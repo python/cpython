@@ -130,6 +130,8 @@ Python/symtable.c	-	PySTEntry_Type	-
 # private static builtin types
 
 Objects/setobject.c	-	_PySetDummy_Type	-
+Objects/stringlib/unicode_format.h	-	PyFormatterIter_Type	-
+Objects/stringlib/unicode_format.h	-	PyFieldNameIter_Type	-
 Objects/unicodeobject.c	-	EncodingMapType	-
 #Objects/unicodeobject.c	-	PyFieldNameIter_Type	-
 #Objects/unicodeobject.c	-	PyFormatterIter_Type	-
@@ -302,7 +304,7 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # manually cached PyUnicodeObject
 Python/ast_unparse.c	-	_str_replace_inf	-
 
-# holds strings
+# holds statically-initialized strings
 Objects/typeobject.c	-	slotdefs	-
 
 # other
@@ -334,10 +336,10 @@ Python/import.c	-	extensions	-
 Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
 
 # during init
-Objects/typeobject.c	-	slotdefs_initialized	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/initconfig.c	-	_Py_global_config_int_max_str_digits	-
 Python/initconfig.c	-	Py_DebugFlag	-
 Python/initconfig.c	-	Py_UTF8Mode	-
 Python/initconfig.c	-	Py_DebugFlag	-
@@ -365,6 +367,8 @@ Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	_preinit_warnoptions	-
 Python/sysmodule.c	-	_preinit_xoptions	-
 Python/thread.c	-	initialized	-
+Python/thread_pthread.h	-	condattr_monotonic	-
+Python/thread_pthread.h	init_condattr	ca	-
 
 # set by embedders during init
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
@@ -373,9 +377,10 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 # lazy
 Objects/floatobject.c	-	double_format	-
 Objects/floatobject.c	-	float_format	-
-Objects/longobject.c	PyLong_FromString	log_base_BASE	-
-Objects/longobject.c	PyLong_FromString	convwidth_base	-
-Objects/longobject.c	PyLong_FromString	convmultmax_base	-
+Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
+Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
+Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
+Objects/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 Python/dtoa.c	-	p5s	-
@@ -451,6 +456,10 @@ Objects/dictobject.c	-	next_dict_keys_version	-
 Objects/funcobject.c	-	next_func_version	-
 Objects/moduleobject.c	-	max_module_number	-
 Objects/object.c	-	_Py_RefTotal	-
+Objects/perf_trampoline.c	-	perf_status	-
+Objects/perf_trampoline.c	-	extra_code_index	-
+Objects/perf_trampoline.c	-	code_arena	-
+Objects/perf_trampoline.c	-	trampoline_api	-
 Objects/typeobject.c	-	next_version_tag	-
 Objects/typeobject.c	resolve_slotdups	ptrs	-
 Parser/pegen.c	-	memo_statistics	-
@@ -463,6 +472,7 @@ Python/import.c	-	import_lock_thread	-
 Python/import.c	import_find_and_load	accumulated	-
 Python/import.c	import_find_and_load	import_level	-
 Python/modsupport.c	-	_Py_PackageContext	-
+Python/thread_pthread_stubs.h	-	py_tls_entries	-
 Python/pyfpe.c	-	PyFPE_counter	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
@@ -495,7 +505,6 @@ Modules/_io/stringio.c	-	PyStringIO_Type	-
 Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/textio.c	-	PyTextIOBase_Type	-
 Modules/_io/textio.c	-	PyTextIOWrapper_Type	-
-# XXX This should have been found by the analyzer but wasn't:
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
@@ -528,7 +537,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 # statically initializd pointer to static type
 # XXX should be const?
-# XXX This should have been found by the analyzer but wasn't:
 Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 
 # initialized once
@@ -612,6 +620,24 @@ Modules/_ctypes/_ctypes.c	-	Union_Type	-
 Modules/_ctypes/callbacks.c	-	PyCThunk_Type	-
 Modules/_ctypes/callproc.c	-	PyCArg_Type	-
 Modules/_ctypes/cfield.c	-	PyCField_Type	-
+Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
+Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
+Modules/_ctypes/ctypes.h	-	PyCData_Type	-
+Modules/_ctypes/ctypes.h	-	PyCField_Type	-
+Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
+Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
+Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
+Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCThunk_Type	-
+Modules/_ctypes/ctypes.h	-	PyExc_ArgError	-
+Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
+Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
+Modules/_ctypes/ctypes.h	-	_ctypes_ptrtype_cache	-
+Modules/_ctypes/ctypes.h	-	basespec_string	-
 Modules/_ctypes/stgdict.c	-	PyCStgDict_Type	-
 Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
 Modules/_datetimemodule.c	-	PyDateTime_DateTimeType	-
@@ -849,6 +875,27 @@ Modules/_decimal/_decimal.c	-	_py_float_abs	-
 Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
 Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
+Modules/cjkcodecs/_codecs_hk.c	-	big5_encmap	-
+Modules/cjkcodecs/_codecs_hk.c	-	big5_decmap	-
+Modules/cjkcodecs/_codecs_hk.c	big5hkscs_codec_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	cp949_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	ksx1001_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisxcommon_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0208_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0212_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_bmp_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_1_bmp_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_2_bmp_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_emp_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_1_emp_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_2_emp_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	gbcommon_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	gb2312_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	ksx1001_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	jisx0208_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	jisx0212_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	jisx0213_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	gb2312_init	initialized	-
 Modules/cjkcodecs/cjkcodecs.h	-	codec_list	-
 Modules/cjkcodecs/cjkcodecs.h	-	mapping_list	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-

@@ -570,103 +570,6 @@ Connection objects
 
    An SQLite database connection has the following attributes and methods:
 
-   .. attribute:: isolation_level
-
-      This attribute controls the :ref:`transaction handling
-      <sqlite3-controlling-transactions>` performed by :mod:`!sqlite3`.
-      If set to ``None``, transactions are never implicitly opened.
-      If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
-      corresponding to the underlying `SQLite transaction behaviour`_,
-      implicit :ref:`transaction management
-      <sqlite3-controlling-transactions>` is performed.
-
-      If not overridden by the *isolation_level* parameter of :func:`connect`,
-      the default is ``""``, which is an alias for ``"DEFERRED"``.
-
-   .. attribute:: in_transaction
-
-      This read-only attribute corresponds to the low-level SQLite
-      `autocommit mode`_.
-
-      ``True`` if a transaction is active (there are uncommitted changes),
-      ``False`` otherwise.
-
-      .. versionadded:: 3.2
-
-   .. attribute:: row_factory
-
-      A callable that accepts two arguments,
-      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
-      and returns a custom object representing an SQLite row.
-
-      Example:
-
-      .. doctest::
-
-         >>> def dict_factory(cursor, row):
-         ...     col_names = [col[0] for col in cursor.description]
-         ...     return {key: value for key, value in zip(col_names, row)}
-         >>> con = sqlite3.connect(":memory:")
-         >>> con.row_factory = dict_factory
-         >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
-         ...     print(row)
-         {'a': 1, 'b': 2}
-
-      If returning a tuple doesn't suffice and you want name-based access to
-      columns, you should consider setting :attr:`row_factory` to the
-      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
-      index-based and case-insensitive name-based access to columns with almost no
-      memory overhead. It will probably be better than your own custom
-      dictionary-based approach or even a db_row based solution.
-
-      .. XXX what's a db_row-based solution?
-
-   .. attribute:: text_factory
-
-      A callable that accepts a :class:`bytes` parameter and returns a text
-      representation of it.
-      The callable is invoked for SQLite values with the ``TEXT`` data type.
-      By default, this attribute is set to :class:`str`.
-      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
-
-      Example:
-
-      .. testcode::
-
-         con = sqlite3.connect(":memory:")
-         cur = con.cursor()
-
-         AUSTRIA = "Österreich"
-
-         # by default, rows are returned as str
-         cur.execute("SELECT ?", (AUSTRIA,))
-         row = cur.fetchone()
-         assert row[0] == AUSTRIA
-
-         # but we can make sqlite3 always return bytestrings ...
-         con.text_factory = bytes
-         cur.execute("SELECT ?", (AUSTRIA,))
-         row = cur.fetchone()
-         assert type(row[0]) is bytes
-         # the bytestrings will be encoded in UTF-8, unless you stored garbage in the
-         # database ...
-         assert row[0] == AUSTRIA.encode("utf-8")
-
-         # we can also implement a custom text_factory ...
-         # here we implement one that appends "foo" to all strings
-         con.text_factory = lambda x: x.decode("utf-8") + "foo"
-         cur.execute("SELECT ?", ("bar",))
-         row = cur.fetchone()
-         assert row[0] == "barfoo"
-
-         con.close()
-
-   .. attribute:: total_changes
-
-      Return the total number of database rows that have been modified, inserted, or
-      deleted since the database connection was opened.
-
-
    .. method:: cursor(factory=Cursor)
 
       Create and return a :class:`Cursor` object.
@@ -1319,6 +1222,102 @@ Connection objects
          deserialize API.
 
       .. versionadded:: 3.11
+
+   .. attribute:: in_transaction
+
+      This read-only attribute corresponds to the low-level SQLite
+      `autocommit mode`_.
+
+      ``True`` if a transaction is active (there are uncommitted changes),
+      ``False`` otherwise.
+
+      .. versionadded:: 3.2
+
+   .. attribute:: isolation_level
+
+      This attribute controls the :ref:`transaction handling
+      <sqlite3-controlling-transactions>` performed by :mod:`!sqlite3`.
+      If set to ``None``, transactions are never implicitly opened.
+      If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
+      corresponding to the underlying `SQLite transaction behaviour`_,
+      implicit :ref:`transaction management
+      <sqlite3-controlling-transactions>` is performed.
+
+      If not overridden by the *isolation_level* parameter of :func:`connect`,
+      the default is ``""``, which is an alias for ``"DEFERRED"``.
+
+   .. attribute:: row_factory
+
+      A callable that accepts two arguments,
+      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
+      and returns a custom object representing an SQLite row.
+
+      Example:
+
+      .. doctest::
+
+         >>> def dict_factory(cursor, row):
+         ...     col_names = [col[0] for col in cursor.description]
+         ...     return {key: value for key, value in zip(col_names, row)}
+         >>> con = sqlite3.connect(":memory:")
+         >>> con.row_factory = dict_factory
+         >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
+         ...     print(row)
+         {'a': 1, 'b': 2}
+
+      If returning a tuple doesn't suffice and you want name-based access to
+      columns, you should consider setting :attr:`row_factory` to the
+      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
+      index-based and case-insensitive name-based access to columns with almost no
+      memory overhead. It will probably be better than your own custom
+      dictionary-based approach or even a db_row based solution.
+
+      .. XXX what's a db_row-based solution?
+
+   .. attribute:: text_factory
+
+      A callable that accepts a :class:`bytes` parameter and returns a text
+      representation of it.
+      The callable is invoked for SQLite values with the ``TEXT`` data type.
+      By default, this attribute is set to :class:`str`.
+      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
+
+      Example:
+
+      .. testcode::
+
+         con = sqlite3.connect(":memory:")
+         cur = con.cursor()
+
+         AUSTRIA = "Österreich"
+
+         # by default, rows are returned as str
+         cur.execute("SELECT ?", (AUSTRIA,))
+         row = cur.fetchone()
+         assert row[0] == AUSTRIA
+
+         # but we can make sqlite3 always return bytestrings ...
+         con.text_factory = bytes
+         cur.execute("SELECT ?", (AUSTRIA,))
+         row = cur.fetchone()
+         assert type(row[0]) is bytes
+         # the bytestrings will be encoded in UTF-8, unless you stored garbage in the
+         # database ...
+         assert row[0] == AUSTRIA.encode("utf-8")
+
+         # we can also implement a custom text_factory ...
+         # here we implement one that appends "foo" to all strings
+         con.text_factory = lambda x: x.decode("utf-8") + "foo"
+         cur.execute("SELECT ?", ("bar",))
+         row = cur.fetchone()
+         assert row[0] == "barfoo"
+
+         con.close()
+
+   .. attribute:: total_changes
+
+      Return the total number of database rows that have been modified, inserted, or
+      deleted since the database connection was opened.
 
 
 .. _sqlite3-cursor-objects:
@@ -2275,7 +2274,8 @@ If the connection attribute :attr:`~Connection.isolation_level`
 is not ``None``,
 new transactions are implicitly opened before
 :meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes
-``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
+``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements;
+for other statements, no implicit transaction handling is performed.
 Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
 You can choose the underlying `SQLite transaction behaviour`_ —
