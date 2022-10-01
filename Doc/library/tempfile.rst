@@ -94,26 +94,32 @@ The module defines the following user-callable items:
    If *delete* is true (the default) and *delete_on_close* is true (the
    default), the file is deleted as soon as it is closed. If *delete* is true
    and *delete_on_close* is false, the file is deleted on context manager exit
-   only, if no context manager was used, then the file is deleted only when the
-   :term:`file-like object` is finalized and hence deletion is not always
-   guaranteed in this case (see :meth:`object.__del__`). If *delete* is false,
-   the value of *delete_on_close* is ignored.
+   only, or else when the :term:`file-like object` is finalized. Deletion is not
+   always guaranteed in this case (see :meth:`object.__del__`). If *delete* is
+   false, the value of *delete_on_close* is ignored.
 
-   While the named temporary file is open, the file can always be opened again
-   on POSIX. On Windows, it can be opened again if *delete* is false, or if
-   *delete_on_close* is false, or if the additional open shares delete access
-   (e.g. by calling :func:`os.open` with the flag ``O_TEMPORARY``).  On
-   Windows, if *delete* is true and *delete_on_close* is false, additional
-   opens that do not share delete access (e.g. via builtin :func:`open`) must
-   be closed before exiting the context manager, else the :func:`os.unlink`
-   call on context manager exit will fail with a :exc:`PermissionError`.
-
-   To use the name of the temporary file to open the closed file second time,
-   either make sure not to delete the file upon closure (set the *delete*
-   parameter to be false) or, in case the temporary file is created in a
-   :keyword:`with` statement, set the *delete_on_close* parameter to be false.
+   Therefore to use the name of the temporary file to open the closed file
+   second time, either make sure not to delete the file upon closure (set the
+   *delete* parameter to be false) or, in case the temporary file is created in
+   a :keyword:`with` statement, set the *delete_on_close* parameter to be false.
    The latter approach is recommended as it provides assistance in automatic
    cleaning of the temporary file upon the context manager exit.
+
+   Opening the temporary file again by its name while it is still open works as
+   follows:
+
+   * On POSIX the file can always be opened again.
+   * On Windows to open the file again while it is open make sure that at least
+     one of the following conditions are fulfilled:
+
+         * *delete* is false
+         * additional open shares delete access (e.g. by calling :func:`os.open`
+           with the flag ``O_TEMPORARY``)
+         * *delete* is true but *delete_on_close* is false. Note, that in this
+           case the additional opens that do not share delete access (e.g.
+           created via builtin :func:`open`) must be closed before exiting the
+           context manager, else the :func:`os.unlink` call on context manager
+           exit will fail with a :exc:`PermissionError`.
 
    On Windows, if *delete_on_close* is false, and the file is created in a
    directory for which the user lacks delete access, then the :func:`os.unlink`
@@ -381,19 +387,16 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
     >>>
     # file is now closed and removed
 
-    # create a temporary file using a context manager, note the name,
+    # create a temporary file using a context manager
     # close the file, use the name to open the file again
     >>> with tempfile.TemporaryFile(delete_on_close=False) as fp:
-    ...     fp.write(b'Hello world!')
-    ...     fp_name = fp.name
-    ...     fp.close()
+    ...    fp.write(b'Hello world!')
+    ...    fp.close()
     # the file is closed, but not removed
     # open the file again by using its name
-    ...     f = open(fp_name)
-    ...     f.seek(0)
-    ...     f.read()
+    ...    with open(fp.name) as f
+    ...        f.read()
     b'Hello world!'
-    ...     f.close()
     >>>
     # file is now removed
 
