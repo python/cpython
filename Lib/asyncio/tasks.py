@@ -14,6 +14,7 @@ import contextvars
 import functools
 import inspect
 import itertools
+import sys
 import types
 import warnings
 import weakref
@@ -183,6 +184,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         to which the output is written; by default output is written
         to sys.stderr.
         """
+        if file is None:
+            file = sys.stderr
         return base_tasks._task_print_stack(self, limit, file)
 
     def cancel(self, msg=None):
