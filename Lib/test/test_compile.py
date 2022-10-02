@@ -544,7 +544,7 @@ if 1:
             with open(fn, "wb") as fp:
                 fp.write(src)
             res = script_helper.run_python_until_end(fn)[0]
-        self.assertIn(b"Non-UTF-8", res.err)
+        self.assertIn(b"source code cannot contain null bytes", res.err)
 
     def test_yet_more_evil_still_undecodable(self):
         # Issue #25388
@@ -554,7 +554,7 @@ if 1:
             with open(fn, "wb") as fp:
                 fp.write(src)
             res = script_helper.run_python_until_end(fn)[0]
-        self.assertIn(b"Non-UTF-8", res.err)
+        self.assertIn(b"source code cannot contain null bytes", res.err)
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
@@ -591,9 +591,9 @@ if 1:
     def test_null_terminated(self):
         # The source code is null-terminated internally, but bytes-like
         # objects are accepted, which could be not terminated.
-        with self.assertRaisesRegex(ValueError, "cannot contain null"):
+        with self.assertRaisesRegex(SyntaxError, "cannot contain null"):
             compile("123\x00", "<dummy>", "eval")
-        with self.assertRaisesRegex(ValueError, "cannot contain null"):
+        with self.assertRaisesRegex(SyntaxError, "cannot contain null"):
             compile(memoryview(b"123\x00"), "<dummy>", "eval")
         code = compile(memoryview(b"123\x00")[1:-1], "<dummy>", "eval")
         self.assertEqual(eval(code), 23)

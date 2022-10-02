@@ -1898,7 +1898,7 @@ socket
   family on OS X.  (Contributed by Michael Goderbauer in :issue:`13777`.)
 
 * New function :func:`~socket.sethostname` allows the hostname to be set
-  on unix systems if the calling process has sufficient privileges.
+  on Unix systems if the calling process has sufficient privileges.
   (Contributed by Ross Lagerwall in :issue:`10866`.)
 
 
