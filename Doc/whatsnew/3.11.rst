@@ -207,8 +207,10 @@ See :pep:`678` for more details.
 PEP written by Zac Hatfield-Dodds.)
 
 
-Windows py.exe launcher improvements
-------------------------------------
+.. _whatsnew311-windows-launcher:
+
+Windows ``py.exe`` launcher improvements
+----------------------------------------
 
 The copy of :ref:`launcher` included with Python 3.11 has been significantly
 updated. It now supports company/tag syntax as defined in :pep:`514` using the
