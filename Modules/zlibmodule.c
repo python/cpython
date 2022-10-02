@@ -9,6 +9,10 @@
 #include "structmember.h"         // PyMemberDef
 #include "zlib.h"
 
+#if defined(ZLIB_VERNUM) && ZLIB_VERNUM < 0x1221
+#error "At least zlib version 1.2.2.1 is required"
+#endif
+
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
 
@@ -171,9 +175,6 @@ OutputBuffer_WindowOnError(_BlocksOutputBuffer *buffer, _Uint32Window *window)
     } } while (0)
 #define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
 
-#if defined(ZLIB_VERNUM) && ZLIB_VERNUM >= 0x1221
-#  define AT_LEAST_ZLIB_1_2_2_1
-#endif
 
 /* The following parameters are copied from zutil.h, version 0.95 */
 #define DEFLATED   8
@@ -677,18 +678,10 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
     case Z_OK:
         self->is_initialised = 1;
         if (self->zdict != NULL && wbits < 0) {
-#ifdef AT_LEAST_ZLIB_1_2_2_1
             if (set_inflate_zdict(state, self) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }
-#else
-            PyErr_Format(state->ZlibError,
-                         "zlib version %s does not allow raw inflate with dictionary",
-                         ZLIB_VERSION);
-            Py_DECREF(self);
-            return NULL;
-#endif
         }
         return (PyObject *)self;
     case Z_STREAM_ERROR:
@@ -1782,18 +1775,10 @@ ZlibDecompressor__new__(PyTypeObject *cls,
         case Z_OK:
         self->is_initialised = 1;
         if (self->zdict != NULL && wbits < 0) {
-#ifdef AT_LEAST_ZLIB_1_2_2_1
             if (set_inflate_zdict_ZlibDecompressor(state, self) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }
-#else
-            PyErr_Format(state->ZlibError,
-                         "zlib version %s does not allow raw inflate with dictionary",
-                         ZLIB_VERSION);
-            Py_DECREF(self);
-            return NULL;
-#endif
         }
         return (PyObject *)self;
     case Z_STREAM_ERROR:
