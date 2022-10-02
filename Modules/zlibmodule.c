@@ -1512,7 +1512,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
                                                         hard_limit);
             if (obuflen == -1){
                 PyErr_SetString(PyExc_MemoryError,
-                                "Unsufficient memory for buffer allocation");
+                                "Insufficient memory for buffer allocation");
                 goto error;
             }
             else if (obuflen == -2)
