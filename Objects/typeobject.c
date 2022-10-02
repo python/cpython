@@ -7552,6 +7552,46 @@ wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
+wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
+{
+    getbufferproc func = (getbufferproc)wrapped;
+    Py_buffer view;
+    int flags = 0;
+
+    if (!check_num_args(args, 1)) {
+        return NULL;
+    }
+    if (!PyArg_ParseTuple(args, "i", &flags)) {
+        return NULL;
+    }
+    if ((*func)(self, &view, flags) < 0) {
+        return NULL;
+    }
+    return PyMemoryView_FromBuffer(&view);
+}
+
+static PyObject *
+wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
+{
+    releasebufferproc func = (releasebufferproc)wrapped;
+    PyMemoryViewObject *mview;
+
+    if (!check_num_args(args, 1)) {
+        return NULL;
+    }
+    if (!PyArg_ParseTuple(args, "O!", &PyMemoryView_Type, &mview)) {
+        return NULL;
+    }
+    if (mview->view.obj != self) {
+        PyErr_SetString(PyExc_ValueError,
+                        "memoryview's buffer is not this object");
+        return NULL;
+    }
+    (*func)(self, &mview->view);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 wrap_init(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
 {
     initproc func = (initproc)wrapped;
@@ -8383,6 +8423,54 @@ slot_tp_finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+static int 
+slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
+{
+    PyObject *flags_obj = PyLong_FromLong(flags);
+    if (flags_obj == NULL) {
+        return -1;
+    }
+    PyObject *stack[2] = {self, flags_obj};
+    PyObject *ret = vectorcall_method(&_Py_ID(__buffer__), stack, 2);
+    if (ret == NULL) {
+        goto fail;
+    }
+    if (!PyMemoryView_Check(ret)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__buffer__ returned non-memoryview object");
+        goto fail;
+    }
+    *buffer = ((PyMemoryViewObject *)ret)->view;
+    Py_DECREF(ret);
+    Py_DECREF(flags_obj);
+    return 0;
+
+fail:
+    Py_XDECREF(ret);
+    Py_DECREF(flags_obj);
+    return -1;
+}
+
+static void
+slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
+{
+    PyObject *mv = PyMemoryView_FromBuffer(buffer);
+    if (mv == NULL) {
+        PyErr_WriteUnraisable(self);
+        return;
+    }
+    PyObject *stack[2] = {self, mv};
+    PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);
+    Py_DECREF(mv);
+    if (ret == NULL) {
+        PyErr_WriteUnraisable(self);
+    }
+    else {
+        Py_DECREF(ret);
+    }
+}
+
+
 static PyObject *
 slot_am_await(PyObject *self)
 {
@@ -8452,6 +8540,7 @@ typedef struct wrapperbase slotdef;
 
 #undef TPSLOT
 #undef FLSLOT
+#undef BUFSLOT
 #undef AMSLOT
 #undef ETSLOT
 #undef SQSLOT
@@ -8471,6 +8560,8 @@ typedef struct wrapperbase slotdef;
 #define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     {#NAME, offsetof(PyHeapTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, \
      PyDoc_STR(DOC), .name_strobj = &_Py_ID(NAME) }
+#define BUFSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+    ETSLOT(NAME, as_buffer.SLOT, FUNCTION, WRAPPER, DOC)
 #define AMSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_async.SLOT, FUNCTION, WRAPPER, DOC)
 #define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
@@ -8551,6 +8642,13 @@ static slotdef slotdefs[] = {
            "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate signature."),
     TPSLOT(__del__, tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del, ""),
+
+    BUFSLOT(__buffer__, bf_getbuffer, slot_bf_getbuffer, wrap_buffer,
+            "__buffer__($self, flags, /)\n--\n\n"
+            "Return a buffer object that exposes the underlying memory of the object."),
+    BUFSLOT(__release_buffer__, bf_releasebuffer, slot_bf_releasebuffer, wrap_releasebuffer,
+            "__release_buffer__($self, /)\n--\n\n"
+            "Release the buffer object that exposes the underlying memory of the object."), 
 
     AMSLOT(__await__, am_await, slot_am_await, wrap_unaryfunc,
            "__await__($self, /)\n--\n\nReturn an iterator to be used in await expression."),
@@ -8698,8 +8796,12 @@ slotptr(PyTypeObject *type, int ioffset)
 
     /* Note: this depends on the order of the members of PyHeapTypeObject! */
     assert(offset >= 0);
-    assert((size_t)offset < offsetof(PyHeapTypeObject, as_buffer));
-    if ((size_t)offset >= offsetof(PyHeapTypeObject, as_sequence)) {
+    assert((size_t)offset < offsetof(PyHeapTypeObject, ht_name));
+    if ((size_t)offset >= offsetof(PyHeapTypeObject, as_buffer)) {
+        ptr = (char *)type->tp_as_buffer;
+        offset -= offsetof(PyHeapTypeObject, as_buffer);
+    }
+    else if ((size_t)offset >= offsetof(PyHeapTypeObject, as_sequence)) {
         ptr = (char *)type->tp_as_sequence;
         offset -= offsetof(PyHeapTypeObject, as_sequence);
     }
