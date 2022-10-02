@@ -453,9 +453,15 @@ Other Language Changes
   pickles instance attributes implemented as :term:`slots <__slots__>`.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
 
-* Add :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
-  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
-  the current directory, the script's directory or an empty string.
+* Added a :option:`-P` command line option
+  and a :envvar:`PYTHONSAFEPATH` environment variable,
+  which disable the automatic prepending to :data:`sys.path`
+  of the script's directory when running a script,
+  or the current directory when using :option:`-c` and :option:`-m`.
+  This ensures only stdlib and installed modules
+  are picked up by :keyword:`import`,
+  and avoids unintentionally or maliciously shadowing modules
+  with those in a local (and typically user-writable) directory.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
 * A ``"z"`` option was added to the :ref:`formatspec` that
