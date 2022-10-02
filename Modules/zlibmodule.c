@@ -1702,10 +1702,12 @@ zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
     PyObject *result = NULL;
 
     ENTER_ZLIB(self);
-    if (self->eof)
+    if (self->eof) {
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
-    else
+    }
+    else {
         result = decompress(self, data->buf, data->len, max_length);
+    }
     LEAVE_ZLIB(self);
     return result;
 }
