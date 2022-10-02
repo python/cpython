@@ -423,15 +423,18 @@ detected by checking its tag for a ``-32`` suffix. All releases of Python
 since 3.5 have included this in their 32-bit builds.
 
 
+.. _whatsnew311-other-lang-changes:
+
 Other Language Changes
 ======================
 
-* Starred expressions can be used in :ref:`for statements<for>`. (See
-  :issue:`46725` for more details.)
+* Starred expressions can be used in :keyword:`for` statements.
+  (See :issue:`46725` for more details.)
 
-* Asynchronous comprehensions are now allowed inside comprehensions in
-  asynchronous functions. Outer comprehensions implicitly become
-  asynchronous. (Contributed by Serhiy Storchaka in :issue:`33346`.)
+* Asynchronous :ref:`comprehensions <comprehensions>` are now allowed
+  inside comprehensions in :ref:`asynchronous functions <async def>`.
+  Outer comprehensions implicitly become asynchronous.
+  (Contributed by Serhiy Storchaka in :issue:`33346`.)
 
 * A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
   :meth:`contextlib.ExitStack.enter_context` and
@@ -447,8 +450,8 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
 * Added :meth:`object.__getstate__` which provides the default
-  implementation of the ``__getstate__()`` method.  :mod:`Copying <copy>`
-  and :mod:`pickling <pickle>` instances of subclasses of builtin types
+  implementation of the :meth:`!__getstate__` method. :mod:`copy`-ing
+  and :mod:`pickle`-ing instances of subclasses of builtin types
   :class:`bytearray`, :class:`set`, :class:`frozenset`,
   :class:`collections.OrderedDict`, :class:`collections.deque`,
   :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
@@ -460,14 +463,14 @@ Other Language Changes
   the current directory, the script's directory or an empty string.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
-* A ``"z"`` option was added to the format specification mini-language that
+* A ``"z"`` option was added to the :ref:`formatspec` that
   coerces negative zero to zero after rounding to the format precision.  See
   :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
 
-* Bytes are no longer accepted on :attr:`sys.path`.  Support broke sometime
+* Bytes are no longer accepted on :data:`sys.path`.  Support broke sometime
   between Python 3.2 and 3.6 with no one noticing until after Python 3.10.0
   was released. Bringing back support would also be problematic due to
-  interactions between :option:`-b` and :attr:`sys.path_importer_cache` when
+  interactions between :option:`-b` and :data:`sys.path_importer_cache` when
   there is a mixture of strings and bytes keys.
   (Contributed by Thomas Grainger in :gh:`91181`.)
 
