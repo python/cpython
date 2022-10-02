@@ -1308,6 +1308,26 @@ class Popen:
         # Prevent a double close of these handles/fds from __init__ on error.
         self._closed_child_pipe_fds = True
 
+    @contextlib.contextmanager
+    def _on_error_fd_closer(self):
+        """Helper to ensure file descriptors opened in _get_handles are closed"""
+        to_close = []
+        try:
+            yield to_close
+        except:
+            if hasattr(self, '_devnull'):
+                to_close.append(self._devnull)
+                del self._devnull
+            for fd in to_close:
+                try:
+                    if _mswindows and isinstance(fd, Handle):
+                        fd.Close()
+                    else:
+                        os.close(fd)
+                except OSError:
+                    pass
+            raise
+
     if _mswindows:
         #
         # Windows methods
@@ -1323,22 +1343,18 @@ class Popen:
             c2pread, c2pwrite = -1, -1
             errread, errwrite = -1, -1
 
-            stdin_needsclose = False
-            stdout_needsclose = False
-            stderr_needsclose = False
-
-            try:
+            with self._on_error_fd_closer() as err_close_fds:
                 if stdin is None:
                     p2cread = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
                     if p2cread is None:
-                        stdin_needsclose = True
                         p2cread, _ = _winapi.CreatePipe(None, 0)
                         p2cread = Handle(p2cread)
                         _winapi.CloseHandle(_)
+                        err_close_fds.append(p2cread)
                 elif stdin == PIPE:
-                    stdin_needsclose = True
                     p2cread, p2cwrite = _winapi.CreatePipe(None, 0)
                     p2cread, p2cwrite = Handle(p2cread), Handle(p2cwrite)
+                    err_close_fds.extend((p2cread, p2cwrite))
                 elif stdin == DEVNULL:
                     p2cread = msvcrt.get_osfhandle(self._get_devnull())
                 elif isinstance(stdin, int):
@@ -1351,14 +1367,14 @@ class Popen:
                 if stdout is None:
                     c2pwrite = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
                     if c2pwrite is None:
-                        stdout_needsclose = True
                         _, c2pwrite = _winapi.CreatePipe(None, 0)
                         c2pwrite = Handle(c2pwrite)
                         _winapi.CloseHandle(_)
+                        err_close_fds.append(c2pwrite)
                 elif stdout == PIPE:
-                    stdout_needsclose = True
                     c2pread, c2pwrite = _winapi.CreatePipe(None, 0)
                     c2pread, c2pwrite = Handle(c2pread), Handle(c2pwrite)
+                    err_close_fds.extend((c2pread, c2pwrite))
                 elif stdout == DEVNULL:
                     c2pwrite = msvcrt.get_osfhandle(self._get_devnull())
                 elif isinstance(stdout, int):
@@ -1371,14 +1387,14 @@ class Popen:
                 if stderr is None:
                     errwrite = _winapi.GetStdHandle(_winapi.STD_ERROR_HANDLE)
                     if errwrite is None:
-                        stderr_needsclose = True
                         _, errwrite = _winapi.CreatePipe(None, 0)
                         errwrite = Handle(errwrite)
                         _winapi.CloseHandle(_)
+                        err_close_fds.append(errwrite)
                 elif stderr == PIPE:
-                    stderr_needsclose = True
                     errread, errwrite = _winapi.CreatePipe(None, 0)
                     errread, errwrite = Handle(errread), Handle(errwrite)
+                    err_close_fds.extend((errread, errwrite))
                 elif stderr == STDOUT:
                     errwrite = c2pwrite
                 elif stderr == DEVNULL:
@@ -1389,27 +1405,6 @@ class Popen:
                     # Assuming file-like object
                     errwrite = msvcrt.get_osfhandle(stderr.fileno())
                 errwrite = self._make_inheritable(errwrite)
-
-            except BaseException:
-                to_close = []
-                if stdin_needsclose and p2cwrite != -1:
-                    to_close.append(p2cread)
-                    to_close.append(p2cwrite)
-                if stdout_needsclose and p2cwrite != -1:
-                    to_close.append(c2pread)
-                    to_close.append(c2pwrite)
-                if stderr_needsclose and errwrite != -1:
-                    to_close.append(errread)
-                    to_close.append(errwrite)
-                for file in to_close:
-                    if isinstance(file, Handle):
-                        file.Close()
-                    else:
-                        os.close(file)
-                if hasattr(self, "_devnull"):
-                    os.close(self._devnull)
-                    del self._devnull
-                raise
 
             return (p2cread, p2cwrite,
                     c2pread, c2pwrite,
@@ -1696,13 +1691,14 @@ class Popen:
             c2pread, c2pwrite = -1, -1
             errread, errwrite = -1, -1
 
-            try:
+            with self._on_error_fd_closer() as err_close_fds:
                 if stdin is None:
                     pass
                 elif stdin == PIPE:
                     p2cread, p2cwrite = os.pipe()
                     if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
                         fcntl.fcntl(p2cwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
+                    err_close_fds.extend((p2cread, p2cwrite))
                 elif stdin == DEVNULL:
                     p2cread = self._get_devnull()
                 elif isinstance(stdin, int):
@@ -1717,6 +1713,7 @@ class Popen:
                     c2pread, c2pwrite = os.pipe()
                     if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
                         fcntl.fcntl(c2pwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
+                    err_close_fds.extend((c2pread, c2pwrite))
                 elif stdout == DEVNULL:
                     c2pwrite = self._get_devnull()
                 elif isinstance(stdout, int):
@@ -1731,6 +1728,7 @@ class Popen:
                     errread, errwrite = os.pipe()
                     if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
                         fcntl.fcntl(errwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
+                    err_close_fds.extend((errread, errwrite))
                 elif stderr == STDOUT:
                     if c2pwrite != -1:
                         errwrite = c2pwrite
@@ -1743,22 +1741,6 @@ class Popen:
                 else:
                     # Assuming file-like object
                     errwrite = stderr.fileno()
-
-            except BaseException:
-                # Close the file descriptors we opened to avoid leakage
-                if stdin == PIPE and p2cwrite != -1:
-                    os.close(p2cread)
-                    os.close(p2cwrite)
-                if stdout == PIPE and c2pwrite != -1:
-                    os.close(c2pread)
-                    os.close(c2pwrite)
-                if stderr == PIPE and errwrite != -1:
-                    os.close(errread)
-                    os.close(errwrite)
-                if hasattr(self, "_devnull"):
-                    os.close(self._devnull)
-                    del self._devnull
-                raise
 
             return (p2cread, p2cwrite,
                     c2pread, c2pwrite,
