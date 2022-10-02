@@ -1,0 +1,1 @@
+Make :meth:`asyncio.Task.print_task` use ``sys.stderr`` by default, as documented.
