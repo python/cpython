@@ -8,6 +8,7 @@
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 #include "zlib.h"
+#include "stdbool.h"
 
 #if defined(ZLIB_VERNUM) && ZLIB_VERNUM < 0x1221
 #error "At least zlib version 1.2.2.1 is required"
@@ -212,7 +213,7 @@ typedef struct
     PyObject *unused_data;
     PyObject *unconsumed_tail;
     char eof;
-    int is_initialised;
+    bool is_initialised;
     PyObject *zdict;
     PyThread_type_lock lock;
 } compobject;
@@ -1358,7 +1359,7 @@ typedef struct {
        separately. Conversion and looping is encapsulated in
        decompress_buf() */
     Py_ssize_t avail_in_real;
-    int is_initialised;
+    bool is_initialised;
     char eof;           /* T_BOOL expects a char */
     char needs_input;
 } ZlibDecompressor;
