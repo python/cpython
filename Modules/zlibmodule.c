@@ -1730,7 +1730,7 @@ ZlibDecompressor__new__(PyTypeObject *cls,
                         PyObject *kwargs)
 {
     static char *keywords[] = {"wbits", "zdict", NULL};
-    static char *format = "|iO:ZlibDecompressor";
+    static char *format = "|iO:_ZlibDecompressor";
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
     zlibstate *state = PyType_GetModuleState(cls);
@@ -1974,7 +1974,7 @@ static PyType_Slot ZlibDecompressor_type_slots[] = {
 };
 
 static PyType_Spec ZlibDecompressor_type_spec = {
-    .name = "zlib.ZlibDecompressor",
+    .name = "zlib._ZlibDecompressor",
     .basicsize = sizeof(ZlibDecompressor),
     // Calling PyType_GetModuleState() on a subclass is not safe.
     // ZlibDecompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
