@@ -1302,13 +1302,6 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
             case Z_STREAM_END:
                 break;
             default:
-                if (err == Z_NEED_DICT && self->zdict != NULL) {
-                    if (set_inflate_zdict(state, self) < 0) {
-                        goto abort;
-                    }
-                    else
-                        break;
-                }
                 goto save;
             }
 
