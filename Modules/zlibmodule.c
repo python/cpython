@@ -1720,8 +1720,12 @@ PyDoc_STRVAR(ZlibDecompressor__new____doc__,
 "\n"
 "  wbits = 15\n"
 "  zdict\n"
-"     The predefined compression dictionary.  This must be the same\n"
-"     dictionary as used by the compressor that produced the input data.\n"
+"     The predefined compression dictionary. This is a sequence of bytes\n"
+"     (such as a bytes object) containing subsequences that are expected\n"
+"     to occur frequently in the data that is to be compressed. Those\n"
+"     subsequences that are expected to be most common should come at the\n"
+"     end of the dictionary. This must be the same dictionary as used by the\n"
+"     compressor that produced the input data.\n"
 "\n");
 
 static PyObject *
