@@ -1563,7 +1563,7 @@ static PyObject *
 decompress(ZlibDecompressor *self, uint8_t *data, 
            size_t len, Py_ssize_t max_length)
 {
-    char input_buffer_in_use;
+    bool input_buffer_in_use;
     PyObject *result;
 
     /* Prepend unconsumed input if necessary */
