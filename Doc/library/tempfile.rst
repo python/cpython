@@ -80,16 +80,19 @@ The module defines the following user-callable items:
    This function operates exactly as :func:`TemporaryFile` does, except the
    following differences:
 
-   * The file is guaranteed to have a visible name in the file system
-     (on Unix, the directory entry is not unlinked).
-   * There is more granularity in the deletion behaviour of the file
-     (see *delete_on_close* below)
+   * This function returns a file that is guaranteed to have a visible name in
+     the file system.
+   * To manage the named file, it extends the parameters of
+     :func:`TemporaryFile` with *delete* and *delete_on_close* parameters that
+     determine whether and how the named file should be automatically deleted.
 
    The returned object is always a :term:`file-like object` whose :attr:`!file`
-   attribute is the underlying true file object. This :term:`file-like object` can be
-   used in a :keyword:`with` statement, just like a normal file.  The name of the
-   temporary file can be retrieved from the :attr:`name` attribute of the
-   returned file-like object.
+   attribute is the underlying true file object. This :term:`file-like object`
+   can be used in a :keyword:`with` statement, just like a normal file.  The
+   name of the temporary file can be retrieved from the :attr:`name` attribute
+   of the returned file-like object. On Unix, unlike with the
+   :func:`TemporaryFile`, the directory entry does not get unlinked immediately
+   after the file creation.
 
    If *delete* is true (the default) and *delete_on_close* is true (the
    default), the file is deleted as soon as it is closed. If *delete* is true
