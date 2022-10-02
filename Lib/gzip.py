@@ -514,7 +514,7 @@ class _GzipReader(_compression.DecompressReader):
                                "end-of-stream marker was reached")
 
         self._crc = zlib.crc32(uncompress, self._crc)
-        self._stream_size = self._stream_size + len(uncompress)
+        self._stream_size += len(uncompress)
         self._pos += len(uncompress)
         return uncompress
 
