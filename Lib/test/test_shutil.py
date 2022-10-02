@@ -1568,16 +1568,30 @@ class TestArchives(BaseTest, unittest.TestCase):
         finally:
             archive.close()
 
-    def test_make_archive_cwd(self):
+    def test_make_archive_cwd_default(self):
         current_dir = os.getcwd()
         def archiver(base_name, base_dir, **kw):
             self.assertNotIn('root_dir', kw)
-            if root_dir is None:
-                self.assertEqual(base_name, 'basename')
-                self.assertEqual(os.getcwd(), current_dir)
-            else:
-                self.assertEqual(base_name, os.path.join(current_dir, 'basename'))
-                self.assertEqual(os.getcwd(), root_dir)
+            self.assertEqual(base_name, 'basename')
+            self.assertEqual(os.getcwd(), current_dir)
+            raise RuntimeError()
+
+        register_archive_format('xxx', archiver, [], 'xxx file')
+        try:
+            with no_chdir:
+                with self.assertRaises(RuntimeError):
+                    make_archive('basename', 'xxx')
+            self.assertEqual(os.getcwd(), current_dir)
+        finally:
+            unregister_archive_format('xxx')
+
+    def test_make_archive_cwd(self):
+        current_dir = os.getcwd()
+        root_dir = self.mkdtemp()
+        def archiver(base_name, base_dir, **kw):
+            self.assertNotIn('root_dir', kw)
+            self.assertEqual(base_name, os.path.join(current_dir, 'basename'))
+            self.assertEqual(os.getcwd(), root_dir)
             raise RuntimeError()
         dirs = []
         def _chdir(path):
@@ -1586,14 +1600,6 @@ class TestArchives(BaseTest, unittest.TestCase):
 
         register_archive_format('xxx', archiver, [], 'xxx file')
         try:
-            root_dir = None
-            with support.swap_attr(os, 'chdir', _chdir) as orig_chdir:
-                with self.assertRaises(RuntimeError):
-                    make_archive('basename', 'xxx')
-            self.assertEqual(os.getcwd(), current_dir)
-            self.assertEqual(dirs, [])
-
-            root_dir = self.mkdtemp()
             with support.swap_attr(os, 'chdir', _chdir) as orig_chdir:
                 with self.assertRaises(RuntimeError):
                     make_archive('basename', 'xxx', root_dir=root_dir)
@@ -1611,18 +1617,13 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertEqual(os.getcwd(), current_dir)
             raise RuntimeError()
         archiver.supports_root_dir = True
-        dirs = []
-        def _chdir(path):
-            dirs.append(path)
-            orig_chdir(path)
 
         register_archive_format('xxx', archiver, [], 'xxx file')
         try:
-            with support.swap_attr(os, 'chdir', _chdir) as orig_chdir:
+            with no_chdir:
                 with self.assertRaises(RuntimeError):
                     make_archive('basename', 'xxx', root_dir=root_dir)
             self.assertEqual(os.getcwd(), current_dir)
-            self.assertEqual(dirs, [])
         finally:
             unregister_archive_format('xxx')
 
