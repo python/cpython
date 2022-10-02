@@ -85,7 +85,8 @@ Future Object
 
    Future is an :term:`awaitable` object.  Coroutines can await on
    Future objects until they either have a result or an exception
-   set, or until they are cancelled.
+   set, or until they are cancelled. A Future can be awaited multiple
+   times and the result is same.
 
    Typically Futures are used to enable low-level
    callback-based code (e.g. in protocols implemented using asyncio
