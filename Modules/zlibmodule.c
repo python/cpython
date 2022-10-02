@@ -1540,7 +1540,6 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
             zlib_error(state, self->zst, err, "while finishing decompression");
             goto error;
         }
-        self->is_initialised = 0;
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(state, self->zst, err, "while decompressing data");
     }
