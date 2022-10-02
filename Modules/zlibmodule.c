@@ -324,7 +324,7 @@ static PyObject *
 zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
 /*[clinic end generated code: output=46bd152fadd66df2 input=c4d06ee5782a7e3f]*/
 {
-    PyObject *RetVal;
+    PyObject *return_value;
     int flush;
     z_stream zst;
     _BlocksOutputBuffer buffer = {.list = NULL};
@@ -391,11 +391,11 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
 
     err = deflateEnd(&zst);
     if (err == Z_OK) {
-        RetVal = OutputBuffer_Finish(&buffer, zst.avail_out);
-        if (RetVal == NULL) {
+        return_value = OutputBuffer_Finish(&buffer, zst.avail_out);
+        if (return_value == NULL) {
             goto error;
         }
-        return RetVal;
+        return return_value;
     }
     else
         zlib_error(state, zst, err, "while finishing compression");
@@ -423,7 +423,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
 /*[clinic end generated code: output=77c7e35111dc8c42 input=a9ac17beff1f893f]*/
 {
-    PyObject *RetVal;
+    PyObject *return_value;
     Byte *ibuf;
     Py_ssize_t ibuflen;
     int err, flush;
@@ -518,9 +518,9 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         goto error;
     }
 
-    RetVal = OutputBuffer_WindowFinish(&buffer, &window, zst.avail_out);
-    if (RetVal != NULL) {
-        return RetVal;
+    return_value = OutputBuffer_WindowFinish(&buffer, &window, zst.avail_out);
+    if (return_value != NULL) {
+        return return_value;
     }
 
  error:
@@ -749,7 +749,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
                             Py_buffer *data)
 /*[clinic end generated code: output=6731b3f0ff357ca6 input=04d00f65ab01d260]*/
 {
-    PyObject *RetVal;
+    PyObject *return_value;
     int err;
     _BlocksOutputBuffer buffer = {.list = NULL};
     zlibstate *state = PyType_GetModuleState(cls);
@@ -787,17 +787,17 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 
     } while (ibuflen != 0);
 
-    RetVal = OutputBuffer_Finish(&buffer, self->zst.avail_out);
-    if (RetVal != NULL) {
+    return_value = OutputBuffer_Finish(&buffer, self->zst.avail_out);
+    if (return_value != NULL) {
         goto success;
     }
 
  error:
     OutputBuffer_OnError(&buffer);
-    RetVal = NULL;
+    return_value = NULL;
  success:
     LEAVE_ZLIB(self);
-    return RetVal;
+    return return_value;
 }
 
 /* Helper for objdecompress() and flush(). Saves any unconsumed input data in
@@ -871,7 +871,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
-    PyObject *RetVal;
+    PyObject *return_value;
     _BlocksOutputBuffer buffer = {.list = NULL};
 
     PyObject *module = PyType_GetModule(cls);
@@ -949,17 +949,17 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
         goto abort;
     }
 
-    RetVal = OutputBuffer_Finish(&buffer, self->zst.avail_out);
-    if (RetVal != NULL) {
+    return_value = OutputBuffer_Finish(&buffer, self->zst.avail_out);
+    if (return_value != NULL) {
         goto success;
     }
 
  abort:
     OutputBuffer_OnError(&buffer);
-    RetVal = NULL;
+    return_value = NULL;
  success:
     LEAVE_ZLIB(self);
-    return RetVal;
+    return return_value;
 }
 
 /*[clinic input]
@@ -981,7 +981,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 /*[clinic end generated code: output=c7efd13efd62add2 input=286146e29442eb6c]*/
 {
     int err;
-    PyObject *RetVal;
+    PyObject *return_value;
     _BlocksOutputBuffer buffer = {.list = NULL};
 
     zlibstate *state = PyType_GetModuleState(cls);
@@ -1038,17 +1038,17 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
         goto error;
     }
 
-    RetVal = OutputBuffer_Finish(&buffer, self->zst.avail_out);
-    if (RetVal != NULL) {
+    return_value = OutputBuffer_Finish(&buffer, self->zst.avail_out);
+    if (return_value != NULL) {
         goto success;
     }
 
 error:
     OutputBuffer_OnError(&buffer);
-    RetVal = NULL;
+    return_value = NULL;
 success:
     LEAVE_ZLIB(self);
-    return RetVal;
+    return return_value;
 }
 
 #ifdef HAVE_ZLIB_COPY
@@ -1067,14 +1067,14 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls)
 {
     zlibstate *state = PyType_GetModuleState(cls);
 
-    compobject *retval = newcompobject(state->Comptype);
-    if (!retval) return NULL;
+    compobject *return_value = newcompobject(state->Comptype);
+    if (!return_value) return NULL;
 
     /* Copy the zstream state
      * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
      */
     ENTER_ZLIB(self);
-    int err = deflateCopy(&retval->zst, &self->zst);
+    int err = deflateCopy(&return_value->zst, &self->zst);
     switch (err) {
     case Z_OK:
         break;
@@ -1090,22 +1090,22 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls)
         goto error;
     }
     Py_INCREF(self->unused_data);
-    Py_XSETREF(retval->unused_data, self->unused_data);
+    Py_XSETREF(return_value->unused_data, self->unused_data);
     Py_INCREF(self->unconsumed_tail);
-    Py_XSETREF(retval->unconsumed_tail, self->unconsumed_tail);
+    Py_XSETREF(return_value->unconsumed_tail, self->unconsumed_tail);
     Py_XINCREF(self->zdict);
-    Py_XSETREF(retval->zdict, self->zdict);
-    retval->eof = self->eof;
+    Py_XSETREF(return_value->zdict, self->zdict);
+    return_value->eof = self->eof;
 
     /* Mark it as being initialized */
-    retval->is_initialised = 1;
+    return_value->is_initialised = 1;
 
     LEAVE_ZLIB(self);
-    return (PyObject *)retval;
+    return (PyObject *)return_value;
 
 error:
     LEAVE_ZLIB(self);
-    Py_XDECREF(retval);
+    Py_XDECREF(return_value);
     return NULL;
 }
 
@@ -1154,14 +1154,14 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls)
 {
     zlibstate *state = PyType_GetModuleState(cls);
 
-    compobject *retval = newcompobject(state->Decomptype);
-    if (!retval) return NULL;
+    compobject *return_value = newcompobject(state->Decomptype);
+    if (!return_value) return NULL;
 
     /* Copy the zstream state
      * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
      */
     ENTER_ZLIB(self);
-    int err = inflateCopy(&retval->zst, &self->zst);
+    int err = inflateCopy(&return_value->zst, &self->zst);
     switch (err) {
     case Z_OK:
         break;
@@ -1178,22 +1178,22 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls)
     }
 
     Py_INCREF(self->unused_data);
-    Py_XSETREF(retval->unused_data, self->unused_data);
+    Py_XSETREF(return_value->unused_data, self->unused_data);
     Py_INCREF(self->unconsumed_tail);
-    Py_XSETREF(retval->unconsumed_tail, self->unconsumed_tail);
+    Py_XSETREF(return_value->unconsumed_tail, self->unconsumed_tail);
     Py_XINCREF(self->zdict);
-    Py_XSETREF(retval->zdict, self->zdict);
-    retval->eof = self->eof;
+    Py_XSETREF(return_value->zdict, self->zdict);
+    return_value->eof = self->eof;
 
     /* Mark it as being initialized */
-    retval->is_initialised = 1;
+    return_value->is_initialised = 1;
 
     LEAVE_ZLIB(self);
-    return (PyObject *)retval;
+    return (PyObject *)return_value;
 
 error:
     LEAVE_ZLIB(self);
-    Py_XDECREF(retval);
+    Py_XDECREF(return_value);
     return NULL;
 }
 
@@ -1248,7 +1248,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 {
     int err, flush;
     Py_buffer data;
-    PyObject *RetVal;
+    PyObject *return_value;
     Py_ssize_t ibuflen;
     _BlocksOutputBuffer buffer = {.list = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
@@ -1325,18 +1325,18 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         }
     }
 
-    RetVal = OutputBuffer_WindowFinish(&buffer, &window, self->zst.avail_out);
-    if (RetVal != NULL) {
+    return_value = OutputBuffer_WindowFinish(&buffer, &window, self->zst.avail_out);
+    if (return_value != NULL) {
         goto success;
     }
 
  abort:
     OutputBuffer_WindowOnError(&buffer, &window);
-    RetVal = NULL;
+    return_value = NULL;
  success:
     PyBuffer_Release(&data);
     LEAVE_ZLIB(self);
-    return RetVal;
+    return return_value;
 }
 
 
@@ -1468,7 +1468,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
     /* data_size is strictly positive, but because we repeatedly have to
        compare against max_length and PyBytes_GET_SIZE we declare it as
        signed */
-    PyObject *RetVal = NULL;
+    PyObject *return_value = NULL;
     Py_ssize_t hard_limit;
     Py_ssize_t obuflen;
     zlibstate *state = PyType_GetModuleState(Py_TYPE(self));
@@ -1500,7 +1500,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
         do {
             obuflen = arrange_output_buffer_with_maximum(&(self->zst.avail_out),
                                                         &(self->zst.next_out),
-                                                        &RetVal,
+                                                        &return_value,
                                                         obuflen,
                                                         hard_limit);
             if (obuflen == -1){
@@ -1546,16 +1546,16 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
 
     self->avail_in_real += self->zst.avail_in;
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (uint8_t *)PyBytes_AS_STRING(RetVal)) != 0) {
+    if (_PyBytes_Resize(&return_value, self->zst.next_out -
+                        (uint8_t *)PyBytes_AS_STRING(return_value)) != 0) {
         goto error;
     }
 
     goto success;
 error:
-    Py_CLEAR(RetVal);
+    Py_CLEAR(return_value);
 success:
-    return RetVal;
+    return return_value;
 }
 
 
