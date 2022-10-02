@@ -1515,9 +1515,9 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
                                 "Insufficient memory for buffer allocation");
                 goto error;
             }
-            else if (obuflen == -2)
+            else if (obuflen == -2) {
                 break;
-
+            }
             Py_BEGIN_ALLOW_THREADS
             err = inflate(&self->zst, Z_SYNC_FLUSH);
             Py_END_ALLOW_THREADS
