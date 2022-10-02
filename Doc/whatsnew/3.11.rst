@@ -437,17 +437,12 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :issue:`33346`.)
 
 * A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
-  :meth:`contextlib.ExitStack.enter_context` and
-  :meth:`contextlib.AsyncExitStack.enter_async_context` for objects which do not
-  support the :term:`context manager` or :term:`asynchronous context manager`
-  protocols correspondingly.
-  (Contributed by Serhiy Storchaka in :issue:`44471`.)
-
-* A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
-  :keyword:`with` and :keyword:`async with` statements for objects which do not
-  support the :term:`context manager` or :term:`asynchronous context manager`
-  protocols correspondingly.
-  (Contributed by Serhiy Storchaka in :issue:`12022`.)
+  :keyword:`with` statements and :meth:`contextlib.ExitStack.enter_context`
+  for objects that do not support the :term:`context manager` protocol,
+  and in :keyword:`async with` statements and
+  :meth:`contextlib.AsyncExitStack.enter_async_context`
+  for objects not supporting the :term:`asynchronous context manager` protocol.
+  (Contributed by Serhiy Storchaka in :issue:`12022` and :issue:`44471`.)
 
 * Added :meth:`object.__getstate__` which provides the default
   implementation of the :meth:`!__getstate__` method. :mod:`copy`-ing
