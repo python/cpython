@@ -517,11 +517,12 @@ Other CPython Implementation Changes
 New Modules
 ===========
 
-* :mod:`tomllib` was added for parsing `TOML <https://toml.io/>`_.
+* :mod:`tomllib`: For parsing `TOML <https://toml.io/>`_.
+  See :pep:`680` for more details.
   (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
-* :mod:`wsgiref.types` was added,
-  containing :pep:`WSGI <3333>`-specific types for static type checking.
+* :mod:`wsgiref.types`:
+  :pep:`WSGI <3333>`-specific types for static type checking.
   (Contributed by Sebastian Rittau in :issue:`42012`.)
 
 
