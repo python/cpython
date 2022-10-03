@@ -1768,7 +1768,8 @@ Or, when processing a file stream in chunks:
 
 Assignment expressions must be surrounded by parentheses when used
 as sub-expressions in slicing, conditional, lambda,
-keyword-argument, and comprehension-if expressions.
+keyword-argument, and comprehension-if expressions
+and in ``assert`` and ``with`` statements.
 In all other places where they can be used, parentheses are not required,
 including in ``if`` and ``while`` statements.
 
