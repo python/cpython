@@ -612,13 +612,14 @@ PyDoc_STRVAR(_asyncio_Task_get_stack__doc__,
 "returned for a suspended coroutine.");
 
 #define _ASYNCIO_TASK_GET_STACK_METHODDEF    \
-    {"get_stack", _PyCFunction_CAST(_asyncio_Task_get_stack), METH_FASTCALL|METH_KEYWORDS, _asyncio_Task_get_stack__doc__},
+    {"get_stack", _PyCFunction_CAST(_asyncio_Task_get_stack), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Task_get_stack__doc__},
 
 static PyObject *
-_asyncio_Task_get_stack_impl(TaskObj *self, PyObject *limit);
+_asyncio_Task_get_stack_impl(TaskObj *self, PyTypeObject *cls,
+                             PyObject *limit);
 
 static PyObject *
-_asyncio_Task_get_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_get_stack(TaskObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -659,7 +660,7 @@ _asyncio_Task_get_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, 
     }
     limit = args[0];
 skip_optional_kwonly:
-    return_value = _asyncio_Task_get_stack_impl(self, limit);
+    return_value = _asyncio_Task_get_stack_impl(self, cls, limit);
 
 exit:
     return return_value;
@@ -678,14 +679,14 @@ PyDoc_STRVAR(_asyncio_Task_print_stack__doc__,
 "to sys.stderr.");
 
 #define _ASYNCIO_TASK_PRINT_STACK_METHODDEF    \
-    {"print_stack", _PyCFunction_CAST(_asyncio_Task_print_stack), METH_FASTCALL|METH_KEYWORDS, _asyncio_Task_print_stack__doc__},
+    {"print_stack", _PyCFunction_CAST(_asyncio_Task_print_stack), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Task_print_stack__doc__},
 
 static PyObject *
-_asyncio_Task_print_stack_impl(TaskObj *self, PyObject *limit,
-                               PyObject *file);
+_asyncio_Task_print_stack_impl(TaskObj *self, PyTypeObject *cls,
+                               PyObject *limit, PyObject *file);
 
 static PyObject *
-_asyncio_Task_print_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Task_print_stack(TaskObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -733,7 +734,7 @@ _asyncio_Task_print_stack(TaskObj *self, PyObject *const *args, Py_ssize_t nargs
     }
     file = args[1];
 skip_optional_kwonly:
-    return_value = _asyncio_Task_print_stack_impl(self, limit, file);
+    return_value = _asyncio_Task_print_stack_impl(self, cls, limit, file);
 
 exit:
     return return_value;
@@ -1189,4 +1190,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f117b2246eaf7a55 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1c30ebb88aa7b0c input=a9049054013a1b77]*/

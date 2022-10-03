@@ -176,7 +176,7 @@ static PyRunningLoopHolder * new_running_loop_holder(PyObject *);
 
 
 static int
-_is_coroutine(PyObject *coro)
+_is_coroutine(asyncio_state *state, PyObject *coro)
 {
     /* 'coro' is not a native coroutine, call asyncio.iscoroutine()
        to check if it's another coroutine flavour.
@@ -184,7 +184,6 @@ _is_coroutine(PyObject *coro)
        Do this check after 'future_init()'; in case we need to raise
        an error, __del__ needs a properly initialized object.
     */
-    asyncio_state *state = get_asyncio_state(NULL);
     PyObject *res = PyObject_CallOneArg(state->asyncio_iscoroutine_func, coro);
     if (res == NULL) {
         return -1;
@@ -211,7 +210,7 @@ _is_coroutine(PyObject *coro)
 
 
 static inline int
-is_coroutine(PyObject *coro)
+is_coroutine(asyncio_state *state, PyObject *coro)
 {
     if (PyCoro_CheckExact(coro)) {
         return 1;
@@ -226,12 +225,11 @@ is_coroutine(PyObject *coro)
        This cache allows us to avoid the cost of even calling
        a pure-Python function in 99.9% cases.
     */
-    asyncio_state *state = get_asyncio_state(NULL);
     int has_it = PySet_Contains(
         state->iscoroutine_typecache, (PyObject*) Py_TYPE(coro));
     if (has_it == 0) {
         /* type(coro) is not in iscoroutine_typecache */
-        return _is_coroutine(coro);
+        return _is_coroutine(state, coro);
     }
 
     /* either an error has occurred or
@@ -242,13 +240,12 @@ is_coroutine(PyObject *coro)
 
 
 static PyObject *
-get_future_loop(PyObject *fut)
+get_future_loop(asyncio_state *state, PyObject *fut)
 {
     /* Implementation of `asyncio.futures._get_loop` */
 
     PyObject *getloop;
 
-    asyncio_state *state = get_asyncio_state(NULL);
     if (Future_CheckExact(state, fut) || Task_CheckExact(state, fut)) {
         PyObject *loop = ((FutureObj *)fut)->fut_loop;
         Py_INCREF(loop);
@@ -269,10 +266,9 @@ get_future_loop(PyObject *fut)
 
 
 static int
-get_running_loop(PyObject **loop)
+get_running_loop(asyncio_state *state, PyObject **loop)
 {
     PyObject *rl;
-    asyncio_state *state = get_asyncio_state(NULL);
 
     PyThreadState *ts = _PyThreadState_GET();
     uint64_t ts_id = PyThreadState_GetID(ts);
@@ -371,12 +367,12 @@ set_running_loop(PyObject *loop)
 
 
 static PyObject *
-get_event_loop(int stacklevel)
+get_event_loop(asyncio_state *state, int stacklevel)
 {
     PyObject *loop;
     PyObject *policy;
 
-    if (get_running_loop(&loop)) {
+    if (get_running_loop(state, &loop)) {
         return NULL;
     }
     if (loop != NULL) {
@@ -390,7 +386,6 @@ get_event_loop(int stacklevel)
         return NULL;
     }
 
-    asyncio_state *state = get_asyncio_state(NULL);
     policy = PyObject_CallNoArgs(state->asyncio_get_event_loop_policy);
     if (policy == NULL) {
         return NULL;
@@ -551,7 +546,8 @@ future_init(FutureObj *fut, PyObject *loop)
     fut->fut_blocking = 0;
 
     if (loop == Py_None) {
-        loop = get_event_loop(1);
+        asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
+        loop = get_event_loop(state, 1);
         if (loop == NULL) {
             return -1;
         }
@@ -577,7 +573,7 @@ future_init(FutureObj *fut, PyObject *loop)
            method, which is called during the interpreter shutdown and the
            traceback module is already unloaded.
         */
-        asyncio_state *state = get_asyncio_state(NULL);
+        asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
         fut->fut_source_tb = PyObject_CallNoArgs(state->traceback_extract_stack);
         if (fut->fut_source_tb == NULL) {
             return -1;
@@ -1892,7 +1888,7 @@ class _asyncio.Task "TaskObj *" "&Task_Type"
 
 static int task_call_step_soon(TaskObj *, PyObject *);
 static PyObject * task_wakeup(TaskObj *, PyObject *);
-static PyObject * task_step(TaskObj *, PyObject *);
+static PyObject * task_step(asyncio_state *, TaskObj *, PyObject *);
 
 /* ----- Task._step wrapper */
 
@@ -1926,7 +1922,8 @@ TaskStepMethWrapper_call(TaskStepMethWrapper *o,
         PyErr_SetString(PyExc_TypeError, "function takes no positional arguments");
         return NULL;
     }
-    return task_step(o->sw_task, o->sw_arg);
+    asyncio_state *state = get_asyncio_state(NULL);
+    return task_step(state, o->sw_task, o->sw_arg);
 }
 
 static int
@@ -2109,7 +2106,8 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
 
-    int is_coro = is_coroutine(coro);
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
+    int is_coro = is_coroutine(state, coro);
     if (is_coro == -1) {
         return -1;
     }
@@ -2138,7 +2136,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     Py_XSETREF(self->task_coro, coro);
 
     if (name == Py_None) {
-        asyncio_state *state = get_asyncio_state(NULL);
         name = PyUnicode_FromFormat("Task-%" PRIu64,
                                     ++state->task_name_counter);
     } else if (!PyUnicode_CheckExact(name)) {
@@ -2242,7 +2239,7 @@ TaskObj_get_fut_waiter(TaskObj *task, void *Py_UNUSED(ignored))
 static PyObject *
 TaskObj_repr(TaskObj *task)
 {
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
     return PyObject_CallOneArg(state->asyncio_task_repr_func,
                                (PyObject *)task);
 }
@@ -2381,6 +2378,8 @@ _asyncio_Task_uncancel_impl(TaskObj *self)
 /*[clinic input]
 _asyncio.Task.get_stack
 
+    cls: defining_class
+    /
     *
     limit: object = None
 
@@ -2406,10 +2405,11 @@ returned for a suspended coroutine.
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Task_get_stack_impl(TaskObj *self, PyObject *limit)
-/*[clinic end generated code: output=c9aeeeebd1e18118 input=05b323d42b809b90]*/
+_asyncio_Task_get_stack_impl(TaskObj *self, PyTypeObject *cls,
+                             PyObject *limit)
+/*[clinic end generated code: output=6774dfc10d3857fa input=8e01c9b2618ae953]*/
 {
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_cls(cls);
     return PyObject_CallFunctionObjArgs(
         state->asyncio_task_get_stack_func, self, limit, NULL);
 }
@@ -2417,6 +2417,8 @@ _asyncio_Task_get_stack_impl(TaskObj *self, PyObject *limit)
 /*[clinic input]
 _asyncio.Task.print_stack
 
+    cls: defining_class
+    /
     *
     limit: object = None
     file: object = None
@@ -2431,11 +2433,11 @@ to sys.stderr.
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Task_print_stack_impl(TaskObj *self, PyObject *limit,
-                               PyObject *file)
-/*[clinic end generated code: output=7339e10314cd3f4d input=1a0352913b7fcd92]*/
+_asyncio_Task_print_stack_impl(TaskObj *self, PyTypeObject *cls,
+                               PyObject *limit, PyObject *file)
+/*[clinic end generated code: output=b38affe9289ec826 input=150b35ba2d3a7dee]*/
 {
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_cls(cls);
     return PyObject_CallFunctionObjArgs(
         state->asyncio_task_print_stack_func, self, limit, file, NULL);
 }
@@ -2671,7 +2673,7 @@ TaskObj_dealloc(PyObject *self)
 {
     TaskObj *task = (TaskObj *)self;
 
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_def(self);
     if (Task_CheckExact(state, self)) {
         /* When fut is subclass of Task, finalizer is called from
          * subtype_dealloc.
@@ -2751,7 +2753,7 @@ gen_status_from_result(PyObject **result)
 }
 
 static PyObject *
-task_step_impl(TaskObj *task, PyObject *exc)
+task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 {
     int res;
     int clear_exc = 0;
@@ -2760,7 +2762,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
     PyObject *o;
 
     if (task->task_state != STATE_PENDING) {
-        asyncio_state *state = get_asyncio_state(NULL);
         PyErr_Format(state->asyncio_InvalidStateError,
                      "_step(): already done: %R %R",
                      task,
@@ -2773,7 +2774,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
         if (exc) {
             /* Check if exc is a CancelledError */
-            asyncio_state *state = get_asyncio_state(NULL);
             res = PyObject_IsInstance(exc, state->asyncio_CancelledError);
             if (res == -1) {
                 /* An error occurred, abort */
@@ -2849,7 +2849,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
             Py_RETURN_NONE;
         }
 
-        asyncio_state *state = get_asyncio_state(NULL);
         if (PyErr_ExceptionMatches(state->asyncio_CancelledError)) {
             /* CancelledError */
             PyErr_Fetch(&et, &ev, &tb);
@@ -2908,7 +2907,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
     }
 
     /* Check if `result` is FutureObj or TaskObj (and not a subclass) */
-    asyncio_state *state = get_asyncio_state(NULL);
     if (Future_CheckExact(state, result) || Task_CheckExact(state, result)) {
         PyObject *wrapper;
         PyObject *tmp;
@@ -2987,7 +2985,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         }
 
         /* Check if `result` future is attached to a different loop */
-        PyObject *oloop = get_future_loop(result);
+        PyObject *oloop = get_future_loop(state, result);
         if (oloop == NULL) {
             goto fail;
         }
@@ -3023,7 +3021,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
         stack[0] = wrapper;
         stack[1] = (PyObject *)task->task_context;
         EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, add_cb);
-        asyncio_state *state = get_asyncio_state(NULL);
         tmp = PyObject_Vectorcall(add_cb, stack, 1, state->context_kwname);
         Py_DECREF(add_cb);
         Py_DECREF(wrapper);
@@ -3108,7 +3105,7 @@ fail:
 }
 
 static PyObject *
-task_step(TaskObj *task, PyObject *exc)
+task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
 {
     PyObject *res;
 
@@ -3116,7 +3113,7 @@ task_step(TaskObj *task, PyObject *exc)
         return NULL;
     }
 
-    res = task_step_impl(task, exc);
+    res = task_step_impl(state, task, exc);
 
     if (res == NULL) {
         PyObject *et, *ev, *tb;
@@ -3154,10 +3151,10 @@ task_wakeup(TaskObj *task, PyObject *o)
             break; /* exception raised */
         case 0:
             Py_DECREF(fut_result);
-            return task_step(task, NULL);
+            return task_step(state, task, NULL);
         default:
             assert(res == 1);
-            result = task_step(task, fut_result);
+            result = task_step(state, task, fut_result);
             Py_DECREF(fut_result);
             return result;
         }
@@ -3166,7 +3163,7 @@ task_wakeup(TaskObj *task, PyObject *o)
         PyObject *fut_result = PyObject_CallMethod(o, "result", NULL);
         if (fut_result != NULL) {
             Py_DECREF(fut_result);
-            return task_step(task, NULL);
+            return task_step(state, task, NULL);
         }
         /* exception raised */
     }
@@ -3178,7 +3175,7 @@ task_wakeup(TaskObj *task, PyObject *o)
         PyException_SetTraceback(ev, tb);
     }
 
-    result = task_step(task, ev);
+    result = task_step(state, task, ev);
 
     Py_DECREF(et);
     Py_XDECREF(tb);
@@ -3206,7 +3203,8 @@ _asyncio__get_running_loop_impl(PyObject *module)
 /*[clinic end generated code: output=b4390af721411a0a input=0a21627e25a4bd43]*/
 {
     PyObject *loop;
-    if (get_running_loop(&loop)) {
+    asyncio_state *state = get_asyncio_state(module);
+    if (get_running_loop(state, &loop)) {
         return NULL;
     }
     if (loop == NULL) {
@@ -3254,7 +3252,8 @@ static PyObject *
 _asyncio_get_event_loop_impl(PyObject *module)
 /*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
 {
-    return get_event_loop(1);
+    asyncio_state *state = get_asyncio_state(module);
+    return get_event_loop(state, 1);
 }
 
 /*[clinic input]
@@ -3266,7 +3265,8 @@ static PyObject *
 _asyncio__get_event_loop_impl(PyObject *module, int stacklevel)
 /*[clinic end generated code: output=9c1d6d3c802e67c9 input=d17aebbd686f711d]*/
 {
-    return get_event_loop(stacklevel-1);
+    asyncio_state *state = get_asyncio_state(module);
+    return get_event_loop(state, stacklevel-1);
 }
 
 /*[clinic input]
@@ -3282,7 +3282,8 @@ _asyncio_get_running_loop_impl(PyObject *module)
 /*[clinic end generated code: output=c247b5f9e529530e input=2a3bf02ba39f173d]*/
 {
     PyObject *loop;
-    if (get_running_loop(&loop)) {
+    asyncio_state *state = get_asyncio_state(module);
+    if (get_running_loop(state, &loop)) {
         return NULL;
     }
     if (loop == NULL) {
