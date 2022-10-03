@@ -320,34 +320,6 @@ class ResourceReader:
         return super().contents(*args, **kwargs)
 
 
-class ResourceReaderDefaultsTests(ABCTestHarness):
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
-        SPLIT = make_abc_subclasses(ResourceReader)
-
-    def test_open_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.open_resource('dummy_file')
-
-    def test_resource_path(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.resource_path('dummy_file')
-
-    def test_is_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.is_resource('dummy_file')
-
-    def test_contents(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.contents()
-
-
-(Frozen_RRDefaultTests,
- Source_RRDefaultsTests
- ) = test_util.test_both(ResourceReaderDefaultsTests)
-
-
 ##### MetaPathFinder concrete methods ##########################################
 class MetaPathFinderFindModuleTests:
 

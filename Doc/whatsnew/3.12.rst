@@ -43,8 +43,8 @@
    module.
    (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the Mercurial log
-   when researching a change.
+   This saves the maintainer the effort of going through the VCS log when
+   researching a change.
 
 This article explains the new features in Python 3.12, compared to 3.11.
 
@@ -83,6 +83,15 @@ Other Language Changes
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
+* :class:`memoryview` now supports the half-float type (the "e" format code).
+  (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
+
+* The parser now raises :exc:`SyntaxError` when parsing source code containing
+  null bytes. (Contributed by Pablo Galindo in :gh:`96670`.)
+
+* :func:`ast.parse` now raises :exc:`SyntaxError` instead of :exc:`ValueError`
+  when parsing source code containing null bytes. (Contributed by Pablo Galindo
+  in :gh:`96670`.)
 
 New Modules
 ===========
@@ -107,7 +116,7 @@ dis
   do not appear in executable bytecode) are now exposed in the
   :mod:`dis` module.
   :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
-  but it is not useful for pseudo instrcutions. Use the new
+  but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
@@ -124,6 +133,20 @@ sqlite3
 
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+threading
+---------
+
+* Add :func:`threading.settrace_all_threads` and
+  :func:`threading.setprofile_all_threads` that allow to set tracing and
+  profiling functions in all running threads in addition to the calling one.
+  (Contributed by Pablo Galindo in :gh:`93503`.)
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to version 15.0.0. (Contributed by
+  Benjamin Peterson in :gh:`96734`).
 
 
 Optimizations
@@ -147,6 +170,15 @@ CPython bytecode changes
   (Contributed by Ken Jin in :gh:`93429`.)
 
 
+Demos and Tools
+===============
+
+* Remove the ``Tools/demo/`` directory which contained old demo scripts. A copy
+  can be found in the `old-demos project
+  <https://github.com/gvanrossum/old-demos>`_.
+  (Contributed by Victor Stinner in :gh:`97681`.)
+
+
 Deprecated
 ==========
 
@@ -158,6 +190,11 @@ Deprecated
   Instead, use the :ref:`sqlite3-adapter-converter-recipes`
   and tailor them to your needs.
   (Contributed by Erlend E. Aasland in :gh:`90016`.)
+
+* The 3-arg signatures (type, value, traceback) of :meth:`~coroutine.throw`,
+  :meth:`~generator.throw` and :meth:`~agen.athrow` are deprecated and
+  may be removed in a future version of Python. Use the single-arg versions
+  of these functions instead. (Contributed by Ofey Chan in :gh:`89874`.)
 
 
 Pending Removal in Python 3.13
@@ -425,6 +462,10 @@ Build Changes
   ``va_start()`` is no longer called with a single parameter.
   (Contributed by Kumar Aditya in :gh:`93207`.)
 
+* CPython now uses the ThinLTO option as the default link time optimization policy
+  if the Clang compiler accepts the flag.
+  (Contributed by Dong-hee Na in :gh:`89536`.)
+
 
 C API Changes
 =============
@@ -458,6 +499,16 @@ New Features
   flags have been added. This allows extensions classes to support object
   ``__dict__`` and weakrefs with less bookkeeping,
   using less memory and with faster access.
+
+* Added two new public functions,
+  :c:func:`PyEval_SetProfileAllThreads` and
+  :c:func:`PyEval_SetTraceAllThreads`, that allow to set tracing and profiling
+  functions in all running threads in addition to the calling one. (Contributed
+  by Pablo Galindo in :gh:`93503`.)
+
+* Added new function :c:func:`PyFunction_SetVectorcall` to the C API
+  which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
+  (Contributed by Andrew Frost in :gh:`92257`.)
 
 Porting to Python 3.12
 ----------------------

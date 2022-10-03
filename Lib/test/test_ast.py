@@ -771,6 +771,15 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_exception_groups_feature_version(self):
+        code = dedent('''
+        try: ...
+        except* Exception: ...
+        ''')
+        ast.parse(code)
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 10))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))
@@ -835,6 +844,10 @@ class AST_Tests(unittest.TestCase):
         check_limit("a", "[0]")
         check_limit("a", "*a")
 
+    def test_null_bytes(self):
+        with self.assertRaises(SyntaxError,
+            msg="source code string cannot contain null bytes"):
+            ast.parse("a\0b")
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1135,6 +1148,14 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '++6')
         self.assertRaises(ValueError, ast.literal_eval, '+True')
         self.assertRaises(ValueError, ast.literal_eval, '2+3')
+
+    def test_literal_eval_str_int_limit(self):
+        with support.adjust_int_max_str_digits(4000):
+            ast.literal_eval('3'*4000)  # no error
+            with self.assertRaises(SyntaxError) as err_ctx:
+                ast.literal_eval('3'*4001)
+            self.assertIn('Exceeds the limit ', str(err_ctx.exception))
+            self.assertIn(' Consider hexadecimal ', str(err_ctx.exception))
 
     def test_literal_eval_complex(self):
         # Issue #4907

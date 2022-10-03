@@ -337,6 +337,17 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
+    def test_invalid_bytecode(self):
+        def foo(): pass
+        foo.__code__ = co = foo.__code__.replace(co_code=b'\xee\x00d\x00S\x00')
+
+        with self.assertRaises(SystemError) as se:
+            foo()
+        self.assertEqual(
+            f"{co.co_filename}:{co.co_firstlineno}: unknown opcode 238",
+            str(se.exception))
+
+
     @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
         import dis

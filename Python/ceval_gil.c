@@ -369,6 +369,7 @@ take_gil(PyThreadState *tstate)
         goto _ready;
     }
 
+    int drop_requested = 0;
     while (_Py_atomic_load_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
 
@@ -384,11 +385,21 @@ take_gil(PyThreadState *tstate)
         {
             if (tstate_must_exit(tstate)) {
                 MUTEX_UNLOCK(gil->mutex);
+                // gh-96387: If the loop requested a drop request in a previous
+                // iteration, reset the request. Otherwise, drop_gil() can
+                // block forever waiting for the thread which exited. Drop
+                // requests made by other threads are also reset: these threads
+                // may have to request again a drop request (iterate one more
+                // time).
+                if (drop_requested) {
+                    RESET_GIL_DROP_REQUEST(interp);
+                }
                 PyThread_exit_thread();
             }
             assert(is_tstate_valid(tstate));
 
             SET_GIL_DROP_REQUEST(interp);
+            drop_requested = 1;
         }
     }
 
