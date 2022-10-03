@@ -59,7 +59,7 @@ The module provides the following classes:
 
    .. versionchanged:: 3.4
       The  *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
-      not longer supported.
+      no longer supported.
 
    .. versionchanged:: 3.7
       *blocksize* parameter was added.
@@ -472,7 +472,7 @@ statement.
 
    Return the value of the header *name*, or *default* if there is no header
    matching *name*.  If there is more than one  header with the name *name*,
-   return all of the values joined by ', '.  If 'default' is any iterable other
+   return all of the values joined by ', '.  If *default* is any iterable other
    than a single string, its elements are similarly returned joined by commas.
 
 .. method:: HTTPResponse.getheaders()
@@ -576,7 +576,7 @@ Here is an example session that uses the ``HEAD`` method.  Note that the
    >>> data == b''
    True
 
-Here is an example session that shows how to ``POST`` requests::
+Here is an example session that uses the ``POST`` method::
 
    >>> import http.client, urllib.parse
    >>> params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
@@ -592,14 +592,13 @@ Here is an example session that shows how to ``POST`` requests::
    b'Redirecting to <a href="https://bugs.python.org/issue12524">https://bugs.python.org/issue12524</a>'
    >>> conn.close()
 
-Client side ``HTTP PUT`` requests are very similar to ``POST`` requests. The
-difference lies only the server side where HTTP server will allow resources to
-be created via ``PUT`` request. It should be noted that custom HTTP methods
+Client side HTTP ``PUT`` requests are very similar to ``POST`` requests. The
+difference lies only on the server side where HTTP servers will allow resources to
+be created via ``PUT`` requests. It should be noted that custom HTTP methods
 are also handled in :class:`urllib.request.Request` by setting the appropriate
-method attribute. Here is an example session that shows how to send a ``PUT``
-request using http.client::
+method attribute. Here is an example session that uses the ``PUT`` method::
 
-    >>> # This creates an HTTP message
+    >>> # This creates an HTTP request
     >>> # with the content of BODY as the enclosed representation
     >>> # for the resource http://localhost:8080/file
     ...
