@@ -1717,7 +1717,7 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 /*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromSsize_t(interp->int_max_str_digits);
+    return PyLong_FromLong(interp->config.int_max_str_digits);
 }
 
 /*[clinic input]
@@ -1734,7 +1734,7 @@ sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
-        tstate->interp->int_max_str_digits = maxdigits;
+        tstate->interp->config.int_max_str_digits = maxdigits;
         Py_RETURN_NONE;
     } else {
         PyErr_Format(
@@ -2810,7 +2810,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(preconfig->utf8_mode);
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
-    SetFlag(_Py_global_config_int_max_str_digits);
+    SetFlag(config->int_max_str_digits);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
