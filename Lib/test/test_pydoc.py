@@ -1090,6 +1090,14 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.render_doc(C).splitlines()[2],
                          'class C\x08C(collections.abc.Mapping, typing.Generic)')
 
+    def test_typing_annotated(self):
+        annot = typing.Annotated[int, 'metadata']
+        self.assertEqual(pydoc.describe(annot), '_AnnotatedAlias')
+        doc = pydoc.render_doc(annot, renderer=pydoc.plaintext)
+        self.assertIn('_AnnotatedAlias in module typing', doc)
+        self.assertIn('Annotated = class _AnnotatedAlias', doc)
+        self.assertIn(typing._AnnotatedAlias.__doc__.strip().splitlines()[0], doc)
+
     def test_builtin(self):
         for name in ('str', 'str.translate', 'builtins.str',
                      'builtins.str.translate'):

@@ -70,6 +70,7 @@ import sys
 import sysconfig
 import time
 import tokenize
+import typing
 import urllib.parse
 import warnings
 from collections import deque
@@ -1769,7 +1770,8 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
               _getdoc(object)):
         # If the passed object is a piece of data or an instance,
         # document its available methods instead of its value.
-        if hasattr(object, '__origin__'):
+        if (hasattr(object, '__origin__') and
+            not isinstance(object, typing._AnnotatedAlias)):
             object = object.__origin__
         else:
             object = type(object)
