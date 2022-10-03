@@ -397,6 +397,7 @@ are always available.  They are listed here in alphabetical order.
    string.  The string must be the name of one of the object's attributes.  The
    function deletes the named attribute, provided the object allows it.  For
    example, ``delattr(x, 'foobar')`` is equivalent to ``del x.foobar``.
+   *name* need not be a Python identifier (see :func:`setattr`).
 
 
 .. _func-dict:
@@ -738,6 +739,7 @@ are always available.  They are listed here in alphabetical order.
    value of that attribute.  For example, ``getattr(x, 'foobar')`` is equivalent to
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if
    provided, otherwise :exc:`AttributeError` is raised.
+   *name* need not be a Python identifier (see :func:`setattr`).
 
    .. note::
 
@@ -1581,6 +1583,12 @@ are always available.  They are listed here in alphabetical order.
    new attribute.  The function assigns the value to the attribute, provided the
    object allows it.  For example, ``setattr(x, 'foobar', 123)`` is equivalent to
    ``x.foobar = 123``.
+
+   *name* need not be a Python identifier as defined in :ref:`identifiers`
+   unless the object chooses to enforce that, for example in a custom
+   :meth:`~object.__getattribute__` or via :attr:`~object.__slots__`.
+   An attribute whose name is not an identifier will not be accessible using
+   the dot notation, but is accessible through :func:`getattr` etc..
 
    .. note::
 

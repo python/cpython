@@ -86,6 +86,12 @@ Other Language Changes
 * :class:`memoryview` now supports the half-float type (the "e" format code).
   (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
 
+* The parser now raises :exc:`SyntaxError` when parsing source code containing
+  null bytes. (Contributed by Pablo Galindo in :gh:`96670`.)
+
+* :func:`ast.parse` now raises :exc:`SyntaxError` instead of :exc:`ValueError`
+  when parsing source code containing null bytes. (Contributed by Pablo Galindo
+  in :gh:`96670`.)
 
 New Modules
 ===========
@@ -175,6 +181,11 @@ Deprecated
   Instead, use the :ref:`sqlite3-adapter-converter-recipes`
   and tailor them to your needs.
   (Contributed by Erlend E. Aasland in :gh:`90016`.)
+
+* The 3-arg signatures (type, value, traceback) of :meth:`~coroutine.throw`,
+  :meth:`~generator.throw` and :meth:`~agen.athrow` are deprecated and
+  may be removed in a future version of Python. Use the single-arg versions
+  of these functions instead. (Contributed by Ofey Chan in :gh:`89874`.)
 
 
 Pending Removal in Python 3.13
