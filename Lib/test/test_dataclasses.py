@@ -69,6 +69,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(repr_output, expected_output)
 
     def test_dataclass_params_repr(self):
+        # Even though this is testing an internal implementation detail,
+        # it's testing a feature we want to make sure is correctly implemented 
+        # for the sake of dataclasses itself
         @dataclass(slots=True, frozen=True)
         class Some: pass
 
@@ -80,7 +83,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual(repr_output, expected_output)
 
     def test_dataclass_params_signature(self):
-        @dataclass(slots=True, frozen=True)
+        # Even though this is testing an internal implementation detail,
+        # it's testing a feature we want to make sure is correctly implemented 
+        # for the sake of dataclasses itself
+        @dataclass
         class Some: pass
 
         for param in inspect.signature(dataclass).parameters:
