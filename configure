@@ -26213,7 +26213,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__STRUCT_STATE=$py_cv_module__struct$as_nl"
   if test "x$py_cv_module__struct" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__STRUCT_CFLAGS=$NO_STRICT_OVERFLOW_CFLAGS$as_nl"
+
 
 
 fi
