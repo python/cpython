@@ -2083,8 +2083,9 @@ case $CC in
 esac
 
 dnl Historically, some of our code assumed that signed integer overflow
-dnl is defined behaviour via twos-complement.  Prepare some flags so that
-dnl we can mark the modules that still do so.
+dnl is defined behaviour via twos-complement.
+dnl Set STRICT_OVERFLOW_CFLAGS and NO_STRICT_OVERFLOW_CFLAGS depending on compiler support.
+dnl Pass the latter to modules that depend on such behaviour.
 _SAVE_VAR([CFLAGS])
 CFLAGS="-fstrict-overflow -fno-strict-overflow"
 AC_CACHE_CHECK([if $CC supports -fstrict-overflow and -fno-strict-overflow],
