@@ -14,7 +14,7 @@
 
 --------------
 
-This module defines classes which implement the client side of the HTTP and
+This module defines classes that implement the client side of the HTTP and
 HTTPS protocols.  It is normally not used directly --- the module
 :mod:`urllib.request` uses it to handle URLs that use HTTP and HTTPS.
 
@@ -35,7 +35,7 @@ The module provides the following classes:
                           blocksize=8192)
 
    An :class:`HTTPConnection` instance represents one transaction with an HTTP
-   server.  It should be instantiated passing it a host and optional port
+   server.  It should be instantiated by passing it a host and optional port
    number.  If no port number is passed, the port is extracted from the host
    string if it has the form ``host:port``, else the default HTTP port (80) is
    used.  If the optional *timeout* parameter is given, blocking
