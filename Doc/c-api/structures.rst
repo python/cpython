@@ -517,9 +517,9 @@ Accessing attributes of extension types
    +-------------+------------------+-----------------------------------+
    | doc         | const char \*    | optional docstring                |
    +-------------+------------------+-----------------------------------+
-   | closure     | void \*          | optional pointer,                 |
-   |             |                  | providing additional data for     |
-   |             |                  | getter and setter                 |
+   | closure     | void \*          | optional pointer, providing       |
+   |             |                  | additional data for getter        |
+   |             |                  | and setter                        |
    +-------------+------------------+-----------------------------------+
 
    The ``get`` function takes one :c:type:`PyObject*` parameter (the
