@@ -510,14 +510,17 @@ Other CPython Implementation Changes
   is 4300 digits in string form.
 
 
+.. _whatsnew311-new-modules:
+
 New Modules
 ===========
 
-* A new module, :mod:`tomllib`, was added for parsing TOML.
+* :mod:`tomllib`: For parsing `TOML <https://toml.io/>`_.
+  See :pep:`680` for more details.
   (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
-* :mod:`wsgiref.types`, containing WSGI-specific types for static type
-  checking, was added.
+* :mod:`wsgiref.types`:
+  :pep:`WSGI <3333>`-specific types for static type checking.
   (Contributed by Sebastian Rittau in :issue:`42012`.)
 
 
