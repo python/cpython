@@ -5289,13 +5289,12 @@ class TestResourceTracker(unittest.TestCase):
         # Check that killing process does not leak named semaphores
         #
         cmd = '''if 1:
-            import time, os, tempfile
+            import time, os
             import multiprocessing as mp
             from multiprocessing import resource_tracker
             from multiprocessing.shared_memory import SharedMemory
 
             mp.set_start_method("spawn")
-            rand = tempfile._RandomNameSequence()
 
 
             def create_and_register_resource(rtype):
