@@ -2001,10 +2001,13 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    // The struct is isolated by default.
+    const _PyInterpreterConfig config = (const _PyInterpreterConfig){};
+
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
     // XXX Possible GILState issues?
-    PyThreadState *tstate = _Py_NewInterpreter(isolated);
+    PyThreadState *tstate = _Py_NewInterpreter(isolated ? &config : NULL);
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to

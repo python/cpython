@@ -1090,8 +1090,8 @@ _winapi_CreateProcess_impl(PyObject *module,
     }
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (config->_isolated_interpreter) {
+    const _PyInterpreterConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (!config->allow_subprocess) {
         PyErr_SetString(PyExc_RuntimeError,
                         "subprocess not supported for isolated subinterpreters");
         return NULL;

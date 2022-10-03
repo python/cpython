@@ -41,7 +41,7 @@ _Py_GetMainConfig(void)
     if (interp == NULL) {
         return NULL;
     }
-    return _PyInterpreterState_GetConfig(interp);
+    return _PyInterpreterState_GetGlobalConfig(interp);
 }
 
 

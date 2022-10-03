@@ -330,7 +330,7 @@ _PySys_ClearAuditHooks(PyThreadState *ts)
         return;
     }
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(ts->interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(ts->interp);
     if (config->verbose) {
         PySys_WriteStderr("# clear sys.audit hooks\n");
     }
@@ -854,7 +854,7 @@ sys_getfilesystemencoding_impl(PyObject *module)
 /*[clinic end generated code: output=1dc4bdbe9be44aa7 input=8475f8649b8c7d8c]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_encoding, -1);
 }
 
@@ -869,7 +869,7 @@ sys_getfilesystemencodeerrors_impl(PyObject *module)
 /*[clinic end generated code: output=ba77b36bbf7c96f5 input=22a1e8365566f1e5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
     return PyUnicode_FromWideChar(config->filesystem_errors, -1);
 }
 
@@ -2776,7 +2776,7 @@ static int
 set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 {
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
 
     // _PySys_UpdateConfig() modifies sys.flags in-place:
     // Py_XDECREF() is needed in this case.
@@ -3298,7 +3298,7 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     PyObject *sysdict = interp->sysdict;
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
     int res;
 
 #define COPY_LIST(KEY, VALUE) \

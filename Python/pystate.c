@@ -134,6 +134,8 @@ init_runtime(_PyRuntimeState *runtime,
     // Set it to the ID of the main thread of the main interpreter.
     runtime->main_thread = PyThread_get_thread_ident();
 
+    PyConfig_InitPythonConfig(&runtime->config);
+
     runtime->unicode_ids.next_index = unicode_next_index;
     runtime->unicode_ids.lock = unicode_ids_mutex;
 
@@ -188,6 +190,8 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 #undef FREE_LOCK
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    PyConfig_Clear(&runtime->config);
 }
 
 #ifdef HAVE_FORK
@@ -307,7 +311,6 @@ init_interpreter(PyInterpreterState *interp,
 
     _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
-    PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
 
     interp->_initialized = 1;
@@ -415,7 +418,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    PyConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
     Py_CLEAR(interp->codec_error_registry);
@@ -1017,7 +1019,7 @@ _PyInterpreterState_ClearModules(PyInterpreterState *interp)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
+    int verbose = _PyInterpreterState_GetGlobalConfig(tstate->interp)->verbose;
 
     if (verbose && tstate->cframe->current_frame != NULL) {
         /* bpo-20526: After the main thread calls
@@ -2142,19 +2144,26 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
 }
 
 
-const PyConfig*
+const _PyInterpreterConfig*
 _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 {
     return &interp->config;
 }
 
 
+const PyConfig*
+_PyInterpreterState_GetGlobalConfig(PyInterpreterState *interp)
+{
+    return &interp->runtime->config;
+}
+
+
 int
-_PyInterpreterState_GetConfigCopy(PyConfig *config)
+_Py_CopyConfig(PyConfig *config)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
 
-    PyStatus status = _PyConfig_Copy(config, &interp->config);
+    PyStatus status = _PyConfig_Copy(config, &interp->runtime->config);
     if (PyStatus_Exception(status)) {
         _PyErr_SetFromPyStatus(status);
         return -1;
@@ -2169,7 +2178,7 @@ _Py_GetConfig(void)
     assert(PyGILState_Check());
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
-    return _PyInterpreterState_GetConfig(tstate->interp);
+    return _PyInterpreterState_GetGlobalConfig(tstate->interp);
 }
 
 #define MINIMUM_OVERHEAD 1000

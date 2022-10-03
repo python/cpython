@@ -3020,7 +3020,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
 {
     PyObject *mod, *dict, *debug;
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
 
     mod = _PyModule_CreateInitialized(&builtinsmodule, PYTHON_API_VERSION);
     if (mod == NULL)

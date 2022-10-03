@@ -177,7 +177,7 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     assert(!_PyErr_Occurred(tstate));
 
     PyInterpreterState *interp = tstate->interp;
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+    int verbose = _PyInterpreterState_GetGlobalConfig(interp)->verbose;
 
     // Import _importlib through its frozen version, _frozen_importlib.
     if (verbose) {
@@ -460,26 +460,28 @@ _Py_SetLocaleFromEnv(int category)
 
 
 static int
-interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
+runtime_update_config(_PyRuntimeState *runtime, int only_update_path_config)
 {
-    const PyConfig *config = &tstate->interp->config;
-
     if (!only_update_path_config) {
-        PyStatus status = _PyConfig_Write(config, tstate->interp->runtime);
+        PyStatus status = _PyConfig_Write(&runtime->config, runtime);
         if (_PyStatus_EXCEPTION(status)) {
             _PyErr_SetFromPyStatus(status);
             return -1;
         }
     }
 
-    if (_Py_IsMainInterpreter(tstate->interp)) {
-        PyStatus status = _PyPathConfig_UpdateGlobal(config);
-        if (_PyStatus_EXCEPTION(status)) {
-            _PyErr_SetFromPyStatus(status);
-            return -1;
-        }
+    PyStatus status = _PyPathConfig_UpdateGlobal(&runtime->config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyErr_SetFromPyStatus(status);
+        return -1;
     }
 
+    return 0;
+}
+
+static int
+interpreter_update_config(PyThreadState *tstate)
+{
     // Update the sys module for the new configuration
     if (_PySys_UpdateConfig(tstate) < 0) {
         return -1;
@@ -489,7 +491,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 
 
 int
-_PyInterpreterState_SetConfig(const PyConfig *src_config)
+_Py_SetConfig(const PyConfig *src_config)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int res = -1;
@@ -508,13 +510,20 @@ _PyInterpreterState_SetConfig(const PyConfig *src_config)
         goto done;
     }
 
-    status = _PyConfig_Copy(&tstate->interp->config, &config);
+    status = _PyConfig_Copy(&tstate->interp->runtime->config, &config);
     if (_PyStatus_EXCEPTION(status)) {
         _PyErr_SetFromPyStatus(status);
         goto done;
     }
 
-    res = interpreter_update_config(tstate, 0);
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        res = runtime_update_config(tstate->interp->runtime, 0);
+        if (res < 0) {
+            goto done;
+        }
+    }
+
+    res = interpreter_update_config(tstate);
 
 done:
     PyConfig_Clear(&config);
@@ -550,17 +559,19 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
     }
+    assert(interp->runtime == runtime);
+    assert(_Py_IsMainInterpreter(interp));
 
     status = _PyConfig_Write(config, runtime);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&runtime->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    config = _PyInterpreterState_GetConfig(interp);
+    config = _PyInterpreterState_GetGlobalConfig(interp);
 
     if (config->_install_importlib) {
         status = _PyPathConfig_UpdateGlobal(config);
@@ -649,9 +660,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
     }
+    assert(interp->runtime == runtime);
     assert(_Py_IsMainInterpreter(interp));
 
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&runtime->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -863,7 +875,7 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
     if (config->_install_importlib) {
         /* This call sets up builtin and frozen import support */
         if (init_importlib(tstate, sysmod) < 0) {
@@ -1079,7 +1091,12 @@ done:
 static PyStatus
 pyinit_main_reconfigure(PyThreadState *tstate)
 {
-    if (interpreter_update_config(tstate, 0) < 0) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        if (runtime_update_config(tstate->interp->runtime, 0) < 0) {
+            return _PyStatus_ERR("fail to reconfigure Python");
+        }
+    }
+    if (interpreter_update_config(tstate) < 0) {
         return _PyStatus_ERR("fail to reconfigure Python");
     }
     return _PyStatus_OK();
@@ -1094,7 +1111,7 @@ init_interp_main(PyThreadState *tstate)
     PyStatus status;
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
     PyInterpreterState *interp = tstate->interp;
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(interp);
 
     if (!config->_install_importlib) {
         /* Special mode for freeze_importlib: run with no import system
@@ -1108,13 +1125,18 @@ init_interp_main(PyThreadState *tstate)
         return _PyStatus_OK();
     }
 
-    // Initialize the import-related configuration.
-    status = _PyConfig_InitImportConfig(&interp->config);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    if (is_main_interp) {
+        // Initialize the import-related configuration.
+        status = _PyConfig_InitImportConfig(&interp->runtime->config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
 
-    if (interpreter_update_config(tstate, 1) < 0) {
+        if (runtime_update_config(tstate->interp->runtime, 1) < 0) {
+            return _PyStatus_ERR("failed to update the Python config");
+        }
+    }
+    if (interpreter_update_config(tstate) < 0) {
         return _PyStatus_ERR("failed to update the Python config");
     }
 
@@ -1257,7 +1279,7 @@ Py_InitializeFromConfig(const PyConfig *config)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    config = _PyInterpreterState_GetConfig(tstate->interp);
+    config = _PyInterpreterState_GetGlobalConfig(tstate->interp);
 
     if (config->_init_main) {
         status = pyinit_main(tstate);
@@ -1530,7 +1552,7 @@ finalize_modules(PyThreadState *tstate)
         // Already done
         return;
     }
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+    int verbose = _PyInterpreterState_GetGlobalConfig(interp)->verbose;
 
     // Delete some special builtins._ and sys attributes first.  These are
     // common places where user values hide and people complain when their
@@ -1787,14 +1809,14 @@ Py_FinalizeEx(void)
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
 #ifdef Py_REF_DEBUG
-    int show_ref_count = tstate->interp->config.show_ref_count;
+    int show_ref_count = runtime->config.show_ref_count;
 #endif
 #ifdef Py_TRACE_REFS
-    int dump_refs = tstate->interp->config.dump_refs;
-    wchar_t *dump_refs_file = tstate->interp->config.dump_refs_file;
+    int dump_refs = runtime->config.dump_refs;
+    wchar_t *dump_refs_file = runtime->config.dump_refs_file;
 #endif
 #ifdef WITH_PYMALLOC
-    int malloc_stats = tstate->interp->config.malloc_stats;
+    int malloc_stats = runtime->config.malloc_stats;
 #endif
 
     /* Remaining daemon threads will automatically exit
@@ -1959,7 +1981,7 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
+new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
 {
     PyStatus status;
 
@@ -1993,23 +2015,15 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     /* Copy the current interpreter config into the new interpreter */
-    const PyConfig *config;
-    if (save_tstate != NULL) {
-        config = _PyInterpreterState_GetConfig(save_tstate->interp);
-    }
-    else
-    {
+    if (config == NULL) {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         config = _PyInterpreterState_GetConfig(main_interp);
     }
-
-
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyInterpreterConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
-    interp->config._isolated_interpreter = isolated_subinterpreter;
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2043,10 +2057,10 @@ error:
 }
 
 PyThreadState *
-_Py_NewInterpreter(int isolated_subinterpreter)
+_Py_NewInterpreter(const _PyInterpreterConfig *config)
 {
     PyThreadState *tstate = NULL;
-    PyStatus status = new_interpreter(&tstate, isolated_subinterpreter);
+    PyStatus status = new_interpreter(&tstate, config);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
@@ -2057,7 +2071,7 @@ _Py_NewInterpreter(int isolated_subinterpreter)
 PyThreadState *
 Py_NewInterpreter(void)
 {
-    return _Py_NewInterpreter(0);
+    return _Py_NewInterpreter(NULL);
 }
 
 /* Delete an interpreter and its last thread.  This requires that the
@@ -2393,7 +2407,7 @@ init_sys_streams(PyThreadState *tstate)
     int fd;
     PyObject * encoding_attr;
     PyStatus res = _PyStatus_OK();
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    const PyConfig *config = _PyInterpreterState_GetGlobalConfig(tstate->interp);
 
     /* Check that stdin is not a directory
        Using shell redirection, you can redirect stdin to a directory,

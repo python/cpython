@@ -58,7 +58,7 @@ _PyImportZip_Init(PyThreadState *tstate)
         goto error;
     }
 
-    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
+    int verbose = _PyInterpreterState_GetGlobalConfig(tstate->interp)->verbose;
     if (verbose) {
         PySys_WriteStderr("# installing zipimport hook\n");
     }
@@ -531,7 +531,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         return NULL;
     }
 
-    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
+    int verbose = _PyInterpreterState_GetGlobalConfig(tstate->interp)->verbose;
     if (verbose) {
         PySys_FormatStderr("import %U # previously loaded (%R)\n",
                            name, filename);
@@ -1064,7 +1064,7 @@ use_frozen(void)
         return false;
     }
     else {
-        return interp->config.use_frozen_modules;
+        return _PyInterpreterState_GetGlobalConfig(interp)->use_frozen_modules;
     }
 }
 
@@ -1479,7 +1479,7 @@ remove_importlib_frames(PyThreadState *tstate)
        which end with a call to "_call_with_frames_removed". */
 
     _PyErr_Fetch(tstate, &exception, &value, &base_tb);
-    if (!exception || _PyInterpreterState_GetConfig(tstate->interp)->verbose) {
+    if (!exception || _PyInterpreterState_GetGlobalConfig(tstate->interp)->verbose) {
         goto done;
     }
 
@@ -1684,7 +1684,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 {
     PyObject *mod = NULL;
     PyInterpreterState *interp = tstate->interp;
-    int import_time = _PyInterpreterState_GetConfig(interp)->import_time;
+    int import_time = _PyInterpreterState_GetGlobalConfig(interp)->import_time;
     static int import_level;
     static _PyTime_t accumulated;
 

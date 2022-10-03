@@ -212,10 +212,6 @@ typedef struct PyConfig {
     // If equal to 0, stop Python initialization before the "main" phase.
     int _init_main;
 
-    // If non-zero, disallow threads, subprocesses, and fork.
-    // Default: 0.
-    int _isolated_interpreter;
-
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;
 } PyConfig;
@@ -243,6 +239,16 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     PyWideStringList *list,
     Py_ssize_t length, wchar_t **items);
 
+typedef struct {
+    /* Allow forking the process. */
+    unsigned int allow_fork:1;
+    /* Allow creating subprocesses. */
+    unsigned int allow_subprocess:1;
+    /* Allow the creation of threads. */
+    unsigned int allow_threading:1;
+    /* Padding to ensure byte alignment. */
+    unsigned int :5;
+} _PyInterpreterConfig;
 
 /* --- Helper functions --------------------------------------- */
 

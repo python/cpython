@@ -269,7 +269,14 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
 
-PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *interp);
+PyAPI_FUNC(const _PyInterpreterConfig*) _PyInterpreterState_GetConfig(
+        PyInterpreterState *interp);
+
+PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetGlobalConfig(PyInterpreterState *interp);
+
+// Get the configuration of the current interpreter.
+// The caller must hold the GIL.
+PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
 /* Get a copy of the current interpreter configuration.
 
@@ -283,8 +290,7 @@ PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *in
 
    Once done with the configuration, PyConfig_Clear() must be called to clear
    it. */
-PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
-    struct PyConfig *config);
+PyAPI_FUNC(int) _Py_CopyConfig(PyConfig *config);
 
 /* Set the configuration of the current interpreter.
 
@@ -300,13 +306,8 @@ PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
 
    Return 0 on success. Raise an exception and return -1 on error.
 
-   The configuration should come from _PyInterpreterState_GetConfigCopy(). */
-PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
-    const struct PyConfig *config);
-
-// Get the configuration of the current interpreter.
-// The caller must hold the GIL.
-PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
+   The configuration should come from _Py_CopyConfig(). */
+PyAPI_FUNC(int) _Py_SetConfig(const PyConfig *config);
 
 
 /* cross-interpreter data */
