@@ -133,7 +133,42 @@ PyDoc_STRVAR(_asyncio_Future_set_result__doc__,
 "InvalidStateError.");
 
 #define _ASYNCIO_FUTURE_SET_RESULT_METHODDEF    \
-    {"set_result", (PyCFunction)_asyncio_Future_set_result, METH_O, _asyncio_Future_set_result__doc__},
+    {"set_result", _PyCFunction_CAST(_asyncio_Future_set_result), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_set_result__doc__},
+
+static PyObject *
+_asyncio_Future_set_result_impl(FutureObj *self, PyTypeObject *cls,
+                                PyObject *result);
+
+static PyObject *
+_asyncio_Future_set_result(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_result",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *result;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    result = args[0];
+    return_value = _asyncio_Future_set_result_impl(self, cls, result);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_asyncio_Future_set_exception__doc__,
 "set_exception($self, exception, /)\n"
@@ -145,7 +180,42 @@ PyDoc_STRVAR(_asyncio_Future_set_exception__doc__,
 "InvalidStateError.");
 
 #define _ASYNCIO_FUTURE_SET_EXCEPTION_METHODDEF    \
-    {"set_exception", (PyCFunction)_asyncio_Future_set_exception, METH_O, _asyncio_Future_set_exception__doc__},
+    {"set_exception", _PyCFunction_CAST(_asyncio_Future_set_exception), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_set_exception__doc__},
+
+static PyObject *
+_asyncio_Future_set_exception_impl(FutureObj *self, PyTypeObject *cls,
+                                   PyObject *exception);
+
+static PyObject *
+_asyncio_Future_set_exception(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_exception",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *exception;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    exception = args[0];
+    return_value = _asyncio_Future_set_exception_impl(self, cls, exception);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
 "add_done_callback($self, fn, /, *, context=<unrepresentable>)\n"
@@ -158,14 +228,14 @@ PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
 "scheduled with call_soon.");
 
 #define _ASYNCIO_FUTURE_ADD_DONE_CALLBACK_METHODDEF    \
-    {"add_done_callback", _PyCFunction_CAST(_asyncio_Future_add_done_callback), METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_add_done_callback__doc__},
+    {"add_done_callback", _PyCFunction_CAST(_asyncio_Future_add_done_callback), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_add_done_callback__doc__},
 
 static PyObject *
-_asyncio_Future_add_done_callback_impl(FutureObj *self, PyObject *fn,
-                                       PyObject *context);
+_asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
+                                       PyObject *fn, PyObject *context);
 
 static PyObject *
-_asyncio_Future_add_done_callback(FutureObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Future_add_done_callback(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -208,7 +278,7 @@ _asyncio_Future_add_done_callback(FutureObj *self, PyObject *const *args, Py_ssi
     }
     context = args[1];
 skip_optional_kwonly:
-    return_value = _asyncio_Future_add_done_callback_impl(self, fn, context);
+    return_value = _asyncio_Future_add_done_callback_impl(self, cls, fn, context);
 
 exit:
     return return_value;
@@ -236,13 +306,14 @@ PyDoc_STRVAR(_asyncio_Future_cancel__doc__,
 "return True.");
 
 #define _ASYNCIO_FUTURE_CANCEL_METHODDEF    \
-    {"cancel", _PyCFunction_CAST(_asyncio_Future_cancel), METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_cancel__doc__},
+    {"cancel", _PyCFunction_CAST(_asyncio_Future_cancel), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_cancel__doc__},
 
 static PyObject *
-_asyncio_Future_cancel_impl(FutureObj *self, PyObject *msg);
+_asyncio_Future_cancel_impl(FutureObj *self, PyTypeObject *cls,
+                            PyObject *msg);
 
 static PyObject *
-_asyncio_Future_cancel(FutureObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_asyncio_Future_cancel(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -283,7 +354,7 @@ _asyncio_Future_cancel(FutureObj *self, PyObject *const *args, Py_ssize_t nargs,
     }
     msg = args[0];
 skip_optional_pos:
-    return_value = _asyncio_Future_cancel_impl(self, msg);
+    return_value = _asyncio_Future_cancel_impl(self, cls, msg);
 
 exit:
     return return_value;
@@ -1190,4 +1261,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a1c30ebb88aa7b0c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6704f726e5f7ece input=a9049054013a1b77]*/

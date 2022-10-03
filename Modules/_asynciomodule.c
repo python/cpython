@@ -172,7 +172,7 @@ class _asyncio.Future "FutureObj *" "&Future_Type"
 /* Get FutureIter from Future */
 static PyObject * future_new_iter(PyObject *);
 
-static PyRunningLoopHolder * new_running_loop_holder(PyObject *);
+static PyRunningLoopHolder * new_running_loop_holder(asyncio_state *, PyObject *);
 
 
 static int
@@ -330,7 +330,7 @@ error:
 
 
 static int
-set_running_loop(PyObject *loop)
+set_running_loop(asyncio_state *state, PyObject *loop)
 {
     PyObject *ts_dict = NULL;
 
@@ -345,7 +345,7 @@ set_running_loop(PyObject *loop)
         return -1;
     }
 
-    PyRunningLoopHolder *rl = new_running_loop_holder(loop);
+    PyRunningLoopHolder *rl = new_running_loop_holder(state, loop);
     if (rl == NULL) {
         return -1;
     }
@@ -358,7 +358,6 @@ set_running_loop(PyObject *loop)
     }
     Py_DECREF(rl);
 
-    asyncio_state *state = get_asyncio_state(NULL);
     state->cached_running_holder = (PyObject *)rl;
     state->cached_running_holder_tsid = PyThreadState_GetID(tstate);
 
@@ -398,7 +397,8 @@ get_event_loop(asyncio_state *state, int stacklevel)
 
 
 static int
-call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
+call_soon(asyncio_state *state, PyObject *loop, PyObject *func, PyObject *arg,
+          PyObject *ctx)
 {
     PyObject *handle;
     PyObject *stack[3];
@@ -425,7 +425,6 @@ call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
         }
         stack[nargs] = (PyObject *)ctx;
         EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
-        asyncio_state *state = get_asyncio_state(NULL);
         handle = PyObject_Vectorcall(callable, stack, nargs,
                                      state->context_kwname);
         Py_DECREF(callable);
@@ -468,7 +467,7 @@ future_ensure_alive(FutureObj *fut)
 
 
 static int
-future_schedule_callbacks(FutureObj *fut)
+future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 {
     Py_ssize_t len;
     Py_ssize_t i;
@@ -476,7 +475,7 @@ future_schedule_callbacks(FutureObj *fut)
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
-        int ret = call_soon(
+        int ret = call_soon(state,
             fut->fut_loop, fut->fut_callback0,
             (PyObject *)fut, fut->fut_context0);
 
@@ -510,7 +509,7 @@ future_schedule_callbacks(FutureObj *fut)
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
 
-        if (call_soon(fut->fut_loop, cb, (PyObject *)fut, ctx)) {
+        if (call_soon(state, fut->fut_loop, cb, (PyObject *)fut, ctx)) {
             /* If an error occurs in pure-Python implementation,
                all callbacks are cleared. */
             Py_CLEAR(fut->fut_callbacks);
@@ -584,14 +583,13 @@ future_init(FutureObj *fut, PyObject *loop)
 }
 
 static PyObject *
-future_set_result(FutureObj *fut, PyObject *res)
+future_set_result(asyncio_state *state, FutureObj *fut, PyObject *res)
 {
     if (future_ensure_alive(fut)) {
         return NULL;
     }
 
     if (fut->fut_state != STATE_PENDING) {
-        asyncio_state *state = get_asyncio_state(NULL);
         PyErr_SetString(state->asyncio_InvalidStateError, "invalid state");
         return NULL;
     }
@@ -601,19 +599,18 @@ future_set_result(FutureObj *fut, PyObject *res)
     fut->fut_result = res;
     fut->fut_state = STATE_FINISHED;
 
-    if (future_schedule_callbacks(fut) == -1) {
+    if (future_schedule_callbacks(state, fut) == -1) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 static PyObject *
-future_set_exception(FutureObj *fut, PyObject *exc)
+future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
 {
     PyObject *exc_val = NULL;
 
     if (fut->fut_state != STATE_PENDING) {
-        asyncio_state *state = get_asyncio_state(NULL);
         PyErr_SetString(state->asyncio_InvalidStateError, "invalid state");
         return NULL;
     }
@@ -625,7 +622,6 @@ future_set_exception(FutureObj *fut, PyObject *exc)
         }
         if (fut->fut_state != STATE_PENDING) {
             Py_DECREF(exc_val);
-            asyncio_state *state = get_asyncio_state(NULL);
             PyErr_SetString(state->asyncio_InvalidStateError, "invalid state");
             return NULL;
         }
@@ -653,7 +649,7 @@ future_set_exception(FutureObj *fut, PyObject *exc)
     fut->fut_exception_tb = PyException_GetTraceback(exc_val);
     fut->fut_state = STATE_FINISHED;
 
-    if (future_schedule_callbacks(fut) == -1) {
+    if (future_schedule_callbacks(state, fut) == -1) {
         return NULL;
     }
 
@@ -729,7 +725,8 @@ future_get_result(FutureObj *fut, PyObject **result)
 }
 
 static PyObject *
-future_add_done_callback(FutureObj *fut, PyObject *arg, PyObject *ctx)
+future_add_done_callback(asyncio_state *state, FutureObj *fut, PyObject *arg,
+                         PyObject *ctx)
 {
     if (!future_is_alive(fut)) {
         PyErr_SetString(PyExc_RuntimeError, "uninitialized Future object");
@@ -739,7 +736,7 @@ future_add_done_callback(FutureObj *fut, PyObject *arg, PyObject *ctx)
     if (fut->fut_state != STATE_PENDING) {
         /* The future is done/cancelled, so schedule the callback
            right away. */
-        if (call_soon(fut->fut_loop, arg, (PyObject*) fut, ctx)) {
+        if (call_soon(state, fut->fut_loop, arg, (PyObject*) fut, ctx)) {
             return NULL;
         }
     }
@@ -805,7 +802,7 @@ future_add_done_callback(FutureObj *fut, PyObject *arg, PyObject *ctx)
 }
 
 static PyObject *
-future_cancel(FutureObj *fut, PyObject *msg)
+future_cancel(asyncio_state *state, FutureObj *fut, PyObject *msg)
 {
     fut->fut_log_tb = 0;
 
@@ -817,7 +814,7 @@ future_cancel(FutureObj *fut, PyObject *msg)
     Py_XINCREF(msg);
     Py_XSETREF(fut->fut_cancel_msg, msg);
 
-    if (future_schedule_callbacks(fut) == -1) {
+    if (future_schedule_callbacks(state, fut) == -1) {
         return NULL;
     }
 
@@ -973,6 +970,7 @@ _asyncio_Future_exception_impl(FutureObj *self)
 /*[clinic input]
 _asyncio.Future.set_result
 
+    cls: defining_class
     result: object
     /
 
@@ -983,17 +981,19 @@ InvalidStateError.
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Future_set_result(FutureObj *self, PyObject *result)
-/*[clinic end generated code: output=1ec2e6bcccd6f2ce input=8b75172c2a7b05f1]*/
+_asyncio_Future_set_result_impl(FutureObj *self, PyTypeObject *cls,
+                                PyObject *result)
+/*[clinic end generated code: output=99afbbe78f99c32d input=d5a41c1e353acc2e]*/
 {
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_cls(cls);
     ENSURE_FUTURE_ALIVE(state, self)
-    return future_set_result(self, result);
+    return future_set_result(state, self, result);
 }
 
 /*[clinic input]
 _asyncio.Future.set_exception
 
+    cls: defining_class
     exception: object
     /
 
@@ -1004,17 +1004,19 @@ InvalidStateError.
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Future_set_exception(FutureObj *self, PyObject *exception)
-/*[clinic end generated code: output=f1c1b0cd321be360 input=e45b7d7aa71cc66d]*/
+_asyncio_Future_set_exception_impl(FutureObj *self, PyTypeObject *cls,
+                                   PyObject *exception)
+/*[clinic end generated code: output=0a5e8b5a52f058d6 input=a245cd49d3df939b]*/
 {
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_cls(cls);
     ENSURE_FUTURE_ALIVE(state, self)
-    return future_set_exception(self, exception);
+    return future_set_exception(state, self, exception);
 }
 
 /*[clinic input]
 _asyncio.Future.add_done_callback
 
+    cls: defining_class
     fn: object
     /
     *
@@ -1028,20 +1030,21 @@ scheduled with call_soon.
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Future_add_done_callback_impl(FutureObj *self, PyObject *fn,
-                                       PyObject *context)
-/*[clinic end generated code: output=7ce635bbc9554c1e input=15ab0693a96e9533]*/
+_asyncio_Future_add_done_callback_impl(FutureObj *self, PyTypeObject *cls,
+                                       PyObject *fn, PyObject *context)
+/*[clinic end generated code: output=922e9a4cbd601167 input=599261c521458cc2]*/
 {
+    asyncio_state *state = get_asyncio_state_by_cls(cls);
     if (context == NULL) {
         context = PyContext_CopyCurrent();
         if (context == NULL) {
             return NULL;
         }
-        PyObject *res = future_add_done_callback(self, fn, context);
+        PyObject *res = future_add_done_callback(state, self, fn, context);
         Py_DECREF(context);
         return res;
     }
-    return future_add_done_callback(self, fn, context);
+    return future_add_done_callback(state, self, fn, context);
 }
 
 /*[clinic input]
@@ -1161,6 +1164,8 @@ fail:
 /*[clinic input]
 _asyncio.Future.cancel
 
+    cls: defining_class
+    /
     msg: object = None
 
 Cancel the future and schedule callbacks.
@@ -1171,12 +1176,13 @@ return True.
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Future_cancel_impl(FutureObj *self, PyObject *msg)
-/*[clinic end generated code: output=3edebbc668e5aba3 input=925eb545251f2c5a]*/
+_asyncio_Future_cancel_impl(FutureObj *self, PyTypeObject *cls,
+                            PyObject *msg)
+/*[clinic end generated code: output=074956f35904b034 input=bba8f8b786941a94]*/
 {
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_cls(cls);
     ENSURE_FUTURE_ALIVE(state, self)
-    return future_cancel(self, msg);
+    return future_cancel(state, self, msg);
 }
 
 /*[clinic input]
@@ -1886,7 +1892,7 @@ class _asyncio.Task "TaskObj *" "&Task_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=719dcef0fcc03b37]*/
 
-static int task_call_step_soon(TaskObj *, PyObject *);
+static int task_call_step_soon(asyncio_state *state, TaskObj *, PyObject *);
 static PyObject * task_wakeup(TaskObj *, PyObject *);
 static PyObject * task_step(asyncio_state *, TaskObj *, PyObject *);
 
@@ -2148,7 +2154,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
 
-    if (task_call_step_soon(self, NULL)) {
+    if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
     return register_task((PyObject*)self);
@@ -2697,20 +2703,21 @@ TaskObj_dealloc(PyObject *self)
 }
 
 static int
-task_call_step_soon(TaskObj *task, PyObject *arg)
+task_call_step_soon(asyncio_state *state, TaskObj *task, PyObject *arg)
 {
     PyObject *cb = TaskStepMethWrapper_new(task, arg);
     if (cb == NULL) {
         return -1;
     }
 
-    int ret = call_soon(task->task_loop, cb, NULL, task->task_context);
+    int ret = call_soon(state, task->task_loop, cb, NULL, task->task_context);
     Py_DECREF(cb);
     return ret;
 }
 
 static PyObject *
-task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
+task_set_error_soon(asyncio_state *state, TaskObj *task, PyObject *et,
+                    const char *format, ...)
 {
     PyObject* msg;
 
@@ -2729,7 +2736,7 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
         return NULL;
     }
 
-    if (task_call_step_soon(task, e) == -1) {
+    if (task_call_step_soon(state, task, e) == -1) {
         Py_DECREF(e);
         return NULL;
     }
@@ -2834,10 +2841,11 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
             if (task->task_must_cancel) {
                 // Task is cancelled right before coro stops.
                 task->task_must_cancel = 0;
-                tmp = future_cancel((FutureObj*)task, task->task_cancel_msg);
+                tmp = future_cancel(state, (FutureObj*)task,
+                                    task->task_cancel_msg);
             }
             else {
-                tmp = future_set_result((FutureObj*)task, result);
+                tmp = future_set_result(state, (FutureObj*)task, result);
             }
 
             Py_DECREF(result);
@@ -2864,7 +2872,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
             /* transfer ownership */
             fut->fut_cancelled_exc = ev;
 
-            return future_cancel(fut, NULL);
+            return future_cancel(state, fut, NULL);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */
@@ -2875,7 +2883,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
             PyException_SetTraceback(ev, tb);
         }
 
-        o = future_set_exception((FutureObj*)task, ev);
+        o = future_set_exception(state, (FutureObj*)task, ev);
         if (!o) {
             /* An exception in Task.set_exception() */
             Py_DECREF(et);
@@ -2928,7 +2936,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         if (wrapper == NULL) {
             goto fail;
         }
-        tmp = future_add_done_callback(
+        tmp = future_add_done_callback(state,
             (FutureObj*)result, wrapper, task->task_context);
         Py_DECREF(wrapper);
         if (tmp == NULL) {
@@ -2963,7 +2971,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     /* Check if `result` is None */
     if (result == Py_None) {
         /* Bare yield relinquishes control for one event loop iteration. */
-        if (task_call_step_soon(task, NULL)) {
+        if (task_call_step_soon(state, task, NULL)) {
             goto fail;
         }
         return result;
@@ -3062,7 +3070,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (res) {
         /* `result` is a generator */
         o = task_set_error_soon(
-            task, PyExc_RuntimeError,
+            state, task, PyExc_RuntimeError,
             "yield was used instead of yield from for "
             "generator in task %R with %R", task, result);
         Py_DECREF(result);
@@ -3071,20 +3079,20 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 
     /* The `result` is none of the above */
     o = task_set_error_soon(
-        task, PyExc_RuntimeError, "Task got bad yield: %R", result);
+        state, task, PyExc_RuntimeError, "Task got bad yield: %R", result);
     Py_DECREF(result);
     return o;
 
 self_await:
     o = task_set_error_soon(
-        task, PyExc_RuntimeError,
+        state, task, PyExc_RuntimeError,
         "Task cannot await on itself: %R", task);
     Py_DECREF(result);
     return o;
 
 yield_insteadof_yf:
     o = task_set_error_soon(
-        task, PyExc_RuntimeError,
+        state, task, PyExc_RuntimeError,
         "yield was used instead of yield from "
         "in task %R with %R",
         task, result);
@@ -3093,7 +3101,7 @@ yield_insteadof_yf:
 
 different_loop:
     o = task_set_error_soon(
-        task, PyExc_RuntimeError,
+        state, task, PyExc_RuntimeError,
         "Task %R got Future %R attached to a different loop",
         task, result);
     Py_DECREF(result);
@@ -3229,7 +3237,8 @@ static PyObject *
 _asyncio__set_running_loop(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=ae56bf7a28ca189a input=4c9720233d606604]*/
 {
-    if (set_running_loop(loop)) {
+    asyncio_state *state = get_asyncio_state(module);
+    if (set_running_loop(state, loop)) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3388,9 +3397,8 @@ _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 
 
 static PyRunningLoopHolder *
-new_running_loop_holder(PyObject *loop)
+new_running_loop_holder(asyncio_state *state, PyObject *loop)
 {
-    asyncio_state *state = get_asyncio_state(NULL);
     PyRunningLoopHolder *rl = PyObject_GC_New(
         PyRunningLoopHolder, state->PyRunningLoopHolder_Type);
     if (rl == NULL) {
