@@ -287,6 +287,7 @@ _specializations = {
     "BINARY_SUBSCR": [
         "BINARY_SUBSCR_ADAPTIVE",
         "BINARY_SUBSCR_DICT",
+        "BINARY_SUBSCR_DICT_UNICODE",
         "BINARY_SUBSCR_GETITEM",
         "BINARY_SUBSCR_LIST_INT",
         "BINARY_SUBSCR_TUPLE_INT",

@@ -1636,6 +1636,30 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(BINARY_SUBSCR_DICT_UNICODE) {
+            assert(cframe.use_tracing == 0);
+            _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
+            PyObject *dict = SECOND();
+            DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
+            PyObject *sub = TOP();
+            PyDictKeysObject *d_keys = ((PyDictObject *)dict)->ma_keys;
+            uint32_t version = read_u32(cache->type_version);
+            assert(version != 0);
+            DEOPT_IF(d_keys->dk_version != version, BINARY_SUBSCR);
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(d_keys);
+            PyObject *res = entries[cache->func_version].me_value;
+            DEOPT_IF(res == NULL, BINARY_SUBSCR);
+
+            STAT_INC(BINARY_SUBSCR, hit);
+            Py_INCREF(res);
+            STACK_SHRINK(1);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            Py_DECREF(dict);
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            DISPATCH();
+        }
+
         TARGET(BINARY_SUBSCR_GETITEM) {
             PyObject *sub = TOP();
             PyObject *container = SECOND();
