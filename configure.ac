@@ -2106,8 +2106,8 @@ AC_MSG_CHECKING([for --with-strict-overflow])
 AC_ARG_WITH([strict-overflow],
   AS_HELP_STRING(
     [--with-strict-overflow],
-    [choose between -fstrict-overflow or -fno-strict-overflow (default is no)]),,
-  with_strict_overflow=no)
+    [choose between -fstrict-overflow or -fno-strict-overflow (default is no)]),[],
+    [with_strict_overflow=no])
 AC_MSG_RESULT([$with_strict_overflow])
 
 # Check if CC supports -Og optimization level
