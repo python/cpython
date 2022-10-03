@@ -1767,9 +1767,9 @@ Or, when processing a file stream in chunks:
        process(chunk)
 
 Assignment expressions must be surrounded by parentheses when used
-as sub-expressions in subscript, slicing, conditional, lambda,
-keyword-argument, generator, and comprehension-if expressions.  They
-can only be used as is in if and while statements and in decorators.
+as sub-expressions in slicing, conditional, lambda,
+keyword-argument, and comprehension-if expressions.  They
+can be used unparenthesized in all other places, including ``if`` and ``while`` statements.
 
 .. versionadded:: 3.8
    See :pep:`572` for more details about assignment expressions.
