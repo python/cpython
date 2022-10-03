@@ -170,6 +170,15 @@ CPython bytecode changes
   (Contributed by Ken Jin in :gh:`93429`.)
 
 
+Demos and Tools
+===============
+
+* Remove the ``Tools/demo/`` directory which contained old demo scripts. A copy
+  can be found in the `old-demos project
+  <https://github.com/gvanrossum/old-demos>`_.
+  (Contributed by Victor Stinner in :gh:`97681`.)
+
+
 Deprecated
 ==========
 
