@@ -8662,7 +8662,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    /** line numbers (TODO: move this to desugaring stage) */
+    /** line numbers (TODO: move this before optimization stage) */
     if (duplicate_exits_without_lineno(g) < 0) {
         goto error;
     }
