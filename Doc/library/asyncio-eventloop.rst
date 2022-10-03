@@ -1636,6 +1636,11 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       loop = asyncio.SelectorEventLoop(selector)
       asyncio.set_event_loop(loop)
 
+   .. note::
+      :func:`asyncio.run` creates a new event loop so if manually
+      configuring the event loop, :func:`loop.run_until_complete`
+      should be used instead of :func:`asyncio.run`.
+
 
    .. availability:: Unix, Windows.
 
