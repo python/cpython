@@ -266,12 +266,9 @@ For cases where you need to choose from a very large number of possibilities,
 you can create a dictionary mapping case values to functions to call.  For
 example::
 
-   def function_1(...):
-       ...
-
    functions = {'a': function_1,
                 'b': function_2,
-                'c': self.method_1, ...}
+                'c': self.method_1}
 
    func = functions[value]
    func()
@@ -279,14 +276,14 @@ example::
 For calling methods on objects, you can simplify yet further by using the
 :func:`getattr` built-in to retrieve methods with a particular name::
 
-   def visit_a(self, ...):
-       ...
-   ...
+   class MyVisitor:
+       def visit_a(self):
+           ...
 
-   def dispatch(self, value):
-       method_name = 'visit_' + str(value)
-       method = getattr(self, method_name)
-       method()
+       def dispatch(self, value):
+           method_name = 'visit_' + str(value)
+           method = getattr(self, method_name)
+           method()
 
 It's suggested that you use a prefix for the method names, such as ``visit_`` in
 this example.  Without such a prefix, if values are coming from an untrusted
@@ -316,7 +313,7 @@ you're too lazy to define a function.
 
 Functions are already first class objects in Python, and can be declared in a
 local scope.  Therefore the only advantage of using a lambda instead of a
-locally-defined function is that you don't need to invent a name for the
+locally defined function is that you don't need to invent a name for the
 function -- but that's just a local variable to which the function object (which
 is exactly the same type of object that a lambda expression yields) is assigned!
 
@@ -324,11 +321,10 @@ is exactly the same type of object that a lambda expression yields) is assigned!
 Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
-`Cython <http://cython.org/>`_ compiles a modified version of Python with
-optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
+`Cython <https://cython.org/>`_ compiles a modified version of Python with
+optional annotations into C extensions.  `Nuitka <https://www.nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
-Python language. For compiling to Java you can consider
-`VOC <https://voc.readthedocs.io>`_.
+Python language.
 
 
 How does Python manage memory?
@@ -342,8 +338,8 @@ cycles and deletes the objects involved. The :mod:`gc` module provides functions
 to perform a garbage collection, obtain debugging statistics, and tune the
 collector's parameters.
 
-Other implementations (such as `Jython <http://www.jython.org>`_ or
-`PyPy <http://www.pypy.org>`_), however, can rely on a different mechanism
+Other implementations (such as `Jython <https://www.jython.org>`_ or
+`PyPy <https://www.pypy.org>`_), however, can rely on a different mechanism
 such as a full-blown garbage collector.  This difference can cause some
 subtle porting problems if your Python code depends on the behavior of the
 reference counting implementation.
@@ -600,7 +596,15 @@ test cases at all.
 Why is there no goto?
 ---------------------
 
-You can use exceptions to provide a "structured goto" that even works across
+In the 1970s people realized that unrestricted goto could lead
+to messy "spaghetti" code that was hard to understand and revise.
+In a high-level language, it is also unneeded as long as there
+are ways to branch (in Python, with ``if`` statements and ``or``,
+``and``, and ``if-else`` expressions) and loop (with ``while``
+and ``for`` statements, possibly containing ``continue`` and ``break``).
+
+One can also use exceptions to provide a "structured goto"
+that works even across
 function calls.  Many feel that exceptions can conveniently emulate all
 reasonable uses of the "go" or "goto" constructs of C, Fortran, and other
 languages.  For example::
@@ -698,6 +702,19 @@ write this::
 This also has the side-effect of increasing execution speed because name
 bindings are resolved at run-time in Python, and the second version only needs
 to perform the resolution once.
+
+Similar proposals that would introduce syntax to further reduce code volume,
+such as using a 'leading dot', have been rejected in favour of explicitness (see
+https://mail.python.org/pipermail/python-ideas/2016-May/040070.html).
+
+
+Why don't generators support the with statement?
+------------------------------------------------
+
+For technical reasons, a generator used directly as a context manager
+would not work correctly.  When, as is most common, a generator is used as
+an iterator run to completion, no closing is needed.  When it is, wrap
+it as "contextlib.closing(generator)" in the 'with' statement.
 
 
 Why are colons required for the if/while/def/class statements?

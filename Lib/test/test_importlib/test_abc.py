@@ -2,14 +2,13 @@ import io
 import marshal
 import os
 import sys
-from test import support
 from test.support import import_helper
 import types
 import unittest
 from unittest import mock
 import warnings
 
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 init = test_util.import_importlib('importlib')
 abc = test_util.import_importlib('importlib.abc')
@@ -55,7 +54,7 @@ class InheritanceTests:
 
 
 class MetaPathFinder(InheritanceTests):
-    superclass_names = ['Finder']
+    superclass_names = []
     subclass_names = ['BuiltinImporter', 'FrozenImporter', 'PathFinder',
                       'WindowsRegistryFinder']
 
@@ -66,7 +65,7 @@ class MetaPathFinder(InheritanceTests):
 
 
 class PathEntryFinder(InheritanceTests):
-    superclass_names = ['Finder']
+    superclass_names = []
     subclass_names = ['FileFinder']
 
 
@@ -220,12 +219,12 @@ class LoaderDefaultsTests(ABCTestHarness):
 
     def test_module_repr(self):
         mod = types.ModuleType('blah')
-        with self.assertRaises(NotImplementedError):
-            self.ins.module_repr(mod)
-        original_repr = repr(mod)
-        mod.__loader__ = self.ins
-        # Should still return a proper repr.
-        self.assertTrue(repr(mod))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            original_repr = repr(mod)
+            mod.__loader__ = self.ins
+            # Should still return a proper repr.
+            self.assertTrue(repr(mod))
 
 
 (Frozen_LDefaultTests,
@@ -319,32 +318,6 @@ class ResourceReader:
 
     def contents(self, *args, **kwargs):
         return super().contents(*args, **kwargs)
-
-
-class ResourceReaderDefaultsTests(ABCTestHarness):
-
-    SPLIT = make_abc_subclasses(ResourceReader)
-
-    def test_open_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.open_resource('dummy_file')
-
-    def test_resource_path(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.resource_path('dummy_file')
-
-    def test_is_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.is_resource('dummy_file')
-
-    def test_contents(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.contents()
-
-
-(Frozen_RRDefaultTests,
- Source_RRDefaultsTests
- ) = test_util.test_both(ResourceReaderDefaultsTests)
 
 
 ##### MetaPathFinder concrete methods ##########################################

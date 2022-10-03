@@ -1,10 +1,12 @@
 import re
 import sys
+import textwrap
 import types
 import unittest
 import weakref
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 
 class ClearTest(unittest.TestCase):
@@ -44,6 +46,19 @@ class ClearTest(unittest.TestCase):
         support.gc_collect()
         # The reference was released by .clear()
         self.assertIs(None, wr())
+
+    def test_clear_does_not_clear_specials(self):
+        class C:
+            pass
+        c = C()
+        exc = self.outer(c=c)
+        del c
+        f = exc.__traceback__.tb_frame
+        f.clear()
+        self.assertIsNot(f.f_code, None)
+        self.assertIsNot(f.f_locals, None)
+        self.assertIsNot(f.f_builtins, None)
+        self.assertIsNot(f.f_globals, None)
 
     def test_clear_generator(self):
         endly = False
@@ -222,6 +237,29 @@ class ReprTest(unittest.TestCase):
                          r"^<frame at 0x[0-9a-fA-F]+, file %s, line %d, code inner>$"
                          % (file_repr, offset + 5))
 
+class TestIncompleteFrameAreInvisible(unittest.TestCase):
+
+    def test_issue95818(self):
+        # See GH-95818 for details
+        code = textwrap.dedent(f"""
+            import gc
+
+            gc.set_threshold(1,1,1)
+            class GCHello:
+                def __del__(self):
+                    print("Destroyed from gc")
+
+            def gen():
+                yield
+
+            fd = open({__file__!r})
+            l = [fd, GCHello()]
+            l.append(l)
+            del fd
+            del l
+            gen()
+        """)
+        assert_python_ok("-c", code)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,2 @@
+:class:`types.MappingProxyType` instances are now hashable if the underlying
+mapping is hashable.

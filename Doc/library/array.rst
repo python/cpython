@@ -52,7 +52,7 @@ Notes:
 
    .. versionchanged:: 3.9
       ``array('u')`` now uses ``wchar_t`` as C type instead of deprecated
-      ``Py_UNICODE``. This change doesn't affect to its behavior because
+      ``Py_UNICODE``. This change doesn't affect its behavior because
       ``Py_UNICODE`` is alias of ``wchar_t`` since Python 3.3.
 
    .. deprecated-removed:: 3.3 4.0
@@ -160,8 +160,7 @@ The following data items and methods are also supported:
    Read *n* items (as machine values) from the :term:`file object` *f* and append
    them to the end of the array.  If less than *n* items are available,
    :exc:`EOFError` is raised, but the items that were available are still
-   inserted into the array. *f* must be a real built-in file object; something
-   else with a :meth:`read` method won't do.
+   inserted into the array.
 
 
 .. method:: array.fromlist(list)
@@ -178,11 +177,15 @@ The following data items and methods are also supported:
    array of some other type.
 
 
-.. method:: array.index(x)
+.. method:: array.index(x[, start[, stop]])
 
    Return the smallest *i* such that *i* is the index of the first occurrence of
-   *x* in the array.
+   *x* in the array.  The optional arguments *start* and *stop* can be
+   specified to search for *x* within a subsection of the array.  Raise
+   :exc:`ValueError` if *x* is not found.
 
+   .. versionchanged:: 3.10
+      Added optional *start* and *stop* parameters.
 
 .. method:: array.insert(i, x)
 

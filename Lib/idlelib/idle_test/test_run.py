@@ -1,4 +1,4 @@
-"Test run, coverage 49%."
+"Test run, coverage 54%."
 
 from idlelib import run
 import io
@@ -12,7 +12,7 @@ from idlelib.idle_test.mock_idle import Func
 idlelib.testing = True  # Use {} for executing test user code.
 
 
-class PrintExceptionTest(unittest.TestCase):
+class ExceptionTest(unittest.TestCase):
 
     def test_print_exception_unhashable(self):
         class UnhashableException(Exception):
@@ -28,8 +28,7 @@ class PrintExceptionTest(unittest.TestCase):
                 raise ex1
             except UnhashableException:
                 with captured_stderr() as output:
-                    with mock.patch.object(run,
-                                           'cleanup_traceback') as ct:
+                    with mock.patch.object(run, 'cleanup_traceback') as ct:
                         ct.side_effect = lambda t, e: t
                         run.print_exception()
 
@@ -38,6 +37,46 @@ class PrintExceptionTest(unittest.TestCase):
         self.assertIn('UnhashableException: ex2', tb[3])
         self.assertIn('UnhashableException: ex1', tb[10])
 
+    data = (('1/0', ZeroDivisionError, "division by zero\n"),
+            ('abc', NameError, "name 'abc' is not defined. "
+                               "Did you mean: 'abs'?\n"),
+            ('int.reel', AttributeError,
+                 "type object 'int' has no attribute 'reel'. "
+                 "Did you mean: 'real'?\n"),
+            )
+
+    def test_get_message(self):
+        for code, exc, msg in self.data:
+            with self.subTest(code=code):
+                try:
+                    eval(compile(code, '', 'eval'))
+                except exc:
+                    typ, val, tb = sys.exc_info()
+                    actual = run.get_message_lines(typ, val, tb)[0]
+                    expect = f'{exc.__name__}: {msg}'
+                    self.assertEqual(actual, expect)
+
+    @mock.patch.object(run, 'cleanup_traceback',
+                       new_callable=lambda: (lambda t, e: None))
+    def test_get_multiple_message(self, mock):
+        d = self.data
+        data2 = ((d[0], d[1]), (d[1], d[2]), (d[2], d[0]))
+        subtests = 0
+        for (code1, exc1, msg1), (code2, exc2, msg2) in data2:
+            with self.subTest(codes=(code1,code2)):
+                try:
+                    eval(compile(code1, '', 'eval'))
+                except exc1:
+                    try:
+                        eval(compile(code2, '', 'eval'))
+                    except exc2:
+                        with captured_stderr() as output:
+                            run.print_exception()
+                        actual = output.getvalue()
+                        self.assertIn(msg1, actual)
+                        self.assertIn(msg2, actual)
+                        subtests += 1
+        self.assertEqual(subtests, len(data2))  # All subtests ran?
 
 # StdioFile tests.
 

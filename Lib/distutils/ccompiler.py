@@ -392,7 +392,7 @@ class CCompiler:
         return output_dir, macros, include_dirs
 
     def _prep_compile(self, sources, output_dir, depends=None):
-        """Decide which souce files must be recompiled.
+        """Decide which source files must be recompiled.
 
         Determine the list of object files corresponding to 'sources',
         and figure out which ones really need to be recompiled.

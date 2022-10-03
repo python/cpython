@@ -1,10 +1,12 @@
 import unittest
 from weakref import WeakSet
+import copy
 import string
 from collections import UserString as ustr
 from collections.abc import Set, MutableSet
 import gc
 import contextlib
+from test import support
 
 
 class Foo:
@@ -13,6 +15,12 @@ class Foo:
 class RefCycle:
     def __init__(self):
         self.cycle = self
+
+class WeakSetSubclass(WeakSet):
+    pass
+
+class WeakSetWithSlots(WeakSet):
+    __slots__ = ('x', 'y')
 
 
 class TestWeakSet(unittest.TestCase):
@@ -48,6 +56,7 @@ class TestWeakSet(unittest.TestCase):
         self.assertEqual(len(self.s), len(self.d))
         self.assertEqual(len(self.fs), 1)
         del self.obj
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertEqual(len(self.fs), 0)
 
     def test_contains(self):
@@ -57,6 +66,7 @@ class TestWeakSet(unittest.TestCase):
         self.assertNotIn(1, self.s)
         self.assertIn(self.obj, self.fs)
         del self.obj
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertNotIn(ustr('F'), self.fs)
 
     def test_union(self):
@@ -215,6 +225,7 @@ class TestWeakSet(unittest.TestCase):
         self.assertEqual(self.s, dup)
         self.assertRaises(TypeError, self.s.add, [])
         self.fs.add(Foo())
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertTrue(len(self.fs) == 1)
         self.fs.add(self.obj)
         self.assertTrue(len(self.fs) == 1)
@@ -406,6 +417,7 @@ class TestWeakSet(unittest.TestCase):
         n1 = len(s)
         del it
         gc.collect()
+        gc.collect()  # For PyPy or other GCs.
         n2 = len(s)
         # one item may be kept alive inside the iterator
         self.assertIn(n1, (0, 1))
@@ -441,6 +453,30 @@ class TestWeakSet(unittest.TestCase):
     def test_abc(self):
         self.assertIsInstance(self.s, Set)
         self.assertIsInstance(self.s, MutableSet)
+
+    def test_copying(self):
+        for cls in WeakSet, WeakSetWithSlots:
+            s = cls(self.items)
+            s.x = ['x']
+            s.z = ['z']
+
+            dup = copy.copy(s)
+            self.assertIsInstance(dup, cls)
+            self.assertEqual(dup, s)
+            self.assertIsNot(dup, s)
+            self.assertIs(dup.x, s.x)
+            self.assertIs(dup.z, s.z)
+            self.assertFalse(hasattr(dup, 'y'))
+
+            dup = copy.deepcopy(s)
+            self.assertIsInstance(dup, cls)
+            self.assertEqual(dup, s)
+            self.assertIsNot(dup, s)
+            self.assertEqual(dup.x, s.x)
+            self.assertIsNot(dup.x, s.x)
+            self.assertEqual(dup.z, s.z)
+            self.assertIsNot(dup.z, s.z)
+            self.assertFalse(hasattr(dup, 'y'))
 
 
 if __name__ == "__main__":

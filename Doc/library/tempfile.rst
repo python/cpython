@@ -62,6 +62,9 @@ The module defines the following user-callable items:
    The :py:data:`os.O_TMPFILE` flag is used if it is available and works
    (Linux-specific, requires Linux kernel 3.11 or later).
 
+   On platforms that are neither Posix nor Cygwin, TemporaryFile is an alias
+   for NamedTemporaryFile.
+
    .. audit-event:: tempfile.mkstemp fullpath tempfile.TemporaryFile
 
    .. versionchanged:: 3.5
@@ -81,11 +84,14 @@ The module defines the following user-callable items:
    file-like object.  Whether the name can be
    used to open the file a second time, while the named temporary file is
    still open, varies across platforms (it can be so used on Unix; it cannot
-   on Windows NT or later).  If *delete* is true (the default), the file is
+   on Windows).  If *delete* is true (the default), the file is
    deleted as soon as it is closed.
    The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can
    be used in a :keyword:`with` statement, just like a normal file.
+
+   On POSIX (only), a process that is terminated abruptly with SIGKILL
+   cannot automatically delete any NamedTemporaryFiles it created.
 
    .. audit-event:: tempfile.mkstemp fullpath tempfile.NamedTemporaryFile
 
@@ -93,9 +99,9 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
+.. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
-   This function operates exactly as :func:`TemporaryFile` does, except that
+   This class operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
    until the file's :func:`fileno` method is called, at which point the
    contents are written to disk and operation proceeds as with
@@ -117,13 +123,18 @@ The module defines the following user-callable items:
    .. versionchanged:: 3.8
       Added *errors* parameter.
 
+   .. versionchanged:: 3.11
+      Fully implements the :class:`io.BufferedIOBase` and
+      :class:`io.TextIOBase` abstract base classes (depending on whether binary
+      or text *mode* was specified).
 
-.. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None)
 
-   This function securely creates a temporary directory using the same rules as :func:`mkdtemp`.
+.. class:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False)
+
+   This class securely creates a temporary directory using the same rules as :func:`mkdtemp`.
    The resulting object can be used as a context manager (see
    :ref:`tempfile-examples`).  On completion of the context or destruction
-   of the temporary directory object the newly created temporary directory
+   of the temporary directory object, the newly created temporary directory
    and all its contents are removed from the filesystem.
 
    The directory name can be retrieved from the :attr:`name` attribute of the
@@ -132,11 +143,20 @@ The module defines the following user-callable items:
    the :keyword:`with` statement, if there is one.
 
    The directory can be explicitly cleaned up by calling the
-   :func:`cleanup` method.
+   :func:`cleanup` method. If *ignore_cleanup_errors* is true, any unhandled
+   exceptions during explicit or implicit cleanup (such as a
+   :exc:`PermissionError` removing open files on Windows) will be ignored,
+   and the remaining removable items deleted on a "best-effort" basis.
+   Otherwise, errors will be raised in whatever context cleanup occurs
+   (the :func:`cleanup` call, exiting the context manager, when the object
+   is garbage-collected or during interpreter shutdown).
 
    .. audit-event:: tempfile.mkdtemp fullpath tempfile.TemporaryDirectory
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.10
+      Added *ignore_cleanup_errors* parameter.
 
 
 .. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)
@@ -296,7 +316,7 @@ not surprise other unsuspecting code by changing global API behavior.
       explicit ``prefix``, ``suffix``, or ``dir`` arguments of type
       str are supplied. Please do not write code expecting or
       depending on this. This awkward behavior is maintained for
-      compatibility with the historcal implementation.
+      compatibility with the historical implementation.
 
 .. _tempfile-examples:
 
@@ -332,6 +352,7 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
     >>>
     # directory and contents have been removed
 
+.. _tempfile-mktemp-deprecated:
 
 Deprecated functions and variables
 ----------------------------------

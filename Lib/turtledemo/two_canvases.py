@@ -1,7 +1,7 @@
 """turtledemo.two_canvases
 
 Use TurtleScreen and RawTurtle to draw on two
-distinct canvases in a separate windows. The
+distinct canvases in a separate window. The
 new window must be separately closed in
 addition to pressing the STOP button.
 """

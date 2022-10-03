@@ -338,7 +338,7 @@ unexpected cache miss.
 .. nonce: MW1TLt
 .. section: Library
 
-Fix :mod:`distutils.sysconfig` if :data:`sys.executable` is ``None`` or an
+Fix ``distutils.sysconfig`` if :data:`sys.executable` is ``None`` or an
 empty string: use :func:`os.getcwd` to initialize ``project_base``.  Fix
 also the distutils build command: don't use :data:`sys.executable` if it is
 ``None`` or an empty string.
@@ -350,7 +350,7 @@ also the distutils build command: don't use :data:`sys.executable` if it is
 .. nonce: Fg4EXb
 .. section: Library
 
-:func:`shutil.which` and :func:`distutils.spawn.find_executable` now use
+:func:`shutil.which` and ``distutils.spawn.find_executable`` now use
 ``os.confstr("CS_PATH")`` if available instead of :data:`os.defpath`, if the
 ``PATH`` environment variable is not set. Moreover, don't use
 ``os.confstr("CS_PATH")`` nor :data:`os.defpath` if the ``PATH`` environment

@@ -28,6 +28,8 @@ HTTPS protocols.  It is normally not used directly --- the module
    HTTPS support is only available if Python was compiled with SSL support
    (through the :mod:`ssl` module).
 
+.. include:: ../includes/wasm-notavail.rst
+
 The module provides the following classes:
 
 
@@ -368,6 +370,8 @@ HTTPConnection Objects
    this is called automatically when making a request if the client does not
    already have a connection.
 
+   .. audit-event:: http.client.connect self,host,port http.client.HTTPConnection.connect
+
 
 .. method:: HTTPConnection.close()
 
@@ -436,6 +440,8 @@ also send your request step by step, by using the four functions below.
    Send data to the server.  This should be used directly only after the
    :meth:`endheaders` method has been called and before :meth:`getresponse` is
    called.
+
+   .. audit-event:: http.client.send self,data http.client.HTTPConnection.send
 
 
 .. _httpresponse-objects:
@@ -585,7 +591,7 @@ Here is an example session that uses the ``POST`` method::
    302 Found
    >>> data = response.read()
    >>> data
-   b'Redirecting to <a href="http://bugs.python.org/issue12524">http://bugs.python.org/issue12524</a>'
+   b'Redirecting to <a href="https://bugs.python.org/issue12524">https://bugs.python.org/issue12524</a>'
    >>> conn.close()
 
 Client side HTTP ``PUT`` requests are very similar to ``POST`` requests. The
