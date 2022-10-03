@@ -5,6 +5,7 @@
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_memoryobject.h"  // PyMemoryView_FromObjectAndFlags()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -7554,8 +7555,6 @@ wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
 static PyObject *
 wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
 {
-    getbufferproc func = (getbufferproc)wrapped;
-    Py_buffer view;
     int flags = 0;
 
     if (!check_num_args(args, 1)) {
@@ -7564,10 +7563,7 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
     if (!PyArg_ParseTuple(args, "i", &flags)) {
         return NULL;
     }
-    if ((*func)(self, &view, flags) < 0) {
-        return NULL;
-    }
-    return PyMemoryView_FromBuffer(&view);
+    return PyMemoryView_FromObjectAndFlags(self, flags);
 }
 
 static PyObject *
@@ -8441,6 +8437,9 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
         goto fail;
     }
     *buffer = ((PyMemoryViewObject *)ret)->view;
+    // TODO does this leak the existing ref in buffer->obj?
+    buffer->obj = self;
+    Py_INCREF(buffer->obj);
     Py_DECREF(ret);
     Py_DECREF(flags_obj);
     return 0;
@@ -8459,6 +8458,9 @@ slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
         PyErr_WriteUnraisable(self);
         return;
     }
+    if (buffer->obj != NULL) {
+        ((PyMemoryViewObject *)mv)->view.obj = Py_NewRef(buffer->obj);
+    }
     PyObject *stack[2] = {self, mv};
     PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);
     Py_DECREF(mv);
@@ -8469,7 +8471,6 @@ slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
         Py_DECREF(ret);
     }
 }
-
 
 static PyObject *
 slot_am_await(PyObject *self)

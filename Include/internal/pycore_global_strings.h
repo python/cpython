@@ -173,7 +173,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__rdivmod__)
         STRUCT_FOR_ID(__reduce__)
         STRUCT_FOR_ID(__reduce_ex__)
-        STRUCT_FOR_ID(__release_buffer__) 
+        STRUCT_FOR_ID(__release_buffer__)
         STRUCT_FOR_ID(__repr__)
         STRUCT_FOR_ID(__reversed__)
         STRUCT_FOR_ID(__rfloordiv__)

@@ -85,7 +85,7 @@ mbuf_alloc(void)
 }
 
 static PyObject *
-_PyManagedBuffer_FromObject(PyObject *base)
+_PyManagedBuffer_FromObject(PyObject *base, int flags)
 {
     _PyManagedBufferObject *mbuf;
 
@@ -93,7 +93,7 @@ _PyManagedBuffer_FromObject(PyObject *base)
     if (mbuf == NULL)
         return NULL;
 
-    if (PyObject_GetBuffer(base, &mbuf->master, PyBUF_FULL_RO) < 0) {
+    if (PyObject_GetBuffer(base, &mbuf->master, flags) < 0) {
         mbuf->master.obj = NULL;
         Py_DECREF(mbuf);
         return NULL;
@@ -779,11 +779,12 @@ PyMemoryView_FromBuffer(const Py_buffer *info)
     return mv;
 }
 
-/* Create a memoryview from an object that implements the buffer protocol.
+/* Create a memoryview from an object that implements the buffer protocol,
+   using the given flags.
    If the object is a memoryview, the new memoryview must be registered
    with the same managed buffer. Otherwise, a new managed buffer is created. */
 PyObject *
-PyMemoryView_FromObject(PyObject *v)
+PyMemoryView_FromObjectAndFlags(PyObject *v, int flags)
 {
     _PyManagedBufferObject *mbuf;
 
@@ -794,7 +795,7 @@ PyMemoryView_FromObject(PyObject *v)
     }
     else if (PyObject_CheckBuffer(v)) {
         PyObject *ret;
-        mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(v);
+        mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(v, flags);
         if (mbuf == NULL)
             return NULL;
         ret = mbuf_add_view(mbuf, NULL);
@@ -806,6 +807,14 @@ PyMemoryView_FromObject(PyObject *v)
         "memoryview: a bytes-like object is required, not '%.200s'",
         Py_TYPE(v)->tp_name);
     return NULL;
+}
+/* Create a memoryview from an object that implements the buffer protocol.
+   If the object is a memoryview, the new memoryview must be registered
+   with the same managed buffer. Otherwise, a new managed buffer is created. */
+PyObject *
+PyMemoryView_FromObject(PyObject *v)
+{
+    return PyMemoryView_FromObjectAndFlags(v, PyBUF_FULL_RO);
 }
 
 /* Copy the format string from a base object that might vanish. */
@@ -853,7 +862,7 @@ memory_from_contiguous_copy(const Py_buffer *src, char order)
     if (bytes == NULL)
         return NULL;
 
-    mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(bytes);
+    mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(bytes, PyBUF_FULL_RO);
     Py_DECREF(bytes);
     if (mbuf == NULL)
         return NULL;

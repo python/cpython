@@ -4436,5 +4436,56 @@ class TestBufferProtocol(unittest.TestCase):
                              struct.calcsize(format))
 
 
+class TestPythonBufferProtocol(unittest.TestCase):
+    def test_basic(self):
+        class MyBuffer:
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+
+        mv = memoryview(MyBuffer())
+        self.assertEqual(mv.tobytes(), b"hello")
+        self.assertEqual(bytes(MyBuffer()), b"hello")
+
+    def test_bad_buffer_method(self):
+        class MustReturnMV:
+            def __buffer__(self, flags):
+                return 42
+
+        self.assertRaises(TypeError, memoryview, MustReturnMV())
+
+        class WrongArity:
+            def __buffer__(self):
+                return memoryview(b"hello")
+
+        self.assertRaises(TypeError, memoryview, WrongArity())
+
+    def test_release_buffer(self):
+        class WhatToRelease:
+            def __init__(self):
+                self.held = False
+                self.ba = bytearray(b"hello")
+            def __buffer__(self, flags):
+                if self.held:
+                    raise TypeError("already held")
+                self.held = True
+                return memoryview(self.ba)
+            def __release_buffer__(self, buffer):
+                assert self is buffer.obj
+                self.held = False
+
+        wr = WhatToRelease()
+        self.assertFalse(wr.held)
+        with memoryview(wr) as mv:
+            self.assertTrue(wr.held)
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertFalse(wr.held)
+
+    def test_call_builtins(self):
+        ba = bytearray(b"hello")
+        mv = ba.__buffer__(0)
+        self.assertEqual(mv.tobytes(), b"hello")
+        ba.__release_buffer__(mv)
+
+
 if __name__ == "__main__":
     unittest.main()
