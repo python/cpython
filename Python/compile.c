@@ -7975,8 +7975,8 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
 #undef MAYBE_PUSH
 
 static int
-add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
-                                          struct compiler *c)
+add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
+                                                struct compiler *c)
 {
     basicblock **stack = make_cfg_traversal_stack(entryblock);
     if (stack == NULL) {
@@ -8639,7 +8639,7 @@ assemble(struct compiler *c, int addNone)
     }
     nlocalsplus -= numdropped;
 
-    /** Desugaring **/
+    /** Map labels to targets and mark exception handlers **/
     if (translate_jump_labels_to_targets(g->g_entryblock)) {
         goto error;
     }
@@ -8658,7 +8658,7 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
-    if (add_checks_for_loads_of_unknown_variables(g->g_entryblock, c) < 0) {
+    if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
         goto error;
     }
 
@@ -8669,11 +8669,11 @@ assemble(struct compiler *c, int addNone)
     propagate_line_numbers(g->g_entryblock);
     guarantee_lineno_for_exits(g->g_entryblock, c->u->u_firstlineno);
 
-    /** Assembly **/
     if (push_cold_blocks_to_end(g, code_flags) < 0) {
         goto error;
     }
 
+    /** Assembly **/
     int maxdepth = stackdepth(g->g_entryblock, code_flags);
     if (maxdepth < 0) {
         goto error;
