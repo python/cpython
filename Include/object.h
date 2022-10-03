@@ -576,14 +576,14 @@ static inline void Py_INCREF(PyObject *op)
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
 #if SIZEOF_VOID_P > 4
-    // Portable saturated add, branching on the carry flag
+    // Portable saturated add, branching on the carry flag and set low bits
     PY_UINT32_T new_refcnt;
     PY_UINT32_T cur_refcnt = _Py_CAST(PY_UINT32_T, op->ob_refcnt);
     new_refcnt = cur_refcnt + 1;
     if (new_refcnt < cur_refcnt) {
         return;
     }
-    op->ob_refcnt = new_refcnt;
+    memcpy(&op->ob_refcnt, &new_refcnt, sizeof(new_refcnt));
 #else
     // Explicitly check immortality against the immortal value
     if (_Py_IsImmortal(op)) {
