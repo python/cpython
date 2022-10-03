@@ -1,0 +1,1 @@
+Enable using IDLE's module browser with .pyw files.

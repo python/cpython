@@ -206,7 +206,7 @@ headers.
 
    The ``decoded`` value of the header will have all encoded words decoded to
    unicode.  :class:`~encodings.idna` encoded domain names are also decoded to
-   unicode.  The ``decoded`` value is set by :attr:`~str.join`\ ing the
+   unicode.  The ``decoded`` value is set by :ref:`joining <meth-str-join>` the
    :class:`str` value of the elements of the ``groups`` attribute with ``',
    '``.
 
@@ -289,7 +289,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     A :class:`ParameterizedMIMEHeader` class that handles the
     :mailheader:`Content-Disposition` header.
 
-    .. attribute:: content-disposition
+    .. attribute:: content_disposition
 
        ``inline`` and ``attachment`` are the only valid values in common use.
 

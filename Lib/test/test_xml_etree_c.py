@@ -2,12 +2,15 @@
 import io
 import struct
 from test import support
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 import types
 import unittest
 
 cET = import_fresh_module('xml.etree.ElementTree',
                           fresh=['_elementtree'])
+cET_alias = import_fresh_module('xml.etree.cElementTree',
+                                fresh=['_elementtree', 'xml.etree'],
+                                deprecated=True)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
@@ -166,6 +169,26 @@ class MiscTests(unittest.TestCase):
         del parser
         support.gc_collect()
 
+    def test_dict_disappearing_during_get_item(self):
+        # test fix for seg fault reported in issue 27946
+        class X:
+            def __hash__(self):
+                e.attrib = {} # this frees e->extra->attrib
+                [{i: i} for i in range(1000)] # exhaust the dict keys cache
+                return 13
+
+        e = cET.Element("elem", {1: 2})
+        r = e.get(X())
+        self.assertIsNone(r)
+
+
+@unittest.skipUnless(cET, 'requires _elementtree')
+class TestAliasWorking(unittest.TestCase):
+    # Test that the cET alias module is alive
+    def test_alias_working(self):
+        e = cET_alias.Element('foo')
+        self.assertEqual(e.tag, 'foo')
+
 
 @unittest.skipUnless(cET, 'requires _elementtree')
 @support.cpython_only
@@ -174,6 +197,9 @@ class TestAcceleratorImported(unittest.TestCase):
     def test_correct_import_cET(self):
         # SubElement is a function so it retains _elementtree as its module.
         self.assertEqual(cET.SubElement.__module__, '_elementtree')
+
+    def test_correct_import_cET_alias(self):
+        self.assertEqual(cET_alias.SubElement.__module__, '_elementtree')
 
     def test_parser_comes_from_C(self):
         # The type of methods defined in Python code is types.FunctionType,
@@ -214,6 +240,7 @@ def test_main():
     # Run the tests specific to the C implementation
     support.run_unittest(
         MiscTests,
+        TestAliasWorking,
         TestAcceleratorImported,
         SizeofTest,
         )

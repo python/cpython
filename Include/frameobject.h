@@ -10,7 +10,7 @@ extern "C" {
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_FRAMEOBJECT_H
-#  include  "cpython/frameobject.h"
+#  include "cpython/frameobject.h"
 #  undef Py_CPYTHON_FRAMEOBJECT_H
 #endif
 

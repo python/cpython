@@ -2,21 +2,20 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "pycore_initconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pyhash.h"
+#include "pycore_import.h"        // _PyImport_BootstrapImp()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
+#include "pycore_namespace.h"     // _PyNamespace_Type
+#include "pycore_pyerrors.h"      // _PyErr_SetString()
+#include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
-#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_sysmodule.h"
-#include "errcode.h"
-#include "marshal.h"
-#include "code.h"
-#include "importdl.h"
-#include "pydtrace.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "marshal.h"              // PyMarshal_ReadObjectFromString()
+#include "importdl.h"             // _PyImport_DynLoadFiletab
+#include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
+#include <stdbool.h>              // bool
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -24,8 +23,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define CACHEDIR "__pycache__"
 
 /* Forward references */
 static PyObject *import_add_module(PyThreadState *tstate, PyObject *name);
@@ -39,9 +36,6 @@ extern struct _inittab _PyImport_Inittab[];
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 static struct _inittab *inittab_copy = NULL;
 
-_Py_IDENTIFIER(__path__);
-_Py_IDENTIFIER(__spec__);
-
 /*[clinic input]
 module _imp
 [clinic start generated code]*/
@@ -52,46 +46,9 @@ module _imp
 /* Initialize things */
 
 PyStatus
-_PyImportHooks_Init(PyThreadState *tstate)
-{
-    PyObject *v, *path_hooks = NULL;
-    int err = 0;
-
-    /* adding sys.path_hooks and sys.path_importer_cache */
-    v = PyList_New(0);
-    if (v == NULL)
-        goto error;
-    err = PySys_SetObject("meta_path", v);
-    Py_DECREF(v);
-    if (err)
-        goto error;
-    v = PyDict_New();
-    if (v == NULL)
-        goto error;
-    err = PySys_SetObject("path_importer_cache", v);
-    Py_DECREF(v);
-    if (err)
-        goto error;
-    path_hooks = PyList_New(0);
-    if (path_hooks == NULL)
-        goto error;
-    err = PySys_SetObject("path_hooks", path_hooks);
-    if (err) {
-        goto error;
-    }
-    Py_DECREF(path_hooks);
-    return _PyStatus_OK();
-
-  error:
-    _PyErr_Print(tstate);
-    return _PyStatus_ERR("initializing sys.meta_path, sys.path_hooks, "
-                        "or path_importer_cache failed");
-}
-
-PyStatus
 _PyImportZip_Init(PyThreadState *tstate)
 {
-    PyObject *path_hooks, *zipimport;
+    PyObject *path_hooks;
     int err = 0;
 
     path_hooks = PySys_GetObject("path_hooks");
@@ -106,34 +63,22 @@ _PyImportZip_Init(PyThreadState *tstate)
         PySys_WriteStderr("# installing zipimport hook\n");
     }
 
-    zipimport = PyImport_ImportModule("zipimport");
-    if (zipimport == NULL) {
-        _PyErr_Clear(tstate); /* No zip import module -- okay */
+    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
+    if (zipimporter == NULL) {
+        _PyErr_Clear(tstate); /* No zipimporter object -- okay */
         if (verbose) {
-            PySys_WriteStderr("# can't import zipimport\n");
+            PySys_WriteStderr("# can't import zipimport.zipimporter\n");
         }
     }
     else {
-        _Py_IDENTIFIER(zipimporter);
-        PyObject *zipimporter = _PyObject_GetAttrId(zipimport,
-                                                    &PyId_zipimporter);
-        Py_DECREF(zipimport);
-        if (zipimporter == NULL) {
-            _PyErr_Clear(tstate); /* No zipimporter object -- okay */
-            if (verbose) {
-                PySys_WriteStderr("# can't import zipimport.zipimporter\n");
-            }
+        /* sys.path_hooks.insert(0, zipimporter) */
+        err = PyList_Insert(path_hooks, 0, zipimporter);
+        Py_DECREF(zipimporter);
+        if (err < 0) {
+            goto error;
         }
-        else {
-            /* sys.path_hooks.insert(0, zipimporter) */
-            err = PyList_Insert(path_hooks, 0, zipimporter);
-            Py_DECREF(zipimporter);
-            if (err < 0) {
-                goto error;
-            }
-            if (verbose) {
-                PySys_WriteStderr("# installed zipimport hook\n");
-            }
+        if (verbose) {
+            PySys_WriteStderr("# installed zipimport hook\n");
         }
     }
 
@@ -293,6 +238,9 @@ _PyImport_Fini2(void)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    // Reset PyImport_Inittab
+    PyImport_Inittab = _PyImport_Inittab;
+
     /* Free memory allocated by PyImport_ExtendInittab() */
     PyMem_RawFree(inittab_copy);
     inittab_copy = NULL;
@@ -325,7 +273,7 @@ _PyImport_IsInitialized(PyInterpreterState *interp)
 }
 
 PyObject *
-_PyImport_GetModuleId(struct _Py_Identifier *nameid)
+_PyImport_GetModuleId(_Py_Identifier *nameid)
 {
     PyObject *name = _PyUnicode_FromId(nameid); /* borrowed */
     if (name == NULL) {
@@ -337,16 +285,16 @@ _PyImport_GetModuleId(struct _Py_Identifier *nameid)
 int
 _PyImport_SetModule(PyObject *name, PyObject *m)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *modules = tstate->interp->modules;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *modules = interp->modules;
     return PyObject_SetItem(modules, name, m);
 }
 
 int
 _PyImport_SetModuleString(const char *name, PyObject *m)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *modules = tstate->interp->modules;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *modules = interp->modules;
     return PyMapping_SetItemString(modules, name, m);
 }
 
@@ -378,258 +326,28 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 
 
 static int
-import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
+import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *name)
 {
-    PyInterpreterState *interp = tstate->interp;
     PyObject *spec;
-
-    _Py_IDENTIFIER(_lock_unlock_module);
 
     /* Optimization: only call _bootstrap._lock_unlock_module() if
        __spec__._initializing is true.
        NOTE: because of this, initializing must be set *before*
        stuffing the new module in sys.modules.
     */
-    spec = _PyObject_GetAttrId(mod, &PyId___spec__);
+    spec = PyObject_GetAttr(mod, &_Py_ID(__spec__));
     int busy = _PyModuleSpec_IsInitializing(spec);
     Py_XDECREF(spec);
     if (busy) {
         /* Wait until module is done importing. */
-        PyObject *value = _PyObject_CallMethodIdOneArg(
-            interp->importlib, &PyId__lock_unlock_module, name);
+        PyObject *value = _PyObject_CallMethodOneArg(
+            interp->importlib, &_Py_ID(_lock_unlock_module), name);
         if (value == NULL) {
             return -1;
         }
         Py_DECREF(value);
     }
     return 0;
-}
-
-
-/* List of names to clear in sys */
-static const char * const sys_deletes[] = {
-    "path", "argv", "ps1", "ps2",
-    "last_type", "last_value", "last_traceback",
-    "path_hooks", "path_importer_cache", "meta_path",
-    "__interactivehook__",
-    NULL
-};
-
-static const char * const sys_files[] = {
-    "stdin", "__stdin__",
-    "stdout", "__stdout__",
-    "stderr", "__stderr__",
-    NULL
-};
-
-/* Un-initialize things, as good as we can */
-
-void
-_PyImport_Cleanup(PyThreadState *tstate)
-{
-    PyInterpreterState *interp = tstate->interp;
-    PyObject *modules = interp->modules;
-    if (modules == NULL) {
-        /* Already done */
-        return;
-    }
-
-    /* Delete some special variables first.  These are common
-       places where user values hide and people complain when their
-       destructors fail.  Since the modules containing them are
-       deleted *last* of all, they would come too late in the normal
-       destruction order.  Sigh. */
-
-    /* XXX Perhaps these precautions are obsolete. Who knows? */
-
-    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
-    if (verbose) {
-        PySys_WriteStderr("# clear builtins._\n");
-    }
-    if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
-        PyErr_WriteUnraisable(NULL);
-    }
-
-    const char * const *p;
-    for (p = sys_deletes; *p != NULL; p++) {
-        if (verbose) {
-            PySys_WriteStderr("# clear sys.%s\n", *p);
-        }
-        if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
-            PyErr_WriteUnraisable(NULL);
-        }
-    }
-    for (p = sys_files; *p != NULL; p+=2) {
-        if (verbose) {
-            PySys_WriteStderr("# restore sys.%s\n", *p);
-        }
-        PyObject *value = _PyDict_GetItemStringWithError(interp->sysdict,
-                                                         *(p+1));
-        if (value == NULL) {
-            if (_PyErr_Occurred(tstate)) {
-                PyErr_WriteUnraisable(NULL);
-            }
-            value = Py_None;
-        }
-        if (PyDict_SetItemString(interp->sysdict, *p, value) < 0) {
-            PyErr_WriteUnraisable(NULL);
-        }
-    }
-
-    /* We prepare a list which will receive (name, weakref) tuples of
-       modules when they are removed from sys.modules.  The name is used
-       for diagnosis messages (in verbose mode), while the weakref helps
-       detect those modules which have been held alive. */
-    PyObject *weaklist = PyList_New(0);
-    if (weaklist == NULL) {
-        PyErr_WriteUnraisable(NULL);
-    }
-
-#define STORE_MODULE_WEAKREF(name, mod) \
-    if (weaklist != NULL) { \
-        PyObject *wr = PyWeakref_NewRef(mod, NULL); \
-        if (wr) { \
-            PyObject *tup = PyTuple_Pack(2, name, wr); \
-            if (!tup || PyList_Append(weaklist, tup) < 0) { \
-                PyErr_WriteUnraisable(NULL); \
-            } \
-            Py_XDECREF(tup); \
-            Py_DECREF(wr); \
-        } \
-        else { \
-            PyErr_WriteUnraisable(NULL); \
-        } \
-    }
-#define CLEAR_MODULE(name, mod) \
-    if (PyModule_Check(mod)) { \
-        if (verbose && PyUnicode_Check(name)) { \
-            PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
-        } \
-        STORE_MODULE_WEAKREF(name, mod); \
-        if (PyObject_SetItem(modules, name, Py_None) < 0) { \
-            PyErr_WriteUnraisable(NULL); \
-        } \
-    }
-
-    /* Remove all modules from sys.modules, hoping that garbage collection
-       can reclaim most of them. */
-    if (PyDict_CheckExact(modules)) {
-        Py_ssize_t pos = 0;
-        PyObject *key, *value;
-        while (PyDict_Next(modules, &pos, &key, &value)) {
-            CLEAR_MODULE(key, value);
-        }
-    }
-    else {
-        PyObject *iterator = PyObject_GetIter(modules);
-        if (iterator == NULL) {
-            PyErr_WriteUnraisable(NULL);
-        }
-        else {
-            PyObject *key;
-            while ((key = PyIter_Next(iterator))) {
-                PyObject *value = PyObject_GetItem(modules, key);
-                if (value == NULL) {
-                    PyErr_WriteUnraisable(NULL);
-                    continue;
-                }
-                CLEAR_MODULE(key, value);
-                Py_DECREF(value);
-                Py_DECREF(key);
-            }
-            if (PyErr_Occurred()) {
-                PyErr_WriteUnraisable(NULL);
-            }
-            Py_DECREF(iterator);
-        }
-    }
-
-    /* Clear the modules dict. */
-    if (PyDict_CheckExact(modules)) {
-        PyDict_Clear(modules);
-    }
-    else {
-        _Py_IDENTIFIER(clear);
-        if (_PyObject_CallMethodIdNoArgs(modules, &PyId_clear) == NULL) {
-            PyErr_WriteUnraisable(NULL);
-        }
-    }
-    /* Restore the original builtins dict, to ensure that any
-       user data gets cleared. */
-    PyObject *dict = PyDict_Copy(interp->builtins);
-    if (dict == NULL) {
-        PyErr_WriteUnraisable(NULL);
-    }
-    PyDict_Clear(interp->builtins);
-    if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
-        _PyErr_Clear(tstate);
-    }
-    Py_XDECREF(dict);
-    /* Collect references */
-    _PyGC_CollectNoFail();
-    /* Dump GC stats before it's too late, since it uses the warnings
-       machinery. */
-    _PyGC_DumpShutdownStats(tstate);
-
-    /* Now, if there are any modules left alive, clear their globals to
-       minimize potential leaks.  All C extension modules actually end
-       up here, since they are kept alive in the interpreter state.
-
-       The special treatment of "builtins" here is because even
-       when it's not referenced as a module, its dictionary is
-       referenced by almost every module's __builtins__.  Since
-       deleting a module clears its dictionary (even if there are
-       references left to it), we need to delete the "builtins"
-       module last.  Likewise, we don't delete sys until the very
-       end because it is implicitly referenced (e.g. by print). */
-    if (weaklist != NULL) {
-        Py_ssize_t i;
-        /* Since dict is ordered in CPython 3.6+, modules are saved in
-           importing order.  First clear modules imported later. */
-        for (i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
-            PyObject *tup = PyList_GET_ITEM(weaklist, i);
-            PyObject *name = PyTuple_GET_ITEM(tup, 0);
-            PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
-            if (mod == Py_None)
-                continue;
-            assert(PyModule_Check(mod));
-            dict = PyModule_GetDict(mod);
-            if (dict == interp->builtins || dict == interp->sysdict)
-                continue;
-            Py_INCREF(mod);
-            if (verbose && PyUnicode_Check(name)) {
-                PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
-            }
-            _PyModule_Clear(mod);
-            Py_DECREF(mod);
-        }
-        Py_DECREF(weaklist);
-    }
-
-    /* Next, delete sys and builtins (in that order) */
-    if (verbose) {
-        PySys_FormatStderr("# cleanup[3] wiping sys\n");
-    }
-    _PyModule_ClearDict(interp->sysdict);
-    if (verbose) {
-        PySys_FormatStderr("# cleanup[3] wiping builtins\n");
-    }
-    _PyModule_ClearDict(interp->builtins);
-
-    /* Clear module dict copies stored in the interpreter state */
-    _PyInterpreterState_ClearModules(interp);
-
-    /* Clear and delete the modules directory.  Actual modules will
-       still be there only if imported during the execution of some
-       destructor. */
-    interp->modules = NULL;
-    Py_DECREF(modules);
-
-    /* Once more */
-    _PyGC_CollectNoFail();
-
-#undef CLEAR_MODULE
-#undef STORE_MODULE_WEAKREF
 }
 
 
@@ -672,7 +390,7 @@ PyImport_GetMagicTag(void)
    modules.  A copy of the module's dictionary is stored by calling
    _PyImport_FixupExtensionObject() immediately after the module initialization
    function succeeds.  A copy can be retrieved from there by calling
-   _PyImport_FindExtensionObject().
+   import_find_extension().
 
    Modules which do support multiple initialization set their m_size
    field to a non-negative number (indicating the size of the
@@ -704,7 +422,9 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         return -1;
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    // bpo-44050: Extensions and def->m_base.m_copy can be updated
+    // when the extension module doesn't support sub-interpreters.
+    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
         if (def->m_size == -1) {
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
@@ -785,25 +505,29 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         if (mod == NULL)
             return NULL;
         mdict = PyModule_GetDict(mod);
-        if (mdict == NULL)
+        if (mdict == NULL) {
+            Py_DECREF(mod);
             return NULL;
-        if (PyDict_Update(mdict, def->m_base.m_copy))
+        }
+        if (PyDict_Update(mdict, def->m_base.m_copy)) {
+            Py_DECREF(mod);
             return NULL;
+        }
     }
     else {
         if (def->m_base.m_init == NULL)
             return NULL;
-        mod = def->m_base.m_init();
+        mod = _PyImport_InitFunc_TrampolineCall(def->m_base.m_init);
         if (mod == NULL)
             return NULL;
         if (PyObject_SetItem(modules, name, mod) == -1) {
             Py_DECREF(mod);
             return NULL;
         }
-        Py_DECREF(mod);
     }
     if (_PyState_AddModule(tstate, mod, def) < 0) {
         PyMapping_DelItem(modules, name);
+        Py_DECREF(mod);
         return NULL;
     }
 
@@ -815,31 +539,10 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     return mod;
 }
 
-PyObject *
-_PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    return import_find_extension(tstate, name, filename);
-}
-
-
-PyObject *
-_PyImport_FindBuiltin(PyThreadState *tstate, const char *name)
-{
-    PyObject *res, *nameobj;
-    nameobj = PyUnicode_InternFromString(name);
-    if (nameobj == NULL)
-        return NULL;
-    res = import_find_extension(tstate, nameobj, nameobj);
-    Py_DECREF(nameobj);
-    return res;
-}
 
 /* Get the module object corresponding to a module name.
    First check the modules dictionary if there's one there,
-   if not, create a new one and insert it in the modules dictionary.
-   Because the former action is most common, THIS DOES NOT RETURN A
-   'NEW' REFERENCE! */
+   if not, create a new one and insert it in the modules dictionary. */
 
 static PyObject *
 import_add_module(PyThreadState *tstate, PyObject *name)
@@ -854,6 +557,7 @@ import_add_module(PyThreadState *tstate, PyObject *name)
     PyObject *m;
     if (PyDict_CheckExact(modules)) {
         m = PyDict_GetItemWithError(modules, name);
+        Py_XINCREF(m);
     }
     else {
         m = PyObject_GetItem(modules, name);
@@ -869,6 +573,7 @@ import_add_module(PyThreadState *tstate, PyObject *name)
     if (m != NULL && PyModule_Check(m)) {
         return m;
     }
+    Py_XDECREF(m);
     m = PyModule_NewObject(name);
     if (m == NULL)
         return NULL;
@@ -876,7 +581,6 @@ import_add_module(PyThreadState *tstate, PyObject *name)
         Py_DECREF(m);
         return NULL;
     }
-    Py_DECREF(m); /* Yes, it still exists, in modules! */
 
     return m;
 }
@@ -885,7 +589,17 @@ PyObject *
 PyImport_AddModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return import_add_module(tstate, name);
+    PyObject *mod = import_add_module(tstate, name);
+    if (mod) {
+        PyObject *ref = PyWeakref_NewRef(mod, NULL);
+        Py_DECREF(mod);
+        if (ref == NULL) {
+            return NULL;
+        }
+        mod = PyWeakref_GetObject(ref);
+        Py_DECREF(ref);
+    }
+    return mod; /* borrowed reference */
 }
 
 
@@ -902,7 +616,11 @@ PyImport_AddModule(const char *name)
 }
 
 
-/* Remove name from sys.modules, if it's there. */
+/* Remove name from sys.modules, if it's there.
+ * Can be called with an exception raised.
+ * If fail to remove name a new exception will be chained with the old
+ * exception, otherwise the old exception is preserved.
+ */
 static void
 remove_module(PyThreadState *tstate, PyObject *name)
 {
@@ -910,18 +628,17 @@ remove_module(PyThreadState *tstate, PyObject *name)
     _PyErr_Fetch(tstate, &type, &value, &traceback);
 
     PyObject *modules = tstate->interp->modules;
-    if (!PyMapping_HasKey(modules, name)) {
-        goto out;
+    if (PyDict_CheckExact(modules)) {
+        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
+        Py_XDECREF(mod);
     }
-    if (PyMapping_DelItem(modules, name) < 0) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "deleting key in sys.modules failed");
-        _PyErr_ChainExceptions(type, value, traceback);
-        return;
+    else if (PyMapping_DelItem(modules, name) < 0) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+            _PyErr_Clear(tstate);
+        }
     }
 
-out:
-    _PyErr_Restore(tstate, type, value, traceback);
+    _PyErr_ChainExceptions(type, value, traceback);
 }
 
 
@@ -976,7 +693,6 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
     }
     else if (cpathobj != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
             Py_FatalError("no current interpreter");
@@ -985,8 +701,8 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         external= PyObject_GetAttrString(interp->importlib,
                                          "_bootstrap_external");
         if (external != NULL) {
-            pathobj = _PyObject_CallMethodIdOneArg(
-                external, &PyId__get_sourcefile, cpathobj);
+            pathobj = _PyObject_CallMethodOneArg(
+                external, &_Py_ID(_get_sourcefile), cpathobj);
             Py_DECREF(external);
         }
         if (pathobj == NULL)
@@ -1006,8 +722,7 @@ error:
 static PyObject *
 module_dict_for_exec(PyThreadState *tstate, PyObject *name)
 {
-    _Py_IDENTIFIER(__builtins__);
-    PyObject *m, *d = NULL;
+    PyObject *m, *d;
 
     m = import_add_module(tstate, name);
     if (m == NULL)
@@ -1015,17 +730,19 @@ module_dict_for_exec(PyThreadState *tstate, PyObject *name)
     /* If the module is being reloaded, we get the old module back
        and re-use its dict to exec the new code. */
     d = PyModule_GetDict(m);
-    if (_PyDict_GetItemIdWithError(d, &PyId___builtins__) == NULL) {
-        if (_PyErr_Occurred(tstate) ||
-            _PyDict_SetItemId(d, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
-        {
-            remove_module(tstate, name);
-            return NULL;
-        }
+    int r = PyDict_Contains(d, &_Py_ID(__builtins__));
+    if (r == 0) {
+        r = PyDict_SetItem(d, &_Py_ID(__builtins__), PyEval_GetBuiltins());
+    }
+    if (r < 0) {
+        remove_module(tstate, name);
+        Py_DECREF(m);
+        return NULL;
     }
 
-    return d;  /* Return a borrowed reference. */
+    Py_INCREF(d);
+    Py_DECREF(m);
+    return d;
 }
 
 static PyObject *
@@ -1057,7 +774,6 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *d, *external, *res;
-    _Py_IDENTIFIER(_fix_up_module);
 
     d = module_dict_for_exec(tstate, name);
     if (d == NULL) {
@@ -1069,16 +785,18 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
     }
     external = PyObject_GetAttrString(tstate->interp->importlib,
                                       "_bootstrap_external");
-    if (external == NULL)
+    if (external == NULL) {
+        Py_DECREF(d);
         return NULL;
-    res = _PyObject_CallMethodIdObjArgs(external,
-                                        &PyId__fix_up_module,
-                                        d, name, pathname, cpathname, NULL);
+    }
+    res = PyObject_CallMethodObjArgs(external, &_Py_ID(_fix_up_module),
+                                     d, name, pathname, cpathname, NULL);
     Py_DECREF(external);
     if (res != NULL) {
         Py_DECREF(res);
         res = exec_code_in_module(tstate, name, d, co);
     }
+    Py_DECREF(d);
     return res;
 }
 
@@ -1144,10 +862,6 @@ _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
 }
 
 
-/* Forward */
-static const struct _frozen * find_frozen(PyObject *);
-
-
 /* Helper to test for built-in module */
 
 static int
@@ -1172,8 +886,7 @@ is_builtin(PyObject *name)
    that can handle the path item. Return None if no hook could;
    this tells our caller that the path based finder could not find
    a finder for this path item. Cache the result in
-   path_importer_cache.
-   Returns a borrowed reference. */
+   path_importer_cache. */
 
 static PyObject *
 get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
@@ -1191,8 +904,10 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
         return NULL; /* Shouldn't happen */
 
     importer = PyDict_GetItemWithError(path_importer_cache, p);
-    if (importer != NULL || _PyErr_Occurred(tstate))
+    if (importer != NULL || _PyErr_Occurred(tstate)) {
+        Py_XINCREF(importer);
         return importer;
+    }
 
     /* set path_importer_cache[p] to None to avoid recursion */
     if (PyDict_SetItem(path_importer_cache, p, Py_None) != 0)
@@ -1212,13 +927,11 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
         _PyErr_Clear(tstate);
     }
     if (importer == NULL) {
-        return Py_None;
+        Py_RETURN_NONE;
     }
-    if (importer != NULL) {
-        int err = PyDict_SetItem(path_importer_cache, p, importer);
+    if (PyDict_SetItem(path_importer_cache, p, importer) < 0) {
         Py_DECREF(importer);
-        if (err != 0)
-            return NULL;
+        return NULL;
     }
     return importer;
 }
@@ -1227,17 +940,66 @@ PyObject *
 PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *importer=NULL, *path_importer_cache=NULL, *path_hooks=NULL;
-
-    path_importer_cache = PySys_GetObject("path_importer_cache");
-    path_hooks = PySys_GetObject("path_hooks");
-    if (path_importer_cache != NULL && path_hooks != NULL) {
-        importer = get_path_importer(tstate, path_importer_cache,
-                                     path_hooks, path);
+    PyObject *path_importer_cache = PySys_GetObject("path_importer_cache");
+    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    if (path_importer_cache == NULL || path_hooks == NULL) {
+        return NULL;
     }
-    Py_XINCREF(importer); /* get_path_importer returns a borrowed reference */
-    return importer;
+    return get_path_importer(tstate, path_importer_cache, path_hooks, path);
 }
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+#include <emscripten.h>
+EM_JS(PyObject*, _PyImport_InitFunc_TrampolineCall, (PyModInitFunction func), {
+    return wasmTable.get(func)();
+});
+#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
+
+static PyObject*
+create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
+{
+    PyObject *mod = import_find_extension(tstate, name, name);
+    if (mod || _PyErr_Occurred(tstate)) {
+        return mod;
+    }
+
+    PyObject *modules = tstate->interp->modules;
+    for (struct _inittab *p = PyImport_Inittab; p->name != NULL; p++) {
+        if (_PyUnicode_EqualToASCIIString(name, p->name)) {
+            if (p->initfunc == NULL) {
+                /* Cannot re-init internal module ("sys" or "builtins") */
+                return PyImport_AddModuleObject(name);
+            }
+            mod = _PyImport_InitFunc_TrampolineCall(*p->initfunc);
+            if (mod == NULL) {
+                return NULL;
+            }
+
+            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
+                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
+            }
+            else {
+                /* Remember pointer to module init function. */
+                PyModuleDef *def = PyModule_GetDef(mod);
+                if (def == NULL) {
+                    return NULL;
+                }
+
+                def->m_base.m_init = p->initfunc;
+                if (_PyImport_FixupExtensionObject(mod, name, name,
+                                                   modules) < 0) {
+                    return NULL;
+                }
+                return mod;
+            }
+        }
+    }
+
+    // not found
+    Py_RETURN_NONE;
+}
+
+
 
 /*[clinic input]
 _imp.create_builtin
@@ -1253,132 +1015,319 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 /*[clinic end generated code: output=ace7ff22271e6f39 input=37f966f890384e47]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    struct _inittab *p;
-    PyObject *name;
-    const char *namestr;
-    PyObject *mod;
 
-    name = PyObject_GetAttrString(spec, "name");
+    PyObject *name = PyObject_GetAttrString(spec, "name");
     if (name == NULL) {
         return NULL;
     }
 
-    mod = _PyImport_FindExtensionObject(name, name);
-    if (mod || _PyErr_Occurred(tstate)) {
-        Py_DECREF(name);
-        Py_XINCREF(mod);
-        return mod;
-    }
+    PyObject *mod = create_builtin(tstate, name, spec);
+    Py_DECREF(name);
+    return mod;
+}
 
-    namestr = PyUnicode_AsUTF8(name);
-    if (namestr == NULL) {
-        Py_DECREF(name);
-        return NULL;
-    }
 
-    PyObject *modules = tstate->interp->modules;
-    for (p = PyImport_Inittab; p->name != NULL; p++) {
-        PyModuleDef *def;
-        if (_PyUnicode_EqualToASCIIString(name, p->name)) {
-            if (p->initfunc == NULL) {
-                /* Cannot re-init internal module ("sys" or "builtins") */
-                mod = PyImport_AddModule(namestr);
-                Py_DECREF(name);
-                return mod;
+/* Return true if the name is an alias.  In that case, "alias" is set
+   to the original module name.  If it is an alias but the original
+   module isn't known then "alias" is set to NULL while true is returned. */
+static bool
+resolve_module_alias(const char *name, const struct _module_alias *aliases,
+                     const char **alias)
+{
+    const struct _module_alias *entry;
+    for (entry = aliases; ; entry++) {
+        if (entry->name == NULL) {
+            /* It isn't an alias. */
+            return false;
+        }
+        if (strcmp(name, entry->name) == 0) {
+            if (alias != NULL) {
+                *alias = entry->orig;
             }
-            mod = (*p->initfunc)();
-            if (mod == NULL) {
-                Py_DECREF(name);
-                return NULL;
-            }
-            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
-                Py_DECREF(name);
-                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
-            } else {
-                /* Remember pointer to module init function. */
-                def = PyModule_GetDef(mod);
-                if (def == NULL) {
-                    Py_DECREF(name);
-                    return NULL;
-                }
-                def->m_base.m_init = p->initfunc;
-                if (_PyImport_FixupExtensionObject(mod, name, name,
-                                                   modules) < 0) {
-                    Py_DECREF(name);
-                    return NULL;
-                }
-                Py_DECREF(name);
-                return mod;
-            }
+            return true;
         }
     }
-    Py_DECREF(name);
-    Py_RETURN_NONE;
 }
 
 
 /* Frozen modules */
 
+static bool
+use_frozen(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int override = interp->override_frozen_modules;
+    if (override > 0) {
+        return true;
+    }
+    else if (override < 0) {
+        return false;
+    }
+    else {
+        return interp->config.use_frozen_modules;
+    }
+}
+
+static PyObject *
+list_frozen_module_names(void)
+{
+    PyObject *names = PyList_New(0);
+    if (names == NULL) {
+        return NULL;
+    }
+    bool enabled = use_frozen();
+    const struct _frozen *p;
+#define ADD_MODULE(name) \
+    do { \
+        PyObject *nameobj = PyUnicode_FromString(name); \
+        if (nameobj == NULL) { \
+            goto error; \
+        } \
+        int res = PyList_Append(names, nameobj); \
+        Py_DECREF(nameobj); \
+        if (res != 0) { \
+            goto error; \
+        } \
+    } while(0)
+    // We always use the bootstrap modules.
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        ADD_MODULE(p->name);
+    }
+    // Frozen stdlib modules may be disabled.
+    for (p = _PyImport_FrozenStdlib; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        if (enabled) {
+            ADD_MODULE(p->name);
+        }
+    }
+    for (p = _PyImport_FrozenTest; ; p++) {
+        if (p->name == NULL) {
+            break;
+        }
+        if (enabled) {
+            ADD_MODULE(p->name);
+        }
+    }
+#undef ADD_MODULE
+    // Add any custom modules.
+    if (PyImport_FrozenModules != NULL) {
+        for (p = PyImport_FrozenModules; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            PyObject *nameobj = PyUnicode_FromString(p->name);
+            if (nameobj == NULL) {
+                goto error;
+            }
+            int found = PySequence_Contains(names, nameobj);
+            if (found < 0) {
+                Py_DECREF(nameobj);
+                goto error;
+            }
+            else if (found) {
+                Py_DECREF(nameobj);
+            }
+            else {
+                int res = PyList_Append(names, nameobj);
+                Py_DECREF(nameobj);
+                if (res != 0) {
+                    goto error;
+                }
+            }
+        }
+    }
+    return names;
+
+error:
+    Py_DECREF(names);
+    return NULL;
+}
+
+typedef enum {
+    FROZEN_OKAY,
+    FROZEN_BAD_NAME,    // The given module name wasn't valid.
+    FROZEN_NOT_FOUND,   // It wasn't in PyImport_FrozenModules.
+    FROZEN_DISABLED,    // -X frozen_modules=off (and not essential)
+    FROZEN_EXCLUDED,    /* The PyImport_FrozenModules entry has NULL "code"
+                           (module is present but marked as unimportable, stops search). */
+    FROZEN_INVALID,     /* The PyImport_FrozenModules entry is bogus
+                           (eg. does not contain executable code). */
+} frozen_status;
+
+static inline void
+set_frozen_error(frozen_status status, PyObject *modname)
+{
+    const char *err = NULL;
+    switch (status) {
+        case FROZEN_BAD_NAME:
+        case FROZEN_NOT_FOUND:
+            err = "No such frozen object named %R";
+            break;
+        case FROZEN_DISABLED:
+            err = "Frozen modules are disabled and the frozen object named %R is not essential";
+            break;
+        case FROZEN_EXCLUDED:
+            err = "Excluded frozen object named %R";
+            break;
+        case FROZEN_INVALID:
+            err = "Frozen object named %R is invalid";
+            break;
+        case FROZEN_OKAY:
+            // There was no error.
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    if (err != NULL) {
+        PyObject *msg = PyUnicode_FromFormat(err, modname);
+        if (msg == NULL) {
+            PyErr_Clear();
+        }
+        PyErr_SetImportError(msg, modname, NULL);
+        Py_XDECREF(msg);
+    }
+}
+
 static const struct _frozen *
-find_frozen(PyObject *name)
+look_up_frozen(const char *name)
 {
     const struct _frozen *p;
-
-    if (name == NULL)
-        return NULL;
-
-    for (p = PyImport_FrozenModules; ; p++) {
-        if (p->name == NULL)
-            return NULL;
-        if (_PyUnicode_EqualToASCIIString(name, p->name))
+    // We always use the bootstrap modules.
+    for (p = _PyImport_FrozenBootstrap; ; p++) {
+        if (p->name == NULL) {
+            // We hit the end-of-list sentinel value.
             break;
+        }
+        if (strcmp(name, p->name) == 0) {
+            return p;
+        }
     }
-    return p;
+    // Prefer custom modules, if any.  Frozen stdlib modules can be
+    // disabled here by setting "code" to NULL in the array entry.
+    if (PyImport_FrozenModules != NULL) {
+        for (p = PyImport_FrozenModules; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+    }
+    // Frozen stdlib modules may be disabled.
+    if (use_frozen()) {
+        for (p = _PyImport_FrozenStdlib; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+        for (p = _PyImport_FrozenTest; ; p++) {
+            if (p->name == NULL) {
+                break;
+            }
+            if (strcmp(name, p->name) == 0) {
+                return p;
+            }
+        }
+    }
+    return NULL;
 }
 
-static PyObject *
-get_frozen_object(PyObject *name)
-{
-    const struct _frozen *p = find_frozen(name);
-    int size;
+struct frozen_info {
+    PyObject *nameobj;
+    const char *data;
+    PyObject *(*get_code)(void);
+    Py_ssize_t size;
+    bool is_package;
+    bool is_alias;
+    const char *origname;
+};
 
+static frozen_status
+find_frozen(PyObject *nameobj, struct frozen_info *info)
+{
+    if (info != NULL) {
+        memset(info, 0, sizeof(*info));
+    }
+
+    if (nameobj == NULL || nameobj == Py_None) {
+        return FROZEN_BAD_NAME;
+    }
+    const char *name = PyUnicode_AsUTF8(nameobj);
+    if (name == NULL) {
+        // Note that this function previously used
+        // _PyUnicode_EqualToASCIIString().  We clear the error here
+        // (instead of propagating it) to match the earlier behavior
+        // more closely.
+        PyErr_Clear();
+        return FROZEN_BAD_NAME;
+    }
+
+    const struct _frozen *p = look_up_frozen(name);
     if (p == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "No such frozen object named %R",
-                     name);
-        return NULL;
+        return FROZEN_NOT_FOUND;
+    }
+    if (info != NULL) {
+        info->nameobj = nameobj;  // borrowed
+        info->data = (const char *)p->code;
+        info->get_code = p->get_code;
+        info->size = p->size;
+        info->is_package = p->is_package;
+        if (p->size < 0) {
+            // backward compatibility with negative size values
+            info->size = -(p->size);
+            info->is_package = true;
+        }
+        info->origname = name;
+        info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
+                                              &info->origname);
+    }
+    if (p->code == NULL && p->size == 0 && p->get_code != NULL) {
+        /* It is only deepfrozen. */
+        return FROZEN_OKAY;
     }
     if (p->code == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "Excluded frozen object named %R",
-                     name);
-        return NULL;
+        /* It is frozen but marked as un-importable. */
+        return FROZEN_EXCLUDED;
     }
-    size = p->size;
-    if (size < 0)
-        size = -size;
-    return PyMarshal_ReadObjectFromString((const char *)p->code, size);
+    if (p->code[0] == '\0' || p->size == 0) {
+        /* Does not contain executable code. */
+        return FROZEN_INVALID;
+    }
+    return FROZEN_OKAY;
 }
 
 static PyObject *
-is_frozen_package(PyObject *name)
+unmarshal_frozen_code(struct frozen_info *info)
 {
-    const struct _frozen *p = find_frozen(name);
-    int size;
-
-    if (p == NULL) {
-        PyErr_Format(PyExc_ImportError,
-                     "No such frozen object named %R",
-                     name);
+    if (info->get_code) {
+        PyObject *code = info->get_code();
+        assert(code != NULL);
+        return code;
+    }
+    PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
+    if (co == NULL) {
+        /* Does not contain executable code. */
+        set_frozen_error(FROZEN_INVALID, info->nameobj);
         return NULL;
     }
-
-    size = p->size;
-
-    if (size < 0)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    if (!PyCode_Check(co)) {
+        // We stick with TypeError for backward compatibility.
+        PyErr_Format(PyExc_TypeError,
+                     "frozen object %R is not a code object",
+                     info->nameobj);
+        Py_DECREF(co);
+        return NULL;
+    }
+    return co;
 }
 
 
@@ -1391,48 +1340,40 @@ int
 PyImport_ImportFrozenModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    const struct _frozen *p;
-    PyObject *co, *m, *d;
-    int ispackage;
-    int size;
+    PyObject *co, *m, *d = NULL;
+    int err;
 
-    p = find_frozen(name);
-
-    if (p == NULL)
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
         return 0;
-    if (p->code == NULL) {
-        _PyErr_Format(tstate, PyExc_ImportError,
-                      "Excluded frozen object named %R",
-                      name);
+    }
+    else if (status == FROZEN_BAD_NAME) {
+        return 0;
+    }
+    else if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
         return -1;
     }
-    size = p->size;
-    ispackage = (size < 0);
-    if (ispackage)
-        size = -size;
-    co = PyMarshal_ReadObjectFromString((const char *)p->code, size);
-    if (co == NULL)
+    co = unmarshal_frozen_code(&info);
+    if (co == NULL) {
         return -1;
-    if (!PyCode_Check(co)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "frozen object %R is not a code object",
-                      name);
-        goto err_return;
     }
-    if (ispackage) {
+    if (info.is_package) {
         /* Set __path__ to the empty list */
         PyObject *l;
-        int err;
         m = import_add_module(tstate, name);
         if (m == NULL)
             goto err_return;
         d = PyModule_GetDict(m);
         l = PyList_New(0);
         if (l == NULL) {
+            Py_DECREF(m);
             goto err_return;
         }
         err = PyDict_SetItemString(d, "__path__", l);
         Py_DECREF(l);
+        Py_DECREF(m);
         if (err != 0)
             goto err_return;
     }
@@ -1444,11 +1385,30 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     if (m == NULL) {
         goto err_return;
     }
-    Py_DECREF(co);
     Py_DECREF(m);
+    /* Set __origname__ (consumed in FrozenImporter._setup_module()). */
+    PyObject *origname;
+    if (info.origname) {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            goto err_return;
+        }
+    }
+    else {
+        Py_INCREF(Py_None);
+        origname = Py_None;
+    }
+    err = PyDict_SetItemString(d, "__origname__", origname);
+    Py_DECREF(origname);
+    if (err != 0) {
+        goto err_return;
+    }
+    Py_DECREF(d);
+    Py_DECREF(co);
     return 1;
 
 err_return:
+    Py_XDECREF(d);
     Py_DECREF(co);
     return -1;
 }
@@ -1566,9 +1526,6 @@ done:
 static PyObject *
 resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level)
 {
-    _Py_IDENTIFIER(__package__);
-    _Py_IDENTIFIER(__name__);
-    _Py_IDENTIFIER(parent);
     PyObject *abs_name;
     PyObject *package = NULL;
     PyObject *spec;
@@ -1584,14 +1541,14 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
         goto error;
     }
-    package = _PyDict_GetItemIdWithError(globals, &PyId___package__);
+    package = PyDict_GetItemWithError(globals, &_Py_ID(__package__));
     if (package == Py_None) {
         package = NULL;
     }
     else if (package == NULL && _PyErr_Occurred(tstate)) {
         goto error;
     }
-    spec = _PyDict_GetItemIdWithError(globals, &PyId___spec__);
+    spec = PyDict_GetItemWithError(globals, &_Py_ID(__spec__));
     if (spec == NULL && _PyErr_Occurred(tstate)) {
         goto error;
     }
@@ -1605,7 +1562,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         }
         else if (spec != NULL && spec != Py_None) {
             int equal;
-            PyObject *parent = _PyObject_GetAttrId(spec, &PyId_parent);
+            PyObject *parent = PyObject_GetAttr(spec, &_Py_ID(parent));
             if (parent == NULL) {
                 goto error;
             }
@@ -1624,7 +1581,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         }
     }
     else if (spec != NULL && spec != Py_None) {
-        package = _PyObject_GetAttrId(spec, &PyId_parent);
+        package = PyObject_GetAttr(spec, &_Py_ID(parent));
         if (package == NULL) {
             goto error;
         }
@@ -1641,7 +1598,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        package = _PyDict_GetItemIdWithError(globals, &PyId___name__);
+        package = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
         if (package == NULL) {
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_SetString(tstate, PyExc_KeyError,
@@ -1657,10 +1614,14 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        if (_PyDict_GetItemIdWithError(globals, &PyId___path__) == NULL) {
+        int haspath = PyDict_Contains(globals, &_Py_ID(__path__));
+        if (haspath < 0) {
+            goto error;
+        }
+        if (!haspath) {
             Py_ssize_t dot;
 
-            if (_PyErr_Occurred(tstate) || PyUnicode_READY(package) < 0) {
+            if (PyUnicode_READY(package) < 0) {
                 goto error;
             }
 
@@ -1721,7 +1682,6 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
 static PyObject *
 import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 {
-    _Py_IDENTIFIER(_find_and_load);
     PyObject *mod = NULL;
     PyInterpreterState *interp = tstate->interp;
     int import_time = _PyInterpreterState_GetConfig(interp)->import_time;
@@ -1762,9 +1722,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
         PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
 
-    mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
-                                        &PyId__find_and_load, abs_name,
-                                        interp->import_func, NULL);
+    mod = PyObject_CallMethodObjArgs(interp->importlib, &_Py_ID(_find_and_load),
+                                     abs_name, interp->import_func, NULL);
 
     if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
         PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
@@ -1793,7 +1752,7 @@ PyImport_GetModule(PyObject *name)
 
     mod = import_get_module(tstate, name);
     if (mod != NULL && mod != Py_None) {
-        if (import_ensure_initialized(tstate, mod, name) < 0) {
+        if (import_ensure_initialized(tstate->interp, mod, name) < 0) {
             Py_DECREF(mod);
             remove_importlib_frames(tstate);
             return NULL;
@@ -1808,7 +1767,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  int level)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _Py_IDENTIFIER(_handle_fromlist);
     PyObject *abs_name = NULL;
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
@@ -1857,7 +1815,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     if (mod != NULL && mod != Py_None) {
-        if (import_ensure_initialized(tstate, mod, name) < 0) {
+        if (import_ensure_initialized(tstate->interp, mod, abs_name) < 0) {
             goto error;
         }
     }
@@ -1929,13 +1887,13 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
     else {
         PyObject *path;
-        if (_PyObject_LookupAttrId(mod, &PyId___path__, &path) < 0) {
+        if (_PyObject_LookupAttr(mod, &_Py_ID(__path__), &path) < 0) {
             goto error;
         }
         if (path) {
             Py_DECREF(path);
-            final_mod = _PyObject_CallMethodIdObjArgs(
-                        interp->importlib, &PyId__handle_fromlist,
+            final_mod = PyObject_CallMethodObjArgs(
+                        interp->importlib, &_Py_ID(_handle_fromlist),
                         mod, fromlist, interp->import_func, NULL);
         }
         else {
@@ -1975,10 +1933,8 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
-    _Py_IDENTIFIER(importlib);
-    _Py_IDENTIFIER(reload);
     PyObject *reloaded_module = NULL;
-    PyObject *importlib = _PyImport_GetModuleId(&PyId_importlib);
+    PyObject *importlib = PyImport_GetModule(&_Py_ID(importlib));
     if (importlib == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -1990,7 +1946,7 @@ PyImport_ReloadModule(PyObject *m)
         }
     }
 
-    reloaded_module = _PyObject_CallMethodIdOneArg(importlib, &PyId_reload, m);
+    reloaded_module = PyObject_CallMethodOneArg(importlib, &_Py_ID(reload), m);
     Py_DECREF(importlib);
     return reloaded_module;
 }
@@ -2009,32 +1965,21 @@ PyObject *
 PyImport_Import(PyObject *module_name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    static PyObject *silly_list = NULL;
-    static PyObject *builtins_str = NULL;
-    static PyObject *import_str = NULL;
     PyObject *globals = NULL;
     PyObject *import = NULL;
     PyObject *builtins = NULL;
     PyObject *r = NULL;
 
-    /* Initialize constant string objects */
-    if (silly_list == NULL) {
-        import_str = PyUnicode_InternFromString("__import__");
-        if (import_str == NULL)
-            return NULL;
-        builtins_str = PyUnicode_InternFromString("__builtins__");
-        if (builtins_str == NULL)
-            return NULL;
-        silly_list = PyList_New(0);
-        if (silly_list == NULL)
-            return NULL;
+    PyObject *from_list = PyList_New(0);
+    if (from_list == NULL) {
+        goto err;
     }
 
     /* Get the builtins from current globals */
     globals = PyEval_GetGlobals();
     if (globals != NULL) {
         Py_INCREF(globals);
-        builtins = PyObject_GetItem(globals, builtins_str);
+        builtins = PyObject_GetItem(globals, &_Py_ID(__builtins__));
         if (builtins == NULL)
             goto err;
     }
@@ -2042,22 +1987,23 @@ PyImport_Import(PyObject *module_name)
         /* No globals -- use standard builtins, and fake globals */
         builtins = PyImport_ImportModuleLevel("builtins",
                                               NULL, NULL, NULL, 0);
-        if (builtins == NULL)
-            return NULL;
-        globals = Py_BuildValue("{OO}", builtins_str, builtins);
+        if (builtins == NULL) {
+            goto err;
+        }
+        globals = Py_BuildValue("{OO}", &_Py_ID(__builtins__), builtins);
         if (globals == NULL)
             goto err;
     }
 
     /* Get the __import__ function from the builtins */
     if (PyDict_Check(builtins)) {
-        import = PyObject_GetItem(builtins, import_str);
+        import = PyObject_GetItem(builtins, &_Py_ID(__import__));
         if (import == NULL) {
-            _PyErr_SetObject(tstate, PyExc_KeyError, import_str);
+            _PyErr_SetObject(tstate, PyExc_KeyError, &_Py_ID(__import__));
         }
     }
     else
-        import = PyObject_GetAttr(builtins, import_str);
+        import = PyObject_GetAttr(builtins, &_Py_ID(__import__));
     if (import == NULL)
         goto err;
 
@@ -2065,7 +2011,7 @@ PyImport_Import(PyObject *module_name)
        Always use absolute import here.
        Calling for side-effect of import. */
     r = PyObject_CallFunction(import, "OOOOi", module_name, globals,
-                              globals, silly_list, 0, NULL);
+                              globals, from_list, 0, NULL);
     if (r == NULL)
         goto err;
     Py_DECREF(r);
@@ -2079,6 +2025,7 @@ PyImport_Import(PyObject *module_name)
     Py_XDECREF(globals);
     Py_XDECREF(builtins);
     Py_XDECREF(import);
+    Py_XDECREF(from_list);
 
     return r;
 }
@@ -2135,7 +2082,6 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int ret;
-    PyObject *m;
 
     ret = PyImport_ImportFrozenModuleObject(name);
     if (ret < 0)
@@ -2143,25 +2089,120 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
     if (ret == 0) {
         Py_RETURN_NONE;
     }
-    m = import_add_module(tstate, name);
-    Py_XINCREF(m);
-    return m;
+    return import_add_module(tstate, name);
+}
+
+/*[clinic input]
+_imp.find_frozen
+
+    name: unicode
+    /
+    *
+    withdata: bool = False
+
+Return info about the corresponding frozen module (if there is one) or None.
+
+The returned info (a 2-tuple):
+
+ * data         the raw marshalled bytes
+ * is_package   whether or not it is a package
+ * origname     the originally frozen module's name, or None if not
+                a stdlib module (this will usually be the same as
+                the module's current name)
+[clinic start generated code]*/
+
+static PyObject *
+_imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
+/*[clinic end generated code: output=8c1c3c7f925397a5 input=22a8847c201542fd]*/
+{
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status == FROZEN_NOT_FOUND || status == FROZEN_DISABLED) {
+        Py_RETURN_NONE;
+    }
+    else if (status == FROZEN_BAD_NAME) {
+        Py_RETURN_NONE;
+    }
+    else if (status != FROZEN_OKAY) {
+        set_frozen_error(status, name);
+        return NULL;
+    }
+
+    PyObject *data = NULL;
+    if (withdata) {
+        data = PyMemoryView_FromMemory((char *)info.data, info.size, PyBUF_READ);
+        if (data == NULL) {
+            return NULL;
+        }
+    }
+
+    PyObject *origname = NULL;
+    if (info.origname != NULL && info.origname[0] != '\0') {
+        origname = PyUnicode_FromString(info.origname);
+        if (origname == NULL) {
+            Py_DECREF(data);
+            return NULL;
+        }
+    }
+
+    PyObject *result = PyTuple_Pack(3, data ? data : Py_None,
+                                    info.is_package ? Py_True : Py_False,
+                                    origname ? origname : Py_None);
+    Py_XDECREF(origname);
+    Py_XDECREF(data);
+    return result;
 }
 
 /*[clinic input]
 _imp.get_frozen_object
 
     name: unicode
+    data as dataobj: object = None
     /
 
 Create a code object for a frozen module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_get_frozen_object_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=2568cc5b7aa0da63 input=ed689bc05358fdbd]*/
+_imp_get_frozen_object_impl(PyObject *module, PyObject *name,
+                            PyObject *dataobj)
+/*[clinic end generated code: output=54368a673a35e745 input=034bdb88f6460b7b]*/
 {
-    return get_frozen_object(name);
+    struct frozen_info info = {0};
+    Py_buffer buf = {0};
+    if (PyObject_CheckBuffer(dataobj)) {
+        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
+            return NULL;
+        }
+        info.data = (const char *)buf.buf;
+        info.size = buf.len;
+    }
+    else if (dataobj != Py_None) {
+        _PyArg_BadArgument("get_frozen_object", "argument 2", "bytes", dataobj);
+        return NULL;
+    }
+    else {
+        frozen_status status = find_frozen(name, &info);
+        if (status != FROZEN_OKAY) {
+            set_frozen_error(status, name);
+            return NULL;
+        }
+    }
+
+    if (info.nameobj == NULL) {
+        info.nameobj = name;
+    }
+    if (info.size == 0 && info.get_code == NULL) {
+        /* Does not contain executable code. */
+        set_frozen_error(FROZEN_INVALID, name);
+        return NULL;
+    }
+
+    PyObject *codeobj = unmarshal_frozen_code(&info);
+    if (dataobj != Py_None) {
+        PyBuffer_Release(&buf);
+    }
+    return codeobj;
 }
 
 /*[clinic input]
@@ -2177,7 +2218,13 @@ static PyObject *
 _imp_is_frozen_package_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=e70cbdb45784a1c9 input=81b6cdecd080fbb8]*/
 {
-    return is_frozen_package(name);
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY && status != FROZEN_EXCLUDED) {
+        set_frozen_error(status, name);
+        return NULL;
+    }
+    return PyBool_FromLong(info.is_package);
 }
 
 /*[clinic input]
@@ -2209,10 +2256,46 @@ static PyObject *
 _imp_is_frozen_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=01f408f5ec0f2577 input=7301dbca1897d66b]*/
 {
-    const struct _frozen *p;
+    struct frozen_info info;
+    frozen_status status = find_frozen(name, &info);
+    if (status != FROZEN_OKAY) {
+        Py_RETURN_FALSE;
+    }
+    Py_RETURN_TRUE;
+}
 
-    p = find_frozen(name);
-    return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
+/*[clinic input]
+_imp._frozen_module_names
+
+Returns the list of available frozen modules.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__frozen_module_names_impl(PyObject *module)
+/*[clinic end generated code: output=80609ef6256310a8 input=76237fbfa94460d2]*/
+{
+    return list_frozen_module_names();
+}
+
+/*[clinic input]
+_imp._override_frozen_modules_for_tests
+
+    override: int
+    /
+
+(internal-only) Override PyConfig.use_frozen_modules.
+
+(-1: "off", 1: "on", 0: no override)
+See frozen_modules() in Lib/test/support/import_helper.py.
+[clinic start generated code]*/
+
+static PyObject *
+_imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
+/*[clinic end generated code: output=36d5cb1594160811 input=8f1f95a3ef21aec3]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->override_frozen_modules = override;
+    Py_RETURN_NONE;
 }
 
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
@@ -2269,11 +2352,11 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         return NULL;
     }
 
-    mod = _PyImport_FindExtensionObject(name, path);
+    PyThreadState *tstate = _PyThreadState_GET();
+    mod = import_find_extension(tstate, name, path);
     if (mod != NULL || PyErr_Occurred()) {
         Py_DECREF(name);
         Py_DECREF(path);
-        Py_XINCREF(mod);
         return mod;
     }
 
@@ -2369,12 +2452,15 @@ static PyMethodDef imp_methods[] = {
     _IMP_LOCK_HELD_METHODDEF
     _IMP_ACQUIRE_LOCK_METHODDEF
     _IMP_RELEASE_LOCK_METHODDEF
+    _IMP_FIND_FROZEN_METHODDEF
     _IMP_GET_FROZEN_OBJECT_METHODDEF
     _IMP_IS_FROZEN_PACKAGE_METHODDEF
     _IMP_CREATE_BUILTIN_METHODDEF
     _IMP_INIT_FROZEN_METHODDEF
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
+    _IMP__FROZEN_MODULE_NAMES_METHODDEF
+    _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
@@ -2384,46 +2470,88 @@ static PyMethodDef imp_methods[] = {
 };
 
 
-static struct PyModuleDef impmodule = {
+static int
+imp_module_exec(PyObject *module)
+{
+    const wchar_t *mode = _Py_GetConfig()->check_hash_pycs_mode;
+    PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
+    if (pyc_mode == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "check_hash_based_pycs", pyc_mode) < 0) {
+        Py_DECREF(pyc_mode);
+        return -1;
+    }
+    Py_DECREF(pyc_mode);
+
+    return 0;
+}
+
+
+static PyModuleDef_Slot imp_slots[] = {
+    {Py_mod_exec, imp_module_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef imp_module = {
     PyModuleDef_HEAD_INIT,
-    "_imp",
-    doc_imp,
-    0,
-    imp_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_imp",
+    .m_doc = doc_imp,
+    .m_size = 0,
+    .m_methods = imp_methods,
+    .m_slots = imp_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__imp(void)
 {
-    PyObject *m, *d;
+    return PyModuleDef_Init(&imp_module);
+}
 
-    m = PyModule_Create(&impmodule);
-    if (m == NULL) {
-        goto failure;
-    }
-    d = PyModule_GetDict(m);
-    if (d == NULL) {
-        goto failure;
+
+// Import the _imp extension by calling manually _imp.create_builtin() and
+// _imp.exec_builtin() since importlib is not initialized yet. Initializing
+// importlib requires the _imp module: this function fix the bootstrap issue.
+PyObject*
+_PyImport_BootstrapImp(PyThreadState *tstate)
+{
+    PyObject *name = PyUnicode_FromString("_imp");
+    if (name == NULL) {
+        return NULL;
     }
 
-    const wchar_t *mode = _Py_GetConfig()->check_hash_pycs_mode;
-    PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
-    if (pyc_mode == NULL) {
-        goto failure;
+    // Mock a ModuleSpec object just good enough for PyModule_FromDefAndSpec():
+    // an object with just a name attribute.
+    //
+    // _imp.__spec__ is overridden by importlib._bootstrap._instal() anyway.
+    PyObject *attrs = Py_BuildValue("{sO}", "name", name);
+    if (attrs == NULL) {
+        goto error;
     }
-    if (PyDict_SetItemString(d, "check_hash_based_pycs", pyc_mode) < 0) {
-        Py_DECREF(pyc_mode);
-        goto failure;
+    PyObject *spec = _PyNamespace_New(attrs);
+    Py_DECREF(attrs);
+    if (spec == NULL) {
+        goto error;
     }
-    Py_DECREF(pyc_mode);
 
-    return m;
-  failure:
-    Py_XDECREF(m);
+    // Create the _imp module from its definition.
+    PyObject *mod = create_builtin(tstate, name, spec);
+    Py_CLEAR(name);
+    Py_DECREF(spec);
+    if (mod == NULL) {
+        goto error;
+    }
+    assert(mod != Py_None);  // not found
+
+    // Execute the _imp module: call imp_module_exec().
+    if (exec_builtin_or_dynamic(mod) < 0) {
+        Py_DECREF(mod);
+        goto error;
+    }
+    return mod;
+
+error:
+    Py_XDECREF(name);
     return NULL;
 }
 
@@ -2492,6 +2620,37 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
     newtab[0].initfunc = initfunc;
 
     return PyImport_ExtendInittab(newtab);
+}
+
+
+PyObject *
+_PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
+{
+    PyObject *mod = PyImport_Import(modname);
+    if (mod == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyObject_GetAttr(mod, attrname);
+    Py_DECREF(mod);
+    return result;
+}
+
+PyObject *
+_PyImport_GetModuleAttrString(const char *modname, const char *attrname)
+{
+    PyObject *pmodname = PyUnicode_FromString(modname);
+    if (pmodname == NULL) {
+        return NULL;
+    }
+    PyObject *pattrname = PyUnicode_FromString(attrname);
+    if (pattrname == NULL) {
+        Py_DECREF(pmodname);
+        return NULL;
+    }
+    PyObject *result = _PyImport_GetModuleAttr(pmodname, pattrname);
+    Py_DECREF(pattrname);
+    Py_DECREF(pmodname);
+    return result;
 }
 
 #ifdef __cplusplus

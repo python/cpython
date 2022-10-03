@@ -8,9 +8,10 @@ import unittest
 import socket
 import shutil
 import threading
-from test.support import TESTFN, requires, unlink, bigmemtest
+from test.support import requires, bigmemtest
 from test.support import SHORT_TIMEOUT
 from test.support import socket_helper
+from test.support.os_helper import TESTFN, unlink
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
@@ -155,6 +156,8 @@ class TestFileMethods(LargeFileTest):
 def skip_no_disk_space(path, required):
     def decorator(fun):
         def wrapper(*args, **kwargs):
+            if not hasattr(shutil, "disk_usage"):
+                raise unittest.SkipTest("requires shutil.disk_usage")
             if shutil.disk_usage(os.path.realpath(path)).free < required:
                 hsize = int(required / 1024 / 1024)
                 raise unittest.SkipTest(

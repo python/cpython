@@ -418,7 +418,7 @@ class FormatRegionTest(unittest.TestCase):
 
     code_sample = """\
 # WS line needed for test.
-class C1():
+class C1:
     # Class comment.
     def __init__(self, a, b):
         self.a = a

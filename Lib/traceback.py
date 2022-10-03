@@ -1,9 +1,11 @@
 """Extract, format and print information about Python stack traces."""
 
-import collections
+import collections.abc
 import itertools
 import linecache
 import sys
+import textwrap
+from contextlib import suppress
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -69,7 +71,8 @@ def extract_tb(tb, limit=None):
     trace.  The line is a string with leading and trailing
     whitespace stripped; if the source is not available it is None.
     """
-    return StackSummary.extract(walk_tb(tb), limit=limit)
+    return StackSummary._extract_from_extended_frame_gen(
+        _walk_tb_with_full_positions(tb), limit=limit)
 
 #
 # Exception formatting and output.
@@ -84,7 +87,29 @@ _context_message = (
     "another exception occurred:\n\n")
 
 
-def print_exception(etype, value, tb, limit=None, file=None, chain=True):
+class _Sentinel:
+    def __repr__(self):
+        return "<implicit>"
+
+_sentinel = _Sentinel()
+
+def _parse_value_tb(exc, value, tb):
+    if (value is _sentinel) != (tb is _sentinel):
+        raise ValueError("Both or neither of value and tb must be given")
+    if value is tb is _sentinel:
+        if exc is not None:
+            if isinstance(exc, BaseException):
+                return exc, exc.__traceback__
+
+            raise TypeError(f'Exception expected for value, '
+                            f'{type(exc).__name__} found')
+        else:
+            return None, None
+    return value, tb
+
+
+def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+                    file=None, chain=True):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -95,17 +120,13 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     occurred with a caret on the next line indicating the approximate
     position of the error.
     """
-    # format_exception has ignored etype for some time, and code such as cgitb
-    # passes in bogus values as a result. For compatibility with such code we
-    # ignore it here (rather than in the new TracebackException API).
-    if file is None:
-        file = sys.stderr
-    for line in TracebackException(
-            type(value), value, tb, limit=limit).format(chain=chain):
-        print(line, file=file, end="")
+    value, tb = _parse_value_tb(exc, value, tb)
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    te.print(file=file, chain=chain)
 
 
-def format_exception(etype, value, tb, limit=None, chain=True):
+def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+                     chain=True):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -114,19 +135,15 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
-    # format_exception has ignored etype for some time, and code such as cgitb
-    # passes in bogus values as a result. For compatibility with such code we
-    # ignore it here (rather than in the new TracebackException API).
-    return list(TracebackException(
-        type(value), value, tb, limit=limit).format(chain=chain))
+    value, tb = _parse_value_tb(exc, value, tb)
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    return list(te.format(chain=chain))
 
 
-def format_exception_only(etype, value):
+def format_exception_only(exc, /, value=_sentinel):
     """Format the exception part of a traceback.
 
-    The arguments are the exception type and value such as given by
-    sys.last_type and sys.last_value. The return value is a list of
-    strings, each ending in a newline.
+    The return value is a list of strings, each ending in a newline.
 
     Normally, the list contains a single string; however, for
     SyntaxError exceptions, it contains several lines that (when
@@ -137,24 +154,27 @@ def format_exception_only(etype, value):
     string in the list.
 
     """
-    return list(TracebackException(etype, value, None).format_exception_only())
+    if value is _sentinel:
+        value = exc
+    te = TracebackException(type(value), value, None, compact=True)
+    return list(te.format_exception_only())
 
 
 # -- not official API but folk probably use these two functions.
 
 def _format_final_exc_line(etype, value):
-    valuestr = _some_str(value)
+    valuestr = _safe_string(value, 'exception')
     if value is None or not valuestr:
         line = "%s\n" % etype
     else:
         line = "%s: %s\n" % (etype, valuestr)
     return line
 
-def _some_str(value):
+def _safe_string(value, what, func=str):
     try:
-        return str(value)
+        return func(value)
     except:
-        return '<unprintable %s object>' % type(value).__name__
+        return f'<{what} {func.__name__}() failed>'
 
 # --
 
@@ -225,7 +245,7 @@ def clear_frames(tb):
 
 
 class FrameSummary:
-    """A single frame from a traceback.
+    """Information about a single frame from a traceback.
 
     - :attr:`filename` The filename for the frame.
     - :attr:`lineno` The line within filename for the frame that was
@@ -238,10 +258,12 @@ class FrameSummary:
       mapping the name to the repr() of the variable.
     """
 
-    __slots__ = ('filename', 'lineno', 'name', '_line', 'locals')
+    __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
+                 'name', '_line', 'locals')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
-            locals=None, line=None):
+            locals=None, line=None,
+            end_lineno=None, colno=None, end_colno=None):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -257,7 +279,11 @@ class FrameSummary:
         self._line = line
         if lookup_line:
             self.line
-        self.locals = {k: repr(v) for k, v in locals.items()} if locals else None
+        self.locals = {k: _safe_string(v, 'local', func=repr)
+            for k, v in locals.items()} if locals else None
+        self.end_lineno = end_lineno
+        self.colno = colno
+        self.end_colno = end_colno
 
     def __eq__(self, other):
         if isinstance(other, FrameSummary):
@@ -283,10 +309,18 @@ class FrameSummary:
         return 4
 
     @property
+    def _original_line(self):
+        # Returns the line as-is from the source, without modifying whitespace.
+        self.line
+        return self._line
+
+    @property
     def line(self):
         if self._line is None:
-            self._line = linecache.getline(self.filename, self.lineno).strip()
-        return self._line
+            if self.lineno is None:
+                return None
+            self._line = linecache.getline(self.filename, self.lineno)
+        return self._line.strip()
 
 
 def walk_stack(f):
@@ -296,7 +330,7 @@ def walk_stack(f):
     current stack is used. Usually used with StackSummary.extract.
     """
     if f is None:
-        f = sys._getframe().f_back.f_back
+        f = sys._getframe().f_back.f_back.f_back.f_back
     while f is not None:
         yield f, f.f_lineno
         f = f.f_back
@@ -313,18 +347,39 @@ def walk_tb(tb):
         tb = tb.tb_next
 
 
+def _walk_tb_with_full_positions(tb):
+    # Internal version of walk_tb that yields full code positions including
+    # end line and column information.
+    while tb is not None:
+        positions = _get_code_position(tb.tb_frame.f_code, tb.tb_lasti)
+        # Yield tb_lineno when co_positions does not have a line number to
+        # maintain behavior with walk_tb.
+        if positions[0] is None:
+            yield tb.tb_frame, (tb.tb_lineno, ) + positions[1:]
+        else:
+            yield tb.tb_frame, positions
+        tb = tb.tb_next
+
+
+def _get_code_position(code, instruction_index):
+    if instruction_index < 0:
+        return (None, None, None, None)
+    positions_gen = code.co_positions()
+    return next(itertools.islice(positions_gen, instruction_index // 2, None))
+
+
 _RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
 
 class StackSummary(list):
-    """A stack of frames."""
+    """A list of FrameSummary objects, representing a stack of frames."""
 
     @classmethod
     def extract(klass, frame_gen, *, limit=None, lookup_lines=True,
             capture_locals=False):
         """Create a StackSummary from a traceback or stack object.
 
-        :param frame_gen: A generator that yields (frame, lineno) tuples to
-            include in the stack.
+        :param frame_gen: A generator that yields (frame, lineno) tuples
+            whose summaries are to be included in the stack.
         :param limit: None to include all frames or the number of frames to
             include.
         :param lookup_lines: If True, lookup lines for each frame immediately,
@@ -332,6 +387,21 @@ class StackSummary(list):
         :param capture_locals: If True, the local variables from each frame will
             be captured as object representations into the FrameSummary.
         """
+        def extended_frame_gen():
+            for f, lineno in frame_gen:
+                yield f, (lineno, None, None, None)
+
+        return klass._extract_from_extended_frame_gen(
+            extended_frame_gen(), limit=limit, lookup_lines=lookup_lines,
+            capture_locals=capture_locals)
+
+    @classmethod
+    def _extract_from_extended_frame_gen(klass, frame_gen, *, limit=None,
+            lookup_lines=True, capture_locals=False):
+        # Same as extract but operates on a frame generator that yields
+        # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
+        # Only lineno is required, the remaining fields can be None if the
+        # information is not available.
         if limit is None:
             limit = getattr(sys, 'tracebacklimit', None)
             if limit is not None and limit < 0:
@@ -344,7 +414,7 @@ class StackSummary(list):
 
         result = klass()
         fnames = set()
-        for f, lineno in frame_gen:
+        for f, (lineno, end_lineno, colno, end_colno) in frame_gen:
             co = f.f_code
             filename = co.co_filename
             name = co.co_name
@@ -357,7 +427,8 @@ class StackSummary(list):
             else:
                 f_locals = None
             result.append(FrameSummary(
-                filename, lineno, name, lookup_line=False, locals=f_locals))
+                filename, lineno, name, lookup_line=False, locals=f_locals,
+                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
         for filename in fnames:
             linecache.checkcache(filename)
         # If immediate lookup was desired, trigger lookups now.
@@ -385,6 +456,61 @@ class StackSummary(list):
                 result.append(FrameSummary(filename, lineno, name, line=line))
         return result
 
+    def format_frame_summary(self, frame_summary):
+        """Format the lines for a single FrameSummary.
+
+        Returns a string representing one frame involved in the stack. This
+        gets called for every frame to be printed in the stack summary.
+        """
+        row = []
+        row.append('  File "{}", line {}, in {}\n'.format(
+            frame_summary.filename, frame_summary.lineno, frame_summary.name))
+        if frame_summary.line:
+            stripped_line = frame_summary.line.strip()
+            row.append('    {}\n'.format(stripped_line))
+
+            orig_line_len = len(frame_summary._original_line)
+            frame_line_len = len(frame_summary.line.lstrip())
+            stripped_characters = orig_line_len - frame_line_len
+            if (
+                frame_summary.colno is not None
+                and frame_summary.end_colno is not None
+            ):
+                colno = _byte_offset_to_character_offset(
+                    frame_summary._original_line, frame_summary.colno)
+                end_colno = _byte_offset_to_character_offset(
+                    frame_summary._original_line, frame_summary.end_colno)
+
+                anchors = None
+                if frame_summary.lineno == frame_summary.end_lineno:
+                    with suppress(Exception):
+                        anchors = _extract_caret_anchors_from_line_segment(
+                            frame_summary._original_line[colno - 1:end_colno - 1]
+                        )
+                else:
+                    end_colno = stripped_characters + len(stripped_line)
+
+                # show indicators if primary char doesn't span the frame line
+                if end_colno - colno < len(stripped_line) or (
+                        anchors and anchors.right_start_offset - anchors.left_end_offset > 0):
+                    row.append('    ')
+                    row.append(' ' * (colno - stripped_characters))
+
+                    if anchors:
+                        row.append(anchors.primary_char * (anchors.left_end_offset))
+                        row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
+                        row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
+                    else:
+                        row.append('^' * (end_colno - colno))
+
+                    row.append('\n')
+
+        if frame_summary.locals:
+            for name, value in sorted(frame_summary.locals.items()):
+                row.append('    {name} = {value}\n'.format(name=name, value=value))
+
+        return ''.join(row)
+
     def format(self):
         """Format the stack ready for printing.
 
@@ -402,32 +528,28 @@ class StackSummary(list):
         last_line = None
         last_name = None
         count = 0
-        for frame in self:
-            if (last_file is None or last_file != frame.filename or
-                last_line is None or last_line != frame.lineno or
-                last_name is None or last_name != frame.name):
+        for frame_summary in self:
+            formatted_frame = self.format_frame_summary(frame_summary)
+            if formatted_frame is None:
+                continue
+            if (last_file is None or last_file != frame_summary.filename or
+                last_line is None or last_line != frame_summary.lineno or
+                last_name is None or last_name != frame_summary.name):
                 if count > _RECURSIVE_CUTOFF:
                     count -= _RECURSIVE_CUTOFF
                     result.append(
                         f'  [Previous line repeated {count} more '
                         f'time{"s" if count > 1 else ""}]\n'
                     )
-                last_file = frame.filename
-                last_line = frame.lineno
-                last_name = frame.name
+                last_file = frame_summary.filename
+                last_line = frame_summary.lineno
+                last_name = frame_summary.name
                 count = 0
             count += 1
             if count > _RECURSIVE_CUTOFF:
                 continue
-            row = []
-            row.append('  File "{}", line {}, in {}\n'.format(
-                frame.filename, frame.lineno, frame.name))
-            if frame.line:
-                row.append('    {}\n'.format(frame.line.strip()))
-            if frame.locals:
-                for name, value in sorted(frame.locals.items()):
-                    row.append('    {name} = {value}\n'.format(name=name, value=value))
-            result.append(''.join(row))
+            result.append(formatted_frame)
+
         if count > _RECURSIVE_CUTOFF:
             count -= _RECURSIVE_CUTOFF
             result.append(
@@ -437,12 +559,92 @@ class StackSummary(list):
         return result
 
 
+def _byte_offset_to_character_offset(str, offset):
+    as_utf8 = str.encode('utf-8')
+    if offset > len(as_utf8):
+        offset = len(as_utf8)
+
+    return len(as_utf8[:offset + 1].decode("utf-8"))
+
+
+_Anchors = collections.namedtuple(
+    "_Anchors",
+    [
+        "left_end_offset",
+        "right_start_offset",
+        "primary_char",
+        "secondary_char",
+    ],
+    defaults=["~", "^"]
+)
+
+def _extract_caret_anchors_from_line_segment(segment):
+    import ast
+
+    try:
+        tree = ast.parse(segment)
+    except SyntaxError:
+        return None
+
+    if len(tree.body) != 1:
+        return None
+
+    statement = tree.body[0]
+    match statement:
+        case ast.Expr(expr):
+            match expr:
+                case ast.BinOp():
+                    operator_str = segment[expr.left.end_col_offset:expr.right.col_offset]
+                    operator_offset = len(operator_str) - len(operator_str.lstrip())
+
+                    left_anchor = expr.left.end_col_offset + operator_offset
+                    right_anchor = left_anchor + 1
+                    if (
+                        operator_offset + 1 < len(operator_str)
+                        and not operator_str[operator_offset + 1].isspace()
+                    ):
+                        right_anchor += 1
+                    return _Anchors(left_anchor, right_anchor)
+                case ast.Subscript():
+                    return _Anchors(expr.value.end_col_offset, expr.slice.end_col_offset + 1)
+
+    return None
+
+
+class _ExceptionPrintContext:
+    def __init__(self):
+        self.seen = set()
+        self.exception_group_depth = 0
+        self.need_close = False
+
+    def indent(self):
+        return ' ' * (2 * self.exception_group_depth)
+
+    def emit(self, text_gen, margin_char=None):
+        if margin_char is None:
+            margin_char = '|'
+        indent_str = self.indent()
+        if self.exception_group_depth:
+            indent_str += margin_char + ' '
+
+        if isinstance(text_gen, str):
+            yield textwrap.indent(text_gen, indent_str, lambda line: True)
+        else:
+            for text in text_gen:
+                yield textwrap.indent(text, indent_str, lambda line: True)
+
+
 class TracebackException:
     """An exception ready for rendering.
 
     The traceback module captures enough attributes from the original exception
     to this intermediary form to ensure that no references are held, while
     still being able to fully print or format it.
+
+    max_group_width and max_group_depth control the formatting of exception
+    groups. The depth refers to the nesting level of the group, and the width
+    refers to the size of a single exception group's exceptions array. The
+    formatted output is truncated when either limit is exceeded.
 
     Use `from_exception` to create TracebackException instances from exception
     objects, or the constructor to create TracebackException instances from
@@ -458,70 +660,126 @@ class TracebackException:
       occurred.
     - :attr:`lineno` For syntax errors - the linenumber where the error
       occurred.
+    - :attr:`end_lineno` For syntax errors - the end linenumber where the error
+      occurred. Can be `None` if not present.
     - :attr:`text` For syntax errors - the text where the error
       occurred.
     - :attr:`offset` For syntax errors - the offset into the text where the
       error occurred.
+    - :attr:`end_offset` For syntax errors - the offset into the text where the
+      error occurred. Can be `None` if not present.
     - :attr:`msg` For syntax errors - the compiler error message.
     """
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
-            lookup_lines=True, capture_locals=False, _seen=None):
+            lookup_lines=True, capture_locals=False, compact=False,
+            max_group_width=15, max_group_depth=10, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
         # Handle loops in __cause__ or __context__.
+        is_recursive_call = _seen is not None
         if _seen is None:
             _seen = set()
         _seen.add(id(exc_value))
-        # Gracefully handle (the way Python 2.4 and earlier did) the case of
-        # being called with no type or value (None, None, None).
-        if (exc_value and exc_value.__cause__ is not None
-            and id(exc_value.__cause__) not in _seen):
-            cause = TracebackException(
-                type(exc_value.__cause__),
-                exc_value.__cause__,
-                exc_value.__cause__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            cause = None
-        if (exc_value and exc_value.__context__ is not None
-            and id(exc_value.__context__) not in _seen):
-            context = TracebackException(
-                type(exc_value.__context__),
-                exc_value.__context__,
-                exc_value.__context__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            context = None
-        self.exc_traceback = exc_traceback
-        self.__cause__ = cause
-        self.__context__ = context
-        self.__suppress_context__ = \
-            exc_value.__suppress_context__ if exc_value else False
-        # TODO: locals.
-        self.stack = StackSummary.extract(
-            walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
+
+        self.max_group_width = max_group_width
+        self.max_group_depth = max_group_depth
+
+        self.stack = StackSummary._extract_from_extended_frame_gen(
+            _walk_tb_with_full_positions(exc_traceback),
+            limit=limit, lookup_lines=lookup_lines,
             capture_locals=capture_locals)
         self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
-        self._str = _some_str(exc_value)
+        self._str = _safe_string(exc_value, 'exception')
+        self.__notes__ = getattr(exc_value, '__notes__', None)
+
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
             self.filename = exc_value.filename
-            self.lineno = str(exc_value.lineno)
+            lno = exc_value.lineno
+            self.lineno = str(lno) if lno is not None else None
+            end_lno = exc_value.end_lineno
+            self.end_lineno = str(end_lno) if end_lno is not None else None
             self.text = exc_value.text
             self.offset = exc_value.offset
+            self.end_offset = exc_value.end_offset
             self.msg = exc_value.msg
         if lookup_lines:
             self._load_lines()
+        self.__suppress_context__ = \
+            exc_value.__suppress_context__ if exc_value is not None else False
+
+        # Convert __cause__ and __context__ to `TracebackExceptions`s, use a
+        # queue to avoid recursion (only the top-level call gets _seen == None)
+        if not is_recursive_call:
+            queue = [(self, exc_value)]
+            while queue:
+                te, e = queue.pop()
+                if (e and e.__cause__ is not None
+                    and id(e.__cause__) not in _seen):
+                    cause = TracebackException(
+                        type(e.__cause__),
+                        e.__cause__,
+                        e.__cause__.__traceback__,
+                        limit=limit,
+                        lookup_lines=lookup_lines,
+                        capture_locals=capture_locals,
+                        max_group_width=max_group_width,
+                        max_group_depth=max_group_depth,
+                        _seen=_seen)
+                else:
+                    cause = None
+
+                if compact:
+                    need_context = (cause is None and
+                                    e is not None and
+                                    not e.__suppress_context__)
+                else:
+                    need_context = True
+                if (e and e.__context__ is not None
+                    and need_context and id(e.__context__) not in _seen):
+                    context = TracebackException(
+                        type(e.__context__),
+                        e.__context__,
+                        e.__context__.__traceback__,
+                        limit=limit,
+                        lookup_lines=lookup_lines,
+                        capture_locals=capture_locals,
+                        max_group_width=max_group_width,
+                        max_group_depth=max_group_depth,
+                        _seen=_seen)
+                else:
+                    context = None
+
+                if e and isinstance(e, BaseExceptionGroup):
+                    exceptions = []
+                    for exc in e.exceptions:
+                        texc = TracebackException(
+                            type(exc),
+                            exc,
+                            exc.__traceback__,
+                            limit=limit,
+                            lookup_lines=lookup_lines,
+                            capture_locals=capture_locals,
+                            max_group_width=max_group_width,
+                            max_group_depth=max_group_depth,
+                            _seen=_seen)
+                        exceptions.append(texc)
+                else:
+                    exceptions = None
+
+                te.__cause__ = cause
+                te.__context__ = context
+                te.exceptions = exceptions
+                if cause:
+                    queue.append((te.__cause__, e.__cause__))
+                if context:
+                    queue.append((te.__context__, e.__context__))
+                if exceptions:
+                    queue.extend(zip(te.exceptions, e.exceptions))
 
     @classmethod
     def from_exception(cls, exc, *args, **kwargs):
@@ -532,10 +790,6 @@ class TracebackException:
         """Private API. force all lines in the stack to be loaded."""
         for frame in self.stack:
             frame.line
-        if self.__context__:
-            self.__context__._load_lines()
-        if self.__cause__:
-            self.__cause__._load_lines()
 
     def __eq__(self, other):
         if isinstance(other, TracebackException):
@@ -565,19 +819,30 @@ class TracebackException:
         stype = self.exc_type.__qualname__
         smod = self.exc_type.__module__
         if smod not in ("__main__", "builtins"):
+            if not isinstance(smod, str):
+                smod = "<unknown>"
             stype = smod + '.' + stype
 
         if not issubclass(self.exc_type, SyntaxError):
             yield _format_final_exc_line(stype, self._str)
         else:
             yield from self._format_syntax_error(stype)
+        if isinstance(self.__notes__, collections.abc.Sequence):
+            for note in self.__notes__:
+                note = _safe_string(note, 'note')
+                yield from [l + '\n' for l in note.split('\n')]
+        elif self.__notes__ is not None:
+            yield _safe_string(self.__notes__, '__notes__', func=repr)
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
-        filename = self.filename or "<string>"
-        lineno = str(self.lineno) or '?'
-        yield '  File "{}", line {}\n'.format(filename, lineno)
+        filename_suffix = ''
+        if self.lineno is not None:
+            yield '  File "{}", line {}\n'.format(
+                self.filename or "<string>", self.lineno)
+        elif self.filename is not None:
+            filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
         if text is not None:
@@ -588,16 +853,24 @@ class TracebackException:
             ltext = rtext.lstrip(' \n\f')
             spaces = len(rtext) - len(ltext)
             yield '    {}\n'.format(ltext)
-            # Convert 1-based column offset to 0-based index into stripped text
-            caret = (self.offset or 0) - 1 - spaces
-            if caret >= 0:
-                # non-space whitespace (likes tabs) must be kept for alignment
-                caretspace = ((c if c.isspace() else ' ') for c in ltext[:caret])
-                yield '    {}^\n'.format(''.join(caretspace))
-        msg = self.msg or "<no detail available>"
-        yield "{}: {}\n".format(stype, msg)
 
-    def format(self, *, chain=True):
+            if self.offset is not None:
+                offset = self.offset
+                end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                if offset == end_offset or end_offset == -1:
+                    end_offset = offset + 1
+
+                # Convert 1-based column offset to 0-based index into stripped text
+                colno = offset - 1 - spaces
+                end_colno = end_offset - 1 - spaces
+                if colno >= 0:
+                    # non-space whitespace (likes tabs) must be kept for alignment
+                    caretspace = ((c if c.isspace() else ' ') for c in ltext[:colno])
+                    yield '    {}{}'.format("".join(caretspace), ('^' * (end_colno - colno) + "\n"))
+        msg = self.msg or "<no detail available>"
+        yield "{}: {}{}\n".format(stype, msg, filename_suffix)
+
+    def format(self, *, chain=True, _ctx=None):
         """Format the exception.
 
         If chain is not *True*, *__cause__* and *__context__* will not be formatted.
@@ -609,15 +882,98 @@ class TracebackException:
         The message indicating which exception occurred is always the last
         string in the output.
         """
+
+        if _ctx is None:
+            _ctx = _ExceptionPrintContext()
+
+        output = []
+        exc = self
         if chain:
-            if self.__cause__ is not None:
-                yield from self.__cause__.format(chain=chain)
-                yield _cause_message
-            elif (self.__context__ is not None and
-                not self.__suppress_context__):
-                yield from self.__context__.format(chain=chain)
-                yield _context_message
-        if self.exc_traceback is not None:
-            yield 'Traceback (most recent call last):\n'
-        yield from self.stack.format()
-        yield from self.format_exception_only()
+            while exc:
+                if exc.__cause__ is not None:
+                    chained_msg = _cause_message
+                    chained_exc = exc.__cause__
+                elif (exc.__context__  is not None and
+                      not exc.__suppress_context__):
+                    chained_msg = _context_message
+                    chained_exc = exc.__context__
+                else:
+                    chained_msg = None
+                    chained_exc = None
+
+                output.append((chained_msg, exc))
+                exc = chained_exc
+        else:
+            output.append((None, exc))
+
+        for msg, exc in reversed(output):
+            if msg is not None:
+                yield from _ctx.emit(msg)
+            if exc.exceptions is None:
+                if exc.stack:
+                    yield from _ctx.emit('Traceback (most recent call last):\n')
+                    yield from _ctx.emit(exc.stack.format())
+                yield from _ctx.emit(exc.format_exception_only())
+            elif _ctx.exception_group_depth > self.max_group_depth:
+                # exception group, but depth exceeds limit
+                yield from _ctx.emit(
+                    f"... (max_group_depth is {self.max_group_depth})\n")
+            else:
+                # format exception group
+                is_toplevel = (_ctx.exception_group_depth == 0)
+                if is_toplevel:
+                    _ctx.exception_group_depth += 1
+
+                if exc.stack:
+                    yield from _ctx.emit(
+                        'Exception Group Traceback (most recent call last):\n',
+                        margin_char = '+' if is_toplevel else None)
+                    yield from _ctx.emit(exc.stack.format())
+
+                yield from _ctx.emit(exc.format_exception_only())
+                num_excs = len(exc.exceptions)
+                if num_excs <= self.max_group_width:
+                    n = num_excs
+                else:
+                    n = self.max_group_width + 1
+                _ctx.need_close = False
+                for i in range(n):
+                    last_exc = (i == n-1)
+                    if last_exc:
+                        # The closing frame may be added by a recursive call
+                        _ctx.need_close = True
+
+                    if self.max_group_width is not None:
+                        truncated = (i >= self.max_group_width)
+                    else:
+                        truncated = False
+                    title = f'{i+1}' if not truncated else '...'
+                    yield (_ctx.indent() +
+                           ('+-' if i==0 else '  ') +
+                           f'+---------------- {title} ----------------\n')
+                    _ctx.exception_group_depth += 1
+                    if not truncated:
+                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                    else:
+                        remaining = num_excs - self.max_group_width
+                        plural = 's' if remaining > 1 else ''
+                        yield from _ctx.emit(
+                            f"and {remaining} more exception{plural}\n")
+
+                    if last_exc and _ctx.need_close:
+                        yield (_ctx.indent() +
+                               "+------------------------------------\n")
+                        _ctx.need_close = False
+                    _ctx.exception_group_depth -= 1
+
+                if is_toplevel:
+                    assert _ctx.exception_group_depth == 1
+                    _ctx.exception_group_depth = 0
+
+
+    def print(self, *, file=None, chain=True):
+        """Print the result of self.format(chain=chain) to 'file'."""
+        if file is None:
+            file = sys.stderr
+        for line in self.format(chain=chain):
+            print(line, file=file, end="")

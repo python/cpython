@@ -27,13 +27,13 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: int PyLong_Check(PyObject *p)
 
    Return true if its argument is a :c:type:`PyLongObject` or a subtype of
-   :c:type:`PyLongObject`.
+   :c:type:`PyLongObject`.  This function always succeeds.
 
 
 .. c:function:: int PyLong_CheckExact(PyObject *p)
 
    Return true if its argument is a :c:type:`PyLongObject`, but not a subtype of
-   :c:type:`PyLongObject`.
+   :c:type:`PyLongObject`.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyLong_FromLong(long v)
@@ -41,7 +41,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Return a new :c:type:`PyLongObject` object from *v*, or ``NULL`` on failure.
 
    The current implementation keeps an array of integer objects for all integers
-   between ``-5`` and ``256``, when you create an int in that range you actually
+   between ``-5`` and ``256``. When you create an int in that range you actually
    just get back a reference to the existing object.
 
 
@@ -84,33 +84,21 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: PyObject* PyLong_FromString(const char *str, char **pend, int base)
 
    Return a new :c:type:`PyLongObject` based on the string value in *str*, which
-   is interpreted according to the radix in *base*.  If *pend* is non-``NULL``,
-   *\*pend* will point to the first character in *str* which follows the
-   representation of the number.  If *base* is ``0``, *str* is interpreted using
-   the :ref:`integers` definition; in this case, leading zeros in a
-   non-zero decimal number raises a :exc:`ValueError`. If *base* is not ``0``,
-   it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
-   underscores after a base specifier and between digits are ignored.  If there
-   are no digits, :exc:`ValueError` will be raised.
-
-
-.. c:function:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
-
-   Convert a sequence of Unicode digits to a Python integer value.  The Unicode
-   string is first encoded to a byte string using :c:func:`PyUnicode_EncodeDecimal`
-   and then converted using :c:func:`PyLong_FromString`.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyLong_FromUnicodeObject`.
+   is interpreted according to the radix in *base*, or ``NULL`` on failure.  If
+   *pend* is non-``NULL``, *\*pend* will point to the end of *str* on success or
+   to the first character that could not be processed on error.  If *base* is ``0``,
+   *str* is interpreted using the :ref:`integers` definition; in this case, leading
+   zeros in a non-zero decimal number raises a :exc:`ValueError`.  If *base* is not
+   ``0``, it must be between ``2`` and ``36``, inclusive.  Leading and trailing
+   whitespace and single underscores after a base specifier and between digits are
+   ignored.  If there are no digits or *str* is not NULL-terminated following the
+   digits and trailing whitespace, :exc:`ValueError` will be raised.
 
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
 
    Convert a sequence of Unicode digits in the string *u* to a Python integer
-   value.  The Unicode string is first encoded to a byte string using
-   :c:func:`PyUnicode_EncodeDecimal` and then converted using
-   :c:func:`PyLong_FromString`.
+   value.
 
    .. versionadded:: 3.3
 
