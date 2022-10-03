@@ -1048,17 +1048,21 @@ def _compute_suggestion_error(exc_value, tb):
 def _levenshtein_distance(a, b, max_cost):
     # A Python implementation of Python/suggestions.c:levenshtein_distance.
 
-    # Both strings are the same (by identity)
+    # Both strings are the same
     if a == b:
         return 0
 
     # Trim away common affixes
-    while a and b and a[0] == b[0]:
-        a = a[1:]
-        b = b[1:]
-    while a and b and a[-1] == b[-1]:
-        a = a[:-1]
-        b = b[:-1]
+    pre = 0
+    while a[pre:] and b[pre:] and a[pre] == b[pre]:
+        pre += 1
+    a = a[pre:]
+    b = b[pre:]
+    post = 0
+    while a[:post or None] and b[:post or None] and a[post-1] == b[post-1]:
+        post -= 1
+    a = a[:post or None]
+    b = b[:post or None]
     if not a or not b:
         return _MOVE_COST * (len(a) + len(b))
     if len(a) > _MAX_STRING_SIZE or len(b) > _MAX_STRING_SIZE:
@@ -1075,7 +1079,7 @@ def _levenshtein_distance(a, b, max_cost):
     # Instead of producing the whole traditional len(a)-by-len(b)
     # matrix, we can update just one row in place.
     # Initialize the buffer row
-    row = list(range(1, (_MOVE_COST * len(a)) + 1, _MOVE_COST))
+    row = list(range(_MOVE_COST, _MOVE_COST * (len(a) + 1), _MOVE_COST))
 
     result = 0
     for bindex in range(len(b)):

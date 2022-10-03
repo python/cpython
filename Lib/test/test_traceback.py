@@ -1,8 +1,10 @@
 """Test cases for traceback module"""
 
 from collections import namedtuple
+import json
 from io import StringIO
 import linecache
+from pathlib import Path
 import sys
 import types
 import inspect
@@ -25,6 +27,9 @@ test_code = namedtuple('code', ['co_filename', 'co_name'])
 test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
+
+
+LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 
 
 class TracebackCases(unittest.TestCase):
@@ -397,10 +402,7 @@ class CAPIExceptionFormattingMixin:
 
 
 @requires_debug_ranges()
-class TracebackErrorLocationCaretTests(
-    PurePythonExceptionFormattingMixin,
-    unittest.TestCase,
-):
+class TracebackErrorLocationCaretTestBase:
     """
     Tests for printing code error expressions as part of PEP 657
     """
@@ -797,11 +799,24 @@ class TracebackErrorLocationCaretTests(
         self.assertEqual(actual, expected)
 
 
+@requires_debug_ranges()
+class PurePythonTracebackErrorCaretTests(
+    PurePythonExceptionFormattingMixin,
+    TracebackErrorLocationCaretTestBase,
+    unittest.TestCase,
+):
+    """
+    Same set of tests as above using the pure Python implementation of
+    traceback printing in traceback.py.
+    """
+
+
 @cpython_only
 @requires_debug_ranges()
 class CPythonTracebackErrorCaretTests(
     CAPIExceptionFormattingMixin,
-    TracebackErrorLocationCaretTests,
+    TracebackErrorLocationCaretTestBase,
+    unittest.TestCase,
 ):
     """
     Same set of tests as above but with Python's internal traceback printing.
@@ -2802,10 +2817,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
 global_for_suggestions = None
 
 
-class SuggestionFormattingTests(
-    PurePythonExceptionFormattingMixin,
-    unittest.TestCase,
-):
+class SuggestionFormattingTestBase:
     def get_suggestion(self, obj, attr_name=None):
         if attr_name is not None:
             def callable():
@@ -3174,10 +3186,22 @@ class SuggestionFormattingTests(
         self.assertNotIn("something", actual)
 
 
+class PurePythonSuggestionFormattingTests(
+    PurePythonExceptionFormattingMixin,
+    SuggestionFormattingTestBase,
+    unittest.TestCase,
+):
+    """
+    Same set of tests as above using the pure Python implementation of
+    traceback printing in traceback.py.
+    """
+
+
 @cpython_only
 class CPythonSuggestionFormattingTests(
     CAPIExceptionFormattingMixin,
-    SuggestionFormattingTests,
+    SuggestionFormattingTestBase,
+    unittest.TestCase,
 ):
     """
     Same set of tests as above but with Python's internal traceback printing.
@@ -3224,6 +3248,59 @@ class MiscTest(unittest.TestCase):
         CHECK("CPython", "pypy", 11)
         CHECK("AttributeError", "AttributeErrop", 2)
         CHECK("AttributeError", "AttributeErrorTests", 10)
+        CHECK("ABA", "AAB", 4)
+
+    def test_levenshtein_distance_short_circuit(self):
+        from traceback import _substitution_cost, _MOVE_COST
+
+        if LEVENSHTEIN_DATA_FILE.is_file():
+            with LEVENSHTEIN_DATA_FILE.open("r") as f:
+                examples = json.load(f)
+        else:
+            print("recreating the missing data file")
+
+            from functools import cache
+            from random import choices, randrange
+
+            @cache
+            def levenshtein(a, b):
+                if not a or not b:
+                    return (len(a) + len(b)) * _MOVE_COST
+                option1 = levenshtein(a[:-1], b[:-1]) + _substitution_cost(a[-1], b[-1])
+                option2 = levenshtein(a[:-1], b) + _MOVE_COST
+                option3 = levenshtein(a, b[:-1]) + _MOVE_COST
+                return min(option1, option2, option3)
+
+            examples = set()
+            # Create a lot of non-empty examples, which should end up with a Gauss-like
+            # distribution for even costs (moves) and odd costs (case substitutions).
+            while len(examples) < 9990:
+                a = ''.join(choices("abcABC", k=randrange(1, 10)))
+                b = ''.join(choices("abcABC", k=randrange(1, 10)))
+                expected = levenshtein(a, b)
+                examples.add((a, b, expected))
+            # Create one empty case each for strings between 0 and 9 in length.
+            for i in range(10):
+                b = ''.join(choices("abcABC", k=i))
+                expected = levenshtein("", b)
+                examples.add(("", b, expected))
+            with LEVENSHTEIN_DATA_FILE.open("w") as f:
+                json.dump(sorted(examples), f, indent=2)
+
+        for a, b, expected in examples:
+            res1 = traceback._levenshtein_distance(a, b, 1000)
+            self.assertEqual(res1, expected, msg=(a, b))
+
+            for threshold in [expected, expected + 1, expected + 2]:
+                # big enough thresholds shouldn't change the result
+                res2 = traceback._levenshtein_distance(a, b, threshold)
+                self.assertEqual(res2, expected, msg=(a, b, threshold))
+
+            for threshold in range(expected):
+                # for small thresholds, the only piece of information
+                # we receive is "strings not close enough".
+                res3 = traceback._levenshtein_distance(a, b, threshold)
+                self.assertGreater(res3, threshold, msg=(a, b, threshold))
 
 
 if __name__ == "__main__":
