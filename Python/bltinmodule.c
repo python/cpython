@@ -261,8 +261,8 @@ importlib.import_module() to programmatically import a module.
 
 The globals argument is only used to determine the context;
 they are not modified.  The locals argument is unused.  The fromlist
-should be a list of names to emulate ``from name import ...'', or an
-empty list to emulate ``import name''.
+should be a list of names to emulate ``from name import ...``, or an
+empty list to emulate ``import name``.
 When importing a module from a package, note that __import__('A.B', ...)
 returns package A when fromlist is empty, but its submodule B when
 fromlist is not empty.  The level argument is used to determine whether to
@@ -1510,7 +1510,7 @@ setattr as builtin_setattr
 
 Sets the named attribute on the given object to the specified value.
 
-setattr(x, 'y', v) is equivalent to ``x.y = v''
+setattr(x, 'y', v) is equivalent to ``x.y = v``
 [clinic start generated code]*/
 
 static PyObject *
@@ -1533,7 +1533,7 @@ delattr as builtin_delattr
 
 Deletes the named attribute from the given object.
 
-delattr(x, 'y') is equivalent to ``del x.y''
+delattr(x, 'y') is equivalent to ``del x.y``
 [clinic start generated code]*/
 
 static PyObject *
