@@ -1,0 +1,1 @@
+Fraction hashes are now cached.
