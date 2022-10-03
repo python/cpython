@@ -1,8 +1,10 @@
 import contextlib
 import errno
+import os.path
 import socket
-import unittest
 import sys
+import tempfile
+import unittest
 
 from .. import support
 from . import warnings_helper
@@ -10,6 +12,9 @@ from . import warnings_helper
 HOST = "localhost"
 HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
+
+# WASI SDK 15.0 does not provide gethostname, stub raises OSError ENOTSUP.
+has_gethostname = not support.is_wasi
 
 
 def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
@@ -267,3 +272,14 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
     # __cause__ or __context__?
     finally:
         socket.setdefaulttimeout(old_timeout)
+
+
+def create_unix_domain_name():
+    """
+    Create a UNIX domain name: socket.bind() argument of a AF_UNIX socket.
+
+    Return a path relative to the current directory to get a short path
+    (around 27 ASCII characters).
+    """
+    return tempfile.mktemp(prefix="test_python_", suffix='.sock',
+                           dir=os.path.curdir)

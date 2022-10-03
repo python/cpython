@@ -746,7 +746,12 @@ depending on the system error code.
 
    Raised when trying to run an operation without the adequate access
    rights - for example filesystem permissions.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EACCES` and :py:data:`~errno.EPERM`.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EACCES`,
+   :py:data:`~errno.EPERM`, and :py:data:`~errno.ENOTCAPABLE`.
+
+   .. versionchanged:: 3.11.1
+      WASI's :py:data:`~errno.ENOTCAPABLE` is now mapped to
+      :exc:`PermissionError`.
 
 .. exception:: ProcessLookupError
 

@@ -73,12 +73,10 @@ class GetLineTestsBadData(TempFile):
     # file_byte_string = b'Bad data goes here'
 
     def test_getline(self):
-        self.assertRaises((SyntaxError, UnicodeDecodeError),
-                          linecache.getline, self.file_name, 1)
+        self.assertEqual(linecache.getline(self.file_name, 1), '')
 
     def test_getlines(self):
-        self.assertRaises((SyntaxError, UnicodeDecodeError),
-                          linecache.getlines, self.file_name)
+        self.assertEqual(linecache.getlines(self.file_name), [])
 
 
 class EmptyFile(GetLineTestsGoodData, unittest.TestCase):
@@ -92,9 +90,11 @@ class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
 class GoodUnicode(GetLineTestsGoodData, unittest.TestCase):
     file_list = ['á\n', 'b\n', 'abcdef\n', 'ááááá\n']
 
+class BadUnicode_NoDeclaration(GetLineTestsBadData, unittest.TestCase):
+    file_byte_string = b'\n\x80abc'
 
-class BadUnicode(GetLineTestsBadData, unittest.TestCase):
-    file_byte_string = b'\x80abc'
+class BadUnicode_WithDeclaration(GetLineTestsBadData, unittest.TestCase):
+    file_byte_string = b'# coding=utf-8\n\x80abc'
 
 
 class LineCacheTests(unittest.TestCase):

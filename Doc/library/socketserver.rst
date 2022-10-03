@@ -10,6 +10,8 @@
 
 The :mod:`socketserver` module simplifies the task of writing network servers.
 
+.. include:: ../includes/wasm-notavail.rst
+
 There are four basic concrete server classes:
 
 

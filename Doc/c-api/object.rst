@@ -126,6 +126,14 @@ Object Protocol
    A generic implementation for the getter of a ``__dict__`` descriptor. It
    creates the dictionary if necessary.
 
+   This function may also be called to get the :py:attr:`~object.__dict__`
+   of the object *o*. Pass ``NULL`` for *context* when calling it.
+   Since this function may need to allocate memory for the
+   dictionary, it may be more efficient to call :c:func:`PyObject_GetAttr`
+   when accessing an attribute on the object.
+
+   On failure, returns ``NULL`` with an exception set.
+
    .. versionadded:: 3.3
 
 
@@ -135,6 +143,16 @@ Object Protocol
    implementation does not allow the dictionary to be deleted.
 
    .. versionadded:: 3.3
+
+
+.. c:function:: PyObject** _PyObject_GetDictPtr(PyObject *obj)
+
+   Return a pointer to :py:attr:`~object.__dict__` of the object *obj*.
+   If there is no ``__dict__``, return ``NULL`` without setting an exception.
+
+   This function may need to allocate memory for the
+   dictionary, so it may be more efficient to call :c:func:`PyObject_GetAttr`
+   when accessing an attribute on the object.
 
 
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)

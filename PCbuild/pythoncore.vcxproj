@@ -167,6 +167,7 @@
     <ClInclude Include="..\Include\cpython\pydebug.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
     <ClInclude Include="..\Include\cpython\pyfpe.h" />
+    <ClInclude Include="..\Include\cpython\pyframe.h" />
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
     <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
@@ -192,7 +193,6 @@
     <ClInclude Include="..\Include\frameobject.h" />
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\pycore_abstract.h" />
-    <ClInclude Include="..\Include\internal\pycore_accu.h" />
     <ClInclude Include="..\Include\internal\pycore_asdl.h" />
     <ClInclude Include="..\Include\internal\pycore_ast.h" />
     <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
@@ -207,6 +207,7 @@
     <ClInclude Include="..\Include\internal\pycore_compile.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dtoa.h" />
     <ClInclude Include="..\Include\internal\pycore_exceptions.h" />
     <ClInclude Include="..\Include\internal\pycore_fileutils.h" />
@@ -236,8 +237,10 @@
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
+    <ClInclude Include="..\Include\internal\pycore_range.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime_init.h" />
+    <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_signal.h" />
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h" />
     <ClInclude Include="..\Include\internal\pycore_strhex.h" />
@@ -280,6 +283,7 @@
     <ClInclude Include="..\Include\pymem.h" />
     <ClInclude Include="..\Include\pyport.h" />
     <ClInclude Include="..\Include\pystate.h" />
+    <ClInclude Include="..\Include\pystats.h" />
     <ClInclude Include="..\Include\pystrcmp.h" />
     <ClInclude Include="..\Include\pystrtod.h" />
     <ClInclude Include="..\Include\pythonrun.h" />
@@ -323,7 +327,6 @@
     <ClInclude Include="..\Parser\pegen.h" />
     <ClInclude Include="..\PC\errmap.h" />
     <ClInclude Include="..\PC\pyconfig.h" />
-    <ClInclude Include="..\Python\ceval_gil.h" />
     <ClInclude Include="..\Python\condvar.h" />
     <ClInclude Include="..\Python\importdl.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
@@ -417,7 +420,6 @@
     <ClCompile Include="..\Modules\cjkcodecs\multibytecodec.c" />
     <ClCompile Include="..\Modules\_winapi.c" />
     <ClCompile Include="..\Objects\abstract.c" />
-    <ClCompile Include="..\Objects\accu.c" />
     <ClCompile Include="..\Objects\boolobject.c" />
     <ClCompile Include="..\Objects\bytearrayobject.c" />
     <ClCompile Include="..\Objects\bytes_methods.c" />
@@ -427,6 +429,7 @@
     <ClCompile Include="..\Objects\cellobject.c" />
     <ClCompile Include="..\Objects\classobject.c" />
     <ClCompile Include="..\Objects\codeobject.c" />
+    <ClCompile Include="..\Objects\perf_trampoline.c" />
     <ClCompile Include="..\Objects\complexobject.c" />
     <ClCompile Include="..\Objects\descrobject.c" />
     <ClCompile Include="..\Objects\dictobject.c" />
@@ -499,6 +502,7 @@
     <ClCompile Include="..\Python\getopt.c" />
     <ClCompile Include="..\Python\getplatform.c" />
     <ClCompile Include="..\Python\getversion.c" />
+    <ClCompile Include="..\Python\ceval_gil.c" />
     <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />
