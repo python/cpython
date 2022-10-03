@@ -191,7 +191,7 @@ See :pep:`654` for more details.
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
-.. _whatsnew311-pep670:
+.. _whatsnew311-pep678:
 
 PEP 678: Exceptions can be enriched with notes
 ----------------------------------------------
@@ -512,14 +512,17 @@ Other CPython Implementation Changes
   (Contributed by Éric Araujo in :issue:`46142`.)
 
 
+.. _whatsnew311-new-modules:
+
 New Modules
 ===========
 
-* A new module, :mod:`tomllib`, was added for parsing TOML.
+* :mod:`tomllib`: For parsing `TOML <https://toml.io/>`_.
+  See :pep:`680` for more details.
   (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
-* :mod:`wsgiref.types`, containing WSGI-specific types for static type
-  checking, was added.
+* :mod:`wsgiref.types`:
+  :pep:`WSGI <3333>`-specific types for static type checking.
   (Contributed by Sebastian Rittau in :issue:`42012`.)
 
 

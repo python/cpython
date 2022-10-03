@@ -1713,6 +1713,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       timeout=support.SHORT_TIMEOUT,
                                       returncode=1)
 
+    def test_get_incomplete_frame(self):
+        self.run_embedded_interpreter("test_get_incomplete_frame")
+
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_unicode_id_init(self):

@@ -5289,13 +5289,12 @@ class TestResourceTracker(unittest.TestCase):
         # Check that killing process does not leak named semaphores
         #
         cmd = '''if 1:
-            import time, os, tempfile
+            import time, os
             import multiprocessing as mp
             from multiprocessing import resource_tracker
             from multiprocessing.shared_memory import SharedMemory
 
             mp.set_start_method("spawn")
-            rand = tempfile._RandomNameSequence()
 
 
             def create_and_register_resource(rtype):
@@ -5432,6 +5431,14 @@ class TestResourceTracker(unittest.TestCase):
         r.close()
 
         self.assertTrue(is_resource_tracker_reused)
+
+    def test_too_long_name_resource(self):
+        # gh-96819: Resource names that will make the length of a write to a pipe
+        # greater than PIPE_BUF are not allowed
+        rtype = "shared_memory"
+        too_long_name_resource = "a" * (512 - len(rtype))
+        with self.assertRaises(ValueError):
+            resource_tracker.register(too_long_name_resource, rtype)
 
 
 class TestSimpleQueue(unittest.TestCase):

@@ -4,6 +4,7 @@ A number of functions that enhance IDLE on macOS.
 from os.path import expanduser
 import plistlib
 from sys import platform  # Used in _init_tk_type, changed by test.
+from test.support import requires, ResourceDenied
 
 import tkinter
 
@@ -14,23 +15,26 @@ import tkinter
 _tk_type = None
 
 def _init_tk_type():
-    """
-    Initializes OS X Tk variant values for
-    isAquaTk(), isCarbonTk(), isCocoaTk(), and isXQuartz().
+    """ Initialize _tk_type for isXyzTk functions.
     """
     global _tk_type
     if platform == 'darwin':
-        root = tkinter.Tk()
-        ws = root.tk.call('tk', 'windowingsystem')
-        if 'x11' in ws:
-            _tk_type = "xquartz"
-        elif 'aqua' not in ws:
-            _tk_type = "other"
-        elif 'AppKit' in root.tk.call('winfo', 'server', '.'):
-            _tk_type = "cocoa"
+        try:
+            requires('gui')
+        except ResourceDenied:  # Possible when testing.
+            _tk_type = "cocoa"  # Newest and most common.
         else:
-            _tk_type = "carbon"
-        root.destroy()
+            root = tkinter.Tk()
+            ws = root.tk.call('tk', 'windowingsystem')
+            if 'x11' in ws:
+                _tk_type = "xquartz"
+            elif 'aqua' not in ws:
+                _tk_type = "other"
+            elif 'AppKit' in root.tk.call('winfo', 'server', '.'):
+                _tk_type = "cocoa"
+            else:
+                _tk_type = "carbon"
+            root.destroy()
     else:
         _tk_type = "other"
 

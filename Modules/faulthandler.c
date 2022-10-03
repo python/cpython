@@ -7,7 +7,6 @@
 
 #include <object.h>
 #include <signal.h>
-#include <signal.h>
 #include <stdlib.h>               // abort()
 #if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK) && defined(HAVE_PTHREAD_H)
 #  include <pthread.h>
@@ -1241,7 +1240,7 @@ static PyMethodDef module_methods[] = {
                "if all_threads is True, into file")},
     {"dump_traceback_later",
      _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_VARARGS|METH_KEYWORDS,
-     PyDoc_STR("dump_traceback_later(timeout, repeat=False, file=sys.stderrn, exit=False):\n"
+     PyDoc_STR("dump_traceback_later(timeout, repeat=False, file=sys.stderr, exit=False):\n"
                "dump the traceback of all threads in timeout seconds,\n"
                "or each timeout seconds if repeat is True. If exit is True, "
                "call _exit(1) which is not safe.")},
