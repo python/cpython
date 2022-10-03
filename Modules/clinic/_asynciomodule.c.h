@@ -112,15 +112,19 @@ PyDoc_STRVAR(_asyncio_Future_exception__doc__,
 "InvalidStateError.");
 
 #define _ASYNCIO_FUTURE_EXCEPTION_METHODDEF    \
-    {"exception", (PyCFunction)_asyncio_Future_exception, METH_NOARGS, _asyncio_Future_exception__doc__},
+    {"exception", _PyCFunction_CAST(_asyncio_Future_exception), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_exception__doc__},
 
 static PyObject *
-_asyncio_Future_exception_impl(FutureObj *self);
+_asyncio_Future_exception_impl(FutureObj *self, PyTypeObject *cls);
 
 static PyObject *
-_asyncio_Future_exception(FutureObj *self, PyObject *Py_UNUSED(ignored))
+_asyncio_Future_exception(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _asyncio_Future_exception_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "exception() takes no arguments");
+        return NULL;
+    }
+    return _asyncio_Future_exception_impl(self, cls);
 }
 
 PyDoc_STRVAR(_asyncio_Future_set_result__doc__,
@@ -1261,4 +1265,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d6704f726e5f7ece input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c3b3681942e8b672 input=a9049054013a1b77]*/

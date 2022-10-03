@@ -658,7 +658,7 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
 }
 
 static PyObject *
-create_cancelled_error(FutureObj *fut)
+create_cancelled_error(asyncio_state *state, FutureObj *fut)
 {
     PyObject *exc;
     if (fut->fut_cancelled_exc != NULL) {
@@ -668,7 +668,6 @@ create_cancelled_error(FutureObj *fut)
         return exc;
     }
     PyObject *msg = fut->fut_cancel_msg;
-    asyncio_state *state = get_asyncio_state(NULL);
     if (msg == NULL || msg == Py_None) {
         exc = PyObject_CallNoArgs(state->asyncio_CancelledError);
     } else {
@@ -678,22 +677,21 @@ create_cancelled_error(FutureObj *fut)
 }
 
 static void
-future_set_cancelled_error(FutureObj *fut)
+future_set_cancelled_error(asyncio_state *state, FutureObj *fut)
 {
-    PyObject *exc = create_cancelled_error(fut);
+    PyObject *exc = create_cancelled_error(state, fut);
     if (exc == NULL) {
         return;
     }
-    asyncio_state *state = get_asyncio_state(NULL);
     PyErr_SetObject(state->asyncio_CancelledError, exc);
     Py_DECREF(exc);
 }
 
 static int
-future_get_result(FutureObj *fut, PyObject **result)
+future_get_result(asyncio_state *state, FutureObj *fut, PyObject **result)
 {
     if (fut->fut_state == STATE_CANCELLED) {
-        future_set_cancelled_error(fut);
+        future_set_cancelled_error(state, fut);
         return -1;
     }
 
@@ -898,16 +896,16 @@ static PyObject *
 _asyncio_Future_result_impl(FutureObj *self)
 /*[clinic end generated code: output=f35f940936a4b1e5 input=49ecf9cf5ec50dc5]*/
 {
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
     PyObject *result;
 
     if (!future_is_alive(self)) {
-        asyncio_state *state = get_asyncio_state(NULL);
         PyErr_SetString(state->asyncio_InvalidStateError,
                         "Future object is not initialized.");
         return NULL;
     }
 
-    int res = future_get_result(self, &result);
+    int res = future_get_result(state, self, &result);
 
     if (res == -1) {
         return NULL;
@@ -927,6 +925,9 @@ _asyncio_Future_result_impl(FutureObj *self)
 /*[clinic input]
 _asyncio.Future.exception
 
+    cls: defining_class
+    /
+
 Return the exception that was set on this future.
 
 The exception (or None if no exception was set) is returned only if
@@ -936,23 +937,24 @@ InvalidStateError.
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Future_exception_impl(FutureObj *self)
-/*[clinic end generated code: output=88b20d4f855e0710 input=733547a70c841c68]*/
+_asyncio_Future_exception_impl(FutureObj *self, PyTypeObject *cls)
+/*[clinic end generated code: output=ce75576b187c905b input=3faf15c22acdb60d]*/
 {
     if (!future_is_alive(self)) {
-        asyncio_state *state = get_asyncio_state(NULL);
+        asyncio_state *state = get_asyncio_state_by_cls(cls);
         PyErr_SetString(state->asyncio_InvalidStateError,
                         "Future object is not initialized.");
         return NULL;
     }
 
     if (self->fut_state == STATE_CANCELLED) {
-        future_set_cancelled_error(self);
+        asyncio_state *state = get_asyncio_state_by_cls(cls);
+        future_set_cancelled_error(state, self);
         return NULL;
     }
 
     if (self->fut_state != STATE_FINISHED) {
-        asyncio_state *state = get_asyncio_state(NULL);
+        asyncio_state *state = get_asyncio_state_by_cls(cls);
         PyErr_SetString(state->asyncio_InvalidStateError,
                         "Exception is not set.");
         return NULL;
@@ -1469,7 +1471,8 @@ static PyObject *
 _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
 /*[clinic end generated code: output=a5df276f6c1213de input=ac6effe4ba795ecc]*/
 {
-    return create_cancelled_error(self);
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)self);
+    return create_cancelled_error(state, self);
 }
 
 static void
@@ -2794,7 +2797,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 
         if (!exc) {
             /* exc was not a CancelledError */
-            exc = create_cancelled_error((FutureObj*)task);
+            exc = create_cancelled_error(state, (FutureObj*)task);
 
             if (!exc) {
                 goto fail;
@@ -3148,10 +3151,10 @@ task_wakeup(TaskObj *task, PyObject *o)
     PyObject *result;
     assert(o);
 
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
     if (Future_CheckExact(state, o) || Task_CheckExact(state, o)) {
         PyObject *fut_result = NULL;
-        int res = future_get_result((FutureObj*)o, &fut_result);
+        int res = future_get_result(state, (FutureObj*)o, &fut_result);
 
         switch(res) {
         case -1:
@@ -3438,7 +3441,7 @@ PyRunningLoopHolder_traverse(PyRunningLoopHolder *rl, visitproc visit,
 static void
 PyRunningLoopHolder_tp_dealloc(PyRunningLoopHolder *rl)
 {
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)rl);
     if (state->cached_running_holder == (PyObject *)rl) {
         state->cached_running_holder = NULL;
     }
@@ -3494,7 +3497,7 @@ module_free_freelists(void)
 static void
 module_free(void *m)
 {
-    asyncio_state *state = get_asyncio_state(NULL);
+    asyncio_state *state = get_asyncio_state(m);
     Py_CLEAR(state->asyncio_mod);
     Py_CLEAR(state->traceback_extract_stack);
     Py_CLEAR(state->asyncio_future_repr_func);
