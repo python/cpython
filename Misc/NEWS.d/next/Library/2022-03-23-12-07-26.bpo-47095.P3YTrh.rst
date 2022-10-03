@@ -1,2 +1,0 @@
-:mod:`hashlib`'s internal ``_blake2`` module now prefers ``libb2`` from
-https://www.blake2.net/ over Python's vendored copy of blake2.

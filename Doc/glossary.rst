@@ -136,9 +136,16 @@ Glossary
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
-      A value associated with an object which is referenced by name using
-      dotted expressions.  For example, if an object *o* has an attribute
+      A value associated with an object which is usually referenced by name
+      using dotted expressions.
+      For example, if an object *o* has an attribute
       *a* it would be referenced as *o.a*.
+
+      It is possible to give an object an attribute whose name is not an
+      identifier as defined by :ref:`identifiers`, for example using
+      :func:`setattr`, if the object allows it.
+      Such an attribute will not be accessible using a dotted expression,
+      and would instead need to be retrieved with :func:`getattr`.
 
    awaitable
       An object that can be used in an :keyword:`await` expression.  Can be
@@ -532,7 +539,7 @@ Glossary
       machines.
 
       However, some extension modules, either standard or third-party,
-      are designed so as to release the GIL when doing computationally-intensive
+      are designed so as to release the GIL when doing computationally intensive
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
@@ -566,9 +573,9 @@ Glossary
       from their :func:`id`.
 
    IDLE
-      An Integrated Development Environment for Python.  IDLE is a basic editor
-      and interpreter environment which ships with the standard distribution of
-      Python.
+      An Integrated Development and Learning Environment for Python.
+      :ref:`idle` is a basic editor and interpreter environment
+      which ships with the standard distribution of Python.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -706,15 +713,15 @@ Glossary
 
    locale encoding
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
 
-      On Windows, it is the ANSI code page (ex: ``cp1252``).
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
 
-      ``locale.getpreferredencoding(False)`` can be used to get the locale
-      encoding.
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
 
-      Python uses the :term:`filesystem encoding and error handler` to convert
-      between Unicode filenames and bytes filenames.
+      ``locale.getencoding()`` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
@@ -1125,7 +1132,16 @@ Glossary
       See also :term:`borrowed reference`.
 
    text encoding
-      A codec which encodes Unicode strings to bytes.
+      A string in Python is a sequence of Unicode code points (in range
+      ``U+0000``--``U+10FFFF``). To store or transfer a string, it needs to be
+      serialized as a sequence of bytes.
+
+      Serializing a string into a sequence of bytes is known as "encoding", and
+      recreating the string from the sequence of bytes is known as "decoding".
+
+      There are a variety of different text serialization
+      :ref:`codecs <standard-encodings>`, which are collectively referred to as
+      "text encodings".
 
    text file
       A :term:`file object` able to read and write :class:`str` objects.

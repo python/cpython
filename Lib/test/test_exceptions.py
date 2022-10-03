@@ -1,7 +1,6 @@
 # Python test set -- part 5, built-in exceptions
 
 import copy
-import gc
 import os
 import sys
 import unittest
@@ -547,26 +546,55 @@ class ExceptionTests(unittest.TestCase):
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
 
-    def test_note(self):
+    def test_setstate(self):
+        e = Exception(42)
+        e.blah = 53
+        self.assertEqual(e.args, (42,))
+        self.assertEqual(e.blah, 53)
+        self.assertRaises(AttributeError, getattr, e, 'a')
+        self.assertRaises(AttributeError, getattr, e, 'b')
+        e.__setstate__({'a': 1 , 'b': 2})
+        self.assertEqual(e.args, (42,))
+        self.assertEqual(e.blah, 53)
+        self.assertEqual(e.a, 1)
+        self.assertEqual(e.b, 2)
+        e.__setstate__({'a': 11, 'args': (1,2,3), 'blah': 35})
+        self.assertEqual(e.args, (1,2,3))
+        self.assertEqual(e.blah, 35)
+        self.assertEqual(e.a, 11)
+        self.assertEqual(e.b, 2)
+
+    def test_invalid_setstate(self):
+        e = Exception(42)
+        with self.assertRaisesRegex(TypeError, "state is not a dictionary"):
+            e.__setstate__(42)
+
+    def test_notes(self):
         for e in [BaseException(1), Exception(2), ValueError(3)]:
             with self.subTest(e=e):
-                self.assertIsNone(e.__note__)
-                e.__note__ = "My Note"
-                self.assertEqual(e.__note__, "My Note")
+                self.assertFalse(hasattr(e, '__notes__'))
+                e.add_note("My Note")
+                self.assertEqual(e.__notes__, ["My Note"])
 
                 with self.assertRaises(TypeError):
-                    e.__note__ = 42
-                self.assertEqual(e.__note__, "My Note")
+                    e.add_note(42)
+                self.assertEqual(e.__notes__, ["My Note"])
 
-                e.__note__ = "Your Note"
-                self.assertEqual(e.__note__, "Your Note")
+                e.add_note("Your Note")
+                self.assertEqual(e.__notes__, ["My Note", "Your Note"])
+
+                del e.__notes__
+                self.assertFalse(hasattr(e, '__notes__'))
+
+                e.add_note("Our Note")
+                self.assertEqual(e.__notes__, ["Our Note"])
+
+                e.__notes__ = 42
+                self.assertEqual(e.__notes__, 42)
 
                 with self.assertRaises(TypeError):
-                    del e.__note__
-                self.assertEqual(e.__note__, "Your Note")
-
-                e.__note__ = None
-                self.assertIsNone(e.__note__)
+                    e.add_note("will not work")
+                self.assertEqual(e.__notes__, 42)
 
     def testWithTraceback(self):
         try:
@@ -597,11 +625,30 @@ class ExceptionTests(unittest.TestCase):
         else:
             self.fail("No exception raised")
 
-    def testInvalidAttrs(self):
-        self.assertRaises(TypeError, setattr, Exception(), '__cause__', 1)
-        self.assertRaises(TypeError, delattr, Exception(), '__cause__')
-        self.assertRaises(TypeError, setattr, Exception(), '__context__', 1)
-        self.assertRaises(TypeError, delattr, Exception(), '__context__')
+    def test_invalid_setattr(self):
+        TE = TypeError
+        exc = Exception()
+        msg = "'int' object is not iterable"
+        self.assertRaisesRegex(TE, msg, setattr, exc, 'args', 1)
+        msg = "__traceback__ must be a traceback or None"
+        self.assertRaisesRegex(TE, msg, setattr, exc, '__traceback__', 1)
+        msg = "exception cause must be None or derive from BaseException"
+        self.assertRaisesRegex(TE, msg, setattr, exc, '__cause__', 1)
+        msg = "exception context must be None or derive from BaseException"
+        self.assertRaisesRegex(TE, msg, setattr, exc, '__context__', 1)
+
+    def test_invalid_delattr(self):
+        TE = TypeError
+        try:
+            raise IndexError(4)
+        except Exception as e:
+            exc = e
+
+        msg = "may not be deleted"
+        self.assertRaisesRegex(TE, msg, delattr, exc, 'args')
+        self.assertRaisesRegex(TE, msg, delattr, exc, '__traceback__')
+        self.assertRaisesRegex(TE, msg, delattr, exc, '__cause__')
+        self.assertRaisesRegex(TE, msg, delattr, exc, '__context__')
 
     def testNoneClearsTracebackAttr(self):
         try:
@@ -2052,6 +2099,11 @@ class AttributeErrorTests(unittest.TestCase):
         except AttributeError as exc:
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
+        try:
+            object.__getattribute__(obj, "bluch")
+        except AttributeError as exc:
+            self.assertEqual("bluch", exc.name)
+            self.assertEqual(obj, exc.obj)
 
     def test_getattr_has_name_and_obj_for_method(self):
         class A:
@@ -2652,7 +2704,7 @@ class PEP626Tests(unittest.TestCase):
         def f():
             1/0
         self.lineno_after_raise(f, 1)
-        f.__code__ = f.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+        f.__code__ = f.__code__.replace(co_linetable=b'\xf8\xf8\xf8\xf9\xf8\xf8\xf8')
         self.lineno_after_raise(f, None)
 
     def test_lineno_after_raise_in_with_exit(self):

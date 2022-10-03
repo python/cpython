@@ -103,14 +103,6 @@ class ExecModuleTests(abc.LoaderTests):
                              expected=value))
         self.assertEqual(output, 'Hello world!\n')
 
-    def test_module_repr(self):
-        name = '__hello__'
-        module, output = self.exec_module(name)
-        with deprecated():
-            repr_str = self.machinery.FrozenImporter.module_repr(module)
-        self.assertEqual(repr_str,
-                         "<module '__hello__' (frozen)>")
-
     def test_module_repr_indirect(self):
         name = '__hello__'
         module, output = self.exec_module(name)

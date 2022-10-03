@@ -4,6 +4,7 @@
 """Fraction, infinite-precision, rational numbers."""
 
 from decimal import Decimal
+import functools
 import math
 import numbers
 import operator
@@ -20,13 +21,46 @@ _PyHASH_MODULUS = sys.hash_info.modulus
 # _PyHASH_MODULUS.
 _PyHASH_INF = sys.hash_info.inf
 
+@functools.lru_cache(maxsize = 1 << 14)
+def _hash_algorithm(numerator, denominator):
+
+    # To make sure that the hash of a Fraction agrees with the hash
+    # of a numerically equal integer, float or Decimal instance, we
+    # follow the rules for numeric hashes outlined in the
+    # documentation.  (See library docs, 'Built-in Types').
+
+    try:
+        dinv = pow(denominator, -1, _PyHASH_MODULUS)
+    except ValueError:
+        # ValueError means there is no modular inverse.
+        hash_ = _PyHASH_INF
+    else:
+        # The general algorithm now specifies that the absolute value of
+        # the hash is
+        #    (|N| * dinv) % P
+        # where N is self._numerator and P is _PyHASH_MODULUS.  That's
+        # optimized here in two ways:  first, for a non-negative int i,
+        # hash(i) == i % P, but the int hash implementation doesn't need
+        # to divide, and is faster than doing % P explicitly.  So we do
+        #    hash(|N| * dinv)
+        # instead.  Second, N is unbounded, so its product with dinv may
+        # be arbitrarily expensive to compute.  The final answer is the
+        # same if we use the bounded |N| % P instead, which can again
+        # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
+        # so this nested hash() call wastes a bit of time making a
+        # redundant copy when |N| < P, but can save an arbitrarily large
+        # amount of computation for large |N|.
+        hash_ = hash(hash(abs(numerator)) * dinv)
+    result = hash_ if numerator >= 0 else -hash_
+    return -2 if result == -1 else result
+
 _RATIONAL_FORMAT = re.compile(r"""
     \A\s*                                 # optional whitespace at the start,
     (?P<sign>[-+]?)                       # an optional sign, then
     (?=\d|\.\d)                           # lookahead for digit or .digit
     (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
     (?:                                   # followed by
-       (?:/(?P<denom>\d+(_\d+)*))?        # an optional denominator
+       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?  # an optional denominator
     |                                     # or
        (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent
@@ -245,14 +279,16 @@ class Fraction(numbers.Rational):
                 break
             p0, q0, p1, q1 = p1, q1, p0+a*p1, q2
             n, d = d, n-a*d
-
         k = (max_denominator-q0)//q1
-        bound1 = Fraction(p0+k*p1, q0+k*q1)
-        bound2 = Fraction(p1, q1)
-        if abs(bound2 - self) <= abs(bound1-self):
-            return bound2
+
+        # Determine which of the candidates (p0+k*p1)/(q0+k*q1) and p1/q1 is
+        # closer to self. The distance between them is 1/(q1*(q0+k*q1)), while
+        # the distance from p1/q1 to self is d/(q1*self._denominator). So we
+        # need to compare 2*(q0+k*q1) with self._denominator/d.
+        if 2*d*(q0+k*q1) <= self._denominator:
+            return Fraction(p1, q1, _normalize=False)
         else:
-            return bound1
+            return Fraction(p0+k*p1, q0+k*q1, _normalize=False)
 
     @property
     def numerator(a):
@@ -644,36 +680,7 @@ class Fraction(numbers.Rational):
 
     def __hash__(self):
         """hash(self)"""
-
-        # To make sure that the hash of a Fraction agrees with the hash
-        # of a numerically equal integer, float or Decimal instance, we
-        # follow the rules for numeric hashes outlined in the
-        # documentation.  (See library docs, 'Built-in Types').
-
-        try:
-            dinv = pow(self._denominator, -1, _PyHASH_MODULUS)
-        except ValueError:
-            # ValueError means there is no modular inverse.
-            hash_ = _PyHASH_INF
-        else:
-            # The general algorithm now specifies that the absolute value of
-            # the hash is
-            #    (|N| * dinv) % P
-            # where N is self._numerator and P is _PyHASH_MODULUS.  That's
-            # optimized here in two ways:  first, for a non-negative int i,
-            # hash(i) == i % P, but the int hash implementation doesn't need
-            # to divide, and is faster than doing % P explicitly.  So we do
-            #    hash(|N| * dinv)
-            # instead.  Second, N is unbounded, so its product with dinv may
-            # be arbitrarily expensive to compute.  The final answer is the
-            # same if we use the bounded |N| % P instead, which can again
-            # be done with an int hash() call.  If 0 <= i < P, hash(i) == i,
-            # so this nested hash() call wastes a bit of time making a
-            # redundant copy when |N| < P, but can save an arbitrarily large
-            # amount of computation for large |N|.
-            hash_ = hash(hash(abs(self._numerator)) * dinv)
-        result = hash_ if self._numerator >= 0 else -hash_
-        return -2 if result == -1 else result
+        return _hash_algorithm(self._numerator, self._denominator)
 
     def __eq__(a, b):
         """a == b"""

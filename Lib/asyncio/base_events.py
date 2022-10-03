@@ -561,8 +561,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'asyncgen': agen
                 })
 
-    async def shutdown_default_executor(self):
-        """Schedule the shutdown of the default executor."""
+    async def shutdown_default_executor(self, timeout=None):
+        """Schedule the shutdown of the default executor.
+
+        The timeout parameter specifies the amount of time the executor will
+        be given to finish joining. The default value is None, which means
+        that the executor will be given an unlimited amount of time.
+        """
         self._executor_shutdown_called = True
         if self._default_executor is None:
             return
@@ -572,14 +577,22 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             await future
         finally:
-            thread.join()
+            thread.join(timeout)
+
+        if thread.is_alive():
+            warnings.warn("The executor did not finishing joining "
+                             f"its threads within {timeout} seconds.",
+                             RuntimeWarning, stacklevel=2)
+            self._default_executor.shutdown(wait=False)
 
     def _do_shutdown(self, future):
         try:
             self._default_executor.shutdown(wait=True)
-            self.call_soon_threadsafe(future.set_result, None)
+            if not self.is_closed():
+                self.call_soon_threadsafe(future.set_result, None)
         except Exception as ex:
-            self.call_soon_threadsafe(future.set_exception, ex)
+            if not self.is_closed():
+                self.call_soon_threadsafe(future.set_exception, ex)
 
     def _check_running(self):
         if self.is_running():
@@ -888,7 +901,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # non-mmap files even if sendfile is supported by OS
         raise exceptions.SendfileNotAvailableError(
             f"syscall sendfile is not available for socket {sock!r} "
-            "and file {file!r} combination")
+            f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:
@@ -980,7 +993,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             local_addr=None, server_hostname=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            happy_eyeballs_delay=None, interleave=None):
+            happy_eyeballs_delay=None, interleave=None,
+            all_errors=False):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given internet host and
@@ -1069,6 +1083,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
+                if all_errors:
+                    raise ExceptionGroup("create_connection failed", exceptions)
                 if len(exceptions) == 1:
                     raise exceptions[0]
                 else:

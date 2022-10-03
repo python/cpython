@@ -1,2 +1,0 @@
-Adjust inaccurate phrasing in :doc:`../extending/newtypes_tutorial` about the
-``ob_base`` field and the macros used to access its contents.

@@ -1,5 +1,0 @@
-All :exc:`URLError` exception messages raised in
-:class:`urllib.request.URLopener` now contain a colon between ``ftp error``
-and the rest of the message. Previously,
-:func:`~urllib.request.URLopener.open_ftp` missed the colon. Patch by Oleg
-Iarygin.

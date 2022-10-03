@@ -1,0 +1,1 @@
+Fix incorrect parsing of Windows registry proxy settings

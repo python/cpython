@@ -1,4 +1,0 @@
-Fix handling of the ``stacklevel`` argument to logging functions in the
-:mod:`logging` module so that it is consistent accross all logging functions
-and, as advertised, similar to the ``stacklevel`` argument used in
-:meth:`~warnings.warn`.
