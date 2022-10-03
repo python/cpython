@@ -1768,8 +1768,9 @@ Or, when processing a file stream in chunks:
 
 Assignment expressions must be surrounded by parentheses when used
 as sub-expressions in slicing, conditional, lambda,
-keyword-argument, and comprehension-if expressions.  They
-can be used unparenthesized in all other places, including ``if`` and ``while`` statements.
+keyword-argument, and comprehension-if expressions.  
+In all other places where they can be used, parentheses are not required,
+including in ``if`` and ``while`` statements.
 
 .. versionadded:: 3.8
    See :pep:`572` for more details about assignment expressions.
