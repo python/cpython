@@ -249,3 +249,18 @@ c_allow_pre_v3 = True
 # bpo-40204: Disable warnings on Sphinx 2 syntax of the C domain since the
 # documentation is built with -W (warnings treated as errors).
 c_warn_on_allowed_pre_v3 = False
+
+# Fix '!' not working with C domain when pre_v3 is enabled
+import sphinx
+
+if sphinx.version_info[:2] < (5, 3):
+    from sphinx.domains.c import CXRefRole
+
+    original_run = CXRefRole.run
+
+    def new_run(self):
+        if self.disabled:
+            return super(CXRefRole, self).run()
+        return original_run(self)
+
+    CXRefRole.run = new_run
