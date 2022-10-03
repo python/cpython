@@ -192,6 +192,8 @@ See :pep:`654` for more details.
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
+.. _whatsnew311-pep678:
+
 PEP 678: Exceptions can be enriched with notes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
