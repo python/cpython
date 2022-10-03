@@ -4,6 +4,8 @@
 #  include <winsock2.h>           // struct timeval
 #endif
 
+#include <fenv.h>
+
 #if defined(__APPLE__)
 #  include <mach/mach_time.h>     // mach_absolute_time(), mach_timebase_info()
 
@@ -294,11 +296,13 @@ pytime_double_to_denominator(double d, time_t *sec, long *numerator,
     }
     assert(0.0 <= floatpart && floatpart < denominator);
 
-    if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+    feclearexcept(FE_ALL_EXCEPT);
+    long long second = llround(intpart);
+    if (fetestexcept(FE_INVALID) || !_Py_InIntegralTypeRange(time_t, second)) {
         pytime_time_t_overflow();
         return -1;
     }
-    *sec = (time_t)intpart;
+    *sec = (time_t)second;
     *numerator = (long)floatpart;
     assert(0 <= *numerator && *numerator < idenominator);
     return 0;
@@ -349,11 +353,13 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         d = pytime_round(d, round);
         (void)modf(d, &intpart);
 
-        if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+        feclearexcept(FE_ALL_EXCEPT);
+        long long second = llround(intpart);
+        if (fetestexcept(FE_INVALID) || !_Py_InIntegralTypeRange(time_t, second)) {
             pytime_time_t_overflow();
             return -1;
         }
-        *sec = (time_t)intpart;
+        *sec = (time_t)second;
         return 0;
     }
     else {
@@ -515,13 +521,14 @@ pytime_from_double(_PyTime_t *tp, double value, _PyTime_round_t round,
     d *= (double)unit_to_ns;
     d = pytime_round(d, round);
 
-    if (!_Py_InIntegralTypeRange(_PyTime_t, d)) {
+    feclearexcept(FE_ALL_EXCEPT);
+    long long ns = llround(d);
+    if (fetestexcept(FE_ALL_EXCEPT)) {
         pytime_overflow();
         return -1;
     }
-    _PyTime_t ns = (_PyTime_t)d;
 
-    *tp = pytime_from_nanoseconds(ns);
+    *tp = pytime_from_nanoseconds((_PyTime_t)ns);
     return 0;
 }
 
