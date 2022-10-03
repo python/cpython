@@ -1011,33 +1011,6 @@ _PyLineTable_NextAddressRange(PyCodeAddressRange *range)
     return 1;
 }
 
-int
-_PyLineTable_StartsLine(PyCodeAddressRange *range)
-{
-    if (range->ar_start <= 0) {
-        return 0;
-    }
-    const uint8_t *ptr = range->opaque.lo_next;
-    do {
-        ptr--;
-    } while (((*ptr) & 128) == 0);
-    int code = ((*ptr)>> 3) & 15;
-    switch(code) {
-        case PY_CODE_LOCATION_INFO_LONG:
-            return 0;
-        case PY_CODE_LOCATION_INFO_NO_COLUMNS:
-        case PY_CODE_LOCATION_INFO_NONE:
-            return ptr[1] != 0;
-        case PY_CODE_LOCATION_INFO_ONE_LINE0:
-            return 0;
-        case PY_CODE_LOCATION_INFO_ONE_LINE1:
-        case PY_CODE_LOCATION_INFO_ONE_LINE2:
-            return 1;
-        default:
-            return 0;
-    }
-}
-
 static int
 emit_pair(PyObject **bytes, int *offset, int a, int b)
 {
