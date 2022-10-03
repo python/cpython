@@ -1,10 +1,8 @@
 """Test cases for traceback module"""
 
 from collections import namedtuple
-import json
 from io import StringIO
 import linecache
-from pathlib import Path
 import sys
 import types
 import inspect
@@ -17,9 +15,11 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
+import json
 import textwrap
 import traceback
 from functools import partial
+from pathlib import Path
 
 MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
