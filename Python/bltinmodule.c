@@ -273,7 +273,7 @@ is the number of parent directories to search relative to the current module.
 static PyObject *
 builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
                         PyObject *locals, PyObject *fromlist, int level)
-/*[clinic end generated code: output=4febeda88a0cd245 input=35e9a6460412430f]*/
+/*[clinic end generated code: output=4febeda88a0cd245 input=73f4b960ea5b9dd6]*/
 {
     return PyImport_ImportModuleLevelObject(name, globals, locals,
                                             fromlist, level);
@@ -1516,7 +1516,7 @@ setattr(x, 'y', v) is equivalent to ``x.y = v``
 static PyObject *
 builtin_setattr_impl(PyObject *module, PyObject *obj, PyObject *name,
                      PyObject *value)
-/*[clinic end generated code: output=dc2ce1d1add9acb4 input=bd2b7ca6875a1899]*/
+/*[clinic end generated code: output=dc2ce1d1add9acb4 input=5e26417f2e8598d4]*/
 {
     if (PyObject_SetAttr(obj, name, value) != 0)
         return NULL;
@@ -1538,7 +1538,7 @@ delattr(x, 'y') is equivalent to ``del x.y``
 
 static PyObject *
 builtin_delattr_impl(PyObject *module, PyObject *obj, PyObject *name)
-/*[clinic end generated code: output=85134bc58dff79fa input=db16685d6b4b9410]*/
+/*[clinic end generated code: output=85134bc58dff79fa input=164865623abe7216]*/
 {
     if (PyObject_SetAttr(obj, name, (PyObject *)NULL) != 0)
         return NULL;
