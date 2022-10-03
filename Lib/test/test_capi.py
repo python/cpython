@@ -1001,6 +1001,9 @@ class SubinterpreterTest(unittest.TestCase):
 
     def test_py_config_isoloated_per_interpreter(self):
         # A config change in one interpreter must not leak to out to others.
+        #
+        # This test could verify ANY config value, it just happens to have been
+        # written around the time of int_max_str_digits. Refactoring is okay.
         code = """if 1:
         import sys, _testinternalcapi
 
