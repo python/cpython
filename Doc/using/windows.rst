@@ -163,11 +163,14 @@ of available options is shown below.
 |                           |                                      | Python X.Y`              |
 +---------------------------+--------------------------------------+--------------------------+
 | DefaultJustForMeTargetDir | The default install directory for    | :file:`%LocalAppData%\\\ |
-|                           | just-for-me installs                 | Programs\\PythonXY` or   |
+|                           | just-for-me installs                 | Programs\\Python\\\      |
+|                           |                                      | PythonXY` or             |
 |                           |                                      | :file:`%LocalAppData%\\\ |
-|                           |                                      | Programs\\PythonXY-32` or|
+|                           |                                      | Programs\\Python\\\      |
+|                           |                                      | PythonXY-32` or          |
 |                           |                                      | :file:`%LocalAppData%\\\ |
-|                           |                                      | Programs\\PythonXY-64`   |
+|                           |                                      | Programs\\Python\\\      |
+|                           |                                      | PythonXY-64`             |
 +---------------------------+--------------------------------------+--------------------------+
 | DefaultCustomTargetDir    | The default custom install directory | (empty)                  |
 |                           | displayed in the UI                  |                          |
