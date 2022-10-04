@@ -320,15 +320,25 @@ class _DataclassParams:
                  'order',
                  'unsafe_hash',
                  'frozen',
+                 'match_args',
+                 'kw_only',
+                 'slots',
+                 'weakref_slot',
                  )
 
-    def __init__(self, init, repr, eq, order, unsafe_hash, frozen):
+    def __init__(self,
+                 init, repr, eq, order, unsafe_hash, frozen,
+                 match_args, kw_only, slots, weakref_slot):
         self.init = init
         self.repr = repr
         self.eq = eq
         self.order = order
         self.unsafe_hash = unsafe_hash
         self.frozen = frozen
+        self.match_args = match_args
+        self.kw_only = kw_only
+        self.slots = slots
+        self.weakref_slot = weakref_slot
 
     def __repr__(self):
         return ('_DataclassParams('
@@ -337,7 +347,11 @@ class _DataclassParams:
                 f'eq={self.eq!r},'
                 f'order={self.order!r},'
                 f'unsafe_hash={self.unsafe_hash!r},'
-                f'frozen={self.frozen!r}'
+                f'frozen={self.frozen!r},'
+                f'match_args={self.match_args!r},'
+                f'kw_only={self.kw_only!r},'
+                f'slots={self.slots!r},'
+                f'weakref_slot={self.weakref_slot!r}'
                 ')')
 
 
@@ -905,7 +919,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         globals = {}
 
     setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order,
-                                           unsafe_hash, frozen))
+                                           unsafe_hash, frozen,
+                                           match_args, kw_only,
+                                           slots, weakref_slot))
 
     # Find our base classes in reverse MRO order, and exclude
     # ourselves.  In reversed order so that more derived classes
