@@ -445,8 +445,8 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :issue:`12022` and :issue:`44471`.)
 
 * Added :meth:`object.__getstate__`, which provides the default
-  implementation of the :meth:`!__getstate__` method. :mod:`copy`-ing
-  and :mod:`pickle`-ing instances of subclasses of builtin types
+  implementation of the :meth:`!__getstate__` method. :mod:`copy`\ing
+  and :mod:`pickle`\ing instances of subclasses of builtin types
   :class:`bytearray`, :class:`set`, :class:`frozenset`,
   :class:`collections.OrderedDict`, :class:`collections.deque`,
   :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
