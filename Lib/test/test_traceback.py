@@ -15,9 +15,11 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
+import json
 import textwrap
 import traceback
 from functools import partial
+from pathlib import Path
 
 MODULE_PREFIX = f'{__name__}.' if __name__ == '__main__' else ''
 
@@ -25,6 +27,9 @@ test_code = namedtuple('code', ['co_filename', 'co_name'])
 test_code.co_positions = lambda _: iter([(6, 6, 0, 0)])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next', 'tb_lasti'])
+
+
+LEVENSHTEIN_DATA_FILE = Path(__file__).parent / 'levenshtein_examples.json'
 
 
 class TracebackCases(unittest.TestCase):
@@ -371,20 +376,36 @@ class TracebackCases(unittest.TestCase):
             '(exc, /, value=<implicit>)')
 
 
-@requires_debug_ranges()
-class TracebackErrorLocationCaretTests(unittest.TestCase):
-    """
-    Tests for printing code error expressions as part of PEP 657
-    """
-    def get_exception(self, callable):
+class PurePythonExceptionFormattingMixin:
+    def get_exception(self, callable, slice_start=0, slice_end=-1):
         try:
             callable()
             self.fail("No exception thrown.")
         except:
-            return traceback.format_exc().splitlines()[:-1]
+            return traceback.format_exc().splitlines()[slice_start:slice_end]
 
     callable_line = get_exception.__code__.co_firstlineno + 2
 
+
+class CAPIExceptionFormattingMixin:
+    def get_exception(self, callable, slice_start=0, slice_end=-1):
+        from _testcapi import exception_print
+        try:
+            callable()
+            self.fail("No exception thrown.")
+        except Exception as e:
+            with captured_output("stderr") as tbstderr:
+                exception_print(e)
+            return tbstderr.getvalue().splitlines()[slice_start:slice_end]
+
+    callable_line = get_exception.__code__.co_firstlineno + 3
+
+
+@requires_debug_ranges()
+class TracebackErrorLocationCaretTestBase:
+    """
+    Tests for printing code error expressions as part of PEP 657
+    """
     def test_basic_caret(self):
         # NOTE: In caret tests, "if True:" is used as a way to force indicator
         #   display, since the raising expression spans only part of the line.
@@ -777,23 +798,29 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         ]
         self.assertEqual(actual, expected)
 
+
+@requires_debug_ranges()
+class PurePythonTracebackErrorCaretTests(
+    PurePythonExceptionFormattingMixin,
+    TracebackErrorLocationCaretTestBase,
+    unittest.TestCase,
+):
+    """
+    Same set of tests as above using the pure Python implementation of
+    traceback printing in traceback.py.
+    """
+
+
 @cpython_only
 @requires_debug_ranges()
-class CPythonTracebackErrorCaretTests(TracebackErrorLocationCaretTests):
+class CPythonTracebackErrorCaretTests(
+    CAPIExceptionFormattingMixin,
+    TracebackErrorLocationCaretTestBase,
+    unittest.TestCase,
+):
     """
     Same set of tests as above but with Python's internal traceback printing.
     """
-    def get_exception(self, callable):
-        from _testcapi import exception_print
-        try:
-            callable()
-            self.fail("No exception thrown.")
-        except Exception as e:
-            with captured_output("stderr") as tbstderr:
-                exception_print(e)
-            return tbstderr.getvalue().splitlines()[:-1]
-
-    callable_line = get_exception.__code__.co_firstlineno + 3
 
 
 class TracebackFormatTests(unittest.TestCase):
@@ -2787,6 +2814,400 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         self.assertEqual(exc, ALWAYS_EQ)
 
 
+global_for_suggestions = None
+
+
+class SuggestionFormattingTestBase:
+    def get_suggestion(self, obj, attr_name=None):
+        if attr_name is not None:
+            def callable():
+                getattr(obj, attr_name)
+        else:
+            callable = obj
+
+        result_lines = self.get_exception(
+            callable, slice_start=-1, slice_end=None
+        )
+        return result_lines[0]
+
+    def test_getattr_suggestions(self):
+        class Substitution:
+            noise = more_noise = a = bc = None
+            blech = None
+
+        class Elimination:
+            noise = more_noise = a = bc = None
+            blch = None
+
+        class Addition:
+            noise = more_noise = a = bc = None
+            bluchin = None
+
+        class SubstitutionOverElimination:
+            blach = None
+            bluc = None
+
+        class SubstitutionOverAddition:
+            blach = None
+            bluchi = None
+
+        class EliminationOverAddition:
+            blucha = None
+            bluc = None
+
+        class CaseChangeOverSubstitution:
+            Luch = None
+            fluch = None
+            BLuch = None
+
+        for cls, suggestion in [
+            (Addition, "'bluchin'?"),
+            (Substitution, "'blech'?"),
+            (Elimination, "'blch'?"),
+            (Addition, "'bluchin'?"),
+            (SubstitutionOverElimination, "'blach'?"),
+            (SubstitutionOverAddition, "'blach'?"),
+            (EliminationOverAddition, "'bluc'?"),
+            (CaseChangeOverSubstitution, "'BLuch'?"),
+        ]:
+            actual = self.get_suggestion(cls(), 'bluch')
+            self.assertIn(suggestion, actual)
+
+    def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
+        class A:
+            blech = None
+
+        actual = self.get_suggestion(A(), 'somethingverywrong')
+        self.assertNotIn("blech", actual)
+
+    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        class MyClass:
+            vvv = mom = w = id = pytho = None
+
+        for name in ("b", "v", "m", "py"):
+            with self.subTest(name=name):
+                actual = self.get_suggestion(MyClass, name)
+                self.assertNotIn("you mean", actual)
+                self.assertNotIn("vvv", actual)
+                self.assertNotIn("mom", actual)
+                self.assertNotIn("'id'", actual)
+                self.assertNotIn("'w'", actual)
+                self.assertNotIn("'pytho'", actual)
+
+    def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
+        class A:
+            blech = None
+        # A class with a very big __dict__ will not be consider
+        # for suggestions.
+        for index in range(2000):
+            setattr(A, f"index_{index}", None)
+
+        actual = self.get_suggestion(A(), 'bluch')
+        self.assertNotIn("blech", actual)
+
+    def test_getattr_suggestions_no_args(self):
+        class A:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError()
+
+        actual = self.get_suggestion(A(), 'bluch')
+        self.assertIn("blech", actual)
+
+        class A:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError
+
+        actual = self.get_suggestion(A(), 'bluch')
+        self.assertIn("blech", actual)
+
+    def test_getattr_suggestions_invalid_args(self):
+        class NonStringifyClass:
+            __str__ = None
+            __repr__ = None
+
+        class A:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError(NonStringifyClass())
+
+        class B:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError("Error", 23)
+
+        class C:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError(23)
+
+        for cls in [A, B, C]:
+            actual = self.get_suggestion(cls(), 'bluch')
+            self.assertIn("blech", actual)
+
+    def test_getattr_suggestions_for_same_name(self):
+        class A:
+            def __dir__(self):
+                return ['blech']
+        actual = self.get_suggestion(A(), 'blech')
+        self.assertNotIn("Did you mean", actual)
+
+    def test_attribute_error_with_failing_dict(self):
+        class T:
+            bluch = 1
+            def __dir__(self):
+                raise AttributeError("oh no!")
+
+        actual = self.get_suggestion(T(), 'blich')
+        self.assertNotIn("blech", actual)
+        self.assertNotIn("oh no!", actual)
+
+    def test_attribute_error_with_bad_name(self):
+        def raise_attribute_error_with_bad_name():
+            raise AttributeError(name=12, obj=23)
+
+        result_lines = self.get_exception(
+            raise_attribute_error_with_bad_name, slice_start=-1, slice_end=None
+        )
+        self.assertNotIn("?", result_lines[-1])
+
+    def test_attribute_error_inside_nested_getattr(self):
+        class A:
+            bluch = 1
+
+        class B:
+            def __getattribute__(self, attr):
+                a = A()
+                return a.blich
+
+        actual = self.get_suggestion(B(), 'something')
+        self.assertIn("Did you mean", actual)
+        self.assertIn("bluch", actual)
+
+    def test_name_error_suggestions(self):
+        def Substitution():
+            noise = more_noise = a = bc = None
+            blech = None
+            print(bluch)
+
+        def Elimination():
+            noise = more_noise = a = bc = None
+            blch = None
+            print(bluch)
+
+        def Addition():
+            noise = more_noise = a = bc = None
+            bluchin = None
+            print(bluch)
+
+        def SubstitutionOverElimination():
+            blach = None
+            bluc = None
+            print(bluch)
+
+        def SubstitutionOverAddition():
+            blach = None
+            bluchi = None
+            print(bluch)
+
+        def EliminationOverAddition():
+            blucha = None
+            bluc = None
+            print(bluch)
+
+        for func, suggestion in [(Substitution, "'blech'?"),
+                                (Elimination, "'blch'?"),
+                                (Addition, "'bluchin'?"),
+                                (EliminationOverAddition, "'blucha'?"),
+                                (SubstitutionOverElimination, "'blach'?"),
+                                (SubstitutionOverAddition, "'blach'?")]:
+            actual = self.get_suggestion(func)
+            self.assertIn(suggestion, actual)
+
+    def test_name_error_suggestions_from_globals(self):
+        def func():
+            print(global_for_suggestio)
+        actual = self.get_suggestion(func)
+        self.assertIn("'global_for_suggestions'?", actual)
+
+    def test_name_error_suggestions_from_builtins(self):
+        def func():
+            print(ZeroDivisionErrrrr)
+        actual = self.get_suggestion(func)
+        self.assertIn("'ZeroDivisionError'?", actual)
+
+    def test_name_error_suggestions_do_not_trigger_for_long_names(self):
+        def func():
+            somethingverywronghehehehehehe = None
+            print(somethingverywronghe)
+        actual = self.get_suggestion(func)
+        self.assertNotIn("somethingverywronghehe", actual)
+
+    def test_name_error_bad_suggestions_do_not_trigger_for_small_names(self):
+
+        def f_b():
+            vvv = mom = w = id = pytho = None
+            b
+
+        def f_v():
+            vvv = mom = w = id = pytho = None
+            v
+
+        def f_m():
+            vvv = mom = w = id = pytho = None
+            m
+
+        def f_py():
+            vvv = mom = w = id = pytho = None
+            py
+
+        for name, func in (("b", f_b), ("v", f_v), ("m", f_m), ("py", f_py)):
+            with self.subTest(name=name):
+                actual = self.get_suggestion(func)
+                self.assertNotIn("you mean", actual)
+                self.assertNotIn("vvv", actual)
+                self.assertNotIn("mom", actual)
+                self.assertNotIn("'id'", actual)
+                self.assertNotIn("'w'", actual)
+                self.assertNotIn("'pytho'", actual)
+
+    def test_name_error_suggestions_do_not_trigger_for_too_many_locals(self):
+        def func():
+            # Mutating locals() is unreliable, so we need to do it by hand
+            a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = a10 = \
+            a11 = a12 = a13 = a14 = a15 = a16 = a17 = a18 = a19 = a20 = \
+            a21 = a22 = a23 = a24 = a25 = a26 = a27 = a28 = a29 = a30 = \
+            a31 = a32 = a33 = a34 = a35 = a36 = a37 = a38 = a39 = a40 = \
+            a41 = a42 = a43 = a44 = a45 = a46 = a47 = a48 = a49 = a50 = \
+            a51 = a52 = a53 = a54 = a55 = a56 = a57 = a58 = a59 = a60 = \
+            a61 = a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = a70 = \
+            a71 = a72 = a73 = a74 = a75 = a76 = a77 = a78 = a79 = a80 = \
+            a81 = a82 = a83 = a84 = a85 = a86 = a87 = a88 = a89 = a90 = \
+            a91 = a92 = a93 = a94 = a95 = a96 = a97 = a98 = a99 = a100 = \
+            a101 = a102 = a103 = a104 = a105 = a106 = a107 = a108 = a109 = a110 = \
+            a111 = a112 = a113 = a114 = a115 = a116 = a117 = a118 = a119 = a120 = \
+            a121 = a122 = a123 = a124 = a125 = a126 = a127 = a128 = a129 = a130 = \
+            a131 = a132 = a133 = a134 = a135 = a136 = a137 = a138 = a139 = a140 = \
+            a141 = a142 = a143 = a144 = a145 = a146 = a147 = a148 = a149 = a150 = \
+            a151 = a152 = a153 = a154 = a155 = a156 = a157 = a158 = a159 = a160 = \
+            a161 = a162 = a163 = a164 = a165 = a166 = a167 = a168 = a169 = a170 = \
+            a171 = a172 = a173 = a174 = a175 = a176 = a177 = a178 = a179 = a180 = \
+            a181 = a182 = a183 = a184 = a185 = a186 = a187 = a188 = a189 = a190 = \
+            a191 = a192 = a193 = a194 = a195 = a196 = a197 = a198 = a199 = a200 = \
+            a201 = a202 = a203 = a204 = a205 = a206 = a207 = a208 = a209 = a210 = \
+            a211 = a212 = a213 = a214 = a215 = a216 = a217 = a218 = a219 = a220 = \
+            a221 = a222 = a223 = a224 = a225 = a226 = a227 = a228 = a229 = a230 = \
+            a231 = a232 = a233 = a234 = a235 = a236 = a237 = a238 = a239 = a240 = \
+            a241 = a242 = a243 = a244 = a245 = a246 = a247 = a248 = a249 = a250 = \
+            a251 = a252 = a253 = a254 = a255 = a256 = a257 = a258 = a259 = a260 = \
+            a261 = a262 = a263 = a264 = a265 = a266 = a267 = a268 = a269 = a270 = \
+            a271 = a272 = a273 = a274 = a275 = a276 = a277 = a278 = a279 = a280 = \
+            a281 = a282 = a283 = a284 = a285 = a286 = a287 = a288 = a289 = a290 = \
+            a291 = a292 = a293 = a294 = a295 = a296 = a297 = a298 = a299 = a300 = \
+            a301 = a302 = a303 = a304 = a305 = a306 = a307 = a308 = a309 = a310 = \
+            a311 = a312 = a313 = a314 = a315 = a316 = a317 = a318 = a319 = a320 = \
+            a321 = a322 = a323 = a324 = a325 = a326 = a327 = a328 = a329 = a330 = \
+            a331 = a332 = a333 = a334 = a335 = a336 = a337 = a338 = a339 = a340 = \
+            a341 = a342 = a343 = a344 = a345 = a346 = a347 = a348 = a349 = a350 = \
+            a351 = a352 = a353 = a354 = a355 = a356 = a357 = a358 = a359 = a360 = \
+            a361 = a362 = a363 = a364 = a365 = a366 = a367 = a368 = a369 = a370 = \
+            a371 = a372 = a373 = a374 = a375 = a376 = a377 = a378 = a379 = a380 = \
+            a381 = a382 = a383 = a384 = a385 = a386 = a387 = a388 = a389 = a390 = \
+            a391 = a392 = a393 = a394 = a395 = a396 = a397 = a398 = a399 = a400 = \
+            a401 = a402 = a403 = a404 = a405 = a406 = a407 = a408 = a409 = a410 = \
+            a411 = a412 = a413 = a414 = a415 = a416 = a417 = a418 = a419 = a420 = \
+            a421 = a422 = a423 = a424 = a425 = a426 = a427 = a428 = a429 = a430 = \
+            a431 = a432 = a433 = a434 = a435 = a436 = a437 = a438 = a439 = a440 = \
+            a441 = a442 = a443 = a444 = a445 = a446 = a447 = a448 = a449 = a450 = \
+            a451 = a452 = a453 = a454 = a455 = a456 = a457 = a458 = a459 = a460 = \
+            a461 = a462 = a463 = a464 = a465 = a466 = a467 = a468 = a469 = a470 = \
+            a471 = a472 = a473 = a474 = a475 = a476 = a477 = a478 = a479 = a480 = \
+            a481 = a482 = a483 = a484 = a485 = a486 = a487 = a488 = a489 = a490 = \
+            a491 = a492 = a493 = a494 = a495 = a496 = a497 = a498 = a499 = a500 = \
+            a501 = a502 = a503 = a504 = a505 = a506 = a507 = a508 = a509 = a510 = \
+            a511 = a512 = a513 = a514 = a515 = a516 = a517 = a518 = a519 = a520 = \
+            a521 = a522 = a523 = a524 = a525 = a526 = a527 = a528 = a529 = a530 = \
+            a531 = a532 = a533 = a534 = a535 = a536 = a537 = a538 = a539 = a540 = \
+            a541 = a542 = a543 = a544 = a545 = a546 = a547 = a548 = a549 = a550 = \
+            a551 = a552 = a553 = a554 = a555 = a556 = a557 = a558 = a559 = a560 = \
+            a561 = a562 = a563 = a564 = a565 = a566 = a567 = a568 = a569 = a570 = \
+            a571 = a572 = a573 = a574 = a575 = a576 = a577 = a578 = a579 = a580 = \
+            a581 = a582 = a583 = a584 = a585 = a586 = a587 = a588 = a589 = a590 = \
+            a591 = a592 = a593 = a594 = a595 = a596 = a597 = a598 = a599 = a600 = \
+            a601 = a602 = a603 = a604 = a605 = a606 = a607 = a608 = a609 = a610 = \
+            a611 = a612 = a613 = a614 = a615 = a616 = a617 = a618 = a619 = a620 = \
+            a621 = a622 = a623 = a624 = a625 = a626 = a627 = a628 = a629 = a630 = \
+            a631 = a632 = a633 = a634 = a635 = a636 = a637 = a638 = a639 = a640 = \
+            a641 = a642 = a643 = a644 = a645 = a646 = a647 = a648 = a649 = a650 = \
+            a651 = a652 = a653 = a654 = a655 = a656 = a657 = a658 = a659 = a660 = \
+            a661 = a662 = a663 = a664 = a665 = a666 = a667 = a668 = a669 = a670 = \
+            a671 = a672 = a673 = a674 = a675 = a676 = a677 = a678 = a679 = a680 = \
+            a681 = a682 = a683 = a684 = a685 = a686 = a687 = a688 = a689 = a690 = \
+            a691 = a692 = a693 = a694 = a695 = a696 = a697 = a698 = a699 = a700 = \
+            a701 = a702 = a703 = a704 = a705 = a706 = a707 = a708 = a709 = a710 = \
+            a711 = a712 = a713 = a714 = a715 = a716 = a717 = a718 = a719 = a720 = \
+            a721 = a722 = a723 = a724 = a725 = a726 = a727 = a728 = a729 = a730 = \
+            a731 = a732 = a733 = a734 = a735 = a736 = a737 = a738 = a739 = a740 = \
+            a741 = a742 = a743 = a744 = a745 = a746 = a747 = a748 = a749 = a750 = \
+            a751 = a752 = a753 = a754 = a755 = a756 = a757 = a758 = a759 = a760 = \
+            a761 = a762 = a763 = a764 = a765 = a766 = a767 = a768 = a769 = a770 = \
+            a771 = a772 = a773 = a774 = a775 = a776 = a777 = a778 = a779 = a780 = \
+            a781 = a782 = a783 = a784 = a785 = a786 = a787 = a788 = a789 = a790 = \
+            a791 = a792 = a793 = a794 = a795 = a796 = a797 = a798 = a799 = a800 \
+                = None
+            print(a0)
+
+        actual = self.get_suggestion(func)
+        self.assertNotRegex(actual, r"NameError.*a1")
+
+    def test_name_error_with_custom_exceptions(self):
+        def func():
+            blech = None
+            raise NameError()
+
+        actual = self.get_suggestion(func)
+        self.assertNotIn("blech", actual)
+
+        def func():
+            blech = None
+            raise NameError
+
+        actual = self.get_suggestion(func)
+        self.assertNotIn("blech", actual)
+
+    def test_unbound_local_error_does_not_match(self):
+        def func():
+            something = 3
+            print(somethong)
+            somethong = 3
+
+        actual = self.get_suggestion(func)
+        self.assertNotIn("something", actual)
+
+
+class PurePythonSuggestionFormattingTests(
+    PurePythonExceptionFormattingMixin,
+    SuggestionFormattingTestBase,
+    unittest.TestCase,
+):
+    """
+    Same set of tests as above using the pure Python implementation of
+    traceback printing in traceback.py.
+    """
+
+
+@cpython_only
+class CPythonSuggestionFormattingTests(
+    CAPIExceptionFormattingMixin,
+    SuggestionFormattingTestBase,
+    unittest.TestCase,
+):
+    """
+    Same set of tests as above but with Python's internal traceback printing.
+    """
+
+
 class MiscTest(unittest.TestCase):
 
     def test_all(self):
@@ -2799,6 +3220,59 @@ class MiscTest(unittest.TestCase):
             if getattr(module_object, '__module__', None) == 'traceback':
                 expected.add(name)
         self.assertCountEqual(traceback.__all__, expected)
+
+    def test_levenshtein_distance(self):
+        # copied from _testinternalcapi.test_edit_cost
+        # to also exercise the Python implementation
+
+        def CHECK(a, b, expected):
+            actual = traceback._levenshtein_distance(a, b, 4044)
+            self.assertEqual(actual, expected)
+
+        CHECK("", "", 0)
+        CHECK("", "a", 2)
+        CHECK("a", "A", 1)
+        CHECK("Apple", "Aple", 2)
+        CHECK("Banana", "B@n@n@", 6)
+        CHECK("Cherry", "Cherry!", 2)
+        CHECK("---0---", "------", 2)
+        CHECK("abc", "y", 6)
+        CHECK("aa", "bb", 4)
+        CHECK("aaaaa", "AAAAA", 5)
+        CHECK("wxyz", "wXyZ", 2)
+        CHECK("wxyz", "wXyZ123", 8)
+        CHECK("Python", "Java", 12)
+        CHECK("Java", "C#", 8)
+        CHECK("AbstractFoobarManager", "abstract_foobar_manager", 3+2*2)
+        CHECK("CPython", "PyPy", 10)
+        CHECK("CPython", "pypy", 11)
+        CHECK("AttributeError", "AttributeErrop", 2)
+        CHECK("AttributeError", "AttributeErrorTests", 10)
+        CHECK("ABA", "AAB", 4)
+
+    def test_levenshtein_distance_short_circuit(self):
+        if not LEVENSHTEIN_DATA_FILE.is_file():
+            self.fail(
+                f"{LEVENSHTEIN_DATA_FILE} is missing."
+                f" Run `make regen-test-levenshtein`"
+            )
+
+        with LEVENSHTEIN_DATA_FILE.open("r") as f:
+            examples = json.load(f)
+        for a, b, expected in examples:
+            res1 = traceback._levenshtein_distance(a, b, 1000)
+            self.assertEqual(res1, expected, msg=(a, b))
+
+            for threshold in [expected, expected + 1, expected + 2]:
+                # big enough thresholds shouldn't change the result
+                res2 = traceback._levenshtein_distance(a, b, threshold)
+                self.assertEqual(res2, expected, msg=(a, b, threshold))
+
+            for threshold in range(expected):
+                # for small thresholds, the only piece of information
+                # we receive is "strings not close enough".
+                res3 = traceback._levenshtein_distance(a, b, threshold)
+                self.assertGreater(res3, threshold, msg=(a, b, threshold))
 
 
 if __name__ == "__main__":

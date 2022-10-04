@@ -707,6 +707,11 @@ class TracebackException:
             self.offset = exc_value.offset
             self.end_offset = exc_value.end_offset
             self.msg = exc_value.msg
+        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
+                getattr(exc_value, "name", None) is not None:
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback)
+            if suggestion:
+                self._str += f". Did you mean: '{suggestion}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -977,3 +982,125 @@ class TracebackException:
             file = sys.stderr
         for line in self.format(chain=chain):
             print(line, file=file, end="")
+
+
+_MAX_CANDIDATE_ITEMS = 750
+_MAX_STRING_SIZE = 40
+_MOVE_COST = 2
+_CASE_COST = 1
+
+
+def _substitution_cost(ch_a, ch_b):
+    if ch_a == ch_b:
+        return 0
+    if ch_a.lower() == ch_b.lower():
+        return _CASE_COST
+    return _MOVE_COST
+
+
+def _compute_suggestion_error(exc_value, tb):
+    wrong_name = getattr(exc_value, "name", None)
+    if wrong_name is None or not isinstance(wrong_name, str):
+        return None
+    if isinstance(exc_value, AttributeError):
+        obj = exc_value.obj
+        try:
+            d = dir(obj)
+        except Exception:
+            return None
+    else:
+        assert isinstance(exc_value, NameError)
+        # find most recent frame
+        if tb is None:
+            return None
+        while tb.tb_next is not None:
+            tb = tb.tb_next
+        frame = tb.tb_frame
+        d = (
+            list(frame.f_locals)
+            + list(frame.f_globals)
+            + list(frame.f_globals['__builtins__'])
+        )
+    if len(d) > _MAX_CANDIDATE_ITEMS:
+        return None
+    wrong_name_len = len(wrong_name)
+    if wrong_name_len > _MAX_STRING_SIZE:
+        return None
+    best_distance = wrong_name_len
+    suggestion = None
+    for possible_name in d:
+        if possible_name == wrong_name:
+            # A missing attribute is "found". Don't suggest it (see GH-88821).
+            continue
+        # No more than 1/3 of the involved characters should need changed.
+        max_distance = (len(possible_name) + wrong_name_len + 3) * _MOVE_COST // 6
+        # Don't take matches we've already beaten.
+        max_distance = min(max_distance, best_distance - 1)
+        current_distance = _levenshtein_distance(wrong_name, possible_name, max_distance)
+        if current_distance > max_distance:
+            continue
+        if not suggestion or current_distance < best_distance:
+            suggestion = possible_name
+            best_distance = current_distance
+    return suggestion
+
+
+def _levenshtein_distance(a, b, max_cost):
+    # A Python implementation of Python/suggestions.c:levenshtein_distance.
+
+    # Both strings are the same
+    if a == b:
+        return 0
+
+    # Trim away common affixes
+    pre = 0
+    while a[pre:] and b[pre:] and a[pre] == b[pre]:
+        pre += 1
+    a = a[pre:]
+    b = b[pre:]
+    post = 0
+    while a[:post or None] and b[:post or None] and a[post-1] == b[post-1]:
+        post -= 1
+    a = a[:post or None]
+    b = b[:post or None]
+    if not a or not b:
+        return _MOVE_COST * (len(a) + len(b))
+    if len(a) > _MAX_STRING_SIZE or len(b) > _MAX_STRING_SIZE:
+        return max_cost + 1
+
+    # Prefer shorter buffer
+    if len(b) < len(a):
+        a, b = b, a
+
+    # Quick fail when a match is impossible
+    if (len(b) - len(a)) * _MOVE_COST > max_cost:
+        return max_cost + 1
+
+    # Instead of producing the whole traditional len(a)-by-len(b)
+    # matrix, we can update just one row in place.
+    # Initialize the buffer row
+    row = list(range(_MOVE_COST, _MOVE_COST * (len(a) + 1), _MOVE_COST))
+
+    result = 0
+    for bindex in range(len(b)):
+        bchar = b[bindex]
+        distance = result = bindex * _MOVE_COST
+        minimum = sys.maxsize
+        for index in range(len(a)):
+            # 1) Previous distance in this row is cost(b[:b_index], a[:index])
+            substitute = distance + _substitution_cost(bchar, a[index])
+            # 2) cost(b[:b_index], a[:index+1]) from previous row
+            distance = row[index]
+            # 3) existing result is cost(b[:b_index+1], a[index])
+
+            insert_delete = min(result, distance) + _MOVE_COST
+            result = min(insert_delete, substitute)
+
+            # cost(b[:b_index+1], a[:index+1])
+            row[index] = result
+            if result < minimum:
+                minimum = result
+        if minimum > max_cost:
+            # Everything in this row is too big, so bail early.
+            return max_cost + 1
+    return result
