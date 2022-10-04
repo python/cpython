@@ -1474,6 +1474,13 @@ Callback Handles
    A callback wrapper object returned by :meth:`loop.call_soon`,
    :meth:`loop.call_soon_threadsafe`.
 
+   .. method:: get_context()
+
+      Return the :class:`contextvars.Context` object
+      associated with the handle.
+
+      .. versionadded:: 3.12
+
    .. method:: cancel()
 
       Cancel the callback.  If the callback has already been canceled

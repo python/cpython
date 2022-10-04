@@ -1097,6 +1097,13 @@ Task Object
 
       .. versionadded:: 3.8
 
+   .. method:: get_context()
+
+      Return the :class:`contextvars.Context` object
+      associated with the task.
+
+      .. versionadded:: 3.12
+
    .. method:: get_name()
 
       Return the name of the Task.
