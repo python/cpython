@@ -373,6 +373,20 @@ _PyTypes_Fini(PyInterpreterState *interp)
 static PyObject * lookup_subclasses(PyTypeObject *);
 
 void
+PyType_SetModifiedCallback(PyType_ModifiedCallback callback)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->type_modified_callback = (void *)callback;
+}
+
+PyType_ModifiedCallback
+PyType_GetModifiedCallback(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return (PyType_ModifiedCallback)interp->type_modified_callback;
+}
+
+void
 PyType_Modified(PyTypeObject *type)
 {
     /* Invalidate any cached data for the specified type and all
@@ -390,6 +404,12 @@ PyType_Modified(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyType_ModifiedCallback cb = (PyType_ModifiedCallback)interp->type_modified_callback;
+    if (cb) {
+        cb(type);
+    }
+
     if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
         return;
     }

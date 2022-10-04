@@ -5486,6 +5486,92 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *g_type_modified_events;
+static PyType_ModifiedCallback g_prev_type_modified_callback;
+
+static void
+type_modified_callback(PyTypeObject *type)
+{
+    assert(PyList_Check(g_type_modified_events));
+    PyList_Append(g_type_modified_events, (PyObject *)type);
+    if (g_prev_type_modified_callback) {
+        g_prev_type_modified_callback(type);
+    }
+}
+
+static int
+type_modified_assert(Py_ssize_t expected_num_events,
+                     PyTypeObject *expected_last_type)
+{
+    char buf[512];
+    Py_ssize_t actual_num_events = PyList_Size(g_type_modified_events);
+    if (expected_num_events != actual_num_events) {
+        snprintf(buf,
+                512,
+                "got %d type modified events, expected %d",
+                (int)actual_num_events,
+                (int)expected_num_events);
+        raiseTestError("test_type_modified_callback", (const char *)&buf);
+        return -1;
+    }
+    PyObject *last_obj = PyList_GetItem(g_type_modified_events,
+                                       actual_num_events - 1);
+    if (!PyType_Check(last_obj)) {
+        raiseTestError("test_type_modified_callback", "non-type in event list");
+        return -1;
+    }
+    PyTypeObject *last_type = (PyTypeObject *)last_obj;
+    if (last_type != expected_last_type) {
+        snprintf(buf,
+                 512,
+                 "last type is '%s', expected '%s'",
+                 last_type->tp_name,
+                 expected_last_type->tp_name);
+        raiseTestError("test_type_modified_callback", (const char *)&buf);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject *
+test_type_modified_callback(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    g_type_modified_events = PyList_New(0);
+    g_prev_type_modified_callback = PyType_GetModifiedCallback();
+
+    PyType_Slot type_slots[] = {{0, 0},};
+    PyType_Spec type_spec = {"_testcapimodule.test_type",
+                             sizeof(PyObject),
+                             0,
+                             Py_TPFLAGS_DEFAULT,
+                             type_slots};
+    PyTypeObject *type = (PyTypeObject *)PyType_FromSpec(&type_spec);
+
+    if (!type) {
+        return NULL;
+    }
+
+    PyType_SetModifiedCallback(type_modified_callback);
+    if (PyType_GetModifiedCallback() != type_modified_callback) {
+        raiseTestError("test_type_modified_callback",
+                       "type modified callback is not what we just set it to");
+        return NULL;
+    }
+
+
+    PyType_Modified(type);
+
+    if (type_modified_assert(1, type)) {
+        return NULL;
+    }
+
+    PyType_SetModifiedCallback(g_prev_type_modified_callback);
+    Py_CLEAR(g_type_modified_events);
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 static PyObject *getargs_s_hash_int2(PyObject *, PyObject *, PyObject*);
@@ -5762,6 +5848,7 @@ static PyMethodDef TestMethods[] = {
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
+    {"test_type_modified_callback", test_type_modified_callback, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
