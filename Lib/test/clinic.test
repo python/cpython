@@ -1803,12 +1803,12 @@ static PyObject *
 test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *a;
-    const Py_UNICODE *b;
-    const Py_UNICODE *c;
-    const Py_UNICODE *d;
+    const Py_UNICODE *a = NULL;
+    const Py_UNICODE *b = NULL;
+    const Py_UNICODE *c = NULL;
+    const Py_UNICODE *d = NULL;
     Py_ssize_t d_length;
-    const Py_UNICODE *e;
+    const Py_UNICODE *e = NULL;
     Py_ssize_t e_length;
 
     if (!_PyArg_ParseStack(args, nargs, "O&O&O&u#Z#:test_Py_UNICODE_converter",
@@ -1833,7 +1833,7 @@ test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
                                const Py_UNICODE *b, const Py_UNICODE *c,
                                const Py_UNICODE *d, Py_ssize_t d_length,
                                const Py_UNICODE *e, Py_ssize_t e_length)
-/*[clinic end generated code: output=4d426808cdbb3ea3 input=064a3b68ad7f04b0]*/
+/*[clinic end generated code: output=9f34a249b3071fdd input=064a3b68ad7f04b0]*/
 
 
 /*[clinic input]

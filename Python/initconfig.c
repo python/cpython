@@ -695,6 +695,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->pathconfig_warnings >= 0);
     assert(config->_is_python_build >= 0);
     assert(config->safe_path >= 0);
+    assert(config->int_max_str_digits >= 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
     return 1;
@@ -789,13 +790,10 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->use_frozen_modules = 1;
 #endif
     config->safe_path = 0;
+    config->int_max_str_digits = -1;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
 }
-
-/* Excluded from public struct PyConfig for backporting reasons. */
-/* default to unconfigured, _PyLong_InitTypes() does the rest */
-int _Py_global_config_int_max_str_digits = -1;
 
 
 static void
@@ -849,6 +847,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->faulthandler = 0;
     config->tracemalloc = 0;
     config->perf_profiling = 0;
+    config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
@@ -1021,6 +1020,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(safe_path);
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
+    COPY_ATTR(int_max_str_digits);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1128,6 +1128,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(use_frozen_modules);
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
+    SET_ITEM_INT(int_max_str_digits);
 
     return dict;
 
@@ -1317,6 +1318,12 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
         } \
         CHECK_VALUE(#KEY, config->KEY >= 0); \
     } while (0)
+#define GET_INT(KEY) \
+    do { \
+        if (config_dict_get_int(dict, #KEY, &config->KEY) < 0) { \
+            return -1; \
+        } \
+    } while (0)
 #define GET_WSTR(KEY) \
     do { \
         if (config_dict_get_wstr(dict, #KEY, config, &config->KEY) < 0) { \
@@ -1415,9 +1422,11 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(use_frozen_modules);
     GET_UINT(safe_path);
     GET_UINT(_is_python_build);
+    GET_INT(int_max_str_digits);
 
 #undef CHECK_VALUE
 #undef GET_UINT
+#undef GET_INT
 #undef GET_WSTR
 #undef GET_WSTR_OPT
     return 0;
@@ -1782,7 +1791,7 @@ config_init_int_max_str_digits(PyConfig *config)
 
     const char *env = config_get_env(config, "PYTHONINTMAXSTRDIGITS");
     if (env) {
-        int valid = 0;
+        bool valid = 0;
         if (!_Py_str_to_int(env, &maxdigits)) {
             valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
         }
@@ -1794,13 +1803,13 @@ config_init_int_max_str_digits(PyConfig *config)
                     STRINGIFY(_PY_LONG_MAX_STR_DIGITS_THRESHOLD)
                     " or 0 for unlimited.");
         }
-        _Py_global_config_int_max_str_digits = maxdigits;
+        config->int_max_str_digits = maxdigits;
     }
 
     const wchar_t *xoption = config_get_xoption(config, L"int_max_str_digits");
     if (xoption) {
         const wchar_t *sep = wcschr(xoption, L'=');
-        int valid = 0;
+        bool valid = 0;
         if (sep) {
             if (!config_wstr_to_int(sep + 1, &maxdigits)) {
                 valid = ((maxdigits == 0) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD));
@@ -1814,7 +1823,10 @@ config_init_int_max_str_digits(PyConfig *config)
 #undef _STRINGIFY
 #undef STRINGIFY
         }
-        _Py_global_config_int_max_str_digits = maxdigits;
+        config->int_max_str_digits = maxdigits;
+    }
+    if (config->int_max_str_digits < 0) {
+        config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     }
     return _PyStatus_OK();
 }
@@ -1882,7 +1894,7 @@ config_read_complex_options(PyConfig *config)
         }
     }
 
-    if (_Py_global_config_int_max_str_digits < 0) {
+    if (config->int_max_str_digits < 0) {
         status = config_init_int_max_str_digits(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;

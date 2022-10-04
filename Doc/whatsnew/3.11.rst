@@ -191,7 +191,7 @@ See :pep:`654` for more details.
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
-.. _whatsnew311-pep670:
+.. _whatsnew311-pep678:
 
 PEP 678: Exceptions can be enriched with notes
 ----------------------------------------------
@@ -205,6 +205,32 @@ See :pep:`678` for more details.
 
 (Contributed by Irit Katriel in :issue:`45607`.
 PEP written by Zac Hatfield-Dodds.)
+
+
+.. _whatsnew311-windows-launcher:
+
+Windows ``py.exe`` launcher improvements
+----------------------------------------
+
+The copy of the :ref:`launcher` included with Python 3.11 has been significantly
+updated. It now supports company/tag syntax as defined in :pep:`514` using the
+``-V:<company>/<tag>`` argument instead of the limited ``-<major>.<minor>``.
+This allows launching distributions other than ``PythonCore``,
+the one hosted on `python.org <https://python.org>`_.
+
+When using ``-V:`` selectors, either company or tag can be omitted, but all
+installs will be searched. For example, ``-V:OtherPython/`` will select the
+"best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
+will select the "best" distribution with tag ``3.11``.
+
+When using the legacy ``-<major>``, ``-<major>.<minor>``,
+``-<major>-<bitness>`` or ``-<major>.<minor>-<bitness>`` arguments,
+all existing behaviour should be preserved from past versions,
+and only releases from ``PythonCore`` will be selected.
+However, the ``-64`` suffix now implies "not 32-bit" (not necessarily x86-64),
+as there are multiple supported 64-bit platforms.
+32-bit runtimes are detected by checking the runtime's tag for a ``-32`` suffix.
+All releases of Python since 3.5 have included this in their 32-bit builds.
 
 
 .. _new-feat-related-type-hints-311:
@@ -401,28 +427,6 @@ See `this message from the Steering Council <https://mail.python.org/archives/li
 for more information.
 
 
-Windows py.exe launcher improvements
-------------------------------------
-
-The copy of :ref:`launcher` included with Python 3.11 has been significantly
-updated. It now supports company/tag syntax as defined in :pep:`514` using the
-``-V:<company>/<tag>`` argument instead of the limited ``-x.y`` argument. This
-allows launching distributions other than ``PythonCore``, which is the one
-obtained from `python.org <https://python.org>`_.
-
-When using ``-V:`` selectors, either company or tag can be omitted, but all
-installs will be searched. For example, ``-V:OtherPython/`` will select the
-"best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
-will select the "best" distribution with tag ``3.11``.
-
-When using legacy ``-x``, ``-x.y``, ``-x-ZZ`` or ``-x.y-ZZ`` arguments, all
-existing behaviour should be preserved from past versions. Only releases from
-``PythonCore`` will be selected. However, the ``-64`` suffix now implies "not
-32-bit", as there are multiple supported 64-bit platforms. 32-bit runtimes are
-detected by checking its tag for a ``-32`` suffix. All releases of Python
-since 3.5 have included this in their 32-bit builds.
-
-
 .. _whatsnew311-other-lang-changes:
 
 Other Language Changes
@@ -517,41 +521,68 @@ Other CPython Implementation Changes
   (Contributed by Éric Araujo in :issue:`46142`.)
 
 
+.. _whatsnew311-new-modules:
+
 New Modules
 ===========
 
-* A new module, :mod:`tomllib`, was added for parsing TOML.
+* :mod:`tomllib`: For parsing `TOML <https://toml.io/>`_.
+  See :pep:`680` for more details.
   (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
-* :mod:`wsgiref.types`, containing WSGI-specific types for static type
-  checking, was added.
+* :mod:`wsgiref.types`:
+  :pep:`WSGI <3333>`-specific types for static type checking.
   (Contributed by Sebastian Rittau in :issue:`42012`.)
 
 
 Improved Modules
 ================
 
+.. _whatsnew311-asyncio:
+
 asyncio
 -------
 
-* Add raw datagram socket functions to the event loop:
-  :meth:`~asyncio.AbstractEventLoop.sock_sendto`,
-  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom` and
-  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
-  (Contributed by Alex Grönholm in :issue:`46805`.)
-
-* Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
-  existing stream-based connections to TLS. (Contributed by Ian Good in
-  :issue:`34975`.)
-
-* Add :class:`~asyncio.Barrier` class to the synchronization primitives of
-  the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
-  :gh:`87518`.)
-
-* Add :class:`~asyncio.TaskGroup` class,
+* Added the :class:`~asyncio.TaskGroup` class,
   an :ref:`asynchronous context manager <async-context-managers>`
   holding a group of tasks that will wait for all of them upon exit.
-  (Contributed by Yury Seliganov and others.)
+  For new code this is recommended over using
+  :func:`~asyncio.create_task` and :func:`~asyncio.gather` directly.
+  (Contributed by Yury Selivanov and others in :gh:`90908`.)
+
+* Added :func:`~asyncio.timeout`, an asynchronous context manager for
+  setting a timeout on asynchronous operations. For new code this is
+  recommended over using :func:`~asyncio.wait_for` directly.
+  (Contributed by Andrew Svetlov in :gh:`90927`.)
+
+* Added the :class:`~asyncio.Runner` class, which exposes the machinery
+  used by :func:`~asyncio.run`.
+  (Contributed by Andrew Svetlov in :gh:`91218`.)
+
+* Added the :class:`~asyncio.Barrier` class to the synchronization
+  primitives in the asyncio library, and the related
+  :exc:`~asyncio.BrokenBarrierError` exception.
+  (Contributed by Yves Duprat and Andrew Svetlov in :gh:`87518`.)
+
+* Added keyword argument *all_errors* to :meth:`asyncio.loop.create_connection`
+  so that multiple connection errors can be raised as an :exc:`ExceptionGroup`.
+
+* Added the :meth:`asyncio.StreamWriter.start_tls` method for
+  upgrading existing stream-based connections to TLS.
+  (Contributed by Ian Good in :issue:`34975`.)
+
+* Added raw datagram socket functions to the event loop:
+  :meth:`~asyncio.loop.sock_sendto`,
+  :meth:`~asyncio.loop.sock_recvfrom` and
+  :meth:`~asyncio.loop.sock_recvfrom_into`.
+  These have implementations in :class:`~asyncio.SelectorEventLoop` and
+  :class:`~asyncio.ProactorEventLoop`.
+  (Contributed by Alex Grönholm in :issue:`46805`.)
+
+* Added :meth:`~asyncio.Task.cancelling` and
+  :meth:`~asyncio.Task.uncancel` methods to :class:`~asyncio.Task`.
+  These are primarily intended for internal use,
+  notably by :class:`~asyncio.TaskGroup`.
 
 contextlib
 ----------
