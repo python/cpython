@@ -8639,7 +8639,8 @@ assemble(struct compiler *c, int addNone)
     }
     nlocalsplus -= numdropped;
 
-    /** Map labels to targets and mark exception handlers **/
+    /** Preprocessing **/
+    /* Map labels to targets and mark exception handlers */
     if (translate_jump_labels_to_targets(g->g_entryblock)) {
         goto error;
     }
