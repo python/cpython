@@ -867,7 +867,7 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :attr:`interp` (:c:type:`PyInterpreterState *`), which points to
+   data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
    this thread's interpreter state.
 
 
