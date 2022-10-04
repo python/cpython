@@ -3251,42 +3251,14 @@ class MiscTest(unittest.TestCase):
         CHECK("ABA", "AAB", 4)
 
     def test_levenshtein_distance_short_circuit(self):
-        from traceback import _substitution_cost, _MOVE_COST
+        if not LEVENSHTEIN_DATA_FILE.is_file():
+            self.fail(
+                f"{LEVENSHTEIN_DATA_FILE} is missing."
+                f" Run `make regen-test-levenshtein`"
+            )
 
-        if LEVENSHTEIN_DATA_FILE.is_file():
-            with LEVENSHTEIN_DATA_FILE.open("r") as f:
-                examples = json.load(f)
-        else:
-            print("recreating the missing data file")
-
-            from functools import cache
-            from random import choices, randrange
-
-            @cache
-            def levenshtein(a, b):
-                if not a or not b:
-                    return (len(a) + len(b)) * _MOVE_COST
-                option1 = levenshtein(a[:-1], b[:-1]) + _substitution_cost(a[-1], b[-1])
-                option2 = levenshtein(a[:-1], b) + _MOVE_COST
-                option3 = levenshtein(a, b[:-1]) + _MOVE_COST
-                return min(option1, option2, option3)
-
-            examples = set()
-            # Create a lot of non-empty examples, which should end up with a Gauss-like
-            # distribution for even costs (moves) and odd costs (case substitutions).
-            while len(examples) < 9990:
-                a = ''.join(choices("abcABC", k=randrange(1, 10)))
-                b = ''.join(choices("abcABC", k=randrange(1, 10)))
-                expected = levenshtein(a, b)
-                examples.add((a, b, expected))
-            # Create one empty case each for strings between 0 and 9 in length.
-            for i in range(10):
-                b = ''.join(choices("abcABC", k=i))
-                expected = levenshtein("", b)
-                examples.add(("", b, expected))
-            with LEVENSHTEIN_DATA_FILE.open("w") as f:
-                json.dump(sorted(examples), f, indent=2)
-
+        with LEVENSHTEIN_DATA_FILE.open("r") as f:
+            examples = json.load(f)
         for a, b, expected in examples:
             res1 = traceback._levenshtein_distance(a, b, 1000)
             self.assertEqual(res1, expected, msg=(a, b))
