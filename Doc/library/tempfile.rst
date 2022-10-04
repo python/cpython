@@ -84,7 +84,7 @@ The module defines the following user-callable items:
    file-like object.  Whether the name can be
    used to open the file a second time, while the named temporary file is
    still open, varies across platforms (it can be so used on Unix; it cannot
-   on Windows NT or later).  If *delete* is true (the default), the file is
+   on Windows).  If *delete* is true (the default), the file is
    deleted as soon as it is closed.
    The returned object is always a file-like object whose :attr:`!file`
    attribute is the underlying true file object. This file-like object can
@@ -99,9 +99,9 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
+.. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
-   This function operates exactly as :func:`TemporaryFile` does, except that
+   This class operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
    until the file's :func:`fileno` method is called, at which point the
    contents are written to disk and operation proceeds as with
@@ -123,10 +123,15 @@ The module defines the following user-callable items:
    .. versionchanged:: 3.8
       Added *errors* parameter.
 
+   .. versionchanged:: 3.11
+      Fully implements the :class:`io.BufferedIOBase` and
+      :class:`io.TextIOBase` abstract base classes (depending on whether binary
+      or text *mode* was specified).
 
-.. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False)
 
-   This function securely creates a temporary directory using the same rules as :func:`mkdtemp`.
+.. class:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False)
+
+   This class securely creates a temporary directory using the same rules as :func:`mkdtemp`.
    The resulting object can be used as a context manager (see
    :ref:`tempfile-examples`).  On completion of the context or destruction
    of the temporary directory object, the newly created temporary directory

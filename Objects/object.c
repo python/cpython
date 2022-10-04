@@ -3,20 +3,18 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // _PyType_CheckConsistency()
+#include "pycore_object.h"        // _PyType_CheckConsistency(), _Py_FatalRefcountError()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
-#include "pycore_typeobject.h"    // _PyTypes_InitSlotDefs()
 #include "pycore_unionobject.h"   // _PyUnion_Type
-#include "frameobject.h"          // PyFrame_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
 
 #ifdef Py_LIMITED_API
@@ -274,11 +272,8 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
     }
     else {
         if (Py_REFCNT(op) <= 0) {
-            /* XXX(twouters) cast refcount to long until %zd is
-               universally available */
             Py_BEGIN_ALLOW_THREADS
-            fprintf(fp, "<refcnt %ld at %p>",
-                (long)Py_REFCNT(op), (void *)op);
+            fprintf(fp, "<refcnt %zd at %p>", Py_REFCNT(op), (void *)op);
             Py_END_ALLOW_THREADS
         }
         else {
@@ -371,9 +366,7 @@ _PyObject_Dump(PyObject* op)
 
     /* first, write fields which are the least likely to crash */
     fprintf(stderr, "object address  : %p\n", (void *)op);
-    /* XXX(twouters) cast refcount to long until %zd is
-       universally available */
-    fprintf(stderr, "object refcount : %ld\n", (long)Py_REFCNT(op));
+    fprintf(stderr, "object refcount : %zd\n", Py_REFCNT(op));
     fflush(stderr);
 
     PyTypeObject *type = Py_TYPE(op);
@@ -427,12 +420,12 @@ PyObject_Repr(PyObject *v)
 
     /* It is possible for a type to have a tp_repr representation that loops
        infinitely. */
-    if (_Py_EnterRecursiveCall(tstate,
-                               " while getting the repr of an object")) {
+    if (_Py_EnterRecursiveCallTstate(tstate,
+                                     " while getting the repr of an object")) {
         return NULL;
     }
     res = (*Py_TYPE(v)->tp_repr)(v);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
 
     if (res == NULL) {
         return NULL;
@@ -487,11 +480,11 @@ PyObject_Str(PyObject *v)
 
     /* It is possible for a type to have a tp_str representation that loops
        infinitely. */
-    if (_Py_EnterRecursiveCall(tstate, " while getting the str of an object")) {
+    if (_Py_EnterRecursiveCallTstate(tstate, " while getting the str of an object")) {
         return NULL;
     }
     res = (*Py_TYPE(v)->tp_str)(v);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
 
     if (res == NULL) {
         return NULL;
@@ -724,11 +717,11 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
         }
         return NULL;
     }
-    if (_Py_EnterRecursiveCall(tstate, " in comparison")) {
+    if (_Py_EnterRecursiveCallTstate(tstate, " in comparison")) {
         return NULL;
     }
     PyObject *res = do_richcompare(tstate, v, w, op);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return res;
 }
 
@@ -1060,18 +1053,17 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 }
 
 PyObject **
-_PyObject_DictPointer(PyObject *obj)
+_PyObject_ComputedDictPointer(PyObject *obj)
 {
     Py_ssize_t dictoffset;
     PyTypeObject *tp = Py_TYPE(obj);
 
-    if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        return _PyObject_ManagedDictPointer(obj);
-    }
+    assert((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     dictoffset = tp->tp_dictoffset;
     if (dictoffset == 0)
         return NULL;
     if (dictoffset < 0) {
+        assert(dictoffset != -1);
         Py_ssize_t tsize = Py_SIZE(obj);
         if (tsize < 0) {
             tsize = -tsize;
@@ -1087,27 +1079,27 @@ _PyObject_DictPointer(PyObject *obj)
 
 /* Helper to get a pointer to an object's __dict__ slot, if any.
  * Creates the dict from inline attributes if necessary.
- * Does not set an exception. */
+ * Does not set an exception.
+ *
+ * Note that the tp_dictoffset docs used to recommend this function,
+ * so it should be treated as part of the public API.
+ */
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-        return _PyObject_DictPointer(obj);
+        return _PyObject_ComputedDictPointer(obj);
     }
-    PyObject **dict_ptr = _PyObject_ManagedDictPointer(obj);
-    PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-    if (*values_ptr == NULL) {
-        return dict_ptr;
+    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+    if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+        PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj, _PyDictOrValues_GetValues(*dorv_ptr));
+        if (dict == NULL) {
+            PyErr_Clear();
+            return NULL;
+        }
+        dorv_ptr->dict = dict;
     }
-    assert(*dict_ptr == NULL);
-    PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj, *values_ptr);
-    if (dict == NULL) {
-        PyErr_Clear();
-        return NULL;
-    }
-    *values_ptr = NULL;
-    *dict_ptr = dict;
-    return dict_ptr;
+    return &dorv_ptr->dict;
 }
 
 PyObject *
@@ -1176,36 +1168,46 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
             }
         }
     }
-    PyDictValues *values;
-    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) &&
-        (values = *_PyObject_ValuesPointer(obj)))
-    {
-        assert(*_PyObject_DictPointer(obj) == NULL);
-        PyObject *attr = _PyObject_GetInstanceAttribute(obj, values, name);
-        if (attr != NULL) {
-            *method = attr;
-            Py_XDECREF(descr);
-            return 0;
+    PyObject *dict;
+    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        PyDictOrValues* dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+        if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+            PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
+            PyObject *attr = _PyObject_GetInstanceAttribute(obj, values, name);
+            if (attr != NULL) {
+                *method = attr;
+                Py_XDECREF(descr);
+                return 0;
+            }
+            dict = NULL;
+        }
+        else {
+            dict = dorv_ptr->dict;
         }
     }
     else {
-        PyObject **dictptr = _PyObject_DictPointer(obj);
-        PyObject *dict;
-        if (dictptr != NULL && (dict = *dictptr) != NULL) {
-            Py_INCREF(dict);
-            PyObject *attr = PyDict_GetItemWithError(dict, name);
-            if (attr != NULL) {
-                *method = Py_NewRef(attr);
-                Py_DECREF(dict);
-                Py_XDECREF(descr);
-                return 0;
-            }
+        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
+        if (dictptr != NULL) {
+            dict = *dictptr;
+        }
+        else {
+            dict = NULL;
+        }
+    }
+    if (dict != NULL) {
+        Py_INCREF(dict);
+        PyObject *attr = PyDict_GetItemWithError(dict, name);
+        if (attr != NULL) {
+            *method = Py_NewRef(attr);
             Py_DECREF(dict);
+            Py_XDECREF(descr);
+            return 0;
+        }
+        Py_DECREF(dict);
 
-            if (PyErr_Occurred()) {
-                Py_XDECREF(descr);
-                return 0;
-            }
+        if (PyErr_Occurred()) {
+            Py_XDECREF(descr);
+            return 0;
         }
     }
 
@@ -1249,7 +1251,6 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     PyObject *descr = NULL;
     PyObject *res = NULL;
     descrgetfunc f;
-    PyObject **dictptr;
 
     if (!PyUnicode_Check(name)){
         PyErr_Format(PyExc_TypeError,
@@ -1280,30 +1281,31 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         }
     }
     if (dict == NULL) {
-        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) &&
-            *_PyObject_ValuesPointer(obj))
-        {
-            PyDictValues **values_ptr = _PyObject_ValuesPointer(obj);
-            if (PyUnicode_CheckExact(name)) {
-                assert(*_PyObject_DictPointer(obj) == NULL);
-                res = _PyObject_GetInstanceAttribute(obj, *values_ptr, name);
-                if (res != NULL) {
-                    goto done;
+        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+            PyDictOrValues* dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+            if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+                PyDictValues *values = _PyDictOrValues_GetValues(*dorv_ptr);
+                if (PyUnicode_CheckExact(name)) {
+                    res = _PyObject_GetInstanceAttribute(obj, values, name);
+                    if (res != NULL) {
+                        goto done;
+                    }
+                }
+                else {
+                    dict = _PyObject_MakeDictFromInstanceAttributes(obj, values);
+                    if (dict == NULL) {
+                        res = NULL;
+                        goto done;
+                    }
+                    dorv_ptr->dict = dict;
                 }
             }
             else {
-                dictptr = _PyObject_DictPointer(obj);
-                assert(dictptr != NULL && *dictptr == NULL);
-                *dictptr = dict = _PyObject_MakeDictFromInstanceAttributes(obj, *values_ptr);
-                if (dict == NULL) {
-                    res = NULL;
-                    goto done;
-                }
-                *values_ptr = NULL;
+                dict = _PyDictOrValues_GetDict(*dorv_ptr);
             }
         }
         else {
-            dictptr = _PyObject_DictPointer(obj);
+            PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
             if (dictptr) {
                 dict = *dictptr;
             }
@@ -1349,6 +1351,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         PyErr_Format(PyExc_AttributeError,
                      "'%.50s' object has no attribute '%U'",
                      tp->tp_name, name);
+
+        set_attribute_error_context(obj, name);
     }
   done:
     Py_XDECREF(descr);
@@ -1382,7 +1386,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         return -1;
 
     Py_INCREF(name);
-
+    Py_INCREF(tp);
     descr = _PyType_Lookup(tp, name);
 
     if (descr != NULL) {
@@ -1395,27 +1399,34 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     if (dict == NULL) {
-        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) && *_PyObject_ValuesPointer(obj)) {
-            res = _PyObject_StoreInstanceAttribute(obj, *_PyObject_ValuesPointer(obj), name, value);
+        PyObject **dictptr;
+        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+            PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+            if (_PyDictOrValues_IsValues(*dorv_ptr)) {
+                res = _PyObject_StoreInstanceAttribute(
+                    obj, _PyDictOrValues_GetValues(*dorv_ptr), name, value);
+                goto error_check;
+            }
+            dictptr = &dorv_ptr->dict;
         }
         else {
-            PyObject **dictptr = _PyObject_DictPointer(obj);
-            if (dictptr == NULL) {
-                if (descr == NULL) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "'%.100s' object has no attribute '%U'",
-                                tp->tp_name, name);
-                }
-                else {
-                    PyErr_Format(PyExc_AttributeError,
-                                "'%.50s' object attribute '%U' is read-only",
-                                tp->tp_name, name);
-                }
-                goto done;
+            dictptr = _PyObject_ComputedDictPointer(obj);
+        }
+        if (dictptr == NULL) {
+            if (descr == NULL) {
+                PyErr_Format(PyExc_AttributeError,
+                            "'%.100s' object has no attribute '%U'",
+                            tp->tp_name, name);
             }
             else {
-                res = _PyObjectDict_SetItem(tp, dictptr, name, value);
+                PyErr_Format(PyExc_AttributeError,
+                            "'%.50s' object attribute '%U' is read-only",
+                            tp->tp_name, name);
             }
+            goto done;
+        }
+        else {
+            res = _PyObjectDict_SetItem(tp, dictptr, name, value);
         }
     }
     else {
@@ -1426,11 +1437,22 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             res = PyDict_SetItem(dict, name, value);
         Py_DECREF(dict);
     }
-    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-        PyErr_SetObject(PyExc_AttributeError, name);
-
+  error_check:
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        if (PyType_IsSubtype(tp, &PyType_Type)) {
+            PyErr_Format(PyExc_AttributeError,
+                         "type object '%.50s' has no attribute '%U'",
+                         ((PyTypeObject*)obj)->tp_name, name);
+        }
+        else {
+            PyErr_Format(PyExc_AttributeError,
+                         "'%.100s' object has no attribute '%U'",
+                         tp->tp_name, name);
+        }
+    }
   done:
     Py_XDECREF(descr);
+    Py_DECREF(tp);
     Py_DECREF(name);
     return res;
 }
@@ -1447,7 +1469,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
     PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
         if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT) &&
-            *_PyObject_ValuesPointer(obj) != NULL)
+            _PyDictOrValues_IsValues(*_PyObject_DictOrValuesPointer(obj)))
         {
             /* Was unable to convert to dict */
             PyErr_NoMemory();
@@ -1814,26 +1836,13 @@ PyObject _Py_NotImplementedStruct = {
     1, &_PyNotImplemented_Type
 };
 
-PyStatus
-_PyTypes_InitState(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    PyStatus status = _PyTypes_InitSlotDefs();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    return _PyStatus_OK();
-}
-
-
-
 #ifdef MS_WINDOWS
 extern PyTypeObject PyHKEY_Type;
 #endif
+extern PyTypeObject _Py_GenericAliasIterType;
+extern PyTypeObject _PyMemoryIter_Type;
+extern PyTypeObject _PyLineIterator;
+extern PyTypeObject _PyPositionsIterator;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -1923,6 +1932,7 @@ static PyTypeObject* static_types[] = {
     &_PyAsyncGenWrappedValue_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
+    &_Py_GenericAliasIterType,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
     &_PyHamtValues_Type,
@@ -1931,11 +1941,15 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
     &_PyInterpreterID_Type,
+    &_PyLineIterator,
     &_PyManagedBuffer_Type,
+    &_PyMemoryIter_Type,
     &_PyMethodWrapper_Type,
     &_PyNamespace_Type,
     &_PyNone_Type,
     &_PyNotImplemented_Type,
+    &_PyPositionsIterator,
+    &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
@@ -1962,8 +1976,8 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        if (PyType_Ready(type) < 0) {
-            return _PyStatus_ERR("Can't initialize types");
+        if (_PyStaticType_InitBuiltin(type) < 0) {
+            return _PyStatus_ERR("Can't initialize builtin type");
         }
         if (type == &PyType_Type) {
             // Sanitify checks of the two most important types
@@ -2215,7 +2229,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
+    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->trash_delete_later);
     tstate->trash_delete_later = op;
 }
 
@@ -2351,11 +2365,45 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 void
 _Py_Dealloc(PyObject *op)
 {
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+    PyTypeObject *type = Py_TYPE(op);
+    destructor dealloc = type->tp_dealloc;
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *old_exc_type = tstate->curexc_type;
+    // Keep the old exception type alive to prevent undefined behavior
+    // on (tstate->curexc_type != old_exc_type) below
+    Py_XINCREF(old_exc_type);
+    // Make sure that type->tp_name remains valid
+    Py_INCREF(type);
+#endif
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
     (*dealloc)(op);
+
+#ifdef Py_DEBUG
+    // gh-89373: The tp_dealloc function must leave the current exception
+    // unchanged.
+    if (tstate->curexc_type != old_exc_type) {
+        const char *err;
+        if (old_exc_type == NULL) {
+            err = "Deallocator of type '%s' raised an exception";
+        }
+        else if (tstate->curexc_type == NULL) {
+            err = "Deallocator of type '%s' cleared the current exception";
+        }
+        else {
+            // It can happen if dealloc() normalized the current exception.
+            // A deallocator function must not change the current exception,
+            // not even normalize it.
+            err = "Deallocator of type '%s' overrode the current exception";
+        }
+        _Py_FatalErrorFormat(__func__, err, type->tp_name);
+    }
+    Py_XDECREF(old_exc_type);
+    Py_DECREF(type);
+#endif
 }
 
 

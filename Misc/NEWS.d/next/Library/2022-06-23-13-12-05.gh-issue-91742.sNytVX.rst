@@ -1,0 +1,1 @@
+Fix :mod:`pdb` crash after jump caused by a null pointer dereference. Patch by Kumar Aditya.

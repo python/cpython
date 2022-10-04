@@ -146,9 +146,9 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.assertIn(
             (b'<dl><dt><a name="-add"><strong>add</strong></a>(x, y)</dt><dd>'
              b'<tt>Add&nbsp;two&nbsp;instances&nbsp;together.&nbsp;This&nbsp;'
-             b'follows&nbsp;<a href="https://www.python.org/dev/peps/pep-0008/">'
+             b'follows&nbsp;<a href="https://peps.python.org/pep-0008/">'
              b'PEP008</a>,&nbsp;but&nbsp;has&nbsp;nothing<br>\nto&nbsp;do&nbsp;'
-             b'with&nbsp;<a href="http://www.rfc-editor.org/rfc/rfc1952.txt">'
+             b'with&nbsp;<a href="https://www.rfc-editor.org/rfc/rfc1952.txt">'
              b'RFC1952</a>.&nbsp;Case&nbsp;should&nbsp;matter:&nbsp;pEp008&nbsp;'
              b'and&nbsp;rFC1952.&nbsp;&nbsp;Things<br>\nthat&nbsp;start&nbsp;'
              b'with&nbsp;http&nbsp;and&nbsp;ftp&nbsp;should&nbsp;be&nbsp;'

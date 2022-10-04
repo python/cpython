@@ -41,6 +41,7 @@ class AllTest(unittest.TestCase):
     def check_all(self, modname):
         names = {}
         with warnings_helper.check_warnings(
+            (f".*{modname}", DeprecationWarning),
             (".* (module|package)", DeprecationWarning),
             (".* (module|package)", PendingDeprecationWarning),
             ("", ResourceWarning),

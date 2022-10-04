@@ -288,10 +288,6 @@ strings are treated as if they were docstrings.  In output, a key ``K`` in
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
 
-.. impl-detail::
-   Prior to version 3.4, extension modules written in C were not fully
-   searched by doctest.
-
 
 .. _doctest-finding-examples:
 
@@ -567,41 +563,35 @@ doctest decides whether actual output matches an example's expected output:
 
 .. data:: IGNORE_EXCEPTION_DETAIL
 
-   When specified, an example that expects an exception passes if an exception of
-   the expected type is raised, even if the exception detail does not match.  For
-   example, an example expecting ``ValueError: 42`` will pass if the actual
-   exception raised is ``ValueError: 3*14``, but will fail, e.g., if
-   :exc:`TypeError` is raised.
+   When specified, doctests expecting exceptions pass so long as an exception
+   of the expected type is raised, even if the details
+   (message and fully qualified exception name) don't match.
 
-   It will also ignore the module name used in Python 3 doctest reports. Hence
-   both of these variations will work with the flag specified, regardless of
-   whether the test is run under Python 2.7 or Python 3.2 (or later versions)::
+   For example, an example expecting ``ValueError: 42`` will pass if the actual
+   exception raised is ``ValueError: 3*14``, but will fail if, say, a
+   :exc:`TypeError` is raised instead.
+   It will also ignore any fully qualified name included before the
+   exception class, which can vary between implementations and versions
+   of Python and the code/libraries in use.
+   Hence, all three of these variations will work with the flag specified:
 
-      >>> raise CustomError('message')
+   .. code-block:: pycon
+
+      >>> raise Exception('message')
       Traceback (most recent call last):
-      CustomError: message
+      Exception: message
 
-      >>> raise CustomError('message')
+      >>> raise Exception('message')
       Traceback (most recent call last):
-      my_module.CustomError: message
+      builtins.Exception: message
+
+      >>> raise Exception('message')
+      Traceback (most recent call last):
+      __main__.Exception: message
 
    Note that :const:`ELLIPSIS` can also be used to ignore the
    details of the exception message, but such a test may still fail based
-   on whether or not the module details are printed as part of the
-   exception name. Using :const:`IGNORE_EXCEPTION_DETAIL` and the details
-   from Python 2.3 is also the only clear way to write a doctest that doesn't
-   care about the exception detail yet continues to pass under Python 2.3 or
-   earlier (those releases do not support :ref:`doctest directives
-   <doctest-directives>` and ignore them as irrelevant comments). For example::
-
-      >>> (1, 2)[3] = 'moo'
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: object doesn't support item assignment
-
-   passes under Python 2.3 and later Python versions with the flag specified,
-   even though the detail
-   changed in Python 2.4 to say "does not" instead of "doesn't".
+   on whether the module name is present or matches exactly.
 
    .. versionchanged:: 3.2
       :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information relating
@@ -718,36 +708,51 @@ above.
 An example's doctest directives modify doctest's behavior for that single
 example.  Use ``+`` to enable the named behavior, or ``-`` to disable it.
 
-For example, this test passes::
+For example, this test passes:
 
-   >>> print(list(range(20))) # doctest: +NORMALIZE_WHITESPACE
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> print(list(range(20)))  # doctest: +NORMALIZE_WHITESPACE
    [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
    10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
 
 Without the directive it would fail, both because the actual output doesn't have
 two blanks before the single-digit list elements, and because the actual output
 is on a single line.  This test also passes, and also requires a directive to do
-so::
+so:
 
-   >>> print(list(range(20))) # doctest: +ELLIPSIS
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> print(list(range(20)))  # doctest: +ELLIPSIS
    [0, 1, ..., 18, 19]
 
 Multiple directives can be used on a single physical line, separated by
-commas::
+commas:
 
-   >>> print(list(range(20))) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> print(list(range(20)))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
 If multiple directive comments are used for a single example, then they are
-combined::
+combined:
 
-   >>> print(list(range(20))) # doctest: +ELLIPSIS
-   ...                        # doctest: +NORMALIZE_WHITESPACE
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> print(list(range(20)))  # doctest: +ELLIPSIS
+   ...                         # doctest: +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
 As the previous example shows, you can add ``...`` lines to your example
 containing only directives.  This can be useful when an example is too long for
-a directive to comfortably fit on the same line::
+a directive to comfortably fit on the same line:
+
+.. doctest::
+   :no-trim-doctest-flags:
 
    >>> print(list(range(5)) + list(range(10, 20)) + list(range(30, 40)))
    ... # doctest: +ELLIPSIS
@@ -785,25 +790,25 @@ instead.  Another is to do ::
    >>> d
    ['Harry', 'Hermione']
 
-.. note::
-
-    Before Python 3.6, when printing a dict, Python did not guarantee that
-    the key-value pairs was printed in any particular order.
-
 There are others, but you get the idea.
 
-Another bad idea is to print things that embed an object address, like ::
+Another bad idea is to print things that embed an object address, like
 
-   >>> id(1.0) # certain to fail some of the time
+.. doctest::
+
+   >>> id(1.0)  # certain to fail some of the time  # doctest: +SKIP
    7948648
    >>> class C: pass
-   >>> C()   # the default repr() for instances embeds an address
-   <__main__.C instance at 0x00AC18F0>
+   >>> C()  # the default repr() for instances embeds an address   # doctest: +SKIP
+   <C object at 0x00AC18F0>
 
-The :const:`ELLIPSIS` directive gives a nice approach for the last example::
+The :const:`ELLIPSIS` directive gives a nice approach for the last example:
 
-   >>> C() #doctest: +ELLIPSIS
-   <__main__.C instance at 0x...>
+.. doctest::
+   :no-trim-doctest-flags:
+
+   >>> C()  # doctest: +ELLIPSIS
+   <C object at 0x...>
 
 Floating-point numbers are also subject to small output variations across
 platforms, because Python defers to the platform C library for float formatting,

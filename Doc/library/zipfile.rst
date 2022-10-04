@@ -139,7 +139,7 @@ ZipFile Objects
 
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
-                   compresslevel=None, *, strict_timestamps=True,
+                   compresslevel=None, *, strict_timestamps=True, \
                    metadata_encoding=None)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
@@ -311,7 +311,7 @@ ZipFile Objects
       compressed text files in :term:`universal newlines` mode.
 
    .. versionchanged:: 3.6
-      :meth:`open` can now be used to write files into the archive with the
+      :meth:`ZipFile.open` can now be used to write files into the archive with the
       ``mode='w'`` option.
 
    .. versionchanged:: 3.6
@@ -477,6 +477,17 @@ ZipFile Objects
       Calling :meth:`writestr` on a ZipFile created with mode ``'r'`` or
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
+
+.. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
+
+   Create a directory inside the archive.  If *zinfo_or_directory* is a string,
+   a directory is created inside the archive with the mode that is specified in
+   the *mode* argument. If, however, *zinfo_or_directory* is
+   a :class:`ZipInfo` instance then the *mode* argument is ignored.
+
+   The archive must be opened with mode ``'w'``, ``'x'`` or ``'a'``.
+
+   .. versionadded:: 3.11
 
 
 The following data attributes are also available:
