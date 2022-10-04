@@ -552,6 +552,11 @@ the module.
    for introspection, but can be used for additional loader-specific
    functionality, for example getting data associated with a loader.
 
+   .. versionchanged:: 3.12
+      The value of ``__loader__`` is expected to be the same as
+      ``__spec__.loader``.  If they are not, an :exc:`ImportWarning` will be
+      raised.
+
 .. attribute:: __package__
 
    The module's ``__package__`` attribute must be set.  Its value must
@@ -563,8 +568,7 @@ the module.
    details.
 
    This attribute is used instead of ``__name__`` to calculate explicit
-   relative imports for main modules, as defined in :pep:`366`. It is
-   expected to have the same value as ``__spec__.parent``.
+   relative imports for main modules, as defined in :pep:`366`.
 
    .. versionchanged:: 3.6
       The value of ``__package__`` is expected to be the same as
