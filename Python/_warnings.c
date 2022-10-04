@@ -1337,8 +1337,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
     WARNINGS_WARN_EXPLICIT_METHODDEF
-    {"_filters_mutated", _PyCFunction_CAST(warnings_filters_mutated), METH_NOARGS,
-        NULL},
+    WARNINGS_FILTERS_MUTATED__METHODDEF
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */

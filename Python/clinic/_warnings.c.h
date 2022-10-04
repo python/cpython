@@ -7,7 +7,9 @@ preserve
 #  include "pycore_runtime.h"       // _Py_ID()
 #endif
 
-
+#define WARNINGS_FILTERS_MUTATED__METHODDEF    \
+    {"_filters_mutated", _PyCFunction_CAST(warnings_filters_mutated), METH_NOARGS, NULL},
+    
 PyDoc_STRVAR(warnings_warn__doc__,
 "warn($module, /, message, category=None, stacklevel=1, source=None)\n"
 "--\n"
