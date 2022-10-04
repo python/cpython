@@ -1453,7 +1453,7 @@ Some of the changes to Python's build process and to the C API are:
   extension functions: :c:macro:`Py_RETURN_NONE`, :c:macro:`Py_RETURN_TRUE`, and
   :c:macro:`Py_RETURN_FALSE`. (Contributed by Brett Cannon.)
 
-* Another new macro, :c:expr:`Py_CLEAR(obj)`,  decreases the reference count of
+* Another new macro, :c:macro:`Py_CLEAR`,  decreases the reference count of
   *obj* and sets *obj* to the null pointer.  (Contributed by Jim Fulton.)
 
 * A new function, ``PyTuple_Pack(N, obj1, obj2, ..., objN)``, constructs
