@@ -83,7 +83,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.Generator` instance and use its
       :meth:`~email.generator.Generator.flatten` method directly.  For example::
 
@@ -125,7 +125,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.BytesGenerator` instance and use its
       :meth:`~email.generator.BytesGenerator.flatten` method directly.
       For example::

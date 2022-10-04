@@ -42,9 +42,6 @@ Linux and the BSD variants of Unix.
       Tutorial material on using curses with Python, by Andrew Kuchling and Eric
       Raymond.
 
-   The :source:`Tools/demo/` directory in the Python source distribution contains
-   some example programs using the curses bindings provided by this module.
-
 
 .. _curses-functions:
 
