@@ -3,7 +3,6 @@ useful while building, extending or managing Python.
 
 2to3                      Main script for running the 2to3 conversion tool
 abitype.py                Converts a C file to use the PEP 384 type definition API
-analyze_dxp.py            Analyzes the result of sys.getdxp()
 combinerefs.py            A helper for analyzing PYTHONDUMPREFS output
 diff.py                   Print file diffs in context, unified, or ndiff formats
 eptags.py                 Create Emacs TAGS file for Python modules
