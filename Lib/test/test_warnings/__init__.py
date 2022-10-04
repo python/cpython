@@ -5,6 +5,7 @@ from io import StringIO
 import re
 import sys
 import textwrap
+from types import ModuleType, SimpleNamespace
 import unittest
 from test import support
 from test.support import import_helper
@@ -884,6 +885,29 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             with support.swap_item(globals(), '__name__', b'foo'), \
                  support.swap_item(globals(), '__file__', None):
                 self.assertRaises(UserWarning, self.module.warn, 'bar')
+
+    @support.cpython_only
+    def test_gh86298(self):
+        # warn_explicit() itself issues an ImportWarning when a module and
+        # module_globals are both given, and the named module has a __loader__
+        # != its __spec__.loader.
+        bar = ModuleType('bar')
+        # First, make the __loader__ != the __spec__.loader.  This should
+        # trigger the ImportWarning inside warn_explicit().
+        bar.__loader__ = object()
+        bar.__spec__ = SimpleNamespace(loader=object())
+        with original_warnings.catch_warnings():
+            self.assertWarns(
+                ImportWarning, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+        # Now make the __loader__ == __spec__.loader.  This will not raise the exception.
+        bar.__spec__.loader = bar.__loader__
+        with original_warnings.catch_warnings():
+            self.module.filterwarnings('error', category=ImportWarning)
+            self.module.warn_explicit(
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
 
 
 class WarningsDisplayTests(BaseTest):
