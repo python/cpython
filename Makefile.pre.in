@@ -959,9 +959,9 @@ regen-test-frozenmain: $(BUILDPYTHON)
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
 .PHONY: regen-test-levenshtein
-regen-test-levenshtein: $(BUILDPYTHON)
+regen-test-levenshtein:
 	# Regenerate Lib/test/levenshtein_examples.json
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/generate_levenshtein_examples.py Lib/test/levenshtein_examples.json
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_levenshtein_examples.py Lib/test/levenshtein_examples.json
 
 .PHONY: regen-re
 regen-re: $(BUILDPYTHON)

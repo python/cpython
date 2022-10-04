@@ -5,7 +5,21 @@ from functools import cache
 import json
 import os.path
 from random import choices, randrange
-from traceback import _MOVE_COST, _substitution_cost
+
+
+# This should be in sync with Lib/traceback.py.  It's not importing those values
+# because this script is being executed by PYTHON_FOR_REGEN and not by the in-tree
+# build of Python.
+_MOVE_COST = 2
+_CASE_COST = 1
+
+
+def _substitution_cost(ch_a, ch_b):
+    if ch_a == ch_b:
+        return 0
+    if ch_a.lower() == ch_b.lower():
+        return _CASE_COST
+    return _MOVE_COST
 
 
 @cache
