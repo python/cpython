@@ -8437,8 +8437,6 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
         goto fail;
     }
     *buffer = ((PyMemoryViewObject *)ret)->view;
-    // TODO does this leak the existing ref in buffer->obj?
-    buffer->obj = self;
     Py_INCREF(buffer->obj);
     Py_DECREF(ret);
     Py_DECREF(flags_obj);
