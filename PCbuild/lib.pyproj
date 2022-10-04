@@ -1334,12 +1334,9 @@
     <Compile Include="test\test_tkinter\test_widgets.py" />
     <Compile Include="test\test_tkinter\widget_tests.py" />
     <Compile Include="test\test_tokenize.py" />
-    <Compile Include="test\test_tools\test_fixcid.py" />
     <Compile Include="test\test_tools\test_gprof2html.py" />
     <Compile Include="test\test_tools\test_i18n.py" />
     <Compile Include="test\test_tools\test_md5sum.py" />
-    <Compile Include="test\test_tools\test_pdeps.py" />
-    <Compile Include="test\test_tools\test_pindent.py" />
     <Compile Include="test\test_tools\test_reindent.py" />
     <Compile Include="test\test_tools\test_sundry.py" />
     <Compile Include="test\test_tools\test_unparse.py" />
