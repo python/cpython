@@ -825,7 +825,7 @@ class AST_Tests(unittest.TestCase):
 
     @support.cpython_only
     def test_ast_recursion_limit(self):
-        fail_depth = 5000
+        fail_depth = support.EXCEEDS_RECURSION_LIMIT
         crash_depth = 100_000
         success_depth = 1200
 

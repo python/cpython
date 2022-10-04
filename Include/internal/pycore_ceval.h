@@ -12,7 +12,9 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
-#define Py_DEFAULT_RECURSION_LIMIT 1000
+#ifndef Py_DEFAULT_RECURSION_LIMIT
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
+#endif
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()

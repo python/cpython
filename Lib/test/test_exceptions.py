@@ -1372,6 +1372,7 @@ class ExceptionTests(unittest.TestCase):
         code = """if 1:
             import sys
             from _testinternalcapi import get_recursion_depth
+            from test import support
 
             class MyException(Exception): pass
 
@@ -1400,7 +1401,7 @@ class ExceptionTests(unittest.TestCase):
             next(generator)
             recursionlimit = sys.getrecursionlimit()
             try:
-                recurse(5000)
+                recurse(support.EXCEEDS_RECURSION_LIMIT)
             finally:
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')
