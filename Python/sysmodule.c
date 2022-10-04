@@ -2014,11 +2014,6 @@ sys__debugmallocstats_impl(PyObject *module)
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
-#ifdef Py_STATS
-/* Defined in ceval.c because it uses static globals in that file */
-extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
@@ -2217,9 +2212,6 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
-#ifdef Py_STATS
-    {"getdxp", _Py_GetDXProfile, METH_VARARGS},
-#endif
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
     SYS__GETQUICKENEDCOUNT_METHODDEF
