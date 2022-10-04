@@ -49,7 +49,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
-           "ByteString",
+           "ByteString", "Buffer", "MutableBuffer",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -436,6 +436,36 @@ class Collection(Sized, Iterable, Container):
     def __subclasshook__(cls, C):
         if cls is Collection:
             return _check_methods(C,  "__len__", "__iter__", "__contains__")
+        return NotImplemented
+
+
+class Buffer(metaclass=ABCMeta):
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __buffer__(self, flags: int, /) -> memoryview:
+        raise NotImplementedError
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Buffer:
+            return _check_methods(C, "__buffer__")
+        return NotImplemented
+
+
+class MutableBuffer(Buffer):
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __release_buffer__(self, buffer: memoryview, /) -> None:
+        pass
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is MutableBuffer:
+            return _check_methods(C, "__buffer__", "__release_buffer__")
         return NotImplemented
 
 

@@ -25,7 +25,7 @@ from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
-from collections.abc import ByteString
+from collections.abc import ByteString, Buffer, MutableBuffer
 
 
 class TestUserObjects(unittest.TestCase):
@@ -1940,6 +1940,22 @@ class TestCollectionABCs(ABCTestCase):
             self.assertFalse(issubclass(sample, ByteString))
         self.assertNotIsInstance(memoryview(b""), ByteString)
         self.assertFalse(issubclass(memoryview, ByteString))
+
+    def test_Buffer(self):
+        for sample in [bytes, bytearray, memoryview]:
+            self.assertIsInstance(sample(b"x"), Buffer)
+            self.assertTrue(issubclass(sample, Buffer))
+        for sample in [str, list, tuple]:
+            self.assertNotIsInstance(sample(), Buffer)
+            self.assertFalse(issubclass(sample, Buffer))
+
+    def test_MutableBuffer(self):
+        for sample in [bytearray, memoryview]:
+            self.assertIsInstance(sample(b"x"), MutableBuffer)
+            self.assertTrue(issubclass(sample, MutableBuffer))
+        for sample in [bytes, str, list, tuple]:
+            self.assertNotIsInstance(sample(), MutableBuffer)
+            self.assertFalse(issubclass(sample, MutableBuffer))
 
     def test_MutableSequence(self):
         for sample in [tuple, str, bytes]:

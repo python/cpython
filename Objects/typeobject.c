@@ -8419,6 +8419,64 @@ slot_tp_finalize(PyObject *self)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+typedef struct _PyBufferWrapper {
+    PyObject_HEAD
+    PyObject *mv;
+    PyObject *obj;
+} PyBufferWrapper;
+
+static int
+bufferwrapper_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+
+    Py_VISIT(bw->mv);
+    Py_VISIT(bw->obj);
+    return 0;
+}
+
+static void
+bufferwrapper_dealloc(PyObject *self)
+{
+    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+
+    _PyObject_GC_UNTRACK(self);
+    Py_XDECREF(bw->mv);
+    Py_XDECREF(bw->obj);
+    Py_TYPE(self)->tp_free(self);
+}
+
+static void
+bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
+{
+    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+
+    assert(PyMemoryView_Check(bw->mv));
+    Py_TYPE(bw->mv)->tp_as_buffer->bf_releasebuffer(bw->mv, view);
+    if (Py_TYPE(bw->obj)->tp_as_buffer != NULL 
+        && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer != NULL) {
+        Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer(bw->obj, view);
+    }
+}
+
+static PyBufferProcs bufferwrapper_as_buffer = {
+    .bf_releasebuffer = bufferwrapper_releasebuf,
+};
+
+
+PyTypeObject _PyBufferWrapper_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "_buffer_wrapper",
+    .tp_basicsize = sizeof(PyBufferWrapper),
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
+    .tp_free = PyObject_GC_Del,
+    .tp_traverse = bufferwrapper_traverse,
+    .tp_dealloc = bufferwrapper_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_as_buffer = &bufferwrapper_as_buffer,
+};
+
 static int 
 slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
 {
@@ -8426,6 +8484,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
     if (flags_obj == NULL) {
         return -1;
     }
+    PyObject *wrapper = NULL;
     PyObject *stack[2] = {self, flags_obj};
     PyObject *ret = vectorcall_method(&_Py_ID(__buffer__), stack, 2);
     if (ret == NULL) {
@@ -8436,13 +8495,27 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
                      "__buffer__ returned non-memoryview object");
         goto fail;
     }
-    *buffer = ((PyMemoryViewObject *)ret)->view;
-    Py_INCREF(buffer->obj);
+
+    if (PyObject_GetBuffer(ret, buffer, flags) < 0) {
+        goto fail;
+    }
+    assert(buffer->obj == ret);
+
+    wrapper = PyObject_GC_New(PyBufferWrapper, &_PyBufferWrapper_Type);
+    if (wrapper == NULL) {
+        goto fail;
+    }
+    ((PyBufferWrapper *)wrapper)->mv = ret;
+    ((PyBufferWrapper *)wrapper)->obj = Py_NewRef(self);
+    _PyObject_GC_TRACK(wrapper);
+
+    buffer->obj = wrapper;
     Py_DECREF(ret);
     Py_DECREF(flags_obj);
     return 0;
 
 fail:
+    Py_XDECREF(wrapper);
     Py_XDECREF(ret);
     Py_DECREF(flags_obj);
     return -1;
@@ -8455,9 +8528,6 @@ slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
     if (mv == NULL) {
         PyErr_WriteUnraisable(self);
         return;
-    }
-    if (buffer->obj != NULL) {
-        ((PyMemoryViewObject *)mv)->view.obj = Py_NewRef(buffer->obj);
     }
     PyObject *stack[2] = {self, mv};
     PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);

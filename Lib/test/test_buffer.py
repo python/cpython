@@ -4470,7 +4470,6 @@ class TestPythonBufferProtocol(unittest.TestCase):
                 self.held = True
                 return memoryview(self.ba)
             def __release_buffer__(self, buffer):
-                assert self is buffer.obj
                 self.held = False
 
         wr = WhatToRelease()
@@ -4478,7 +4477,7 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with memoryview(wr) as mv:
             self.assertTrue(wr.held)
             self.assertEqual(mv.tobytes(), b"hello")
-        #self.assertFalse(wr.held)
+        self.assertFalse(wr.held)
 
     def test_call_builtins(self):
         ba = bytearray(b"hello")
