@@ -529,27 +529,51 @@ New Modules
 Improved Modules
 ================
 
+.. _whatsnew311-asyncio:
+
 asyncio
 -------
 
-* Add raw datagram socket functions to the event loop:
-  :meth:`~asyncio.AbstractEventLoop.sock_sendto`,
-  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom` and
-  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
-  (Contributed by Alex Grönholm in :issue:`46805`.)
-
-* Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
-  existing stream-based connections to TLS. (Contributed by Ian Good in
-  :issue:`34975`.)
-
-* Add :class:`~asyncio.Barrier` class to the synchronization primitives of
-  the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
-  :gh:`87518`.)
-
-* Add :class:`~asyncio.TaskGroup` class,
+* Added the :class:`~asyncio.TaskGroup` class,
   an :ref:`asynchronous context manager <async-context-managers>`
   holding a group of tasks that will wait for all of them upon exit.
-  (Contributed by Yury Seliganov and others.)
+  For new code this is recommended over using
+  :func:`~asyncio.create_task` and :func:`~asyncio.gather` directly.
+  (Contributed by Yury Selivanov and others in :gh:`90908`.)
+
+* Added :func:`~asyncio.timeout`, an asynchronous context manager for
+  setting a timeout on asynchronous operations. For new code this is
+  recommended over using :func:`~asyncio.wait_for` directly.
+  (Contributed by Andrew Svetlov in :gh:`90927`.)
+
+* Added the :class:`~asyncio.Runner` class, which exposes the machinery
+  used by :func:`~asyncio.run`.
+  (Contributed by Andrew Svetlov in :gh:`91218`.)
+
+* Added the :class:`~asyncio.Barrier` class to the synchronization
+  primitives in the asyncio library, and the related
+  :exc:`~asyncio.BrokenBarrierError` exception.
+  (Contributed by Yves Duprat and Andrew Svetlov in :gh:`87518`.)
+
+* Added keyword argument *all_errors* to :meth:`asyncio.loop.create_connection`
+  so that multiple connection errors can be raised as an :exc:`ExceptionGroup`.
+
+* Added the :meth:`asyncio.StreamWriter.start_tls` method for
+  upgrading existing stream-based connections to TLS.
+  (Contributed by Ian Good in :issue:`34975`.)
+
+* Added raw datagram socket functions to the event loop:
+  :meth:`~asyncio.loop.sock_sendto`,
+  :meth:`~asyncio.loop.sock_recvfrom` and
+  :meth:`~asyncio.loop.sock_recvfrom_into`.
+  These have implementations in :class:`~asyncio.SelectorEventLoop` and
+  :class:`~asyncio.ProactorEventLoop`.
+  (Contributed by Alex Grönholm in :issue:`46805`.)
+
+* Added :meth:`~asyncio.Task.cancelling` and
+  :meth:`~asyncio.Task.uncancel` methods to :class:`~asyncio.Task`.
+  These are primarily intended for internal use,
+  notably by :class:`~asyncio.TaskGroup`.
 
 contextlib
 ----------
