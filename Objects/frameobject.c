@@ -1094,6 +1094,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     init_frame((_PyInterpreterFrame *)f->_f_frame_data, func, locals);
     f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    // This frame needs to be "complete", so act as if the first RESUME has run:
+    ((_PyInterpreterFrame *)f->_f_frame_data)->prev_instr = _PyCode_CODE(code);
+    assert(_Py_OPCODE(*f->f_frame->prev_instr) == RESUME);
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
     return f;
