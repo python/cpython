@@ -429,6 +429,10 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # Compute the text of the entire function.
     txt = f' def {name}({args}){return_annotation}:\n{body}'
 
+    # Free variables in exec are resolved in the global namespace.
+    # The global namespace we have is user-provided, so we can't modify it for
+    # our purposes. So we put the things we need into locals and introduce a
+    # scope to allow the function we're creating to close over them.
     local_vars = ', '.join(locals.keys())
     txt = f"def __create_fn__({local_vars}):\n{txt}\n return {name}"
     ns = {}
@@ -920,10 +924,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             if getattr(b, _PARAMS).frozen:
                 any_frozen_base = True
 
-    # Annotations that are defined in this class (not in base
-    # classes).  If __annotations__ isn't present, then this class
-    # adds no new annotations.  We use this to compute fields that are
-    # added by this class.
+    # Annotations defined specifically in this class (not in base classes).
     #
     # Fields are found from cls_annotations, which is guaranteed to be
     # ordered.  Default values are from class attributes, if a field
@@ -932,7 +933,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # actual default value.  Pseudo-fields ClassVars and InitVars are
     # included, despite the fact that they're not real fields.  That's
     # dealt with later.
-    cls_annotations = cls.__dict__.get('__annotations__', {})
+    cls_annotations = inspect.get_annotations(cls)
 
     # Now find fields in our class.  While doing so, validate some
     # things, and set the default values (as class attributes) where

@@ -1644,7 +1644,7 @@ unicodedata
 -----------
 
 The :mod:`unicodedata` module now uses data from `Unicode 9.0.0
-<http://unicode.org/versions/Unicode9.0.0/>`_.
+<https://unicode.org/versions/Unicode9.0.0/>`_.
 (Contributed by Benjamin Peterson.)
 
 
