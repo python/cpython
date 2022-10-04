@@ -1171,13 +1171,17 @@ _dawg_node_child_count(int node_offset)
 // upper bits of the varint needs to be added to the offset of the target node
 // of the previous edge. For the first edge, where the is no previous target
 // node, the offset of the first edge is used.
-// (the intuition here is that edges going out from a node often lead to nodes
+// the intuition here is that edges going out from a node often lead to nodes
 // that are close by, leading to small offsets from the current node and thus
-// fewer bytes)
+// fewer bytes.
 //
 // There is a special case: if a final node has no outgoing edges, it has to be
 // followed by a 0 byte to indicate that there are no edges (because the end of
 // the edge list is normally indicated in a bit in the edge encoding).
+//
+// side note: it's not possible to do a topological sort and only have positive
+// offsets. while the DAWG is acyclic, the outgoing edges of a node are
+// *ordered*, leading to implicit cyclic dependencies.
 
 static int
 _dawg_decode_edge(bool is_first_edge, int prev_target_node_offset, int edge_offset, unsigned int* size, int* label_offset, int* target_node_offset)
