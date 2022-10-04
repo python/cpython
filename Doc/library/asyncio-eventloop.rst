@@ -1271,6 +1271,15 @@ Allows customizing how exceptions are handled in the event loop.
    (see :meth:`call_exception_handler` documentation for details
    about context).
 
+   If the handler is called on behalf of a :class:`~asyncio.Task` or
+   :class:`~asyncio.Handle`, it is run in the
+   :class:`contextvars.Context` of that task or callback handle.
+
+   .. versionchanged:: 3.12
+
+      The handler may be called in the :class:`~contextvars.Context`
+      of the task or handle where the exception originated.
+
 .. method:: loop.get_exception_handler()
 
    Return the current exception handler, or ``None`` if no custom
