@@ -536,11 +536,11 @@ asyncio
   an :ref:`asynchronous context manager <async-context-managers>`
   holding a group of tasks that will wait for all of them upon exit.
   For new code this is recommended over using
-  :class:`~asyncio.create_task` and :func:`~asyncio.gather` directly.
+  :func:`~asyncio.create_task` and :func:`~asyncio.gather` directly.
   (Contributed by Yury Seliganov and others in :gh:`90908`.)
 
 * Added :func:`~asyncio.timeout`, an asynchronous context manager for
-  setting a timeout on asynchronous operations For new code this is
+  setting a timeout on asynchronous operations. For new code this is
   recommended over using :func:`~asyncio.wait_for` directly.
   (Contributed by Andrew Svetlov in :gh:`90927`.)
 
@@ -558,9 +558,9 @@ asyncio
   (Contributed by Ian Good in :issue:`34975`.)
 
 * Added raw datagram socket functions to the event loop:
-  :meth:`~asyncio.AbstractEventLoop.sock_sendto`,
-  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom` and
-  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
+  :meth:`~asyncio.loop.sock_sendto`,
+  :meth:`~asyncio.loop.sock_recvfrom` and
+  :meth:`~asyncio.loop.sock_recvfrom_into`.
   These have implementations in :class:`~asyncio.SelectorEventLoop` and
   :class:`~asyncio.ProactorEventLoop`.
   (Contributed by Alex Grönholm in :issue:`46805`.)
