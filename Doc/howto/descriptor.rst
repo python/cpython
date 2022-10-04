@@ -1551,7 +1551,7 @@ variables:
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(slot_names):
                 mapping[name] = Member(name, clsname, offset)
-            return super().__new__(mcls, clsname, bases, mapping)
+            return type.__new__(mcls, clsname, bases, mapping, **kwargs)
 
 The :meth:`object.__new__` method takes care of creating instances that have
 slots instead of an instance dictionary.  Here is a rough simulation in pure
@@ -1564,10 +1564,10 @@ Python:
 
         def __new__(cls, *args, **kwargs):
             'Emulate object_new() in Objects/typeobject.c'
-            inst = super().__new__(cls)
+            inst = super().__new__(cls, *args, **kwargs)
             if hasattr(cls, 'slot_names'):
                 empty_slots = [null] * len(cls.slot_names)
-                super(Object, inst).__setattr__('_slotvalues', empty_slots)
+                object.__setattr__(inst, '_slotvalues', empty_slots)
             return inst
 
         def __setattr__(self, name, value):
