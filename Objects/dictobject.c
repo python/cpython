@@ -5765,11 +5765,12 @@ _PyDict_SendEvent(int watcher_bits,
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
-        if (watcher_bits & (1 << i)) {
+        if (watcher_bits & 1) {
             PyDict_WatchCallback cb = (PyDict_WatchCallback)interp->dict_watchers[i];
             if (cb) {
                 cb(event, (PyObject*)mp, key, value);
             }
         }
+        watcher_bits >>= 1;
     }
 }
