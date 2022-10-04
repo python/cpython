@@ -615,7 +615,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Further arguments are passed as keyword arguments: *owner*, *group*,
    *dry_run* and *logger* (as passed in :func:`make_archive`).
 
-   If *function* has the custom attribute `function.supports_root_dir` set to ``True``,
+   If *function* has the custom attribute ``function.supports_root_dir`` set to ``True``,
    the *root_dir* argument is passed as a keyword argument.
    Otherwise the current working directory of the process is temporarily
    changed to *root_dir* before calling *function*.
