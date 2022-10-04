@@ -553,6 +553,9 @@ asyncio
   :exc:`~asyncio.BrokenBarrierError` exception.
   (Contributed by Yves Duprat and Andrew Svetlov in :gh:`87518`.)
 
+* Add keyword argument ``all_errors`` to :func:`asyncio.loop.create_connection`
+  so that multiple connection errors can be raised as an :exc:`ExceptionGroup`.
+
 * Added the :meth:`~asyncio.StreamWriter.start_tls` method for
   upgrading existing stream-based connections to TLS.
   (Contributed by Ian Good in :issue:`34975`.)
