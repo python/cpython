@@ -1809,11 +1809,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             try:
                 ctx = None
-                task = context.get("task")
-                if task is None:
-                    task = context.get("future")
-                if task is not None and hasattr(task, "get_context"):
-                    ctx = task.get_context()
+                thing = context.get("task")
+                if thing is None:
+                    # Even though Futures don't have a context,
+                    # Task is a subclass of Future,
+                    # and sometimes the 'future' key holds a Task.
+                    thing = context.get("future")
+                if thing is None:
+                    # Handles also have a context.
+                    thing = context.get("handle")
+                if thing is not None and hasattr(thing, "get_context"):
+                    ctx = thing.get_context()
                 if ctx is not None and hasattr(ctx, "run"):
                     ctx.run(self._exception_handler, self, context)
                 else:
