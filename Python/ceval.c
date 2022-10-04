@@ -7207,61 +7207,6 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int oparg)
     }
 }
 
-#ifdef Py_STATS
-
-static PyObject *
-getarray(uint64_t a[256])
-{
-    int i;
-    PyObject *l = PyList_New(256);
-    if (l == NULL) return NULL;
-    for (i = 0; i < 256; i++) {
-        PyObject *x = PyLong_FromUnsignedLongLong(a[i]);
-        if (x == NULL) {
-            Py_DECREF(l);
-            return NULL;
-        }
-        PyList_SET_ITEM(l, i, x);
-    }
-    for (i = 0; i < 256; i++)
-        a[i] = 0;
-    return l;
-}
-
-PyObject *
-_Py_GetDXProfile(PyObject *self, PyObject *args)
-{
-    int i;
-    PyObject *l = PyList_New(257);
-    if (l == NULL) return NULL;
-    for (i = 0; i < 256; i++) {
-        PyObject *x = getarray(_py_stats_struct.opcode_stats[i].pair_count);
-        if (x == NULL) {
-            Py_DECREF(l);
-            return NULL;
-        }
-        PyList_SET_ITEM(l, i, x);
-    }
-    PyObject *counts = PyList_New(256);
-    if (counts == NULL) {
-        Py_DECREF(l);
-        return NULL;
-    }
-    for (i = 0; i < 256; i++) {
-        PyObject *x = PyLong_FromUnsignedLongLong(
-            _py_stats_struct.opcode_stats[i].execution_count);
-        if (x == NULL) {
-            Py_DECREF(counts);
-            Py_DECREF(l);
-            return NULL;
-        }
-        PyList_SET_ITEM(counts, i, x);
-    }
-    PyList_SET_ITEM(l, 256, counts);
-    return l;
-}
-
-#endif
 
 Py_ssize_t
 _PyEval_RequestCodeExtraIndex(freefunc free)
