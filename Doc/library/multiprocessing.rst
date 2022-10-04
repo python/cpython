@@ -118,7 +118,7 @@ to start a process.  These *start methods* are
     When the program starts and selects the *forkserver* start method,
     a server process is spawned.  From then on, whenever a new process
     is needed, the parent process connects to the server and requests
-    that it forks a new process.  The fork server process is single
+    that it fork a new process.  The fork server process is single
     threaded so it is safe for it to use :func:`os.fork`.  No
     unnecessary resources are inherited.
 
