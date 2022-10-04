@@ -70,7 +70,7 @@ class TestCase(unittest.TestCase):
 
     def test_dataclass_params_repr(self):
         # Even though this is testing an internal implementation detail,
-        # it's testing a feature we want to make sure is correctly implemented 
+        # it's testing a feature we want to make sure is correctly implemented
         # for the sake of dataclasses itself
         @dataclass(slots=True, frozen=True)
         class Some: pass
@@ -84,7 +84,7 @@ class TestCase(unittest.TestCase):
 
     def test_dataclass_params_signature(self):
         # Even though this is testing an internal implementation detail,
-        # it's testing a feature we want to make sure is correctly implemented 
+        # it's testing a feature we want to make sure is correctly implemented
         # for the sake of dataclasses itself
         @dataclass
         class Some: pass
