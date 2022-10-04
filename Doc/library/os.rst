@@ -369,7 +369,7 @@ process and user.
       :ref:`wasm-availability` for more information.
 
 
-.. function:: getgrouplist(user, group)
+.. function:: getgrouplist(user, group, /)
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
@@ -515,7 +515,7 @@ process and user.
       :ref:`wasm-availability` for more information.
 
 
-.. function:: initgroups(username, gid)
+.. function:: initgroups(username, gid, /)
 
    Call the system initgroups() to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
@@ -526,7 +526,7 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: putenv(key, value)
+.. function:: putenv(key, value, /)
 
    .. index:: single: environment variables; setting
 
@@ -551,28 +551,28 @@ process and user.
       The function is now always available.
 
 
-.. function:: setegid(egid)
+.. function:: setegid(egid, /)
 
    Set the current process's effective group id.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: seteuid(euid)
+.. function:: seteuid(euid, /)
 
    Set the current process's effective user id.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setgid(gid)
+.. function:: setgid(gid, /)
 
    Set the current process' group id.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setgroups(groups)
+.. function:: setgroups(groups, /)
 
    Set the list of supplemental group ids associated with the current process to
    *groups*. *groups* must be a sequence, and each element must be an integer
@@ -593,7 +593,7 @@ process and user.
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setpgid(pid, pgrp)
+.. function:: setpgid(pid, pgrp, /)
 
    Call the system call :c:func:`setpgid` to set the process group id of the
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
@@ -621,14 +621,14 @@ process and user.
    .. versionadded:: 3.3
 
 
-.. function:: setregid(rgid, egid)
+.. function:: setregid(rgid, egid, /)
 
    Set the current process's real and effective group ids.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setresgid(rgid, egid, sgid)
+.. function:: setresgid(rgid, egid, sgid, /)
 
    Set the current process's real, effective, and saved group ids.
 
@@ -637,7 +637,7 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: setresuid(ruid, euid, suid)
+.. function:: setresuid(ruid, euid, suid, /)
 
    Set the current process's real, effective, and saved user ids.
 
@@ -646,14 +646,14 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: setreuid(ruid, euid)
+.. function:: setreuid(ruid, euid, /)
 
    Set the current process's real and effective user ids.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: getsid(pid)
+.. function:: getsid(pid, /)
 
    Call the system call :c:func:`getsid`.  See the Unix manual for the semantics.
 
@@ -667,7 +667,7 @@ process and user.
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setuid(uid)
+.. function:: setuid(uid, /)
 
    .. index:: single: user; id, setting
 
@@ -677,7 +677,7 @@ process and user.
 
 
 .. placed in this section since it relates to errno.... a little weak
-.. function:: strerror(code)
+.. function:: strerror(code, /)
 
    Return the error message corresponding to the error code in *code*.
    On platforms where :c:func:`strerror` returns ``NULL`` when given an unknown
@@ -692,7 +692,7 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: umask(mask)
+.. function:: umask(mask, /)
 
    Set the current numeric umask and return the previous umask.
 
@@ -732,7 +732,7 @@ process and user.
       with named attributes.
 
 
-.. function:: unsetenv(key)
+.. function:: unsetenv(key, /)
 
    .. index:: single: environment variables; deleting
 
@@ -800,7 +800,7 @@ as internal buffering of data.
       :func:`fdopen`, use its :meth:`~io.IOBase.close` method.
 
 
-.. function:: closerange(fd_low, fd_high)
+.. function:: closerange(fd_low, fd_high, /)
 
    Close all file descriptors from *fd_low* (inclusive) to *fd_high* (exclusive),
    ignoring errors. Equivalent to (but much faster than)::
@@ -860,7 +860,7 @@ as internal buffering of data.
       On Unix, the function now implements the Python UTF-8 Mode.
 
 
-.. function:: dup(fd)
+.. function:: dup(fd, /)
 
    Return a duplicate of file descriptor *fd*. The new file descriptor is
    :ref:`non-inheritable <fd_inheritance>`.
@@ -931,7 +931,7 @@ as internal buffering of data.
       This function is not available on MacOS.
 
 
-.. function:: fpathconf(fd, name)
+.. function:: fpathconf(fd, name, /)
 
    Return system configuration information relevant to an open file. *name*
    specifies the configuration value to retrieve; it may be a string which is the
@@ -963,7 +963,7 @@ as internal buffering of data.
       The :func:`.stat` function.
 
 
-.. function:: fstatvfs(fd)
+.. function:: fstatvfs(fd, /)
 
    Return information about the filesystem containing the file associated with
    file descriptor *fd*, like :func:`statvfs`.  As of Python 3.3, this is
@@ -984,7 +984,7 @@ as internal buffering of data.
    .. availability:: Unix, Windows.
 
 
-.. function:: ftruncate(fd, length)
+.. function:: ftruncate(fd, length, /)
 
    Truncate the file corresponding to file descriptor *fd*, so that it is at
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
@@ -998,7 +998,7 @@ as internal buffering of data.
       Added support for Windows
 
 
-.. function:: get_blocking(fd)
+.. function:: get_blocking(fd, /)
 
    Get the blocking mode of the file descriptor: ``False`` if the
    :data:`O_NONBLOCK` flag is set, ``True`` if the flag is cleared.
@@ -1013,13 +1013,13 @@ as internal buffering of data.
    .. versionadded:: 3.5
 
 
-.. function:: isatty(fd)
+.. function:: isatty(fd, /)
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
    tty(-like) device, else ``False``.
 
 
-.. function:: lockf(fd, cmd, len)
+.. function:: lockf(fd, cmd, len, /)
 
    Apply, test or remove a POSIX lock on an open file descriptor.
    *fd* is an open file descriptor.
@@ -1046,7 +1046,7 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: login_tty(fd)
+.. function:: login_tty(fd, /)
 
    Prepare the tty of which fd is a file descriptor for a new login session.
    Make the calling process a session leader; make the tty the controlling tty,
@@ -1057,7 +1057,7 @@ as internal buffering of data.
    .. versionadded:: 3.11
 
 
-.. function:: lseek(fd, pos, how)
+.. function:: lseek(fd, pos, how, /)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
    by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
@@ -1214,7 +1214,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       The new file descriptors are now non-inheritable.
 
 
-.. function:: pipe2(flags)
+.. function:: pipe2(flags, /)
 
    Create a pipe with *flags* set atomically.
    *flags* can be constructed by ORing together one or more of these values:
@@ -1227,7 +1227,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: posix_fallocate(fd, offset, len)
+.. function:: posix_fallocate(fd, offset, len, /)
 
    Ensures that enough disk space is allocated for the file specified by *fd*
    starting from *offset* and continuing for *len* bytes.
@@ -1237,7 +1237,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: posix_fadvise(fd, offset, len, advice)
+.. function:: posix_fadvise(fd, offset, len, advice, /)
 
    Announces an intention to access data in a specific pattern thus allowing
    the kernel to make optimizations.
@@ -1267,7 +1267,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pread(fd, n, offset)
+.. function:: pread(fd, n, offset, /)
 
    Read at most *n* bytes from file descriptor *fd* at a position of *offset*,
    leaving the file offset unchanged.
@@ -1280,7 +1280,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: preadv(fd, buffers, offset, flags=0)
+.. function:: preadv(fd, buffers, offset, flags=0, /)
 
    Read from a file descriptor *fd* at a position of *offset* into mutable
    :term:`bytes-like objects <bytes-like object>` *buffers*, leaving the file
@@ -1337,7 +1337,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.7
 
 
-.. function:: pwrite(fd, str, offset)
+.. function:: pwrite(fd, str, offset, /)
 
    Write the bytestring in *str* to file descriptor *fd* at position of
    *offset*, leaving the file offset unchanged.
@@ -1349,7 +1349,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pwritev(fd, buffers, offset, flags=0)
+.. function:: pwritev(fd, buffers, offset, flags=0, /)
 
    Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
    leaving the file offset unchanged.  *buffers* must be a sequence of
@@ -1412,7 +1412,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.10
 
 
-.. function:: read(fd, n)
+.. function:: read(fd, n, /)
 
    Read at most *n* bytes from file descriptor *fd*.
 
@@ -1472,7 +1472,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
-.. function:: set_blocking(fd, blocking)
+.. function:: set_blocking(fd, blocking, /)
 
    Set the blocking mode of the specified file descriptor. Set the
    :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
@@ -1541,7 +1541,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.10
 
-.. function:: readv(fd, buffers)
+.. function:: readv(fd, buffers, /)
 
    Read from a file descriptor *fd* into a number of mutable :term:`bytes-like
    objects <bytes-like object>` *buffers*. Transfer data into each buffer until
@@ -1559,7 +1559,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: tcgetpgrp(fd)
+.. function:: tcgetpgrp(fd, /)
 
    Return the process group associated with the terminal given by *fd* (an open
    file descriptor as returned by :func:`os.open`).
@@ -1567,7 +1567,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix, not WASI.
 
 
-.. function:: tcsetpgrp(fd, pg)
+.. function:: tcsetpgrp(fd, pg, /)
 
    Set the process group associated with the terminal given by *fd* (an open file
    descriptor as returned by :func:`os.open`) to *pg*.
@@ -1575,7 +1575,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix, not WASI.
 
 
-.. function:: ttyname(fd)
+.. function:: ttyname(fd, /)
 
    Return a string which specifies the terminal device associated with
    file descriptor *fd*.  If *fd* is not associated with a terminal device, an
@@ -1584,7 +1584,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix.
 
 
-.. function:: write(fd, str)
+.. function:: write(fd, str, /)
 
    Write the bytestring in *str* to file descriptor *fd*.
 
@@ -1604,7 +1604,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
-.. function:: writev(fd, buffers)
+.. function:: writev(fd, buffers, /)
 
    Write the contents of *buffers* to file descriptor *fd*. *buffers* must be
    a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
@@ -1628,7 +1628,7 @@ Querying the size of a terminal
 
 .. versionadded:: 3.3
 
-.. function:: get_terminal_size(fd=STDOUT_FILENO)
+.. function:: get_terminal_size(fd=STDOUT_FILENO, /)
 
    Return the size of the terminal window as ``(columns, lines)``,
    tuple of type :class:`terminal_size`.
@@ -1683,21 +1683,21 @@ streams are closed, and inheritable handles are only inherited if the
 On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, the file
 descriptor cannot be modified.
 
-.. function:: get_inheritable(fd)
+.. function:: get_inheritable(fd, /)
 
    Get the "inheritable" flag of the specified file descriptor (a boolean).
 
-.. function:: set_inheritable(fd, inheritable)
+.. function:: set_inheritable(fd, inheritable, /)
 
    Set the "inheritable" flag of the specified file descriptor.
 
-.. function:: get_handle_inheritable(handle)
+.. function:: get_handle_inheritable(handle, /)
 
    Get the "inheritable" flag of the specified handle (a boolean).
 
    .. availability:: Windows.
 
-.. function:: set_handle_inheritable(handle, inheritable)
+.. function:: set_handle_inheritable(handle, inheritable, /)
 
    Set the "inheritable" flag of the specified handle.
 
@@ -2244,19 +2244,19 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: major(device)
+.. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
    :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
 
 
-.. function:: minor(device)
+.. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
    :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
 
 
-.. function:: makedev(major, minor)
+.. function:: makedev(major, minor, /)
 
    Compose a raw device number from the major and minor device numbers.
 
@@ -3912,7 +3912,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: kill(pid, sig)
+.. function:: kill(pid, sig, /)
 
    .. index::
       single: process; killing
@@ -3939,7 +3939,7 @@ written in Python, such as a mail server's external command delivery program.
       Windows support.
 
 
-.. function:: killpg(pgid, sig)
+.. function:: killpg(pgid, sig, /)
 
    .. index::
       single: process; killing
@@ -3952,7 +3952,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: nice(increment)
+.. function:: nice(increment, /)
 
    Add *increment* to the process's "niceness".  Return the new niceness.
 
@@ -3981,7 +3981,7 @@ written in Python, such as a mail server's external command delivery program.
    .. versionadded:: 3.12
 
 
-.. function:: plock(op)
+.. function:: plock(op, /)
 
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
@@ -4403,7 +4403,7 @@ written in Python, such as a mail server's external command delivery program.
       :func:`waitpid` can be used to wait for the completion of a specific
       child process and has more options.
 
-.. function:: waitid(idtype, id, options)
+.. function:: waitid(idtype, id, options, /)
 
    Wait for the completion of one or more child processes.
    *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
@@ -4471,7 +4471,7 @@ written in Python, such as a mail server's external command delivery program.
       Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
-.. function:: waitpid(pid, options)
+.. function:: waitpid(pid, options, /)
 
    The details of this function differ on Unix and Windows.
 
@@ -4600,7 +4600,7 @@ The following functions take a process status code as returned by
 :func:`system`, :func:`wait`, or :func:`waitpid` as a parameter.  They may be
 used to determine the disposition of a process.
 
-.. function:: WCOREDUMP(status)
+.. function:: WCOREDUMP(status, /)
 
    Return ``True`` if a core dump was generated for the process, otherwise
    return ``False``.
@@ -4745,33 +4745,33 @@ operating system.
    scheduling policy constants above.
 
 
-.. function:: sched_setscheduler(pid, policy, param)
+.. function:: sched_setscheduler(pid, policy, param, /)
 
    Set the scheduling policy for the process with PID *pid*. A *pid* of 0 means
    the calling process. *policy* is one of the scheduling policy constants
    above. *param* is a :class:`sched_param` instance.
 
 
-.. function:: sched_getscheduler(pid)
+.. function:: sched_getscheduler(pid, /)
 
    Return the scheduling policy for the process with PID *pid*. A *pid* of 0
    means the calling process. The result is one of the scheduling policy
    constants above.
 
 
-.. function:: sched_setparam(pid, param)
+.. function:: sched_setparam(pid, param, /)
 
    Set the scheduling parameters for the process with PID *pid*. A *pid* of 0 means
    the calling process. *param* is a :class:`sched_param` instance.
 
 
-.. function:: sched_getparam(pid)
+.. function:: sched_getparam(pid, /)
 
    Return the scheduling parameters as a :class:`sched_param` instance for the
    process with PID *pid*. A *pid* of 0 means the calling process.
 
 
-.. function:: sched_rr_get_interval(pid)
+.. function:: sched_rr_get_interval(pid, /)
 
    Return the round-robin quantum in seconds for the process with PID *pid*. A
    *pid* of 0 means the calling process.
@@ -4782,14 +4782,14 @@ operating system.
    Voluntarily relinquish the CPU.
 
 
-.. function:: sched_setaffinity(pid, mask)
+.. function:: sched_setaffinity(pid, mask, /)
 
    Restrict the process with PID *pid* (or the current process if zero) to a
    set of CPUs.  *mask* is an iterable of integers representing the set of
    CPUs to which the process should be restricted.
 
 
-.. function:: sched_getaffinity(pid)
+.. function:: sched_getaffinity(pid, /)
 
    Return the set of CPUs the process with PID *pid* (or the current process
    if zero) is restricted to.
@@ -4801,7 +4801,7 @@ Miscellaneous System Information
 --------------------------------
 
 
-.. function:: confstr(name)
+.. function:: confstr(name, /)
 
    Return string-valued system configuration values. *name* specifies the
    configuration value to retrieve; it may be a string which is the name of a
@@ -4852,7 +4852,7 @@ Miscellaneous System Information
    .. availability:: Unix.
 
 
-.. function:: sysconf(name)
+.. function:: sysconf(name, /)
 
    Return integer-valued system configuration values. If the configuration value
    specified by *name* isn't defined, ``-1`` is returned.  The comments regarding
@@ -4995,7 +4995,7 @@ Random numbers
 
    .. versionadded:: 3.6
 
-.. function:: urandom(size)
+.. function:: urandom(size, /)
 
    Return a bytestring of *size* random bytes suitable for cryptographic use.
 
