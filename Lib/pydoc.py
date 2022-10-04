@@ -1770,6 +1770,9 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
               _getdoc(object)):
         # If the passed object is a piece of data or an instance,
         # document its available methods instead of its value.
+        # Special-case Annotated[foo, ...] here; while we want it to act as foo
+        # in most contexts, in the case of help() we would like to print the
+        # help for Annotated, not for foo.
         if (hasattr(object, '__origin__') and
             not isinstance(object, typing._AnnotatedAlias)):
             object = object.__origin__
