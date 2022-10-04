@@ -25,7 +25,7 @@ class TestSundryScripts(unittest.TestCase):
     # scripts that use windows-only modules
     windows_only = ['win_add2path']
     # denylisted for other reasons
-    other = ['analyze_dxp', '2to3']
+    other = ['2to3']
 
     skiplist = denylist + allowlist + windows_only + other
 
@@ -49,13 +49,6 @@ class TestSundryScripts(unittest.TestCase):
     def test_sundry_windows(self):
         for name in self.windows_only:
             import_tool(name)
-
-    def test_analyze_dxp_import(self):
-        if hasattr(sys, 'getdxp'):
-            import_tool('analyze_dxp')
-        else:
-            with self.assertRaises(RuntimeError):
-                import_tool('analyze_dxp')
 
 
 if __name__ == '__main__':
