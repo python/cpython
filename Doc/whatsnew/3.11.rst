@@ -537,7 +537,7 @@ asyncio
   holding a group of tasks that will wait for all of them upon exit.
   For new code this is recommended over using
   :func:`~asyncio.create_task` and :func:`~asyncio.gather` directly.
-  (Contributed by Yury Seliganov and others in :gh:`90908`.)
+  (Contributed by Yury Selivanov and others in :gh:`90908`.)
 
 * Added :func:`~asyncio.timeout`, an asynchronous context manager for
   setting a timeout on asynchronous operations. For new code this is
