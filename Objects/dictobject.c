@@ -5736,7 +5736,7 @@ PyDict_Watch(int watcher_id, PyObject* dict)
         PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
         return -1;
     }
-    ((PyDictObject*)dict)->ma_version_tag |= (1 << watcher_id);
+    ((PyDictObject*)dict)->ma_version_tag |= (1LL << watcher_id);
     return 0;
 }
 

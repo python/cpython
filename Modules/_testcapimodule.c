@@ -5205,6 +5205,16 @@ dict_watch_callback(PyDict_WatchEvent event,
     PyList_Append(g_dict_watch_events, msg);
 }
 
+static void
+dict_watch_callback_2(PyDict_WatchEvent event,
+                      PyObject *dict,
+                      PyObject *key,
+                      PyObject *new_value)
+{
+    PyObject *msg = PyUnicode_FromString("second");
+    PyList_Append(g_dict_watch_events, msg);
+}
+
 static int
 dict_watch_assert(Py_ssize_t expected_num_events,
                   const char *expected_last_msg)
@@ -5324,10 +5334,20 @@ test_watch_dict(PyObject *self, PyObject *Py_UNUSED(args))
         return NULL;
     }
 
+    int wid2 = PyDict_AddWatcher(dict_watch_callback_2);
+    if (try_watch(wid2, unwatched)) {
+        return NULL;
+    }
+
     PyDict_Clear(watched);
-    PyDict_Clear(unwatched);
 
     if (dict_watch_assert(8, "clear")) {
+        return NULL;
+    }
+
+    PyDict_Clear(unwatched);
+
+    if (dict_watch_assert(9, "second")) {
         return NULL;
     }
 
@@ -5337,7 +5357,7 @@ test_watch_dict(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_CLEAR(watched);
 
-    if (dict_watch_assert(9, "dealloc")) {
+    if (dict_watch_assert(10, "dealloc")) {
         return NULL;
     }
 
