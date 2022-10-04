@@ -28,7 +28,8 @@ call_pyfunc_callback(PyFunction_Event event, PyFunctionObject *func, PyObject *n
         Py_INCREF(func);
     }
     PyObject *stack[] = {event_obj, func_or_id, new_value};
-    PyObject_Vectorcall(pyfunc_callback, stack, 3, NULL);
+    PyObject *res = PyObject_Vectorcall(pyfunc_callback, stack, 3, NULL);
+    Py_XDECREF(res);
     Py_DECREF(new_value);
     Py_DECREF(event_obj);
     Py_DECREF(func_or_id);
