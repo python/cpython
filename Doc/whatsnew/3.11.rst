@@ -529,6 +529,8 @@ New Modules
 Improved Modules
 ================
 
+.. _whatsnew311-asyncio:
+
 asyncio
 -------
 
