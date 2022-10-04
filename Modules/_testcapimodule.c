@@ -4846,6 +4846,31 @@ sequence_setitem(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+hasattr_string(PyObject *self, PyObject* args)
+{
+    PyObject* obj;
+    PyObject* attr_name;
+
+    if (!PyArg_UnpackTuple(args, "hasattr_string", 2, 2, &obj, &attr_name)) {
+        return NULL;
+    }
+
+    if (!PyUnicode_Check(attr_name)) {
+        PyErr_SetString(PyExc_TypeError, "attribute name must a be string");
+        return PyErr_Occurred();
+    }
+
+    const char *name_str = PyUnicode_AsUTF8(attr_name);
+    if (PyObject_HasAttrString(obj, name_str)) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+
 /* Functions for testing C calling conventions (METH_*) are named meth_*,
  * e.g. "meth_varargs" for METH_VARARGS.
  *
@@ -5707,6 +5732,7 @@ static PyMethodDef TestMethods[] = {
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"sequence_getitem", sequence_getitem, METH_VARARGS},
     {"sequence_setitem", sequence_setitem, METH_VARARGS},
+    {"hasattr_string", hasattr_string, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},

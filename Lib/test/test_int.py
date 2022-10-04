@@ -770,6 +770,26 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         with self.subTest(base=base):
             self._other_base_helper(base)
 
+    def test_int_max_str_digits_is_per_interpreter(self):
+        # Changing the limit in one interpreter does not change others.
+        code = """if 1:
+        # Subinterpreters maintain and enforce their own limit
+        import sys
+        sys.set_int_max_str_digits(2323)
+        try:
+            int('3'*3333)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Expected a int max str digits ValueError.')
+        """
+        with support.adjust_int_max_str_digits(4000):
+            before_value = sys.get_int_max_str_digits()
+            self.assertEqual(support.run_in_subinterp(code), 0,
+                             'subinterp code failure, check stderr.')
+            after_value = sys.get_int_max_str_digits()
+            self.assertEqual(before_value, after_value)
+
 
 class IntSubclassStrDigitLimitsTests(IntStrDigitLimitsTests):
     int_class = IntSubclass
