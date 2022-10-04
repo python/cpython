@@ -488,7 +488,7 @@ Other CPython Implementation Changes
   :class:`str`, :class:`bytes`, and some other types
   now use it as the default algorithm for :func:`hash`.
   :pep:`552` :ref:`hash-based .pyc files <pyc-invalidation>`
-  now use ``siphash13``, too.
+  now use ``siphash13`` too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
 * When an active exception is re-raised by a :keyword:`raise` statement with no parameters,
