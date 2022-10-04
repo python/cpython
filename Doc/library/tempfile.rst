@@ -101,8 +101,8 @@ The module defines the following user-callable items:
    always guaranteed in this case (see :meth:`object.__del__`). If *delete* is
    false, the value of *delete_on_close* is ignored.
 
-   Therefore to use the name of the temporary file to open the closed file
-   second time, either make sure not to delete the file upon closure (set the
+   Therefore to use the name of the temporary file to reopen the file after
+   closing it, either make sure not to delete the file upon closure (set the
    *delete* parameter to be false) or, in case the temporary file is created in
    a :keyword:`with` statement, set the *delete_on_close* parameter to be false.
    The latter approach is recommended as it provides assistance in automatic
@@ -112,8 +112,8 @@ The module defines the following user-callable items:
    follows:
 
    * On POSIX the file can always be opened again.
-   * On Windows to open the file again while it is open make sure that at least
-     one of the following conditions are fulfilled:
+   * On Windows, make sure that at least one of the following conditions are
+     fulfilled:
 
          * *delete* is false
          * additional open shares delete access (e.g. by calling :func:`os.open`
