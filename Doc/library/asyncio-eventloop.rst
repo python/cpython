@@ -1632,9 +1632,12 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       import asyncio
       import selectors
 
-      selector = selectors.SelectSelector()
-      loop = asyncio.SelectorEventLoop(selector)
-      asyncio.set_event_loop(loop)
+      class MyPolicy(asyncio.DefaultEventLoopPolicy):
+         def new_event_loop(self):
+            selector = selectors.SelectSelector()
+            return asyncio.SelectorEventLoop(selector)
+
+      asyncio.set_event_loop_policy(MyPolicy())
 
 
    .. availability:: Unix, Windows.
