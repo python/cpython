@@ -555,7 +555,7 @@ asyncio
   :exc:`~asyncio.BrokenBarrierError` exception.
   (Contributed by Yves Duprat and Andrew Svetlov in :gh:`87518`.)
 
-* Add keyword argument *all_errors* to :meth:`asyncio.loop.create_connection`
+* Added keyword argument *all_errors* to :meth:`asyncio.loop.create_connection`
   so that multiple connection errors can be raised as an :exc:`ExceptionGroup`.
 
 * Added the :meth:`asyncio.StreamWriter.start_tls` method for
