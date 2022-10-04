@@ -159,6 +159,11 @@ can be read from :data:`sys.flags.utf8_mode <sys.flags>`.
 See also the :ref:`UTF-8 mode on Windows <win-utf8-mode>`
 and the :term:`filesystem encoding and error handler`.
 
+.. seealso::
+
+   :pep:`686`
+      Python 3.15 will make :ref:`utf8-mode` default.
+
 
 .. _os-procinfo:
 
