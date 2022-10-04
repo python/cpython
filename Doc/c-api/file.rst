@@ -65,7 +65,7 @@ the :mod:`io` APIs instead.
    Overrides the normal behavior of :func:`io.open_code` to pass its parameter
    through the provided handler.
 
-   The handler is a function of type :c:type:`PyObject *(\*)(PyObject *path,
+   The handler is a function of type :c:expr:`PyObject *(\*)(PyObject *path,
    void *userData)`, where *path* is guaranteed to be :c:type:`PyUnicodeObject`.
 
    The *userData* pointer is passed into the hook function. Since hook
