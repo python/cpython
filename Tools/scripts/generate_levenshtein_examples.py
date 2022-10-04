@@ -3,13 +3,9 @@
 import argparse
 from functools import cache
 import json
-from pathlib import Path
+import os.path
 from random import choices, randrange
 from traceback import _MOVE_COST, _substitution_cost
-
-
-SCRIPTS_DIR = Path(__file__).parent
-TOOLS_DIR = SCRIPTS_DIR.parent
 
 
 @cache
@@ -30,8 +26,8 @@ def main():
                         help='overwrite an existing test file')
 
     args = parser.parse_args()
-    output_path = Path(args.output_path)
-    if not args.overwrite and output_path.is_file():
+    output_path = os.path.realpath(args.output_path)
+    if not args.overwrite and os.path.isfile(output_path):
         print(f"{output_path} already exists, skipping regeneration.")
         print(
             "To force, add --overwrite to the invocation of this tool or"
@@ -52,7 +48,7 @@ def main():
         b = ''.join(choices("abcABC", k=i))
         expected = levenshtein("", b)
         examples.add(("", b, expected))
-    with output_path.open("w") as f:
+    with open(output_path, "w") as f:
         json.dump(sorted(examples), f, indent=2)
 
 
