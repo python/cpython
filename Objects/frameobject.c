@@ -1095,9 +1095,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     init_frame((_PyInterpreterFrame *)f->_f_frame_data, func, locals);
     f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
-    // This frame needs to be "complete", so act as if the first RESUME has run:
-    ((_PyInterpreterFrame *)f->_f_frame_data)->prev_instr = _PyCode_CODE(code);
-    assert(!_PyFrame_IsIncomplete((_PyInterpreterFrame *)f->_f_frame_data));
+    // This frame needs to be "complete", so pretend that the first RESUME ran:
+    f->f_frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
     return f;
@@ -1135,7 +1135,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     PyObject **fast;
     PyCodeObject *co;
     locals = frame->f_locals;
-    if (locals == NULL) {
+    if (locals == NULL) {Fix 
         locals = frame->f_locals = PyDict_New();
         if (locals == NULL)
             return -1;

@@ -72,7 +72,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(frame)) {
         // This may be a newly-created generator or coroutine frame. Since it's
-        // dead anyways, just pretend that the first RESUME has run:
+        // dead anyways, just pretend that the first RESUME ran:
         PyCodeObject *code = frame->f_code;
         frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
     }
