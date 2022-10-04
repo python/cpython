@@ -1135,7 +1135,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     PyObject **fast;
     PyCodeObject *co;
     locals = frame->f_locals;
-    if (locals == NULL) {Fix 
+    if (locals == NULL) {
         locals = frame->f_locals = PyDict_New();
         if (locals == NULL)
             return -1;
