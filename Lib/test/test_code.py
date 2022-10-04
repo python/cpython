@@ -690,6 +690,7 @@ class CodeLocationTest(unittest.TestCase):
         # so that they both stay in sync.
         def f():
             pass
+        PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
         f.__code__ = f.__code__.replace(
             co_firstlineno=42,
             co_code=bytes(
@@ -702,7 +703,7 @@ class CodeLocationTest(unittest.TestCase):
             co_linetable=bytes(
                 [
                     (1 << 7)
-                    | (13 << 3)
+                    | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
                     | (3 - 1),
                     0,
                 ]
