@@ -1558,7 +1558,7 @@ always available.
 .. function:: activate_stack_trampoline(backend, /)
 
    Activate the stack profiler trampoline *backend*.
-   The only supported backend is `"perf"`.
+   The only supported backend is ``"perf"``.
 
    .. availability:: Linux.
 

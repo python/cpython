@@ -151,12 +151,11 @@ Instead, if we run the same experiment with ``perf`` support enabled we get:
 How to enable ``perf`` profiling support
 ----------------------------------------
 
-There are three ways to enable ``perf`` profiling support;
-the environment variable :envvar:`PYTHONPERFSUPPORT` and the
-:option:`-X perf <-X>` option allow you to enable perf profiling from the start,
-whereas the :func:`sys.activate_stack_trampoline` and
-:func:`sys.deactivate_stack_trampoline` functions allow you to enable and
-disable it dynamically.
+``perf`` profiling support can either be enabled from the start using
+the environment variable :envvar:`PYTHONPERFSUPPORT` or the
+:option:`-X perf <-X>` option,
+or dynamically using :func:`sys.activate_stack_trampoline` and
+:func:`sys.deactivate_stack_trampoline`.
 
 The :mod:`!sys` functions take precedence over the :option:`!-X` option,
 the :option:`!-X` option takes precedence over the environment variable.
