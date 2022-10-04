@@ -11,6 +11,7 @@ from traceback import _MOVE_COST, _substitution_cost
 SCRIPTS_DIR = Path(__file__).parent
 TOOLS_DIR = SCRIPTS_DIR.parent
 
+
 @cache
 def levenshtein(a, b):
     if not a or not b:
