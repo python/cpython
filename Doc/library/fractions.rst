@@ -98,6 +98,9 @@ another rational number, or from a string.
       :class:`Fraction` implements ``__int__`` now to satisfy
       ``typing.SupportsInt`` instance checks.
 
+   .. versionchanged:: 3.12
+      Space is allowed around the slash for string inputs: `Fraction('2 / 3')`.
+
    .. attribute:: numerator
 
       Numerator of the Fraction in lowest term.
@@ -114,10 +117,10 @@ another rational number, or from a string.
 
       .. versionadded:: 3.8
 
-   .. method:: from_float(flt)
+   .. classmethod:: from_float(flt)
 
-      This class method constructs a :class:`Fraction` representing the exact
-      value of *flt*, which must be a :class:`float`. Beware that
+      Alternative constructor which only accepts instances of
+      :class:`float` or :class:`numbers.Integral`. Beware that
       ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``.
 
       .. note::
@@ -126,10 +129,10 @@ another rational number, or from a string.
          :class:`Fraction` instance directly from a :class:`float`.
 
 
-   .. method:: from_decimal(dec)
+   .. classmethod:: from_decimal(dec)
 
-      This class method constructs a :class:`Fraction` representing the exact
-      value of *dec*, which must be a :class:`decimal.Decimal` instance.
+      Alternative constructor which only accepts instances of
+      :class:`decimal.Decimal` or :class:`numbers.Integral`.
 
       .. note::
 

@@ -113,8 +113,8 @@ to many different classes of problems.
 
 The language comes with a large standard library that covers areas such as
 string processing (regular expressions, Unicode, calculating differences between
-files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
-programming), software engineering (unit testing, logging, profiling, parsing
+files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP),
+software engineering (unit testing, logging, profiling, parsing
 Python code), and operating system interfaces (system calls, filesystems, TCP/IP
 sockets).  Look at the table of contents for :ref:`library-index` to get an idea
 of what's available.  A wide variety of third-party extensions are also
@@ -182,7 +182,7 @@ at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions 
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
-documentation tool <http://sphinx-doc.org/>`__.  The reStructuredText source for
+documentation tool <https://www.sphinx-doc.org/>`__.  The reStructuredText source for
 the documentation is part of the Python source distribution.
 
 
@@ -230,14 +230,8 @@ You can also access the development version of Python through Git.  See
 How do I submit bug reports and patches for Python?
 ---------------------------------------------------
 
-To report a bug or submit a patch, please use the Roundup installation at
-https://bugs.python.org/.
-
-You must have a Roundup account to report bugs; this makes it possible for us to
-contact you if we have follow-up questions.  It will also enable Roundup to send
-you updates as we act on your bug. If you had previously used SourceForge to
-report bugs to Python, you can obtain your Roundup password through Roundup's
-`password reset procedure <https://bugs.python.org/user?@template=forgotten>`_.
+To report a bug or submit a patch, use the issue tracker at
+https://github.com/python/cpython/issues.
 
 For more information on how Python is developed, consult `the Python Developer's
 Guide <https://devguide.python.org/>`_.
@@ -270,7 +264,7 @@ Where in the world is www.python.org located?
 ---------------------------------------------
 
 The Python project's infrastructure is located all over the world and is managed
-by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
+by the Python Infrastructure Team. Details `here <https://infra.psf.io>`__.
 
 
 Why is it called Python?
@@ -310,7 +304,7 @@ The latest stable releases can always be found on the `Python download page
 <https://www.python.org/downloads/>`_.  There are two production-ready versions
 of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
 most widely used libraries.  Although 2.x is still widely used, `it is not
-maintained anymore <https://www.python.org/dev/peps/pep-0373/>`_.
+maintained anymore <https://peps.python.org/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------
@@ -335,8 +329,8 @@ Consulting the proceedings for `past Python conferences
 different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
-<http://www.list.org>`_ and `the Zope application server
-<http://www.zope.org>`_.  Several Linux distributions, most notably `Red Hat
+<https://www.list.org>`_ and `the Zope application server
+<https://www.zope.dev>`_.  Several Linux distributions, most notably `Red Hat
 <https://www.redhat.com>`_, have written part or all of their installer and
 system administration software in Python.  Companies that use Python internally
 include Google, Yahoo, and Lucasfilm Ltd.
@@ -345,7 +339,7 @@ include Google, Yahoo, and Lucasfilm Ltd.
 What new developments are expected for Python in the future?
 ------------------------------------------------------------
 
-See https://www.python.org/dev/peps/ for the Python Enhancement Proposals
+See https://peps.python.org/ for the Python Enhancement Proposals
 (PEPs). PEPs are design documents describing a suggested new feature for Python,
 providing a concise technical specification and a rationale.  Look for a PEP
 titled "Python X.Y Release Schedule", where X.Y is a version that hasn't been

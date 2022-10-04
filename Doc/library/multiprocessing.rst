@@ -8,6 +8,8 @@
 
 --------------
 
+.. include:: ../includes/wasm-notavail.rst
+
 Introduction
 ------------
 
@@ -41,6 +43,16 @@ of data parallelism using :class:`~multiprocessing.pool.Pool`, ::
 will print to standard output ::
 
    [1, 4, 9]
+
+
+.. seealso::
+
+   :class:`concurrent.futures.ProcessPoolExecutor` offers a higher level interface
+   to push tasks to a background process without blocking execution of the
+   calling process. Compared to using the :class:`~multiprocessing.pool.Pool`
+   interface directly, the :mod:`concurrent.futures` API more readily allows
+   the submission of work to the underlying process pool to be separated from
+   waiting for the results.
 
 
 The :class:`Process` class
@@ -96,7 +108,7 @@ Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
 
   *spawn*
-    The parent process starts a fresh python interpreter process.  The
+    The parent process starts a fresh Python interpreter process.  The
     child process will only inherit those resources necessary to run
     the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
@@ -132,8 +144,8 @@ to start a process.  These *start methods* are
    subprocess. See :issue:`33725`.
 
 .. versionchanged:: 3.4
-   *spawn* added on all unix platforms, and *forkserver* added for
-   some unix platforms.
+   *spawn* added on all Unix platforms, and *forkserver* added for
+   some Unix platforms.
    Child processes no longer inherit all of the parents inheritable
    handles on Windows.
 
@@ -662,7 +674,6 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Example usage of some of the methods of :class:`Process`:
 
    .. doctest::
-      :options: +ELLIPSIS
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
@@ -1074,6 +1085,9 @@ Miscellaneous
 
    .. versionchanged:: 3.4
       Now supported on Unix when the ``'spawn'`` start method is used.
+
+   .. versionchanged:: 3.11
+      Accepts a :term:`path-like object`.
 
 .. function:: set_start_method(method)
 
@@ -1663,6 +1677,7 @@ different machines. A manager object controls a server process which manages
 proxies.
 
 .. function:: multiprocessing.Manager()
+   :module:
 
    Returns a started :class:`~multiprocessing.managers.SyncManager` object which
    can be used for sharing objects between processes.  The returned manager
@@ -1676,7 +1691,7 @@ Manager processes will be shutdown as soon as they are garbage collected or
 their parent process exits.  The manager classes are defined in the
 :mod:`multiprocessing.managers` module:
 
-.. class:: BaseManager([address[, authkey]])
+.. class:: BaseManager(address=None, authkey=None, serializer='pickle', ctx=None, *, shutdown_timeout=1.0)
 
    Create a BaseManager object.
 
@@ -1690,6 +1705,20 @@ their parent process exits.  The manager classes are defined in the
    validity of incoming connections to the server process.  If
    *authkey* is ``None`` then ``current_process().authkey`` is used.
    Otherwise *authkey* is used and it must be a byte string.
+
+   *serializer* must be ``'pickle'`` (use :mod:`pickle` serialization) or
+   ``'xmlrpclib'`` (use :mod:`xmlrpc.client` serialization).
+
+   *ctx* is a context object, or ``None`` (use the current context). See the
+   :func:`get_context` function.
+
+   *shutdown_timeout* is a timeout in seconds used to wait until the process
+   used by the manager completes in the :meth:`shutdown` method. If the
+   shutdown times out, the process is terminated. If terminating the process
+   also times out, the process is killed.
+
+   .. versionchanged:: 3.11
+      Added the *shutdown_timeout* parameter.
 
    .. method:: start([initializer[, initargs]])
 

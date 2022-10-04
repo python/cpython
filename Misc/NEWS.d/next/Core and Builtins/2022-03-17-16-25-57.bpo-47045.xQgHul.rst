@@ -1,3 +1,0 @@
-Remove the ``f_state`` field from the _PyInterpreterFrame struct. Add the
-``owner`` field to the _PyInterpreterFrame struct to make ownership explicit
-to simplify clearing and deallocing frames and generators.

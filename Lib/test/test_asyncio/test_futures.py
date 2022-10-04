@@ -10,6 +10,7 @@ from unittest import mock
 from types import GenericAlias
 import asyncio
 from asyncio import futures
+import warnings
 from test.test_asyncio import utils as test_utils
 from test import support
 
@@ -148,7 +149,7 @@ class BaseFutureTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
                 self._new_future()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
 
     def test_constructor_use_running_loop(self):
         async def test():
@@ -163,7 +164,7 @@ class BaseFutureTests:
         self.addCleanup(asyncio.set_event_loop, None)
         with self.assertWarns(DeprecationWarning) as cm:
             f = self._new_future()
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 
@@ -510,7 +511,7 @@ class BaseFutureTests:
         with self.assertWarns(DeprecationWarning) as cm:
             with self.assertRaises(RuntimeError):
                 asyncio.wrap_future(f1)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         ex.shutdown(wait=True)
 
     def test_wrap_future_use_running_loop(self):
@@ -534,7 +535,7 @@ class BaseFutureTests:
         f1 = ex.submit(run, 'oi')
         with self.assertWarns(DeprecationWarning) as cm:
             f2 = asyncio.wrap_future(f1)
-        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertEqual(cm.filename, __file__)
         self.assertIs(self.loop, f2._loop)
         ex.shutdown(wait=True)
 
@@ -619,10 +620,14 @@ class BaseFutureTests:
     def test_future_iter_throw(self):
         fut = self._new_future(loop=self.loop)
         fi = iter(fut)
-        self.assertRaises(TypeError, fi.throw,
-                          Exception, Exception("elephant"), 32)
-        self.assertRaises(TypeError, fi.throw,
-                          Exception("elephant"), Exception("elephant"))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(Exception, fi.throw, Exception, Exception("zebra"), None)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            self.assertRaises(TypeError, fi.throw,
+                            Exception, Exception("elephant"), 32)
+            self.assertRaises(TypeError, fi.throw,
+                            Exception("elephant"), Exception("elephant"))
         self.assertRaises(TypeError, fi.throw, list)
 
     def test_future_del_collect(self):
@@ -829,6 +834,21 @@ class BaseFutureDoneCallbackTests():
             def __eq__(self, other):
                 fut.remove_done_callback(id)
                 return False
+
+        fut.remove_done_callback(evil())
+
+    def test_remove_done_callbacks_list_clear(self):
+        # see https://github.com/python/cpython/issues/97592 for details
+
+        fut = self._new_future()
+        fut.add_done_callback(str)
+
+        for _ in range(63):
+            fut.add_done_callback(id)
+
+        class evil:
+            def __eq__(self, other):
+                fut.remove_done_callback(other)
 
         fut.remove_done_callback(evil())
 

@@ -1,0 +1,2 @@
+The ``PyLong_FromString`` function was refactored to make it more maintainable
+and extensible.

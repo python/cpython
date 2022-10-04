@@ -1,1 +1,0 @@
-Speed up throwing exception in generator with :const:`METH_FASTCALL` calling convention. Patch by Kumar Aditya.

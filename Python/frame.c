@@ -1,7 +1,9 @@
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "frameobject.h"
-#include "pycore_code.h"           // stats
+#include "pycore_code.h"          // stats
 #include "pycore_frame.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "opcode.h"
@@ -11,7 +13,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_func);
+    Py_VISIT(frame->f_funcobj);
     Py_VISIT(frame->f_code);
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
@@ -52,6 +54,9 @@ _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
     assert(src->stacktop >= src->f_code->co_nlocalsplus);
     Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
     memcpy(dest, src, size);
+    // Don't leave a dangling pointer to the old frame when creating generators
+    // and coroutines:
+    dest->previous = NULL;
 }
 
 
@@ -66,9 +71,13 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     assert(f->f_back == NULL);
-    if (frame->previous != NULL) {
+    _PyInterpreterFrame *prev = frame->previous;
+    while (prev && _PyFrame_IsIncomplete(prev)) {
+        prev = prev->previous;
+    }
+    if (prev) {
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
-        PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
+        PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
             /* Memory error here. */
             assert(PyErr_ExceptionMatches(PyExc_MemoryError));
@@ -108,22 +117,13 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     }
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_func);
+    Py_DECREF(frame->f_funcobj);
     Py_DECREF(frame->f_code);
 }
 
-/* Consumes reference to func */
-_PyInterpreterFrame *
-_PyFrame_Push(PyThreadState *tstate, PyFunctionObject *func)
+int
+_PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
-    PyCodeObject *code = (PyCodeObject *)func->func_code;
-    size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
-    CALL_STAT_INC(frames_pushed);
-    _PyInterpreterFrame *new_frame = _PyThreadState_BumpFramePointer(tstate, size);
-    if (new_frame == NULL) {
-        Py_DECREF(func);
-        return NULL;
-    }
-    _PyFrame_InitializeSpecials(new_frame, func, NULL, code->co_nlocalsplus);
-    return new_frame;
+    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+    return PyCode_Addr2Line(frame->f_code, addr);
 }

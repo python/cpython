@@ -1,0 +1,2 @@
+:mod:`subprocess` now fails early on Emscripten and WASI platforms to work
+around missing :func:`os.pipe` on WASI.
