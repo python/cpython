@@ -286,6 +286,7 @@ def _compile(pattern, flags):
         pass
 
     key = (type(pattern), pattern, flags)
+    # Item in _cache should be moved to the end if found.
     p = _cache.pop(key, None)
     if p is None:
         if isinstance(pattern, Pattern):
