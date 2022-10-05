@@ -12,7 +12,9 @@ rem
 rem The following substitutions will be applied to the release URI:
 rem     Variable        Description         Example
 rem     {arch}          architecture        amd64, win32
-set RELEASE_URI=https://www.python.org/{arch}
+rem Do not change the scheme to https. Otherwise, releases built with this
+rem script will not be upgradable to/from official releases of Python.
+set RELEASE_URI=http://www.python.org/{arch}
 
 rem This is the URL that will be used to download installation files.
 rem The files available from the default URL *will* conflict with your

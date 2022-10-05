@@ -22,14 +22,14 @@ Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
 
 class nonmember(object):
     """
-    Protects item from becaming an Enum member during class creation.
+    Protects item from becoming an Enum member during class creation.
     """
     def __init__(self, value):
         self.value = value
 
 class member(object):
     """
-    Forces item to became an Enum member during class creation.
+    Forces item to become an Enum member during class creation.
     """
     def __init__(self, value):
         self.value = value
@@ -1887,7 +1887,7 @@ def _test_simple_enum(checked_enum, simple_enum):
             else:
                 checked_value = checked_dict[key]
                 simple_value = simple_dict[key]
-                if callable(checked_value):
+                if callable(checked_value) or isinstance(checked_value, bltns.property):
                     continue
                 if key == '__doc__':
                     # remove all spaces/tabs

@@ -111,8 +111,7 @@ class TestSpecifics(unittest.TestCase):
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
-        # default: 1000 * 2.5 = 2500 repetitions
-        repeat = int(sys.getrecursionlimit() * 2.5)
+        repeat = 2000
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = '''
@@ -198,6 +197,19 @@ if 1:
         self.assertEqual(eval("-0b000000000010"), -2)
         self.assertEqual(eval("0o777"), 511)
         self.assertEqual(eval("-0o0000010"), -8)
+
+    def test_int_literals_too_long(self):
+        n = 3000
+        source = f"a = 1\nb = 2\nc = {'3'*n}\nd = 4"
+        with support.adjust_int_max_str_digits(n):
+            compile(source, "<long_int_pass>", "exec")  # no errors.
+        with support.adjust_int_max_str_digits(n-1):
+            with self.assertRaises(SyntaxError) as err_ctx:
+                compile(source, "<long_int_fail>", "exec")
+            exc = err_ctx.exception
+            self.assertEqual(exc.lineno, 3)
+            self.assertIn('Exceeds the limit ', str(exc))
+            self.assertIn(' Consider hexadecimal ', str(exc))
 
     def test_unary_minus(self):
         # Verify treatment of unary minus on negative numbers SF bug #660455
@@ -531,7 +543,7 @@ if 1:
             with open(fn, "wb") as fp:
                 fp.write(src)
             res = script_helper.run_python_until_end(fn)[0]
-        self.assertIn(b"Non-UTF-8", res.err)
+        self.assertIn(b"source code cannot contain null bytes", res.err)
 
     def test_yet_more_evil_still_undecodable(self):
         # Issue #25388
@@ -541,7 +553,7 @@ if 1:
             with open(fn, "wb") as fp:
                 fp.write(src)
             res = script_helper.run_python_until_end(fn)[0]
-        self.assertIn(b"Non-UTF-8", res.err)
+        self.assertIn(b"source code cannot contain null bytes", res.err)
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
@@ -578,9 +590,9 @@ if 1:
     def test_null_terminated(self):
         # The source code is null-terminated internally, but bytes-like
         # objects are accepted, which could be not terminated.
-        with self.assertRaisesRegex(ValueError, "cannot contain null"):
+        with self.assertRaisesRegex(SyntaxError, "cannot contain null"):
             compile("123\x00", "<dummy>", "eval")
-        with self.assertRaisesRegex(ValueError, "cannot contain null"):
+        with self.assertRaisesRegex(SyntaxError, "cannot contain null"):
             compile(memoryview(b"123\x00"), "<dummy>", "eval")
         code = compile(memoryview(b"123\x00")[1:-1], "<dummy>", "eval")
         self.assertEqual(eval(code), 23)
@@ -658,10 +670,22 @@ if 1:
 
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
 
+    @support.cpython_only
+    def test_strip_unused_consts(self):
+        def f():
+            "docstring"
+            if True:
+                return "used"
+            else:
+                return "unused"
+
+        self.assertEqual(f.__code__.co_consts,
+                         ("docstring", True, "used"))
+
     # Stripping unused constants is not a strict requirement for the
     # Python semantics, it's a more an implementation detail.
     @support.cpython_only
-    def test_strip_unused_consts(self):
+    def test_strip_unused_None(self):
         # Python 3.10rc1 appended None to co_consts when None is not used
         # at all. See bpo-45056.
         def f1():
@@ -1063,6 +1087,31 @@ if 1:
         check_op_count(aug, "BINARY_SLICE", 1)
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
+
+    def test_compare_positions(self):
+        for opname, op in [
+            ("COMPARE_OP", "<"),
+            ("COMPARE_OP", "<="),
+            ("COMPARE_OP", ">"),
+            ("COMPARE_OP", ">="),
+            ("CONTAINS_OP", "in"),
+            ("CONTAINS_OP", "not in"),
+            ("IS_OP", "is"),
+            ("IS_OP", "is not"),
+        ]:
+            expr = f'a {op} b {op} c'
+            expected_positions = 2 * [(2, 2, 0, len(expr))]
+            for source in [
+                f"\\\n{expr}", f'if \\\n{expr}: x', f"x if \\\n{expr} else y"
+            ]:
+                code = compile(source, "<test>", "exec")
+                actual_positions = [
+                    instruction.positions
+                    for instruction in dis.get_instructions(code)
+                    if instruction.opname == opname
+                ]
+                with self.subTest(source):
+                    self.assertEqual(actual_positions, expected_positions)
 
 
 @requires_debug_ranges()

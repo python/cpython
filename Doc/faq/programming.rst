@@ -35,7 +35,7 @@ debugging non-PythonWin programs.  PythonWin is available as part of
 as a part of the
 `ActivePython <https://www.activestate.com/products/python/>`_ distribution.
 
-`Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
+`Eric <https://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
 `trepan3k <https://github.com/rocky/python3-trepan/>`_ is a gdb-like debugger.
@@ -99,7 +99,7 @@ executables:
 * `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
 * `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
 * `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
-* `py2exe <http://www.py2exe.org/>`_ (Windows only)
+* `py2exe <https://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
@@ -735,7 +735,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`!lambda`.  See the following three examples, slightly adapted from Ulf Bartelt::
 
    from functools import reduce
 
@@ -748,7 +748,7 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
    f(x,f), range(10))))
 
    # Mandelbrot set
-   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,
+   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+'\n'+y,map(lambda y,
    Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,
    Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,
    i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y
@@ -1270,7 +1270,7 @@ use a list comprehension::
    A = [[None] * w for i in range(h)]
 
 Or, you can use an extension that provides a matrix datatype; `NumPy
-<http://www.numpy.org/>`_ is the best known.
+<https://numpy.org/>`_ is the best known.
 
 
 How do I apply a method to a sequence of objects?
@@ -1896,6 +1896,8 @@ The classes can be used like this:
     >>> TitleStr('Blog: Why Python Rocks')
     'blog-why-python-rocks'
 
+
+.. _faq-cache-method-calls:
 
 How do I cache method calls?
 ----------------------------

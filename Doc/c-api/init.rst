@@ -1023,7 +1023,7 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :attr:`interp` (:c:type:`PyInterpreterState *`), which points to
+   data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
    this thread's interpreter state.
 
 
@@ -1875,7 +1875,7 @@ you need to include :file:`pythread.h` to use thread-local storage.
 .. note::
    None of these API functions handle memory management on behalf of the
    :c:type:`void*` values.  You need to allocate and deallocate them yourself.
-   If the :c:type:`void*` values happen to be :c:type:`PyObject*`, these
+   If the :c:type:`void*` values happen to be :c:expr:`PyObject*`, these
    functions don't do refcount operations on them either.
 
 .. _thread-specific-storage-api:

@@ -73,6 +73,7 @@ Include/internal/pycore_runtime_init_generated.h    generated
 Include/opcode.h                                    generated
 Include/token.h                                     generated
 Lib/keyword.py                                      generated
+Lib/test/levenshtein_examples.json                  generated
 Lib/test/test_stable_abi_ctypes.py                  generated
 Lib/token.py                                        generated
 Objects/typeslots.inc                               generated

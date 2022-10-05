@@ -54,6 +54,9 @@ _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
     assert(src->stacktop >= src->f_code->co_nlocalsplus);
     Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
     memcpy(dest, src, size);
+    // Don't leave a dangling pointer to the old frame when creating generators
+    // and coroutines:
+    dest->previous = NULL;
 }
 
 
@@ -67,6 +70,13 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    if (_PyFrame_IsIncomplete(frame)) {
+        // This may be a newly-created generator or coroutine frame. Since it's
+        // dead anyways, just pretend that the first RESUME ran:
+        PyCodeObject *code = frame->f_code;
+        frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
+    }
+    assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = frame->previous;
     while (prev && _PyFrame_IsIncomplete(prev)) {

@@ -21,8 +21,8 @@ PyDoc_STRVAR(builtin___import____doc__,
 "\n"
 "The globals argument is only used to determine the context;\n"
 "they are not modified.  The locals argument is unused.  The fromlist\n"
-"should be a list of names to emulate ``from name import ...\'\', or an\n"
-"empty list to emulate ``import name\'\'.\n"
+"should be a list of names to emulate ``from name import ...``, or an\n"
+"empty list to emulate ``import name``.\n"
 "When importing a module from a package, note that __import__(\'A.B\', ...)\n"
 "returns package A when fromlist is empty, but its submodule B when\n"
 "fromlist is not empty.  The level argument is used to determine whether to\n"
@@ -183,11 +183,14 @@ PyDoc_STRVAR(builtin_format__doc__,
 "format($module, value, format_spec=\'\', /)\n"
 "--\n"
 "\n"
-"Return value.__format__(format_spec)\n"
+"Return type(value).__format__(value, format_spec)\n"
 "\n"
-"format_spec defaults to the empty string.\n"
-"See the Format Specification Mini-Language section of help(\'FORMATTING\') for\n"
-"details.");
+"Many built-in types implement format_spec according to the\n"
+"Format Specification Mini-language. See help(\'FORMATTING\').\n"
+"\n"
+"If type(value) does not supply a method named __format__\n"
+"and format_spec is empty, then str(value) is returned.\n"
+"See also help(\'SPECIALMETHODS\').");
 
 #define BUILTIN_FORMAT_METHODDEF    \
     {"format", _PyCFunction_CAST(builtin_format), METH_FASTCALL, builtin_format__doc__},
@@ -614,7 +617,7 @@ PyDoc_STRVAR(builtin_setattr__doc__,
 "\n"
 "Sets the named attribute on the given object to the specified value.\n"
 "\n"
-"setattr(x, \'y\', v) is equivalent to ``x.y = v\'\'");
+"setattr(x, \'y\', v) is equivalent to ``x.y = v``");
 
 #define BUILTIN_SETATTR_METHODDEF    \
     {"setattr", _PyCFunction_CAST(builtin_setattr), METH_FASTCALL, builtin_setattr__doc__},
@@ -649,7 +652,7 @@ PyDoc_STRVAR(builtin_delattr__doc__,
 "\n"
 "Deletes the named attribute from the given object.\n"
 "\n"
-"delattr(x, \'y\') is equivalent to ``del x.y\'\'");
+"delattr(x, \'y\') is equivalent to ``del x.y``");
 
 #define BUILTIN_DELATTR_METHODDEF    \
     {"delattr", _PyCFunction_CAST(builtin_delattr), METH_FASTCALL, builtin_delattr__doc__},
@@ -1212,4 +1215,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=919725bf5d400acf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c9497e0ffeb8a30 input=a9049054013a1b77]*/

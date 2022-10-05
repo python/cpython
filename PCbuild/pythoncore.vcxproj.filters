@@ -923,6 +923,9 @@
     <ClCompile Include="..\Objects\codeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\perf_trampoline.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\complexobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
