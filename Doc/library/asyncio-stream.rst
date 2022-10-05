@@ -67,6 +67,12 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_connection`.
 
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      :class:`StreamWriter` created. To close the socket, call its
+      :meth:`~asyncio.StreamWriter.close` method.
+
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
 
@@ -103,6 +109,12 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_server`.
 
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      server created. To close the socket, call the server's
+      :meth:`~asyncio.Server.close` method.
+
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* and *start_serving* parameters.
 
@@ -123,6 +135,12 @@ and work with streams:
 
    See also the documentation of :meth:`loop.create_unix_connection`.
 
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      :class:`StreamWriter` created. To close the socket, call its
+      :meth:`~asyncio.StreamWriter.close` method.
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.7
@@ -142,6 +160,12 @@ and work with streams:
    Similar to :func:`start_server` but works with Unix sockets.
 
    See also the documentation of :meth:`loop.create_unix_server`.
+
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      server created. To close the socket, call the server's
+      :meth:`~asyncio.Server.close` method.
 
    .. availability:: Unix.
 
