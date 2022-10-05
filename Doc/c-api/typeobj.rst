@@ -1484,7 +1484,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    If the instances of this type are weakly referenceable, this field is greater
    than zero and contains the offset in the instance structure of the weak
    reference list head (ignoring the GC header, if present); this offset is used by
-   :c:func:`PyObject_ClearWeakRefs` and the ``PyWeakref_*`` functions.  The
+   :c:func:`PyObject_ClearWeakRefs` and the :c:func:`PyWeakref_\*` functions.  The
    instance structure needs to include a field of type :c:expr:`PyObject*` which is
    initialized to ``NULL``.
 
