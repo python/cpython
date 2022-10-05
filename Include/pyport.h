@@ -14,50 +14,19 @@
 #endif
 
 
-// Macro to use C++ static_cast<>, reinterpret_cast<> and const_cast<>
-// in the Python C API.
-//
-// In C++, _Py_CAST(type, expr) converts a constant expression to a
-// non constant type using const_cast<type>. For example,
-// _Py_CAST(PyObject*, op) can convert a "const PyObject*" to
-// "PyObject*".
-//
-// The type argument must not be a constant type.
+// Macro to use C++ static_cast<> in the Python C API.
 #ifdef __cplusplus
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
-extern "C++" {
-    namespace {
-        template <typename type, typename expr_type>
-            inline type _Py_CAST_impl(expr_type *expr) {
-                return reinterpret_cast<type>(expr);
-            }
-
-        template <typename type, typename expr_type>
-            inline type _Py_CAST_impl(expr_type const *expr) {
-                return reinterpret_cast<type>(const_cast<expr_type *>(expr));
-            }
-
-        template <typename type, typename expr_type>
-            inline type _Py_CAST_impl(expr_type &expr) {
-                return static_cast<type>(expr);
-            }
-
-        template <typename type, typename expr_type>
-            inline type _Py_CAST_impl(expr_type const &expr) {
-                return static_cast<type>(const_cast<expr_type &>(expr));
-            }
-    }
-}
-#  define _Py_CAST(type, expr) _Py_CAST_impl<type>(expr)
-
 #else
 #  define _Py_STATIC_CAST(type, expr) ((type)(expr))
-#  define _Py_CAST(type, expr) ((type)(expr))
 #endif
+// Macro to use the more powerful/dangerous C-style cast even in C++.
+#define _Py_CAST(type, expr) ((type)(expr))
 
 // Static inline functions should use _Py_NULL rather than using directly NULL
-// to prevent C++ compiler warnings. In C++, _Py_NULL uses nullptr.
-#ifdef __cplusplus
+// to prevent C++ compiler warnings. On C++11 and newer, _Py_NULL is defined as
+// nullptr.
+#if defined(__cplusplus) && __cplusplus >= 201103
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL

@@ -75,7 +75,7 @@ memory manager. For example, this is required when the interpreter is extended
 with new object types written in C. Another reason for using the Python heap is
 the desire to *inform* the Python memory manager about the memory needs of the
 extension module. Even when the requested memory is used exclusively for
-internal, highly-specific purposes, delegating all memory requests to the Python
+internal, highly specific purposes, delegating all memory requests to the Python
 memory manager causes the interpreter to have a more accurate image of its
 memory footprint as a whole. Consequently, under certain circumstances, the
 Python memory manager may or may not trigger appropriate actions, like garbage
@@ -265,14 +265,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 .. c:function:: TYPE* PyMem_New(TYPE, size_t n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to :c:type:`TYPE*`.  The memory will not have
+   memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
    been initialized in any way.
 
 
 .. c:function:: TYPE* PyMem_Resize(void *p, TYPE, size_t n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:type:`TYPE*`. On return,
+   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:expr:`TYPE*`. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 

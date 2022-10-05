@@ -1,6 +1,8 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-event-loop:
+
 ==========
 Event Loop
 ==========
@@ -79,7 +81,7 @@ This documentation page contains the following sections:
   loop APIs.
 
 
-.. _asyncio-event-loop:
+.. _asyncio-event-loop-methods:
 
 Event Loop Methods
 ==================
@@ -165,18 +167,27 @@ Running and stopping the loop
 
    .. versionadded:: 3.6
 
-.. coroutinemethod:: loop.shutdown_default_executor()
+.. coroutinemethod:: loop.shutdown_default_executor(timeout=None)
 
    Schedule the closure of the default executor and wait for it to join all of
    the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
    :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
    while using the default executor.
 
+   The *timeout* parameter specifies the amount of time the executor will
+   be given to finish joining. The default value is ``None``, which means the
+   executor will be given an unlimited amount of time.
+
+   If the timeout duration is reached, a warning is emitted and executor is
+   terminated without waiting for its threads to finish joining.
+
    Note that there is no need to call this function when
    :func:`asyncio.run` is used.
 
    .. versionadded:: 3.9
 
+   .. versionchanged:: 3.12
+      Added the *timeout* parameter.
 
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
@@ -319,7 +330,7 @@ Creating Futures and Tasks
 
 .. method:: loop.create_task(coro, *, name=None, context=None)
 
-   Schedule the execution of a :ref:`coroutine`.
+   Schedule the execution of :ref:`coroutine <coroutine>` *coro*.
    Return a :class:`Task` object.
 
    Third-party event loops can use their own subclass of :class:`Task`
@@ -364,7 +375,8 @@ Opening network connections
                           local_addr=None, server_hostname=None, \
                           ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, \
-                          happy_eyeballs_delay=None, interleave=None)
+                          happy_eyeballs_delay=None, interleave=None, \
+                          all_errors=False)
 
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
@@ -455,6 +467,14 @@ Opening network connections
      to complete before aborting the connection. ``30.0`` seconds if ``None``
      (default).
 
+   * *all_errors* determines what exceptions are raised when a connection cannot
+     be created. By default, only a single ``Exception`` is raised: the first
+     exception if there is only one or all errors have same message, or a single
+     ``OSError`` with the error messages combined. When ``all_errors`` is ``True``,
+     an ``ExceptionGroup`` will be raised containing all exceptions (even if there
+     is only one).
+
+
    .. versionchanged:: 3.5
 
       Added support for SSL/TLS in :class:`ProactorEventLoop`.
@@ -486,6 +506,9 @@ Opening network connections
    .. versionchanged:: 3.11
 
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.12
+      *all_errors* was added.
 
    .. seealso::
 
@@ -1235,6 +1258,15 @@ Allows customizing how exceptions are handled in the event loop.
    (see :meth:`call_exception_handler` documentation for details
    about context).
 
+   If the handler is called on behalf of a :class:`~asyncio.Task` or
+   :class:`~asyncio.Handle`, it is run in the
+   :class:`contextvars.Context` of that task or callback handle.
+
+   .. versionchanged:: 3.12
+
+      The handler may be called in the :class:`~contextvars.Context`
+      of the task or handle where the exception originated.
+
 .. method:: loop.get_exception_handler()
 
    Return the current exception handler, or ``None`` if no custom
@@ -1438,6 +1470,13 @@ Callback Handles
    A callback wrapper object returned by :meth:`loop.call_soon`,
    :meth:`loop.call_soon_threadsafe`.
 
+   .. method:: get_context()
+
+      Return the :class:`contextvars.Context` object
+      associated with the handle.
+
+      .. versionadded:: 3.12
+
    .. method:: cancel()
 
       Cancel the callback.  If the callback has already been canceled
@@ -1573,6 +1612,7 @@ Do not instantiate the class directly.
 
 
 .. _asyncio-event-loops:
+.. _asyncio-event-loop-implementations:
 
 Event Loop Implementations
 ==========================
@@ -1595,9 +1635,12 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       import asyncio
       import selectors
 
-      selector = selectors.SelectSelector()
-      loop = asyncio.SelectorEventLoop(selector)
-      asyncio.set_event_loop(loop)
+      class MyPolicy(asyncio.DefaultEventLoopPolicy):
+         def new_event_loop(self):
+            selector = selectors.SelectSelector()
+            return asyncio.SelectorEventLoop(selector)
+
+      asyncio.set_event_loop_policy(MyPolicy())
 
 
    .. availability:: Unix, Windows.
@@ -1619,7 +1662,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
    Abstract base class for asyncio-compliant event loops.
 
-   The :ref:`Event Loop Methods <asyncio-event-loop>` section lists all
+   The :ref:`asyncio-event-loop-methods` section lists all
    methods that an alternative implementation of ``AbstractEventLoop``
    should have defined.
 

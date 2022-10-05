@@ -82,7 +82,7 @@ The module defines the following exception and functions:
 
    Iteratively unpack from the buffer *buffer* according to the format
    string *format*.  This function returns an iterator which will read
-   equally-sized chunks from the buffer until all its contents have been
+   equally sized chunks from the buffer until all its contents have been
    consumed.  The buffer's size in bytes must be a multiple of the size
    required by the format, as reflected by :func:`calcsize`.
 
@@ -146,9 +146,10 @@ If the first character is not one of these, ``'@'`` is assumed.
 
 Native byte order is big-endian or little-endian, depending on the host
 system. For example, Intel x86 and AMD64 (x86-64) are little-endian;
-Motorola 68000 and PowerPC G5 are big-endian; ARM and Intel Itanium feature
-switchable endianness (bi-endian). Use ``sys.byteorder`` to check the
-endianness of your system.
+IBM z and most legacy architectures are big-endian;
+and ARM, RISC-V and IBM Power feature switchable endianness
+(bi-endian, though the former two are nearly always little-endian in practice).
+Use ``sys.byteorder`` to check the endianness of your system.
 
 Native size and alignment are determined using the C compiler's
 ``sizeof`` expression.  This is always combined with native byte order.
@@ -466,6 +467,6 @@ The :mod:`struct` module also defines the following type:
 
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 
-.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_floating_point#IEEE_754-2008
+.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision
 
 .. _IETF RFC 1700: https://tools.ietf.org/html/rfc1700

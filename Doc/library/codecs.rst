@@ -1530,7 +1530,7 @@ functions can be used directly if desired.
 
 This module implements the ANSI codepage (CP_ACP).
 
-.. availability:: Windows only.
+.. availability:: Windows.
 
 .. versionchanged:: 3.3
    Support any error handler.
