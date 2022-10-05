@@ -317,7 +317,7 @@ class Dawg(object):
                     encode_varint_unsigned(info, result)
                     prev_child_offset = child_offset
                     if len(label) > 1:
-                        encode_varint_unsigned(len(label), result)
+                        result.append(len(label))
                     result.extend(label)
                     prev_printed = len(result)
                 node.packed_size = len(result) - node.packed_offset

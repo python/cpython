@@ -1132,9 +1132,9 @@ _dawg_node_child_count(unsigned int node_offset)
 //
 // this information is encoded in a compact form as follows:
 //
-// +---------+--------------------------+--------------+--------------------
-// |  varint | varint: size (if != 1)  | label chars  | ... next edge ...
-// +---------+--------------------------+--------------+--------------------
+// +---------+-----------------+--------------+--------------------
+// |  varint | size (if != 1)  | label chars  | ... next edge ...
+// +---------+-----------------+--------------+--------------------
 //
 // - first comes a varint
 //     - the lowest bit of that varint is whether the edge is final (4)
@@ -1142,9 +1142,10 @@ _dawg_node_child_count(unsigned int node_offset)
 //       the length of the label is 1 (1)
 //     - the rest of the varint is an offset that can be used to compute
 //       the offset of the target node of that edge (3)
-//  - if the size is not 1, the first varint is followed by another
-//    varint encoding the number of characters of the label (1)
-//    (this varint always takes 1 byte for the unicode character names)
+//  - if the size is not 1, the first varint is followed by a
+//    character encoding the number of characters of the label (1)
+//    (unicode character names aren't larger than 256 bytes, therefore each
+//    edge label can be at most 256 chars, but is usually smaller)
 //  - the next size bytes are the characters of the label (2)
 //
 // the offset of the target node is computed as follows: the number in the
@@ -1178,7 +1179,7 @@ _dawg_decode_edge(bool is_first_edge, unsigned int prev_target_node_offset,
     if (len_is_one) {
         *size = 1;
     } else {
-        edge_offset = _dawg_decode_varint_unsigned(edge_offset, size);
+        *size = packed_name_dawg[edge_offset++];
     }
     *label_offset = edge_offset;
     return final_edge;
