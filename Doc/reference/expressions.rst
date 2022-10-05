@@ -1744,6 +1744,10 @@ returns a boolean value regardless of the type of its argument
 Assignment expressions
 ======================
 
+.. index::
+   operator: :=
+   operator: walrus
+
 .. productionlist:: python-grammar
    assignment_expression: [`identifier` ":="] `expression`
 
