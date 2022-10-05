@@ -1379,29 +1379,25 @@ find_syllable(const char *str, int *len, int *pos, int count, int column)
 }
 
 static int
-_check_alias_and_seq(unsigned int cp, Py_UCS4* code, int with_named_seq)
+_check_alias_and_seq(Py_UCS4* code, int with_named_seq)
 {
     /* check if named sequences are allowed */
-    if (!with_named_seq && IS_NAMED_SEQ(cp))
+    if (!with_named_seq && IS_NAMED_SEQ(*code))
         return 0;
     /* if the code point is in the PUA range that we use for aliases,
      * convert it to obtain the right code point */
-    if (IS_ALIAS(cp))
-        *code = name_aliases[cp-aliases_start];
-    else
-        *code = cp;
+    if (IS_ALIAS(*code))
+        *code = name_aliases[*code-aliases_start];
     return 1;
 }
 
 
 static int
-_getcode(PyObject* self,
-         const char* name, int namelen, Py_UCS4* code, int with_named_seq)
+_getcode(const char* name, int namelen, Py_UCS4* code)
 {
     /* Return the code point associated with the given name.
-     * Named aliases are resolved too (unless self != NULL (i.e. we are using
-     * 3.2.0)).  If with_named_seq is 1, returns the PUA code point that we are
-     * using for the named sequence, and the caller must then convert it. */
+     * Named aliases are not resolved, they are returned as a code point in the
+     * PUA */
 
     /* Check for hangul syllables. */
     if (strncmp(name, "HANGUL SYLLABLE ", 16) == 0) {
@@ -1449,7 +1445,8 @@ _getcode(PyObject* self,
     int position = _lookup_dawg_packed(name, namelen);
     if (position < 0)
         return 0;
-    return _check_alias_and_seq(dawg_pos_to_codepoint[position], code, with_named_seq);
+    *code = dawg_pos_to_codepoint[position];
+    return 1;
 }
 
 
@@ -1457,8 +1454,10 @@ static int
 capi_getcode(const char* name, int namelen, Py_UCS4* code,
              int with_named_seq)
 {
-    return _getcode(NULL, name, namelen, code, with_named_seq);
-
+    if (!_getcode(name, namelen, code)) {
+        return 0;
+    }
+    return _check_alias_and_seq(code, with_named_seq);
 }
 
 static void
@@ -1552,25 +1551,27 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
         return NULL;
     }
 
-    if (!_getcode(self, name, (int)name_length, &code, 1)) {
+    if (!_getcode(name, (int)name_length, &code)) {
         PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
         return NULL;
     }
-
-    /* check if code is in the PUA range that we use for named sequences
-       and convert it */
     if (UCD_Check(self)) {
         /* in 3.2.0 there are no aliases and named sequences */
         if (IS_ALIAS(code) || IS_NAMED_SEQ(code)) {
             PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
-            return NULL;
+            return 0;
         }
     }
+    /* check if code is in the PUA range that we use for named sequences
+       and convert it */
     if (IS_NAMED_SEQ(code)) {
         index = code-named_sequences_start;
         return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND,
                                          named_sequences[index].seq,
                                          named_sequences[index].seqlen);
+    }
+    if (IS_ALIAS(code)) {
+        code = name_aliases[code-aliases_start];
     }
     return PyUnicode_FromOrdinal(code);
 }
