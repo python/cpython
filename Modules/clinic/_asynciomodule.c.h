@@ -297,7 +297,42 @@ PyDoc_STRVAR(_asyncio_Future_remove_done_callback__doc__,
 "Returns the number of callbacks removed.");
 
 #define _ASYNCIO_FUTURE_REMOVE_DONE_CALLBACK_METHODDEF    \
-    {"remove_done_callback", (PyCFunction)_asyncio_Future_remove_done_callback, METH_O, _asyncio_Future_remove_done_callback__doc__},
+    {"remove_done_callback", _PyCFunction_CAST(_asyncio_Future_remove_done_callback), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_remove_done_callback__doc__},
+
+static PyObject *
+_asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
+                                          PyObject *fn);
+
+static PyObject *
+_asyncio_Future_remove_done_callback(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "remove_done_callback",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *fn;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    fn = args[0];
+    return_value = _asyncio_Future_remove_done_callback_impl(self, cls, fn);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_asyncio_Future_cancel__doc__,
 "cancel($self, /, msg=None)\n"
@@ -410,15 +445,19 @@ PyDoc_STRVAR(_asyncio_Future_get_loop__doc__,
 "Return the event loop the Future is bound to.");
 
 #define _ASYNCIO_FUTURE_GET_LOOP_METHODDEF    \
-    {"get_loop", (PyCFunction)_asyncio_Future_get_loop, METH_NOARGS, _asyncio_Future_get_loop__doc__},
+    {"get_loop", _PyCFunction_CAST(_asyncio_Future_get_loop), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _asyncio_Future_get_loop__doc__},
 
 static PyObject *
-_asyncio_Future_get_loop_impl(FutureObj *self);
+_asyncio_Future_get_loop_impl(FutureObj *self, PyTypeObject *cls);
 
 static PyObject *
-_asyncio_Future_get_loop(FutureObj *self, PyObject *Py_UNUSED(ignored))
+_asyncio_Future_get_loop(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _asyncio_Future_get_loop_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "get_loop() takes no arguments");
+        return NULL;
+    }
+    return _asyncio_Future_get_loop_impl(self, cls);
 }
 
 PyDoc_STRVAR(_asyncio_Future__make_cancelled_error__doc__,
@@ -1265,4 +1304,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c3b3681942e8b672 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=550bc6603df89ed9 input=a9049054013a1b77]*/
