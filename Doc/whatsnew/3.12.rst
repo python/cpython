@@ -215,6 +215,11 @@ Deprecated
   may be removed in a future version of Python. Use the single-arg versions
   of these functions instead. (Contributed by Ofey Chan in :gh:`89874`.)
 
+* :exc:`DeprecationWarning` is now raised when ``__package__`` on a
+  module differs from ``__spec__.parent`` (previously it was
+  :exc:`ImportWarning`).
+  (Contributed by Brett Cannon in :gh:`65961`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -274,6 +279,9 @@ Pending Removal in Python 3.14
 
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases using the C API.
+
+* ``__package__`` will cease to be set or taken into consideration by
+  the import system (:gh:`97879`).
 
 
 Pending Removal in Future Versions
@@ -430,6 +438,10 @@ Removed
   completed:
 
   * References to, and support for ``module_repr()`` has been eradicated.
+
+
+* ``importlib.util.set_package`` has been removed.
+  (Contributed by Brett Cannon in :gh:`65961`.)
 
 
 Porting to Python 3.12
