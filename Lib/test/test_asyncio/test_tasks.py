@@ -2482,6 +2482,17 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_get_context(self):
+        loop = asyncio.new_event_loop()
+        coro = coroutine_function()
+        context = contextvars.copy_context()
+        try:
+            task = self.new_task(loop, coro, context=context)
+            loop.run_until_complete(task)
+            self.assertIs(task.get_context(), context)
+        finally:
+            loop.close()
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task

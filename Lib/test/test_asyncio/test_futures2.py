@@ -1,5 +1,6 @@
 # IsolatedAsyncioTestCase based tests
 import asyncio
+import contextvars
 import traceback
 import unittest
 from asyncio import tasks
@@ -26,6 +27,46 @@ class FutureTests:
                 self.assertEqual(tb.count("await future"), 1)
             else:
                 self.fail('TypeError was not raised')
+
+    async def test_task_exc_handler_correct_context(self):
+        # see https://github.com/python/cpython/issues/96704
+        name = contextvars.ContextVar('name', default='foo')
+        exc_handler_called = False
+
+        def exc_handler(*args):
+            self.assertEqual(name.get(), 'bar')
+            nonlocal exc_handler_called
+            exc_handler_called = True
+
+        async def task():
+            name.set('bar')
+            1/0
+
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(exc_handler)
+        self.cls(task())
+        await asyncio.sleep(0)
+        self.assertTrue(exc_handler_called)
+
+    async def test_handle_exc_handler_correct_context(self):
+        # see https://github.com/python/cpython/issues/96704
+        name = contextvars.ContextVar('name', default='foo')
+        exc_handler_called = False
+
+        def exc_handler(*args):
+            self.assertEqual(name.get(), 'bar')
+            nonlocal exc_handler_called
+            exc_handler_called = True
+
+        def callback():
+            name.set('bar')
+            1/0
+
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(exc_handler)
+        loop.call_soon(callback)
+        await asyncio.sleep(0)
+        self.assertTrue(exc_handler_called)
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                        'requires the C _asyncio module')
