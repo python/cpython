@@ -286,7 +286,7 @@ class BitFieldTest(unittest.TestCase):
                 ("B", c_uint, 1),
                 ]
         if sys.platform == 'win32':
-            self.assertEqual(sizeof(X), 8)
+            self.assertEqual(8, sizeof(X))
         else:
             self.assertEqual(4, sizeof(X))
 
