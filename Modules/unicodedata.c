@@ -1048,11 +1048,11 @@ is_unified_ideograph(Py_UCS4 code)
 
 // DAWG decoding functions
 
-static int
-_dawg_decode_varint_unsigned(int index, unsigned int* result) {
-    assert(index >= 0);
+static unsigned int
+_dawg_decode_varint_unsigned(unsigned int index, unsigned int* result)
+{
     unsigned int res = 0;
-    int shift = 0;
+    unsigned int shift = 0;
     for (;;) {
         unsigned char byte = packed_name_dawg[index];
         res |= (byte & 0x7f) << shift;
@@ -1060,16 +1060,18 @@ _dawg_decode_varint_unsigned(int index, unsigned int* result) {
         shift += 7;
         if (!(byte & 0x80)) {
             *result = res;
-            assert(index >= 0);
-
             return index;
         }
     }
 }
 
 static int
-_dawg_match_edge(const char* name, int namelen, unsigned int size, int label_offset, int namepos) {
-    if (size > 1 && namepos + (int)size > namelen) {
+_dawg_match_edge(const char* name, unsigned int namelen, unsigned int size,
+                 unsigned int label_offset, unsigned int namepos)
+{
+    // This returns 1 if the edge matched, 0 if it didn't (but further edges
+    // could match) and -1 if the name cannot match at all.
+    if (size > 1 && namepos + size > namelen) {
         return 0;
     }
     for (unsigned int i = 0; i < size; i++) {
@@ -1095,8 +1097,8 @@ _dawg_match_edge(const char* name, int namelen, unsigned int size, int label_off
 // is described below
 
 
-static int
-_dawg_decode_node(int node_offset, bool* final)
+static unsigned int
+_dawg_decode_node(unsigned int node_offset, bool* final)
 {
     unsigned int num;
     node_offset = _dawg_decode_varint_unsigned(node_offset, &num);
@@ -1105,15 +1107,15 @@ _dawg_decode_node(int node_offset, bool* final)
 }
 
 static bool
-_dawg_node_is_final(int node_offset)
+_dawg_node_is_final(unsigned int node_offset)
 {
     unsigned int num;
     _dawg_decode_varint_unsigned(node_offset, &num);
     return num & 1;
 }
 
-static int
-_dawg_node_child_count(int node_offset)
+static unsigned int
+_dawg_node_child_count(unsigned int node_offset)
 {
     unsigned int num;
     _dawg_decode_varint_unsigned(node_offset, &num);
@@ -1159,7 +1161,9 @@ _dawg_node_child_count(int node_offset)
 
 
 static int
-_dawg_decode_edge(bool is_first_edge, int prev_target_node_offset, int edge_offset, unsigned int* size, int* label_offset, int* target_node_offset)
+_dawg_decode_edge(bool is_first_edge, unsigned int prev_target_node_offset,
+                  unsigned int edge_offset, unsigned int* size,
+                  unsigned int* label_offset, unsigned int* target_node_offset)
 {
     unsigned int num;
     edge_offset = _dawg_decode_varint_unsigned(edge_offset, &num);
@@ -1170,7 +1174,6 @@ _dawg_decode_edge(bool is_first_edge, int prev_target_node_offset, int edge_offs
     num >>= 1;
     bool len_is_one = num & 1;
     num >>= 1;
-    assert(prev_target_node_offset + num >= 0);
     *target_node_offset = prev_target_node_offset + num;
     if (len_is_one) {
         *size = 1;
@@ -1182,26 +1185,27 @@ _dawg_decode_edge(bool is_first_edge, int prev_target_node_offset, int edge_offs
 }
 
 static int
-_lookup_dawg_packed(const char* name, int namelen)
+_lookup_dawg_packed(const char* name, unsigned int namelen)
 {
-    int stringpos = 0;
-    int node_offset = 0;
-    int result = 0; // this is the number of final nodes that we skipped to match name
+    unsigned int stringpos = 0;
+    unsigned int node_offset = 0;
+    unsigned int result = 0; // this is the number of final nodes that we skipped to match name
     while (stringpos < namelen) {
         bool final;
-        int edge_offset = _dawg_decode_node(node_offset, &final);
-        int prev_target_node_offset = edge_offset;
+        unsigned int edge_offset = _dawg_decode_node(node_offset, &final);
+        unsigned int prev_target_node_offset = edge_offset;
         bool is_first_edge = true;
         for (;;) {
             unsigned int size;
-            int label_offset, target_node_offset;
-            int final_edge = _dawg_decode_edge(is_first_edge, prev_target_node_offset, edge_offset, &size, &label_offset, &target_node_offset);
+            unsigned int label_offset, target_node_offset;
+            int final_edge = _dawg_decode_edge(
+                    is_first_edge, prev_target_node_offset, edge_offset,
+                    &size, &label_offset, &target_node_offset);
             if (final_edge == -1) {
                 return -1;
             }
             is_first_edge = false;
             prev_target_node_offset = target_node_offset;
-            assert(target_node_offset >= 0);
             int matched = _dawg_match_edge(name, namelen, size, label_offset, stringpos);
             if (matched == -1) {
                 return -1;
@@ -1227,14 +1231,13 @@ _lookup_dawg_packed(const char* name, int namelen)
 }
 
 static int
-_inverse_dawg_lookup(char* buffer, int buflen, int pos)
+_inverse_dawg_lookup(char* buffer, unsigned int buflen, unsigned int pos)
 {
-    // TODO: check max name size instead of checking buflen all the time
-    int node_offset = 0;
-    int bufpos = 0;
+    unsigned int node_offset = 0;
+    unsigned int bufpos = 0;
     for (;;) {
         bool final;
-        int edge_offset = _dawg_decode_node(node_offset, &final);
+        unsigned int edge_offset = _dawg_decode_node(node_offset, &final);
 
         if (final) {
             if (pos == 0) {
@@ -1246,23 +1249,23 @@ _inverse_dawg_lookup(char* buffer, int buflen, int pos)
             }
             pos--;
         }
-        int prev_target_node_offset = edge_offset;
+        unsigned int prev_target_node_offset = edge_offset;
         bool is_first_edge = true;
         for (;;) {
             unsigned int size;
-            int label_offset, target_node_offset;
-            int final_edge = _dawg_decode_edge(is_first_edge, prev_target_node_offset, edge_offset, &size, &label_offset, &target_node_offset);
+            unsigned int label_offset, target_node_offset;
+            int final_edge = _dawg_decode_edge(
+                    is_first_edge, prev_target_node_offset, edge_offset,
+                    &size, &label_offset, &target_node_offset);
             if (final_edge == -1) {
                 return 0;
             }
             is_first_edge = false;
             prev_target_node_offset = target_node_offset;
-            assert(target_node_offset >= 0);
 
-            int child_count = _dawg_node_child_count(target_node_offset);
-            if (pos - child_count < 0) {
-                assert(label_offset >= 0);
-                if (bufpos + (int)size >= buflen) {
+            unsigned int child_count = _dawg_node_child_count(target_node_offset);
+            if (pos < child_count) {
+                if (bufpos + size >= buflen) {
                     return 0; // buffer overflow
                 }
                 for (unsigned int i = 0; i < size; i++) {
@@ -1346,7 +1349,8 @@ _getucname(PyObject *self,
     if (offset == DAWG_CODEPOINT_TO_POS_NOTFOUND)
         return 0;
 
-    return _inverse_dawg_lookup(buffer, buflen, offset);
+    assert(buflen >= 0);
+    return _inverse_dawg_lookup(buffer, (unsigned int)buflen, offset);
 }
 
 static int
@@ -1442,7 +1446,8 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
         return 1;
     }
 
-    int position = _lookup_dawg_packed(name, namelen);
+    assert(namelen >= 0);
+    int position = _lookup_dawg_packed(name, (unsigned int)namelen);
     if (position < 0)
         return 0;
     *code = dawg_pos_to_codepoint[position];
