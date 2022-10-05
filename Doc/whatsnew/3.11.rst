@@ -439,17 +439,24 @@ Other Language Changes
   there is a mixture of strings and bytes keys.
   (Contributed by Thomas Grainger in :gh:`91181`.)
 
+
+.. _whatsnew311-other-implementation-changes:
+
 Other CPython Implementation Changes
 ====================================
 
-* Special methods :meth:`complex.__complex__` and :meth:`bytes.__bytes__` are implemented to
-  support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
+* The special methods :meth:`~object.__complex__` for :class:`complex`
+  and :meth:`~object.__bytes__` for :class:`bytes` are implemented to support
+  the :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
-* ``siphash13`` is added as a new internal hashing algorithms. It has similar security
-  properties as ``siphash24`` but it is slightly faster for long inputs. ``str``, ``bytes``,
-  and some other types now use it as default algorithm for :func:`hash`. :pep:`552`
-  hash-based pyc files now use ``siphash13``, too.
+* ``siphash13`` is added as a new internal hashing algorithm.
+  It has similar security properties as ``siphash24``,
+  but it is slightly faster for long inputs.
+  :class:`str`, :class:`bytes`, and some other types
+  now use it as the default algorithm for :func:`hash`.
+  :pep:`552` :ref:`hash-based .pyc files <pyc-invalidation>`
+  now use ``siphash13`` too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
 * When an active exception is re-raised by a :keyword:`raise` statement with no parameters,
@@ -458,25 +465,28 @@ Other CPython Implementation Changes
   reflected in the re-raised exception.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
-* The interpreter state's representation of handled exceptions (a.k.a exc_info, or
-  _PyErr_StackItem) now has only the ``exc_value`` field, ``exc_type`` and ``exc_traceback``
-  have been removed as their values can be derived from ``exc_value``.
+* The interpreter state's representation of handled exceptions
+  (aka ``exc_info`` or ``_PyErr_StackItem``)
+  now only has the ``exc_value`` field; ``exc_type`` and ``exc_traceback``
+  have been removed, as they can be derived from ``exc_value``.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
-* A new command line option for the Windows installer ``AppendPath`` has been added.
-  It behaves similiar to ``PrependPath`` but appends the install and scripts directories
-  instead of prepending them.
+* A new :ref:`command line option <install-quiet-option>`, ``AppendPath``,
+  has been added for the Windows installer.
+  It behaves similarly to ``PrependPath``,
+  but appends the install and scripts directories instead of prepending them.
   (Contributed by Bastian Neuburger in :issue:`44934`.)
 
-* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to ``1`` for
   initialization to use :c:member:`PyConfig.module_search_paths` to initialize
   :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
   any values added to ``module_search_paths``.
 
-* The output of the :option:`--help` option is changed to fit inside 50 lines and 80
-  columns.  Information about :ref:`Python environment variables <using-on-envvars>`
-  and :option:`-X options <-X>` is available with the new :option:`--help-env` or
-  :option:`--help-xoptions` flags, and with :option:`--help-all`.
+* The output of the :option:`--help` option now fits in 50 lines/80 columns.
+  Information about :ref:`Python environment variables <using-on-envvars>`
+  and :option:`-X` options is now available using the respective
+  :option:`--help-env` and :option:`--help-xoptions` flags,
+  and with the new :option:`--help-all`.
   (Contributed by Éric Araujo in :issue:`46142`.)
 
 * Converting between :class:`int` and :class:`str` in bases other than 2
