@@ -1068,29 +1068,6 @@ _dawg_decode_varint_unsigned(int index, unsigned int* result) {
 }
 
 static int
-_dawg_decode_varint_signed(int index, int* result) {
-    assert(index >= 0);
-    int res = 0;
-    int shift = 0;
-    for (;;) {
-        unsigned char byte = packed_name_dawg[index];
-        res |= (byte & 0x7f) << shift;
-        index++;
-        shift += 7;
-        if (!(byte & 0x80)) {
-            if (byte & 0x40) {
-                res |= (unsigned int)(-1) << shift;
-                assert(res < 0);
-            }
-            *result = res;
-            assert(index >= 0);
-            return index;
-        }
-    }
-}
-
-
-static int
 _dawg_match_edge(const char* name, int namelen, unsigned int size, int label_offset, int namepos) {
     if (size > 1 && namepos + (int)size > namelen) {
         return 0;
@@ -1157,37 +1134,35 @@ _dawg_node_child_count(int node_offset)
 // |  varint | varuint: size (if != 1)  | label chars  | ... next edge ...
 // +---------+--------------------------+--------------+--------------------
 //
-// - first comes a (signed) varint
+// - first comes a varint
 //     - the lowest bit of that varint is whether the edge is final (4)
 //     - the second lowest bit of that varint is true if the size of
 //       the length of the label is 1 (1)
-//     - the rest of the signed varint is an offset that can be used to compute
+//     - the rest of the varint is an offset that can be used to compute
 //       the offset of the target node of that edge (3)
-//  - if the size is not 1, the first signed varint is followed by an unsigned
+//  - if the size is not 1, the first varint is followed by another
 //    varint encoding the number of characters of the label (1)
+//    (this varint always takes 1 byte for the unicode character names)
 //  - the next size bytes are the characters of the label (2)
 //
 // the offset of the target node is computed as follows: the number in the
 // upper bits of the varint needs to be added to the offset of the target node
 // of the previous edge. For the first edge, where the is no previous target
 // node, the offset of the first edge is used.
-// the intuition here is that edges going out from a node often lead to nodes
+// The intuition here is that edges going out from a node often lead to nodes
 // that are close by, leading to small offsets from the current node and thus
 // fewer bytes.
 //
 // There is a special case: if a final node has no outgoing edges, it has to be
 // followed by a 0 byte to indicate that there are no edges (because the end of
 // the edge list is normally indicated in a bit in the edge encoding).
-//
-// side note: it's not possible to do a topological sort and only have positive
-// offsets. while the DAWG is acyclic, the outgoing edges of a node are
-// *ordered*, leading to implicit cyclic dependencies.
+
 
 static int
 _dawg_decode_edge(bool is_first_edge, int prev_target_node_offset, int edge_offset, unsigned int* size, int* label_offset, int* target_node_offset)
 {
-    signed int num;
-    edge_offset = _dawg_decode_varint_signed(edge_offset, &num);
+    unsigned int num;
+    edge_offset = _dawg_decode_varint_unsigned(edge_offset, &num);
     if (num == 0 && is_first_edge) {
         return -1; // trying to decode past a final node without outgoing edges
     }
@@ -1364,7 +1339,7 @@ _getucname(PyObject *self,
         return 1;
     }
 
-    /* get offset into phrasebook */
+    /* get position of codepoint in order of names in the dawg */
     offset = dawg_codepoint_to_pos_index1[(code>>DAWG_CODEPOINT_TO_POS_SHIFT)];
     offset = dawg_codepoint_to_pos_index2[(offset<<DAWG_CODEPOINT_TO_POS_SHIFT) +
                                (code&((1<<DAWG_CODEPOINT_TO_POS_SHIFT)-1))];

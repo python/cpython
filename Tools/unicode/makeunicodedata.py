@@ -651,13 +651,16 @@ def makeunicodename(unicode, trace):
         fprint()
 
         fprint("/* name->code dictionary */")
-        packed_dawg, pos_to_codepoint, inverse = build_compression_dawg(data)
-        inverse_list = [inverse.get(x, len(inverse)) for x in range(sys.maxunicode + 1)]
+        packed_dawg, pos_to_codepoint = build_compression_dawg(data)
+        notfound = len(pos_to_codepoint)
+        inverse_list = [notfound] * len(unicode.chars)
+        for pos, codepoint in enumerate(pos_to_codepoint):
+            inverse_list[codepoint] = pos
         Array("packed_name_dawg", list(packed_dawg)).dump(fp, trace)
         Array("dawg_pos_to_codepoint", pos_to_codepoint).dump(fp, trace)
         index1, index2, shift = splitbins(inverse_list, trace)
         fprint("#define DAWG_CODEPOINT_TO_POS_SHIFT", shift)
-        fprint("#define DAWG_CODEPOINT_TO_POS_NOTFOUND", len(inverse))
+        fprint("#define DAWG_CODEPOINT_TO_POS_NOTFOUND", notfound)
         Array("dawg_codepoint_to_pos_index1", index1).dump(fp, trace)
         Array("dawg_codepoint_to_pos_index2", index2).dump(fp, trace)
 
