@@ -238,22 +238,6 @@ PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
                 CFieldObject* self, StgDictObject* dict
                 )
 {
-    /*
-    Now: pbitofs is relative to poffset;
-    we assume that poffset == 0 is aligned as much as we need it.
-    */
-    // *pbitofs += *poffset * 8;
-    // *poffset = 0;
-
-    // Change:
-    // * pbitofs is now relative to the start of the struct, not the start of
-    // the current field
-    // * we don't need pfield_size anymore
-    // * same for poffset, unless it's in use by our caller?
-    //      poffset doesn't seem to be used after this function returns.
-    //      Though we might have to honour it's starting point?
-    //      I guess fall back, if it ain't zero?
-
     int is_bitfield = !!bitsize;
     if(!is_bitfield) {
         bitsize = 8 * dict->size; // might still be 0 afterwards.
@@ -287,8 +271,10 @@ PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
     // But we only really care about size, when we have a bitfield.
     self->offset = *poffset - (*pfield_size) / 8;
     if(is_bitfield) {
-        self->size = (bitsize << 16 ) + (*pfield_size + *pbitofs);
         assert(dict->size == dict->align);
+        assert(0 <= (*pfield_size + *pbitofs));
+        assert((*pfield_size + *pbitofs) < dict->size * 8);
+        self->size = (bitsize << 16 ) + (*pfield_size + *pbitofs);
     } else {
         self->size = dict->size;
     }
