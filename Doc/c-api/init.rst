@@ -847,11 +847,11 @@ from a C thread is::
    /* Release the thread. No Python API allowed beyond this point. */
    PyGILState_Release(gstate);
 
-Note that the :c:func:`PyGILState_\*` functions assume there is only one global
+Note that the ``PyGILState_*`` functions assume there is only one global
 interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
-:c:func:`PyGILState_\*` API is unsupported.
+``PyGILState_*`` API is unsupported.
 
 
 .. _fork-and-threads:
@@ -1478,7 +1478,7 @@ operations executed by such objects may affect the wrong (sub-)interpreter's
 dictionary of loaded modules. It is equally important to avoid sharing
 objects from which the above are reachable.
 
-Also note that combining this functionality with :c:func:`PyGILState_\*` APIs
+Also note that combining this functionality with ``PyGILState_*`` APIs
 is delicate, because these APIs assume a bijection between Python thread states
 and OS-level threads, an assumption broken by the presence of sub-interpreters.
 It is highly recommended that you don't switch sub-interpreters between a pair
