@@ -1556,8 +1556,16 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
         PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
         return NULL;
     }
+
     /* check if code is in the PUA range that we use for named sequences
        and convert it */
+    if (UCD_Check(self)) {
+        /* in 3.2.0 there are no aliases and named sequences */
+        if (IS_ALIAS(code) || IS_NAMED_SEQ(code)) {
+            PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
+            return NULL;
+        }
+    }
     if (IS_NAMED_SEQ(code)) {
         index = code-named_sequences_start;
         return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND,
