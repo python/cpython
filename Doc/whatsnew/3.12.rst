@@ -133,7 +133,7 @@ shutil
 * :func:`shutil.make_archive` now passes the *root_dir* argument to custom
   archivers which support it.
   In this case it no longer temporarily changes the current working directory
-  of the process to perform archiving.
+  of the process to *root_dir* to perform archiving.
   (Contributed by Serhiy Storchaka in :gh:`74696`.)
 
 
