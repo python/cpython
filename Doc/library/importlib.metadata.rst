@@ -16,7 +16,7 @@
 ``importlib_metadata`` is a library that provides access to
 the metadata of an installed :term:`packaging:Distribution Package`,
 such as its entry points
-or its top-level names (:term:`packaging:Import Package`s, modules, if any).
+or its top-level names (:term:`packaging:Import Package`\ s, modules, if any).
 Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
 API`_ and `metadata API`_ of ``pkg_resources``.  Along with

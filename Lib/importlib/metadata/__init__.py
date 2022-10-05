@@ -134,6 +134,7 @@ class DeprecatedTuple:
     1
     """
 
+    # Do not remove prior to 2023-05-01 or Python 3.13
     _warn = functools.partial(
         warnings.warn,
         "EntryPoint tuple interface is deprecated. Access members by name.",
