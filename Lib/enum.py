@@ -1269,7 +1269,7 @@ class FlagBoundary(StrEnum):
 STRICT, CONFORM, EJECT, KEEP = FlagBoundary
 
 
-class Flag(Enum, boundary=STRICT):
+class Flag(Enum, boundary=CONFORM):
     """
     Support for flags
     """
