@@ -12,33 +12,32 @@ from _testcapi import (
 
 class FuncEventsTest(unittest.TestCase):
     def test_func_events_dispatched(self):
-        event = None
+        events = []
         def handle_func_event(*args):
-            nonlocal event
-            event = args
+            events.append(args)
         set_func_event_callback(handle_func_event)
 
         try:
             def myfunc():
                 pass
-            self.assertEqual(event, (PYFUNC_EVENT_CREATED, myfunc, None))
+            self.assertIn((PYFUNC_EVENT_CREATED, myfunc, None), events)
             myfunc_id = id(myfunc)
 
             new_code = self.test_func_events_dispatched.__code__
             myfunc.__code__ = new_code
-            self.assertEqual(event, (PYFUNC_EVENT_MODIFY_CODE, myfunc, new_code))
+            self.assertIn((PYFUNC_EVENT_MODIFY_CODE, myfunc, new_code), events)
 
             new_defaults = (123,)
             myfunc.__defaults__ = new_defaults
-            self.assertEqual(event, (PYFUNC_EVENT_MODIFY_DEFAULTS, myfunc, new_defaults))
+            self.assertIn((PYFUNC_EVENT_MODIFY_DEFAULTS, myfunc, new_defaults), events)
 
             new_kwdefaults = {"self": 123}
             myfunc.__kwdefaults__ = new_kwdefaults
-            self.assertEqual(event, (PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults))
+            self.assertIn((PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults), events)
 
-            # Clear event's reference to func
-            event = None
+            # Clear events reference to func
+            events = []
             del myfunc
-            self.assertEqual(event, (PYFUNC_EVENT_DESTROY, myfunc_id, None))
+            self.assertIn((PYFUNC_EVENT_DESTROY, myfunc_id, None), events)
         finally:
             restore_func_event_callback()
