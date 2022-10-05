@@ -1,0 +1,7 @@
+Switch the storage of the unicode character names to use a different
+data-structure, a `directed acyclic word graph`_. This makes the unicodedata
+shared library about 400KiB smaller. Contributed by Carl Friedrich
+Bolz-Tereick using code from the PyPy project.
+
+.. _`directed acyclic word graph`:
+https://en.wikipedia.org/wiki/Deterministic_acyclic_finite_state_automaton
