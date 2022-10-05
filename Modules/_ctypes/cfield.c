@@ -77,30 +77,20 @@ PyObject *
 PyCField_FromDesc_big_endian(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian)
+                int pack, int big_endian,
+                CFieldObject* self, StgDictObject* dict
+                )
 {
-    CFieldObject *self;
     PyObject *proto;
     Py_ssize_t size, align;
     SETFUNC setfunc = NULL;
     GETFUNC getfunc = NULL;
-    StgDictObject *dict;
     int fieldtype;
 #define NO_BITFIELD 0
 #define NEW_BITFIELD 1
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
-    if (self == NULL)
-        return NULL;
-    dict = PyType_stgdict(desc);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "has no _stginfo_");
-        Py_DECREF(self);
-        return NULL;
-    }
     if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
 #ifdef MS_WIN32
@@ -232,42 +222,21 @@ PyObject *
 PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian)
+                int pack, int big_endian,
+                CFieldObject* self, StgDictObject* dict
+                )
 {
     assert(*pfield_size == 0);
     *pbitofs += *poffset * 8;
     *poffset = 0;
 
-    // Change:
-    // * pbitofs is now relative to the start of the struct, not the start of
-    // the current field
-    // * we don't need pfield_size anymore
-    // * same for poffset, unless it's in use by our caller?
-    //      poffset doesn't seem to be used after this function returns.
-    //      Though we might have to honour it's starting point?
-    //      I guess fall back, if it ain't zero?
-
-    CFieldObject* self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
-    if (self == NULL)
-        return NULL;
-    StgDictObject* dict = PyType_stgdict(desc);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "has no _stginfo_");
-        Py_DECREF(self);
-        return NULL;
-    }
 
     int is_bitfield = !!bitsize;
     if(!is_bitfield) {
         bitsize = 8 * dict->size; // might still be 0 afterwards.
     }
 
-    Py_ssize_t align;
-    if (pack)
-        align = min(pack, dict->align);
-    else
-        align = dict->align;
+    Py_ssize_t align = dict->align;;
 
     if ((bitsize > 0)
          && (round_down(*pbitofs, 8 * align)
@@ -342,7 +311,9 @@ PyObject *
 PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian)
+                int pack, int big_endian,
+                CFieldObject* self, StgDictObject* dict
+                )
 {
     assert(*pfield_size == 0);
     *pbitofs += *poffset * 8;
@@ -356,17 +327,6 @@ PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
     //      poffset doesn't seem to be used after this function returns.
     //      Though we might have to honour it's starting point?
     //      I guess fall back, if it ain't zero?
-
-    CFieldObject* self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
-    if (self == NULL)
-        return NULL;
-    StgDictObject* dict = PyType_stgdict(desc);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "has no _stginfo_");
-        Py_DECREF(self);
-        return NULL;
-    }
 
     int is_bitfield = !!bitsize;
     if(!is_bitfield) {
@@ -454,11 +414,24 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian)
 {
+    CFieldObject* self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
+    if (self == NULL)
+        return NULL;
+    StgDictObject* dict = PyType_stgdict(desc);
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError,
+                        "has no _stginfo_");
+        Py_DECREF(self);
+        return NULL;
+    }
+
     if(big_endian) {
         return PyCField_FromDesc_big_endian(desc, index,
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
-                pack, big_endian);
+                pack, big_endian,
+                self, dict
+                );
     } else if (
         #ifdef MS_WIN32
         true
@@ -469,12 +442,16 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         return PyCField_FromDesc_windows(desc, index,
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
-                pack, big_endian);
+                pack, big_endian,
+                self, dict
+                );
     } else {
         return PyCField_FromDesc_linux(desc, index,
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
-                pack, big_endian);
+                pack, big_endian,
+                self, dict
+                );
     }
 }
 
@@ -497,6 +474,7 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
     }
     return PyCData_set(inst, self->proto, self->setfunc, value,
                      self->index, self->size, ptr);
+}
 
 static PyObject *
 PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
