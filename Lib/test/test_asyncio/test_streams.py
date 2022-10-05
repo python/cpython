@@ -949,7 +949,7 @@ class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-            await rd.read()
+            data = await rd.read()
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
             self.assertFalse(wr.is_closing())
             wr.close()
