@@ -943,7 +943,7 @@ os.close(fd)
 
 class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
     async def test_wait_closed_on_close(self):
-        async with test_utils.run_test_server() as httpd:
+        with test_utils.run_test_server() as httpd:
             rd, wr = self.loop.run_until_complete(
                 asyncio.open_connection(*httpd.address))
 
@@ -1002,7 +1002,7 @@ class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
 
     async def test_eof_feed_when_closing_writer(self):
         # See http://bugs.python.org/issue35065
-        async with test_utils.run_test_server() as httpd:
+        with test_utils.run_test_server() as httpd:
             rd, wr = await asyncio.open_connection(*httpd.address)
             wr.close()
             f = wr.wait_closed()
