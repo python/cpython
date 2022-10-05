@@ -2777,8 +2777,8 @@ class AbstractPickleTests:
                     self.assertEqual(method(obj), unpickled(obj))
 
         descriptors = (
-            PyMethodsTest.__dict__['cheese'],
-            PyMethodsTest.__dict__['wine'],
+            PyMethodsTest.__dict__['cheese'],  # static method descriptor
+            PyMethodsTest.__dict__['wine'],  # class method descriptor
         )
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for descr in descriptors:
@@ -2821,8 +2821,8 @@ class AbstractPickleTests:
                     self.assertEqual(method(*args), unpickled(*args))
 
         descriptors = (
-            bytearray.__dict__['maketrans'],
-            dict.__dict__['fromkeys'],
+            bytearray.__dict__['maketrans'],  # built-in static method descriptor
+            dict.__dict__['fromkeys'],  # built-in class method descriptor
         )
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for descr in descriptors:
