@@ -183,7 +183,7 @@ class SubprocessMixin:
             self.assertEqual(-signal.SIGKILL, returncode)
 
     def test_kill_issue43884(self):
-        blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(100000000)"'
+        blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(100000)"'
         creationflags = 0
         if sys.platform == 'win32':
             from subprocess import CREATE_NEW_PROCESS_GROUP
