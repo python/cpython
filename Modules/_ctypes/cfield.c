@@ -75,7 +75,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t x);
  */
 PyObject *
 PyCField_FromDesc_big_endian(PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
+                Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian,
                 CFieldObject* self, StgDictObject* dict
@@ -182,7 +182,7 @@ PyCField_FromDesc_big_endian(PyObject *desc, Py_ssize_t index,
 
 PyObject *
 PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
+                Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian,
                 CFieldObject* self, StgDictObject* dict
@@ -232,7 +232,7 @@ PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
 
 PyObject *
 PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
+                Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian,
                 CFieldObject* self, StgDictObject* dict
@@ -290,7 +290,7 @@ PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
 
 PyObject *
 PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
+                Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian)
 {

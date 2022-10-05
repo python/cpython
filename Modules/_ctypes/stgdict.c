@@ -354,7 +354,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
     Py_ssize_t field_size = 0;
-    int bitofs = 0;
+    Py_ssize_t bitofs = 0;
     PyObject *tmp;
     int isPacked;
     int pack;
