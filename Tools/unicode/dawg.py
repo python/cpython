@@ -193,9 +193,9 @@ class Dawg(object):
         node = self.root
         while 1:
             if node.final:
-               if pos == 0:
-                   return "".join(result)
-               pos -= 1
+                if pos == 0:
+                    return "".join(result)
+                pos -= 1
             for label, child in sorted(node.edges.items()):
                 nextpos = pos - child.count
                 if nextpos < 0:
@@ -448,9 +448,9 @@ def _inverse_lookup(packed, pos):
     while 1:
         node_count, final, edge_offset = decode_node(packed, node_offset)
         if final:
-           if pos == 0:
-               return result.build()
-           pos -= 1
+            if pos == 0:
+                return result.build()
+            pos -= 1
         prev_child_offset = edge_offset
         edgeindex = 0
         while 1:
