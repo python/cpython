@@ -207,7 +207,7 @@ a special case, for which the new value passed to the handler is ``NULL``.
 
 Python supports two pairs of attribute handlers; a type that supports attributes
 only needs to implement the functions for one pair.  The difference is that one
-pair takes the name of the attribute as a :c:type:`char\*`, while the other
+pair takes the name of the attribute as a :c:expr:`char\*`, while the other
 accepts a :c:type:`PyObject\*`.  Each type can use whichever pair makes more
 sense for the implementation's convenience. ::
 
@@ -339,8 +339,8 @@ of ``NULL`` is required.
 Type-specific Attribute Management
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For simplicity, only the :c:type:`char\*` version will be demonstrated here; the
-type of the name parameter is the only difference between the :c:type:`char\*`
+For simplicity, only the :c:expr:`char\*` version will be demonstrated here; the
+type of the name parameter is the only difference between the :c:expr:`char\*`
 and :c:type:`PyObject\*` flavors of the interface. This example effectively does
 the same thing as the generic example above, but does not use the generic
 support added in Python 2.2.  It explains how the handler functions are
