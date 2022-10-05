@@ -8526,10 +8526,18 @@ fail:
 static void
 slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
 {
-    PyObject *mv = PyMemoryView_FromBuffer(buffer);
-    if (mv == NULL) {
-        PyErr_WriteUnraisable(self);
-        return;
+    PyObject *mv;
+    if (Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type) {
+        // Make sure we pass the same memoryview to
+        // __release_buffer__() that __buffer__() returned.
+        mv = Py_NewRef(((PyBufferWrapper *)buffer->obj)->mv);
+    }
+    else {
+        mv = PyMemoryView_FromBuffer(buffer);
+        if (mv == NULL) {
+            PyErr_WriteUnraisable(self);
+            return;
+        }
     }
     PyObject *stack[2] = {self, mv};
     PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);

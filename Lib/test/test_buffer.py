@@ -4479,6 +4479,29 @@ class TestPythonBufferProtocol(unittest.TestCase):
             self.assertEqual(mv.tobytes(), b"hello")
         self.assertFalse(wr.held)
 
+    def test_same_buffer_returned(self):
+        class WhatToRelease:
+            def __init__(self):
+                self.held = False
+                self.ba = bytearray(b"hello")
+                self.created_mv = None
+            def __buffer__(self, flags):
+                if self.held:
+                    raise TypeError("already held")
+                self.held = True
+                self.created_mv = memoryview(self.ba)
+                return self.created_mv
+            def __release_buffer__(self, buffer):
+                assert buffer is self.created_mv
+                self.held = False
+
+        wr = WhatToRelease()
+        self.assertFalse(wr.held)
+        with memoryview(wr) as mv:
+            self.assertTrue(wr.held)
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertFalse(wr.held)
+
     def test_call_builtins(self):
         ba = bytearray(b"hello")
         mv = ba.__buffer__(0)
