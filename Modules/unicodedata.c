@@ -1084,10 +1084,10 @@ _dawg_match_edge(const char* name, int namelen, unsigned int size, int label_off
 }
 
 // reading DAWG node information:
-// a node is encoded by an unsigned varint. The lowest bit of that int is set
-// if the node is a final, accepting state. The higher bits of that int
-// represent the number of names that are encoded by the sub-DAWG started by
-// this node. It's used to compute the position of a name.
+// a node is encoded by a varint. The lowest bit of that int is set if the node
+// is a final, accepting state. The higher bits of that int represent the
+// number of names that are encoded by the sub-DAWG started by this node. It's
+// used to compute the position of a name.
 //
 // the starting node of the DAWG is at position 0.
 //
@@ -1131,7 +1131,7 @@ _dawg_node_child_count(int node_offset)
 // this information is encoded in a compact form as follows:
 //
 // +---------+--------------------------+--------------+--------------------
-// |  varint | varuint: size (if != 1)  | label chars  | ... next edge ...
+// |  varint | varint: size (if != 1)  | label chars  | ... next edge ...
 // +---------+--------------------------+--------------+--------------------
 //
 // - first comes a varint
