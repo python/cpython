@@ -1088,7 +1088,7 @@ An extended example which also demonstrates the use of pointers accesses the
 
 Quoting the docs for that value:
 
-   This pointer is initialized to point to an array of :c:type:`struct _frozen`
+   This pointer is initialized to point to an array of :c:struct:`_frozen`
    records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
@@ -1107,7 +1107,7 @@ size, we show only how this table can be read with :mod:`ctypes`::
    ...
    >>>
 
-We have defined the :c:type:`struct _frozen` data type, so we can get the pointer
+We have defined the :c:struct:`_frozen` data type, so we can get the pointer
 to the table::
 
    >>> FrozenTable = POINTER(struct_frozen)
@@ -2387,8 +2387,8 @@ These are the fundamental ctypes data types:
 
 .. class:: py_object
 
-   Represents the C :c:type:`PyObject *` datatype.  Calling this without an
-   argument creates a ``NULL`` :c:type:`PyObject *` pointer.
+   Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
+   argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
 The :mod:`ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`HWND`, :c:type:`WPARAM`, or :c:type:`DWORD`.  Some

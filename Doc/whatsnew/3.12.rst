@@ -148,6 +148,11 @@ unicodedata
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
 
+tempfile
+--------
+
+The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+*delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
 Optimizations
 =============
@@ -177,6 +182,11 @@ Demos and Tools
   can be found in the `old-demos project
   <https://github.com/gvanrossum/old-demos>`_.
   (Contributed by Victor Stinner in :gh:`97681`.)
+
+* Remove outdated example scripts of the ``Tools/scripts/`` directory.
+  A copy can be found in the `old-demos project
+  <https://github.com/gvanrossum/old-demos>`_.
+  (Contributed by Victor Stinner in :gh:`97669`.)
 
 
 Deprecated

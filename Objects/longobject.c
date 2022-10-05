@@ -1767,7 +1767,7 @@ long_to_decimal_string_internal(PyObject *aa,
     if (size_a >= 10 * _PY_LONG_MAX_STR_DIGITS_THRESHOLD
                   / (3 * PyLong_SHIFT) + 2) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_str_digits = interp->int_max_str_digits;
+        int max_str_digits = interp->config.int_max_str_digits;
         if ((max_str_digits > 0) &&
             (max_str_digits / (3 * PyLong_SHIFT) <= (size_a - 11) / 10)) {
             PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_STR,
@@ -1837,7 +1837,7 @@ long_to_decimal_string_internal(PyObject *aa,
     }
     if (strlen > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        int max_str_digits = interp->int_max_str_digits;
+        int max_str_digits = interp->config.int_max_str_digits;
         Py_ssize_t strlen_nosign = strlen - negative;
         if ((max_str_digits > 0) && (strlen_nosign > max_str_digits)) {
             Py_DECREF(scratch);
@@ -2578,7 +2578,7 @@ long_from_string_base(const char **str, int base, PyLongObject **res)
          * quadratic algorithm. */
         if (digits > _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
-            int max_str_digits = interp->int_max_str_digits;
+            int max_str_digits = interp->config.int_max_str_digits;
             if ((max_str_digits > 0) && (digits > max_str_digits)) {
                 PyErr_Format(PyExc_ValueError, _MAX_STR_DIGITS_ERROR_FMT_TO_INT,
                              max_str_digits, digits);
@@ -5528,11 +5528,13 @@ int.__format__
 
     format_spec: unicode
     /
+
+Convert to a string according to format_spec.
 [clinic start generated code]*/
 
 static PyObject *
 int___format___impl(PyObject *self, PyObject *format_spec)
-/*[clinic end generated code: output=b4929dee9ae18689 input=e31944a9b3e428b7]*/
+/*[clinic end generated code: output=b4929dee9ae18689 input=d5e1254a47e8d1dc]*/
 {
     _PyUnicodeWriter writer;
     int ret;
@@ -6234,10 +6236,6 @@ _PyLong_InitTypes(PyInterpreterState *interp)
         if (_PyStructSequence_InitBuiltin(&Int_InfoType, &int_info_desc) < 0) {
             return _PyStatus_ERR("can't init int info type");
         }
-    }
-    interp->int_max_str_digits = _Py_global_config_int_max_str_digits;
-    if (interp->int_max_str_digits == -1) {
-        interp->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     }
 
     return _PyStatus_OK();

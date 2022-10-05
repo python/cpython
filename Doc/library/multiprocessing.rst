@@ -674,7 +674,6 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Example usage of some of the methods of :class:`Process`:
 
    .. doctest::
-      :options: +ELLIPSIS
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
@@ -2630,9 +2629,9 @@ Address Formats
   filesystem.
 
 * An ``'AF_PIPE'`` address is a string of the form
-  :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
+  :samp:`r'\\\\\\.\\pipe\\\\{PipeName}'`.  To use :func:`Client` to connect to a named
   pipe on a remote computer called *ServerName* one should use an address of the
-  form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
+  form :samp:`r'\\\\\\\\{ServerName}\\pipe\\\\{PipeName}'` instead.
 
 Note that any string beginning with two backslashes is assumed by default to be
 an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
