@@ -15,7 +15,7 @@ two types exist -- :ref:`GenericAlias <types-genericalias>` and
    Equivalent to calling the Python class
    :class:`types.GenericAlias`.  The *origin* and *args* arguments set the
    ``GenericAlias``\ 's ``__origin__`` and ``__args__`` attributes respectively.
-   *origin* should be a :c:type:`PyTypeObject*`, and *args* can be a
+   *origin* should be a :c:expr:`PyTypeObject*`, and *args* can be a
    :c:expr:`PyTupleObject*` or any ``PyObject*``.  If *args* passed is
    not a tuple, a 1-tuple is automatically constructed and ``__args__`` is set
    to ``(args,)``.
