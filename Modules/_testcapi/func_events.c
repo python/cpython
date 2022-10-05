@@ -3,29 +3,49 @@
 static PyObject *pyfunc_callback = NULL;
 static PyFunction_EventCallback orig_callback = NULL;
 
+static PyObject *get_id(PyObject *obj) {
+    PyObject *builtins = PyEval_GetBuiltins();
+    if (builtins == NULL) {
+        return NULL;
+    }
+    PyObject *id_str = PyUnicode_FromString("id");
+    if (id_str == NULL) {
+        return NULL;
+    }
+    PyObject *id_func = PyObject_GetItem(builtins, id_str);
+    Py_DECREF(id_str);
+    if (id_func == NULL) {
+        return NULL;
+    }
+    PyObject *stack[] = {obj};
+    PyObject *id = PyObject_Vectorcall(id_func, stack, 1, NULL);
+    Py_DECREF(id_func);
+    return id;
+}
+
 static void
 call_pyfunc_callback(PyFunction_Event event, PyFunctionObject *func, PyObject *new_value)
 {
     PyObject *event_obj = PyLong_FromLong(event);
     if (event_obj == NULL) {
-        PyErr_Clear();
         return;
     }
     if (new_value == NULL) {
         new_value = Py_None;
     }
     Py_INCREF(new_value);
-    /* Don't expose a function that's about to be destroyed to managed code */
-    PyObject *func_or_id = (PyObject *) func;
+    PyObject *func_or_id = NULL;
     if (event == PYFUNC_EVENT_DESTROY) {
-        func_or_id = PyLong_FromLong((long) func);
+        /* Don't expose a function that's about to be destroyed to managed code */
+        func_or_id = get_id((PyObject *) func);
         if (func_or_id == NULL) {
-            Py_DECREF(new_value);
             Py_DECREF(event_obj);
+            Py_DECREF(new_value);
             return;
         }
     } else {
         Py_INCREF(func);
+        func_or_id = (PyObject *) func;
     }
     PyObject *stack[] = {event_obj, func_or_id, new_value};
     PyObject *res = PyObject_Vectorcall(pyfunc_callback, stack, 3, NULL);
