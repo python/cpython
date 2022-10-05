@@ -358,7 +358,6 @@ of what happens during the loading portion of import::
         sys.modules[spec.name] = module
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
-        # Set __loader__ and __package__ if missing.
     else:
         sys.modules[spec.name] = module
         try:
@@ -554,7 +553,7 @@ the module.
 
 .. attribute:: __package__
 
-   The module's ``__package__`` attribute must be set.  Its value must
+   The module's ``__package__`` attribute may be set.  Its value must
    be a string, but it can be the same value as its ``__name__``.  When
    the module is a package, its ``__package__`` value should be set to
    its ``__name__``.  When the module is not a package, ``__package__``
@@ -570,6 +569,16 @@ the module.
       The value of ``__package__`` is expected to be the same as
       ``__spec__.parent``.
 
+   .. versionchanged:: 3.10
+      :exc:`ImportWarning` is raised if import must fall back to
+      ``__package__`` instead of
+      :attr:`~importlib.machinery.ModuleSpec.parent`.
+
+   .. versionchanged:: 3.12
+      Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning`
+      when falling back to ``__package__``.
+
+
 .. attribute:: __spec__
 
    The ``__spec__`` attribute must be set to the module spec that was
@@ -578,7 +587,7 @@ the module.
    interpreter startup <programs>`.  The one exception is ``__main__``,
    where ``__spec__`` is :ref:`set to None in some cases <main_spec>`.
 
-   When ``__package__`` is not defined, ``__spec__.parent`` is used as
+   When ``__spec__.parent`` is not set, ``__package__`` is used as
    a fallback.
 
    .. versionadded:: 3.4

@@ -201,6 +201,11 @@ Deprecated
   may be removed in a future version of Python. Use the single-arg versions
   of these functions instead. (Contributed by Ofey Chan in :gh:`89874`.)
 
+* :exc:`DeprecationWarning` is now raised when ``__package__`` on a
+  module differs from ``__spec__.parent`` (previously it was
+  :exc:`ImportWarning`).
+  (Contributed by Brett Cannon in :gh:`65961`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -411,6 +416,10 @@ Removed
   <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
   Validation.
   (Contributed by Victor Stinner in :gh:`94199`.)
+
+
+* ``importlib.util.set_package`` has been removed.
+  (Contributed by Brett Cannon in :gh:`65961`.)
 
 
 Porting to Python 3.12
