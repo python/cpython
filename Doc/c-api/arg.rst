@@ -129,17 +129,17 @@ which disallows mutable objects such as :class:`bytearray`.
 ``S`` (:class:`bytes`) [PyBytesObject \*]
    Requires that the Python object is a :class:`bytes` object, without
    attempting any conversion.  Raises :exc:`TypeError` if the object is not
-   a bytes object.  The C variable may also be declared as :c:type:`PyObject*`.
+   a bytes object.  The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``Y`` (:class:`bytearray`) [PyByteArrayObject \*]
    Requires that the Python object is a :class:`bytearray` object, without
    attempting any conversion.  Raises :exc:`TypeError` if the object is not
-   a :class:`bytearray` object. The C variable may also be declared as :c:type:`PyObject*`.
+   a :class:`bytearray` object. The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``U`` (:class:`str`) [PyObject \*]
    Requires that the Python object is a Unicode object, without attempting
    any conversion.  Raises :exc:`TypeError` if the object is not a Unicode
-   object.  The C variable may also be declared as :c:type:`PyObject*`.
+   object.  The C variable may also be declared as :c:expr:`PyObject*`.
 
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
@@ -283,7 +283,7 @@ Other objects
 ``O!`` (object) [*typeobject*, PyObject \*]
    Store a Python object in a C object pointer.  This is similar to ``O``, but
    takes two C arguments: the first is the address of a Python type object, the
-   second is the address of the C variable (of type :c:type:`PyObject*`) into which
+   second is the address of the C variable (of type :c:expr:`PyObject*`) into which
    the object pointer is stored.  If the Python object does not have the required
    type, :exc:`TypeError` is raised.
 
@@ -444,7 +444,7 @@ API Functions
    *args*; it must actually be a tuple.  The length of the tuple must be at least
    *min* and no more than *max*; *min* and *max* may be equal.  Additional
    arguments must be passed to the function, each of which should be a pointer to a
-   :c:type:`PyObject*` variable; these will be filled in with the values from
+   :c:expr:`PyObject*` variable; these will be filled in with the values from
    *args*; they will contain :term:`borrowed references <borrowed reference>`.
    The variables which correspond
    to optional parameters not given by *args* will not be filled in; these should

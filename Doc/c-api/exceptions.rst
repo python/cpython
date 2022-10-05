@@ -189,7 +189,7 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
 
    This is a convenience function to raise :exc:`WindowsError`. If called with
-   *ierr* of :c:data:`0`, the error code returned by a call to :c:func:`GetLastError`
+   *ierr* of ``0``, the error code returned by a call to :c:func:`GetLastError`
    is used instead.  It calls the Win32 function :c:func:`FormatMessage` to retrieve
    the Windows description of error code given by *ierr* or :c:func:`GetLastError`,
    then it constructs a tuple object whose first item is the *ierr* value and whose
@@ -848,7 +848,7 @@ Standard Exceptions
 
 All standard Python exceptions are available as global variables whose names are
 ``PyExc_`` followed by the Python exception name.  These have the type
-:c:type:`PyObject*`; they are all class objects.  For completeness, here are all
+:c:expr:`PyObject*`; they are all class objects.  For completeness, here are all
 the variables:
 
 .. index::
@@ -1068,7 +1068,7 @@ Standard Warning Categories
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:type:`PyObject*`; they are all class objects. For completeness, here are all
+:c:expr:`PyObject*`; they are all class objects. For completeness, here are all
 the variables:
 
 .. index::
