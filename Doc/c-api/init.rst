@@ -365,7 +365,7 @@ Process-wide parameters
    interpreter will change the contents of this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
 
 .. c:function:: wchar* Py_GetProgramName()
@@ -509,7 +509,7 @@ Process-wide parameters
    if required after calling :c:func:`Py_Initialize`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    The path argument is copied internally, so the caller may free it after the
    call completes.
@@ -615,7 +615,7 @@ Process-wide parameters
      directory (``"."``).
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    .. note::
       It is recommended that applications embedding the Python interpreter
@@ -642,7 +642,7 @@ Process-wide parameters
    :option:`-I`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
@@ -659,7 +659,7 @@ Process-wide parameters
    this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
 
 .. c:function:: w_char* Py_GetPythonHome()
@@ -1221,8 +1221,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    exception (if any) for the thread is cleared. This raises no exceptions.
 
    .. versionchanged:: 3.7
-      The type of the *id* parameter changed from :c:type:`long` to
-      :c:type:`unsigned long`.
+      The type of the *id* parameter changed from :c:expr:`long` to
+      :c:expr:`unsigned long`.
 
 .. c:function:: void PyEval_AcquireThread(PyThreadState *tstate)
 
@@ -1656,7 +1656,7 @@ The Python interpreter provides low-level support for thread-local storage
 (TLS) which wraps the underlying native TLS implementation to support the
 Python-level thread local storage API (:class:`threading.local`).  The
 CPython C level APIs are similar to those offered by pthreads and Windows:
-use a thread key and functions to associate a :c:type:`void*` value per
+use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
 The GIL does *not* need to be held when calling these functions; they supply
@@ -1667,8 +1667,8 @@ you need to include :file:`pythread.h` to use thread-local storage.
 
 .. note::
    None of these API functions handle memory management on behalf of the
-   :c:type:`void*` values.  You need to allocate and deallocate them yourself.
-   If the :c:type:`void*` values happen to be :c:expr:`PyObject*`, these
+   :c:expr:`void*` values.  You need to allocate and deallocate them yourself.
+   If the :c:expr:`void*` values happen to be :c:expr:`PyObject*`, these
    functions don't do refcount operations on them either.
 
 .. _thread-specific-storage-api:
@@ -1678,7 +1678,7 @@ Thread Specific Storage (TSS) API
 
 TSS API is introduced to supersede the use of the existing TLS API within the
 CPython interpreter.  This API uses a new type :c:type:`Py_tss_t` instead of
-:c:type:`int` to represent thread keys.
+:c:expr:`int` to represent thread keys.
 
 .. versionadded:: 3.7
 
@@ -1764,14 +1764,14 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
 
 .. c:function:: int PyThread_tss_set(Py_tss_t *key, void *value)
 
-   Return a zero value to indicate successfully associating a :c:type:`void*`
+   Return a zero value to indicate successfully associating a :c:expr:`void*`
    value with a TSS key in the current thread.  Each thread has a distinct
-   mapping of the key to a :c:type:`void*` value.
+   mapping of the key to a :c:expr:`void*` value.
 
 
 .. c:function:: void* PyThread_tss_get(Py_tss_t *key)
 
-   Return the :c:type:`void*` value associated with a TSS key in the current
+   Return the :c:expr:`void*` value associated with a TSS key in the current
    thread.  This returns ``NULL`` if no value is associated with the key in the
    current thread.
 
