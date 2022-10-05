@@ -538,6 +538,10 @@ The import machinery fills in these attributes on each module object
 during loading, based on the module's spec, before the loader executes
 the module.
 
+It is **strongly** recommended that you rely on :attr:`__spec__` and
+its attributes instead of any of the other individual attributes
+listed below.
+
 .. attribute:: __name__
 
    The ``__name__`` attribute must be set to the fully qualified name of
@@ -551,6 +555,9 @@ the module.
    for introspection, but can be used for additional loader-specific
    functionality, for example getting data associated with a loader.
 
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of this attribute.
+
 .. attribute:: __package__
 
    The module's ``__package__`` attribute may be set.  Its value must
@@ -561,16 +568,15 @@ the module.
    submodules, to the parent package's name.  See :pep:`366` for further
    details.
 
-   This attribute is used instead of ``__name__`` to calculate explicit
-   relative imports for main modules, as defined in :pep:`366`. It is
-   expected to have the same value as ``__spec__.parent``.
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of this attribute.
 
    .. versionchanged:: 3.6
       The value of ``__package__`` is expected to be the same as
       ``__spec__.parent``.
 
    .. versionchanged:: 3.10
-      :exc:`ImportWarning` is raised if import must fall back to
+      :exc:`ImportWarning` is raised if import falls back to
       ``__package__`` instead of
       :attr:`~importlib.machinery.ModuleSpec.parent`.
 
@@ -631,6 +637,9 @@ the module.
    (from which ``__file__`` and ``__cached__`` are derived).  So
    if a loader can load from a cached module but otherwise does not load
    from a file, that atypical scenario may be appropriate.
+
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of ``__cached__``.
 
 .. _package-path-rules:
 
