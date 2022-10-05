@@ -16,11 +16,11 @@ parameter.  The available start symbols are :const:`Py_eval_input`,
 :const:`Py_file_input`, and :const:`Py_single_input`.  These are described
 following the functions which accept them as parameters.
 
-Note also that several of these functions take :c:type:`FILE*` parameters.  One
-particular issue which needs to be handled carefully is that the :c:type:`FILE`
+Note also that several of these functions take :c:expr:`FILE*` parameters.  One
+particular issue which needs to be handled carefully is that the :c:expr:`FILE`
 structure for different C libraries can be different and incompatible.  Under
 Windows (at least), it is possible for dynamically linked extensions to actually
-use different libraries, so care should be taken that :c:type:`FILE*` parameters
+use different libraries, so care should be taken that :c:expr:`FILE*` parameters
 are only passed to these functions if it is certain that they were created by
 the same library that the Python runtime is using.
 
