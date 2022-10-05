@@ -148,6 +148,11 @@ unicodedata
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
 
+tempfile
+--------
+
+The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+*delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
 Optimizations
 =============

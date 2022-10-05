@@ -1059,7 +1059,7 @@ The :mod:`socket` module also offers various network-related services:
    Convert an IPv4 address from dotted-quad string format (for example,
    '123.45.67.89') to 32-bit packed binary format, as a bytes object four characters in
    length.  This is useful when conversing with a program that uses the standard C
-   library and needs objects of type :c:type:`struct in_addr`, which is the C type
+   library and needs objects of type :c:struct:`in_addr`, which is the C type
    for the 32-bit packed binary this function returns.
 
    :func:`inet_aton` also accepts strings with less than three dots; see the
@@ -1078,7 +1078,7 @@ The :mod:`socket` module also offers various network-related services:
    Convert a 32-bit packed IPv4 address (a :term:`bytes-like object` four
    bytes in length) to its standard dotted-quad string representation (for example,
    '123.45.67.89').  This is useful when conversing with a program that uses the
-   standard C library and needs objects of type :c:type:`struct in_addr`, which
+   standard C library and needs objects of type :c:struct:`in_addr`, which
    is the C type for the 32-bit packed binary data this function takes as an
    argument.
 
@@ -1095,8 +1095,8 @@ The :mod:`socket` module also offers various network-related services:
 
    Convert an IP address from its family-specific string format to a packed,
    binary format. :func:`inet_pton` is useful when a library or network protocol
-   calls for an object of type :c:type:`struct in_addr` (similar to
-   :func:`inet_aton`) or :c:type:`struct in6_addr`.
+   calls for an object of type :c:struct:`in_addr` (similar to
+   :func:`inet_aton`) or :c:struct:`in6_addr`.
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the IP address string *ip_string* is invalid,
@@ -1116,8 +1116,8 @@ The :mod:`socket` module also offers various network-related services:
    bytes) to its standard, family-specific string representation (for
    example, ``'7.10.0.5'`` or ``'5aef:2b::8'``).
    :func:`inet_ntop` is useful when a library or network protocol returns an
-   object of type :c:type:`struct in_addr` (similar to :func:`inet_ntoa`) or
-   :c:type:`struct in6_addr`.
+   object of type :c:struct:`in_addr` (similar to :func:`inet_ntoa`) or
+   :c:struct:`in6_addr`.
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the bytes object *packed_ip* is not the correct
