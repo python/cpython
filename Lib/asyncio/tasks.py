@@ -139,6 +139,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def get_coro(self):
         return self._coro
 
+    def get_context(self):
+        return self._context
+
     def get_name(self):
         return self._name
 
@@ -243,8 +246,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def uncancel(self):
         """Decrement the task's count of cancellation requests.
 
-        This should be used by tasks that catch CancelledError
-        and wish to continue indefinitely until they are cancelled again.
+        This should be called by the party that called `cancel()` on the task
+        beforehand.
 
         Returns the remaining number of cancellation requests.
         """

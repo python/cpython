@@ -1,6 +1,8 @@
 .. currentmodule:: asyncio
 
 
+.. _asyncio-event-loop:
+
 ==========
 Event Loop
 ==========
@@ -92,7 +94,7 @@ This documentation page contains the following sections:
   loop APIs.
 
 
-.. _asyncio-event-loop:
+.. _asyncio-event-loop-methods:
 
 Event Loop Methods
 ==================
@@ -178,18 +180,27 @@ Running and stopping the loop
 
    .. versionadded:: 3.6
 
-.. coroutinemethod:: loop.shutdown_default_executor()
+.. coroutinemethod:: loop.shutdown_default_executor(timeout=None)
 
    Schedule the closure of the default executor and wait for it to join all of
    the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
    :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
    while using the default executor.
 
+   The *timeout* parameter specifies the amount of time the executor will
+   be given to finish joining. The default value is ``None``, which means the
+   executor will be given an unlimited amount of time.
+
+   If the timeout duration is reached, a warning is emitted and executor is
+   terminated without waiting for its threads to finish joining.
+
    Note that there is no need to call this function when
    :func:`asyncio.run` is used.
 
    .. versionadded:: 3.9
 
+   .. versionchanged:: 3.12
+      Added the *timeout* parameter.
 
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
@@ -1260,6 +1271,15 @@ Allows customizing how exceptions are handled in the event loop.
    (see :meth:`call_exception_handler` documentation for details
    about context).
 
+   If the handler is called on behalf of a :class:`~asyncio.Task` or
+   :class:`~asyncio.Handle`, it is run in the
+   :class:`contextvars.Context` of that task or callback handle.
+
+   .. versionchanged:: 3.12
+
+      The handler may be called in the :class:`~contextvars.Context`
+      of the task or handle where the exception originated.
+
 .. method:: loop.get_exception_handler()
 
    Return the current exception handler, or ``None`` if no custom
@@ -1463,6 +1483,13 @@ Callback Handles
    A callback wrapper object returned by :meth:`loop.call_soon`,
    :meth:`loop.call_soon_threadsafe`.
 
+   .. method:: get_context()
+
+      Return the :class:`contextvars.Context` object
+      associated with the handle.
+
+      .. versionadded:: 3.12
+
    .. method:: cancel()
 
       Cancel the callback.  If the callback has already been canceled
@@ -1598,6 +1625,7 @@ Do not instantiate the class directly.
 
 
 .. _asyncio-event-loops:
+.. _asyncio-event-loop-implementations:
 
 Event Loop Implementations
 ==========================
@@ -1620,9 +1648,12 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       import asyncio
       import selectors
 
-      selector = selectors.SelectSelector()
-      loop = asyncio.SelectorEventLoop(selector)
-      asyncio.set_event_loop(loop)
+      class MyPolicy(asyncio.DefaultEventLoopPolicy):
+         def new_event_loop(self):
+            selector = selectors.SelectSelector()
+            return asyncio.SelectorEventLoop(selector)
+
+      asyncio.set_event_loop_policy(MyPolicy())
 
 
    .. availability:: Unix, Windows.
@@ -1644,7 +1675,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
    Abstract base class for asyncio-compliant event loops.
 
-   The :ref:`Event Loop Methods <asyncio-event-loop>` section lists all
+   The :ref:`asyncio-event-loop-methods` section lists all
    methods that an alternative implementation of ``AbstractEventLoop``
    should have defined.
 
