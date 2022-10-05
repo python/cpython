@@ -8,7 +8,7 @@ File Objects
 .. index:: object: file
 
 These APIs are a minimal emulation of the Python 2 C API for built-in file
-objects, which used to rely on the buffered I/O (:c:type:`FILE*`) support
+objects, which used to rely on the buffered I/O (:c:expr:`FILE*`) support
 from the C standard library.  In Python 3, files and streams use the new
 :mod:`io` module, which defines several layers over the low-level unbuffered
 I/O of the operating system.  The functions described below are
