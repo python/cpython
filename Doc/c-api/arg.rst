@@ -335,7 +335,7 @@ Other objects
       status = converter(object, address);
 
    where *object* is the Python object to be converted and *address* is the
-   :c:expr:`void*` argument that was passed to the ``PyArg_Parse*`` function.
+   :c:type:`void*` argument that was passed to the ``PyArg_Parse*`` function.
    The returned *status* should be ``1`` for a successful conversion and ``0`` if
    the conversion has failed.  When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
@@ -409,9 +409,9 @@ what is specified for the corresponding format unit in that case.
 
 For the conversion to succeed, the *arg* object must match the format
 and the format must be exhausted.  On success, the
-:c:func:`PyArg_Parse\*` functions return true, otherwise they return
+``PyArg_Parse*`` functions return true, otherwise they return
 false and raise an appropriate exception. When the
-:c:func:`PyArg_Parse\*` functions fail due to conversion failure in one
+``PyArg_Parse*`` functions fail due to conversion failure in one
 of the format units, the variables at the addresses corresponding to that
 and the following format units are left untouched.
 
@@ -518,7 +518,7 @@ Building values
 .. c:function:: PyObject* Py_BuildValue(const char *format, ...)
 
    Create a new value based on a format string similar to those accepted by the
-   :c:func:`PyArg_Parse\*` family of functions and a sequence of values.  Returns
+   ``PyArg_Parse*`` family of functions and a sequence of values.  Returns
    the value or ``NULL`` in the case of an error; an exception will be raised if
    ``NULL`` is returned.
 

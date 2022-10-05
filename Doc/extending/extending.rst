@@ -157,16 +157,16 @@ since you should be able to tell from the return value.
 
 When a function *f* that calls another function *g* detects that the latter
 fails, *f* should itself return an error value (usually ``NULL`` or ``-1``).  It
-should *not* call one of the :c:func:`PyErr_\*` functions --- one has already
+should *not* call one of the ``PyErr_*`` functions --- one has already
 been called by *g*. *f*'s caller is then supposed to also return an error
-indication to *its* caller, again *without* calling :c:func:`PyErr_\*`, and so on
+indication to *its* caller, again *without* calling ``PyErr_*``, and so on
 --- the most detailed cause of the error was already reported by the function
 that first detected it.  Once the error reaches the Python interpreter's main
 loop, this aborts the currently executing Python code and tries to find an
 exception handler specified by the Python programmer.
 
 (There are situations where a module can actually give a more detailed error
-message by calling another :c:func:`PyErr_\*` function, and in such cases it is
+message by calling another ``PyErr_*`` function, and in such cases it is
 fine to do so.  As a general rule, however, this is not necessary, and can cause
 information about the cause of the error to be lost: most operations can fail
 for a variety of reasons.)
