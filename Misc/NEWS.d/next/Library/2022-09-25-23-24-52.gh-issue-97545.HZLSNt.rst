@@ -1,0 +1,1 @@
+Make Semaphore run faster.

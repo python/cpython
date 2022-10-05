@@ -379,7 +379,7 @@ def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[
         [2.0, 1.0, 3.0]
 
     Ranks are conventionally numbered starting from one; however,
-    setting *start* to zero allow the ranks to be used as array indices:
+    setting *start* to zero allows the ranks to be used as array indices:
 
         >>> prize = ['Gold', 'Silver', 'Bronze', 'Certificate']
         >>> scores = [8.1, 7.3, 9.4, 8.3]
@@ -1073,8 +1073,9 @@ def correlation(x, y, /, *, method='linear'):
     if method not in {'linear', 'ranked'}:
         raise ValueError(f'Unknown method: {method!r}')
     if method == 'ranked':
-        x = _rank(x)
-        y = _rank(y)
+        start = (n - 1) / -2            # Center rankings around zero
+        x = _rank(x, start=start)
+        y = _rank(y, start=start)
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))

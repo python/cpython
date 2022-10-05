@@ -82,9 +82,16 @@
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
+  <Target Name="_RegenGlobalObjects"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate Global Objects" Importance="high" />
+    <Exec Command="$(PythonForBuild) Tools\scripts\generate_global_objects.py"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
   <Target Name="Regen"
           Condition="$(Configuration) != 'PGUpdate'"
-          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenOpcodes;_RegenTokens;_RegenKeywords">
+          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenOpcodes;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
     <Message Text="Generated sources are up to date" Importance="high" />
   </Target>
 

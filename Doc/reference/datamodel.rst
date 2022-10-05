@@ -2996,6 +2996,11 @@ generators, coroutines do not directly support iteration.
    above.  If the exception is not caught in the coroutine, it propagates
    back to the caller.
 
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
+
 .. method:: coroutine.close()
 
    Causes the coroutine to clean itself up and exit.  If the coroutine

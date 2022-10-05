@@ -428,8 +428,13 @@ return next yielded value or raise StopIteration.");
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in the wrapped iterator,\n\
-return next yielded value or raise StopIteration.");
+"throw(value)\n\
+throw(typ[,val[,tb]])\n\
+\n\
+raise exception in the wrapped iterator, return next yielded value\n\
+or raise StopIteration.\n\
+the (type, val, tb) signature is deprecated, \n\
+and may be removed in a future version of Python.");
 
 
 PyDoc_STRVAR(close_doc,
