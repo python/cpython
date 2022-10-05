@@ -74,7 +74,7 @@ Py_ssize_t NUM_BITS(Py_ssize_t x);
  * prev_desc points to the type of the previous bitfield, if any.
  */
 PyObject *
-PyCField_FromDesc_old(PyObject *desc, Py_ssize_t index,
+PyCField_FromDesc_big_endian(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian)
@@ -229,24 +229,11 @@ PyCField_FromDesc_old(PyObject *desc, Py_ssize_t index,
 }
 
 PyObject *
-PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
+PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian)
 {
-    #ifndef MS_WIN32
-    if(big_endian)
-    #endif
-    {
-        // Fall back to old behaviour for cases that I don't understand well
-        // enough.
-        // TODO(Matthias): Learn enough so we don't need to fall back.
-        return PyCField_FromDesc_old(desc, index,
-                pfield_size, bitsize, pbitofs,
-                psize, poffset, palign,
-                pack, big_endian);
-    }
-
     assert(*pfield_size == 0);
     *pbitofs += *poffset * 8;
     *poffset = 0;
@@ -351,6 +338,146 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     return (PyObject *)self;
 }
 
+PyObject *
+PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
+                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
+                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
+                int pack, int big_endian)
+{
+    assert(*pfield_size == 0);
+    *pbitofs += *poffset * 8;
+    *poffset = 0;
+
+    // Change:
+    // * pbitofs is now relative to the start of the struct, not the start of
+    // the current field
+    // * we don't need pfield_size anymore
+    // * same for poffset, unless it's in use by our caller?
+    //      poffset doesn't seem to be used after this function returns.
+    //      Though we might have to honour it's starting point?
+    //      I guess fall back, if it ain't zero?
+
+    CFieldObject* self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
+    if (self == NULL)
+        return NULL;
+    StgDictObject* dict = PyType_stgdict(desc);
+    if (!dict) {
+        PyErr_SetString(PyExc_TypeError,
+                        "has no _stginfo_");
+        Py_DECREF(self);
+        return NULL;
+    }
+
+    int is_bitfield = !!bitsize;
+    if(!is_bitfield) {
+        bitsize = 8 * dict->size; // might still be 0 afterwards.
+    }
+
+    Py_ssize_t align;
+    if (pack)
+        align = min(pack, dict->align);
+    else
+        align = dict->align;
+
+    if ((bitsize > 0)
+         && (round_down(*pbitofs, 8 * align)
+            < round_down(*pbitofs + bitsize - 1, 8 * align))) {
+        // We would be straddling alignment units.
+        *pbitofs = round_up(*pbitofs, 8*align);
+    }
+
+    PyObject* proto = desc;
+
+    /*  Field descriptors for 'c_char * n' are be scpecial cased to
+        return a Python string instead of an Array object instance...
+    */
+    SETFUNC setfunc = NULL;
+    GETFUNC getfunc = NULL;
+    if (PyCArrayTypeObject_Check(proto)) {
+        StgDictObject *adict = PyType_stgdict(proto);
+        StgDictObject *idict;
+        if (adict && adict->proto) {
+            idict = PyType_stgdict(adict->proto);
+            if (!idict) {
+                PyErr_SetString(PyExc_TypeError,
+                                "has no _stginfo_");
+                Py_DECREF(self);
+                return NULL;
+            }
+            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+                struct fielddesc *fd = _ctypes_get_fielddesc("s");
+                getfunc = fd->getfunc;
+                setfunc = fd->setfunc;
+            }
+            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+                struct fielddesc *fd = _ctypes_get_fielddesc("U");
+                getfunc = fd->getfunc;
+                setfunc = fd->setfunc;
+            }
+        }
+    }
+
+    self->setfunc = setfunc;
+    self->getfunc = getfunc;
+    self->index = index;
+
+    Py_INCREF(proto);
+    self->proto = proto;
+
+    assert(bitsize <= dict->size * 8);
+    assert(*poffset == 0);
+
+    // We need to fit within alignment and within size.
+    // But we only really care about size, when we have a bitfield.
+    if(is_bitfield) {
+        self->offset = round_down(*pbitofs, 8*dict->size) / 8;
+        Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
+        self->size = (bitsize << 16 ) + effective_bitsof;
+        assert(dict->size == dict->align);
+        assert(effective_bitsof <= dict->size * 8);
+    } else {
+        self->offset = round_down(*pbitofs, 8*align) / 8;
+        self->size = dict->size;
+    }
+
+    *pbitofs += bitsize;
+    *psize = round_up(*pbitofs, 8) / 8;
+    *palign = align;
+
+    assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
+    return (PyObject *)self;
+}
+
+PyObject *
+PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
+                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
+                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
+                int pack, int big_endian)
+{
+    if(big_endian) {
+        return PyCField_FromDesc_big_endian(desc, index,
+                pfield_size, bitsize, pbitofs,
+                psize, poffset, palign,
+                pack, big_endian);
+    } else if (
+        #ifdef MS_WIN32
+        true
+        #else
+        pack != 0
+        #endif
+        ) {
+        return PyCField_FromDesc_windows(desc, index,
+                pfield_size, bitsize, pbitofs,
+                psize, poffset, palign,
+                pack, big_endian);
+    } else {
+        return PyCField_FromDesc_linux(desc, index,
+                pfield_size, bitsize, pbitofs,
+                psize, poffset, palign,
+                pack, big_endian);
+    }
+}
+
 static int
 PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
 {
@@ -370,7 +497,6 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
     }
     return PyCData_set(inst, self->proto, self->setfunc, value,
                      self->index, self->size, ptr);
-}
 
 static PyObject *
 PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
