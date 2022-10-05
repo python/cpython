@@ -273,7 +273,7 @@ PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
         // Close bitfield, ...
         // ... align,
         *poffset = round_up(*poffset, align);
-        
+
         // ... and re-open.
         *poffset += dict->size;
 
