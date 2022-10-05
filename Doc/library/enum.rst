@@ -134,8 +134,7 @@ Module Contents
 
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``
-.. versionadded:: 3.11  ``member``, ``nonmember``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``
 
 ---------------
 
