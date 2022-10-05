@@ -2410,6 +2410,18 @@ _asyncio_Task_get_coro_impl(TaskObj *self)
 }
 
 /*[clinic input]
+_asyncio.Task.get_context
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task_get_context_impl(TaskObj *self)
+/*[clinic end generated code: output=6996f53d3dc01aef input=87c0b209b8fceeeb]*/
+{
+    Py_INCREF(self->task_context);
+    return self->task_context;
+}
+
+/*[clinic input]
 _asyncio.Task.get_name
 [clinic start generated code]*/
 
@@ -2536,6 +2548,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
+    _ASYNCIO_TASK_GET_CONTEXT_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
