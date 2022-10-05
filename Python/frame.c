@@ -54,6 +54,9 @@ _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
     assert(src->stacktop >= src->f_code->co_nlocalsplus);
     Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
     memcpy(dest, src, size);
+    // Don't leave a dangling pointer to the old frame when creating generators
+    // and coroutines:
+    dest->previous = NULL;
 }
 
 

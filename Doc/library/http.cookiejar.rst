@@ -320,8 +320,8 @@ writing.
 .. class:: MozillaCookieJar(filename, delayload=None, policy=None)
 
    A :class:`FileCookieJar` that can load from and save cookies to disk in the
-   Mozilla ``cookies.txt`` file format (which is also used by the Lynx and Netscape
-   browsers).
+   Mozilla ``cookies.txt`` file format (which is also used by curl and the Lynx
+   and Netscape browsers).
 
    .. note::
 

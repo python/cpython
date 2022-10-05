@@ -606,12 +606,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._check_closed()
         self._check_running()
         self._set_coroutine_origin_tracking(self._debug)
-        self._thread_id = threading.get_ident()
 
         old_agen_hooks = sys.get_asyncgen_hooks()
-        sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
-                               finalizer=self._asyncgen_finalizer_hook)
         try:
+            self._thread_id = threading.get_ident()
+            sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
+                                   finalizer=self._asyncgen_finalizer_hook)
+
             events._set_running_loop(self)
             while True:
                 self._run_once()
