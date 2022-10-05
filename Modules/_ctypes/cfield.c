@@ -81,10 +81,7 @@ PyCField_FromDesc_big_endian(PyObject *desc, Py_ssize_t index,
                 CFieldObject* self, StgDictObject* dict
                 )
 {
-    PyObject *proto;
     Py_ssize_t size, align;
-    SETFUNC setfunc = NULL;
-    GETFUNC getfunc = NULL;
     int fieldtype;
 #define NO_BITFIELD 0
 #define NEW_BITFIELD 1
@@ -124,41 +121,6 @@ PyCField_FromDesc_big_endian(PyObject *desc, Py_ssize_t index,
     }
 
     size = dict->size;
-    proto = desc;
-
-    /*  Field descriptors for 'c_char * n' are be scpecial cased to
-        return a Python string instead of an Array object instance...
-    */
-    if (PyCArrayTypeObject_Check(proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
-        StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
-            if (!idict) {
-                PyErr_SetString(PyExc_TypeError,
-                                "has no _stginfo_");
-                Py_DECREF(self);
-                return NULL;
-            }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("s");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("U");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-        }
-    }
-
-    self->setfunc = setfunc;
-    self->getfunc = getfunc;
-    self->index = index;
-
-    Py_INCREF(proto);
-    self->proto = proto;
 
     switch (fieldtype) {
     case NEW_BITFIELD:
@@ -245,44 +207,6 @@ PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
         *pbitofs = round_up(*pbitofs, 8*align);
     }
 
-    PyObject* proto = desc;
-
-    /*  Field descriptors for 'c_char * n' are be scpecial cased to
-        return a Python string instead of an Array object instance...
-    */
-    SETFUNC setfunc = NULL;
-    GETFUNC getfunc = NULL;
-    if (PyCArrayTypeObject_Check(proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
-        StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
-            if (!idict) {
-                PyErr_SetString(PyExc_TypeError,
-                                "has no _stginfo_");
-                Py_DECREF(self);
-                return NULL;
-            }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("s");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("U");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-        }
-    }
-
-    self->setfunc = setfunc;
-    self->getfunc = getfunc;
-    self->index = index;
-
-    Py_INCREF(proto);
-    self->proto = proto;
-
     assert(bitsize <= dict->size * 8);
     assert(*poffset == 0);
 
@@ -346,44 +270,6 @@ PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
         *pbitofs = round_up(*pbitofs, 8*align);
     }
 
-    PyObject* proto = desc;
-
-    /*  Field descriptors for 'c_char * n' are be scpecial cased to
-        return a Python string instead of an Array object instance...
-    */
-    SETFUNC setfunc = NULL;
-    GETFUNC getfunc = NULL;
-    if (PyCArrayTypeObject_Check(proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
-        StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
-            if (!idict) {
-                PyErr_SetString(PyExc_TypeError,
-                                "has no _stginfo_");
-                Py_DECREF(self);
-                return NULL;
-            }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("s");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("U");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-        }
-    }
-
-    self->setfunc = setfunc;
-    self->getfunc = getfunc;
-    self->index = index;
-
-    Py_INCREF(proto);
-    self->proto = proto;
-
     assert(bitsize <= dict->size * 8);
     assert(*poffset == 0);
 
@@ -424,6 +310,44 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         Py_DECREF(self);
         return NULL;
     }
+
+    PyObject* proto = desc;
+
+    /*  Field descriptors for 'c_char * n' are be scpecial cased to
+        return a Python string instead of an Array object instance...
+    */
+    SETFUNC setfunc = NULL;
+    GETFUNC getfunc = NULL;
+    if (PyCArrayTypeObject_Check(proto)) {
+        StgDictObject *adict = PyType_stgdict(proto);
+        StgDictObject *idict;
+        if (adict && adict->proto) {
+            idict = PyType_stgdict(adict->proto);
+            if (!idict) {
+                PyErr_SetString(PyExc_TypeError,
+                                "has no _stginfo_");
+                Py_DECREF(self);
+                return NULL;
+            }
+            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+                struct fielddesc *fd = _ctypes_get_fielddesc("s");
+                getfunc = fd->getfunc;
+                setfunc = fd->setfunc;
+            }
+            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+                struct fielddesc *fd = _ctypes_get_fielddesc("U");
+                getfunc = fd->getfunc;
+                setfunc = fd->setfunc;
+            }
+        }
+    }
+
+    self->setfunc = setfunc;
+    self->getfunc = getfunc;
+    self->index = index;
+
+    Py_INCREF(proto);
+    self->proto = proto;
 
     if(big_endian) {
         return PyCField_FromDesc_big_endian(desc, index,
