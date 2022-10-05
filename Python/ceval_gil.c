@@ -70,7 +70,8 @@ COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
            && _Py_ThreadCanHandleSignals(interp))
         | (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do)
            && _Py_ThreadCanHandlePendingCalls())
-        | ceval2->pending.async_exc);
+        | ceval2->pending.async_exc
+        | _Py_atomic_load_relaxed_int32(&ceval2->gc_scheduled));
 }
 
 
@@ -945,6 +946,7 @@ _Py_HandlePending(PyThreadState *tstate)
     if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gc_scheduled)) {
         _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
         _Py_RunGC(tstate);
+        COMPUTE_EVAL_BREAKER(tstate->interp, ceval, interp_ceval_state);
     }
 
     /* Pending signals */
@@ -988,16 +990,17 @@ _Py_HandlePending(PyThreadState *tstate)
         return -1;
     }
 
-#ifdef MS_WINDOWS
-    // bpo-42296: On Windows, _PyEval_SignalReceived() can be called in a
-    // different thread than the Python thread, in which case
+
+    // It is possible that some of the conditions that trigger the eval breaker
+    // are called in a different thread than the Python thread. An example of
+    // this is bpo-42296: On Windows, _PyEval_SignalReceived() can be called in
+    // a different thread than the Python thread, in which case
     // _Py_ThreadCanHandleSignals() is wrong. Recompute eval_breaker in the
     // current Python thread with the correct _Py_ThreadCanHandleSignals()
     // value. It prevents to interrupt the eval loop at every instruction if
     // the current Python thread cannot handle signals (if
     // _Py_ThreadCanHandleSignals() is false).
     COMPUTE_EVAL_BREAKER(tstate->interp, ceval, interp_ceval_state);
-#endif
 
     return 0;
 }
