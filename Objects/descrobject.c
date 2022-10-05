@@ -776,7 +776,7 @@ PyTypeObject PyClassMethodDescr_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    descr_methods,                              /* tp_methods */
+    0,                                          /* tp_methods */
     descr_members,                              /* tp_members */
     method_getset,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -1176,6 +1176,12 @@ static PyObject *
 mappingproxy_getiter(mappingproxyobject *pp)
 {
     return PyObject_GetIter(pp->mapping);
+}
+
+static Py_hash_t
+mappingproxy_hash(mappingproxyobject *pp)
+{
+    return PyObject_Hash(pp->mapping);
 }
 
 static PyObject *
@@ -1901,7 +1907,7 @@ PyTypeObject PyDictProxy_Type = {
     &mappingproxy_as_number,                    /* tp_as_number */
     &mappingproxy_as_sequence,                  /* tp_as_sequence */
     &mappingproxy_as_mapping,                   /* tp_as_mapping */
-    0,                                          /* tp_hash */
+    (hashfunc)mappingproxy_hash,                /* tp_hash */
     0,                                          /* tp_call */
     (reprfunc)mappingproxy_str,                 /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */

@@ -195,37 +195,38 @@ else:
     # unable to retrieve the real program name
     _PROJECT_BASE = _safe_realpath(os.getcwd())
 
-if (os.name == 'nt' and
-    _PROJECT_BASE.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
-    _PROJECT_BASE = _safe_realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
+# In a virtual environment, `sys._home` gives us the target directory
+# `_PROJECT_BASE` for the executable that created it when the virtual
+# python is an actual executable ('venv --copies' or Windows).
+_sys_home = getattr(sys, '_home', None)
+if _sys_home:
+    _PROJECT_BASE = _sys_home
+
+if os.name == 'nt':
+    # In a source build, the executable is in a subdirectory of the root
+    # that we want (<root>\PCbuild\<platname>).
+    # `_BASE_PREFIX` is used as the base installation is where the source
+    # will be.  The realpath is needed to prevent mount point confusion
+    # that can occur with just string comparisons.
+    if _safe_realpath(_PROJECT_BASE).startswith(
+            _safe_realpath(f'{_BASE_PREFIX}\\PCbuild')):
+        _PROJECT_BASE = _BASE_PREFIX
 
 # set for cross builds
 if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
-def _is_python_source_dir(d):
+def is_python_build(check_home=None):
+    if check_home is not None:
+        import warnings
+        warnings.warn("check_home argument is deprecated and ignored.",
+                      DeprecationWarning, stacklevel=2)
     for fn in ("Setup", "Setup.local"):
-        if os.path.isfile(os.path.join(d, "Modules", fn)):
+        if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
             return True
     return False
 
-_sys_home = getattr(sys, '_home', None)
-
-if os.name == 'nt':
-    def _fix_pcbuild(d):
-        if d and os.path.normcase(d).startswith(
-                os.path.normcase(os.path.join(_PREFIX, "PCbuild"))):
-            return _PREFIX
-        return d
-    _PROJECT_BASE = _fix_pcbuild(_PROJECT_BASE)
-    _sys_home = _fix_pcbuild(_sys_home)
-
-def is_python_build(check_home=False):
-    if check_home and _sys_home:
-        return _is_python_source_dir(_sys_home)
-    return _is_python_source_dir(_PROJECT_BASE)
-
-_PYTHON_BUILD = is_python_build(True)
+_PYTHON_BUILD = is_python_build()
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
@@ -442,7 +443,7 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
 def get_makefile_filename():
     """Return the path of the Makefile."""
     if _PYTHON_BUILD:
-        return os.path.join(_sys_home or _PROJECT_BASE, "Makefile")
+        return os.path.join(_PROJECT_BASE, "Makefile")
     if hasattr(sys, 'abiflags'):
         config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
@@ -587,9 +588,9 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.join(_sys_home or _PROJECT_BASE, "PC")
+            inc_dir = os.path.join(_PROJECT_BASE, "PC")
         else:
-            inc_dir = _sys_home or _PROJECT_BASE
+            inc_dir = _PROJECT_BASE
     else:
         inc_dir = get_path('platinclude')
     return os.path.join(inc_dir, 'pyconfig.h')

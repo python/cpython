@@ -31,6 +31,8 @@ class LegacyBase64TestCase(unittest.TestCase):
            b"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
            b"RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
            b"Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n")
+        eq(base64.encodebytes(b"Aladdin:open sesame"),
+                              b"QWxhZGRpbjpvcGVuIHNlc2FtZQ==\n")
         # Non-bytes
         eq(base64.encodebytes(bytearray(b'abc')), b'YWJj\n')
         eq(base64.encodebytes(memoryview(b'abc')), b'YWJj\n')
@@ -50,6 +52,8 @@ class LegacyBase64TestCase(unittest.TestCase):
            b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
            b"0123456789!@#0^&*();:<>,. []{}")
         eq(base64.decodebytes(b''), b'')
+        eq(base64.decodebytes(b"QWxhZGRpbjpvcGVuIHNlc2FtZQ==\n"),
+                              b"Aladdin:open sesame")
         # Non-bytes
         eq(base64.decodebytes(bytearray(b'YWJj\n')), b'abc')
         eq(base64.decodebytes(memoryview(b'YWJj\n')), b'abc')
@@ -761,14 +765,6 @@ class TestMain(unittest.TestCase):
 
     def get_output(self, *args):
         return script_helper.assert_python_ok('-m', 'base64', *args).out
-
-    def test_encode_decode(self):
-        output = self.get_output('-t')
-        self.assertSequenceEqual(output.splitlines(), (
-            b"b'Aladdin:open sesame'",
-            br"b'QWxhZGRpbjpvcGVuIHNlc2FtZQ==\n'",
-            b"b'Aladdin:open sesame'",
-        ))
 
     def test_encode_file(self):
         with open(os_helper.TESTFN, 'wb') as fp:

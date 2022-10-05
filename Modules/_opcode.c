@@ -60,12 +60,7 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
                 "stack_effect: jump must be False, True or None");
         return -1;
     }
-    if (IS_ARTIFICIAL(opcode)) {
-        effect = PY_INVALID_STACK_EFFECT;
-    }
-    else {
-        effect = PyCompile_OpcodeStackEffectWithJump(opcode, oparg_int, jump_int);
-    }
+    effect = PyCompile_OpcodeStackEffectWithJump(opcode, oparg_int, jump_int);
     if (effect == PY_INVALID_STACK_EFFECT) {
             PyErr_SetString(PyExc_ValueError,
                     "invalid opcode or oparg");

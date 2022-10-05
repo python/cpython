@@ -1023,7 +1023,7 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :attr:`interp` (:c:type:`PyInterpreterState *`), which points to
+   data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
    this thread's interpreter state.
 
 
@@ -1774,6 +1774,18 @@ Python-level trace functions in previous versions.
 
    The caller must hold the :term:`GIL`.
 
+.. c:function:: void PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *obj)
+
+   Like :c:func:`PyEval_SetProfile` but sets the profile function in all running threads
+   belonging to the current interpreter instead of the setting it only on the current thread.
+
+   The caller must hold the :term:`GIL`.
+
+   As :c:func:`PyEval_SetProfile`, this function ignores any exceptions raised while
+   setting the profile functions in all threads.
+
+.. versionadded:: 3.12
+
 
 .. c:function:: void PyEval_SetTrace(Py_tracefunc func, PyObject *obj)
 
@@ -1787,6 +1799,18 @@ Python-level trace functions in previous versions.
    See also the :func:`sys.settrace` function.
 
    The caller must hold the :term:`GIL`.
+
+.. c:function:: void PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *obj)
+
+   Like :c:func:`PyEval_SetTrace` but sets the tracing function in all running threads
+   belonging to the current interpreter instead of the setting it only on the current thread.
+
+   The caller must hold the :term:`GIL`.
+
+   As :c:func:`PyEval_SetTrace`, this function ignores any exceptions raised while
+   setting the trace functions in all threads.
+
+.. versionadded:: 3.12
 
 
 .. _advanced-debugging:
@@ -1851,7 +1875,7 @@ you need to include :file:`pythread.h` to use thread-local storage.
 .. note::
    None of these API functions handle memory management on behalf of the
    :c:type:`void*` values.  You need to allocate and deallocate them yourself.
-   If the :c:type:`void*` values happen to be :c:type:`PyObject*`, these
+   If the :c:type:`void*` values happen to be :c:expr:`PyObject*`, these
    functions don't do refcount operations on them either.
 
 .. _thread-specific-storage-api:

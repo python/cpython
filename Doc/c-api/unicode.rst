@@ -477,9 +477,6 @@ APIs:
    |                   |                     | :c:func:`PyObject_Repr`.         |
    +-------------------+---------------------+----------------------------------+
 
-   An unrecognized format character causes all the rest of the format string to be
-   copied as-is to the result string, and any extra arguments discarded.
-
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes for ``"%s"`` and
@@ -499,6 +496,11 @@ APIs:
    .. versionchanged:: 3.4
       Support width and precision formatter for ``"%s"``, ``"%A"``, ``"%U"``,
       ``"%V"``, ``"%S"``, ``"%R"`` added.
+
+   .. versionchanged:: 3.12
+      An unrecognized format character now sets a :exc:`SystemError`.
+      In previous versions it caused all the rest of the format string to be
+      copied as-is to the result string, and any extra arguments discarded.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
@@ -709,7 +711,7 @@ conversion function:
    ParseTuple converter: encode :class:`str` objects -- obtained directly or
    through the :class:`os.PathLike` interface -- to :class:`bytes` using
    :c:func:`PyUnicode_EncodeFSDefault`; :class:`bytes` objects are output as-is.
-   *result* must be a :c:type:`PyBytesObject*` which must be released when it is
+   *result* must be a :c:expr:`PyBytesObject*` which must be released when it is
    no longer used.
 
    .. versionadded:: 3.1
@@ -726,7 +728,7 @@ conversion function:
    ParseTuple converter: decode :class:`bytes` objects -- obtained either
    directly or indirectly through the :class:`os.PathLike` interface -- to
    :class:`str` using :c:func:`PyUnicode_DecodeFSDefaultAndSize`; :class:`str`
-   objects are output as-is. *result* must be a :c:type:`PyUnicodeObject*` which
+   objects are output as-is. *result* must be a :c:expr:`PyUnicodeObject*` which
    must be released when it is no longer used.
 
    .. versionadded:: 3.2
@@ -819,7 +821,7 @@ wchar_t Support
    most C functions. If *size* is ``NULL`` and the :c:type:`wchar_t*` string
    contains null characters a :exc:`ValueError` is raised.
 
-   Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
+   Returns a buffer allocated by :c:func:`PyMem_New` (use
    :c:func:`PyMem_Free` to free it) on success. On error, returns ``NULL``
    and *\*size* is undefined. Raises a :exc:`MemoryError` if memory allocation
    is failed.

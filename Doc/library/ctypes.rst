@@ -148,15 +148,14 @@ Calling functions
 ^^^^^^^^^^^^^^^^^
 
 You can call these functions like any other Python callable. This example uses
-the ``time()`` function, which returns system time in seconds since the Unix
-epoch, and the ``GetModuleHandleA()`` function, which returns a win32 module
-handle.
+the ``rand()`` function, which takes no arguments and returns a pseudo-random integer::
 
-This example calls both functions with a ``NULL`` pointer (``None`` should be used
-as the ``NULL`` pointer)::
+   >>> print(libc.rand())  # doctest: +SKIP
+   1804289383
 
-   >>> print(libc.time(None))  # doctest: +SKIP
-   1150640792
+On Windows, you can call the ``GetModuleHandleA()`` function, which returns a win32 module
+handle (passing ``None`` as single argument to call it with a ``NULL`` pointer)::
+
    >>> print(hex(windll.kernel32.GetModuleHandleA(None)))  # doctest: +WINDOWS
    0x1d000000
    >>>
@@ -246,6 +245,8 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
 |                      | :c:type:`Py_ssize_t`                     |                            |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_float`     | :c:type:`float`                          | float                      |
 +----------------------+------------------------------------------+----------------------------+
@@ -446,6 +447,21 @@ Return types
 By default functions are assumed to return the C :c:type:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
+
+The C prototype of ``time()`` is ``time_t time(time_t *)``. Because ``time_t``
+might be of a different type than the default return type ``int``, you should
+specify the ``restype``::
+
+   >>> libc.time.restype = c_time_t
+
+The argument types can be specified using ``argtypes``::
+
+   >>> libc.time.argtypes = (POINTER(c_time_t),)
+
+To call the function with a ``NULL`` pointer as first argument, use ``None``::
+
+   >>> print(libc.time(None))  # doctest: +SKIP
+   1150640792
 
 Here is a more advanced example, it uses the ``strchr`` function, which expects
 a string pointer and a char, and returns a pointer to a string::
@@ -1052,18 +1068,16 @@ Accessing values exported from dlls
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some shared libraries not only export functions, they also export variables. An
-example in the Python library itself is the :c:data:`Py_OptimizeFlag`, an integer
-set to 0, 1, or 2, depending on the :option:`-O` or :option:`-OO` flag given on
-startup.
+example in the Python library itself is the :c:data:`Py_Version`, Python
+runtime version number encoded in a single constant integer.
 
 :mod:`ctypes` can access values like this with the :meth:`in_dll` class methods of
 the type.  *pythonapi* is a predefined symbol giving access to the Python C
 api::
 
-   >>> opt_flag = c_int.in_dll(pythonapi, "Py_OptimizeFlag")
-   >>> print(opt_flag)
-   c_long(0)
-   >>>
+   >>> version = ctypes.c_int.in_dll(ctypes.pythonapi, "Py_Version")
+   >>> print(hex(version.value))
+   0x30c00a0
 
 If the interpreter would have been started with :option:`-O`, the sample would
 have printed ``c_long(1)``, or ``c_long(2)`` if :option:`-OO` would have been
@@ -1074,7 +1088,7 @@ An extended example which also demonstrates the use of pointers accesses the
 
 Quoting the docs for that value:
 
-   This pointer is initialized to point to an array of :c:type:`struct _frozen`
+   This pointer is initialized to point to an array of :c:struct:`_frozen`
    records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
@@ -1093,7 +1107,7 @@ size, we show only how this table can be read with :mod:`ctypes`::
    ...
    >>>
 
-We have defined the :c:type:`struct _frozen` data type, so we can get the pointer
+We have defined the :c:struct:`_frozen` data type, so we can get the pointer
 to the table::
 
    >>> FrozenTable = POINTER(struct_frozen)
@@ -2275,6 +2289,13 @@ These are the fundamental ctypes data types:
    .. versionadded:: 3.2
 
 
+.. class:: c_time_t
+
+   Represents the C :c:type:`time_t` datatype.
+
+   .. versionadded:: 3.12
+
+
 .. class:: c_ubyte
 
    Represents the C :c:type:`unsigned char` datatype, it interprets the value as
@@ -2366,8 +2387,8 @@ These are the fundamental ctypes data types:
 
 .. class:: py_object
 
-   Represents the C :c:type:`PyObject *` datatype.  Calling this without an
-   argument creates a ``NULL`` :c:type:`PyObject *` pointer.
+   Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
+   argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
 The :mod:`ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`HWND`, :c:type:`WPARAM`, or :c:type:`DWORD`.  Some

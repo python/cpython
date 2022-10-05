@@ -190,7 +190,8 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
-    import threading, queue
+    import threading
+    import queue
 
     q = queue.Queue()
 

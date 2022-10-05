@@ -1,0 +1,2 @@
+Fixed a bug that caused ``_PyCode_GetExtra`` to return garbage for negative
+indexes. Patch by Pablo Galindo
