@@ -771,6 +771,15 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_exception_groups_feature_version(self):
+        code = dedent('''
+        try: ...
+        except* Exception: ...
+        ''')
+        ast.parse(code)
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 10))
+
     def test_constant_as_name(self):
         for constant in "True", "False", "None":
             expr = ast.Expression(ast.Name(constant, ast.Load()))
