@@ -12,15 +12,8 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
-/* WASI has limited call stack. Python's recursion limit depends on code
-   layout, optimization, and WASI runtime. Wasmtime can handle about 700-750
-   recursions, sometimes less. 600 is a more conservative limit. */
 #ifndef Py_DEFAULT_RECURSION_LIMIT
-#  ifdef __wasi__
-#    define Py_DEFAULT_RECURSION_LIMIT 600
-#  else
-#    define Py_DEFAULT_RECURSION_LIMIT 1000
-#  endif
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
@@ -118,18 +111,21 @@ extern void _PyEval_DeactivateOpCache(void);
 /* With USE_STACKCHECK macro defined, trigger stack checks in
    _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (tstate->recursion_remaining-- <= 0
-            || (tstate->recursion_remaining & 63) == 0);
+    return (tstate->c_recursion_remaining-- <= 0
+            || (tstate->c_recursion_remaining & 63) == 0);
 }
 #else
 static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return tstate->recursion_remaining-- <= 0;
+    return tstate->c_recursion_remaining-- <= 0;
 }
 #endif
 
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
+
+int _Py_CheckRecursiveCallPy(
+    PyThreadState *tstate);
 
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
                                                const char *where) {
@@ -142,7 +138,7 @@ static inline int _Py_EnterRecursiveCall(const char *where) {
 }
 
 static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
-    tstate->recursion_remaining++;
+    tstate->c_recursion_remaining++;
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {
@@ -155,6 +151,7 @@ extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 extern int _Py_HandlePending(PyThreadState *tstate);
+
 
 
 #ifdef __cplusplus
