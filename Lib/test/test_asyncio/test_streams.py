@@ -944,8 +944,7 @@ os.close(fd)
 class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
     async def test_wait_closed_on_close(self):
         with test_utils.run_test_server() as httpd:
-            rd, wr = self.loop.run_until_complete(
-                asyncio.open_connection(*httpd.address))
+            rd, wr = await asyncio.open_connection(*httpd.address)
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             data = await rd.readline()
@@ -962,8 +961,7 @@ class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
             rd, wr = await asyncio.open_connection(*httpd.address)
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            f = rd.readline()
-            data = self.loop.run_until_complete(f)
+            data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             wr.close()
             await wr.wait_closed()
@@ -1005,11 +1003,9 @@ class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
         with test_utils.run_test_server() as httpd:
             rd, wr = await asyncio.open_connection(*httpd.address)
             wr.close()
-            f = wr.wait_closed()
-            self.loop.run_until_complete(f)
+            await wr.wait_closed()
             self.assertTrue(rd.at_eof())
-            f = rd.read()
-            data = self.loop.run_until_complete(f)
+            data = await rd.read()
             self.assertEqual(data, b'')
 
 
