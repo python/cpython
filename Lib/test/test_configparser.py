@@ -2138,7 +2138,7 @@ class SectionlessTestCase(unittest.TestCase):
 
         output = io.StringIO()
         cfg1.write(output)
-        cfg2 = self.fromstring(output.getvalue())
+        cfg2 = self.fromstring(configparser.TOP_LEVEL, output.getvalue())
 
         self.assertEqual([], cfg1.sections())
         self.assertEqual('1', cfg2[configparser.TOP_LEVEL]['a'])
@@ -2157,7 +2157,7 @@ class SectionlessTestCase(unittest.TestCase):
 
         output = io.StringIO()
         cfg1.write(output)
-        cfg2 = self.fromstring(output.getvalue())
+        cfg2 = self.fromstring(configparser.TOP_LEVEL, output.getvalue())
 
         self.assertEqual(['sect1'], cfg2.sections())
         self.assertEqual('1', cfg2['sect1']['a'])
@@ -2181,7 +2181,7 @@ class SectionlessTestCase(unittest.TestCase):
 
         output = io.StringIO()
         cfg1.write(output)
-        cfg2 = self.fromstring(output.getvalue())
+        cfg2 = self.fromstring(configparser.TOP_LEVEL, output.getvalue())
 
         self.assertEqual(['sect1'], cfg1.sections())
         self.assertEqual('1', cfg2[configparser.TOP_LEVEL]['a'])
