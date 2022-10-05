@@ -162,9 +162,8 @@ typedef void(*PyFunction_EventCallback)(
   PyObject *new_value);
 
 /*
- * Set the callback that will be invoked for function lifecycle events.
- *
- * This must only be called after the runtime has been initialized.
+ * Set the per-interpreter callback that will be invoked for function lifecycle
+ * events.
  *
  * Pass NULL to clear the callback.
  */

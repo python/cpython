@@ -12,7 +12,8 @@ static uint32_t next_func_version = 1;
 static void
 handle_func_event(PyFunction_Event event, PyFunctionObject *func, PyObject *new_value)
 {
-    PyFunction_EventCallback handle_event = _PyRuntime.func_event_callback;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyFunction_EventCallback handle_event = tstate->interp->func_event_callback;
     if (handle_event == NULL) {
         return;
     }
@@ -22,15 +23,17 @@ handle_func_event(PyFunction_Event event, PyFunctionObject *func, PyObject *new_
 void
 PyFunction_SetEventCallback(PyFunction_EventCallback callback)
 {
-    assert(_PyRuntime.initialized);
-    _PyRuntime.func_event_callback = callback;
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate->interp->_initialized);
+    tstate->interp->func_event_callback = callback;
 }
 
 PyFunction_EventCallback
 PyFunction_GetEventCallback()
 {
-    assert(_PyRuntime.initialized);
-    return _PyRuntime.func_event_callback;
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate->interp->_initialized);
+    return tstate->interp->func_event_callback;
 }
 
 PyFunctionObject *

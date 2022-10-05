@@ -107,8 +107,7 @@ init_runtime(_PyRuntimeState *runtime,
              PyThread_type_lock unicode_ids_mutex,
              PyThread_type_lock interpreters_mutex,
              PyThread_type_lock xidregistry_mutex,
-             PyThread_type_lock getargs_mutex,
-             PyFunction_EventCallback func_event_callback)
+             PyThread_type_lock getargs_mutex)
 {
     if (runtime->_initialized) {
         Py_FatalError("runtime already initialized");
@@ -138,8 +137,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->unicode_ids.next_index = unicode_next_index;
     runtime->unicode_ids.lock = unicode_ids_mutex;
 
-    runtime->func_event_callback = func_event_callback;
-
     runtime->_initialized = 1;
 }
 
@@ -167,8 +164,7 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
         memcpy(runtime, &initial, sizeof(*runtime));
     }
     init_runtime(runtime, open_code_hook, open_code_userdata, audit_hook_head,
-                 unicode_next_index, lock1, lock2, lock3, lock4,
-                 runtime->func_event_callback);
+                 unicode_next_index, lock1, lock2, lock3, lock4);
 
     return _PyStatus_OK();
 }
@@ -434,6 +430,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
+    interp->func_event_callback = NULL;
 
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
