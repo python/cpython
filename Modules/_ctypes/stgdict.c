@@ -612,6 +612,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                                    &size, &offset, &align,
                                    pack, big_endian);
         } else /* union */ {
+            field_size = 0;
             size = 0;
             bitofs = 0;
             offset = 0;

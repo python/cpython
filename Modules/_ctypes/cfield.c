@@ -238,9 +238,12 @@ PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
                 CFieldObject* self, StgDictObject* dict
                 )
 {
-    assert(*pfield_size == 0);
-    *pbitofs += *poffset * 8;
-    *poffset = 0;
+    /*
+    Now: pbitofs is relative to poffset;
+    we assume that poffset == 0 is aligned as much as we need it.
+    */
+    // *pbitofs += *poffset * 8;
+    // *poffset = 0;
 
     // Change:
     // * pbitofs is now relative to the start of the struct, not the start of
@@ -262,31 +265,37 @@ PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
     else
         align = dict->align;
 
-    if ((bitsize > 0)
-         && (round_down(*pbitofs, 8 * align)
-            < round_down(*pbitofs + bitsize - 1, 8 * align))) {
-        // We would be straddling alignment units.
-        *pbitofs = round_up(*pbitofs, 8*align);
+    assert(bitsize <= dict->size * 8);
+
+    // New thing: poffset points to end of bitfield.
+    // And we work with negative *pbitofs;
+    if (0 < *pbitofs + bitsize || 8 * dict->size != *pfield_size) {
+        // Close bitfield, ...
+        // ... align,
+        *poffset = round_up(*poffset, align);
+        
+        // ... and re-open.
+        *poffset += dict->size;
+
+        *pfield_size = dict->size * 8;
+        *pbitofs = - *pfield_size;
     }
 
-    assert(bitsize <= dict->size * 8);
-    assert(*poffset == 0);
+    assert(8 * dict->size == *pfield_size);
 
     // We need to fit within alignment and within size.
     // But we only really care about size, when we have a bitfield.
+    self->offset = *poffset - (*pfield_size) / 8;
     if(is_bitfield) {
-        self->offset = round_down(*pbitofs, 8*dict->size) / 8;
-        Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
-        self->size = (bitsize << 16 ) + effective_bitsof;
+        self->size = (bitsize << 16 ) + (*pfield_size + *pbitofs);
         assert(dict->size == dict->align);
-        assert(effective_bitsof <= dict->size * 8);
     } else {
-        self->offset = round_down(*pbitofs, 8*align) / 8;
         self->size = dict->size;
     }
+    assert(*pfield_size + *pbitofs <= dict->size * 8);
 
     *pbitofs += bitsize;
-    *psize = round_up(*pbitofs, 8) / 8;
+    *psize = *poffset;
     *palign = align;
 
     assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
