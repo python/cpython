@@ -184,13 +184,13 @@ class SubprocessMixin:
             self.assertEqual(-signal.SIGKILL, returncode)
 
     def test_kill_issue43884(self):
-        import subprocess
         blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(100000000)"'
         creationflags = 0
         if sys.platform == 'win32':
+            from subprocess import CREATE_NEW_PROCESS_GROUP
             # On windows create a new process group so that killing process
             # kills the process and all its children.
-            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+            creationflags = CREATE_NEW_PROCESS_GROUP
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
             creationflags=creationflags)
@@ -198,7 +198,8 @@ class SubprocessMixin:
         self.loop.run_until_complete(asyncio.sleep(1))
         if sys.platform == 'win32':
             proc.send_signal(signal.CTRL_BREAK_EVENT)
-        proc.kill()
+        else:
+            proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
         if sys.platform == 'win32':
             self.assertIsInstance(returncode, int)
