@@ -980,13 +980,8 @@ class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
             wr.close()
             await wr.wait_closed()
 
-        messages = []
-        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-
         with test_utils.run_test_server() as httpd:
             await inner(httpd)
-
-        self.assertEqual(messages, [])
 
     async def test_async_writer_api_exception_after_close(self):
         async def inner(httpd):
