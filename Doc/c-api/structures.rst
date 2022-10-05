@@ -99,7 +99,7 @@ the definition of all other Python objects.
 
    Return a :term:`borrowed reference`.
 
-   The :c:func:`Py_SET_TYPE` function must be used to set an object type.
+   Use the :c:func:`Py_SET_TYPE` function to set an object type.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
@@ -137,7 +137,7 @@ the definition of all other Python objects.
 
    Get the size of the Python object *o*.
 
-   The :c:func:`Py_SET_SIZE` function must be used to set an object size.
+   Use the :c:func:`Py_SET_SIZE` function to set an object size.
 
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
