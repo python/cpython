@@ -997,13 +997,8 @@ class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
                 wr.write(b'data')
                 await wr.drain()
 
-        messages = []
-        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-
         with test_utils.run_test_server() as httpd:
             await inner(httpd)
-
-        self.assertEqual(messages, [])
 
     async def test_eof_feed_when_closing_writer(self):
         # See http://bugs.python.org/issue35065
