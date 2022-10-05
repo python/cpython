@@ -59,14 +59,14 @@ static const int16_t seg_uend[8] = {
 static int16_t
 search(int16_t val, const int16_t *table, int size)
 {
+    assert(0 <= size);
+    assert(size < INT16_MAX);
     int i;
 
     for (i = 0; i < size; i++) {
         if (val <= *table++)
             return (i);
     }
-    assert(0 <= size);
-    assert(size < INT16_MAX);
     return (size);
 }
 #define st_ulaw2linear16(uc) (_st_ulaw2linear16[uc])
