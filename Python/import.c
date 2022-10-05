@@ -1573,7 +1573,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                 goto error;
             }
             else if (equal == 0) {
-                if (PyErr_WarnEx(PyExc_ImportWarning,
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
                         "__package__ != __spec__.parent", 1) < 0) {
                     goto error;
                 }

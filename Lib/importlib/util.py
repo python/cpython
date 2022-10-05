@@ -141,26 +141,6 @@ def _module_to_load(name):
         module.__initializing__ = False
 
 
-def set_package(fxn):
-    """Set __package__ on the returned module.
-
-    This function is deprecated.
-
-    """
-    @functools.wraps(fxn)
-    def set_package_wrapper(*args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically; '
-                      'this decorator is slated for removal in Python 3.12',
-                      DeprecationWarning, stacklevel=2)
-        module = fxn(*args, **kwargs)
-        if getattr(module, '__package__', None) is None:
-            module.__package__ = module.__name__
-            if not hasattr(module, '__path__'):
-                module.__package__ = module.__package__.rpartition('.')[0]
-        return module
-    return set_package_wrapper
-
-
 def set_loader(fxn):
     """Set __loader__ on the returned module.
 
