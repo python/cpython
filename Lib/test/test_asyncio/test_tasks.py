@@ -521,7 +521,7 @@ class BaseTaskTests:
         finally:
             loop.close()
 
-    def test_uncancel(self):
+    def test_uncancel_basic(self):
         loop = asyncio.new_event_loop()
 
         async def task():
@@ -534,16 +534,136 @@ class BaseTaskTests:
         try:
             t = self.new_task(loop, task())
             loop.run_until_complete(asyncio.sleep(0.01))
-            self.assertTrue(t.cancel())  # Cancel first sleep
-            self.assertIn(" cancelling ", repr(t))
-            loop.run_until_complete(asyncio.sleep(0.01))
-            self.assertNotIn(" cancelling ", repr(t))  # after .uncancel()
-            self.assertTrue(t.cancel())  # Cancel second sleep
 
+            # Cancel first sleep
+            self.assertTrue(t.cancel())
+            self.assertIn(" cancelling ", repr(t))
+            self.assertEqual(t.cancelling(), 1)
+            self.assertFalse(t.cancelled())  # Task is still not complete
+            loop.run_until_complete(asyncio.sleep(0.01))
+
+            # after .uncancel()
+            self.assertNotIn(" cancelling ", repr(t))
+            self.assertEqual(t.cancelling(), 0)
+            self.assertFalse(t.cancelled())  # Task is still not complete
+
+            # Cancel second sleep
+            self.assertTrue(t.cancel())
+            self.assertEqual(t.cancelling(), 1)
+            self.assertFalse(t.cancelled())  # Task is still not complete
             with self.assertRaises(asyncio.CancelledError):
                 loop.run_until_complete(t)
+            self.assertTrue(t.cancelled())  # Finally, task complete
+            self.assertTrue(t.done())
+
+            # uncancel is no longer effective after the task is complete
+            t.uncancel()
+            self.assertTrue(t.cancelled())
+            self.assertTrue(t.done())
         finally:
             loop.close()
+
+    def test_uncancel_structured_blocks(self):
+        # This test recreates the following high-level structure using uncancel()::
+        #
+        #     async def make_request_with_timeout():
+        #         try:
+        #             async with asyncio.timeout(1):
+        #                 # Structured block affected by the timeout:
+        #                 await make_request()
+        #                 await make_another_request()
+        #         except TimeoutError:
+        #             pass  # There was a timeout
+        #         # Outer code not affected by the timeout:
+        #         await unrelated_code()
+
+        loop = asyncio.new_event_loop()
+
+        async def make_request_with_timeout(*, sleep: float, timeout: float):
+            task = asyncio.current_task()
+            loop = task.get_loop()
+
+            timed_out = False
+            structured_block_finished = False
+            outer_code_reached = False
+
+            def on_timeout():
+                nonlocal timed_out
+                timed_out = True
+                task.cancel()
+
+            timeout_handle = loop.call_later(timeout, on_timeout)
+            try:
+                try:
+                    # Structured block affected by the timeout
+                    await asyncio.sleep(sleep)
+                    structured_block_finished = True
+                finally:
+                    timeout_handle.cancel()
+                    if (
+                        timed_out
+                        and task.uncancel() == 0
+                        and sys.exc_info()[0] is asyncio.CancelledError
+                    ):
+                        # Note the five rules that are needed here to satisfy proper
+                        # uncancellation:
+                        #
+                        # 1. handle uncancellation in a `finally:` block to allow for
+                        #    plain returns;
+                        # 2. our `timed_out` flag is set, meaning that it was our event
+                        #    that triggered the need to uncancel the task, regardless of
+                        #    what exception is raised;
+                        # 3. we can call `uncancel()` because *we* called `cancel()`
+                        #    before;
+                        # 4. we call `uncancel()` but we only continue converting the
+                        #    CancelledError to TimeoutError if `uncancel()` caused the
+                        #    cancellation request count go down to 0.  We need to look
+                        #    at the counter vs having a simple boolean flag because our
+                        #    code might have been nested (think multiple timeouts). See
+                        #    commit 7fce1063b6e5a366f8504e039a8ccdd6944625cd for
+                        #    details.
+                        # 5. we only convert CancelledError to TimeoutError; for other
+                        #    exceptions raised due to the cancellation (like
+                        #    a ConnectionLostError from a database client), simply
+                        #    propagate them.
+                        #
+                        # Those checks need to take place in this exact order to make
+                        # sure the `cancelling()` counter always stays in sync.
+                        #
+                        # Additionally, the original stimulus to `cancel()` the task
+                        # needs to be unscheduled to avoid re-cancelling the task later.
+                        # Here we do it by cancelling `timeout_handle` in the `finally:`
+                        # block.
+                        raise TimeoutError
+            except TimeoutError:
+                self.assertTrue(timed_out)
+
+            # Outer code not affected by the timeout:
+            outer_code_reached = True
+            await asyncio.sleep(0)
+            return timed_out, structured_block_finished, outer_code_reached
+
+        # Test which timed out.
+        t1 = self.new_task(loop, make_request_with_timeout(sleep=10.0, timeout=0.1))
+        timed_out, structured_block_finished, outer_code_reached = (
+            loop.run_until_complete(t1)
+        )
+        self.assertTrue(timed_out)
+        self.assertFalse(structured_block_finished)  # it was cancelled
+        self.assertTrue(outer_code_reached)  # task got uncancelled after leaving
+                                             # the structured block and continued until
+                                             # completion
+        self.assertEqual(t1.cancelling(), 0) # no pending cancellation of the outer task
+
+        # Test which did not time out.
+        t2 = self.new_task(loop, make_request_with_timeout(sleep=0, timeout=10.0))
+        timed_out, structured_block_finished, outer_code_reached = (
+            loop.run_until_complete(t2)
+        )
+        self.assertFalse(timed_out)
+        self.assertTrue(structured_block_finished)
+        self.assertTrue(outer_code_reached)
+        self.assertEqual(t2.cancelling(), 0)
 
     def test_cancel(self):
 
