@@ -1,0 +1,4 @@
+Optimizing interpreters and JIT compilers may need to invalidate internal
+metadata when functions are modified. This change adds the ability to
+provide a callback that will be invoked each time a function is created,
+modified, or destroyed.
