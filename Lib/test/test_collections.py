@@ -1948,6 +1948,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [str, list, tuple]:
             self.assertNotIsInstance(sample(), Buffer)
             self.assertFalse(issubclass(sample, Buffer))
+        self.validate_abstract_methods(Buffer, '__buffer__')
 
     def test_MutableBuffer(self):
         for sample in [bytearray, memoryview]:
@@ -1956,6 +1957,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [bytes, str, list, tuple]:
             self.assertNotIsInstance(sample(), MutableBuffer)
             self.assertFalse(issubclass(sample, MutableBuffer))
+        self.validate_abstract_methods(MutableBuffer, '__buffer__', '__release_buffer__')
 
     def test_MutableSequence(self):
         for sample in [tuple, str, bytes]:
