@@ -1372,6 +1372,7 @@ class ExceptionTests(unittest.TestCase):
         code = """if 1:
             import sys
             from _testinternalcapi import get_recursion_depth
+            from test import support
 
             class MyException(Exception): pass
 
@@ -1399,13 +1400,8 @@ class ExceptionTests(unittest.TestCase):
             generator = gen()
             next(generator)
             recursionlimit = sys.getrecursionlimit()
-            depth = get_recursion_depth()
             try:
-                # Upon the last recursive invocation of recurse(),
-                # tstate->recursion_depth is equal to (recursion_limit - 1)
-                # and is equal to recursion_limit when _gen_throw() calls
-                # PyErr_NormalizeException().
-                recurse(setrecursionlimit(depth + 2) - depth)
+                recurse(support.EXCEEDS_RECURSION_LIMIT)
             finally:
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')
