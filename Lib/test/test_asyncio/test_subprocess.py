@@ -198,8 +198,8 @@ class SubprocessMixin:
         self.loop.run_until_complete(asyncio.sleep(1))
         if sys.platform == 'win32':
             proc.send_signal(signal.CTRL_BREAK_EVENT)
-        else:
-            proc.kill()
+        # On windows it is an alias of terminate which sets the return code
+        proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
         if sys.platform == 'win32':
             self.assertIsInstance(returncode, int)
