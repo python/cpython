@@ -1073,7 +1073,7 @@ _dawg_match_edge(const char* name, int namelen, unsigned int size, int label_off
         return 0;
     }
     for (unsigned int i = 0; i < size; i++) {
-        if (packed_name_dawg[label_offset + i] != name[namepos + i]) {
+        if (packed_name_dawg[label_offset + i] != Py_TOUPPER(name[namepos + i])) {
             if (i > 0) {
                 return -1; // cannot match at all
             }
