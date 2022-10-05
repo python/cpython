@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
-#include "pycore_code.h"         // stats
+#include "pycore_code.h"          // stats
+#include "pycore_pystate.h"       // _PyInterpreterState_GET
 
 #include <stdbool.h>
 #include <stdlib.h>               // malloc()
@@ -700,12 +701,15 @@ _PyMem_Strdup(const char *str)
     return copy;
 }
 
+static PyInterpreterState *interp;
+
 void *
 PyObject_Malloc(size_t size)
 {
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
+    interp = _PyInterpreterState_GET();
     OBJECT_STAT_INC_COND(allocations512, size < 512);
     OBJECT_STAT_INC_COND(allocations4k, size >= 512 && size < 4094);
     OBJECT_STAT_INC_COND(allocations_big, size >= 4094);
