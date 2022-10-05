@@ -162,7 +162,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
-           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
+           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "TOP_LEVEL")
 
 _default_dict = dict
 DEFAULTSECT = "DEFAULT"
@@ -332,10 +332,15 @@ class MissingSectionHeaderError(ParsingError):
 class _UnnamedSection:
 
     def __repr__(self):
-        return "<UNNAMED_SECTION>"
+        return "<TOP_LEVEL>"
 
+    def __eq__(self, other):
+        return repr(self) == repr(other)
 
-UNNAMED_SECTION = _UnnamedSection()
+    def __hash__(self):
+        return hash(repr(self))
+
+TOP_LEVEL = _UnnamedSection()
 
 
 # Used in parser getters to indicate the default behaviour when a specific
@@ -599,8 +604,7 @@ class RawConfigParser(MutableMapping):
                  comment_prefixes=('#', ';'), inline_comment_prefixes=None,
                  strict=True, empty_lines_in_values=True,
                  default_section=DEFAULTSECT,
-                 interpolation=_UNSET, converters=_UNSET,
-                 allow_unnamed_section=False):
+                 interpolation=_UNSET, converters=_UNSET):
 
         self._dict = dict_type
         self._sections = self._dict()
@@ -639,7 +643,6 @@ class RawConfigParser(MutableMapping):
             self._converters.update(converters)
         if defaults:
             self._read_defaults(defaults)
-        self._allow_unnamed_section = allow_unnamed_section
 
     def defaults(self):
         return self._defaults
@@ -910,21 +913,16 @@ class RawConfigParser(MutableMapping):
             d = " {} ".format(self._delimiters[0])
         else:
             d = self._delimiters[0]
-        if UNNAMED_SECTION in self._sections:
-            self._write_section(fp, UNNAMED_SECTION,
-                                self._sections[UNNAMED_SECTION].items(), d)
         if self._defaults:
             self._write_section(fp, self.default_section,
                                     self._defaults.items(), d)
         for section in self._sections:
-            if section is UNNAMED_SECTION:
-                continue
             self._write_section(fp, section,
                                 self._sections[section].items(), d)
 
     def _write_section(self, fp, section_name, section_items, delimiter):
         """Write a single section to the specified `fp'."""
-        if section_name is not UNNAMED_SECTION:
+        if section_name is not TOP_LEVEL:
             fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
             value = self._interpolation.before_write(self, section_name, key,
@@ -1061,12 +1059,9 @@ class RawConfigParser(MutableMapping):
                 cursect[optname].append(value)
             # a section header or option header?
             else:
-                if self._allow_unnamed_section and cursect is None:
-                    sectname = UNNAMED_SECTION
-                    cursect = self._dict()
-                    self._sections[sectname] = cursect
-                    self._proxies[sectname] = SectionProxy(self, sectname)
-                    elements_added.add(sectname)
+                if self.default_section is TOP_LEVEL and cursect is None:
+                    sectname = TOP_LEVEL
+                    cursect = self._defaults
 
                 indent_level = cur_indent_level
                 # is it a section header?
@@ -1118,12 +1113,6 @@ class RawConfigParser(MutableMapping):
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         e = self._handle_error(e, fpname, lineno, line)
-
-        # delete UNNAMED_SECTION if it's empty
-        if (UNNAMED_SECTION in self._sections and not
-                self._sections[UNNAMED_SECTION]):
-            del self._sections[UNNAMED_SECTION]
-            del self._proxies[UNNAMED_SECTION]
 
         self._join_multiline_values()
         # if any parsing errors occurred, raise an exception
