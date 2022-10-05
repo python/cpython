@@ -426,6 +426,11 @@ Removed
   Validation.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
+* Many previously deprecated cleanups in :mod:`importlib` have now been
+  completed:
+
+  * References to, and support for ``module_repr()`` has been eradicated.
+
 
 Porting to Python 3.12
 ======================
