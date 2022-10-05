@@ -279,24 +279,29 @@ class BitFieldTest(unittest.TestCase):
                 ]
         self.assertEqual(sizeof(Foo), sizeof(Bar))
 
-    @unittest.skipIf(sys.platform == 'win32', "Doesn't work on Windows, yet")
     def test_mixed_9(self):
         class X(Structure):
             _fields_ = [
                 ("A", c_uint8),
                 ("B", c_uint, 1),
                 ]
-        self.assertEqual(4, sizeof(X))
+        if sys.platform == 'win32':
+            self.assertEqual(sizeof(X), 8)
+        else:
+            self.assertEqual(4, sizeof(X))
 
-    @unittest.skipIf(sys.platform == 'win32', "Doesn't work on Windows, yet")
     def test_mixed_10(self):
         class X(Structure):
             _fields_ = [
                 ("A", c_uint32, 1),
                 ("B", c_uint64, 1),
                 ]
-        self.assertEqual(8, alignment(X))
-        self.assertEqual(8, sizeof(X))
+        if sys.platform == 'win32':
+            self.assertEqual(16, alignment(X))
+            self.assertEqual(16, sizeof(X))
+        else:
+            self.assertEqual(8, alignment(X))
+            self.assertEqual(8, sizeof(X))
 
     def test_anon_bitfields(self):
         # anonymous bit-fields gave a strange error message
