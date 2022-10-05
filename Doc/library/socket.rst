@@ -1612,7 +1612,7 @@ to sockets.
    ancillary data, items of the form ``(socket.SOL_SOCKET,
    socket.SCM_RIGHTS, fds)``, where *fds* is a :class:`bytes` object
    representing the new file descriptors as a binary array of the
-   native C :c:type:`int` type.  If :meth:`recvmsg` raises an
+   native C :c:expr:`int` type.  If :meth:`recvmsg` raises an
    exception after the system call returns, it will first attempt to
    close any file descriptors received via this mechanism.
 
