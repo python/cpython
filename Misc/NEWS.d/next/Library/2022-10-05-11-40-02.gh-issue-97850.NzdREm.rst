@@ -1,0 +1,3 @@
+Remove deprecated :func:`importlib.utils.set_loader`,
+:func:`importlib.utils.set_package`, and
+:func:`importlib.utils.module_for_loader` from :mod:`importlib.utils`.
