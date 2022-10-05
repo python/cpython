@@ -133,12 +133,14 @@ static void destroy_gil(struct _gil_runtime_state *gil)
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
 }
 
+#ifdef HAVE_FORK
 static void recreate_gil(struct _gil_runtime_state *gil)
 {
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
     /* XXX should we destroy the old OS resources here? */
     create_gil(gil);
 }
+#endif
 
 static void
 drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
