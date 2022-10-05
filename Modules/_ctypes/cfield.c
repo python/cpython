@@ -198,13 +198,13 @@ PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
         bitsize = 8 * dict->size; // might still be 0 afterwards.
     }
 
-    Py_ssize_t align = dict->align;;
+    *palign = dict->align;
 
     if ((bitsize > 0)
-         && (round_down(*pbitofs, 8 * align)
-            < round_down(*pbitofs + bitsize - 1, 8 * align))) {
+         && (round_down(*pbitofs, 8 * dict->align)
+            < round_down(*pbitofs + bitsize - 1, 8 * dict->align))) {
         // We would be straddling alignment units.
-        *pbitofs = round_up(*pbitofs, 8*align);
+        *pbitofs = round_up(*pbitofs, 8*dict->align);
     }
 
     assert(bitsize <= dict->size * 8);
@@ -219,13 +219,12 @@ PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
         assert(dict->size == dict->align);
         assert(effective_bitsof <= dict->size * 8);
     } else {
-        self->offset = round_down(*pbitofs, 8*align) / 8;
+        self->offset = round_down(*pbitofs, 8*dict->align) / 8;
         self->size = dict->size;
     }
 
     *pbitofs += bitsize;
     *psize = round_up(*pbitofs, 8) / 8;
-    *palign = align;
 
     assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
     return (PyObject *)self;
