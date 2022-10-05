@@ -68,6 +68,32 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(repr_output, expected_output)
 
+    def test_dataclass_params_repr(self):
+        # Even though this is testing an internal implementation detail,
+        # it's testing a feature we want to make sure is correctly implemented
+        # for the sake of dataclasses itself
+        @dataclass(slots=True, frozen=True)
+        class Some: pass
+
+        repr_output = repr(Some.__dataclass_params__)
+        expected_output = "_DataclassParams(init=True,repr=True," \
+                          "eq=True,order=False,unsafe_hash=False,frozen=True," \
+                          "match_args=True,kw_only=False," \
+                          "slots=True,weakref_slot=False)"
+        self.assertEqual(repr_output, expected_output)
+
+    def test_dataclass_params_signature(self):
+        # Even though this is testing an internal implementation detail,
+        # it's testing a feature we want to make sure is correctly implemented
+        # for the sake of dataclasses itself
+        @dataclass
+        class Some: pass
+
+        for param in inspect.signature(dataclass).parameters:
+            if param == 'cls':
+                continue
+            self.assertTrue(hasattr(Some.__dataclass_params__, param), msg=param)
+
     def test_named_init_params(self):
         @dataclass
         class C:

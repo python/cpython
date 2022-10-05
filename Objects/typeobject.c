@@ -5824,11 +5824,13 @@ object.__format__
   /
 
 Default object formatter.
+
+Return str(self) if format_spec is empty. Raise TypeError otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 object___format___impl(PyObject *self, PyObject *format_spec)
-/*[clinic end generated code: output=34897efb543a974b input=7c3b3bc53a6fb7fa]*/
+/*[clinic end generated code: output=34897efb543a974b input=b94d8feb006689ea]*/
 {
     /* Issue 7994: If we're converting to a string, we
        should reject format specifications */

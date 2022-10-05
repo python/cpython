@@ -638,10 +638,20 @@ PyCode_New(int argcount, int kwonlyargcount,
                                      exceptiontable);
 }
 
-static const char assert0[6] = {
+// NOTE: When modifying the construction of PyCode_NewEmpty, please also change
+// test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
+
+static const uint8_t assert0[6] = {
     RESUME, 0,
     LOAD_ASSERTION_ERROR, 0,
     RAISE_VARARGS, 1
+};
+
+static const uint8_t linetable[2] = {
+    (1 << 7)  // New entry.
+    | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
+    | (3 - 1),  // Three code units.
+    0,  // Offset from co_firstlineno.
 };
 
 PyCodeObject *
@@ -651,6 +661,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyObject *code_ob = NULL;
+    PyObject *linetable_ob = NULL;
     PyCodeObject *result = NULL;
 
     nulltuple = PyTuple_New(0);
@@ -665,8 +676,12 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL) {
         goto failed;
     }
-    code_ob = PyBytes_FromStringAndSize(assert0, 6);
+    code_ob = PyBytes_FromStringAndSize((const char *)assert0, 6);
     if (code_ob == NULL) {
+        goto failed;
+    }
+    linetable_ob = PyBytes_FromStringAndSize((const char *)linetable, 2);
+    if (linetable_ob == NULL) {
         goto failed;
     }
 
@@ -677,7 +692,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         .qualname = funcname_ob,
         .code = code_ob,
         .firstlineno = firstlineno,
-        .linetable = emptystring,
+        .linetable = linetable_ob,
         .consts = nulltuple,
         .names = nulltuple,
         .localsplusnames = nulltuple,
@@ -692,6 +707,7 @@ failed:
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);
     Py_XDECREF(code_ob);
+    Py_XDECREF(linetable_ob);
     return result;
 }
 
@@ -1009,33 +1025,6 @@ _PyLineTable_NextAddressRange(PyCodeAddressRange *range)
     advance(range);
     assert(range->ar_end > range->ar_start);
     return 1;
-}
-
-int
-_PyLineTable_StartsLine(PyCodeAddressRange *range)
-{
-    if (range->ar_start <= 0) {
-        return 0;
-    }
-    const uint8_t *ptr = range->opaque.lo_next;
-    do {
-        ptr--;
-    } while (((*ptr) & 128) == 0);
-    int code = ((*ptr)>> 3) & 15;
-    switch(code) {
-        case PY_CODE_LOCATION_INFO_LONG:
-            return 0;
-        case PY_CODE_LOCATION_INFO_NO_COLUMNS:
-        case PY_CODE_LOCATION_INFO_NONE:
-            return ptr[1] != 0;
-        case PY_CODE_LOCATION_INFO_ONE_LINE0:
-            return 0;
-        case PY_CODE_LOCATION_INFO_ONE_LINE1:
-        case PY_CODE_LOCATION_INFO_ONE_LINE2:
-            return 1;
-        default:
-            return 0;
-    }
 }
 
 static int

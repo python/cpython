@@ -148,6 +148,11 @@ unicodedata
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
 
+tempfile
+--------
+
+The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+*delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
 Optimizations
 =============
@@ -168,6 +173,20 @@ CPython bytecode changes
   :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
   :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
   (Contributed by Ken Jin in :gh:`93429`.)
+
+
+Demos and Tools
+===============
+
+* Remove the ``Tools/demo/`` directory which contained old demo scripts. A copy
+  can be found in the `old-demos project
+  <https://github.com/gvanrossum/old-demos>`_.
+  (Contributed by Victor Stinner in :gh:`97681`.)
+
+* Remove outdated example scripts of the ``Tools/scripts/`` directory.
+  A copy can be found in the `old-demos project
+  <https://github.com/gvanrossum/old-demos>`_.
+  (Contributed by Victor Stinner in :gh:`97669`.)
 
 
 Deprecated
