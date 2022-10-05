@@ -510,3 +510,7 @@ Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
 
 PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
 PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);
+
+typedef void(*PyType_ModifiedCallback)(PyTypeObject *);
+PyAPI_FUNC(void) PyType_SetModifiedCallback(PyType_ModifiedCallback callback);
+PyAPI_FUNC(PyType_ModifiedCallback) PyType_GetModifiedCallback(void);

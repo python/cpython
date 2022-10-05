@@ -288,9 +288,6 @@ PyAPI_FUNC(PyObject *) PyType_GenericNew(PyTypeObject *,
                                                PyObject *, PyObject *);
 PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
 PyAPI_FUNC(void) PyType_Modified(PyTypeObject *);
-typedef void(*PyType_ModifiedCallback)(PyTypeObject *);
-PyAPI_FUNC(void) PyType_SetModifiedCallback(PyType_ModifiedCallback callback);
-PyAPI_FUNC(PyType_ModifiedCallback) PyType_GetModifiedCallback(void);
 
 /* Generic operations on objects */
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
