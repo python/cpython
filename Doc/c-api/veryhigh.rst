@@ -82,7 +82,7 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_SimpleString(const char *command)
 
    This is a simplified interface to :c:func:`PyRun_SimpleStringFlags` below,
-   leaving the :c:type:`PyCompilerFlags`\* argument set to ``NULL``.
+   leaving the :c:struct:`PyCompilerFlags`\* argument set to ``NULL``.
 
 
 .. c:function:: int PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
@@ -338,7 +338,7 @@ the same library that the Python runtime is using.
    interpreter loop.
 
 
-.. c:type:: struct PyCompilerFlags
+.. c:struct:: PyCompilerFlags
 
    This is the structure used to hold compiler flags.  In cases where code is only
    being compiled, it is passed as ``int flags``, and in cases where code is being
