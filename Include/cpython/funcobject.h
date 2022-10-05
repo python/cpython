@@ -164,6 +164,8 @@ typedef void(*PyFunction_EventCallback)(
 /*
  * Set the callback that will be invoked for function lifecycle events.
  *
+ * This must only be called after the runtime has been initialized.
+ *
  * Pass NULL to clear the callback.
  */
 PyAPI_FUNC(void) PyFunction_SetEventCallback(PyFunction_EventCallback callback);

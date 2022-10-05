@@ -132,6 +132,8 @@ typedef struct pyruntimestate {
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_global_objects global_objects;
 
+    PyFunction_EventCallback func_event_callback;
+
     /* The following fields are here to avoid allocation during init.
        The data is exposed through _PyRuntimeState pointer fields.
        These fields should not be accessed directly outside of init.

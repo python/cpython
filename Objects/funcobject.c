@@ -9,27 +9,28 @@
 
 static uint32_t next_func_version = 1;
 
-static PyFunction_EventCallback func_event_callback = NULL;
-
 static void
 handle_func_event(PyFunction_Event event, PyFunctionObject *func, PyObject *new_value)
 {
-    if (func_event_callback == NULL) {
+    PyFunction_EventCallback handle_event = _PyRuntime.func_event_callback;
+    if (handle_event == NULL) {
         return;
     }
-    func_event_callback(event, func, new_value);
+    handle_event(event, func, new_value);
 }
 
 void
 PyFunction_SetEventCallback(PyFunction_EventCallback callback)
 {
-    func_event_callback = callback;
+    assert(_PyRuntime.initialized);
+    _PyRuntime.func_event_callback = callback;
 }
 
 PyFunction_EventCallback
 PyFunction_GetEventCallback()
 {
-    return func_event_callback;
+    assert(_PyRuntime.initialized);
+    return _PyRuntime.func_event_callback;
 }
 
 PyFunctionObject *
