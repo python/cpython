@@ -130,7 +130,7 @@ role_with_no_backticks = re.compile(r"%s[^` ]" % all_roles)
 
 # Find role glued with another word like:
 # the:c:func:`PyThreadState_LeaveTracing` function.
-# instad of:
+# instead of:
 # the :c:func:`PyThreadState_LeaveTracing` function.
 role_glued_with_word = re.compile(r"[a-zA-Z]%s" % all_roles)
 
@@ -344,6 +344,11 @@ Options:  -v       verbose (print all checked file names)
         return 2
 
     count = defaultdict(int)
+
+    print("""⚠ rstlint.py is no longer maintained here and will be removed
+⚠ in a future release.
+⚠ Please use https://pypi.org/p/sphinx-lint instead.
+""")
 
     for root, dirs, files in os.walk(path):
         # ignore subdirs in ignore list

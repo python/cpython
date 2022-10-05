@@ -1,15 +1,19 @@
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "frameobject.h"
+#include "pycore_code.h"          // stats
 #include "pycore_frame.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "opcode.h"
 
 int
-_PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
+_PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_func);
+    Py_VISIT(frame->f_funcobj);
     Py_VISIT(frame->f_code);
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
@@ -22,7 +26,7 @@ _PyFrame_Traverse(InterpreterFrame *frame, visitproc visit, void *arg)
 }
 
 PyFrameObject *
-_PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
+_PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 {
     assert(frame->frame_obj == NULL);
     PyObject *error_type, *error_value, *error_traceback;
@@ -35,7 +39,8 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
         Py_XDECREF(error_traceback);
     }
     else {
-        f->f_owns_frame = 0;
+        assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
+        assert(frame->owner != FRAME_CLEARED);
         f->f_frame = frame;
         frame->frame_obj = f;
         PyErr_Restore(error_type, error_value, error_traceback);
@@ -44,36 +49,42 @@ _PyFrame_MakeAndSetFrameObject(InterpreterFrame *frame)
 }
 
 void
-_PyFrame_Copy(InterpreterFrame *src, InterpreterFrame *dest)
+_PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
     assert(src->stacktop >= src->f_code->co_nlocalsplus);
     Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
     memcpy(dest, src, size);
+    // Don't leave a dangling pointer to the old frame when creating generators
+    // and coroutines:
+    dest->previous = NULL;
 }
 
-static inline void
-clear_specials(InterpreterFrame *frame)
-{
-    frame->generator = NULL;
-    Py_XDECREF(frame->frame_obj);
-    Py_XDECREF(frame->f_locals);
-    Py_DECREF(frame->f_func);
-    Py_DECREF(frame->f_code);
-}
 
 static void
-take_ownership(PyFrameObject *f, InterpreterFrame *frame)
+take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
-    assert(f->f_owns_frame == 0);
+    assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
+    assert(frame->owner != FRAME_CLEARED);
     Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
-    memcpy((InterpreterFrame *)f->_f_frame_data, frame, size);
-    frame = (InterpreterFrame *)f->_f_frame_data;
-    f->f_owns_frame = 1;
+    memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
+    frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame = frame;
+    frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    if (_PyFrame_IsIncomplete(frame)) {
+        // This may be a newly-created generator or coroutine frame. Since it's
+        // dead anyways, just pretend that the first RESUME ran:
+        PyCodeObject *code = frame->f_code;
+        frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
+    }
+    assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
-    if (frame->previous != NULL) {
-        /* Link PyFrameObjects.f_back and remove link through InterpreterFrame.previous */
-        PyFrameObject *back = _PyFrame_GetFrameObject(frame->previous);
+    _PyInterpreterFrame *prev = frame->previous;
+    while (prev && _PyFrame_IsIncomplete(prev)) {
+        prev = prev->previous;
+    }
+    if (prev) {
+        /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
+        PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
             /* Memory error here. */
             assert(PyErr_ExceptionMatches(PyExc_MemoryError));
@@ -91,11 +102,12 @@ take_ownership(PyFrameObject *f, InterpreterFrame *frame)
 }
 
 void
-_PyFrame_Clear(InterpreterFrame * frame)
+_PyFrame_Clear(_PyInterpreterFrame *frame)
 {
     /* It is the responsibility of the owning generator/coroutine
-     * to have cleared the generator pointer */
-    assert(frame->generator == NULL);
+     * to have cleared the enclosing generator, if any. */
+    assert(frame->owner != FRAME_OWNED_BY_GENERATOR ||
+        _PyFrame_GetGenerator(frame)->gi_frame_state == FRAME_CLEARED);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
@@ -110,5 +122,15 @@ _PyFrame_Clear(InterpreterFrame * frame)
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
-    clear_specials(frame);
+    Py_XDECREF(frame->frame_obj);
+    Py_XDECREF(frame->f_locals);
+    Py_DECREF(frame->f_funcobj);
+    Py_DECREF(frame->f_code);
+}
+
+int
+_PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame)
+{
+    int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+    return PyCode_Addr2Line(frame->f_code, addr);
 }

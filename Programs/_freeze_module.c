@@ -11,6 +11,7 @@
 
 #include <Python.h>
 #include <marshal.h>
+#include "pycore_fileutils.h"     // _Py_stat_struct
 #include <pycore_import.h>
 
 #include <stdio.h>
@@ -20,6 +21,17 @@
 #ifndef MS_WINDOWS
 #include <unistd.h>
 #endif
+
+/* Empty initializer for deepfrozen modules */
+int _Py_Deepfreeze_Init(void)
+{
+    return 0;
+}
+/* Empty finalizer for deepfrozen modules */
+void
+_Py_Deepfreeze_Fini(void)
+{
+}
 
 /* To avoid a circular dependency on frozen.o, we create our own structure
    of frozen modules instead, left deliberately blank so as to avoid
@@ -234,3 +246,4 @@ error:
     Py_Finalize();
     return 1;
 }
+

@@ -1,1 +1,0 @@
-Fix the regression of os.path.normpath("A/../../B") not returning expected "../B" but "B".

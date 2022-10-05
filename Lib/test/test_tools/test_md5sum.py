@@ -1,6 +1,5 @@
 """Tests for the md5sum script in the Tools directory."""
 
-import sys
 import os
 import unittest
 from test.support import os_helper
@@ -11,7 +10,7 @@ from test.test_tools import scriptsdir, skip_if_missing
 
 skip_if_missing()
 
-@hashlib_helper.requires_hashdigest('md5')
+@hashlib_helper.requires_hashdigest('md5', openssl=True)
 class MD5SumTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

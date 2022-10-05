@@ -10,6 +10,7 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 
+@support.requires_subprocess()
 class TestTool(unittest.TestCase):
     data = """
 

@@ -1,2 +1,0 @@
-Improve error message when importing :mod:`asyncio.windows_events` on
-non-Windows.

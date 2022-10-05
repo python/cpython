@@ -1,2 +1,0 @@
-Removed parameter that is unsupported on Windows 8.1 and early Windows 10
-and may have caused build or runtime failures.

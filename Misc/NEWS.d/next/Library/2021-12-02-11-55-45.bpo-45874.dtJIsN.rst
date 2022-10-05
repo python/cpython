@@ -1,3 +1,0 @@
-The empty query string, consisting of no query arguments, is now handled
-correctly in ``urllib.parse.parse_qsl``. This caused problems before when
-strict parsing was enabled.

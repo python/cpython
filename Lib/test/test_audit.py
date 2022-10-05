@@ -16,9 +16,11 @@ AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):
+
+    @support.requires_subprocess()
     def do_test(self, *args):
         with subprocess.Popen(
-            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -29,10 +31,11 @@ class AuditTest(unittest.TestCase):
             if p.returncode:
                 self.fail("".join(p.stderr))
 
+    @support.requires_subprocess()
     def run_python(self, *args):
         events = []
         with subprocess.Popen(
-            [sys.executable, "-Xutf8", AUDIT_TESTS_PY, *args],
+            [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -152,10 +155,7 @@ class AuditTest(unittest.TestCase):
 
 
     def test_sqlite3(self):
-        try:
-            import sqlite3
-        except ImportError:
-            return
+        sqlite3 = import_helper.import_module("sqlite3")
         returncode, events, stderr = self.run_python("test_sqlite3")
         if returncode:
             self.fail(stderr)
@@ -170,6 +170,33 @@ class AuditTest(unittest.TestCase):
                 "sqlite3.enable_load_extension",
                 "sqlite3.load_extension",
             ]
+        self.assertEqual(actual, expected)
+
+
+    def test_sys_getframe(self):
+        returncode, events, stderr = self.run_python("test_sys_getframe")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("sys._getframe", "test_sys_getframe")]
+
+        self.assertEqual(actual, expected)
+
+
+    def test_wmi_exec_query(self):
+        import_helper.import_module("_wmi")
+        returncode, events, stderr = self.run_python("test_wmi_exec_query")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_wmi.exec_query", "SELECT * FROM Win32_OperatingSystem")]
+
         self.assertEqual(actual, expected)
 
 

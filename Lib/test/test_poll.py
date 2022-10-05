@@ -7,7 +7,9 @@ import select
 import threading
 import time
 import unittest
-from test.support import cpython_only
+from test.support import (
+    cpython_only, requires_subprocess, requires_working_socket
+)
 from test.support import threading_helper
 from test.support.os_helper import TESTFN
 
@@ -17,6 +19,7 @@ try:
 except AttributeError:
     raise unittest.SkipTest("select.poll not defined")
 
+requires_working_socket(module=True)
 
 def find_ready_matching(ready, flag):
     match = []
@@ -120,12 +123,12 @@ class PollTests(unittest.TestCase):
     # Another test case for poll().  This is copied from the test case for
     # select(), modified to use poll() instead.
 
+    @requires_subprocess()
     def test_poll2(self):
         cmd = 'for i in 0 1 2 3 4 5 6 7 8 9; do echo testing...; sleep 1; done'
         proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                                 bufsize=0)
-        proc.__enter__()
-        self.addCleanup(proc.__exit__, None, None, None)
+        self.enterContext(proc)
         p = proc.stdout
         pollster = select.poll()
         pollster.register( p, select.POLLIN )

@@ -525,8 +525,6 @@ struct _odictnode {
 #define _odict_FOREACH(od, node) \
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
 
-_Py_IDENTIFIER(items);
-
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
 _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
@@ -949,31 +947,20 @@ PyDoc_STRVAR(odict_reduce__doc__, "Return state information for pickling");
 static PyObject *
 odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(__dict__);
-    PyObject *dict = NULL, *result = NULL;
+    PyObject *state, *result = NULL;
     PyObject *items_iter, *items, *args = NULL;
 
     /* capture any instance state */
-    dict = _PyObject_GetAttrId((PyObject *)od, &PyId___dict__);
-    if (dict == NULL)
+    state = _PyObject_GetState((PyObject *)od);
+    if (state == NULL)
         goto Done;
-    else {
-        /* od.__dict__ isn't necessarily a dict... */
-        Py_ssize_t dict_len = PyObject_Length(dict);
-        if (dict_len == -1)
-            goto Done;
-        if (!dict_len) {
-            /* nothing to pickle in od.__dict__ */
-            Py_CLEAR(dict);
-        }
-    }
 
     /* build the result */
     args = PyTuple_New(0);
     if (args == NULL)
         goto Done;
 
-    items = _PyObject_CallMethodIdNoArgs((PyObject *)od, &PyId_items);
+    items = PyObject_CallMethodNoArgs((PyObject *)od, &_Py_ID(items));
     if (items == NULL)
         goto Done;
 
@@ -982,11 +969,11 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (items_iter == NULL)
         goto Done;
 
-    result = PyTuple_Pack(5, Py_TYPE(od), args, dict ? dict : Py_None, Py_None, items_iter);
+    result = PyTuple_Pack(5, Py_TYPE(od), args, state, Py_None, items_iter);
     Py_DECREF(items_iter);
 
 Done:
-    Py_XDECREF(dict);
+    Py_XDECREF(state);
     Py_XDECREF(args);
 
     return result;
@@ -1330,7 +1317,7 @@ static PyMethodDef odict_methods[] = {
      odict_values__doc__},
     {"items",           odictitems_new,                 METH_NOARGS,
      odict_items__doc__},
-    {"update",          (PyCFunction)(void(*)(void))odict_update, METH_VARARGS | METH_KEYWORDS,
+    {"update",          _PyCFunction_CAST(odict_update), METH_VARARGS | METH_KEYWORDS,
      odict_update__doc__},
     {"clear",           (PyCFunction)odict_clear,       METH_NOARGS,
      odict_clear__doc__},
@@ -1431,8 +1418,8 @@ odict_repr(PyODictObject *self)
         }
     }
     else {
-        PyObject *items = _PyObject_CallMethodIdNoArgs((PyObject *)self,
-                                                       &PyId_items);
+        PyObject *items = PyObject_CallMethodNoArgs(
+                (PyObject *)self, &_Py_ID(items));
         if (items == NULL)
             goto Done;
         pieces = PySequence_List(items);
@@ -1808,7 +1795,6 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 static PyObject *
 odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     /* copy the iterator state */
     odictiterobject tmp = *di;
     Py_XINCREF(tmp.di_odict);
@@ -1821,7 +1807,7 @@ odictiter_reduce(odictiterobject *di, PyObject *Py_UNUSED(ignored))
     if (list == NULL) {
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltinId(&PyId_iter), list);
+    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
 }
 
 static PyMethodDef odictiter_methods[] = {
@@ -2217,9 +2203,8 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         Py_DECREF(items);
         return res;
     }
-    _Py_IDENTIFIER(keys);
     PyObject *func;
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, &_Py_ID(keys), &func) < 0) {
         return -1;
     }
     if (func != NULL) {
@@ -2251,7 +2236,7 @@ mutablemapping_update_arg(PyObject *self, PyObject *arg)
         }
         return 0;
     }
-    if (_PyObject_LookupAttrId(arg, &PyId_items, &func) < 0) {
+    if (_PyObject_LookupAttr(arg, &_Py_ID(items), &func) < 0) {
         return -1;
     }
     if (func != NULL) {

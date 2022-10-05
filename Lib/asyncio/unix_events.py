@@ -223,13 +223,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
-        self.call_soon_threadsafe(transp._process_exited, returncode)
+        # Skip one iteration for callbacks to be executed
+        self.call_soon_threadsafe(self.call_soon, transp._process_exited, returncode)
 
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
             ssl=None, sock=None,
             server_hostname=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -241,6 +243,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if ssl_handshake_timeout is not None:
                 raise ValueError(
                     'ssl_handshake_timeout is only meaningful with ssl')
+            if ssl_shutdown_timeout is not None:
+                raise ValueError(
+                    'ssl_shutdown_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -267,13 +272,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         return transport, protocol
 
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             start_serving=True):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
@@ -281,6 +288,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if ssl_handshake_timeout is not None and not ssl:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
+
+        if ssl_shutdown_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_shutdown_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -328,7 +339,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         sock.setblocking(False)
         server = base_events.Server(self, [sock], protocol_factory,
-                                    ssl, backlog, ssl_handshake_timeout)
+                                    ssl, backlog, ssl_handshake_timeout,
+                                    ssl_shutdown_timeout)
         if start_serving:
             server._start_serving()
             # Skip one loop iteration so that all 'loop.add_reader'

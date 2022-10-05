@@ -1,1 +1,0 @@
-Remove special-casing of ``__new__`` in :meth:`enum.Enum.__dir__`.

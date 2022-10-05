@@ -1,1 +1,0 @@
-A new directory ``Tools/wasm`` contains WebAssembly-related helpers like ``config.site`` override for wasm32-emscripten, wasm assets generator to bundle the stdlib, and a README.

@@ -1889,8 +1889,8 @@ class MathTests(unittest.TestCase):
         perm = math.perm
         factorial = math.factorial
         # Test if factorial definition is satisfied
-        for n in range(100):
-            for k in range(n + 1):
+        for n in range(500):
+            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
                 self.assertEqual(perm(n, k),
                                  factorial(n) // factorial(n - k))
 
@@ -1953,8 +1953,8 @@ class MathTests(unittest.TestCase):
         comb = math.comb
         factorial = math.factorial
         # Test if factorial definition is satisfied
-        for n in range(100):
-            for k in range(n + 1):
+        for n in range(500):
+            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
                 self.assertEqual(comb(n, k), factorial(n)
                     // (factorial(k) * factorial(n - k)))
 

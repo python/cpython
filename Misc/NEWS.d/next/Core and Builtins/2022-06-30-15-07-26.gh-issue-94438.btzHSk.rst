@@ -1,0 +1,2 @@
+Account for instructions that can push NULL to the stack when setting line
+number in a frame. Prevents some (unlikely) crashes.

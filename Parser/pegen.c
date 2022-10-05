@@ -1,5 +1,6 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <errcode.h>
 
 #include "tokenizer.h"
@@ -36,17 +37,6 @@ _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     Py_DECREF(text);
     return size;
 }
-
-#if 0
-static const char *
-token_name(int type)
-{
-    if (0 <= type && type <= N_TOKENS) {
-        return _PyParser_TokenNames[type];
-    }
-    return "<Huh?>";
-}
-#endif
 
 // Here, mark is the start of the node, while p->mark is the end.
 // If node==NULL, they should be the same.
@@ -88,13 +78,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    PyObject *m = PyImport_ImportModule("unicodedata");
-    if (!m)
-    {
-        return 0;
-    }
-    p->normalize = PyObject_GetAttrString(m, "normalize");
-    Py_DECREF(m);
+    p->normalize = _PyImport_GetModuleAttrString("unicodedata", "normalize");
     if (!p->normalize)
     {
         return 0;
@@ -662,6 +646,28 @@ _PyPegen_number_token(Parser *p)
 
     if (c == NULL) {
         p->error_indicator = 1;
+        PyThreadState *tstate = _PyThreadState_GET();
+        // The only way a ValueError should happen in _this_ code is via
+        // PyLong_FromString hitting a length limit.
+        if (tstate->curexc_type == PyExc_ValueError &&
+            tstate->curexc_value != NULL) {
+            PyObject *type, *value, *tb;
+            // This acts as PyErr_Clear() as we're replacing curexc.
+            PyErr_Fetch(&type, &value, &tb);
+            Py_XDECREF(tb);
+            Py_DECREF(type);
+            /* Intentionally omitting columns to avoid a wall of 1000s of '^'s
+             * on the error message. Nobody is going to overlook their huge
+             * numeric literal once given the line. */
+            RAISE_ERROR_KNOWN_LOCATION(
+                p, PyExc_SyntaxError,
+                t->lineno, -1 /* col_offset */,
+                t->end_lineno, -1 /* end_col_offset */,
+                "%S - Consider hexadecimal for huge integer literals "
+                "to avoid decimal conversion limits.",
+                value);
+            Py_DECREF(value);
+        }
         return NULL;
     }
 
@@ -726,6 +732,9 @@ compute_parser_flags(PyCompilerFlags *flags)
     if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
         parser_flags |= PyPARSE_ASYNC_HACKS;
     }
+    if (flags->cf_flags & PyCF_ALLOW_INCOMPLETE_INPUT) {
+        parser_flags |= PyPARSE_ALLOW_INCOMPLETE_INPUT;
+    }
     return parser_flags;
 }
 
@@ -752,7 +761,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
         return (Parser *) PyErr_NoMemory();
     }
     p->tokens[0] = PyMem_Calloc(1, sizeof(Token));
-    if (!p->tokens) {
+    if (!p->tokens[0]) {
         PyMem_Free(p->tokens);
         PyMem_Free(p);
         return (Parser *) PyErr_NoMemory();
@@ -782,7 +791,9 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-    p->in_raw_rule = 0;
+#ifdef Py_DEBUG
+    p->debug = _Py_GetConfig()->parser_debug;
+#endif
     return p;
 }
 
@@ -811,16 +822,26 @@ reset_parser_state_for_error_pass(Parser *p)
     p->tok->interactive_underflow = IUNDERFLOW_STOP;
 }
 
+static inline int
+_is_end_of_source(Parser *p) {
+    int err = p->tok->done;
+    return err == E_EOF || err == E_EOFS || err == E_EOLS;
+}
+
 void *
 _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     assert(p->level == 0);
     if (res == NULL) {
+        if ((p->flags & PyPARSE_ALLOW_INCOMPLETE_INPUT) &&  _is_end_of_source(p)) {
+            PyErr_Clear();
+            return RAISE_SYNTAX_ERROR("incomplete input");
+        }
         if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_SyntaxError)) {
             return NULL;
         }
-        // Make a second parser pass. In this pass we activate heavier and slower checks
+       // Make a second parser pass. In this pass we activate heavier and slower checks
         // to produce better error messages and more complete diagnostics. Extra "invalid_*"
         // rules will be active during parsing.
         Token *last_token = p->tokens[p->fill - 1];

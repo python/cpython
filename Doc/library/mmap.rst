@@ -6,6 +6,8 @@
 
 --------------
 
+.. include:: ../includes/wasm-notavail.rst
+
 Memory-mapped file objects behave like both :class:`bytearray` and like
 :term:`file objects <file object>`.  You can use mmap objects in most places
 where :class:`bytearray` are expected; for example, you can use the :mod:`re`
@@ -102,7 +104,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
-   with physical backing store on macOS and OpenVMS.
+   with the physical backing store on macOS.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 

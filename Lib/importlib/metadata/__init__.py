@@ -152,12 +152,21 @@ class EntryPoint(DeprecatedTuple):
     See `the packaging docs on entry points
     <https://packaging.python.org/specifications/entry-points/>`_
     for more information.
+
+    >>> ep = EntryPoint(
+    ...     name=None, group=None, value='package.module:attr [extra1, extra2]')
+    >>> ep.module
+    'package.module'
+    >>> ep.attr
+    'attr'
+    >>> ep.extras
+    ['extra1', 'extra2']
     """
 
     pattern = re.compile(
         r'(?P<module>[\w.]+)\s*'
-        r'(:\s*(?P<attr>[\w.]+))?\s*'
-        r'(?P<extras>\[.*\])?\s*$'
+        r'(:\s*(?P<attr>[\w.]+)\s*)?'
+        r'((?P<extras>\[.*\])\s*)?$'
     )
     """
     A regular expression describing the syntax for an entry point,
@@ -203,7 +212,7 @@ class EntryPoint(DeprecatedTuple):
     @property
     def extras(self):
         match = self.pattern.match(self.value)
-        return list(re.finditer(r'\w+', match.group('extras') or ''))
+        return re.findall(r'\w+', match.group('extras') or '')
 
     def _for(self, dist):
         vars(self).update(dist=dist)
@@ -221,6 +230,25 @@ class EntryPoint(DeprecatedTuple):
         return iter((self.name, self))
 
     def matches(self, **params):
+        """
+        EntryPoint matches the given parameters.
+
+        >>> ep = EntryPoint(group='foo', name='bar', value='bing:bong [extra1, extra2]')
+        >>> ep.matches(group='foo')
+        True
+        >>> ep.matches(name='bar', value='bing:bong [extra1, extra2]')
+        True
+        >>> ep.matches(group='foo', name='other')
+        False
+        >>> ep.matches()
+        True
+        >>> ep.matches(extras=['extra1', 'extra2'])
+        True
+        >>> ep.matches(module='bing')
+        True
+        >>> ep.matches(attr='bong')
+        True
+        """
         attrs = (getattr(self, param) for param in params)
         return all(map(operator.eq, params.values(), attrs))
 
@@ -278,6 +306,8 @@ class DeprecatedList(list):
     1
     """
 
+    __slots__ = ()
+
     _warn = functools.partial(
         warnings.warn,
         "EntryPoints list interface is deprecated. Cast to list if needed.",
@@ -290,21 +320,15 @@ class DeprecatedList(list):
             self._warn()
             return getattr(super(), method_name)(*args, **kwargs)
 
-        return wrapped
+        return method_name, wrapped
 
-    for method_name in [
-        '__setitem__',
-        '__delitem__',
-        'append',
-        'reverse',
-        'extend',
-        'pop',
-        'remove',
-        '__iadd__',
-        'insert',
-        'sort',
-    ]:
-        locals()[method_name] = _wrap_deprecated_method(method_name)
+    locals().update(
+        map(
+            _wrap_deprecated_method,
+            '__setitem__ __delitem__ append reverse extend pop remove '
+            '__iadd__ insert sort'.split(),
+        )
+    )
 
     def __add__(self, other):
         if not isinstance(other, tuple):
@@ -519,7 +543,7 @@ class Distribution:
         """
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str):
         """Return the Distribution for the given package name.
 
         :param name: The name of the distribution package to search for.
@@ -527,13 +551,13 @@ class Distribution:
             package, if found.
         :raises PackageNotFoundError: When the named package's distribution
             metadata cannot be found.
+        :raises ValueError: When an invalid value is supplied for name.
         """
-        for resolver in cls._discover_resolvers():
-            dists = resolver(DistributionFinder.Context(name=name))
-            dist = next(iter(dists), None)
-            if dist is not None:
-                return dist
-        else:
+        if not name:
+            raise ValueError("A distribution name is required.")
+        try:
+            return next(cls.discover(name=name))
+        except StopIteration:
             raise PackageNotFoundError(name)
 
     @classmethod
@@ -570,18 +594,6 @@ class Distribution:
             getattr(finder, 'find_distributions', None) for finder in sys.meta_path
         )
         return filter(None, declared)
-
-    @classmethod
-    def _local(cls, root='.'):
-        from pep517 import build, meta
-
-        system = build.compat_system(root)
-        builder = functools.partial(
-            meta.build,
-            source_dir=root,
-            system=system,
-        )
-        return PathDistribution(zipfile.Path(meta.build_as_zip(builder)))
 
     @property
     def metadata(self) -> _meta.PackageMetadata:
@@ -670,7 +682,7 @@ class Distribution:
 
     def _read_egg_info_reqs(self):
         source = self.read_text('requires.txt')
-        return source and self._deps_from_requires_text(source)
+        return pass_none(self._deps_from_requires_text)(source)
 
     @classmethod
     def _deps_from_requires_text(cls, source):
@@ -775,7 +787,6 @@ class FastPath:
 
     def __init__(self, root):
         self.root = root
-        self.base = os.path.basename(self.root).lower()
 
     def joinpath(self, child):
         return pathlib.Path(self.root, child)
@@ -934,13 +945,26 @@ class PathDistribution(Distribution):
         normalized name from the file system path.
         """
         stem = os.path.basename(str(self._path))
-        return self._name_from_stem(stem) or super()._normalized_name
+        return (
+            pass_none(Prepared.normalize)(self._name_from_stem(stem))
+            or super()._normalized_name
+        )
 
-    def _name_from_stem(self, stem):
-        name, ext = os.path.splitext(stem)
+    @staticmethod
+    def _name_from_stem(stem):
+        """
+        >>> PathDistribution._name_from_stem('foo-3.0.egg-info')
+        'foo'
+        >>> PathDistribution._name_from_stem('CherryPy-3.0.dist-info')
+        'CherryPy'
+        >>> PathDistribution._name_from_stem('face.egg-info')
+        'face'
+        >>> PathDistribution._name_from_stem('foo.bar')
+        """
+        filename, ext = os.path.splitext(stem)
         if ext not in ('.dist-info', '.egg-info'):
             return
-        name, sep, rest = stem.partition('-')
+        name, sep, rest = filename.partition('-')
         return name
 
 
@@ -980,6 +1004,15 @@ def version(distribution_name):
     return distribution(distribution_name).version
 
 
+_unique = functools.partial(
+    unique_everseen,
+    key=operator.attrgetter('_normalized_name'),
+)
+"""
+Wrapper for ``distributions`` to return unique distributions by name.
+"""
+
+
 def entry_points(**params) -> Union[EntryPoints, SelectableGroups]:
     """Return EntryPoint objects for all installed packages.
 
@@ -997,10 +1030,8 @@ def entry_points(**params) -> Union[EntryPoints, SelectableGroups]:
 
     :return: EntryPoints or SelectableGroups for all installed packages.
     """
-    norm_name = operator.attrgetter('_normalized_name')
-    unique = functools.partial(unique_everseen, key=norm_name)
     eps = itertools.chain.from_iterable(
-        dist.entry_points for dist in unique(distributions())
+        dist.entry_points for dist in _unique(distributions())
     )
     return SelectableGroups.load(eps).select(**params)
 

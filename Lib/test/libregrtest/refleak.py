@@ -142,7 +142,7 @@ def dash_R(ns, test_name, test_func):
             msg = '%s leaked %s %s, sum=%s' % (
                 test_name, deltas, item_name, sum(deltas))
             print(msg, file=sys.stderr, flush=True)
-            with open(fname, "a") as refrep:
+            with open(fname, "a", encoding="utf-8") as refrep:
                 print(msg, file=refrep)
                 refrep.flush()
             failed = True

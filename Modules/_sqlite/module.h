@@ -53,11 +53,22 @@ typedef struct {
     int BaseTypeAdapted;
     int enable_callback_tracebacks;
 
+    PyTypeObject *BlobType;
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
     PyTypeObject *PrepareProtocolType;
     PyTypeObject *RowType;
     PyTypeObject *StatementType;
+
+    /* Pointers to interned strings */
+    PyObject *str___adapt__;
+    PyObject *str___conform__;
+    PyObject *str_executescript;
+    PyObject *str_finalize;
+    PyObject *str_inverse;
+    PyObject *str_step;
+    PyObject *str_upper;
+    PyObject *str_value;
 } pysqlite_state;
 
 extern pysqlite_state pysqlite_global_state;
@@ -74,7 +85,7 @@ extern struct PyModuleDef _sqlite3module;
 static inline pysqlite_state *
 pysqlite_get_state_by_type(PyTypeObject *tp)
 {
-    PyObject *module = _PyType_GetModuleByDef(tp, &_sqlite3module);
+    PyObject *module = PyType_GetModuleByDef(tp, &_sqlite3module);
     assert(module != NULL);
     return pysqlite_get_state(module);
 }

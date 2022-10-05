@@ -1,2 +1,0 @@
-Fix parser error when parsing non-utf8 characters in source files. Patch by
-Pablo Galindo.

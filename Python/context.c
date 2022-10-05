@@ -351,6 +351,7 @@ _context_alloc(void)
         state->numfree--;
         ctx = state->freelist;
         state->freelist = (PyContext *)ctx->ctx_weakreflist;
+        OBJECT_STAT_INC(from_freelist);
         ctx->ctx_weakreflist = NULL;
         _Py_NewReference((PyObject *)ctx);
     }
@@ -482,6 +483,7 @@ context_tp_dealloc(PyContext *self)
         state->numfree++;
         self->ctx_weakreflist = (PyObject *)state->freelist;
         state->freelist = self;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -685,7 +687,7 @@ static PyMethodDef PyContext_methods[] = {
     _CONTEXTVARS_CONTEXT_KEYS_METHODDEF
     _CONTEXTVARS_CONTEXT_VALUES_METHODDEF
     _CONTEXTVARS_CONTEXT_COPY_METHODDEF
-    {"run", (PyCFunction)(void(*)(void))context_run, METH_FASTCALL | METH_KEYWORDS, NULL},
+    {"run", _PyCFunction_CAST(context_run), METH_FASTCALL | METH_KEYWORDS, NULL},
     {NULL, NULL}
 };
 
@@ -1260,7 +1262,7 @@ context_token_missing_tp_repr(PyObject *self)
 }
 
 
-PyTypeObject PyContextTokenMissing_Type = {
+PyTypeObject _PyContextTokenMissing_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Token.MISSING",
     sizeof(PyContextTokenMissing),
@@ -1279,7 +1281,7 @@ get_token_missing(void)
     }
 
     _token_missing = (PyObject *)PyObject_New(
-        PyContextTokenMissing, &PyContextTokenMissing_Type);
+        PyContextTokenMissing, &_PyContextTokenMissing_Type);
     if (_token_missing == NULL) {
         return NULL;
     }
@@ -1323,23 +1325,10 @@ _PyContext_Fini(PyInterpreterState *interp)
 
 
 PyStatus
-_PyContext_InitTypes(PyInterpreterState *interp)
+_PyContext_Init(PyInterpreterState *interp)
 {
     if (!_Py_IsMainInterpreter(interp)) {
         return _PyStatus_OK();
-    }
-
-    PyStatus status = _PyHamt_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    if ((PyType_Ready(&PyContext_Type) < 0) ||
-        (PyType_Ready(&PyContextVar_Type) < 0) ||
-        (PyType_Ready(&PyContextToken_Type) < 0) ||
-        (PyType_Ready(&PyContextTokenMissing_Type) < 0))
-    {
-        return _PyStatus_ERR("can't init context types");
     }
 
     PyObject *missing = get_token_missing();

@@ -1,1 +1,0 @@
-Document method :meth:`cmd.Cmd.columnize`.

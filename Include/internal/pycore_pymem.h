@@ -99,6 +99,14 @@ PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
 void *_PyObject_VirtualAlloc(size_t size);
 void _PyObject_VirtualFree(void *, size_t size);
 
+/* This function returns the number of allocated memory blocks, regardless of size */
+PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
+
+/* Macros */
+#ifdef WITH_PYMALLOC
+// Export the symbol for the 3rd party guppy3 project
+PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
+#endif
 
 #ifdef __cplusplus
 }
