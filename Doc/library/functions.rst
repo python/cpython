@@ -164,7 +164,7 @@ are always available.  They are listed here in alphabetical order.
    :func:`sys.breakpointhook` can be set to some other function and
    :func:`breakpoint` will automatically call that, allowing you to drop into
    the debugger of choice.
-   If :func:`sys.breakpointhook` is not available to be called, this function will
+   If :func:`sys.breakpointhook` is not accessible, this function will
    raise :exc:`RuntimeError`.
 
    .. audit-event:: builtins.breakpoint breakpointhook breakpoint
