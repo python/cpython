@@ -68,9 +68,8 @@ The bytecode analysis API allows pieces of Python code to be wrapped in a
 :class:`Bytecode` object that provides easy access to details of the compiled
 code.
 
-.. class:: Bytecode(x, *, first_line=None, current_offset=None, show_caches=False,
-                    adaptive=False)
-
+.. class:: Bytecode(x, *, first_line=None, current_offset=None,\
+                    show_caches=False, adaptive=False)
 
    Analyse the bytecode corresponding to a function, generator, asynchronous
    generator, coroutine, method, string of source code, or a code object (as
