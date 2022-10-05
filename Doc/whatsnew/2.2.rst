@@ -983,7 +983,7 @@ New and Improved Modules
   Jun-ichiro "itojun" Hagino.)
 
 * Two new format characters were added to the :mod:`struct` module for 64-bit
-  integers on platforms that support the C :c:type:`long long` type.  ``q`` is for
+  integers on platforms that support the C :c:expr:`long long` type.  ``q`` is for
   a signed 64-bit integer, and ``Q`` is for an unsigned one.  The value is
   returned in Python's long integer type.  (Contributed by Tim Peters.)
 

@@ -530,8 +530,8 @@ Types
 -----
 
 There are few other data types that play a significant role in  the Python/C
-API; most are simple C types such as :c:type:`int`,  :c:type:`long`,
-:c:type:`double` and :c:type:`char*`.  A few structure types  are used to
+API; most are simple C types such as :c:expr:`int`,  :c:expr:`long`,
+:c:expr:`double` and :c:expr:`char*`.  A few structure types  are used to
 describe static tables used to list the functions exported  by a module or the
 data attributes of a new object type, and another is used to describe the value
 of a complex number.  These will  be discussed together with the functions that

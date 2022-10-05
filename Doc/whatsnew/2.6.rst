@@ -2389,7 +2389,7 @@ changes, or look through the Subversion logs for all the details.
   has been updated from version 2.3.2 in Python 2.5 to
   version 2.4.1.
 
-* The :mod:`struct` module now supports the C99 :c:type:`_Bool` type,
+* The :mod:`struct` module now supports the C99 :c:expr:`_Bool` type,
   using the format character ``'?'``.
   (Contributed by David Remahl.)
 
