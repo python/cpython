@@ -1453,7 +1453,7 @@ Some of the changes to Python's build process and to the C API are:
   extension functions: :c:macro:`Py_RETURN_NONE`, :c:macro:`Py_RETURN_TRUE`, and
   :c:macro:`Py_RETURN_FALSE`. (Contributed by Brett Cannon.)
 
-* Another new macro, :c:macro:`Py_CLEAR(obj)`,  decreases the reference count of
+* Another new macro, :c:macro:`Py_CLEAR`,  decreases the reference count of
   *obj* and sets *obj* to the null pointer.  (Contributed by Jim Fulton.)
 
 * A new function, ``PyTuple_Pack(N, obj1, obj2, ..., objN)``, constructs
@@ -1464,7 +1464,7 @@ Some of the changes to Python's build process and to the C API are:
   lookups without masking exceptions raised during the look-up process.
   (Contributed by Raymond Hettinger.)
 
-* The :c:macro:`Py_IS_NAN(X)` macro returns 1 if  its float or double argument
+* The :c:expr:`Py_IS_NAN(X)` macro returns 1 if  its float or double argument
   *X* is a NaN.   (Contributed by Tim Peters.)
 
 * C code can avoid unnecessary locking by using the new
