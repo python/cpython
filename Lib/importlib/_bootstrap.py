@@ -1228,7 +1228,7 @@ def _calc___package__(globals):
         if spec is not None and package != spec.parent:
             _warnings.warn("__package__ != __spec__.parent "
                            f"({package!r} != {spec.parent!r})",
-                           ImportWarning, stacklevel=3)
+                           DeprecationWarning, stacklevel=3)
         return package
     elif spec is not None:
         return spec.parent
