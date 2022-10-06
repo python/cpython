@@ -1393,23 +1393,18 @@ tok_continuation_line(struct tok_state *tok) {
 static int
 token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
 {
-    // Default token values
+    token->level = tok->level;
     token->lineno = type == STRING ? tok->first_lineno : tok->lineno;
-    token->end_lineno = tok->lineno;;
+    token->end_lineno = tok->lineno;
     token->col_offset = -1;
     token->end_col_offset = -1;
-    token->start = NULL;
-    token->end = NULL;
+    token->start = start;
+    token->end = end;
 
-    token->level = tok->level;
     if (start != NULL && end != NULL) {
         const char *line_start = type == STRING ? tok->multi_line_start : tok->line_start;
-        token->lineno = type == STRING ? tok->first_lineno : tok->lineno;
-        token->end_lineno = tok->lineno;
         token->col_offset = (start >= line_start) ? (int)(start - line_start) : -1;
         token->end_col_offset = (end >= tok->line_start) ? (int)(end - tok->line_start) : -1;
-        token->start = start;
-        token->end = end;
     }
     return type;
 }
