@@ -272,7 +272,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
    source line information (if any) is taken directly from the disassembled code
    object.
 
-   The *show_caches* and *adaptive* parameters function as in :func:`dis`.
+   The *show_caches* and *adaptive* parameters work as they do in :func:`dis`.
 
    .. versionadded:: 3.4
 
