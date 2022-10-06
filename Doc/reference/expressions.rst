@@ -1742,10 +1742,11 @@ returns a boolean value regardless of the type of its argument
 
 
 .. index::
-  single: := (colon equals)
-  single: assignment expression
-  single: walrus operator
-  single: named expression
+   single: := (colon equals)
+   single: assignment expression
+   single: walrus operator
+   single: named expression
+
 Assignment expressions
 ======================
 
