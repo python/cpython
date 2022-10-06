@@ -411,7 +411,7 @@ that subclass, which may be defined in different module than yours.
           pass
 
 For a method to get its "defining class", it must use the
-:c:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
+:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
 :c:type:`calling convention <PyMethodDef>`
 and the corresponding :c:type:`PyCMethod` signature::
 
