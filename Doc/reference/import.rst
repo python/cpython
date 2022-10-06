@@ -1019,25 +1019,6 @@ and ``__main__.__spec__`` is set accordingly, they're still considered
 to populate the ``__main__`` namespace, and not during normal import.
 
 
-Open issues
-===========
-
-XXX It would be really nice to have a diagram.
-
-XXX * (import_machinery.rst) how about a section devoted just to the
-attributes of modules and packages, perhaps expanding upon or supplanting the
-related entries in the data model reference page?
-
-XXX runpy, pkgutil, et al in the library manual should all get "See Also"
-links at the top pointing to the new import system section.
-
-XXX Add more explanation regarding the different ways in which
-``__main__`` is initialized?
-
-XXX Add more info on ``__main__`` quirks/pitfalls (i.e. copy from
-:pep:`395`).
-
-
 References
 ==========
 
