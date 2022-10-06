@@ -1393,6 +1393,7 @@ tok_continuation_line(struct tok_state *tok) {
 static int
 token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
 {
+    assert((start == NULL && end == NULL) || (start != NULL && end != NULL));
     token->level = tok->level;
     token->lineno = type == STRING ? tok->first_lineno : tok->lineno;
     token->end_lineno = tok->lineno;
