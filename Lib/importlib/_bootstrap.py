@@ -1154,7 +1154,7 @@ def _find_and_load(name, import_):
         _lock_unlock_module(name)
 
     if module is None:
-        message = (f'import of {name} halted; None in sys.modules')
+        message = f'import of {name} halted; None in sys.modules'
         raise ModuleNotFoundError(message, name=name)
 
     return module
