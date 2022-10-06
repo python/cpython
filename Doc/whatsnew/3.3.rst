@@ -932,7 +932,7 @@ it can now be used as a class decorator (:issue:`10868`).
 array
 -----
 
-The :mod:`array` module supports the :c:type:`long long` type using ``q`` and
+The :mod:`array` module supports the :c:expr:`long long` type using ``q`` and
 ``Q`` type codes.
 
 (Contributed by Oren Tirosh and Hirokazu Yamamoto in :issue:`1172711`.)

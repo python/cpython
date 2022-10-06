@@ -728,17 +728,6 @@ class BuiltinImporter:
 
     _ORIGIN = "built-in"
 
-    @staticmethod
-    def module_repr(module):
-        """Return repr for the module.
-
-        The method is deprecated.  The import machinery does the job itself.
-
-        """
-        _warnings.warn("BuiltinImporter.module_repr() is deprecated and "
-                       "slated for removal in Python 3.12", DeprecationWarning)
-        return f'<module {module.__name__!r} ({BuiltinImporter._ORIGIN})>'
-
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
         if path is not None:
@@ -807,17 +796,6 @@ class FrozenImporter:
     """
 
     _ORIGIN = "frozen"
-
-    @staticmethod
-    def module_repr(m):
-        """Return repr for the module.
-
-        The method is deprecated.  The import machinery does the job itself.
-
-        """
-        _warnings.warn("FrozenImporter.module_repr() is deprecated and "
-                       "slated for removal in Python 3.12", DeprecationWarning)
-        return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
     def _fix_up_module(cls, module):
@@ -1250,7 +1228,7 @@ def _calc___package__(globals):
         if spec is not None and package != spec.parent:
             _warnings.warn("__package__ != __spec__.parent "
                            f"({package!r} != {spec.parent!r})",
-                           ImportWarning, stacklevel=3)
+                           DeprecationWarning, stacklevel=3)
         return package
     elif spec is not None:
         return spec.parent
