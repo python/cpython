@@ -2816,10 +2816,10 @@ class CAPITest(unittest.TestCase):
         self.assertIsInstance(p_format1, str)
         self.assertRegex(p_format1, p_format_regex)
 
-        p_format2 = PyUnicode_FromFormat(b'%p %p %p', '123456', None, b'xyz')
+        p_format2 = PyUnicode_FromFormat(b'%p %p', '123456', b'xyz')
         self.assertIsInstance(p_format2, str)
         self.assertRegex(p_format2,
-                         r'0x[a-zA-Z0-9]{8,} 0x[a-zA-Z0-9]{1,} 0x[a-zA-Z0-9]{8,}')
+                         r'0x[a-zA-Z0-9]{8,} 0x[a-zA-Z0-9]{8,}')
 
         # Extra args are ignored:
         p_format3 = PyUnicode_FromFormat(b'%p', '123456', None, b'xyz')
