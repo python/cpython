@@ -886,26 +886,122 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                  support.swap_item(globals(), '__file__', None):
                 self.assertRaises(UserWarning, self.module.warn, 'bar')
 
+    # GH#86298 is part of the migration away from module attributes and toward
+    # __spec__ attributes.  There are several cases to test here.  This will
+    # have to change in Python 3.14 when we actually remove/ignore __loader__
+    # in favor of requiring __spec__.loader.
+
     @support.cpython_only
-    def test_gh86298(self):
-        # warn_explicit() itself issues an ImportWarning when a module and
-        # module_globals are both given, and the named module has a __loader__
-        # != its __spec__.loader.
+    def test_gh86298_no_loader_and_no_spec(self):
         bar = ModuleType('bar')
-        # First, make the __loader__ != the __spec__.loader.  This should
-        # trigger the ImportWarning inside warn_explicit().
+        with original_warnings.catch_warnings():
+            self.assertRaises(
+                AttributeError, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_loader_is_none_and_no_spec(self):
+        bar = ModuleType('bar')
+        bar.__loader__ = None
+        with original_warnings.catch_warnings():
+            self.assertRaises(
+                AttributeError, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_no_loader_and_spec_is_none(self):
+        bar = ModuleType('bar')
+        bar.__spec__ = None
+        with original_warnings.catch_warnings():
+            self.assertRaises(
+                ValueError, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_loader_is_none_and_spec_is_none(self):
+        bar = ModuleType('bar')
+        bar.__loader__ = None
+        bar.__spec__ = None
+        with original_warnings.catch_warnings():
+            self.assertRaises(
+                ValueError, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_loader_is_none_and_spec_loader_is_none(self):
+        bar = ModuleType('bar')
+        bar.__loader__ = None
+        bar.__spec__ = SimpleNamespace(loader=None)
+        with original_warnings.catch_warnings():
+            self.assertRaises(
+                ValueError, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_no_spec(self):
+        bar = ModuleType('bar')
+        bar.__loader__ = object()
+        with original_warnings.catch_warnings():
+            self.assertWarns(
+                DeprecationWarning, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_spec_is_none(self):
+        bar = ModuleType('bar')
+        bar.__loader__ = object()
+        bar.__spec__ = None
+        with original_warnings.catch_warnings():
+            self.assertWarns(
+                DeprecationWarning, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_no_spec_loader(self):
+        bar = ModuleType('bar')
+        bar.__loader__ = object()
+        bar.__spec__ = SimpleNamespace()
+        with original_warnings.catch_warnings():
+            self.assertWarns(
+                DeprecationWarning, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_loader_and_spec_loader_disagree(self):
+        bar = ModuleType('bar')
         bar.__loader__ = object()
         bar.__spec__ = SimpleNamespace(loader=object())
         with original_warnings.catch_warnings():
             self.assertWarns(
-                ImportWarning, self.module.warn_explicit,
+                DeprecationWarning, self.module.warn_explicit,
                 'warning!', RuntimeWarning,
                 'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
-        # Now make the __loader__ == __spec__.loader.  This will not raise the exception.
-        bar.__spec__.loader = bar.__loader__
+
+    @support.cpython_only
+    def test_gh86298_no_loader_and_no_spec_loader(self):
+        bar = ModuleType('bar')
+        bar.__spec__ = SimpleNamespace()
         with original_warnings.catch_warnings():
-            self.module.filterwarnings('error', category=ImportWarning)
-            self.module.warn_explicit(
+            self.assertRaises(
+                AttributeError, self.module.warn_explicit,
+                'warning!', RuntimeWarning,
+                'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+
+    @support.cpython_only
+    def test_gh86298_no_loader_with_spec_loader_okay(self):
+        bar = ModuleType('bar')
+        bar.__spec__ = SimpleNamespace(loader=object())
+        with original_warnings.catch_warnings():
+            self.assertWarn(
+                RuntimeWarning, self.module.warn_explicit,
                 'warning!', RuntimeWarning,
                 'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
 

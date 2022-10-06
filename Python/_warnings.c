@@ -975,61 +975,33 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
 }
 
 static PyObject *
-get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno)
+get_source_line(PyInterpreterState *interp, PyObject* mod, PyObject *module_globals, int lineno)
 {
-    PyObject *loader, *spec_loader;
-    PyObject *spec;
+    PyObject *external;
+    PyObject *loader;
     PyObject *module_name;
     PyObject *get_source;
     PyObject *source;
     PyObject *source_list;
     PyObject *source_line;
 
+    /* stolen from import.c */
+    external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
+    if (external == NULL) {
+        return NULL;
+    }
+
+    loader = PyObject_CallMethodObjArgs(external, "_bless_my_loader", mod, NULL);
+    Py_DECREF(external);
+    if (loader == NULL) {
+        return NULL;
+    }
+
     module_name = _PyDict_GetItemWithError(module_globals, &_Py_ID(__name__));
     if (!module_name) {
         return NULL;
     }
     Py_INCREF(module_name);
-
-    /* Check/get the requisite pieces needed for the loader.  Get both the
-       __spec__.loader and __loader__ attributes and warn if they are not the
-       same.
-    */
-    spec = _PyDict_GetItemWithError(module_globals, &_Py_ID(__spec__));
-    if (spec == NULL) {
-        Py_DECREF(module_name);
-        return NULL;
-    }
-    Py_INCREF(spec);
-
-    spec_loader = PyObject_GetAttrString(spec, "loader");
-    Py_DECREF(spec);
-    if (spec_loader == NULL) {
-        Py_DECREF(module_name);
-        return NULL;
-    }
-
-    loader = _PyDict_GetItemWithError(module_globals, &_Py_ID(__loader__));
-    if (loader == NULL) {
-        Py_DECREF(spec_loader);
-        Py_DECREF(module_name);
-        return NULL;
-    }
-    Py_INCREF(loader);
-
-    if (spec_loader != loader) {
-        int error = PyErr_WarnFormat(
-            PyExc_ImportWarning, 2,
-            "Module %U; __loader__ != __spec__.loader (%R != %R)",
-            module_name, spec_loader, loader);
-        if (error < 0) {
-            Py_DECREF(module_name);
-            Py_DECREF(spec_loader);
-            Py_DECREF(loader);
-            return NULL;
-        }
-    }
-    Py_DECREF(spec_loader);
 
     /* Make sure the loader implements the optional get_source() method. */
     (void)_PyObject_LookupAttr(loader, &_Py_ID(get_source), &get_source);
@@ -1102,7 +1074,7 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
             return NULL;
         }
 
-        source_line = get_source_line(tstate->interp, module_globals, lineno);
+        source_line = get_source_line(tstate->interp, mod, module_globals, lineno);
         if (source_line == NULL && PyErr_Occurred()) {
             return NULL;
         }
