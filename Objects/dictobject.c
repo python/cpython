@@ -5783,12 +5783,10 @@ _PyDict_SendEvent(int watcher_bits,
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (watcher_bits & 1) {
             PyDict_WatchCallback cb = interp->dict_watchers[i];
-            if (cb) {
-                if (cb(event, (PyObject*)mp, key, value) < 0) {
-                    // some dict modification paths (e.g. PyDict_Clear) can't raise, so we
-                    // can't propagate exceptions from dict watchers.
-                    PyErr_WriteUnraisable((PyObject *)mp);
-                }
+            if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
+                // some dict modification paths (e.g. PyDict_Clear) can't raise, so we
+                // can't propagate exceptions from dict watchers.
+                PyErr_WriteUnraisable((PyObject *)mp);
             }
         }
         watcher_bits >>= 1;
