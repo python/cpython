@@ -999,6 +999,7 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
 
     module_name = _PyDict_GetItemWithError(module_globals, &_Py_ID(__name__));
     if (!module_name) {
+        Py_DECREF(loader);
         return NULL;
     }
     Py_INCREF(module_name);

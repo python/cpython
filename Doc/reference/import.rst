@@ -560,8 +560,8 @@ listed below.
 
    .. versionchanged:: 3.12
       The value of ``__loader__`` is expected to be the same as
-      ``__spec__.loader``.  If they are not, an :exc:`ImportWarning` will be
-      raised.
+      ``__spec__.loader``.  The use of ``__loader__`` is deprecated and slated
+      for removal in Python 3.14.
 
 .. attribute:: __package__
 
