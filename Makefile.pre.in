@@ -36,7 +36,6 @@ abs_builddir=	@abs_builddir@
 
 CC=		@CC@
 CXX=		@CXX@
-MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
 AR=		@AR@
 READELF=	@READELF@
@@ -55,6 +54,8 @@ DTRACE=         @DTRACE@
 DFLAGS=         @DFLAGS@
 DTRACE_HEADERS= @DTRACE_HEADERS@
 DTRACE_OBJS=    @DTRACE_OBJS@
+DSYMUTIL=       @DSYMUTIL@
+DSYMUTIL_PATH=  @DSYMUTIL_PATH@
 
 GNULD=		@GNULD@
 
@@ -389,6 +390,7 @@ PYTHON_OBJS=	\
 		Python/getcopyright.o \
 		Python/getplatform.o \
 		Python/getversion.o \
+		Python/ceval_gil.o \
 		Python/hamt.o \
 		Python/hashtable.o \
 		Python/import.o \
@@ -435,7 +437,6 @@ PYTHON_OBJS=	\
 # Objects
 OBJECT_OBJS=	\
 		Objects/abstract.o \
-		Objects/accu.o \
 		Objects/boolobject.o \
 		Objects/bytes_methods.o \
 		Objects/bytearrayobject.o \
@@ -477,7 +478,9 @@ OBJECT_OBJS=	\
 		Objects/unicodeobject.o \
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
-		Objects/weakrefobject.o
+		Objects/weakrefobject.o \
+		Objects/perf_trampoline.o \
+		@PERF_TRAMPOLINE_OBJ@
 
 DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
 
@@ -577,7 +580,7 @@ LIBEXPAT_HEADERS= \
 # Default target
 all:		@DEF_MAKE_ALL_RULE@
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
 
@@ -642,6 +645,16 @@ profile-opt: profile-run-stamp
 	-rm -f profile-clean-stamp
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS_NODIST="$(CFLAGS_NODIST) $(PGO_PROF_USE_FLAG)" LDFLAGS_NODIST="$(LDFLAGS_NODIST)"
 
+bolt-opt: @PREBOLT_RULE@
+	rm -f *.fdata
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst
+	./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true
+	@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions=3 -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot
+	rm -f *.fdata
+	rm -f $(BUILDPYTHON).bolt_inst
+	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
+
 # Compile and run with gcov
 .PHONY=coverage coverage-lcov coverage-report
 coverage:
@@ -692,6 +705,7 @@ coverage-report: regen-token regen-frozen
 .PHONY=clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_global_objects.py
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
@@ -794,10 +808,11 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 # wasm assets directory is relative to current build dir, e.g. "./usr/local".
 # --preload-file turns a relative asset path into an absolute path.
 
+.PHONY: wasm_stdlib
+wasm_stdlib: $(WASM_STDLIB)
 $(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
 	    $(srcdir)/Tools/wasm/wasm_assets.py \
-	    Makefile pybuilddir.txt Modules/Setup.local \
-	    python.html python.worker.js
+	    Makefile pybuilddir.txt Modules/Setup.local
 	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
 	    --buildroot . --prefix $(prefix)
 
@@ -894,6 +909,22 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/scripts/check_extension_modules.py
 
+rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
+	@if [ ! -z $(DSYMUTIL) ] ; then \
+		echo $(DSYMUTIL_PATH) $(BUILDPYTHON); \
+		$(DSYMUTIL_PATH) $(BUILDPYTHON); \
+		if test -f $(LDLIBRARY); then \
+			echo $(DSYMUTIL_PATH) $(LDLIBRARY); \
+			$(DSYMUTIL_PATH) $(LDLIBRARY); \
+		fi; \
+		for mod in X $(SHAREDMODS); do \
+			if test $$mod != X; then \
+				echo $(DSYMUTIL_PATH) $$mod; \
+				$(DSYMUTIL_PATH) $$mod; \
+			fi; \
+		done \
+	fi
+
 Modules/Setup.local:
 	@# Create empty Setup.local when file was deleted by user
 	echo "# Edit this file for local setup changes" > $@
@@ -926,6 +957,11 @@ regen-test-frozenmain: $(BUILDPYTHON)
 	# from Programs/test_frozenmain.py
 	# using Programs/freeze_test_frozenmain.py
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
+
+.PHONY: regen-test-levenshtein
+regen-test-levenshtein:
+	# Regenerate Lib/test/levenshtein_examples.json
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_levenshtein_examples.py Lib/test/levenshtein_examples.json
 
 .PHONY: regen-re
 regen-re: $(BUILDPYTHON)
@@ -1192,7 +1228,7 @@ regen-limited-abi: all
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-global-objects
+	regen-test-levenshtein regen-global-objects
 	@echo
 	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
 
@@ -1223,10 +1259,10 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h M
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
-	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
 
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h
-	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
 Modules/_sre/sre.o: $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h
 
@@ -1409,8 +1445,7 @@ regen-opcode-targets:
 		$(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
-		$(srcdir)/Python/condvar.h
+Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -1545,6 +1580,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
 		$(srcdir)/Include/cpython/picklebufobject.h \
+		$(srcdir)/Include/cpython/pthread_stubs.h \
 		$(srcdir)/Include/cpython/pyctype.h \
 		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
@@ -1565,7 +1601,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/weakrefobject.h \
 		\
 		$(srcdir)/Include/internal/pycore_abstract.h \
-		$(srcdir)/Include/internal/pycore_accu.h \
 		$(srcdir)/Include/internal/pycore_asdl.h \
 		$(srcdir)/Include/internal/pycore_ast.h \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
@@ -1688,6 +1723,10 @@ buildbottest: all
 		fi
 		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
+# Like testall, but run Python tests with HOSTRUNNER directly.
+hostrunnertest: all
+	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test -u all $(TESTOPTS)
+
 pythoninfo: all
 		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
@@ -1745,8 +1784,13 @@ sharedinstall: $(DESTSHARED) all
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
 		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+			if test -d "$$i.dSYM"; then \
+				echo $(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+				$(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+			fi; \
 		  fi; \
 		done
+
 
 $(DESTSHARED):
 		@for i in $(DESTDIRS); \
@@ -1808,6 +1852,23 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE) \
 			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 	fi
+	# Install macOS debug information (if available)
+	if test -d "$(BUILDPYTHON).dSYM"; then \
+		echo $(DSYMUTIL_PATH) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+		$(DSYMUTIL_PATH) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+	fi
+	if test "$(PYTHONFRAMEWORKDIR)" = "no-framework" ; then \
+		if test -d "$(LDLIBRARY).dSYM"; then \
+			echo $(DSYMUTIL_PATH) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
+			$(DSYMUTIL_PATH) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
+		fi \
+	else \
+		if test -d "$(LDLIBRARY).dSYM"; then \
+			echo $(DSYMUTIL_PATH) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME); \
+      $(DSYMUTIL_PATH) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME); \
+		fi \
+	fi
+
 
 bininstall: altbininstall
 	if test ! -d $(DESTDIR)$(LIBPC); then \
@@ -1926,15 +1987,6 @@ TESTSUBDIRS=	distutils/tests \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/data \
-		test/test_importlib/data01 \
-		test/test_importlib/data01/subdirectory \
-		test/test_importlib/data02 \
-		test/test_importlib/data02/one \
-		test/test_importlib/data02/two \
-		test/test_importlib/data03 \
-		test/test_importlib/data03/namespace \
-		test/test_importlib/data03/namespace/portion1 \
-		test/test_importlib/data03/namespace/portion2 \
 		test/test_importlib/extension \
 		test/test_importlib/frozen \
 		test/test_importlib/import_ \
@@ -1958,12 +2010,21 @@ TESTSUBDIRS=	distutils/tests \
 		test/test_importlib/namespace_pkgs/project3 \
 		test/test_importlib/namespace_pkgs/project3/parent \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
-		test/test_importlib/namespacedata01 \
 		test/test_importlib/partial \
 		test/test_importlib/resources \
+		test/test_importlib/resources/data01 \
+		test/test_importlib/resources/data01/subdirectory \
+		test/test_importlib/resources/data02 \
+		test/test_importlib/resources/data02/one \
+		test/test_importlib/resources/data02/two \
+		test/test_importlib/resources/data03 \
+		test/test_importlib/resources/data03/namespace \
+		test/test_importlib/resources/data03/namespace/portion1 \
+		test/test_importlib/resources/data03/namespace/portion2 \
+		test/test_importlib/resources/namespacedata01 \
+		test/test_importlib/resources/zipdata01 \
+		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
-		test/test_importlib/zipdata01 \
-		test/test_importlib/zipdata02 \
 		test/test_json \
 		test/test_lib2to3 \
 		test/test_lib2to3/data \
@@ -2308,6 +2369,9 @@ config.status:	$(srcdir)/configure
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
+Objects/asm_trampoline.o: $(srcdir)/Objects/asm_trampoline.S
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
 # Some make's put the object file in the current directory
 .c.o:
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
@@ -2373,8 +2437,7 @@ rmtestturds:
 	-rm -f gb-18030-2000.xml
 
 docclean:
-	-rm -rf Doc/build
-	-rm -rf Doc/tools/sphinx Doc/tools/pygments Doc/tools/docutils
+	$(MAKE) -C Doc clean
 
 # like the 'clean' target but retain the profile guided optimization (PGO)
 # data.  The PGO data is only valid if source code remains unchanged.
@@ -2382,6 +2445,7 @@ clean-retain-profile: pycremoval
 	find . -name '*.[oa]' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find . -name '*.so.[0-9]*.[0-9]*' -exec rm -f {} ';'
+	find . -name '*.lto' -exec rm -f {} ';'
 	find . -name '*.wasm' -exec rm -f {} ';'
 	find . -name '*.lst' -exec rm -f {} ';'
 	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
@@ -2425,7 +2489,7 @@ clobber: clean
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
 # Keep configure and Python-ast.[ch], it's possible they can't be generated
-distclean: clobber
+distclean: clobber docclean
 	for file in $(srcdir)/Lib/test/data/* ; do \
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done
@@ -2498,7 +2562,7 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # Declare targets that aren't real files
 .PHONY: all build_all build_wasm check-clean-src
-.PHONY: sharedmods checksharedmods test quicktest
+.PHONY: sharedmods checksharedmods test quicktest rundsymutil
 .PHONY: install altinstall sharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
@@ -2511,6 +2575,8 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 ##########################################################################
 # Module dependencies and platform-specific files
+
+MODULE_DEPS=$(PYTHON_HEADERS) Modules/config.c $(EXPORTSYMS)
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
@@ -2528,7 +2594,7 @@ MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h $(srcdir)/Modules/hashlib.h
 MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h
+MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h

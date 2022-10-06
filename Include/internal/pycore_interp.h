@@ -18,7 +18,6 @@ extern "C" {
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
-#include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
@@ -173,7 +172,7 @@ struct _is {
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
-    struct type_cache type_cache;
+    struct types_state types;
     struct callable_cache callable_cache;
 
     /* The following fields are here to avoid allocation during init.

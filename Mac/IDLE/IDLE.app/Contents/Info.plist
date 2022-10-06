@@ -10,6 +10,7 @@
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>py</string>
+				<string>pyi</string>
 				<string>pyw</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>

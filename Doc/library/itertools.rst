@@ -314,7 +314,7 @@ loops that truncate the stream.
 
       def count(start=0, step=1):
           # count(10) --> 10 11 12 13 14 ...
-          # count(2.5, 0.5) -> 2.5 3.0 3.5 ...
+          # count(2.5, 0.5) --> 2.5 3.0 3.5 ...
           n = start
           while True:
               yield n
@@ -668,7 +668,7 @@ loops that truncate the stream.
    the tee objects being informed.
 
    ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
-   raised when using simultaneously iterators returned by the same :func:`tee`
+   raised when simultaneously using iterators returned by the same :func:`tee`
    call, even if the original *iterable* is threadsafe.
 
    This itertool may require significant auxiliary storage (depending on how
@@ -739,7 +739,7 @@ which incur interpreter overhead.
 
    def prepend(value, iterator):
        "Prepend a single value in front of an iterator"
-       # prepend(1, [2, 3, 4]) -> 1 2 3 4
+       # prepend(1, [2, 3, 4]) --> 1 2 3 4
        return chain([value], iterator)
 
    def tabulate(function, start=0):
@@ -800,6 +800,28 @@ which incur interpreter overhead.
            window.append(x)
            yield sum(map(operator.mul, kernel, window))
 
+   def polynomial_from_roots(roots):
+       """Compute a polynomial's coefficients from its roots.
+
+          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
+       """
+       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
+       roots = list(map(operator.neg, roots))
+       return [
+           sum(map(math.prod, combinations(roots, k)))
+           for k in range(len(roots) + 1)
+       ]
+
+   def sieve(n):
+      "Primes less than n"
+      # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+      data = bytearray([1]) * n
+      data[:2] = 0, 0
+      limit = math.isqrt(n) + 1
+      for p in compress(range(limit), data):
+         data[p+p : n : p] = bytearray(len(range(p+p, n, p)))
+      return compress(count(), data)
+
    def flatten(list_of_lists):
        "Flatten one level of nesting"
        return chain.from_iterable(list_of_lists)
@@ -830,12 +852,12 @@ which incur interpreter overhead.
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
-       # triplewise('ABCDEFG') -> ABC BCD CDE DEF EFG
+       # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
        for (a, _), (b, c) in pairwise(pairwise(iterable)):
            yield a, b, c
 
    def sliding_window(iterable, n):
-       # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
        it = iter(iterable)
        window = collections.deque(islice(it, n), maxlen=n)
        if len(window) == n:
@@ -1067,6 +1089,7 @@ which incur interpreter overhead.
     >>> import operator
     >>> import collections
     >>> import math
+    >>> import random
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -1116,7 +1139,6 @@ which incur interpreter overhead.
     >>> list(repeatfunc(pow, 5, 2, 3))
     [8, 8, 8, 8, 8]
 
-    >>> import random
     >>> take(5, map(int, repeatfunc(random.random)))
     [0, 0, 0, 0, 0]
 
@@ -1137,10 +1159,35 @@ which incur interpreter overhead.
     >>> list(convolve(data, [1, -2, 1]))
     [20, 0, -36, 24, -20, 20, -20, -4, 16]
 
+    >>> polynomial_from_roots([5, -4, 3])
+    [1, -4, -17, 60]
+    >>> factored = lambda x: (x - 5) * (x + 4) * (x - 3)
+    >>> expanded = lambda x: x**3 -4*x**2 -17*x + 60
+    >>> all(factored(x) == expanded(x) for x in range(-10, 11))
+    True
+
+    >>> list(sieve(30))
+    [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59]
+    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(60))
+    True
+    >>> len(list(sieve(100)))
+    25
+    >>> len(list(sieve(1_000)))
+    168
+    >>> len(list(sieve(10_000)))
+    1229
+    >>> len(list(sieve(100_000)))
+    9592
+    >>> len(list(sieve(1_000_000)))
+    78498
+    >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
+    >>> set(sieve(10_000)).isdisjoint(carmichael)
+    True
+
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 
-    >>> import random
     >>> random.seed(85753098575309)
     >>> list(repeatfunc(random.random, 3))
     [0.16370491282496968, 0.45889608687313455, 0.3747076837820118]

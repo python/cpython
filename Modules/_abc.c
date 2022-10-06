@@ -63,6 +63,7 @@ abc_data_clear(_abc_data *self)
 static void
 abc_data_dealloc(_abc_data *self)
 {
+    PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
     (void)abc_data_clear(self);
     tp->tp_free(self);

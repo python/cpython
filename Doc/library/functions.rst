@@ -164,6 +164,8 @@ are always available.  They are listed here in alphabetical order.
    :func:`sys.breakpointhook` can be set to some other function and
    :func:`breakpoint` will automatically call that, allowing you to drop into
    the debugger of choice.
+   If :func:`sys.breakpointhook` is not accessible, this function will
+   raise :exc:`RuntimeError`.
 
    .. audit-event:: builtins.breakpoint breakpointhook breakpoint
 
@@ -395,6 +397,7 @@ are always available.  They are listed here in alphabetical order.
    string.  The string must be the name of one of the object's attributes.  The
    function deletes the named attribute, provided the object allows it.  For
    example, ``delattr(x, 'foobar')`` is equivalent to ``del x.foobar``.
+   *name* need not be a Python identifier (see :func:`setattr`).
 
 
 .. _func-dict:
@@ -736,6 +739,7 @@ are always available.  They are listed here in alphabetical order.
    value of that attribute.  For example, ``getattr(x, 'foobar')`` is equivalent to
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if
    provided, otherwise :exc:`AttributeError` is raised.
+   *name* need not be a Python identifier (see :func:`setattr`).
 
    .. note::
 
@@ -908,6 +912,13 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The delegation to :meth:`__trunc__` is deprecated.
 
+   .. versionchanged:: 3.11
+      :class:`int` string inputs and string representations can be limited to
+      help avoid denial of service attacks. A :exc:`ValueError` is raised when
+      the limit is exceeded while converting a string *x* to an :class:`int` or
+      when converting an :class:`int` into a string would exceed the limit.
+      See the :ref:`integer string conversion length limitation
+      <int_max_str_digits>` documentation.
 
 .. function:: isinstance(object, classinfo)
 
@@ -1513,6 +1524,8 @@ are always available.  They are listed here in alphabetical order.
    of the type of the object together with additional information often
    including the name and address of the object.  A class can control what this
    function returns for its instances by defining a :meth:`__repr__` method.
+   If :func:`sys.displayhook` is not accessible, this function will raise
+   :exc:`RuntimeError`.
 
 
 .. function:: reversed(seq)
@@ -1570,6 +1583,12 @@ are always available.  They are listed here in alphabetical order.
    new attribute.  The function assigns the value to the attribute, provided the
    object allows it.  For example, ``setattr(x, 'foobar', 123)`` is equivalent to
    ``x.foobar = 123``.
+
+   *name* need not be a Python identifier as defined in :ref:`identifiers`
+   unless the object chooses to enforce that, for example in a custom
+   :meth:`~object.__getattribute__` or via :attr:`~object.__slots__`.
+   An attribute whose name is not an identifier will not be accessible using
+   the dot notation, but is accessible through :func:`getattr` etc..
 
    .. note::
 

@@ -397,6 +397,14 @@ which, when run, will produce:
 
     MainThread: Look out!
 
+.. note:: Although the earlier discussion wasn't specifically talking about
+   async code, but rather about slow logging handlers, it should be noted that
+   when logging from async code, network and even file handlers could lead to
+   problems (blocking the event loop) because some logging is done from
+   :mod:`asyncio` internals. It might be best, if any async code is used in an
+   application, to use the above approach for logging, so that any blocking code
+   runs only in the ``QueueListener`` thread.
+
 .. versionchanged:: 3.5
    Prior to Python 3.5, the :class:`QueueListener` always passed every message
    received from the queue to every handler it was initialized with. (This was
@@ -2678,6 +2686,88 @@ You can of course use the conventional means of decoration::
         ...
 
 
+.. _buffered-smtp:
+
+Sending logging messages to email, with buffering
+-------------------------------------------------
+
+To illustrate how you can send log messages via email, so that a set number of
+messages are sent per email, you can subclass
+:class:`~logging.handlers.BufferingHandler`. In the following  example, which you can
+adapt to suit your specific needs, a simple test harness is provided which allows you
+to run the script with command line arguments specifying what you typically need to
+send things via SMTP. (Run the downloaded script with the ``-h`` argument to see the
+required and optional arguments.)
+
+.. code-block:: python
+
+    import logging
+    import logging.handlers
+    import smtplib
+
+    class BufferingSMTPHandler(logging.handlers.BufferingHandler):
+        def __init__(self, mailhost, port, username, password, fromaddr, toaddrs,
+                     subject, capacity):
+            logging.handlers.BufferingHandler.__init__(self, capacity)
+            self.mailhost = mailhost
+            self.mailport = port
+            self.username = username
+            self.password = password
+            self.fromaddr = fromaddr
+            if isinstance(toaddrs, str):
+                toaddrs = [toaddrs]
+            self.toaddrs = toaddrs
+            self.subject = subject
+            self.setFormatter(logging.Formatter("%(asctime)s %(levelname)-5s %(message)s"))
+
+        def flush(self):
+            if len(self.buffer) > 0:
+                try:
+                    smtp = smtplib.SMTP(self.mailhost, self.mailport)
+                    smtp.starttls()
+                    smtp.login(self.username, self.password)
+                    msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (self.fromaddr, ','.join(self.toaddrs), self.subject)
+                    for record in self.buffer:
+                        s = self.format(record)
+                        msg = msg + s + "\r\n"
+                    smtp.sendmail(self.fromaddr, self.toaddrs, msg)
+                    smtp.quit()
+                except Exception:
+                    if logging.raiseExceptions:
+                        raise
+                self.buffer = []
+
+    if __name__ == '__main__':
+        import argparse
+
+        ap = argparse.ArgumentParser()
+        aa = ap.add_argument
+        aa('host', metavar='HOST', help='SMTP server')
+        aa('--port', '-p', type=int, default=587, help='SMTP port')
+        aa('user', metavar='USER', help='SMTP username')
+        aa('password', metavar='PASSWORD', help='SMTP password')
+        aa('to', metavar='TO', help='Addressee for emails')
+        aa('sender', metavar='SENDER', help='Sender email address')
+        aa('--subject', '-s',
+           default='Test Logging email from Python logging module (buffering)',
+           help='Subject of email')
+        options = ap.parse_args()
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        h = BufferingSMTPHandler(options.host, options.port, options.user,
+                                 options.password, options.sender,
+                                 options.to, options.subject, 10)
+        logger.addHandler(h)
+        for i in range(102):
+            logger.info("Info index = %d", i)
+        h.flush()
+        h.close()
+
+If you run this script and your SMTP server is correctly set up, you should find that
+it sends eleven emails to the addressee you specify. The first ten emails will each
+have ten log messages, and the eleventh will have two messages. That makes up 102
+messages as specified in the script.
+
 .. _utc-formatting:
 
 Formatting times using UTC (GMT) via configuration
@@ -3338,6 +3428,82 @@ the above handler, you'd pass structured data using something like this::
     i = 1
     logger.debug('Message %d', i, extra=extra)
 
+How to treat a logger like an output stream
+-------------------------------------------
+
+Sometimes, you need to interface to a third-party API which expects a file-like
+object to write to, but you want to direct the API's output to a logger. You
+can do this using a class which wraps a logger with a file-like API.
+Here's a short script illustrating such a class:
+
+.. code-block:: python
+
+    import logging
+
+    class LoggerWriter:
+        def __init__(self, logger, level):
+            self.logger = logger
+            self.level = level
+
+        def write(self, message):
+            if message != '\n':  # avoid printing bare newlines, if you like
+                self.logger.log(self.level, message)
+
+        def flush(self):
+            # doesn't actually do anything, but might be expected of a file-like
+            # object - so optional depending on your situation
+            pass
+
+        def close(self):
+            # doesn't actually do anything, but might be expected of a file-like
+            # object - so optional depending on your situation. You might want
+            # to set a flag so that later calls to write raise an exception
+            pass
+
+    def main():
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger('demo')
+        info_fp = LoggerWriter(logger, logging.INFO)
+        debug_fp = LoggerWriter(logger, logging.DEBUG)
+        print('An INFO message', file=info_fp)
+        print('A DEBUG message', file=debug_fp)
+
+    if __name__ == "__main__":
+        main()
+
+When this script is run, it prints
+
+.. code-block:: text
+
+    INFO:demo:An INFO message
+    DEBUG:demo:A DEBUG message
+
+You could also use ``LoggerWriter`` to redirect ``sys.stdout`` and
+``sys.stderr`` by doing something like this:
+
+.. code-block:: python
+
+    import sys
+
+    sys.stdout = LoggerWriter(logger, logging.INFO)
+    sys.stderr = LoggerWriter(logger, logging.WARNING)
+
+You should do this *after* configuring logging for your needs. In the above
+example, the :func:`~logging.basicConfig` call does this (using the
+``sys.stderr`` value *before* it is overwritten by a ``LoggerWriter``
+instance). Then, you'd get this kind of result:
+
+.. code-block:: pycon
+
+    >>> print('Foo')
+    INFO:demo:Foo
+    >>> print('Bar', file=sys.stderr)
+    WARNING:demo:Bar
+    >>>
+
+Of course, these above examples show output according to the format used by
+:func:`~logging.basicConfig`, but you can use a different formatter when you
+configure logging.
 
 .. patterns-to-avoid:
 

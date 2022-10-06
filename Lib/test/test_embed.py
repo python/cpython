@@ -283,7 +283,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                         "test_pre_initialization_sys_options", env=env)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
-            "sys._xoptions: {'dev': '2', 'utf8': '1'}\n"
+            "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
             "warnings.filters[:3]: ['default', 'module', 'once']\n"
         )
         self.assertIn(expected_output, out)
@@ -434,8 +434,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'install_signal_handlers': 1,
         'use_hash_seed': 0,
         'hash_seed': 0,
+        'int_max_str_digits': sys.int_info.default_max_str_digits,
         'faulthandler': 0,
         'tracemalloc': 0,
+        'perf_profiling': 0,
         'import_time': 0,
         'code_debug_ranges': 1,
         'show_ref_count': 0,
@@ -520,6 +522,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         use_hash_seed=0,
         faulthandler=0,
         tracemalloc=0,
+        perf_profiling=0,
         pathconfig_warnings=0,
     )
     if MS_WINDOWS:
@@ -828,6 +831,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': 1,
             'hash_seed': 123,
             'tracemalloc': 2,
+            'perf_profiling': 0,
             'import_time': 1,
             'code_debug_ranges': 0,
             'show_ref_count': 1,
@@ -841,14 +845,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'argv': ['-c', 'arg2'],
             'orig_argv': ['python3',
                           '-W', 'cmdline_warnoption',
-                          '-X', 'dev',
+                          '-X', 'cmdline_xoption',
                           '-c', 'pass',
                           'arg2'],
             'parse_argv': 2,
             'xoptions': [
-                'dev=3',
-                'utf8',
-                'dev',
+                'config_xoption1=3',
+                'config_xoption2=',
+                'config_xoption3',
+                'cmdline_xoption',
             ],
             'warnoptions': [
                 'cmdline_warnoption',
@@ -872,6 +877,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'platlibdir': 'my_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
+            'int_max_str_digits': 31337,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
@@ -889,6 +895,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': 1,
             'hash_seed': 42,
             'tracemalloc': 2,
+            'perf_profiling': 0,
             'import_time': 1,
             'code_debug_ranges': 0,
             'malloc_stats': 1,
@@ -907,6 +914,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
+            'int_max_str_digits': 4567,
         }
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
@@ -920,6 +928,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': 1,
             'hash_seed': 42,
             'tracemalloc': 2,
+            'perf_profiling': 0,
             'import_time': 1,
             'code_debug_ranges': 0,
             'malloc_stats': 1,
@@ -938,6 +947,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
+            'int_max_str_digits': 4567,
         }
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
@@ -1076,8 +1086,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'faulthandler': 1,
             'xoptions': [
-                'dev',
-                'utf8',
+                'config_xoption',
+                'cmdline_xoption',
+                'sysadd_xoption',
                 'faulthandler',
             ],
             'warnoptions': [
@@ -1087,12 +1098,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ],
             'orig_argv': ['python3',
                           '-W', 'ignore:::cmdline_warnoption',
-                          '-X', 'utf8'],
+                          '-X', 'cmdline_xoption'],
         }
-        preconfig = {'utf8_mode': 1}
-        self.check_all_configs("test_init_sys_add", config,
-                               expected_preconfig=preconfig,
-                               api=API_PYTHON)
+        self.check_all_configs("test_init_sys_add", config, api=API_PYTHON)
 
     def test_init_run_main(self):
         code = ('import _testinternalcapi, json; '
@@ -1708,6 +1716,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_audit_run_stdin",
                                       timeout=support.SHORT_TIMEOUT,
                                       returncode=1)
+
+    def test_get_incomplete_frame(self):
+        self.run_embedded_interpreter("test_get_incomplete_frame")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

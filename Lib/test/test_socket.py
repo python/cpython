@@ -965,6 +965,19 @@ class GeneralModuleTests(unittest.TestCase):
         socket.IPPROTO_L2TP
         socket.IPPROTO_SCTP
 
+    @unittest.skipIf(support.is_wasi, "WASI is missing these methods")
+    def test_socket_methods(self):
+        # socket methods that depend on a configure HAVE_ check. They should
+        # be present on all platforms except WASI.
+        names = [
+            "_accept", "bind", "connect", "connect_ex", "getpeername",
+            "getsockname", "listen", "recvfrom", "recvfrom_into", "sendto",
+            "setsockopt", "shutdown"
+        ]
+        for name in names:
+            if not hasattr(socket.socket, name):
+                self.fail(f"socket method {name} is missing")
+
     @unittest.skipUnless(sys.platform == 'darwin', 'macOS specific test')
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
     def test3542SocketOptions(self):
@@ -1385,10 +1398,21 @@ class GeneralModuleTests(unittest.TestCase):
 
     def testSockName(self):
         # Testing getsockname()
-        port = socket_helper.find_unused_port()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
-        sock.bind(("0.0.0.0", port))
+
+        # Since find_unused_port() is inherently subject to race conditions, we
+        # call it a couple times if necessary.
+        for i in itertools.count():
+            port = socket_helper.find_unused_port()
+            try:
+                sock.bind(("0.0.0.0", port))
+            except OSError as e:
+                if e.errno != errno.EADDRINUSE or i == 5:
+                    raise
+            else:
+                break
+
         name = sock.getsockname()
         # XXX(nnorwitz): http://tinyurl.com/os5jz seems to indicate
         # it reasonable to get the host's addr in addition to 0.0.0.0.
