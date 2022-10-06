@@ -1275,7 +1275,7 @@ allocate_from_new_pool(uint size)
    or when the max memory limit has been reached.
 */
 static inline void*
-pymalloc_alloc(void *Py_UNUSED(ctx), size_t nbytes)
+pymalloc_alloc(PyInterpreterState *interp, void *Py_UNUSED(ctx), size_t nbytes)
 {
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind == -1)) {
@@ -1325,7 +1325,8 @@ pymalloc_alloc(void *Py_UNUSED(ctx), size_t nbytes)
 void *
 _PyObject_Malloc(void *ctx, size_t nbytes)
 {
-    void* ptr = pymalloc_alloc(ctx, nbytes);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    void* ptr = pymalloc_alloc(interp, ctx, nbytes);
     if (LIKELY(ptr != NULL)) {
         return ptr;
     }
@@ -1344,7 +1345,8 @@ _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     size_t nbytes = nelem * elsize;
 
-    void* ptr = pymalloc_alloc(ctx, nbytes);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    void* ptr = pymalloc_alloc(interp, ctx, nbytes);
     if (LIKELY(ptr != NULL)) {
         memset(ptr, 0, nbytes);
         return ptr;
@@ -1545,7 +1547,7 @@ insert_to_freepool(poolp pool)
    Return 1 if it was freed.
    Return 0 if the block was not allocated by pymalloc_alloc(). */
 static inline int
-pymalloc_free(void *Py_UNUSED(ctx), void *p)
+pymalloc_free(PyInterpreterState *interp, void *Py_UNUSED(ctx), void *p)
 {
     assert(p != NULL);
 
@@ -1610,7 +1612,8 @@ _PyObject_Free(void *ctx, void *p)
         return;
     }
 
-    if (UNLIKELY(!pymalloc_free(ctx, p))) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (UNLIKELY(!pymalloc_free(interp, ctx, p))) {
         /* pymalloc didn't allocate this address */
         PyMem_RawFree(p);
         raw_allocated_blocks--;
@@ -1628,7 +1631,8 @@ _PyObject_Free(void *ctx, void *p)
 
    Return 0 if pymalloc didn't allocated p. */
 static int
-pymalloc_realloc(void *ctx, void **newptr_p, void *p, size_t nbytes)
+pymalloc_realloc(PyInterpreterState *interp, void *ctx,
+                 void **newptr_p, void *p, size_t nbytes)
 {
     void *bp;
     poolp pool;
@@ -1697,7 +1701,8 @@ _PyObject_Realloc(void *ctx, void *ptr, size_t nbytes)
         return _PyObject_Malloc(ctx, nbytes);
     }
 
-    if (pymalloc_realloc(ctx, &ptr2, ptr, nbytes)) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (pymalloc_realloc(interp, ctx, &ptr2, ptr, nbytes)) {
         return ptr2;
     }
 
