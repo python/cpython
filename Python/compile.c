@@ -386,7 +386,6 @@ struct compiler_unit {
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
 
     int u_firstlineno; /* the first lineno of the block */
-    struct location u_loc;  /* line/column info of the current stmt */
 };
 
 /* This struct captures the global state of a compilation.
@@ -990,10 +989,10 @@ basicblock_next_instr(basicblock *b)
    - before the "except" and "finally" clauses
 */
 
-#define SET_LOC(c, x)  (c)->u->u_loc = LOC(x);
+#define SET_LOC(c, x)
 
 // Artificial instructions
-#define UNSET_LOC(c)   (c)->u->u_loc = NO_LOCATION;
+#define UNSET_LOC(c)
 
 #define LOC(x) LOCATION((x)->lineno,          \
                         (x)->end_lineno,      \
@@ -1733,7 +1732,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     u->u_nfblocks = 0;
     u->u_firstlineno = lineno;
-    u->u_loc = loc;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -1770,7 +1768,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = 0;
-        c->u->u_loc = loc;
     }
     else {
         if (!compiler_set_qualname(c))
@@ -1780,7 +1777,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = -1;
-        c->u->u_loc = loc;
     }
     return 1;
 }
@@ -2159,7 +2155,6 @@ compiler_mod(struct compiler *c, mod_ty mod)
         return NULL;
     }
     struct location loc = LOCATION(1, 1, 0, 0);
-    c->u->u_loc = loc;
     switch (mod->kind) {
     case Module_kind:
         if (!compiler_body(c, loc, mod->v.Module.body)) {
@@ -2303,13 +2298,11 @@ compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
     if (!decos)
         return 1;
 
-    struct location old_loc = c->u->u_loc;
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         SET_LOC(c, (expr_ty)asdl_seq_GET(decos, i));
         struct location loc = LOC((expr_ty)asdl_seq_GET(decos, i));
         ADDOP_I(c, loc, CALL, 0);
     }
-    c->u->u_loc = old_loc;
     return 1;
 }
 
@@ -4809,7 +4802,6 @@ update_start_location_to_match_attr(struct compiler *c, struct location loc,
             loc.end_col_offset = Py_MAX(loc.col_offset, loc.end_col_offset);
         }
     }
-    c->u->u_loc = loc;
     return loc;
 }
 
@@ -5933,10 +5925,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
 static int
 compiler_visit_expr(struct compiler *c, expr_ty e)
 {
-    struct location old_loc = c->u->u_loc;
     SET_LOC(c, e);
     int res = compiler_visit_expr1(c, e);
-    c->u->u_loc = old_loc;
     return res;
 }
 
@@ -5954,7 +5944,6 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     expr_ty e = s->v.AugAssign.target;
 
     struct location loc = LOC(e);
-    struct location old_loc = c->u->u_loc;
     SET_LOC(c, e);
 
     switch (e->kind) {
@@ -5993,8 +5982,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         return 0;
     }
 
-    c->u->u_loc = old_loc;
-    loc = old_loc;
+    loc = LOC(s);
 
     VISIT(c, expr, s->v.AugAssign.value);
     ADDOP_INPLACE(c, loc, s->v.AugAssign.op);
