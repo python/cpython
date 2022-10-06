@@ -19,7 +19,7 @@ class TestSundryScripts(unittest.TestCase):
     # added for a script it should be added to the allowlist below.
 
     # scripts that have independent tests.
-    allowlist = ['reindent', 'pdeps', 'gprof2html', 'md5sum']
+    allowlist = ['reindent']
     # scripts that can't be imported without running
     denylist = ['make_ctype']
     # scripts that use windows-only modules
