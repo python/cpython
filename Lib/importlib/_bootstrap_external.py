@@ -182,6 +182,16 @@ else:
         return path.startswith(path_separators)
 
 
+def _path_abspath(path):
+    """Replacement for os.path.abspath."""
+    if not _path_isabs(path):
+        for sep in path_separators:
+            path = path.removeprefix(f".{sep}")
+        return _path_join(_os.getcwd(), path)
+    else:
+        return path
+
+
 def _write_atomic(path, data, mode=0o666):
     """Best-effort function to write data to a path atomically.
     Be prepared to handle a FileExistsError if concurrent writing of the
@@ -494,8 +504,7 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         # make it absolute (`C:\Somewhere\Foo\Bar`), then make it root-relative
         # (`Somewhere\Foo\Bar`), so we end up placing the bytecode file in an
         # unambiguous `C:\Bytecode\Somewhere\Foo\Bar\`.
-        if not _path_isabs(head):
-            head = _path_join(_os.getcwd(), head)
+        head = _path_abspath(head)
 
         # Strip initial drive from a Windows path. We know we have an absolute
         # path here, so the second part of the check rules out a POSIX path that
@@ -808,11 +817,10 @@ def spec_from_file_location(name, location=None, *, loader=None,
                 pass
     else:
         location = _os.fspath(location)
-        if not _path_isabs(location):
-            try:
-                location = _path_join(_os.getcwd(), location)
-            except OSError:
-                pass
+        try:
+            location = _path_abspath(location)
+        except OSError:
+            pass
 
     # If the location is on the filesystem, but doesn't actually exist,
     # we could return None here, indicating that the location is not
@@ -1564,10 +1572,8 @@ class FileFinder:
         # Base (directory) path
         if not path or path == '.':
             self.path = _os.getcwd()
-        elif not _path_isabs(path):
-            self.path = _path_join(_os.getcwd(), path)
         else:
-            self.path = path
+            self.path = _path_abspath(path)
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
@@ -1717,6 +1723,8 @@ def _fix_up_module(ns, name, pathname, cpathname=None):
             loader = SourceFileLoader(name, pathname)
     if not spec:
         spec = spec_from_file_location(name, pathname, loader=loader)
+        if cpathname:
+            spec.cached = _path_abspath(cpathname)
     try:
         ns['__spec__'] = spec
         ns['__loader__'] = loader
