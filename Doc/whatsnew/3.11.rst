@@ -1667,6 +1667,10 @@ Removed
   Python's test suite."
   (Contributed by Victor Stinner in :issue:`46852`.)
 
+* Pynche --- The Pythonically Natural Color and Hue Editor --- has been moved out
+  of ``Tools/scripts`` and is `being developed independently
+  <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.
+
 Porting to Python 3.11
 ======================
 
