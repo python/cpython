@@ -7,6 +7,9 @@ sphinx==4.5.0
 
 blurb
 
+# sphinx-lint 0.6.2 yields many default role errors due to the new regular
+# expression used for default role detection, so we don't use the version
+# until the errors are fixed.
 sphinx-lint<1,!=0.6.2
 
 # The theme used by the documentation is stored separately, so we need
