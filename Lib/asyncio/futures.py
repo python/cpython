@@ -404,6 +404,8 @@ def _chain_future(source, destination):
         if dest_loop is None or dest_loop is source_loop:
             _set_state(destination, source)
         else:
+            if dest_loop.is_closed():
+                return
             dest_loop.call_soon_threadsafe(_set_state, destination, source)
 
     destination.add_done_callback(_call_check_cancel)

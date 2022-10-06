@@ -582,6 +582,11 @@ is already executing raises a :exc:`ValueError` exception.
    :attr:`~BaseException.__traceback__` attribute stored in *value* may
    be cleared.
 
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
+
 .. index:: exception: GeneratorExit
 
 
@@ -738,7 +743,8 @@ which are used to control the execution of a generator function.
    because there is no yield expression that could receive the value.
 
 
-.. coroutinemethod:: agen.athrow(type[, value[, traceback]])
+.. coroutinemethod:: agen.athrow(value)
+                     agen.athrow(type[, value[, traceback]])
 
    Returns an awaitable that raises an exception of type ``type`` at the point
    where the asynchronous generator was paused, and returns the next value
@@ -749,6 +755,11 @@ which are used to control the execution of a generator function.
    If the generator function does not catch the passed-in exception, or
    raises a different exception, then when the awaitable is run that exception
    propagates to the caller of the awaitable.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
 
 .. index:: exception: GeneratorExit
 
@@ -1889,7 +1900,7 @@ The following table summarizes the operator precedence in Python, from highest
 precedence (most binding) to lowest precedence (least binding).  Operators in
 the same box have the same precedence.  Unless the syntax is explicitly given,
 operators are binary.  Operators in the same box group left to right (except for
-exponentiation, which groups from right to left).
+exponentiation and conditional expressions, which group from right to left).
 
 Note that comparisons, membership tests, and identity tests, all have the same
 precedence and have a left-to-right chaining feature as described in the
