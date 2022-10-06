@@ -261,7 +261,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             gen()
         """)
         assert_python_ok("-c", code)
-    
+
     @support.cpython_only
     def test_sneaky_frame_object(self):
 
@@ -284,7 +284,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
         def f():
             while True:
                 yield
-        
+
         old_threshold = gc.get_threshold()
         old_callbacks = gc.callbacks[:]
         old_enabled = gc.isenabled()
