@@ -86,7 +86,7 @@ set_func_event_callback(PyObject *self, PyObject *func)
 }
 
 static PyObject *
-restore_func_event_callback() {
+restore_func_event_callback(PyObject *self, PyObject *Py_UNUSED(ignored)) {
     if (pyfunc_callback == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "nothing to restore");
         return NULL;
