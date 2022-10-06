@@ -127,6 +127,15 @@ os
   for a process with :func:`os.pidfd_open` in non-blocking mode.
   (Contributed by Kumar Aditya in :gh:`93312`.)
 
+shutil
+------
+
+* :func:`shutil.make_archive` now passes the *root_dir* argument to custom
+  archivers which support it.
+  In this case it no longer temporarily changes the current working directory
+  of the process to *root_dir* to perform archiving.
+  (Contributed by Serhiy Storchaka in :gh:`74696`.)
+
 
 sqlite3
 -------
@@ -148,6 +157,11 @@ unicodedata
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
 
+tempfile
+--------
+
+The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+*delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
 Optimizations
 =============
@@ -200,6 +214,11 @@ Deprecated
   :meth:`~generator.throw` and :meth:`~agen.athrow` are deprecated and
   may be removed in a future version of Python. Use the single-arg versions
   of these functions instead. (Contributed by Ofey Chan in :gh:`89874`.)
+
+* :exc:`DeprecationWarning` is now raised when ``__package__`` on a
+  module differs from ``__spec__.parent`` (previously it was
+  :exc:`ImportWarning`).
+  (Contributed by Brett Cannon in :gh:`65961`.)
 
 
 Pending Removal in Python 3.13
@@ -260,6 +279,9 @@ Pending Removal in Python 3.14
 
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases using the C API.
+
+* ``__package__`` will cease to be set or taken into consideration by
+  the import system (:gh:`97879`).
 
 
 Pending Removal in Future Versions
@@ -411,6 +433,15 @@ Removed
   <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
   Validation.
   (Contributed by Victor Stinner in :gh:`94199`.)
+
+* Many previously deprecated cleanups in :mod:`importlib` have now been
+  completed:
+
+  * References to, and support for ``module_repr()`` has been eradicated.
+
+
+* ``importlib.util.set_package`` has been removed.
+  (Contributed by Brett Cannon in :gh:`65961`.)
 
 
 Porting to Python 3.12

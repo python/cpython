@@ -864,6 +864,44 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         with self.check_raises_type_error(msg):
             A().method_two_args("x", "y", x="oops")
 
+@cpython_only
+class TestRecursion(unittest.TestCase):
+
+    def test_super_deep(self):
+
+        def recurse(n):
+            if n:
+                recurse(n-1)
+
+        def py_recurse(n, m):
+            if n:
+                py_recurse(n-1, m)
+            else:
+                c_py_recurse(m-1)
+
+        def c_recurse(n):
+            if n:
+                _testcapi.pyobject_fastcall(c_recurse, (n-1,))
+
+        def c_py_recurse(m):
+            if m:
+                _testcapi.pyobject_fastcall(py_recurse, (1000, m))
+
+        depth = sys.getrecursionlimit()
+        sys.setrecursionlimit(100_000)
+        try:
+            recurse(90_000)
+            with self.assertRaises(RecursionError):
+                recurse(101_000)
+            c_recurse(100)
+            with self.assertRaises(RecursionError):
+                c_recurse(90_000)
+            c_py_recurse(90)
+            with self.assertRaises(RecursionError):
+                c_py_recurse(100_000)
+        finally:
+            sys.setrecursionlimit(depth)
+
 
 if __name__ == "__main__":
     unittest.main()
