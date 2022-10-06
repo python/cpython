@@ -2945,6 +2945,44 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_asutf8andsize(nonbmp), (b'\xf4\x8f\xbf\xbf', 4))
         self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize, 'a\ud800b\udfffc')
 
+    # Test PyUnicode_Count()
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_count(self):
+        from _testcapi import unicode_count
+
+        st = 'abcabd'
+        self.assertEqual(unicode_count(st, 'a', 0, len(st)), 2)
+        self.assertEqual(unicode_count(st, 'ab', 0, len(st)), 2)
+        self.assertEqual(unicode_count(st, 'abc', 0, len(st)), 1)
+        self.assertEqual(unicode_count(st, 'а', 0, len(st)), 0)  # cyrillic "a"
+        # start < end
+        self.assertEqual(unicode_count(st, 'a', 3, len(st)), 1)
+        self.assertEqual(unicode_count(st, 'a', 4, len(st)), 0)
+        self.assertEqual(unicode_count(st, 'a', 0, sys.maxsize), 2)
+        # start >= end
+        self.assertEqual(unicode_count(st, 'abc', 0, 0), 0)
+        self.assertEqual(unicode_count(st, 'a', 3, 2), 0)
+        self.assertEqual(unicode_count(st, 'a', sys.maxsize, 5), 0)
+        # negative
+        self.assertEqual(unicode_count(st, 'ab', -len(st), -1), 2)
+        self.assertEqual(unicode_count(st, 'a', -len(st), -3), 1)
+        # wrong args
+        self.assertRaises(TypeError, unicode_count, 'a', 'a')
+        self.assertRaises(TypeError, unicode_count, 'a', 'a', 1)
+        self.assertRaises(TypeError, unicode_count, 1, 'a', 0, 1)
+        self.assertRaises(TypeError, unicode_count, 'a', 1, 0, 1)
+        # empty string
+        self.assertEqual(unicode_count('abc', '', 0, 3), 4)
+        self.assertEqual(unicode_count('abc', '', 1, 3), 3)
+        self.assertEqual(unicode_count('', '', 0, 1), 1)
+        self.assertEqual(unicode_count('', 'a', 0, 1), 0)
+        # different unicode kinds
+        for uni in "\xa1", "\u8000\u8080", "\ud800\udc02", "\U0001f100\U0001f1f1":
+            for ch in uni:
+                self.assertEqual(unicode_count(uni, ch, 0, len(uni)), 1)
+                self.assertEqual(unicode_count(st, ch, 0, len(st)), 0)
+
     # Test PyUnicode_FindChar()
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
