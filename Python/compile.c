@@ -264,6 +264,9 @@ typedef struct basicblock_ {
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
     int b_offset;
+    /* Used by add_checks_for_loads_of_unknown_variables */
+    uint64_t b_needs_visited_locals_mask;
+    uint64_t b_already_visited_locals_mask;
     /* Basic block is an exception handler that preserves lasti */
     unsigned b_preserve_lasti : 1;
     /* Used by compiler passes to mark whether they have visited a basic block. */
@@ -7899,19 +7902,30 @@ assemble_jump_offsets(basicblock *entryblock)
 }
 
 
-// Ensure each basicblock is only put onto the stack once.
-#define MAYBE_PUSH(B) do {                          \
-        if ((B)->b_visited == 0) {                  \
-            *(*stack_top)++ = (B);                  \
-            (B)->b_visited = 1;                     \
-        }                                           \
-    } while (0)
+// helper functions for add_checks_for_loads_of_unknown_variables
+static inline void
+maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
+{
+    // Push b if the unsafe mask is giving us any new information.
+    // To avoid overflowing the stack, only allow each block once.
+    // Use b->b_visited=1 to mean that b is currently on the stack.
+    b->b_needs_visited_locals_mask |= unsafe_mask;
+    if (b->b_needs_visited_locals_mask
+        & ~b->b_already_visited_locals_mask)
+    {
+        // Still work left to do.
+        if (!b->b_visited) {
+            // not on the stack, so push it.
+            *(*sp)++ = b;
+            b->b_visited = 1;
+        }
+    }
+}
 
 static void
-scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
-                     basicblock ***stack_top)
+scan_block_for_locals(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 {
-    bool unsafe = unsafe_to_start;
+    // mask & (1<<i) = 1 if local i is potentially uninitialized
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
         assert(instr->i_opcode != EXTENDED_ARG);
@@ -7921,81 +7935,94 @@ scan_block_for_local(int target, basicblock *b, bool unsafe_to_start,
         assert(instr->i_opcode != LOAD_CONST__LOAD_FAST);
         assert(instr->i_opcode != STORE_FAST__STORE_FAST);
         assert(instr->i_opcode != LOAD_FAST__LOAD_CONST);
-        if (unsafe && instr->i_except != NULL) {
-            MAYBE_PUSH(instr->i_except);
+        if (instr->i_except != NULL) {
+            maybe_push(instr->i_except, unsafe_mask, sp);
         }
-        if (instr->i_oparg != target) {
+        if (instr->i_oparg >= 64) {
             continue;
         }
+        assert(instr->i_oparg >= 0);
+        uint64_t bit = (uint64_t)1 << instr->i_oparg;
         switch (instr->i_opcode) {
-            case LOAD_FAST_CHECK:
-                // if this doesn't raise, then var is defined
-                unsafe = false;
+            case DELETE_FAST:
+                unsafe_mask |= bit;
                 break;
             case LOAD_FAST:
-                if (unsafe) {
+                // If this doesn't raise, then var is defined.
+                if (unsafe_mask & bit) {
                     instr->i_opcode = LOAD_FAST_CHECK;
                 }
-                unsafe = false;
+                unsafe_mask &= ~bit;
+                break;
+            case LOAD_FAST_CHECK:
+                unsafe_mask &= ~bit;
                 break;
             case STORE_FAST:
-                unsafe = false;
-                break;
-            case DELETE_FAST:
-                unsafe = true;
+                unsafe_mask &= ~bit;
                 break;
         }
     }
-    if (unsafe) {
-        // unsafe at end of this block,
-        // so unsafe at start of next blocks
-        if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
-            MAYBE_PUSH(b->b_next);
-        }
-        struct instr *last = basicblock_last_instr(b);
-        if (last != NULL) {
-            if (is_jump(last)) {
-                assert(last->i_target != NULL);
-                MAYBE_PUSH(last->i_target);
-            }
-        }
+    if (b->b_next && BB_HAS_FALLTHROUGH(b)) {
+        maybe_push(b->b_next, unsafe_mask, sp);
+    }
+    struct instr *last = basicblock_last_instr(b);
+    if (last && is_jump(last)) {
+        assert(last->i_target != NULL);
+        maybe_push(last->i_target, unsafe_mask, sp);
     }
 }
-#undef MAYBE_PUSH
 
 static int
 add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
                                           struct compiler *c)
 {
+    int nparams = (int)PyList_GET_SIZE(c->u->u_ste->ste_varnames);
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    if (nlocals > 64) {
+        // Avoid O(nlocals**2) compilation:
+        // only analyze the first 64 locals.
+        // The rest get only LOAD_FAST_CHECK.
+        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+            for (int i = 0; i < b->b_iused; i++) {
+                struct instr *instr = &b->b_instr[i];
+                if (instr->i_opcode == LOAD_FAST && instr->i_oparg >= 64) {
+                    instr->i_opcode = LOAD_FAST_CHECK;
+                }
+            }
+        }
+        nlocals = 64;
+    }
     basicblock **stack = make_cfg_traversal_stack(entryblock);
     if (stack == NULL) {
         return -1;
     }
-    Py_ssize_t nparams = PyList_GET_SIZE(c->u->u_ste->ste_varnames);
-    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
-    for (int target = 0; target < nlocals; target++) {
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            b->b_visited = 0;
-        }
-        basicblock **stack_top = stack;
+    basicblock **sp = stack;
 
-        // First pass: find the relevant DFS starting points:
-        // the places where "being uninitialized" originates,
-        // which are the entry block and any DELETE_FAST statements.
-        if (target >= nparams) {
-            // only non-parameter locals start out uninitialized.
-            *(stack_top++) = entryblock;
-            entryblock->b_visited = 1;
-        }
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            scan_block_for_local(target, b, false, &stack_top);
-        }
+    // First origin of being uninitialized:
+    // The non-parameter locals in the entry block.
+    // is there a bithack for this without UB?
+    uint64_t start_mask = 0;
+    for (int i = nparams; i < nlocals; i++) {
+        start_mask |= (uint64_t)1 << i;
+    }
+    maybe_push(entryblock, start_mask, &sp);
 
-        // Second pass: Depth-first search to propagate uncertainty
-        while (stack_top > stack) {
-            basicblock *b = *--stack_top;
-            scan_block_for_local(target, b, true, &stack_top);
-        }
+    // Second origin of being uninitialized:
+    // There could be DELETE_FAST somewhere.
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        scan_block_for_locals(b, 0, &sp);
+    }
+
+    // Now propagate the uncertainty from the origins we found: Use
+    // LOAD_FAST_CHECK for any LOAD_FAST where the local could be undefined.
+    while (sp > stack) {
+        basicblock *b = *--sp;
+        // mark as no longer on stack
+        b->b_visited = 0;
+        uint64_t unsafe_mask = b->b_needs_visited_locals_mask;
+        assert(unsafe_mask & ~b->b_already_visited_locals_mask);
+        b->b_already_visited_locals_mask = unsafe_mask;
+        scan_block_for_locals(b, unsafe_mask, &sp);
     }
     PyMem_Free(stack);
     return 0;
