@@ -854,59 +854,50 @@ def spec_from_file_location(name, location=None, *, loader=None,
     return spec
 
 
-def _bless_my_loader(module):
-    """Helper function implementing the current module loader policy.
-
-    In Python 3.14, the end state is to require and use the module's
-    __spec__.loader and ignore any __loader__ attribute on the
-    module.
-
-   * If you have a __loader__ and a __spec__.loader but they are not the
-     same, in Python 3.12 we issue a DeprecationWarning and fall back to
-     __loader__ for backward compatibility.  In Python 3.14, we'll flip
-     this case to ignoring __loader__ entirely, without error.
-
-   * If you do not have a __spec__ or __spec__.loader, we also issue a
-     DeprecationWarning and fall back to __loader__.  In Python 3.14,
-     we'll make this case fail with an AttributeError, and ignore
-     __loader__.
-
-   * In Python 3.12 and beyond, if you do not have a __loader__, we don't
-     care as long as you still have a __spec__.loader, otherwise you get
-     an AttributeError, telling you to add a __spec__.loader.
+def _bless_my_loader(module_globals):
+    """Helper function for _warnings.c
 
     See GH#97850 for details.
     """
+    # 2022-10-06(warsaw): For now, this helper is only used in _warnings.c and
+    # that use case only has the module globals.  This function could be
+    # extended to accept either that or a module object.  However, in the
+    # latter case, it would be better to raise certain exceptions when looking
+    # at a module, which should have either a __loader__ or __spec__.loader.
+    # For backward compatibility, it is possible that we'll get an empty
+    # dictionary for the module globals, and that cannot raise an exception.
+    if not isinstance(module_globals, dict):
+        return None
+
     missing = object()
-    loader = getattr(module, '__loader__', None)
-    spec = getattr(module, '__spec__', missing)
+    loader = module_globals.get('__loader__', None)
+    spec = module_globals.get('__spec__', missing)
 
     if loader is None and spec is missing:
-        raise AttributeError(f'{module!r} is missing a __spec__')
+        #raise AttributeError('Module globals is missing a __spec__')
+        return None
     if loader is None and spec is None:
-        raise ValueError(f'{module!r} is missing a __spec__.loader')
+        raise ValueError('Module globals is missing a __spec__.loader')
 
-    spec_loader = getattr(spec, 'loader', None)
+    spec_loader = getattr(spec, 'loader', missing)
 
-    if spec_loader is None:
+    if spec_loader in (missing, None):
         if loader is None:
-            raise ValueError(f'{module!r} is missing a __spec__.loader')
+            exc = AttributeError if spec_loader is missing else ValueError
+            raise exc('Module globals is missing a __spec__.loader')
         _warnings.warn(
-            f'{module!r} is missing a __spec__.loader',
+            'Module globals is missing a __spec__.loader',
             DeprecationWarning)
         spec_loader = loader
 
     assert spec_loader is not None
     if loader is not None and loader != spec_loader:
         _warnings.warn(
-            f'{module!r}; __loader__ != __spec__.loader',
+            'Module globals; __loader__ != __spec__.loader',
             DeprecationWarning)
-        preferred_loader = loader
-    if loader is None:
-        preferred_loader = spec_loader
+        return loader
 
-    assert preferred_loader is not None
-    return preferred_loader
+    return spec_loader
 
 
 # Loaders #####################################################################

@@ -894,9 +894,18 @@ class _WarningsTests(BaseTest, unittest.TestCase):
     @support.cpython_only
     def test_gh86298_no_loader_and_no_spec(self):
         bar = ModuleType('bar')
+        del bar.__loader__
+        del bar.__spec__
         with original_warnings.catch_warnings():
-            self.assertRaises(
-                AttributeError, self.module.warn_explicit,
+            # 2022-10-06(warsaw): For backward compatibility with the
+            # implementation in _warnings.c, this can't raise an
+            # AttributeError.  See _bless_my_loader() in _bootstrap_external.py
+            ## self.assertRaises(
+            ##     AttributeError, self.module.warn_explicit,
+            ##     'warning!', RuntimeWarning,
+            ##     'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+            self.assertWarns(
+                RuntimeWarning, self.module.warn_explicit,
                 'warning!', RuntimeWarning,
                 'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
 
@@ -904,15 +913,24 @@ class _WarningsTests(BaseTest, unittest.TestCase):
     def test_gh86298_loader_is_none_and_no_spec(self):
         bar = ModuleType('bar')
         bar.__loader__ = None
+        del bar.__spec__
         with original_warnings.catch_warnings():
-            self.assertRaises(
-                AttributeError, self.module.warn_explicit,
+            # 2022-10-06(warsaw): For backward compatibility with the
+            # implementation in _warnings.c, this can't raise an
+            # AttributeError.  See _bless_my_loader() in _bootstrap_external.py
+            ## self.assertRaises(
+            ##     AttributeError, self.module.warn_explicit,
+            ##     'warning!', RuntimeWarning,
+            ##     'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
+            self.assertWarns(
+                RuntimeWarning, self.module.warn_explicit,
                 'warning!', RuntimeWarning,
                 'bar.py', 2, module='bar knee', module_globals=bar.__dict__)
 
     @support.cpython_only
     def test_gh86298_no_loader_and_spec_is_none(self):
         bar = ModuleType('bar')
+        del bar.__loader__
         bar.__spec__ = None
         with original_warnings.catch_warnings():
             self.assertRaises(
@@ -946,6 +964,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
     def test_gh86298_no_spec(self):
         bar = ModuleType('bar')
         bar.__loader__ = object()
+        del bar.__spec__
         with original_warnings.catch_warnings():
             self.assertWarns(
                 DeprecationWarning, self.module.warn_explicit,
@@ -988,6 +1007,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
     @support.cpython_only
     def test_gh86298_no_loader_and_no_spec_loader(self):
         bar = ModuleType('bar')
+        del bar.__loader__
         bar.__spec__ = SimpleNamespace()
         with original_warnings.catch_warnings():
             self.assertRaises(
@@ -998,9 +1018,10 @@ class _WarningsTests(BaseTest, unittest.TestCase):
     @support.cpython_only
     def test_gh86298_no_loader_with_spec_loader_okay(self):
         bar = ModuleType('bar')
+        del bar.__loader__
         bar.__spec__ = SimpleNamespace(loader=object())
         with original_warnings.catch_warnings():
-            self.assertWarn(
+            self.assertWarns(
                 RuntimeWarning, self.module.warn_explicit,
                 'warning!', RuntimeWarning,
                 'bar.py', 2, module='bar knee', module_globals=bar.__dict__)

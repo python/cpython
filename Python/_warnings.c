@@ -975,7 +975,7 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
 }
 
 static PyObject *
-get_source_line(PyInterpreterState *interp, PyObject* mod, PyObject *module_globals, int lineno)
+get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno)
 {
     PyObject *external;
     PyObject *loader;
@@ -991,7 +991,7 @@ get_source_line(PyInterpreterState *interp, PyObject* mod, PyObject *module_glob
         return NULL;
     }
 
-    loader = PyObject_CallMethodObjArgs(external, "_bless_my_loader", mod, NULL);
+    loader = PyObject_CallMethod(external, "_bless_my_loader", "O", module_globals, NULL);
     Py_DECREF(external);
     if (loader == NULL) {
         return NULL;
@@ -1074,7 +1074,7 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
             return NULL;
         }
 
-        source_line = get_source_line(tstate->interp, mod, module_globals, lineno);
+        source_line = get_source_line(tstate->interp, module_globals, lineno);
         if (source_line == NULL && PyErr_Occurred()) {
             return NULL;
         }
