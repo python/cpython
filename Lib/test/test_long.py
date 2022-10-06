@@ -1530,9 +1530,9 @@ class LongTest(unittest.TestCase):
                 1 / 0
 
         self.assertEqual(int.from_bytes(ValidBytes()), 1)
-        self.assertRaises(TypeError, int.from_bytes, InvalidBytes)
-        self.assertRaises(TypeError, int.from_bytes, MissingBytes)
-        self.assertRaises(TypeError, int.from_bytes, RaisingBytes)
+        self.assertRaises(TypeError, int.from_bytes, InvalidBytes())
+        self.assertRaises(TypeError, int.from_bytes, MissingBytes())
+        self.assertRaises(ZeroDivisionError, int.from_bytes, RaisingBytes())
 
     @support.cpython_only
     def test_from_bytes_small(self):
