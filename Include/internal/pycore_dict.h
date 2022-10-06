@@ -155,8 +155,8 @@ struct _dictvalues {
 extern uint64_t _pydict_global_version;
 
 #define DICT_MAX_WATCHERS 8
-#define DICT_VERSION_MASK 255
-#define DICT_VERSION_INCREMENT 256
+#define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
+#define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
 
 #define DICT_NEXT_VERSION() (_pydict_global_version += DICT_VERSION_INCREMENT)
 

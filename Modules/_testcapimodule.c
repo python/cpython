@@ -5171,8 +5171,9 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
 
 // Test dict watching
 static PyObject *g_dict_watch_events;
+static int g_dict_watchers_installed;
 
-static void
+static int
 dict_watch_callback(PyDict_WatchEvent event,
                     PyObject *dict,
                     PyObject *key,
@@ -5201,191 +5202,106 @@ dict_watch_callback(PyDict_WatchEvent event,
         default:
             msg = PyUnicode_FromString("unknown");
     }
+    if (!msg) {
+        return -1;
+    }
     assert(PyList_Check(g_dict_watch_events));
-    PyList_Append(g_dict_watch_events, msg);
+    if (PyList_Append(g_dict_watch_events, msg) < 0) {
+        Py_DECREF(msg);
+        return -1;
+    }
+    return 0;
 }
 
-static void
-dict_watch_callback_2(PyDict_WatchEvent event,
-                      PyObject *dict,
-                      PyObject *key,
-                      PyObject *new_value)
+static int
+dict_watch_callback_second(PyDict_WatchEvent event,
+                           PyObject *dict,
+                           PyObject *key,
+                           PyObject *new_value)
 {
     PyObject *msg = PyUnicode_FromString("second");
-    PyList_Append(g_dict_watch_events, msg);
+    if (!msg) {
+        return -1;
+    }
+    if (PyList_Append(g_dict_watch_events, msg) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 static int
-dict_watch_assert(Py_ssize_t expected_num_events,
-                  const char *expected_last_msg)
+dict_watch_callback_error(PyDict_WatchEvent event,
+                          PyObject *dict,
+                          PyObject *key,
+                          PyObject *new_value)
 {
-    char buf[512];
-    Py_ssize_t actual_num_events = PyList_Size(g_dict_watch_events);
-    if (expected_num_events != actual_num_events) {
-        snprintf(buf,
-                 512,
-                 "got %d dict watch events, expected %d",
-                 (int)actual_num_events,
-                 (int)expected_num_events);
-        raiseTestError("test_watch_dict", (const char *)&buf);
-        return -1;
-    }
-    PyObject *last_msg = PyList_GetItem(g_dict_watch_events,
-                                        PyList_Size(g_dict_watch_events)-1);
-    if (PyUnicode_CompareWithASCIIString(last_msg, expected_last_msg)) {
-        snprintf(buf,
-                 512,
-                 "last event is '%s', expected '%s'",
-                 PyUnicode_AsUTF8(last_msg),
-                 expected_last_msg);
-        raiseTestError("test_watch_dict", (const char *)&buf);
-        return -1;
-    }
-    return 0;
-}
-
-static int
-try_watch(int watcher_id, PyObject *obj) {
-    if (PyDict_Watch(watcher_id, obj)) {
-        raiseTestError("test_watch_dict", "PyDict_Watch() failed on dict");
-        return -1;
-    }
-    return 0;
-}
-
-static int
-dict_watch_assert_error(int watcher_id, PyObject *obj, const char *fail_msg)
-{
-    if (!PyDict_Watch(watcher_id, obj)) {
-        raiseTestError("test_watch_dict", fail_msg);
-        return -1;
-    } else if (!PyErr_Occurred()) {
-        raiseTestError("test_watch_dict", "PyDict_Watch() returned error code without exception set");
-        return -1;
-    } else {
-        PyErr_Clear();
-    }
-    return 0;
+    PyErr_SetString(PyExc_RuntimeError, "boom!");
+    return -1;
 }
 
 static PyObject *
-test_watch_dict(PyObject *self, PyObject *Py_UNUSED(args))
+add_dict_watcher(PyObject *self, PyObject *kind)
 {
-    PyObject *watched = PyDict_New();
-    PyObject *unwatched = PyDict_New();
-    PyObject *one = PyLong_FromLong(1);
-    PyObject *two = PyLong_FromLong(2);
-    PyObject *key1 = PyUnicode_FromString("key1");
-    PyObject *key2 = PyUnicode_FromString("key2");
-
-    g_dict_watch_events = PyList_New(0);
-
-    int wid = PyDict_AddWatcher(dict_watch_callback);
-    if (try_watch(wid, watched)) {
+    int watcher_id;
+    assert(PyLong_Check(kind));
+    long kind_l = PyLong_AsLong(kind);
+    if (kind_l == 2) {
+        watcher_id = PyDict_AddWatcher(dict_watch_callback_second);
+    } else if (kind_l == 1) {
+        watcher_id = PyDict_AddWatcher(dict_watch_callback_error);
+    } else {
+        watcher_id = PyDict_AddWatcher(dict_watch_callback);
+    }
+    if (watcher_id < 0) {
         return NULL;
     }
+    if (!g_dict_watchers_installed) {
+        assert(!g_dict_watch_events);
+        if (!(g_dict_watch_events = PyList_New(0))) {
+            return NULL;
+        }
+    }
+    g_dict_watchers_installed++;
+    return PyLong_FromLong(watcher_id);
+}
 
-    PyDict_SetItem(unwatched, key1, two);
-    PyDict_Merge(watched, unwatched, 1);
-
-    if (dict_watch_assert(1, "clone")) {
+static PyObject *
+clear_dict_watcher(PyObject *self, PyObject *watcher_id)
+{
+    if (PyDict_ClearWatcher(PyLong_AsLong(watcher_id))) {
         return NULL;
     }
-
-    PyDict_SetItem(watched, key1, one);
-    PyDict_SetItem(unwatched, key1, one);
-
-    if (dict_watch_assert(2, "mod:key1:1")) {
-        return NULL;
+    g_dict_watchers_installed--;
+    if (!g_dict_watchers_installed) {
+        assert(g_dict_watch_events);
+        Py_CLEAR(g_dict_watch_events);
     }
-
-    PyDict_SetItemString(watched, "key1", two);
-    PyDict_SetItemString(unwatched, "key1", two);
-
-    if (dict_watch_assert(3, "mod:key1:2")) {
-        return NULL;
-    }
-
-    PyDict_SetItem(watched, key2, one);
-    PyDict_SetItem(unwatched, key2, one);
-
-    if (dict_watch_assert(4, "new:key2:1")) {
-        return NULL;
-    }
-
-    _PyDict_Pop(watched, key2, Py_None);
-    _PyDict_Pop(unwatched, key2, Py_None);
-
-    if (dict_watch_assert(5, "del:key2")) {
-        return NULL;
-    }
-
-    PyDict_DelItemString(watched, "key1");
-    PyDict_DelItemString(unwatched, "key1");
-
-    if (dict_watch_assert(6, "del:key1")) {
-        return NULL;
-    }
-
-    PyDict_SetDefault(watched, key1, one);
-    PyDict_SetDefault(unwatched, key1, one);
-
-    if (dict_watch_assert(7, "new:key1:1")) {
-        return NULL;
-    }
-
-    int wid2 = PyDict_AddWatcher(dict_watch_callback_2);
-    if (try_watch(wid2, unwatched)) {
-        return NULL;
-    }
-
-    PyDict_Clear(watched);
-
-    if (dict_watch_assert(8, "clear")) {
-        return NULL;
-    }
-
-    PyDict_Clear(unwatched);
-
-    if (dict_watch_assert(9, "second")) {
-        return NULL;
-    }
-
-    PyObject *copy = PyDict_Copy(watched);
-    // copied dict is not watched, so this does not add an event
-    Py_CLEAR(copy);
-
-    Py_CLEAR(watched);
-
-    if (dict_watch_assert(10, "dealloc")) {
-        return NULL;
-    }
-
-    // it is an error to try to watch a non-dict
-    if (dict_watch_assert_error(wid, one, "PyDict_Watch() succeeded on non-dict")) {
-        return NULL;
-    }
-
-    // It is an error to pass an out-of-range watcher ID
-    if (dict_watch_assert_error(-1, unwatched, "PyDict_Watch() succeeded on negative watcher ID")) { 
-        return NULL;
-    }
-    if (dict_watch_assert_error(8, unwatched, "PyDict_Watch() succeeded on too-large watcher ID")) {
-        return NULL;
-    }
-
-    // It is an error to pass a never-registered watcher ID
-    if (dict_watch_assert_error(7, unwatched, "PyDict_Watch() succeeded on unused watcher ID")) { 
-        return NULL;
-    }
-
-    Py_CLEAR(unwatched);
-    Py_CLEAR(g_dict_watch_events);
-    Py_DECREF(one);
-    Py_DECREF(two);
-    Py_DECREF(key1);
-    Py_DECREF(key2);
     Py_RETURN_NONE;
+}
+
+static PyObject *
+watch_dict(PyObject *self, PyObject *args)
+{
+    PyObject *dict;
+    int watcher_id;
+    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &dict)) {
+        return NULL;
+    }
+    if (PyDict_Watch(watcher_id, dict)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (!g_dict_watch_events) {
+        PyErr_SetString(PyExc_RuntimeError, "no watchers active");
+        return NULL;
+    }
+    Py_INCREF(g_dict_watch_events);
+    return g_dict_watch_events;
 }
 
 
@@ -5982,7 +5898,10 @@ static PyMethodDef TestMethods[] = {
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
-    {"test_watch_dict", test_watch_dict, METH_NOARGS, NULL},
+    {"add_dict_watcher", add_dict_watcher, METH_O, NULL},
+    {"clear_dict_watcher", clear_dict_watcher, METH_O, NULL},
+    {"watch_dict", watch_dict, METH_VARARGS, NULL},
+    {"get_dict_watcher_events", get_dict_watcher_events, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

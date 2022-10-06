@@ -98,10 +98,11 @@ typedef enum {
 // Callback to be invoked when a watched dict is cleared, dealloced, or modified.
 // In clear/dealloc case, key and new_value will be NULL. Otherwise, new_value will be the
 // new value for key, NULL if key is being deleted.
-typedef void(*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject* dict, PyObject* key, PyObject* new_value);
+typedef int(*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject* dict, PyObject* key, PyObject* new_value);
 
-// Register a dict-watcher callback
+// Register/unregister a dict-watcher callback
 PyAPI_FUNC(int) PyDict_AddWatcher(PyDict_WatchCallback callback);
+PyAPI_FUNC(int) PyDict_ClearWatcher(int watcher_id);
 
 // Mark given dictionary as "watched" (callback will be called if it is modified)
 PyAPI_FUNC(int) PyDict_Watch(int watcher_id, PyObject* dict);

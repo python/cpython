@@ -5747,13 +5747,29 @@ PyDict_AddWatcher(PyDict_WatchCallback callback)
 
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (!interp->dict_watchers[i]) {
-            interp->dict_watchers[i] = (void*)callback;
+            interp->dict_watchers[i] = callback;
             return i;
         }
     }
 
     PyErr_SetString(PyExc_RuntimeError, "no more dict watcher IDs available");
     return -1;
+}
+
+int
+PyDict_ClearWatcher(int watcher_id)
+{
+    if (watcher_id < 0 || watcher_id >= DICT_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
+        return -1;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!interp->dict_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    interp->dict_watchers[watcher_id] = NULL;
+    return 0;
 }
 
 void
@@ -5766,9 +5782,13 @@ _PyDict_SendEvent(int watcher_bits,
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (watcher_bits & 1) {
-            PyDict_WatchCallback cb = (PyDict_WatchCallback)interp->dict_watchers[i];
+            PyDict_WatchCallback cb = interp->dict_watchers[i];
             if (cb) {
-                cb(event, (PyObject*)mp, key, value);
+                if (cb(event, (PyObject*)mp, key, value) < 0) {
+                    // some dict modification paths (e.g. PyDict_Clear) can't raise, so we
+                    // can't propagate exceptions from dict watchers.
+                    PyErr_WriteUnraisable((PyObject *)mp);
+                }
             }
         }
         watcher_bits >>= 1;
