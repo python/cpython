@@ -80,7 +80,7 @@ def resolve_bases(bases):
     updated = False
     shift = 0
     for i, base in enumerate(bases):
-        if isinstance(base, type) and not isinstance(base, GenericAlias):
+        if isinstance(base, type):
             continue
         if not hasattr(base, "__mro_entries__"):
             continue

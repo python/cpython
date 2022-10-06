@@ -112,8 +112,8 @@ def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
     charset is the input character set, and must be the canonical name of a
     character set.
 
-    Optional header_enc and body_enc is either Charset.QP for
-    quoted-printable, Charset.BASE64 for base64 encoding, Charset.SHORTEST for
+    Optional header_enc and body_enc is either charset.QP for
+    quoted-printable, charset.BASE64 for base64 encoding, charset.SHORTEST for
     the shortest of qp or base64 encoding, or None for no encoding.  SHORTEST
     is only valid for header_enc.  It describes how message headers and
     message bodies in the input charset are to be encoded.  Default is no
@@ -185,13 +185,13 @@ class Charset:
 
     header_encoding: If the character set must be encoded before it can be
                      used in an email header, this attribute will be set to
-                     Charset.QP (for quoted-printable), Charset.BASE64 (for
-                     base64 encoding), or Charset.SHORTEST for the shortest of
+                     charset.QP (for quoted-printable), charset.BASE64 (for
+                     base64 encoding), or charset.SHORTEST for the shortest of
                      QP or BASE64 encoding.  Otherwise, it will be None.
 
     body_encoding: Same as header_encoding, but describes the encoding for the
                    mail message's body, which indeed may be different than the
-                   header encoding.  Charset.SHORTEST is not allowed for
+                   header encoding.  charset.SHORTEST is not allowed for
                    body_encoding.
 
     output_charset: Some character sets must be converted before they can be

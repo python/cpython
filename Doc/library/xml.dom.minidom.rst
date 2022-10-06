@@ -95,7 +95,7 @@ document: the one that holds all others.  Here is an example program::
 When you are finished with a DOM tree, you may optionally call the
 :meth:`unlink` method to encourage early cleanup of the now-unneeded
 objects.  :meth:`unlink` is an :mod:`xml.dom.minidom`\ -specific
-extension to the DOM API that renders the node and its descendants are
+extension to the DOM API that renders the node and its descendants
 essentially useless.  Otherwise, Python's garbage collector will
 eventually take care of the objects in the tree.
 
@@ -180,7 +180,7 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
-.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None, \
+.. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
                              standalone=None)
 
    Return a pretty-printed version of the document. *indent* specifies the

@@ -358,7 +358,6 @@ of what happens during the loading portion of import::
         sys.modules[spec.name] = module
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
-        # Set __loader__ and __package__ if missing.
     else:
         sys.modules[spec.name] = module
         try:
@@ -490,21 +489,19 @@ submodule.  Let's say you have the following directory structure::
     spam/
         __init__.py
         foo.py
-        bar.py
 
-and ``spam/__init__.py`` has the following lines in it::
+and ``spam/__init__.py`` has the following line in it::
 
     from .foo import Foo
-    from .bar import Bar
 
-then executing the following puts a name binding to ``foo`` and ``bar`` in the
+then executing the following puts name bindings for ``foo`` and ``Foo`` in the
 ``spam`` module::
 
     >>> import spam
     >>> spam.foo
     <module 'spam.foo' from '/tmp/imports/spam/foo.py'>
-    >>> spam.bar
-    <module 'spam.bar' from '/tmp/imports/spam/bar.py'>
+    >>> spam.Foo
+    <class 'spam.foo.Foo'>
 
 Given Python's familiar name binding rules this might seem surprising, but
 it's actually a fundamental feature of the import system.  The invariant
@@ -541,9 +538,13 @@ The import machinery fills in these attributes on each module object
 during loading, based on the module's spec, before the loader executes
 the module.
 
+It is **strongly** recommended that you rely on :attr:`__spec__` and
+its attributes instead of any of the other individual attributes
+listed below.
+
 .. attribute:: __name__
 
-   The ``__name__`` attribute must be set to the fully-qualified name of
+   The ``__name__`` attribute must be set to the fully qualified name of
    the module.  This name is used to uniquely identify the module in
    the import system.
 
@@ -554,9 +555,12 @@ the module.
    for introspection, but can be used for additional loader-specific
    functionality, for example getting data associated with a loader.
 
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of this attribute.
+
 .. attribute:: __package__
 
-   The module's ``__package__`` attribute must be set.  Its value must
+   The module's ``__package__`` attribute may be set.  Its value must
    be a string, but it can be the same value as its ``__name__``.  When
    the module is a package, its ``__package__`` value should be set to
    its ``__name__``.  When the module is not a package, ``__package__``
@@ -564,13 +568,22 @@ the module.
    submodules, to the parent package's name.  See :pep:`366` for further
    details.
 
-   This attribute is used instead of ``__name__`` to calculate explicit
-   relative imports for main modules, as defined in :pep:`366`. It is
-   expected to have the same value as ``__spec__.parent``.
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of this attribute.
 
    .. versionchanged:: 3.6
       The value of ``__package__`` is expected to be the same as
       ``__spec__.parent``.
+
+   .. versionchanged:: 3.10
+      :exc:`ImportWarning` is raised if import falls back to
+      ``__package__`` instead of
+      :attr:`~importlib.machinery.ModuleSpec.parent`.
+
+   .. versionchanged:: 3.12
+      Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning`
+      when falling back to ``__package__``.
+
 
 .. attribute:: __spec__
 
@@ -580,7 +593,7 @@ the module.
    interpreter startup <programs>`.  The one exception is ``__main__``,
    where ``__spec__`` is :ref:`set to None in some cases <main_spec>`.
 
-   When ``__package__`` is not defined, ``__spec__.parent`` is used as
+   When ``__spec__.parent`` is not set, ``__package__`` is used as
    a fallback.
 
    .. versionadded:: 3.4
@@ -612,17 +625,21 @@ the module.
    import system may opt to leave it unset if it has no semantic
    meaning (e.g. a module loaded from a database).
 
-   If ``__file__`` is set, it may also be appropriate to set the
-   ``__cached__`` attribute which is the path to any compiled version of
+   If ``__file__`` is set then the ``__cached__`` attribute might also
+   be set,  which is the path to any compiled version of
    the code (e.g. byte-compiled file). The file does not need to exist
    to set this attribute; the path can simply point to where the
    compiled file would exist (see :pep:`3147`).
 
-   It is also appropriate to set ``__cached__`` when ``__file__`` is not
+   Note that ``__cached__`` may be set even if ``__file__`` is not
    set.  However, that scenario is quite atypical.  Ultimately, the
-   loader is what makes use of ``__file__`` and/or ``__cached__``.  So
+   loader is what makes use of the module spec provided by the finder
+   (from which ``__file__`` and ``__cached__`` are derived).  So
    if a loader can load from a cached module but otherwise does not load
    from a file, that atypical scenario may be appropriate.
+
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of ``__cached__``.
 
 .. _package-path-rules:
 
@@ -677,22 +694,10 @@ Here are the exact rules used:
 
  * Otherwise, just use the module's ``__name__`` in the repr.
 
-.. versionchanged:: 3.4
-   Use of :meth:`loader.module_repr() <importlib.abc.Loader.module_repr>`
-   has been deprecated and the module spec is now used by the import
-   machinery to generate a module repr.
-
-   For backward compatibility with Python 3.3, the module repr will be
-   generated by calling the loader's
-   :meth:`~importlib.abc.Loader.module_repr` method, if defined, before
-   trying either approach described above.  However, the method is deprecated.
-
-.. versionchanged:: 3.10
-
-   Calling :meth:`~importlib.abc.Loader.module_repr` now occurs after trying to
-   use a module's ``__spec__`` attribute but before falling back on
-   ``__file__``. Use of :meth:`~importlib.abc.Loader.module_repr` is slated to
-   stop in Python 3.12.
+.. versionchanged:: 3.12
+   Use of :meth:`module_repr`, having been deprecated since Python 3.4, was
+   removed in Python 3.12 and is no longer called during the resolution of a
+   module's repr.
 
 .. _pyc-invalidation:
 
@@ -801,10 +806,8 @@ environment variable and various other installation- and
 implementation-specific defaults.  Entries in :data:`sys.path` can name
 directories on the file system, zip files, and potentially other "locations"
 (see the :mod:`site` module) that should be searched for modules, such as
-URLs, or database queries.  Only strings and bytes should be present on
-:data:`sys.path`; all other data types are ignored.  The encoding of bytes
-entries is determined by the individual :term:`path entry finders <path entry
-finder>`.
+URLs, or database queries.  Only strings should be present on
+:data:`sys.path`; all other data types are ignored.
 
 The :term:`path based finder` is a :term:`meta path finder`, so the import
 machinery begins the :term:`import path` search by calling the path

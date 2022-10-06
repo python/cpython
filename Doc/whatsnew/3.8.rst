@@ -45,6 +45,7 @@
 :Editor: Raymond Hettinger
 
 This article explains the new features in Python 3.8, compared to 3.7.
+Python 3.8 was released on October 14, 2019.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. testsetup::
@@ -249,6 +250,7 @@ Android and Cygwin, whose cases are handled by the script);
 this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
+.. _bpo-36817-whatsnew:
 
 f-strings support ``=`` for self-documenting expressions and debugging
 ----------------------------------------------------------------------
@@ -1087,6 +1089,9 @@ contain characters unrepresentable at the OS level.
 Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
+Note that ``link_to`` was deprecated in 3.10 and removed in 3.12 in
+favor of a ``hardlink_to`` method added in 3.10 which matches the
+semantics of the existing ``symlink_to`` method.
 
 
 pickle
@@ -1346,7 +1351,7 @@ unicodedata
 -----------
 
 The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.1.0
-<http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
+<https://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 New function :func:`~unicodedata.is_normalized` can be used to verify a string
 is in a specific normal form, often much faster than by actually normalizing
@@ -1490,7 +1495,7 @@ Optimizations
   first introduced in Python 3.4.  It offers better performance and smaller
   size compared to Protocol 3 available since Python 3.0.
 
-* Removed one ``Py_ssize_t`` member from ``PyGC_Head``.  All GC tracked
+* Removed one :c:type:`Py_ssize_t` member from ``PyGC_Head``.  All GC tracked
   objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
   (Contributed by Inada Naoki in :issue:`33597`.)
 
@@ -2004,11 +2009,13 @@ Changes in the Python API
   ``replace()`` method of :class:`types.CodeType` can be used to make the code
   future-proof.
 
+* The parameter ``digestmod`` for :func:`hmac.new` no longer uses the MD5 digest
+  by default.
 
 Changes in the C API
 --------------------
 
-* The :c:type:`PyCompilerFlags` structure got a new *cf_feature_version*
+* The :c:struct:`PyCompilerFlags` structure got a new *cf_feature_version*
   field. It should be initialized to ``PY_MINOR_VERSION``. The field is ignored
   by default, and is used if and only if ``PyCF_ONLY_AST`` flag is set in
   *cf_flags*.

@@ -38,6 +38,14 @@ class HANDLE_converter(CConverter):
     type = 'void *'
     format_unit = '"_Py_PARSE_UINTPTR"'
 
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
 class HANDLE_return_converter(CReturnConverter):
     type = 'void *'
 
@@ -66,7 +74,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d102511df3cda2eb]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1e8e9fa3538ec08f]*/
 
 /*[clinic input]
 module msvcrt

@@ -1,0 +1,2 @@
+Fix the Shell context menu copy-with-prompts bug of copying an extra line
+when one selects whole lines.
