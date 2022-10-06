@@ -24,7 +24,7 @@ from contextlib import suppress
 from importlib import import_module
 from importlib.abc import MetaPathFinder
 from itertools import starmap
-from typing import List, Mapping, Optional, Union
+from typing import List, Mapping, Optional
 
 
 __all__ = [
@@ -134,6 +134,7 @@ class DeprecatedTuple:
     1
     """
 
+    # Do not remove prior to 2023-05-01 or Python 3.13
     _warn = functools.partial(
         warnings.warn,
         "EntryPoint tuple interface is deprecated. Access members by name.",
@@ -184,6 +185,10 @@ class EntryPoint(DeprecatedTuple):
     following the attr, and following any extras.
     """
 
+    name: str
+    value: str
+    group: str
+
     dist: Optional['Distribution'] = None
 
     def __init__(self, name, value, group):
@@ -217,17 +222,6 @@ class EntryPoint(DeprecatedTuple):
     def _for(self, dist):
         vars(self).update(dist=dist)
         return self
-
-    def __iter__(self):
-        """
-        Supply iter so one may construct dicts of EntryPoints by name.
-        """
-        msg = (
-            "Construction of dict of EntryPoints is deprecated in "
-            "favor of EntryPoints."
-        )
-        warnings.warn(msg, DeprecationWarning)
-        return iter((self.name, self))
 
     def matches(self, **params):
         """
@@ -274,77 +268,7 @@ class EntryPoint(DeprecatedTuple):
         return hash(self._key())
 
 
-class DeprecatedList(list):
-    """
-    Allow an otherwise immutable object to implement mutability
-    for compatibility.
-
-    >>> recwarn = getfixture('recwarn')
-    >>> dl = DeprecatedList(range(3))
-    >>> dl[0] = 1
-    >>> dl.append(3)
-    >>> del dl[3]
-    >>> dl.reverse()
-    >>> dl.sort()
-    >>> dl.extend([4])
-    >>> dl.pop(-1)
-    4
-    >>> dl.remove(1)
-    >>> dl += [5]
-    >>> dl + [6]
-    [1, 2, 5, 6]
-    >>> dl + (6,)
-    [1, 2, 5, 6]
-    >>> dl.insert(0, 0)
-    >>> dl
-    [0, 1, 2, 5]
-    >>> dl == [0, 1, 2, 5]
-    True
-    >>> dl == (0, 1, 2, 5)
-    True
-    >>> len(recwarn)
-    1
-    """
-
-    __slots__ = ()
-
-    _warn = functools.partial(
-        warnings.warn,
-        "EntryPoints list interface is deprecated. Cast to list if needed.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    def _wrap_deprecated_method(method_name: str):  # type: ignore
-        def wrapped(self, *args, **kwargs):
-            self._warn()
-            return getattr(super(), method_name)(*args, **kwargs)
-
-        return method_name, wrapped
-
-    locals().update(
-        map(
-            _wrap_deprecated_method,
-            '__setitem__ __delitem__ append reverse extend pop remove '
-            '__iadd__ insert sort'.split(),
-        )
-    )
-
-    def __add__(self, other):
-        if not isinstance(other, tuple):
-            self._warn()
-            other = tuple(other)
-        return self.__class__(tuple(self) + other)
-
-    def __eq__(self, other):
-        if not isinstance(other, tuple):
-            self._warn()
-            other = tuple(other)
-
-        return tuple(self).__eq__(other)
-
-
-class EntryPoints(DeprecatedList):
+class EntryPoints(tuple):
     """
     An immutable collection of selectable EntryPoint objects.
     """
@@ -355,14 +279,6 @@ class EntryPoints(DeprecatedList):
         """
         Get the EntryPoint in self matching name.
         """
-        if isinstance(name, int):
-            warnings.warn(
-                "Accessing entry points by index is deprecated. "
-                "Cast to tuple if needed.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return super().__getitem__(name)
         try:
             return next(iter(self.select(name=name)))
         except StopIteration:
@@ -386,10 +302,6 @@ class EntryPoints(DeprecatedList):
     def groups(self):
         """
         Return the set of all groups of all entry points.
-
-        For coverage while SelectableGroups is present.
-        >>> EntryPoints().groups
-        set()
         """
         return {ep.group for ep in self}
 
@@ -403,101 +315,6 @@ class EntryPoints(DeprecatedList):
             EntryPoint(name=item.value.name, value=item.value.value, group=item.name)
             for item in Sectioned.section_pairs(text or '')
         )
-
-
-class Deprecated:
-    """
-    Compatibility add-in for mapping to indicate that
-    mapping behavior is deprecated.
-
-    >>> recwarn = getfixture('recwarn')
-    >>> class DeprecatedDict(Deprecated, dict): pass
-    >>> dd = DeprecatedDict(foo='bar')
-    >>> dd.get('baz', None)
-    >>> dd['foo']
-    'bar'
-    >>> list(dd)
-    ['foo']
-    >>> list(dd.keys())
-    ['foo']
-    >>> 'foo' in dd
-    True
-    >>> list(dd.values())
-    ['bar']
-    >>> len(recwarn)
-    1
-    """
-
-    _warn = functools.partial(
-        warnings.warn,
-        "SelectableGroups dict interface is deprecated. Use select.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    def __getitem__(self, name):
-        self._warn()
-        return super().__getitem__(name)
-
-    def get(self, name, default=None):
-        self._warn()
-        return super().get(name, default)
-
-    def __iter__(self):
-        self._warn()
-        return super().__iter__()
-
-    def __contains__(self, *args):
-        self._warn()
-        return super().__contains__(*args)
-
-    def keys(self):
-        self._warn()
-        return super().keys()
-
-    def values(self):
-        self._warn()
-        return super().values()
-
-
-class SelectableGroups(Deprecated, dict):
-    """
-    A backward- and forward-compatible result from
-    entry_points that fully implements the dict interface.
-    """
-
-    @classmethod
-    def load(cls, eps):
-        by_group = operator.attrgetter('group')
-        ordered = sorted(eps, key=by_group)
-        grouped = itertools.groupby(ordered, by_group)
-        return cls((group, EntryPoints(eps)) for group, eps in grouped)
-
-    @property
-    def _all(self):
-        """
-        Reconstruct a list of all entrypoints from the groups.
-        """
-        groups = super(Deprecated, self).values()
-        return EntryPoints(itertools.chain.from_iterable(groups))
-
-    @property
-    def groups(self):
-        return self._all.groups
-
-    @property
-    def names(self):
-        """
-        for coverage:
-        >>> SelectableGroups().names
-        set()
-        """
-        return self._all.names
-
-    def select(self, **params):
-        if not params:
-            return self
-        return self._all.select(**params)
 
 
 class PackagePath(pathlib.PurePosixPath):
@@ -1013,27 +830,19 @@ Wrapper for ``distributions`` to return unique distributions by name.
 """
 
 
-def entry_points(**params) -> Union[EntryPoints, SelectableGroups]:
+def entry_points(**params) -> EntryPoints:
     """Return EntryPoint objects for all installed packages.
 
     Pass selection parameters (group or name) to filter the
     result to entry points matching those properties (see
     EntryPoints.select()).
 
-    For compatibility, returns ``SelectableGroups`` object unless
-    selection parameters are supplied. In the future, this function
-    will return ``EntryPoints`` instead of ``SelectableGroups``
-    even when no selection parameters are supplied.
-
-    For maximum future compatibility, pass selection parameters
-    or invoke ``.select`` with parameters on the result.
-
-    :return: EntryPoints or SelectableGroups for all installed packages.
+    :return: EntryPoints for all installed packages.
     """
     eps = itertools.chain.from_iterable(
         dist.entry_points for dist in _unique(distributions())
     )
-    return SelectableGroups.load(eps).select(**params)
+    return EntryPoints(eps).select(**params)
 
 
 def files(distribution_name):
