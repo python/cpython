@@ -11,10 +11,9 @@
 # Kowaltowski, T.; CL. Lucchesi (1993), "Applications of finite automata representing large vocabularies",
 # Software-Practice and Experience 1993
 
-from pprint import pprint
 from collections import defaultdict
-import sys
-import time
+
+DEBUG = False
 
 
 # This class represents a node in the directed acyclic word graph (DAWG). It
@@ -24,7 +23,7 @@ import time
 # __eq__ functions allow it to be used as a key in a python dictionary.
 
 
-class DawgNode(object):
+class DawgNode:
 
     def __init__(self, dawg):
         self.id = dawg.next_id
@@ -73,7 +72,7 @@ class DawgNode(object):
         return count
 
 
-class Dawg(object):
+class Dawg:
     def __init__(self):
         self.previous_word = ""
         self.next_id = 0
@@ -91,11 +90,12 @@ class Dawg(object):
         self.inverse = {}
 
     def insert(self, word, data):
-        assert [0 <= ord(c) < 128 for c in word]
+        if not all(0 <= ord(c) < 128 for c in word):
+            raise ValueError("Use 7-bit ASCII characters only")
         if word <= self.previous_word:
-            raise Exception("Error: Words must be inserted in alphabetical order.")
+            raise ValueError("Error: Words must be inserted in alphabetical order.")
         if data in self.inverse:
-            raise Exception("data %s is duplicate, got it for word %s and now %s" % (data, self.inverse[data], word))
+            raise ValueError(f"data {data} is duplicate, got it for word {self.inverse[data]} and now {word}")
 
         # find common prefix between word and previous word
         common_prefix = 0
@@ -183,9 +183,10 @@ class Dawg(object):
 
     def prettyprint(self):
         for node in sorted(self.enum_all_nodes(), key=lambda e: e.id):
-            print("{}: ({}) {}{}".format(node.id, node, node.count, " final" if node.final else ""))
+            s_final = " final" if node.final else ""
+            print(f"{node.id}: ({node}) {node.count}{s_final}")
             for label, child in sorted(node.edges.items()):
-                print("    {} goto {}".format(label, child.id))
+                print(f"    {label} goto {child.id}")
 
     def _inverse_lookup(self, number):
         assert 0, "not working in the current form, but keep it as the pure python version of compact lookup"
@@ -242,7 +243,7 @@ class Dawg(object):
             for label, child in node.linear_edges:
                 stack.append(child)
 
-        # do a (slighly bad) topological sort
+        # do a (slightly bad) topological sort
         incoming = defaultdict(set)
         for node in order:
             for label, child in node.linear_edges:
@@ -329,8 +330,7 @@ class Dawg(object):
 
 
 # ______________________________________________________________________
-# the following functions are used from RPython to interpret the packed
-# representation
+# the following functions operate on the packed representation
 
 def number_add_bits(x, *bits):
     for bit in bits:
@@ -411,13 +411,13 @@ def _lookup(packed, s):
     skipped = 0  # keep track of number of final nodes that we skipped
     false = False
     while stringpos < len(s):
-        print(f"{node_offset=} {stringpos=}")
+        #print(f"{node_offset=} {stringpos=}")
         _, final, edge_offset = decode_node(packed, node_offset)
         prev_child_offset = edge_offset
         edgeindex = 0
         while 1:
             child_offset, final_edge, size, edgelabel_chars_offset = decode_edge(packed, edgeindex, prev_child_offset, edge_offset)
-            print(f"    {edge_offset=} {child_offset=} {final_edge=} {size=} {edgelabel_chars_offset=}")
+            #print(f"    {edge_offset=} {child_offset=} {final_edge=} {size=} {edgelabel_chars_offset=}")
             edgeindex += 1
             prev_child_offset = child_offset
             if _match_edge(packed, s, size, edgelabel_chars_offset, stringpos):
@@ -442,14 +442,13 @@ def inverse_lookup(packed, inverse, x):
     return _inverse_lookup(packed, pos)
 
 def _inverse_lookup(packed, pos):
-    from rpython.rlib import rstring
-    result = rstring.StringBuilder(42) # max size is like 83
+    result = bytearray()
     node_offset = 0
     while 1:
         node_count, final, edge_offset = decode_node(packed, node_offset)
         if final:
             if pos == 0:
-                return result.build()
+                return bytes(result)
             pos -= 1
         prev_child_offset = edge_offset
         edgeindex = 0
@@ -461,7 +460,7 @@ def _inverse_lookup(packed, pos):
             nextpos = pos - child_count
             if nextpos < 0:
                 assert edgelabel_chars_offset >= 0
-                result.append_slice(packed, edgelabel_chars_offset, edgelabel_chars_offset + size)
+                result.extend(packed[edgelabel_chars_offset: edgelabel_chars_offset + size])
                 node_offset = child_offset
                 break
             elif not final_edge:
@@ -480,4 +479,9 @@ def build_compression_dawg(ucdata):
         d.insert(name, value)
     packed, pos_to_code, reversedict = d.finish()
     print("size of dawg [KiB]", round(len(packed) / 1024, 2))
+    if DEBUG:
+        # check that lookup and inverse_lookup work correctly on the input data
+        for name, value in ucdata:
+            assert lookup(packed, pos_to_code, name.encode('ascii')) == value
+            assert inverse_lookup(packed, reversedict, value) == name.encode('ascii')
     return packed, pos_to_code
