@@ -17,8 +17,8 @@ of Unicode characters while staying memory efficient.  There are special cases
 for strings where all code points are below 128, 256, or 65536; otherwise, code
 points must be below 1114112 (which is the full Unicode range).
 
-:c:type:`Py_UNICODE*` and UTF-8 representations are created on demand and cached
-in the Unicode object.  The :c:type:`Py_UNICODE*` representation is deprecated
+:c:expr:`Py_UNICODE*` and UTF-8 representations are created on demand and cached
+in the Unicode object.  The :c:expr:`Py_UNICODE*` representation is deprecated
 and inefficient.
 
 Due to the transition between the old APIs and the new APIs, Unicode objects
@@ -30,7 +30,7 @@ can internally be in two states depending on how they were created:
 
 * "legacy" Unicode objects have been created through one of the deprecated
   APIs (typically :c:func:`PyUnicode_FromUnicode`) and only bear the
-  :c:type:`Py_UNICODE*` representation; you will have to call
+  :c:expr:`Py_UNICODE*` representation; you will have to call
   :c:func:`PyUnicode_READY` on them before calling any other API.
 
 .. note::
@@ -236,7 +236,7 @@ access to internal read-only data of Unicode objects:
    returned buffer is always terminated with an extra null code point.  It
    may also contain embedded null code points, which would cause the string
    to be truncated when used in most C functions.  The ``AS_DATA`` form
-   casts the pointer to :c:type:`const char *`.  The *o* argument has to be
+   casts the pointer to :c:expr:`const char *`.  The *o* argument has to be
    a Unicode object (not checked).
 
    .. versionchanged:: 3.3
@@ -714,7 +714,7 @@ Extension modules can continue using them, as they will not be removed in Python
 
    Return a read-only pointer to the Unicode object's internal
    :c:type:`Py_UNICODE` buffer, or ``NULL`` on error. This will create the
-   :c:type:`Py_UNICODE*` representation of the object if it is not yet
+   :c:expr:`Py_UNICODE*` representation of the object if it is not yet
    available. The buffer is always terminated with an extra null code point.
    Note that the resulting :c:type:`Py_UNICODE` string may also contain
    embedded null code points, which would cause the string to be truncated when
@@ -730,7 +730,7 @@ Extension modules can continue using them, as they will not be removed in Python
 
    Like :c:func:`PyUnicode_AsUnicode`, but also saves the :c:func:`Py_UNICODE`
    array length (excluding the extra null terminator) in *size*.
-   Note that the resulting :c:type:`Py_UNICODE*` string
+   Note that the resulting :c:expr:`Py_UNICODE*` string
    may contain embedded null code points, which would cause the string to be
    truncated when used in most C functions.
 
