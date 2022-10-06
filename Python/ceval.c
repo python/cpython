@@ -4793,7 +4793,7 @@ handle_eval_breaker:
 
         TARGET(PRECALL_ADAPTIVE) {
             _PyPrecallCache *cache = (_PyPrecallCache *)next_instr;
-            if (cache->counter == 0) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 next_instr--;
                 int is_meth = is_method(stack_pointer, oparg);
                 int nargs = oparg + is_meth;
@@ -4807,7 +4807,7 @@ handle_eval_breaker:
             }
             else {
                 STAT_INC(PRECALL, deferred);
-                cache->counter--;
+                DECREMENT_ADAPTIVE_COUNTER(cache);
                 JUMP_TO_INSTRUCTION(PRECALL);
             }
         }
