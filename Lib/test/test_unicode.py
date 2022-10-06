@@ -2816,9 +2816,15 @@ class CAPITest(unittest.TestCase):
         self.assertIsInstance(p_format1, str)
         self.assertRegex(p_format1, p_format_regex)
 
-        p_format2 = PyUnicode_FromFormat(b'repr=%p', '123456', None, b'xyz')
+        p_format2 = PyUnicode_FromFormat(b'%p %p %p', '123456', None, b'xyz')
         self.assertIsInstance(p_format2, str)
-        self.assertRegex(p_format2, p_format_regex)
+        self.assertRegex(p_format2,
+                         r'0x[a-zA-Z0-9]{8,} 0x[a-zA-Z0-9]{1,} 0x[a-zA-Z0-9]{8,}')
+
+        # Extra args are ignored:
+        p_format3 = PyUnicode_FromFormat(b'%p', '123456', None, b'xyz')
+        self.assertIsInstance(p_format3, str)
+        self.assertRegex(p_format3, p_format_regex)
 
         # Test string decode from parameter of %s using utf-8.
         # b'\xe4\xba\xba\xe6\xb0\x91' is utf-8 encoded byte sequence of
