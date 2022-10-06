@@ -280,8 +280,8 @@ Pending Removal in Python 3.14
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases using the C API.
 
-* ``__package__`` will cease to be set or taken into consideration by
-  the import system (:gh:`97879`).
+* ``__package__`` and ``__cached__`` will cease to be set or taken
+  into consideration by the import system (:gh:`97879`).
 
 
 Pending Removal in Future Versions
