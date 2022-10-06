@@ -95,7 +95,8 @@ The :mod:`runpy` module provides two functions:
 
    .. versionchanged:: 3.12
       The setting of ``__cached__``, ``__loader__``, and
-      ``__package__`` are deprecated.
+      ``__package__`` are deprecated. See
+      :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
 .. function:: run_path(path_name, init_globals=None, run_name=None)
 

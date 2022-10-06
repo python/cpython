@@ -152,7 +152,8 @@ Importing Modules
 
    .. versionchanged:: 3.12
       The setting of :attr:`__cached__` and :attr:`__loader__` is
-      deprecated.
+      deprecated. See :class:`~importlib.machinery.ModuleSpec` for
+      alternatives.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
@@ -172,7 +173,8 @@ Importing Modules
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.12
-      Setting :attr:`__cached__` is deprecated.
+      Setting :attr:`__cached__` is deprecated. See
+      :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
