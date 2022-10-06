@@ -403,8 +403,6 @@ The Python compiler currently generates the following bytecode instructions.
 **General instructions**
 
 In the following, TOS(i) refers to the *i*-th item on the stack which is index from 1.
-We also use as shorthand TOS = TOS(1) which is the top-of-stack.
-TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respectively.
 
 .. opcode:: NOP
 
@@ -414,7 +412,7 @@ TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respective
 
 .. opcode:: POP_TOP
 
-   Removes the top-of-stack (TOS) item.
+   Removes the top-of-stack (TOS(1)) item.
 
 
 .. opcode:: END_FOR
@@ -436,7 +434,7 @@ TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respective
 
 .. opcode:: SWAP (i)
 
-   Swap TOS with TOS(i).
+   Swap TOS(1) with TOS(i).
 
    .. versionadded:: 3.11
 
@@ -467,76 +465,76 @@ result back on the stack.
 
 .. opcode:: UNARY_NEGATIVE
 
-   Implements ``TOS = -TOS``.
+   Implements ``TOS(1) = -TOS(1)``.
 
 
 .. opcode:: UNARY_NOT
 
-   Implements ``TOS = not TOS``.
+   Implements ``TOS(1) = not TOS(1)``.
 
 
 .. opcode:: UNARY_INVERT
 
-   Implements ``TOS = ~TOS``.
+   Implements ``TOS(1) = ~TOS(1)``.
 
 
 .. opcode:: GET_ITER
 
-   Implements ``TOS = iter(TOS)``.
+   Implements ``TOS(1) = iter(TOS(1))``.
 
 
 .. opcode:: GET_YIELD_FROM_ITER
 
-   If ``TOS`` is a :term:`generator iterator` or :term:`coroutine` object
-   it is left as is.  Otherwise, implements ``TOS = iter(TOS)``.
+   If ``TOS(1)`` is a :term:`generator iterator` or :term:`coroutine` object
+   it is left as is.  Otherwise, implements ``TOS(1) = iter(TOS(1))``.
 
    .. versionadded:: 3.5
 
 
 **Binary and in-place operations**
 
-Binary operations remove the top two items from the stack (TOS and TOS1).
+Binary operations remove the top two items from the stack (TOS(1) and TOS(2)).
 They perform the operation, then put the result back on the stack.
 
 In-place operations are like binary operations, but the operation is done in-place
-when TOS1 supports it, and the resulting TOS may be (but does not have to be)
-the original TOS1.
+when TOS(2) supports it, and the resulting TOS(1) may be (but does not have to be)
+the original TOS(2).
 
 
 .. opcode:: BINARY_OP (op)
 
    Implements the binary and in-place operators (depending on the value of
    *op*).
-   ``TOS = TOS1 op TOS``.
+   ``TOS(1) = TOS(2) op TOS(1)``.
 
    .. versionadded:: 3.11
 
 
 .. opcode:: BINARY_SUBSCR
 
-   Implements ``TOS = TOS1[TOS]``.
+   Implements ``TOS(1) = TOS(2)[TOS(1)]``.
 
 
 .. opcode:: STORE_SUBSCR
 
-   Implements ``TOS1[TOS] = TOS2``.
+   Implements ``TOS(2)[TOS(1)] = TOS(3)``.
 
 
 .. opcode:: DELETE_SUBSCR
 
-   Implements ``del TOS1[TOS]``.
+   Implements ``del TOS(2)[TOS(1)]``.
 
 
 .. opcode:: BINARY_SLICE
 
-   Implements ``TOS = TOS2[TOS1:TOS]``.
+   Implements ``TOS(1) = TOS(3)[TOS(2):TOS(1)]``.
 
    .. versionadded:: 3.12
 
 
 .. opcode:: STORE_SLICE
 
-   Implements ``TOS2[TOS1:TOS] = TOS3``.
+   Implements ``TOS(3)[TOS(2):TOS(1)] = TOS(4)``.
 
    .. versionadded:: 3.12
 
@@ -545,7 +543,7 @@ the original TOS1.
 
 .. opcode:: GET_AWAITABLE (where)
 
-   Implements ``TOS = get_awaitable(TOS)``, where ``get_awaitable(o)``
+   Implements ``TOS(1) = get_awaitable(TOS(1))``, where ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
    the CO_ITERABLE_COROUTINE flag, or resolves
    ``o.__await__``.
@@ -564,7 +562,7 @@ the original TOS1.
 
 .. opcode:: GET_AITER
 
-   Implements ``TOS = TOS.__aiter__()``.
+   Implements ``TOS(1) = TOS(1).__aiter__()``.
 
    .. versionadded:: 3.5
    .. versionchanged:: 3.7
@@ -574,7 +572,7 @@ the original TOS1.
 
 .. opcode:: GET_ANEXT
 
-   Pushes ``get_awaitable(TOS.__anext__())`` to the stack.  See
+   Pushes ``get_awaitable(TOS(1).__anext__())`` to the stack.  See
    ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
@@ -583,7 +581,7 @@ the original TOS1.
 .. opcode:: END_ASYNC_FOR
 
    Terminates an :keyword:`async for` loop.  Handles an exception raised
-   when awaiting a next item.  If TOS is :exc:`StopAsyncIteration` pop 3
+   when awaiting a next item.  If TOS(1) is :exc:`StopAsyncIteration` pop 3
    values from the stack and restore the exception state using the second
    of them.  Otherwise re-raise the exception using the value
    from the stack.  An exception handler block is removed from the block stack.
@@ -597,9 +595,9 @@ the original TOS1.
 .. opcode:: CLEANUP_THROW
 
    Handles an exception raised during a :meth:`~generator.throw` or
-   :meth:`~generator.close` call through the current frame.  If TOS is an
+   :meth:`~generator.close` call through the current frame.  If TOS(1) is an
    instance of :exc:`StopIteration`, pop three values from the stack and push
-   its ``value`` member.  Otherwise, re-raise TOS.
+   its ``value`` member.  Otherwise, re-raise TOS(1).
 
    .. versionadded:: 3.12
 
@@ -617,22 +615,22 @@ the original TOS1.
 
 .. opcode:: SET_ADD (i)
 
-   Calls ``set.add(TOS1[-i], TOS)``.  Used to implement set comprehensions.
+   Calls ``set.add(TOS(2)[-i], TOS(1))``.  Used to implement set comprehensions.
 
 
 .. opcode:: LIST_APPEND (i)
 
-   Calls ``list.append(TOS1[-i], TOS)``.  Used to implement list comprehensions.
+   Calls ``list.append(TOS(2)[-i], TOS(1))``.  Used to implement list comprehensions.
 
 
 .. opcode:: MAP_ADD (i)
 
-   Calls ``dict.__setitem__(TOS1[-i], TOS1, TOS)``.  Used to implement dict
+   Calls ``dict.__setitem__(TOS(2)[-i], TOS(2), TOS(1))``.  Used to implement dict
    comprehensions.
 
    .. versionadded:: 3.1
    .. versionchanged:: 3.8
-      Map value is TOS and map key is TOS1. Before, those were reversed.
+      Map value is TOS(1) and map key is TOS(2). Before, those were reversed.
 
 For all of the :opcode:`SET_ADD`, :opcode:`LIST_APPEND` and :opcode:`MAP_ADD`
 instructions, while the added value or key/value pair is popped off, the
@@ -642,12 +640,12 @@ iterations of the loop.
 
 .. opcode:: RETURN_VALUE
 
-   Returns with TOS to the caller of the function.
+   Returns with TOS(1) to the caller of the function.
 
 
 .. opcode:: YIELD_VALUE
 
-   Pops TOS and yields it from a :term:`generator`.
+   Pops TOS(1) and yields it from a :term:`generator`.
 
     .. versionchanged:: 3.11
        oparg set to be the stack depth, for efficient handling on frames.
@@ -691,15 +689,15 @@ iterations of the loop.
 
 .. opcode:: CHECK_EXC_MATCH
 
-   Performs exception matching for ``except``. Tests whether the TOS1 is an exception
-   matching TOS. Pops TOS and pushes the boolean result of the test.
+   Performs exception matching for ``except``. Tests whether the TOS(2) is an exception
+   matching TOS(1). Pops TOS(1) and pushes the boolean result of the test.
 
    .. versionadded:: 3.11
 
 .. opcode:: CHECK_EG_MATCH
 
-   Performs exception matching for ``except*``. Applies ``split(TOS)`` on
-   the exception group representing TOS1.
+   Performs exception matching for ``except*``. Applies ``split(TOS(1))`` on
+   the exception group representing TOS(2).
 
    In case of a match, pops two items from the stack and pushes the
    non-matching subgroup (``None`` in case of full match) followed by the
@@ -710,9 +708,9 @@ iterations of the loop.
 
 .. opcode:: PREP_RERAISE_STAR
 
-   Combines the raised and reraised exceptions list from TOS, into an exception
+   Combines the raised and reraised exceptions list from TOS(1), into an exception
    group to propagate from a try-except* block. Uses the original exception
-   group from TOS1 to reconstruct the structure of reraised exceptions. Pops
+   group from TOS(2) to reconstruct the structure of reraised exceptions. Pops
    two items from the stack and pushes the exception to reraise or ``None``
    if there isn't one.
 
@@ -759,14 +757,14 @@ iterations of the loop.
 
 .. opcode:: GET_LEN
 
-   Push ``len(TOS)`` onto the stack.
+   Push ``len(TOS(1))`` onto the stack.
 
    .. versionadded:: 3.10
 
 
 .. opcode:: MATCH_MAPPING
 
-   If TOS is an instance of :class:`collections.abc.Mapping` (or, more technically: if
+   If TOS(1) is an instance of :class:`collections.abc.Mapping` (or, more technically: if
    it has the :const:`Py_TPFLAGS_MAPPING` flag set in its
    :c:member:`~PyTypeObject.tp_flags`), push ``True`` onto the stack.  Otherwise, push
    ``False``.
@@ -776,7 +774,7 @@ iterations of the loop.
 
 .. opcode:: MATCH_SEQUENCE
 
-   If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an instance
+   If TOS(1) is an instance of :class:`collections.abc.Sequence` and is *not* an instance
    of :class:`str`/:class:`bytes`/:class:`bytearray` (or, more technically: if it has
    the :const:`Py_TPFLAGS_SEQUENCE` flag set in its :c:member:`~PyTypeObject.tp_flags`),
    push ``True`` onto the stack.  Otherwise, push ``False``.
@@ -786,8 +784,8 @@ iterations of the loop.
 
 .. opcode:: MATCH_KEYS
 
-   TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
-   contains all of the keys in TOS, push a :class:`tuple` containing the
+   TOS(1) is a tuple of mapping keys, and TOS(2) is the match subject.  If TOS(2)
+   contains all of the keys in TOS(1), push a :class:`tuple` containing the
    corresponding values. Otherwise, push ``None``.
 
    .. versionadded:: 3.10
@@ -799,7 +797,7 @@ iterations of the loop.
 
 .. opcode:: STORE_NAME (namei)
 
-   Implements ``name = TOS``. *namei* is the index of *name* in the attribute
+   Implements ``name = TOS(1)``. *namei* is the index of *name* in the attribute
    :attr:`co_names` of the code object. The compiler tries to use
    :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
@@ -812,13 +810,13 @@ iterations of the loop.
 
 .. opcode:: UNPACK_SEQUENCE (count)
 
-   Unpacks TOS into *count* individual values, which are put onto the stack
+   Unpacks TOS(1) into *count* individual values, which are put onto the stack
    right-to-left.
 
 
 .. opcode:: UNPACK_EX (counts)
 
-   Implements assignment with a starred target: Unpacks an iterable in TOS into
+   Implements assignment with a starred target: Unpacks an iterable in TOS(1) into
    individual values, where the total number of values can be smaller than the
    number of items in the iterable: one of the new values will be a list of all
    leftover items.
@@ -830,13 +828,13 @@ iterations of the loop.
 
 .. opcode:: STORE_ATTR (namei)
 
-   Implements ``TOS.name = TOS1``, where *namei* is the index of name in
+   Implements ``TOS(1).name = TOS(2)``, where *namei* is the index of name in
    :attr:`co_names`.
 
 
 .. opcode:: DELETE_ATTR (namei)
 
-   Implements ``del TOS.name``, using *namei* as index into :attr:`co_names`.
+   Implements ``del TOS(1).name``, using *namei* as index into :attr:`co_names`.
 
 
 .. opcode:: STORE_GLOBAL (namei)
@@ -879,7 +877,7 @@ iterations of the loop.
 
    Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
    so that the dictionary holds *count* entries:
-   ``{..., TOS3: TOS2, TOS1: TOS}``.
+   ``{..., TOS(4): TOS(3), TOS(2): TOS(1)}``.
 
    .. versionchanged:: 3.5
       The dictionary is created from stack items instead of creating an
@@ -890,7 +888,7 @@ iterations of the loop.
 
    The version of :opcode:`BUILD_MAP` specialized for constant keys. Pops the
    top element on the stack which contains a tuple of keys, then starting from
-   ``TOS1``, pops *count* values to form values in the built dictionary.
+   ``TOS(2)``, pops *count* values to form values in the built dictionary.
 
    .. versionadded:: 3.6
 
@@ -905,21 +903,21 @@ iterations of the loop.
 
 .. opcode:: LIST_EXTEND (i)
 
-   Calls ``list.extend(TOS1[-i], TOS)``.  Used to build lists.
+   Calls ``list.extend(TOS(2)[-i], TOS(1))``.  Used to build lists.
 
    .. versionadded:: 3.9
 
 
 .. opcode:: SET_UPDATE (i)
 
-   Calls ``set.update(TOS1[-i], TOS)``.  Used to build sets.
+   Calls ``set.update(TOS(2)[-i], TOS(1))``.  Used to build sets.
 
    .. versionadded:: 3.9
 
 
 .. opcode:: DICT_UPDATE (i)
 
-   Calls ``dict.update(TOS1[-i], TOS)``.  Used to build dicts.
+   Calls ``dict.update(TOS(2)[-i], TOS(1))``.  Used to build dicts.
 
    .. versionadded:: 3.9
 
@@ -933,13 +931,13 @@ iterations of the loop.
 
 .. opcode:: LOAD_ATTR (namei)
 
-   If the low bit of ``namei`` is not set, this replaces TOS with
-   ``getattr(TOS, co_names[namei>>1])``.
+   If the low bit of ``namei`` is not set, this replaces TOS(1) with
+   ``getattr(TOS(1), co_names[namei>>1])``.
 
    If the low bit of ``namei`` is set, this will attempt to load a method named
-   ``co_names[namei>>1]`` from the TOS object. TOS is popped.
-   This bytecode distinguishes two cases: if TOS has a method with the correct
-   name, the bytecode pushes the unbound method and TOS. TOS will be used as
+   ``co_names[namei>>1]`` from the TOS(1) object. TOS(1) is popped.
+   This bytecode distinguishes two cases: if TOS(1) has a method with the correct
+   name, the bytecode pushes the unbound method and TOS(1). TOS(1) will be used as
    the first argument (``self``) by :opcode:`CALL` when calling the
    unbound method. Otherwise, ``NULL`` and the object return by the attribute
    lookup are pushed.
@@ -971,7 +969,7 @@ iterations of the loop.
 
 .. opcode:: IMPORT_NAME (namei)
 
-   Imports the module ``co_names[namei]``.  TOS and TOS1 are popped and provide
+   Imports the module ``co_names[namei]``.  TOS(1) and TOS(2) are popped and provide
    the *fromlist* and *level* arguments of :func:`__import__`.  The module
    object is pushed onto the stack.  The current namespace is not affected: for
    a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
@@ -980,7 +978,7 @@ iterations of the loop.
 
 .. opcode:: IMPORT_FROM (namei)
 
-   Loads the attribute ``co_names[namei]`` from the module found in TOS. The
+   Loads the attribute ``co_names[namei]`` from the module found in TOS(1). The
    resulting object is pushed onto the stack, to be subsequently stored by a
    :opcode:`STORE_FAST` instruction.
 
@@ -1006,7 +1004,7 @@ iterations of the loop.
 
 .. opcode:: POP_JUMP_IF_TRUE (delta)
 
-   If TOS is true, increments the bytecode counter by *delta*.  TOS is popped.
+   If TOS(1) is true, increments the bytecode counter by *delta*.  TOS(1) is popped.
 
    .. versionchanged:: 3.11
       The oparg is now a relative delta rather than an absolute target.
@@ -1018,7 +1016,7 @@ iterations of the loop.
 
 .. opcode:: POP_JUMP_IF_FALSE (delta)
 
-   If TOS is false, increments the bytecode counter by *delta*.  TOS is popped.
+   If TOS(1) is false, increments the bytecode counter by *delta*.  TOS(1) is popped.
 
    .. versionchanged:: 3.11
       The oparg is now a relative delta rather than an absolute target.
@@ -1030,7 +1028,10 @@ iterations of the loop.
 
 .. opcode:: POP_JUMP_IF_NOT_NONE (delta)
 
-   If TOS is not ``None``, increments the bytecode counter by *delta*.  TOS is popped.
+   If TOS(1) is not ``None``, increments the bytecode counter by *delta*.  TOS(1) is popped.
+
+   This opcode is a pseudo-instruction, replaced in final bytecode by
+   the directed versions (forward/backward).
 
    .. versionadded:: 3.11
 
@@ -1040,8 +1041,11 @@ iterations of the loop.
 
 .. opcode:: POP_JUMP_IF_NONE (delta)
 
-   If TOS is ``None``, increments the bytecode counter by *delta*.  TOS is popped.
+   If TOS(1) is ``None``, increments the bytecode counter by *delta*.  TOS(1) is popped.
 
+   This opcode is a pseudo-instruction, replaced in final bytecode by
+   the directed versions (forward/backward).
+   
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -1050,8 +1054,8 @@ iterations of the loop.
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (delta)
 
-   If TOS is true, increments the bytecode counter by *delta* and leaves TOS on the
-   stack.  Otherwise (TOS is false), TOS is popped.
+   If TOS(1) is true, increments the bytecode counter by *delta* and leaves TOS(1) on the
+   stack.  Otherwise (TOS(1) is false), TOS(1) is popped.
 
    .. versionadded:: 3.1
 
@@ -1060,8 +1064,8 @@ iterations of the loop.
 
 .. opcode:: JUMP_IF_FALSE_OR_POP (delta)
 
-   If TOS is false, increments the bytecode counter by *delta* and leaves TOS on the
-   stack.  Otherwise (TOS is true), TOS is popped.
+   If TOS(1) is false, increments the bytecode counter by *delta* and leaves TOS(1) on the
+   stack.  Otherwise (TOS(1) is true), TOS(1) is popped.
 
    .. versionadded:: 3.1
 
@@ -1071,7 +1075,7 @@ iterations of the loop.
 
 .. opcode:: FOR_ITER (delta)
 
-   TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
+   TOS(1) is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
    this yields a new value, push it on the stack (leaving the iterator below
    it).  If the iterator indicates it is exhausted then the byte
    code counter is incremented by *delta*.
@@ -1105,7 +1109,7 @@ iterations of the loop.
 
 .. opcode:: STORE_FAST (var_num)
 
-   Stores TOS into the local ``co_varnames[var_num]``.
+   Stores TOS(1) into the local ``co_varnames[var_num]``.
 
 
 .. opcode:: DELETE_FAST (var_num)
@@ -1156,7 +1160,7 @@ iterations of the loop.
 
 .. opcode:: STORE_DEREF (i)
 
-   Stores TOS into the cell contained in slot ``i`` of the "fast locals"
+   Stores TOS(1) into the cell contained in slot ``i`` of the "fast locals"
    storage.
 
    .. versionchanged:: 3.11
@@ -1189,9 +1193,9 @@ iterations of the loop.
    depending on the value of *argc*:
 
    * 0: ``raise`` (re-raise previous exception)
-   * 1: ``raise TOS`` (raise exception instance or type at ``TOS``)
-   * 2: ``raise TOS1 from TOS`` (raise exception instance or type at ``TOS1``
-     with ``__cause__`` set to ``TOS``)
+   * 1: ``raise TOS(1)`` (raise exception instance or type at ``TOS(1)``)
+   * 2: ``raise TOS(2) from TOS(1)`` (raise exception instance or type at ``TOS(2)``
+     with ``__cause__`` set to ``TOS(1)``)
 
 
 .. opcode:: CALL (argc)
@@ -1266,8 +1270,8 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
-   * the code associated with the function (at TOS1)
-   * the :term:`qualified name` of the function (at TOS)
+   * the code associated with the function (at TOS(2))
+   * the :term:`qualified name` of the function (at TOS(1))
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
@@ -1277,7 +1281,7 @@ iterations of the loop.
    .. index:: builtin: slice
 
    Pushes a slice object on the stack.  *argc* must be 2 or 3.  If it is 2,
-   ``slice(TOS1, TOS)`` is pushed; if it is 3, ``slice(TOS2, TOS1, TOS)`` is
+   ``slice(TOS(2), TOS(1))`` is pushed; if it is 3, ``slice(TOS(3), TOS(2), TOS(1))`` is
    pushed. See the :func:`slice` built-in function for more information.
 
 
@@ -1313,12 +1317,12 @@ iterations of the loop.
 
 .. opcode:: MATCH_CLASS (count)
 
-   TOS is a tuple of keyword attribute names, TOS1 is the class being matched
-   against, and TOS2 is the match subject.  *count* is the number of positional
+   TOS(1) is a tuple of keyword attribute names, TOS(2) is the class being matched
+   against, and TOS(3) is the match subject.  *count* is the number of positional
    sub-patterns.
 
-   Pop TOS, TOS1, and TOS2.  If TOS2 is an instance of TOS1 and has the
-   positional and keyword attributes required by *count* and TOS, push a tuple
+   Pop TOS(1), TOS(2), and TOS(3).  If TOS(3) is an instance of TOS(2) and has the
+   positional and keyword attributes required by *count* and TOS(1), push a tuple
    of extracted attributes.  Otherwise, push ``None``.
 
    .. versionadded:: 3.10
@@ -1352,7 +1356,7 @@ iterations of the loop.
 
 .. opcode:: SEND (delta)
 
-    Equivalent to ``TOS = TOS1.send(TOS)``. Used in ``yield from`` and ``await``
+    Equivalent to ``TOS(1) = TOS(2).send(TOS(1))``. Used in ``yield from`` and ``await``
     statements.
 
     If the call raises :exc:`StopIteration`, pop both items, push the
