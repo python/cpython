@@ -123,9 +123,9 @@ growable_comment_array_deallocate(growable_comment_array *arr) {
 }
 
 static int
-_get_keyword_or_name_type(Parser *p, struct token new_token)
+_get_keyword_or_name_type(Parser *p, struct token *new_token)
 {
-    int name_len = new_token.end_col_offset - new_token.col_offset;
+    int name_len = new_token->end_col_offset - new_token->col_offset;
     assert(name_len > 0);
 
     if (name_len >= p->n_keyword_lists ||
@@ -134,7 +134,7 @@ _get_keyword_or_name_type(Parser *p, struct token new_token)
         return NAME;
     }
     for (KeywordToken *k = p->keywords[name_len]; k != NULL && k->type != -1; k++) {
-        if (strncmp(k->str, new_token.start, name_len) == 0) {
+        if (strncmp(k->str, new_token->start, name_len) == 0) {
             return k->type;
         }
     }
@@ -142,11 +142,11 @@ _get_keyword_or_name_type(Parser *p, struct token new_token)
 }
 
 static int
-initialize_token(Parser *p, Token *parser_token, struct token new_token, int token_type) {
+initialize_token(Parser *p, Token *parser_token, struct token *new_token, int token_type) {
     assert(parser_token != NULL);
 
     parser_token->type = (token_type == NAME) ? _get_keyword_or_name_type(p, new_token) : token_type;
-    parser_token->bytes = PyBytes_FromStringAndSize(new_token.start, new_token.end - new_token.start);
+    parser_token->bytes = PyBytes_FromStringAndSize(new_token->start, new_token->end - new_token->start);
     if (parser_token->bytes == NULL) {
         return -1;
     }
@@ -155,13 +155,13 @@ initialize_token(Parser *p, Token *parser_token, struct token new_token, int tok
         return -1;
     }
 
-    parser_token->level = new_token.level;
-    parser_token->lineno = new_token.lineno;
-    parser_token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token.col_offset
-                                                                    : new_token.col_offset;
-    parser_token->end_lineno = new_token.end_lineno;
-    parser_token->end_col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token.end_col_offset
-                                                                 : new_token.end_col_offset;
+    parser_token->level = new_token->level;
+    parser_token->lineno = new_token->lineno;
+    parser_token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token->col_offset
+                                                                    : new_token->col_offset;
+    parser_token->end_lineno = new_token->end_lineno;
+    parser_token->end_col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token->end_col_offset
+                                                                 : new_token->end_col_offset;
 
     p->fill += 1;
 
@@ -238,7 +238,7 @@ _PyPegen_fill_token(Parser *p)
     }
 
     Token *t = p->tokens[p->fill];
-    return initialize_token(p, t, new_token, type);
+    return initialize_token(p, t, &new_token, type);
 }
 
 #if defined(Py_DEBUG)
