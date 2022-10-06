@@ -572,7 +572,7 @@ performance-critical objects (such as numbers).
 
 For an object to be weakly referencable, the extension type must do two things:
 
-#. Include a :c:type:`PyObject\*` field in the C object structure dedicated to
+#. Include a :c:expr:`PyObject*` field in the C object structure dedicated to
    the weak reference mechanism.  The object's constructor should leave it
    ``NULL`` (which is automatic when using the default
    :c:member:`~PyTypeObject.tp_alloc`).
