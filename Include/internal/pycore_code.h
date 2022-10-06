@@ -91,27 +91,7 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
-#define QUICKENING_WARMUP_DELAY 8
-
-/* We want to compare to zero for efficiency, so we offset values accordingly */
-#define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
-
-void _PyCode_Quicken(PyCodeObject *code);
-
-static inline void
-_PyCode_Warmup(PyCodeObject *code)
-{
-    if (code->co_warmup != 0) {
-        code->co_warmup++;
-        if (code->co_warmup == 0) {
-            _PyCode_Quicken(code);
-        }
-    }
-}
-
 extern uint8_t _PyOpcode_Adaptive[256];
-
-extern Py_ssize_t _Py_QuickenedCount;
 
 // Borrowed references to common callables:
 struct callable_cache {
@@ -397,8 +377,8 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 /* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
 #define ADAPTIVE_BACKOFF_BITS 4
-/* The initial counter value is 31 == 2**ADAPTIVE_BACKOFF_START - 1 */
-#define ADAPTIVE_BACKOFF_START 5
+/* The initial counter value is 7 == 2**ADAPTIVE_BACKOFF_START - 1 */
+#define ADAPTIVE_BACKOFF_START 3
 
 #define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
 

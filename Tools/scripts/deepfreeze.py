@@ -257,7 +257,6 @@ class Printer:
             self.write(f".co_names = {co_names},")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
-            self.write(".co_warmup = QUICKENING_INITIAL_WARMUP_VALUE,")
             self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")

@@ -63,7 +63,6 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_exceptiontable;   /* Byte string encoding exception handling  \
                                       table */                                 \
     int co_flags;                  /* CO_..., see below */                     \
-    short co_warmup;                 /* Warmup counter for quickening */       \
     short _co_linearray_entry_size;  /* Size of each entry in _co_linearray */ \
                                                                                \
     /* The rest are not so impactful on performance. */                        \

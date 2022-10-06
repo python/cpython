@@ -348,7 +348,6 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         # _handle_fromlist doesn't get quickened until we intend it to.
         from dis import _all_opmap
         resume = _all_opmap["RESUME"]
-        resume_quick = _all_opmap["RESUME_QUICK"]
         from test.test_dis import QUICKENING_WARMUP_DELAY
 
         code = textwrap.dedent(f"""\
@@ -365,7 +364,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 func(importlib._bootstrap, ["x"], lambda *args: None)
 
             # Assert quickening worked
-            if set(code._co_code_adaptive[:2]) != set([{resume_quick}, 0]):
+            if set(code._co_code_adaptive[:2]) != set([{resume}, 0]):
                 raise AssertionError()
 
             print("Tests passed")

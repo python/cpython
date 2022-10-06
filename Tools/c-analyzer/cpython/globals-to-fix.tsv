@@ -477,7 +477,6 @@ Python/pyfpe.c	-	PyFPE_counter	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
 Python/pylifecycle.c	fatal_error	reentrant	-
-Python/specialize.c	-	_Py_QuickenedCount	-
 
 
 ##################################

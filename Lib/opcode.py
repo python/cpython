@@ -325,9 +325,6 @@ _specializations = {
         "FOR_ITER_LIST",
         "FOR_ITER_RANGE",
     ],
-    "JUMP_BACKWARD": [
-        "JUMP_BACKWARD_QUICK",
-    ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
         # These potentially push [NULL, bound method] onto the stack.
@@ -355,9 +352,6 @@ _specializations = {
         "LOAD_GLOBAL_ADAPTIVE",
         "LOAD_GLOBAL_BUILTIN",
         "LOAD_GLOBAL_MODULE",
-    ],
-    "RESUME": [
-        "RESUME_QUICK",
     ],
     "STORE_ATTR": [
         "STORE_ATTR_ADAPTIVE",
