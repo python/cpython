@@ -14,9 +14,9 @@
 **Source code:** :source:`Lib/importlib/metadata/__init__.py`
 
 ``importlib_metadata`` is a library that provides access to
-the metadata of an installed :term:`packaging:Distribution Package`,
+the metadata of an installed `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_,
 such as its entry points
-or its top-level names (:term:`packaging:Import Package`\ s, modules, if any).
+or its top-level names (`Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_\s, modules, if any).
 Built in part on Python's import system, this library
 intends to replace similar functionality in the `entry point
 API`_ and `metadata API`_ of ``pkg_resources``.  Along with
@@ -29,7 +29,7 @@ installed into Python's ``site-packages`` directory via tools such as
 `pip <https://pypi.org/project/pip/>`_.
 Specifically, it works with distributions with discoverable
 ``dist-info`` or ``egg-info`` directories,
-and metadata defined by the :ref:`packaging:core-metadata`.
+and metadata defined by the `Core metadata specifications <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_.
 
 .. important::
 
@@ -67,7 +67,7 @@ Overview
 ========
 
 Let's say you wanted to get the version string for a
-:term:`packaging:Distribution Package` you've installed
+`Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ you've installed
 using ``pip``.  We start by creating a virtual environment and installing
 something into it:
 
@@ -187,7 +187,7 @@ for compatibility options.
 Distribution metadata
 ---------------------
 
-Every :term:`packaging:Distribution Package` includes some metadata,
+Every `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ includes some metadata,
 which you can extract using the
 ``metadata()`` function::
 
@@ -227,7 +227,7 @@ Distribution versions
 ---------------------
 
 The ``version()`` function is the quickest way to get a
-:term:`packaging:Distribution Package`'s version
+`Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_'s version
 number, as a string::
 
     >>> version('wheel')  # doctest: +SKIP
@@ -240,7 +240,7 @@ Distribution files
 ------------------
 
 You can also get the full set of files contained within a distribution.  The
-``files()`` function takes a :term:`packaging:Distribution Package` name
+``files()`` function takes a `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ name
 and returns all of the
 files installed by this distribution.  Each file object returned is a
 ``PackagePath``, a :class:`pathlib.PurePath` derived object with additional ``dist``,
@@ -286,7 +286,7 @@ distribution is not known to have the metadata present.
 Distribution requirements
 -------------------------
 
-To get the full set of requirements for a :term:`packaging:Distribution Package`,
+To get the full set of requirements for a `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_,
 use the ``requires()``
 function::
 
@@ -300,10 +300,10 @@ function::
 Mapping import to distribution packages
 ---------------------------------------
 
-A convenience method to resolve the :term:`packaging:Distribution Package`
+A convenience method to resolve the `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 name (or names, in the case of a namespace package)
 that provide each importable top-level
-Python module or :term:`packaging:Import Package`::
+Python module or `Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_::
 
     >>> packages_distributions()
     {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
@@ -318,7 +318,7 @@ Distributions
 While the above API is the most common and convenient usage, you can get all
 of that information from the ``Distribution`` class.  A ``Distribution`` is an
 abstract object that represents the metadata for
-a Python :term:`packaging:Distribution Package`.  You can
+a Python `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_.  You can
 get the ``Distribution`` instance::
 
     >>> from importlib.metadata import distribution  # doctest: +SKIP
@@ -339,14 +339,14 @@ instance::
     'MIT'
 
 The full set of available metadata is not described here.
-See the :ref:`packaging:core-metadata` for additional details.
+See the `Core metadata specifications <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_ for additional details.
 
 
 Distribution Discovery
 ======================
 
 By default, this package provides built-in support for discovery of metadata
-for file system and zip file :term:`packaging:Distribution Package`\s.
+for file system and zip file `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_\s.
 This metadata finder search defaults to ``sys.path``, but varies slightly in how it interprets those values from how other import machinery does. In particular:
 
 - ``importlib.metadata`` does not honor :class:`bytes` objects on ``sys.path``.
@@ -356,7 +356,7 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
 Extending the search algorithm
 ==============================
 
-Because :term:`packaging:Distribution Package` metadata
+Because `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_ metadata
 is not available through :data:`sys.path` searches, or
 package loaders directly,
 the metadata for a distribution is found through import
@@ -396,4 +396,4 @@ a custom finder, return instances of this derived ``Distribution`` in the
 
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
 .. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
-.. _`importlib_resources`: https://importlib-resources.readthedocs.io/en/latest/index.html
+.. _`finders`: https://docs.python.org/3/reference/import.html#finders-and-loaders
