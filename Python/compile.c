@@ -1652,10 +1652,6 @@ cfg_builder_addop_j(cfg_builder *g, struct location loc,
 #define ADDOP_INPLACE(C, LOC, BINOP) \
     RETURN_IF_FALSE(addop_binary((C), (LOC), (BINOP), true))
 
-/* VISIT and VISIT_SEQ takes an ASDL type as their second argument.  They use
-   the ASDL name to synthesize the name of the C type and the visit function.
-*/
-
 #define ADD_YIELD_FROM(C, LOC, await) \
     RETURN_IF_FALSE(compiler_add_yield_from((C), (LOC), (await)))
 
@@ -1664,6 +1660,10 @@ cfg_builder_addop_j(cfg_builder *g, struct location loc,
 
 #define ADDOP_YIELD(C, LOC) \
     RETURN_IF_FALSE(addop_yield((C), (LOC)))
+
+/* VISIT and VISIT_SEQ takes an ASDL type as their second argument.  They use
+   the ASDL name to synthesize the name of the C type and the visit function.
+*/
 
 #define VISIT(C, TYPE, V) {\
     if (!compiler_visit_ ## TYPE((C), (V))) \
@@ -3307,6 +3307,18 @@ compiler_continue(struct compiler *c, struct location loc)
 }
 
 
+static struct location
+last_location_in_body(asdl_stmt_seq *stmts)
+{
+    for (int i = asdl_seq_LEN(stmts) - 1; i >= 0; i++) {
+        struct location loc = LOC((stmt_ty)asdl_seq_GET(stmts, i));
+        if (loc.lineno > 0) {
+            return loc;
+        }
+    }
+    return NO_LOCATION;
+}
+
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
         SETUP_FINALLY           L
@@ -3362,6 +3374,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+
     ADDOP_JUMP(c, NO_LOCATION, JUMP, exit);
     /* `finally` block */
 
@@ -3374,6 +3387,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+    loc = last_location_in_body(s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
 
     ADDOP_I(c, loc, RERAISE, 0);  // CHANGED
@@ -3412,6 +3426,7 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
+
     ADDOP_JUMP(c, NO_LOCATION, JUMP, exit);
 
     /* `finally` block */
@@ -3425,6 +3440,8 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
         return 0;
     }
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
+    loc = last_location_in_body(s->v.Try.finalbody);
+
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, loc, RERAISE, 0);  // CHANGED
 
