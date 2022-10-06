@@ -7075,8 +7075,13 @@ static PyObject *
 os_sched_yield_impl(PyObject *module)
 /*[clinic end generated code: output=902323500f222cac input=e54d6f98189391d4]*/
 {
-    if (sched_yield())
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    result = sched_yield();
+    Py_END_ALLOW_THREADS
+    if (result < 0) {
         return posix_error();
+    }
     Py_RETURN_NONE;
 }
 
