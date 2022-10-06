@@ -272,7 +272,7 @@ to provide an interface to files in the machine's file system.
 The :class:`BufferedIOBase` ABC extends :class:`IOBase`.  It deals with
 buffering on a raw binary stream (:class:`RawIOBase`).  Its subclasses,
 :class:`BufferedWriter`, :class:`BufferedReader`, and :class:`BufferedRWPair`
-buffer raw binary streams that are readable, writable, and both readable and writable,
+buffer raw binary streams that are writable, readable, and both readable and writable,
 respectively. :class:`BufferedRandom` provides a buffered interface to seekable streams.
 Another :class:`BufferedIOBase` subclass, :class:`BytesIO`, is a stream of
 in-memory bytes.
