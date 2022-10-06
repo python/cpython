@@ -999,6 +999,39 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
 
+    def test_py_config_isoloated_per_interpreter(self):
+        # A config change in one interpreter must not leak to out to others.
+        #
+        # This test could verify ANY config value, it just happens to have been
+        # written around the time of int_max_str_digits. Refactoring is okay.
+        code = """if 1:
+        import sys, _testinternalcapi
+
+        # Any config value would do, this happens to be the one being
+        # double checked at the time this test was written.
+        config = _testinternalcapi.get_config()
+        config['int_max_str_digits'] = 55555
+        _testinternalcapi.set_config(config)
+        sub_value = _testinternalcapi.get_config()['int_max_str_digits']
+        assert sub_value == 55555, sub_value
+        """
+        before_config = _testinternalcapi.get_config()
+        assert before_config['int_max_str_digits'] != 55555
+        self.assertEqual(support.run_in_subinterp(code), 0,
+                         'subinterp code failure, check stderr.')
+        after_config = _testinternalcapi.get_config()
+        self.assertIsNot(
+                before_config, after_config,
+                "Expected get_config() to return a new dict on each call")
+        self.assertEqual(before_config, after_config,
+                         "CAUTION: Tests executed after this may be "
+                         "running under an altered config.")
+        # try:...finally: calling set_config(before_config) not done
+        # as that results in sys.argv, sys.path, and sys.warnoptions
+        # "being modified by test_capi" per test.regrtest.  So if this
+        # test fails, assume that the environment in this process may
+        # be altered and suspect.
+
     def test_mutate_exception(self):
         """
         Exceptions saved in global module state get shared between
