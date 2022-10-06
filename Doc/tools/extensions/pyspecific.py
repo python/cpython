@@ -30,7 +30,6 @@ from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.writers.latex import LaTeXTranslator
 
 try:
     from sphinx.domains.python import PyFunction, PyMethod
@@ -43,7 +42,8 @@ except ImportError:
 import suspicious
 
 
-ISSUE_URI = 'https://bugs.python.org/issue%s'
+ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
+GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
@@ -58,8 +58,30 @@ Body.enum.converters['loweralpha'] = \
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
+    # sanity check: there are no bpo issues within these two values
+    if 47261 < int(issue) < 400000:
+        msg = inliner.reporter.error(f'The BPO ID {text!r} seems too high -- '
+                                     'use :gh:`...` for GitHub IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
     text = 'bpo-' + issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
+    return [refnode], []
+
+
+# Support for marking up and linking to GitHub issues
+
+def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    issue = utils.unescape(text)
+    # sanity check: all GitHub issues have ID >= 32426
+    # even though some of them are also valid BPO IDs
+    if int(issue) < 32426:
+        msg = inliner.reporter.error(f'The GitHub ID {text!r} seems too low -- '
+                                     'use :issue:`...` for BPO IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
+    text = 'gh-' + issue
+    refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
     return [refnode], []
 
 
@@ -78,33 +100,24 @@ def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 class ImplementationDetail(Directive):
 
     has_content = True
-    required_arguments = 0
-    optional_arguments = 1
     final_argument_whitespace = True
 
     # This text is copied to templates/dummy.html
     label_text = 'CPython implementation detail:'
 
     def run(self):
+        self.assert_has_content()
         pnode = nodes.compound(classes=['impl-detail'])
         label = translators['sphinx'].gettext(self.label_text)
         content = self.content
         add_text = nodes.strong(label, label)
-        if self.arguments:
-            n, m = self.state.inline_text(self.arguments[0], self.lineno)
-            pnode.append(nodes.paragraph('', '', *(n + m)))
         self.state.nested_parse(content, self.content_offset, pnode)
-        if pnode.children and isinstance(pnode[0], nodes.paragraph):
-            content = nodes.inline(pnode[0].rawsource, translatable=True)
-            content.source = pnode[0].source
-            content.line = pnode[0].line
-            content += pnode[0].children
-            pnode[0].replace_self(nodes.paragraph('', '', content,
-                                                  translatable=False))
-            pnode[0].insert(0, add_text)
-            pnode[0].insert(1, nodes.Text(' '))
-        else:
-            pnode.insert(0, nodes.paragraph('', '', add_text))
+        content = nodes.inline(pnode[0].rawsource, translatable=True)
+        content.source = pnode[0].source
+        content.line = pnode[0].line
+        content += pnode[0].children
+        pnode[0].replace_self(nodes.paragraph(
+            '', '', add_text, nodes.Text(' '), content, translatable=False))
         return [pnode]
 
 
@@ -112,10 +125,21 @@ class ImplementationDetail(Directive):
 
 class Availability(Directive):
 
-    has_content = False
+    has_content = True
     required_arguments = 1
     optional_arguments = 0
     final_argument_whitespace = True
+
+    # known platform, libc, and threading implementations
+    known_platforms = frozenset({
+        "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
+        "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris", "Unix", "VxWorks",
+        "WASI", "Windows", "macOS",
+        # libc
+        "BSD libc", "glibc", "musl",
+        # POSIX platforms with pthreads
+        "pthreads",
+    })
 
     def run(self):
         availability_ref = ':ref:`Availability <availability>`: '
@@ -125,7 +149,50 @@ class Availability(Directive):
         pnode.extend(n + m)
         n, m = self.state.inline_text(self.arguments[0], self.lineno)
         pnode.extend(n + m)
+        if self.content:
+            self.state.nested_parse(self.content, self.content_offset, pnode)
+
+        self.parse_platforms()
+
         return [pnode]
+
+    def parse_platforms(self):
+        """Parse platform information from arguments
+
+        Arguments is a comma-separated string of platforms. A platform may
+        be prefixed with "not " to indicate that a feature is not available.
+
+        Example::
+
+           .. availability:: Windows, Linux >= 4.2, not Emscripten, not WASI
+
+        Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
+        parsed into separate tokens.
+        """
+        platforms = {}
+        for arg in self.arguments[0].rstrip(".").split(","):
+            arg = arg.strip()
+            platform, _, version = arg.partition(" >= ")
+            if platform.startswith("not "):
+                version = False
+                platform = platform[4:]
+            elif not version:
+                version = True
+            platforms[platform] = version
+
+        unknown = set(platforms).difference(self.known_platforms)
+        if unknown:
+            cls = type(self)
+            logger = logging.getLogger(cls.__qualname__)
+            logger.warn(
+                f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
+                f"in '.. availability:: {self.arguments[0]}', see "
+                f"{__file__}:{cls.__qualname__}.known_platforms for a set "
+                "known platforms."
+            )
+
+        return platforms
+
 
 
 # Support for documenting audit event
@@ -395,18 +462,14 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        # deprecated pre-Sphinx-2 method
-        if hasattr(env, 'note_versionchange'):
-            env.note_versionchange('deprecated', version[0], node, self.lineno)
-        # new method
-        else:
-            env.get_domain('changeset').note_changeset(node)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 
 # Support for including Misc/NEWS
 
-issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
+issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
+gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -433,8 +496,9 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/issue\1>`__',
-                               content)
+        content = issue_re.sub(r':issue:`\1`', content)
+        # Fallback handling for the GitHub issue
+        content = gh_issue_re.sub(r':gh:`\1`', content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
@@ -614,6 +678,7 @@ def process_audit_events(app, doctree, fromdocname):
 
 def setup(app):
     app.add_role('issue', issue_role)
+    app.add_role('gh', gh_issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)

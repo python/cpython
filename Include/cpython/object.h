@@ -45,7 +45,7 @@ typedef struct _Py_Identifier {
 // For now we are keeping _Py_IDENTIFIER for continued use
 // in non-builtin extensions (and naughty PyPI modules).
 
-#define _Py_static_string_init(value) { .string = value, .index = -1 }
+#define _Py_static_string_init(value) { .string = (value), .index = -1 }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
@@ -53,9 +53,6 @@ typedef struct _Py_Identifier {
 
 typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
 typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
-
-typedef PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args,
-                                    size_t nargsf, PyObject *kwnames);
 
 
 typedef struct {
@@ -201,11 +198,11 @@ struct _typeobject {
     iternextfunc tp_iternext;
 
     /* Attribute descriptor and subclassing stuff */
-    struct PyMethodDef *tp_methods;
-    struct PyMemberDef *tp_members;
-    struct PyGetSetDef *tp_getset;
+    PyMethodDef *tp_methods;
+    PyMemberDef *tp_members;
+    PyGetSetDef *tp_getset;
     // Strong reference on a heap type, borrowed reference on a static type
-    struct _typeobject *tp_base;
+    PyTypeObject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
     descrsetfunc tp_descr_set;
@@ -217,9 +214,9 @@ struct _typeobject {
     inquiry tp_is_gc; /* For PyObject_IS_GC */
     PyObject *tp_bases;
     PyObject *tp_mro; /* method resolution order */
-    PyObject *tp_cache;
-    PyObject *tp_subclasses;
-    PyObject *tp_weaklist;
+    PyObject *tp_cache; /* no longer used */
+    void *tp_subclasses;  /* for static builtin types this is an index */
+    PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
     /* Type attribute cache version tag. Added in version 2.6 */
@@ -227,6 +224,13 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
+};
+
+/* This struct is used by the specializer
+ * It should should be treated as an opaque blob
+ * by code other than the specializer and interpreter. */
+struct _specialization_cache {
+    PyObject *getitem;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -247,6 +251,7 @@ typedef struct _heaptypeobject {
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
     char *_ht_tpname;  // Storage for "tp_name"; see PyType_FromModuleAndSpec
+    struct _specialization_cache _spec_cache; // For use by the specializer.
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
@@ -262,18 +267,16 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecialId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
-struct PyModuleDef;
-PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, struct PyModuleDef *);
+PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 
-struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
 PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 PyAPI_FUNC(int) _PyObject_IsAbstract(PyObject *);
-PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, struct _Py_Identifier *);
-PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObject *);
+PyAPI_FUNC(PyObject *) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
+PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
 /* Replacements of PyObject_GetAttr() and _PyObject_GetAttrId() which
    don't raise AttributeError.
 
@@ -284,7 +287,7 @@ PyAPI_FUNC(int) _PyObject_SetAttrId(PyObject *, struct _Py_Identifier *, PyObjec
    is raised.
 */
 PyAPI_FUNC(int) _PyObject_LookupAttr(PyObject *, PyObject *, PyObject **);
-PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, struct _Py_Identifier *, PyObject **);
+PyAPI_FUNC(int) _PyObject_LookupAttrId(PyObject *, _Py_Identifier *, PyObject **);
 
 PyAPI_FUNC(int) _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 
@@ -379,9 +382,9 @@ _PyObject_DebugTypeStats(FILE *out);
 #endif
 
 #define _PyObject_ASSERT_WITH_MSG(obj, expr, msg) \
-    _PyObject_ASSERT_FROM(obj, expr, msg, __FILE__, __LINE__, __func__)
+    _PyObject_ASSERT_FROM((obj), expr, (msg), __FILE__, __LINE__, __func__)
 #define _PyObject_ASSERT(obj, expr) \
-    _PyObject_ASSERT_WITH_MSG(obj, expr, NULL)
+    _PyObject_ASSERT_WITH_MSG((obj), expr, NULL)
 
 #define _PyObject_ASSERT_FAILED_MSG(obj, msg) \
     _PyObject_AssertFailed((obj), NULL, (msg), __FILE__, __LINE__, __func__)
@@ -462,12 +465,9 @@ partially-deallocated object. To check this, the tp_dealloc function must be
 passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
-/* Forward declarations for PyThreadState */
-struct _ts;
-
 /* Python 3.9 private API, invoked by the macros below. */
-PyAPI_FUNC(int) _PyTrash_begin(struct _ts *tstate, PyObject *op);
-PyAPI_FUNC(void) _PyTrash_end(struct _ts *tstate);
+PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
+PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
 /* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
 PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 
@@ -490,8 +490,8 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
     } while (0);
 
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
-    Py_TRASHCAN_BEGIN_CONDITION(op, \
-        _PyTrash_cond(_PyObject_CAST(op), (destructor)dealloc))
+    Py_TRASHCAN_BEGIN_CONDITION((op), \
+        _PyTrash_cond(_PyObject_CAST(op), (destructor)(dealloc)))
 
 /* The following two macros, Py_TRASHCAN_SAFE_BEGIN and
  * Py_TRASHCAN_SAFE_END, are deprecated since version 3.11 and
@@ -502,7 +502,11 @@ Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
 #define Py_TRASHCAN_SAFE_BEGIN(op) \
     do { \
         UsingDeprecatedTrashcanMacro cond=1; \
-        Py_TRASHCAN_BEGIN_CONDITION(op, cond);
+        Py_TRASHCAN_BEGIN_CONDITION((op), cond);
 #define Py_TRASHCAN_SAFE_END(op) \
         Py_TRASHCAN_END; \
     } while(0);
+
+
+PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
+PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);

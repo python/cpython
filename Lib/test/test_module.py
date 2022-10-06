@@ -8,10 +8,10 @@ from test.support.script_helper import assert_python_ok
 import sys
 ModuleType = type(sys)
 
+
 class FullLoader:
-    @classmethod
-    def module_repr(cls, m):
-        return "<module '{}' (crafted)>".format(m.__name__)
+    pass
+
 
 class BareLoader:
     pass
@@ -236,10 +236,9 @@ a = A(destroyed)"""
         # Yes, a class not an instance.
         m.__loader__ = FullLoader
         self.assertEqual(
-            repr(m), "<module 'foo' (crafted)>")
+            repr(m), "<module 'foo' (<class 'test.test_module.FullLoader'>)>")
 
     def test_module_repr_with_bare_loader_and_filename(self):
-        # Because the loader has no module_repr(), use the file name.
         m = ModuleType('foo')
         # Yes, a class not an instance.
         m.__loader__ = BareLoader
@@ -247,12 +246,11 @@ a = A(destroyed)"""
         self.assertEqual(repr(m), "<module 'foo' from '/tmp/foo.py'>")
 
     def test_module_repr_with_full_loader_and_filename(self):
-        # Even though the module has an __file__, use __loader__.module_repr()
         m = ModuleType('foo')
         # Yes, a class not an instance.
         m.__loader__ = FullLoader
         m.__file__ = '/tmp/foo.py'
-        self.assertEqual(repr(m), "<module 'foo' (crafted)>")
+        self.assertEqual(repr(m), "<module 'foo' from '/tmp/foo.py'>")
 
     def test_module_repr_builtin(self):
         self.assertEqual(repr(sys), "<module 'sys' (built-in)>")
@@ -345,6 +343,25 @@ a = A(destroyed)"""
         self.assertEqual(count, 100)
 
     # frozen and namespace module reprs are tested in importlib.
+
+    def test_subclass_with_slots(self):
+        # In 3.11alpha this crashed, as the slots weren't NULLed.
+
+        class ModuleWithSlots(ModuleType):
+            __slots__ = ("a", "b")
+
+            def __init__(self, name):
+                super().__init__(name)
+
+        m = ModuleWithSlots("name")
+        with self.assertRaises(AttributeError):
+            m.a
+        with self.assertRaises(AttributeError):
+            m.b
+        m.a, m.b = 1, 2
+        self.assertEqual(m.a, 1)
+        self.assertEqual(m.b, 2)
+
 
 
 if __name__ == '__main__':

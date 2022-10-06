@@ -290,21 +290,21 @@ PEP 539: New C API for Thread-Local Storage
 
 While Python provides a C API for thread-local storage support; the existing
 :ref:`Thread Local Storage (TLS) API <thread-local-storage-api>` has used
-:c:type:`int` to represent TLS keys across all platforms.  This has not
-generally been a problem for officially-support platforms, but that is neither
+:c:expr:`int` to represent TLS keys across all platforms.  This has not
+generally been a problem for officially support platforms, but that is neither
 POSIX-compliant, nor portable in any practical sense.
 
 :pep:`539` changes this by providing a new :ref:`Thread Specific Storage (TSS)
 API <thread-specific-storage-api>` to CPython which supersedes use of the
 existing TLS API within the CPython interpreter, while deprecating the existing
-API.  The TSS API uses a new type :c:type:`Py_tss_t` instead of :c:type:`int`
+API.  The TSS API uses a new type :c:type:`Py_tss_t` instead of :c:expr:`int`
 to represent TSS keys--an opaque type the definition of which may depend on
 the underlying TLS implementation.  Therefore, this will allow to build CPython
 on platforms where the native TLS key is defined in a way that cannot be safely
-cast to :c:type:`int`.
+cast to :c:expr:`int`.
 
 Note that on platforms where the native TLS key is defined in a way that cannot
-be safely cast to :c:type:`int`, all functions of the existing TLS API will be
+be safely cast to :c:expr:`int`, all functions of the existing TLS API will be
 no-op and immediately return failure. This indicates clearly that the old API
 is not supported on platforms where it cannot be used reliably, and that no
 effort will be made to add such support.
@@ -353,7 +353,7 @@ module:
 
 The new functions return the number of nanoseconds as an integer value.
 
-`Measurements <https://www.python.org/dev/peps/pep-0564/#annex-clocks-resolution-in-python>`_
+`Measurements <https://peps.python.org/pep-0564/#annex-clocks-resolution-in-python>`_
 show that on Linux and Windows the resolution of :func:`time.time_ns` is
 approximately 3 times better than that of :func:`time.time`.
 
@@ -538,7 +538,7 @@ Other Language Changes
 * The new :option:`-X` ``importtime`` option or the
   :envvar:`PYTHONPROFILEIMPORTTIME` environment variable can be used to show
   the timing of each module import.
-  (Contributed by Victor Stinner in :issue:`31415`.)
+  (Contributed by Inada Naoki in :issue:`31415`.)
 
 
 New Modules
@@ -611,7 +611,7 @@ Contributed by Barry Warsaw and Brett Cannon in :issue:`32248`.
 
 .. seealso::
 
-    `importlib_resources <http://importlib-resources.readthedocs.io/en/latest/>`_
+    `importlib_resources <https://importlib-resources.readthedocs.io/en/latest/>`_
     -- a PyPI backport for earlier Python versions.
 
 
@@ -1175,7 +1175,7 @@ of :func:`os.writev` and :func:`os.pwrite`). (Contributed by Pablo Galindo in
 :issue:`31368`.)
 
 The mode argument of :func:`os.makedirs` no longer affects the file
-permission bits of newly-created intermediate-level directories.
+permission bits of newly created intermediate-level directories.
 (Contributed by Serhiy Storchaka in :issue:`19930`.)
 
 :func:`os.dup2` now returns the new file descriptor.  Previously, ``None``
@@ -1507,7 +1507,7 @@ unicodedata
 -----------
 
 The internal :mod:`unicodedata` database has been upgraded to use `Unicode 11
-<http://www.unicode.org/versions/Unicode11.0.0/>`_. (Contributed by Benjamin
+<https://www.unicode.org/versions/Unicode11.0.0/>`_. (Contributed by Benjamin
 Peterson.)
 
 
@@ -1708,12 +1708,12 @@ Contributed by Paul Ganssle in :issue:`10381`.
 
 The type of results of :c:func:`PyThread_start_new_thread` and
 :c:func:`PyThread_get_thread_ident`, and the *id* parameter of
-:c:func:`PyThreadState_SetAsyncExc` changed from :c:type:`long` to
-:c:type:`unsigned long`.
+:c:func:`PyThreadState_SetAsyncExc` changed from :c:expr:`long` to
+:c:expr:`unsigned long`.
 (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
 :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
-second argument is ``NULL`` and the :c:type:`wchar_t*` string contains null
+second argument is ``NULL`` and the :c:expr:`wchar_t*` string contains null
 characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
 Changes to the startup sequence and the management of dynamic memory
@@ -1906,7 +1906,7 @@ Other CPython Implementation Changes
   variables were defined.  Previously, the order was undefined.
   (Contributed by Raymond Hettinger in :issue:`32690`.)
 
-* The :mod:`distutils` ``upload`` command no longer tries to change CR
+* The ``distutils`` ``upload`` command no longer tries to change CR
   end-of-line characters to CRLF.  This fixes a corruption issue with sdists
   that ended with a byte equivalent to CR.
   (Contributed by Bo Bayles in :issue:`32304`.)
@@ -2120,7 +2120,8 @@ Platform Support Removals
   of other LTS Linux releases (e.g. RHEL/CentOS 7.5, SLES 12-SP3), use OpenSSL
   1.0.2 or later, and remain supported in the default build configuration.
 
-  CPython's own :source:`CI configuration file <.travis.yml>` provides an
+  CPython's own `CI configuration file
+  <https://github.com/python/cpython/blob/v3.7.13/.travis.yml>`_ provides an
   example of using the SSL
   :source:`compatibility testing infrastructure <Tools/ssl/multissltests.py>` in
   CPython's test suite to build and link against OpenSSL 1.1.0 rather than an
@@ -2180,7 +2181,7 @@ The following features and APIs have been removed from Python 3.7:
   :func:`ssl.wrap_socket` or :class:`ssl.SSLContext`.
   (Contributed by Christian Heimes in :issue:`32951`.)
 
-* The unused :mod:`distutils` ``install_misc`` command has been removed.
+* The unused ``distutils`` ``install_misc`` command has been removed.
   (Contributed by Eric N. Vander Weele in :issue:`29218`.)
 
 
@@ -2295,7 +2296,7 @@ Changes in the Python API
   (Contributed by Serhiy Storchaka in :issue:`29192`.)
 
 * The *mode* argument of :func:`os.makedirs` no longer affects the file
-  permission bits of newly-created intermediate-level directories.
+  permission bits of newly created intermediate-level directories.
   To set their file permission bits you can set the umask before invoking
   ``makedirs()``.
   (Contributed by Serhiy Storchaka in :issue:`19930`.)
@@ -2474,7 +2475,7 @@ Windows-only Changes
 
 The file used to override :data:`sys.path` is now called
 ``<python-executable>._pth`` instead of ``'sys.path'``.
-See :ref:`finding_modules` for more information.
+See :ref:`windows_finding_modules` for more information.
 (Contributed by Steve Dower in :issue:`28137`.)
 
 

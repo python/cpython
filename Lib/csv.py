@@ -4,6 +4,7 @@ csv.py - read/write/investigate CSV files
 """
 
 import re
+import types
 from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  field_size_limit, \
@@ -80,6 +81,8 @@ register_dialect("unix", unix_dialect)
 class DictReader:
     def __init__(self, f, fieldnames=None, restkey=None, restval=None,
                  dialect="excel", *args, **kwds):
+        if fieldnames is not None and iter(fieldnames) is fieldnames:
+            fieldnames = list(fieldnames)
         self._fieldnames = fieldnames   # list of keys for the dict
         self.restkey = restkey          # key to catch long rows
         self.restval = restval          # default value for short rows
@@ -126,10 +129,14 @@ class DictReader:
                 d[key] = self.restval
         return d
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
                  dialect="excel", *args, **kwds):
+        if fieldnames is not None and iter(fieldnames) is fieldnames:
+            fieldnames = list(fieldnames)
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
         if extrasaction.lower() not in ("raise", "ignore"):
@@ -155,6 +162,8 @@ class DictWriter:
 
     def writerows(self, rowdicts):
         return self.writer.writerows(map(self._dict_to_list, rowdicts))
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 # Guard Sniffer's type checking against builds that exclude complex()
 try:
@@ -428,7 +437,7 @@ class Sniffer:
         # on whether it's a header
         hasHeader = 0
         for col, colType in columnTypes.items():
-            if type(colType) == type(0): # it's a length
+            if isinstance(colType, int): # it's a length
                 if len(header[col]) != colType:
                     hasHeader += 1
                 else:

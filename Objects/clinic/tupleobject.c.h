@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(tuple_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
 "--\n"
@@ -11,7 +17,7 @@ PyDoc_STRVAR(tuple_index__doc__,
 "Raises ValueError if the value is not present.");
 
 #define TUPLE_INDEX_METHODDEF    \
-    {"index", (PyCFunction)(void(*)(void))tuple_index, METH_FASTCALL, tuple_index__doc__},
+    {"index", _PyCFunction_CAST(tuple_index), METH_FASTCALL, tuple_index__doc__},
 
 static PyObject *
 tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
@@ -112,4 +118,4 @@ tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl(self);
 }
-/*[clinic end generated code: output=72cc0bc4f7358116 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=441d2b880e865f87 input=a9049054013a1b77]*/

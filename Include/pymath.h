@@ -50,11 +50,8 @@
 #  define Py_HUGE_VAL HUGE_VAL
 #endif
 
-/* Py_NAN
- * A value that evaluates to a quiet Not-a-Number (NaN).
- * Define Py_NO_NAN in pyconfig.h if your platform doesn't support NaNs.
- */
-#if !defined(Py_NAN) && !defined(Py_NO_NAN)
+// Py_NAN: Value that evaluates to a quiet Not-a-Number (NaN).
+#if !defined(Py_NAN)
 #  if _Py__has_builtin(__builtin_nan)
      // Built-in implementation of the ISO C99 function nan(): quiet NaN.
 #    define Py_NAN (__builtin_nan(""))

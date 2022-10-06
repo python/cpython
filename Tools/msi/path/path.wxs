@@ -2,7 +2,8 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
         <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
-        
+
+        <PropertyRef Id="DetectTargetDir" />
         <PropertyRef Id="UpgradeTable" />
         <PropertyRef Id="REGISTRYKEY" />
         

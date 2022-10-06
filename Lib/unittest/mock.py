@@ -1943,7 +1943,7 @@ right = ' '.join('r%s' % n for n in numerics.split())
 _non_defaults = {
     '__get__', '__set__', '__delete__', '__reversed__', '__missing__',
     '__reduce__', '__reduce_ex__', '__getinitargs__', '__getnewargs__',
-    '__getstate__', '__setstate__', '__getformat__', '__setformat__',
+    '__getstate__', '__setstate__', '__getformat__',
     '__repr__', '__dir__', '__subclasses__', '__format__',
     '__getnewargs_ex__',
 }
@@ -2175,6 +2175,10 @@ class AsyncMockMixin(Base):
         code_mock = NonCallableMock(spec_set=CodeType)
         code_mock.co_flags = inspect.CO_COROUTINE
         self.__dict__['__code__'] = code_mock
+        self.__dict__['__name__'] = 'AsyncMock'
+        self.__dict__['__defaults__'] = tuple()
+        self.__dict__['__kwdefaults__'] = {}
+        self.__dict__['__annotations__'] = None
 
     async def _execute_mock_call(self, /, *args, **kwargs):
         # This is nearly just like super(), except for special handling
