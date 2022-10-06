@@ -1378,15 +1378,6 @@ an :term:`importer`.
    .. deprecated:: 3.4
       The import machinery takes care of this automatically.
 
-.. decorator:: set_package
-
-   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module` to set the
-   :attr:`__package__` attribute on the returned module. If :attr:`__package__`
-   is set and has a value other than ``None`` it will not be changed.
-
-   .. deprecated:: 3.4
-      The import machinery takes care of this automatically.
-
 .. function:: spec_from_loader(name, loader, *, origin=None, is_package=None)
 
    A factory function for creating a :class:`~importlib.machinery.ModuleSpec`

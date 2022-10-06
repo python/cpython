@@ -252,69 +252,6 @@ class ModuleForLoaderTests:
  ) = util.test_both(ModuleForLoaderTests, util=importlib_util)
 
 
-class SetPackageTests:
-
-    """Tests for importlib.util.set_package."""
-
-    def verify(self, module, expect):
-        """Verify the module has the expected value for __package__ after
-        passing through set_package."""
-        fxn = lambda: module
-        wrapped = self.util.set_package(fxn)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            wrapped()
-        self.assertTrue(hasattr(module, '__package__'))
-        self.assertEqual(expect, module.__package__)
-
-    def test_top_level(self):
-        # __package__ should be set to the empty string if a top-level module.
-        # Implicitly tests when package is set to None.
-        module = types.ModuleType('module')
-        module.__package__ = None
-        self.verify(module, '')
-
-    def test_package(self):
-        # Test setting __package__ for a package.
-        module = types.ModuleType('pkg')
-        module.__path__ = ['<path>']
-        module.__package__ = None
-        self.verify(module, 'pkg')
-
-    def test_submodule(self):
-        # Test __package__ for a module in a package.
-        module = types.ModuleType('pkg.mod')
-        module.__package__ = None
-        self.verify(module, 'pkg')
-
-    def test_setting_if_missing(self):
-        # __package__ should be set if it is missing.
-        module = types.ModuleType('mod')
-        if hasattr(module, '__package__'):
-            delattr(module, '__package__')
-        self.verify(module, '')
-
-    def test_leaving_alone(self):
-        # If __package__ is set and not None then leave it alone.
-        for value in (True, False):
-            module = types.ModuleType('mod')
-            module.__package__ = value
-            self.verify(module, value)
-
-    def test_decorator_attrs(self):
-        def fxn(module): pass
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            wrapped = self.util.set_package(fxn)
-        self.assertEqual(wrapped.__name__, fxn.__name__)
-        self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
-
-
-(Frozen_SetPackageTests,
- Source_SetPackageTests
- ) = util.test_both(SetPackageTests, util=importlib_util)
-
-
 class SetLoaderTests:
 
     """Tests importlib.util.set_loader()."""
