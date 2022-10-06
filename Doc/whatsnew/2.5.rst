@@ -1725,7 +1725,7 @@ attribute of the function object to  change this::
 ``ctypes.pythonapi`` object.  This object does *not*  release the global
 interpreter lock before calling a function, because the lock must be held when
 calling into the interpreter's code.   There's a :class:`py_object()` type
-constructor that will create a  :c:type:`PyObject \*` pointer.  A simple usage::
+constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
 
    import ctypes
 
