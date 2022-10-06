@@ -687,9 +687,6 @@ class SourceOnlyLoader:
     def get_filename(self, fullname):
         return self.path
 
-    def module_repr(self, module):
-        return '<module>'
-
 
 SPLIT_SOL = make_abc_subclasses(SourceOnlyLoader, 'SourceLoader')
 

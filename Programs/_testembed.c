@@ -683,6 +683,9 @@ static int test_init_from_config(void)
 
     config._isolated_interpreter = 1;
 
+    putenv("PYTHONINTMAXSTRDIGITS=6666");
+    config.int_max_str_digits = 31337;
+
     init_from_config_clear(&config);
 
     dump_config();
@@ -748,6 +751,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONIOENCODING=iso8859-1:replace");
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
     putenv("PYTHONSAFEPATH=1");
+    putenv("PYTHONINTMAXSTRDIGITS=4567");
 }
 
 
