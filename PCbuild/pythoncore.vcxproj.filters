@@ -486,6 +486,9 @@
     <ClInclude Include="..\Include\internal\pycore_abstract.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_allocators.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_asdl.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
