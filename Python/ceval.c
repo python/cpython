@@ -4904,6 +4904,7 @@ handle_eval_breaker:
 
             Py_XDECREF(kwargs);
             Py_DECREF(callargs);
+            Py_DECREF(func);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert(TOP() == NULL);
             SET_TOP(res);
