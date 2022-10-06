@@ -27,6 +27,7 @@ extern "C" {
         .allocators = { \
             _pymem_allocators_standard_INIT, \
             _pymem_allocators_debug_INIT, \
+            _pymem_allocators_obj_arena_INIT, \
         }, \
         .interpreters = { \
             /* This prevents interpreters from getting created \

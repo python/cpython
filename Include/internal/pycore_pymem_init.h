@@ -70,6 +70,17 @@ void _PyMem_DebugFree(void *ctx, void *p);
        {'o', PYOBJ_ALLOC}, \
    }
 
+#ifdef MS_WINDOWS
+#  define _pymem_allocators_obj_arena_INIT \
+    { NULL, _PyObject_ArenaVirtualAlloc, _PyObject_ArenaVirtualFree }
+#elif defined(ARENAS_USE_MMAP)
+#  define _pymem_allocators_obj_arena_INIT \
+    { NULL, _PyObject_ArenaMmap, _PyObject_ArenaMunmap }
+#else
+#  define _pymem_allocators_obj_arena_INIT \
+    { NULL, _PyObject_ArenaMalloc, _PyObject_ArenaFree }
+#endif
+
 
 #ifdef __cplusplus
 }

@@ -422,7 +422,6 @@ Python/pathconfig.c	-	_Py_path_config	-
 # state
 
 # object allocator
-Objects/obmalloc.c	-	_PyObject_Arena	-
 Objects/obmalloc.c	-	_Py_tracemalloc_config	-
 Objects/obmalloc.c	-	arena_map_bot_count	-
 Objects/obmalloc.c	-	arena_map_mid_count	-

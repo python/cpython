@@ -28,6 +28,7 @@ struct _pymem_allocators {
         debug_alloc_api_t mem;
         debug_alloc_api_t obj;
     } debug;
+    PyObjectArenaAllocator obj_arena;
 };
 
 
