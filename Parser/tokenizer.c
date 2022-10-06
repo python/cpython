@@ -1394,8 +1394,8 @@ static int
 token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
 {
     // Default token values
-    token->lineno = -1;
-    token->end_lineno = -1;
+    token->lineno = type == STRING ? tok->first_lineno : tok->lineno;
+    token->end_lineno = tok->lineno;;
     token->col_offset = -1;
     token->end_col_offset = -1;
     token->start = NULL;
