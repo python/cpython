@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_gil.h"             // struct _gil_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_interp.h"          // PyInterpreterState
+#include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 struct _getargs_runtime_state {
@@ -84,6 +85,8 @@ typedef struct pyruntimestate {
        Use _PyRuntimeState_GetFinalizing() and _PyRuntimeState_SetFinalizing()
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
+
+    struct _pymem_allocators allocators;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;

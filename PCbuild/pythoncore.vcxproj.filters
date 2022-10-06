@@ -618,6 +618,9 @@
     <ClInclude Include="..\Include\internal\pycore_pymem.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pymem_init.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
       <Filter>Include\internal</Filter>
     </ClInclude>

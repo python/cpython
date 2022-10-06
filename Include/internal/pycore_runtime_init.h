@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_object.h"
+#include "pycore_pymem_init.h"
 
 
 /* The static initializers defined here should only be used
@@ -22,6 +23,10 @@ extern "C" {
             /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
                in accordance with the specification. */ \
             .autoTSSkey = Py_tss_NEEDS_INIT, \
+        }, \
+        .allocators = { \
+            _pymem_allocators_standard_INIT, \
+            _pymem_allocators_debug_INIT, \
         }, \
         .interpreters = { \
             /* This prevents interpreters from getting created \

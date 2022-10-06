@@ -11,6 +11,26 @@ extern "C" {
 #include "pymem.h"      // PyMemAllocatorName
 
 
+typedef struct {
+    /* We tag each block with an API ID in order to tag API violations */
+    char api_id;
+    PyMemAllocatorEx alloc;
+} debug_alloc_api_t;
+
+struct _pymem_allocators {
+    struct {
+        PyMemAllocatorEx raw;
+        PyMemAllocatorEx mem;
+        PyMemAllocatorEx obj;
+    } standard;
+    struct {
+        debug_alloc_api_t raw;
+        debug_alloc_api_t mem;
+        debug_alloc_api_t obj;
+    } debug;
+};
+
+
 /* Set the memory allocator of the specified domain to the default.
    Save the old allocator into *old_alloc if it's non-NULL.
    Return on success, or return -1 if the domain is unknown. */

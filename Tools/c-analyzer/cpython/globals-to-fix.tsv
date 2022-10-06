@@ -421,7 +421,7 @@ Python/pathconfig.c	-	_Py_path_config	-
 #-----------------------
 # state
 
-# allocator
+# object allocator
 Objects/obmalloc.c	-	_PyObject_Arena	-
 Objects/obmalloc.c	-	_Py_tracemalloc_config	-
 Objects/obmalloc.c	-	arena_map_bot_count	-
@@ -436,6 +436,7 @@ Objects/obmalloc.c	-	ntimes_arena_allocated	-
 Objects/obmalloc.c	-	raw_allocated_blocks	-
 Objects/obmalloc.c	-	unused_arena_objects	-
 Objects/obmalloc.c	-	usable_arenas	-
+Objects/obmalloc.c	-	usedpools	-
 Objects/obmalloc.c	new_arena	debug_stats	-
 
 # pre-allocated memory

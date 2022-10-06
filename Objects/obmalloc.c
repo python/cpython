@@ -2,7 +2,8 @@
 #include "pycore_pymem.h"         // _PyTraceMalloc_Config
 #include "pycore_code.h"          // stats
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
-#include "pycore_allocators.h"
+#include "pycore_pymem.h"
+#include "pycore_pymem_init.h"
 
 #include <stdbool.h>
 
@@ -59,6 +60,12 @@ static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
    Modules/_tracemalloc.c because _tracemalloc can be compiled as dynamic
    library, whereas _Py_NewReference() requires it. */
 struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT;
+
+
+#define _PyMem_Raw (_PyRuntime.allocators.standard.raw)
+#define _PyMem (_PyRuntime.allocators.standard.mem)
+#define _PyObject (_PyRuntime.allocators.standard.obj)
+#define _PyMem_Debug (_PyRuntime.allocators.debug)
 
 
 static int
@@ -261,14 +268,67 @@ _PyMem_GetCurrentAllocatorName(void)
 }
 
 
-#undef MALLOC_ALLOC
-#undef PYMALLOC_ALLOC
-#undef PYRAW_ALLOC
-#undef PYMEM_ALLOC
-#undef PYOBJ_ALLOC
-#undef PYDBGRAW_ALLOC
-#undef PYDBGMEM_ALLOC
-#undef PYDBGOBJ_ALLOC
+/***************************************/
+/* the object allocator implementation */
+
+#ifdef WITH_PYMALLOC
+#  ifdef MS_WINDOWS
+#    include <windows.h>
+#  elif defined(HAVE_MMAP)
+#    include <sys/mman.h>
+#    ifdef MAP_ANONYMOUS
+#      define ARENAS_USE_MMAP
+#    endif
+#  endif
+#endif
+
+#ifdef MS_WINDOWS
+static void *
+_PyObject_ArenaVirtualAlloc(void *Py_UNUSED(ctx), size_t size)
+{
+    return VirtualAlloc(NULL, size,
+                        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+}
+
+static void
+_PyObject_ArenaVirtualFree(void *Py_UNUSED(ctx), void *ptr,
+    size_t Py_UNUSED(size))
+{
+    VirtualFree(ptr, 0, MEM_RELEASE);
+}
+
+#elif defined(ARENAS_USE_MMAP)
+static void *
+_PyObject_ArenaMmap(void *Py_UNUSED(ctx), size_t size)
+{
+    void *ptr;
+    ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
+               MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+    if (ptr == MAP_FAILED)
+        return NULL;
+    assert(ptr != NULL);
+    return ptr;
+}
+
+static void
+_PyObject_ArenaMunmap(void *Py_UNUSED(ctx), void *ptr, size_t size)
+{
+    munmap(ptr, size);
+}
+
+#else
+static void *
+_PyObject_ArenaMalloc(void *Py_UNUSED(ctx), size_t size)
+{
+    return malloc(size);
+}
+
+static void
+_PyObject_ArenaFree(void *Py_UNUSED(ctx), void *ptr, size_t Py_UNUSED(size))
+{
+    free(ptr);
+}
+#endif
 
 
 static PyObjectArenaAllocator _PyObject_Arena = {NULL,
@@ -1833,7 +1893,7 @@ pymalloc_alloc(void *Py_UNUSED(ctx), size_t nbytes)
 }
 
 
-static void *
+void *
 _PyObject_Malloc(void *ctx, size_t nbytes)
 {
     void* ptr = pymalloc_alloc(ctx, nbytes);
@@ -1849,7 +1909,7 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
 }
 
 
-static void *
+void *
 _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 {
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
@@ -2113,7 +2173,7 @@ pymalloc_free(void *Py_UNUSED(ctx), void *p)
 }
 
 
-static void
+void
 _PyObject_Free(void *ctx, void *p)
 {
     /* PyObject_Free(NULL) has no effect */
@@ -2199,7 +2259,7 @@ pymalloc_realloc(void *ctx, void **newptr_p, void *p, size_t nbytes)
 }
 
 
-static void *
+void *
 _PyObject_Realloc(void *ctx, void *ptr, size_t nbytes)
 {
     void *ptr2;
@@ -2376,13 +2436,13 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     return data;
 }
 
-static void *
+void *
 _PyMem_DebugRawMalloc(void *ctx, size_t nbytes)
 {
     return _PyMem_DebugRawAlloc(0, ctx, nbytes);
 }
 
-static void *
+void *
 _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
 {
     size_t nbytes;
@@ -2397,7 +2457,7 @@ _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
    Then fills the original bytes with PYMEM_DEADBYTE.
    Then calls the underlying free.
 */
-static void
+void
 _PyMem_DebugRawFree(void *ctx, void *p)
 {
     /* PyMem_Free(NULL) has no effect */
@@ -2417,7 +2477,7 @@ _PyMem_DebugRawFree(void *ctx, void *p)
 }
 
 
-static void *
+void *
 _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 {
     if (p == NULL) {
@@ -2527,14 +2587,14 @@ _PyMem_DebugCheckGIL(const char *func)
     }
 }
 
-static void *
+void *
 _PyMem_DebugMalloc(void *ctx, size_t nbytes)
 {
     _PyMem_DebugCheckGIL(__func__);
     return _PyMem_DebugRawMalloc(ctx, nbytes);
 }
 
-static void *
+void *
 _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
 {
     _PyMem_DebugCheckGIL(__func__);
@@ -2542,7 +2602,7 @@ _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
 }
 
 
-static void
+void
 _PyMem_DebugFree(void *ctx, void *ptr)
 {
     _PyMem_DebugCheckGIL(__func__);
@@ -2550,7 +2610,7 @@ _PyMem_DebugFree(void *ctx, void *ptr)
 }
 
 
-static void *
+void *
 _PyMem_DebugRealloc(void *ctx, void *ptr, size_t nbytes)
 {
     _PyMem_DebugCheckGIL(__func__);
