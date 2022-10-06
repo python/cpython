@@ -1109,7 +1109,7 @@ def _find_and_load_unlocked(name, import_):
         child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
-        raise ModuleNotFoundError(f'{_ERR_MSG_PREFIX} {name!r}', name=name)
+        raise ModuleNotFoundError(f'{_ERR_MSG_PREFIX}{name!r}', name=name)
     else:
         if parent_spec:
             # Temporarily add child we are currently importing to parent's
