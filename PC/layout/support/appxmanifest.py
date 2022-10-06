@@ -6,13 +6,11 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 
-import collections
 import ctypes
 import io
 import os
-import sys
 
-from pathlib import Path, PureWindowsPath
+from pathlib import PureWindowsPath
 from xml.etree import ElementTree as ET
 
 from .constants import *
@@ -28,7 +26,14 @@ APPX_DATA = dict(
     ),
     DisplayName="Python {}".format(VER_DOT),
     Description="The Python {} runtime and console.".format(VER_DOT),
-    ProcessorArchitecture="x64" if IS_X64 else "x86",
+)
+
+APPX_PLATFORM_DATA = dict(
+    _keys=("ProcessorArchitecture",),
+    win32=("x86",),
+    amd64=("x64",),
+    arm32=("arm",),
+    arm64=("arm64",),
 )
 
 PYTHON_VE_DATA = dict(
@@ -60,12 +65,12 @@ PIP_VE_DATA = dict(
 IDLE_VE_DATA = dict(
     DisplayName="IDLE (Python {})".format(VER_DOT),
     Description="IDLE editor for Python {}".format(VER_DOT),
-    Square150x150Logo="_resources/pythonwx150.png",
-    Square44x44Logo="_resources/pythonwx44.png",
+    Square150x150Logo="_resources/idlex150.png",
+    Square44x44Logo="_resources/idlex44.png",
     BackgroundColor="transparent",
 )
 
-PY_PNG = '_resources/py.png'
+PY_PNG = "_resources/py.png"
 
 APPXMANIFEST_NS = {
     "": "http://schemas.microsoft.com/appx/manifest/foundation/windows10",
@@ -81,7 +86,8 @@ APPXMANIFEST_NS = {
 }
 
 APPXMANIFEST_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+<Package IgnorableNamespaces="desktop4 desktop6"
+    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
     xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
     xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
     xmlns:rescap4="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities/4"
@@ -147,18 +153,22 @@ RESOURCES_XML_TEMPLATE = r"""<?xml version="1.0" encoding="UTF-8" standalone="ye
 
 SCCD_FILENAME = "PC/classicAppCompat.sccd"
 
+SPECIAL_LOOKUP = object()
+
 REGISTRY = {
     "HKCU\\Software\\Python\\PythonCore": {
         VER_DOT: {
             "DisplayName": APPX_DATA["DisplayName"],
             "SupportUrl": "https://www.python.org/",
-            "SysArchitecture": "64bit" if IS_X64 else "32bit",
+            "SysArchitecture": SPECIAL_LOOKUP,
             "SysVersion": VER_DOT,
             "Version": "{}.{}.{}".format(VER_MAJOR, VER_MINOR, VER_MICRO),
             "InstallPath": {
                 "": "[{AppVPackageRoot}]",
                 "ExecutablePath": "[{{AppVPackageRoot}}]\\python{}.exe".format(VER_DOT),
-                "WindowedExecutablePath": "[{{AppVPackageRoot}}]\\pythonw{}.exe".format(VER_DOT),
+                "WindowedExecutablePath": "[{{AppVPackageRoot}}]\\pythonw{}.exe".format(
+                    VER_DOT
+                ),
             },
             "Help": {
                 "Main Python Documentation": {
@@ -328,7 +338,17 @@ def _get_registry_entries(ns, root="", d=None):
     for key, value in d.items():
         if key == "_condition":
             continue
-        elif isinstance(value, dict):
+        if value is SPECIAL_LOOKUP:
+            if key == "SysArchitecture":
+                value = {
+                    "win32": "32bit",
+                    "amd64": "64bit",
+                    "arm32": "32bit",
+                    "arm64": "64bit",
+                }[ns.arch]
+            else:
+                raise ValueError(f"Key '{key}' unhandled for special lookup")
+        if isinstance(value, dict):
             cond = value.get("_condition")
             if cond and not cond(ns):
                 continue
@@ -376,25 +396,37 @@ def get_appxmanifest(ns):
     NS = APPXMANIFEST_NS
     QN = ET.QName
 
+    data = dict(APPX_DATA)
+    for k, v in zip(APPX_PLATFORM_DATA["_keys"], APPX_PLATFORM_DATA[ns.arch]):
+        data[k] = v
+
     node = xml.find("m:Identity", NS)
     for k in node.keys():
-        value = APPX_DATA.get(k)
+        value = data.get(k)
         if value:
             node.set(k, value)
 
     for node in xml.find("m:Properties", NS):
-        value = APPX_DATA.get(node.tag.rpartition("}")[2])
+        value = data.get(node.tag.rpartition("}")[2])
         if value:
             node.text = value
 
-    winver = sys.getwindowsversion()[:3]
+    try:
+        winver = tuple(int(i) for i in os.getenv("APPX_DATA_WINVER", "").split(".", maxsplit=3))
+    except (TypeError, ValueError):
+        winver = ()
+
+    # Default "known good" version is 10.0.22000, first Windows 11 release
+    winver = winver or (10, 0, 22000)
+
     if winver < (10, 0, 17763):
         winver = 10, 0, 17763
     find_or_add(xml, "m:Dependencies/m:TargetDeviceFamily").set(
-        "MaxVersionTested", "{}.{}.{}.0".format(*winver)
+        "MaxVersionTested", "{}.{}.{}.{}".format(*(winver + (0, 0, 0, 0)[:4]))
     )
 
-    if winver > (10, 0, 17763):
+    # Only for Python 3.11 and later. Older versions do not disable virtualization
+    if (VER_MAJOR, VER_MINOR) >= (3, 11) and winver > (10, 0, 17763):
         disable_registry_virtualization(xml)
 
     app = add_application(
@@ -405,7 +437,7 @@ def get_appxmanifest(ns):
         ["python", "python{}".format(VER_MAJOR), "python{}".format(VER_DOT)],
         PYTHON_VE_DATA,
         "console",
-        ("python.file", [".py"], '"%1"', 'Python File', PY_PNG),
+        ("python.file", [".py"], '"%1" %*', "Python File", PY_PNG),
     )
 
     add_application(
@@ -416,7 +448,7 @@ def get_appxmanifest(ns):
         ["pythonw", "pythonw{}".format(VER_MAJOR), "pythonw{}".format(VER_DOT)],
         PYTHONW_VE_DATA,
         "windows",
-        ("python.windowedfile", [".pyw"], '"%1"', 'Python File (no console)', PY_PNG),
+        ("python.windowedfile", [".pyw"], '"%1" %*', "Python File (no console)", PY_PNG),
     )
 
     if ns.include_pip and ns.include_launchers:
@@ -428,7 +460,7 @@ def get_appxmanifest(ns):
             ["pip", "pip{}".format(VER_MAJOR), "pip{}".format(VER_DOT)],
             PIP_VE_DATA,
             "console",
-            ("python.wheel", [".whl"], 'install "%1"', 'Python Wheel'),
+            ("python.wheel", [".whl"], 'install "%1"', "Python Wheel"),
         )
 
     if ns.include_idle and ns.include_launchers:
@@ -473,6 +505,11 @@ def get_appx_layout(ns):
         src = icons / "pythonwx{}.png".format(px)
         yield f"_resources/pythonwx{px}.png", src
         yield f"_resources/pythonwx{px}$targetsize-{px}_altform-unplated.png", src
+    if ns.include_idle and ns.include_launchers:
+        for px in [44, 150]:
+            src = icons / "idlex{}.png".format(px)
+            yield f"_resources/idlex{px}.png", src
+            yield f"_resources/idlex{px}$targetsize-{px}_altform-unplated.png", src
     yield f"_resources/py.png", icons / "py.png"
     sccd = ns.source / SCCD_FILENAME
     if sccd.is_file():

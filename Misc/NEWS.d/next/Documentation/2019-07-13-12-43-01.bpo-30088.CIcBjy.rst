@@ -1,1 +1,0 @@
-Documented that :class:`mailbox.Maildir` constructor doesn't attempt to verify the maildir folder layout correctness. Patch by Sviatoslav Sydorenko.

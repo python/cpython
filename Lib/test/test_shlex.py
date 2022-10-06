@@ -3,7 +3,7 @@ import itertools
 import shlex
 import string
 import unittest
-
+from unittest import mock
 
 
 # The original test data set was from shellwords, by Hartmut Goebel.
@@ -161,6 +161,10 @@ class ShlexTest(unittest.TestCase):
             ret.append(tok)
             tok = lex.get_token()
         return ret
+
+    def testSplitNone(self):
+        with self.assertRaises(ValueError):
+            shlex.split(None)
 
     def testSplitPosix(self):
         """Test data splitting with posix parser"""

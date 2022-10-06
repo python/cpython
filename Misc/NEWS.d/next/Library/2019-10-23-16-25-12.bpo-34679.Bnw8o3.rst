@@ -1,2 +1,0 @@
-asynci.ProactorEventLoop.close() now only calls signal.set_wakeup_fd() in the
-main thread.

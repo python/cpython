@@ -40,6 +40,9 @@ alternatively be passed to :func:`faulthandler.enable`.
 The module is implemented in C, so tracebacks can be dumped on a crash or when
 Python is deadlocked.
 
+The :ref:`Python Development Mode <devmode>` calls :func:`faulthandler.enable`
+at Python startup.
+
 
 Dumping the traceback
 ---------------------
@@ -72,6 +75,10 @@ Fault handler state
 
    .. versionchanged:: 3.6
       On Windows, a handler for Windows exception is also installed.
+
+   .. versionchanged:: 3.10
+      The dump now mentions if a garbage collector collection is running
+      if *all_threads* is true.
 
 .. function:: disable()
 

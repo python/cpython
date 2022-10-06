@@ -1,2 +1,0 @@
-:func:`ctypes.create_unicode_buffer()` now also supports non-BMP characters
-on platforms with 16-bit :c:type:`wchar_t` (for example, Windows and AIX).

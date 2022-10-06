@@ -1,4 +1,0 @@
-Better control over symbol visibility is provided through use of the
-visibility attributes available in gcc >= 4.0, provided in a uniform way
-across POSIX and Windows. The POSIX build files have been updated to compile
-with -fvisibility=hidden, minimising exported symbols.

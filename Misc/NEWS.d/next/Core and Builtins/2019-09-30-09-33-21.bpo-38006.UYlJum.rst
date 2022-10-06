@@ -1,3 +1,0 @@
-Fix a bug due to the interaction of weakrefs and the cyclic garbage
-collector. We must clear any weakrefs in garbage in order to prevent their
-callbacks from executing and causing a crash.

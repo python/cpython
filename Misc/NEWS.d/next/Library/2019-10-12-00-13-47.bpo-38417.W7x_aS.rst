@@ -1,2 +1,0 @@
-Added support for setting the umask in the child process to the subprocess
-module on POSIX systems.

@@ -1,4 +1,0 @@
-Add timeout constants to :mod:`test.support`:
-:data:`~test.support.LOOPBACK_TIMEOUT`,
-:data:`~test.support.INTERNET_TIMEOUT`, :data:`~test.support.SHORT_TIMEOUT`
-and :data:`~test.support.LONG_TIMEOUT`.

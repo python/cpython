@@ -1,4 +1,5 @@
-﻿from . import util
+from test.test_importlib import util
+
 abc = util.import_importlib('importlib.abc')
 init = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -249,69 +250,6 @@ class ModuleForLoaderTests:
 (Frozen_ModuleForLoaderTests,
  Source_ModuleForLoaderTests
  ) = util.test_both(ModuleForLoaderTests, util=importlib_util)
-
-
-class SetPackageTests:
-
-    """Tests for importlib.util.set_package."""
-
-    def verify(self, module, expect):
-        """Verify the module has the expected value for __package__ after
-        passing through set_package."""
-        fxn = lambda: module
-        wrapped = self.util.set_package(fxn)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            wrapped()
-        self.assertTrue(hasattr(module, '__package__'))
-        self.assertEqual(expect, module.__package__)
-
-    def test_top_level(self):
-        # __package__ should be set to the empty string if a top-level module.
-        # Implicitly tests when package is set to None.
-        module = types.ModuleType('module')
-        module.__package__ = None
-        self.verify(module, '')
-
-    def test_package(self):
-        # Test setting __package__ for a package.
-        module = types.ModuleType('pkg')
-        module.__path__ = ['<path>']
-        module.__package__ = None
-        self.verify(module, 'pkg')
-
-    def test_submodule(self):
-        # Test __package__ for a module in a package.
-        module = types.ModuleType('pkg.mod')
-        module.__package__ = None
-        self.verify(module, 'pkg')
-
-    def test_setting_if_missing(self):
-        # __package__ should be set if it is missing.
-        module = types.ModuleType('mod')
-        if hasattr(module, '__package__'):
-            delattr(module, '__package__')
-        self.verify(module, '')
-
-    def test_leaving_alone(self):
-        # If __package__ is set and not None then leave it alone.
-        for value in (True, False):
-            module = types.ModuleType('mod')
-            module.__package__ = value
-            self.verify(module, value)
-
-    def test_decorator_attrs(self):
-        def fxn(module): pass
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            wrapped = self.util.set_package(fxn)
-        self.assertEqual(wrapped.__name__, fxn.__name__)
-        self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
-
-
-(Frozen_SetPackageTests,
- Source_SetPackageTests
- ) = util.test_both(SetPackageTests, util=importlib_util)
 
 
 class SetLoaderTests:
@@ -845,23 +783,21 @@ class MagicNumberTests(unittest.TestCase):
         'only applies to candidate or final python release levels'
     )
     def test_magic_number(self):
-        """
-        Each python minor release should generally have a MAGIC_NUMBER
-        that does not change once the release reaches candidate status.
+        # Each python minor release should generally have a MAGIC_NUMBER
+        # that does not change once the release reaches candidate status.
 
-        Once a release reaches candidate status, the value of the constant
-        EXPECTED_MAGIC_NUMBER in this test should be changed.
-        This test will then check that the actual MAGIC_NUMBER matches
-        the expected value for the release.
+        # Once a release reaches candidate status, the value of the constant
+        # EXPECTED_MAGIC_NUMBER in this test should be changed.
+        # This test will then check that the actual MAGIC_NUMBER matches
+        # the expected value for the release.
 
-        In exceptional cases, it may be required to change the MAGIC_NUMBER
-        for a maintenance release. In this case the change should be
-        discussed in python-dev. If a change is required, community
-        stakeholders such as OS package maintainers must be notified
-        in advance. Such exceptional releases will then require an
-        adjustment to this test case.
-        """
-        EXPECTED_MAGIC_NUMBER = 3413
+        # In exceptional cases, it may be required to change the MAGIC_NUMBER
+        # for a maintenance release. In this case the change should be
+        # discussed in python-dev. If a change is required, community
+        # stakeholders such as OS package maintainers must be notified
+        # in advance. Such exceptional releases will then require an
+        # adjustment to this test case.
+        EXPECTED_MAGIC_NUMBER = 3495
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (

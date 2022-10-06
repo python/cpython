@@ -1,3 +1,0 @@
-Initialize the Customize Run dialog with the command line arguments
-most recently entered before.  The user can optionally edit before
-submitting them.

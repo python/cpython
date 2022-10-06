@@ -1,1 +1,0 @@
-Fix _hashlib build when Blake2 is disabled, but OpenSSL supports it.

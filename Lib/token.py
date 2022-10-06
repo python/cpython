@@ -62,12 +62,13 @@ AWAIT = 55
 ASYNC = 56
 TYPE_IGNORE = 57
 TYPE_COMMENT = 58
+SOFT_KEYWORD = 59
 # These aren't used by the C tokenizer but are needed for tokenize.py
-ERRORTOKEN = 59
-COMMENT = 60
-NL = 61
-ENCODING = 62
-N_TOKENS = 63
+ERRORTOKEN = 60
+COMMENT = 61
+NL = 62
+ENCODING = 63
+N_TOKENS = 64
 # Special definitions for cooperation with parser
 NT_OFFSET = 256
 

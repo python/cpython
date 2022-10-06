@@ -1,2 +1,0 @@
-Fix handling of negative indices in :c:member:`~PySequenceMethods.sq_item`
-of :class:`bytearray`. Patch by Sergey Fedoseev.

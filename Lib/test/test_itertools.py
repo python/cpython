@@ -1,5 +1,7 @@
+import doctest
 import unittest
 from test import support
+from test.support import threading_helper
 from itertools import *
 import weakref
 from decimal import Decimal
@@ -12,6 +14,8 @@ from functools import reduce
 import sys
 import struct
 import threading
+import gc
+
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -176,6 +180,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(chain.from_iterable([''])), [])
         self.assertEqual(take(4, chain.from_iterable(['abc', 'def'])), list('abcd'))
         self.assertRaises(TypeError, list, chain.from_iterable([2, 3]))
+        self.assertEqual(list(islice(chain.from_iterable(repeat(range(5))), 2)), [0, 1])
 
     def test_chain_reducible(self):
         for oper in [copy.deepcopy] + picklecopiers:
@@ -1024,6 +1029,25 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(next(it), (1, 2))
         self.assertRaises(RuntimeError, next, it)
 
+    def test_pairwise(self):
+        self.assertEqual(list(pairwise('')), [])
+        self.assertEqual(list(pairwise('a')), [])
+        self.assertEqual(list(pairwise('ab')),
+                              [('a', 'b')]),
+        self.assertEqual(list(pairwise('abcde')),
+                              [('a', 'b'), ('b', 'c'), ('c', 'd'), ('d', 'e')])
+        self.assertEqual(list(pairwise(range(10_000))),
+                         list(zip(range(10_000), range(1, 10_000))))
+
+        with self.assertRaises(TypeError):
+            pairwise()                                      # too few arguments
+        with self.assertRaises(TypeError):
+            pairwise('abc', 10)                             # too many arguments
+        with self.assertRaises(TypeError):
+            pairwise(iterable='abc')                        # keyword arguments
+        with self.assertRaises(TypeError):
+            pairwise(None)                                  # non-iterable argument
+
     def test_product(self):
         for args, result in [
             ([], [()]),                     # zero iterables
@@ -1421,6 +1445,7 @@ class TestBasicOps(unittest.TestCase):
         p = weakref.proxy(a)
         self.assertEqual(getattr(p, '__class__'), type(b))
         del a
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, getattr, p, '__class__')
 
         ans = list('abc')
@@ -1510,6 +1535,7 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "tee"):
             next(a)
 
+    @threading_helper.requires_working_threading()
     def test_tee_concurrent(self):
         start = threading.Event()
         finish = threading.Event()
@@ -1553,6 +1579,51 @@ class TestBasicOps(unittest.TestCase):
         for f in (filter, filterfalse, map, takewhile, dropwhile, starmap):
             self.assertRaises(StopIteration, next, f(lambda x:x, []))
             self.assertRaises(StopIteration, next, f(lambda x:x, StopNow()))
+
+    @support.cpython_only
+    def test_combinations_result_gc(self):
+        # bpo-42536: combinations's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = combinations([None, []], 1)
+        next(it)
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which has the value (None,). Make sure it's re-tracked when
+        # it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_combinations_with_replacement_result_gc(self):
+        # Ditto for combinations_with_replacement.
+        it = combinations_with_replacement([None, []], 1)
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_permutations_result_gc(self):
+        # Ditto for permutations.
+        it = permutations([None, []], 1)
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_product_result_gc(self):
+        # Ditto for product.
+        it = product([None, []])
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_zip_longest_result_gc(self):
+        # Ditto for zip_longest.
+        it = zip_longest([[]])
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
 
 class TestExamples(unittest.TestCase):
 
@@ -1787,6 +1858,10 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(islice([a]*2, None), a)
 
+    def test_pairwise(self):
+        a = []
+        self.makecycle(pairwise([a]*5), a)
+
     def test_permutations(self):
         a = []
         self.makecycle(permutations([1,2,a,3], 3), a)
@@ -1995,6 +2070,17 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, islice, N(s), 10)
             self.assertRaises(ZeroDivisionError, list, islice(E(s), 10))
 
+    def test_pairwise(self):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                seq = list(g(s))
+                expected = list(zip(seq, seq[1:]))
+                actual = list(pairwise(g(s)))
+                self.assertEqual(actual, expected)
+            self.assertRaises(TypeError, pairwise, X(s))
+            self.assertRaises(TypeError, pairwise, N(s))
+            self.assertRaises(ZeroDivisionError, list, pairwise(E(s)))
+
     def test_starmap(self):
         for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
             for g in (G, I, Ig, S, L, R):
@@ -2147,16 +2233,57 @@ class RegressionTests(unittest.TestCase):
 class SubclassWithKwargsTest(unittest.TestCase):
     def test_keywords_in_subclass(self):
         # count is not subclassable...
-        for cls in (repeat, zip, filter, filterfalse, chain, map,
-                    starmap, islice, takewhile, dropwhile, cycle, compress):
-            class Subclass(cls):
-                def __init__(self, newarg=None, *args):
-                    cls.__init__(self, *args)
-            try:
-                Subclass(newarg=1)
-            except TypeError as err:
-                # we expect type errors because of wrong argument count
-                self.assertNotIn("keyword arguments", err.args[0])
+        testcases = [
+            (repeat, (1, 2), [1, 1]),
+            (zip, ([1, 2], 'ab'), [(1, 'a'), (2, 'b')]),
+            (filter, (None, [0, 1]), [1]),
+            (filterfalse, (None, [0, 1]), [0]),
+            (chain, ([1, 2], [3, 4]), [1, 2, 3]),
+            (map, (str, [1, 2]), ['1', '2']),
+            (starmap, (operator.pow, ((2, 3), (3, 2))), [8, 9]),
+            (islice, ([1, 2, 3, 4], 1, 3), [2, 3]),
+            (takewhile, (isEven, [2, 3, 4]), [2]),
+            (dropwhile, (isEven, [2, 3, 4]), [3, 4]),
+            (cycle, ([1, 2],), [1, 2, 1]),
+            (compress, ('ABC', [1, 0, 1]), ['A', 'C']),
+        ]
+        for cls, args, result in testcases:
+            with self.subTest(cls):
+                class subclass(cls):
+                    pass
+                u = subclass(*args)
+                self.assertIs(type(u), subclass)
+                self.assertEqual(list(islice(u, 0, 3)), result)
+                with self.assertRaises(TypeError):
+                    subclass(*args, newarg=3)
+
+        for cls, args, result in testcases:
+            # Constructors of repeat, zip, compress accept keyword arguments.
+            # Their subclasses need overriding __new__ to support new
+            # keyword arguments.
+            if cls in [repeat, zip, compress]:
+                continue
+            with self.subTest(cls):
+                class subclass_with_init(cls):
+                    def __init__(self, *args, newarg=None):
+                        self.newarg = newarg
+                u = subclass_with_init(*args, newarg=3)
+                self.assertIs(type(u), subclass_with_init)
+                self.assertEqual(list(islice(u, 0, 3)), result)
+                self.assertEqual(u.newarg, 3)
+
+        for cls, args, result in testcases:
+            with self.subTest(cls):
+                class subclass_with_new(cls):
+                    def __new__(cls, *args, newarg=None):
+                        self = super().__new__(cls, *args)
+                        self.newarg = newarg
+                        return self
+                u = subclass_with_new(*args, newarg=3)
+                self.assertIs(type(u), subclass_with_new)
+                self.assertEqual(list(islice(u, 0, 3)), result)
+                self.assertEqual(u.newarg, 3)
+
 
 @support.cpython_only
 class SizeofTest(unittest.TestCase):
@@ -2197,341 +2324,10 @@ class SizeofTest(unittest.TestCase):
               basesize + 10 * self.ssize_t + 4 * self.ssize_t)
 
 
-libreftest = """ Doctest for examples in the library reference: libitertools.tex
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-
->>> amounts = [120.15, 764.05, 823.14]
->>> for checknum, amount in zip(count(1200), amounts):
-...     print('Check %d is for $%.2f' % (checknum, amount))
-...
-Check 1200 is for $120.15
-Check 1201 is for $764.05
-Check 1202 is for $823.14
-
->>> import operator
->>> for cube in map(operator.pow, range(1,4), repeat(3)):
-...    print(cube)
-...
-1
-8
-27
-
->>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura', '', 'martin', '', 'walter', '', 'samuele']
->>> for name in islice(reportlines, 3, None, 2):
-...    print(name.title())
-...
-Alex
-Laura
-Martin
-Walter
-Samuele
-
->>> from operator import itemgetter
->>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
->>> di = sorted(sorted(d.items()), key=itemgetter(1))
->>> for k, g in groupby(di, itemgetter(1)):
-...     print(k, list(map(itemgetter(0), g)))
-...
-1 ['a', 'c', 'e']
-2 ['b', 'd', 'f']
-3 ['g']
-
-# Find runs of consecutive numbers using groupby.  The key to the solution
-# is differencing with a range so that consecutive numbers all appear in
-# same group.
->>> data = [ 1,  4,5,6, 10, 15,16,17,18, 22, 25,26,27,28]
->>> for k, g in groupby(enumerate(data), lambda t:t[0]-t[1]):
-...     print(list(map(operator.itemgetter(1), g)))
-...
-[1]
-[4, 5, 6]
-[10]
-[15, 16, 17, 18]
-[22]
-[25, 26, 27, 28]
-
->>> def take(n, iterable):
-...     "Return first n items of the iterable as a list"
-...     return list(islice(iterable, n))
-
->>> def prepend(value, iterator):
-...     "Prepend a single value in front of an iterator"
-...     # prepend(1, [2, 3, 4]) -> 1 2 3 4
-...     return chain([value], iterator)
-
->>> def enumerate(iterable, start=0):
-...     return zip(count(start), iterable)
-
->>> def tabulate(function, start=0):
-...     "Return function(0), function(1), ..."
-...     return map(function, count(start))
-
->>> import collections
->>> def consume(iterator, n=None):
-...     "Advance the iterator n-steps ahead. If n is None, consume entirely."
-...     # Use functions that consume iterators at C speed.
-...     if n is None:
-...         # feed the entire iterator into a zero-length deque
-...         collections.deque(iterator, maxlen=0)
-...     else:
-...         # advance to the empty slice starting at position n
-...         next(islice(iterator, n, n), None)
-
->>> def nth(iterable, n, default=None):
-...     "Returns the nth item or a default value"
-...     return next(islice(iterable, n, None), default)
-
->>> def all_equal(iterable):
-...     "Returns True if all the elements are equal to each other"
-...     g = groupby(iterable)
-...     return next(g, True) and not next(g, False)
-
->>> def quantify(iterable, pred=bool):
-...     "Count how many times the predicate is true"
-...     return sum(map(pred, iterable))
-
->>> def padnone(iterable):
-...     "Returns the sequence elements and then returns None indefinitely"
-...     return chain(iterable, repeat(None))
-
->>> def ncycles(iterable, n):
-...     "Returns the sequence elements n times"
-...     return chain(*repeat(iterable, n))
-
->>> def dotproduct(vec1, vec2):
-...     return sum(map(operator.mul, vec1, vec2))
-
->>> def flatten(listOfLists):
-...     return list(chain.from_iterable(listOfLists))
-
->>> def repeatfunc(func, times=None, *args):
-...     "Repeat calls to func with specified arguments."
-...     "   Example:  repeatfunc(random.random)"
-...     if times is None:
-...         return starmap(func, repeat(args))
-...     else:
-...         return starmap(func, repeat(args, times))
-
->>> def pairwise(iterable):
-...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-...     a, b = tee(iterable)
-...     try:
-...         next(b)
-...     except StopIteration:
-...         pass
-...     return zip(a, b)
-
->>> def grouper(n, iterable, fillvalue=None):
-...     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
-...     args = [iter(iterable)] * n
-...     return zip_longest(*args, fillvalue=fillvalue)
-
->>> def roundrobin(*iterables):
-...     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
-...     # Recipe credited to George Sakkis
-...     pending = len(iterables)
-...     nexts = cycle(iter(it).__next__ for it in iterables)
-...     while pending:
-...         try:
-...             for next in nexts:
-...                 yield next()
-...         except StopIteration:
-...             pending -= 1
-...             nexts = cycle(islice(nexts, pending))
-
->>> def powerset(iterable):
-...     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-...     s = list(iterable)
-...     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
-
->>> def unique_everseen(iterable, key=None):
-...     "List unique elements, preserving order. Remember all elements ever seen."
-...     # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-...     # unique_everseen('ABBCcAD', str.lower) --> A B C D
-...     seen = set()
-...     seen_add = seen.add
-...     if key is None:
-...         for element in iterable:
-...             if element not in seen:
-...                 seen_add(element)
-...                 yield element
-...     else:
-...         for element in iterable:
-...             k = key(element)
-...             if k not in seen:
-...                 seen_add(k)
-...                 yield element
-
->>> def unique_justseen(iterable, key=None):
-...     "List unique elements, preserving order. Remember only the element just seen."
-...     # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-...     # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-...     return map(next, map(itemgetter(1), groupby(iterable, key)))
-
->>> def first_true(iterable, default=False, pred=None):
-...     '''Returns the first true value in the iterable.
-...
-...     If no true value is found, returns *default*
-...
-...     If *pred* is not None, returns the first item
-...     for which pred(item) is true.
-...
-...     '''
-...     # first_true([a,b,c], x) --> a or b or c or x
-...     # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
-...     return next(filter(pred, iterable), default)
-
->>> def nth_combination(iterable, r, index):
-...     'Equivalent to list(combinations(iterable, r))[index]'
-...     pool = tuple(iterable)
-...     n = len(pool)
-...     if r < 0 or r > n:
-...         raise ValueError
-...     c = 1
-...     k = min(r, n-r)
-...     for i in range(1, k+1):
-...         c = c * (n - k + i) // i
-...     if index < 0:
-...         index += c
-...     if index < 0 or index >= c:
-...         raise IndexError
-...     result = []
-...     while r:
-...         c, n, r = c*r//n, n-1, r-1
-...         while index >= c:
-...             index -= c
-...             c, n = c*(n-r)//n, n-1
-...         result.append(pool[-1-n])
-...     return tuple(result)
-
-
-This is not part of the examples but it tests to make sure the definitions
-perform as purported.
-
->>> take(10, count())
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
->>> list(prepend(1, [2, 3, 4]))
-[1, 2, 3, 4]
-
->>> list(enumerate('abc'))
-[(0, 'a'), (1, 'b'), (2, 'c')]
-
->>> list(islice(tabulate(lambda x: 2*x), 4))
-[0, 2, 4, 6]
-
->>> it = iter(range(10))
->>> consume(it, 3)
->>> next(it)
-3
->>> consume(it)
->>> next(it, 'Done')
-'Done'
-
->>> nth('abcde', 3)
-'d'
-
->>> nth('abcde', 9) is None
-True
-
->>> [all_equal(s) for s in ('', 'A', 'AAAA', 'AAAB', 'AAABA')]
-[True, True, True, False, False]
-
->>> quantify(range(99), lambda x: x%2==0)
-50
-
->>> a = [[1, 2, 3], [4, 5, 6]]
->>> flatten(a)
-[1, 2, 3, 4, 5, 6]
-
->>> list(repeatfunc(pow, 5, 2, 3))
-[8, 8, 8, 8, 8]
-
->>> import random
->>> take(5, map(int, repeatfunc(random.random)))
-[0, 0, 0, 0, 0]
-
->>> list(pairwise('abcd'))
-[('a', 'b'), ('b', 'c'), ('c', 'd')]
-
->>> list(pairwise([]))
-[]
-
->>> list(pairwise('a'))
-[]
-
->>> list(islice(padnone('abc'), 0, 6))
-['a', 'b', 'c', None, None, None]
-
->>> list(ncycles('abc', 3))
-['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']
-
->>> dotproduct([1,2,3], [4,5,6])
-32
-
->>> list(grouper(3, 'abcdefg', 'x'))
-[('a', 'b', 'c'), ('d', 'e', 'f'), ('g', 'x', 'x')]
-
->>> list(roundrobin('abc', 'd', 'ef'))
-['a', 'd', 'e', 'b', 'f', 'c']
-
->>> list(powerset([1,2,3]))
-[(), (1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
-
->>> all(len(list(powerset(range(n)))) == 2**n for n in range(18))
-True
-
->>> list(powerset('abcde')) == sorted(sorted(set(powerset('abcde'))), key=len)
-True
-
->>> list(unique_everseen('AAAABBBCCDAABBB'))
-['A', 'B', 'C', 'D']
-
->>> list(unique_everseen('ABBCcAD', str.lower))
-['A', 'B', 'C', 'D']
-
->>> list(unique_justseen('AAAABBBCCDAABBB'))
-['A', 'B', 'C', 'D', 'A', 'B']
-
->>> list(unique_justseen('ABBCcAD', str.lower))
-['A', 'B', 'C', 'A', 'D']
-
->>> first_true('ABC0DEF1', '9', str.isdigit)
-'0'
-
->>> population = 'ABCDEFGH'
->>> for r in range(len(population) + 1):
-...     seq = list(combinations(population, r))
-...     for i in range(len(seq)):
-...         assert nth_combination(population, r, i) == seq[i]
-...     for i in range(-len(seq), 0):
-...         assert nth_combination(population, r, i) == seq[i]
-
-
-"""
-
-__test__ = {'libreftest' : libreftest}
-
-def test_main(verbose=None):
-    test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
-                    RegressionTests, LengthTransparency,
-                    SubclassWithKwargsTest, TestExamples,
-                    TestPurePythonRoughEquivalents,
-                    SizeofTest)
-    support.run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
-    # doctest the examples in the library reference
-    support.run_doctest(sys.modules[__name__], verbose)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

@@ -1,2 +1,0 @@
-Stop recommending getopt in the tutorial for command line argument parsing
-and promote argparse.

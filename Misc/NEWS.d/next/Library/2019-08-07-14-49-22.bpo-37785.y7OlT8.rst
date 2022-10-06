@@ -1,1 +1,0 @@
-Fix xgettext warnings in :mod:`argparse`.

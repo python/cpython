@@ -7,21 +7,28 @@
 Policies
 ========
 
-An event loop policy is a global per-process object that controls
-the management of the event loop. Each event loop has a default
-policy, which can be changed and customized using the policy API.
+An event loop policy is a global object
+used to get and set the current :ref:`event loop <asyncio-event-loop>`,
+as well as create new event loops.
+The default policy can be :ref:`replaced <asyncio-policy-get-set>` with
+:ref:`built-in alternatives <asyncio-policy-builtin>`
+to use different event loop implementations,
+or substituted by a :ref:`custom policy <asyncio-custom-policies>`
+that can override these behaviors.
 
-A policy defines the notion of *context* and manages a
-separate event loop per context. The default policy
-defines *context* to be the current thread.
+The :ref:`policy object <asyncio-policy-objects>`
+gets and sets a separate event loop per *context*.
+This is per-thread by default,
+though custom policies could define *context* differently.
 
-By using a custom event loop policy, the behavior of
-:func:`get_event_loop`, :func:`set_event_loop`, and
-:func:`new_event_loop` functions can be customized.
+Custom event loop policies can control the behavior of
+:func:`get_event_loop`, :func:`set_event_loop`, and :func:`new_event_loop`.
 
 Policy objects should implement the APIs defined
 in the :class:`AbstractEventLoopPolicy` abstract base class.
 
+
+.. _asyncio-policy-get-set:
 
 Getting and Setting the Policy
 ==============================
@@ -39,6 +46,8 @@ for the current process:
 
    If *policy* is set to ``None``, the default policy is restored.
 
+
+.. _asyncio-policy-objects:
 
 Policy Objects
 ==============
@@ -86,6 +95,8 @@ The abstract event loop policy base class is defined as follows:
       This function is Unix specific.
 
 
+.. _asyncio-policy-builtin:
+
 asyncio ships with the following built-in policies:
 
 
@@ -116,6 +127,7 @@ asyncio ships with the following built-in policies:
    :class:`ProactorEventLoop` event loop implementation.
 
    .. availability:: Windows.
+
 
 .. _asyncio-watchers:
 
@@ -159,7 +171,7 @@ implementation used by the asyncio event loop:
 
 .. class:: AbstractChildWatcher
 
-   .. method:: add_child_handler(pid, callback, \*args)
+   .. method:: add_child_handler(pid, callback, *args)
 
       Register a new child handler.
 
@@ -209,7 +221,7 @@ implementation used by the asyncio event loop:
    It works reliably even when the asyncio event loop is run in a non-main OS thread.
 
    There is no noticeable overhead when handling a big number of children (*O(1)* each
-   time a child terminates), but stating a thread per process requires extra memory.
+   time a child terminates), but starting a thread per process requires extra memory.
 
    This watcher is used by default.
 
@@ -219,7 +231,7 @@ implementation used by the asyncio event loop:
 
    This implementation registers a :py:data:`SIGCHLD` signal handler on
    instantiation. That can break third-party code that installs a custom handler for
-   `SIGCHLD`.  signal).
+   :py:data:`SIGCHLD` signal.
 
    The watcher avoids disrupting other code spawning processes
    by polling every process explicitly on a :py:data:`SIGCHLD` signal.
@@ -257,6 +269,20 @@ implementation used by the asyncio event loop:
    This solution requires a running event loop in the main thread to work, as
    :class:`SafeChildWatcher`.
 
+.. class:: PidfdChildWatcher
+
+   This implementation polls process file descriptors (pidfds) to await child
+   process termination. In some respects, :class:`PidfdChildWatcher` is a
+   "Goldilocks" child watcher implementation. It doesn't require signals or
+   threads, doesn't interfere with any processes launched outside the event
+   loop, and scales linearly with the number of subprocesses launched by the
+   event loop. The main disadvantage is that pidfds are specific to Linux, and
+   only work on recent (5.3+) kernels.
+
+   .. versionadded:: 3.9
+
+
+.. _asyncio-custom-policies:
 
 Custom Policies
 ===============

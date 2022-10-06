@@ -1,2 +1,0 @@
-Improve speed of dictview intersection by directly using set intersection
-logic. Patch by David Su.

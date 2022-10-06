@@ -1,2 +1,0 @@
-Add :func:`test.support.catch_threading_exception`: context manager catching
-:class:`threading.Thread` exception using :func:`threading.excepthook`.

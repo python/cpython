@@ -1,2 +1,0 @@
-Officially drop support for creating bdist_wininst installers on non-Windows
-systems.

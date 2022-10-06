@@ -15,7 +15,7 @@ operating system::
 
    >>> import os
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python39'
+   'C:\\Python312'
    >>> os.chdir('/server/accesslogs')   # Change current working directory
    >>> os.system('mkdir today')   # Run the command mkdir in the system shell
    0
@@ -65,28 +65,35 @@ Command Line Arguments
 
 Common utility scripts often need to process command line arguments. These
 arguments are stored in the :mod:`sys` module's *argv* attribute as a list.  For
-instance the following output results from running ``python demo.py one two
-three`` at the command line::
+instance, let's take the following :file:`demo.py` file::
 
-   >>> import sys
-   >>> print(sys.argv)
+   # File demo.py
+   import sys
+   print(sys.argv)
+
+Here is the output from running ``python demo.py one two three`` at the command
+line::
+
    ['demo.py', 'one', 'two', 'three']
 
-The :mod:`argparse` module provides a mechanism to process command line arguments.
-It should always be preferred over directly processing ``sys.argv`` manually.
+The :mod:`argparse` module provides a more sophisticated mechanism to process
+command line arguments.  The following script extracts one or more filenames
+and an optional number of lines to be displayed::
 
-Take, for example, the below snippet of code::
+    import argparse
 
-   >>> import argparse
-   >>> from getpass import getuser
-   >>> parser = argparse.ArgumentParser(description='An argparse example.')
-   >>> parser.add_argument('name', nargs='?', default=getuser(), help='The name of someone to greet.')
-   >>> parser.add_argument('--verbose', '-v', action='count')
-   >>> args = parser.parse_args()
-   >>> greeting = ["Hi", "Hello", "Greetings! its very nice to meet you"][args.verbose % 3]
-   >>> print(f'{greeting}, {args.name}')
-   >>> if not args.verbose:
-   >>>     print('Try running this again with multiple "-v" flags!')
+    parser = argparse.ArgumentParser(
+        prog='top',
+        description='Show top lines from each file')
+    parser.add_argument('filenames', nargs='+')
+    parser.add_argument('-l', '--lines', type=int, default=10)
+    args = parser.parse_args()
+    print(args)
+
+When run at the command line with ``python top.py --lines=5 alpha.txt
+beta.txt``, the script sets ``args.lines`` to ``5`` and ``args.filenames``
+to ``['alpha.txt', 'beta.txt']``.
+
 
 .. _tut-stderr:
 
@@ -176,13 +183,13 @@ protocols. Two of the simplest are :mod:`urllib.request` for retrieving data
 from URLs and :mod:`smtplib` for sending mail::
 
    >>> from urllib.request import urlopen
-   >>> with urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl') as response:
+   >>> with urlopen('http://worldtimeapi.org/api/timezone/etc/UTC.txt') as response:
    ...     for line in response:
-   ...         line = line.decode('utf-8')  # Decoding the binary data to text.
-   ...         if 'EST' in line or 'EDT' in line:  # look for Eastern Time
-   ...             print(line)
-
-   <BR>Nov. 25, 09:43:32 PM EST
+   ...         line = line.decode()             # Convert bytes to a str
+   ...         if line.startswith('datetime'):
+   ...             print(line.rstrip())         # Remove trailing newline
+   ...
+   datetime: 2022-01-01T01:36:47.689215+00:00
 
    >>> import smtplib
    >>> server = smtplib.SMTP('localhost')
@@ -324,7 +331,7 @@ Python has a "batteries included" philosophy.  This is best seen through the
 sophisticated and robust capabilities of its larger packages. For example:
 
 * The :mod:`xmlrpc.client` and :mod:`xmlrpc.server` modules make implementing
-  remote procedure calls into an almost trivial task.  Despite the modules
+  remote procedure calls into an almost trivial task.  Despite the modules'
   names, no direct knowledge or handling of XML is needed.
 
 * The :mod:`email` package is a library for managing email messages, including

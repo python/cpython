@@ -1,2 +1,0 @@
-sendfile() used in socket and shutil modules was raising OverflowError for
-files >= 2GiB on 32-bit architectures.  (patch by Giampaolo Rodola)
