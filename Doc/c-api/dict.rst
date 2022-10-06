@@ -262,17 +262,17 @@ Dictionary Objects
 
    Enumeration of possible dictionary watcher events: ``PyDict_EVENT_ADDED``,
    ``PyDict_EVENT_MODIFIED``, ``PyDict_EVENT_DELETED``, ``PyDict_EVENT_CLONED``,
-   ``PyDict_EVENT_CLEARED``, or ``PyDict_EVENT_DEALLOCED``.
+   ``PyDict_EVENT_CLEARED``, or ``PyDict_EVENT_DEALLOCATED``.
 
 .. c:type:: int (*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 
    Type of a dict watcher callback function.
 
-   If *event* is ``PyDict_EVENT_CLEARED`` or ``PyDict_EVENT_DEALLOCED``, both
-   *key* and *new_value* will be ``NULL``. If *event* is
-   ``PyDict_EVENT_ADDED`` or ``PyDict_EVENT_MODIFIED``, *new_value* will be the
-   new value for *key*. If *event* is ``PyDict_EVENT_DELETED``, *key* is being
-   deleted from the dictionary and *new_value* will be ``NULL``.
+   If *event* is ``PyDict_EVENT_CLEARED`` or ``PyDict_EVENT_DEALLOCATED``, both
+   *key* and *new_value* will be ``NULL``. If *event* is ``PyDict_EVENT_ADDED``
+   or ``PyDict_EVENT_MODIFIED``, *new_value* will be the new value for *key*.
+   If *event* is ``PyDict_EVENT_DELETED``, *key* is being deleted from the
+   dictionary and *new_value* will be ``NULL``.
 
    ``PyDict_EVENT_CLONED`` occurs when *dict* was previously empty and another
    dict is merged into it. To maintain efficiency of this operation, per-key
@@ -280,12 +280,12 @@ Dictionary Objects
    single ``PyDict_EVENT_CLONED`` is issued, and *key* will be the source
    dictionary.
 
-   The callback may inspect but should not modify *dict*; doing so could have
+   The callback may inspect but must not modify *dict*; doing so could have
    unpredictable effects, including infinite recursion.
 
    Callbacks occur before the notified modification to *dict* takes place, so
    the prior state of *dict* can be inspected.
 
-   If an error occurs in the callback, it may return ``-1`` with an exception
-   set; this exception will be printed as an unraisable exception using
-   :c:func:`PyErr_WriteUnraisable`. On success it should return ``0``.
+   If the callback returns with an exception set, it must return ``-1``; this
+   exception will be printed as an unraisable exception using
+   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.

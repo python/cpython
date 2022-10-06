@@ -92,7 +92,7 @@ typedef enum {
     PyDict_EVENT_DELETED,
     PyDict_EVENT_CLONED,
     PyDict_EVENT_CLEARED,
-    PyDict_EVENT_DEALLOCED,
+    PyDict_EVENT_DEALLOCATED,
 } PyDict_WatchEvent;
 
 // Callback to be invoked when a watched dict is cleared, dealloced, or modified.

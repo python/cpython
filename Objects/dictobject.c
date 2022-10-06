@@ -2330,7 +2330,7 @@ Fail:
 static void
 dict_dealloc(PyDictObject *mp)
 {
-    _PyDict_NotifyEvent(PyDict_EVENT_DEALLOCED, mp, NULL, NULL);
+    _PyDict_NotifyEvent(PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
     PyDictValues *values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;

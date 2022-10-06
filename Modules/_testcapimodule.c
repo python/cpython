@@ -5184,7 +5184,7 @@ dict_watch_callback(PyDict_WatchEvent event,
         case PyDict_EVENT_CLEARED:
             msg = PyUnicode_FromString("clear");
             break;
-        case PyDict_EVENT_DEALLOCED:
+        case PyDict_EVENT_DEALLOCATED:
             msg = PyUnicode_FromString("dealloc");
             break;
         case PyDict_EVENT_CLONED:
