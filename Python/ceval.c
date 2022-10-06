@@ -4838,7 +4838,7 @@ handle_eval_breaker:
             DEOPT_IF(!PyTuple_CheckExact(callargs), CALL_FUNCTION_EX);
             Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
             DEOPT_IF(!Py_IS_TYPE(func, &PyFunction_Type), CALL_FUNCTION_EX);
-            STACK_SHRINK(3);
+            STACK_SHRINK(3); /* Get rid of callargs, func and NULL */
             STAT_INC(CALL_FUNCTION_EX, hit);
 
             int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
@@ -4886,7 +4886,6 @@ handle_eval_breaker:
             DEOPT_IF(kwargs != NULL &&
                 ((PyDictObject *)kwargs)->ma_keys->dk_kind != DICT_KEYS_UNICODE, CALL_FUNCTION_EX);
             STAT_INC(CALL_FUNCTION_EX, hit);
-            STACK_SHRINK(2 + has_kwargs); /* Get rid of kwargs, callargs, func */
 
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -4894,6 +4893,7 @@ handle_eval_breaker:
                 goto error;
             }
 
+            STACK_SHRINK(2 + has_kwargs); /* Get rid of kwargs, callargs, func */
             /* res = func(self, args, nargs, kwnames) */
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(func);
             PyObject *res = ((PyCFunctionWithKeywords)(void(*)(void))cfunc)(
