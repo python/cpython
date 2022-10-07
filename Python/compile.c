@@ -258,15 +258,14 @@ typedef struct basicblock_ {
     int b_iused;
     /* length of instruction array (b_instr) */
     int b_ialloc;
+    /* Used by add_checks_for_loads_of_unknown_variables */
+    uint64_t b_visited_locals_mask;
     /* Number of predecessors that a block has. */
     int b_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
     int b_offset;
-    /* Used by add_checks_for_loads_of_unknown_variables */
-    uint64_t b_needs_visited_locals_mask;
-    uint64_t b_already_visited_locals_mask;
     /* Basic block is an exception handler that preserves lasti */
     unsigned b_preserve_lasti : 1;
     /* Used by compiler passes to mark whether they have visited a basic block. */
@@ -7909,11 +7908,10 @@ maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
     // Push b if the unsafe mask is giving us any new information.
     // To avoid overflowing the stack, only allow each block once.
     // Use b->b_visited=1 to mean that b is currently on the stack.
-    b->b_needs_visited_locals_mask |= unsafe_mask;
-    if (b->b_needs_visited_locals_mask
-        & ~b->b_already_visited_locals_mask)
-    {
-        // Still work left to do.
+    uint64_t both = b->b_visited_locals_mask | unsafe_mask;
+    if (b->b_visited_locals_mask != both) {
+        b->b_visited_locals_mask = both;
+        // More work left to do.
         if (!b->b_visited) {
             // not on the stack, so push it.
             *(*sp)++ = b;
@@ -8055,10 +8053,7 @@ add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
         basicblock *b = *--sp;
         // mark as no longer on stack
         b->b_visited = 0;
-        uint64_t unsafe_mask = b->b_needs_visited_locals_mask;
-        assert(unsafe_mask & ~b->b_already_visited_locals_mask);
-        b->b_already_visited_locals_mask = unsafe_mask;
-        scan_block_for_locals(b, unsafe_mask, &sp);
+        scan_block_for_locals(b, b->b_visited_locals_mask, &sp);
     }
     PyMem_Free(stack);
     return 0;
