@@ -333,6 +333,9 @@ modules, and one that knows how to import modules from an :term:`import path`
    Use of :meth:`~importlib.abc.MetaPathFinder.find_module` by the import system
    now raises :exc:`ImportWarning`.
 
+.. versionchanged:: 3.12
+   ``find_module()`` has been removed.  Use ``find_spec()`` instead.
+
 
 Loading
 =======
@@ -887,7 +890,7 @@ module.  ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
 
 To indicate to the import machinery that the spec represents a namespace
-:term:`portion`, the path entry finder sets "submodule_search_locations" to
+:term:`portion`, the path entry finder sets ``submodule_search_locations`` to
 a list containing the portion.
 
 .. versionchanged:: 3.4
@@ -923,6 +926,9 @@ a list containing the portion.
     Calls to :meth:`~importlib.abc.PathEntryFinder.find_module` and
     :meth:`~importlib.abc.PathEntryFinder.find_loader` by the import
     system will raise :exc:`ImportWarning`.
+
+.. versionchanged:: 3.12
+    ``find_module()`` and ``find_loader()`` have been removed.
 
 
 Replacing the standard import system
@@ -1073,8 +1079,3 @@ methods to finders and loaders.
    module may replace itself in :data:`sys.modules`.  This is
    implementation-specific behavior that is not guaranteed to work in other
    Python implementations.
-
-.. [#fnpic] In legacy code, it is possible to find instances of
-   :class:`imp.NullImporter` in the :data:`sys.path_importer_cache`.  It
-   is recommended that code be changed to use ``None`` instead.  See
-   :ref:`portingpythoncode` for more details.

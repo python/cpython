@@ -193,14 +193,6 @@ class LoaderTests(abc.LoaderTests):
     # No way to trigger an error in a frozen module.
     test_state_after_failure = None
 
-    def test_unloadable(self):
-        with import_helper.frozen_modules():
-            with deprecated():
-                assert self.machinery.FrozenImporter.find_module('_not_real') is None
-            with self.assertRaises(ImportError) as cm:
-                self.load_module('_not_real')
-            self.assertEqual(cm.exception.name, '_not_real')
-
 
 (Frozen_LoaderTests,
  Source_LoaderTests
