@@ -13,13 +13,8 @@
 # The current format is TOML.
 
 # There are these kinds of top-level "items":
-# - struct: A C struct. Currently this file does not distinguish between:
-#   - opaque structs, which the Limited API only handles via pointers
-#     (so these can change at any time)
-#   - structs where only certain members are part of the stable ABI (e.g.
-#     PyObject)
-#   - structs which must not be changed at all (e.g. PyType_Slot, which is
-#     fully defined and used in arrays)
+# - struct: A C struct. See `struct_abi_kind` for how much of the struct is
+#   exposed.
 # - function: A function that must be kept available (and exported, i.e. not
 #   converted to a macro).
 # - const: A simple value, defined with `#define`.
@@ -42,6 +37,18 @@
 #     of the stable ABI.
 #   - a combination of the above (functions that were called by macros that
 #     were public in the past)
+# - struct_abi_kind: for `struct`, defines how much of the struct is exposed:
+#   - 'full-abi': All of the struct is part of the ABI, including the size
+#     (users may define arrays of these structs).
+#     Typically used for initalization, rather than at runtime.
+#   - 'opaque': No members are part of the ABI, nor is the size. The Limited
+#     API only handles these via pointers. The C definition should be
+#     incomplete (opaque).
+#   - 'members': Only specific members are part of the stable ABI.
+#     The struct's size may change, so it can't be used in arrays.
+#     Do not add new structs of this kind without an extremely good reason.
+# - members: For `struct` with struct_abi_kind = 'members', a list of the
+#   exposed members.
 # - doc: for `feature_macro`, the blurb added in documentation
 # - windows: for `feature_macro`, this macro is defined on Windows.
 #   (This info is used to generate the DLL manifest and needs to be available
@@ -1524,6 +1531,7 @@
     added = '3.2'
 [function.PyUnicode_GetSize]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_IsIdentifier]
     added = '3.2'
 [function.PyUnicode_Join]
@@ -1562,6 +1570,7 @@
     added = '3.2'
 [function.PyUnicode_InternImmortal]
     added = '3.2'
+    abi_only = true
 [function.PyUnicode_InternInPlace]
     added = '3.2'
 [data.PyUnicode_Type]
@@ -2273,3 +2282,14 @@
     added = '3.11'
 [function.PyErr_SetHandledException]
     added = '3.11'
+
+[function.PyType_FromMetaclass]
+    added = '3.12'
+[const.Py_TPFLAGS_HAVE_VECTORCALL]
+    added = '3.12'
+[function.PyVectorcall_NARGS]
+    added = '3.12'
+[function.PyVectorcall_Call]
+    added = '3.12'
+[typedef.vectorcallfunc]
+    added = '3.12'

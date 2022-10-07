@@ -1121,7 +1121,7 @@ checkpath(PyObject* tag)
     if (PyUnicode_Check(tag)) {
         const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
         const void *data = PyUnicode_DATA(tag);
-        unsigned int kind = PyUnicode_KIND(tag);
+        int kind = PyUnicode_KIND(tag);
         if (len >= 3 && PyUnicode_READ(kind, data, 0) == '{' && (
                 PyUnicode_READ(kind, data, 1) == '}' || (
                 PyUnicode_READ(kind, data, 1) == '*' &&
@@ -4370,7 +4370,7 @@ static struct PyModuleDef elementtreemodule = {
 PyMODINIT_FUNC
 PyInit__elementtree(void)
 {
-    PyObject *m, *temp;
+    PyObject *m;
     elementtreestate *st;
 
     m = PyState_FindModule(&elementtreemodule);
@@ -4394,11 +4394,7 @@ PyInit__elementtree(void)
         return NULL;
     st = get_elementtree_state(m);
 
-    if (!(temp = PyImport_ImportModule("copy")))
-        return NULL;
-    st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
-    Py_XDECREF(temp);
-
+    st->deepcopy_obj = _PyImport_GetModuleAttrString("copy", "deepcopy");
     if (st->deepcopy_obj == NULL) {
         return NULL;
     }

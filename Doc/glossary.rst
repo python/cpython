@@ -136,9 +136,16 @@ Glossary
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
-      A value associated with an object which is referenced by name using
-      dotted expressions.  For example, if an object *o* has an attribute
+      A value associated with an object which is usually referenced by name
+      using dotted expressions.
+      For example, if an object *o* has an attribute
       *a* it would be referenced as *o.a*.
+
+      It is possible to give an object an attribute whose name is not an
+      identifier as defined by :ref:`identifiers`, for example using
+      :func:`setattr`, if the object allows it.
+      Such an attribute will not be accessible using a dotted expression,
+      and would instead need to be retrieved with :func:`getattr`.
 
    awaitable
       An object that can be used in an :keyword:`await` expression.  Can be
@@ -532,7 +539,7 @@ Glossary
       machines.
 
       However, some extension modules, either standard or third-party,
-      are designed so as to release the GIL when doing computationally-intensive
+      are designed so as to release the GIL when doing computationally intensive
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
@@ -566,9 +573,9 @@ Glossary
       from their :func:`id`.
 
    IDLE
-      An Integrated Development Environment for Python.  IDLE is a basic editor
-      and interpreter environment which ships with the standard distribution of
-      Python.
+      An Integrated Development and Learning Environment for Python.
+      :ref:`idle` is a basic editor and interpreter environment
+      which ships with the standard distribution of Python.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and

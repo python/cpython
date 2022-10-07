@@ -868,7 +868,7 @@ Reader_iternext(ReaderObj *self)
     PyObject *fields = NULL;
     Py_UCS4 c;
     Py_ssize_t pos, linelen;
-    unsigned int kind;
+    int kind;
     const void *data;
     PyObject *lineobj;
 
@@ -1066,7 +1066,7 @@ join_reset(WriterObj *self)
  * record length.
  */
 static Py_ssize_t
-join_append_data(WriterObj *self, unsigned int field_kind, const void *field_data,
+join_append_data(WriterObj *self, int field_kind, const void *field_data,
                  Py_ssize_t field_len, int *quoted,
                  int copy_phase)
 {
@@ -1179,7 +1179,7 @@ join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
 static int
 join_append(WriterObj *self, PyObject *field, int quoted)
 {
-    unsigned int field_kind = -1;
+    int field_kind = -1;
     const void *field_data = NULL;
     Py_ssize_t field_len = 0;
     Py_ssize_t rec_len;
@@ -1211,7 +1211,7 @@ static int
 join_append_lineterminator(WriterObj *self)
 {
     Py_ssize_t terminator_len, i;
-    unsigned int term_kind;
+    int term_kind;
     const void *term_data;
 
     terminator_len = PyUnicode_GET_LENGTH(self->dialect->lineterminator);

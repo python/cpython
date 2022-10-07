@@ -2,6 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
+from contextlib import contextmanager
 import _thread
 import importlib.machinery
 import importlib.util
@@ -15,6 +16,7 @@ import textwrap
 import threading
 import time
 import unittest
+import warnings
 import weakref
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
@@ -35,9 +37,6 @@ except ImportError:
 _testcapi = import_helper.import_module('_testcapi')
 
 import _testinternalcapi
-
-# Were we compiled --with-pydebug or with #define Py_DEBUG?
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
 
 def decode_stderr(err):
@@ -73,16 +72,17 @@ class CAPITest(unittest.TestCase):
                                   'import _testcapi;'
                                   '_testcapi.crash_no_current_thread()'],
                                  stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+                                 stderr=subprocess.PIPE,
+                                 text=True)
         (out, err) = p.communicate()
-        self.assertEqual(out, b'')
+        self.assertEqual(out, '')
         # This used to cause an infinite loop.
-        self.assertTrue(err.rstrip().startswith(
-                         b'Fatal Python error: '
-                         b'PyThreadState_Get: '
-                         b'the function must be called with the GIL held, '
-                         b'but the GIL is released '
-                         b'(the current Python thread state is NULL)'),
+        msg = ("Fatal Python error: PyThreadState_Get: "
+               "the function must be called with the GIL held, "
+               "after Python initialization and before Python finalization, "
+               "but the GIL is released "
+               "(the current Python thread state is NULL)")
+        self.assertTrue(err.rstrip().startswith(msg),
                         err)
 
     def test_memoryview_from_NULL_pointer(self):
@@ -230,7 +230,7 @@ class CAPITest(unittest.TestCase):
     def test_return_null_without_error(self):
         # Issue #23571: A function must not return NULL without setting an
         # error
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             code = textwrap.dedent("""
                 import _testcapi
                 from test import support
@@ -258,7 +258,7 @@ class CAPITest(unittest.TestCase):
 
     def test_return_result_with_error(self):
         # Issue #23571: A function must not return a result with an error set
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             code = textwrap.dedent("""
                 import _testcapi
                 from test import support
@@ -516,7 +516,7 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
             self.assertEqual(type_refcnt, B.refcnt_in_del)
@@ -540,6 +540,30 @@ class CAPITest(unittest.TestCase):
         inst = _testcapi.HeapCTypeWithDict()
         self.assertEqual({}, inst.__dict__)
 
+    def test_heaptype_with_managed_dict(self):
+        inst = _testcapi.HeapCTypeWithManagedDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.__dict__, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithManagedDict()
+        self.assertEqual({}, inst.__dict__)
+
+        a = _testcapi.HeapCTypeWithManagedDict()
+        b = _testcapi.HeapCTypeWithManagedDict()
+        a.b = b
+        b.a = a
+        del a, b
+
+    def test_sublclassing_managed_dict(self):
+
+        class C(_testcapi.HeapCTypeWithManagedDict):
+            pass
+
+        i = C()
+        i.spam = i
+        del i
+
     def test_heaptype_with_negative_dict(self):
         inst = _testcapi.HeapCTypeWithNegativeDict()
         inst.foo = 42
@@ -555,6 +579,37 @@ class CAPITest(unittest.TestCase):
         ref = weakref.ref(inst)
         self.assertEqual(ref(), inst)
         self.assertEqual(inst.weakreflist, ref)
+
+    def test_heaptype_with_managed_weakref(self):
+        inst = _testcapi.HeapCTypeWithManagedWeakref()
+        ref = weakref.ref(inst)
+        self.assertEqual(ref(), inst)
+
+    def test_sublclassing_managed_weakref(self):
+
+        class C(_testcapi.HeapCTypeWithManagedWeakref):
+            pass
+
+        inst = C()
+        ref = weakref.ref(inst)
+        self.assertEqual(ref(), inst)
+
+    def test_sublclassing_managed_both(self):
+
+        class C1(_testcapi.HeapCTypeWithManagedWeakref, _testcapi.HeapCTypeWithManagedDict):
+            pass
+
+        class C2(_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
+            pass
+
+        for cls in (C1, C2):
+            inst = cls()
+            ref = weakref.ref(inst)
+            self.assertEqual(ref(), inst)
+            inst.spam = inst
+            del inst
+            ref = weakref.ref(cls())
+            self.assertIs(ref(), None)
 
     def test_heaptype_with_buffer(self):
         inst = _testcapi.HeapCTypeWithBuffer()
@@ -586,7 +641,7 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
             self.assertEqual(type_refcnt, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
@@ -608,16 +663,121 @@ class CAPITest(unittest.TestCase):
         del obj.value
         self.assertEqual(obj.pvalue, 0)
 
+    def test_heaptype_with_custom_metaclass(self):
+        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclass, type))
+        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclassCustomNew, type))
+
+        t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclass)
+        self.assertIsInstance(t, type)
+        self.assertEqual(t.__name__, "HeapCTypeViaMetaclass")
+        self.assertIs(type(t), _testcapi.HeapCTypeMetaclass)
+
+        msg = "Metaclasses with custom tp_new are not supported."
+        with self.assertRaisesRegex(TypeError, msg):
+            t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclassCustomNew)
+
+    def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
+
+        with self.assertRaises(TypeError):
+            class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
+                pass
+        with self.assertRaises(TypeError):
+            class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+                pass
+
+    def test_multiple_inheritance_ctypes_with_weakref_or_dict_and_other_builtin(self):
+
+        with self.assertRaises(TypeError):
+            class C1(_testcapi.HeapCTypeWithDict, list):
+                pass
+
+        with self.assertRaises(TypeError):
+            class C2(_testcapi.HeapCTypeWithWeakref, list):
+                pass
+
+        class C3(_testcapi.HeapCTypeWithManagedDict, list):
+            pass
+        class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
+            pass
+
+        inst = C3()
+        inst.append(0)
+        str(inst.__dict__)
+
+        inst = C4()
+        inst.append(0)
+        str(inst.__weakref__)
+
+        for cls in (_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
+            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
+                class S(cls, cls2):
+                    pass
+            class B1(C3, cls):
+                pass
+            class B2(C4, cls):
+                pass
+
+    def test_pytype_fromspec_with_repeated_slots(self):
+        for variant in range(2):
+            with self.subTest(variant=variant):
+                with self.assertRaises(SystemError):
+                    _testcapi.create_type_from_repeated_slots(variant)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_immutable_type_with_mutable_base(self):
+        # Add deprecation warning here so it's removed in 3.14
+        warnings._deprecated(
+            'creating immutable classes with mutable bases', remove=(3, 14))
+
+        class MutableBase:
+            def meth(self):
+                return 'original'
+
+        with self.assertWarns(DeprecationWarning):
+            ImmutableSubclass = _testcapi.make_immutable_type_with_base(
+                MutableBase)
+        instance = ImmutableSubclass()
+
+        self.assertEqual(instance.meth(), 'original')
+
+        # Cannot override the static type's method
+        with self.assertRaisesRegex(
+                TypeError,
+                "cannot set 'meth' attribute of immutable type"):
+            ImmutableSubclass.meth = lambda self: 'overridden'
+        self.assertEqual(instance.meth(), 'original')
+
+        # Can change the method on the mutable base
+        MutableBase.meth = lambda self: 'changed'
+        self.assertEqual(instance.meth(), 'changed')
+
+
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
-        self.assertEqual(pynumber_tobase(123, 2), '0b1111011')
-        self.assertEqual(pynumber_tobase(123, 8), '0o173')
-        self.assertEqual(pynumber_tobase(123, 10), '123')
-        self.assertEqual(pynumber_tobase(123, 16), '0x7b')
-        self.assertEqual(pynumber_tobase(-123, 2), '-0b1111011')
-        self.assertEqual(pynumber_tobase(-123, 8), '-0o173')
-        self.assertEqual(pynumber_tobase(-123, 10), '-123')
-        self.assertEqual(pynumber_tobase(-123, 16), '-0x7b')
+        small_number = 123
+        large_number = 2**64
+        class IDX:
+            def __init__(self, val):
+                self.val = val
+            def __index__(self):
+                return self.val
+
+        test_cases = ((2, '0b1111011', '0b10000000000000000000000000000000000000000000000000000000000000000'),
+                      (8, '0o173', '0o2000000000000000000000'),
+                      (10, '123', '18446744073709551616'),
+                      (16, '0x7b', '0x10000000000000000'))
+        for base, small_target, large_target in test_cases:
+            with self.subTest(base=base, st=small_target, lt=large_target):
+                # Test for small number
+                self.assertEqual(pynumber_tobase(small_number, base), small_target)
+                self.assertEqual(pynumber_tobase(-small_number, base), '-' + small_target)
+                self.assertEqual(pynumber_tobase(IDX(small_number), base), small_target)
+                # Test for large number(out of range of a longlong,i.e.[-2**63, 2**63-1])
+                self.assertEqual(pynumber_tobase(large_number, base), large_target)
+                self.assertEqual(pynumber_tobase(-large_number, base), '-' + large_target)
+                self.assertEqual(pynumber_tobase(IDX(large_number), base), large_target)
+        self.assertRaises(TypeError, pynumber_tobase, IDX(123.0), 10)
+        self.assertRaises(TypeError, pynumber_tobase, IDX('123'), 10)
         self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
@@ -705,6 +865,20 @@ class CAPITest(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertTrue(hasattr(ctypes.pythonapi, name))
 
+    def test_clear_managed_dict(self):
+
+        class C:
+            def __init__(self):
+                self.a = 1
+
+        c = C()
+        _testcapi.clear_managed_dict(c)
+        self.assertEqual(c.__dict__, {})
+        c = C()
+        self.assertEqual(c.__dict__, {'a':1})
+        _testcapi.clear_managed_dict(c)
+        self.assertEqual(c.__dict__, {})
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -788,6 +962,7 @@ class TestPendingCalls(unittest.TestCase):
 
 class SubinterpreterTest(unittest.TestCase):
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_subinterps(self):
         import builtins
         r, w = os.pipe()
@@ -803,6 +978,7 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_subinterps_recent_language_features(self):
         r, w = os.pipe()
         code = """if 1:
@@ -823,6 +999,39 @@ class SubinterpreterTest(unittest.TestCase):
             ret = support.run_in_subinterp(code)
             self.assertEqual(ret, 0)
             self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
+
+    def test_py_config_isoloated_per_interpreter(self):
+        # A config change in one interpreter must not leak to out to others.
+        #
+        # This test could verify ANY config value, it just happens to have been
+        # written around the time of int_max_str_digits. Refactoring is okay.
+        code = """if 1:
+        import sys, _testinternalcapi
+
+        # Any config value would do, this happens to be the one being
+        # double checked at the time this test was written.
+        config = _testinternalcapi.get_config()
+        config['int_max_str_digits'] = 55555
+        _testinternalcapi.set_config(config)
+        sub_value = _testinternalcapi.get_config()['int_max_str_digits']
+        assert sub_value == 55555, sub_value
+        """
+        before_config = _testinternalcapi.get_config()
+        assert before_config['int_max_str_digits'] != 55555
+        self.assertEqual(support.run_in_subinterp(code), 0,
+                         'subinterp code failure, check stderr.')
+        after_config = _testinternalcapi.get_config()
+        self.assertIsNot(
+                before_config, after_config,
+                "Expected get_config() to return a new dict on each call")
+        self.assertEqual(before_config, after_config,
+                         "CAUTION: Tests executed after this may be "
+                         "running under an altered config.")
+        # try:...finally: calling set_config(before_config) not done
+        # as that results in sys.argv, sys.path, and sys.warnoptions
+        # "being modified by test_capi" per test.regrtest.  So if this
+        # test fails, assume that the environment in this process may
+        # be altered and suspect.
 
     def test_mutate_exception(self):
         """
@@ -893,6 +1102,21 @@ class TestThreadState(unittest.TestCase):
         t = threading.Thread(target=target)
         t.start()
         t.join()
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_gilstate_ensure_no_deadlock(self):
+        # See https://github.com/python/cpython/issues/96071
+        code = textwrap.dedent(f"""
+            import _testcapi
+
+            def callback():
+                print('callback called')
+
+            _testcapi._test_thread_state(callback)
+            """)
+        ret = assert_python_ok('-X', 'tracemalloc', '-c', code)
+        self.assertIn(b'callback called', ret.out)
 
 
 class Test_testcapi(unittest.TestCase):
@@ -1027,7 +1251,7 @@ class PyMemPymallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'pymalloc_debug'
 
 
-@unittest.skipUnless(Py_DEBUG, 'need Py_DEBUG')
+@unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
 class PyMemDefaultTests(PyMemDebugTests):
     # test default allocator of Python compiled in debug mode
     PYTHONMALLOC = ''
@@ -1168,6 +1392,137 @@ class Test_Pep523API(unittest.TestCase):
         def func2(x=None):
             pass
         self.do_test(func2)
+
+
+class TestDictWatchers(unittest.TestCase):
+    # types of watchers testcapimodule can add:
+    EVENTS = 0   # appends dict events as strings to global event list
+    ERROR = 1    # unconditionally sets and signals a RuntimeException
+    SECOND = 2   # always appends "second" to global event list
+
+    def add_watcher(self, kind=EVENTS):
+        return _testcapi.add_dict_watcher(kind)
+
+    def clear_watcher(self, watcher_id):
+        _testcapi.clear_dict_watcher(watcher_id)
+
+    @contextmanager
+    def watcher(self, kind=EVENTS):
+        wid = self.add_watcher(kind)
+        try:
+            yield wid
+        finally:
+            self.clear_watcher(wid)
+
+    def assert_events(self, expected):
+        actual = _testcapi.get_dict_watcher_events()
+        self.assertEqual(actual, expected)
+
+    def watch(self, wid, d):
+        _testcapi.watch_dict(wid, d)
+
+    def test_set_new_item(self):
+        d = {}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d["foo"] = "bar"
+            self.assert_events(["new:foo:bar"])
+
+    def test_set_existing_item(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d["foo"] = "baz"
+            self.assert_events(["mod:foo:baz"])
+
+    def test_clone(self):
+        d = {}
+        d2 = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.update(d2)
+            self.assert_events(["clone"])
+
+    def test_no_event_if_not_watched(self):
+        d = {}
+        with self.watcher() as wid:
+            d["foo"] = "bar"
+            self.assert_events([])
+
+    def test_del(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            del d["foo"]
+            self.assert_events(["del:foo"])
+
+    def test_pop(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.pop("foo")
+            self.assert_events(["del:foo"])
+
+    def test_clear(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.clear()
+            self.assert_events(["clear"])
+
+    def test_dealloc(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            del d
+            self.assert_events(["dealloc"])
+
+    def test_error(self):
+        d = {}
+        unraisables = []
+        def unraisable_hook(unraisable):
+            unraisables.append(unraisable)
+        with self.watcher(kind=self.ERROR) as wid:
+            self.watch(wid, d)
+            orig_unraisable_hook = sys.unraisablehook
+            sys.unraisablehook = unraisable_hook
+            try:
+                d["foo"] = "bar"
+            finally:
+                sys.unraisablehook = orig_unraisable_hook
+            self.assert_events([])
+        self.assertEqual(len(unraisables), 1)
+        unraisable = unraisables[0]
+        self.assertIs(unraisable.object, d)
+        self.assertEqual(str(unraisable.exc_value), "boom!")
+
+    def test_two_watchers(self):
+        d1 = {}
+        d2 = {}
+        with self.watcher() as wid1:
+            with self.watcher(kind=self.SECOND) as wid2:
+                self.watch(wid1, d1)
+                self.watch(wid2, d2)
+                d1["foo"] = "bar"
+                d2["hmm"] = "baz"
+                self.assert_events(["new:foo:bar", "second"])
+
+    def test_watch_non_dict(self):
+        with self.watcher() as wid:
+            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
+                self.watch(wid, 1)
+
+    def test_watch_out_of_range_watcher_id(self):
+        d = {}
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
+            self.watch(-1, d)
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
+            self.watch(8, d)  # DICT_MAX_WATCHERS = 8
+
+    def test_unassigned_watcher_id(self):
+        d = {}
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
+            self.watch(1, d)
 
 
 if __name__ == "__main__":

@@ -66,11 +66,7 @@ class ImportTests(unittest.TestCase):
         self.test_strings = mod.test_strings
         self.test_path = mod.__path__
 
-    def test_import_encoded_module(self):
-        for modname, encoding, teststr in self.test_strings:
-            mod = importlib.import_module('test.encoded_modules.'
-                                          'module_' + modname)
-            self.assertEqual(teststr, mod.test)
+    # test_import_encoded_module moved to test_source_encoding.py
 
     def test_find_module_encoding(self):
         for mod, encoding, _ in self.test_strings:

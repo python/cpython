@@ -1513,6 +1513,50 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 }
 
 /*[clinic input]
+_winapi.LCMapStringEx
+
+    locale: LPCWSTR
+    flags: DWORD
+    src: LPCWSTR
+
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
+                           LPCWSTR src)
+/*[clinic end generated code: output=cf4713d80e2b47c9 input=9fe26f95d5ab0001]*/
+{
+    if (flags & (LCMAP_SORTHANDLE | LCMAP_HASH | LCMAP_BYTEREV |
+                 LCMAP_SORTKEY)) {
+        return PyErr_Format(PyExc_ValueError, "unsupported flags");
+    }
+
+    int dest_size = LCMapStringEx(locale, flags, src, -1, NULL, 0,
+                                  NULL, NULL, 0);
+    if (dest_size == 0) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
+    if (dest == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    int nmapped = LCMapStringEx(locale, flags, src, -1, dest, dest_size,
+                                NULL, NULL, 0);
+    if (nmapped == 0) {
+        DWORD error = GetLastError();
+        PyMem_DEL(dest);
+        return PyErr_SetFromWindowsErr(error);
+    }
+
+    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size - 1);
+    PyMem_DEL(dest);
+
+    return ret;
+}
+
+/*[clinic input]
 _winapi.ReadFile
 
     handle: HANDLE
@@ -2023,6 +2067,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_OPENFILEMAPPING_METHODDEF
     _WINAPI_OPENPROCESS_METHODDEF
     _WINAPI_PEEKNAMEDPIPE_METHODDEF
+    _WINAPI_LCMAPSTRINGEX_METHODDEF
     _WINAPI_READFILE_METHODDEF
     _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF
     _WINAPI_TERMINATEPROCESS_METHODDEF
@@ -2159,6 +2204,22 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, FILE_TYPE_CHAR);
     WINAPI_CONSTANT(F_DWORD, FILE_TYPE_PIPE);
     WINAPI_CONSTANT(F_DWORD, FILE_TYPE_REMOTE);
+
+    WINAPI_CONSTANT("u", LOCALE_NAME_INVARIANT);
+    WINAPI_CONSTANT(F_DWORD, LOCALE_NAME_MAX_LENGTH);
+    WINAPI_CONSTANT("u", LOCALE_NAME_SYSTEM_DEFAULT);
+    WINAPI_CONSTANT("u", LOCALE_NAME_USER_DEFAULT);
+
+    WINAPI_CONSTANT(F_DWORD, LCMAP_FULLWIDTH);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_HALFWIDTH);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_HIRAGANA);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_KATAKANA);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_LINGUISTIC_CASING);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_LOWERCASE);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_SIMPLIFIED_CHINESE);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_TITLECASE);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_TRADITIONAL_CHINESE);
+    WINAPI_CONSTANT(F_DWORD, LCMAP_UPPERCASE);
 
     WINAPI_CONSTANT("i", NULL);
 
