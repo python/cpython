@@ -2,6 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
+from contextlib import contextmanager
 import _thread
 import importlib.machinery
 import importlib.util
@@ -753,14 +754,30 @@ class CAPITest(unittest.TestCase):
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
-        self.assertEqual(pynumber_tobase(123, 2), '0b1111011')
-        self.assertEqual(pynumber_tobase(123, 8), '0o173')
-        self.assertEqual(pynumber_tobase(123, 10), '123')
-        self.assertEqual(pynumber_tobase(123, 16), '0x7b')
-        self.assertEqual(pynumber_tobase(-123, 2), '-0b1111011')
-        self.assertEqual(pynumber_tobase(-123, 8), '-0o173')
-        self.assertEqual(pynumber_tobase(-123, 10), '-123')
-        self.assertEqual(pynumber_tobase(-123, 16), '-0x7b')
+        small_number = 123
+        large_number = 2**64
+        class IDX:
+            def __init__(self, val):
+                self.val = val
+            def __index__(self):
+                return self.val
+
+        test_cases = ((2, '0b1111011', '0b10000000000000000000000000000000000000000000000000000000000000000'),
+                      (8, '0o173', '0o2000000000000000000000'),
+                      (10, '123', '18446744073709551616'),
+                      (16, '0x7b', '0x10000000000000000'))
+        for base, small_target, large_target in test_cases:
+            with self.subTest(base=base, st=small_target, lt=large_target):
+                # Test for small number
+                self.assertEqual(pynumber_tobase(small_number, base), small_target)
+                self.assertEqual(pynumber_tobase(-small_number, base), '-' + small_target)
+                self.assertEqual(pynumber_tobase(IDX(small_number), base), small_target)
+                # Test for large number(out of range of a longlong,i.e.[-2**63, 2**63-1])
+                self.assertEqual(pynumber_tobase(large_number, base), large_target)
+                self.assertEqual(pynumber_tobase(-large_number, base), '-' + large_target)
+                self.assertEqual(pynumber_tobase(IDX(large_number), base), large_target)
+        self.assertRaises(TypeError, pynumber_tobase, IDX(123.0), 10)
+        self.assertRaises(TypeError, pynumber_tobase, IDX('123'), 10)
         self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
@@ -982,6 +999,39 @@ class SubinterpreterTest(unittest.TestCase):
             ret = support.run_in_subinterp(code)
             self.assertEqual(ret, 0)
             self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
+
+    def test_py_config_isoloated_per_interpreter(self):
+        # A config change in one interpreter must not leak to out to others.
+        #
+        # This test could verify ANY config value, it just happens to have been
+        # written around the time of int_max_str_digits. Refactoring is okay.
+        code = """if 1:
+        import sys, _testinternalcapi
+
+        # Any config value would do, this happens to be the one being
+        # double checked at the time this test was written.
+        config = _testinternalcapi.get_config()
+        config['int_max_str_digits'] = 55555
+        _testinternalcapi.set_config(config)
+        sub_value = _testinternalcapi.get_config()['int_max_str_digits']
+        assert sub_value == 55555, sub_value
+        """
+        before_config = _testinternalcapi.get_config()
+        assert before_config['int_max_str_digits'] != 55555
+        self.assertEqual(support.run_in_subinterp(code), 0,
+                         'subinterp code failure, check stderr.')
+        after_config = _testinternalcapi.get_config()
+        self.assertIsNot(
+                before_config, after_config,
+                "Expected get_config() to return a new dict on each call")
+        self.assertEqual(before_config, after_config,
+                         "CAUTION: Tests executed after this may be "
+                         "running under an altered config.")
+        # try:...finally: calling set_config(before_config) not done
+        # as that results in sys.argv, sys.path, and sys.warnoptions
+        # "being modified by test_capi" per test.regrtest.  So if this
+        # test fails, assume that the environment in this process may
+        # be altered and suspect.
 
     def test_mutate_exception(self):
         """
@@ -1342,6 +1392,140 @@ class Test_Pep523API(unittest.TestCase):
         def func2(x=None):
             pass
         self.do_test(func2)
+
+
+class TestDictWatchers(unittest.TestCase):
+    # types of watchers testcapimodule can add:
+    EVENTS = 0   # appends dict events as strings to global event list
+    ERROR = 1    # unconditionally sets and signals a RuntimeException
+    SECOND = 2   # always appends "second" to global event list
+
+    def add_watcher(self, kind=EVENTS):
+        return _testcapi.add_dict_watcher(kind)
+
+    def clear_watcher(self, watcher_id):
+        _testcapi.clear_dict_watcher(watcher_id)
+
+    @contextmanager
+    def watcher(self, kind=EVENTS):
+        wid = self.add_watcher(kind)
+        try:
+            yield wid
+        finally:
+            self.clear_watcher(wid)
+
+    def assert_events(self, expected):
+        actual = _testcapi.get_dict_watcher_events()
+        self.assertEqual(actual, expected)
+
+    def watch(self, wid, d):
+        _testcapi.watch_dict(wid, d)
+
+    def test_set_new_item(self):
+        d = {}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d["foo"] = "bar"
+            self.assert_events(["new:foo:bar"])
+
+    def test_set_existing_item(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d["foo"] = "baz"
+            self.assert_events(["mod:foo:baz"])
+
+    def test_clone(self):
+        d = {}
+        d2 = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.update(d2)
+            self.assert_events(["clone"])
+
+    def test_no_event_if_not_watched(self):
+        d = {}
+        with self.watcher() as wid:
+            d["foo"] = "bar"
+            self.assert_events([])
+
+    def test_del(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            del d["foo"]
+            self.assert_events(["del:foo"])
+
+    def test_pop(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.pop("foo")
+            self.assert_events(["del:foo"])
+
+    def test_clear(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.clear()
+            self.assert_events(["clear"])
+
+    def test_dealloc(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            del d
+            self.assert_events(["dealloc"])
+
+    def test_error(self):
+        d = {}
+        unraisables = []
+        def unraisable_hook(unraisable):
+            unraisables.append(unraisable)
+        with self.watcher(kind=self.ERROR) as wid:
+            self.watch(wid, d)
+            orig_unraisable_hook = sys.unraisablehook
+            sys.unraisablehook = unraisable_hook
+            try:
+                d["foo"] = "bar"
+            finally:
+                sys.unraisablehook = orig_unraisable_hook
+            self.assert_events([])
+        self.assertEqual(len(unraisables), 1)
+        unraisable = unraisables[0]
+        self.assertIs(unraisable.object, d)
+        self.assertEqual(str(unraisable.exc_value), "boom!")
+        # avoid leaking reference cycles
+        del unraisable
+        del unraisables
+
+    def test_two_watchers(self):
+        d1 = {}
+        d2 = {}
+        with self.watcher() as wid1:
+            with self.watcher(kind=self.SECOND) as wid2:
+                self.watch(wid1, d1)
+                self.watch(wid2, d2)
+                d1["foo"] = "bar"
+                d2["hmm"] = "baz"
+                self.assert_events(["new:foo:bar", "second"])
+
+    def test_watch_non_dict(self):
+        with self.watcher() as wid:
+            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
+                self.watch(wid, 1)
+
+    def test_watch_out_of_range_watcher_id(self):
+        d = {}
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
+            self.watch(-1, d)
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
+            self.watch(8, d)  # DICT_MAX_WATCHERS = 8
+
+    def test_unassigned_watcher_id(self):
+        d = {}
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
+            self.watch(1, d)
 
 
 if __name__ == "__main__":

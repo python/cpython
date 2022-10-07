@@ -155,7 +155,7 @@ Why can't I use an assignment in an expression?
 
 Starting in Python 3.8, you can!
 
-Assignment expressions using the walrus operator `:=` assign a variable in an
+Assignment expressions using the walrus operator ``:=`` assign a variable in an
 expression::
 
    while chunk := fp.read(200):
@@ -702,6 +702,10 @@ write this::
 This also has the side-effect of increasing execution speed because name
 bindings are resolved at run-time in Python, and the second version only needs
 to perform the resolution once.
+
+Similar proposals that would introduce syntax to further reduce code volume,
+such as using a 'leading dot', have been rejected in favour of explicitness (see
+https://mail.python.org/pipermail/python-ideas/2016-May/040070.html).
 
 
 Why don't generators support the with statement?

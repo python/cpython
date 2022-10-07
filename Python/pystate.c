@@ -451,6 +451,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
 
+    for (int i=0; i < DICT_MAX_WATCHERS; i++) {
+        interp->dict_watchers[i] = NULL;
+    }
+
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
@@ -792,8 +796,9 @@ init_threadstate(PyThreadState *tstate,
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
-    tstate->recursion_limit = interp->ceval.recursion_limit,
-    tstate->recursion_remaining = interp->ceval.recursion_limit,
+    tstate->py_recursion_limit = interp->ceval.recursion_limit,
+    tstate->py_recursion_remaining = interp->ceval.recursion_limit,
+    tstate->c_recursion_remaining = C_RECURSION_LIMIT;
 
     tstate->exc_info = &tstate->exc_state;
 
@@ -1406,6 +1411,9 @@ _PyThread_CurrentFrames(void)
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
             _PyInterpreterFrame *frame = t->cframe->current_frame;
+            while (frame && _PyFrame_IsIncomplete(frame)) {
+                frame = frame->previous;
+            }
             if (frame == NULL) {
                 continue;
             }
@@ -1413,7 +1421,12 @@ _PyThread_CurrentFrames(void)
             if (id == NULL) {
                 goto fail;
             }
-            int stat = PyDict_SetItem(result, id, (PyObject *)_PyFrame_GetFrameObject(frame));
+            PyObject *frameobj = (PyObject *)_PyFrame_GetFrameObject(frame);
+            if (frameobj == NULL) {
+                Py_DECREF(id);
+                goto fail;
+            }
+            int stat = PyDict_SetItem(result, id, frameobj);
             Py_DECREF(id);
             if (stat < 0) {
                 goto fail;
@@ -2195,15 +2208,12 @@ _PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size)
 {
     assert(size < INT_MAX/sizeof(PyObject *));
-    PyObject **base = tstate->datastack_top;
-    PyObject **top = base + size;
-    if (top >= tstate->datastack_limit) {
-        base = push_chunk(tstate, (int)size);
+    if (_PyThreadState_HasStackSpace(tstate, (int)size)) {
+        _PyInterpreterFrame *res = (_PyInterpreterFrame *)tstate->datastack_top;
+        tstate->datastack_top += size;
+        return res;
     }
-    else {
-        tstate->datastack_top = top;
-    }
-    return (_PyInterpreterFrame *)base;
+    return (_PyInterpreterFrame *)push_chunk(tstate, (int)size);
 }
 
 void
