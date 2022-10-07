@@ -7946,17 +7946,17 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
             case DELETE_FAST:
                 unsafe_mask |= bit;
                 break;
-            case LOAD_FAST:
-                // If this doesn't raise, then var is defined.
-                if (unsafe_mask & bit) {
-                    instr->i_opcode = LOAD_FAST_CHECK;
-                }
+            case STORE_FAST:
                 unsafe_mask &= ~bit;
                 break;
             case LOAD_FAST_CHECK:
+                // If this doesn't raise, then the local is defined.
                 unsafe_mask &= ~bit;
                 break;
-            case STORE_FAST:
+            case LOAD_FAST:
+                if (unsafe_mask & bit) {
+                    instr->i_opcode = LOAD_FAST_CHECK;
+                }
                 unsafe_mask &= ~bit;
                 break;
         }
