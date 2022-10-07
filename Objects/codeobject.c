@@ -2172,9 +2172,9 @@ _PyCode_ConstantKey(PyObject *op)
 }
 
 void
-_PyStaticCode_Dealloc(PyCodeObject *co)
+_PyStaticCode_Fini(PyCodeObject *co)
 {
-    deopt_code(_PyCode_CODE(co), Py_SIZE(co));  // XXX
+    deopt_code(_PyCode_CODE(co), Py_SIZE(co));
     PyMem_Free(co->co_extra);
     Py_CLEAR(co->_co_code);
     co->co_extra = NULL;
@@ -2189,7 +2189,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
 }
 
 int
-_PyStaticCode_InternStrings(PyCodeObject *co)
+_PyStaticCode_Init(PyCodeObject *co)
 {
     int res = intern_strings(co->co_names);
     if (res < 0) {
@@ -2203,5 +2203,6 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
     if (res < 0) {
         return -1;
     }
+    _PyCode_Quicken(co);
     return 0;
 }

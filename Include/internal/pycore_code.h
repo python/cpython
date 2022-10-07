@@ -232,10 +232,10 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr);
 
-/* Deallocator function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Dealloc(PyCodeObject *co);
-/* Function to intern strings of codeobjects */
-extern int _PyStaticCode_InternStrings(PyCodeObject *co);
+/* Finalizer function for static codeobjects used in deepfreeze.py */
+extern void _PyStaticCode_Fini(PyCodeObject *co);
+/* Function to intern strings of codeobjects and quicken the bytecode */
+extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 

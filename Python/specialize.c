@@ -282,7 +282,10 @@ _PyCode_Quicken(PyCodeObject *code)
     int previous_opcode = -1;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
-        int opcode = _Py_OPCODE(instructions[i]);
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
+        if (opcode == 0) {
+            continue;
+        }
         uint8_t adaptive_opcode = _PyOpcode_Adaptive[opcode];
         if (adaptive_opcode) {
             _Py_SET_OPCODE(instructions[i], adaptive_opcode);
@@ -325,6 +328,8 @@ _PyCode_Quicken(PyCodeObject *code)
                                        LOAD_FAST__LOAD_CONST);
                     }
                     break;
+                default:
+                    _Py_SET_OPCODE(instructions[i], opcode);
             }
             previous_opcode = opcode;
         }
