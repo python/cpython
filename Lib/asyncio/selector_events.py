@@ -58,6 +58,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
+        self._ensure_fd_no_transport(sock)
         return _SelectorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
