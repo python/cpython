@@ -8964,20 +8964,18 @@ _PyUnicode_InsertThousandsGrouping(
     return count;
 }
 
-
-Py_ssize_t
-PyUnicode_Count(PyObject *str,
-                PyObject *substr,
-                Py_ssize_t start,
-                Py_ssize_t end)
+static Py_ssize_t
+any_unicode_count(PyObject *str,
+                  PyObject *substr,
+                  Py_ssize_t start,
+                  Py_ssize_t end)
 {
+    // You must ensure that `str` and `substr` are both unicode objects
+    // before calling this function.
     Py_ssize_t result;
     int kind1, kind2;
     const void *buf1 = NULL, *buf2 = NULL;
     Py_ssize_t len1, len2;
-
-    if (ensure_unicode(str) < 0 || ensure_unicode(substr) < 0)
-        return -1;
 
     kind1 = PyUnicode_KIND(str);
     kind2 = PyUnicode_KIND(substr);
@@ -9037,6 +9035,18 @@ PyUnicode_Count(PyObject *str,
     if (kind2 != kind1)
         PyMem_Free((void *)buf2);
     return -1;
+}
+
+Py_ssize_t
+PyUnicode_Count(PyObject *str,
+                PyObject *substr,
+                Py_ssize_t start,
+                Py_ssize_t end)
+{
+    if (ensure_unicode(str) < 0 || ensure_unicode(substr) < 0)
+        return -1;
+
+    return any_unicode_count(str, substr, start, end);
 }
 
 Py_ssize_t
@@ -10858,11 +10868,16 @@ unicode_count(PyObject *self, PyObject *args)
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     PyObject *result;
+    Py_ssize_t iresult;
 
     if (!parse_args_finds_unicode("count", args, &substring, &start, &end))
         return NULL;
 
-    result = PyLong_FromSsize_t(PyUnicode_Count(self, substring, start, end));
+    iresult = any_unicode_count(self, substring, start, end);
+    if (iresult == -1)
+        return NULL;
+
+    result = PyLong_FromSsize_t(iresult);
     return result;
 }
 
