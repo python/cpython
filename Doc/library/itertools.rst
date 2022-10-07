@@ -775,10 +775,7 @@ which incur interpreter overhead.
        return sum(map(pred, iterable))
 
    def pad_none(iterable):
-       """Returns the sequence elements and then returns None indefinitely.
-
-       Useful for emulating the behavior of the built-in map() function.
-       """
+       "Returns the sequence elements and then returns None indefinitely."
        return chain(iterable, repeat(None))
 
    def ncycles(iterable, n):
@@ -849,6 +846,13 @@ which incur interpreter overhead.
            return zip(*args)
        else:
            raise ValueError('Expected fill, strict, or ignore')
+
+   def batched(iterable, n):
+       "Batch data into lists of length n. The last batch may be shorter."
+       # batched('ABCDEFG', 3) --> ABC DEF G
+       it = iter(iterable)
+       while (batch := list(islice(it, n))):
+           yield batch
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
@@ -1168,8 +1172,8 @@ which incur interpreter overhead.
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
-    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59]
-    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(60))
+    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(101))
     True
     >>> len(list(sieve(100)))
     25
@@ -1211,6 +1215,36 @@ which incur interpreter overhead.
 
     >>> list(grouper('abcdefg', n=3, incomplete='ignore'))
     [('a', 'b', 'c'), ('d', 'e', 'f')]
+
+    >>> list(batched('ABCDEFG', 3))
+    [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']]
+    >>> list(batched('ABCDEF', 3))
+    [['A', 'B', 'C'], ['D', 'E', 'F']]
+    >>> list(batched('ABCDE', 3))
+    [['A', 'B', 'C'], ['D', 'E']]
+    >>> list(batched('ABCD', 3))
+    [['A', 'B', 'C'], ['D']]
+    >>> list(batched('ABC', 3))
+    [['A', 'B', 'C']]
+    >>> list(batched('AB', 3))
+    [['A', 'B']]
+    >>> list(batched('A', 3))
+    [['A']]
+    >>> list(batched('', 3))
+    []
+    >>> list(batched('ABCDEFG', 2))
+    [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']]
+    >>> list(batched('ABCDEFG', 1))
+    [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']]
+    >>> list(batched('ABCDEFG', 0))
+    []
+    >>> list(batched('ABCDEFG', -1))
+    Traceback (most recent call last):
+      ...
+    ValueError: Stop argument for islice() must be None or an integer: 0 <= x <= sys.maxsize.
+    >>> s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    >>> all(list(flatten(batched(s[:n], 5))) == list(s[:n]) for n in range(len(s)))
+    True
 
     >>> list(triplewise('ABCDEFG'))
     [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
