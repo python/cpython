@@ -311,12 +311,6 @@ _specializations = {
         "CALL_NO_KW_TUPLE_1",
         "CALL_NO_KW_TYPE_1",
     ],
-    "CALL_FUNCTION_EX": [
-        "CALL_FUNCTION_EX_ADAPTIVE",
-        "CALL_FUNCTION_EX_PY_KWARGS",
-        "CALL_FUNCTION_EX_PY_NO_KWARGS",
-        "CALL_FUNCTION_EX_BUILTIN_PYCFUNCTIONWITHKEYWORDS",
-    ],
     "COMPARE_OP": [
         "COMPARE_OP_ADAPTIVE",
         "COMPARE_OP_FLOAT_JUMP",
@@ -436,11 +430,6 @@ _cache_format = {
         "index": 1,
     },
     "CALL": {
-        "counter": 1,
-        "func_version": 2,
-        "min_args": 1,
-    },
-    "CALL_FUNCTION_EX": {
         "counter": 1,
         "func_version": 2,
         "min_args": 1,

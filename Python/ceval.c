@@ -4741,10 +4741,57 @@ handle_eval_breaker:
             }
             assert(PyTuple_CheckExact(callargs));
 
-            result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
-            Py_DECREF(func);
-            Py_DECREF(callargs);
-            Py_XDECREF(kwargs);
+            if (Py_IS_TYPE(func, &PyFunction_Type) &&
+                tstate->interp->eval_frame == NULL &&
+                ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                assert(PyTuple_CheckExact(callargs));
+                Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+                PyCodeObject *code = (PyCodeObject *)((PyFunctionObject *)func)->func_code;
+
+                bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
+                PyObject *kwnames = NULL;
+                PyObject *const *newargs = has_dict
+                    ? _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs),
+                        nargs, kwargs, &kwnames)
+                    : &PyTuple_GET_ITEM(callargs, 0);
+                if (newargs == NULL) {
+                    goto error;
+                }
+                if (!has_dict) {
+                    /* We need to incref all our args since the new frame steals the references. */
+                    for (Py_ssize_t i = 0; i < nargs; ++i) {
+                        Py_INCREF(PyTuple_GET_ITEM(callargs, i));
+                    }
+                }
+                _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+                    tstate, (PyFunctionObject *)func, locals,
+                    newargs, nargs, kwnames
+                );
+                STACK_SHRINK(2); /* get rid of func and NULL */
+                Py_DECREF(callargs);
+                Py_XDECREF(kwargs);
+                if (has_dict) {
+                    _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
+                }
+                if (new_frame == NULL) {
+                    goto error;
+                }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                frame->prev_instr = next_instr - 1;
+                new_frame->previous = frame;
+                cframe.current_frame = frame = new_frame;
+                CALL_STAT_INC(inlined_py_calls);
+                goto start_frame;
+            }
+            else {
+                result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
+                Py_DECREF(func);
+                Py_DECREF(callargs);
+                Py_XDECREF(kwargs);
+            }
+
 
             STACK_SHRINK(1);
             assert(TOP() == NULL);
@@ -4752,166 +4799,6 @@ handle_eval_breaker:
             if (result == NULL) {
                 goto error;
             }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            CHECK_EVAL_BREAKER();
-            DISPATCH();
-        }
-
-        TARGET(CALL_FUNCTION_EX_ADAPTIVE) {
-            _PyCallCache *cache = (_PyCallCache *)next_instr;
-            PyObject *func, *callargs, *kwargs = NULL;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                next_instr--;
-                if (oparg & 0x01) {
-                    kwargs = TOP();
-                    // DICT_MERGE is called before this opcode if there are kwargs.
-                    // It converts all dict subtypes in kwargs into regular dicts.
-                    assert(PyDict_CheckExact(kwargs));
-                    callargs = SECOND();
-                    func = THIRD();
-                }
-                else {
-                    callargs = TOP();
-                    func = SECOND();
-                }
-                
-                int err = _Py_Specialize_CallEx(func, next_instr, callargs, kwargs);
-                if (err < 0) {
-                    goto error;
-                }
-                DISPATCH_SAME_OPARG();
-            }
-            else {
-                STAT_INC(CALL_FUNCTION_EX, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(CALL_FUNCTION_EX);
-            }
-        }
-
-        TARGET(CALL_FUNCTION_EX_PY_KWARGS) {
-            assert(oparg & 0x01);
-            PyObject *func, *callargs, *kwargs = NULL;
-            kwargs = TOP();
-            callargs = SECOND();
-            func = THIRD();
-            DEOPT_IF(!PyTuple_CheckExact(callargs), CALL_FUNCTION_EX);
-            Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-            DEOPT_IF(kwargs == NULL || PyDict_GET_SIZE(kwargs) <= 0, CALL_FUNCTION_EX);
-            DEOPT_IF(!Py_IS_TYPE(func, &PyFunction_Type), CALL_FUNCTION_EX);
-            DEOPT_IF(((PyDictObject *)kwargs)->ma_keys->dk_kind != DICT_KEYS_UNICODE, CALL_FUNCTION_EX);
-            STAT_INC(CALL_FUNCTION_EX, hit);
-            STACK_SHRINK(4); /* Get rid of kwargs, callargs, func and NULL */
-
-            PyObject *kwnames;
-            PyObject *const *newargs = _PyStack_UnpackDict(tstate,
-                _PyTuple_ITEMS(callargs), nargs,
-                kwargs, &kwnames);
-            int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
-            PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
-            PyCodeObject *code = (PyCodeObject *)((PyFunctionObject *)func)->func_code;
-            CALL_STAT_INC(frames_pushed);
-
-            _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                tstate, (PyFunctionObject *)func, locals,
-                newargs, nargs, kwnames
-            );
-            Py_DECREF(kwargs);
-            Py_DECREF(callargs);
-            _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
-            if (new_frame == NULL) {
-                goto error;
-            }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            cframe.current_frame = frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
-        }
-
-        TARGET(CALL_FUNCTION_EX_PY_NO_KWARGS) {
-            assert(!(oparg & 0x01));
-            PyObject *func, *callargs;
-            callargs = TOP();
-            func = SECOND();
-            DEOPT_IF(!PyTuple_CheckExact(callargs), CALL_FUNCTION_EX);
-            Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-            DEOPT_IF(!Py_IS_TYPE(func, &PyFunction_Type), CALL_FUNCTION_EX);
-            STACK_SHRINK(3); /* Get rid of callargs, func and NULL */
-            STAT_INC(CALL_FUNCTION_EX, hit);
-
-            int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
-            PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
-            PyCodeObject *code = (PyCodeObject *)((PyFunctionObject *)func)->func_code;
-            CALL_STAT_INC(frames_pushed);
-
-            for (Py_ssize_t i = 0; i < nargs; ++i) {
-                /* We need to incref all our args since the new frame steals the references. */
-                Py_INCREF(PyTuple_GET_ITEM(callargs, i));
-            }
-            _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
-                tstate, (PyFunctionObject *)func, locals,
-                &PyTuple_GET_ITEM(callargs, 0), nargs, NULL
-            );
-            Py_DECREF(callargs);
-            if (new_frame == NULL) {
-                goto error;
-            }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            cframe.current_frame = frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
-        }
-
-        TARGET(CALL_FUNCTION_EX_BUILTIN_PYCFUNCTIONWITHKEYWORDS) {
-            PyObject *func, *callargs, *kwargs = NULL;
-            int has_kwargs = oparg & 0x01;
-            if (has_kwargs) {
-                kwargs = TOP();
-                callargs = SECOND();
-                func = THIRD();
-            }
-            else {
-                callargs = TOP();
-                func = SECOND();
-            }
-            DEOPT_IF(!PyTuple_CheckExact(callargs), CALL_FUNCTION_EX);
-            Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-            DEOPT_IF(!PyCFunction_CheckExact(func), CALL_FUNCTION_EX);
-            DEOPT_IF(PyCFunction_GET_FLAGS(func) != (METH_VARARGS | METH_KEYWORDS), CALL);
-            DEOPT_IF(kwargs != NULL &&
-                ((PyDictObject *)kwargs)->ma_keys->dk_kind != DICT_KEYS_UNICODE, CALL_FUNCTION_EX);
-            STAT_INC(CALL_FUNCTION_EX, hit);
-
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                goto error;
-            }
-
-            STACK_SHRINK(2 + has_kwargs); /* Get rid of kwargs, callargs, func */
-            /* res = func(self, args, nargs, kwnames) */
-            PyCFunction cfunc = PyCFunction_GET_FUNCTION(func);
-            PyObject *res = ((PyCFunctionWithKeywords)(void(*)(void))cfunc)(
-                PyCFunction_GET_SELF(func),
-                callargs,
-                (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) ? NULL : kwargs
-            );
-
-            Py_XDECREF(kwargs);
-            Py_DECREF(callargs);
-            Py_DECREF(func);
-            _Py_LeaveRecursiveCallTstate(tstate);
-            assert(TOP() == NULL);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }

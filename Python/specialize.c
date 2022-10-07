@@ -24,7 +24,6 @@ uint8_t _PyOpcode_Adaptive[256] = {
     [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
     [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
     [CALL] = CALL_ADAPTIVE,
-    [CALL_FUNCTION_EX] = CALL_FUNCTION_EX_ADAPTIVE,
     [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
     [BINARY_OP] = BINARY_OP_ADAPTIVE,
     [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
@@ -1800,79 +1799,6 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     }
     return 0;
 }
-
-
-static int
-specialize_py_callex(PyObject *callable, _Py_CODEUNIT *instr, PyObject *args, PyObject *kwargs, int oparg)
-{
-    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
-    if (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0) {
-        assert(oparg & 0x01);
-        if (((PyDictObject *)kwargs)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-            /* kwargs keys should be unicode */
-            SPECIALIZATION_FAIL(CALL_FUNCTION_EX, SPEC_FAIL_EXPECTED_ERROR);
-            return 1;
-        }
-        _Py_SET_OPCODE(*instr, CALL_FUNCTION_EX_PY_KWARGS);
-        return 0;
-    }
-    else {
-        if (oparg & 0x01) {
-            /* Bad TOS dict or something */
-            SPECIALIZATION_FAIL(CALL_FUNCTION_EX, SPEC_FAIL_EXPECTED_ERROR);
-            return 1;
-        }
-        _Py_SET_OPCODE(*instr, CALL_FUNCTION_EX_PY_NO_KWARGS);
-        return 0;
-    }
-}
-
-
-int
-_Py_Specialize_CallEx(PyObject *callable, _Py_CODEUNIT *instr, PyObject *args, PyObject *kwargs)
-{
-    int oparg = _Py_OPARG(*instr);
-    assert(_PyOpcode_Caches[CALL_FUNCTION_EX] == INLINE_CACHE_ENTRIES_CALL);
-    _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-    int fail;
-    if (!PyTuple_CheckExact(args)) {
-        fail = 1;
-        goto fail_please;
-    }
-    if (Py_IS_TYPE(callable, &PyFunction_Type)) {
-        fail = specialize_py_callex(callable, instr, args, kwargs, oparg);
-    }
-    else if (PyCFunction_CheckExact(callable)) {
-        PyCFunctionObject *func = (PyCFunctionObject *)callable;
-        switch (func->m_ml->ml_flags &
-            (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
-                METH_KEYWORDS | METH_METHOD)) {
-            case METH_VARARGS | METH_KEYWORDS:
-                _Py_SET_OPCODE(*instr, CALL_FUNCTION_EX_BUILTIN_PYCFUNCTIONWITHKEYWORDS);
-                break;
-            default:
-                fail = 1;
-        }
-    }
-    else {
-        SPECIALIZATION_FAIL(CALL_FUNCTION_EX, call_fail_kind(callable));
-        fail = 1;
-    }
-
-fail_please:
-    if (fail) {
-        STAT_INC(CALL_FUNCTION_EX, failure);
-        assert(!PyErr_Occurred());
-        cache->counter = adaptive_counter_backoff(cache->counter);
-    }
-    else {
-        STAT_INC(CALL_FUNCTION_EX, success);
-        assert(!PyErr_Occurred());
-        cache->counter = miss_counter_start();
-    }
-    return 0;
-}
-
 
 #ifdef Py_STATS
 static int

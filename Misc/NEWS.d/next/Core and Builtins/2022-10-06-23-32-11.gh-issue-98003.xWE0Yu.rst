@@ -1,1 +1,2 @@
-Specialize complex calls.
+Complex function calls are now significantly faster and consume no C stack
+space.
