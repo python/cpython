@@ -7978,18 +7978,54 @@ add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
 {
     int nparams = (int)PyList_GET_SIZE(c->u->u_ste->ste_varnames);
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+
     if (nlocals > 64) {
-        // Avoid O(nlocals**2) compilation:
-        // only analyze the first 64 locals.
-        // The rest get only LOAD_FAST_CHECK.
+        // To avoid O(nlocals**2) compilation, locals beyond the first 64
+        // Are only analyzed one basicblock at a time. Initialization
+        // information is not passed between basicblocks.
+        // state[oparg - 64] == blocknum means
+        // local #oparg is guaranteed to be initialized.
+        Py_ssize_t *states = PyMem_Calloc(nlocals - 64, sizeof(Py_ssize_t));
+        if (states == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        Py_ssize_t blocknum = 0;
         for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+            blocknum++;
             for (int i = 0; i < b->b_iused; i++) {
                 struct instr *instr = &b->b_instr[i];
-                if (instr->i_opcode == LOAD_FAST && instr->i_oparg >= 64) {
-                    instr->i_opcode = LOAD_FAST_CHECK;
+                assert(instr->i_opcode != EXTENDED_ARG);
+                assert(instr->i_opcode != EXTENDED_ARG_QUICK);
+                assert(instr->i_opcode != LOAD_FAST__LOAD_FAST);
+                assert(instr->i_opcode != STORE_FAST__LOAD_FAST);
+                assert(instr->i_opcode != LOAD_CONST__LOAD_FAST);
+                assert(instr->i_opcode != STORE_FAST__STORE_FAST);
+                assert(instr->i_opcode != LOAD_FAST__LOAD_CONST);
+                int arg = instr->i_oparg;
+                if (arg < 64) {
+                    continue;
+                }
+                assert(arg >= 0);
+                switch (instr->i_opcode) {
+                    case DELETE_FAST:
+                        states[arg - 64] = blocknum - 1;
+                        break;
+                    case STORE_FAST:
+                        states[arg - 64] = blocknum;
+                        break;
+                    case LOAD_FAST:
+                        if (states[arg - 64] != blocknum) {
+                            instr->i_opcode = LOAD_FAST_CHECK;
+                        }
+                        states[arg - 64] = blocknum;
+                        break;
+                    case LOAD_FAST_CHECK:
+                        Py_UNREACHABLE();
                 }
             }
         }
+        PyMem_Free(states);
         nlocals = 64;
     }
     basicblock **stack = make_cfg_traversal_stack(entryblock);

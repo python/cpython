@@ -788,6 +788,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             a50 = a51 = a52 = a53 = a54 = a55 = a56 = a57 = a58 = a59 = 1
             a60 = a61 = a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = 1
             a70 = a71 = a72 = a73 = a74 = a75 = a76 = a77 = a78 = a79 = 1
+            print(a70, a71, a72, a73)
             while True:
                 print(a00, a01, a62, a63)
                 print(a64, a65, a78, a79)
@@ -798,6 +799,12 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         for i in 64, 65, 78, 79:
             self.assertInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
             self.assertNotInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+        for i in 70, 71, 72, 73:
+            # Even though we don't do the complete analysis beyond the
+            # first 64 locals, we can at least use LOAD_FAST
+            # within the same basicblock.
+            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
 
     def test_setting_lineno_adds_check(self):
         code = textwrap.dedent("""\
