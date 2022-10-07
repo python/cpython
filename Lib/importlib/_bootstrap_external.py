@@ -197,7 +197,7 @@ def _write_atomic(path, data, mode=0o666):
     Be prepared to handle a FileExistsError if concurrent writing of the
     temporary file is attempted."""
     # id() is used to generate a pseudo-random filename.
-    path_tmp = '{}.{}'.format(path, id(path))
+    path_tmp = f'{path}.{id(path)}'
     fd = _os.open(path_tmp,
                   _os.O_EXCL | _os.O_CREAT | _os.O_WRONLY, mode & 0o666)
     try:
@@ -492,8 +492,8 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
     optimization = str(optimization)
     if optimization != '':
         if not optimization.isalnum():
-            raise ValueError('{!r} is not alphanumeric'.format(optimization))
-        almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
+            raise ValueError(f'{optimization!r} is not alphanumeric')
+        almost_filename = f'{almost_filename}.{_OPT}{optimization}'
     filename = almost_filename + BYTECODE_SUFFIXES[0]
     if sys.pycache_prefix is not None:
         # We need an absolute path to the py file to avoid the possibility of
@@ -651,8 +651,8 @@ def _find_module_shim(self, fullname):
     # return None.
     loader, portions = self.find_loader(fullname)
     if loader is None and len(portions):
-        msg = 'Not importing directory {}: missing __init__'
-        _warnings.warn(msg.format(portions[0]), ImportWarning)
+        msg = f'Not importing directory {portions[0]}: missing __init__'
+        _warnings.warn(msg, ImportWarning)
     return loader
 
 
@@ -750,7 +750,7 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
             _imp._fix_co_filename(code, source_path)
         return code
     else:
-        raise ImportError('Non-code object in {!r}'.format(bytecode_path),
+        raise ImportError(f'Non-code object in {bytecode_path!r}',
                           name=name, path=bytecode_path)
 
 
@@ -951,8 +951,8 @@ class _LoaderBasics:
         """Execute the module."""
         code = self.get_code(module.__name__)
         if code is None:
-            raise ImportError('cannot load module {!r} when get_code() '
-                              'returns None'.format(module.__name__))
+            raise ImportError(f'cannot load module {module.__name__!r} when '
+                              'get_code() returns None')
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
     def load_module(self, fullname):
@@ -1337,7 +1337,7 @@ class _NamespacePath:
         return len(self._recalculate())
 
     def __repr__(self):
-        return '_NamespacePath({!r})'.format(self._path)
+        return f'_NamespacePath({self._path!r})'
 
     def __contains__(self, item):
         return item in self._recalculate()
@@ -1678,7 +1678,7 @@ class FileFinder:
             for item in contents:
                 name, dot, suffix = item.partition('.')
                 if dot:
-                    new_name = '{}.{}'.format(name, suffix.lower())
+                    new_name = f'{name}.{suffix.lower()}'
                 else:
                     new_name = name
                 lower_suffix_contents.add(new_name)
@@ -1705,7 +1705,7 @@ class FileFinder:
         return path_hook_for_FileFinder
 
     def __repr__(self):
-        return 'FileFinder({!r})'.format(self.path)
+        return f'FileFinder({self.path!r})'
 
 
 # Import setup ###############################################################
