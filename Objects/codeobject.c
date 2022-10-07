@@ -1384,7 +1384,8 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
  ******************/
 
 static PyObject *
-get_cached_locals(PyCodeObject *co, PyObject **cached_field, _PyLocals_Kind kind, int num)
+get_cached_locals(PyCodeObject *co, PyObject **cached_field,
+    _PyLocals_Kind kind, int num)
 {
     assert(cached_field != NULL);
     assert(co->_co_cached != NULL);
