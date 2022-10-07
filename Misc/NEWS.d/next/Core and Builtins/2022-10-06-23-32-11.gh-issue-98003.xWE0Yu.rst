@@ -1,2 +1,2 @@
-Complex function calls are now significantly faster and consume no C stack
+Complex function calls are now faster and consume no C stack
 space.
