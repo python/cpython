@@ -1137,10 +1137,8 @@ Task Object
       .. versionchanged:: 3.9
          Added the *msg* parameter.
 
-      .. deprecated-removed:: 3.11 3.14
-         *msg* parameter is ambiguous when multiple :meth:`cancel`
-         are called with different cancellation messages.
-         The argument will be removed.
+      .. versionchanged:: 3.11
+         The ``msg`` parameter is propagated from cancelled task to its awaiter.
 
       .. _asyncio_example_task_cancel:
 
