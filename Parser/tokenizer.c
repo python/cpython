@@ -1449,7 +1449,6 @@ tok_get(struct tok_state *tok, struct token *token)
         int col = 0;
         int altcol = 0;
         tok->atbol = 0;
-        tok->starting_col_offset = 0;
         int cont_line_col = 0;
         for (;;) {
             c = tok_nextc(tok);
