@@ -31,7 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       run_tests: ${{ steps.check.outputs.run_tests }}
-      run_ssl_tests: ${{ steps.check.outputs.run_ssl_tests }}
     steps:
       - uses: actions/checkout@v3
       - name: Check for source changes
@@ -39,7 +38,6 @@ jobs:
         run: |
           if [ -z "$GITHUB_BASE_REF" ]; then
             echo '::set-output name=run_tests::true'
-            echo '::set-output name=run_ssl_tests::true'
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
             # git diff "origin/$GITHUB_BASE_REF..." (3 dots) may be more
@@ -56,7 +54,6 @@ jobs:
             #
             # https://github.com/python/core-workflow/issues/373
             git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE '(ssl|hashlib|hmac|^.github)' && echo '::set-output name=run_ssl_tests::true' || true
           fi
 
   check_generated_files:
@@ -230,7 +227,7 @@ jobs:
     name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ubuntu-20.04
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_ssl_tests == 'true'
+    if: needs.check_source.outputs.run_tests == 'true'
     strategy:
       fail-fast: false
       matrix:
