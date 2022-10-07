@@ -1495,6 +1495,9 @@ class TestDictWatchers(unittest.TestCase):
         unraisable = unraisables[0]
         self.assertIs(unraisable.object, d)
         self.assertEqual(str(unraisable.exc_value), "boom!")
+        # avoid leaking reference cycles
+        del unraisable
+        del unraisables
 
     def test_two_watchers(self):
         d1 = {}
