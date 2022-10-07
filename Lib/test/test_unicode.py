@@ -2811,7 +2811,7 @@ class CAPITest(unittest.TestCase):
         # We cannot test the exact result,
         # because it returns a hex representation of a C pointer,
         # which is going to be different each time. But, we can test the format.
-        p_format_regex = r'^0x[a-zA-Z0-9]{8,}$'
+        p_format_regex = r'^0x[a-zA-Z0-9]{3,}$'
         p_format1 = PyUnicode_FromFormat(b'%p', 'abc')
         self.assertIsInstance(p_format1, str)
         self.assertRegex(p_format1, p_format_regex)
@@ -2819,7 +2819,7 @@ class CAPITest(unittest.TestCase):
         p_format2 = PyUnicode_FromFormat(b'%p %p', '123456', b'xyz')
         self.assertIsInstance(p_format2, str)
         self.assertRegex(p_format2,
-                         r'0x[a-zA-Z0-9]{8,} 0x[a-zA-Z0-9]{8,}')
+                         r'0x[a-zA-Z0-9]{3,} 0x[a-zA-Z0-9]{3,}')
 
         # Extra args are ignored:
         p_format3 = PyUnicode_FromFormat(b'%p', '123456', None, b'xyz')
