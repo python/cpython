@@ -847,6 +847,13 @@ which incur interpreter overhead.
        else:
            raise ValueError('Expected fill, strict, or ignore')
 
+   def batched(iterable, n):
+       "Batch data into lists of length n. The last batch may be shorter."
+       # batched('ABCDEFG', 3) --> ABC DEF G
+       it = iter(iterable)
+       while (batch := list(islice(it, n))):
+           yield batch
+
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
        # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
@@ -1208,6 +1215,37 @@ which incur interpreter overhead.
 
     >>> list(grouper('abcdefg', n=3, incomplete='ignore'))
     [('a', 'b', 'c'), ('d', 'e', 'f')]
+
+    >>> list(batched('ABCDEFG', 3))
+    [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']]
+    >>> list(batched('ABCDEF', 3))
+    [['A', 'B', 'C'], ['D', 'E', 'F']]
+    >>> list(batched('ABCDE', 3))
+    [['A', 'B', 'C'], ['D', 'E']]
+    >>> list(batched('ABCD', 3))
+    [['A', 'B', 'C'], ['D']]
+    >>> list(batched('ABC', 3))
+    [['A', 'B', 'C']]
+    >>> list(batched('AB', 3))
+    [['A', 'B']]
+    >>> list(batched('A', 3))
+    [['A']]
+    >>> list(batched('', 3))
+    []
+    >>> list(batched('ABCDEFG', 2))
+    [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']]
+    >>> list(batched('ABCDEFG', 1))
+    [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']]
+    >>> list(batched('ABCDEFG', 0))
+    []
+    >>> list(batched('ABCDEFG', -1))
+    []
+    Traceback (most recent call last):
+      ...
+    ValueError: Stop argument for islice() must be None or an integer: 0 <= x <= sys.maxsize.
+    >>> s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    >>> all(list(flatten(batched(s[:n], 5))) == list(s[:n]) for n in range(len(s)))
+    True
 
     >>> list(triplewise('ABCDEFG'))
     [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
