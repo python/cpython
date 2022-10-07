@@ -21,8 +21,9 @@ extern "C" {
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
+#include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_obmalloc.h"      // struct obmalloc_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -88,6 +89,8 @@ struct _is {
        after allocation. */
     int _initialized;
     int finalizing;
+
+    struct _obmalloc_state obmalloc;
 
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;

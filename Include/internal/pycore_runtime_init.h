@@ -25,7 +25,6 @@ extern "C" {
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
-        .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
         .pyhash_state = pyhash_state_INIT, \
         .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
@@ -94,7 +93,7 @@ extern "C" {
                 }, \
             }, \
         }, \
-        ._main_interpreter = _PyInterpreterState_INIT, \
+        ._main_interpreter = _PyInterpreterState_INIT(runtime._main_interpreter), \
     }
 
 #ifdef HAVE_DLOPEN
@@ -110,10 +109,11 @@ extern "C" {
 #  define DLOPENFLAGS_INIT
 #endif
 
-#define _PyInterpreterState_INIT \
+#define _PyInterpreterState_INIT(interp) \
     { \
         .id_refcount = -1, \
         DLOPENFLAGS_INIT \
+        .obmalloc = _obmalloc_state_INIT(interp.obmalloc), \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
