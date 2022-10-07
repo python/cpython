@@ -159,6 +159,11 @@ can be read from :data:`sys.flags.utf8_mode <sys.flags>`.
 See also the :ref:`UTF-8 mode on Windows <win-utf8-mode>`
 and the :term:`filesystem encoding and error handler`.
 
+.. seealso::
+
+   :pep:`686`
+      Python 3.15 will make :ref:`utf8-mode` default.
+
 
 .. _os-procinfo:
 
@@ -3189,7 +3194,7 @@ features:
    system records access and modification times; see :func:`~os.stat`. The best
    way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
    fields from the :func:`os.stat` result object with the *ns* parameter to
-   `utime`.
+   :func:`utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
@@ -3217,7 +3222,8 @@ features:
    filenames)``.
 
    *dirpath* is a string, the path to the directory.  *dirnames* is a list of the
-   names of the subdirectories in *dirpath* (excluding ``'.'`` and ``'..'``).
+   names of the subdirectories in *dirpath* (including symlinks to directories,
+   and excluding ``'.'`` and ``'..'``).
    *filenames* is a list of the names of the non-directory files in *dirpath*.
    Note that the names in the lists contain no path components.  To get a full path
    (which begins with *top*) to a file or directory in *dirpath*, do
@@ -4089,7 +4095,7 @@ written in Python, such as a mail server's external command delivery program.
    library :c:data:`POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for `posix_spawn`. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
+   for ``posix_spawn``. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
    or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 

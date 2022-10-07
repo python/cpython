@@ -224,6 +224,26 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+unicode_count(PyObject *self, PyObject *args)
+{
+    PyObject *str;
+    PyObject *substr;
+    Py_ssize_t result;
+    Py_ssize_t start, end;
+
+    if (!PyArg_ParseTuple(args, "UUnn:unicode_count", &str, &substr,
+                          &start, &end)) {
+        return NULL;
+    }
+
+    result = PyUnicode_Count(str, substr, start, end);
+    if (result == -1)
+        return NULL;
+    else
+        return PyLong_FromSsize_t(result);
+}
+
+static PyObject *
 unicode_findchar(PyObject *self, PyObject *args)
 {
     PyObject *str;
@@ -696,6 +716,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asucs4",           unicode_asucs4,                 METH_VARARGS},
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_asutf8andsize",    unicode_asutf8andsize,          METH_VARARGS},
+    {"unicode_count",            unicode_count,                  METH_VARARGS},
     {"unicode_findchar",         unicode_findchar,               METH_VARARGS},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
     {NULL},

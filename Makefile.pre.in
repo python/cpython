@@ -958,6 +958,11 @@ regen-test-frozenmain: $(BUILDPYTHON)
 	# using Programs/freeze_test_frozenmain.py
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
+.PHONY: regen-test-levenshtein
+regen-test-levenshtein:
+	# Regenerate Lib/test/levenshtein_examples.json
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_levenshtein_examples.py Lib/test/levenshtein_examples.json
+
 .PHONY: regen-re
 regen-re: $(BUILDPYTHON)
 	# Regenerate Lib/re/_casefix.py
@@ -1223,7 +1228,7 @@ regen-limited-abi: all
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-global-objects
+	regen-test-levenshtein regen-global-objects
 	@echo
 	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
 
@@ -1863,7 +1868,7 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
       $(DSYMUTIL_PATH) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(INSTSONAME); \
 		fi \
 	fi
-	
+
 
 bininstall: altbininstall
 	if test ! -d $(DESTDIR)$(LIBPC); then \
@@ -2033,6 +2038,7 @@ TESTSUBDIRS=	distutils/tests \
 		test/test_zoneinfo test/test_zoneinfo/data \
 		test/test_unittest test/test_unittest/testmock \
 		test/tracedmodules \
+		test/typinganndata \
 		test/xmltestdata test/xmltestdata/c14n-20 \
 		test/ziptestdata
 
@@ -2432,8 +2438,7 @@ rmtestturds:
 	-rm -f gb-18030-2000.xml
 
 docclean:
-	-rm -rf Doc/build
-	-rm -rf Doc/tools/sphinx Doc/tools/pygments Doc/tools/docutils
+	$(MAKE) -C Doc clean
 
 # like the 'clean' target but retain the profile guided optimization (PGO)
 # data.  The PGO data is only valid if source code remains unchanged.
@@ -2485,7 +2490,7 @@ clobber: clean
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
 # Keep configure and Python-ast.[ch], it's possible they can't be generated
-distclean: clobber
+distclean: clobber docclean
 	for file in $(srcdir)/Lib/test/data/* ; do \
 	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
 	done

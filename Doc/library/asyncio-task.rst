@@ -631,7 +631,7 @@ Timeouts
 
             Change the time the timeout will trigger.
 
-            If *when* is `None`, any current deadline will be removed, and the
+            If *when* is ``None``, any current deadline will be removed, and the
             context manager will wait indefinitely.
 
             If *when* is a float, it is set as the new deadline.
@@ -867,17 +867,17 @@ Running in Threads
        # blocking_io complete at 19:50:54
        # finished main at 19:50:54
 
-   Directly calling `blocking_io()` in any coroutine would block the event loop
+   Directly calling ``blocking_io()`` in any coroutine would block the event loop
    for its duration, resulting in an additional 1 second of run time. Instead,
-   by using `asyncio.to_thread()`, we can run it in a separate thread without
+   by using ``asyncio.to_thread()``, we can run it in a separate thread without
    blocking the event loop.
 
    .. note::
 
-      Due to the :term:`GIL`, `asyncio.to_thread()` can typically only be used
+      Due to the :term:`GIL`, ``asyncio.to_thread()`` can typically only be used
       to make IO-bound functions non-blocking. However, for extension modules
       that release the GIL or alternative Python implementations that don't
-      have one, `asyncio.to_thread()` can also be used for CPU-bound functions.
+      have one, ``asyncio.to_thread()`` can also be used for CPU-bound functions.
 
    .. versionadded:: 3.9
 
@@ -1097,6 +1097,13 @@ Task Object
 
       .. versionadded:: 3.8
 
+   .. method:: get_context()
+
+      Return the :class:`contextvars.Context` object
+      associated with the task.
+
+      .. versionadded:: 3.12
+
    .. method:: get_name()
 
       Return the name of the Task.
@@ -1137,10 +1144,8 @@ Task Object
       .. versionchanged:: 3.9
          Added the *msg* parameter.
 
-      .. deprecated-removed:: 3.11 3.14
-         *msg* parameter is ambiguous when multiple :meth:`cancel`
-         are called with different cancellation messages.
-         The argument will be removed.
+      .. versionchanged:: 3.11
+         The ``msg`` parameter is propagated from cancelled task to its awaiter.
 
       .. _asyncio_example_task_cancel:
 
