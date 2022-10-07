@@ -80,8 +80,10 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.add_writer = mock.Mock()
         self.loop.remove_reader = mock.Mock()
         self.loop.remove_writer = mock.Mock()
+        self.loop._ensure_fd_no_transport = mock.Mock()
         with self.assertRaises(RuntimeError):
             self.loop._make_ssl_transport(m, m, m, m)
+        self.assertEqual(self.loop._ensure_fd_no_transport.call_count, 1)
 
     def test_close(self):
         class EventLoop(BaseSelectorEventLoop):
