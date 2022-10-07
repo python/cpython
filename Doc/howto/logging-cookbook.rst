@@ -562,7 +562,7 @@ To run a logging listener in production, you may need to use a process-managemen
 such as `Supervisor <http://supervisord.org/>`_. `Here
 <https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
 provides the bare-bones files to run the above functionality using Supervisor: you
-will need to change the `/path/to/` parts in the Gist to reflect the actual paths you
+will need to change the ``/path/to/`` parts in the Gist to reflect the actual paths you
 want to use.
 
 
@@ -2774,7 +2774,7 @@ Formatting times using UTC (GMT) via configuration
 --------------------------------------------------
 
 Sometimes you want to format times using UTC, which can be done using a class
-such as `UTCFormatter`, shown below::
+such as ``UTCFormatter``, shown below::
 
     import logging
     import time
