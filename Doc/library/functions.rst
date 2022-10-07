@@ -1254,8 +1254,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. _open-newline-parameter:
 
-   *newline* controls how :term:`universal newlines` mode works (it only
-   applies to text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and
+   *newline* determines how to parse newline characters from the stream.
+   It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and
    ``'\r\n'``.  It works as follows:
 
    * When reading input from the stream, if *newline* is ``None``, universal
