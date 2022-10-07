@@ -10858,60 +10858,11 @@ unicode_count(PyObject *self, PyObject *args)
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     PyObject *result;
-    int kind1, kind2;
-    const void *buf1, *buf2;
-    Py_ssize_t len1, len2, iresult;
 
     if (!parse_args_finds_unicode("count", args, &substring, &start, &end))
         return NULL;
 
-    kind1 = PyUnicode_KIND(self);
-    kind2 = PyUnicode_KIND(substring);
-    if (kind1 < kind2)
-        return PyLong_FromLong(0);
-
-    len1 = PyUnicode_GET_LENGTH(self);
-    len2 = PyUnicode_GET_LENGTH(substring);
-    ADJUST_INDICES(start, end, len1);
-    if (end - start < len2)
-        return PyLong_FromLong(0);
-
-    buf1 = PyUnicode_DATA(self);
-    buf2 = PyUnicode_DATA(substring);
-    if (kind2 != kind1) {
-        buf2 = unicode_askind(kind2, buf2, len2, kind1);
-        if (!buf2)
-            return NULL;
-    }
-    switch (kind1) {
-    case PyUnicode_1BYTE_KIND:
-        iresult = ucs1lib_count(
-            ((const Py_UCS1*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    case PyUnicode_2BYTE_KIND:
-        iresult = ucs2lib_count(
-            ((const Py_UCS2*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    case PyUnicode_4BYTE_KIND:
-        iresult = ucs4lib_count(
-            ((const Py_UCS4*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    default:
-        Py_UNREACHABLE();
-    }
-
-    result = PyLong_FromSsize_t(iresult);
-
-    assert((kind2 == kind1) == (buf2 == PyUnicode_DATA(substring)));
-    if (kind2 != kind1)
-        PyMem_Free((void *)buf2);
-
+    result = PyLong_FromSsize_t(PyUnicode_Count(self, substring, start, end));
     return result;
 }
 

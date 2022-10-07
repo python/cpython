@@ -1,0 +1,2 @@
+Reuse ``PyUnicode_Count`` function in ``unicode_count`` in
+``unicodeobject.c``.
