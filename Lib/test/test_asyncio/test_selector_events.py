@@ -64,6 +64,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._ensure_fd_no_transport = mock.Mock()
         transport = self.loop._make_socket_transport(m, asyncio.Protocol())
         self.assertIsInstance(transport, _SelectorSocketTransport)
+        self.assertEqual(self.loop._ensure_fd_no_transport.call_count, 1)
 
         # Calling repr() must not fail when the event loop is closed
         self.loop.close()
