@@ -960,8 +960,8 @@ contextlib
 
 The :class:`contextlib.AbstractContextManager` class has been added to
 provide an abstract base class for context managers.  It provides a
-sensible default implementation for `__enter__()` which returns
-``self`` and leaves `__exit__()` an abstract method.  A matching
+sensible default implementation for ``__enter__()`` which returns
+``self`` and leaves ``__exit__()`` an abstract method.  A matching
 class has been added to the :mod:`typing` module as
 :class:`typing.ContextManager`.
 (Contributed by Brett Cannon in :issue:`25609`.)
@@ -1388,7 +1388,7 @@ are treated as punctuation.
 site
 ----
 
-When specifying paths to add to :attr:`sys.path` in a `.pth` file,
+When specifying paths to add to :attr:`sys.path` in a ``.pth`` file,
 you may now specify file paths on top of directories (e.g. zip files).
 (Contributed by Wolfgang Langner in :issue:`26587`).
 

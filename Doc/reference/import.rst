@@ -816,7 +816,7 @@ The path based finder iterates over every entry in the search path, and
 for each of these, looks for an appropriate :term:`path entry finder`
 (:class:`~importlib.abc.PathEntryFinder`) for the
 path entry.  Because this can be an expensive operation (e.g. there may be
-`stat()` call overheads for this search), the path based finder maintains
+``stat()`` call overheads for this search), the path based finder maintains
 a cache mapping path entries to path entry finders.  This cache is maintained
 in :data:`sys.path_importer_cache` (despite the name, this cache actually
 stores finder objects rather than being limited to :term:`importer` objects).
