@@ -84,7 +84,7 @@ def find_loader(name, path=None):
     try:
         loader = sys.modules[name].__loader__
         if loader is None:
-            raise ValueError('{name}.__loader__ is None')
+            raise ValueError(f'{name}.__loader__ is None')
         else:
             return loader
     except KeyError:
