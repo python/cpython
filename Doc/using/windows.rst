@@ -163,11 +163,14 @@ of available options is shown below.
 |                           |                                      | Python X.Y`              |
 +---------------------------+--------------------------------------+--------------------------+
 | DefaultJustForMeTargetDir | The default install directory for    | :file:`%LocalAppData%\\\ |
-|                           | just-for-me installs                 | Programs\\PythonXY` or   |
+|                           | just-for-me installs                 | Programs\\Python\\\      |
+|                           |                                      | PythonXY` or             |
 |                           |                                      | :file:`%LocalAppData%\\\ |
-|                           |                                      | Programs\\PythonXY-32` or|
+|                           |                                      | Programs\\Python\\\      |
+|                           |                                      | PythonXY-32` or          |
 |                           |                                      | :file:`%LocalAppData%\\\ |
-|                           |                                      | Programs\\PythonXY-64`   |
+|                           |                                      | Programs\\Python\\\      |
+|                           |                                      | PythonXY-64`             |
 +---------------------------+--------------------------------------+--------------------------+
 | DefaultCustomTargetDir    | The default custom install directory | (empty)                  |
 |                           | displayed in the UI                  |                          |
@@ -213,7 +216,7 @@ of available options is shown below.
 +---------------------------+--------------------------------------+--------------------------+
 | Include_pip               | Install bundled pip and setuptools   | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
-| Include_symbols           | Install debugging symbols (`*`.pdb)  | 0                        |
+| Include_symbols           | Install debugging symbols (``*.pdb``)| 0                        |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_tcltk             | Install Tcl/Tk support and IDLE      | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
@@ -1226,7 +1229,7 @@ With ongoing development of Python, some platforms that used to be supported
 earlier are no longer supported (due to the lack of users or developers).
 Check :pep:`11` for details on all unsupported platforms.
 
-* `Windows CE <http://pythonce.sourceforge.net/>`_ is
+* `Windows CE <https://pythonce.sourceforge.net/>`_ is
   `no longer supported <https://github.com/python/cpython/issues/71542>`__
   since Python 3 (if it ever was).
 * The `Cygwin <https://cygwin.com/>`_ installer offers to install the

@@ -1162,14 +1162,14 @@ invalid_dict_comprehension:
     | '{' a='**' bitwise_or for_if_clauses '}' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
-    | param_no_default* invalid_parameters_helper a=param_no_default {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
-    | param_no_default* a='(' param_no_default+ ','? b=')' {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
     | a="/" ',' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
     | (slash_no_default | slash_with_default) param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | slash_no_default? param_no_default* invalid_parameters_helper a=param_no_default {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameter without a default follows parameter with a default") }
+    | param_no_default* a='(' param_no_default+ ','? b=')' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
     | (slash_no_default | slash_with_default)? param_maybe_default* '*' (',' | param_no_default) param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
     | param_maybe_default+ '/' a='*' {
@@ -1190,14 +1190,14 @@ invalid_parameters_helper: # This is only there to avoid type errors
     | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
     | param_with_default+
 invalid_lambda_parameters:
-    | lambda_param_no_default* invalid_lambda_parameters_helper a=lambda_param_no_default {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
-    | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
     | a="/" ',' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
     | (lambda_slash_no_default | lambda_slash_with_default) lambda_param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | lambda_slash_no_default? lambda_param_no_default* invalid_lambda_parameters_helper a=lambda_param_no_default {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameter without a default follows parameter with a default") }
+    | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
     | (lambda_slash_no_default | lambda_slash_with_default)? lambda_param_maybe_default* '*' (',' | lambda_param_no_default) lambda_param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
     | lambda_param_maybe_default+ '/' a='*' {

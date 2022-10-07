@@ -777,7 +777,7 @@ class _FlagTests:
     def test_default_missing_with_wrong_type_value(self):
         with self.assertRaisesRegex(
             ValueError,
-            "'RED' is not a valid TestFlag.Color",
+            "'RED' is not a valid ",
             ) as ctx:
             self.MainEnum('RED')
         self.assertIs(ctx.exception.__context__, None)
@@ -786,7 +786,7 @@ class TestPlainEnum(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Enum
 
 
-class TestPlainFlag(_EnumTests, _PlainOutputTests, unittest.TestCase):
+class TestPlainFlag(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
 
 
@@ -798,7 +798,7 @@ class TestStrEnum(_EnumTests, _MinimalOutputTests, unittest.TestCase):
     enum_type = StrEnum
 
 
-class TestIntFlag(_EnumTests, _MinimalOutputTests, unittest.TestCase):
+class TestIntFlag(_EnumTests, _MinimalOutputTests, _FlagTests, unittest.TestCase):
     enum_type = IntFlag
 
 
@@ -810,7 +810,7 @@ class TestMixedStr(_EnumTests, _MixedOutputTests, unittest.TestCase):
     class enum_type(str, Enum): pass
 
 
-class TestMixedIntFlag(_EnumTests, _MixedOutputTests, unittest.TestCase):
+class TestMixedIntFlag(_EnumTests, _MixedOutputTests, _FlagTests, unittest.TestCase):
     class enum_type(int, Flag): pass
 
 
@@ -2927,7 +2927,7 @@ class OldTestFlag(unittest.TestCase):
             self.assertEqual(bool(f.value), bool(f))
 
     def test_boundary(self):
-        self.assertIs(enum.Flag._boundary_, STRICT)
+        self.assertIs(enum.Flag._boundary_, CONFORM)
         class Iron(Flag, boundary=STRICT):
             ONE = 1
             TWO = 2
