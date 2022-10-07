@@ -515,7 +515,7 @@ class OpenerDirector:
             req = meth(req)
 
         sys.audit('urllib.Request', req.full_url, req.data, req.headers, req.get_method())
-        response = self._open(req, data)
+        response = self._open(req)
 
         # post-process response
         meth_name = protocol+"_response"
@@ -525,7 +525,7 @@ class OpenerDirector:
 
         return response
 
-    def _open(self, req, data=None):
+    def _open(self, req):
         result = self._call_chain(self.handle_open, 'default',
                                   'default_open', req)
         if result:
