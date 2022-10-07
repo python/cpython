@@ -5210,6 +5210,7 @@ dict_watch_callback(PyDict_WatchEvent event,
         Py_DECREF(msg);
         return -1;
     }
+    Py_DECREF(msg);
     return 0;
 }
 
@@ -5224,8 +5225,10 @@ dict_watch_callback_second(PyDict_WatchEvent event,
         return -1;
     }
     if (PyList_Append(g_dict_watch_events, msg) < 0) {
+        Py_DECREF(msg);
         return -1;
     }
+    Py_DECREF(msg);
     return 0;
 }
 
