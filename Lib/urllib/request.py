@@ -799,10 +799,10 @@ class ProxyHandler(BaseHandler):
         for type, url in proxies.items():
             type = type.lower()
             setattr(self, '%s_open' % type,
-                    lambda r, proxy=url, type=type, meth=self.proxy_open:
-                        meth(r, proxy, type))
+                    lambda r, proxy=url, meth=self.proxy_open:
+                        meth(r, proxy))
 
-    def proxy_open(self, req, proxy, type):
+    def proxy_open(self, req, proxy):
         orig_type = req.type
         proxy_type, user, password, hostport = _parse_proxy(proxy)
         if proxy_type is None:
