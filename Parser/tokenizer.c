@@ -1623,6 +1623,7 @@ tok_get(struct tok_state *tok, struct token *token)
             /* This is a type comment if we matched all of type_comment_prefix. */
             if (!*prefix) {
                 int is_type_ignore = 1;
+                // +6 in order to skip the word 'ignore'
                 const char *ignore_end = p + 6;
                 const int ignore_end_col_offset = current_starting_col_offset + 6;
                 tok_backup(tok, c);  /* don't eat the newline or EOF */
@@ -1645,7 +1646,6 @@ tok_get(struct tok_state *tok, struct token *token)
                         tok_nextc(tok);
                         tok->atbol = 1;
                     }
-                    // +6 below cause we need to skip the ignore part
                     return MAKE_TYPE_COMMENT_TOKEN(TYPE_IGNORE, ignore_end_col_offset, tok->col_offset);
                 } else {
                     p_start = type_start;
