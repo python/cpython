@@ -1239,7 +1239,6 @@ which incur interpreter overhead.
     >>> list(batched('ABCDEFG', 0))
     []
     >>> list(batched('ABCDEFG', -1))
-    []
     Traceback (most recent call last):
       ...
     ValueError: Stop argument for islice() must be None or an integer: 0 <= x <= sys.maxsize.
