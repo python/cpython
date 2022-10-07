@@ -121,6 +121,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
     err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
+    err += add_stat_dict(stats, FOR_ITER, "for_iter");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -836,6 +837,11 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             if (!function_check_args(descr, 2, LOAD_ATTR)) {
                 goto fail;
             }
+            uint32_t version = function_get_version(descr, LOAD_ATTR);
+            if (version == 0) {
+                goto fail;
+            }
+            write_u32(lm_cache->keys_version, version);
             /* borrowed */
             write_obj(lm_cache->descr, descr);
             write_u32(lm_cache->type_version, type->tp_version_tag);
@@ -975,6 +981,7 @@ load_attr_fail_kind(DescriptorClassification kind)
         case MUTABLE:
             return SPEC_FAIL_ATTR_MUTABLE_CLASS;
         case GETSET_OVERRIDDEN:
+        case GETATTRIBUTE_IS_PYTHON_FUNCTION:
             return SPEC_FAIL_OVERRIDDEN;
         case BUILTIN_CLASSMETHOD:
             return SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD;

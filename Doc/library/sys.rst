@@ -250,7 +250,7 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is `built in debug mode <debug-build>` (:option:`configure
+   If Python is :ref:`built in debug mode <debug-build>` (:option:`configure
    --with-pydebug option <--with-pydebug>`), it also performs some expensive
    internal consistency checks.
 
@@ -349,7 +349,7 @@ always available.
    files to (and read them from) a parallel directory tree rooted at this
    directory, rather than from ``__pycache__`` directories in the source code
    tree. Any ``__pycache__`` directories in the source code tree will be ignored
-   and new `.pyc` files written within the pycache prefix. Thus if you use
+   and new ``.pyc`` files written within the pycache prefix. Thus if you use
    :mod:`compileall` as a pre-build step, you must ensure you run it with the
    same pycache prefix (if any) that you will use at runtime.
 
@@ -544,7 +544,7 @@ always available.
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
 
 
@@ -732,7 +732,7 @@ always available.
    Returns the current value for the :ref:`integer string conversion length
    limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
 
 .. function:: getrefcount(object)
 
@@ -874,7 +874,7 @@ always available.
 .. function:: get_asyncgen_hooks()
 
    Returns an *asyncgen_hooks* object, which is similar to a
-   :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
+   :class:`~collections.namedtuple` of the form ``(firstiter, finalizer)``,
    where *firstiter* and *finalizer* are expected to be either ``None`` or
    functions which take an :term:`asynchronous generator iterator` as an
    argument, and are used to schedule finalization of an asynchronous
@@ -1029,7 +1029,7 @@ always available.
 
    .. versionadded:: 3.1
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
 
 
@@ -1331,13 +1331,13 @@ always available.
 
    .. availability:: Unix.
 
-.. function:: set_int_max_str_digits(n)
+.. function:: set_int_max_str_digits(maxdigits)
 
    Set the :ref:`integer string conversion length limitation
    <int_max_str_digits>` used by this interpreter. See also
    :func:`get_int_max_str_digits`.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
 
 .. function:: setprofile(profilefunc)
 

@@ -182,7 +182,7 @@ at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions 
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
-documentation tool <http://sphinx-doc.org/>`__.  The reStructuredText source for
+documentation tool <https://www.sphinx-doc.org/>`__.  The reStructuredText source for
 the documentation is part of the Python source distribution.
 
 
@@ -264,7 +264,7 @@ Where in the world is www.python.org located?
 ---------------------------------------------
 
 The Python project's infrastructure is located all over the world and is managed
-by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
+by the Python Infrastructure Team. Details `here <https://infra.psf.io>`__.
 
 
 Why is it called Python?
@@ -329,7 +329,7 @@ Consulting the proceedings for `past Python conferences
 different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
-<http://www.list.org>`_ and `the Zope application server
+<https://www.list.org>`_ and `the Zope application server
 <https://www.zope.dev>`_.  Several Linux distributions, most notably `Red Hat
 <https://www.redhat.com>`_, have written part or all of their installer and
 system administration software in Python.  Companies that use Python internally

@@ -44,7 +44,7 @@ VERSION = "3.3"
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (two occurrences)
-UNIDATA_VERSION = "14.0.0"
+UNIDATA_VERSION = "15.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -104,11 +104,12 @@ cjk_ranges = [
     ('3400', '4DBF'),
     ('4E00', '9FFF'),
     ('20000', '2A6DF'),
-    ('2A700', '2B738'),
+    ('2A700', '2B739'),
     ('2B740', '2B81D'),
     ('2B820', '2CEA1'),
     ('2CEB0', '2EBE0'),
     ('30000', '3134A'),
+    ('31350', '323AF'),
 ]
 
 
@@ -416,7 +417,7 @@ def makeunicodetype(unicode, trace):
     # extract unicode types
     dummy = (0, 0, 0, 0, 0, 0)
     table = [dummy]
-    cache = {0: dummy}
+    cache = {dummy: 0}
     index = [0] * len(unicode.chars)
     numeric = {}
     spaces = []
