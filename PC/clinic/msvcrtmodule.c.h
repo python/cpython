@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(msvcrt_heapmin__doc__,
 "heapmin($module, /)\n"
 "--\n"
@@ -37,7 +43,7 @@ PyDoc_STRVAR(msvcrt_locking__doc__,
 "individually.");
 
 #define MSVCRT_LOCKING_METHODDEF    \
-    {"locking", (PyCFunction)(void(*)(void))msvcrt_locking, METH_FASTCALL, msvcrt_locking__doc__},
+    {"locking", _PyCFunction_CAST(msvcrt_locking), METH_FASTCALL, msvcrt_locking__doc__},
 
 static PyObject *
 msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes);
@@ -53,27 +59,12 @@ msvcrt_locking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("locking", nargs, 3, 3)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(args[0]);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     mode = _PyLong_AsInt(args[1]);
     if (mode == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     nbytes = PyLong_AsLong(args[2]);
@@ -98,7 +89,7 @@ PyDoc_STRVAR(msvcrt_setmode__doc__,
 "Return value is the previous mode.");
 
 #define MSVCRT_SETMODE_METHODDEF    \
-    {"setmode", (PyCFunction)(void(*)(void))msvcrt_setmode, METH_FASTCALL, msvcrt_setmode__doc__},
+    {"setmode", _PyCFunction_CAST(msvcrt_setmode), METH_FASTCALL, msvcrt_setmode__doc__},
 
 static long
 msvcrt_setmode_impl(PyObject *module, int fd, int flags);
@@ -114,18 +105,8 @@ msvcrt_setmode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setmode", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(args[0]);
     if (fd == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     flags = _PyLong_AsInt(args[1]);
@@ -153,7 +134,7 @@ PyDoc_STRVAR(msvcrt_open_osfhandle__doc__,
 "to os.fdopen() to create a file object.");
 
 #define MSVCRT_OPEN_OSFHANDLE_METHODDEF    \
-    {"open_osfhandle", (PyCFunction)(void(*)(void))msvcrt_open_osfhandle, METH_FASTCALL, msvcrt_open_osfhandle__doc__},
+    {"open_osfhandle", _PyCFunction_CAST(msvcrt_open_osfhandle), METH_FASTCALL, msvcrt_open_osfhandle__doc__},
 
 static long
 msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags);
@@ -166,8 +147,15 @@ msvcrt_open_osfhandle(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, ""_Py_PARSE_UINTPTR"i:open_osfhandle",
-        &handle, &flags)) {
+    if (!_PyArg_CheckPositional("open_osfhandle", nargs, 2, 2)) {
+        goto exit;
+    }
+    handle = PyLong_AsVoidPtr(args[0]);
+    if (!handle && PyErr_Occurred()) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_open_osfhandle_impl(module, handle, flags);
@@ -201,11 +189,6 @@ msvcrt_get_osfhandle(PyObject *module, PyObject *arg)
     int fd;
     void *_return_value;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
@@ -375,7 +358,7 @@ msvcrt_putch(PyObject *module, PyObject *arg)
         char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
-        _PyArg_BadArgument("putch", 0, "a byte string of length 1", arg);
+        _PyArg_BadArgument("putch", "argument", "a byte string of length 1", arg);
         goto exit;
     }
     return_value = msvcrt_putch_impl(module, char_value);
@@ -403,14 +386,14 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
     int unicode_char;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("putwch", 0, "a unicode character", arg);
+        _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("putwch", 0, "a unicode character", arg);
+        _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -449,7 +432,7 @@ msvcrt_ungetch(PyObject *module, PyObject *arg)
         char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
-        _PyArg_BadArgument("ungetch", 0, "a byte string of length 1", arg);
+        _PyArg_BadArgument("ungetch", "argument", "a byte string of length 1", arg);
         goto exit;
     }
     return_value = msvcrt_ungetch_impl(module, char_value);
@@ -477,14 +460,14 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
     int unicode_char;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("ungetwch", 0, "a unicode character", arg);
+        _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg)) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
-        _PyArg_BadArgument("ungetwch", 0, "a unicode character", arg);
+        _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
         goto exit;
     }
     unicode_char = PyUnicode_READ_CHAR(arg, 0);
@@ -505,7 +488,7 @@ PyDoc_STRVAR(msvcrt_CrtSetReportFile__doc__,
 "Only available on Debug builds.");
 
 #define MSVCRT_CRTSETREPORTFILE_METHODDEF    \
-    {"CrtSetReportFile", (PyCFunction)(void(*)(void))msvcrt_CrtSetReportFile, METH_FASTCALL, msvcrt_CrtSetReportFile__doc__},
+    {"CrtSetReportFile", _PyCFunction_CAST(msvcrt_CrtSetReportFile), METH_FASTCALL, msvcrt_CrtSetReportFile__doc__},
 
 static void *
 msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file);
@@ -518,8 +501,15 @@ msvcrt_CrtSetReportFile(PyObject *module, PyObject *const *args, Py_ssize_t narg
     void *file;
     void *_return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "i"_Py_PARSE_UINTPTR":CrtSetReportFile",
-        &type, &file)) {
+    if (!_PyArg_CheckPositional("CrtSetReportFile", nargs, 2, 2)) {
+        goto exit;
+    }
+    type = _PyLong_AsInt(args[0]);
+    if (type == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    file = PyLong_AsVoidPtr(args[1]);
+    if (!file && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = msvcrt_CrtSetReportFile_impl(module, type, file);
@@ -545,7 +535,7 @@ PyDoc_STRVAR(msvcrt_CrtSetReportMode__doc__,
 "Only available on Debug builds.");
 
 #define MSVCRT_CRTSETREPORTMODE_METHODDEF    \
-    {"CrtSetReportMode", (PyCFunction)(void(*)(void))msvcrt_CrtSetReportMode, METH_FASTCALL, msvcrt_CrtSetReportMode__doc__},
+    {"CrtSetReportMode", _PyCFunction_CAST(msvcrt_CrtSetReportMode), METH_FASTCALL, msvcrt_CrtSetReportMode__doc__},
 
 static long
 msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode);
@@ -561,18 +551,8 @@ msvcrt_CrtSetReportMode(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!_PyArg_CheckPositional("CrtSetReportMode", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     type = _PyLong_AsInt(args[0]);
     if (type == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     mode = _PyLong_AsInt(args[1]);
@@ -614,11 +594,6 @@ msvcrt_set_error_mode(PyObject *module, PyObject *arg)
     int mode;
     long _return_value;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     mode = _PyLong_AsInt(arg);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
@@ -634,6 +609,24 @@ exit:
 }
 
 #endif /* defined(_DEBUG) */
+
+PyDoc_STRVAR(msvcrt_GetErrorMode__doc__,
+"GetErrorMode($module, /)\n"
+"--\n"
+"\n"
+"Wrapper around GetErrorMode.");
+
+#define MSVCRT_GETERRORMODE_METHODDEF    \
+    {"GetErrorMode", (PyCFunction)msvcrt_GetErrorMode, METH_NOARGS, msvcrt_GetErrorMode__doc__},
+
+static PyObject *
+msvcrt_GetErrorMode_impl(PyObject *module);
+
+static PyObject *
+msvcrt_GetErrorMode(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return msvcrt_GetErrorMode_impl(module);
+}
 
 PyDoc_STRVAR(msvcrt_SetErrorMode__doc__,
 "SetErrorMode($module, mode, /)\n"
@@ -653,11 +646,6 @@ msvcrt_SetErrorMode(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned int mode;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     mode = (unsigned int)PyLong_AsUnsignedLongMask(arg);
     if (mode == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
@@ -679,4 +667,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=816bc4f993893cea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=204bae9fee7f6124 input=a9049054013a1b77]*/

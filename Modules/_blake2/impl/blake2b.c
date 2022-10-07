@@ -189,13 +189,6 @@ static inline int blake2b_init0( blake2b_state *S )
 
 
 
-#define blake2b_init BLAKE2_IMPL_NAME(blake2b_init)
-#define blake2b_init_param BLAKE2_IMPL_NAME(blake2b_init_param)
-#define blake2b_init_key BLAKE2_IMPL_NAME(blake2b_init_key)
-#define blake2b_update BLAKE2_IMPL_NAME(blake2b_update)
-#define blake2b_final BLAKE2_IMPL_NAME(blake2b_final)
-#define blake2b BLAKE2_IMPL_NAME(blake2b)
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -395,7 +388,7 @@ int blake2b_final( blake2b_state *S, uint8_t *out, size_t outlen )
     blake2b_increment_counter( S, BLAKE2B_BLOCKBYTES );
     blake2b_compress( S, S->buf );
     S->buflen -= BLAKE2B_BLOCKBYTES;
-    memcpy( S->buf, S->buf + BLAKE2B_BLOCKBYTES, S->buflen );
+    memmove( S->buf, S->buf + BLAKE2B_BLOCKBYTES, S->buflen );
   }
 
   blake2b_increment_counter( S, S->buflen );

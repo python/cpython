@@ -117,15 +117,17 @@ of the new API.
    a 10-tuple; the first 9 elements make up a tuple that can be passed directly to
    :func:`time.mktime`, and the tenth is the offset of the date's timezone from UTC
    (which is the official term for Greenwich Mean Time) [#]_.  If the input string
-   has no timezone, the last element of the tuple returned is ``None``.  Note that
-   indexes 6, 7, and 8 of the result tuple are not usable.
+   has no timezone, the last element of the tuple returned is ``0``, which represents
+   UTC. Note that indexes 6, 7, and 8 of the result tuple are not usable.
 
 
 .. function:: parsedate_to_datetime(date)
 
    The inverse of :func:`format_datetime`.  Performs the same function as
-   :func:`parsedate`, but on success returns a :mod:`~datetime.datetime`.  If
-   the input date has a timezone of ``-0000``, the ``datetime`` will be a naive
+   :func:`parsedate`, but on success returns a :mod:`~datetime.datetime`;
+   otherwise ``ValueError`` is raised if *date* contains an invalid value such
+   as an hour greater than 23 or a timezone offset not between -24 and 24 hours.
+   If the input date has a timezone of ``-0000``, the ``datetime`` will be a naive
    ``datetime``, and if the date is conforming to the RFCs it will represent a
    time in UTC but with no indication of the actual source timezone of the
    message the date comes from.  If the input date has any other valid timezone

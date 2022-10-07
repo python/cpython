@@ -3,12 +3,63 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
-
-#include "pythread.h"
+#include "structmember.h"         // PyMemberDef
 
 #include <bzlib.h>
 #include <stdio.h>
+
+// Blocks output buffer wrappers
+#include "pycore_blocks_output_buffer.h"
+
+#if OUTPUT_BUFFER_MAX_BLOCK_SIZE > UINT32_MAX
+    #error "The maximum block size accepted by libbzip2 is UINT32_MAX."
+#endif
+
+/* On success, return value >= 0
+   On failure, return -1 */
+static inline Py_ssize_t
+OutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
+                         char **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    allocated = _BlocksOutputBuffer_InitAndGrow(
+                    buffer, max_length, (void**) next_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+/* On success, return value >= 0
+   On failure, return -1 */
+static inline Py_ssize_t
+OutputBuffer_Grow(_BlocksOutputBuffer *buffer,
+                  char **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    allocated = _BlocksOutputBuffer_Grow(
+                    buffer, (void**) next_out, (Py_ssize_t) *avail_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+static inline Py_ssize_t
+OutputBuffer_GetDataSize(_BlocksOutputBuffer *buffer, uint32_t avail_out)
+{
+    return _BlocksOutputBuffer_GetDataSize(buffer, (Py_ssize_t) avail_out);
+}
+
+static inline PyObject *
+OutputBuffer_Finish(_BlocksOutputBuffer *buffer, uint32_t avail_out)
+{
+    return _BlocksOutputBuffer_Finish(buffer, (Py_ssize_t) avail_out);
+}
+
+static inline void
+OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
+{
+    _BlocksOutputBuffer_OnError(buffer);
+}
 
 
 #ifndef BZ_CONFIG_ERROR
@@ -52,9 +103,6 @@ typedef struct {
     size_t bzs_avail_in_real;
     PyThread_type_lock lock;
 } BZ2Decompressor;
-
-static PyTypeObject BZ2Compressor_Type;
-static PyTypeObject BZ2Decompressor_Type;
 
 /* Helper functions. */
 
@@ -107,52 +155,22 @@ catch_bz2_error(int bzerror)
     }
 }
 
-#if BUFSIZ < 8192
-#define INITIAL_BUFFER_SIZE 8192
-#else
-#define INITIAL_BUFFER_SIZE BUFSIZ
-#endif
-
-static int
-grow_buffer(PyObject **buf, Py_ssize_t max_length)
-{
-    /* Expand the buffer by an amount proportional to the current size,
-       giving us amortized linear-time behavior. Use a less-than-double
-       growth factor to avoid excessive allocation. */
-    size_t size = PyBytes_GET_SIZE(*buf);
-    size_t new_size = size + (size >> 3) + 6;
-
-    if (max_length > 0 && new_size > (size_t) max_length)
-        new_size = (size_t) max_length;
-
-    if (new_size > size) {
-        return _PyBytes_Resize(buf, new_size);
-    } else {  /* overflow */
-        PyErr_SetString(PyExc_OverflowError,
-                        "Unable to allocate buffer - output too large");
-        return -1;
-    }
-}
-
 
 /* BZ2Compressor class. */
 
 static PyObject *
 compress(BZ2Compressor *c, char *data, size_t len, int action)
 {
-    size_t data_size = 0;
     PyObject *result;
+    _BlocksOutputBuffer buffer = {.list = NULL};
 
-    result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
-    if (result == NULL)
-        return NULL;
-
+    if (OutputBuffer_InitAndGrow(&buffer, -1, &c->bzs.next_out, &c->bzs.avail_out) < 0) {
+        goto error;
+    }
     c->bzs.next_in = data;
     c->bzs.avail_in = 0;
-    c->bzs.next_out = PyBytes_AS_STRING(result);
-    c->bzs.avail_out = INITIAL_BUFFER_SIZE;
+
     for (;;) {
-        char *this_out;
         int bzerror;
 
         /* On a 64-bit system, len might not fit in avail_in (an unsigned int).
@@ -167,21 +185,15 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
             break;
 
         if (c->bzs.avail_out == 0) {
-            size_t buffer_left = PyBytes_GET_SIZE(result) - data_size;
-            if (buffer_left == 0) {
-                if (grow_buffer(&result, -1) < 0)
-                    goto error;
-                c->bzs.next_out = PyBytes_AS_STRING(result) + data_size;
-                buffer_left = PyBytes_GET_SIZE(result) - data_size;
+            if (OutputBuffer_Grow(&buffer, &c->bzs.next_out, &c->bzs.avail_out) < 0) {
+                goto error;
             }
-            c->bzs.avail_out = (unsigned int)Py_MIN(buffer_left, UINT_MAX);
         }
 
         Py_BEGIN_ALLOW_THREADS
-        this_out = c->bzs.next_out;
         bzerror = BZ2_bzCompress(&c->bzs, action);
-        data_size += c->bzs.next_out - this_out;
         Py_END_ALLOW_THREADS
+
         if (catch_bz2_error(bzerror))
             goto error;
 
@@ -189,13 +201,14 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
         if (action == BZ_FINISH && bzerror == BZ_STREAM_END)
             break;
     }
-    if (data_size != (size_t)PyBytes_GET_SIZE(result))
-        if (_PyBytes_Resize(&result, data_size) < 0)
-            goto error;
-    return result;
+
+    result = OutputBuffer_Finish(&buffer, c->bzs.avail_out);
+    if (result != NULL) {
+        return result;
+    }
 
 error:
-    Py_XDECREF(result);
+    OutputBuffer_OnError(&buffer);
     return NULL;
 }
 
@@ -282,21 +295,11 @@ BZ2_Free(void* ctx, void *ptr)
     PyMem_RawFree(ptr);
 }
 
-/*[clinic input]
-_bz2.BZ2Compressor.__init__
 
-    compresslevel: int = 9
-        Compression level, as a number between 1 and 9.
-    /
-
-Create a compressor object for compressing data incrementally.
-
-For one-shot compression, use the compress() function instead.
-[clinic start generated code]*/
-
+/* Argument Clinic is not used since the Argument Clinic always want to
+   check the type which would be wrong here */
 static int
 _bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
-/*[clinic end generated code: output=c4e6adfd02963827 input=4e1ff7b8394b6e9a]*/
 {
     int bzerror;
 
@@ -327,13 +330,60 @@ error:
     return -1;
 }
 
+PyDoc_STRVAR(_bz2_BZ2Compressor___init____doc__,
+"BZ2Compressor(compresslevel=9, /)\n"
+"--\n"
+"\n"
+"Create a compressor object for compressing data incrementally.\n"
+"\n"
+"  compresslevel\n"
+"    Compression level, as a number between 1 and 9.\n"
+"\n"
+"For one-shot compression, use the compress() function instead.");
+
+static int
+_bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    int compresslevel = 9;
+
+    if (!_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
+        goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    if (compresslevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _bz2_BZ2Compressor___init___impl((BZ2Compressor *)self, compresslevel);
+
+exit:
+    return return_value;
+}
+
 static void
 BZ2Compressor_dealloc(BZ2Compressor *self)
 {
     BZ2_bzCompressEnd(&self->bzs);
-    if (self->lock != NULL)
+    if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    }
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
+}
+
+static int
+BZ2Compressor_traverse(BZ2Compressor *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
 }
 
 static PyMethodDef BZ2Compressor_methods[] = {
@@ -342,48 +392,26 @@ static PyMethodDef BZ2Compressor_methods[] = {
     {NULL}
 };
 
-
-static PyTypeObject BZ2Compressor_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_bz2.BZ2Compressor",               /* tp_name */
-    sizeof(BZ2Compressor),              /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    (destructor)BZ2Compressor_dealloc,  /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash  */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    _bz2_BZ2Compressor___init____doc__,  /* tp_doc */
-    0,                                  /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    BZ2Compressor_methods,              /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    _bz2_BZ2Compressor___init__,        /* tp_init */
-    0,                                  /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+static PyType_Slot bz2_compressor_type_slots[] = {
+    {Py_tp_dealloc, BZ2Compressor_dealloc},
+    {Py_tp_methods, BZ2Compressor_methods},
+    {Py_tp_init, _bz2_BZ2Compressor___init__},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_doc, (char *)_bz2_BZ2Compressor___init____doc__},
+    {Py_tp_traverse, BZ2Compressor_traverse},
+    {0, 0}
 };
 
+static PyType_Spec bz2_compressor_type_spec = {
+    .name = "_bz2.BZ2Compressor",
+    .basicsize = sizeof(BZ2Compressor),
+    // Calling PyType_GetModuleState() on a subclass is not safe.
+    // bz2_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
+    // which prevents to create a subclass.
+    // So calling PyType_GetModuleState() in this file is always safe.
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = bz2_compressor_type_slots,
+};
 
 /* BZ2Decompressor class. */
 
@@ -397,36 +425,29 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
     /* data_size is strictly positive, but because we repeatedly have to
        compare against max_length and PyBytes_GET_SIZE we declare it as
        signed */
-    Py_ssize_t data_size = 0;
     PyObject *result;
+    _BlocksOutputBuffer buffer = {.list = NULL};
     bz_stream *bzs = &d->bzs;
 
-    if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE)
-        result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
-    else
-        result = PyBytes_FromStringAndSize(NULL, max_length);
-    if (result == NULL)
-        return NULL;
+    if (OutputBuffer_InitAndGrow(&buffer, max_length, &bzs->next_out, &bzs->avail_out) < 0) {
+        goto error;
+    }
 
-    bzs->next_out = PyBytes_AS_STRING(result);
     for (;;) {
         int bzret;
-        size_t avail;
-
         /* On a 64-bit system, buffer length might not fit in avail_out, so we
            do decompression in chunks of no more than UINT_MAX bytes
            each. Note that the expression for `avail` is guaranteed to be
            positive, so the cast is safe. */
-        avail = (size_t) (PyBytes_GET_SIZE(result) - data_size);
-        bzs->avail_out = (unsigned int)Py_MIN(avail, UINT_MAX);
         bzs->avail_in = (unsigned int)Py_MIN(d->bzs_avail_in_real, UINT_MAX);
         d->bzs_avail_in_real -= bzs->avail_in;
 
         Py_BEGIN_ALLOW_THREADS
         bzret = BZ2_bzDecompress(bzs);
-        data_size = bzs->next_out - PyBytes_AS_STRING(result);
-        d->bzs_avail_in_real += bzs->avail_in;
         Py_END_ALLOW_THREADS
+
+        d->bzs_avail_in_real += bzs->avail_in;
+
         if (catch_bz2_error(bzret))
             goto error;
         if (bzret == BZ_STREAM_END) {
@@ -435,22 +456,22 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
         } else if (d->bzs_avail_in_real == 0) {
             break;
         } else if (bzs->avail_out == 0) {
-            if (data_size == max_length)
+            if (OutputBuffer_GetDataSize(&buffer, bzs->avail_out) == max_length) {
                 break;
-            if (data_size == PyBytes_GET_SIZE(result) &&
-                grow_buffer(&result, max_length) == -1)
+            }
+            if (OutputBuffer_Grow(&buffer, &bzs->next_out, &bzs->avail_out) < 0) {
                 goto error;
-            bzs->next_out = PyBytes_AS_STRING(result) + data_size;
+            }
         }
     }
-    if (data_size != PyBytes_GET_SIZE(result))
-        if (_PyBytes_Resize(&result, data_size) == -1)
-            goto error;
 
-    return result;
+    result = OutputBuffer_Finish(&buffer, bzs->avail_out);
+    if (result != NULL) {
+        return result;
+    }
 
 error:
-    Py_XDECREF(result);
+    OutputBuffer_OnError(&buffer);
     return NULL;
 }
 
@@ -603,17 +624,10 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
     return result;
 }
 
-/*[clinic input]
-_bz2.BZ2Decompressor.__init__
-
-Create a decompressor object for decompressing data incrementally.
-
-For one-shot decompression, use the decompress() function instead.
-[clinic start generated code]*/
-
+/* Argument Clinic is not used since the Argument Clinic always want to
+   check the type which would be wrong here */
 static int
 _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
-/*[clinic end generated code: output=e4d2b9bb866ab8f1 input=95f6500dcda60088]*/
 {
     int bzerror;
 
@@ -648,16 +662,53 @@ error:
     return -1;
 }
 
+static int
+_bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+
+    if (!_PyArg_NoPositional("BZ2Decompressor", args)) {
+        goto exit;
+    }
+    if (!_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
+        goto exit;
+    }
+    return_value = _bz2_BZ2Decompressor___init___impl((BZ2Decompressor *)self);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_bz2_BZ2Decompressor___init____doc__,
+"BZ2Decompressor()\n"
+"--\n"
+"\n"
+"Create a decompressor object for decompressing data incrementally.\n"
+"\n"
+"For one-shot decompression, use the decompress() function instead.");
+
 static void
 BZ2Decompressor_dealloc(BZ2Decompressor *self)
 {
-    if(self->input_buffer != NULL)
+    if(self->input_buffer != NULL) {
         PyMem_Free(self->input_buffer);
+    }
     BZ2_bzDecompressEnd(&self->bzs);
     Py_CLEAR(self->unused_data);
-    if (self->lock != NULL)
+    if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    }
+
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
+}
+
+static int
+BZ2Decompressor_traverse(BZ2Decompressor *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
 }
 
 static PyMethodDef BZ2Decompressor_methods[] = {
@@ -684,82 +735,71 @@ static PyMemberDef BZ2Decompressor_members[] = {
     {NULL}
 };
 
-static PyTypeObject BZ2Decompressor_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_bz2.BZ2Decompressor",             /* tp_name */
-    sizeof(BZ2Decompressor),            /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    (destructor)BZ2Decompressor_dealloc,/* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash  */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    _bz2_BZ2Decompressor___init____doc__,  /* tp_doc */
-    0,                                  /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    BZ2Decompressor_methods,            /* tp_methods */
-    BZ2Decompressor_members,            /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    _bz2_BZ2Decompressor___init__,      /* tp_init */
-    0,                                  /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+static PyType_Slot bz2_decompressor_type_slots[] = {
+    {Py_tp_dealloc, BZ2Decompressor_dealloc},
+    {Py_tp_methods, BZ2Decompressor_methods},
+    {Py_tp_init, _bz2_BZ2Decompressor___init__},
+    {Py_tp_doc, (char *)_bz2_BZ2Decompressor___init____doc__},
+    {Py_tp_members, BZ2Decompressor_members},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_traverse, BZ2Decompressor_traverse},
+    {0, 0}
 };
 
+static PyType_Spec bz2_decompressor_type_spec = {
+    .name = "_bz2.BZ2Decompressor",
+    .basicsize = sizeof(BZ2Decompressor),
+    // Calling PyType_GetModuleState() on a subclass is not safe.
+    // bz2_decompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
+    // which prevents to create a subclass.
+    // So calling PyType_GetModuleState() in this file is always safe.
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = bz2_decompressor_type_slots,
+};
 
 /* Module initialization. */
 
+static int
+_bz2_exec(PyObject *module)
+{
+    PyTypeObject *bz2_compressor_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+                                                            &bz2_compressor_type_spec, NULL);
+    if (bz2_compressor_type == NULL) {
+        return -1;
+    }
+    int rc = PyModule_AddType(module, bz2_compressor_type);
+    Py_DECREF(bz2_compressor_type);
+    if (rc < 0) {
+        return -1;
+    }
+
+    PyTypeObject *bz2_decompressor_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+                                                         &bz2_decompressor_type_spec, NULL);
+    if (bz2_decompressor_type == NULL) {
+        return -1;
+    }
+    rc = PyModule_AddType(module, bz2_decompressor_type);
+    Py_DECREF(bz2_decompressor_type);
+    if (rc < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static struct PyModuleDef_Slot _bz2_slots[] = {
+    {Py_mod_exec, _bz2_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _bz2module = {
-    PyModuleDef_HEAD_INIT,
-    "_bz2",
-    NULL,
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_bz2",
+    .m_slots = _bz2_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__bz2(void)
 {
-    PyObject *m;
-
-    if (PyType_Ready(&BZ2Compressor_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&BZ2Decompressor_Type) < 0)
-        return NULL;
-
-    m = PyModule_Create(&_bz2module);
-    if (m == NULL)
-        return NULL;
-
-    Py_INCREF(&BZ2Compressor_Type);
-    PyModule_AddObject(m, "BZ2Compressor", (PyObject *)&BZ2Compressor_Type);
-
-    Py_INCREF(&BZ2Decompressor_Type);
-    PyModule_AddObject(m, "BZ2Decompressor",
-                       (PyObject *)&BZ2Decompressor_Type);
-
-    return m;
+    return PyModuleDef_Init(&_bz2module);
 }

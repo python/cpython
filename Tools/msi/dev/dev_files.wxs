@@ -29,14 +29,4 @@
             </Component>
         </ComponentGroup>
     </Fragment>
-    
-    <?ifdef IncludeMinGWLib ?>
-    <Fragment>
-        <ComponentGroup Id="dev_mingw">
-            <Component Id="libs_libpython.a" Directory="libs" Guid="*">
-                <File Id="libs_libpython.a" Name="libpython$(var.MajorVersionNumber)$(var.MinorVersionNumber).a" KeyPath="yes" />
-            </Component>
-        </ComponentGroup>
-    </Fragment>
-    <?endif ?>
 </Wix>
