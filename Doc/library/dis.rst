@@ -31,9 +31,8 @@ interpreter.
       by instruction.
 
    .. versionchanged:: 3.10
-      The argument for instructions that have a jump now use the instruction
-      offset instead of the byte offset. Because each instruction take two
-      bytes, the instruction offset is exactly half of the byte offset.
+      The argument of jump, exception handling and loop instructions is now
+      the instruction offset rather than the byte offset.
 
    .. versionchanged:: 3.11
       Some instructions are accompanied by one or more inline cache entries,
