@@ -39,6 +39,9 @@
 #define MAKE_TOKEN(token_type) token_setup(tok, token, token_type, p_start, p_end)
 #define MAKE_TYPE_COMMENT_TOKEN(token_type, col_offset, end_col_offset) (\
                 type_comment_token_setup(tok, token, token_type, col_offset, end_col_offset, p_start, p_end))
+#define ADVANCE_LINENO() \
+            tok->lineno++; \
+            tok->col_offset = 0;
 
 /* Forward */
 static struct tok_state *tok_new(void);
@@ -875,8 +878,7 @@ tok_underflow_string(struct tok_state *tok) {
         tok->buf = tok->cur;
     }
     tok->line_start = tok->cur;
-    tok->lineno++;
-    tok->col_offset = 0;
+    ADVANCE_LINENO();
     tok->inp = end;
     return 1;
 }
@@ -935,8 +937,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     else if (tok->start != NULL) {
         Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
         size_t size = strlen(newtok);
-        tok->lineno++;
-        tok->col_offset = 0;
+        ADVANCE_LINENO();
         if (!tok_reserve_buf(tok, size + 1)) {
             PyMem_Free(tok->buf);
             tok->buf = NULL;
@@ -949,8 +950,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->multi_line_start = tok->buf + cur_multi_line_start;
     }
     else {
-        tok->lineno++;
-        tok->col_offset = 0;
+        ADVANCE_LINENO();
         PyMem_Free(tok->buf);
         tok->buf = newtok;
         tok->cur = tok->buf;
@@ -1005,8 +1005,7 @@ tok_underflow_file(struct tok_state *tok) {
         *tok->inp = '\0';
     }
 
-    tok->lineno++;
-    tok->col_offset = 0;
+    ADVANCE_LINENO();
     if (tok->decoding_state != STATE_NORMAL) {
         if (tok->lineno > 2) {
             tok->decoding_state = STATE_NORMAL;
