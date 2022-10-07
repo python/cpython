@@ -1,16 +1,3 @@
-#! /usr/bin/env python3
-
-# Module ndiff version 1.7.0
-# Released to the public domain 08-Dec-2000,
-# by Tim Peters (tim.one@home.com).
-
-# Provided as-is; use at your own risk; no warranty; no promises; enjoy!
-
-# ndiff.py is now simply a front-end to the difflib.ndiff() function.
-# Originally, it contained the difflib.SequenceMatcher class as well.
-# This completes the raiding of reusable code from this formerly
-# self-contained script.
-
 """ndiff [-q] file1 file2
     or
 ndiff (-r1 | -r2) < ndiff_output > file1_or_file2
@@ -121,13 +108,4 @@ def restore(which):
     sys.stdout.writelines(restored)
 
 if __name__ == '__main__':
-    args = sys.argv[1:]
-    if "-profile" in args:
-        import profile, pstats
-        args.remove("-profile")
-        statf = "ndiff.pro"
-        profile.run("main(args)", statf)
-        stats = pstats.Stats(statf)
-        stats.strip_dirs().sort_stats('time').print_stats()
-    else:
-        main(args)
+    main(sys.argv[1:])
