@@ -1141,8 +1141,10 @@ class ContextTests(unittest.TestCase):
 
     def test_protocol(self):
         for proto in PROTOCOLS:
-            ctx = ssl.SSLContext(proto)
-            self.assertEqual(ctx.protocol, proto)
+            if has_tls_protocol(proto):
+                with warnings_helper.check_warnings():
+                    ctx = ssl.SSLContext(proto)
+                self.assertEqual(ctx.protocol, proto)
 
     def test_ciphers(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1524,7 +1526,10 @@ class ContextTests(unittest.TestCase):
 
     def test_session_stats(self):
         for proto in PROTOCOLS:
-            ctx = ssl.SSLContext(proto)
+            if not has_tls_protocol(proto):
+                continue
+            with warnings_helper.check_warnings():
+                ctx = ssl.SSLContext(proto)
             self.assertEqual(ctx.session_stats(), {
                 'number': 0,
                 'connect': 0,
@@ -1715,13 +1720,14 @@ class ContextTests(unittest.TestCase):
             self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
             self._assert_context_options(ctx)
 
-        ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1,
-                                         cert_reqs=ssl.CERT_REQUIRED,
-                                         check_hostname=True)
-        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
-        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
-        self.assertTrue(ctx.check_hostname)
-        self._assert_context_options(ctx)
+            with warnings_helper.check_warnings():
+                ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1,
+                                                cert_reqs=ssl.CERT_REQUIRED,
+                                                check_hostname=True)
+            self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+            self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+            self.assertTrue(ctx.check_hostname)
+            self._assert_context_options(ctx)
 
         ctx = ssl._create_stdlib_context(purpose=ssl.Purpose.CLIENT_AUTH)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS)
