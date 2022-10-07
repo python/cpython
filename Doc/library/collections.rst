@@ -1201,6 +1201,7 @@ variants of :func:`functools.lru_cache`:
 
 .. testcode::
 
+    from collections import OrderedDict
     from time import time
 
     class TimeBoundedLRU:

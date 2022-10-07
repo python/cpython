@@ -215,7 +215,7 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
 There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
 point numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a
 subtype of integers.  Integers have unlimited precision.  Floating point
-numbers are usually implemented using :c:type:`double` in C; information
+numbers are usually implemented using :c:expr:`double` in C; information
 about the precision and internal representation of floating point
 numbers for the machine on which your program is running is available
 in :data:`sys.float_info`.  Complex numbers have a real and imaginary
@@ -5523,7 +5523,7 @@ Verification:
    ...           '571186405732').to_bytes(53, 'big')
    ...
 
-.. versionadded:: 3.12
+.. versionadded:: 3.11
 
 Affected APIs
 -------------
@@ -5578,7 +5578,7 @@ Information about the default and minimum can be found in :attr:`sys.int_info`:
 * :data:`sys.int_info.str_digits_check_threshold <sys.int_info>` is the lowest
   accepted value for the limit (other than 0 which disables it).
 
-.. versionadded:: 3.12
+.. versionadded:: 3.11
 
 .. caution::
 

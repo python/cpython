@@ -1425,7 +1425,9 @@ Cursor objects
 
    .. method:: fetchone()
 
-      Return the next row of a query result set as a :class:`tuple`.
+      If :attr:`~Connection.row_factory` is ``None``,
+      return the next row query result set as a :class:`tuple`.
+      Else, pass it to the row factory and return its result.
       Return ``None`` if no more data is available.
 
 

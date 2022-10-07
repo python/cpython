@@ -39,6 +39,11 @@ provides backports of these new features to older versions of Python.
 For a summary of deprecated features and a deprecation timeline, please see
 `Deprecation Timeline of Major Features`_.
 
+.. seealso::
+
+   The documentation at https://typing.readthedocs.io/ serves as useful reference
+   for type system features, useful typing related tools and typing best practices.
+
 
 .. _relevant-peps:
 
@@ -625,6 +630,8 @@ These can be used as types in annotations and do not support ``[]``.
    strings could generate problems. For example, the two cases above
    that generate type checker errors could be vulnerable to an SQL
    injection attack.
+
+   See :pep:`675` for more details.
 
    .. versionadded:: 3.11
 
