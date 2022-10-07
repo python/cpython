@@ -7921,8 +7921,9 @@ maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 }
 
 static void
-scan_block_for_locals(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
+scan_block_for_locals(basicblock *b, basicblock ***sp)
 {
+    uint64_t unsafe_mask = b->b_visited_locals_mask;
     // mask & (1<<i) = 1 if local i is potentially uninitialized
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
@@ -7971,6 +7972,57 @@ scan_block_for_locals(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 }
 
 static int
+fast_scan_many_locals(basicblock *entryblock, int nlocals)
+{
+    assert(nlocals > 64);
+    Py_ssize_t *states = PyMem_Calloc(nlocals - 64, sizeof(Py_ssize_t));
+    if (states == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    Py_ssize_t blocknum = 0;
+    // state[oparg - 64] == blocknum if #oparg is guaranteed to be
+    // initialized, i.e., if it has had a previous LOAD_FAST or
+    // STORE_FAST within that basicblock (not followed by DELETE_FAST).
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        blocknum++;
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            assert(instr->i_opcode != EXTENDED_ARG);
+            assert(instr->i_opcode != EXTENDED_ARG_QUICK);
+            assert(instr->i_opcode != LOAD_FAST__LOAD_FAST);
+            assert(instr->i_opcode != STORE_FAST__LOAD_FAST);
+            assert(instr->i_opcode != LOAD_CONST__LOAD_FAST);
+            assert(instr->i_opcode != STORE_FAST__STORE_FAST);
+            assert(instr->i_opcode != LOAD_FAST__LOAD_CONST);
+            int arg = instr->i_oparg;
+            if (arg < 64) {
+                continue;
+            }
+            assert(arg >= 0);
+            switch (instr->i_opcode) {
+                case DELETE_FAST:
+                    states[arg - 64] = blocknum - 1;
+                    break;
+                case STORE_FAST:
+                    states[arg - 64] = blocknum;
+                    break;
+                case LOAD_FAST:
+                    if (states[arg - 64] != blocknum) {
+                        instr->i_opcode = LOAD_FAST_CHECK;
+                    }
+                    states[arg - 64] = blocknum;
+                    break;
+                case LOAD_FAST_CHECK:
+                    Py_UNREACHABLE();
+            }
+        }
+    }
+    PyMem_Free(states);
+    return 0;
+}
+
+static int
 add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
                                           struct compiler *c)
 {
@@ -7978,52 +8030,12 @@ add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
 
     if (nlocals > 64) {
-        // To avoid O(nlocals**2) compilation, locals beyond the first 64
-        // Are only analyzed one basicblock at a time. Initialization
-        // information is not passed between basicblocks.
-        // state[oparg - 64] == blocknum means
-        // local #oparg is guaranteed to be initialized.
-        Py_ssize_t *states = PyMem_Calloc(nlocals - 64, sizeof(Py_ssize_t));
-        if (states == NULL) {
-            PyErr_NoMemory();
+        // To avoid O(nlocals**2) compilation, locals beyond the first
+        // 64 are only analyzed one basicblock at a time: initialization
+        // info is not passed between basicblocks.
+        if (fast_scan_many_locals(entryblock, nlocals) < 0) {
             return -1;
         }
-        Py_ssize_t blocknum = 0;
-        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-            blocknum++;
-            for (int i = 0; i < b->b_iused; i++) {
-                struct instr *instr = &b->b_instr[i];
-                assert(instr->i_opcode != EXTENDED_ARG);
-                assert(instr->i_opcode != EXTENDED_ARG_QUICK);
-                assert(instr->i_opcode != LOAD_FAST__LOAD_FAST);
-                assert(instr->i_opcode != STORE_FAST__LOAD_FAST);
-                assert(instr->i_opcode != LOAD_CONST__LOAD_FAST);
-                assert(instr->i_opcode != STORE_FAST__STORE_FAST);
-                assert(instr->i_opcode != LOAD_FAST__LOAD_CONST);
-                int arg = instr->i_oparg;
-                if (arg < 64) {
-                    continue;
-                }
-                assert(arg >= 0);
-                switch (instr->i_opcode) {
-                    case DELETE_FAST:
-                        states[arg - 64] = blocknum - 1;
-                        break;
-                    case STORE_FAST:
-                        states[arg - 64] = blocknum;
-                        break;
-                    case LOAD_FAST:
-                        if (states[arg - 64] != blocknum) {
-                            instr->i_opcode = LOAD_FAST_CHECK;
-                        }
-                        states[arg - 64] = blocknum;
-                        break;
-                    case LOAD_FAST_CHECK:
-                        Py_UNREACHABLE();
-                }
-            }
-        }
-        PyMem_Free(states);
         nlocals = 64;
     }
     basicblock **stack = make_cfg_traversal_stack(entryblock);
@@ -8034,7 +8046,6 @@ add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
 
     // First origin of being uninitialized:
     // The non-parameter locals in the entry block.
-    // is there a bithack for this without UB?
     uint64_t start_mask = 0;
     for (int i = nparams; i < nlocals; i++) {
         start_mask |= (uint64_t)1 << i;
@@ -8042,9 +8053,10 @@ add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
     maybe_push(entryblock, start_mask, &sp);
 
     // Second origin of being uninitialized:
-    // There could be DELETE_FAST somewhere.
+    // There could be DELETE_FAST somewhere, so
+    // be sure to scan each basicblock at least once.
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        scan_block_for_locals(b, 0, &sp);
+        scan_block_for_locals(b, &sp);
     }
 
     // Now propagate the uncertainty from the origins we found: Use
@@ -8053,7 +8065,7 @@ add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
         basicblock *b = *--sp;
         // mark as no longer on stack
         b->b_visited = 0;
-        scan_block_for_locals(b, b->b_visited_locals_mask, &sp);
+        scan_block_for_locals(b, &sp);
     }
     PyMem_Free(stack);
     return 0;
