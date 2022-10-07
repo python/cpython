@@ -1,0 +1,3 @@
+Remove ``-c/--clock`` and ``-t/--time`` CLI options of :mod:`timeit`.
+The options had been deprecated since Python 3.3 and the functionality
+was removed in Python 3.7. Patch by Shantanu Jain.
