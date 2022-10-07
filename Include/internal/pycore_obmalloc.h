@@ -411,8 +411,6 @@ struct _obmalloc_pools {
     poolp used[2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8];
 };
 
-#define usedpools (_PyRuntime.obmalloc.pools.used)
-
 
 /*==========================================================================
 Arena management.

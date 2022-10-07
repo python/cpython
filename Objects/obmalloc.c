@@ -972,6 +972,8 @@ address_in_range(void *p, poolp pool)
 
 /*==========================================================================*/
 
+#define usedpools (_PyRuntime.obmalloc.pools.used)
+
 // Called when freelist is exhausted.  Extend the freelist if there is
 // space for a block.  Otherwise, remove this pool from usedpools.
 static void

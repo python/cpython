@@ -17,7 +17,7 @@ extern "C" {
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
 
-#define _PyRuntimeState_INIT \
+#define _PyRuntimeState_INIT(runtime) \
     { \
         .gilstate = { \
             .check_enabled = 1, \
@@ -30,7 +30,7 @@ extern "C" {
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
-        .obmalloc = _obmalloc_state_INIT, \
+        .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \

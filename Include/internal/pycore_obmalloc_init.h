@@ -9,44 +9,52 @@ extern "C" {
 #endif
 
 
-#define PTA(x)  ((poolp )((uint8_t *)&(usedpools[2*(x)]) - 2*sizeof(pymem_block *)))
-#define PT(x)   PTA(x), PTA(x)
+#define PTA(pools, x) \
+    ((poolp )((uint8_t *)&(pools.used[2*(x)]) - 2*sizeof(pymem_block *)))
+#define PT(p, x)   PTA(p, x), PTA(p, x)
 
-#define PT_8(start) \
-    PT(start), PT(start+1), PT(start+2), PT(start+3), PT(start+4), PT(start+5), PT(start+6), PT(start+7)
+#define PT_8(p, start) \
+    PT(p, start), \
+    PT(p, start+1), \
+    PT(p, start+2), \
+    PT(p, start+3), \
+    PT(p, start+4), \
+    PT(p, start+5), \
+    PT(p, start+6), \
+    PT(p, start+7)
 
 #if NB_SMALL_SIZE_CLASSES <= 8
-#  define _obmalloc_pools_INIT \
-    { PT_8(0) }
+#  define _obmalloc_pools_INIT(p) \
+    { PT_8(p, 0) }
 #elif NB_SMALL_SIZE_CLASSES <= 16
-#  define _obmalloc_pools_INIT \
-    { PT_8(0), PT_8(8) }
+#  define _obmalloc_pools_INIT(p) \
+    { PT_8(p, 0), PT_8(p, 8) }
 #elif NB_SMALL_SIZE_CLASSES <= 24
-#  define _obmalloc_pools_INIT \
-    { PT_8(0), PT_8(8), PT_8(16) }
+#  define _obmalloc_pools_INIT(p) \
+    { PT_8(p, 0), PT_8(p, 8), PT_8(p, 16) }
 #elif NB_SMALL_SIZE_CLASSES <= 32
-#  define _obmalloc_pools_INIT \
-    { PT_8(0), PT_8(8), PT_8(16), PT_8(24) }
+#  define _obmalloc_pools_INIT(p) \
+    { PT_8(p, 0), PT_8(p, 8), PT_8(p, 16), PT_8(p, 24) }
 #elif NB_SMALL_SIZE_CLASSES <= 40
-#  define _obmalloc_pools_INIT \
-    { PT_8(0), PT_8(8), PT_8(16), PT_8(24), PT_8(32) }
+#  define _obmalloc_pools_INIT(p) \
+    { PT_8(p, 0), PT_8(p, 8), PT_8(p, 16), PT_8(p, 24), PT_8(p, 32) }
 #elif NB_SMALL_SIZE_CLASSES <= 48
-#  define _obmalloc_pools_INIT \
-    { PT_8(0), PT_8(8), PT_8(16), PT_8(24), PT_8(32), PT_8(40) }
+#  define _obmalloc_pools_INIT(p) \
+    { PT_8(p, 0), PT_8(p, 8), PT_8(p, 16), PT_8(p, 24), PT_8(p, 32), PT_8(p, 40) }
 #elif NB_SMALL_SIZE_CLASSES <= 56
-#  define _obmalloc_pools_INIT \
-    { PT_8(0), PT_8(8), PT_8(16), PT_8(24), PT_8(32), PT_8(40), PT_8(48) }
+#  define _obmalloc_pools_INIT(p) \
+    { PT_8(p, 0), PT_8(p, 8), PT_8(p, 16), PT_8(p, 24), PT_8(p, 32), PT_8(p, 40), PT_8(p, 48) }
 #elif NB_SMALL_SIZE_CLASSES <= 64
-#  define _obmalloc_pools_INIT \
-    { PT_8(0), PT_8(8), PT_8(16), PT_8(24), PT_8(32), PT_8(40), PT_8(48), PT_8(56) }
+#  define _obmalloc_pools_INIT(p) \
+    { PT_8(p, 0), PT_8(p, 8), PT_8(p, 16), PT_8(p, 24), PT_8(p, 32), PT_8(p, 40), PT_8(p, 48), PT_8(p, 56) }
 #else
 #  error "NB_SMALL_SIZE_CLASSES should be less than 64"
 #endif
 
-#define _obmalloc_state_INIT \
+#define _obmalloc_state_INIT(obmalloc) \
     { \
         .pools = { \
-            .used = _obmalloc_pools_INIT, \
+            .used = _obmalloc_pools_INIT(obmalloc.pools), \
         }, \
     }
 

@@ -51,8 +51,11 @@ static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 /* We use "initial" if the runtime gets re-used
-   (e.g. Py_Finalize() followed by Py_Initialize(). */
-static const _PyRuntimeState initial = _PyRuntimeState_INIT;
+   (e.g. Py_Finalize() followed by Py_Initialize().
+   Note that we initialize "initial" relative to _PyRuntime,
+   to ensure pre-initialized pointers point to the active
+   runtime state (and not "initial"). */
+static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
 static int
