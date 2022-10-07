@@ -335,6 +335,11 @@ class Test_Csv(unittest.TestCase):
                           ['abc,3'], [[]],
                           quoting=csv.QUOTE_NONNUMERIC)
 
+    def test_read_skipinitialspace(self):
+        self._read_test(['no space, space,  spaces,\ttab'],
+                        [['no space', 'space', 'spaces', '\ttab']],
+                        skipinitialspace=True)
+
     def test_read_bigfield(self):
         # This exercises the buffer realloc functionality and field size
         # limits.
