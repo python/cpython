@@ -941,32 +941,34 @@ os.close(fd)
                 self.assertEqual(str(e), str(e2))
                 self.assertEqual(e.consumed, e2.consumed)
 
-class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
     async def test_wait_closed_on_close(self):
-        with test_utils.run_test_server() as httpd:
-            rd, wr = await asyncio.open_connection(*httpd.address)
+        async with test_utils.run_test_server() as httpd:
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address))
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-            data = await rd.read()
+            await rd.read()
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
             self.assertFalse(wr.is_closing())
             wr.close()
             self.assertTrue(wr.is_closing())
             await wr.wait_closed()
 
-    async def test_wait_closed_on_close_with_unread_data(self):
+    def test_wait_closed_on_close_with_unread_data(self):
         with test_utils.run_test_server() as httpd:
-            rd, wr = await asyncio.open_connection(*httpd.address)
+            rd, wr = self.loop.run_until_complete(
+                asyncio.open_connection(*httpd.address))
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
-            data = await rd.readline()
+            f = rd.readline()
+            data = self.loop.run_until_complete(f)
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             wr.close()
-            await wr.wait_closed()
+            self.loop.run_until_complete(wr.wait_closed())
 
-    async def test_async_writer_api(self):
+    def test_async_writer_api(self):
         async def inner(httpd):
             rd, wr = await asyncio.open_connection(*httpd.address)
 
@@ -978,10 +980,15 @@ class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
             wr.close()
             await wr.wait_closed()
 
-        with test_utils.run_test_server() as httpd:
-            await inner(httpd)
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
-    async def test_async_writer_api_exception_after_close(self):
+        with test_utils.run_test_server() as httpd:
+            self.loop.run_until_complete(inner(httpd))
+
+        self.assertEqual(messages, [])
+
+    def test_async_writer_api_exception_after_close(self):
         async def inner(httpd):
             rd, wr = await asyncio.open_connection(*httpd.address)
 
@@ -995,17 +1002,24 @@ class NewStreamTests2(unittest.IsolatedAsyncioTestCase):
                 wr.write(b'data')
                 await wr.drain()
 
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
         with test_utils.run_test_server() as httpd:
-            await inner(httpd)
+            self.loop.run_until_complete(inner(httpd))
+
+        self.assertEqual(messages, [])
 
     async def test_eof_feed_when_closing_writer(self):
         # See http://bugs.python.org/issue35065
-        with test_utils.run_test_server() as httpd:
+        async with test_utils.run_test_server() as httpd:
             rd, wr = await asyncio.open_connection(*httpd.address)
             wr.close()
-            await wr.wait_closed()
+            f = wr.wait_closed()
+            self.loop.run_until_complete(f)
             self.assertTrue(rd.at_eof())
-            data = await rd.read()
+            f = rd.read()
+            data = self.loop.run_until_complete(f)
             self.assertEqual(data, b'')
 
 
