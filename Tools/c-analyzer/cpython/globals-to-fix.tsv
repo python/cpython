@@ -423,19 +423,6 @@ Python/pathconfig.c	-	_Py_path_config	-
 
 # object allocator
 Objects/obmalloc.c	-	_Py_tracemalloc_config	-
-Objects/obmalloc.c	-	arena_map_bot_count	-
-Objects/obmalloc.c	-	arena_map_mid_count	-
-Objects/obmalloc.c	-	arena_map_root	-
-Objects/obmalloc.c	-	arenas	-
-Objects/obmalloc.c	-	maxarenas	-
-Objects/obmalloc.c	-	narenas_currently_allocated	-
-Objects/obmalloc.c	-	narenas_highwater	-
-Objects/obmalloc.c	-	nfp2lasta	-
-Objects/obmalloc.c	-	ntimes_arena_allocated	-
-Objects/obmalloc.c	-	raw_allocated_blocks	-
-Objects/obmalloc.c	-	unused_arena_objects	-
-Objects/obmalloc.c	-	usable_arenas	-
-Objects/obmalloc.c	-	usedpools	-
 Objects/obmalloc.c	new_arena	debug_stats	-
 
 # pre-allocated memory

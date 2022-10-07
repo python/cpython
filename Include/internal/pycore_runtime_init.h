@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_object.h"
 #include "pycore_pymem_init.h"
+#include "pycore_obmalloc_init.h"
 
 
 /* The static initializers defined here should only be used
@@ -29,6 +30,7 @@ extern "C" {
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
+        .obmalloc = _obmalloc_state_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
