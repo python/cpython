@@ -259,7 +259,7 @@ typedef struct basicblock_ {
     /* length of instruction array (b_instr) */
     int b_ialloc;
     /* Used by add_checks_for_loads_of_unknown_variables */
-    uint64_t b_visited_locals_mask;
+    uint64_t b_unsafe_locals_mask;
     /* Number of predecessors that a block has. */
     int b_predecessors;
     /* depth of stack upon entry of block, computed by stackdepth() */
@@ -7908,9 +7908,9 @@ maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
     // Push b if the unsafe mask is giving us any new information.
     // To avoid overflowing the stack, only allow each block once.
     // Use b->b_visited=1 to mean that b is currently on the stack.
-    uint64_t both = b->b_visited_locals_mask | unsafe_mask;
-    if (b->b_visited_locals_mask != both) {
-        b->b_visited_locals_mask = both;
+    uint64_t both = b->b_unsafe_locals_mask | unsafe_mask;
+    if (b->b_unsafe_locals_mask != both) {
+        b->b_unsafe_locals_mask = both;
         // More work left to do.
         if (!b->b_visited) {
             // not on the stack, so push it.
@@ -7923,7 +7923,7 @@ maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 static void
 scan_block_for_locals(basicblock *b, basicblock ***sp)
 {
-    uint64_t unsafe_mask = b->b_visited_locals_mask;
+    uint64_t unsafe_mask = b->b_unsafe_locals_mask;
     // mask & (1<<i) = 1 if local i is potentially uninitialized
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
