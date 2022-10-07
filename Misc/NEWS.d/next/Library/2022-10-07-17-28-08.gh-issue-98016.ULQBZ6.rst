@@ -1,0 +1,1 @@
+Removed some unused arguments in :mod:`urllib.request`.
