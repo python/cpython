@@ -704,7 +704,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
             self->state = ESCAPED_CHAR;
         }
         else if (c == ' ' && dialect->skipinitialspace)
-            /* ignore space at start of field */
+            /* ignore spaces at start of field */
             ;
         else if (c == dialect->delimiter) {
             /* save empty field */
@@ -1647,9 +1647,9 @@ PyDoc_STRVAR(csv_module_doc,
 "        quoting character.  It defaults to '\"'.\n"
 "    * delimiter - specifies a one-character string to use as the\n"
 "        field separator.  It defaults to ','.\n"
-"    * skipinitialspace - specifies how to interpret whitespace which\n"
-"        immediately follows a delimiter.  It defaults to False, which\n"
-"        means that whitespace immediately following a delimiter is part\n"
+"    * skipinitialspace - specifies how to interpret spaces which\n"
+"        immediately follow a delimiter.  It defaults to False, which\n"
+"        means that spaces immediately following a delimiter is part\n"
 "        of the following field.\n"
 "    * lineterminator -  specifies the character sequence which should\n"
 "        terminate rows.\n"
