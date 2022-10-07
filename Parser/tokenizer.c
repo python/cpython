@@ -37,6 +37,11 @@
 #define TABSIZE 8
 
 #define MAKE_TOKEN(token_type) token_setup(tok, token, token_type, p_start, p_end)
+#define MAKE_TYPE_COMMENT_TOKEN(token_type, col_offset, end_col_offset) (\
+                type_comment_token_setup(tok, token, token_type, col_offset, end_col_offset, p_start, p_end))
+#define ADVANCE_LINENO() \
+            tok->lineno++; \
+            tok->col_offset = 0;
 
 /* Forward */
 static struct tok_state *tok_new(void);
@@ -73,6 +78,8 @@ tok_new(void)
     tok->pendin = 0;
     tok->prompt = tok->nextprompt = NULL;
     tok->lineno = 0;
+    tok->starting_col_offset = -1;
+    tok->col_offset = -1;
     tok->level = 0;
     tok->altindstack[0] = 0;
     tok->decoding_state = STATE_INIT;
@@ -871,7 +878,7 @@ tok_underflow_string(struct tok_state *tok) {
         tok->buf = tok->cur;
     }
     tok->line_start = tok->cur;
-    tok->lineno++;
+    ADVANCE_LINENO();
     tok->inp = end;
     return 1;
 }
@@ -930,7 +937,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     else if (tok->start != NULL) {
         Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
         size_t size = strlen(newtok);
-        tok->lineno++;
+        ADVANCE_LINENO();
         if (!tok_reserve_buf(tok, size + 1)) {
             PyMem_Free(tok->buf);
             tok->buf = NULL;
@@ -943,7 +950,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->multi_line_start = tok->buf + cur_multi_line_start;
     }
     else {
-        tok->lineno++;
+        ADVANCE_LINENO();
         PyMem_Free(tok->buf);
         tok->buf = newtok;
         tok->cur = tok->buf;
@@ -998,7 +1005,7 @@ tok_underflow_file(struct tok_state *tok) {
         *tok->inp = '\0';
     }
 
-    tok->lineno++;
+    ADVANCE_LINENO();
     if (tok->decoding_state != STATE_NORMAL) {
         if (tok->lineno > 2) {
             tok->decoding_state = STATE_NORMAL;
@@ -1056,6 +1063,7 @@ tok_nextc(struct tok_state *tok)
     int rc;
     for (;;) {
         if (tok->cur != tok->inp) {
+            tok->col_offset++;
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
         if (tok->done != E_OK) {
@@ -1104,6 +1112,7 @@ tok_backup(struct tok_state *tok, int c)
         if ((int)(unsigned char)*tok->cur != c) {
             Py_FatalError("tok_backup: wrong character");
         }
+        tok->col_offset--;
     }
 }
 
@@ -1391,20 +1400,32 @@ tok_continuation_line(struct tok_state *tok) {
 }
 
 static int
+type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
+                         int end_col_offset, const char *start, const char *end)
+{
+    token->level = tok->level;
+    token->lineno = token->end_lineno = tok->lineno;
+    token->col_offset = col_offset;
+    token->end_col_offset = end_col_offset;
+    token->start = start;
+    token->end = end;
+    return type;
+}
+
+static int
 token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
 {
     assert((start == NULL && end == NULL) || (start != NULL && end != NULL));
     token->level = tok->level;
     token->lineno = type == STRING ? tok->first_lineno : tok->lineno;
     token->end_lineno = tok->lineno;
-    token->col_offset = -1;
-    token->end_col_offset = -1;
+    token->col_offset = token->end_col_offset = -1;
     token->start = start;
     token->end = end;
+
     if (start != NULL && end != NULL) {
-        const char *line_start = type == STRING ? tok->multi_line_start : tok->line_start;
-        token->col_offset = (start >= line_start) ? (int)(start - line_start) : -1;
-        token->end_col_offset = (end >= tok->line_start) ? (int)(end - tok->line_start) : -1;
+        token->col_offset = tok->starting_col_offset;
+        token->end_col_offset = tok->col_offset;
     }
     return type;
 }
@@ -1419,6 +1440,7 @@ tok_get(struct tok_state *tok, struct token *token)
     const char *p_end = NULL;
   nextline:
     tok->start = NULL;
+    tok->starting_col_offset = -1;
     blankline = 0;
 
     /* Get indentation level */
@@ -1518,6 +1540,7 @@ tok_get(struct tok_state *tok, struct token *token)
     }
 
     tok->start = tok->cur;
+    tok->starting_col_offset = tok->col_offset;
 
     /* Return pending indents/dedents */
     if (tok->pendin != 0) {
@@ -1565,10 +1588,12 @@ tok_get(struct tok_state *tok, struct token *token)
 
     /* Set start of current token */
     tok->start = tok->cur == NULL ? NULL : tok->cur - 1;
+    tok->starting_col_offset = tok->col_offset - 1;
 
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
         const char *prefix, *p, *type_start;
+        int current_starting_col_offset;
 
         while (c != EOF && c != '\n') {
             c = tok_nextc(tok);
@@ -1576,14 +1601,17 @@ tok_get(struct tok_state *tok, struct token *token)
 
         if (tok->type_comments) {
             p = tok->start;
+            current_starting_col_offset = tok->starting_col_offset;
             prefix = type_comment_prefix;
             while (*prefix && p < tok->cur) {
                 if (*prefix == ' ') {
                     while (*p == ' ' || *p == '\t') {
                         p++;
+                        current_starting_col_offset++;
                     }
                 } else if (*prefix == *p) {
                     p++;
+                    current_starting_col_offset++;
                 } else {
                     break;
                 }
@@ -1594,7 +1622,9 @@ tok_get(struct tok_state *tok, struct token *token)
             /* This is a type comment if we matched all of type_comment_prefix. */
             if (!*prefix) {
                 int is_type_ignore = 1;
+                // +6 in order to skip the word 'ignore'
                 const char *ignore_end = p + 6;
+                const int ignore_end_col_offset = current_starting_col_offset + 6;
                 tok_backup(tok, c);  /* don't eat the newline or EOF */
 
                 type_start = p;
@@ -1615,11 +1645,11 @@ tok_get(struct tok_state *tok, struct token *token)
                         tok_nextc(tok);
                         tok->atbol = 1;
                     }
-                    return MAKE_TOKEN(TYPE_IGNORE);
+                    return MAKE_TYPE_COMMENT_TOKEN(TYPE_IGNORE, ignore_end_col_offset, tok->col_offset);
                 } else {
                     p_start = type_start;
                     p_end = tok->cur;
-                    return MAKE_TOKEN(TYPE_COMMENT);
+                    return MAKE_TYPE_COMMENT_TOKEN(TYPE_COMMENT, current_starting_col_offset, tok->col_offset);
                 }
             }
         }
