@@ -286,6 +286,7 @@ Pending Removal in Python 3.14
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
 
+
 Pending Removal in Future Versions
 ----------------------------------
 
