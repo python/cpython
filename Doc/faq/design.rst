@@ -62,7 +62,7 @@ and think it is a bug in Python.  It's not.  This has little to do with Python,
 and much more to do with how the underlying platform handles floating-point
 numbers.
 
-The :class:`float` type in CPython uses a C :c:type:`double` for storage.  A
+The :class:`float` type in CPython uses a C ``double`` for storage.  A
 :class:`float` object's value is stored in binary floating-point with a fixed
 precision (typically 53 bits) and Python uses C operations, which in turn rely
 on the hardware implementation in the processor, to perform floating-point
