@@ -280,8 +280,8 @@ Pending Removal in Python 3.14
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases using the C API.
 
-* ``__package__`` will cease to be set or taken into consideration by
-  the import system (:gh:`97879`).
+* ``__package__`` and ``__cached__`` will cease to be set or taken
+  into consideration by the import system (:gh:`97879`).
 
 
 Pending Removal in Future Versions
@@ -588,7 +588,7 @@ Porting to Python 3.12
   ``tp_weaklistoffset``, respectively.
   The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
   supported, but does not fully support multiple inheritance
-  (:gh: `95589`), and performance may be worse.
+  (:gh:`95589`), and performance may be worse.
   Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
   :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.

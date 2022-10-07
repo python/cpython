@@ -3252,6 +3252,7 @@ handle_eval_breaker:
             uint16_t hint = cache->index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
             PyObject *value, *old_value;
+            uint64_t new_version;
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
@@ -3259,6 +3260,7 @@ handle_eval_breaker:
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 STACK_SHRINK(1);
                 value = POP();
+                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             else {
@@ -3268,6 +3270,7 @@ handle_eval_breaker:
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 STACK_SHRINK(1);
                 value = POP();
+                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             Py_DECREF(old_value);
@@ -3277,7 +3280,7 @@ handle_eval_breaker:
                 _PyObject_GC_TRACK(dict);
             }
             /* PEP 509 */
-            dict->ma_version_tag = DICT_NEXT_VERSION();
+            dict->ma_version_tag = new_version;
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
             DISPATCH();

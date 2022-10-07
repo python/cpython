@@ -1929,7 +1929,7 @@ is not possible due to its implementation being opaque at build time.
    Free the given *key* allocated by :c:func:`PyThread_tss_alloc`, after
    first calling :c:func:`PyThread_tss_delete` to ensure any associated
    thread locals have been unassigned. This is a no-op if the *key*
-   argument is `NULL`.
+   argument is ``NULL``.
 
    .. note::
       A freed key becomes a dangling pointer. You should reset the key to
