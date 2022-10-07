@@ -118,7 +118,7 @@ class FinderTests:
 
     def test_finder_with_find_module(self):
         class TestFinder:
-            def find_module(self, fullname):
+            def find_spec(self, fullname):
                 return self.to_return
         failing_finder = TestFinder()
         failing_finder.to_return = None
@@ -140,8 +140,10 @@ class FinderTests:
         class TestFinder:
             loader = None
             portions = []
-            def find_loader(self, fullname):
-                return self.loader, self.portions
+            def find_spec(self, fullname):
+                spec = self.machinery.ModuleSpec(fullname, self.loader)
+                spec.submodule_search_locations = self.portions
+                return spec
         path = 'testing path'
         with util.import_state(path_importer_cache={path: TestFinder()}):
             with warnings.catch_warnings():
@@ -228,9 +230,9 @@ class FinderTests:
 
 class FindModuleTests(FinderTests):
     def find(self, *args, **kwargs):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return self.machinery.PathFinder.find_module(*args, **kwargs)
+        spec = self.machinery.PathFinder.find_spec(*args, **kwargs)
+        return None if spec is None else spec.loader
+
     def check_found(self, found, importer):
         self.assertIs(found, importer)
 
@@ -264,7 +266,7 @@ class PathEntryFinderTests:
                     raise ImportError
 
             @staticmethod
-            def find_module(fullname):
+            def find_spec(fullname):
                 return None
 
 
@@ -284,7 +286,7 @@ class PathEntryFinderTests:
                     raise ImportError
 
             @staticmethod
-            def find_module(fullname):
+            def find_spec(fullname):
                 return None
 
 
