@@ -723,7 +723,7 @@ hashlib
 IDLE and idlelib
 ----------------
 
-* Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+* Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
   Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 * Include prompts when saving Shell with inputs and outputs.
