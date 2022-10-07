@@ -93,7 +93,7 @@ bound into a function.
 .. c:function:: PyObject* PyCode_GetVarnames(PyCodeObject *co)
 
    Equivalent to the Python code ``getattr(co, 'co_varnames')``.
-   Returns a strong reference to a :c:type:`PyTupleObject` containing the names of
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
    the local variables. On error, ``NULL`` is returned and an exception
    is raised.
 
@@ -102,7 +102,7 @@ bound into a function.
 .. c:function:: PyObject* PyCode_GetCellvars(PyCodeObject *co)
 
    Equivalent to the Python code ``getattr(co, 'co_cellvars')``.
-   Returns a strong reference to a :c:type:`PyTupleObject` containing the names of
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
    the local variables that are referenced by nested functions. On error, ``NULL``
    is returned and an exception is raised.
 
@@ -111,7 +111,7 @@ bound into a function.
 .. c:function:: PyObject* PyCode_GetFreevars(PyCodeObject *co)
 
    Equivalent to the Python code ``getattr(co, 'co_freevars')``.
-   Returns a strong reference to a :c:type:`PyTupleObject` containing the names of
+   Returns a new reference to a :c:type:`PyTupleObject` containing the names of
    the free variables. On error, ``NULL`` is returned and an exception is raised.
 
    .. versionadded:: 3.11

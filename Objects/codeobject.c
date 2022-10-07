@@ -156,7 +156,7 @@ init_co_cached(PyCodeObject *self) {
         self->_co_cached = PyMem_New(_PyCoCached, 1);
         if (self->_co_cached == NULL) {
             PyErr_NoMemory();
-            return 1;
+            return -1;
         }
         self->_co_cached->_co_code = NULL;
         self->_co_cached->_co_cellvars = NULL;
@@ -1383,23 +1383,29 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
  * other PyCodeObject accessor functions
  ******************/
 
-PyObject *
-_PyCode_GetVarnames(PyCodeObject *co)
+static PyObject *
+get_cached_locals(PyCodeObject *co, PyObject **cached_field, _PyLocals_Kind kind, int num)
 {
+    assert(cached_field != NULL);
     if (init_co_cached(co)) {
         return NULL;
     }
-    if (co->_co_cached->_co_varnames != NULL) {
-        return Py_NewRef(co->_co_cached->_co_varnames);
+    if (*cached_field != NULL) {
+        return Py_NewRef(*cached_field);
     }
-    assert(co->_co_cached->_co_varnames == NULL);
-    PyObject *varnames = get_localsplus_names(co, CO_FAST_LOCAL, co->co_nlocals);
+    assert(*cached_field == NULL);
+    PyObject *varnames = get_localsplus_names(co, kind, num);
     if (varnames == NULL) {
         return NULL;
     }
-    co->_co_cached->_co_varnames = Py_NewRef(varnames);
+    *cached_field = Py_NewRef(varnames);
     return varnames;
+}
 
+PyObject *
+_PyCode_GetVarnames(PyCodeObject *co)
+{
+    return get_cached_locals(co, &co->_co_cached->_co_varnames, CO_FAST_LOCAL, co->co_nlocals);
 }
 
 PyObject *
@@ -1411,16 +1417,7 @@ PyCode_GetVarnames(PyCodeObject *code)
 PyObject *
 _PyCode_GetCellvars(PyCodeObject *co)
 {
-    if (init_co_cached(co)) {
-        return NULL;
-    }
-    if (co->_co_cached->_co_cellvars != NULL) {
-        return Py_NewRef(co->_co_cached->_co_cellvars);
-    }
-    PyObject *cellvars = get_localsplus_names(co, CO_FAST_CELL, co->co_ncellvars);
-    assert(co->_co_cached->_co_cellvars == NULL);
-    co->_co_cached->_co_cellvars = Py_NewRef(cellvars);
-    return cellvars;
+    return get_cached_locals(co, &co->_co_cached->_co_cellvars, CO_FAST_CELL, co->co_ncellvars);
 }
 
 PyObject *
@@ -1432,16 +1429,7 @@ PyCode_GetCellvars(PyCodeObject *code)
 PyObject *
 _PyCode_GetFreevars(PyCodeObject *co)
 {
-    if (init_co_cached(co)) {
-        return NULL;
-    }
-    if (co->_co_cached->_co_freevars != NULL) {
-        return Py_NewRef(co->_co_cached->_co_freevars);
-    }
-    PyObject *freevars = get_localsplus_names(co, CO_FAST_FREE, co->co_nfreevars);
-    assert(co->_co_cached->_co_freevars == NULL);
-    co->_co_cached->_co_freevars = Py_NewRef(freevars);
-    return freevars;
+    return get_cached_locals(co, &co->_co_cached->_co_freevars, CO_FAST_FREE, co->co_nfreevars);
 }
 
 PyObject *
