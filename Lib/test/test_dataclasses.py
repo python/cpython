@@ -12,9 +12,9 @@ import types
 import weakref
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
+from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
-from collections import deque, OrderedDict, namedtuple
+from collections import deque, OrderedDict, namedtuple, defaultdict
 from functools import total_ordering
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
@@ -1676,6 +1676,23 @@ class TestCase(unittest.TestCase):
         # Make sure that t has been copied, not used directly.
         self.assertIsNot(d['f'], t)
         self.assertEqual(d['f'].my_a(), 6)
+
+    def test_helper_asdict_defaultdict(self):
+        # Ensure asdict() does not throw exceptions when a
+        # defaultdict is a member of a dataclass
+
+        @dataclass
+        class C:
+            mp: DefaultDict[str, List]
+
+
+        dd = defaultdict(list)
+        dd["x"].append(12)
+        c = C(mp=dd)
+        d = asdict(c)
+
+        assert d == {"mp": {"x": [12]}}
+        assert d["mp"] is not c.mp  # make sure defaultdict is copied
 
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
