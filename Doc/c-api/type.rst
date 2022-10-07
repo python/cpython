@@ -40,7 +40,7 @@ Type Objects
 .. c:function:: unsigned long PyType_GetFlags(PyTypeObject* type)
 
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
-   meant for use with `Py_LIMITED_API`; the individual flag bits are
+   meant for use with ``Py_LIMITED_API``; the individual flag bits are
    guaranteed to be stable across Python releases, but access to
    :c:member:`~PyTypeObject.tp_flags` itself is not part of the limited API.
 
@@ -327,9 +327,9 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_weaklist`
       * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+        (use :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
       * :c:member:`~PyTypeObject.tp_dictoffset`
-        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+        (use :const:`Py_TPFLAGS_MANAGED_DICT` instead)
       * :c:member:`~PyTypeObject.tp_vectorcall_offset`
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)
 
