@@ -5698,15 +5698,18 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     @classmethod
     def _test_list(cls, obj):
-        assert obj[0] == 5
-        assert obj.count(5) == 1
-        assert obj.index(5) == 0
+        def check(a, b):
+            if a != b:
+                raise AssertionError(f"{a} != {b}")
+        check(obj[0], 5)
+        check(obj.count(5), 1)
+        check(obj.index(5), 0)
         obj.sort()
         obj.reverse()
         for x in obj:
             pass
-        assert len(obj) == 1
-        assert obj.pop(0) == 5
+        check(len(obj), 1)
+        check(obj.pop(0), 5)
 
     def test_list(self):
         o = self.manager.list()
@@ -5717,14 +5720,17 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     @classmethod
     def _test_dict(cls, obj):
-        assert len(obj) == 1
-        assert obj['foo'] == 5
-        assert obj.get('foo') == 5
-        assert list(obj.items()) == [('foo', 5)]
-        assert list(obj.keys()) == ['foo']
-        assert list(obj.values()) == [5]
-        assert obj.copy() == {'foo': 5}
-        assert obj.popitem() == ('foo', 5)
+        def check(a, b):
+            if a != b:
+                raise AssertionError(f"{a} != {b}")
+        check(len(obj), 1)
+        check(obj['foo'], 5)
+        check(obj.get('foo'), 5)
+        check(list(obj.items()), [('foo', 5)])
+        check(list(obj.keys()), ['foo'])
+        check(list(obj.values()), [5])
+        check(obj.copy(), {'foo': 5})
+        check(obj.popitem(), ('foo', 5))
 
     def test_dict(self):
         o = self.manager.dict()
