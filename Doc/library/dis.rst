@@ -367,7 +367,7 @@ details of bytecode instructions as :class:`Instruction` instances:
 
 .. class:: Positions
 
-   In case the information is not available, some fields might be `None`.
+   In case the information is not available, some fields might be ``None``.
 
    .. data:: lineno
    .. data:: end_lineno
