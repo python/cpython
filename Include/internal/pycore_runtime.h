@@ -93,8 +93,8 @@ typedef struct pyruntimestate {
            in the operation of the runtime.  It is also often the only
            interpreter. */
         PyInterpreterState *main;
-        /* _next_interp_id is an auto-numbered sequence of small
-           integers.  It gets initialized in _PyInterpreterState_Init(),
+        /* next_id is an auto-numbered sequence of small
+           integers.  It gets initialized in _PyInterpreterState_Enable(),
            which is called in Py_Initialize(), and used in
            PyInterpreterState_New().  A negative interpreter ID
            indicates an error occurred.  The main interpreter will

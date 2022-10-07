@@ -2090,6 +2090,28 @@ class TestPosixWeaklinking(unittest.TestCase):
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.mkdir("dir", dir_fd=0)
 
+    def test_mkfifo(self):
+        self._verify_available("HAVE_MKFIFOAT")
+        if self.mac_ver >= (13, 0):
+            self.assertIn("HAVE_MKFIFOAT", posix._have_functions)
+
+        else:
+            self.assertNotIn("HAVE_MKFIFOAT", posix._have_functions)
+
+            with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
+                os.mkfifo("path", dir_fd=0)
+
+    def test_mknod(self):
+        self._verify_available("HAVE_MKNODAT")
+        if self.mac_ver >= (13, 0):
+            self.assertIn("HAVE_MKNODAT", posix._have_functions)
+
+        else:
+            self.assertNotIn("HAVE_MKNODAT", posix._have_functions)
+
+            with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
+                os.mknod("path", dir_fd=0)
+
     def test_rename_replace(self):
         self._verify_available("HAVE_RENAMEAT")
         if self.mac_ver >= (10, 10):

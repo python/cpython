@@ -575,9 +575,10 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. note::
 
       This function is not thread-safe when custom archivers registered
-      with :func:`register_archive_format` are used.  In this case it
+      with :func:`register_archive_format` do not support the *root_dir*
+      argument.  In this case it
       temporarily changes the current working directory of the process
-      to perform archiving.
+      to *root_dir* to perform archiving.
 
    .. versionchanged:: 3.8
       The modern pax (POSIX.1-2001) format is now used instead of
@@ -614,11 +615,20 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Further arguments are passed as keyword arguments: *owner*, *group*,
    *dry_run* and *logger* (as passed in :func:`make_archive`).
 
+   If *function* has the custom attribute ``function.supports_root_dir`` set to ``True``,
+   the *root_dir* argument is passed as a keyword argument.
+   Otherwise the current working directory of the process is temporarily
+   changed to *root_dir* before calling *function*.
+   In this case :func:`make_archive` is not thread-safe.
+
    If given, *extra_args* is a sequence of ``(name, value)`` pairs that will be
    used as extra keywords arguments when the archiver callable is used.
 
    *description* is used by :func:`get_archive_formats` which returns the
    list of archivers.  Defaults to an empty string.
+
+   .. versionchanged:: 3.12
+      Added support for functions supporting the *root_dir* argument.
 
 
 .. function:: unregister_archive_format(name)

@@ -807,6 +807,7 @@ extern "C" {
                 INIT_ID(code), \
                 INIT_ID(command), \
                 INIT_ID(comment_factory), \
+                INIT_ID(consts), \
                 INIT_ID(context), \
                 INIT_ID(cookie), \
                 INIT_ID(copy), \
@@ -916,6 +917,7 @@ extern "C" {
                 INIT_ID(input), \
                 INIT_ID(insert_comments), \
                 INIT_ID(insert_pis), \
+                INIT_ID(instructions), \
                 INIT_ID(intern), \
                 INIT_ID(intersection), \
                 INIT_ID(isatty), \
@@ -958,6 +960,7 @@ extern "C" {
                 INIT_ID(mapping), \
                 INIT_ID(match), \
                 INIT_ID(max_length), \
+                INIT_ID(maxdigits), \
                 INIT_ID(maxevents), \
                 INIT_ID(maxmem), \
                 INIT_ID(maxsplit), \
@@ -974,6 +977,7 @@ extern "C" {
                 INIT_ID(modules), \
                 INIT_ID(mro), \
                 INIT_ID(msg), \
+                INIT_ID(mycmp), \
                 INIT_ID(n), \
                 INIT_ID(n_arg), \
                 INIT_ID(n_fields), \
@@ -1000,6 +1004,7 @@ extern "C" {
                 INIT_ID(offset_src), \
                 INIT_ID(on_type_read), \
                 INIT_ID(onceregistry), \
+                INIT_ID(only_keys), \
                 INIT_ID(oparg), \
                 INIT_ID(opcode), \
                 INIT_ID(open), \
@@ -1034,6 +1039,7 @@ extern "C" {
                 INIT_ID(protocol), \
                 INIT_ID(ps1), \
                 INIT_ID(ps2), \
+                INIT_ID(query), \
                 INIT_ID(quotetabs), \
                 INIT_ID(r), \
                 INIT_ID(raw), \
@@ -1285,134 +1291,134 @@ extern "C" {
                 _PyASCIIObject_INIT("\x7f"), \
             }, \
             .latin1 = { \
-                _PyUnicode_LATIN1_INIT("\x80"), \
-                _PyUnicode_LATIN1_INIT("\x81"), \
-                _PyUnicode_LATIN1_INIT("\x82"), \
-                _PyUnicode_LATIN1_INIT("\x83"), \
-                _PyUnicode_LATIN1_INIT("\x84"), \
-                _PyUnicode_LATIN1_INIT("\x85"), \
-                _PyUnicode_LATIN1_INIT("\x86"), \
-                _PyUnicode_LATIN1_INIT("\x87"), \
-                _PyUnicode_LATIN1_INIT("\x88"), \
-                _PyUnicode_LATIN1_INIT("\x89"), \
-                _PyUnicode_LATIN1_INIT("\x8a"), \
-                _PyUnicode_LATIN1_INIT("\x8b"), \
-                _PyUnicode_LATIN1_INIT("\x8c"), \
-                _PyUnicode_LATIN1_INIT("\x8d"), \
-                _PyUnicode_LATIN1_INIT("\x8e"), \
-                _PyUnicode_LATIN1_INIT("\x8f"), \
-                _PyUnicode_LATIN1_INIT("\x90"), \
-                _PyUnicode_LATIN1_INIT("\x91"), \
-                _PyUnicode_LATIN1_INIT("\x92"), \
-                _PyUnicode_LATIN1_INIT("\x93"), \
-                _PyUnicode_LATIN1_INIT("\x94"), \
-                _PyUnicode_LATIN1_INIT("\x95"), \
-                _PyUnicode_LATIN1_INIT("\x96"), \
-                _PyUnicode_LATIN1_INIT("\x97"), \
-                _PyUnicode_LATIN1_INIT("\x98"), \
-                _PyUnicode_LATIN1_INIT("\x99"), \
-                _PyUnicode_LATIN1_INIT("\x9a"), \
-                _PyUnicode_LATIN1_INIT("\x9b"), \
-                _PyUnicode_LATIN1_INIT("\x9c"), \
-                _PyUnicode_LATIN1_INIT("\x9d"), \
-                _PyUnicode_LATIN1_INIT("\x9e"), \
-                _PyUnicode_LATIN1_INIT("\x9f"), \
-                _PyUnicode_LATIN1_INIT("\xa0"), \
-                _PyUnicode_LATIN1_INIT("\xa1"), \
-                _PyUnicode_LATIN1_INIT("\xa2"), \
-                _PyUnicode_LATIN1_INIT("\xa3"), \
-                _PyUnicode_LATIN1_INIT("\xa4"), \
-                _PyUnicode_LATIN1_INIT("\xa5"), \
-                _PyUnicode_LATIN1_INIT("\xa6"), \
-                _PyUnicode_LATIN1_INIT("\xa7"), \
-                _PyUnicode_LATIN1_INIT("\xa8"), \
-                _PyUnicode_LATIN1_INIT("\xa9"), \
-                _PyUnicode_LATIN1_INIT("\xaa"), \
-                _PyUnicode_LATIN1_INIT("\xab"), \
-                _PyUnicode_LATIN1_INIT("\xac"), \
-                _PyUnicode_LATIN1_INIT("\xad"), \
-                _PyUnicode_LATIN1_INIT("\xae"), \
-                _PyUnicode_LATIN1_INIT("\xaf"), \
-                _PyUnicode_LATIN1_INIT("\xb0"), \
-                _PyUnicode_LATIN1_INIT("\xb1"), \
-                _PyUnicode_LATIN1_INIT("\xb2"), \
-                _PyUnicode_LATIN1_INIT("\xb3"), \
-                _PyUnicode_LATIN1_INIT("\xb4"), \
-                _PyUnicode_LATIN1_INIT("\xb5"), \
-                _PyUnicode_LATIN1_INIT("\xb6"), \
-                _PyUnicode_LATIN1_INIT("\xb7"), \
-                _PyUnicode_LATIN1_INIT("\xb8"), \
-                _PyUnicode_LATIN1_INIT("\xb9"), \
-                _PyUnicode_LATIN1_INIT("\xba"), \
-                _PyUnicode_LATIN1_INIT("\xbb"), \
-                _PyUnicode_LATIN1_INIT("\xbc"), \
-                _PyUnicode_LATIN1_INIT("\xbd"), \
-                _PyUnicode_LATIN1_INIT("\xbe"), \
-                _PyUnicode_LATIN1_INIT("\xbf"), \
-                _PyUnicode_LATIN1_INIT("\xc0"), \
-                _PyUnicode_LATIN1_INIT("\xc1"), \
-                _PyUnicode_LATIN1_INIT("\xc2"), \
-                _PyUnicode_LATIN1_INIT("\xc3"), \
-                _PyUnicode_LATIN1_INIT("\xc4"), \
-                _PyUnicode_LATIN1_INIT("\xc5"), \
-                _PyUnicode_LATIN1_INIT("\xc6"), \
-                _PyUnicode_LATIN1_INIT("\xc7"), \
-                _PyUnicode_LATIN1_INIT("\xc8"), \
-                _PyUnicode_LATIN1_INIT("\xc9"), \
-                _PyUnicode_LATIN1_INIT("\xca"), \
-                _PyUnicode_LATIN1_INIT("\xcb"), \
-                _PyUnicode_LATIN1_INIT("\xcc"), \
-                _PyUnicode_LATIN1_INIT("\xcd"), \
-                _PyUnicode_LATIN1_INIT("\xce"), \
-                _PyUnicode_LATIN1_INIT("\xcf"), \
-                _PyUnicode_LATIN1_INIT("\xd0"), \
-                _PyUnicode_LATIN1_INIT("\xd1"), \
-                _PyUnicode_LATIN1_INIT("\xd2"), \
-                _PyUnicode_LATIN1_INIT("\xd3"), \
-                _PyUnicode_LATIN1_INIT("\xd4"), \
-                _PyUnicode_LATIN1_INIT("\xd5"), \
-                _PyUnicode_LATIN1_INIT("\xd6"), \
-                _PyUnicode_LATIN1_INIT("\xd7"), \
-                _PyUnicode_LATIN1_INIT("\xd8"), \
-                _PyUnicode_LATIN1_INIT("\xd9"), \
-                _PyUnicode_LATIN1_INIT("\xda"), \
-                _PyUnicode_LATIN1_INIT("\xdb"), \
-                _PyUnicode_LATIN1_INIT("\xdc"), \
-                _PyUnicode_LATIN1_INIT("\xdd"), \
-                _PyUnicode_LATIN1_INIT("\xde"), \
-                _PyUnicode_LATIN1_INIT("\xdf"), \
-                _PyUnicode_LATIN1_INIT("\xe0"), \
-                _PyUnicode_LATIN1_INIT("\xe1"), \
-                _PyUnicode_LATIN1_INIT("\xe2"), \
-                _PyUnicode_LATIN1_INIT("\xe3"), \
-                _PyUnicode_LATIN1_INIT("\xe4"), \
-                _PyUnicode_LATIN1_INIT("\xe5"), \
-                _PyUnicode_LATIN1_INIT("\xe6"), \
-                _PyUnicode_LATIN1_INIT("\xe7"), \
-                _PyUnicode_LATIN1_INIT("\xe8"), \
-                _PyUnicode_LATIN1_INIT("\xe9"), \
-                _PyUnicode_LATIN1_INIT("\xea"), \
-                _PyUnicode_LATIN1_INIT("\xeb"), \
-                _PyUnicode_LATIN1_INIT("\xec"), \
-                _PyUnicode_LATIN1_INIT("\xed"), \
-                _PyUnicode_LATIN1_INIT("\xee"), \
-                _PyUnicode_LATIN1_INIT("\xef"), \
-                _PyUnicode_LATIN1_INIT("\xf0"), \
-                _PyUnicode_LATIN1_INIT("\xf1"), \
-                _PyUnicode_LATIN1_INIT("\xf2"), \
-                _PyUnicode_LATIN1_INIT("\xf3"), \
-                _PyUnicode_LATIN1_INIT("\xf4"), \
-                _PyUnicode_LATIN1_INIT("\xf5"), \
-                _PyUnicode_LATIN1_INIT("\xf6"), \
-                _PyUnicode_LATIN1_INIT("\xf7"), \
-                _PyUnicode_LATIN1_INIT("\xf8"), \
-                _PyUnicode_LATIN1_INIT("\xf9"), \
-                _PyUnicode_LATIN1_INIT("\xfa"), \
-                _PyUnicode_LATIN1_INIT("\xfb"), \
-                _PyUnicode_LATIN1_INIT("\xfc"), \
-                _PyUnicode_LATIN1_INIT("\xfd"), \
-                _PyUnicode_LATIN1_INIT("\xfe"), \
-                _PyUnicode_LATIN1_INIT("\xff"), \
+                _PyUnicode_LATIN1_INIT("\x80", "\xc2\x80"), \
+                _PyUnicode_LATIN1_INIT("\x81", "\xc2\x81"), \
+                _PyUnicode_LATIN1_INIT("\x82", "\xc2\x82"), \
+                _PyUnicode_LATIN1_INIT("\x83", "\xc2\x83"), \
+                _PyUnicode_LATIN1_INIT("\x84", "\xc2\x84"), \
+                _PyUnicode_LATIN1_INIT("\x85", "\xc2\x85"), \
+                _PyUnicode_LATIN1_INIT("\x86", "\xc2\x86"), \
+                _PyUnicode_LATIN1_INIT("\x87", "\xc2\x87"), \
+                _PyUnicode_LATIN1_INIT("\x88", "\xc2\x88"), \
+                _PyUnicode_LATIN1_INIT("\x89", "\xc2\x89"), \
+                _PyUnicode_LATIN1_INIT("\x8a", "\xc2\x8a"), \
+                _PyUnicode_LATIN1_INIT("\x8b", "\xc2\x8b"), \
+                _PyUnicode_LATIN1_INIT("\x8c", "\xc2\x8c"), \
+                _PyUnicode_LATIN1_INIT("\x8d", "\xc2\x8d"), \
+                _PyUnicode_LATIN1_INIT("\x8e", "\xc2\x8e"), \
+                _PyUnicode_LATIN1_INIT("\x8f", "\xc2\x8f"), \
+                _PyUnicode_LATIN1_INIT("\x90", "\xc2\x90"), \
+                _PyUnicode_LATIN1_INIT("\x91", "\xc2\x91"), \
+                _PyUnicode_LATIN1_INIT("\x92", "\xc2\x92"), \
+                _PyUnicode_LATIN1_INIT("\x93", "\xc2\x93"), \
+                _PyUnicode_LATIN1_INIT("\x94", "\xc2\x94"), \
+                _PyUnicode_LATIN1_INIT("\x95", "\xc2\x95"), \
+                _PyUnicode_LATIN1_INIT("\x96", "\xc2\x96"), \
+                _PyUnicode_LATIN1_INIT("\x97", "\xc2\x97"), \
+                _PyUnicode_LATIN1_INIT("\x98", "\xc2\x98"), \
+                _PyUnicode_LATIN1_INIT("\x99", "\xc2\x99"), \
+                _PyUnicode_LATIN1_INIT("\x9a", "\xc2\x9a"), \
+                _PyUnicode_LATIN1_INIT("\x9b", "\xc2\x9b"), \
+                _PyUnicode_LATIN1_INIT("\x9c", "\xc2\x9c"), \
+                _PyUnicode_LATIN1_INIT("\x9d", "\xc2\x9d"), \
+                _PyUnicode_LATIN1_INIT("\x9e", "\xc2\x9e"), \
+                _PyUnicode_LATIN1_INIT("\x9f", "\xc2\x9f"), \
+                _PyUnicode_LATIN1_INIT("\xa0", "\xc2\xa0"), \
+                _PyUnicode_LATIN1_INIT("\xa1", "\xc2\xa1"), \
+                _PyUnicode_LATIN1_INIT("\xa2", "\xc2\xa2"), \
+                _PyUnicode_LATIN1_INIT("\xa3", "\xc2\xa3"), \
+                _PyUnicode_LATIN1_INIT("\xa4", "\xc2\xa4"), \
+                _PyUnicode_LATIN1_INIT("\xa5", "\xc2\xa5"), \
+                _PyUnicode_LATIN1_INIT("\xa6", "\xc2\xa6"), \
+                _PyUnicode_LATIN1_INIT("\xa7", "\xc2\xa7"), \
+                _PyUnicode_LATIN1_INIT("\xa8", "\xc2\xa8"), \
+                _PyUnicode_LATIN1_INIT("\xa9", "\xc2\xa9"), \
+                _PyUnicode_LATIN1_INIT("\xaa", "\xc2\xaa"), \
+                _PyUnicode_LATIN1_INIT("\xab", "\xc2\xab"), \
+                _PyUnicode_LATIN1_INIT("\xac", "\xc2\xac"), \
+                _PyUnicode_LATIN1_INIT("\xad", "\xc2\xad"), \
+                _PyUnicode_LATIN1_INIT("\xae", "\xc2\xae"), \
+                _PyUnicode_LATIN1_INIT("\xaf", "\xc2\xaf"), \
+                _PyUnicode_LATIN1_INIT("\xb0", "\xc2\xb0"), \
+                _PyUnicode_LATIN1_INIT("\xb1", "\xc2\xb1"), \
+                _PyUnicode_LATIN1_INIT("\xb2", "\xc2\xb2"), \
+                _PyUnicode_LATIN1_INIT("\xb3", "\xc2\xb3"), \
+                _PyUnicode_LATIN1_INIT("\xb4", "\xc2\xb4"), \
+                _PyUnicode_LATIN1_INIT("\xb5", "\xc2\xb5"), \
+                _PyUnicode_LATIN1_INIT("\xb6", "\xc2\xb6"), \
+                _PyUnicode_LATIN1_INIT("\xb7", "\xc2\xb7"), \
+                _PyUnicode_LATIN1_INIT("\xb8", "\xc2\xb8"), \
+                _PyUnicode_LATIN1_INIT("\xb9", "\xc2\xb9"), \
+                _PyUnicode_LATIN1_INIT("\xba", "\xc2\xba"), \
+                _PyUnicode_LATIN1_INIT("\xbb", "\xc2\xbb"), \
+                _PyUnicode_LATIN1_INIT("\xbc", "\xc2\xbc"), \
+                _PyUnicode_LATIN1_INIT("\xbd", "\xc2\xbd"), \
+                _PyUnicode_LATIN1_INIT("\xbe", "\xc2\xbe"), \
+                _PyUnicode_LATIN1_INIT("\xbf", "\xc2\xbf"), \
+                _PyUnicode_LATIN1_INIT("\xc0", "\xc3\x80"), \
+                _PyUnicode_LATIN1_INIT("\xc1", "\xc3\x81"), \
+                _PyUnicode_LATIN1_INIT("\xc2", "\xc3\x82"), \
+                _PyUnicode_LATIN1_INIT("\xc3", "\xc3\x83"), \
+                _PyUnicode_LATIN1_INIT("\xc4", "\xc3\x84"), \
+                _PyUnicode_LATIN1_INIT("\xc5", "\xc3\x85"), \
+                _PyUnicode_LATIN1_INIT("\xc6", "\xc3\x86"), \
+                _PyUnicode_LATIN1_INIT("\xc7", "\xc3\x87"), \
+                _PyUnicode_LATIN1_INIT("\xc8", "\xc3\x88"), \
+                _PyUnicode_LATIN1_INIT("\xc9", "\xc3\x89"), \
+                _PyUnicode_LATIN1_INIT("\xca", "\xc3\x8a"), \
+                _PyUnicode_LATIN1_INIT("\xcb", "\xc3\x8b"), \
+                _PyUnicode_LATIN1_INIT("\xcc", "\xc3\x8c"), \
+                _PyUnicode_LATIN1_INIT("\xcd", "\xc3\x8d"), \
+                _PyUnicode_LATIN1_INIT("\xce", "\xc3\x8e"), \
+                _PyUnicode_LATIN1_INIT("\xcf", "\xc3\x8f"), \
+                _PyUnicode_LATIN1_INIT("\xd0", "\xc3\x90"), \
+                _PyUnicode_LATIN1_INIT("\xd1", "\xc3\x91"), \
+                _PyUnicode_LATIN1_INIT("\xd2", "\xc3\x92"), \
+                _PyUnicode_LATIN1_INIT("\xd3", "\xc3\x93"), \
+                _PyUnicode_LATIN1_INIT("\xd4", "\xc3\x94"), \
+                _PyUnicode_LATIN1_INIT("\xd5", "\xc3\x95"), \
+                _PyUnicode_LATIN1_INIT("\xd6", "\xc3\x96"), \
+                _PyUnicode_LATIN1_INIT("\xd7", "\xc3\x97"), \
+                _PyUnicode_LATIN1_INIT("\xd8", "\xc3\x98"), \
+                _PyUnicode_LATIN1_INIT("\xd9", "\xc3\x99"), \
+                _PyUnicode_LATIN1_INIT("\xda", "\xc3\x9a"), \
+                _PyUnicode_LATIN1_INIT("\xdb", "\xc3\x9b"), \
+                _PyUnicode_LATIN1_INIT("\xdc", "\xc3\x9c"), \
+                _PyUnicode_LATIN1_INIT("\xdd", "\xc3\x9d"), \
+                _PyUnicode_LATIN1_INIT("\xde", "\xc3\x9e"), \
+                _PyUnicode_LATIN1_INIT("\xdf", "\xc3\x9f"), \
+                _PyUnicode_LATIN1_INIT("\xe0", "\xc3\xa0"), \
+                _PyUnicode_LATIN1_INIT("\xe1", "\xc3\xa1"), \
+                _PyUnicode_LATIN1_INIT("\xe2", "\xc3\xa2"), \
+                _PyUnicode_LATIN1_INIT("\xe3", "\xc3\xa3"), \
+                _PyUnicode_LATIN1_INIT("\xe4", "\xc3\xa4"), \
+                _PyUnicode_LATIN1_INIT("\xe5", "\xc3\xa5"), \
+                _PyUnicode_LATIN1_INIT("\xe6", "\xc3\xa6"), \
+                _PyUnicode_LATIN1_INIT("\xe7", "\xc3\xa7"), \
+                _PyUnicode_LATIN1_INIT("\xe8", "\xc3\xa8"), \
+                _PyUnicode_LATIN1_INIT("\xe9", "\xc3\xa9"), \
+                _PyUnicode_LATIN1_INIT("\xea", "\xc3\xaa"), \
+                _PyUnicode_LATIN1_INIT("\xeb", "\xc3\xab"), \
+                _PyUnicode_LATIN1_INIT("\xec", "\xc3\xac"), \
+                _PyUnicode_LATIN1_INIT("\xed", "\xc3\xad"), \
+                _PyUnicode_LATIN1_INIT("\xee", "\xc3\xae"), \
+                _PyUnicode_LATIN1_INIT("\xef", "\xc3\xaf"), \
+                _PyUnicode_LATIN1_INIT("\xf0", "\xc3\xb0"), \
+                _PyUnicode_LATIN1_INIT("\xf1", "\xc3\xb1"), \
+                _PyUnicode_LATIN1_INIT("\xf2", "\xc3\xb2"), \
+                _PyUnicode_LATIN1_INIT("\xf3", "\xc3\xb3"), \
+                _PyUnicode_LATIN1_INIT("\xf4", "\xc3\xb4"), \
+                _PyUnicode_LATIN1_INIT("\xf5", "\xc3\xb5"), \
+                _PyUnicode_LATIN1_INIT("\xf6", "\xc3\xb6"), \
+                _PyUnicode_LATIN1_INIT("\xf7", "\xc3\xb7"), \
+                _PyUnicode_LATIN1_INIT("\xf8", "\xc3\xb8"), \
+                _PyUnicode_LATIN1_INIT("\xf9", "\xc3\xb9"), \
+                _PyUnicode_LATIN1_INIT("\xfa", "\xc3\xba"), \
+                _PyUnicode_LATIN1_INIT("\xfb", "\xc3\xbb"), \
+                _PyUnicode_LATIN1_INIT("\xfc", "\xc3\xbc"), \
+                _PyUnicode_LATIN1_INIT("\xfd", "\xc3\xbd"), \
+                _PyUnicode_LATIN1_INIT("\xfe", "\xc3\xbe"), \
+                _PyUnicode_LATIN1_INIT("\xff", "\xc3\xbf"), \
             }, \
         }, \
         \
@@ -1917,6 +1923,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(comment_factory);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(consts);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(context);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(cookie);
@@ -2135,6 +2143,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(insert_pis);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(instructions);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(intern);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(intersection);
@@ -2219,6 +2229,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(max_length);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(maxdigits);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(maxevents);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(maxmem);
@@ -2250,6 +2262,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(mro);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(msg);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(mycmp);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(n);
     PyUnicode_InternInPlace(&string);
@@ -2302,6 +2316,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(on_type_read);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(onceregistry);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(only_keys);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(oparg);
     PyUnicode_InternInPlace(&string);
@@ -2370,6 +2386,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(ps1);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(ps2);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(query);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(quotetabs);
     PyUnicode_InternInPlace(&string);
@@ -5758,6 +5776,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(comment_factory));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(consts)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(consts));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(context)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(context));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6194,6 +6216,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(insert_pis));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(instructions)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(instructions));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(intern)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(intern));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6362,6 +6388,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(max_length));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(maxdigits)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(maxdigits));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(maxevents)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(maxevents));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6424,6 +6454,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(msg)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(msg));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(mycmp)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(mycmp));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(n)) < _PyObject_IMMORTAL_REFCNT) {
@@ -6528,6 +6562,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(onceregistry)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(onceregistry));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(only_keys)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(only_keys));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(oparg)) < _PyObject_IMMORTAL_REFCNT) {
@@ -6664,6 +6702,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(ps2)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(ps2));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(query)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(query));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(quotetabs)) < _PyObject_IMMORTAL_REFCNT) {

@@ -139,6 +139,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def get_coro(self):
         return self._coro
 
+    def get_context(self):
+        return self._context
+
     def get_name(self):
         return self._name
 
@@ -207,11 +210,6 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
         This also increases the task's count of cancellation requests.
         """
-        if msg is not None:
-            warnings.warn("Passing 'msg' argument to Task.cancel() "
-                          "is deprecated since Python 3.11, and "
-                          "scheduled for removal in Python 3.14.",
-                          DeprecationWarning, stacklevel=2)
         self._log_traceback = False
         if self.done():
             return False
@@ -243,8 +241,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def uncancel(self):
         """Decrement the task's count of cancellation requests.
 
-        This should be used by tasks that catch CancelledError
-        and wish to continue indefinitely until they are cancelled again.
+        This should be called by the party that called `cancel()` on the task
+        beforehand.
 
         Returns the remaining number of cancellation requests.
         """
@@ -848,7 +846,8 @@ def shield(arg):
 
     The statement
 
-        res = await shield(something())
+        task = asyncio.create_task(something())
+        res = await shield(task)
 
     is exactly equivalent to the statement
 
@@ -864,10 +863,16 @@ def shield(arg):
     If you want to completely ignore cancellation (not recommended)
     you can combine shield() with a try/except clause, as follows:
 
+        task = asyncio.create_task(something())
         try:
-            res = await shield(something())
+            res = await shield(task)
         except CancelledError:
             res = None
+
+    Save a reference to tasks passed to this function, to avoid
+    a task disappearing mid-execution. The event loop only keeps
+    weak references to tasks. A task that isn't referenced elsewhere
+    may get garbage collected at any time, even before it's done.
     """
     inner = _ensure_future(arg)
     if inner.done():
