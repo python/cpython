@@ -1,2 +1,3 @@
-Reuse ``PyUnicode_Count`` function in ``unicode_count`` in
+Create ``any_unicode_count`` private helper for 
+both ``PyUnicode_Count`` and ``unicode_count`` in
 ``unicodeobject.c``.
