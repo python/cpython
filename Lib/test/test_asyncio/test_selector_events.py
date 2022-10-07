@@ -61,6 +61,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
     def test_make_socket_transport(self):
         m = mock.Mock()
         self.loop.add_reader = mock.Mock()
+        self.loop._ensure_fd_no_transport = mock.Mock()
         transport = self.loop._make_socket_transport(m, asyncio.Protocol())
         self.assertIsInstance(transport, _SelectorSocketTransport)
 
