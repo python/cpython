@@ -942,13 +942,6 @@ _Py_HandlePending(PyThreadState *tstate)
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     struct _ceval_state *interp_ceval_state = &tstate->interp->ceval;
 
-    /* GC scheduled to run */
-    if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gc_scheduled)) {
-        _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
-        _Py_RunGC(tstate);
-        COMPUTE_EVAL_BREAKER(tstate->interp, ceval, interp_ceval_state);
-    }
-
     /* Pending signals */
     if (_Py_atomic_load_relaxed_int32(&ceval->signals_pending)) {
         if (handle_signals(tstate) != 0) {
@@ -961,6 +954,13 @@ _Py_HandlePending(PyThreadState *tstate)
         if (make_pending_calls(tstate->interp) != 0) {
             return -1;
         }
+    }
+
+    /* GC scheduled to run */
+    if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gc_scheduled)) {
+        _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
+        _Py_RunGC(tstate);
+        COMPUTE_EVAL_BREAKER(tstate->interp, ceval, interp_ceval_state);
     }
 
     /* GIL drop request */
