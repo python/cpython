@@ -339,7 +339,7 @@ HTTPConnection Objects
 
    .. versionadded:: 3.2
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.12
       HTTP CONNECT tunnelling requests use protocol HTTP/1.1, upgraded from
       protocol HTTP/1.0. ``Host:`` HTTP headers are mandatory for HTTP/1.1, so
       one will be automatically generated and transmitted if not provided in
