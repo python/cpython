@@ -235,7 +235,7 @@ syslog_setlogmask(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "l;mask for priority", &maskpri))
         return NULL;
-    if (PySys_Audit("syslog.setlogmask", "(O)", args ? args : Py_None) < 0) {
+    if (PySys_Audit("syslog.setlogmask", "l", maskpri) < 0) {
         return NULL;
     }
     omaskpri = setlogmask(maskpri);

@@ -1019,3 +1019,22 @@ PyObject_ClearWeakRefs(PyObject *object)
         PyErr_Restore(err_type, err_value, err_tb);
     }
 }
+
+/* This function is called by _PyStaticType_Dealloc() to clear weak references.
+ *
+ * This is called at the end of runtime finalization, so we can just
+ * wipe out the type's weaklist.  We don't bother with callbacks
+ * or anything else.
+ */
+void
+_PyStaticType_ClearWeakRefs(PyTypeObject *type)
+{
+    static_builtin_state *state = _PyStaticType_GetState(type);
+    PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
+    while (*list != NULL) {
+        /* Note that clear_weakref() pops the first ref off the type's
+           weaklist before clearing its wr_object and wr_callback.
+           That is how we're able to loop over the list. */
+        clear_weakref((PyWeakReference *)*list);
+    }
+}

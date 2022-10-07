@@ -26,7 +26,7 @@ re-used.
 
 On Windows, invoke the ``venv`` command as follows::
 
-    c:\>c:\Python35\python -m venv c:\path\to\myenv
+    c:\>Python35\python -m venv c:\path\to\myenv
 
 Alternatively, if you configured the ``PATH`` and ``PATHEXT`` variables for
 your :ref:`Python installation <using-on-windows>`::

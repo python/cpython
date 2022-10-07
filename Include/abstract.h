@@ -228,6 +228,16 @@ PyAPI_FUNC(PyObject *) PyObject_CallMethodObjArgs(
     PyObject *name,
     ...);
 
+/* Given a vectorcall nargsf argument, return the actual number of arguments.
+ * (For use outside the limited API, this is re-defined as a static inline
+ * function in cpython/abstract.h)
+ */
+PyAPI_FUNC(Py_ssize_t) PyVectorcall_NARGS(size_t nargsf);
+
+/* Call "callable" (which must support vectorcall) with positional arguments
+   "tuple" and keyword arguments "dict". "dict" may also be NULL */
+PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
+
 
 /* Implemented elsewhere:
 

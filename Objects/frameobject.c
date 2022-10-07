@@ -311,25 +311,12 @@ mark_stacks(PyCodeObject *code_obj, int len)
             switch (opcode) {
                 case JUMP_IF_FALSE_OR_POP:
                 case JUMP_IF_TRUE_OR_POP:
-                case POP_JUMP_FORWARD_IF_FALSE:
-                case POP_JUMP_BACKWARD_IF_FALSE:
-                case POP_JUMP_FORWARD_IF_TRUE:
-                case POP_JUMP_BACKWARD_IF_TRUE:
+                case POP_JUMP_IF_FALSE:
+                case POP_JUMP_IF_TRUE:
                 {
                     int64_t target_stack;
                     int j = get_arg(code, i);
-                    if (opcode == POP_JUMP_FORWARD_IF_FALSE ||
-                        opcode == POP_JUMP_FORWARD_IF_TRUE ||
-                        opcode == JUMP_IF_FALSE_OR_POP ||
-                        opcode == JUMP_IF_TRUE_OR_POP)
-                    {
-                        j += i + 1;
-                    }
-                    else {
-                        assert(opcode == POP_JUMP_BACKWARD_IF_FALSE ||
-                               opcode == POP_JUMP_BACKWARD_IF_TRUE);
-                        j = i + 1 - j;
-                    }
+                    j += i + 1;
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
@@ -601,6 +588,7 @@ first_line_not_before(int *lines, int len, int line)
 static PyFrameState
 _PyFrame_GetState(PyFrameObject *frame)
 {
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     if (frame->f_frame->stacktop == 0) {
         return FRAME_CLEARED;
     }
@@ -910,7 +898,7 @@ frame_dealloc(PyFrameObject *f)
         /* Don't clear code object until the end */
         co = frame->f_code;
         frame->f_code = NULL;
-        Py_CLEAR(frame->f_func);
+        Py_CLEAR(frame->f_funcobj);
         Py_CLEAR(frame->f_locals);
         PyObject **locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {
@@ -1107,6 +1095,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     init_frame((_PyInterpreterFrame *)f->_f_frame_data, func, locals);
     f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    // This frame needs to be "complete", so pretend that the first RESUME ran:
+    f->f_frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
     return f;
@@ -1154,10 +1145,12 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     // COPY_FREE_VARS has no quickened forms, so no need to use _PyOpcode_Deopt
     // here:
     int lasti = _PyInterpreterFrame_LASTI(frame);
-    if (lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS) {
+    if (lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS
+        && PyFunction_Check(frame->f_funcobj))
+    {
         /* Free vars have not been initialized -- Do that */
         PyCodeObject *co = frame->f_code;
-        PyObject *closure = frame->f_func->func_closure;
+        PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
         int offset = co->co_nlocals + co->co_nplaincellvars;
         for (int i = 0; i < co->co_nfreevars; ++i) {
             PyObject *o = PyTuple_GET_ITEM(closure, i);
@@ -1233,6 +1226,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
     if (f == NULL) {
         PyErr_BadInternalCall();
         return -1;
@@ -1248,7 +1242,7 @@ void
 PyFrame_FastToLocals(PyFrameObject *f)
 {
     int res;
-
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
     assert(!PyErr_Occurred());
 
     res = PyFrame_FastToLocalsWithError(f);
@@ -1331,6 +1325,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
     if (f && f->f_fast_as_locals && _PyFrame_GetState(f) != FRAME_CLEARED) {
         _PyFrame_LocalsToFast(f->f_frame, clear);
         f->f_fast_as_locals = 0;
@@ -1341,6 +1336,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 int _PyFrame_IsEntryFrame(PyFrameObject *frame)
 {
     assert(frame != NULL);
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     return frame->f_frame->is_entry;
 }
 
@@ -1349,6 +1345,7 @@ PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
 {
     assert(frame != NULL);
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     PyCodeObject *code = frame->f_frame->f_code;
     assert(code != NULL);
     Py_INCREF(code);
@@ -1360,6 +1357,7 @@ PyFrameObject*
 PyFrame_GetBack(PyFrameObject *frame)
 {
     assert(frame != NULL);
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     PyFrameObject *back = frame->f_back;
     if (back == NULL) {
         _PyInterpreterFrame *prev = frame->f_frame->previous;
@@ -1377,24 +1375,28 @@ PyFrame_GetBack(PyFrameObject *frame)
 PyObject*
 PyFrame_GetLocals(PyFrameObject *frame)
 {
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     return frame_getlocals(frame, NULL);
 }
 
 PyObject*
 PyFrame_GetGlobals(PyFrameObject *frame)
 {
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     return frame_getglobals(frame, NULL);
 }
 
 PyObject*
 PyFrame_GetBuiltins(PyFrameObject *frame)
 {
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     return frame_getbuiltins(frame, NULL);
 }
 
 int
 PyFrame_GetLasti(PyFrameObject *frame)
 {
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     int lasti = _PyInterpreterFrame_LASTI(frame->f_frame);
     if (lasti < 0) {
         return -1;
@@ -1405,6 +1407,7 @@ PyFrame_GetLasti(PyFrameObject *frame)
 PyObject *
 PyFrame_GetGenerator(PyFrameObject *frame)
 {
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
     if (frame->f_frame->owner != FRAME_OWNED_BY_GENERATOR) {
         return NULL;
     }
