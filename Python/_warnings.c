@@ -977,6 +977,7 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
 static PyObject *
 get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno)
 {
+    PyObject *external;
     PyObject *loader;
     PyObject *module_name;
     PyObject *get_source;
@@ -984,12 +985,18 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     PyObject *source_list;
     PyObject *source_line;
 
-    /* Check/get the requisite pieces needed for the loader. */
-    loader = _PyDict_GetItemWithError(module_globals, &_Py_ID(__loader__));
+    /* stolen from import.c */
+    external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
+    if (external == NULL) {
+        return NULL;
+    }
+
+    loader = PyObject_CallMethod(external, "_bless_my_loader", "O", module_globals, NULL);
+    Py_DECREF(external);
     if (loader == NULL) {
         return NULL;
     }
-    Py_INCREF(loader);
+
     module_name = _PyDict_GetItemWithError(module_globals, &_Py_ID(__name__));
     if (!module_name) {
         Py_DECREF(loader);
