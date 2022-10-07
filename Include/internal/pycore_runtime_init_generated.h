@@ -977,6 +977,7 @@ extern "C" {
                 INIT_ID(modules), \
                 INIT_ID(mro), \
                 INIT_ID(msg), \
+                INIT_ID(mycmp), \
                 INIT_ID(n), \
                 INIT_ID(n_arg), \
                 INIT_ID(n_fields), \
@@ -2259,6 +2260,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(mro);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(msg);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(mycmp);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(n);
     PyUnicode_InternInPlace(&string);
@@ -6445,6 +6448,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(msg)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(msg));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(mycmp)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(mycmp));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(n)) < _PyObject_IMMORTAL_REFCNT) {
