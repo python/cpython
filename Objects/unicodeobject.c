@@ -8970,8 +8970,9 @@ any_unicode_count(PyObject *str,
                   Py_ssize_t start,
                   Py_ssize_t end)
 {
-    // You must ensure that `str` and `substr` are both unicode objects
-    // before calling this function.
+    assert(PyUnicode_Check(str));
+    assert(PyUnicode_Check(substr));
+
     Py_ssize_t result;
     int kind1, kind2;
     const void *buf1 = NULL, *buf2 = NULL;
