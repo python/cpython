@@ -414,7 +414,6 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3508 (Add CLEANUP_THROW)
 #     Python 3.12a1 3509 (Conditional jumps only jump forward)
 
-
 #     Python 3.13 will start with 3550
 
 # MAGIC must change whenever the bytecode emitted by the compiler may no
