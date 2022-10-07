@@ -1,1 +1,1 @@
-Lazily create and cache ``co_*`` attributes for better performance for code getters.
+Lazily create and cache ``co_`` attributes for better performance for code getters.
