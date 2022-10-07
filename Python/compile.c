@@ -8028,7 +8028,9 @@ add_checks_for_loads_of_unknown_variables(basicblock *entryblock,
 {
     int nparams = (int)PyList_GET_SIZE(c->u->u_ste->ste_varnames);
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
-
+    if (nlocals == 0) {
+        return 0;
+    }
     if (nlocals > 64) {
         // To avoid O(nlocals**2) compilation, locals beyond the first
         // 64 are only analyzed one basicblock at a time: initialization
