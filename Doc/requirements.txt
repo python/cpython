@@ -10,7 +10,7 @@ blurb
 # sphinx-lint 0.6.2 yields many default role errors due to the new regular
 # expression used for default role detection, so we don't use the version
 # until the errors are fixed.
-sphinx-lint==0.6.1
+sphinx-lint==0.6.4
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
