@@ -881,11 +881,13 @@ def _bless_my_loader(module_globals):
     loader = module_globals.get('__loader__', None)
     spec = module_globals.get('__spec__', missing)
 
-    if loader is None and spec is missing:
-        #raise AttributeError('Module globals is missing a __spec__')
-        return None
-    if loader is None and spec is None:
-        raise ValueError('Module globals is missing a __spec__.loader')
+    if loader is None:
+        if spec is missing:
+            # If working with a module:
+            # raise AttributeError('Module globals is missing a __spec__')
+            return None
+        elif spec is None:
+            raise ValueError('Module globals is missing a __spec__.loader')
 
     spec_loader = getattr(spec, 'loader', missing)
 
