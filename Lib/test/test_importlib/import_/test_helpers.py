@@ -83,6 +83,7 @@ class TestBlessMyLoader(unittest.TestCase):
         # 2022-10-06(warsaw): For backward compatibility with the
         # implementation in _warnings.c, this can't raise an
         # AttributeError.  See _bless_my_loader() in _bootstrap_external.py
+        # If working with a module:
         ## self.assertRaises(
         ##     AttributeError, _bootstrap_external._bless_my_loader,
         ##     bar.__dict__)
