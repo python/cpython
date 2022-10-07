@@ -1349,8 +1349,8 @@ class Popen:
                     if p2cread is None:
                         p2cread, _ = _winapi.CreatePipe(None, 0)
                         p2cread = Handle(p2cread)
-                        _winapi.CloseHandle(_)
                         err_close_fds.append(p2cread)
+                        _winapi.CloseHandle(_)
                 elif stdin == PIPE:
                     p2cread, p2cwrite = _winapi.CreatePipe(None, 0)
                     p2cread, p2cwrite = Handle(p2cread), Handle(p2cwrite)
@@ -1369,8 +1369,8 @@ class Popen:
                     if c2pwrite is None:
                         _, c2pwrite = _winapi.CreatePipe(None, 0)
                         c2pwrite = Handle(c2pwrite)
-                        _winapi.CloseHandle(_)
                         err_close_fds.append(c2pwrite)
+                        _winapi.CloseHandle(_)
                 elif stdout == PIPE:
                     c2pread, c2pwrite = _winapi.CreatePipe(None, 0)
                     c2pread, c2pwrite = Handle(c2pread), Handle(c2pwrite)
@@ -1389,8 +1389,8 @@ class Popen:
                     if errwrite is None:
                         _, errwrite = _winapi.CreatePipe(None, 0)
                         errwrite = Handle(errwrite)
-                        _winapi.CloseHandle(_)
                         err_close_fds.append(errwrite)
+                        _winapi.CloseHandle(_)
                 elif stderr == PIPE:
                     errread, errwrite = _winapi.CreatePipe(None, 0)
                     errread, errwrite = Handle(errread), Handle(errwrite)
@@ -1696,9 +1696,9 @@ class Popen:
                     pass
                 elif stdin == PIPE:
                     p2cread, p2cwrite = os.pipe()
+                    err_close_fds.extend((p2cread, p2cwrite))
                     if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
                         fcntl.fcntl(p2cwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
-                    err_close_fds.extend((p2cread, p2cwrite))
                 elif stdin == DEVNULL:
                     p2cread = self._get_devnull()
                 elif isinstance(stdin, int):
@@ -1711,9 +1711,9 @@ class Popen:
                     pass
                 elif stdout == PIPE:
                     c2pread, c2pwrite = os.pipe()
+                    err_close_fds.extend((c2pread, c2pwrite))
                     if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
                         fcntl.fcntl(c2pwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
-                    err_close_fds.extend((c2pread, c2pwrite))
                 elif stdout == DEVNULL:
                     c2pwrite = self._get_devnull()
                 elif isinstance(stdout, int):
@@ -1726,9 +1726,9 @@ class Popen:
                     pass
                 elif stderr == PIPE:
                     errread, errwrite = os.pipe()
+                    err_close_fds.extend((errread, errwrite))
                     if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
                         fcntl.fcntl(errwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
-                    err_close_fds.extend((errread, errwrite))
                 elif stderr == STDOUT:
                     if c2pwrite != -1:
                         errwrite = c2pwrite
