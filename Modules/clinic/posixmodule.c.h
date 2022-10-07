@@ -1849,7 +1849,8 @@ PyDoc_STRVAR(os_mkdir__doc__,
 "dir_fd may not be implemented on your platform.\n"
 "  If it is unavailable, using it will raise a NotImplementedError.\n"
 "\n"
-"The mode argument is ignored on Windows.");
+"The mode argument is ignored on Windows. Where it is used, the current umask\n"
+"value is first masked out.");
 
 #define OS_MKDIR_METHODDEF    \
     {"mkdir", _PyCFunction_CAST(os_mkdir), METH_FASTCALL|METH_KEYWORDS, os_mkdir__doc__},
@@ -11516,4 +11517,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=022fd16962d84378 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90f5e6995114e5ca input=a9049054013a1b77]*/
