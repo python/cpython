@@ -154,7 +154,32 @@ struct _dictvalues {
 
 extern uint64_t _pydict_global_version;
 
-#define DICT_NEXT_VERSION() (++_pydict_global_version)
+#define DICT_MAX_WATCHERS 8
+#define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
+#define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
+
+#define DICT_NEXT_VERSION() (_pydict_global_version += DICT_VERSION_INCREMENT)
+
+void
+_PyDict_SendEvent(int watcher_bits,
+                  PyDict_WatchEvent event,
+                  PyDictObject *mp,
+                  PyObject *key,
+                  PyObject *value);
+
+static inline uint64_t
+_PyDict_NotifyEvent(PyDict_WatchEvent event,
+                    PyDictObject *mp,
+                    PyObject *key,
+                    PyObject *value)
+{
+    int watcher_bits = mp->ma_version_tag & DICT_VERSION_MASK;
+    if (watcher_bits) {
+        _PyDict_SendEvent(watcher_bits, event, mp, key, value);
+        return DICT_NEXT_VERSION() | watcher_bits;
+    }
+    return DICT_NEXT_VERSION();
+}
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
 extern PyObject *_PyDict_FromItems(

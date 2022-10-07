@@ -2,6 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
+from contextlib import contextmanager
 import _thread
 import importlib.machinery
 import importlib.util
@@ -1391,6 +1392,137 @@ class Test_Pep523API(unittest.TestCase):
         def func2(x=None):
             pass
         self.do_test(func2)
+
+
+class TestDictWatchers(unittest.TestCase):
+    # types of watchers testcapimodule can add:
+    EVENTS = 0   # appends dict events as strings to global event list
+    ERROR = 1    # unconditionally sets and signals a RuntimeException
+    SECOND = 2   # always appends "second" to global event list
+
+    def add_watcher(self, kind=EVENTS):
+        return _testcapi.add_dict_watcher(kind)
+
+    def clear_watcher(self, watcher_id):
+        _testcapi.clear_dict_watcher(watcher_id)
+
+    @contextmanager
+    def watcher(self, kind=EVENTS):
+        wid = self.add_watcher(kind)
+        try:
+            yield wid
+        finally:
+            self.clear_watcher(wid)
+
+    def assert_events(self, expected):
+        actual = _testcapi.get_dict_watcher_events()
+        self.assertEqual(actual, expected)
+
+    def watch(self, wid, d):
+        _testcapi.watch_dict(wid, d)
+
+    def test_set_new_item(self):
+        d = {}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d["foo"] = "bar"
+            self.assert_events(["new:foo:bar"])
+
+    def test_set_existing_item(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d["foo"] = "baz"
+            self.assert_events(["mod:foo:baz"])
+
+    def test_clone(self):
+        d = {}
+        d2 = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.update(d2)
+            self.assert_events(["clone"])
+
+    def test_no_event_if_not_watched(self):
+        d = {}
+        with self.watcher() as wid:
+            d["foo"] = "bar"
+            self.assert_events([])
+
+    def test_del(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            del d["foo"]
+            self.assert_events(["del:foo"])
+
+    def test_pop(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.pop("foo")
+            self.assert_events(["del:foo"])
+
+    def test_clear(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.clear()
+            self.assert_events(["clear"])
+
+    def test_dealloc(self):
+        d = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            del d
+            self.assert_events(["dealloc"])
+
+    def test_error(self):
+        d = {}
+        unraisables = []
+        def unraisable_hook(unraisable):
+            unraisables.append(unraisable)
+        with self.watcher(kind=self.ERROR) as wid:
+            self.watch(wid, d)
+            orig_unraisable_hook = sys.unraisablehook
+            sys.unraisablehook = unraisable_hook
+            try:
+                d["foo"] = "bar"
+            finally:
+                sys.unraisablehook = orig_unraisable_hook
+            self.assert_events([])
+        self.assertEqual(len(unraisables), 1)
+        unraisable = unraisables[0]
+        self.assertIs(unraisable.object, d)
+        self.assertEqual(str(unraisable.exc_value), "boom!")
+
+    def test_two_watchers(self):
+        d1 = {}
+        d2 = {}
+        with self.watcher() as wid1:
+            with self.watcher(kind=self.SECOND) as wid2:
+                self.watch(wid1, d1)
+                self.watch(wid2, d2)
+                d1["foo"] = "bar"
+                d2["hmm"] = "baz"
+                self.assert_events(["new:foo:bar", "second"])
+
+    def test_watch_non_dict(self):
+        with self.watcher() as wid:
+            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
+                self.watch(wid, 1)
+
+    def test_watch_out_of_range_watcher_id(self):
+        d = {}
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
+            self.watch(-1, d)
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
+            self.watch(8, d)  # DICT_MAX_WATCHERS = 8
+
+    def test_unassigned_watcher_id(self):
+        d = {}
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
+            self.watch(1, d)
 
 
 if __name__ == "__main__":
