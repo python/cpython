@@ -393,7 +393,7 @@ provides three different variants:
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
       For example usage, see the implementation of the ``test`` function
-      invocation in :source:`Lib/http/server.py`.
+      in :source:`Lib/http/server.py`.
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
