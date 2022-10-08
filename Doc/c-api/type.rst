@@ -88,7 +88,7 @@ Type Objects
    .. versionadded:: 3.12
 
 
-.. c:function:: int (*PyType_WatchCallback)(PyObject *type)
+.. c:type:: int (*PyType_WatchCallback)(PyObject *type)
 
    Type of a type-watcher callback function.
 

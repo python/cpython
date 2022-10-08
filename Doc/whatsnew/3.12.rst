@@ -557,7 +557,6 @@ New Features
   :c:func:`PyDict_AddWatch` and related APIs to be called whenever a dictionary
   is modified. This is intended for use by optimizing interpreters, JIT
   compilers, or debuggers.
-  (Contributed by Carl Meyer in :gh:`31787`.)
 
 * Added :c:func:`PyType_AddWatcher` and :c:func:`PyType_Watch` API to register
   callbacks to receive notification on changes to a type.
