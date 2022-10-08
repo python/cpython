@@ -47,7 +47,7 @@ PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
 for proto, ver in (
-    ("PROTOCOL_SSLv23", "SSLv3"),
+    ("PROTOCOL_SSLv3", "SSLv3"),
     ("PROTOCOL_TLSv1", "TLSv1"),
     ("PROTOCOL_TLSv1_1", "TLSv1_1"),
 ):
@@ -938,8 +938,20 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.set_ciphers('AESGCM')
         names = set(d['name'] for d in ctx.get_ciphers())
-        self.assertIn('AES256-GCM-SHA384', names)
-        self.assertIn('AES128-GCM-SHA256', names)
+        expected = {
+            'AES128-GCM-SHA256',
+            'ECDHE-ECDSA-AES128-GCM-SHA256',
+            'ECDHE-RSA-AES128-GCM-SHA256',
+            'DHE-RSA-AES128-GCM-SHA256',
+            'AES256-GCM-SHA384',
+            'ECDHE-ECDSA-AES256-GCM-SHA384',
+            'ECDHE-RSA-AES256-GCM-SHA384',
+            'DHE-RSA-AES256-GCM-SHA384',
+        }
+        intersection = names.intersection(expected)
+        self.assertGreaterEqual(
+            len(intersection), 2, f"\ngot: {sorted(names)}\nexpected: {sorted(expected)}"
+        )
 
     def test_options(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)

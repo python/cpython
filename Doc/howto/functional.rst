@@ -1215,7 +1215,7 @@ flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
 Python code.
 
-http://www.defmacro.org/ramblings/fp.html: A general introduction to functional
+https://www.defmacro.org/ramblings/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
 https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
@@ -1223,12 +1223,14 @@ describing functional programming.
 
 https://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
 
+https://en.wikipedia.org/wiki/Partial_application: Entry for the concept of partial function application.
+
 https://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
 
 Python-specific
 ---------------
 
-http://gnosis.cx/TPiP/: The first chapter of David Mertz's book
+https://gnosis.cx/TPiP/: The first chapter of David Mertz's book
 :title-reference:`Text Processing in Python` discusses functional programming
 for text processing, in the section titled "Utilizing Higher-Order Functions in
 Text Processing".

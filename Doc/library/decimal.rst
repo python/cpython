@@ -114,7 +114,7 @@ reset them before monitoring a calculation.
 .. seealso::
 
    * IBM's General Decimal Arithmetic Specification, `The General Decimal Arithmetic
-     Specification <http://speleotrove.com/decimal/decarith.html>`_.
+     Specification <https://speleotrove.com/decimal/decarith.html>`_.
 
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -576,11 +576,11 @@ Decimal objects
       Alternative constructor that only accepts instances of :class:`float` or
       :class:`int`.
 
-      Note `Decimal.from_float(0.1)` is not the same as `Decimal('0.1')`.
+      Note ``Decimal.from_float(0.1)`` is not the same as ``Decimal('0.1')``.
       Since 0.1 is not exactly representable in binary floating point, the
       value is stored as the nearest representable value which is
-      `0x1.999999999999ap-4`.  That equivalent value in decimal is
-      `0.1000000000000000055511151231257827021181583404541015625`.
+      ``0x1.999999999999ap-4``.  That equivalent value in decimal is
+      ``0.1000000000000000055511151231257827021181583404541015625``.
 
       .. note:: From Python 3.2 onwards, a :class:`Decimal` instance
          can also be constructed directly from a :class:`float`.
@@ -1209,7 +1209,7 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: exp(x)
 
-      Returns `e ** x`.
+      Returns ``e ** x``.
 
 
    .. method:: fma(x, y, z)

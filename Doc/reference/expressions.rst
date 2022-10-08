@@ -582,6 +582,11 @@ is already executing raises a :exc:`ValueError` exception.
    :attr:`~BaseException.__traceback__` attribute stored in *value* may
    be cleared.
 
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
+
 .. index:: exception: GeneratorExit
 
 
@@ -738,7 +743,8 @@ which are used to control the execution of a generator function.
    because there is no yield expression that could receive the value.
 
 
-.. coroutinemethod:: agen.athrow(type[, value[, traceback]])
+.. coroutinemethod:: agen.athrow(value)
+                     agen.athrow(type[, value[, traceback]])
 
    Returns an awaitable that raises an exception of type ``type`` at the point
    where the asynchronous generator was paused, and returns the next value
@@ -749,6 +755,11 @@ which are used to control the execution of a generator function.
    If the generator function does not catch the passed-in exception, or
    raises a different exception, then when the awaitable is run that exception
    propagates to the caller of the awaitable.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
 
 .. index:: exception: GeneratorExit
 
@@ -1054,9 +1065,19 @@ used in the same call, so in practice this confusion does not often arise.
 
 If the syntax ``**expression`` appears in the function call, ``expression`` must
 evaluate to a :term:`mapping`, the contents of which are treated as
-additional keyword arguments.  If a keyword is already present
-(as an explicit keyword argument, or from another unpacking),
+additional keyword arguments. If a parameter matching a key has already been
+given a value (by an explicit keyword argument, or from another unpacking),
 a :exc:`TypeError` exception is raised.
+
+When ``**expression`` is used, each key in this mapping must be
+a string.
+Each value from the mapping is assigned to the first formal parameter
+eligible for keyword assignment whose name is equal to the key.
+A key need not be a Python identifier (e.g. ``"max-temp °F"`` is acceptable,
+although it will not match any formal parameter that could be declared).
+If there is no match to a formal parameter
+the key-value pair is collected by the ``**`` parameter, if there is one,
+or if there is not, a :exc:`TypeError` exception is raised.
 
 Formal parameters using the syntax ``*identifier`` or ``**identifier`` cannot be
 used as positional argument slots or as keyword argument names.
@@ -1541,7 +1562,7 @@ built-in types.
     true).
 
 * Mappings (instances of :class:`dict`) compare equal if and only if they have
-  equal `(key, value)` pairs. Equality comparison of the keys and values
+  equal ``(key, value)`` pairs. Equality comparison of the keys and values
   enforces reflexivity.
 
   Order comparisons (``<``, ``>``, ``<=``, and ``>=``) raise :exc:`TypeError`.
@@ -1720,6 +1741,12 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+.. index::
+   single: := (colon equals)
+   single: assignment expression
+   single: walrus operator
+   single: named expression
+
 Assignment expressions
 ======================
 
@@ -1744,6 +1771,13 @@ Or, when processing a file stream in chunks:
 
    while chunk := file.read(9000):
        process(chunk)
+
+Assignment expressions must be surrounded by parentheses when used
+as sub-expressions in slicing, conditional, lambda,
+keyword-argument, and comprehension-if expressions
+and in ``assert`` and ``with`` statements.
+In all other places where they can be used, parentheses are not required,
+including in ``if`` and ``while`` statements.
 
 .. versionadded:: 3.8
    See :pep:`572` for more details about assignment expressions.
@@ -1879,7 +1913,7 @@ The following table summarizes the operator precedence in Python, from highest
 precedence (most binding) to lowest precedence (least binding).  Operators in
 the same box have the same precedence.  Unless the syntax is explicitly given,
 operators are binary.  Operators in the same box group left to right (except for
-exponentiation, which groups from right to left).
+exponentiation and conditional expressions, which group from right to left).
 
 Note that comparisons, membership tests, and identity tests, all have the same
 precedence and have a left-to-right chaining feature as described in the

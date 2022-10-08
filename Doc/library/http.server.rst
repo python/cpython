@@ -22,6 +22,8 @@ This module defines classes for implementing HTTP servers.
     :mod:`http.server` is not recommended for production. It only implements
     :ref:`basic security checks <http.server-security>`.
 
+.. include:: ../includes/wasm-notavail.rst
+
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
 handler.  Code to create and run the server looks like this::
@@ -390,8 +392,8 @@ provides three different variants:
       contents of the file are output. If the file's MIME type starts with
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
-      For example usage, see the implementation of the :func:`test` function
-      invocation in the :mod:`http.server` module.
+      For example usage, see the implementation of the ``test`` function
+      in :source:`Lib/http/server.py`.
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.

@@ -22,6 +22,11 @@ try:
     import _tkinter
 except ImportError:
     _tkinter = None
+# Treat warnings as errors, done here to prevent warnings in Sphinx code from
+# causing spurious test failures.
+import warnings
+warnings.simplefilter('error')
+del warnings
 '''
 
 manpages_url = 'https://manpages.debian.org/{path}'
@@ -73,6 +78,13 @@ html_theme_options = {
     'license_url': '/license.html',
     'root_include_title': False   # We use the version switcher instead.
 }
+
+# Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
+# https://github.com/python/cpython/issues/91207
+if any('htmlhelp' in arg for arg in sys.argv):
+    html_style = 'pydoctheme.css'
+    print("\nWARNING: Windows CHM Help is no longer supported.")
+    print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
@@ -227,13 +239,3 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
-
-# Sphinx 2 and Sphinx 3 compatibility
-# -----------------------------------
-
-# bpo-40204: Allow Sphinx 2 syntax in the C domain
-c_allow_pre_v3 = True
-
-# bpo-40204: Disable warnings on Sphinx 2 syntax of the C domain since the
-# documentation is built with -W (warnings treated as errors).
-c_warn_on_allowed_pre_v3 = False

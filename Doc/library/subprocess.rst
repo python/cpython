@@ -25,6 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -192,7 +193,10 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: output
 
         Output of the child process if it was captured by :func:`run` or
-        :func:`check_output`.  Otherwise, ``None``.
+        :func:`check_output`.  Otherwise, ``None``.  This is always
+        :class:`bytes` when any output was captured regardless of the
+        ``text=True`` setting.  It may remain ``None`` instead of ``b''``
+        when no output was observed.
 
     .. attribute:: stdout
 
@@ -201,7 +205,9 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: stderr
 
         Stderr output of the child process if it was captured by :func:`run`.
-        Otherwise, ``None``.
+        Otherwise, ``None``.  This is always :class:`bytes` when stderr output
+        was captured regardless of the ``text=True`` setting.  It may remain
+        ``None`` instead of ``b''`` when no stderr output was observed.
 
     .. versionadded:: 3.3
 
@@ -1473,7 +1479,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   .. availability:: POSIX & Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
@@ -1495,7 +1501,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   .. availability:: POSIX & Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added

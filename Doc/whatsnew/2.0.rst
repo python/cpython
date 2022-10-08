@@ -572,7 +572,7 @@ Work has been done on porting Python to 64-bit Windows on the Itanium processor,
 mostly by Trent Mick of ActiveState.  (Confusingly, ``sys.platform`` is still
 ``'win32'`` on Win64 because it seems that for ease of porting, MS Visual C++
 treats code as 32 bit on Itanium.) PythonWin also supports Windows CE; see the
-Python CE page at http://pythonce.sourceforge.net/ for more information.
+Python CE page at https://pythonce.sourceforge.net/ for more information.
 
 Another new platform is Darwin/MacOS X; initial support for it is in Python 2.0.
 Dynamic loading works, if you specify "configure --with-dyld --with-suffix=.x".
@@ -820,7 +820,7 @@ packages, which made administering a Python installation something of  a chore.
 
 The SIG for distribution utilities, shepherded by Greg Ward, has created the
 Distutils, a system to make package installation much easier.  They form the
-:mod:`distutils` package, a new part of Python's standard library. In the best
+``distutils`` package, a new part of Python's standard library. In the best
 case, installing a Python module from source will require the same steps: first
 you simply mean unpack the tarball or zip archive, and the run "``python
 setup.py install``".  The platform will be automatically detected, the compiler

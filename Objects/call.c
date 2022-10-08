@@ -1047,3 +1047,11 @@ _PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
     PyMem_Free((PyObject **)stack - 1);
     Py_DECREF(kwnames);
 }
+
+// Export for the stable ABI
+#undef PyVectorcall_NARGS
+Py_ssize_t
+PyVectorcall_NARGS(size_t n)
+{
+    return _PyVectorcall_NARGS(n);
+}
