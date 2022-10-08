@@ -912,10 +912,6 @@ class PidfdChildWatcher(AbstractChildWatcher):
     recent (5.3+) kernels.
     """
 
-    def __init__(self):
-        self._loop = None
-        self._callbacks = {}
-
     def __enter__(self):
         return self
 
@@ -923,35 +919,22 @@ class PidfdChildWatcher(AbstractChildWatcher):
         pass
 
     def is_active(self):
-        return self._loop is not None and self._loop.is_running()
+        return True
 
     def close(self):
-        self.attach_loop(None)
+        pass
 
     def attach_loop(self, loop):
-        if self._loop is not None and loop is None and self._callbacks:
-            warnings.warn(
-                'A loop is being detached '
-                'from a child watcher with pending handlers',
-                RuntimeWarning)
-        for pidfd, _, _ in self._callbacks.values():
-            self._loop._remove_reader(pidfd)
-            os.close(pidfd)
-        self._callbacks.clear()
-        self._loop = loop
+        pass
 
     def add_child_handler(self, pid, callback, *args):
-        existing = self._callbacks.get(pid)
-        if existing is not None:
-            self._callbacks[pid] = existing[0], callback, args
-        else:
-            pidfd = os.pidfd_open(pid)
-            self._loop._add_reader(pidfd, self._do_wait, pid)
-            self._callbacks[pid] = pidfd, callback, args
+        loop = events.get_running_loop()
+        pidfd = os.pidfd_open(pid)
+        loop._add_reader(pidfd, self._do_wait, pid, pidfd, callback, args)
 
-    def _do_wait(self, pid):
-        pidfd, callback, args = self._callbacks.pop(pid)
-        self._loop._remove_reader(pidfd)
+    def _do_wait(self, pid, pidfd, callback, args):
+        loop = events.get_running_loop()
+        loop._remove_reader(pidfd)
         try:
             _, status = os.waitpid(pid, 0)
         except ChildProcessError:
@@ -969,12 +952,9 @@ class PidfdChildWatcher(AbstractChildWatcher):
         callback(pid, returncode, *args)
 
     def remove_child_handler(self, pid):
-        try:
-            pidfd, _, _ = self._callbacks.pop(pid)
-        except KeyError:
-            return False
-        self._loop._remove_reader(pidfd)
-        os.close(pidfd)
+        # asyncio never calls remove_child_handler() !!!
+        # The method is no-op but is implemented because
+        # abstract base classes require it.
         return True
 
 
