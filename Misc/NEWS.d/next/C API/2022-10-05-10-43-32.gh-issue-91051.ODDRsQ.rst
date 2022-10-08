@@ -1,2 +1,2 @@
-Add :c:func:`PyType_SetModifiedCallback` to allow registering a callback to
-be called whenever :c:func:`PyType_Modified` is called.
+Add :c:func:`PyType_Watch` and related APIs to allow callbacks on
+:c:func:`PyType_Modified`.
