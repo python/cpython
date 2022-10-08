@@ -8965,10 +8965,10 @@ _PyUnicode_InsertThousandsGrouping(
 }
 
 static Py_ssize_t
-any_unicode_count(PyObject *str,
-                  PyObject *substr,
-                  Py_ssize_t start,
-                  Py_ssize_t end)
+unicode_count_impl(PyObject *str,
+                   PyObject *substr,
+                   Py_ssize_t start,
+                   Py_ssize_t end)
 {
     assert(PyUnicode_Check(str));
     assert(PyUnicode_Check(substr));
@@ -9047,7 +9047,7 @@ PyUnicode_Count(PyObject *str,
     if (ensure_unicode(str) < 0 || ensure_unicode(substr) < 0)
         return -1;
 
-    return any_unicode_count(str, substr, start, end);
+    return unicode_count_impl(str, substr, start, end);
 }
 
 Py_ssize_t
@@ -10868,18 +10868,16 @@ unicode_count(PyObject *self, PyObject *args)
     PyObject *substring = NULL;   /* initialize to fix a compiler warning */
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *result;
-    Py_ssize_t iresult;
+    Py_ssize_t result;
 
     if (!parse_args_finds_unicode("count", args, &substring, &start, &end))
         return NULL;
 
-    iresult = any_unicode_count(self, substring, start, end);
-    if (iresult == -1)
+    result = unicode_count_impl(self, substring, start, end);
+    if (result == -1)
         return NULL;
 
-    result = PyLong_FromSsize_t(iresult);
-    return result;
+    return PyLong_FromSsize_t(result);
 }
 
 /*[clinic input]
