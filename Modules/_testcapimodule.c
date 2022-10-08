@@ -5297,6 +5297,20 @@ watch_dict(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+unwatch_dict(PyObject *self, PyObject *args)
+{
+    PyObject *dict;
+    int watcher_id;
+    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &dict)) {
+        return NULL;
+    }
+    if (PyDict_Unwatch(watcher_id, dict)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(args))
 {
     if (!g_dict_watch_events) {
@@ -5904,6 +5918,7 @@ static PyMethodDef TestMethods[] = {
     {"add_dict_watcher", add_dict_watcher, METH_O, NULL},
     {"clear_dict_watcher", clear_dict_watcher, METH_O, NULL},
     {"watch_dict", watch_dict, METH_VARARGS, NULL},
+    {"unwatch_dict", unwatch_dict, METH_VARARGS, NULL},
     {"get_dict_watcher_events", get_dict_watcher_events, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
