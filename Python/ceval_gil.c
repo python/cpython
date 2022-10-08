@@ -959,8 +959,8 @@ _Py_HandlePending(PyThreadState *tstate)
     /* GC scheduled to run */
     if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gc_scheduled)) {
         _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
-        _Py_RunGC(tstate);
         COMPUTE_EVAL_BREAKER(tstate->interp, ceval, interp_ceval_state);
+        _Py_RunGC(tstate);
     }
 
     /* GIL drop request */
