@@ -1702,9 +1702,21 @@ class PolicyTests(unittest.TestCase):
     def test_get_default_child_watcher(self):
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
-
+        unix_events.can_use_pidfd = mock.Mock()
+        unix_events.can_use_pidfd.return_value = False
         watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
+
+        self.assertIs(policy._watcher, watcher)
+
+        self.assertIs(watcher, policy.get_child_watcher())
+
+        policy = self.create_policy()
+        self.assertIsNone(policy._watcher)
+        unix_events.can_use_pidfd = mock.Mock()
+        unix_events.can_use_pidfd.return_value = True
+        watcher = policy.get_child_watcher()
+        self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
 

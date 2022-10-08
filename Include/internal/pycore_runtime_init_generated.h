@@ -977,6 +977,7 @@ extern "C" {
                 INIT_ID(modules), \
                 INIT_ID(mro), \
                 INIT_ID(msg), \
+                INIT_ID(mycmp), \
                 INIT_ID(n), \
                 INIT_ID(n_arg), \
                 INIT_ID(n_fields), \
@@ -1002,6 +1003,7 @@ extern "C" {
                 INIT_ID(offset_src), \
                 INIT_ID(on_type_read), \
                 INIT_ID(onceregistry), \
+                INIT_ID(only_keys), \
                 INIT_ID(oparg), \
                 INIT_ID(opcode), \
                 INIT_ID(open), \
@@ -2260,6 +2262,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(msg);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(mycmp);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(n);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(n_arg);
@@ -2309,6 +2313,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(on_type_read);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(onceregistry);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(only_keys);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(oparg);
     PyUnicode_InternInPlace(&string);
@@ -6447,6 +6453,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(msg));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(mycmp)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(mycmp));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(n)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(n));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6545,6 +6555,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(onceregistry)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(onceregistry));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(only_keys)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(only_keys));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(oparg)) < _PyObject_IMMORTAL_REFCNT) {
