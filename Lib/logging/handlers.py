@@ -28,6 +28,7 @@ from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 import threading
 import copy
+import warnings
 
 #
 # Some constants...
@@ -258,6 +259,11 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             raise ValueError("Invalid rollover interval specified: %s" % self.when)
 
         self.extMatch = re.compile(self.extMatch, re.ASCII)
+        if self.when == 'MIDNIGHT' and interval != 1:
+            msg = (f'An interval of {interval} is incompatible with '
+                   "when='MIDNIGHT'. Use when='D' (for days) "
+                   'if you want to use an interval other than 1.')
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
         self.interval = self.interval * interval # multiply by units requested
         # The following line added because the filename passed in could be a
         # path object (see Issue #27493), but self.baseFilename will be a string

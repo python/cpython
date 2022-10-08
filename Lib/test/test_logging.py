@@ -5755,6 +5755,16 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         finally:
             rh.close()
 
+    def test_midnight_interval(self):
+        with warnings.catch_warnings(record=True) as w:
+            rh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, encoding="utf-8", when='MIDNIGHT', interval=2, backupCount=0,
+                utc=True)
+            rh.close()
+        if w:
+            self.assertIs(w[0].category, DeprecationWarning)
+            self.assertIn('An interval of 2 is incompatible ', str(w[0].message))
+
     #@unittest.skipIf(True, 'Temporarily skipped while failures investigated.')
     def test_compute_rollover_weekly_attime(self):
         currentTime = int(time.time())
