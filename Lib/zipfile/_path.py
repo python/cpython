@@ -1,9 +1,12 @@
 import io
 import posixpath
+import zipfile
 import itertools
 import contextlib
 import pathlib
-import zipfile
+
+
+__all__ = ['Path']
 
 
 def _parents(path):
