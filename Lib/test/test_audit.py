@@ -223,25 +223,5 @@ class AuditTest(unittest.TestCase):
         )
 
 
-    def test_syslog(self):
-        syslog = import_helper.import_module("syslog")
-
-        returncode, events, stderr = self.run_python("test_syslog")
-
-        if returncode:
-            self.fail(stderr)
-
-        if support.verbose:
-            print(*events, sep='\n')
-
-        self.assertSequenceEqual(
-            [('syslog.openlog', ' ', f'python 0 {syslog.LOG_USER}'),
-            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test'),
-            ('syslog.setlogmask', ' ', f'{syslog.LOG_DEBUG}'),
-            ('syslog.closelog', '', '')],
-            events
-        )
-
-
 if __name__ == "__main__":
     unittest.main()

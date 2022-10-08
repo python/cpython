@@ -450,20 +450,6 @@ def test_syslog():
     syslog.closelog()
 
 
-def test_syslog():
-    import syslog
-
-    def hook(event, args):
-        if event.startswith("syslog."):
-            print(event, *args)
-
-    sys.addaudithook(hook)
-    syslog.openlog('python')
-    syslog.syslog('test')
-    syslog.setlogmask(syslog.LOG_DEBUG)
-    syslog.closelog()
-
-
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
