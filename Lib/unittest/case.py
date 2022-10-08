@@ -895,9 +895,8 @@ class TestCase(object):
               objects is more than the given delta.
 
            3) Comparing that the relative difference between the two
-              objects is more than the given rel_delta. The relative
-              difference is applied with respect to the first object,
-              testing abs(first - second) < rel_delta*abs(first).
+              objects is more than the given rel_delta, using the same
+              algorithm as :meth:`math.isclose`.
 
            If the two objects compare equal then they will automatically
            compare almost equal.
@@ -920,7 +919,7 @@ class TestCase(object):
                 safe_repr(delta),
                 safe_repr(diff))
         elif rel_delta is not None:
-            if diff < rel_delta*abs(first):
+            if (diff < rel_delta*abs(first)) or (diff < rel_delta*abs(second)):
                 return
 
             standardMsg = '%s != %s within relatively %s (%s rel. difference)' % (
@@ -965,7 +964,7 @@ class TestCase(object):
                 safe_repr(delta),
                 safe_repr(diff))
         elif rel_delta is not None:
-            if diff > rel_delta*abs(first):
+            if (diff > rel_delta*abs(first)) and (diff > rel_delta*abs(second)):
                 return
 
             standardMsg = '%s == %s within relatively %s (%s rel. difference)' % (
