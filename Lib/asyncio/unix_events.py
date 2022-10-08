@@ -1025,7 +1025,7 @@ class SafeChildWatcher(BaseChildWatcher):
     def __init__(self):
         super().__init__()
         warnings._deprecated("SafeChildWatcher",
-                             "{name!r} is deprecated since Python 3.12 and will be "
+                             "{name!r} is deprecated as of Python 3.12 and will be "
                              "removed in Python {remove}.",
                               remove=(3, 14))
 
@@ -1108,7 +1108,7 @@ class FastChildWatcher(BaseChildWatcher):
         self._zombies = {}
         self._forks = 0
         warnings._deprecated("FastChildWatcher",
-                             "{name!r} is deprecated since Python 3.12 and will be "
+                             "{name!r} is deprecated as of Python 3.12 and will be "
                              "removed in Python {remove}.",
                               remove=(3, 14))
 
@@ -1224,7 +1224,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         self._callbacks = {}
         self._saved_sighandler = None
         warnings._deprecated("MultiLoopChildWatcher",
-                             "{name!r} is deprecated since Python 3.12 and will be "
+                             "{name!r} is deprecated as of Python 3.12 and will be "
                              "removed in Python {remove}.",
                               remove=(3, 14))
 
