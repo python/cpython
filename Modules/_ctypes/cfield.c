@@ -292,7 +292,7 @@ PyObject *
 PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian)
+                int pack, int big_endian, int ms_struct)
 {
     CFieldObject* self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
     if (self == NULL)

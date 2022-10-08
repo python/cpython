@@ -350,6 +350,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     _Py_IDENTIFIER(_swappedbytes_);
     _Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
     _Py_IDENTIFIER(_pack_);
+    _Py_IDENTIFIER(_ms_struct_);
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
@@ -360,6 +361,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int pack;
     Py_ssize_t ffi_ofs;
     int big_endian;
+    int ms_struct;
     int arrays_seen = 0;
 
     /* HACK Alert: I cannot be bothered to fix ctypes.com, so there has to
@@ -382,6 +384,20 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     }
     else {
         big_endian = PY_BIG_ENDIAN;
+    }
+
+    #ifdef MS_WIN32
+    ms_struct = 1;
+    #else
+    ms_struct = 0;
+    #endif
+
+    if (_PyObject_LookupAttrId(type, &PyId__ms_struct_, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        ms_struct = _PyLong_AsInt(tmp);
+        Py_DECREF(tmp);
     }
 
     if (_PyObject_LookupAttrId(type,
@@ -610,7 +626,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian);
+                                   pack, big_endian, ms_struct);
         } else /* union */ {
             field_size = 0;
             size = 0;
@@ -620,7 +636,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian);
+                                   pack, big_endian, ms_struct);
             union_size = max(size, union_size);
         }
         total_align = max(align, total_align);
