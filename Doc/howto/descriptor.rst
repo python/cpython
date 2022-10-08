@@ -1584,7 +1584,7 @@ Python:
 
         def __new__(cls, *args, **kwargs):
             'Emulate object_new() in Objects/typeobject.c'
-            inst = super().__new__(cls, *args, **kwargs)
+            inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
                 empty_slots = [null] * len(cls.slot_names)
                 object.__setattr__(inst, '_slotvalues', empty_slots)
