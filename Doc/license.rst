@@ -302,7 +302,8 @@ for third-party software incorporated in the Python distribution.
 Mersenne Twister
 ----------------
 
-The :mod:`_random` module includes code based on a download from
+The :mod:`!_random` C extension underlying the :mod:`random` module
+includes code based on a download from
 http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html. The following are
 the verbatim comments from the original code::
 
@@ -819,7 +820,8 @@ sources unless the build is configured ``--with-system-expat``::
 libffi
 ------
 
-The :mod:`_ctypes` extension is built using an included copy of the libffi
+The :mod:`!_ctypes` C extension underlying the :mod:`ctypes` module
+is built using an included copy of the libffi
 sources unless the build is configured ``--with-system-libffi``::
 
    Copyright (c) 1996-2008  Red Hat, Inc and others.
@@ -920,7 +922,8 @@ on the cfuhash project::
 libmpdec
 --------
 
-The :mod:`_decimal` module is built using an included copy of the libmpdec
+The :mod:`!_decimal` C extension underlying the :mod:`decimal` module
+is built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
    Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
