@@ -1,8 +1,10 @@
 import os
+import shutil
 import signal
 import sys
 import unittest
 import warnings
+import functools
 from unittest import mock
 
 import asyncio
@@ -27,6 +29,19 @@ PROGRAM_CAT = [
     ';'.join(('import sys',
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
+
+
+@functools.cache
+def _has_pidfd_support():
+    if not hasattr(os, 'pidfd_open'):
+        return False
+
+    try:
+        os.close(os.pidfd_open(os.getpid()))
+    except OSError:
+        return False
+
+    return True
 
 
 def tearDownModule():
@@ -174,6 +189,30 @@ class SubprocessMixin:
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(*args)
         )
+        proc.kill()
+        returncode = self.loop.run_until_complete(proc.wait())
+        if sys.platform == 'win32':
+            self.assertIsInstance(returncode, int)
+            # expect 1 but sometimes get 0
+        else:
+            self.assertEqual(-signal.SIGKILL, returncode)
+
+    def test_kill_issue43884(self):
+        blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(100000000)"'
+        creationflags = 0
+        if sys.platform == 'win32':
+            from subprocess import CREATE_NEW_PROCESS_GROUP
+            # On windows create a new process group so that killing process
+            # kills the process and all its children.
+            creationflags = CREATE_NEW_PROCESS_GROUP
+        proc = self.loop.run_until_complete(
+            asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
+            creationflags=creationflags)
+        )
+        self.loop.run_until_complete(asyncio.sleep(1))
+        if sys.platform == 'win32':
+            proc.send_signal(signal.CTRL_BREAK_EVENT)
+        # On windows it is an alias of terminate which sets the return code
         proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
         if sys.platform == 'win32':
@@ -683,17 +722,8 @@ if sys.platform != 'win32':
 
         Watcher = unix_events.FastChildWatcher
 
-    def has_pidfd_support():
-        if not hasattr(os, 'pidfd_open'):
-            return False
-        try:
-            os.close(os.pidfd_open(os.getpid()))
-        except OSError:
-            return False
-        return True
-
     @unittest.skipUnless(
-        has_pidfd_support(),
+        _has_pidfd_support(),
         "operating system does not support pidfds",
     )
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
@@ -726,6 +756,35 @@ if sys.platform != 'win32':
                 mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
             ])
 
+
+        @unittest.skipUnless(
+            _has_pidfd_support(),
+            "operating system does not support pidfds",
+        )
+        def test_create_subprocess_with_pidfd(self):
+            async def in_thread():
+                proc = await asyncio.create_subprocess_exec(
+                    *PROGRAM_CAT,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                )
+                stdout, stderr = await proc.communicate(b"some data")
+                return proc.returncode, stdout
+
+            async def main():
+                # asyncio.Runner did not call asyncio.set_event_loop()
+                with self.assertRaises(RuntimeError):
+                    asyncio.get_event_loop_policy().get_event_loop()
+                return await asyncio.to_thread(asyncio.run, in_thread())
+
+            asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
+            try:
+                with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
+                    returncode, stdout = runner.run(main())
+                self.assertEqual(returncode, 0)
+                self.assertEqual(stdout, b'some data')
+            finally:
+                asyncio.set_child_watcher(None)
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):

@@ -7,8 +7,8 @@ Type Objects
 
 Perhaps one of the most important structures of the Python object system is the
 structure that defines a new type: the :c:type:`PyTypeObject` structure.  Type
-objects can be handled using any of the :c:func:`PyObject_\*` or
-:c:func:`PyType_\*` functions, but do not offer much that's interesting to most
+objects can be handled using any of the ``PyObject_*`` or
+``PyType_*`` functions, but do not offer much that's interesting to most
 Python applications. These objects are fundamental to how objects behave, so
 they are very important to the interpreter itself and to any extension module
 that implements new types.
@@ -1519,7 +1519,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    If the instances of this type are weakly referenceable, this field is greater
    than zero and contains the offset in the instance structure of the weak
    reference list head (ignoring the GC header, if present); this offset is used by
-   :c:func:`PyObject_ClearWeakRefs` and the :c:func:`PyWeakref_\*` functions.  The
+   :c:func:`PyObject_ClearWeakRefs` and the ``PyWeakref_*`` functions.  The
    instance structure needs to include a field of type :c:expr:`PyObject*` which is
    initialized to ``NULL``.
 
