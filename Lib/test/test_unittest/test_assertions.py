@@ -58,26 +58,19 @@ class Test_Assertions(unittest.TestCase):
                                   delta=datetime.timedelta(seconds=5))
 
     def test_AlmostEqualWithRelativeDelta(self):
-        self.assertAlmostEqual(1.1, 1.0, rel_delta=0.5)
-        self.assertAlmostEqual(1.0, 1.1, rel_delta=0.5)
-        with self.assertRaises(self.failureException):
-            self.assertAlmostEqual(1.1, 1.0, rel_delta=0.05)
-        with self.assertRaises(self.failureException):
-            self.assertAlmostEqual(1.0, 1.1, rel_delta=0.05)
-
-        self.assertNotAlmostEqual(1.1, 1.0, rel_delta=0.05)
-        self.assertNotAlmostEqual(1.0, 1.1, rel_delta=0.05)
-        with self.assertRaises(self.failureException):
-            self.assertNotAlmostEqual(1.1, 1.0, rel_delta=0.5)
-        with self.assertRaises(self.failureException):
-            self.assertNotAlmostEqual(1.0, 1.1, rel_delta=0.5)
-
         self.assertAlmostEqual(1.0, 0.6, rel_delta=0.5)
-        self.assertNotAlmostEqual(0.6, 1.0, rel_delta=0.5)
+        self.assertAlmostEqual(0.6, 1.0, rel_delta=0.5)
         with self.assertRaises(self.failureException):
-            self.assertAlmostEqual(0.6, 1.0, rel_delta=0.5)
+            self.assertAlmostEqual(1.0, 0.6, rel_delta=0.05)
+        with self.assertRaises(self.failureException):
+            self.assertAlmostEqual(0.6, 1.0, rel_delta=0.05)
+
+        self.assertNotAlmostEqual(1.0, 0.6, rel_delta=0.05)
+        self.assertNotAlmostEqual(0.6, 1.0, rel_delta=0.05)
         with self.assertRaises(self.failureException):
             self.assertNotAlmostEqual(1.0, 0.6, rel_delta=0.5)
+        with self.assertRaises(self.failureException):
+            self.assertNotAlmostEqual(0.6, 1.0, rel_delta=0.5)
 
         with self.assertRaises(TypeError):
             self.assertAlmostEqual(1.0, 1.1, places=0, rel_delta=0.5)
