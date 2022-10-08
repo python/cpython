@@ -2253,6 +2253,20 @@ PyObject_IS_GC(PyObject *obj)
 }
 
 void
+_Py_ScheduleGC(PyInterpreterState *interp)
+{
+    GCState *gcstate = &interp->gc;
+    if (gcstate->collecting == 1) {
+        return;
+    }
+    struct _ceval_state *ceval = &interp->ceval;
+    if (!_Py_atomic_load_relaxed(&ceval->gc_scheduled)) {
+        _Py_atomic_store_relaxed(&ceval->gc_scheduled, 1);
+        _Py_atomic_store_relaxed(&ceval->eval_breaker, 1);
+    }
+}
+
+void
 _PyObject_GC_Link(PyObject *op)
 {
     PyGC_Head *g = AS_GC(op);
@@ -2269,10 +2283,17 @@ _PyObject_GC_Link(PyObject *op)
         !gcstate->collecting &&
         !_PyErr_Occurred(tstate))
     {
-        gcstate->collecting = 1;
-        gc_collect_generations(tstate);
-        gcstate->collecting = 0;
+        _Py_ScheduleGC(tstate->interp);
     }
+}
+
+void
+_Py_RunGC(PyThreadState *tstate)
+{
+    GCState *gcstate = &tstate->interp->gc;
+    gcstate->collecting = 1;
+    gc_collect_generations(tstate);
+    gcstate->collecting = 0;
 }
 
 static PyObject *
