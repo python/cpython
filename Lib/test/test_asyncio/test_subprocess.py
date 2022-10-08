@@ -688,7 +688,7 @@ if sys.platform != 'win32':
             self.loop = policy.new_event_loop()
             self.set_event_loop(self.loop)
 
-            watcher = self.Watcher()
+            watcher = self._get_watcher()
             watcher.attach_loop(self.loop)
             policy.set_child_watcher(watcher)
 
@@ -703,24 +703,28 @@ if sys.platform != 'win32':
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
 
-        Watcher = unix_events.ThreadedChildWatcher
-
-    @unittest.skip("bpo-38323: MultiLoopChildWatcher has a race condition \
-                    and these tests can hang the test suite")
-    class SubprocessMultiLoopWatcherTests(SubprocessWatcherMixin,
-                                          test_utils.TestCase):
-
-        Watcher = unix_events.MultiLoopChildWatcher
+        def _get_watcher(self):
+            return unix_events.ThreadedChildWatcher()
 
     class SubprocessSafeWatcherTests(SubprocessWatcherMixin,
                                      test_utils.TestCase):
 
-        Watcher = unix_events.SafeChildWatcher
+        def _get_watcher(self):
+            with self.assertWarns(DeprecationWarning):
+                return unix_events.SafeChildWatcher()
+
+    class MultiLoopChildWatcherTests(test_utils.TestCase):
+
+        def test_warns(self):
+            with self.assertWarns(DeprecationWarning):
+                unix_events.MultiLoopChildWatcher()
 
     class SubprocessFastWatcherTests(SubprocessWatcherMixin,
                                      test_utils.TestCase):
 
-        Watcher = unix_events.FastChildWatcher
+        def _get_watcher(self):
+            with self.assertWarns(DeprecationWarning):
+                return unix_events.FastChildWatcher()
 
     @unittest.skipUnless(
         _has_pidfd_support(),
@@ -728,7 +732,9 @@ if sys.platform != 'win32':
     )
     class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
                                       test_utils.TestCase):
-        Watcher = unix_events.PidfdChildWatcher
+
+        def _get_watcher(self):
+            return unix_events.PidfdChildWatcher()
 
 
     class GenericWatcherTests(test_utils.TestCase):
