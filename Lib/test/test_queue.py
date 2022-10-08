@@ -241,6 +241,17 @@ class BaseQueueTestMixin(BlockingTestMixin):
         with self.assertRaises(self.queue.Full):
             q.put_nowait(4)
 
+    def test_queue_front(self):
+        q = self.type2test(QUEUE_SIZE)
+        self.assertEqual(q.front(), None)
+
+        q.put(111)
+        self.assertEqual(q.front(), 111)
+
+        q.put(222)
+        self.assertEqual(q.front(), 111)
+
+
 class QueueTest(BaseQueueTestMixin):
 
     def setUp(self):

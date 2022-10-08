@@ -182,6 +182,15 @@ class Queue:
             self.not_full.notify()
             return item
 
+    def front(self):
+        ''' Get the first element in the queue without removing
+ 
+        If queue is empty, then return None
+        '''
+        if not self.empty():
+            return self.queue[0]
+        return None
+
     def put_nowait(self, item):
         '''Put an item into the queue without blocking.
 
