@@ -61,7 +61,7 @@ The module defines the following:
    events.
 
    *sizehint* informs epoll about the expected number of events to be
-   registered.  It must be positive, or `-1` to use the default. It is only
+   registered.  It must be positive, or ``-1`` to use the default. It is only
    used on older systems where :c:func:`epoll_create1` is not available;
    otherwise it has no effect (though its value is still checked).
 

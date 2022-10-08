@@ -2807,6 +2807,25 @@ class CAPITest(unittest.TestCase):
         check_format('repr=abc',
                      b'repr=%V', 'abc', b'xyz')
 
+        # test %p
+        # We cannot test the exact result,
+        # because it returns a hex representation of a C pointer,
+        # which is going to be different each time. But, we can test the format.
+        p_format_regex = r'^0x[a-zA-Z0-9]{3,}$'
+        p_format1 = PyUnicode_FromFormat(b'%p', 'abc')
+        self.assertIsInstance(p_format1, str)
+        self.assertRegex(p_format1, p_format_regex)
+
+        p_format2 = PyUnicode_FromFormat(b'%p %p', '123456', b'xyz')
+        self.assertIsInstance(p_format2, str)
+        self.assertRegex(p_format2,
+                         r'0x[a-zA-Z0-9]{3,} 0x[a-zA-Z0-9]{3,}')
+
+        # Extra args are ignored:
+        p_format3 = PyUnicode_FromFormat(b'%p', '123456', None, b'xyz')
+        self.assertIsInstance(p_format3, str)
+        self.assertRegex(p_format3, p_format_regex)
+
         # Test string decode from parameter of %s using utf-8.
         # b'\xe4\xba\xba\xe6\xb0\x91' is utf-8 encoded byte sequence of
         # '\u4eba\u6c11'
@@ -2944,6 +2963,44 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_asutf8andsize(bmp2), (b'\xef\xbf\xbf', 3))
         self.assertEqual(unicode_asutf8andsize(nonbmp), (b'\xf4\x8f\xbf\xbf', 4))
         self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize, 'a\ud800b\udfffc')
+
+    # Test PyUnicode_Count()
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_count(self):
+        from _testcapi import unicode_count
+
+        st = 'abcabd'
+        self.assertEqual(unicode_count(st, 'a', 0, len(st)), 2)
+        self.assertEqual(unicode_count(st, 'ab', 0, len(st)), 2)
+        self.assertEqual(unicode_count(st, 'abc', 0, len(st)), 1)
+        self.assertEqual(unicode_count(st, 'а', 0, len(st)), 0)  # cyrillic "a"
+        # start < end
+        self.assertEqual(unicode_count(st, 'a', 3, len(st)), 1)
+        self.assertEqual(unicode_count(st, 'a', 4, len(st)), 0)
+        self.assertEqual(unicode_count(st, 'a', 0, sys.maxsize), 2)
+        # start >= end
+        self.assertEqual(unicode_count(st, 'abc', 0, 0), 0)
+        self.assertEqual(unicode_count(st, 'a', 3, 2), 0)
+        self.assertEqual(unicode_count(st, 'a', sys.maxsize, 5), 0)
+        # negative
+        self.assertEqual(unicode_count(st, 'ab', -len(st), -1), 2)
+        self.assertEqual(unicode_count(st, 'a', -len(st), -3), 1)
+        # wrong args
+        self.assertRaises(TypeError, unicode_count, 'a', 'a')
+        self.assertRaises(TypeError, unicode_count, 'a', 'a', 1)
+        self.assertRaises(TypeError, unicode_count, 1, 'a', 0, 1)
+        self.assertRaises(TypeError, unicode_count, 'a', 1, 0, 1)
+        # empty string
+        self.assertEqual(unicode_count('abc', '', 0, 3), 4)
+        self.assertEqual(unicode_count('abc', '', 1, 3), 3)
+        self.assertEqual(unicode_count('', '', 0, 1), 1)
+        self.assertEqual(unicode_count('', 'a', 0, 1), 0)
+        # different unicode kinds
+        for uni in "\xa1", "\u8000\u8080", "\ud800\udc02", "\U0001f100\U0001f1f1":
+            for ch in uni:
+                self.assertEqual(unicode_count(uni, ch, 0, len(uni)), 1)
+                self.assertEqual(unicode_count(st, ch, 0, len(st)), 0)
 
     # Test PyUnicode_FindChar()
     @support.cpython_only
