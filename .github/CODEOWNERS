@@ -151,3 +151,6 @@ Lib/ast.py                    @isidentical
 
 # pathlib
 **/*pathlib*                  @brettcannon
+
+# zipfile.Path
+**/*zipfile/*_path.py         @jaraco
