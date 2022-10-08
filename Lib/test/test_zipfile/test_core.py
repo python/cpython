@@ -2715,13 +2715,13 @@ class TestWithDirectory(unittest.TestCase):
 class ZipInfoTests(unittest.TestCase):
     def test_from_file(self):
         zi = zipfile.ZipInfo.from_file(__file__)
-        self.assertEqual(posixpath.basename(zi.filename), 'test_zipfile.py')
+        self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
     def test_from_file_pathlike(self):
         zi = zipfile.ZipInfo.from_file(pathlib.Path(__file__))
-        self.assertEqual(posixpath.basename(zi.filename), 'test_zipfile.py')
+        self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
