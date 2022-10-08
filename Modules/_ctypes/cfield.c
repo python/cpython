@@ -350,13 +350,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 pack, big_endian,
                 self, dict
                 );
-    } else if (
-        #ifdef MS_WIN32
-        true
-        #else
-        pack != 0
-        #endif
-        ) {
+    } else if (ms_struct || pack != 0) {
         return PyCField_FromDesc_windows(desc, index,
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,

@@ -303,6 +303,77 @@ class BitFieldTest(unittest.TestCase):
             self.assertEqual(8, alignment(X))
             self.assertEqual(8, sizeof(X))
 
+    def test_gh_95496(self):
+        for field_width in range(1, 33):
+            class TestStruct(Structure):
+                _fields_ = [
+                    ("Field1", c_uint32, field_width),
+                    ("Field2", c_uint8, 8)
+                ]
+
+            cmd = TestStruct()
+            cmd.Field2 = 1
+            self.assertEqual(1, cmd.Field2)
+
+    def test_gh_84039(self):
+        class Bad(Structure):
+            _pack_ = 1
+            _fields_ = [
+                ("a0", c_uint8, 1),
+                ("a1", c_uint8, 1),
+                ("a2", c_uint8, 1),
+                ("a3", c_uint8, 1),
+                ("a4", c_uint8, 1),
+                ("a5", c_uint8, 1),
+                ("a6", c_uint8, 1),
+                ("a7", c_uint8, 1),
+                ("b0", c_uint16, 4),
+                ("b1", c_uint16, 12),
+            ]
+
+
+        class GoodA(Structure):
+            _pack_ = 1
+            _fields_ = [
+                ("a0", c_uint8, 1),
+                ("a1", c_uint8, 1),
+                ("a2", c_uint8, 1),
+                ("a3", c_uint8, 1),
+                ("a4", c_uint8, 1),
+                ("a5", c_uint8, 1),
+                ("a6", c_uint8, 1),
+                ("a7", c_uint8, 1),
+            ]
+
+
+        class Good(Structure):
+            _pack_ = 1
+            _fields_ = [
+                ("a", GoodA),
+                ("b0", c_uint16, 4),
+                ("b1", c_uint16, 12),
+            ]
+
+        self.assertEqual(3, sizeof(Bad))
+        self.assertEqual(3, sizeof(Good))
+
+    def test_gh_73939(self):
+        class MyStructure(Structure):
+            _pack_      = 1
+            _fields_    = [
+                            ("P",       c_uint16),
+                            ("L",       c_uint16, 9),
+                            ("Pro",     c_uint16, 1),
+                            ("G",       c_uint16, 1),
+                            ("IB",      c_uint16, 1),
+                            ("IR",      c_uint16, 1),
+                            ("R",       c_uint16, 3),
+                            ("T",       c_uint32, 10),
+                            ("C",       c_uint32, 20),
+                            ("R2",      c_uint32, 2)
+                        ]
+        self.assertEqual(8, sizeof(MyStructure))
+
     def test_anon_bitfields(self):
         # anonymous bit-fields gave a strange error message
         class X(Structure):
