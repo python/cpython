@@ -5,12 +5,17 @@ import signal
 import sys
 import unittest
 from test import support
+from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 try:
     import gc
 except ImportError:
     gc = None
 
-from test.libregrtest.refleak import warm_caches
+from test.libregrtest.utils import (setup_unraisable_hook,
+                                    setup_threading_excepthook)
+
+
+UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
 
 
 def setup_tests(ns):
@@ -35,6 +40,7 @@ def setup_tests(ns):
         for signum in signals:
             faulthandler.register(signum, chain=True, file=stderr_fd)
 
+    _adjust_resource_limits()
     replace_stdout()
     support.record_original_stdout(sys.stdout)
 
@@ -60,28 +66,8 @@ def setup_tests(ns):
         if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
-    # MacOSX (a.k.a. Darwin) has a default stack size that is too small
-    # for deeply recursive regular expressions.  We see this as crashes in
-    # the Python test suite when running test_re.py and test_sre.py.  The
-    # fix is to set the stack limit to 2048.
-    # This approach may also be useful for other Unixy platforms that
-    # suffer from small default stack limits.
-    if sys.platform == 'darwin':
-        try:
-            import resource
-        except ImportError:
-            pass
-        else:
-            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
-            newsoft = min(hard, max(soft, 1024*2048))
-            resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
-
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
-
-        # Avoid false positives due to various caches
-        # filling slowly with random data:
-        warm_caches()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
@@ -89,29 +75,40 @@ def setup_tests(ns):
     if ns.threshold is not None:
         gc.set_threshold(ns.threshold)
 
-    try:
-        import msvcrt
-    except ImportError:
-        pass
-    else:
-        msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                            msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                            msvcrt.SEM_NOGPFAULTERRORBOX|
-                            msvcrt.SEM_NOOPENFILEERRORBOX)
-        try:
-            msvcrt.CrtSetReportMode
-        except AttributeError:
-            # release build
-            pass
-        else:
-            for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                if ns.verbose and ns.verbose >= 2:
-                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-                else:
-                    msvcrt.CrtSetReportMode(m, 0)
+    support.suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
 
     support.use_resources = ns.use_resources
+
+    if hasattr(sys, 'addaudithook'):
+        # Add an auditing hook for all tests to ensure PySys_Audit is tested
+        def _test_audit_hook(name, args):
+            pass
+        sys.addaudithook(_test_audit_hook)
+
+    setup_unraisable_hook()
+    setup_threading_excepthook()
+
+    if ns.timeout is not None:
+        # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, ns.timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, ns.timeout / 4)
+
+        # If --timeout is short: reduce timeouts
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, ns.timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
+
+    if ns.xmlpath:
+        from test.support.testresult import RegressionTestResult
+        RegressionTestResult.USE_XML = True
+
+    # Ensure there's a non-ASCII character in env vars at all times to force
+    # tests consider this case. See BPO-44647 for details.
+    if TESTFN_UNDECODABLE and os.supports_bytes_environ:
+        os.environb.setdefault(UNICODE_GUARD_ENV.encode(), TESTFN_UNDECODABLE)
+    elif FS_NONASCII:
+        os.environ.setdefault(UNICODE_GUARD_ENV, FS_NONASCII)
 
 
 def replace_stdout():
@@ -138,3 +135,25 @@ def replace_stdout():
         sys.stdout.close()
         sys.stdout = stdout
     atexit.register(restore_stdout)
+
+
+def _adjust_resource_limits():
+    """Adjust the system resource limits (ulimit) if needed."""
+    try:
+        import resource
+        from resource import RLIMIT_NOFILE
+    except ImportError:
+        return
+    fd_limit, max_fds = resource.getrlimit(RLIMIT_NOFILE)
+    # On macOS the default fd limit is sometimes too low (256) for our
+    # test suite to succeed.  Raise it to something more reasonable.
+    # 1024 is a common Linux default.
+    desired_fds = 1024
+    if fd_limit < desired_fds and fd_limit < max_fds:
+        new_fd_limit = min(desired_fds, max_fds)
+        try:
+            resource.setrlimit(RLIMIT_NOFILE, (new_fd_limit, max_fds))
+            print(f"Raised RLIMIT_NOFILE: {fd_limit} -> {new_fd_limit}")
+        except (ValueError, OSError) as err:
+            print(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
+                  f"{new_fd_limit}: {err}.")

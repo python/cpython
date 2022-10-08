@@ -101,7 +101,7 @@ class TextFileTestCase(support.TempdirManager, unittest.TestCase):
             in_file.close()
 
 def test_suite():
-    return unittest.makeSuite(TextFileTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(TextFileTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

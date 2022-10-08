@@ -3,6 +3,10 @@
 {% if daily is defined %}
   {% set dlbase = pathto('archives', 1) %}
 {% else %}
+  {#
+    The link below returns HTTP 404 until the first related alpha release.
+    This is expected; use daily documentation builds for CPython development.
+  #}
   {% set dlbase = 'https://docs.python.org/ftp/python/doc/' + release %}
 {% endif %}
 
@@ -12,8 +16,7 @@
 {% if last_updated %}<p><b>Last updated on: {{ last_updated }}.</b></p>{% endif %}
 
 <p>To download an archive containing all the documents for this version of
-Python in one of various formats, follow one of links in this table. The numbers
-in the table are the size of the download files in megabytes.</p>
+Python in one of various formats, follow one of links in this table.</p>
 
 <table class="docutils">
   <tr><th>Format</th><th>Packed as .zip</th><th>Packed as .tar.bz2</th></tr>
@@ -40,10 +43,6 @@ in the table are the size of the download files in megabytes.</p>
 </table>
 
 <p>These archives contain all the content in the documentation.</p>
-
-<p>HTML Help (<tt>.chm</tt>) files are made available in the "Windows" section
-on the <a href="https://www.python.org/downloads/release/python-{{ release.replace('.', '') }}/">Python
-download page</a>.</p>
 
 
 <h2>Unpacking</h2>

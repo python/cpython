@@ -1,4 +1,5 @@
 import unittest
+import sys
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
@@ -10,6 +11,14 @@ import operator
 INF = float("inf")
 NAN = float("nan")
 # These tests ensure that complex math does the right thing
+
+ZERO_DIVISION = (
+    (1+1j, 0+0j),
+    (1+1j, 0.0),
+    (1+1j, 0),
+    (1.0, 0+0j),
+    (1, 0+0j),
+)
 
 class ComplexTest(unittest.TestCase):
 
@@ -99,21 +108,34 @@ class ComplexTest(unittest.TestCase):
             self.check_div(complex(random(), random()),
                            complex(random(), random()))
 
-        self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
-        # FIXME: The following currently crashes on Alpha
-        # self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
-
         self.assertAlmostEqual(complex.__truediv__(2+0j, 1+1j), 1-1j)
-        self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
 
         for denom_real, denom_imag in [(0, NAN), (NAN, 0), (NAN, NAN)]:
             z = complex(0, 0) / complex(denom_real, denom_imag)
             self.assertTrue(isnan(z.real))
             self.assertTrue(isnan(z.imag))
 
+    def test_truediv_zero_division(self):
+        for a, b in ZERO_DIVISION:
+            with self.assertRaises(ZeroDivisionError):
+                a / b
+
     def test_floordiv(self):
-        self.assertRaises(TypeError, complex.__floordiv__, 3+0j, 1.5+0j)
-        self.assertRaises(TypeError, complex.__floordiv__, 3+0j, 0+0j)
+        with self.assertRaises(TypeError):
+            (1+1j) // (1+0j)
+        with self.assertRaises(TypeError):
+            (1+1j) // 1.0
+        with self.assertRaises(TypeError):
+            (1+1j) // 1
+        with self.assertRaises(TypeError):
+            1.0 // (1+0j)
+        with self.assertRaises(TypeError):
+            1 // (1+0j)
+
+    def test_floordiv_zero_division(self):
+        for a, b in ZERO_DIVISION:
+            with self.assertRaises(TypeError):
+                a // b
 
     def test_richcompare(self):
         self.assertIs(complex.__eq__(1+1j, 1<<10000), False)
@@ -160,13 +182,32 @@ class ComplexTest(unittest.TestCase):
 
     def test_mod(self):
         # % is no longer supported on complex numbers
-        self.assertRaises(TypeError, (1+1j).__mod__, 0+0j)
-        self.assertRaises(TypeError, lambda: (3.33+4.43j) % 0)
-        self.assertRaises(TypeError, (1+1j).__mod__, 4.3j)
+        with self.assertRaises(TypeError):
+            (1+1j) % (1+0j)
+        with self.assertRaises(TypeError):
+            (1+1j) % 1.0
+        with self.assertRaises(TypeError):
+            (1+1j) % 1
+        with self.assertRaises(TypeError):
+            1.0 % (1+0j)
+        with self.assertRaises(TypeError):
+            1 % (1+0j)
+
+    def test_mod_zero_division(self):
+        for a, b in ZERO_DIVISION:
+            with self.assertRaises(TypeError):
+                a % b
 
     def test_divmod(self):
         self.assertRaises(TypeError, divmod, 1+1j, 1+0j)
-        self.assertRaises(TypeError, divmod, 1+1j, 0+0j)
+        self.assertRaises(TypeError, divmod, 1+1j, 1.0)
+        self.assertRaises(TypeError, divmod, 1+1j, 1)
+        self.assertRaises(TypeError, divmod, 1.0, 1+0j)
+        self.assertRaises(TypeError, divmod, 1, 1+0j)
+
+    def test_divmod_zero_division(self):
+        for a, b in ZERO_DIVISION:
+            self.assertRaises(TypeError, divmod, a, b)
 
     def test_pow(self):
         self.assertAlmostEqual(pow(1+1j, 0+0j), 1.0)
@@ -175,6 +216,7 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(pow(1j, -1), 1/1j)
         self.assertAlmostEqual(pow(1j, 200), 1)
         self.assertRaises(ValueError, pow, 1+1j, 1+1j, 1+1j)
+        self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
 
         a = 3.33+4.43j
         self.assertEqual(a ** 0j, 1)
@@ -206,6 +248,54 @@ class ComplexTest(unittest.TestCase):
 
         b = 5.1+2.3j
         self.assertRaises(ValueError, pow, a, b, 0)
+
+        # Check some boundary conditions; some of these used to invoke
+        # undefined behaviour (https://bugs.python.org/issue44698). We're
+        # not actually checking the results of these operations, just making
+        # sure they don't crash (for example when using clang's
+        # UndefinedBehaviourSanitizer).
+        values = (sys.maxsize, sys.maxsize+1, sys.maxsize-1,
+                  -sys.maxsize, -sys.maxsize+1, -sys.maxsize+1)
+        for real in values:
+            for imag in values:
+                with self.subTest(real=real, imag=imag):
+                    c = complex(real, imag)
+                    try:
+                        c ** real
+                    except OverflowError:
+                        pass
+                    try:
+                        c ** c
+                    except OverflowError:
+                        pass
+
+    def test_pow_with_small_integer_exponents(self):
+        # Check that small integer exponents are handled identically
+        # regardless of their type.
+        values = [
+            complex(5.0, 12.0),
+            complex(5.0e100, 12.0e100),
+            complex(-4.0, INF),
+            complex(INF, 0.0),
+        ]
+        exponents = [-19, -5, -3, -2, -1, 0, 1, 2, 3, 5, 19]
+        for value in values:
+            for exponent in exponents:
+                with self.subTest(value=value, exponent=exponent):
+                    try:
+                        int_pow = value**exponent
+                    except OverflowError:
+                        int_pow = "overflow"
+                    try:
+                        float_pow = value**float(exponent)
+                    except OverflowError:
+                        float_pow = "overflow"
+                    try:
+                        complex_pow = value**complex(exponent)
+                    except OverflowError:
+                        complex_pow = "overflow"
+                    self.assertEqual(str(float_pow), str(int_pow))
+                    self.assertEqual(str(complex_pow), str(int_pow))
 
     def test_boolcontext(self):
         for i in range(100):
@@ -368,6 +458,24 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex(real=float2(17.), imag=float2(23.)), 17+23j)
         self.assertRaises(TypeError, complex, float2(None))
 
+        class MyIndex:
+            def __init__(self, value):
+                self.value = value
+            def __index__(self):
+                return self.value
+
+        self.assertAlmostEqual(complex(MyIndex(42)), 42.0+0.0j)
+        self.assertAlmostEqual(complex(123, MyIndex(42)), 123.0+42.0j)
+        self.assertRaises(OverflowError, complex, MyIndex(2**2000))
+        self.assertRaises(OverflowError, complex, 123, MyIndex(2**2000))
+
+        class MyInt:
+            def __int__(self):
+                return 42
+
+        self.assertRaises(TypeError, complex, MyInt())
+        self.assertRaises(TypeError, complex, 123, MyInt())
+
         class complex0(complex):
             """Test usage of __complex__() when inheriting from 'complex'"""
             def __complex__(self):
@@ -390,6 +498,18 @@ class ComplexTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(complex(complex1(1j)), 2j)
         self.assertRaises(TypeError, complex, complex2(1j))
+
+    def test___complex__(self):
+        z = 3 + 4j
+        self.assertEqual(z.__complex__(), z)
+        self.assertEqual(type(z.__complex__()), complex)
+
+        class complex_subclass(complex):
+            pass
+
+        z = complex_subclass(3 + 4j)
+        self.assertEqual(z.__complex__(), 3 + 4j)
+        self.assertEqual(type(z.__complex__()), complex)
 
     @support.requires_IEEE_754
     def test_constructor_special_numbers(self):
@@ -482,22 +602,6 @@ class ComplexTest(unittest.TestCase):
 
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
-
-    def test_file(self):
-        a = 3.33+4.43j
-        b = 5.1+2.3j
-
-        fo = None
-        try:
-            fo = open(support.TESTFN, "w")
-            print(a, b, file=fo)
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), ("%s %s\n" % (a, b)))
-        finally:
-            if (fo is not None) and (not fo.closed):
-                fo.close()
-            support.unlink(support.TESTFN)
 
     def test_getnewargs(self):
         self.assertEqual((1+2j).__getnewargs__(), (1.0, 2.0))
@@ -685,8 +789,6 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(format(complex(INF, 1), 'F'), 'INF+1.000000j')
         self.assertEqual(format(complex(INF, -1), 'F'), 'INF-1.000000j')
 
-def test_main():
-    support.run_unittest(ComplexTest)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -44,19 +44,17 @@ Copyright 2009 Gabriel A. Genellina
 import os
 import re
 import csv
-import sys
 
 from docutils import nodes
 from sphinx.builders import Builder
+import sphinx.util
 
 detect_all = re.compile(r'''
     ::(?=[^=])|            # two :: (but NOT ::=)
     :[a-zA-Z][a-zA-Z0-9]+| # :foo
     `|                     # ` (seldom used by itself)
     (?<!\.)\.\.[ \t]*\w+:  # .. foo: (but NOT ... else:)
-    ''', re.UNICODE | re.VERBOSE).finditer
-
-py3 = sys.version_info >= (3, 0)
+    ''', re.VERBOSE).finditer
 
 
 class Rule:
@@ -85,6 +83,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
     Checks for possibly invalid markup that may leak into the output.
     """
     name = 'suspicious'
+    logger = sphinx.util.logging.getLogger("CheckSuspiciousMarkupBuilder")
 
     def init(self):
         # create output file
@@ -113,10 +112,12 @@ class CheckSuspiciousMarkupBuilder(Builder):
     def finish(self):
         unused_rules = [rule for rule in self.rules if not rule.used]
         if unused_rules:
-            self.warn('Found %s/%s unused rules:' %
-                      (len(unused_rules), len(self.rules)))
-            for rule in unused_rules:
-                self.info(repr(rule))
+            self.logger.warning(
+                'Found %s/%s unused rules: %s' % (
+                    len(unused_rules), len(self.rules),
+                    '\n'.join(repr(rule) for rule in unused_rules),
+                )
+            )
         return
 
     def check_issue(self, line, lineno, issue):
@@ -146,34 +147,17 @@ class CheckSuspiciousMarkupBuilder(Builder):
         return False
 
     def report_issue(self, text, lineno, issue):
-        if not self.any_issue: self.info()
         self.any_issue = True
         self.write_log_entry(lineno, issue, text)
-        if py3:
-            self.warn('[%s:%d] "%s" found in "%-.120s"' %
-                      (self.docname, lineno, issue, text))
-        else:
-            self.warn('[%s:%d] "%s" found in "%-.120s"' % (
-                self.docname.encode(sys.getdefaultencoding(),'replace'),
-                lineno,
-                issue.encode(sys.getdefaultencoding(),'replace'),
-                text.strip().encode(sys.getdefaultencoding(),'replace')))
+        self.logger.warning('[%s:%d] "%s" found in "%-.120s"' %
+                                (self.docname, lineno, issue, text))
         self.app.statuscode = 1
 
     def write_log_entry(self, lineno, issue, text):
-        if py3:
-            f = open(self.log_file_name, 'a')
-            writer = csv.writer(f, dialect)
-            writer.writerow([self.docname, lineno, issue, text.strip()])
-            f.close()
-        else:
-            f = open(self.log_file_name, 'ab')
-            writer = csv.writer(f, dialect)
-            writer.writerow([self.docname.encode('utf-8'),
-                             lineno,
-                             issue.encode('utf-8'),
-                             text.strip().encode('utf-8')])
-            f.close()
+        f = open(self.log_file_name, 'a')
+        writer = csv.writer(f, dialect)
+        writer.writerow([self.docname, lineno, issue, text.strip()])
+        f.close()
 
     def load_rules(self, filename):
         """Load database of previously ignored issues.
@@ -181,13 +165,10 @@ class CheckSuspiciousMarkupBuilder(Builder):
         A csv file, with exactly the same format as suspicious.csv
         Fields: document name (normalized), line number, issue, surrounding text
         """
-        self.info("loading ignore rules... ", nonl=1)
+        self.logger.info("loading ignore rules... ", nonl=1)
         self.rules = rules = []
         try:
-            if py3:
-                f = open(filename, 'r')
-            else:
-                f = open(filename, 'rb')
+            f = open(filename, 'r')
         except IOError:
             return
         for i, row in enumerate(csv.reader(f)):
@@ -199,14 +180,10 @@ class CheckSuspiciousMarkupBuilder(Builder):
                 lineno = int(lineno)
             else:
                 lineno = None
-            if not py3:
-                docname = docname.decode('utf-8')
-                issue = issue.decode('utf-8')
-                text = text.decode('utf-8')
             rule = Rule(docname, lineno, issue, text)
             rules.append(rule)
         f.close()
-        self.info('done, %d rules loaded' % len(self.rules))
+        self.logger.info('done, %d rules loaded' % len(self.rules))
 
 
 def get_lineno(node):

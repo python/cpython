@@ -1,2 +1,0 @@
-Add a note about curses.addch and curses.addstr exception behavior when
-writing outside a window, or pad.

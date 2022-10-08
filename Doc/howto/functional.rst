@@ -65,11 +65,10 @@ output must only depend on its input.
 
 Some languages are very strict about purity and don't even have assignment
 statements such as ``a=3`` or ``c = a + b``, but it's difficult to avoid all
-side effects.  Printing to the screen or writing to a disk file are side
-effects, for example.  For example, in Python a call to the :func:`print` or
-:func:`time.sleep` function both return no useful value; they're only called for
-their side effects of sending some text to the screen or pausing execution for a
-second.
+side effects, such as printing to the screen or writing to a disk file. Another
+example is a call to the :func:`print` or :func:`time.sleep` function, neither
+of which returns a useful value. Both are called only for their side effects
+of sending some text to the screen or pausing execution for a second.
 
 Python programs written in functional style usually won't go to the extreme of
 avoiding all I/O or all assignments; instead, they'll provide a
@@ -198,7 +197,7 @@ for it.
 
 You can experiment with the iteration interface manually:
 
-    >>> L = [1,2,3]
+    >>> L = [1, 2, 3]
     >>> it = iter(L)
     >>> it  #doctest: +ELLIPSIS
     <...iterator object at ...>
@@ -229,7 +228,7 @@ iterator.  These two statements are equivalent::
 Iterators can be materialized as lists or tuples by using the :func:`list` or
 :func:`tuple` constructor functions:
 
-    >>> L = [1,2,3]
+    >>> L = [1, 2, 3]
     >>> iterator = iter(L)
     >>> t = tuple(iterator)
     >>> t
@@ -238,10 +237,10 @@ Iterators can be materialized as lists or tuples by using the :func:`list` or
 Sequence unpacking also supports iterators: if you know an iterator will return
 N elements, you can unpack them into an N-tuple:
 
-    >>> L = [1,2,3]
+    >>> L = [1, 2, 3]
     >>> iterator = iter(L)
-    >>> a,b,c = iterator
-    >>> a,b,c
+    >>> a, b, c = iterator
+    >>> a, b, c
     (1, 2, 3)
 
 Built-in functions such as :func:`max` and :func:`min` can take a single
@@ -316,9 +315,15 @@ line of a file like this::
 Sets can take their contents from an iterable and let you iterate over the set's
 elements::
 
-    S = {2, 3, 5, 7, 11, 13}
-    for i in S:
-        print(i)
+    >>> S = {2, 3, 5, 7, 11, 13}
+    >>> for i in S:
+    ...     print(i)
+    2
+    3
+    5
+    7
+    11
+    13
 
 
 
@@ -336,18 +341,18 @@ List comprehensions and generator expressions (short form: "listcomps" and
 functional programming language Haskell (https://www.haskell.org/).  You can strip
 all the whitespace from a stream of strings with the following code::
 
-    line_list = ['  line 1\n', 'line 2  \n', ...]
+    >>> line_list = ['  line 1\n', 'line 2  \n', ' \n', '']
 
-    # Generator expression -- returns iterator
-    stripped_iter = (line.strip() for line in line_list)
+    >>> # Generator expression -- returns iterator
+    >>> stripped_iter = (line.strip() for line in line_list)
 
-    # List comprehension -- returns list
-    stripped_list = [line.strip() for line in line_list]
+    >>> # List comprehension -- returns list
+    >>> stripped_list = [line.strip() for line in line_list]
 
 You can select only certain elements by adding an ``"if"`` condition::
 
-    stripped_list = [line.strip() for line in line_list
-                     if line != ""]
+    >>> stripped_list = [line.strip() for line in line_list
+    ...                  if line != ""]
 
 With a list comprehension, you get back a Python list; ``stripped_list`` is a
 list containing the resulting lines, not an iterator.  Generator expressions
@@ -364,7 +369,8 @@ have the form::
                  if condition1
                  for expr2 in sequence2
                  if condition2
-                 for expr3 in sequence3 ...
+                 for expr3 in sequence3
+                 ...
                  if condition3
                  for exprN in sequenceN
                  if conditionN )
@@ -411,7 +417,7 @@ lengths of all the sequences.  If you have two lists of length 3, the output
 list is 9 elements long:
 
     >>> seq1 = 'abc'
-    >>> seq2 = (1,2,3)
+    >>> seq2 = (1, 2, 3)
     >>> [(x, y) for x in seq1 for y in seq2]  #doctest: +NORMALIZE_WHITESPACE
     [('a', 1), ('a', 2), ('a', 3),
      ('b', 1), ('b', 2), ('b', 3),
@@ -479,7 +485,7 @@ Here's a sample usage of the ``generate_ints()`` generator:
       File "stdin", line 2, in generate_ints
     StopIteration
 
-You could equally write ``for i in generate_ints(5)``, or ``a,b,c =
+You could equally write ``for i in generate_ints(5)``, or ``a, b, c =
 generate_ints(3)``.
 
 Inside a generator function, ``return value`` causes ``StopIteration(value)``
@@ -590,7 +596,7 @@ generator function.
 In addition to :meth:`~generator.send`, there are two other methods on
 generators:
 
-* :meth:`throw(type, value=None, traceback=None) <generator.throw>` is used to
+* :meth:`throw(value) <generator.throw>` is used to
   raise an exception inside the generator; the exception is raised by the
   ``yield`` expression where the generator's execution is paused.
 
@@ -695,17 +701,17 @@ truth values of an iterable's contents.  :func:`any` returns ``True`` if any ele
 in the iterable is a true value, and :func:`all` returns ``True`` if all of the
 elements are true values:
 
-    >>> any([0,1,0])
+    >>> any([0, 1, 0])
     True
-    >>> any([0,0,0])
+    >>> any([0, 0, 0])
     False
-    >>> any([1,1,1])
+    >>> any([1, 1, 1])
     True
-    >>> all([0,1,0])
+    >>> all([0, 1, 0])
     False
-    >>> all([0,0,0])
+    >>> all([0, 0, 0])
     False
-    >>> all([1,1,1])
+    >>> all([1, 1, 1])
     True
 
 
@@ -735,7 +741,7 @@ further because you risk skipping a discarded element.
 The itertools module
 ====================
 
-The :mod:`itertools` module contains a number of commonly-used iterators as well
+The :mod:`itertools` module contains a number of commonly used iterators as well
 as functions for combining several iterators.  This section will introduce the
 module's contents by showing small examples.
 
@@ -764,7 +770,7 @@ which defaults to 0, and the interval between numbers, which defaults to 1::
 a provided iterable and returns a new iterator that returns its elements from
 first to last.  The new iterator will repeat these elements infinitely. ::
 
-    itertools.cycle([1,2,3,4,5]) =>
+    itertools.cycle([1, 2, 3, 4, 5]) =>
       1, 2, 3, 4, 5, 1, 2, 3, 4, 5, ...
 
 :func:`itertools.repeat(elem, [n]) <itertools.repeat>` returns the provided
@@ -875,7 +881,7 @@ iterable's results. ::
 iterators and returns only those elements of *data* for which the corresponding
 element of *selectors* is true, stopping whenever either one is exhausted::
 
-    itertools.compress([1,2,3,4,5], [True, True, False, False, True]) =>
+    itertools.compress([1, 2, 3, 4, 5], [True, True, False, False, True]) =>
        1, 2, 5
 
 
@@ -1035,7 +1041,7 @@ first calculation. ::
     Traceback (most recent call last):
       ...
     TypeError: reduce() of empty sequence with no initial value
-    >>> functools.reduce(operator.mul, [1,2,3], 1)
+    >>> functools.reduce(operator.mul, [1, 2, 3], 1)
     6
     >>> functools.reduce(operator.mul, [], 1)
     1
@@ -1045,9 +1051,9 @@ elements of the iterable.  This case is so common that there's a special
 built-in called :func:`sum` to compute it:
 
     >>> import functools, operator
-    >>> functools.reduce(operator.add, [1,2,3,4], 0)
+    >>> functools.reduce(operator.add, [1, 2, 3, 4], 0)
     10
-    >>> sum([1,2,3,4])
+    >>> sum([1, 2, 3, 4])
     10
     >>> sum([])
     0
@@ -1057,11 +1063,11 @@ write the obvious :keyword:`for` loop::
 
    import functools
    # Instead of:
-   product = functools.reduce(operator.mul, [1,2,3], 1)
+   product = functools.reduce(operator.mul, [1, 2, 3], 1)
 
    # You can write:
    product = 1
-   for i in [1,2,3]:
+   for i in [1, 2, 3]:
        product *= i
 
 A related function is :func:`itertools.accumulate(iterable, func=operator.add)
@@ -1069,10 +1075,10 @@ A related function is :func:`itertools.accumulate(iterable, func=operator.add)
 returning only the final result, :func:`accumulate` returns an iterator that
 also yields each partial result::
 
-    itertools.accumulate([1,2,3,4,5]) =>
+    itertools.accumulate([1, 2, 3, 4, 5]) =>
       1, 3, 6, 10, 15
 
-    itertools.accumulate([1,2,3,4,5], operator.mul) =>
+    itertools.accumulate([1, 2, 3, 4, 5], operator.mul) =>
       1, 2, 6, 24, 120
 
 
@@ -1108,7 +1114,7 @@ need to define a new function at all::
     existing_files = filter(os.path.exists, file_list)
 
 If the function you need doesn't exist, you need to write it.  One way to write
-small functions is to use the :keyword:`lambda` statement.  ``lambda`` takes a
+small functions is to use the :keyword:`lambda` expression.  ``lambda`` takes a
 number of parameters and an expression combining these parameters, and creates
 an anonymous function that returns the value of the expression::
 
@@ -1156,7 +1162,7 @@ But it would be best of all if I had simply used a ``for`` loop::
 
 Or the :func:`sum` built-in and a generator expression::
 
-     total = sum(b for a,b in items)
+     total = sum(b for a, b in items)
 
 Many uses of :func:`functools.reduce` are clearer when written as ``for`` loops.
 
@@ -1209,7 +1215,7 @@ flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
 Python code.
 
-http://www.defmacro.org/ramblings/fp.html: A general introduction to functional
+https://www.defmacro.org/ramblings/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
 https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
@@ -1217,21 +1223,23 @@ describing functional programming.
 
 https://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
 
+https://en.wikipedia.org/wiki/Partial_application: Entry for the concept of partial function application.
+
 https://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
 
 Python-specific
 ---------------
 
-http://gnosis.cx/TPiP/: The first chapter of David Mertz's book
+https://gnosis.cx/TPiP/: The first chapter of David Mertz's book
 :title-reference:`Text Processing in Python` discusses functional programming
 for text processing, in the section titled "Utilizing Higher-Order Functions in
 Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
 for IBM's DeveloperWorks site; see
-`part 1 <https://www.ibm.com/developerworks/linux/library/l-prog/index.html>`__,
-`part 2 <https://www.ibm.com/developerworks/linux/library/l-prog2/index.html>`__, and
-`part 3 <https://www.ibm.com/developerworks/linux/library/l-prog3/index.html>`__,
+`part 1 <https://developer.ibm.com/articles/l-prog/>`__,
+`part 2 <https://developer.ibm.com/tutorials/l-prog2/>`__, and
+`part 3 <https://developer.ibm.com/tutorials/l-prog3/>`__,
 
 
 Python documentation

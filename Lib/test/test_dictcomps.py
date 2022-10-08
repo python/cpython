@@ -73,13 +73,59 @@ class DictComprehensionTest(unittest.TestCase):
         self.assertEqual(v, "Local variable")
 
     def test_illegal_assignment(self):
-        with self.assertRaisesRegex(SyntaxError, "can't assign"):
+        with self.assertRaisesRegex(SyntaxError, "cannot assign"):
             compile("{x: y for y, x in ((1, 2), (3, 4))} = 5", "<test>",
                     "exec")
 
-        with self.assertRaisesRegex(SyntaxError, "can't assign"):
+        with self.assertRaisesRegex(SyntaxError, "illegal expression"):
             compile("{x: y for y, x in ((1, 2), (3, 4))} += 5", "<test>",
                     "exec")
+
+    def test_evaluation_order(self):
+        expected = {
+            'H': 'W',
+            'e': 'o',
+            'l': 'l',
+            'o': 'd',
+        }
+
+        expected_calls = [
+            ('key', 'H'), ('value', 'W'),
+            ('key', 'e'), ('value', 'o'),
+            ('key', 'l'), ('value', 'r'),
+            ('key', 'l'), ('value', 'l'),
+            ('key', 'o'), ('value', 'd'),
+        ]
+
+        actual_calls = []
+
+        def add_call(pos, value):
+            actual_calls.append((pos, value))
+            return value
+
+        actual = {
+            add_call('key', k): add_call('value', v)
+            for k, v in zip('Hello', 'World')
+        }
+
+        self.assertEqual(actual, expected)
+        self.assertEqual(actual_calls, expected_calls)
+
+    def test_assignment_idiom_in_comprehensions(self):
+        expected = {1: 1, 2: 4, 3: 9, 4: 16}
+        actual = {j: j*j for i in range(4) for j in [i+1]}
+        self.assertEqual(actual, expected)
+        expected = {3: 2, 5: 6, 7: 12, 9: 20}
+        actual = {j+k: j*k for i in range(4) for j in [i+1] for k in [j+1]}
+        self.assertEqual(actual, expected)
+        expected = {3: 2, 5: 6, 7: 12, 9: 20}
+        actual = {j+k: j*k for i in range(4)  for j, k in [(i+1, i+2)]}
+        self.assertEqual(actual, expected)
+
+    def test_star_expression(self):
+        expected = {0: 0, 1: 1, 2: 4, 3: 9}
+        self.assertEqual({i: i*i for i in [*range(4)]}, expected)
+        self.assertEqual({i: i*i for i in (*range(4),)}, expected)
 
 
 if __name__ == "__main__":

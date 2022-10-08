@@ -13,6 +13,7 @@ import doctest
 import inspect
 import linecache
 import unittest
+from test.support import os_helper
 from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
                                         make_script, make_zip_script)
 
@@ -77,7 +78,7 @@ class ZipSupportTests(unittest.TestCase):
 
     def test_inspect_getsource_issue4223(self):
         test_src = "def foo(): pass\n"
-        with test.support.temp_dir() as d:
+        with os_helper.temp_dir() as d:
             init_name = make_script(d, '__init__', test_src)
             name_in_zip = os.path.join('zip_pkg',
                                        os.path.basename(init_name))
@@ -117,20 +118,18 @@ class ZipSupportTests(unittest.TestCase):
             mod_name = mod_name.replace("sample_", "sample_zipped_")
             sample_sources[mod_name] = src
 
-        with test.support.temp_dir() as d:
+        with os_helper.temp_dir() as d:
             script_name = make_script(d, 'test_zipped_doctest',
                                             test_src)
             zip_name, run_name = make_zip_script(d, 'test_zip',
                                                 script_name)
-            z = zipfile.ZipFile(zip_name, 'a')
-            for mod_name, src in sample_sources.items():
-                z.writestr(mod_name + ".py", src)
-            z.close()
+            with zipfile.ZipFile(zip_name, 'a') as z:
+                for mod_name, src in sample_sources.items():
+                    z.writestr(mod_name + ".py", src)
             if verbose:
-                zip_file = zipfile.ZipFile(zip_name, 'r')
-                print ('Contents of %r:' % zip_name)
-                zip_file.printdir()
-                zip_file.close()
+                with zipfile.ZipFile(zip_name, 'r') as zip_file:
+                    print ('Contents of %r:' % zip_name)
+                    zip_file.printdir()
             os.remove(script_name)
             sys.path.insert(0, zip_name)
             import test_zipped_doctest
@@ -194,7 +193,7 @@ class ZipSupportTests(unittest.TestCase):
                     doctest.testmod()
                     """)
         pattern = 'File "%s", line 2, in %s'
-        with test.support.temp_dir() as d:
+        with os_helper.temp_dir() as d:
             script_name = make_script(d, 'script', test_src)
             rc, out, err = assert_python_ok(script_name)
             expected = pattern % (script_name, "__main__.Test")
@@ -221,7 +220,7 @@ class ZipSupportTests(unittest.TestCase):
                     import pdb
                     pdb.Pdb(nosigint=True).runcall(f)
                     """)
-        with test.support.temp_dir() as d:
+        with os_helper.temp_dir() as d:
             script_name = make_script(d, 'script', test_src)
             p = spawn_python(script_name)
             p.stdin.write(b'l\n')

@@ -1,7 +1,10 @@
 """
-A number of functions that enhance IDLE on Mac OSX.
+A number of functions that enhance IDLE on macOS.
 """
+from os.path import expanduser
+import plistlib
 from sys import platform  # Used in _init_tk_type, changed by test.
+from test.support import requires, ResourceDenied
 
 import tkinter
 
@@ -12,23 +15,26 @@ import tkinter
 _tk_type = None
 
 def _init_tk_type():
-    """
-    Initializes OS X Tk variant values for
-    isAquaTk(), isCarbonTk(), isCocoaTk(), and isXQuartz().
+    """ Initialize _tk_type for isXyzTk functions.
     """
     global _tk_type
     if platform == 'darwin':
-        root = tkinter.Tk()
-        ws = root.tk.call('tk', 'windowingsystem')
-        if 'x11' in ws:
-            _tk_type = "xquartz"
-        elif 'aqua' not in ws:
-            _tk_type = "other"
-        elif 'AppKit' in root.tk.call('winfo', 'server', '.'):
-            _tk_type = "cocoa"
+        try:
+            requires('gui')
+        except ResourceDenied:  # Possible when testing.
+            _tk_type = "cocoa"  # Newest and most common.
         else:
-            _tk_type = "carbon"
-        root.destroy()
+            root = tkinter.Tk()
+            ws = root.tk.call('tk', 'windowingsystem')
+            if 'x11' in ws:
+                _tk_type = "xquartz"
+            elif 'aqua' not in ws:
+                _tk_type = "other"
+            elif 'AppKit' in root.tk.call('winfo', 'server', '.'):
+                _tk_type = "cocoa"
+            else:
+                _tk_type = "carbon"
+            root.destroy()
     else:
         _tk_type = "other"
 
@@ -66,25 +72,37 @@ def isXQuartz():
     return _tk_type == "xquartz"
 
 
-def tkVersionWarning(root):
+def readSystemPreferences():
     """
-    Returns a string warning message if the Tk version in use appears to
-    be one known to cause problems with IDLE.
-    1. Apple Cocoa-based Tk 8.5.7 shipped with Mac OS X 10.6 is unusable.
-    2. Apple Cocoa-based Tk 8.5.9 in OS X 10.7 and 10.8 is better but
-        can still crash unexpectedly.
+    Fetch the macOS system preferences.
     """
+    if platform != 'darwin':
+        return None
 
-    if isCocoaTk():
-        patchlevel = root.tk.call('info', 'patchlevel')
-        if patchlevel not in ('8.5.7', '8.5.9'):
-            return False
-        return (r"WARNING: The version of Tcl/Tk ({0}) in use may"
-                r" be unstable.\n"
-                r"Visit http://www.python.org/download/mac/tcltk/"
-                r" for current information.".format(patchlevel))
-    else:
-        return False
+    plist_path = expanduser('~/Library/Preferences/.GlobalPreferences.plist')
+    try:
+        with open(plist_path, 'rb') as plist_file:
+            return plistlib.load(plist_file)
+    except OSError:
+        return None
+
+
+def preferTabsPreferenceWarning():
+    """
+    Warn if "Prefer tabs when opening documents" is set to "Always".
+    """
+    if platform != 'darwin':
+        return None
+
+    prefs = readSystemPreferences()
+    if prefs and prefs.get('AppleWindowTabbingMode') == 'always':
+        return (
+            'WARNING: The system preference "Prefer tabs when opening'
+            ' documents" is set to "Always". This will cause various problems'
+            ' with IDLE. For the best experience, change this setting when'
+            ' running IDLE (via System Preferences -> Dock).'
+        )
+    return None
 
 
 ## Fix the menu and related functions.
@@ -143,7 +161,7 @@ def overrideRootMenu(root, flist):
     del mainmenu.menudefs[-1][1][0:2]
     # Remove the 'Configure Idle' entry from the options menu, it is in the
     # application menu as 'Preferences'
-    del mainmenu.menudefs[-2][1][0]
+    del mainmenu.menudefs[-3][1][0:2]
     menubar = Menu(root)
     root.configure(menu=menubar)
     menudict = {}
@@ -192,7 +210,7 @@ def overrideRootMenu(root, flist):
         root.bind('<<close-all-windows>>', flist.close_all_callback)
 
         # The binding above doesn't reliably work on all versions of Tk
-        # on MacOSX. Adding command definition below does seem to do the
+        # on macOS. Adding command definition below does seem to do the
         # right thing for now.
         root.createcommand('exit', flist.close_all_callback)
 

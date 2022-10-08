@@ -4,10 +4,18 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{bdef7710-e433-4ac0-84e0-14f34454bd3e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{8513f324-7c13-4657-b463-5d686a8a5371}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\PC\_msi.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
