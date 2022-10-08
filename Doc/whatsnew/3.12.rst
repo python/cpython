@@ -546,6 +546,11 @@ New Features
   which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
   (Contributed by Andrew Frost in :gh:`92257`.)
 
+* The C API now permits registering callbacks via :c:func:`PyDict_AddWatcher`,
+  :c:func:`PyDict_AddWatch` and related APIs to be called whenever a dictionary
+  is modified. This is intended for use by optimizing interpreters, JIT
+  compilers, or debuggers.
+
 Porting to Python 3.12
 ----------------------
 
