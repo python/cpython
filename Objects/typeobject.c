@@ -372,18 +372,81 @@ _PyTypes_Fini(PyInterpreterState *interp)
 
 static PyObject * lookup_subclasses(PyTypeObject *);
 
-void
-PyType_SetModifiedCallback(PyType_ModifiedCallback callback)
+int
+PyType_AddWatcher(PyType_WatchCallback callback)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->type_modified_callback = (void *)callback;
+
+    for (int i = 0; i < TYPE_MAX_WATCHERS; i++) {
+        if (!interp->type_watchers[i]) {
+            interp->type_watchers[i] = callback;
+            return i;
+        }
+    }
+
+    PyErr_SetString(PyExc_RuntimeError, "no more type watcher IDs available");
+    return -1;
 }
 
-PyType_ModifiedCallback
-PyType_GetModifiedCallback(void)
+static inline int
+validate_watcher_id(PyInterpreterState *interp, int watcher_id)
+{
+    if (watcher_id < 0 || watcher_id >= TYPE_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid type watcher ID %d", watcher_id);
+        return -1;
+    }
+    if (!interp->type_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No type watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    return 0;
+}
+
+int
+PyType_ClearWatcher(int watcher_id)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return (PyType_ModifiedCallback)interp->type_modified_callback;
+    if (validate_watcher_id(interp, watcher_id)) {
+        return -1;
+    }
+    interp->type_watchers[watcher_id] = NULL;
+    return 0;
+}
+
+static int assign_version_tag(PyTypeObject *type);
+
+int
+PyType_Watch(int watcher_id, PyObject* obj)
+{
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_ValueError, "Cannot watch non-type");
+        return -1;
+    }
+    PyTypeObject *type = (PyTypeObject *)obj;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id)) {
+        return -1;
+    }
+    // ensure we will get a callback on the next modification
+    assign_version_tag(type);
+    type->tp_watched |= (1 << watcher_id);
+    return 0;
+}
+
+int
+PyType_Unwatch(int watcher_id, PyObject* obj)
+{
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_ValueError, "Cannot watch non-type");
+        return -1;
+    }
+    PyTypeObject *type = (PyTypeObject *)obj;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id)) {
+        return -1;
+    }
+    type->tp_watched &= ~(1 << watcher_id);
+    return 0;
 }
 
 void
@@ -404,12 +467,6 @@ PyType_Modified(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyType_ModifiedCallback cb = (PyType_ModifiedCallback)interp->type_modified_callback;
-    if (cb) {
-        cb(type);
-    }
-
     if (!_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
         return;
     }
@@ -428,6 +485,21 @@ PyType_Modified(PyTypeObject *type)
             PyType_Modified(subclass);
         }
     }
+
+    if (type->tp_watched) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        char bits = type->tp_watched;
+        for (int i = 0; i < TYPE_MAX_WATCHERS; i++) {
+            if (bits & 1) {
+                PyType_WatchCallback cb = interp->type_watchers[i];
+                if (cb && (cb(type) < 0)) {
+                    PyErr_WriteUnraisable((PyObject *)type);
+                }
+            }
+            bits >>= 1;
+        }
+    }
+
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
@@ -487,7 +559,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 }
 
 static int
-assign_version_tag(struct type_cache *cache, PyTypeObject *type)
+assign_version_tag(PyTypeObject *type)
 {
     /* Ensure that the tp_version_tag is valid and set
        Py_TPFLAGS_VALID_VERSION_TAG.  To respect the invariant, this
@@ -512,7 +584,7 @@ assign_version_tag(struct type_cache *cache, PyTypeObject *type)
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
-        if (!assign_version_tag(cache, _PyType_CAST(b)))
+        if (!assign_version_tag(_PyType_CAST(b)))
             return 0;
     }
     type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
@@ -4131,7 +4203,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         return NULL;
     }
 
-    if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(cache, type)) {
+    if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
         h = MCACHE_HASH_METHOD(type, name);
         struct type_cache_entry *entry = &cache->hashtable[h];
         entry->version = type->tp_version_tag;

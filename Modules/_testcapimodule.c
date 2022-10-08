@@ -5639,88 +5639,124 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
-static PyObject *g_type_modified_events;
-static PyType_ModifiedCallback g_prev_type_modified_callback;
+// type watchers
 
-static void
+static PyObject *g_type_modified_events;
+static int g_type_watchers_installed;
+
+static int
 type_modified_callback(PyTypeObject *type)
 {
     assert(PyList_Check(g_type_modified_events));
-    PyList_Append(g_type_modified_events, (PyObject *)type);
-    if (g_prev_type_modified_callback) {
-        g_prev_type_modified_callback(type);
-    }
-}
-
-static int
-type_modified_assert(Py_ssize_t expected_num_events,
-                     PyTypeObject *expected_last_type)
-{
-    char buf[512];
-    Py_ssize_t actual_num_events = PyList_Size(g_type_modified_events);
-    if (expected_num_events != actual_num_events) {
-        snprintf(buf,
-                512,
-                "got %d type modified events, expected %d",
-                (int)actual_num_events,
-                (int)expected_num_events);
-        raiseTestError("test_type_modified_callback", (const char *)&buf);
-        return -1;
-    }
-    PyObject *last_obj = PyList_GetItem(g_type_modified_events,
-                                       actual_num_events - 1);
-    if (!PyType_Check(last_obj)) {
-        raiseTestError("test_type_modified_callback", "non-type in event list");
-        return -1;
-    }
-    PyTypeObject *last_type = (PyTypeObject *)last_obj;
-    if (last_type != expected_last_type) {
-        snprintf(buf,
-                 512,
-                 "last type is '%s', expected '%s'",
-                 last_type->tp_name,
-                 expected_last_type->tp_name);
-        raiseTestError("test_type_modified_callback", (const char *)&buf);
+    if(PyList_Append(g_type_modified_events, (PyObject *)type) < 0) {
         return -1;
     }
     return 0;
 }
 
+static int
+type_modified_callback_wrap(PyTypeObject *type)
+{
+    assert(PyList_Check(g_type_modified_events));
+    PyObject *list = PyList_New(0);
+    if (!list) {
+        return -1;
+    }
+    if (PyList_Append(list, (PyObject *)type) < 0) {
+        Py_DECREF(list);
+        return -1;
+    }
+    if (PyList_Append(g_type_modified_events, list) < 0) {
+        Py_DECREF(list);
+        return -1;
+    }
+    Py_DECREF(list);
+    return 0;
+}
+
+static int
+type_modified_callback_error(PyTypeObject *type)
+{
+    PyErr_SetString(PyExc_RuntimeError, "boom!");
+    return -1;
+}
 
 static PyObject *
-test_type_modified_callback(PyObject *self, PyObject *Py_UNUSED(args))
+add_type_watcher(PyObject *self, PyObject *kind)
 {
-    g_type_modified_events = PyList_New(0);
-    g_prev_type_modified_callback = PyType_GetModifiedCallback();
-
-    PyType_Slot type_slots[] = {{0, 0},};
-    PyType_Spec type_spec = {"_testcapimodule.test_type",
-                             sizeof(PyObject),
-                             0,
-                             Py_TPFLAGS_DEFAULT,
-                             type_slots};
-    PyTypeObject *type = (PyTypeObject *)PyType_FromSpec(&type_spec);
-
-    if (!type) {
+    int watcher_id;
+    assert(PyLong_Check(kind));
+    long kind_l = PyLong_AsLong(kind);
+    if (kind_l == 2) {
+        watcher_id = PyType_AddWatcher(type_modified_callback_wrap);
+    } else if (kind_l == 1) {
+        watcher_id = PyType_AddWatcher(type_modified_callback_error);
+    } else {
+        watcher_id = PyType_AddWatcher(type_modified_callback);
+    }
+    if (watcher_id < 0) {
         return NULL;
     }
+    if (!g_type_watchers_installed) {
+        assert(!g_type_modified_events);
+        if (!(g_type_modified_events = PyList_New(0))) {
+            return NULL;
+        }
+    }
+    g_type_watchers_installed++;
+    return PyLong_FromLong(watcher_id);
+}
 
-    PyType_SetModifiedCallback(type_modified_callback);
-    if (PyType_GetModifiedCallback() != type_modified_callback) {
-        raiseTestError("test_type_modified_callback",
-                       "type modified callback is not what we just set it to");
+static PyObject *
+clear_type_watcher(PyObject *self, PyObject *watcher_id)
+{
+    if (PyType_ClearWatcher(PyLong_AsLong(watcher_id))) {
         return NULL;
     }
+    g_type_watchers_installed--;
+    if (!g_type_watchers_installed) {
+        assert(g_type_modified_events);
+        Py_CLEAR(g_type_modified_events);
+    }
+    Py_RETURN_NONE;
+}
 
-
-    PyType_Modified(type);
-
-    if (type_modified_assert(1, type)) {
+static PyObject *
+get_type_modified_events(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (!g_type_modified_events) {
+        PyErr_SetString(PyExc_RuntimeError, "no watchers active");
         return NULL;
     }
+    Py_INCREF(g_type_modified_events);
+    return g_type_modified_events;
+}
 
-    PyType_SetModifiedCallback(g_prev_type_modified_callback);
-    Py_CLEAR(g_type_modified_events);
+static PyObject *
+watch_type(PyObject *self, PyObject *args)
+{
+    PyObject *type;
+    int watcher_id;
+    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &type)) {
+        return NULL;
+    }
+    if (PyType_Watch(watcher_id, type)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unwatch_type(PyObject *self, PyObject *args)
+{
+    PyObject *type;
+    int watcher_id;
+    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &type)) {
+        return NULL;
+    }
+    if (PyType_Unwatch(watcher_id, type)) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -6006,7 +6042,11 @@ static PyMethodDef TestMethods[] = {
     {"watch_dict", watch_dict, METH_VARARGS, NULL},
     {"unwatch_dict", unwatch_dict, METH_VARARGS, NULL},
     {"get_dict_watcher_events", get_dict_watcher_events, METH_NOARGS, NULL},
-    {"test_type_modified_callback", test_type_modified_callback, METH_NOARGS, NULL},
+    {"add_type_watcher", add_type_watcher, METH_O, NULL},
+    {"clear_type_watcher", clear_type_watcher, METH_O, NULL},
+    {"watch_type", watch_type, METH_VARARGS, NULL},
+    {"unwatch_type", unwatch_type, METH_VARARGS, NULL},
+    {"get_type_modified_events", get_type_modified_events, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
