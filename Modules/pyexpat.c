@@ -1365,9 +1365,7 @@ xmlparse_buffer_size_setter(xmlparseobject *self, PyObject *v, void *closure)
 
     /* check maximum */
     if (new_buffer_size > INT_MAX) {
-        char errmsg[100];
-        sprintf(errmsg, "buffer_size must not be greater than %i", INT_MAX);
-        PyErr_SetString(PyExc_ValueError, errmsg);
+        PyErr_Format(PyExc_ValueError, "buffer_size must not be greater than %i", INT_MAX);
         return -1;
     }
 
