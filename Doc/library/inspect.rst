@@ -61,6 +61,11 @@ attributes:
 |           | __package__       | parent package for the    |
 |           |                   | module/package            |
 +-----------+-------------------+---------------------------+
+|           | __spec__          | specification for the     |
+|           |                   | module's                  |
+|           |                   | import-system-related     |
+|           |                   | state                     |
++-----------+-------------------+---------------------------+
 | class     | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
