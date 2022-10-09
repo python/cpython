@@ -659,8 +659,8 @@ class EnsurePipTest(BaseTest):
         try:
             yield
         except subprocess.CalledProcessError as exc:
-            out = exc.output.decode(errors="replace")
-            err = exc.stderr.decode(errors="replace")
+            out = 'No output' if exc.output is None else exc.output.decode(errors="replace")
+            err = 'No stderr' if exc.stderr is None else exc.stderr.decode(errors="replace")
             self.fail(
                 f"{exc}\n\n"
                 f"**Subprocess Output**\n{out}\n\n"

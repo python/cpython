@@ -166,8 +166,7 @@ class MetaPathFinderDefaultsTests(ABCTestHarness):
 
 class PathEntryFinder:
 
-    def find_loader(self, fullname):
-        return super().find_loader(fullname)
+    pass
 
 
 class PathEntryFinderDefaultsTests(ABCTestHarness):
@@ -186,8 +185,7 @@ class PathEntryFinderDefaultsTests(ABCTestHarness):
 
 class Loader:
 
-    def load_module(self, fullname):
-        return super().load_module(fullname)
+    pass
 
 
 class LoaderDefaultsTests(ABCTestHarness):
