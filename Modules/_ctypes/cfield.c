@@ -85,6 +85,7 @@ PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
                 int is_bitfield
                 )
 {
+    // We don't use poffset here, so clear it, if it has been set.
     *pbitofs += *poffset * 8;
     *poffset = 0;
 
@@ -126,30 +127,31 @@ PyCField_FromDesc_msvc(
                 int is_bitfield
                 )
 {
-    Py_ssize_t align;
     if (pack)
-        align = min(pack, dict->align);
+        *palign = min(pack, dict->align);
     else
-        align = dict->align;
+        *palign = dict->align;
 
-    // New thing: poffset points to end of bitfield.
-    // And we work with negative *pbitofs.
+    // *poffset points to end of current bitfield.
+    // *pbitofs is generally non-positive,
+    // and 8 * (*poffset) + *pbitofs points just behind
+    // the end of the last field we placed.
     if (0 < *pbitofs + bitsize || 8 * dict->size != *pfield_size) {
-        // Close bitfield, ...
-        // ... align,
-        *poffset = round_up(*poffset, align);
+        // Close the previous bitfield (if any).
+        // and start a new bitfield:
+        *poffset = round_up(*poffset, *palign);
 
-        // ... and re-open.
         *poffset += dict->size;
 
         *pfield_size = dict->size * 8;
+        // Reminder: 8 * (*poffset) + *pbitofs points to where we would start a
+        // new field.  Ie just behind where we placed the last field plus an
+        // allowance for alignment.
         *pbitofs = - *pfield_size;
     }
 
     assert(8 * dict->size == *pfield_size);
 
-    // We need to fit within alignment and within size.
-    // But we only really care about size, when we have a bitfield.
     self->offset = *poffset - (*pfield_size) / 8;
     if(is_bitfield) {
         assert(dict->size == dict->align);
@@ -163,9 +165,8 @@ PyCField_FromDesc_msvc(
 
     *pbitofs += bitsize;
     *psize = *poffset;
-    *palign = align;
 
-    assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
+    assert(!is_bitfield || LOW_BIT(self->size) <= self->size * 8);
 }
 
 PyObject *
