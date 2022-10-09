@@ -31,6 +31,9 @@ class C(object):
         return self.get_answer()
     def __class_getitem__(self, item):
         return types.GenericAlias(self, item)
+    @classmethod
+    def regular(cls, arg):
+        """Doc for class method."""
 
 def doc_func():
     """

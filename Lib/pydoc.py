@@ -243,6 +243,14 @@ def _is_bound_method(fn):
         return not (inspect.ismodule(self) or (self is None))
     return False
 
+def _is_bound_classmethod(method):
+    """Returns True for bound classmethods."""
+    return (
+        inspect.isclass(method.__self__) and
+        (getattr(getattr(method.__self__, method.__name__, None), '__func__', None)
+            is method.__func__)
+    )
+
 
 def allmethods(cl):
     methods = {}
@@ -1032,7 +1040,8 @@ class HTMLDoc(Doc):
         if _is_bound_method(object):
             imclass = object.__self__.__class__
             if cl:
-                if imclass is not cl:
+                if imclass is not cl and not _is_bound_classmethod(object):
+                    # We ignore `from builtins.type` note for classmethods.
                     note = ' from ' + self.classlink(imclass, mod)
             else:
                 if object.__self__ is not None:
@@ -1465,7 +1474,8 @@ location listed above.
         if _is_bound_method(object):
             imclass = object.__self__.__class__
             if cl:
-                if imclass is not cl:
+                if imclass is not cl and not _is_bound_classmethod(object):
+                    # We ignore `from builtins.type` note for classmethods.
                     note = ' from ' + classname(imclass, mod)
             else:
                 if object.__self__ is not None:

@@ -1,0 +1,2 @@
+Now ``help()`` does not show ``from builtins.type`` note for ``classmethod``
+definitions.

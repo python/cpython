@@ -98,7 +98,10 @@ CLASSES
      |  ----------------------------------------------------------------------
      |  Class methods defined here:
      |
-     |  __class_getitem__(item) from builtins.type
+     |  __class_getitem__(item)
+     |
+     |  regular(arg)
+     |      Doc for class method.
      |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -188,7 +191,9 @@ class C(builtins.object)
             Return self.get_answer()
         say_no(self)
     Class methods defined here:
-        __class_getitem__(item) from builtins.type
+        __class_getitem__(item)
+        regular(arg)
+            Doc for class method.
     Data descriptors defined here:
         __dict__
             dictionary for instance variables (if defined)
@@ -1202,8 +1207,36 @@ cm(x) method of builtins.type instance
         self.assertIn("""
  |  Class methods defined here:
  |
- |  cm(x) from builtins.type
+ |  cm(x)
  |      A class method
+""", pydoc.plain(pydoc.render_doc(X)))
+
+    @requires_docstrings
+    def test_classmethod_builtins(self):
+        self.assertIn("""
+ |  Class methods defined here:
+ |
+ |  from_bytes = <built-in method from_bytes of type object>
+ |      Return the integer represented by the given array of bytes.
+ |
+""", pydoc.plain(pydoc.render_doc(int)))
+
+    @requires_docstrings
+    def test_types_method_type(self):
+        from types import MethodType
+
+        def some(*args, **kwargs):
+            """Doc1."""
+
+        class X:
+            name = MethodType(some, 1)
+
+        self.assertIn("""
+ |  Methods defined here:
+ |
+ |  name = some(*args, **kwargs) from builtins.int
+ |      Doc1.
+ |
 """, pydoc.plain(pydoc.render_doc(X)))
 
     @requires_docstrings
