@@ -1,0 +1,2 @@
+Deprecate the locking behavior of :class:`~functools.cached_property` and
+add the *lock* keyword argument.

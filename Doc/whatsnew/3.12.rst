@@ -245,6 +245,17 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
+* The locking behavior of :class:`~functools.cached_property` is deprecated.
+  The locking is class-wide and thus inefficient if many instances of the same
+  class with a cached property are used across multiple threads (only a single
+  instance across all instances of the class can update its cached property at
+  once). Integrating locking into :class:`~functools.cached_property` was a
+  mistake; the application should determine its need for synchronization
+  guarantees and lock as needed to meet them. Use
+  ``@cached_property(lock=False)`` to create a cached property with no locking
+  and avoid the deprecation warning.
+  (Contributed by Carl Meyer in :gh:`87634`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------

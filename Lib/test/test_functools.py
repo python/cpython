@@ -2946,6 +2946,21 @@ class CachedCostItemWait:
         return self._cost
 
 
+class CachedCostItemWaitNoLock:
+
+    def __init__(self, event):
+        self._cost = 1
+        self.lock = py_functools.RLock()
+        self.event = event
+
+    @py_functools.cached_property(lock=False)
+    def cost(self):
+        self.event.wait(1)
+        with self.lock:
+            self._cost += 1
+        return self._cost
+
+
 class CachedCostItemWithSlots:
     __slots__ = ('_cost')
 
@@ -2970,10 +2985,9 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(item.get_cost(), 4)
         self.assertEqual(item.cached_cost, 3)
 
-    @threading_helper.requires_working_threading()
-    def test_threaded(self):
+    def _run_threads(self, item_cls):
         go = threading.Event()
-        item = CachedCostItemWait(go)
+        item = item_cls(go)
 
         num_threads = 3
 
@@ -2989,7 +3003,25 @@ class TestCachedProperty(unittest.TestCase):
         finally:
             sys.setswitchinterval(orig_si)
 
+        return item
+
+    @threading_helper.requires_working_threading()
+    def test_threaded(self):
+        item = self._run_threads(CachedCostItemWait)
+
+        # cached_property locks, cost is only incremented once
         self.assertEqual(item.cost, 2)
+
+    @threading_helper.requires_working_threading()
+    def test_threaded_no_lock(self):
+        item = self._run_threads(CachedCostItemWaitNoLock)
+
+        # cached_property does not lock, cost is incremented 3 times
+        self.assertEqual(item.cost, 4)
+
+    def test_locking_deprecated(self):
+        with self.assertWarns(PendingDeprecationWarning):
+            f = py_functools.cached_property(lambda s: None)
 
     def test_object_with_slots(self):
         item = CachedCostItemWithSlots()
@@ -3064,6 +3096,32 @@ class TestCachedProperty(unittest.TestCase):
                 "Cannot use cached_property instance without calling __set_name__ on it.",
         ):
             Foo().cp
+
+    def test_call_once_completed(self):
+        cp = py_functools.cached_property(lambda s: None)
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "'cached_property' object is not callable",
+        ):
+            cp()
+
+    def test_assign_to_instance_incomplete(self):
+        with self.assertRaisesRegex(RuntimeError, "Error calling __set_name__") as cm:
+            class C:
+                f = py_functools.cached_property(lock=False)
+        self.assertIn("must decorate a function", str(cm.exception.__cause__))
+
+    def test_assign_to_instance_incomplete_bypass_set_name(self):
+        class C: pass
+        f = py_functools.cached_property(lock=False)
+        # unlikely edge case, but we want to validate existence of `func` in `__get__`,
+        # and this requires bypassing `__set_name__` but still having `attrname` set
+        f.attrname = "f"
+        C.f = f
+
+        with self.assertRaisesRegex(TypeError, "must decorate a function"):
+            C().f
 
     def test_access_from_class(self):
         self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
