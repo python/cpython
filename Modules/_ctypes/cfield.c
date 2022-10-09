@@ -113,8 +113,6 @@ PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
     }
     assert(*poffset == 0);
 
-    // We need to fit within alignment and within size.
-    // But we only really care about size, when we have a bitfield.
     if(is_bitfield) {
         self->offset = round_down(*pbitofs, 8*dict->size) / 8;
         Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
