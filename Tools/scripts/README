@@ -5,7 +5,6 @@ useful while building, extending or managing Python.
 abitype.py                Converts a C file to use the PEP 384 type definition API
 combinerefs.py            A helper for analyzing PYTHONDUMPREFS output
 diff.py                   Print file diffs in context, unified, or ndiff formats
-eptags.py                 Create Emacs TAGS file for Python modules
 gprof2html.py             Transform gprof(1) output into useful HTML
 idle3                     Main program to start IDLE
 md5sum.py                 Print MD5 checksums of argument files
