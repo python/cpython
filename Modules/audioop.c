@@ -172,7 +172,8 @@ st_14linear2ulaw(int16_t pcm_val)       /* 2's complement (14-bit range) */
     if (seg >= 8)           /* out of range, return maximum value. */
         return (unsigned char) (0x7F ^ mask);
     else {
-        uval = (unsigned char) (seg * (1 << 4)) | ((pcm_val >> (seg + 1)) & 0xF);
+        assert(seg >= 0);
+        uval = (unsigned char) (seg << 4) | ((pcm_val >> (seg + 1)) & 0xF);
         return (uval ^ mask);
     }
 
@@ -261,7 +262,7 @@ st_linear2alaw(int16_t pcm_val) /* 2's complement (13-bit range) */
     if (seg >= 8)           /* out of range, return maximum value. */
         return (unsigned char) (0x7F ^ mask);
     else {
-        aval = (unsigned char) seg * (1 << SEG_SHIFT);
+        aval = (unsigned char) seg << SEG_SHIFT;
         if (seg < 2)
             aval |= (pcm_val >> 1) & QUANT_MASK;
         else
