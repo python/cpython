@@ -470,8 +470,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
-        if (('[' in netloc and ']' not in netloc) or
-                (']' in netloc and '[' not in netloc)):
+        if netloc.count('[') != netloc.count(']'):
             raise ValueError("Invalid IPv6 URL")
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
