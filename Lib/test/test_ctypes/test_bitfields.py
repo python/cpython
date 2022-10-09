@@ -381,7 +381,10 @@ class BitFieldTest(unittest.TestCase):
                 ("b", c_uint8, 8),
                 ("c", c_uint32, 16)
             ]
-        self.assertEqual(4, sizeof(X))
+        if sys.platform == 'win32':
+            self.assertEqual(8, sizeof(X))
+        else:
+            self.assertEqual(4, sizeof(X))
 
     def test_anon_bitfields(self):
         # anonymous bit-fields gave a strange error message
