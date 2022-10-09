@@ -79,15 +79,13 @@ Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
  */
 
 void
-PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
+PyCField_FromDesc_gcc(Py_ssize_t index, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian,
                 CFieldObject* self, StgDictObject* dict,
                 int is_bitfield
                 )
 {
-    assert(*pfield_size == 0);
     *pbitofs += *poffset * 8;
     *poffset = 0;
 
@@ -123,7 +121,7 @@ PyCField_FromDesc_linux(PyObject *desc, Py_ssize_t index,
 }
 
 void
-PyCField_FromDesc_windows(PyObject *desc, Py_ssize_t index,
+PyCField_FromDesc_msvc(Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian,
@@ -236,7 +234,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     }
 
     if (ms_struct || pack != 0) {
-        PyCField_FromDesc_windows(desc, index,
+        PyCField_FromDesc_msvc(index,
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
                 pack, big_endian,
@@ -244,8 +242,8 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 is_bitfield
                 );
     } else {
-        PyCField_FromDesc_linux(desc, index,
-                pfield_size, bitsize, pbitofs,
+        PyCField_FromDesc_gcc(index,
+                bitsize, pbitofs,
                 psize, poffset, palign,
                 pack, big_endian,
                 self, dict,
