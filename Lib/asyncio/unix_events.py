@@ -1022,6 +1022,13 @@ class SafeChildWatcher(BaseChildWatcher):
     big number of children (O(n) each time SIGCHLD is raised)
     """
 
+    def __init__(self):
+        super().__init__()
+        warnings._deprecated("SafeChildWatcher",
+                             "{name!r} is deprecated as of Python 3.12 and will be "
+                             "removed in Python {remove}.",
+                              remove=(3, 14))
+
     def close(self):
         self._callbacks.clear()
         super().close()
@@ -1100,6 +1107,10 @@ class FastChildWatcher(BaseChildWatcher):
         self._lock = threading.Lock()
         self._zombies = {}
         self._forks = 0
+        warnings._deprecated("FastChildWatcher",
+                             "{name!r} is deprecated as of Python 3.12 and will be "
+                             "removed in Python {remove}.",
+                              remove=(3, 14))
 
     def close(self):
         self._callbacks.clear()
@@ -1212,6 +1223,10 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
     def __init__(self):
         self._callbacks = {}
         self._saved_sighandler = None
+        warnings._deprecated("MultiLoopChildWatcher",
+                             "{name!r} is deprecated as of Python 3.12 and will be "
+                             "removed in Python {remove}.",
+                              remove=(3, 14))
 
     def is_active(self):
         return self._saved_sighandler is not None
