@@ -9,6 +9,7 @@ import _string
 import codecs
 import itertools
 import operator
+import pickle
 import struct
 import sys
 import textwrap
@@ -184,6 +185,36 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(next(it), "\u2222")
         self.assertEqual(next(it), "\u3333")
         self.assertRaises(StopIteration, next, it)
+
+    def test_iterators_invocation(self):
+        cases = [type(iter('abc')), type(iter('🚀'))]
+        for cls in cases:
+            with self.subTest(cls=cls):
+                self.assertRaises(TypeError, cls)
+
+    def test_iteration(self):
+        cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
+        for case in cases:
+            with self.subTest(string=case):
+                self.assertEqual(case, "".join(iter(case)))
+
+    def test_exhausted_iterator(self):
+        cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
+        for case in cases:
+            with self.subTest(case=case):
+                iterator = iter(case)
+                tuple(iterator)
+                self.assertRaises(StopIteration, next, iterator)
+
+    def test_pickle_iterator(self):
+        cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
+        for case in cases:
+            with self.subTest(case=case):
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    it = iter(case)
+                    with self.subTest(proto=proto):
+                        pickled = "".join(pickle.loads(pickle.dumps(it, proto)))
+                        self.assertEqual(case, pickled)
 
     def test_count(self):
         string_tests.CommonTest.test_count(self)
@@ -2339,20 +2370,19 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertIs(s.expandtabs(), s)
 
     def test_raiseMemError(self):
-        if struct.calcsize('P') == 8:
-            # 64 bits pointers
-            ascii_struct_size = 48
-            compact_struct_size = 72
-        else:
-            # 32 bits pointers
-            ascii_struct_size = 24
-            compact_struct_size = 36
+        asciifields = "nnb"
+        compactfields = asciifields + "nP"
+        ascii_struct_size = support.calcobjsize(asciifields)
+        compact_struct_size = support.calcobjsize(compactfields)
 
         for char in ('a', '\xe9', '\u20ac', '\U0010ffff'):
             code = ord(char)
-            if code < 0x100:
+            if code < 0x80:
                 char_size = 1  # sizeof(Py_UCS1)
                 struct_size = ascii_struct_size
+            elif code < 0x100:
+                char_size = 1  # sizeof(Py_UCS1)
+                struct_size = compact_struct_size
             elif code < 0x10000:
                 char_size = 2  # sizeof(Py_UCS2)
                 struct_size = compact_struct_size
@@ -2364,8 +2394,18 @@ class UnicodeTest(string_tests.CommonTest,
             # be allocatable, given enough memory.
             maxlen = ((sys.maxsize - struct_size) // char_size)
             alloc = lambda: char * maxlen
-            self.assertRaises(MemoryError, alloc)
-            self.assertRaises(MemoryError, alloc)
+            with self.subTest(
+                char=char,
+                struct_size=struct_size,
+                char_size=char_size
+            ):
+                # self-check
+                self.assertEqual(
+                    sys.getsizeof(char * 42),
+                    struct_size + (char_size * (42 + 1))
+                )
+                self.assertRaises(MemoryError, alloc)
+                self.assertRaises(MemoryError, alloc)
 
     def test_format_subclass(self):
         class S(str):
@@ -2602,8 +2642,6 @@ class CAPITest(unittest.TestCase):
 
         # test "%"
         check_format('%',
-                     b'%')
-        check_format('%',
                      b'%%')
         check_format('%s',
                      b'%%s')
@@ -2769,6 +2807,25 @@ class CAPITest(unittest.TestCase):
         check_format('repr=abc',
                      b'repr=%V', 'abc', b'xyz')
 
+        # test %p
+        # We cannot test the exact result,
+        # because it returns a hex representation of a C pointer,
+        # which is going to be different each time. But, we can test the format.
+        p_format_regex = r'^0x[a-zA-Z0-9]{3,}$'
+        p_format1 = PyUnicode_FromFormat(b'%p', 'abc')
+        self.assertIsInstance(p_format1, str)
+        self.assertRegex(p_format1, p_format_regex)
+
+        p_format2 = PyUnicode_FromFormat(b'%p %p', '123456', b'xyz')
+        self.assertIsInstance(p_format2, str)
+        self.assertRegex(p_format2,
+                         r'0x[a-zA-Z0-9]{3,} 0x[a-zA-Z0-9]{3,}')
+
+        # Extra args are ignored:
+        p_format3 = PyUnicode_FromFormat(b'%p', '123456', None, b'xyz')
+        self.assertIsInstance(p_format3, str)
+        self.assertRegex(p_format3, p_format_regex)
+
         # Test string decode from parameter of %s using utf-8.
         # b'\xe4\xba\xba\xe6\xb0\x91' is utf-8 encoded byte sequence of
         # '\u4eba\u6c11'
@@ -2779,22 +2836,21 @@ class CAPITest(unittest.TestCase):
         check_format('repr=abc\ufffd',
                      b'repr=%V', None, b'abc\xff')
 
-        # not supported: copy the raw format string. these tests are just here
-        # to check for crashes and should not be considered as specifications
-        check_format('%s',
-                     b'%1%s', b'abc')
-        check_format('%1abc',
-                     b'%1abc')
-        check_format('%+i',
-                     b'%+i', c_int(10))
-        check_format('%.%s',
-                     b'%.%s', b'abc')
-
         # Issue #33817: empty strings
         check_format('',
                      b'')
         check_format('',
                      b'%s', b'')
+
+        # check for crashes
+        for fmt in (b'%', b'%0', b'%01', b'%.', b'%.1',
+                    b'%0%s', b'%1%s', b'%.%s', b'%.1%s', b'%1abc',
+                    b'%l', b'%ll', b'%z', b'%ls', b'%lls', b'%zs'):
+            with self.subTest(fmt=fmt):
+                self.assertRaisesRegex(SystemError, 'invalid format string',
+                    PyUnicode_FromFormat, fmt, b'abc')
+        self.assertRaisesRegex(SystemError, 'invalid format string',
+            PyUnicode_FromFormat, b'%+i', c_int(10))
 
     # Test PyUnicode_AsWideChar()
     @support.cpython_only
@@ -2907,6 +2963,44 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_asutf8andsize(bmp2), (b'\xef\xbf\xbf', 3))
         self.assertEqual(unicode_asutf8andsize(nonbmp), (b'\xf4\x8f\xbf\xbf', 4))
         self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize, 'a\ud800b\udfffc')
+
+    # Test PyUnicode_Count()
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_count(self):
+        from _testcapi import unicode_count
+
+        st = 'abcabd'
+        self.assertEqual(unicode_count(st, 'a', 0, len(st)), 2)
+        self.assertEqual(unicode_count(st, 'ab', 0, len(st)), 2)
+        self.assertEqual(unicode_count(st, 'abc', 0, len(st)), 1)
+        self.assertEqual(unicode_count(st, 'а', 0, len(st)), 0)  # cyrillic "a"
+        # start < end
+        self.assertEqual(unicode_count(st, 'a', 3, len(st)), 1)
+        self.assertEqual(unicode_count(st, 'a', 4, len(st)), 0)
+        self.assertEqual(unicode_count(st, 'a', 0, sys.maxsize), 2)
+        # start >= end
+        self.assertEqual(unicode_count(st, 'abc', 0, 0), 0)
+        self.assertEqual(unicode_count(st, 'a', 3, 2), 0)
+        self.assertEqual(unicode_count(st, 'a', sys.maxsize, 5), 0)
+        # negative
+        self.assertEqual(unicode_count(st, 'ab', -len(st), -1), 2)
+        self.assertEqual(unicode_count(st, 'a', -len(st), -3), 1)
+        # wrong args
+        self.assertRaises(TypeError, unicode_count, 'a', 'a')
+        self.assertRaises(TypeError, unicode_count, 'a', 'a', 1)
+        self.assertRaises(TypeError, unicode_count, 1, 'a', 0, 1)
+        self.assertRaises(TypeError, unicode_count, 'a', 1, 0, 1)
+        # empty string
+        self.assertEqual(unicode_count('abc', '', 0, 3), 4)
+        self.assertEqual(unicode_count('abc', '', 1, 3), 3)
+        self.assertEqual(unicode_count('', '', 0, 1), 1)
+        self.assertEqual(unicode_count('', 'a', 0, 1), 0)
+        # different unicode kinds
+        for uni in "\xa1", "\u8000\u8080", "\ud800\udc02", "\U0001f100\U0001f1f1":
+            for ch in uni:
+                self.assertEqual(unicode_count(uni, ch, 0, len(uni)), 1)
+                self.assertEqual(unicode_count(st, ch, 0, len(st)), 0)
 
     # Test PyUnicode_FindChar()
     @support.cpython_only
@@ -3043,6 +3137,30 @@ class StringModuleTest(unittest.TestCase):
              (False, 'key2'),
             ]])
         self.assertRaises(TypeError, _string.formatter_field_name_split, 1)
+
+    def test_str_subclass_attr(self):
+
+        name = StrSubclass("name")
+        name2 = StrSubclass("name2")
+        class Bag:
+            pass
+
+        o = Bag()
+        with self.assertRaises(AttributeError):
+            delattr(o, name)
+        setattr(o, name, 1)
+        self.assertEqual(o.name, 1)
+        o.name = 2
+        self.assertEqual(list(o.__dict__), [name])
+
+        with self.assertRaises(AttributeError):
+            delattr(o, name2)
+        with self.assertRaises(AttributeError):
+            del o.name2
+        setattr(o, name2, 3)
+        self.assertEqual(o.name2, 3)
+        o.name2 = 4
+        self.assertEqual(list(o.__dict__), [name, name2])
 
 
 if __name__ == "__main__":

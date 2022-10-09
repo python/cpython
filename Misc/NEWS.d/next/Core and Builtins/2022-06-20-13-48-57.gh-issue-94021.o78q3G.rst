@@ -1,0 +1,1 @@
+Fix unreachable code warning in ``Python/specialize.c``.

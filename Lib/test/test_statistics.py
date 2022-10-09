@@ -1040,50 +1040,6 @@ class FailNegTest(unittest.TestCase):
         self.assertEqual(errmsg, msg)
 
 
-class FindLteqTest(unittest.TestCase):
-    # Test _find_lteq private function.
-
-    def test_invalid_input_values(self):
-        for a, x in [
-            ([], 1),
-            ([1, 2], 3),
-            ([1, 3], 2)
-        ]:
-            with self.subTest(a=a, x=x):
-                with self.assertRaises(ValueError):
-                    statistics._find_lteq(a, x)
-
-    def test_locate_successfully(self):
-        for a, x, expected_i in [
-            ([1, 1, 1, 2, 3], 1, 0),
-            ([0, 1, 1, 1, 2, 3], 1, 1),
-            ([1, 2, 3, 3, 3], 3, 2)
-        ]:
-            with self.subTest(a=a, x=x):
-                self.assertEqual(expected_i, statistics._find_lteq(a, x))
-
-
-class FindRteqTest(unittest.TestCase):
-    # Test _find_rteq private function.
-
-    def test_invalid_input_values(self):
-        for a, l, x in [
-            ([1], 2, 1),
-            ([1, 3], 0, 2)
-        ]:
-            with self.assertRaises(ValueError):
-                statistics._find_rteq(a, l, x)
-
-    def test_locate_successfully(self):
-        for a, l, x, expected_i in [
-            ([1, 1, 1, 2, 3], 0, 1, 2),
-            ([0, 1, 1, 1, 2, 3], 0, 1, 3),
-            ([1, 2, 3, 3, 3], 0, 3, 4)
-        ]:
-            with self.subTest(a=a, l=l, x=x):
-                self.assertEqual(expected_i, statistics._find_rteq(a, l, x))
-
-
 # === Tests for public functions ===
 
 class UnivariateCommonMixin:
@@ -1785,6 +1741,12 @@ class TestMedianGrouped(TestMedian):
             for count in (2, 5, 10, 20):
                 data = [x]*count
                 self.assertEqual(self.func(data), float(x))
+
+    def test_single_value(self):
+        # Override method from AverageMixin.
+        # Average of a single value is the value as a float.
+        for x in (23, 42.5, 1.3e15, Fraction(15, 19), Decimal('0.28')):
+            self.assertEqual(self.func([x]), float(x))
 
     def test_odd_fractions(self):
         # Test median_grouped works with an odd number of Fractions.
@@ -2603,6 +2565,22 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         self.assertAlmostEqual(statistics.covariance(x, y), 0.1)
 
 
+    def test_correlation_spearman(self):
+        # https://statistics.laerd.com/statistical-guides/spearmans-rank-order-correlation-statistical-guide-2.php
+        # Compare with:
+        #     >>> import scipy.stats.mstats
+        #     >>> scipy.stats.mstats.spearmanr(reading, mathematics)
+        #     SpearmanrResult(correlation=0.6686960980480712, pvalue=0.03450954165178532)
+        # And Wolfram Alpha gives: 0.668696
+        #     https://www.wolframalpha.com/input?i=SpearmanRho%5B%7B56%2C+75%2C+45%2C+71%2C+61%2C+64%2C+58%2C+80%2C+76%2C+61%7D%2C+%7B66%2C+70%2C+40%2C+60%2C+65%2C+56%2C+59%2C+77%2C+67%2C+63%7D%5D
+        reading = [56, 75, 45, 71, 61, 64, 58, 80, 76, 61]
+        mathematics = [66, 70, 40, 60, 65, 56, 59, 77, 67, 63]
+        self.assertAlmostEqual(statistics.correlation(reading, mathematics, method='ranked'),
+                               0.6686960980480712)
+
+        with self.assertRaises(ValueError):
+            statistics.correlation(reading, mathematics, method='bad_method')
+
 class TestLinearRegression(unittest.TestCase):
 
     def test_constant_input_error(self):
@@ -2839,9 +2817,10 @@ class TestNormalDist:
             iq.inv_cdf(1.0)                         # p is one
         with self.assertRaises(self.module.StatisticsError):
             iq.inv_cdf(1.1)                         # p over one
-        with self.assertRaises(self.module.StatisticsError):
-            iq = NormalDist(100, 0)                 # sigma is zero
-            iq.inv_cdf(0.5)
+
+        # Supported case:
+        iq = NormalDist(100, 0)                     # sigma is zero
+        self.assertEqual(iq.inv_cdf(0.5), 100)
 
         # Special values
         self.assertTrue(math.isnan(Z.inv_cdf(float('NaN'))))

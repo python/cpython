@@ -401,6 +401,7 @@ class SysModuleTest(unittest.TestCase):
 
     # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_current_frames(self):
         import threading
         import traceback
@@ -466,6 +467,7 @@ class SysModuleTest(unittest.TestCase):
         t.join()
 
     @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_current_exceptions(self):
         import threading
         import traceback
@@ -548,11 +550,17 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.executable, str)
         self.assertEqual(len(sys.float_info), 11)
         self.assertEqual(sys.float_info.radix, 2)
-        self.assertEqual(len(sys.int_info), 2)
+        self.assertEqual(len(sys.int_info), 4)
         self.assertTrue(sys.int_info.bits_per_digit % 5 == 0)
         self.assertTrue(sys.int_info.sizeof_digit >= 1)
+        self.assertGreaterEqual(sys.int_info.default_max_str_digits, 500)
+        self.assertGreaterEqual(sys.int_info.str_digits_check_threshold, 100)
+        self.assertGreater(sys.int_info.default_max_str_digits,
+                           sys.int_info.str_digits_check_threshold)
         self.assertEqual(type(sys.int_info.bits_per_digit), int)
         self.assertEqual(type(sys.int_info.sizeof_digit), int)
+        self.assertIsInstance(sys.int_info.default_max_str_digits, int)
+        self.assertIsInstance(sys.int_info.str_digits_check_threshold, int)
         self.assertIsInstance(sys.hexversion, int)
 
         self.assertEqual(len(sys.hash_info), 9)
@@ -624,8 +632,24 @@ class SysModuleTest(unittest.TestCase):
     def test_thread_info(self):
         info = sys.thread_info
         self.assertEqual(len(info), 3)
-        self.assertIn(info.name, ('nt', 'pthread', 'solaris', None))
+        self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
+        if sys.platform.startswith(("linux", "freebsd")):
+            self.assertEqual(info.name, "pthread")
+        elif sys.platform == "win32":
+            self.assertEqual(info.name, "nt")
+        elif sys.platform == "emscripten":
+            self.assertIn(info.name, {"pthread", "pthread-stubs"})
+        elif sys.platform == "wasi":
+            self.assertEqual(info.name, "pthread-stubs")
+
+    @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
+    def test_emscripten_info(self):
+        self.assertEqual(len(sys._emscripten_info), 4)
+        self.assertIsInstance(sys._emscripten_info.emscripten_version, tuple)
+        self.assertIsInstance(sys._emscripten_info.runtime, (str, type(None)))
+        self.assertIsInstance(sys._emscripten_info.pthreads, bool)
+        self.assertIsInstance(sys._emscripten_info.shared_memory, bool)
 
     def test_43581(self):
         # Can't use sys.stdout, as this is a StringIO object when
@@ -659,10 +683,10 @@ class SysModuleTest(unittest.TestCase):
                  "dont_write_bytecode", "no_user_site", "no_site",
                  "ignore_environment", "verbose", "bytes_warning", "quiet",
                  "hash_randomization", "isolated", "dev_mode", "utf8_mode",
-                 "warn_default_encoding")
+                 "warn_default_encoding", "safe_path", "int_max_str_digits")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            attr_type = bool if attr == "dev_mode" else int
+            attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
@@ -1176,11 +1200,12 @@ class UnraisableHookTest(unittest.TestCase):
         for moduleName in 'builtins', '__main__', 'some_module':
             with self.subTest(moduleName=moduleName):
                 A.B.X.__module__ = moduleName
-                with test.support.captured_stderr() as stderr, \
-                     test.support.swap_attr(sys, 'unraisablehook',
-                                            sys.__unraisablehook__):
-                         expected = self.write_unraisable_exc(
-                             A.B.X(), "msg", "obj");
+                with test.support.captured_stderr() as stderr, test.support.swap_attr(
+                    sys, 'unraisablehook', sys.__unraisablehook__
+                ):
+                    expected = self.write_unraisable_exc(
+                        A.B.X(), "msg", "obj"
+                    )
                 report = stderr.getvalue()
                 self.assertIn(A.B.X.__qualname__, report)
                 if moduleName in ['builtins', '__main__']:
@@ -1276,7 +1301,7 @@ class SizeofTest(unittest.TestCase):
             def __sizeof__(self):
                 return int(self)
         self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
-                         sys.maxsize + self.gc_headsize)
+                         sys.maxsize + self.gc_headsize*2)
         with self.assertRaises(OverflowError):
             sys.getsizeof(OverflowSizeof(sys.maxsize + 1))
         with self.assertRaises(ValueError):
@@ -1346,8 +1371,12 @@ class SizeofTest(unittest.TestCase):
         check({}.__iter__, size('2P'))
         # empty dict
         check({}, size('nQ2P'))
-        # dict
-        check({"a": 1}, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + (8*2//3)*calcsize('n2P'))
+        # dict (string key)
+        check({"a": 1}, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + (8*2//3)*calcsize('2P'))
+        longdict = {str(i): i for i in range(8)}
+        check(longdict, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + (16*2//3)*calcsize('2P'))
+        # dict (non-string key)
+        check({1: 1}, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
         check(longdict, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
@@ -1417,9 +1446,10 @@ class SizeofTest(unittest.TestCase):
         import re
         check(re.finditer('',''), size('2P'))
         # list
-        samples = [[], [1,2,3], ['1', '2', '3']]
-        for sample in samples:
-            check(list(sample), vsize('Pn') + len(sample)*self.P)
+        check(list([]), vsize('Pn'))
+        check(list([1]), vsize('Pn') + 2*self.P)
+        check(list([1, 2]), vsize('Pn') + 2*self.P)
+        check(list([1, 2, 3]), vsize('Pn') + 4*self.P)
         # sortwrapper (list)
         # XXX
         # cmpwrapper (list)
@@ -1501,17 +1531,19 @@ class SizeofTest(unittest.TestCase):
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '6P')
+                  '6P'
+                  '1P'                  # Specializer cache
+                  )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 64 + 42*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 64 + 42*calcsize("2P"))
         # dict with shared keys
         [newstyleclass() for _ in range(100)]
         check(newstyleclass().__dict__, size('nQ2P') + self.P)
         o = newstyleclass()
         o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
         # Separate block for PyDictKeysObject with 16 keys and 10 entries
-        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 64 + 42*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 64 + 42*calcsize("2P"))
         # dict with shared keys
         check(newstyleclass().__dict__, size('nQ2P') + self.P)
         # unicode
@@ -1521,8 +1553,9 @@ class SizeofTest(unittest.TestCase):
         samples = ['1'*100, '\xff'*50,
                    '\u0100'*40, '\uffff'*100,
                    '\U00010000'*30, '\U0010ffff'*100]
-        asciifields = "nnbP"
-        compactfields = asciifields + "nPn"
+        # also update field definitions in test_unicode.test_raiseMemError
+        asciifields = "nnb"
+        compactfields = asciifields + "nP"
         unicodefields = compactfields + "P"
         for s in samples:
             maxchar = ord(max(s))

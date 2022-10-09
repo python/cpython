@@ -3,6 +3,7 @@ from test import support
 from test.support import import_helper
 import binascii
 import copy
+import os
 import pickle
 import random
 import sys
@@ -17,6 +18,35 @@ requires_Compress_copy = unittest.skipUnless(
 requires_Decompress_copy = unittest.skipUnless(
         hasattr(zlib.decompressobj(), "copy"),
         'requires Decompress.copy()')
+
+# bpo-46623: On s390x, when a hardware accelerator is used, using different
+# ways to compress data with zlib can produce different compressed data.
+# Simplified test_pair() code:
+#
+#   def func1(data):
+#       return zlib.compress(data)
+#
+#   def func2(data)
+#       co = zlib.compressobj()
+#       x1 = co.compress(data)
+#       x2 = co.flush()
+#       return x1 + x2
+#
+# On s390x if zlib uses a hardware accelerator, func1() creates a single
+# "final" compressed block whereas func2() produces 3 compressed blocks (the
+# last one is a final block). On other platforms with no accelerator, func1()
+# and func2() produce the same compressed data made of a single (final)
+# compressed block.
+#
+# Only the compressed data is different, the decompression returns the original
+# data:
+#
+#   zlib.decompress(func1(data)) == zlib.decompress(func2(data)) == data
+#
+# Make the assumption that s390x always has an accelerator to simplify the skip
+# condition. Windows doesn't have os.uname() but it doesn't support s390x.
+skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
+                                'skipped on s390x')
 
 
 class VersionTestCase(unittest.TestCase):
@@ -182,6 +212,7 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
                                          bufsize=zlib.DEF_BUF_SIZE),
                          HAMLET_SCENE)
 
+    @skip_on_s390x
     def test_speech128(self):
         # compress more data
         data = HAMLET_SCENE * 128
@@ -233,6 +264,7 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
 
 class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     # Test compression object
+    @skip_on_s390x
     def test_pair(self):
         # straightforward compress/decompress objects
         datasrc = HAMLET_SCENE * 128

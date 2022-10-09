@@ -6,7 +6,7 @@ PyMODINIT_FUNC PyInit__imp(void);
 
 PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
 
-PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(struct _Py_Identifier *name);
+PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(_Py_Identifier *name);
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 
@@ -32,7 +32,7 @@ struct _frozen {
     const char *name;                 /* ASCII encoded string */
     const unsigned char *code;
     int size;
-    bool is_package;
+    int is_package;
     PyObject *(*get_code)(void);
 };
 
@@ -40,3 +40,6 @@ struct _frozen {
    collection of frozen modules: */
 
 PyAPI_DATA(const struct _frozen *) PyImport_FrozenModules;
+
+PyAPI_DATA(PyObject *) _PyImport_GetModuleAttr(PyObject *, PyObject *);
+PyAPI_DATA(PyObject *) _PyImport_GetModuleAttrString(const char *, const char *);

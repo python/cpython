@@ -837,7 +837,7 @@ class Differ:
         Each sequence must contain individual single-line strings ending with
         newlines. Such sequences can be obtained from the `readlines()` method
         of file-like objects.  The delta generated also consists of newline-
-        terminated strings, ready to be printed as-is via the writeline()
+        terminated strings, ready to be printed as-is via the writelines()
         method of a file-like object.
 
         Example:

@@ -1,2 +1,0 @@
-Inherit asyncio proactor datagram transport from
-:class:`asyncio.DatagramTransport`.

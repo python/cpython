@@ -80,19 +80,19 @@ if (-not $skipupload) {
     ""
 
     if ($doc_htmlhelp) {
-        pushd $doc_htmlhelp
+        $chm = gci -EA 0 $doc_htmlhelp\python*.chm, $doc_htmlhelp\python*.chm.asc
     } else {
-        pushd $build
+        $chm = gci -EA 0 $build\python*.chm, $build\python*.chm.asc
     }
-    $chm = gci python*.chm, python*.chm.asc
-    popd
 
     $d = "$target/$($p[0])/"
     & $plink -batch $user@$server mkdir $d
     & $plink -batch $user@$server chgrp downloads $d
     & $plink -batch $user@$server chmod o+rx $d
-    & $pscp -batch $chm.FullName "$user@${server}:$d"
-    if (-not $?) { throw "Failed to upload $chm" }
+    if ($chm) {
+        & $pscp -batch $chm.FullName "$user@${server}:$d"
+        if (-not $?) { throw "Failed to upload $chm" }
+    }
 
     $dirs = gci "$build" -Directory
     if ($embed) {
