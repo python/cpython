@@ -723,7 +723,7 @@ hashlib
 IDLE and idlelib
 ----------------
 
-* Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+* Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
   Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 * Include prompts when saving Shell with inputs and outputs.
@@ -1666,6 +1666,10 @@ Removed
   probably don't want to use this function. It exists mainly to be used in
   Python's test suite."
   (Contributed by Victor Stinner in :issue:`46852`.)
+
+* Pynche --- The Pythonically Natural Color and Hue Editor --- has been moved out
+  of ``Tools/scripts`` and is `being developed independently
+  <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.
 
 Porting to Python 3.11
 ======================

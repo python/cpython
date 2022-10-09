@@ -4,6 +4,9 @@
 # It uses the same pattern rule for gitignore file
 # https://git-scm.com/docs/gitignore#_pattern_format
 
+# GitHub
+.github/**                    @ezio-melotti
+
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @gvanrossum
 
