@@ -599,8 +599,8 @@ class EnsurePipTest(BaseTest):
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
         # Ignore DeprecationWarning since pip code is not part of Python
         out, err = check_output([envpy, '-W', 'ignore::DeprecationWarning',
-               '-W', 'ignore::ImportWarning', '-I',
-               '-m', 'pip', '--version'])
+               '-W', 'ignore::ImportWarning', '-W', 'ignore::PendingDeprecationWarning',
+               '-I', '-m', 'pip', '--version'])
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
         err = err.decode("latin-1") # Force to text, prevent decoding errors
@@ -621,6 +621,7 @@ class EnsurePipTest(BaseTest):
                 envvars["PYTHONWARNINGS"] = "ignore"
                 out, err = check_output([envpy,
                     '-W', 'ignore::DeprecationWarning',
+                    '-W', 'ignore::PendingDeprecationWarning',
                     '-W', 'ignore::ImportWarning', '-I',
                     '-m', 'ensurepip._uninstall'])
         # We force everything to text, so unittest gives the detailed diff

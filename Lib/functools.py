@@ -967,7 +967,8 @@ class cached_property:
     def __init__(self, func=None, *, lock=True):
         self.func = func
         self.attrname = None
-        self.__doc__ = func.__doc__
+        if func is not None:
+            self.__doc__ = func.__doc__
         if lock:
             warn("Locking cached_property is deprecated; use @cached_property(lock=False)",
                  PendingDeprecationWarning, 2)
@@ -977,6 +978,8 @@ class cached_property:
         if self.func is not None:
             raise TypeError("'cached_property' object is not callable")
         self.func = func
+        if func is not None:
+            self.__doc__ = func.__doc__
         return self
 
     def __set_name__(self, owner, name):

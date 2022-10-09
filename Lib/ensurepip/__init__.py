@@ -94,6 +94,8 @@ runpy.run_module("pip", run_name="__main__", alter_sys=True)
         sys.executable,
         '-W',
         'ignore::DeprecationWarning',
+        '-W',
+        'ignore::PendingDeprecationWarning',
         '-c',
         code,
     ]
