@@ -110,21 +110,23 @@ script in the virtual environment's binary directory. The invocation of the
 script is platform-specific (`<venv>` must be replaced by the path of the
 directory containing the virtual environment):
 
-+-------------+-----------------+-----------------------------------------+
-| Platform    | Shell           | Command to activate virtual environment |
-+=============+=================+=========================================+
-| POSIX       | bash/zsh        | $ source <venv>/bin/activate            |
-+-------------+-----------------+-----------------------------------------+
-|             | fish            | $ source <venv>/bin/activate.fish       |
-+-------------+-----------------+-----------------------------------------+
-|             | csh/tcsh        | $ source <venv>/bin/activate.csh        |
-+-------------+-----------------+-----------------------------------------+
-|             | PowerShell Core | $ <venv>/bin/Activate.ps1               |
-+-------------+-----------------+-----------------------------------------+
-| Windows     | cmd.exe         | C:\\> <venv>\\Scripts\\activate.bat     |
-+-------------+-----------------+-----------------------------------------+
-|             | PowerShell      | PS C:\\> <venv>\\Scripts\\Activate.ps1  |
-+-------------+-----------------+-----------------------------------------+
++-------------+-------------------+-----------------------------------------+
+| Platform    | Shell             | Command to activate virtual environment |
++=============+===================+=========================================+
+| POSIX       | Bourne compatible | $ . <venv>/bin/activate                 |
++-------------+-------------------+-----------------------------------------+
+|             | csh               | % source <venv>/bin/activate.csh        |
++-------------+-------------------+-----------------------------------------+
+|             | fish              | user@host /> . <venv>/bin/activate.fish |
++-------------+-------------------+-----------------------------------------+
+|             | PowerShell Core   | PS /> <venv>/bin/Activate.ps1           |
++-------------+-------------------+-----------------------------------------+
+|             | tcsh              | > source <venv>/bin/activate.csh        |
++-------------+-------------------+-----------------------------------------+
+| Windows     | cmd.exe           | C:\\> <venv>\\Scripts\\activate.bat     |
++-------------+-------------------+-----------------------------------------+
+|             | PowerShell        | PS C:\\> <venv>\\Scripts\\Activate.ps1  |
++-------------+-------------------+-----------------------------------------+
 
 When a virtual environment is active, the :envvar:`VIRTUAL_ENV` environment
 variable is set to the path of the virtual environment. This can be used to
