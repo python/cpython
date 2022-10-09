@@ -42,6 +42,7 @@ static inline
 Py_ssize_t round_down(Py_ssize_t numToRound, Py_ssize_t multiple)
 {
     assert(numToRound >= 0);
+    assert(multiple >= 0);
     if (multiple == 0)
         return numToRound;
     return (numToRound / multiple) * multiple;
@@ -51,6 +52,7 @@ static inline
 Py_ssize_t round_up(Py_ssize_t numToRound, Py_ssize_t multiple)
 {
     assert(numToRound >= 0);
+    assert(multiple >= 0);
     if (multiple == 0)
         return numToRound;
     return ((numToRound + multiple - 1) / multiple) * multiple;
