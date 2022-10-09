@@ -65,20 +65,34 @@ Py_ssize_t LOW_BIT(Py_ssize_t offset);
 static inline
 Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
 
-/*
- * Expects the size, index and offset for the current field in *psize and
- * *poffset, stores the total size so far in *psize, the offset for the next
- * field in *poffset, the alignment requirements for the current field in
- * *palign, and returns a field descriptor for this field.
- */
-/*
- * bitfields extension:
- * bitsize != 0: this is a bit field.
- * pbitofs points to the current bit offset, this will be updated.
- * prev_desc points to the type of the previous bitfield, if any.
- */
+/* PyCField_FromDesc creates and returns a struct/union field descriptor.
 
-void
+The function expects to be called repeatedly for all fields in a struct or
+union.  It uses helper functions PyCField_FromDesc_gcc and
+PyCField_FromDesc_msvc to simulate the corresponding compilers.
+
+GCC mode places fields one after another, bit by bit.  But when a field would straddle an alignment boundary for its type, we insert a few bits of padding to
+avoid that.
+
+MSVC mode works similar expect for bitfield packing.  Adjacent bit-fields are
+packed into the same 1-, 2-, or 4-byte allocation unit if the integral types
+are the same size and if the next bit-field fits into the current allocation
+unit without crossing the boundary imposed by the common alignment requirements
+of the bit-fields.
+
+See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#index-mms-bitfields for details.
+
+We do not support zero length bitfields.  In fact we use bitsize != 0 to
+indicate a bitfield.
+
+PyCField_FromDesc manages:
+- *psize: the size of the structure / union so far.
+- *poffset, *pbitofs: 8* (*poffset) + *pbitofs points to where the next field
+  would start.
+- *palign: the alignment requirements of the last field we placed.
+*/
+
+static void
 PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 CFieldObject* self, StgDictObject* dict,
@@ -118,7 +132,7 @@ PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
     assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
 }
 
-void
+static void
 PyCField_FromDesc_msvc(
                 Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
@@ -226,7 +240,8 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 
     int is_bitfield = !!bitsize;
     if(!is_bitfield) {
-        bitsize = 8 * dict->size; // might still be 0 afterwards.
+        bitsize = 8 * dict->size;
+        // Caution: bitsize might still be 0 now.
     }
     assert(bitsize <= dict->size * 8);
 
