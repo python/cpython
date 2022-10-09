@@ -840,7 +840,7 @@ stores finder objects rather than being limited to :term:`importer` objects).
 In this way, the expensive search for a particular :term:`path entry`
 location's :term:`path entry finder` need only be done once.  User code is
 free to remove cache entries from :data:`sys.path_importer_cache` forcing
-the path based finder to perform the path entry search again [#fnpic]_.
+the path based finder to perform the path entry search again.
 
 If the path entry is not present in the cache, the path based finder iterates
 over every callable in :data:`sys.path_hooks`.  Each of the :term:`path entry
