@@ -94,7 +94,7 @@ PyCField_FromDesc manages:
 */
 
 static void
-PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
+PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 CFieldObject* self, StgDictObject* dict,
                 int is_bitfield
@@ -131,9 +131,9 @@ PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
 
 static void
 PyCField_FromDesc_msvc(
-                Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack,
+                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
+                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
+                Py_ssize_t *palign, int pack,
                 CFieldObject* self, StgDictObject* dict,
                 int is_bitfield
                 )
@@ -180,8 +180,8 @@ PyCField_FromDesc_msvc(
 
 PyObject *
 PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
+                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
+                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian, int ms_struct)
 {
     CFieldObject* self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
@@ -235,6 +235,9 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 
     int is_bitfield = !!bitsize;
     if(!is_bitfield) {
+        assert(dict->size >= 0);
+        // assert: no overflow;
+        assert(dict->size < (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8);
         bitsize = 8 * dict->size;
         // Caution: bitsize might still be 0 now.
     }

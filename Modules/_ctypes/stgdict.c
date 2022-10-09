@@ -525,7 +525,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         PyObject *pair = PySequence_GetItem(fields, i);
         PyObject *prop;
         StgDictObject *dict;
-        int bitsize = 0;
+        Py_ssize_t bitsize = 0;
 
         if (!pair || !PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
             PyErr_SetString(PyExc_TypeError,
