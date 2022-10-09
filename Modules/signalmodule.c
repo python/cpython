@@ -1798,6 +1798,19 @@ int
 PyErr_CheckSignals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+
+    /* Opportunistically check if the GC is scheduled to run and run it
+       if we have a request. This is done here because native code needs
+       to call this API if is going to run for some time without executing
+       Python code to ensure signals are handled. Checking for the GC here
+       allows long running native code to clean cycles created using the C-API
+       even if it doesn't run the evaluation loop */
+    struct _ceval_state *interp_ceval_state = &tstate->interp->ceval;
+    if (_Py_atomic_load_relaxed(&interp_ceval_state->gc_scheduled)) {
+        _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
+        _Py_RunGC(tstate);
+    }
+
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }

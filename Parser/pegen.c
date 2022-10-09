@@ -123,16 +123,18 @@ growable_comment_array_deallocate(growable_comment_array *arr) {
 }
 
 static int
-_get_keyword_or_name_type(Parser *p, const char *name, int name_len)
+_get_keyword_or_name_type(Parser *p, struct token *new_token)
 {
+    int name_len = new_token->end_col_offset - new_token->col_offset;
     assert(name_len > 0);
+
     if (name_len >= p->n_keyword_lists ||
         p->keywords[name_len] == NULL ||
         p->keywords[name_len]->type == -1) {
         return NAME;
     }
     for (KeywordToken *k = p->keywords[name_len]; k != NULL && k->type != -1; k++) {
-        if (strncmp(k->str, name, name_len) == 0) {
+        if (strncmp(k->str, new_token->start, name_len) == 0) {
             return k->type;
         }
     }
@@ -140,33 +142,26 @@ _get_keyword_or_name_type(Parser *p, const char *name, int name_len)
 }
 
 static int
-initialize_token(Parser *p, Token *token, const char *start, const char *end, int token_type) {
-    assert(token != NULL);
+initialize_token(Parser *p, Token *parser_token, struct token *new_token, int token_type) {
+    assert(parser_token != NULL);
 
-    token->type = (token_type == NAME) ? _get_keyword_or_name_type(p, start, (int)(end - start)) : token_type;
-    token->bytes = PyBytes_FromStringAndSize(start, end - start);
-    if (token->bytes == NULL) {
+    parser_token->type = (token_type == NAME) ? _get_keyword_or_name_type(p, new_token) : token_type;
+    parser_token->bytes = PyBytes_FromStringAndSize(new_token->start, new_token->end - new_token->start);
+    if (parser_token->bytes == NULL) {
+        return -1;
+    }
+    if (_PyArena_AddPyObject(p->arena, parser_token->bytes) < 0) {
+        Py_DECREF(parser_token->bytes);
         return -1;
     }
 
-    if (_PyArena_AddPyObject(p->arena, token->bytes) < 0) {
-        Py_DECREF(token->bytes);
-        return -1;
-    }
-
-    token->level = p->tok->level;
-
-    const char *line_start = token_type == STRING ? p->tok->multi_line_start : p->tok->line_start;
-    int lineno = token_type == STRING ? p->tok->first_lineno : p->tok->lineno;
-    int end_lineno = p->tok->lineno;
-
-    int col_offset = (start != NULL && start >= line_start) ? (int)(start - line_start) : -1;
-    int end_col_offset = (end != NULL && end >= p->tok->line_start) ? (int)(end - p->tok->line_start) : -1;
-
-    token->lineno = lineno;
-    token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + col_offset : col_offset;
-    token->end_lineno = end_lineno;
-    token->end_col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + end_col_offset : end_col_offset;
+    parser_token->level = new_token->level;
+    parser_token->lineno = new_token->lineno;
+    parser_token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token->col_offset
+                                                                    : new_token->col_offset;
+    parser_token->end_lineno = new_token->end_lineno;
+    parser_token->end_col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token->end_col_offset
+                                                                 : new_token->end_col_offset;
 
     p->fill += 1;
 
@@ -202,26 +197,25 @@ _resize_tokens_array(Parser *p) {
 int
 _PyPegen_fill_token(Parser *p)
 {
-    const char *start;
-    const char *end;
-    int type = _PyTokenizer_Get(p->tok, &start, &end);
+    struct token new_token;
+    int type = _PyTokenizer_Get(p->tok, &new_token);
 
     // Record and skip '# type: ignore' comments
     while (type == TYPE_IGNORE) {
-        Py_ssize_t len = end - start;
+        Py_ssize_t len = new_token.end_col_offset - new_token.col_offset;
         char *tag = PyMem_Malloc(len + 1);
         if (tag == NULL) {
             PyErr_NoMemory();
             return -1;
         }
-        strncpy(tag, start, len);
+        strncpy(tag, new_token.start, len);
         tag[len] = '\0';
         // Ownership of tag passes to the growable array
         if (!growable_comment_array_add(&p->type_ignore_comments, p->tok->lineno, tag)) {
             PyErr_NoMemory();
             return -1;
         }
-        type = _PyTokenizer_Get(p->tok, &start, &end);
+        type = _PyTokenizer_Get(p->tok, &new_token);
     }
 
     // If we have reached the end and we are in single input mode we need to insert a newline and reset the parsing
@@ -244,7 +238,7 @@ _PyPegen_fill_token(Parser *p)
     }
 
     Token *t = p->tokens[p->fill];
-    return initialize_token(p, t, start, end, type);
+    return initialize_token(p, t, &new_token, type);
 }
 
 #if defined(Py_DEBUG)

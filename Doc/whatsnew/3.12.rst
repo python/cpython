@@ -93,6 +93,13 @@ Other Language Changes
   when parsing source code containing null bytes. (Contributed by Pablo Galindo
   in :gh:`96670`.)
 
+* The Garbage Collector now runs only on the eval breaker mechanism of the
+  Python bytecode evaluation loop instead on object allocations. The GC can
+  also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
+  need to run for a long time without executing any Python code also have a
+  chance to execute the GC periodically. (Contributed by Pablo Galindo in
+  :gh:`97922`.)
+
 New Modules
 ===========
 
@@ -101,6 +108,24 @@ New Modules
 
 Improved Modules
 ================
+
+asyncio
+-------
+
+* On Linux, :mod:`asyncio` uses :class:`~asyncio.PidfdChildWatcher` by default
+  if :func:`os.pidfd_open` is available and functional instead of
+  :class:`~asyncio.ThreadedChildWatcher`.
+  (Contributed by Kumar Aditya in :gh:`98024`.)
+
+* The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`,
+  :class:`~asyncio.FastChildWatcher` and
+  :class:`~asyncio.SafeChildWatcher` are deprecated and
+  will be removed in Python 3.14. It is recommended to not manually
+  configure a child watcher as the event loop now uses the best available
+  child watcher for each platform (:class:`~asyncio.PidfdChildWatcher`
+  if supported and :class:`~asyncio.ThreadedChildWatcher` otherwise).
+  (Contributed by Kumar Aditya in :gh:`94597`.)
+
 
 pathlib
 -------
@@ -280,8 +305,8 @@ Pending Removal in Python 3.14
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases using the C API.
 
-* ``__package__`` will cease to be set or taken into consideration by
-  the import system (:gh:`97879`).
+* ``__package__`` and ``__cached__`` will cease to be set or taken
+  into consideration by the import system (:gh:`97879`).
 
 
 Pending Removal in Future Versions
@@ -546,6 +571,11 @@ New Features
   which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
   (Contributed by Andrew Frost in :gh:`92257`.)
 
+* The C API now permits registering callbacks via :c:func:`PyDict_AddWatcher`,
+  :c:func:`PyDict_AddWatch` and related APIs to be called whenever a dictionary
+  is modified. This is intended for use by optimizing interpreters, JIT
+  compilers, or debuggers.
+
 Porting to Python 3.12
 ----------------------
 
@@ -588,7 +618,7 @@ Porting to Python 3.12
   ``tp_weaklistoffset``, respectively.
   The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
   supported, but does not fully support multiple inheritance
-  (:gh: `95589`), and performance may be worse.
+  (:gh:`95589`), and performance may be worse.
   Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
   :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
