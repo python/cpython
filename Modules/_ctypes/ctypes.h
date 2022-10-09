@@ -144,7 +144,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
                 Py_ssize_t *palign,
-                int pack, int is_big_endian, int ms_struct);
+                int pack, int is_big_endian, int ms_struct, int gcc_packed);
 
 extern PyObject *PyCData_AtAddress(PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(PyObject *type, char *data, Py_ssize_t length);

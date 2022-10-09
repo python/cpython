@@ -97,7 +97,7 @@ static void
 PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 CFieldObject* self, StgDictObject* dict,
-                int is_bitfield
+                int is_bitfield, int gcc_packed
                 )
 {
     // We don't use poffset here, so clear it, if it has been set.
@@ -107,7 +107,8 @@ PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
     *palign = dict->align;
 
     if ((bitsize > 0)
-         && (round_down(*pbitofs, 8 * dict->align)
+        && !gcc_packed
+        && (round_down(*pbitofs, 8 * dict->align)
             < round_down(*pbitofs + bitsize - 1, 8 * dict->align))) {
         // We would be straddling alignment units.
         *pbitofs = round_up(*pbitofs, 8*dict->align);
@@ -182,7 +183,7 @@ PyObject *
 PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, Py_ssize_t bitsize,
                 Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian, int ms_struct)
+                int pack, int big_endian, int ms_struct, int gcc_packed)
 {
     CFieldObject* self = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
     if (self == NULL)
@@ -258,7 +259,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 bitsize, pbitofs,
                 psize, poffset, palign,
                 self, dict,
-                is_bitfield
+                is_bitfield, gcc_packed
                 );
     }
     assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));

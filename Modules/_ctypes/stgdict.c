@@ -351,6 +351,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     _Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
     _Py_IDENTIFIER(_pack_);
     _Py_IDENTIFIER(_ms_struct_);
+    _Py_IDENTIFIER(_gcc_packed_);
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
@@ -385,20 +386,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         big_endian = PY_BIG_ENDIAN;
     }
 
-    #ifdef MS_WIN32
-    int ms_struct = 1;
-    #else
-    int ms_struct = 0;
-    #endif
-
-    if (_PyObject_LookupAttrId(type, &PyId__ms_struct_, &tmp) < 0) {
-        return -1;
-    }
-    if (tmp) {
-        ms_struct = _PyLong_AsInt(tmp);
-        Py_DECREF(tmp);
-    }
-
     if (_PyObject_LookupAttrId(type,
                 &PyId__use_broken_old_ctypes_structure_semantics_, &tmp) < 0)
     {
@@ -419,6 +406,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         isPacked = 1;
         pack = _PyLong_AsInt(tmp);
         Py_DECREF(tmp);
+        // TODO(Matthias): It looks like pack == 0 triggers a bug.
         if (pack < 0) {
             if (!PyErr_Occurred() ||
                 PyErr_ExceptionMatches(PyExc_TypeError) ||
@@ -433,6 +421,55 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     else {
         isPacked = 0;
         pack = 0;
+    }
+
+    #ifdef MS_WIN32
+    int ms_struct = 1;
+    #else
+    int ms_struct = 0;
+    #endif
+
+    if (_PyObject_LookupAttrId(type, &PyId__ms_struct_, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        ms_struct = _PyLong_AsInt(tmp);
+        Py_DECREF(tmp);
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError) ||
+                PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "_pack_ must be a bool or integer");
+            }
+            return -1;
+        }
+
+        if(!ms_struct && isPacked) {
+            PyErr_SetString(PyExc_ValueError,
+                                "_ms_struct_ == 0 is not compatible with _pack_ != 0");
+            return -1;
+        }
+    } else {
+        ms_struct = isPacked;
+    }
+
+    int gcc_packed = 0;
+    if (_PyObject_LookupAttrId(type, &PyId__gcc_packed_, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        Py_DECREF(tmp);
+        gcc_packed = 1;
+        if(isPacked) {
+            PyErr_SetString(PyExc_ValueError,
+                    "_gcc_packed_ is not compatible with _pack_");
+            return -1;
+        }
+        if(ms_struct) {
+            PyErr_SetString(PyExc_ValueError,
+                    "_gcc_packed_ is not compatible with _ms_struct_ != 0");
+            return -1;
+        }
     }
 
     len = PySequence_Size(fields);
@@ -625,7 +662,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian, ms_struct);
+                                   pack, big_endian, ms_struct, gcc_packed);
         } else /* union */ {
             field_size = 0;
             size = 0;
@@ -635,7 +672,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian, ms_struct);
+                                   pack, big_endian, ms_struct, gcc_packed);
             union_size = max(size, union_size);
         }
         total_align = max(align, total_align);
