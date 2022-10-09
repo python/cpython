@@ -351,7 +351,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     _Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
     _Py_IDENTIFIER(_pack_);
     _Py_IDENTIFIER(_ms_struct_);
-    _Py_IDENTIFIER(_gcc_packed_);
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
@@ -451,25 +450,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         }
     } else {
         ms_struct = isPacked;
-    }
-
-    int gcc_packed = 0;
-    if (_PyObject_LookupAttrId(type, &PyId__gcc_packed_, &tmp) < 0) {
-        return -1;
-    }
-    if (tmp) {
-        Py_DECREF(tmp);
-        gcc_packed = 1;
-        if(isPacked) {
-            PyErr_SetString(PyExc_ValueError,
-                    "_gcc_packed_ is not compatible with _pack_");
-            return -1;
-        }
-        if(ms_struct) {
-            PyErr_SetString(PyExc_ValueError,
-                    "_gcc_packed_ is not compatible with _ms_struct_ != 0");
-            return -1;
-        }
     }
 
     len = PySequence_Size(fields);
@@ -662,7 +642,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian, ms_struct, gcc_packed);
+                                   pack, big_endian, ms_struct);
         } else /* union */ {
             field_size = 0;
             size = 0;
@@ -672,7 +652,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian, ms_struct, gcc_packed);
+                                   pack, big_endian, ms_struct);
             union_size = max(size, union_size);
         }
         total_align = max(align, total_align);
