@@ -27,8 +27,8 @@ or as base classes.
 
    .. note::
 
-      This function should only be used to escape characters that are
-      problematic to include directly in XML. Do not use this function as a general
+      This function should only be used to escape characters that
+      can't be used directly in XML. Do not use this function as a general
       string translation function.
 
 .. function:: unescape(data, entities={})
