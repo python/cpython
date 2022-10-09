@@ -812,6 +812,27 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         rv = shutil.copytree(src_dir, dst_dir)
         self.assertEqual(['pol'], os.listdir(rv))
 
+    def test_copytree_no_clobber(self):
+        src_dir = self.mkdtemp()
+        dst_dir = self.mkdtemp()
+        self.addCleanup(shutil.rmtree, src_dir)
+        self.addCleanup(shutil.rmtree, dst_dir)
+
+        write_file((src_dir, 'nonexisting.txt'), '123')
+        os.mkdir(os.path.join(src_dir, 'existing_dir'))
+        os.mkdir(os.path.join(dst_dir, 'existing_dir'))
+        write_file((dst_dir, 'existing_dir', 'existing.txt'), 'modified')
+        write_file((src_dir, 'existing_dir', 'existing.txt'), 'original')
+
+        shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True, no_clobber=True)
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'nonexisting.txt')))
+        self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'existing_dir')))
+        self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'existing_dir',
+                                                    'existing.txt')))
+
+        actual = read_file((dst_dir, 'existing_dir', 'existing.txt'))
+        self.assertEqual(actual, 'modified')
+
 class TestCopy(BaseTest, unittest.TestCase):
 
     ### shutil.copymode
