@@ -237,7 +237,8 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     if(!is_bitfield) {
         assert(dict->size >= 0);
         // assert: no overflow;
-        assert(dict->size < (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8);
+        assert((unsigned long long int) dict->size
+            < (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8);
         bitsize = 8 * dict->size;
         // Caution: bitsize might still be 0 now.
     }
