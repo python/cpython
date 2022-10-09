@@ -79,7 +79,7 @@ Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
  */
 
 void
-PyCField_FromDesc_gcc(Py_ssize_t index, int bitsize, Py_ssize_t *pbitofs,
+PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 CFieldObject* self, StgDictObject* dict,
                 int is_bitfield
@@ -120,7 +120,7 @@ PyCField_FromDesc_gcc(Py_ssize_t index, int bitsize, Py_ssize_t *pbitofs,
 }
 
 void
-PyCField_FromDesc_msvc(Py_ssize_t index,
+PyCField_FromDesc_msvc(
                 Py_ssize_t *pfield_size, int bitsize, Py_ssize_t *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack,
@@ -233,7 +233,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     }
 
     if (ms_struct || pack != 0) {
-        PyCField_FromDesc_msvc(index,
+        PyCField_FromDesc_msvc(
                 pfield_size, bitsize, pbitofs,
                 psize, poffset, palign,
                 pack,
@@ -241,7 +241,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 is_bitfield
                 );
     } else {
-        PyCField_FromDesc_gcc(index,
+        PyCField_FromDesc_gcc(
                 bitsize, pbitofs,
                 psize, poffset, palign,
                 self, dict,
