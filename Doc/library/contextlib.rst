@@ -66,9 +66,9 @@ Functions and classes provided:
               # Code to release resource, e.g.:
               release_resource(resource)
 
-      >>> with managed_resource(timeout=3600) as resource:
-      ...     # Resource is released at the end of this block,
-      ...     # even if code in the block raises an exception
+      with managed_resource(timeout=3600) as resource:
+          # Resource is released at the end of this block,
+          # even if code in the block raises an exception
 
    The function being decorated must return a :term:`generator`-iterator when
    called. This iterator must yield exactly one value, which will be bound to
@@ -140,9 +140,9 @@ Functions and classes provided:
          finally:
              print(f'it took {time.monotonic() - now}s to run')
 
-      @timeit()
-      async def main():
-          # ... async code ...
+     @timeit()
+     async def main():
+         # ... async code ...
 
    When used as a decorator, a new generator instance is implicitly created on
    each function call. This allows the otherwise "one-shot" context managers
@@ -249,15 +249,15 @@ Functions and classes provided:
    :ref:`asynchronous context managers <async-context-managers>`::
 
        async def send_http(session=None):
-          if not session:
-              # If no http session, create it with aiohttp
-              cm = aiohttp.ClientSession()
-          else:
-              # Caller is responsible for closing the session
-              cm = nullcontext(session)
+           if not session:
+               # If no http session, create it with aiohttp
+               cm = aiohttp.ClientSession()
+           else:
+               # Caller is responsible for closing the session
+               cm = nullcontext(session)
 
-          async with cm as session:
-              # Send http requests with session
+           async with cm as session:
+               # Send http requests with session
 
    .. versionadded:: 3.7
 
@@ -385,17 +385,16 @@ Functions and classes provided:
 
    Example of ``ContextDecorator``::
 
-      from contextlib import ContextDecorator
+      >>> from contextlib import ContextDecorator
 
-      class mycontext(ContextDecorator):
-          def __enter__(self):
-              print('Starting')
-              return self
-
-          def __exit__(self, *exc):
-              print('Finishing')
-              return False
-
+      >>> class mycontext(ContextDecorator):
+      ...     def __enter__(self):
+      ...         print('Starting')
+      ...         return self
+      ...     def __exit__(self, *exc):
+      ...         print('Finishing')
+      ...         return False
+      ...
       >>> @mycontext()
       ... def function():
       ...     print('The bit in the middle')
@@ -454,18 +453,17 @@ Functions and classes provided:
 
    Example of ``AsyncContextDecorator``::
 
-      from asyncio import run
-      from contextlib import AsyncContextDecorator
+      >>> from asyncio import run
+      >>> from contextlib import AsyncContextDecorator
 
-      class mycontext(AsyncContextDecorator):
-          async def __aenter__(self):
-              print('Starting')
-              return self
-
-          async def __aexit__(self, *exc):
-              print('Finishing')
-              return False
-
+      >>> class mycontext(AsyncContextDecorator):
+      ...     async def __aenter__(self):
+      ...         print('Starting')
+      ...         return self
+      ...     async def __aexit__(self, *exc):
+      ...         print('Finishing')
+      ...         return False
+      ...
       >>> @mycontext()
       ... async def function():
       ...     print('The bit in the middle')
