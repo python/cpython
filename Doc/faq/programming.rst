@@ -1939,7 +1939,7 @@ This example shows the various techniques::
             # Do not cache this because old results
             # can be out of date.
 
-        @cached_property
+        @cached_property(lock=False)
         def location(self):
             "Return the longitude/latitude coordinates of the station"
             # Result only depends on the station_id

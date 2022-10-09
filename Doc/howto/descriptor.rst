@@ -1500,7 +1500,7 @@ instance dictionary to function correctly:
     class CP:
         __slots__ = ()                          # Eliminates the instance dict
 
-        @cached_property                        # Requires an instance dict
+        @cached_property(lock=False)            # Requires an instance dict
         def pi(self):
             return 4 * sum((-1.0)**n / (2.0*n + 1.0)
                            for n in reversed(range(100_000)))

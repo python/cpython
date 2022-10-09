@@ -847,7 +847,7 @@ class uname_result(
     except when needed.
     """
 
-    @functools.cached_property
+    @functools.cached_property(lock=False)
     def processor(self):
         return _unknown_as_blank(_Processor.get())
 

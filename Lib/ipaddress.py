@@ -755,12 +755,12 @@ class _BaseNetwork(_IPAddressBase):
                 other.network_address in self or (
                     other.broadcast_address in self)))
 
-    @functools.cached_property
+    @functools.cached_property(lock=False)
     def broadcast_address(self):
         return self._address_class(int(self.network_address) |
                                    int(self.hostmask))
 
-    @functools.cached_property
+    @functools.cached_property(lock=False)
     def hostmask(self):
         return self._address_class(int(self.netmask) ^ self._ALL_ONES)
 
@@ -1390,7 +1390,7 @@ class IPv4Interface(IPv4Address):
         self.netmask = self.network.netmask
         self._prefixlen = self.network._prefixlen
 
-    @functools.cached_property
+    @functools.cached_property(lock=False)
     def hostmask(self):
         return self.network.hostmask
 
@@ -2094,7 +2094,7 @@ class IPv6Interface(IPv6Address):
         self.netmask = self.network.netmask
         self._prefixlen = self.network._prefixlen
 
-    @functools.cached_property
+    @functools.cached_property(lock=False)
     def hostmask(self):
         return self.network.hostmask
 

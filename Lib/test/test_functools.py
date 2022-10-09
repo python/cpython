@@ -2912,7 +2912,7 @@ class CachedCostItem:
     def __init__(self):
         self.lock = py_functools.RLock()
 
-    @py_functools.cached_property
+    @py_functools.cached_property(lock=False)
     def cost(self):
         """The cost of the item."""
         with self.lock:
@@ -2928,7 +2928,7 @@ class OptionallyCachedCostItem:
         self._cost += 1
         return self._cost
 
-    cached_cost = py_functools.cached_property(get_cost)
+    cached_cost = py_functools.cached_property(get_cost, lock=False)
 
 
 class CachedCostItemWait:
@@ -2967,7 +2967,7 @@ class CachedCostItemWithSlots:
     def __init__(self):
         self._cost = 1
 
-    @py_functools.cached_property
+    @py_functools.cached_property(lock=False)
     def cost(self):
         raise RuntimeError('never called, slots not supported')
 

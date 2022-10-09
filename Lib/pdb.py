@@ -175,7 +175,7 @@ class _ModuleTarget(str):
             traceback.print_exc()
             sys.exit(1)
 
-    @functools.cached_property
+    @functools.cached_property(lock=False)
     def _details(self):
         import runpy
         return runpy._get_module_details(self)

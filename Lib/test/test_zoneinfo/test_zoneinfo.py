@@ -1661,7 +1661,7 @@ class TestModule(ZoneInfoTestBase):
     def zoneinfo_data(self):
         return ZONEINFO_DATA
 
-    @cached_property
+    @cached_property(lock=False)
     def _UTC_bytes(self):
         zone_file = self.zoneinfo_data.path_from_key("UTC")
         with open(zone_file, "rb") as f:
