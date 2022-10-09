@@ -361,7 +361,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int pack;
     Py_ssize_t ffi_ofs;
     int big_endian;
-    int ms_struct;
     int arrays_seen = 0;
 
     /* HACK Alert: I cannot be bothered to fix ctypes.com, so there has to
@@ -387,9 +386,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     }
 
     #ifdef MS_WIN32
-    ms_struct = 1;
+    int ms_struct = 1;
     #else
-    ms_struct = 0;
+    int ms_struct = 0;
     #endif
 
     if (_PyObject_LookupAttrId(type, &PyId__ms_struct_, &tmp) < 0) {

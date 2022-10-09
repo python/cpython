@@ -96,8 +96,6 @@ PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
         // We would be straddling alignment units.
         *pbitofs = round_up(*pbitofs, 8*dict->align);
     }
-
-    assert(bitsize <= dict->size * 8);
     assert(*poffset == 0);
 
     // We need to fit within alignment and within size.
@@ -134,10 +132,8 @@ PyCField_FromDesc_msvc(
     else
         align = dict->align;
 
-    assert(bitsize <= dict->size * 8);
-
     // New thing: poffset points to end of bitfield.
-    // And we work with negative *pbitofs;
+    // And we work with negative *pbitofs.
     if (0 < *pbitofs + bitsize || 8 * dict->size != *pfield_size) {
         // Close bitfield, ...
         // ... align,
@@ -231,6 +227,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     if(!is_bitfield) {
         bitsize = 8 * dict->size; // might still be 0 afterwards.
     }
+    assert(bitsize <= dict->size * 8);
 
     if (ms_struct || pack != 0) {
         PyCField_FromDesc_msvc(
