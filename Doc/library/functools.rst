@@ -69,7 +69,7 @@ The :mod:`functools` module defines the following functions:
            def __init__(self, sequence_of_numbers):
                self._data = tuple(sequence_of_numbers)
 
-           @cached_property
+           @cached_property(lock=False)
            def stdev(self):
                return statistics.stdev(self._data)
 
@@ -85,6 +85,18 @@ The :mod:`functools` module defines the following functions:
 
    The cached value can be cleared by deleting the attribute.  This
    allows the *cached_property* method to run again.
+
+   By default, a ``cached_property`` instance contains an
+   :class:`~threading.RLock` which prevents multiple threads from executing the
+   cached property concurrently. This was intended to ensure that the cached
+   property would execute only once per instance, but it also prevents
+   concurrent execution on different instances of the same class, causing
+   unnecessary and excessive serialization of updates. This locking behavior is
+   deprecated and can be avoided by passing ``lock=False``.
+
+   With ``lock=False``, ``cached_property`` provides no guarantee that it will
+   run only once per instance, if accessed in multiple threads. An application
+   wanting such guarantees must handle its own locking explicitly.
 
    Note, this decorator interferes with the operation of :pep:`412`
    key-sharing dictionaries.  This means that instance dictionaries
@@ -109,26 +121,6 @@ The :mod:`functools` module defines the following functions:
            @cache
            def stdev(self):
                return statistics.stdev(self._data)
-
-    By default, a ``cached_property`` instance contains an
-    :class:`~threading.RLock` which prevents multiple threads from executing
-    the cached property concurrently. This was intended to ensure that the
-    cached property would execute only once per instance, but it also prevents
-    concurrent execution on different instances of the same class, causing
-    unnecessary and excessive serialization of updates. This locking behavior
-    is deprecated and can be avoided by passing ``lock=False``::
-
-        class DataSet:
-            def __init__(self, sequence_of_numbers):
-                self._data = sequence_of_numbers
-
-            @cached_property(lock=False)
-            def stdev(self):
-                return statistics.stdev(self._data)
-
-    With ``lock=False``, ``cached_property`` provides no guarantee that it will
-    run only once per instance, if accessed in multiple threads. An application
-    wanting such guarantees must handle its own locking explicitly.
 
    .. versionadded:: 3.8
 
