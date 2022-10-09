@@ -229,6 +229,14 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[-1], res.processor)
         self.assertEqual(len(res), 6)
 
+    @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
+    def test_uname_win32_without_wmi(self):
+        def raises_oserror(*a):
+            raise OSError()
+
+        with support.swap_attr(platform, '_wmi_query', raises_oserror):
+            self.test_uname()
+
     def test_uname_cast_to_tuple(self):
         res = platform.uname()
         expected = (
@@ -289,20 +297,27 @@ class PlatformTest(unittest.TestCase):
         # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
         # using it, per
         # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
-        try:
+
+        # We also need to suppress WMI checks, as those are reliable and
+        # overrule the environment variables
+        def raises_oserror(*a):
+            raise OSError()
+
+        with support.swap_attr(platform, '_wmi_query', raises_oserror):
             with os_helper.EnvironmentVarGuard() as environ:
-                if 'PROCESSOR_ARCHITEW6432' in environ:
-                    del environ['PROCESSOR_ARCHITEW6432']
-                environ['PROCESSOR_ARCHITECTURE'] = 'foo'
-                platform._uname_cache = None
-                system, node, release, version, machine, processor = platform.uname()
-                self.assertEqual(machine, 'foo')
-                environ['PROCESSOR_ARCHITEW6432'] = 'bar'
-                platform._uname_cache = None
-                system, node, release, version, machine, processor = platform.uname()
-                self.assertEqual(machine, 'bar')
-        finally:
-            platform._uname_cache = None
+                try:
+                    if 'PROCESSOR_ARCHITEW6432' in environ:
+                        del environ['PROCESSOR_ARCHITEW6432']
+                    environ['PROCESSOR_ARCHITECTURE'] = 'foo'
+                    platform._uname_cache = None
+                    system, node, release, version, machine, processor = platform.uname()
+                    self.assertEqual(machine, 'foo')
+                    environ['PROCESSOR_ARCHITEW6432'] = 'bar'
+                    platform._uname_cache = None
+                    system, node, release, version, machine, processor = platform.uname()
+                    self.assertEqual(machine, 'bar')
+                finally:
+                    platform._uname_cache = None
 
     def test_java_ver(self):
         res = platform.java_ver()

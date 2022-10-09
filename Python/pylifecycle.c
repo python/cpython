@@ -695,11 +695,6 @@ pycore_init_types(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    status = _PyTypes_InitState(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyTypes_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -787,6 +782,9 @@ pycore_init_builtins(PyThreadState *tstate)
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
     assert(list_append);
     interp->callable_cache.list_append = list_append;
+    PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
+    assert(object__getattribute__);
+    interp->callable_cache.object__getattribute__ = object__getattribute__;
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
@@ -1146,6 +1144,16 @@ init_interp_main(PyThreadState *tstate)
         if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
             return _PyStatus_ERR("can't initialize tracemalloc");
         }
+
+
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+        if (config->perf_profiling) {
+            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ||
+                    _PyPerfTrampoline_Init(config->perf_profiling) < 0) {
+                return _PyStatus_ERR("can't initialize the perf trampoline");
+            }
+        }
+#endif
     }
 
     status = init_sys_streams(tstate);
@@ -1720,6 +1728,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _Py_Deepfreeze_Fini();
+        _PyPerfTrampoline_Fini();
     }
 
     finalize_interp_types(tstate->interp);
