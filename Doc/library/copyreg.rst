@@ -32,8 +32,8 @@ Such constructors may be factory functions or class instances.
    containing two or three elements. See the :attr:`~pickle.Pickler.dispatch_table`
    for more details on the interface of *function*.
 
-   The optional *constructor* parameter, if provided, validates that
-   *constructor* is callable, and if uncallable then :exc:`TypeError` is raised.
+   The *constructor* parameter is a legacy feature and is now ignored, but if
+   passed it must be a callable.
 
    Note that the :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
    object or subclass of :class:`pickle.Pickler` can also be used for
