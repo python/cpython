@@ -13,12 +13,14 @@ import time
 import typing
 import unittest
 import unittest.mock
+import warnings
 import weakref
 import gc
 from weakref import proxy
 import contextlib
 from inspect import Signature
 
+from test.support.warnings_helper import ignore_warnings
 from test.support import import_helper
 from test.support import threading_helper
 
@@ -2931,19 +2933,21 @@ class OptionallyCachedCostItem:
     cached_cost = py_functools.cached_property(get_cost, lock=False)
 
 
-class CachedCostItemWait:
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=PendingDeprecationWarning)
+    class CachedCostItemWait:
 
-    def __init__(self, event):
-        self._cost = 1
-        self.lock = py_functools.RLock()
-        self.event = event
+        def __init__(self, event):
+            self._cost = 1
+            self.lock = py_functools.RLock()
+            self.event = event
 
-    @py_functools.cached_property
-    def cost(self):
-        self.event.wait(1)
-        with self.lock:
-            self._cost += 1
-        return self._cost
+        @py_functools.cached_property
+        def cost(self):
+            self.event.wait(1)
+            with self.lock:
+                self._cost += 1
+            return self._cost
 
 
 class CachedCostItemWaitNoLock:
@@ -3033,7 +3037,7 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_immutable_dict(self):
         class MyMeta(type):
-            @py_functools.cached_property
+            @py_functools.cached_property(lock=False)
             def prop(self):
                 return True
 
@@ -3050,7 +3054,7 @@ class TestCachedProperty(unittest.TestCase):
         """Disallow this case because decorated function a would not be cached."""
         with self.assertRaises(RuntimeError) as ctx:
             class ReusedCachedProperty:
-                @py_functools.cached_property
+                @py_functools.cached_property(lock=False)
                 def a(self):
                     pass
 
@@ -3065,7 +3069,7 @@ class TestCachedProperty(unittest.TestCase):
         """Reusing a cached_property on different classes under the same name is OK."""
         counter = 0
 
-        @py_functools.cached_property
+        @py_functools.cached_property(lock=False)
         def _cp(_self):
             nonlocal counter
             counter += 1
@@ -3085,7 +3089,7 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(a.cp, 1)
 
     def test_set_name_not_called(self):
-        cp = py_functools.cached_property(lambda s: None)
+        cp = py_functools.cached_property(lambda s: None, lock=False)
         class Foo:
             pass
 
@@ -3098,7 +3102,7 @@ class TestCachedProperty(unittest.TestCase):
             Foo().cp
 
     def test_call_once_completed(self):
-        cp = py_functools.cached_property(lambda s: None)
+        cp = py_functools.cached_property(lambda s: None, lock=False)
 
         with self.assertRaisesRegex(
             TypeError,

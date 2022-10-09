@@ -20,7 +20,6 @@ from collections import namedtuple
 from reprlib import recursive_repr
 from _thread import RLock
 from types import GenericAlias
-from warnings import warn
 
 
 ################################################################################
@@ -970,13 +969,14 @@ class cached_property:
         if func is not None:
             self.__doc__ = func.__doc__
         if lock:
+            from warnings import warn
             warn("Locking cached_property is deprecated; use @cached_property(lock=False)",
                  PendingDeprecationWarning, 2)
         self.lock = RLock() if lock else None
 
     def __call__(self, func=None):
         if self.func is not None:
-            raise TypeError("'cached_property' object is not callable")
+            raise TypeError(f"{type(self).__name__!r} object is not callable")
         self.func = func
         if func is not None:
             self.__doc__ = func.__doc__

@@ -92,7 +92,8 @@ The :mod:`functools` module defines the following functions:
    property would execute only once per instance, but it also prevents
    concurrent execution on different instances of the same class, causing
    unnecessary and excessive serialization of updates. This locking behavior is
-   deprecated and can be avoided by passing ``lock=False``.
+   deprecated and will be removed in Python 3.14. It can be avoided by passing
+   ``lock=False``.
 
    With ``lock=False``, ``cached_property`` provides no guarantee that it will
    run only once per instance, if accessed in multiple threads. An application
@@ -126,6 +127,10 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.12
       The ``lock`` argument was added.
+
+   .. deprecated-removed:: 3.12 3.14
+      The locking behavior of ``cached_property`` is deprecated and will be
+      removed in 3.14. Use ``lock=False`` to avoid the deprecated behavior.
 
 
 .. function:: cmp_to_key(func)
