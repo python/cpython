@@ -1,0 +1,3 @@
+Remove more deprecated importlib APIs: ``find_loader()``, ``find_module()``,
+``imp`` module, ``importlib.abc.Finder``, ``pkgutil.ImpImporter``,
+``pkgutil.ImpLoader``.
