@@ -1,0 +1,3 @@
+Improved :class:`TypeError` message for undefined abstract methods of a
+:class:`abc.ABC` instance. The names of the missing methods are surrounded
+by single-quotes to highlight them.
