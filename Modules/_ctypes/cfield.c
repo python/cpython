@@ -71,7 +71,8 @@ The function expects to be called repeatedly for all fields in a struct or
 union.  It uses helper functions PyCField_FromDesc_gcc and
 PyCField_FromDesc_msvc to simulate the corresponding compilers.
 
-GCC mode places fields one after another, bit by bit.  But when a field would straddle an alignment boundary for its type, we insert a few bits of padding to
+GCC mode places fields one after another, bit by bit.  But when a field would
+straddle an alignment boundary for its type, we insert a few bits of padding to
 avoid that.
 
 MSVC mode works similar expect for bitfield packing.  Adjacent bit-fields are
