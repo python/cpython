@@ -1361,10 +1361,14 @@ class LongTest(unittest.TestCase):
             def __bytes__(self):
                 1 / 0
 
-        self.assertEqual(int.from_bytes(ValidBytes()), 1)
-        self.assertRaises(TypeError, int.from_bytes, InvalidBytes())
-        self.assertRaises(TypeError, int.from_bytes, MissingBytes())
-        self.assertRaises(ZeroDivisionError, int.from_bytes, RaisingBytes())
+        for byte_order in ('big', 'little'):
+            self.assertEqual(int.from_bytes(ValidBytes(), byte_order), 1)
+            self.assertRaises(
+                TypeError, int.from_bytes, InvalidBytes(), byte_order)
+            self.assertRaises(
+                TypeError, int.from_bytes, MissingBytes(), byte_order)
+            self.assertRaises(
+                ZeroDivisionError, int.from_bytes, RaisingBytes(), byte_order)
 
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that
