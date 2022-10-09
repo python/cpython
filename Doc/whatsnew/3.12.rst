@@ -227,6 +227,11 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
+* Providing anything but a string or bytes object to :mod:`urllib.parse`
+  functions expecting strings or bytes now raises :exc:`DeprecationWarning`
+  if the value tests false, or :exc:`TypeError` if it tests true.
+  (Contributed by Jacob Walls in :issue:`19094`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
