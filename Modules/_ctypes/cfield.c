@@ -229,6 +229,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     }
     assert(bitsize <= dict->size * 8);
 
+    // `pack` only makes sense in msvc compatibility mode.
     if (ms_struct || pack != 0) {
         PyCField_FromDesc_msvc(
                 pfield_size, bitsize, pbitofs,
