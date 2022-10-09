@@ -1,0 +1,2 @@
+Fix compiler warnings and test failures when building with
+``--enable-pystats``.

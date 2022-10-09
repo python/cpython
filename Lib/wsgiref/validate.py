@@ -1,6 +1,6 @@
 # (c) 2005 Ian Bicking and contributors; written for Paste (http://pythonpaste.org)
-# Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
-# Also licenced under the Apache License, 2.0: http://opensource.org/licenses/apache2.0.php
+# Licensed under the MIT license: https://opensource.org/licenses/mit-license.php
+# Also licenced under the Apache License, 2.0: https://opensource.org/licenses/apache2.0.php
 # Licensed to PSF under a Contributor Agreement
 """
 Middleware to check for obedience to the WSGI specification.
