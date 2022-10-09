@@ -126,8 +126,6 @@ PyCField_FromDesc_gcc(int bitsize, Py_ssize_t *pbitofs,
 
     *pbitofs += bitsize;
     *psize = round_up(*pbitofs, 8) / 8;
-
-    assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
 }
 
 static void
@@ -177,8 +175,6 @@ PyCField_FromDesc_msvc(
 
     *pbitofs += bitsize;
     *psize = *poffset;
-
-    assert(!is_bitfield || LOW_BIT(self->size) <= self->size * 8);
 }
 
 PyObject *
@@ -260,7 +256,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 is_bitfield
                 );
     }
-
+    assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
     if(big_endian && is_bitfield) {
         self->size = BUILD_SIZE(NUM_BITS(self->size), 8*dict->size - LOW_BIT(self->size) - bitsize);
     }
