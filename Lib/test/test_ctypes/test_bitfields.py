@@ -374,6 +374,15 @@ class BitFieldTest(unittest.TestCase):
                         ]
         self.assertEqual(8, sizeof(MyStructure))
 
+    def test_gh_86098(self):
+        class X(Structure):
+            _fields_ = [
+                ("a", c_uint8, 8),
+                ("b", c_uint8, 8),
+                ("c", c_uint32, 16)
+            ]
+        self.assertEqual(4, sizeof(X))
+
     def test_anon_bitfields(self):
         # anonymous bit-fields gave a strange error message
         class X(Structure):
