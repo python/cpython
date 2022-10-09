@@ -91,7 +91,7 @@ Tuple Objects
 
    .. note::
 
-      This macro "steals" a reference to *o*, and, unlike
+      This function "steals" a reference to *o*, and, unlike
       :c:func:`PyTuple_SetItem`, does *not* discard a reference to any item that
       is being replaced; any reference in the tuple at position *pos* will be
       leaked.
@@ -161,7 +161,7 @@ type.
 .. c:type:: PyStructSequence_Field
 
    Describes a field of a struct sequence. As a struct sequence is modeled as a
-   tuple, all fields are typed as :c:type:`PyObject*`.  The index in the
+   tuple, all fields are typed as :c:expr:`PyObject*`.  The index in the
    :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 
@@ -215,7 +215,8 @@ type.
 
 .. c:function:: void PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)
 
-   Macro equivalent of :c:func:`PyStructSequence_SetItem`.
+   Similar to :c:func:`PyStructSequence_SetItem`, but implemented as a static
+   inlined function.
 
    .. note::
 

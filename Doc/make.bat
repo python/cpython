@@ -13,7 +13,7 @@ if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
-        %PYTHON% -m pip install sphinx==2.2.0
+        %PYTHON% -m pip install -r requirements.txt
         if errorlevel 1 exit /B
     )
     set SPHINXBUILD=%PYTHON% -c "import sphinx.cmd.build, sys; sys.exit(sphinx.cmd.build.main())"
@@ -30,10 +30,22 @@ if not defined BLURB (
     %PYTHON% -c "import blurb" > nul 2> nul
     if errorlevel 1 (
         echo Installing blurb with %PYTHON%
+        rem Should have been installed with Sphinx earlier
         %PYTHON% -m pip install blurb
         if errorlevel 1 exit /B
     )
     set BLURB=%PYTHON% -m blurb
+)
+
+if not defined SPHINXLINT (
+    %PYTHON% -c "import sphinxlint" > nul 2> nul
+    if errorlevel 1 (
+        echo Installing sphinx-lint with %PYTHON%
+        rem Should have been installed with Sphinx earlier
+        %PYTHON% -m pip install sphinx-lint
+        if errorlevel 1 exit /B
+    )
+    set SPHINXLINT=%PYTHON% -m sphinxlint
 )
 
 if "%1" NEQ "htmlhelp" goto :skiphhcsearch
@@ -99,7 +111,7 @@ echo.   Provided by Sphinx:
 echo.      html, htmlhelp, latex, text
 echo.      suspicious, linkcheck, changes, doctest
 echo.   Provided by this script:
-echo.      clean, check, serve, htmlview
+echo.      clean, check, htmlview
 echo.
 echo.All arguments past the first one are passed through to sphinx-build as
 echo.filenames to build or are ignored.  See README.rst in this directory or
@@ -168,11 +180,14 @@ if EXIST "%BUILDDIR%\html\index.html" (
 goto end
 
 :check
-cmd /S /C "%PYTHON% tools\rstlint.py -i tools"
+rem Check the docs and NEWS files with sphinx-lint.
+rem Ignore the tools dir and check that the default role is not used.
+cmd /S /C "%SPHINXLINT% -i tools --enable default-role"
+cmd /S /C "%SPHINXLINT% --enable default-role ..\Misc\NEWS.d\next\ "
 goto end
 
 :serve
-cmd /S /C "%PYTHON% ..\Tools\scripts\serve.py "%BUILDDIR%\html""
+echo.The serve target was removed, use htmlview instead (see bpo-36329)
 goto end
 
 :end

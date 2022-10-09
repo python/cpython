@@ -223,13 +223,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
-        self.call_soon_threadsafe(transp._process_exited, returncode)
+        # Skip one iteration for callbacks to be executed
+        self.call_soon_threadsafe(self.call_soon, transp._process_exited, returncode)
 
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
             ssl=None, sock=None,
             server_hostname=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
             if server_hostname is None:
@@ -241,6 +243,9 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if ssl_handshake_timeout is not None:
                 raise ValueError(
                     'ssl_handshake_timeout is only meaningful with ssl')
+            if ssl_shutdown_timeout is not None:
+                raise ValueError(
+                    'ssl_shutdown_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -267,13 +272,15 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         return transport, protocol
 
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             start_serving=True):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
@@ -281,6 +288,10 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if ssl_handshake_timeout is not None and not ssl:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
+
+        if ssl_shutdown_timeout is not None and not ssl:
+            raise ValueError(
+                'ssl_shutdown_timeout is only meaningful with ssl')
 
         if path is not None:
             if sock is not None:
@@ -328,7 +339,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         sock.setblocking(False)
         server = base_events.Server(self, [sock], protocol_factory,
-                                    ssl, backlog, ssl_handshake_timeout)
+                                    ssl, backlog, ssl_handshake_timeout,
+                                    ssl_shutdown_timeout)
         if start_serving:
             server._start_serving()
             # Skip one loop iteration so that all 'loop.add_reader'
@@ -900,10 +912,6 @@ class PidfdChildWatcher(AbstractChildWatcher):
     recent (5.3+) kernels.
     """
 
-    def __init__(self):
-        self._loop = None
-        self._callbacks = {}
-
     def __enter__(self):
         return self
 
@@ -911,35 +919,22 @@ class PidfdChildWatcher(AbstractChildWatcher):
         pass
 
     def is_active(self):
-        return self._loop is not None and self._loop.is_running()
+        return True
 
     def close(self):
-        self.attach_loop(None)
+        pass
 
     def attach_loop(self, loop):
-        if self._loop is not None and loop is None and self._callbacks:
-            warnings.warn(
-                'A loop is being detached '
-                'from a child watcher with pending handlers',
-                RuntimeWarning)
-        for pidfd, _, _ in self._callbacks.values():
-            self._loop._remove_reader(pidfd)
-            os.close(pidfd)
-        self._callbacks.clear()
-        self._loop = loop
+        pass
 
     def add_child_handler(self, pid, callback, *args):
-        existing = self._callbacks.get(pid)
-        if existing is not None:
-            self._callbacks[pid] = existing[0], callback, args
-        else:
-            pidfd = os.pidfd_open(pid)
-            self._loop._add_reader(pidfd, self._do_wait, pid)
-            self._callbacks[pid] = pidfd, callback, args
+        loop = events.get_running_loop()
+        pidfd = os.pidfd_open(pid)
+        loop._add_reader(pidfd, self._do_wait, pid, pidfd, callback, args)
 
-    def _do_wait(self, pid):
-        pidfd, callback, args = self._callbacks.pop(pid)
-        self._loop._remove_reader(pidfd)
+    def _do_wait(self, pid, pidfd, callback, args):
+        loop = events.get_running_loop()
+        loop._remove_reader(pidfd)
         try:
             _, status = os.waitpid(pid, 0)
         except ChildProcessError:
@@ -957,12 +952,9 @@ class PidfdChildWatcher(AbstractChildWatcher):
         callback(pid, returncode, *args)
 
     def remove_child_handler(self, pid):
-        try:
-            pidfd, _, _ = self._callbacks.pop(pid)
-        except KeyError:
-            return False
-        self._loop._remove_reader(pidfd)
-        os.close(pidfd)
+        # asyncio never calls remove_child_handler() !!!
+        # The method is no-op but is implemented because
+        # abstract base classes require it.
         return True
 
 
@@ -1029,6 +1021,13 @@ class SafeChildWatcher(BaseChildWatcher):
     This is a safe solution but it has a significant overhead when handling a
     big number of children (O(n) each time SIGCHLD is raised)
     """
+
+    def __init__(self):
+        super().__init__()
+        warnings._deprecated("SafeChildWatcher",
+                             "{name!r} is deprecated as of Python 3.12 and will be "
+                             "removed in Python {remove}.",
+                              remove=(3, 14))
 
     def close(self):
         self._callbacks.clear()
@@ -1108,6 +1107,10 @@ class FastChildWatcher(BaseChildWatcher):
         self._lock = threading.Lock()
         self._zombies = {}
         self._forks = 0
+        warnings._deprecated("FastChildWatcher",
+                             "{name!r} is deprecated as of Python 3.12 and will be "
+                             "removed in Python {remove}.",
+                              remove=(3, 14))
 
     def close(self):
         self._callbacks.clear()
@@ -1220,6 +1223,10 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
     def __init__(self):
         self._callbacks = {}
         self._saved_sighandler = None
+        warnings._deprecated("MultiLoopChildWatcher",
+                             "{name!r} is deprecated as of Python 3.12 and will be "
+                             "removed in Python {remove}.",
+                              remove=(3, 14))
 
     def is_active(self):
         return self._saved_sighandler is not None
@@ -1379,7 +1386,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
     def remove_child_handler(self, pid):
         # asyncio never calls remove_child_handler() !!!
         # The method is no-op but is implemented because
-        # abstract base classe requires it
+        # abstract base classes require it.
         return True
 
     def attach_loop(self, loop):
@@ -1411,6 +1418,17 @@ class ThreadedChildWatcher(AbstractChildWatcher):
 
         self._threads.pop(expected_pid)
 
+def can_use_pidfd():
+    if not hasattr(os, 'pidfd_open'):
+        return False
+    try:
+        pid = os.getpid()
+        os.close(os.pidfd_open(pid, 0))
+    except OSError:
+        # blocked by security policy like SECCOMP
+        return False
+    return True
+
 
 class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     """UNIX event loop policy with a watcher for child processes."""
@@ -1423,7 +1441,10 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     def _init_watcher(self):
         with events._lock:
             if self._watcher is None:  # pragma: no branch
-                self._watcher = ThreadedChildWatcher()
+                if can_use_pidfd():
+                    self._watcher = PidfdChildWatcher()
+                else:
+                    self._watcher = ThreadedChildWatcher()
                 if threading.current_thread() is threading.main_thread():
                     self._watcher.attach_loop(self._local._loop)
 

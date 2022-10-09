@@ -1,1 +1,0 @@
-Add keyword arguments support to ``ChainMap.new_child()``.

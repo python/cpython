@@ -42,10 +42,100 @@ directives = [
     'versionchanged'
 ]
 
-all_directives = '(' + '|'.join(directives) + ')'
-seems_directive_re = re.compile(r'(?<!\.)\.\. %s([^a-z:]|:(?!:))' % all_directives)
-default_role_re = re.compile(r'(^| )`\w([^`]*?\w)?`($| )')
-leaked_markup_re = re.compile(r'[a-z]::\s|`|\.\.\s*\w+:')
+roles = [
+    "(?<!py):class:",
+    "(?<!:c|py):func:",
+    "(?<!py):meth:",
+    "(?<!:py):mod:",
+    ":exc:",
+    ":issue:",
+    ":attr:",
+    ":c:func:",
+    ":ref:",
+    ":const:",
+    ":term:",
+    "(?<!:c|py):data:",
+    ":keyword:",
+    ":file:",
+    ":pep:",
+    ":c:type:",
+    ":c:member:",
+    ":option:",
+    ":rfc:",
+    ":envvar:",
+    ":c:data:",
+    ":source:",
+    ":mailheader:",
+    ":program:",
+    ":c:macro:",
+    ":dfn:",
+    ":kbd:",
+    ":command:",
+    ":mimetype:",
+    ":opcode:",
+    ":manpage:",
+    ":py:data:",
+    ":RFC:",
+    ":pdbcmd:",
+    ":abbr:",
+    ":samp:",
+    ":token:",
+    ":PEP:",
+    ":sup:",
+    ":py:class:",
+    ":menuselection:",
+    ":doc:",
+    ":sub:",
+    ":py:meth:",
+    ":newsgroup:",
+    ":code:",
+    ":py:func:",
+    ":makevar:",
+    ":guilabel:",
+    ":title-reference:",
+    ":py:mod:",
+    ":download:",
+    ":2to3fixer:",
+]
+
+all_directives = "(" + "|".join(directives) + ")"
+all_roles = "(" + "|".join(roles) + ")"
+
+# Find comments that looks like a directive, like:
+# .. versionchanged 3.6
+# or
+# .. versionchanged: 3.6
+# as it should be:
+# .. versionchanged:: 3.6
+seems_directive_re = re.compile(r"(?<!\.)\.\. %s([^a-z:]|:(?!:))" % all_directives)
+
+# Find directive prefixed with three dots instead of two, like:
+# ... versionchanged:: 3.6
+# instead of:
+# .. versionchanged:: 3.6
+three_dot_directive_re = re.compile(r"\.\.\. %s::" % all_directives)
+
+# Find role used with double backticks instead of simple backticks like:
+# :const:``None``
+# instead of:
+# :const:`None`
+double_backtick_role = re.compile(r"(?<!``)%s``" % all_roles)
+
+
+# Find role used with no backticks instead of simple backticks like:
+# :const:None
+# instead of:
+# :const:`None`
+role_with_no_backticks = re.compile(r"%s[^` ]" % all_roles)
+
+# Find role glued with another word like:
+# the:c:func:`PyThreadState_LeaveTracing` function.
+# instead of:
+# the :c:func:`PyThreadState_LeaveTracing` function.
+role_glued_with_word = re.compile(r"[a-zA-Z]%s" % all_roles)
+
+default_role_re = re.compile(r"(^| )`\w([^`]*?\w)?`($| )")
+leaked_markup_re = re.compile(r"[a-z]::\s|`|\.\.\s*\w+:")
 
 
 checkers = {}
@@ -82,13 +172,21 @@ def check_syntax(fn, lines):
 def check_suspicious_constructs(fn, lines):
     """Check for suspicious reST constructs."""
     inprod = False
-    for lno, line in enumerate(lines):
+    for lno, line in enumerate(lines, start=1):
         if seems_directive_re.search(line):
-            yield lno+1, 'comment seems to be intended as a directive'
-        if '.. productionlist::' in line:
+            yield lno, "comment seems to be intended as a directive"
+        if three_dot_directive_re.search(line):
+            yield lno, "directive should start with two dots, not three."
+        if double_backtick_role.search(line):
+            yield lno, "role use a single backtick, double backtick found."
+        if role_with_no_backticks.search(line):
+            yield lno, "role use a single backtick, no backtick found."
+        if role_glued_with_word.search(line):
+            yield lno, "missing space before role"
+        if ".. productionlist::" in line:
             inprod = True
         elif not inprod and default_role_re.search(line):
-            yield lno+1, 'default role used'
+            yield lno, "default role used"
         elif inprod and not line.strip():
             inprod = False
 
@@ -165,7 +263,7 @@ def hide_comments(lines):
     """Tool to remove comments from given lines.
 
     It yields empty lines in place of comments, so line numbers are
-    still meaningfull.
+    still meaningful.
     """
     in_multiline_comment = False
     for line in lines:
@@ -246,6 +344,11 @@ Options:  -v       verbose (print all checked file names)
         return 2
 
     count = defaultdict(int)
+
+    print("""⚠ rstlint.py is no longer maintained here and will be removed
+⚠ in a future release.
+⚠ Please use https://pypi.org/p/sphinx-lint instead.
+""")
 
     for root, dirs, files in os.walk(path):
         # ignore subdirs in ignore list

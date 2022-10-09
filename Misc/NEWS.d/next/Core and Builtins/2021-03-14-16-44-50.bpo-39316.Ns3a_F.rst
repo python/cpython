@@ -1,3 +1,0 @@
-Tracing now has correct line numbers for attribute accesses when the
-the attribute is on a different line from the object.
-Improves debugging and profiling for multi-line method chains.
