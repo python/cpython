@@ -347,7 +347,6 @@ static PyObject *
 PyCField_repr(CFieldObject *self)
 {
     PyObject *result;
-    // TODO: use function.
     Py_ssize_t bits = NUM_BITS(self->size);
     Py_ssize_t size = LOW_BIT(self->size);
     const char *name;
