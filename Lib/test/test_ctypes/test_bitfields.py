@@ -29,6 +29,30 @@ class BITS(Structure):
 func = CDLL(_ctypes_test.__file__).unpack_bitfields
 func.argtypes = POINTER(BITS), c_char
 
+
+class BITS_msvc(Structure):
+    _ms_struct_ = 1
+    _fields_ = [("A", c_int, 1),
+                ("B", c_int, 2),
+                ("C", c_int, 3),
+                ("D", c_int, 4),
+                ("E", c_int, 5),
+                ("F", c_int, 6),
+                ("G", c_int, 7),
+                ("H", c_int, 8),
+                ("I", c_int, 9),
+
+                ("M", c_short, 1),
+                ("N", c_short, 2),
+                ("O", c_short, 3),
+                ("P", c_short, 4),
+                ("Q", c_short, 5),
+                ("R", c_short, 6),
+                ("S", c_short, 7)]
+
+func_msvc = CDLL(_ctypes_test.__file__).unpack_bitfields_msvc
+func_msvc.argtypes = POINTER(BITS_msvc), c_char
+
 ##for n in "ABCDEFGHIMNOPQRS":
 ##    print n, hex(getattr(BITS, n).size), getattr(BITS, n).offset
 
@@ -50,7 +74,24 @@ class C_Test(unittest.TestCase):
             for name in "MNOPQRS":
                 b = BITS()
                 setattr(b, name, i)
-                self.assertEqual(getattr(b, name), func(byref(b), name.encode('ascii')))
+                self.assertEqual(
+                    getattr(b, name),
+                    func(byref(b),
+                    (name.encode('ascii'), i)))
+
+    def test_shorts_msvc_mode(self):
+        b = BITS_msvc()
+        name = "M"
+        if func_msvc(byref(b), name.encode('ascii')) == 999:
+            self.skipTest("Compiler does not support signed short bitfields")
+        for i in range(256):
+            for name in "MNOPQRS":
+                b = BITS_msvc()
+                setattr(b, name, i)
+                self.assertEqual(
+                    getattr(b, name),
+                    func_msvc(byref(b), name.encode('ascii')),
+                    (name, i))
 
 signed_int_types = (c_byte, c_short, c_int, c_long, c_longlong)
 unsigned_int_types = (c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong)
