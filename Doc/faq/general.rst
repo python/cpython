@@ -125,11 +125,14 @@ find packages of interest to you.
 How does the Python version numbering scheme work?
 --------------------------------------------------
 
-Python versions are numbered "A.B.C" or "A.B".  *A* is the major version number -- it
-is only incremented for really major changes in the language.  *B* is the minor
-version number, incremented for less earth-shattering changes.  *C* is the
-micro-level -- it is incremented for each bugfix release.  See :pep:`6` for more
-information about bugfix releases.
+Python versions are numbered "A.B.C" or "A.B":
+* *A* is the major version number --- it is only incremented for
+  really major changes in the language.
+* *B* is the minor version number, incremented for less
+  earth-shattering changes.
+* *C* is the micro-level --- it is incremented for each bugfix release.
+
+See :pep:`6` for more information about bugfix releases.
 
 Not all releases are bugfix releases.  In the run-up to a new major release, a
 series of development releases are made, denoted as alpha, beta, or release
