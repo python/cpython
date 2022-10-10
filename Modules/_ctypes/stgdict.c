@@ -449,7 +449,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             return -1;
         }
     } else {
-        ms_struct = isPacked;
+        ms_struct ||= isPacked;
     }
 
     len = PySequence_Size(fields);
