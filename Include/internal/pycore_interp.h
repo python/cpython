@@ -180,7 +180,7 @@ struct _is {
     struct callable_cache callable_cache;
 
 
-    PyFunction_EventCallback func_event_callback;
+    PyFunction_WatchCallback func_watch_callback;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.

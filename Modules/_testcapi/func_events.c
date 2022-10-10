@@ -1,7 +1,7 @@
 #include "parts.h"
 
 static PyObject *pyfunc_callback = NULL;
-static PyFunction_EventCallback orig_callback = NULL;
+static PyFunction_WatchCallback orig_callback = NULL;
 
 static PyObject *get_id(PyObject *obj) {
     PyObject *builtins = PyEval_GetBuiltins();
@@ -68,7 +68,7 @@ add_event(PyObject *module, const char *name, PyFunction_Event event)
 }
 
 static PyObject *
-set_func_event_callback(PyObject *self, PyObject *func)
+set_func_watch_callback(PyObject *self, PyObject *func)
 {
     if (!PyFunction_Check(func)) {
         PyErr_SetString(PyExc_TypeError, "'func' must be a function");
@@ -80,26 +80,26 @@ set_func_event_callback(PyObject *self, PyObject *func)
     }
     Py_INCREF(func);
     pyfunc_callback = func;
-    orig_callback = PyFunction_GetEventCallback();
-    PyFunction_SetEventCallback(call_pyfunc_callback);
+    orig_callback = PyFunction_GetWatchCallback();
+    PyFunction_SetWatchCallback(call_pyfunc_callback);
     Py_RETURN_NONE;
 }
 
 static PyObject *
-restore_func_event_callback(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+restore_func_watch_callback(PyObject *self, PyObject *Py_UNUSED(ignored)) {
     if (pyfunc_callback == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "nothing to restore");
         return NULL;
     }
-    PyFunction_SetEventCallback(orig_callback);
+    PyFunction_SetWatchCallback(orig_callback);
     orig_callback = NULL;
     Py_CLEAR(pyfunc_callback);
     Py_RETURN_NONE;
 }
 
 static PyMethodDef TestMethods[] = {
-    {"set_func_event_callback", set_func_event_callback, METH_O},
-    {"restore_func_event_callback", restore_func_event_callback, METH_NOARGS},
+    {"set_func_watch_callback", set_func_watch_callback, METH_O},
+    {"restore_func_watch_callback", restore_func_watch_callback, METH_NOARGS},
     {NULL},
 };
 
@@ -118,4 +118,5 @@ _PyTestCapi_Init_FuncEvents(PyObject *m) {
 #undef ADD_EVENT
 
     return 0;
+
 }

@@ -156,7 +156,7 @@ typedef enum {
  * contain a borrowed reference to the new value that is about to be stored in
  * the function. Otherwise the third argument is NULL.
  */
-typedef void(*PyFunction_EventCallback)(
+typedef void(*PyFunction_WatchCallback)(
   PyFunction_Event event,
   PyFunctionObject *func,
   PyObject *new_value);
@@ -167,8 +167,8 @@ typedef void(*PyFunction_EventCallback)(
  *
  * Pass NULL to clear the callback.
  */
-PyAPI_FUNC(void) PyFunction_SetEventCallback(PyFunction_EventCallback callback);
-PyAPI_FUNC(PyFunction_EventCallback) PyFunction_GetEventCallback(void);
+PyAPI_FUNC(void) PyFunction_SetWatchCallback(PyFunction_WatchCallback callback);
+PyAPI_FUNC(PyFunction_WatchCallback) PyFunction_GetWatchCallback(void);
 
 #ifdef __cplusplus
 }

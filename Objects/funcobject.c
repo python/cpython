@@ -13,7 +13,7 @@ static void
 handle_func_event(PyFunction_Event event, PyFunctionObject *func, PyObject *new_value)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFunction_EventCallback handle_event = tstate->interp->func_event_callback;
+    PyFunction_WatchCallback handle_event = tstate->interp->func_watch_callback;
     if (handle_event == NULL) {
         return;
     }
@@ -21,19 +21,19 @@ handle_func_event(PyFunction_Event event, PyFunctionObject *func, PyObject *new_
 }
 
 void
-PyFunction_SetEventCallback(PyFunction_EventCallback callback)
+PyFunction_SetWatchCallback(PyFunction_WatchCallback callback)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     assert(tstate->interp->_initialized);
-    tstate->interp->func_event_callback = callback;
+    tstate->interp->func_watch_callback = callback;
 }
 
-PyFunction_EventCallback
-PyFunction_GetEventCallback()
+PyFunction_WatchCallback
+PyFunction_GetWatchCallback()
 {
     PyThreadState *tstate = _PyThreadState_GET();
     assert(tstate->interp->_initialized);
-    return tstate->interp->func_event_callback;
+    return tstate->interp->func_watch_callback;
 }
 
 PyFunctionObject *

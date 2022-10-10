@@ -5,8 +5,8 @@ from _testcapi import (
     PYFUNC_EVENT_MODIFY_CODE,
     PYFUNC_EVENT_MODIFY_DEFAULTS,
     PYFUNC_EVENT_MODIFY_KWDEFAULTS,
-    restore_func_event_callback,
-    set_func_event_callback,
+    restore_func_watch_callback,
+    set_func_watch_callback,
 )
 
 
@@ -15,7 +15,7 @@ class FuncEventsTest(unittest.TestCase):
         events = []
         def handle_func_event(*args):
             events.append(args)
-        set_func_event_callback(handle_func_event)
+        set_func_watch_callback(handle_func_event)
 
         try:
             def myfunc():
@@ -40,4 +40,4 @@ class FuncEventsTest(unittest.TestCase):
             del myfunc
             self.assertIn((PYFUNC_EVENT_DESTROY, myfunc_id, None), events)
         finally:
-            restore_func_event_callback()
+            restore_func_watch_callback()

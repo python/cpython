@@ -430,7 +430,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
-    interp->func_event_callback = NULL;
+    interp->func_watch_callback = NULL;
 
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
