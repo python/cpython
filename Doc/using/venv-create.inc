@@ -144,8 +144,7 @@ The exact mechanism is platform-specific and is an internal implementation
 detail (typically a script or shell function will be used).
 
 .. versionadded:: 3.4
-   ``fish`` and ``csh`` activation scripts.
+   ``.fish`` and ``.csh`` activation scripts.
 
 .. versionadded:: 3.8
-   PowerShell activation scripts installed under POSIX for PowerShell Core
-   support.
+   ``.ps1`` activation script for PowerShell Core.
