@@ -12,6 +12,7 @@
 # Software-Practice and Experience 1993
 
 from collections import defaultdict
+from functools import cached_property
 
 DEBUG = False
 
@@ -30,9 +31,6 @@ class DawgNode:
         dawg.next_id += 1
         self.final = False
         self.edges = {}
-
-        # Number of end nodes reachable from this one.
-        self.count = 0
 
         self.linear_edges = None # later: list of (string, next_state)
 
@@ -55,20 +53,18 @@ class DawgNode:
     def __eq__(self, other):
         return str(self) == str(other)
 
+    @cached_property
     def num_reachable_linear(self):
-        # if a count is already assigned, return it
-        if self.count:
-            return self.count
+        # returns the number of different paths to final nodes reachable from
+        # this one
 
-        # count the number of final nodes that are reachable from this one.
-        # including self
         count = 0
+        # staying at self counts as a path if self is final
         if self.final:
             count += 1
         for label, node in self.linear_edges:
-            count += node.num_reachable_linear()
+            count += node.num_reachable_linear
 
-        self.count = count
         return count
 
 
@@ -164,7 +160,7 @@ class Dawg:
                         break
                     else:
                         return None
-                skipped += child.count
+                skipped += child.num_reachable_linear
             else:
                 return None
         return skipped
@@ -184,7 +180,7 @@ class Dawg:
     def prettyprint(self):
         for node in sorted(self.enum_all_nodes(), key=lambda e: e.id):
             s_final = " final" if node.final else ""
-            print(f"{node.id}: ({node}) {node.count}{s_final}")
+            print(f"{node.id}: ({node}) {s_final}")
             for label, child in sorted(node.edges.items()):
                 print(f"    {label} goto {child.id}")
 
@@ -198,7 +194,7 @@ class Dawg:
                     return "".join(result)
                 pos -= 1
             for label, child in sorted(node.edges.items()):
-                nextpos = pos - child.count
+                nextpos = pos - child.num_reachable_linear
                 if nextpos < 0:
                     result.append(label)
                     node = child
@@ -276,7 +272,7 @@ class Dawg:
         # number the nodes. afterwards every input string in the set has a
         # unique number in the 0 <= number < len(data). We then put the data in
         # self.data into a linear list using these numbers as indexes.
-        topoorder[0].num_reachable_linear()
+        topoorder[0].num_reachable_linear
         linear_data = [None] * len(self.data)
         inverse = {} # maps value back to index
         for word, value in self.data.items():
@@ -301,7 +297,10 @@ class Dawg:
             result = bytearray()
             for node in order:
                 offset = node.packed_offset = len(result)
-                encode_varint_unsigned(number_add_bits(node.count, node.final), result)
+                encode_varint_unsigned(
+                    number_add_bits(node.num_reachable_linear, node.final),
+                    result
+                )
                 if len(node.linear_edges) == 0:
                     assert node.final
                     encode_varint_unsigned(0, result) # add a 0 saying "done"
