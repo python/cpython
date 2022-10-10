@@ -1,0 +1,1 @@
+Disable incorrect pickling of the C implemented classmethod descriptors.

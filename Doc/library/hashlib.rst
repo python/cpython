@@ -426,7 +426,7 @@ Constructor functions also accept the following tree hashing parameters:
   BLAKE2s, 0 in sequential mode).
 
 * *last_node*: boolean indicating whether the processed node is the last
-  one (`False` for sequential mode).
+  one (``False`` for sequential mode).
 
 .. figure:: hashlib-blake2-tree.png
    :alt: Explanation of tree mode parameters.
