@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
@@ -12,28 +13,45 @@ static uint32_t next_func_version = 1;
 static void
 handle_func_event(PyFunction_Event event, PyFunctionObject *func, PyObject *new_value)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyFunction_WatchCallback handle_event = tstate->interp->func_watch_callback;
-    if (handle_event == NULL) {
-        return;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    for (int i = 0; i < FUNC_MAX_WATCHERS; i++) {
+        PyFunction_WatchCallback cb = interp->func_watchers[i];
+        if ((cb != NULL) && (cb(event, func, new_value) < 0)) {
+            PyErr_WriteUnraisable((PyObject *) func);
+        }
     }
-    handle_event(event, func, new_value);
 }
 
-void
-PyFunction_SetWatchCallback(PyFunction_WatchCallback callback)
+int
+PyFunction_AddWatcher(PyFunction_WatchCallback callback)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate->interp->_initialized);
-    tstate->interp->func_watch_callback = callback;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->_initialized);
+    for (int i = 0; i < FUNC_MAX_WATCHERS; i++) {
+        if (interp->func_watchers[i] == NULL) {
+            interp->func_watchers[i] = callback;
+            return i;
+        }
+    }
+    PyErr_SetString(PyExc_RuntimeError, "no more func watcher IDs available");
+    return -1;
+
 }
 
-PyFunction_WatchCallback
-PyFunction_GetWatchCallback()
+int
+PyFunction_ClearWatcher(int watcher_id)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate->interp->_initialized);
-    return tstate->interp->func_watch_callback;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (watcher_id < 0 || watcher_id >= FUNC_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid func watcher ID %d", watcher_id);
+        return -1;
+    }
+    if (!interp->func_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No func watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    interp->func_watchers[watcher_id] = NULL;
+    return 0;
 }
 
 PyFunctionObject *

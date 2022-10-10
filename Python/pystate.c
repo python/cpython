@@ -430,7 +430,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_parent);
     Py_CLEAR(interp->after_forkers_child);
 #endif
-    interp->func_watch_callback = NULL;
 
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
@@ -454,6 +453,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     for (int i=0; i < DICT_MAX_WATCHERS; i++) {
         interp->dict_watchers[i] = NULL;
+    }
+
+    for (int i=0; i < FUNC_MAX_WATCHERS; i++) {
+        interp->func_watchers[i] = NULL;
     }
 
     // XXX Once we have one allocator per interpreter (i.e.

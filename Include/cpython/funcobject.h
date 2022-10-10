@@ -156,19 +156,26 @@ typedef enum {
  * contain a borrowed reference to the new value that is about to be stored in
  * the function. Otherwise the third argument is NULL.
  */
-typedef void(*PyFunction_WatchCallback)(
+typedef int (*PyFunction_WatchCallback)(
   PyFunction_Event event,
   PyFunctionObject *func,
   PyObject *new_value);
 
 /*
- * Set the per-interpreter callback that will be invoked for function lifecycle
+ * Register a per-interpreter callback that will be invoked for function lifecycle
  * events.
  *
- * Pass NULL to clear the callback.
+ * Returns a handle that may be passed to PyFunction_ClearWatcher on success,
+ * or -1 and sets an error if no more handles are available.
  */
-PyAPI_FUNC(void) PyFunction_SetWatchCallback(PyFunction_WatchCallback callback);
-PyAPI_FUNC(PyFunction_WatchCallback) PyFunction_GetWatchCallback(void);
+PyAPI_FUNC(int) PyFunction_AddWatcher(PyFunction_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the supplied id.
+ */
+PyAPI_FUNC(int) PyFunction_ClearWatcher(int watcher_id);
 
 #ifdef __cplusplus
 }
