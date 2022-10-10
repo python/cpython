@@ -25,7 +25,7 @@ static PyObject *get_id(PyObject *obj) {
 }
 
 static int
-call_pyfunc_watcher(PyObject *watcher, PyFunction_Event event, PyFunctionObject *func, PyObject *new_value)
+call_pyfunc_watcher(PyObject *watcher, PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
 {
     PyObject *event_obj = PyLong_FromLong(event);
     if (event_obj == NULL) {
@@ -36,7 +36,7 @@ call_pyfunc_watcher(PyObject *watcher, PyFunction_Event event, PyFunctionObject 
     }
     Py_INCREF(new_value);
     PyObject *func_or_id = NULL;
-    if (event == PYFUNC_EVENT_DESTROY) {
+    if (event == PyFunction_EVENT_DESTROY) {
         /* Don't expose a function that's about to be destroyed to managed code */
         func_or_id = get_id((PyObject *) func);
         if (func_or_id == NULL) {
@@ -59,13 +59,13 @@ call_pyfunc_watcher(PyObject *watcher, PyFunction_Event event, PyFunctionObject 
 }
 
 static int
-first_watcher_callback(PyFunction_Event event, PyFunctionObject *func, PyObject *new_value)
+first_watcher_callback(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
 {
     return call_pyfunc_watcher(pyfunc_watchers[0], event, func, new_value);
 }
 
 static int
-second_watcher_callback(PyFunction_Event event, PyFunctionObject *func, PyObject *new_value)
+second_watcher_callback(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
 {
     return call_pyfunc_watcher(pyfunc_watchers[1], event, func, new_value);
 }
@@ -76,7 +76,7 @@ static PyFunction_WatchCallback watcher_callbacks[num_watchers] = {
 };
 
 static int
-add_event(PyObject *module, const char *name, PyFunction_Event event)
+add_event(PyObject *module, const char *name, PyFunction_WatchEvent event)
 {
     PyObject *value = PyLong_FromLong(event);
     if (value == NULL) {
@@ -158,7 +158,7 @@ _PyTestCapi_Init_FuncEvents(PyObject *m) {
 
     /* Expose each event as an attribute on the module */
 #define ADD_EVENT(event)  \
-    if (add_event(m, "PYFUNC_EVENT_" #event, PYFUNC_EVENT_##event)) { \
+    if (add_event(m, "PYFUNC_EVENT_" #event, PyFunction_EVENT_##event)) { \
         return -1;                                    \
     }
     FOREACH_FUNC_EVENT(ADD_EVENT);

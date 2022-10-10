@@ -139,10 +139,10 @@ PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
     V(MODIFY_KWDEFAULTS)
 
 typedef enum {
-    #define DEF_EVENT(EVENT) PYFUNC_EVENT_##EVENT,
+    #define DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,
     FOREACH_FUNC_EVENT(DEF_EVENT)
     #undef DEF_EVENT
-} PyFunction_Event;
+} PyFunction_WatchEvent;
 
 /*
  * A callback that is invoked for different events in a function's lifecycle.
@@ -157,7 +157,7 @@ typedef enum {
  * the function. Otherwise the third argument is NULL.
  */
 typedef int (*PyFunction_WatchCallback)(
-  PyFunction_Event event,
+  PyFunction_WatchEvent event,
   PyFunctionObject *func,
   PyObject *new_value);
 
