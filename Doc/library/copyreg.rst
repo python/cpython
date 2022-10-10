@@ -25,14 +25,14 @@ Such constructors may be factory functions or class instances.
    hence not valid as a constructor), raises :exc:`TypeError`.
 
 
-.. function:: pickle(type, function, constructor=None)
+.. function:: pickle(type, function, constructor_ob=None)
 
    Declares that *function* should be used as a "reduction" function for objects
    of type *type*.  *function* should return either a string or a tuple
    containing two or three elements. See the :attr:`~pickle.Pickler.dispatch_table`
    for more details on the interface of *function*.
 
-   The *constructor* parameter is a legacy feature and is now ignored, but if
+   The *constructor_ob* parameter is a legacy feature and is now ignored, but if
    passed it must be a callable.
 
    Note that the :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
