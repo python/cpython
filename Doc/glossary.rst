@@ -204,7 +204,7 @@ Glossary
       :ref:`the dis module <bytecodes>`.
 
    callable
-      A callable is an object that is possible to execute, possibly with a set
+      A callable is an object that can be called, possibly with a set
       of arguments (see :term:`argument`), with the following syntax::
 
          callable(argument1, argument2, ...)
