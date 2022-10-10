@@ -149,9 +149,8 @@ Alpha, beta and release candidate versions have an additional suffix:
 * The suffix for a beta version is "bN" for some small number *N*.
 * The suffix for a release candidate version is "rcN" for some small number *N*.
 
-In other words, all versions
-labeled *2.0aN* precede the versions labeled *2.0bN*, which precede versions labeled
-*2.0rcN*, and *those* precede 2.0.
+In other words, all versions labeled *2.0aN* precede the versions labeled
+*2.0bN*, which precede versions labeled *2.0rcN*, and *those* precede 2.0.
 
 You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
 unreleased versions, built directly from the CPython development repository.  In
