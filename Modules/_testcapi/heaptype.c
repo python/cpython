@@ -973,6 +973,110 @@ static PyType_Spec HeapCTypeSetattr_spec = {
     HeapCTypeSetattr_slots
 };
 
+PyDoc_STRVAR(HeapCCollection_doc,
+"Tuple-like heap type that uses PyObject_GetItemData for items.");
+
+static PyObject*
+HeapCCollection_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+{
+    PyObject *self = NULL;
+    PyObject *result = NULL;
+
+    Py_ssize_t size = PyTuple_GET_SIZE(args);
+    self = subtype->tp_alloc(subtype, size);
+    if (!self) {
+        goto finally;
+    }
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        goto finally;
+    }
+
+    for (Py_ssize_t i = 0; i < size; i++) {
+        data[i] = Py_NewRef(PyTuple_GET_ITEM(args, i));
+    }
+
+    result = self;
+    self = NULL;
+  finally:
+    Py_XDECREF(self);
+    return result;
+}
+
+static Py_ssize_t
+HeapCCollection_length(PyVarObject *self)
+{
+    return Py_SIZE(self);
+}
+
+static PyObject*
+HeapCCollection_item(PyObject *self, Py_ssize_t i)
+{
+    if (i < 0 || i >= Py_SIZE(self)) {
+        return PyErr_Format(PyExc_IndexError, "index %zd out of range", i);
+    }
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return NULL;
+    }
+    return Py_NewRef(data[i]);
+}
+
+static int
+HeapCCollection_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < Py_SIZE(self); i++) {
+        Py_VISIT(data[i]);
+    }
+    return 0;
+}
+
+static int
+HeapCCollection_clear(PyObject *self) {
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return -1;
+    }
+    Py_ssize_t size = Py_SIZE(self);
+    Py_SET_SIZE(self, 0);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        Py_CLEAR(data[i]);
+    }
+    return 0;
+}
+
+static void HeapCCollection_dealloc(PyObject *self) {
+    PyTypeObject *tp = Py_TYPE(self);
+    HeapCCollection_clear(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot HeapCCollection_slots[] = {
+    {Py_tp_new, HeapCCollection_new},
+    {Py_sq_length, HeapCCollection_length},
+    {Py_sq_item, HeapCCollection_item},
+    {Py_tp_traverse, HeapCCollection_traverse},
+    {Py_tp_clear, HeapCCollection_clear},
+    {Py_tp_dealloc, HeapCCollection_dealloc},
+    {Py_tp_doc, (char*)HeapCCollection_doc},
+    {0, 0},
+};
+
+static PyType_Spec HeapCCollection_spec = {
+    "_testcapi.HeapCCollection",
+    sizeof(PyVarObject),
+    sizeof(PyObject*),
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC
+        | Py_TPFLAGS_ITEMS_AT_END,
+    HeapCCollection_slots
+};
+
 int
 _PyTestCapi_Init_Heaptype(PyObject *m) {
     _testcapimodule = PyModule_GetDef(m);
@@ -1095,6 +1199,13 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
         return -1;
     }
     PyModule_AddObject(m, "HeapCTypeMetaclassCustomNew", HeapCTypeMetaclassCustomNew);
+
+    PyObject *HeapCCollection = PyType_FromMetaclass(
+        NULL, m, &HeapCCollection_spec, NULL);
+    if (HeapCCollection == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "HeapCCollection", HeapCCollection);
 
     return 0;
 }

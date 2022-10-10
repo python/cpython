@@ -16,11 +16,13 @@ import time
 import unittest
 import warnings
 import weakref
+import operator
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import requires_limited_api
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
@@ -756,6 +758,118 @@ class CAPITest(unittest.TestCase):
         MutableBase.meth = lambda self: 'changed'
         self.assertEqual(instance.meth(), 'changed')
 
+    @requires_limited_api
+    def test_heaptype_relative_sizes(self):
+        # Test subclassing using "relative" basicsize, see PEP 697
+        def check(extra_base_size, extra_size):
+            Base, Sub, instance, data_ptr, data_size = (
+                _testcapi.make_sized_heaptypes(
+                    extra_base_size, -extra_size))
+
+            # no alignment shenanigans when inheriting directly
+            if extra_size == 0:
+                self.assertEqual(Base.__basicsize__, Sub.__basicsize__)
+                self.assertEqual(data_size, 0)
+
+            else:
+                # The following offsets should be in increasing order:
+                data_offset = data_ptr - id(instance)
+                offsets = [
+                    (0, 'start of object'),
+                    (Base.__basicsize__, 'end of base data'),
+                    (data_offset, 'subclass data'),
+                    (data_offset + extra_size, 'end of requested subcls data'),
+                    (data_offset + data_size, 'end of reserved subcls data'),
+                    (Sub.__basicsize__, 'end of object'),
+                ]
+                ordered_offsets = sorted(offsets, key=operator.itemgetter(0))
+                self.assertEqual(
+                    offsets, ordered_offsets,
+                    msg=f'Offsets not in expected order, got: {ordered_offsets}')
+
+                # end of reserved subcls data == end of object
+                self.assertEqual(Sub.__basicsize__, data_offset + data_size)
+
+                # we don't reserve (requested + alignment) or more data
+                self.assertLess(data_size - extra_size,
+                                _testcapi.alignof_max_align_t)
+
+            # Everything should be aligned
+            self.assertEqual(data_ptr % _testcapi.alignof_max_align_t, 0)
+            self.assertEqual(data_size % _testcapi.alignof_max_align_t, 0)
+
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_base_size in sizes:
+            for extra_size in sizes:
+                args = dict(extra_base_size=extra_base_size,
+                            extra_size=extra_size)
+                with self.subTest(**args):
+                    check(**args)
+
+    @requires_limited_api
+    def test_HeapCCollection(self):
+        """Make sure HeapCCollection works properly by itself"""
+        collection = _testcapi.HeapCCollection(1, 2, 3)
+        self.assertEqual(list(collection), [1, 2, 3])
+
+    @requires_limited_api
+    def test_heaptype_inherit_itemsize(self):
+        """Test HeapCCollection subclasses work properly"""
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_size in sizes:
+            with self.subTest(extra_size=extra_size):
+                Sub = _testcapi.subclass_var_heaptype(
+                    _testcapi.HeapCCollection, -extra_size, 0, 0)
+                collection = Sub(1, 2, 3)
+                collection.set_data_to_3s()
+
+                self.assertEqual(list(collection), [1, 2, 3])
+                mem = collection.get_data()
+                self.assertGreaterEqual(len(mem), extra_size)
+                self.assertTrue(set(mem) <= {3}, f'got {mem!r}')
+
+    @requires_limited_api
+    def test_heaptype_relative_members(self):
+        """Test HeapCCollection subclasses work properly"""
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_base_size in sizes:
+            for extra_size in sizes:
+                for offset in sizes:
+                    with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size, offset=offset):
+                        if offset < extra_size:
+                            Sub = _testcapi.make_heaptype_with_member(
+                                extra_base_size, -extra_size, offset, True)
+                            Base = Sub.mro()[1]
+                            instance = Sub()
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            instance.set_memb(13)
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            self.assertEqual(instance.get_memb(), 13)
+                            instance.memb = 14
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            self.assertEqual(instance.get_memb(), 14)
+                            self.assertGreaterEqual(instance.get_memb_offset(), Base.__basicsize__)
+                            self.assertLess(instance.get_memb_offset(), Sub.__basicsize__)
+                        else:
+                            with self.assertRaises(SystemError):
+                                Sub = _testcapi.make_heaptype_with_member(
+                                    extra_base_size, -extra_size, offset, True)
+                        with self.assertRaises(SystemError):
+                            Sub = _testcapi.make_heaptype_with_member(
+                                extra_base_size, extra_size, offset, True)
+                with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size):
+                    with self.assertRaises(SystemError):
+                        Sub = _testcapi.make_heaptype_with_member(
+                            extra_base_size, -extra_size, -1, True)
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
