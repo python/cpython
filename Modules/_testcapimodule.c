@@ -4847,6 +4847,20 @@ sequence_setitem(PyObject *self, PyObject *args)
 
 
 static PyObject *
+sequence_delitem(PyObject *self, PyObject *args)
+{
+    Py_ssize_t i;
+    PyObject *seq;
+    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
+        return NULL;
+    }
+    if (PySequence_DelItem(seq, i)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 hasattr_string(PyObject *self, PyObject* args)
 {
     PyObject* obj;
@@ -5885,6 +5899,7 @@ static PyMethodDef TestMethods[] = {
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"sequence_getitem", sequence_getitem, METH_VARARGS},
     {"sequence_setitem", sequence_setitem, METH_VARARGS},
+    {"sequence_delitem", sequence_delitem, METH_VARARGS},
     {"hasattr_string", hasattr_string, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
