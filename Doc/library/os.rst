@@ -304,8 +304,8 @@ process and user.
 
 .. function:: getenv(key, default=None)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str. Note that
+   Return the value of the environment variable *key* as a string if it exists, or
+   *default* if it doesn't. *key* is a string. Note that
    since :func:`getenv` uses :data:`os.environ`, the mapping of :func:`getenv` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
@@ -319,8 +319,8 @@ process and user.
 
 .. function:: getenvb(key, default=None)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes. Note that
+   Return the value of the environment variable *key* as bytes if it exists, or
+   *default* if it doesn't. *key* must be bytes. Note that
    since :func:`getenvb` uses :data:`os.environb`, the mapping of :func:`getenvb` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
