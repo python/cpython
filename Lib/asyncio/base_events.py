@@ -447,6 +447,36 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         return task
 
+    def eager_task_factory(self, coro, *, name=None, context=None):
+        """Start a coroutine.
+
+        This runs the coroutine until it first suspends itself.
+
+        If it runs till completion or fails without suspending,
+        return a future with the result or exception.
+
+        Otherwise schedule the resumption and return a task.
+        """
+        self._check_closed()
+        try:
+            yield_result = coro.send(None)
+        except BaseException as exc:
+            fut = self.create_future()
+            # XXX What about AsyncStopIteration?
+            if isinstance(exc, StopIteration):
+                fut.set_result(exc.value)
+            else:
+                fut.set_exception(exc)
+            return fut
+        else:
+            # Do not go through the task factory.
+            # This _is_ the task factory.
+            task = tasks.Task(coro, loop=self, name=name, context=context,
+                                    yield_result=yield_result)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+            return task
+
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().
 
