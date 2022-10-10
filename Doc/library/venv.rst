@@ -85,6 +85,19 @@ Creating virtual environments
    without there needing to be any reference to its virtual environment in
    ``PATH``.
 
+.. warning:: Because scripts installed in environments should not expect the
+   environment to be activated, their shebang lines contain the absolute paths
+   to their environment's interpreters. Because of this, environments are
+   inherently non-portable, in the general case. You should always have a
+   simple means of recreating an environment (for example, if you have a
+   requirements file ``requirements.txt``, you can invoke ``pip install -r
+   requirements.txt`` using the environment's ``pip`` to install all of the
+   packages needed by the environment). If for any reason you need to move the
+   environment to a new location, you should recreate it at the desired
+   location and delete the one at the old location. If you move an environment
+   because you moved a parent directory of it, you should recreate the
+   environment in its new location. Otherwise, software installed into the
+   environment may not work as expected.
 
 .. _venv-api:
 
