@@ -445,7 +445,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
         if(!ms_struct && isPacked) {
             PyErr_SetString(PyExc_ValueError,
-                                "_ms_struct_ == 0 is not compatible with _pack_ != 0");
+                            "_ms_struct_ == 0 is not compatible with _pack_ != 0");
             return -1;
         }
     } else {
