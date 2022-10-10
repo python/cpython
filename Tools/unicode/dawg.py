@@ -50,10 +50,10 @@ class DawgNode:
     __repr__ = __str__
 
     def __hash__(self):
-        return self.__str__().__hash__()
+        return hash(str(self))
 
     def __eq__(self, other):
-        return self.__str__() == other.__str__()
+        return str(self) == str(other)
 
     def num_reachable_linear(self):
         # if a count is already assigned, return it

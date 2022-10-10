@@ -1351,7 +1351,7 @@ _getucname(PyObject *self,
         return 0;
 
     assert(buflen >= 0);
-    return _inverse_dawg_lookup(buffer, (unsigned int)buflen, offset);
+    return _inverse_dawg_lookup(buffer, Py_SAFE_DOWNCAST(buflen, int, unsigned int), offset);
 }
 
 static int
@@ -1448,9 +1448,10 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
     }
 
     assert(namelen >= 0);
-    int position = _lookup_dawg_packed(name, (unsigned int)namelen);
-    if (position < 0)
+    int position = _lookup_dawg_packed(name, Py_SAFE_DOWNCAST(namelen, int, unsigned int));
+    if (position < 0) {
         return 0;
+    }
     *code = dawg_pos_to_codepoint[position];
     return 1;
 }
