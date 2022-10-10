@@ -76,8 +76,8 @@ class C_Test(unittest.TestCase):
                 setattr(b, name, i)
                 self.assertEqual(
                     getattr(b, name),
-                    func(byref(b),
-                    (name.encode('ascii'), i)))
+                    func(byref(b), (name.encode('ascii'))),
+                    (name, i))
 
     def test_shorts_msvc_mode(self):
         b = BITS_msvc()
