@@ -363,7 +363,6 @@ one :keyword:`!except*` clause, the first that matches it. ::
      +-+---------------- 1 ----------------
        | ValueError: 1
        +------------------------------------
-   >>>
 
 Any remaining exceptions that were not handled by any :keyword:`!except*`
 clause are re-raised at the end, combined into an exception group along with
