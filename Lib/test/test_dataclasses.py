@@ -254,8 +254,10 @@ class TestCase(unittest.TestCase):
         @dataclass(frozen=True)
         class C:
             object: str
-        c = C('foo')
+            BUILTINS: int  # gh-96151
+        c = C('foo', 5)
         self.assertEqual(c.object, 'foo')
+        self.assertEqual(c.BUILTINS, 5)
 
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
