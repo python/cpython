@@ -631,6 +631,8 @@ These can be used as types in annotations and do not support ``[]``.
    that generate type checker errors could be vulnerable to an SQL
    injection attack.
 
+   See :pep:`675` for more details.
+
    .. versionadded:: 3.11
 
 .. data:: Never

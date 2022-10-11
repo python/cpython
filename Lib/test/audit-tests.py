@@ -429,6 +429,26 @@ def test_wmi_exec_query():
     sys.addaudithook(hook)
     _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
 
+def test_syslog():
+    import syslog
+
+    def hook(event, args):
+        if event.startswith("syslog."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    syslog.openlog('python')
+    syslog.syslog('test')
+    syslog.setlogmask(syslog.LOG_DEBUG)
+    syslog.closelog()
+    # implicit open
+    syslog.syslog('test2')
+    # open with default ident
+    syslog.openlog(logoption=syslog.LOG_NDELAY, facility=syslog.LOG_LOCAL0)
+    sys.argv = None
+    syslog.openlog()
+    syslog.closelog()
+
 
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
