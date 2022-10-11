@@ -19,15 +19,13 @@ class TestSundryScripts(unittest.TestCase):
     # added for a script it should be added to the allowlist below.
 
     # scripts that have independent tests.
-    allowlist = ['reindent', 'pdeps', 'gprof2html', 'md5sum']
+    allowlist = ['reindent']
     # scripts that can't be imported without running
     denylist = ['make_ctype']
-    # scripts that use windows-only modules
-    windows_only = ['win_add2path']
     # denylisted for other reasons
     other = ['2to3']
 
-    skiplist = denylist + allowlist + windows_only + other
+    skiplist = denylist + allowlist + other
 
     def test_sundry(self):
         old_modules = import_helper.modules_setup()
@@ -44,11 +42,6 @@ class TestSundryScripts(unittest.TestCase):
         finally:
             # Unload all modules loaded in this test
             import_helper.modules_cleanup(*old_modules)
-
-    @unittest.skipIf(sys.platform != "win32", "Windows-only test")
-    def test_sundry_windows(self):
-        for name in self.windows_only:
-            import_tool(name)
 
 
 if __name__ == '__main__':
