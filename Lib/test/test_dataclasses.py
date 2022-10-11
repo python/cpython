@@ -254,9 +254,15 @@ class TestCase(unittest.TestCase):
         @dataclass(frozen=True)
         class C:
             object: str
-            BUILTINS: int  # gh-96151
-        c = C('foo', 5)
+        c = C('foo')
         self.assertEqual(c.object, 'foo')
+
+    def test_field_named_BUILTINS_frozen(self):
+        # gh-96151
+        @dataclass(frozen=True)
+        class C:
+            BUILTINS: int
+        c = C(5)
         self.assertEqual(c.BUILTINS, 5)
 
     def test_field_named_like_builtin(self):
