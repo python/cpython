@@ -340,17 +340,17 @@ one except* clause, the first that matches it. ::
      +-+---------------- 1 ----------------
        | ValueError: 1
        +------------------------------------
-   >>>
 
-   Any remaining exceptions that were not handled by any except* clause
-   are re-raised at the end, combined into an exception group along with
-   all exceptions that were raised from within except* clauses.
+Any remaining exceptions that were not handled by any :keyword:`!except*`
+clause are re-raised at the end, combined into an exception group along with
+all exceptions that were raised from within :keyword:`!except*` clauses.
 
-   An except* clause must have a matching type, and this type cannot be a
-   subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
-   and except* in the same :keyword:`try`. :keyword:`break`,
-   :keyword:`continue` and :keyword:`return` cannot appear in an except*
-   clause.
+An :keyword:`!except*` clause must have a matching type,
+and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+It is not possible to mix :keyword:`except` and :keyword:`!except*`
+in the same :keyword:`try`.
+:keyword:`break`, :keyword:`continue` and :keyword:`return`
+cannot appear in an :keyword:`!except*` clause.
 
 
 .. index::
