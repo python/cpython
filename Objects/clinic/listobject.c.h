@@ -100,6 +100,13 @@ PyDoc_STRVAR(list_extend__doc__,
 "\n"
 "Extend list by appending elements from the iterable.");
 
+#define LIST_FILTER_METHODDEF \
+    {"filter", (PyCFunction)list_filter, METH_O, list_filter__doc__},
+
+PyDoc_STRVAR(list_filter__doc__,
+"foo\n"
+);
+
 #define LIST_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)list_extend, METH_O, list_extend__doc__},
 

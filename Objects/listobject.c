@@ -854,6 +854,16 @@ list_append(PyListObject *self, PyObject *object)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+list_filter(PyListObject *self, PyObject *object)
+/*[clinic end generated code: output=7c096003a29c0eae input=43a3fe48a7066e91]*/
+{
+    if (_PyList_AppendTakeRef(self, Py_NewRef(object)) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 /*[clinic input]
 list.extend
 
@@ -2845,6 +2855,7 @@ static PyMethodDef list_methods[] = {
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF
+    LIST_FILTER_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
