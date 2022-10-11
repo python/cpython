@@ -58,7 +58,7 @@ def load(fp: BinaryIO, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
     b = fp.read()
     try:
-        s = b.decode()
+        s = b.decode("UTF-8")
     except AttributeError:
         raise TypeError(
             "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`"
