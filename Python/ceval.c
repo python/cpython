@@ -4748,7 +4748,6 @@ handle_eval_breaker:
                 Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
                 int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
-                PyCodeObject *code = (PyCodeObject *)((PyFunctionObject *)func)->func_code;
 
                 bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
                 PyObject *kwnames = NULL;
