@@ -468,6 +468,11 @@ Removed
 * ``importlib.util.set_package`` has been removed.
   (Contributed by Brett Cannon in :gh:`65961`.)
 
+* Removed the ``suspicious`` rule from the documentation Makefile, and
+  removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
+  <https://github.com/sphinx-contrib/sphinx-lint>`_.
+  (Contributed by Julien Palard in :gh:`98179`.)
+
 
 Porting to Python 3.12
 ======================
