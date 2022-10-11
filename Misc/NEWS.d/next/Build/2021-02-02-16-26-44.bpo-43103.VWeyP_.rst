@@ -1,3 +1,0 @@
-Add a new configure ``--without-static-libpython`` option to not build the
-``libpythonMAJOR.MINOR.a`` static library and not install the ``python.o``
-object file.

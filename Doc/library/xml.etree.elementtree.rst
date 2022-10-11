@@ -363,13 +363,6 @@ These two approaches both output::
      |--> Commander Clement
 
 
-Additional resources
-^^^^^^^^^^^^^^^^^^^^
-
-See http://effbot.org/zone/element-index.htm for tutorials and links to other
-docs.
-
-
 .. _elementtree-xpath:
 
 XPath support
@@ -833,6 +826,7 @@ Functions
 ^^^^^^^^^
 
 .. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding=None)
+   :module:
 
    Default loader. This default loader reads an included resource from disk.  *href* is a URL.
    *parse* is for parse mode either "xml" or "text".  *encoding*
@@ -844,6 +838,7 @@ Functions
 
 .. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
                                                 max_depth=6)
+   :module:
 
    This function expands XInclude directives.  *elem* is the root element.  *loader* is
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.

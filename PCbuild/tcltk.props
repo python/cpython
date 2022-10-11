@@ -4,8 +4,8 @@
   <PropertyGroup>
     <TclMajorVersion>8</TclMajorVersion>
     <TclMinorVersion>6</TclMinorVersion>
-    <TclPatchLevel>10</TclPatchLevel>
-    <TclRevision>0</TclRevision>
+    <TclPatchLevel>12</TclPatchLevel>
+    <TclRevision>1</TclRevision>
     <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
     <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
     <TkPatchLevel>$(TclPatchLevel)</TkPatchLevel>
@@ -18,6 +18,9 @@
     <tkDir>$(ExternalsDir)tk-$(TkMajorVersion).$(TkMinorVersion).$(TkPatchLevel).$(TkRevision)\</tkDir>
     <tixDir>$(ExternalsDir)tix-$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel).$(TixRevision)\</tixDir>
     <tcltkDir>$(ExternalsDir)tcltk-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\$(ArchName)\</tcltkDir>
+    <tclWin32Exe Condition="$(Platform) == 'Win32'">$(tcltkDir)\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
+    <tclWin32Exe Condition="$(Platform) != 'Win32'">$(tcltkDir)\..\win32\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
+
     <!--<TclDebugExt Condition="'$(Configuration)' == 'Debug'">g</TclDebugExt>-->
     <tclDLLName>tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).dll</tclDLLName>
     <tclLibName>tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib</tclLibName>
@@ -29,6 +32,7 @@
     <tcltkLib>$(tcltkDir)lib\tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib;$(tcltkDir)lib\tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tcltkLib>
     <TclMachine>IX86</TclMachine>
     <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>
+    <TclMachine Condition="'$(Platform)' == 'ARM64'">ARM64</TclMachine>
     <TclVersions>TCL_MAJOR_VERSION=$(TclMajorVersion) TCL_MINOR_VERSION=$(TclMinorVersion) TCL_PATCH_LEVEL=$(TclPatchLevel)</TclVersions>
     <TclShortVersions>TCL_MAJOR=$(TclMajorVersion) TCL_MINOR=$(TclMinorVersion) TCL_PATCH=$(TclPatchLevel)</TclShortVersions>
     <TkVersions>TK_MAJOR_VERSION=$(TkMajorVersion) TK_MINOR_VERSION=$(TkMinorVersion) TK_PATCH_LEVEL=$(TkPatchLevel)</TkVersions>

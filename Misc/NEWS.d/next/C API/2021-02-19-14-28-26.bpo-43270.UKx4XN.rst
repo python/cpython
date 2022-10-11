@@ -1,2 +1,0 @@
-Remove the private ``_PyErr_OCCURRED()`` macro: use the public
-:c:func:`PyErr_Occurred` function instead.
