@@ -651,6 +651,8 @@ add_load_fast_null_checks(PyCodeObject *co)
         Py_CLEAR(co->_co_cached->_co_cellvars);
         Py_CLEAR(co->_co_cached->_co_freevars);
         Py_CLEAR(co->_co_cached->_co_varnames);
+        PyMem_Free(co->_co_cached);
+        co->_co_cached = NULL;
     }
 }
 

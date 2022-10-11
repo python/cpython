@@ -2238,6 +2238,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
         Py_CLEAR(co->_co_cached->_co_freevars);
         Py_CLEAR(co->_co_cached->_co_varnames);
         PyMem_Free(co->_co_cached);
+        co->_co_cached = NULL;
     }
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
