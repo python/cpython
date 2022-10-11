@@ -592,10 +592,9 @@ class TemplateReplacementTests(BaseTestCase):
 class GenericAliasSubstitutionTests(BaseTestCase):
     """Tests for type variable substitution in generic aliases.
 
-    Note that the expected results here are tentative, based on a
-    still-being-worked-out spec for what we allow at runtime (given that
-    implementation of *full* substitution logic at runtime would add too much
-    complexity to typing.py). This spec is currently being discussed at
+    For variadic cases, these tests should be regarded as the source of truth,
+    since we hadn't realised the full complexity of variadic substitution
+    at the time of finalizing PEP 646. For full discussion, see
     https://github.com/python/cpython/issues/91162.
     """
 
@@ -682,9 +681,6 @@ class GenericAliasSubstitutionTests(BaseTestCase):
 
             ('generic[T1, T2]',                        '[tuple_type[int, ...]]',                            'TypeError'),
             ('generic[T1, T2]',                        '[tuple_type[int, ...], tuple_type[str, ...]]',      'generic[tuple_type[int, ...], tuple_type[str, ...]]'),
-            # Should raise TypeError according to the tentative spec: unpacked
-            # types cannot be used as arguments to aliases that expect a fixed
-            # number of arguments.
             ('generic[T1, T2]',                        '[*tuple_type[int, ...]]',                           'TypeError'),
             ('generic[T1, T2]',                        '[int, *tuple_type[str, ...]]',                      'TypeError'),
             ('generic[T1, T2]',                        '[*tuple_type[int, ...], str]',                      'TypeError'),
@@ -692,10 +688,12 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[T1, T2]',                        '[*Ts]',                                             'TypeError'),
             ('generic[T1, T2]',                        '[T, *Ts]',                                          'TypeError'),
             ('generic[T1, T2]',                        '[*Ts, T]',                                          'TypeError'),
-            # Should raise TypeError according to the tentative spec: unpacked
-            # types cannot be used as arguments to generics that expect a fixed
-            # number of arguments.
-            # (None of the things in `generics` were defined using *Ts.)
+            # This one isn't technically valid - none of the things that
+            # `generic` can be (defined in `generics` above) are variadic, so we
+            # shouldn't really be able to do `generic[T1, *tuple_type[int, ...]]`.
+            # So even if type checkers shouldn't allow it, we allow it at
+            # runtime, in accordance with a general philosophy of "Keep the
+            # runtime lenient so people can experiment with typing constructs".
             ('generic[T1, *tuple_type[int, ...]]',     '[str]',                                             'generic[str, *tuple_type[int, ...]]'),
         ]
 
@@ -757,8 +755,6 @@ class GenericAliasSubstitutionTests(BaseTestCase):
         generics = ['C', 'tuple', 'Tuple']
         tuple_types = ['tuple', 'Tuple']
 
-        # The majority of these have three separate cases for C, tuple and
-        # Tuple because tuple currently behaves differently.
         tests = [
             # Alias                                    # Args                                            # Expected result
             ('generic[*Ts]',                           '[()]',                                           'generic[()]'),
