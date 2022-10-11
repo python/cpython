@@ -1152,12 +1152,11 @@ handle_eval_breaker:
 
     {
     /* Start instructions */
-#if USE_COMPUTED_GOTOS
-    {
-#else
+#if !USE_COMPUTED_GOTOS
     dispatch_opcode:
-        switch (opcode) {
+        switch (opcode)
 #endif
+        {
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
@@ -5102,23 +5101,23 @@ handle_eval_breaker:
 /* Specialization misses */
 
 miss:
-    {
-        STAT_INC(opcode, miss);
-        opcode = _PyOpcode_Deopt[opcode];
-        STAT_INC(opcode, miss);
-        /* The counter is always the first cache entry: */
-        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
-        *counter -= 1;
-        if (*counter == 0) {
-            int adaptive_opcode = _PyOpcode_Adaptive[opcode];
-            assert(adaptive_opcode);
-            _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
-            STAT_INC(opcode, deopt);
-            *counter = adaptive_counter_start();
+        {
+            STAT_INC(opcode, miss);
+            opcode = _PyOpcode_Deopt[opcode];
+            STAT_INC(opcode, miss);
+            /* The counter is always the first cache entry: */
+            _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
+            *counter -= 1;
+            if (*counter == 0) {
+                int adaptive_opcode = _PyOpcode_Adaptive[opcode];
+                assert(adaptive_opcode);
+                _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
+                STAT_INC(opcode, deopt);
+                *counter = adaptive_counter_start();
+            }
+            next_instr--;
+            DISPATCH_GOTO();
         }
-        next_instr--;
-        DISPATCH_GOTO();
-    }
 
 unbound_local_error:
         {
