@@ -1,0 +1,75 @@
+.. date: 2022-09-28-17-09-37
+.. gh-issue: 97616
+.. nonce: K1e3Xs
+.. release date: 2022-10-11
+.. section: Security
+
+Fix multiplying a list by an integer (``list *= int``): detect the integer
+overflow when the new allocated length is close to the maximum size. Issue
+reported by Jordan Limor.  Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-28-12-10-57
+.. gh-issue: 97612
+.. nonce: y6NvOQ
+.. section: Security
+
+Fix a shell code injection vulnerability in the
+``get-remote-certificate.py`` example script. The script no longer uses a
+shell to run ``openssl`` commands. Issue reported and initial fix by Caleb
+Shortt. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-21-14-38-31
+.. gh-issue: 96848
+.. nonce: WuoLzU
+.. section: Core and Builtins
+
+Fix command line parsing: reject :option:`-X int_max_str_digits <-X>` option
+with no value (invalid) when the :envvar:`PYTHONINTMAXSTRDIGITS` environment
+variable is set to a valid limit. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-16-19-02-40
+.. gh-issue: 95778
+.. nonce: cJmnst
+.. section: Core and Builtins
+
+When :exc:`ValueError` is raised if an integer is larger than the limit,
+mention the :func:`sys.set_int_max_str_digits` function in the error
+message. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-22-14-35-02
+.. gh-issue: 97005
+.. nonce: yf21Q7
+.. section: Library
+
+Update bundled libexpat to 2.4.9
+
+..
+
+.. date: 2022-09-07-00-11-33
+.. gh-issue: 96577
+.. nonce: kV4K_1
+.. section: Windows
+
+Fixes a potential buffer overrun in :mod:`msilib`.
+
+..
+
+.. date: 2022-10-05-15-26-58
+.. gh-issue: 97897
+.. nonce: Rf-C6u
+.. section: macOS
+
+The macOS 13 SDK includes support for the ``mkfifoat`` and ``mknodat``
+system calls. Using the ``dir_fd`` option with either :func:`os.mkfifo` or
+:func:`os.mknod` could result in a segfault if cpython is built with the
+macOS 13 SDK but run on an earlier version of macOS. Prevent this by adding
+runtime support for detection of these system calls ("weaklinking") as is
+done for other newer syscalls on macOS.
