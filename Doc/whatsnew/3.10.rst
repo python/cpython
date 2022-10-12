@@ -669,6 +669,7 @@ Several other key features:
           GREEN = 1
           BLUE = 2
 
+      color = Color.GREEN
       match color:
           case Color.RED:
               print("I see red!")
@@ -1183,7 +1184,7 @@ and will be incorrect in some rare cases, including some ``_``-s in
 
 New in 3.10 maintenance releases.
 
-Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
 Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 Include prompts when saving Shell with inputs and outputs.

@@ -82,27 +82,32 @@ getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_basename(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    const char *path;
-    if (!PyArg_ParseTuple(args, "s", &path)) {
+    PyObject *path;
+    if (!PyArg_ParseTuple(args, "U", &path)) {
         return NULL;
     }
-    const char *name = strrchr(path, SEP);
-    return PyUnicode_FromString(name ? name + 1 : path);
+    Py_ssize_t end = PyUnicode_GET_LENGTH(path);
+    Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
+    if (pos < 0) {
+        return Py_NewRef(path);
+    }
+    return PyUnicode_Substring(path, pos + 1, end);
 }
 
 
 static PyObject *
 getpath_dirname(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    const char *path;
-    if (!PyArg_ParseTuple(args, "s", &path)) {
+    PyObject *path;
+    if (!PyArg_ParseTuple(args, "U", &path)) {
         return NULL;
     }
-    const char *name = strrchr(path, SEP);
-    if (!name) {
+    Py_ssize_t end = PyUnicode_GET_LENGTH(path);
+    Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
+    if (pos < 0) {
         return PyUnicode_FromStringAndSize(NULL, 0);
     }
-    return PyUnicode_FromStringAndSize(path, (name - path));
+    return PyUnicode_Substring(path, 0, pos);
 }
 
 
@@ -256,7 +261,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     Py_ssize_t n = PyTuple_GET_SIZE(args);
     if (n == 0) {
-        return PyUnicode_FromString(NULL);
+        return PyUnicode_FromStringAndSize(NULL, 0);
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));

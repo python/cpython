@@ -195,7 +195,6 @@ class Printer:
                 else:
                     self.write("PyCompactUnicodeObject _compact;")
                 self.write(f"{datatype} _data[{len(s)+1}];")
-        self.deallocs.append(f"_PyStaticUnicode_Dealloc((PyObject *)&{name});")
         with self.block(f"{name} =", ";"):
             if ascii:
                 with self.block("._ascii =", ","):
@@ -218,6 +217,9 @@ class Printer:
                             self.write(f".kind = {kind},")
                             self.write(".compact = 1,")
                             self.write(".ascii = 0,")
+                    utf8 = s.encode('utf-8')
+                    self.write(f'.utf8 = {make_string_literal(utf8)},')
+                    self.write(f'.utf8_length = {len(utf8)},')
                 with self.block(f"._data =", ","):
                     for i in range(0, len(s), 16):
                         data = s[i:i+16]
@@ -274,7 +276,7 @@ class Printer:
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
-            self.write(f"._co_code = NULL,")
+            self.write(f"._co_cached = NULL,")
             self.write("._co_linearray = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
             for i, op in enumerate(code.co_code[::2]):

@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
 "--\n"
@@ -18,8 +24,31 @@ static PyObject *
 sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(hook), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"hook", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "addaudithook", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "addaudithook",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *hook;
 
@@ -263,6 +292,18 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__settraceallthreads__doc__,
+"_settraceallthreads($module, arg, /)\n"
+"--\n"
+"\n"
+"Set the global debug tracing function in all running threads belonging to the current interpreter.\n"
+"\n"
+"It will be called on each function call. See the debugger chapter\n"
+"in the library manual.");
+
+#define SYS__SETTRACEALLTHREADS_METHODDEF    \
+    {"_settraceallthreads", (PyCFunction)sys__settraceallthreads, METH_O, sys__settraceallthreads__doc__},
+
 PyDoc_STRVAR(sys_gettrace__doc__,
 "gettrace($module, /)\n"
 "--\n"
@@ -282,6 +323,18 @@ sys_gettrace(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys_gettrace_impl(module);
 }
+
+PyDoc_STRVAR(sys__setprofileallthreads__doc__,
+"_setprofileallthreads($module, arg, /)\n"
+"--\n"
+"\n"
+"Set the profiling function in all running threads belonging to the current interpreter.\n"
+"\n"
+"It will be called on each function call and return.  See the profiler chapter\n"
+"in the library manual.");
+
+#define SYS__SETPROFILEALLTHREADS_METHODDEF    \
+    {"_setprofileallthreads", (PyCFunction)sys__setprofileallthreads, METH_O, sys__setprofileallthreads__doc__},
 
 PyDoc_STRVAR(sys_getprofile__doc__,
 "getprofile($module, /)\n"
@@ -425,8 +478,31 @@ static PyObject *
 sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(depth), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"depth", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_coroutine_origin_tracking_depth", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_coroutine_origin_tracking_depth",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     int depth;
 
@@ -668,6 +744,82 @@ exit:
 }
 
 #endif /* defined(USE_MALLOPT) */
+
+PyDoc_STRVAR(sys_get_int_max_str_digits__doc__,
+"get_int_max_str_digits($module, /)\n"
+"--\n"
+"\n"
+"Set the maximum string digits limit for non-binary int<->str conversions.");
+
+#define SYS_GET_INT_MAX_STR_DIGITS_METHODDEF    \
+    {"get_int_max_str_digits", (PyCFunction)sys_get_int_max_str_digits, METH_NOARGS, sys_get_int_max_str_digits__doc__},
+
+static PyObject *
+sys_get_int_max_str_digits_impl(PyObject *module);
+
+static PyObject *
+sys_get_int_max_str_digits(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_get_int_max_str_digits_impl(module);
+}
+
+PyDoc_STRVAR(sys_set_int_max_str_digits__doc__,
+"set_int_max_str_digits($module, /, maxdigits)\n"
+"--\n"
+"\n"
+"Set the maximum string digits limit for non-binary int<->str conversions.");
+
+#define SYS_SET_INT_MAX_STR_DIGITS_METHODDEF    \
+    {"set_int_max_str_digits", _PyCFunction_CAST(sys_set_int_max_str_digits), METH_FASTCALL|METH_KEYWORDS, sys_set_int_max_str_digits__doc__},
+
+static PyObject *
+sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits);
+
+static PyObject *
+sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(maxdigits), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"maxdigits", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_int_max_str_digits",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int maxdigits;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    maxdigits = _PyLong_AsInt(args[0]);
+    if (maxdigits == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = sys_set_int_max_str_digits_impl(module, maxdigits);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(sys_getrefcount__doc__,
 "getrefcount($module, object, /)\n"
@@ -1075,6 +1227,79 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(ANDROID_API_LEVEL) */
 
+PyDoc_STRVAR(sys_activate_stack_trampoline__doc__,
+"activate_stack_trampoline($module, backend, /)\n"
+"--\n"
+"\n"
+"Activate the perf profiler trampoline.");
+
+#define SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
+    {"activate_stack_trampoline", (PyCFunction)sys_activate_stack_trampoline, METH_O, sys_activate_stack_trampoline__doc__},
+
+static PyObject *
+sys_activate_stack_trampoline_impl(PyObject *module, const char *backend);
+
+static PyObject *
+sys_activate_stack_trampoline(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *backend;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("activate_stack_trampoline", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t backend_length;
+    backend = PyUnicode_AsUTF8AndSize(arg, &backend_length);
+    if (backend == NULL) {
+        goto exit;
+    }
+    if (strlen(backend) != (size_t)backend_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = sys_activate_stack_trampoline_impl(module, backend);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_deactivate_stack_trampoline__doc__,
+"deactivate_stack_trampoline($module, /)\n"
+"--\n"
+"\n"
+"Dectivate the perf profiler trampoline.");
+
+#define SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
+    {"deactivate_stack_trampoline", (PyCFunction)sys_deactivate_stack_trampoline, METH_NOARGS, sys_deactivate_stack_trampoline__doc__},
+
+static PyObject *
+sys_deactivate_stack_trampoline_impl(PyObject *module);
+
+static PyObject *
+sys_deactivate_stack_trampoline(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_deactivate_stack_trampoline_impl(module);
+}
+
+PyDoc_STRVAR(sys_is_stack_trampoline_active__doc__,
+"is_stack_trampoline_active($module, /)\n"
+"--\n"
+"\n"
+"Returns *True* if the perf profiler trampoline is active.");
+
+#define SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF    \
+    {"is_stack_trampoline_active", (PyCFunction)sys_is_stack_trampoline_active, METH_NOARGS, sys_is_stack_trampoline_active__doc__},
+
+static PyObject *
+sys_is_stack_trampoline_active_impl(PyObject *module);
+
+static PyObject *
+sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_is_stack_trampoline_active_impl(module);
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1118,4 +1343,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=41122dae1bb7158c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15318cdd96b62b06 input=a9049054013a1b77]*/

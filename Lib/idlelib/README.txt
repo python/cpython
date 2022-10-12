@@ -280,3 +280,11 @@ first back-ported feature after 3.n.0 is released. Since each older
 version file gets a different number of backports, it is easiest to
 make a separate PR for each file and label it with the backports
 needed.
+
+Github repository and issues
+----------------------------
+
+The CPython repository is https://github.com/python/cpython.  The
+IDLE Issues listing is https://github.com/orgs/python/projects/31.
+The main classification is by Topic, based on the IDLE menu.  View the
+topics list by clicking the [<]] button in the upper right.

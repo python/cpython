@@ -1,0 +1,5 @@
+When ``__package__`` is different than ``__spec__.parent``, raise a
+``DeprecationWarning`` instead of ``ImportWarning``.
+
+Also remove ``importlib.util.set_package()`` which was scheduled for
+removal.

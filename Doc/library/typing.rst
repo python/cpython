@@ -39,6 +39,11 @@ provides backports of these new features to older versions of Python.
 For a summary of deprecated features and a deprecation timeline, please see
 `Deprecation Timeline of Major Features`_.
 
+.. seealso::
+
+   The documentation at https://typing.readthedocs.io/ serves as useful reference
+   for type system features, useful typing related tools and typing best practices.
+
 
 .. _relevant-peps:
 
@@ -100,7 +105,7 @@ A type alias is defined by assigning the type to the alias. In this example,
    def scale(scalar: float, vector: Vector) -> Vector:
        return [scalar * num for num in vector]
 
-   # typechecks; a list of floats qualifies as a Vector.
+   # passes type checking; a list of floats qualifies as a Vector.
    new_vector = scale(2.0, [1.0, -4.2, 5.4])
 
 Type aliases are useful for simplifying complex type signatures. For example::
@@ -142,10 +147,10 @@ of the original type. This is useful in helping catch logical errors::
    def get_user_name(user_id: UserId) -> str:
        ...
 
-   # typechecks
+   # passes type checking
    user_a = get_user_name(UserId(42351))
 
-   # does not typecheck; an int is not a UserId
+   # fails type checking; an int is not a UserId
    user_b = get_user_name(-1)
 
 You may still perform all ``int`` operations on a variable of type ``UserId``,
@@ -171,7 +176,7 @@ It is invalid to create a subtype of ``Derived``::
 
    UserId = NewType('UserId', int)
 
-   # Fails at runtime and does not typecheck
+   # Fails at runtime and does not pass type checking
    class AdminUserId(UserId): pass
 
 However, it is possible to create a :class:`NewType` based on a 'derived' ``NewType``::
@@ -458,12 +463,12 @@ value of type :data:`Any` and assign it to any variable::
    s = a           # OK
 
    def foo(item: Any) -> int:
-       # Typechecks; 'item' could be any type,
+       # Passes type checking; 'item' could be any type,
        # and that type might have a 'bar' method
        item.bar()
        ...
 
-Notice that no typechecking is performed when assigning a value of type
+Notice that no type checking is performed when assigning a value of type
 :data:`Any` to a more precise type. For example, the static type checker did
 not report an error when assigning ``a`` to ``s`` even though ``s`` was
 declared to be of type :class:`str` and receives an :class:`int` value at
@@ -495,20 +500,20 @@ reject almost all operations on it, and assigning it to a variable (or using
 it as a return value) of a more specialized type is a type error. For example::
 
    def hash_a(item: object) -> int:
-       # Fails; an object does not have a 'magic' method.
+       # Fails type checking; an object does not have a 'magic' method.
        item.magic()
        ...
 
    def hash_b(item: Any) -> int:
-       # Typechecks
+       # Passes type checking
        item.magic()
        ...
 
-   # Typechecks, since ints and strs are subclasses of object
+   # Passes type checking, since ints and strs are subclasses of object
    hash_a(42)
    hash_a("foo")
 
-   # Typechecks, since Any is compatible with all types
+   # Passes type checking, since Any is compatible with all types
    hash_b(42)
    hash_b("foo")
 
@@ -625,6 +630,8 @@ These can be used as types in annotations and do not support ``[]``.
    strings could generate problems. For example, the two cases above
    that generate type checker errors could be vulnerable to an SQL
    injection attack.
+
+   See :pep:`675` for more details.
 
    .. versionadded:: 3.11
 
@@ -1305,20 +1312,25 @@ These are not used in annotations. They are building blocks for creating generic
         T = TypeVar('T')
         Ts = TypeVarTuple('Ts')
 
-        def remove_first_element(tup: tuple[T, *Ts]) -> tuple[*Ts]:
-            return tup[1:]
+        def move_first_element_to_last(tup: tuple[T, *Ts]) -> tuple[*Ts, T]:
+            return (*tup[1:], tup[0])
 
         # T is bound to int, Ts is bound to ()
-        # Return value is (), which has type tuple[()]
-        remove_first_element(tup=(1,))
+        # Return value is (1,), which has type tuple[int]
+        move_first_element_to_last(tup=(1,))
 
         # T is bound to int, Ts is bound to (str,)
-        # Return value is ('spam',), which has type tuple[str]
-        remove_first_element(tup=(1, 'spam'))
+        # Return value is ('spam', 1), which has type tuple[str, int]
+        move_first_element_to_last(tup=(1, 'spam'))
 
         # T is bound to int, Ts is bound to (str, float)
-        # Return value is ('spam', 3.0), which has type tuple[str, float]
-        remove_first_element(tup=(1, 'spam', 3.0))
+        # Return value is ('spam', 3.0, 1), which has type tuple[str, float, int]
+        move_first_element_to_last(tup=(1, 'spam', 3.0))
+
+        # This fails to type check (and fails at runtime)
+        # because tuple[()] is not compatible with tuple[T, *Ts]
+        # (at least one element is required)
+        move_first_element_to_last(tup=())
 
     Note the use of the unpacking operator ``*`` in ``tuple[T, *Ts]``.
     Conceptually, you can think of ``Ts`` as a tuple of type variables
@@ -1825,6 +1837,9 @@ These are not used in annotations. They are building blocks for declaring types.
          True
 
    .. attribute:: __required_keys__
+
+      .. versionadded:: 3.9
+
    .. attribute:: __optional_keys__
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
@@ -1851,6 +1866,8 @@ These are not used in annotations. They are building blocks for declaring types.
          True
          >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
          True
+
+      .. versionadded:: 3.9
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 

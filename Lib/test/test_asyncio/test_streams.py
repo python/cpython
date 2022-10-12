@@ -9,6 +9,7 @@ import sys
 import threading
 import unittest
 from unittest import mock
+import warnings
 from test.support import socket_helper
 try:
     import ssl
@@ -791,8 +792,9 @@ os.close(fd)
         protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
         transport, _ = self.loop.run_until_complete(
             self.loop.connect_read_pipe(lambda: protocol, pipe))
-
-        watcher = asyncio.SafeChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            watcher = asyncio.SafeChildWatcher()
         watcher.attach_loop(self.loop)
         try:
             asyncio.set_child_watcher(watcher)
@@ -863,6 +865,25 @@ os.close(fd)
             protocol = asyncio.StreamReaderProtocol(reader)
         self.assertEqual(cm.filename, __file__)
         self.assertIs(protocol._loop, self.loop)
+
+    def test_multiple_drain(self):
+        # See https://github.com/python/cpython/issues/74116
+        drained = 0
+
+        async def drainer(stream):
+            nonlocal drained
+            await stream._drain_helper()
+            drained += 1
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            stream = asyncio.streams.FlowControlMixin(loop)
+            stream.pause_writing()
+            loop.call_later(0.1, stream.resume_writing)
+            await asyncio.gather(*[drainer(stream) for _ in range(10)])
+            self.assertEqual(drained, 10)
+
+        self.loop.run_until_complete(main())
 
     def test_drain_raises(self):
         # See http://bugs.python.org/issue25441

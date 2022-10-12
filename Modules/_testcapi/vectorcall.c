@@ -103,6 +103,24 @@ test_pyobject_vectorcall(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+override_vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf,
+                    PyObject *kwnames)
+{
+    return PyUnicode_FromString("overridden");
+}
+
+static PyObject *
+function_setvectorcall(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "'func' must be a function");
+        return NULL;
+    }
+    PyFunction_SetVectorcall((PyFunctionObject *)func, (vectorcallfunc)override_vectorcall);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 test_pyvectorcall_call(PyObject *self, PyObject *args)
 {
     PyObject *func;
@@ -214,7 +232,7 @@ _testcapi_make_vectorcall_class_impl(PyObject *module, PyTypeObject *base)
     VectorCallClass_members[0].offset = base->tp_basicsize;
     PyType_Spec spec = {
         .name = "_testcapi.VectorcallClass",
-        .basicsize = base->tp_basicsize + (int)sizeof(vectorcallfunc),
+        .basicsize = (int)(base->tp_basicsize + sizeof(vectorcallfunc)),
         .flags = Py_TPFLAGS_DEFAULT
             | Py_TPFLAGS_HAVE_VECTORCALL
             | Py_TPFLAGS_BASETYPE,
@@ -244,6 +262,7 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_fastcall", test_pyobject_fastcall, METH_VARARGS},
     {"pyobject_fastcalldict", test_pyobject_fastcalldict, METH_VARARGS},
     {"pyobject_vectorcall", test_pyobject_vectorcall, METH_VARARGS},
+    {"function_setvectorcall", function_setvectorcall, METH_O},
     {"pyvectorcall_call", test_pyvectorcall_call, METH_VARARGS},
     _TESTCAPI_MAKE_VECTORCALL_CLASS_METHODDEF
     _TESTCAPI_HAS_VECTORCALL_FLAG_METHODDEF
