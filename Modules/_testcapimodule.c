@@ -4847,6 +4847,20 @@ sequence_setitem(PyObject *self, PyObject *args)
 
 
 static PyObject *
+sequence_delitem(PyObject *self, PyObject *args)
+{
+    Py_ssize_t i;
+    PyObject *seq;
+    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
+        return NULL;
+    }
+    if (PySequence_DelItem(seq, i)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 hasattr_string(PyObject *self, PyObject* args)
 {
     PyObject* obj;
@@ -5210,6 +5224,7 @@ dict_watch_callback(PyDict_WatchEvent event,
         Py_DECREF(msg);
         return -1;
     }
+    Py_DECREF(msg);
     return 0;
 }
 
@@ -5224,8 +5239,10 @@ dict_watch_callback_second(PyDict_WatchEvent event,
         return -1;
     }
     if (PyList_Append(g_dict_watch_events, msg) < 0) {
+        Py_DECREF(msg);
         return -1;
     }
+    Py_DECREF(msg);
     return 0;
 }
 
@@ -5288,6 +5305,20 @@ watch_dict(PyObject *self, PyObject *args)
         return NULL;
     }
     if (PyDict_Watch(watcher_id, dict)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unwatch_dict(PyObject *self, PyObject *args)
+{
+    PyObject *dict;
+    int watcher_id;
+    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &dict)) {
+        return NULL;
+    }
+    if (PyDict_Unwatch(watcher_id, dict)) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -5868,6 +5899,7 @@ static PyMethodDef TestMethods[] = {
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"sequence_getitem", sequence_getitem, METH_VARARGS},
     {"sequence_setitem", sequence_setitem, METH_VARARGS},
+    {"sequence_delitem", sequence_delitem, METH_VARARGS},
     {"hasattr_string", hasattr_string, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
@@ -5901,6 +5933,7 @@ static PyMethodDef TestMethods[] = {
     {"add_dict_watcher", add_dict_watcher, METH_O, NULL},
     {"clear_dict_watcher", clear_dict_watcher, METH_O, NULL},
     {"watch_dict", watch_dict, METH_VARARGS, NULL},
+    {"unwatch_dict", unwatch_dict, METH_VARARGS, NULL},
     {"get_dict_watcher_events", get_dict_watcher_events, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };

@@ -22,7 +22,7 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j auto \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
-	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
+	coverage doctest pydoc-topics htmlview clean dist check serve \
 	autobuild-dev autobuild-stable venv
 
 help:
@@ -42,7 +42,6 @@ help:
 	@echo "  doctest    to run doctests in the documentation"
 	@echo "  pydoc-topics  to regenerate the pydoc topics file"
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
-	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  check      to run a check for frequent markup errors"
 
 build:
@@ -109,18 +108,6 @@ linkcheck:
 	echo "Link check complete; look for any errors in the above output" \
 	     "or in build/$(BUILDER)/output.txt"; \
 	false; }
-
-suspicious: BUILDER = suspicious
-suspicious:
-	@$(MAKE) build BUILDER=$(BUILDER) || { \
-	echo "Suspicious check complete; look for any errors in the above output" \
-	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
-	     "positives, append that file to tools/susp-ignored.csv."; \
-	false; }
-	@echo "⚠ make suspicious is deprecated and will be removed soon."
-	@echo "⚠ Use:"
-	@echo "⚠     make check"
-	@echo "⚠ instead."
 
 coverage: BUILDER = coverage
 coverage: build
