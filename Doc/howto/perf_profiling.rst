@@ -151,7 +151,7 @@ Enabling perf profiling mode
 ----------------------------
 
 There are two main ways to activate the perf profiling mode. If you want it to be
-active since the start of the Python interpreter, you can use the `-Xperf` option:
+active since the start of the Python interpreter, you can use the ``-Xperf`` option:
 
     $ python -Xperf my_script.py
 

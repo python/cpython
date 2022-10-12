@@ -30,6 +30,10 @@ interpreter.
       Use 2 bytes for each instruction. Previously the number of bytes varied
       by instruction.
 
+   .. versionchanged:: 3.10
+      The argument of jump, exception handling and loop instructions is now
+      the instruction offset rather than the byte offset.
+
    .. versionchanged:: 3.11
       Some instructions are accompanied by one or more inline cache entries,
       which take the form of :opcode:`CACHE` instructions. These instructions
@@ -367,7 +371,7 @@ details of bytecode instructions as :class:`Instruction` instances:
 
 .. class:: Positions
 
-   In case the information is not available, some fields might be `None`.
+   In case the information is not available, some fields might be ``None``.
 
    .. data:: lineno
    .. data:: end_lineno
