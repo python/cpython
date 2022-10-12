@@ -90,7 +90,7 @@ class UnixCCompilerTestCase(unittest.TestCase):
         sys.platform = 'bar'
         def gcv(v):
             if v == 'CC':
-                return 'cc'
+                return 'icc'
             elif v == 'GNULD':
                 return 'yes'
         sysconfig.get_config_var = gcv
@@ -100,7 +100,7 @@ class UnixCCompilerTestCase(unittest.TestCase):
         sys.platform = 'bar'
         def gcv(v):
             if v == 'CC':
-                return 'cc'
+                return 'icc'
             elif v == 'GNULD':
                 return 'no'
         sysconfig.get_config_var = gcv
