@@ -1,1 +1,1 @@
-Fix module docstring in :file:`Tools/i18n/pygettext.py`.
+Fix handling of module docstrings in :file:`Tools/i18n/pygettext.py`.
