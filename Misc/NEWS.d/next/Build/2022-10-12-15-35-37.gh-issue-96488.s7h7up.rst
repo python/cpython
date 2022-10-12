@@ -1,0 +1,1 @@
+Fix build failures with older versions of GCC when using runtime_library_dirs with distutils. Older versions of GCC only support the flag "-Wl,-R" instead of "-R". distutils now also handles this correctly with the compiler alias "cc".
