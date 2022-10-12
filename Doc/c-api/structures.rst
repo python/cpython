@@ -17,7 +17,8 @@ All Python objects ultimately share a small number of fields at the beginning
 of the object's representation in memory.  These are represented by the
 :c:type:`PyObject` and :c:type:`PyVarObject` types, which are defined, in turn,
 by the expansions of some macros also used, whether directly or indirectly, in
-the definition of all other Python objects.
+the definition of all other Python objects.  Additional macros can be found
+under :ref:`reference counting <countingrefs>`.
 
 
 .. c:type:: PyObject
