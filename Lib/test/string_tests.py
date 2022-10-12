@@ -507,7 +507,8 @@ class BaseTest:
     def test_rsplit(self):
         # without arg
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit')
-        self.checkequal(['a', 'b', 'c', 'd'], 'a  b  c  d', 'rsplit')
+        self.checkequal(['a', 'b', 'c', 'd'], 'a  b  c d', 'rsplit')
+        self.checkequal([], '', 'rsplit')
 
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|')
