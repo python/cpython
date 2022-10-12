@@ -37,11 +37,11 @@
    * Credit the author of a patch or bugfix.   Just the name is
    sufficient; the e-mail address isn't necessary.
 
-   * It's helpful to add the bug/patch number as a comment:
+   * It's helpful to add the issue number as a comment:
 
    XXX Describe the transmogrify() function added to the socket
    module.
-   (Contributed by P.Y. Developer in :issue:`12345`.)
+   (Contributed by P.Y. Developer in :gh:`12345`.)
 
    This saves the maintainer the effort of going through the VCS log when
    researching a change.
@@ -93,6 +93,13 @@ Other Language Changes
   when parsing source code containing null bytes. (Contributed by Pablo Galindo
   in :gh:`96670`.)
 
+* The Garbage Collector now runs only on the eval breaker mechanism of the
+  Python bytecode evaluation loop instead on object allocations. The GC can
+  also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
+  need to run for a long time without executing any Python code also have a
+  chance to execute the GC periodically. (Contributed by Pablo Galindo in
+  :gh:`97922`.)
+
 New Modules
 ===========
 
@@ -101,6 +108,24 @@ New Modules
 
 Improved Modules
 ================
+
+asyncio
+-------
+
+* On Linux, :mod:`asyncio` uses :class:`~asyncio.PidfdChildWatcher` by default
+  if :func:`os.pidfd_open` is available and functional instead of
+  :class:`~asyncio.ThreadedChildWatcher`.
+  (Contributed by Kumar Aditya in :gh:`98024`.)
+
+* The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`,
+  :class:`~asyncio.FastChildWatcher` and
+  :class:`~asyncio.SafeChildWatcher` are deprecated and
+  will be removed in Python 3.14. It is recommended to not manually
+  configure a child watcher as the event loop now uses the best available
+  child watcher for each platform (:class:`~asyncio.PidfdChildWatcher`
+  if supported and :class:`~asyncio.ThreadedChildWatcher` otherwise).
+  (Contributed by Kumar Aditya in :gh:`94597`.)
+
 
 pathlib
 -------
@@ -442,6 +467,11 @@ Removed
 
 * ``importlib.util.set_package`` has been removed.
   (Contributed by Brett Cannon in :gh:`65961`.)
+
+* Removed the ``suspicious`` rule from the documentation Makefile, and
+  removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
+  <https://github.com/sphinx-contrib/sphinx-lint>`_.
+  (Contributed by Julien Palard in :gh:`98179`.)
 
 
 Porting to Python 3.12
