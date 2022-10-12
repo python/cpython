@@ -210,6 +210,16 @@ Glossary
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
 
+   callable
+      A callable is an object that can be called, possibly with a set
+      of arguments (see :term:`argument`), with the following syntax::
+
+         callable(argument1, argument2, ...)
+
+      A :term:`function`, and by extension a :term:`method`, is a callable.
+      An instance of a class that implements the :meth:`~object.__call__`
+      method is also a callable.
+
    callback
       A subroutine function which is passed as an argument to be executed at
       some point in the future.
