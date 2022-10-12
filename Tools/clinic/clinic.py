@@ -495,7 +495,8 @@ def permute_optional_groups(left, required, right):
     result = []
 
     if not required:
-        assert not left
+        if left:
+            raise ValueError("required is empty but left is not")
 
     accumulator = []
     counts = set()
@@ -3586,6 +3587,7 @@ class Py_UNICODE_converter(CConverter):
                 self.converter = '_PyUnicode_WideCharString_Opt_Converter'
             else:
                 fail("Py_UNICODE_converter: illegal 'accept' argument " + repr(accept))
+        self.c_default = "NULL"
 
     def cleanup(self):
         if not self.length:
