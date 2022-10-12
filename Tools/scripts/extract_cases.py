@@ -6,10 +6,17 @@
 
 # TODO: Reuse C generation framework from deepfreeze.py.
 
+import argparse
 import difflib
 import dis
 import re
 import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-i", "--input", type=str, default="Python/ceval.c")
+parser.add_argument("-o", "--output", type=str, default="bytecodes.inst")
+parser.add_argument("-c", "--compare", action="store_true")
+parser.add_argument("-q", "--quiet", action="store_true")
 
 
 def eopen(filename, mode="r"):
@@ -24,6 +31,7 @@ def eopen(filename, mode="r"):
 def leading_whitespace(line):
     return len(line) - len(line.lstrip())
 
+
 def extract_opcode_name(line):
     m = re.match(r"\A\s*TARGET\((\w+)\)\s*{\s*\Z", line)
     if m:
@@ -32,6 +40,7 @@ def extract_opcode_name(line):
             raise ValueError(f"error: unknown opcode {opcode_name}")
         return opcode_name
     raise ValueError(f"error: no opcode in {line.strip()}")
+
 
 def figure_stack_effect(opcode_name):
     # If stack effect is constant, return it as an int.
@@ -53,6 +62,7 @@ def figure_stack_effect(opcode_name):
         except ValueError as err:
             raise ValueError(f"{err} for {opcode_name}")
 
+
 START_MARKER = "/* Start instructions */"  # The '{' is on the preceding line.
 END_MARKER = "/* End regular instructions */"
 
@@ -73,19 +83,25 @@ def read_cases(f):
             if case:
                 cases.append(case)
             indent = " " * leading_whitespace(line)
-            case = "// <CASE>\n"  # For debugging
+            case = ""
             opcode_name = extract_opcode_name(line)
             try:
                 se = figure_stack_effect(opcode_name)
             except ValueError as err:
-                case += f"// error: {err}\n"
-                case += f"inst({opcode_name}) {{\n"
+                case += f"{indent}// error: {err}\n"
+                case += f"{indent}inst({opcode_name}, ?? -- ??) {{\n"
             else:
-                if se == 0:
-                    case += f"inst({opcode_name}, --) {{\n"
-                else:
-                    case += f"// stack effect: {se}\n"
-                    case += f"inst({opcode_name}) {{\n"
+                inputs = []
+                outputs = []
+                if se > 0:
+                    for i in range(se):
+                        outputs.append(f"__{i}")
+                elif se < 0:
+                    for i in range(-se):
+                        inputs.append(f"__{i}")
+                input = ", ".join(inputs)
+                output = ", ".join(outputs)
+                case += f"{indent}inst({opcode_name}, ({input} -- {output})) {{\n"
         else:
             if case:
                 case += line
@@ -95,13 +111,11 @@ def read_cases(f):
 
 
 def write_cases(f, cases):
-    print("// <HEADER>\n", file=f)
     for case in cases:
         print(case.rstrip() + "\n", file=f)
-    print("// <TRAILER>", file=f)
 
 
-def compare(oldfile, newfile):
+def compare(oldfile, newfile, quiet=False):
     with open(oldfile) as f:
         oldlines = f.readlines()
     for top, line in enumerate(oldlines):
@@ -118,24 +132,33 @@ def compare(oldfile, newfile):
         print(f"No end marker found in {oldfile}", file=sys.stderr)
         return
     del oldlines[bottom:]
-    print(f"// {oldfile} has {len(oldlines)} lines after stripping top/bottom", file=sys.stderr)
+    if not quiet:
+        print(
+            f"// {oldfile} has {len(oldlines)} lines after stripping top/bottom",
+            file=sys.stderr,
+        )
     with open(newfile) as f:
         newlines = f.readlines()
-    print(f"// {newfile} has {len(newlines)} lines", file=sys.stderr)
+    if not quiet:
+        print(f"// {newfile} has {len(newlines)} lines", file=sys.stderr)
     for line in difflib.unified_diff(oldlines, newlines, fromfile=oldfile, tofile=newfile):
         sys.stdout.write(line)
 
 
 def main():
-    if len(sys.argv) != 3:
-        sys.exit(f"Usage: {sys.argv[0]} input output")
-    with eopen(sys.argv[1]) as f:
+    args = parser.parse_args()
+    input = args.input
+    output = args.output
+    with eopen(input) as f:
         cases = read_cases(f)
-    print("// Collected", len(cases), "cases", file=sys.stderr)
-    with eopen(sys.argv[2], "w") as f:
+    if not args.quiet:
+        print(f"// Read {len(cases)} cases from {input}", file=sys.stderr)
+    with eopen(output, "w") as f:
         write_cases(f, cases)
-    if sys.argv[1] != "-" and sys.argv[2] != "-" and sys.argv[1] != sys.argv[2]:
-        compare(sys.argv[1], sys.argv[2])
+    if not args.quiet:
+        print(f"// Wrote {len(cases)} cases to {output}", file=sys.stderr)
+    if args.compare:
+        compare(input, output, args.quiet)
 
 
 main()
