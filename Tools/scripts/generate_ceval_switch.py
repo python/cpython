@@ -24,21 +24,43 @@ def eopen(filename, mode="r"):
 def leading_whitespace(line):
     return len(line) - len(line.lstrip())
 
-
-def extract_opcode(line):
+def extract_opcode_name(line):
     m = re.match(r"\A\s*TARGET\((\w+)\)\s*{\s*\Z", line)
     if m:
-        return m.group(1)
+        opcode_name = m.group(1)
+        if opcode_name not in dis._all_opmap:
+            raise ValueError(f"error: unknown opcode {opcode_name}")
+        return opcode_name
+    raise ValueError(f"error: no opcode in {line.strip()}")
+
+def figure_stack_effect(opcode_name):
+    # If stack effect is constant, return it as an int.
+    # If it is variable or unknown, raise ValueError.
+    # (It may be dis.stack_effect() that raises ValueError.)
+    opcode = dis._all_opmap[opcode_name]
+    if opcode in dis.hasarg:
+        try:
+            se = dis.stack_effect(opcode, 0)
+        except ValueError as err:
+            raise ValueError(f"{err} for {opcode_name}")
+        for i in range(1, 33):
+            if dis.stack_effect(opcode, i) != se:
+                raise ValueError(f"{opcode_name} has variable stack effect")
+        return se
     else:
-        return None
+        try:
+            return dis.stack_effect(opcode)
+        except ValueError as err:
+            raise ValueError(f"{err} for {opcode_name}")
 
 START_MARKER = "/* Start instructions */"  # The '{' is on the preceding line.
-END_MARKER = "} /* End instructions */"
+END_MARKER = "/* End regular instructions */"
 
 def read_cases(f):
     cases = []
     case = None
     started = False
+    # TODO: Count line numbers
     for line in f:
         stripped = line.strip()
         if not started:
@@ -50,25 +72,20 @@ def read_cases(f):
         if stripped.startswith("TARGET("):
             if case:
                 cases.append(case)
-            case = line
-            opc = extract_opcode(line)
-            if not opc:
-                se_str = f"error: no opcode in {line.strip()}"
-            elif opc not in dis._all_opmap:
-                se_str = f"error: unknown opcode {opc}"
-            else:
-                opc_int = dis._all_opmap[opc]
-                try:
-                    if opc_int in dis.hasarg:
-                        se = dis.stack_effect(opc_int, 0)
-                    else:
-                        se = dis.stack_effect(opc_int)
-                except ValueError:
-                    se_str = "error: no stack effect"
-                else:
-                    se_str = f"stack_effect: {se}"
             indent = " " * leading_whitespace(line)
-            case += f"{indent}    // {se_str}\n"
+            case = "// <CASE>\n"  # For debugging
+            opcode_name = extract_opcode_name(line)
+            try:
+                se = figure_stack_effect(opcode_name)
+            except ValueError as err:
+                case += f"// error: {err}\n"
+                case += f"inst {opcode_name} {{\n"
+            else:
+                if se == 0:
+                    case += f"inst {opcode_name} (--) {{\n"
+                else:
+                    case += f"// stack effect: {se}\n"
+                    case += f"inst {opcode_name} {{\n"
         else:
             if case:
                 case += line
@@ -80,7 +97,6 @@ def read_cases(f):
 def write_cases(f, cases):
     print("// <HEADER>\n", file=f)
     for case in cases:
-        print("// <CASE>", file=f)  # This is just for debugging
         print(case.rstrip() + "\n", file=f)
     print("// <TRAILER>", file=f)
 
