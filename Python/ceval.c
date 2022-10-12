@@ -5014,6 +5014,8 @@ handle_eval_breaker:
             Py_UNREACHABLE();
         }
 
+        /* End regular instructions */
+
 #if USE_COMPUTED_GOTOS
         TARGET_DO_TRACING:
 #else
