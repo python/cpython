@@ -10,10 +10,10 @@
 
 :mod:`__future__` is a real module, and serves three purposes:
 
-* To avoid confusing existing tools that analyze import statements and expect to
+* To avoid confusing existing tools that analyze import statements and are expected to
   find the modules they're importing.
 
-* To ensure that :ref:`future statements <future>` run under releases prior to
+* To ensure that :ref:`future statements <future>` runs under releases prior to
   2.1 at least yield runtime exceptions (the import of :mod:`__future__` will
   fail, because there was no module of that name prior to 2.1).
 
@@ -41,7 +41,7 @@ where, normally, *OptionalRelease* is less than *MandatoryRelease*, and both are
 *OptionalRelease* records the first release in which the feature was accepted.
 
 In the case of a *MandatoryRelease* that has not yet occurred,
-*MandatoryRelease* predicts the release in which the feature will become part of
+*MandatoryRelease* predicts the release in which the feature will become a part of
 the language.
 
 Else *MandatoryRelease* records when the feature became part of the language; in
