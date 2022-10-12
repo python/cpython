@@ -9000,16 +9000,10 @@ PyUnicode_Count(PyObject *str,
 
     switch (kind1) {
     case PyUnicode_1BYTE_KIND:
-        if (PyUnicode_IS_ASCII(str) && PyUnicode_IS_ASCII(substr))
-            result = asciilib_count(
-                ((const Py_UCS1*)buf1) + start, end - start,
-                buf2, len2, PY_SSIZE_T_MAX
-                );
-        else
-            result = ucs1lib_count(
-                ((const Py_UCS1*)buf1) + start, end - start,
-                buf2, len2, PY_SSIZE_T_MAX
-                );
+        result = ucs1lib_count(
+            ((const Py_UCS1*)buf1) + start, end - start,
+            buf2, len2, PY_SSIZE_T_MAX
+            );
         break;
     case PyUnicode_2BYTE_KIND:
         result = ucs2lib_count(
@@ -9904,10 +9898,7 @@ anylib_count(int kind, PyObject *sstr, const void* sbuf, Py_ssize_t slen,
 {
     switch (kind) {
     case PyUnicode_1BYTE_KIND:
-        if (PyUnicode_IS_ASCII(sstr) && PyUnicode_IS_ASCII(str1))
-            return asciilib_count(sbuf, slen, buf1, len1, maxcount);
-        else
-            return ucs1lib_count(sbuf, slen, buf1, len1, maxcount);
+        return ucs1lib_count(sbuf, slen, buf1, len1, maxcount);
     case PyUnicode_2BYTE_KIND:
         return ucs2lib_count(sbuf, slen, buf1, len1, maxcount);
     case PyUnicode_4BYTE_KIND:
