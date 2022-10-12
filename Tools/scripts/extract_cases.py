@@ -79,13 +79,13 @@ def read_cases(f):
                 se = figure_stack_effect(opcode_name)
             except ValueError as err:
                 case += f"// error: {err}\n"
-                case += f"inst {opcode_name} {{\n"
+                case += f"inst({opcode_name}) {{\n"
             else:
                 if se == 0:
-                    case += f"inst {opcode_name} (--) {{\n"
+                    case += f"inst({opcode_name}, --) {{\n"
                 else:
                     case += f"// stack effect: {se}\n"
-                    case += f"inst {opcode_name} {{\n"
+                    case += f"inst({opcode_name}) {{\n"
         else:
             if case:
                 case += line
