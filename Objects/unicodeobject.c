@@ -8997,6 +8997,7 @@ unicode_count_impl(PyObject *str,
             goto onError;
     }
 
+    // We don't reuse `anylib_count` here because of the explicit casts.
     switch (kind1) {
     case PyUnicode_1BYTE_KIND:
         result = ucs1lib_count(
