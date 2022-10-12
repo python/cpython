@@ -537,6 +537,8 @@ configuration::
     print('complete')
 
 
+.. _blocking-handlers:
+
 Dealing with handlers that block
 --------------------------------
 
