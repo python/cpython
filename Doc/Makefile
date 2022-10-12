@@ -21,9 +21,9 @@ PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j auto \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
-.PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
-	coverage doctest pydoc-topics htmlview clean dist check serve \
-	autobuild-dev autobuild-stable venv
+.PHONY: help build html htmlhelp latex text texinfo epub changes linkcheck \
+	coverage doctest pydoc-topics htmlview clean clean-venv venv dist check serve \
+	autobuild-dev autobuild-dev-html autobuild-stable autobuild-stable-html
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
