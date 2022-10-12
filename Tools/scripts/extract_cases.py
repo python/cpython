@@ -1,10 +1,8 @@
-"""Generate the main interpreter switch."""
+"""Extract the main interpreter switch cases."""
 
-# Version 1 reads a switch statement from a file, writes one to another file.
+# Reads cases from ceval.c, writes to bytecodes.inst.
 #
-# Version 2 will extract the switch from ceval.c.
-
-# TODO: Reuse C generation framework from deepfreeze.py.
+# The script generate_cases.py regenerates the cases.
 
 import argparse
 import difflib
@@ -52,15 +50,23 @@ def figure_stack_effect(opcode_name):
             se = dis.stack_effect(opcode, 0)
         except ValueError as err:
             raise ValueError(f"{err} for {opcode_name}")
+        if dis.stack_effect(opcode, 0, jump=True) != se:
+            raise ValueError(f"{opcode_name} stack effect depends on jump flag")
+        if dis.stack_effect(opcode, 0, jump=False) != se:
+            raise ValueError(f"{opcode_name} stack effect depends on jump flag")
         for i in range(1, 33):
             if dis.stack_effect(opcode, i) != se:
                 raise ValueError(f"{opcode_name} has variable stack effect")
-        return se
     else:
         try:
-            return dis.stack_effect(opcode)
+            se = dis.stack_effect(opcode)
         except ValueError as err:
             raise ValueError(f"{err} for {opcode_name}")
+        if dis.stack_effect(opcode, jump=True) != se:
+            raise ValueError(f"{opcode_name} stack effect depends on jump flag")
+        if dis.stack_effect(opcode, jump=False) != se:
+            raise ValueError(f"{opcode_name} stack effect depends on jump flag")
+    return se
 
 
 START_MARKER = "/* Start instructions */"  # The '{' is on the preceding line.
@@ -161,4 +167,5 @@ def main():
         compare(input, output, args.quiet)
 
 
-main()
+if __name__ == "__main__":
+    main()
