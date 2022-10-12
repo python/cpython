@@ -13,7 +13,7 @@ the "typical" Unix-style command-line C compiler:
   * link shared library handled by 'cc -shared'
 """
 
-import os, sys, re
+import os, sys, re, shutil
 
 from distutils import sysconfig
 from distutils.dep_util import newer
@@ -216,7 +216,27 @@ class UnixCCompiler(CCompiler):
 
     def _is_gcc(self, compiler_name):
         # clang uses same syntax for rpath as gcc
-        return any(name in compiler_name for name in ("gcc", "g++", "clang"))
+        valid_compiler_names = ("gcc", "g++", "clang")
+        is_gcc = any(name in compiler_name for name in valid_compiler_names)
+        # On Linux systems, the compiler name may be, e.g., "cc -pthread".
+        # The executable "cc" is in this case a symlink to the true compiler.
+        if not is_gcc and "cc" in compiler_name:
+            # We need to make sure that this is not another compiler with "cc"
+            # at the end of its name, like "icc". For this, it is checked
+            # whether "cc" is the first word, or separated by a space or path
+            # delimiter before the "cc" substring.
+            cc_string_location = compiler_name.find("cc")
+            if cc_string_location == 0 \
+                    or compiler_name[cc_string_location - 1] == ' ' \
+                    or compiler_name[cc_string_location - 1] == '/' \
+                    or compiler_name[cc_string_location - 1] == '\\':
+                cc_path = shutil.which("cc")
+                if cc_path is not None:
+                    real_compiler_path = os.path.realpath(cc_path)
+                    is_gcc = any(
+                        name in real_compiler_path \
+                        for name in valid_compiler_names)
+        return is_gcc
 
     def runtime_library_dir_option(self, dir):
         # XXX Hackish, at the very least.  See Python bug #445902:
