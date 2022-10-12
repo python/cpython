@@ -16,10 +16,13 @@ The :class:`~netrc.netrc` class parses and encapsulates the netrc file format us
 the Unix :program:`ftp` program and other FTP clients.
 
 
-.. class:: netrc([file])
+.. class:: netrc([file[, filename]])
 
    A :class:`~netrc.netrc` instance or subclass instance encapsulates data from  a netrc
-   file.  The initialization argument, if present, specifies the file to parse.  If
+   file.  The initialization argument, if present, specifies the file to parse.  It
+   can be either a file name or an open file object.  In the latter case the second
+   argument can be used as the name of the file for error reporting.  If the second
+   argument is not present, the file name will be derived from the file object.  If
    no argument is given, the file :file:`.netrc` in the user's home directory --
    as determined by :func:`os.path.expanduser` -- will be read.  Otherwise,
    a :exc:`FileNotFoundError` exception will be raised.
@@ -46,6 +49,9 @@ the Unix :program:`ftp` program and other FTP clients.
       can contain arbitrary characters, like whitespace and non-ASCII characters.
       If the login name is anonymous, it won't trigger the security check.
 
+   .. versionchanged:: 3.12
+      :class:`netrc` accepts an instance of an :class:`io.TextIOBase` subclass
+      as the *file* argument. In such case uses *filename* in error messages.
 
 .. exception:: NetrcParseError
 

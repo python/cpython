@@ -1,5 +1,6 @@
 import netrc, os, unittest, sys, textwrap
 from test.support import os_helper, run_unittest
+from io import StringIO
 
 try:
     import pwd
@@ -22,6 +23,22 @@ class NetrcTestCase(unittest.TestCase):
         finally:
             os.unlink(temp_filename)
         return nrc
+
+    def make_nrc_file(self, test_data, filename=None):
+        test_data = textwrap.dedent(test_data)
+        temp_data = StringIO(test_data)
+        try:
+            nrc = netrc.netrc(temp_data, filename)
+        finally:
+            pass
+        return nrc
+
+    def test_nrc_filename(self):
+        with self.assertRaisesRegex(netrc.NetrcParseError, "bad toplevel token 'spam' \\(eggs, line 1\\)"):
+            self.make_nrc_file("spam", "eggs")
+
+        with self.assertRaisesRegex(netrc.NetrcParseError, "bad toplevel token 'spam' \\(<_io.StringIO object at 0x[0-9a-fA-F]+>, line 1\\)"):
+            self.make_nrc_file("spam")
 
     def test_toplevel_non_ordered_tokens(self):
         nrc = self.make_nrc("""\
