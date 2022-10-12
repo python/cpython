@@ -105,7 +105,7 @@ A type alias is defined by assigning the type to the alias. In this example,
    def scale(scalar: float, vector: Vector) -> Vector:
        return [scalar * num for num in vector]
 
-   # typechecks; a list of floats qualifies as a Vector.
+   # passes type checking; a list of floats qualifies as a Vector.
    new_vector = scale(2.0, [1.0, -4.2, 5.4])
 
 Type aliases are useful for simplifying complex type signatures. For example::
@@ -147,10 +147,10 @@ of the original type. This is useful in helping catch logical errors::
    def get_user_name(user_id: UserId) -> str:
        ...
 
-   # typechecks
+   # passes type checking
    user_a = get_user_name(UserId(42351))
 
-   # does not typecheck; an int is not a UserId
+   # fails type checking; an int is not a UserId
    user_b = get_user_name(-1)
 
 You may still perform all ``int`` operations on a variable of type ``UserId``,
@@ -176,7 +176,7 @@ It is invalid to create a subtype of ``Derived``::
 
    UserId = NewType('UserId', int)
 
-   # Fails at runtime and does not typecheck
+   # Fails at runtime and does not pass type checking
    class AdminUserId(UserId): pass
 
 However, it is possible to create a :class:`NewType` based on a 'derived' ``NewType``::
@@ -463,12 +463,12 @@ value of type :data:`Any` and assign it to any variable::
    s = a           # OK
 
    def foo(item: Any) -> int:
-       # Typechecks; 'item' could be any type,
+       # Passes type checking; 'item' could be any type,
        # and that type might have a 'bar' method
        item.bar()
        ...
 
-Notice that no typechecking is performed when assigning a value of type
+Notice that no type checking is performed when assigning a value of type
 :data:`Any` to a more precise type. For example, the static type checker did
 not report an error when assigning ``a`` to ``s`` even though ``s`` was
 declared to be of type :class:`str` and receives an :class:`int` value at
@@ -500,20 +500,20 @@ reject almost all operations on it, and assigning it to a variable (or using
 it as a return value) of a more specialized type is a type error. For example::
 
    def hash_a(item: object) -> int:
-       # Fails; an object does not have a 'magic' method.
+       # Fails type checking; an object does not have a 'magic' method.
        item.magic()
        ...
 
    def hash_b(item: Any) -> int:
-       # Typechecks
+       # Passes type checking
        item.magic()
        ...
 
-   # Typechecks, since ints and strs are subclasses of object
+   # Passes type checking, since ints and strs are subclasses of object
    hash_a(42)
    hash_a("foo")
 
-   # Typechecks, since Any is compatible with all types
+   # Passes type checking, since Any is compatible with all types
    hash_b(42)
    hash_b("foo")
 
