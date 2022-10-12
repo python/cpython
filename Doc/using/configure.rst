@@ -280,8 +280,8 @@ also be used to improve performance.
 
 .. cmdoption:: --with-strict-overflow
 
-   Add `-fstrict-overflow` to the C compiler flags (by default we add
-   `-fno-strict-overflow` instead).
+   Add ``-fstrict-overflow`` to the C compiler flags (by default we add
+   ``-fno-strict-overflow`` instead).
 
 
 .. _debug-build:
