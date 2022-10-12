@@ -436,7 +436,6 @@ programming.
 
 There are also good IDEs for Python.  IDLE is a cross-platform IDE for Python
 that is written in Python using Tkinter.
-`PythonWin <https://wiki.python.org/moin/PythonWin>`_ is a Windows-specific IDE.
 Emacs users will be happy to know that there is a very good Python mode for
 Emacs.  All of these programming environments provide syntax highlighting,
 auto-indenting, and access to the interactive interpreter while coding.  Consult
