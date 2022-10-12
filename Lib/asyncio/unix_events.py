@@ -195,32 +195,34 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     async def _make_subprocess_transport(self, protocol, args, shell,
                                          stdin, stdout, stderr, bufsize,
                                          extra=None, **kwargs):
-        with events.get_child_watcher() as watcher:
-            if not watcher.is_active():
-                # Check early.
-                # Raising exception before process creation
-                # prevents subprocess execution if the watcher
-                # is not ready to handle it.
-                raise RuntimeError("asyncio.get_child_watcher() is not activated, "
-                                   "subprocess support is not installed.")
-            waiter = self.create_future()
-            transp = _UnixSubprocessTransport(self, protocol, args, shell,
-                                              stdin, stdout, stderr, bufsize,
-                                              waiter=waiter, extra=extra,
-                                              **kwargs)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            with events.get_child_watcher() as watcher:
+                if not watcher.is_active():
+                    # Check early.
+                    # Raising exception before process creation
+                    # prevents subprocess execution if the watcher
+                    # is not ready to handle it.
+                    raise RuntimeError("asyncio.get_child_watcher() is not activated, "
+                                    "subprocess support is not installed.")
+                waiter = self.create_future()
+                transp = _UnixSubprocessTransport(self, protocol, args, shell,
+                                                stdin, stdout, stderr, bufsize,
+                                                waiter=waiter, extra=extra,
+                                                **kwargs)
 
-            watcher.add_child_handler(transp.get_pid(),
-                                      self._child_watcher_callback, transp)
-            try:
-                await waiter
-            except (SystemExit, KeyboardInterrupt):
-                raise
-            except BaseException:
-                transp.close()
-                await transp._wait()
-                raise
+                watcher.add_child_handler(transp.get_pid(),
+                                        self._child_watcher_callback, transp)
+                try:
+                    await waiter
+                except (SystemExit, KeyboardInterrupt):
+                    raise
+                except BaseException:
+                    transp.close()
+                    await transp._wait()
+                    raise
 
-        return transp
+            return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
         # Skip one iteration for callbacks to be executed
@@ -1470,17 +1472,22 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         if self._watcher is None:
             self._init_watcher()
 
+        warnings._deprecated("get_child_watcher",
+                            "{name!r} is deprecated as of Python 3.12 and will be "
+                            "removed in Python {remove}.", remove=(3, 14))
         return self._watcher
 
     def set_child_watcher(self, watcher):
         """Set the watcher for child processes."""
 
         assert watcher is None or isinstance(watcher, AbstractChildWatcher)
-
         if self._watcher is not None:
             self._watcher.close()
 
         self._watcher = watcher
+        warnings._deprecated("set_child_watcher",
+                            "{name!r} is deprecated as of Python 3.12 and will be "
+                            "removed in Python {remove}.", remove=(3, 14))
 
 
 SelectorEventLoop = _UnixSelectorEventLoop
