@@ -1387,8 +1387,8 @@ class Timer(Thread):
 
     """
 
-    def __init__(self, interval, function, args=None, kwargs=None):
-        Thread.__init__(self)
+    def __init__(self, interval, function, args=None, kwargs=None, *, daemon=None):
+        Thread.__init__(self, daemon=daemon)
         self.interval = interval
         self.function = function
         self.args = args if args is not None else []
