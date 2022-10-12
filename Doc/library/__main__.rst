@@ -150,7 +150,7 @@ named ``main`` encapsulates the program's primary behavior::
 
 Note that if the module didn't encapsulate code inside the ``main`` function
 but instead put it directly within the ``if __name__ == '__main__'`` block,
-the ``phrase`` variable would be global to the entire module.  This is
+the ``phrase`` variable would become global to the entire module.  This is
 error-prone as other functions within the module could be unintentionally using
 the global variable instead of a local name.  A ``main`` function solves this
 problem.
@@ -178,8 +178,8 @@ that your function will return some value acceptable as an input to
 returned if your function does not have a return statement).
 
 By proactively following this convention ourselves, our module will have the
-same behavior when run directly (i.e. ``python3 echo.py``) as it will have if
-we later package it as a console script entry-point in a pip-installable
+same behavior when we run it directly (i.e. ``python3 echo.py``) as it will have if
+we add a package later as it is a console script entry-point in a pip-installable
 package.
 
 In particular, be careful about returning strings from your ``main`` function.
