@@ -5,9 +5,6 @@ useful while building, extending or managing Python.
 combinerefs.py            A helper for analyzing PYTHONDUMPREFS output
 idle3                     Main program to start IDLE
 parse_html5_entities.py   Utility for parsing HTML5 entity definitions
-patchcheck.py             Perform common checks and cleanup before committing
 pydoc3                    Python documentation browser
-reindent.py               Change .py files to use 4-space indents
 run_tests.py              Run the test suite with more sensible default options
 stable_abi.py             Stable ABI checks and file generators.
-untabify.py               Replace tabs with spaces in argument files
