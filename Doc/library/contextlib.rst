@@ -66,9 +66,11 @@ Functions and classes provided:
               # Code to release resource, e.g.:
               release_resource(resource)
 
-      with managed_resource(timeout=3600) as resource:
-          # Resource is released at the end of this block,
-          # even if code in the block raises an exception
+   The function can then be used like this::
+
+      >>> with managed_resource(timeout=3600) as resource:
+      ...     # Resource is released at the end of this block,
+      ...     # even if code in the block raises an exception
 
    The function being decorated must return a :term:`generator`-iterator when
    called. This iterator must yield exactly one value, which will be bound to
@@ -385,16 +387,19 @@ Functions and classes provided:
 
    Example of ``ContextDecorator``::
 
-      >>> from contextlib import ContextDecorator
+      from contextlib import ContextDecorator
 
-      >>> class mycontext(ContextDecorator):
-      ...     def __enter__(self):
-      ...         print('Starting')
-      ...         return self
-      ...     def __exit__(self, *exc):
-      ...         print('Finishing')
-      ...         return False
-      ...
+      class mycontext(ContextDecorator):
+          def __enter__(self):
+              print('Starting')
+              return self
+
+          def __exit__(self, *exc):
+              print('Finishing')
+              return False
+
+   The class can then be used like this::
+
       >>> @mycontext()
       ... def function():
       ...     print('The bit in the middle')
@@ -453,17 +458,20 @@ Functions and classes provided:
 
    Example of ``AsyncContextDecorator``::
 
-      >>> from asyncio import run
-      >>> from contextlib import AsyncContextDecorator
+      from asyncio import run
+      from contextlib import AsyncContextDecorator
 
-      >>> class mycontext(AsyncContextDecorator):
-      ...     async def __aenter__(self):
-      ...         print('Starting')
-      ...         return self
-      ...     async def __aexit__(self, *exc):
-      ...         print('Finishing')
-      ...         return False
-      ...
+      class mycontext(AsyncContextDecorator):
+          async def __aenter__(self):
+              print('Starting')
+              return self
+
+          async def __aexit__(self, *exc):
+              print('Finishing')
+              return False
+
+   The class can then be used like this::
+
       >>> @mycontext()
       ... async def function():
       ...     print('The bit in the middle')
