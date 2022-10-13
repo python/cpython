@@ -173,7 +173,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.7
 
 .. _func-bytearray:
-.. class:: bytearray(source)
+.. class:: bytearray(source=b'')
            bytearray(source, encoding)
            bytearray(source, encoding, errors)
    :noindex:
