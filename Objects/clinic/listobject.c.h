@@ -107,6 +107,22 @@ PyDoc_STRVAR(list_filter__doc__,
 "foo\n"
 );
 
+#define LIST_SUM_METHODDEF \
+    {"sum", (PyCFunction)list_sum, METH_NOARGS, list_sum__doc__},
+
+PyDoc_STRVAR(list_sum__doc__,
+"foo\n"
+);
+
+static PyObject *
+list_sum_impl(PyListObject *self);
+
+static PyObject *
+list_sum(PyListObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return list_sum_impl(self);
+}
+
 #define LIST_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)list_extend, METH_O, list_extend__doc__},
 
