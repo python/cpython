@@ -3192,6 +3192,14 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(func)
         self.assertIn("forget to import 'io'", actual)
 
+    def test_name_error_for_private_stdlib_modules(self):
+        def func():
+            stream = _io.StringIO()
+
+        actual = self.get_suggestion(func)
+        self.assertIn("forget to import '_io'", actual)
+
+
 
 class PurePythonSuggestionFormattingTests(
     PurePythonExceptionFormattingMixin,
