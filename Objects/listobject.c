@@ -861,8 +861,14 @@ list_map(PyListObject *self, PyObject *object)
     Py_ssize_t i,n = Py_SIZE(self);
     PyObject **items;
     items = self->ob_item;
+    if (PyUnicode_Check(object)){
+        printf("cannot\n");
+        Py_RETURN_NONE;
+    }
     for (i = n; --i >= 0; ){
-        items[i] = PyNumber_Add(items[i],object);
+        if (PyNumber_Check(items[i])){
+            items[i] = PyNumber_Add(items[i],object);
+        }
     }
     Py_RETURN_NONE;
 }
