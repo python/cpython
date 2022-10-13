@@ -1,1 +1,1 @@
-Add a daemon keyword-only argument to the :func:`threading.Timer` constructor, to pass it to the inherited :func:`Thread` constructor.
+Add a daemon keyword-only argument to the :class:`threading.Timer` constructor, to pass it to the inherited :class:`threading.Thread` constructor.
