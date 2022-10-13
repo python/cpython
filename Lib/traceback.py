@@ -713,9 +713,8 @@ class TracebackException:
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
             if issubclass(exc_type, NameError):
-                mod_names = frozenset(mod for mod in sys.stdlib_module_names if not mod.startswith("_"))
                 wrong_name = getattr(exc_value, "name", None)
-                if wrong_name is not None and wrong_name in mod_names:
+                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
                     if suggestion:
                         self._str += f" Or did you forget to import '{wrong_name}'"
                     else:
