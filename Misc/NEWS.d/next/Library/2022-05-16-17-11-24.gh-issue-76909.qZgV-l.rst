@@ -1,0 +1,3 @@
+:meth:`ZipFile.write`, :meth:`ZipFile.writestr` and the
+constructor for :class:`zipfile.ZipFile` now accept a ``preset`` parameter
+to set the LZMA filter preset.

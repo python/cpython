@@ -62,8 +62,8 @@ class AbstractTestsWithSourceFile:
         with open(TESTFN, "wb") as fp:
             fp.write(self.data)
 
-    def make_test_archive(self, f, compression, compresslevel=None):
-        kwargs = {'compression': compression, 'compresslevel': compresslevel}
+    def make_test_archive(self, f, compression, compresslevel=None, preset=None):
+        kwargs = {'compression': compression, 'compresslevel': compresslevel, 'preset': preset}
         # Create the ZIP archive
         with zipfile.ZipFile(f, "w", **kwargs) as zipfp:
             zipfp.write(TESTFN, "another.name")
@@ -73,8 +73,8 @@ class AbstractTestsWithSourceFile:
                 for line in self.line_gen:
                     f.write(line)
 
-    def zip_test(self, f, compression, compresslevel=None):
-        self.make_test_archive(f, compression, compresslevel)
+    def zip_test(self, f, compression, compresslevel=None, preset=None):
+        self.make_test_archive(f, compression, compresslevel, preset=None)
 
         # Read the ZIP archive
         with zipfile.ZipFile(f, "r", compression) as zipfp:
@@ -324,6 +324,23 @@ class AbstractTestsWithSourceFile:
         self.assertEqual(b_info.compress_type, self.compression)
         self.assertEqual(b_info._compresslevel, 2)
 
+    def test_writestr_preset(self):
+        zipfp = zipfile.ZipFile(TESTFN2, "w", preset=1)
+        zipfp.writestr("a.txt", "hello world", compress_type=self.compression)
+        zipfp.writestr("b.txt", "hello world", compress_type=self.compression,
+                       preset=2)
+
+        # Preset follows the constructor.
+        a_info = zipfp.getinfo('a.txt')
+        self.assertEqual(a_info.compress_type, self.compression)
+        self.assertEqual(a_info._preset, 1)
+
+        # Preset is overridden.
+        b_info = zipfp.getinfo('b.txt')
+        self.assertEqual(b_info.compress_type, self.compression)
+        self.assertEqual(b_info._preset, 2)
+
+
     def test_read_return_size(self):
         # Issue #9837: ZipExtFile.read() shouldn't return more bytes
         # than requested.
@@ -401,6 +418,11 @@ class AbstractTestsWithSourceFile:
         for f in get_files(self):
             self.zip_test(f, self.compression, compresslevel=9)
 
+    def test_preset_basic(self):
+        for f in get_files(self):
+            self.zip_test(f, self.compression, preset=9)
+
+
     def test_per_file_compresslevel(self):
         """Check that files within a Zip archive can have different
         compression levels."""
@@ -411,6 +433,18 @@ class AbstractTestsWithSourceFile:
             nine_info = zipfp.getinfo('compress_9')
             self.assertEqual(one_info._compresslevel, 1)
             self.assertEqual(nine_info._compresslevel, 9)
+
+    def test_per_file_preset(self):
+        """Check that files within a Zip archive can have different
+        presets."""
+        with zipfile.ZipFile(TESTFN2, "w", preset=1) as zipfp:
+            zipfp.write(TESTFN, 'compress_1')
+            zipfp.write(TESTFN, 'compress_9', preset=9)
+            one_info = zipfp.getinfo('compress_1')
+            nine_info = zipfp.getinfo('compress_9')
+            self.assertEqual(one_info._preset, 1)
+            self.assertEqual(nine_info._preset, 9)
+
 
     def test_writing_errors(self):
         class BrokenFile(io.BytesIO):
