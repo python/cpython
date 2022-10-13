@@ -205,7 +205,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-bytes:
-.. class:: bytes(source)
+.. class:: bytes(source=b'')
            bytes(source, encoding)
            bytes(source, encoding, errors)
    :noindex:
