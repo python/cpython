@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_io_BytesIO_readable__doc__,
 "readable($self, /)\n"
 "--\n"
@@ -158,7 +164,7 @@ PyDoc_STRVAR(_io_BytesIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ_METHODDEF    \
-    {"read", (PyCFunction)(void(*)(void))_io_BytesIO_read, METH_FASTCALL, _io_BytesIO_read__doc__},
+    {"read", _PyCFunction_CAST(_io_BytesIO_read), METH_FASTCALL, _io_BytesIO_read__doc__},
 
 static PyObject *
 _io_BytesIO_read_impl(bytesio *self, Py_ssize_t size);
@@ -195,7 +201,7 @@ PyDoc_STRVAR(_io_BytesIO_read1__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READ1_METHODDEF    \
-    {"read1", (PyCFunction)(void(*)(void))_io_BytesIO_read1, METH_FASTCALL, _io_BytesIO_read1__doc__},
+    {"read1", _PyCFunction_CAST(_io_BytesIO_read1), METH_FASTCALL, _io_BytesIO_read1__doc__},
 
 static PyObject *
 _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size);
@@ -233,7 +239,7 @@ PyDoc_STRVAR(_io_BytesIO_readline__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_READLINE_METHODDEF    \
-    {"readline", (PyCFunction)(void(*)(void))_io_BytesIO_readline, METH_FASTCALL, _io_BytesIO_readline__doc__},
+    {"readline", _PyCFunction_CAST(_io_BytesIO_readline), METH_FASTCALL, _io_BytesIO_readline__doc__},
 
 static PyObject *
 _io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size);
@@ -271,7 +277,7 @@ PyDoc_STRVAR(_io_BytesIO_readlines__doc__,
 "total number of bytes in the lines returned.");
 
 #define _IO_BYTESIO_READLINES_METHODDEF    \
-    {"readlines", (PyCFunction)(void(*)(void))_io_BytesIO_readlines, METH_FASTCALL, _io_BytesIO_readlines__doc__},
+    {"readlines", _PyCFunction_CAST(_io_BytesIO_readlines), METH_FASTCALL, _io_BytesIO_readlines__doc__},
 
 static PyObject *
 _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg);
@@ -347,7 +353,7 @@ PyDoc_STRVAR(_io_BytesIO_truncate__doc__,
 "The current file position is unchanged.  Returns the new size.");
 
 #define _IO_BYTESIO_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)(void(*)(void))_io_BytesIO_truncate, METH_FASTCALL, _io_BytesIO_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(_io_BytesIO_truncate), METH_FASTCALL, _io_BytesIO_truncate__doc__},
 
 static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size);
@@ -387,7 +393,7 @@ PyDoc_STRVAR(_io_BytesIO_seek__doc__,
 "Returns the new absolute position.");
 
 #define _IO_BYTESIO_SEEK_METHODDEF    \
-    {"seek", (PyCFunction)(void(*)(void))_io_BytesIO_seek, METH_FASTCALL, _io_BytesIO_seek__doc__},
+    {"seek", _PyCFunction_CAST(_io_BytesIO_seek), METH_FASTCALL, _io_BytesIO_seek__doc__},
 
 static PyObject *
 _io_BytesIO_seek_impl(bytesio *self, Py_ssize_t pos, int whence);
@@ -483,8 +489,31 @@ static int
 _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(initial_bytes), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"initial_bytes", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "BytesIO", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "BytesIO",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -505,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=49a32140eb8c5555 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a44770efbaeb80dd input=a9049054013a1b77]*/

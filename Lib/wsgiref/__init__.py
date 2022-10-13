@@ -13,6 +13,8 @@ Current Contents:
 * validate -- validation wrapper that sits between an app and a server
   to detect errors in either
 
+* types -- collection of WSGI-related types for static type checking
+
 To-Do:
 
 * cgi_gateway -- Run WSGI apps under CGI (pending a deployment standard)

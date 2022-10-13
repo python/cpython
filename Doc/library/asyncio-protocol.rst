@@ -553,7 +553,7 @@ accept factories that return streaming protocols.
    a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once.  Once `eof_received()` is called,
+   is called at most once.  Once ``eof_received()`` is called,
    ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()
@@ -683,7 +683,7 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
 Subprocess Protocols
 --------------------
 
-Datagram Protocol instances should be constructed by protocol
+Subprocess Protocol instances should be constructed by protocol
 factories passed to the :meth:`loop.subprocess_exec` and
 :meth:`loop.subprocess_shell` methods.
 

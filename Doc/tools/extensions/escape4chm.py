@@ -5,6 +5,7 @@ effect on some MBCS Windows systems.
 https://bugs.python.org/issue32174
 """
 
+import pathlib
 import re
 from html.entities import codepoint2name
 
@@ -39,12 +40,12 @@ def fixup_keywords(app, exception):
         return
 
     getLogger(__name__).info('fixing HTML escapes in keywords file...')
-    outdir = app.builder.outdir
+    outdir = pathlib.Path(app.builder.outdir)
     outname = app.builder.config.htmlhelp_basename
-    with app.builder.open_file(outdir, outname + '.hhk', 'r') as f:
+    with open(outdir / (outname + '.hhk'), 'rb') as f:
         index = f.read()
-    with app.builder.open_file(outdir, outname + '.hhk', 'w') as f:
-        f.write(index.replace('&#x27;', '&#39;'))
+    with open(outdir / (outname + '.hhk'), 'wb') as f:
+        f.write(index.replace(b'&#x27;', b'&#39;'))
 
 def setup(app):
     # `html-page-context` event emitted when the HTML builder has

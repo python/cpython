@@ -23,8 +23,8 @@ and a path within the archive can be specified to only import from a
 subdirectory.  For example, the path :file:`example.zip/lib/` would only
 import from the :file:`lib/` subdirectory within the archive.
 
-Any files may be present in the ZIP archive, but only files :file:`.py` and
-:file:`.pyc` are available for import.  ZIP import of dynamic modules
+Any files may be present in the ZIP archive, but importers are only invoked for
+:file:`.py` and :file:`.pyc` files.  ZIP import of dynamic modules
 (:file:`.pyd`, :file:`.so`) is disallowed. Note that if an archive only contains
 :file:`.py` files, Python will not attempt to modify the archive by adding the
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
@@ -165,6 +165,15 @@ zipimporter Objects
       .. deprecated:: 3.10
 
          Use :meth:`exec_module` instead.
+
+
+   .. method:: invalidate_caches()
+
+      Clear out the internal cache of information about files found within
+      the ZIP archive.
+
+      .. versionadded:: 3.10
+
 
    .. attribute:: archive
 
