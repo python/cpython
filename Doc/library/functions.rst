@@ -364,6 +364,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: complex(real=0, imag=0)
+           complex(string, /)
 
    Return a complex number with the value *real* + *imag*\*1j or convert a string
    or number to a complex number.  If the first parameter is a string, it will
