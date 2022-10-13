@@ -12,7 +12,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", type=str, default="Python/ceval.c")
-parser.add_argument("-o", "--output", type=str, default="bytecodes.inst")
+parser.add_argument("-o", "--output", type=str, default="Python/bytecodes.inst")
 parser.add_argument("-c", "--compare", action="store_true")
 parser.add_argument("-q", "--quiet", action="store_true")
 
