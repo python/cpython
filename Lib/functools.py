@@ -947,6 +947,8 @@ class singledispatchmethod:
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
+        _method.dispatch = self.dispatcher.dispatch
+        _method.registry = self.dispatcher.registry
         update_wrapper(_method, self.func)
         return _method
 

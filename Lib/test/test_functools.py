@@ -2451,6 +2451,13 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(a.arg, "base")
         aa = A()
         self.assertFalse(hasattr(aa, 'arg'))
+        def fun(self, arg):
+            pass
+        A.t.register(list, fun)
+        self.assertIs(fun, A.t.dispatch(list))
+        self.assertIs(fun, A().t.dispatch(list))
+        self.assertIs(fun, A.t.registry[list])
+        self.assertIs(fun, A().t.registry[list])
 
     def test_staticmethod_register(self):
         class A:

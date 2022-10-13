@@ -729,6 +729,13 @@ IDLE and idlelib
 * Include prompts when saving Shell with inputs and outputs.
   (Contributed by Terry Jan Reedy in :gh:`95191`.)
 
+functools
+---------
+
+* :class:`functools.singledispatchmethod` exposes members 'registry' and
+  'dispatch'. (Contributed by Weipeng Hong in :issue:`42943`.)
+
+
 inspect
 -------
 * Add :func:`inspect.getmembers_static`: return all members without
