@@ -2132,6 +2132,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     def __getattr__(self, attr):
         if attr in {'__name__', '__qualname__'}:
             return 'Annotated'
+        if attr == '__mro__':
+            return self.__class__.__mro__
         return super().__getattr__(attr)
 
     def __mro_entries__(self, bases):

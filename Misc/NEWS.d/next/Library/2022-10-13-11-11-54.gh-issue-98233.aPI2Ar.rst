@@ -1,0 +1,1 @@
+Fix ``Annotated[int, ...].__mro__`` access.

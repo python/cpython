@@ -6768,9 +6768,20 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(X[int], List[Annotated[int, 5]])
 
     def test_annotated_mro(self):
-        class X(Annotated[int, (1, 10)]): ...
+        A = Annotated[int, (1, 10)]
+        class X(A): ...
         self.assertEqual(X.__mro__, (X, int, object),
                          "Annotated should be transparent.")
+
+        # But, __mro__ of the annotation itself should be concrete:
+        class_mro = A.__mro__
+        # We don't want to fix all implementation details of mro here:
+        self.assertIn(typing._AnnotatedAlias, class_mro)
+        self.assertIn(typing._GenericAlias, class_mro)
+        self.assertIn(object, class_mro)
+
+        # __class__ must be concrete:
+        self.assertEqual(A.__class__, typing._AnnotatedAlias)
 
 
 class TypeAliasTests(BaseTestCase):
