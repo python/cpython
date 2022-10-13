@@ -186,7 +186,7 @@ The :mod:`uuid` module defines the following functions:
 .. function:: uuid3(namespace, name)
 
    Generate a UUID based on the MD5 hash of a namespace identifier (which is a
-   UUID) and a name (which is a byte sequence or a UTF-8-encoded string).
+   UUID) and a name (which is a :class:`bytes` object or a UTF-8 string).
 
 .. index:: single: uuid3
 
@@ -201,7 +201,7 @@ The :mod:`uuid` module defines the following functions:
 .. function:: uuid5(namespace, name)
 
    Generate a UUID based on the SHA-1 hash of a namespace identifier (which is a
-   UUID) and a name (which is a byte sequence or a UTF-8-encoded string).
+   UUID) and a name (which is a :class:`bytes` object or a UTF-8 string).
 
 .. index:: single: uuid5
 
