@@ -546,9 +546,7 @@ np_byte(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     if (get_long(state, v, &x) < 0 || x < -128 || x > 127) {
-        PyErr_SetString(state->StructError,
-                        "byte format requires -128 <= number <= 127");
-        return -1;
+        RANGE_ERROR(state, x, f, 0, (unsigned char)-1);
     }
     *p = (char)x;
     return 0;
@@ -559,9 +557,7 @@ np_ubyte(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     if (get_long(state, v, &x) < 0 || x < 0 || x > 255) {
-        PyErr_SetString(state->StructError,
-                        "ubyte format requires 0 <= number <= 255");
-        return -1;
+        RANGE_ERROR(state, x, f, 1, (unsigned char)-1);
     }
     *(unsigned char *)p = (unsigned char)x;
     return 0;
@@ -585,10 +581,7 @@ np_short(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     short y;
     if (get_long(state, v, &x) < 0 || x < SHRT_MIN || x > SHRT_MAX) {
-        PyErr_Format(state->StructError,
-                     "short format requires %d <= number <= %d",
-                     (int)SHRT_MIN, (int)SHRT_MAX);
-        return -1;
+        RANGE_ERROR(state, x, f, 0, (unsigned short)-1);
     }
     y = (short)x;
     memcpy(p, (char *)&y, sizeof y);
@@ -601,10 +594,7 @@ np_ushort(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     unsigned short y;
     if (get_long(state, v, &x) < 0 || x < 0 || x > USHRT_MAX) {
-        PyErr_Format(state->StructError,
-                     "ushort format requires 0 <= number <= %u",
-                     (unsigned int)USHRT_MAX);
-        return -1;
+        RANGE_ERROR(state, x, f, 1, (unsigned short)-1);
     }
     y = (unsigned short)x;
     memcpy(p, (char *)&y, sizeof y);
@@ -695,7 +685,9 @@ np_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long long x;
     if (get_longlong(state, v, &x) < 0) {
         PyErr_Format(state->StructError,
-                     "longlong format requires %lld <= number <= %lld",
+                     "'%c' format requires %lld <= number <= %lld",
+                     f->format,
+                     LLONG_MIN,
                      LLONG_MAX);
         return -1;
     }
@@ -709,7 +701,8 @@ np_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     unsigned long long x;
     if (get_ulonglong(state, v, &x) < 0) {
         PyErr_Format(state->StructError,
-                     "ulonglong format requires 0 <= number <= %llu",
+                     "'%c' format requires 0 <= number <= %llu",
+                     f->format,
                      ULLONG_MAX);
         return -1;
     }
@@ -974,7 +967,8 @@ bp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_DECREF(v);
     if (res == -1 && PyErr_Occurred()) {
         PyErr_Format(state->StructError,
-                     "longlong format requires %lld <= number <= %lld",
+                     "'%c' format requires %lld <= number <= %lld",
+                     f->format,
                      LLONG_MIN,
                      LLONG_MAX);
         return -1;
@@ -997,7 +991,8 @@ bp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     Py_DECREF(v);
     if (res == -1 && PyErr_Occurred()) {
         PyErr_Format(state->StructError,
-                     "longlong format requires 0 <= number <= %llu",
+                     "'%c' format requires 0 <= number <= %llu",
+                     f->format,
                      ULLONG_MAX);
         return -1;
     }
@@ -1226,7 +1221,8 @@ lp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_DECREF(v);
     if (res == -1 && PyErr_Occurred()) {
         PyErr_Format(state->StructError,
-                     "longlong format requires %lld <= number <= %lld",
+                     "'%c' format requires %lld <= number <= %lld",
+                     f->format,
                      LLONG_MIN,
                      LLONG_MAX);
         return -1;
@@ -1249,7 +1245,8 @@ lp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     Py_DECREF(v);
     if (res == -1 && PyErr_Occurred()) {
         PyErr_Format(state->StructError,
-                     "ulonglong format requires 0 <= number <= %llu",
+                     "'%c' format requires 0 <= number <= %llu",
+                     f->format,
                      ULLONG_MAX);
         return -1;
     }
