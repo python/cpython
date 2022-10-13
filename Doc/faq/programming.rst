@@ -136,7 +136,7 @@ works, but this code:
    ...     print(x)
    ...     x += 1
 
-results in an ``UnboundLocalError``:
+results in an :exc:`!UnboundLocalError`:
 
    >>> foo()
    Traceback (most recent call last):
@@ -1340,11 +1340,12 @@ that even though there was an error, the append worked::
     ['foo', 'item']
 
 To see why this happens, you need to know that (a) if an object implements an
-``__iadd__`` magic method, it gets called when the ``+=`` augmented assignment
+:meth:`~object.__iadd__` magic method, it gets called when the ``+=`` augmented
+assignment
 is executed, and its return value is what gets used in the assignment statement;
-and (b) for lists, ``__iadd__`` is equivalent to calling ``extend`` on the list
+and (b) for lists, :meth:`__iadd__` is equivalent to calling :meth:`list.extend` on the list
 and returning the list.  That's why we say that for lists, ``+=`` is a
-"shorthand" for ``list.extend``::
+"shorthand" for :meth:`list.extend`::
 
     >>> a_list = []
     >>> a_list += [1]
@@ -1369,7 +1370,7 @@ Thus, in our tuple example what is happening is equivalent to::
      ...
    TypeError: 'tuple' object does not support item assignment
 
-The ``__iadd__`` succeeds, and thus the list is extended, but even though
+The :meth:`__iadd__` succeeds, and thus the list is extended, but even though
 ``result`` points to the same object that ``a_tuple[0]`` already points to,
 that final assignment still results in an error, because tuples are immutable.
 
@@ -1543,11 +1544,11 @@ Here the ``UpperOut`` class redefines the ``write()`` method to convert the
 argument string to uppercase before calling the underlying
 ``self._outfile.write()`` method.  All other methods are delegated to the
 underlying ``self._outfile`` object.  The delegation is accomplished via the
-``__getattr__`` method; consult :ref:`the language reference <attribute-access>`
+:meth:`~object.__getattr__` method; consult :ref:`the language reference <attribute-access>`
 for more information about controlling attribute access.
 
 Note that for more general cases delegation can get trickier. When attributes
-must be set as well as retrieved, the class must define a :meth:`__setattr__`
+must be set as well as retrieved, the class must define a :meth:`~object.__setattr__`
 method too, and it must do so carefully.  The basic implementation of
 :meth:`__setattr__` is roughly equivalent to the following::
 
