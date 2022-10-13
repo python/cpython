@@ -1628,6 +1628,15 @@ class TimerTests(BaseTestCase):
         timer1.join()
         timer2.join()
 
+    def test_daemon_param(self):
+        # PR 98231: add the daemon parameter to the Timer argument
+        t = threading.Timer(1, print)
+        self.assertFalse(t.daemon)
+        t = threading.Timer(1, print, daemon=False)
+        self.assertFalse(t.daemon)
+        t = threading.Timer(1, print, daemon=True)
+        self.assertTrue(t.daemon)
+
     def _callback_spy(self, *args, **kwargs):
         self.callback_args.append((args[:], kwargs.copy()))
         self.callback_event.set()
