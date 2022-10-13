@@ -1021,9 +1021,9 @@ are always available.  They are listed here in alphabetical order.
       The contents of this dictionary should not be modified; changes may not
       affect the values of local and free variables used by the interpreter.
 
-.. function:: map(function, /, *iterables)
+.. function:: map(function, /, iterable, *iterables)
 
-   Return an iterator that applies *function* to every item of *iterables*,
+   Return an iterator that applies *function* to every item of *iterable*,
    yielding the results.  If additional *iterables* arguments are passed,
    *function* must take that many arguments and is applied to the items from all
    iterables in parallel.  With multiple iterables, the iterator stops when the
