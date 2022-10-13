@@ -964,6 +964,13 @@ bp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                               0, /* little_endian */
                               1  /* signed */);
     Py_DECREF(v);
+    if (res == -1 && PyErr_Occurred()) {
+        PyErr_Format(state->StructError,
+                     "longlong format requires %lld <= number <= %lld",
+                     LLONG_MIN,
+                     LLONG_MAX);
+        return -1;
+    }
     return res;
 }
 
@@ -980,6 +987,12 @@ bp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
                               0, /* little_endian */
                               0  /* signed */);
     Py_DECREF(v);
+    if (res == -1 && PyErr_Occurred()) {
+        PyErr_Format(state->StructError,
+                     "longlong format requires 0 <= number <= %llu",
+                     ULLONG_MAX);
+        return -1;
+    }
     return res;
 }
 
