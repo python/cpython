@@ -545,9 +545,7 @@ static int
 np_byte(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
-    if (get_long(state, v, &x) < 0)
-        return -1;
-    if (x < -128 || x > 127) {
+    if (get_long(state, v, &x) < 0 || x < -128 || x > 127) {
         PyErr_SetString(state->StructError,
                         "byte format requires -128 <= number <= 127");
         return -1;
@@ -560,9 +558,7 @@ static int
 np_ubyte(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
-    if (get_long(state, v, &x) < 0)
-        return -1;
-    if (x < 0 || x > 255) {
+    if (get_long(state, v, &x) < 0 || x < 0 || x > 255) {
         PyErr_SetString(state->StructError,
                         "ubyte format requires 0 <= number <= 255");
         return -1;
@@ -588,9 +584,7 @@ np_short(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     short y;
-    if (get_long(state, v, &x) < 0)
-        return -1;
-    if (x < SHRT_MIN || x > SHRT_MAX) {
+    if (get_long(state, v, &x) < 0 || x < SHRT_MIN || x > SHRT_MAX) {
         PyErr_Format(state->StructError,
                      "short format requires %d <= number <= %d",
                      (int)SHRT_MIN, (int)SHRT_MAX);
@@ -606,9 +600,7 @@ np_ushort(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     unsigned short y;
-    if (get_long(state, v, &x) < 0)
-        return -1;
-    if (x < 0 || x > USHRT_MAX) {
+    if (get_long(state, v, &x) < 0 || x < 0 || x > USHRT_MAX) {
         PyErr_Format(state->StructError,
                      "ushort format requires 0 <= number <= %u",
                      (unsigned int)USHRT_MAX);
@@ -624,8 +616,9 @@ np_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     int y;
-    if (get_long(state, v, &x) < 0)
-        return -1;
+    if (get_long(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+    }
 #if (SIZEOF_LONG > SIZEOF_INT)
     if ((x < ((long)INT_MIN)) || (x > ((long)INT_MAX)))
         RANGE_ERROR(state, x, f, 0, -1);
@@ -640,8 +633,9 @@ np_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     unsigned long x;
     unsigned int y;
-    if (get_ulong(state, v, &x) < 0)
-        return -1;
+    if (get_ulong(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 1, (unsigned long)-1);
+    }
     y = (unsigned int)x;
 #if (SIZEOF_LONG > SIZEOF_INT)
     if (x > ((unsigned long)UINT_MAX))
@@ -655,8 +649,9 @@ static int
 np_long(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
-    if (get_long(state, v, &x) < 0)
-        return -1;
+    if (get_long(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 0, (unsigned long)-1);
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -665,8 +660,9 @@ static int
 np_ulong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     unsigned long x;
-    if (get_ulong(state, v, &x) < 0)
-        return -1;
+    if (get_ulong(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 1, (unsigned long)-1);
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -675,8 +671,9 @@ static int
 np_ssize_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     Py_ssize_t x;
-    if (get_ssize_t(state, v, &x) < 0)
-        return -1;
+    if (get_ssize_t(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 0, (unsigned long)-1);
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -685,8 +682,9 @@ static int
 np_size_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     size_t x;
-    if (get_size_t(state, v, &x) < 0)
-        return -1;
+    if (get_size_t(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 1,  (size_t)-1);
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -695,8 +693,12 @@ static int
 np_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long long x;
-    if (get_longlong(state, v, &x) < 0)
+    if (get_longlong(state, v, &x) < 0) {
+        PyErr_Format(state->StructError,
+                     "longlong format requires %lld <= number <= %lld",
+                     LLONG_MAX);
         return -1;
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -705,8 +707,12 @@ static int
 np_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     unsigned long long x;
-    if (get_ulonglong(state, v, &x) < 0)
+    if (get_ulonglong(state, v, &x) < 0) {
+        PyErr_Format(state->StructError,
+                     "ulonglong format requires 0 <= number <= %llu",
+                     ULLONG_MAX);
         return -1;
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -911,8 +917,9 @@ bp_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
-    if (get_long(state, v, &x) < 0)
-        return -1;
+    if (get_long(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+    }
     i = f->size;
     if (i != SIZEOF_LONG) {
         if ((i == 2) && (x < -32768 || x > 32767))
@@ -935,8 +942,9 @@ bp_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     unsigned long x;
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
-    if (get_ulong(state, v, &x) < 0)
-        return -1;
+    if (get_ulong(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 1, (unsigned int)-1);
+    }
     i = f->size;
     if (i != SIZEOF_LONG) {
         unsigned long maxint = 1;
@@ -1161,8 +1169,9 @@ lp_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
-    if (get_long(state, v, &x) < 0)
-        return -1;
+    if (get_long(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+    }
     i = f->size;
     if (i != SIZEOF_LONG) {
         if ((i == 2) && (x < -32768 || x > 32767))
@@ -1185,8 +1194,9 @@ lp_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     unsigned long x;
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
-    if (get_ulong(state, v, &x) < 0)
-        return -1;
+    if (get_ulong(state, v, &x) < 0) {
+        RANGE_ERROR(state, x, f, 1, (unsigned int)-1);
+    }
     i = f->size;
     if (i != SIZEOF_LONG) {
         unsigned long maxint = 1;
@@ -1214,6 +1224,13 @@ lp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                               1, /* little_endian */
                               1  /* signed */);
     Py_DECREF(v);
+    if (res == -1 && PyErr_Occurred()) {
+        PyErr_Format(state->StructError,
+                     "longlong format requires %lld <= number <= %lld",
+                     LLONG_MIN,
+                     LLONG_MAX);
+        return -1;
+    }
     return res;
 }
 
@@ -1230,6 +1247,12 @@ lp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
                               1, /* little_endian */
                               0  /* signed */);
     Py_DECREF(v);
+    if (res == -1 && PyErr_Occurred()) {
+        PyErr_Format(state->StructError,
+                     "ulonglong format requires 0 <= number <= %llu",
+                     ULLONG_MAX);
+        return -1;
+    }
     return res;
 }
 
