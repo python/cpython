@@ -1,0 +1,1 @@
+Add a daemon keyword-only argument to the :func:`threading.Timer` constructor, to pass it to the inherited :func:`Thread` constructor.
