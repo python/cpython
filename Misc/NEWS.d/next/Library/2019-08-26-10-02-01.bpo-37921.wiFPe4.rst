@@ -1,0 +1,5 @@
+Add methods :meth:`zipfile.ZipInfo.is_file()` and
+:meth:`zipfile.ZipInfo.is_sym()`, and attribute
+:attr:`zipfile.ZipInfo.filemode`. Add parameter `follow_symlinks` to
+:meth:`zipfile.ZipInfo.from_file()`. Change how we detect directories in
+:meth:`zipfile.ZipInfo.is_dir()`.

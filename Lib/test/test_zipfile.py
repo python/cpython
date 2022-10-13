@@ -2717,18 +2717,24 @@ class ZipInfoTests(unittest.TestCase):
         zi = zipfile.ZipInfo.from_file(__file__)
         self.assertEqual(posixpath.basename(zi.filename), 'test_zipfile.py')
         self.assertFalse(zi.is_dir())
+        self.assertFalse(zi.is_sym())
+        self.assertTrue(zi.is_file())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
     def test_from_file_pathlike(self):
         zi = zipfile.ZipInfo.from_file(pathlib.Path(__file__))
         self.assertEqual(posixpath.basename(zi.filename), 'test_zipfile.py')
         self.assertFalse(zi.is_dir())
+        self.assertFalse(zi.is_sym())
+        self.assertTrue(zi.is_file())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
     def test_from_file_bytes(self):
         zi = zipfile.ZipInfo.from_file(os.fsencode(__file__), 'test')
         self.assertEqual(posixpath.basename(zi.filename), 'test')
         self.assertFalse(zi.is_dir())
+        self.assertFalse(zi.is_sym())
+        self.assertTrue(zi.is_file())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
     def test_from_file_fileno(self):
@@ -2736,6 +2742,8 @@ class ZipInfoTests(unittest.TestCase):
             zi = zipfile.ZipInfo.from_file(f.fileno(), 'test')
             self.assertEqual(posixpath.basename(zi.filename), 'test')
             self.assertFalse(zi.is_dir())
+            self.assertFalse(zi.is_sym())
+            self.assertTrue(zi.is_file())
             self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
     def test_from_dir(self):
@@ -2743,8 +2751,37 @@ class ZipInfoTests(unittest.TestCase):
         zi = zipfile.ZipInfo.from_file(dirpath, 'stdlib_tests')
         self.assertEqual(zi.filename, 'stdlib_tests/')
         self.assertTrue(zi.is_dir())
+        self.assertFalse(zi.is_sym())
+        self.assertFalse(zi.is_file())
         self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
         self.assertEqual(zi.file_size, 0)
+
+    def test_from_symlink(self):
+        self.addCleanup(unlink, TESTFN)
+        os.symlink(os.path.abspath(__file__), TESTFN)
+
+        zi = zipfile.ZipInfo.from_file(TESTFN, follow_symlinks=False)
+        self.assertEqual(posixpath.basename(zi.filename), TESTFN)
+        self.assertFalse(zi.is_dir())
+        self.assertFalse(zi.is_file())
+        self.assertTrue(zi.is_sym())
+
+        zi = zipfile.ZipInfo.from_file(TESTFN, follow_symlinks=True)
+        self.assertEqual(posixpath.basename(zi.filename), TESTFN)
+        self.assertFalse(zi.is_dir())
+        self.assertTrue(zi.is_file())
+        self.assertFalse(zi.is_sym())
+        self.assertEqual(zi.file_size, os.path.getsize(__file__))
+
+    def test_filemode(self):
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as f:
+            f.write("the cake is a lie")
+        modes_to_test = (0o400, 0o777, 0o755, 0o600)
+        for mode in modes_to_test:
+            os.chmod(TESTFN, mode)
+            zi = zipfile.ZipInfo.from_file(TESTFN)
+            self.assertEqual(zi.filemode, os.stat(TESTFN).st_mode)
 
 
 class CommandLineTest(unittest.TestCase):

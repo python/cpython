@@ -514,7 +514,7 @@ class ZipInfo (object):
             extra = extra[ln+4:]
 
     @classmethod
-    def from_file(cls, filename, arcname=None, *, strict_timestamps=True):
+    def from_file(cls, filename, arcname=None, *, strict_timestamps=True, follow_symlinks=True):
         """Construct an appropriate ZipInfo for a file on the filesystem.
 
         filename should be the path to a file or directory on the filesystem.
@@ -525,7 +525,7 @@ class ZipInfo (object):
         """
         if isinstance(filename, os.PathLike):
             filename = os.fspath(filename)
-        st = os.stat(filename)
+        st = os.stat(filename, follow_symlinks=follow_symlinks)
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
         date_time = mtime[0:6]
@@ -551,9 +551,19 @@ class ZipInfo (object):
 
         return zinfo
 
+    @property
+    def filemode(self):
+        return self.external_attr >> 16
+
+    def is_file(self):
+        """Return True if this archive member is a regular file."""
+        return stat.S_ISREG(self.filemode)
+    def is_sym(self):
+        """Return True if this archive member is a symbolic link."""
+        return stat.S_ISLNK(self.filemode)
     def is_dir(self):
         """Return True if this archive member is a directory."""
-        return self.filename[-1] == '/'
+        return stat.S_ISDIR(self.filemode)
 
 
 # ZIP encryption uses the CRC32 one-byte primitive for scrambling some
