@@ -20,6 +20,14 @@ class ListSumTest(unittest.TestCase):
             212342423309546512039
         ]
         assert ls.sum() == 566788967022672618230
+    
+    def test_large_float_list(self):
+        ls = [
+            231212340289713793871.12312312312,
+            123234203423412312320.349853490,
+            212342423309546512039.1230981230918
+        ]
+        assert ls.sum() == 5.667889670226726e+20
 
 if __name__ == '__main__':
     unittest.main()
