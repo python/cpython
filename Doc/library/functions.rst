@@ -635,7 +635,7 @@ are always available.  They are listed here in alphabetical order.
    elements of *iterable* for which *function* returns false.
 
 
-.. class:: float(x=0.0)
+.. class:: float(x=0.0, /)
 
    .. index::
       single: NaN
