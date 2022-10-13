@@ -1162,6 +1162,23 @@ handle_eval_breaker:
            It is essential that any operation that fails must goto error
            and that all operation that succeed call DISPATCH() ! */
 
+/* In VS Code, you may want to set USE_ORIGINAL_CASES for editing,
+   while leaving it unset for compiling.
+   Put this in your workspace settings (.vscode/settings.json):
+
+{
+    "C_Cpp.default.defines" : [
+        "${default}",
+        "USE_ORIGINAL_CASES",
+    ],
+}
+
+*/
+
+#ifndef USE_ORIGINAL_CASES
+#include "cases.h"
+#else
+
         TARGET(NOP) {
             DISPATCH();
         }
@@ -5013,6 +5030,8 @@ handle_eval_breaker:
         TARGET(CACHE) {
             Py_UNREACHABLE();
         }
+
+#endif
 
         /* End regular instructions */
 
