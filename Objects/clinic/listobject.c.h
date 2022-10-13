@@ -100,13 +100,20 @@ PyDoc_STRVAR(list_extend__doc__,
 "\n"
 "Extend list by appending elements from the iterable.");
 
-
-#define LIST_MAP_METHODDEF \
-    {"map", (PyCFunction)list_map, METH_O, list_map__doc__},
-
 PyDoc_STRVAR(list_map__doc__,
 "hoge\n"
 );
+
+#define LIST_MAP_METHODDEF \
+    {"map", (PyCFunction)list_map, METH_FASTCALL|METH_KEYWORDS, list_map__doc__},
+
+static PyObject *
+list_map_impl(PyListObject *self, PyObject *keyfunc);
+
+static PyObject*
+list_map(PyListObject *self, PyObject *args){
+    return list_map_impl(self,args);
+}
 
 #define LIST_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)list_extend, METH_O, list_extend__doc__},

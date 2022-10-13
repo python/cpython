@@ -854,23 +854,47 @@ list_append(PyListObject *self, PyObject *object)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-list_map(PyListObject *self, PyObject *object)
-/*[clinic end generated code: output=7c096003a29c0eae input=43a3fe48a7066e91]*/
-{   
-    Py_ssize_t i,n = Py_SIZE(self);
-    PyObject **items;
-    items = self->ob_item;
-    if (PyUnicode_Check(object)){
-        printf("cannot\n");
-        Py_RETURN_NONE;
+// static PyObject *
+// list_map(PyListObject *self, PyObject *object)
+// /*[clinic end generated code: output=7c096003a29c0eae input=43a3fe48a7066e91]*/
+// {   
+//     Py_ssize_t i,n = Py_SIZE(self);
+//     PyObject **items;
+//     items = self->ob_item;
+//     if (PyUnicode_Check(object)){
+//         printf("cannot\n");
+//         Py_RETURN_NONE;
+//     }
+//     for (i = n; --i >= 0; ){
+//         if (PyNumber_Check(items[i])){
+//             items[i] = PyNumber_Add(items[i],object);
+//         }
+//     }
+//     Py_RETURN_NONE;
+// }
+
+static PyObject* 
+list_map_impl(PyListObject *self, PyObject *keyfunc){
+    PyListObject *result;
+    PyObject **src, **dest;
+    Py_ssize_t i, len;
+    len = Py_SIZE(self);
+    result = (PyListObject *) list_new_prealloc(len);
+    if (result ==NULL){
+        return NULL;
     }
-    for (i = n; --i >= 0; ){
-        if (PyNumber_Check(items[i])){
-            items[i] = PyNumber_Add(items[i],object);
-        }
+    src = self->ob_item;
+    dest = result->ob_item;
+    for (i = 0 ; i< len; i++){
+        PyObject *v = PyObject_CallOneArg(keyfunc,src[i]);
+        Py_INCREF(v);
+        dest[i] = v;
     }
-    Py_RETURN_NONE;
+    Py_SET_SIZE(result,len);
+    // for (int i = 0 ; i < n; i++){
+    //     result[i] = PyObject_CallOneArg(keyfunc, saved_ob_item[i]);
+    // }
+    return (PyObject *)result;
 }
 
 /*[clinic input]
