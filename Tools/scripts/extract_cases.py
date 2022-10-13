@@ -121,6 +121,11 @@ def write_cases(f, cases):
         print(case.rstrip() + "\n", file=f)
 
 
+def write_families(f):
+    for opcode, family in dis._specializations.items():
+        print(f"family({opcode}) = {' + '.join(family)};", file=f)
+
+
 def compare(oldfile, newfile, quiet=False):
     with open(oldfile) as f:
         oldlines = f.readlines()
@@ -161,6 +166,7 @@ def main():
         print(f"// Read {len(cases)} cases from {input}", file=sys.stderr)
     with eopen(output, "w") as f:
         write_cases(f, cases)
+        write_families(f)
     if not args.quiet:
         print(f"// Wrote {len(cases)} cases to {output}", file=sys.stderr)
     if args.compare:
