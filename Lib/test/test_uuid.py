@@ -600,7 +600,26 @@ class BaseTestUUID:
     def test_uuid3(self):
         equal = self.assertEqual
 
-        # Test some known version-3 UUIDs.
+        # Test some known version-3 UUIDs with name passed as a byte object
+        for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS,
+                        bytes('python.org', encoding='UTF-8')),
+                      '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_URL,
+                        bytes('http://python.org/', encoding='UTF-8')),
+                      '9fe8e8c4-aaa8-32a9-a55c-4535a88b748d'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_OID,
+                        bytes('1.3.6.1', encoding='UTF-8')),
+                      'dd1a1cef-13d5-368a-ad82-eca71acd4cd1'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_X500,
+                        bytes('c=ca', encoding='UTF-8')),
+                      '658d3002-db6b-3040-a1d1-8ddd7d189a4d'),
+                    ]:
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 3)
+            equal(u, self.uuid.UUID(v))
+            equal(str(u), v)
+
+        # Test some known version-3 UUIDs with name passed as a string
         for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
                      (self.uuid.uuid3(self.uuid.NAMESPACE_URL, 'http://python.org/'),
@@ -632,7 +651,26 @@ class BaseTestUUID:
     def test_uuid5(self):
         equal = self.assertEqual
 
-        # Test some known version-5 UUIDs.
+        # Test some known version-5 UUIDs with names given as byte objects
+        for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS,
+                        bytes('python.org', encoding='UTF-8')),
+                      '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_URL,
+                        bytes('http://python.org/', encoding='UTF-8')),
+                      '4c565f0d-3f5a-5890-b41b-20cf47701c5e'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_OID,
+                        bytes('1.3.6.1', encoding='UTF-8')),
+                      '1447fa61-5277-5fef-a9b3-fbc6e44f4af3'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_X500,
+                        bytes('c=ca', encoding='UTF-8')),
+                      'cc957dd1-a972-5349-98cd-874190002798'),
+                    ]:
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 5)
+            equal(u, self.uuid.UUID(v))
+            equal(str(u), v)
+
+        # Test some known version-5 UUIDs with names given as strings
         for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
                      (self.uuid.uuid5(self.uuid.NAMESPACE_URL, 'http://python.org/'),
