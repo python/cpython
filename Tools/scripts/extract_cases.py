@@ -95,7 +95,7 @@ def read_cases(f):
                 se = figure_stack_effect(opcode_name)
             except ValueError as err:
                 case += f"{indent}// error: {err}\n"
-                case += f"{indent}inst({opcode_name}, ?? -- ??) {{\n"
+                case += f"{indent}inst({opcode_name}, (?? -- ??)) {{\n"
             else:
                 inputs = []
                 outputs = []
