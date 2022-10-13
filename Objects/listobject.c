@@ -857,9 +857,12 @@ list_append(PyListObject *self, PyObject *object)
 static PyObject *
 list_map(PyListObject *self, PyObject *object)
 /*[clinic end generated code: output=7c096003a29c0eae input=43a3fe48a7066e91]*/
-{
-    if (_PyList_AppendTakeRef(self, Py_NewRef(object)) < 0) {
-        return NULL;
+{   
+    Py_ssize_t i,n = Py_SIZE(self);
+    PyObject **items;
+    items = self->ob_item;
+    for (i = n; --i >= 0; ){
+        items[i] = PyNumber_Add(items[i],object);
     }
     Py_RETURN_NONE;
 }
