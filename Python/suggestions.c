@@ -302,11 +302,11 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     // Add a trailer ". Did you mean: (...)?"
     PyObject* result = NULL;
     if (!is_stdlib_module) {
-        result = PyUnicode_FromFormat(". Did you mean %R?", suggestion);
+        result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
     } else if (suggestion == NULL) {
         result = PyUnicode_FromFormat(". Did you forget to import %R?", name);
     } else {
-        result = PyUnicode_FromFormat(". Did you mean %R? Or did you forget to import %R?", suggestion, name);
+        result = PyUnicode_FromFormat(". Did you mean: %R? Or did you forget to import %R?", suggestion, name);
     }
     Py_XDECREF(suggestion);
     return result;
