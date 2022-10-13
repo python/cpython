@@ -3184,6 +3184,13 @@ class SuggestionFormattingTestBase:
 
         actual = self.get_suggestion(func)
         self.assertNotIn("something", actual)
+    
+    def test_name_error_for_stdlib_modules(self):
+        def func():
+            stream = io.StringIO()
+
+        actual = self.get_suggestion(func)
+        self.assertIn("forget to import 'io'", actual)
 
 
 class PurePythonSuggestionFormattingTests(
