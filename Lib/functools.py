@@ -969,9 +969,12 @@ class cached_property:
         if func is not None:
             self.__doc__ = func.__doc__
         if lock:
-            from warnings import warn
-            warn("Locking cached_property is deprecated; use @cached_property(lock=False)",
-                 PendingDeprecationWarning, 2)
+            import warnings
+            warnings._deprecated(
+                "lock=True default behavior of cached_property",
+                "Locking cached_property is deprecated; use @cached_property(lock=False)",
+                remove=(3, 14)
+            )
         self.lock = RLock() if lock else None
 
     def __call__(self, func=None):

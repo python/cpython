@@ -2934,7 +2934,7 @@ class OptionallyCachedCostItem:
 
 
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore", category=PendingDeprecationWarning)
+    warnings.simplefilter("ignore", category=DeprecationWarning)
     class CachedCostItemWait:
 
         def __init__(self, event):
@@ -3024,7 +3024,7 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(item.cost, 4)
 
     def test_locking_deprecated(self):
-        with self.assertWarns(PendingDeprecationWarning):
+        with self.assertWarns(DeprecationWarning):
             f = py_functools.cached_property(lambda s: None)
 
     def test_object_with_slots(self):
