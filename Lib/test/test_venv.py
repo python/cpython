@@ -216,7 +216,7 @@ class BasicTest(BaseTest):
             if sys.platform == 'win32':
                 expect_exe = os.path.normcase(os.path.realpath(expect_exe))
 
-            def pip_cmd_checker(cmd):
+            def pip_cmd_checker(cmd, **kwargs):
                 cmd[0] = os.path.normcase(cmd[0])
                 self.assertEqual(
                     cmd,
@@ -232,7 +232,7 @@ class BasicTest(BaseTest):
                 )
 
             fake_context = builder.ensure_directories(fake_env_dir)
-            with patch('venv.subprocess.check_call', pip_cmd_checker):
+            with patch('venv.subprocess.check_output', pip_cmd_checker):
                 builder.upgrade_dependencies(fake_context)
 
     @requireVenvCreate
@@ -659,8 +659,8 @@ class EnsurePipTest(BaseTest):
         try:
             yield
         except subprocess.CalledProcessError as exc:
-            out = exc.output.decode(errors="replace")
-            err = exc.stderr.decode(errors="replace")
+            out = (exc.output or b'').decode(errors="replace")
+            err = (exc.stderr or b'').decode(errors="replace")
             self.fail(
                 f"{exc}\n\n"
                 f"**Subprocess Output**\n{out}\n\n"
