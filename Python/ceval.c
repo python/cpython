@@ -679,7 +679,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
 #define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
+#ifdef Py_DEBUG
+#define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
+#else
 #define TARGET(op) case op: INSTRUCTION_START(op);
+#endif
 #define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 

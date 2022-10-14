@@ -8525,7 +8525,7 @@ then
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
-		OPT="-g $PYDEBUG_CFLAGS -Wall"
+		OPT="-g $PYDEBUG_CFLAGS -Wall -Wno-unused-label"
 	    else
 		OPT="-g $WRAP -O3 -Wall"
 	    fi
