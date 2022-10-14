@@ -738,12 +738,10 @@ class StructTest(unittest.TestCase):
                 with self.assertRaisesRegex(struct.error, error_msg):
                     struct.pack(fmt_str, value)
 
-        for int_type in 'BHILQ':
-            for prefix in '@=<>':
+        for prefix in '@=<>':
+            for int_type in 'BHILQ':
                 test_error_msg(prefix, int_type, True)
-
-        for int_type in 'bhilq':
-            for prefix in '@=<>':
+            for int_type in 'bhilq':
                 test_error_msg(prefix, int_type, False)
 
         int_type = 'N'
