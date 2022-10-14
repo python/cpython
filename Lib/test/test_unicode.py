@@ -241,6 +241,10 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequal(0, 'a' * 10, 'count', 'a\u0102')
         self.checkequal(0, 'a' * 10, 'count', 'a\U00100304')
         self.checkequal(0, '\u0102' * 10, 'count', '\u0102\U00100304')
+        # test subclass
+        class MyStr(str):
+            pass
+        self.checkequal(3, MyStr('aaa'), 'count', 'a')
 
     def test_find(self):
         string_tests.CommonTest.test_find(self)
@@ -3001,6 +3005,12 @@ class CAPITest(unittest.TestCase):
             for ch in uni:
                 self.assertEqual(unicode_count(uni, ch, 0, len(uni)), 1)
                 self.assertEqual(unicode_count(st, ch, 0, len(st)), 0)
+
+        # subclasses should still work
+        class MyStr(str):
+            pass
+
+        self.assertEqual(unicode_count(MyStr('aab'), 'a', 0, 3), 2)
 
     # Test PyUnicode_FindChar()
     @support.cpython_only
