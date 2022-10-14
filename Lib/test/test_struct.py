@@ -723,24 +723,6 @@ class StructTest(unittest.TestCase):
                 struct.calcsize(s)
 
     @support.cpython_only
-    def test_issue45034_unsigned(self):
-        _testcapi = import_helper.import_module('_testcapi')
-        error_msg = f'\'H\' format requires 0 <= number <= {_testcapi.USHRT_MAX}'
-        with self.assertRaisesRegex(struct.error, error_msg):
-            struct.pack('H', 70000)  # too large
-        with self.assertRaisesRegex(struct.error, error_msg):
-            struct.pack('H', -1)  # too small
-
-    @support.cpython_only
-    def test_issue45034_signed(self):
-        _testcapi = import_helper.import_module('_testcapi')
-        error_msg = f'\'h\' format requires {_testcapi.SHRT_MIN} <= number <= {_testcapi.SHRT_MAX}'
-        with self.assertRaisesRegex(struct.error, error_msg):
-            struct.pack('h', 70000)  # too large
-        with self.assertRaisesRegex(struct.error, error_msg):
-            struct.pack('h', -70000)  # too small
-
-    @support.cpython_only
     def test_issue92848(self):
         def test_error_msg(prefix, int_type, is_unsigned):
             fmt_str = prefix + int_type
