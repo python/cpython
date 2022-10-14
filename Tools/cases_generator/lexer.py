@@ -1,3 +1,6 @@
+# Parser for C code
+# Originally by Mark Shannon (mark@hotpy.org)
+# https://gist.github.com/markshannon/db7ab649440b5af765451bb77c7dba34
 
 import re
 import sys
@@ -8,7 +11,7 @@ def choice(*opts):
 
 # Regexes
 
-#Longer operators must go before shorter ones.
+# Longer operators must go before shorter ones.
 
 PLUSPLUS = r'\+\+'
 MINUSMINUS = r'--'
@@ -73,7 +76,7 @@ for op in operators:
     globals()[op] = op
 opmap = { pattern.replace("\\", "") or '\\' : op for op, pattern in operators.items() }
     
-#Macros
+# Macros
 macro = r'# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)'
 MACRO = 'MACRO'
 
@@ -164,8 +167,10 @@ class Token:
     def __str__(self):
         return f"Token({self.kind}, {self.text}, {self.begin}, {self.end})"
 
+    __repr__ = __str__
+
 def tokenize(src, line=1):
-    linestart = 0
+    linestart = -1
     for m in matcher.finditer(src):
         start, end = m.span()
         text = m.group(0)
@@ -225,7 +230,6 @@ def to_text(tkns, dedent=0):
 if __name__ == "__main__":
     import sys
     src = open(sys.argv[1]).read()
-    #print(to_text(tokenize(src)))
+    # print(to_text(tokenize(src)))
     for tkn in tokenize(src):
         print(tkn)
-
