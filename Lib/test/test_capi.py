@@ -20,6 +20,7 @@ import warnings
 import weakref
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
+from test.support import catch_unraisable_exception
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -879,6 +880,56 @@ class CAPITest(unittest.TestCase):
         _testcapi.clear_managed_dict(c)
         self.assertEqual(c.__dict__, {})
 
+    def test_eval_get_func_name(self):
+        def function_example(): ...
+
+        class A:
+            def method_example(self): ...
+
+        self.assertEqual(_testcapi.eval_get_func_name(function_example),
+                         "function_example")
+        self.assertEqual(_testcapi.eval_get_func_name(A.method_example),
+                         "method_example")
+        self.assertEqual(_testcapi.eval_get_func_name(A().method_example),
+                         "method_example")
+        self.assertEqual(_testcapi.eval_get_func_name(sum), "sum")  # c function
+        self.assertEqual(_testcapi.eval_get_func_name(A), "type")
+
+    def test_function_get_code(self):
+        import types
+
+        def some():
+            pass
+
+        code = _testcapi.function_get_code(some)
+        self.assertIsInstance(code, types.CodeType)
+        self.assertEqual(code, some.__code__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_code(None)  # not a function
+
+    def test_function_get_globals(self):
+        def some():
+            pass
+
+        globals_ = _testcapi.function_get_globals(some)
+        self.assertIsInstance(globals_, dict)
+        self.assertEqual(globals_, some.__globals__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_globals(None)  # not a function
+
+    def test_function_get_module(self):
+        def some():
+            pass
+
+        module = _testcapi.function_get_module(some)
+        self.assertIsInstance(module, str)
+        self.assertEqual(module, some.__module__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_module(None)  # not a function
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -1421,6 +1472,9 @@ class TestDictWatchers(unittest.TestCase):
     def watch(self, wid, d):
         _testcapi.watch_dict(wid, d)
 
+    def unwatch(self, wid, d):
+        _testcapi.unwatch_dict(wid, d)
+
     def test_set_new_item(self):
         d = {}
         with self.watcher() as wid:
@@ -1477,27 +1531,24 @@ class TestDictWatchers(unittest.TestCase):
             del d
             self.assert_events(["dealloc"])
 
+    def test_unwatch(self):
+        d = {}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d["foo"] = "bar"
+            self.unwatch(wid, d)
+            d["hmm"] = "baz"
+            self.assert_events(["new:foo:bar"])
+
     def test_error(self):
         d = {}
-        unraisables = []
-        def unraisable_hook(unraisable):
-            unraisables.append(unraisable)
         with self.watcher(kind=self.ERROR) as wid:
             self.watch(wid, d)
-            orig_unraisable_hook = sys.unraisablehook
-            sys.unraisablehook = unraisable_hook
-            try:
+            with catch_unraisable_exception() as cm:
                 d["foo"] = "bar"
-            finally:
-                sys.unraisablehook = orig_unraisable_hook
+                self.assertIs(cm.unraisable.object, d)
+                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
             self.assert_events([])
-        self.assertEqual(len(unraisables), 1)
-        unraisable = unraisables[0]
-        self.assertIs(unraisable.object, d)
-        self.assertEqual(str(unraisable.exc_value), "boom!")
-        # avoid leaking reference cycles
-        del unraisable
-        del unraisables
 
     def test_two_watchers(self):
         d1 = {}
@@ -1522,10 +1573,37 @@ class TestDictWatchers(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
             self.watch(8, d)  # DICT_MAX_WATCHERS = 8
 
-    def test_unassigned_watcher_id(self):
+    def test_watch_unassigned_watcher_id(self):
         d = {}
         with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
             self.watch(1, d)
+
+    def test_unwatch_non_dict(self):
+        with self.watcher() as wid:
+            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
+                self.unwatch(wid, 1)
+
+    def test_unwatch_out_of_range_watcher_id(self):
+        d = {}
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
+            self.unwatch(-1, d)
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
+            self.unwatch(8, d)  # DICT_MAX_WATCHERS = 8
+
+    def test_unwatch_unassigned_watcher_id(self):
+        d = {}
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
+            self.unwatch(1, d)
+
+    def test_clear_out_of_range_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
+            self.clear_watcher(-1)
+        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
+            self.clear_watcher(8)  # DICT_MAX_WATCHERS = 8
+
+    def test_clear_unassigned_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
+            self.clear_watcher(1)
 
 
 if __name__ == "__main__":
