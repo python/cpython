@@ -740,6 +740,35 @@ class StructTest(unittest.TestCase):
         with self.assertRaisesRegex(struct.error, error_msg):
             struct.pack('h', -70000)  # too small
 
+    @support.cpython_only
+    def test_issue92848(self):
+        def test_error_msg(prefix, int_type, is_unsigned):
+            fmt_str = prefix + int_type
+            size = struct.calcsize(fmt_str)
+            if is_unsigned:
+                max_ = 2 ** (size * 8) - 1
+                min_ = 0
+            else:
+                max_ = 2 ** (size * 8 - 1) - 1
+                min_ = -2 ** (size * 8 - 1)
+            error_msg = f"'{int_type}' format requires {min_} <= number <= {max_}"
+            for value in [int(-1e50), min_ - 1, max_ + 1, int(1e50)]:
+                with self.assertRaisesRegex(struct.error, error_msg):
+                    struct.pack(fmt_str, value)
+
+        for int_type in 'BHILQ':
+            for prefix in '@=<>':
+                test_error_msg(prefix, int_type, True)
+
+        for int_type in 'bhilq':
+            for prefix in '@=<>':
+                test_error_msg(prefix, int_type, False)
+
+        int_type = 'N'
+        test_error_msg("@", int_type, True)
+
+        int_type = 'n'
+        test_error_msg("@", int_type, False)
 
 class UnpackIteratorTest(unittest.TestCase):
     """
