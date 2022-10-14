@@ -5156,6 +5156,7 @@ class GetTypeHintTests(BaseTestCase):
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
         T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
         P = ParamSpec('P')
         class C(Generic[T]): pass
         self.assertIs(get_origin(C[int]), C)
@@ -5179,6 +5180,12 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(P.kwargs), P)
         self.assertIs(get_origin(Required[int]), Required)
         self.assertIs(get_origin(NotRequired[int]), NotRequired)
+        self.assertIs(get_origin((*Ts,)[0]), Unpack)
+        self.assertIs(get_origin(Unpack[Ts]), Unpack)
+        self.assertIs(get_origin((*tuple[*Ts],)[0]), tuple)
+        import pdb; pdb.set_trace()
+        get_origin(Unpack[Tuple[Unpack[Ts]]])
+        self.assertIs(get_origin(Unpack[Tuple[Unpack[Ts]]]), typing.Tuple)
 
     def test_get_args(self):
         T = TypeVar('T')
