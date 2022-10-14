@@ -220,7 +220,7 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 .PHONY: check
-check:
+check: ensure-venv
 	# Check the docs and NEWS files with sphinx-lint.
 	# Ignore the tools and venv dirs and check that the default role is not used.
 	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
