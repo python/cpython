@@ -1624,6 +1624,19 @@ class TestTypeWatchers(unittest.TestCase):
             C.bar = "baz"
             self.assert_events([C])
 
+    def test_clear_watcher(self):
+        class C: pass
+        # outer watcher is unused, it's just to keep events list alive
+        with self.watcher() as _:
+            with self.watcher() as wid:
+                self.watch(wid, C)
+                C.foo = "bar"
+                self.assertEqual(C.foo, "bar")
+                self.assert_events([C])
+            C.bar = "baz"
+            # Watcher on C has been cleared, no new event
+            self.assert_events([C])
+
     def test_watch_type_subclass(self):
         class C: pass
         class D(C): pass
@@ -1647,6 +1660,7 @@ class TestTypeWatchers(unittest.TestCase):
         class C2: pass
         with self.watcher() as wid1:
             with self.watcher(kind=self.WRAP) as wid2:
+                self.assertNotEqual(wid1, wid2)
                 self.watch(wid1, C1)
                 self.watch(wid2, C2)
                 C1.foo = "bar"

@@ -73,6 +73,10 @@ Type Objects
    :c:func:`PyType_AddWatcher`). Return ``0`` on success, ``-1`` on error (e.g.
    if *watcher_id* was never registered.)
 
+   An extension should never call ``PyType_ClearWatcher`` with a *watcher_id*
+   that was not returned to it by a previous call to
+   :c:func:`PyType_AddWatcher`.
+
    .. versionadded:: 3.12
 
 
@@ -84,6 +88,9 @@ Type Objects
    called only once for a series of consecutive modifications to *type*, if
    :c:func:`PyType_Lookup` is not called on *type* between the modifications;
    this is an implementation detail and subject to change.)
+
+   An extension should never call ``PyType_Watch`` with a *watcher_id* that was
+   not returned to it by a previous call to :c:func:`PyType_AddWatcher`.
 
    .. versionadded:: 3.12
 
