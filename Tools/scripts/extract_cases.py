@@ -48,13 +48,17 @@ def extract_opcode_name(line):
 
 
 def figure_stack_effect(opcode_name):
-    # If stack effect is constant, return it as an int.
-    # If it is variable or unknown, raise ValueError.
-    # (It may be dis.stack_effect() that raises ValueError.)
+    # Return (i, diff``) where i is the stack effect for oparg=0
+    # and diff is the increment for oparg=1.
+    # If it is irregular or unknown, raise ValueError.
     if m := re.match(f"^(\w+)__(\w+)$", opcode_name):
         # Super-instruction adds effect of both parts
         first, second = m.groups()
-        return figure_stack_effect(first) + figure_stack_effect(second)
+        se1, incr1 = figure_stack_effect(first)
+        se2, incr2 = figure_stack_effect(second)
+        if incr1 or incr2:
+            raise ValueError(f"irregular stack effect for {opcode_name}")
+        return se1 + se2, 0
     if opcode_name in inverse_specializations:
         # Specialized instruction maps to unspecialized instruction
         opcode_name = inverse_specializations[opcode_name]
@@ -68,9 +72,9 @@ def figure_stack_effect(opcode_name):
             raise ValueError(f"{opcode_name} stack effect depends on jump flag")
         if dis.stack_effect(opcode, 0, jump=False) != se:
             raise ValueError(f"{opcode_name} stack effect depends on jump flag")
-        for i in range(1, 33):
+        for i in range(1, 257):
             if dis.stack_effect(opcode, i) != se:
-                raise ValueError(f"{opcode_name} has variable stack effect")
+                return figure_variable_stack_effect(opcode_name, opcode, se)
     else:
         try:
             se = dis.stack_effect(opcode)
@@ -80,7 +84,20 @@ def figure_stack_effect(opcode_name):
             raise ValueError(f"{opcode_name} stack effect depends on jump flag")
         if dis.stack_effect(opcode, jump=False) != se:
             raise ValueError(f"{opcode_name} stack effect depends on jump flag")
-    return se
+    return se, 0
+
+
+def figure_variable_stack_effect(opcode_name, opcode, se0):
+    # Is it a linear progression?
+    se1 = dis.stack_effect(opcode, 1)
+    diff = se1 - se0
+    for i in range(2, 257):
+        sei = dis.stack_effect(opcode, i)
+        if sei - se0 != diff * i:
+            raise ValueError(f"{opcode_name} has irregular stack effect")
+    # Assume it's okay for larger oparg values too
+    return se0, diff
+
 
 
 START_MARKER = "/* Start instructions */"  # The '{' is on the preceding line.
@@ -106,7 +123,7 @@ def read_cases(f):
             case = ""
             opcode_name = extract_opcode_name(line)
             try:
-                se = figure_stack_effect(opcode_name)
+                se, diff = figure_stack_effect(opcode_name)
             except ValueError as err:
                 case += f"{indent}// error: {err}\n"
                 case += f"{indent}inst({opcode_name}, (?? -- ??)) {{\n"
@@ -119,6 +136,16 @@ def read_cases(f):
                 elif se < 0:
                     for i in range(-se):
                         inputs.append(f"__{i}")
+                if diff > 0:
+                    if diff == 1:
+                        outputs.append(f"__array[oparg]")
+                    else:
+                        outputs.append(f"__array[oparg*{diff}]")
+                elif diff < 0:
+                    if diff == -1:
+                        inputs.append(f"__array[oparg]")
+                    else:
+                        inputs.append(f"__array[oparg*{-diff}]")
                 input = ", ".join(inputs)
                 output = ", ".join(outputs)
                 case += f"{indent}inst({opcode_name}, ({input} -- {output})) {{\n"
