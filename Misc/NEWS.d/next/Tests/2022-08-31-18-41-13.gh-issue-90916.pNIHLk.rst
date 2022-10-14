@@ -1,0 +1,4 @@
+Use a table to make the lists of expected Instructions in test_dis more
+readable.
+
+Patch by Martin DeMello
