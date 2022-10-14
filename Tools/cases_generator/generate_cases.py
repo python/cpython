@@ -10,7 +10,7 @@ import dis
 import re
 import sys
 
-import c_lexer as clx  # Tools/scripts/c_lexer.py
+import lexer as clx
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("-i", "--input", type=str, default="Python/bytecodes.inst")
