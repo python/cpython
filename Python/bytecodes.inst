@@ -666,8 +666,7 @@
             DISPATCH();
         }
 
-        // error: RAISE_VARARGS has variable stack effect
-        inst(RAISE_VARARGS, (?? -- ??)) {
+        inst(RAISE_VARARGS, (__array[oparg] -- )) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -1079,8 +1078,7 @@
             DISPATCH();
         }
 
-        // error: UNPACK_SEQUENCE has variable stack effect
-        inst(UNPACK_SEQUENCE, (?? -- ??)) {
+        inst(UNPACK_SEQUENCE, (__0 -- __array[oparg])) {
             PREDICTED(UNPACK_SEQUENCE);
             PyObject *seq = POP();
             PyObject **top = stack_pointer + oparg;
@@ -1094,8 +1092,7 @@
             DISPATCH();
         }
 
-        // error: UNPACK_SEQUENCE has variable stack effect
-        inst(UNPACK_SEQUENCE_ADAPTIVE, (?? -- ??)) {
+        inst(UNPACK_SEQUENCE_ADAPTIVE, (__0 -- __array[oparg])) {
             assert(cframe.use_tracing == 0);
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -1111,8 +1108,7 @@
             }
         }
 
-        // error: UNPACK_SEQUENCE has variable stack effect
-        inst(UNPACK_SEQUENCE_TWO_TUPLE, (?? -- ??)) {
+        inst(UNPACK_SEQUENCE_TWO_TUPLE, (__0 -- __array[oparg])) {
             PyObject *seq = TOP();
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
@@ -1124,8 +1120,7 @@
             DISPATCH();
         }
 
-        // error: UNPACK_SEQUENCE has variable stack effect
-        inst(UNPACK_SEQUENCE_TUPLE, (?? -- ??)) {
+        inst(UNPACK_SEQUENCE_TUPLE, (__0 -- __array[oparg])) {
             PyObject *seq = TOP();
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
@@ -1140,8 +1135,7 @@
             DISPATCH();
         }
 
-        // error: UNPACK_SEQUENCE has variable stack effect
-        inst(UNPACK_SEQUENCE_LIST, (?? -- ??)) {
+        inst(UNPACK_SEQUENCE_LIST, (__0 -- __array[oparg])) {
             PyObject *seq = TOP();
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyList_GET_SIZE(seq) != oparg, UNPACK_SEQUENCE);
@@ -1156,7 +1150,7 @@
             DISPATCH();
         }
 
-        // error: UNPACK_EX has variable stack effect
+        // error: UNPACK_EX has irregular stack effect
         inst(UNPACK_EX, (?? -- ??)) {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             PyObject *seq = POP();
@@ -1287,7 +1281,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_GLOBAL has variable stack effect
+        // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL, (?? -- ??)) {
             PREDICTED(LOAD_GLOBAL);
             int push_null = oparg & 1;
@@ -1341,7 +1335,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_GLOBAL has variable stack effect
+        // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL_ADAPTIVE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
@@ -1360,7 +1354,7 @@
             }
         }
 
-        // error: LOAD_GLOBAL has variable stack effect
+        // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL_MODULE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
@@ -1382,7 +1376,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_GLOBAL has variable stack effect
+        // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL_BUILTIN, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
@@ -1513,8 +1507,7 @@
             DISPATCH();
         }
 
-        // error: BUILD_STRING has variable stack effect
-        inst(BUILD_STRING, (?? -- ??)) {
+        inst(BUILD_STRING, (__array[oparg] -- __0)) {
             PyObject *str;
             str = _PyUnicode_JoinArray(&_Py_STR(empty),
                                        stack_pointer - oparg, oparg);
@@ -1528,8 +1521,7 @@
             DISPATCH();
         }
 
-        // error: BUILD_TUPLE has variable stack effect
-        inst(BUILD_TUPLE, (?? -- ??)) {
+        inst(BUILD_TUPLE, (__array[oparg] -- __0)) {
             STACK_SHRINK(oparg);
             PyObject *tup = _PyTuple_FromArraySteal(stack_pointer, oparg);
             if (tup == NULL)
@@ -1538,8 +1530,7 @@
             DISPATCH();
         }
 
-        // error: BUILD_LIST has variable stack effect
-        inst(BUILD_LIST, (?? -- ??)) {
+        inst(BUILD_LIST, (__array[oparg] -- __0)) {
             PyObject *list =  PyList_New(oparg);
             if (list == NULL)
                 goto error;
@@ -1594,8 +1585,7 @@
             DISPATCH();
         }
 
-        // error: BUILD_SET has variable stack effect
-        inst(BUILD_SET, (?? -- ??)) {
+        inst(BUILD_SET, (__array[oparg] -- __0)) {
             PyObject *set = PySet_New(NULL);
             int err = 0;
             int i;
@@ -1616,8 +1606,7 @@
             DISPATCH();
         }
 
-        // error: BUILD_MAP has variable stack effect
-        inst(BUILD_MAP, (?? -- ??)) {
+        inst(BUILD_MAP, (__array[oparg*2] -- __0)) {
             PyObject *map = _PyDict_FromItems(
                     &PEEK(2*oparg), 2,
                     &PEEK(2*oparg - 1), 2,
@@ -1688,8 +1677,7 @@
             DISPATCH();
         }
 
-        // error: BUILD_CONST_KEY_MAP has variable stack effect
-        inst(BUILD_CONST_KEY_MAP, (?? -- ??)) {
+        inst(BUILD_CONST_KEY_MAP, (__array[oparg] -- )) {
             PyObject *map;
             PyObject *keys = TOP();
             if (!PyTuple_CheckExact(keys) ||
@@ -1758,7 +1746,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR, (?? -- ??)) {
             PREDICTED(LOAD_ATTR);
             PyObject *name = GETITEM(names, oparg >> 1);
@@ -1808,7 +1796,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_ADAPTIVE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
@@ -1828,7 +1816,7 @@
             }
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_INSTANCE_VALUE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -1854,7 +1842,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_MODULE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -1880,7 +1868,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_WITH_HINT, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -1920,7 +1908,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_SLOT, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -1943,7 +1931,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_CLASS, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -1967,7 +1955,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_PROPERTY, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
@@ -2006,7 +1994,7 @@
             goto start_frame;
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
@@ -2901,7 +2889,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_WITH_VALUES, (?? -- ??)) {
             /* Cached method object */
             assert(cframe.use_tracing == 0);
@@ -2928,7 +2916,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_WITH_DICT, (?? -- ??)) {
             /* Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
@@ -2957,7 +2945,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_NO_DICT, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -2977,7 +2965,7 @@
             DISPATCH();
         }
 
-        // error: LOAD_ATTR has variable stack effect
+        // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_LAZY_DICT, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -3001,8 +2989,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_BOUND_METHOD_EXACT_ARGS, (?? -- ??)) {
+        inst(CALL_BOUND_METHOD_EXACT_ARGS, (__0, __array[oparg] -- )) {
             DEOPT_IF(is_method(stack_pointer, oparg), CALL);
             PyObject *function = PEEK(oparg + 1);
             DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, CALL);
@@ -3024,8 +3011,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL, (?? -- ??)) {
+        inst(CALL, (__0, __array[oparg] -- )) {
             PREDICTED(CALL);
             int total_args, is_meth;
             is_meth = is_method(stack_pointer, oparg);
@@ -3101,8 +3087,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_ADAPTIVE, (?? -- ??)) {
+        inst(CALL_ADAPTIVE, (__0, __array[oparg] -- )) {
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 next_instr--;
@@ -3123,8 +3108,7 @@
             }
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_PY_EXACT_ARGS, (?? -- ??)) {
+        inst(CALL_PY_EXACT_ARGS, (__0, __array[oparg] -- )) {
             PREDICTED(CALL_PY_EXACT_ARGS);
             assert(call_shape.kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
@@ -3157,8 +3141,7 @@
             goto start_frame;
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_PY_WITH_DEFAULTS, (?? -- ??)) {
+        inst(CALL_PY_WITH_DEFAULTS, (__0, __array[oparg] -- )) {
             assert(call_shape.kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
@@ -3198,8 +3181,7 @@
             goto start_frame;
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_TYPE_1, (?? -- ??)) {
+        inst(CALL_NO_KW_TYPE_1, (__0, __array[oparg] -- )) {
             assert(call_shape.kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
@@ -3217,8 +3199,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_STR_1, (?? -- ??)) {
+        inst(CALL_NO_KW_STR_1, (__0, __array[oparg] -- )) {
             assert(call_shape.kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
@@ -3240,8 +3221,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_TUPLE_1, (?? -- ??)) {
+        inst(CALL_NO_KW_TUPLE_1, (__0, __array[oparg] -- )) {
             assert(call_shape.kwnames == NULL);
             assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), CALL);
@@ -3262,8 +3242,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_BUILTIN_CLASS, (?? -- ??)) {
+        inst(CALL_BUILTIN_CLASS, (__0, __array[oparg] -- )) {
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             int kwnames_len = KWNAMES_LEN();
@@ -3291,8 +3270,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_BUILTIN_O, (?? -- ??)) {
+        inst(CALL_NO_KW_BUILTIN_O, (__0, __array[oparg] -- )) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
             assert(call_shape.kwnames == NULL);
@@ -3326,8 +3304,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_BUILTIN_FAST, (?? -- ??)) {
+        inst(CALL_NO_KW_BUILTIN_FAST, (__0, __array[oparg] -- )) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
             assert(call_shape.kwnames == NULL);
@@ -3367,8 +3344,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (?? -- ??)) {
+        inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (__0, __array[oparg] -- )) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int is_meth = is_method(stack_pointer, oparg);
@@ -3407,8 +3383,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_LEN, (?? -- ??)) {
+        inst(CALL_NO_KW_LEN, (__0, __array[oparg] -- )) {
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
             /* len(o) */
@@ -3438,8 +3413,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_ISINSTANCE, (?? -- ??)) {
+        inst(CALL_NO_KW_ISINSTANCE, (__0, __array[oparg] -- )) {
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
             /* isinstance(o, o2) */
@@ -3472,8 +3446,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_LIST_APPEND, (?? -- ??)) {
+        inst(CALL_NO_KW_LIST_APPEND, (__0, __array[oparg] -- )) {
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
             assert(oparg == 1);
@@ -3496,8 +3469,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (?? -- ??)) {
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (__0, __array[oparg] -- )) {
             assert(call_shape.kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3533,8 +3505,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (?? -- ??)) {
+        inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (__0, __array[oparg] -- )) {
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             PyMethodDescrObject *callable =
@@ -3571,8 +3542,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (?? -- ??)) {
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (__0, __array[oparg] -- )) {
             assert(call_shape.kwnames == NULL);
             assert(oparg == 0 || oparg == 1);
             int is_meth = is_method(stack_pointer, oparg);
@@ -3606,8 +3576,7 @@
             DISPATCH();
         }
 
-        // error: CALL has variable stack effect
-        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (?? -- ??)) {
+        inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (__0, __array[oparg] -- )) {
             assert(call_shape.kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3642,7 +3611,7 @@
             DISPATCH();
         }
 
-        // error: CALL_FUNCTION_EX has variable stack effect
+        // error: CALL_FUNCTION_EX has irregular stack effect
         inst(CALL_FUNCTION_EX, (?? -- ??)) {
             PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
@@ -3681,7 +3650,7 @@
             DISPATCH();
         }
 
-        // error: MAKE_FUNCTION has variable stack effect
+        // error: MAKE_FUNCTION has irregular stack effect
         inst(MAKE_FUNCTION, (?? -- ??)) {
             PyObject *codeobj = POP();
             PyFunctionObject *func = (PyFunctionObject *)
@@ -3749,7 +3718,7 @@
             return (PyObject *)gen;
         }
 
-        // error: BUILD_SLICE has variable stack effect
+        // error: BUILD_SLICE has irregular stack effect
         inst(BUILD_SLICE, (?? -- ??)) {
             PyObject *start, *stop, *step, *slice;
             if (oparg == 3)
@@ -3768,7 +3737,7 @@
             DISPATCH();
         }
 
-        // error: FORMAT_VALUE has variable stack effect
+        // error: FORMAT_VALUE has irregular stack effect
         inst(FORMAT_VALUE, (?? -- ??)) {
             /* Handles f-string value formatting. */
             PyObject *result;
