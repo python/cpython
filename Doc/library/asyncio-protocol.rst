@@ -553,7 +553,7 @@ accept factories that return streaming protocols.
    a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once.  Once `eof_received()` is called,
+   is called at most once.  Once ``eof_received()`` is called,
    ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()
