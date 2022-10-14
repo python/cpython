@@ -1137,7 +1137,7 @@ def _splitnport(host, defport=-1):
     host, delim, port = host.rpartition(':')
     if not delim:
         host = port
-    elif port:
+    elif port.isdigit():
         try:
             nport = int(port)
         except ValueError:
