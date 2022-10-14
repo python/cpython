@@ -1,10 +1,18 @@
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
+
+#include "clinic/_functoolsmodule.c.h"
+/*[clinic input]
+module _functools
+class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bece4053896b09c0]*/
 
 /* _functools module written and maintained
    by Hye-Shik Chang <perky@FreeBSD.org>
@@ -50,13 +58,14 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_functools_module);
+    PyObject *module = PyType_GetModuleByDef(type, &_functools_module);
     if (module == NULL) {
         return NULL;
     }
     return get_functools_state(module);
 }
 
+// Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
 partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -147,18 +156,37 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return (PyObject *)pto;
 }
 
+static int
+partial_clear(partialobject *pto)
+{
+    Py_CLEAR(pto->fn);
+    Py_CLEAR(pto->args);
+    Py_CLEAR(pto->kw);
+    Py_CLEAR(pto->dict);
+    return 0;
+}
+
+static int
+partial_traverse(partialobject *pto, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(pto));
+    Py_VISIT(pto->fn);
+    Py_VISIT(pto->args);
+    Py_VISIT(pto->kw);
+    Py_VISIT(pto->dict);
+    return 0;
+}
+
 static void
 partial_dealloc(partialobject *pto)
 {
     PyTypeObject *tp = Py_TYPE(pto);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(pto);
-    if (pto->weakreflist != NULL)
+    if (pto->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) pto);
-    Py_XDECREF(pto->fn);
-    Py_XDECREF(pto->args);
-    Py_XDECREF(pto->kw);
-    Py_XDECREF(pto->dict);
+    }
+    (void)partial_clear(pto);
     tp->tp_free(pto);
     Py_DECREF(tp);
 }
@@ -167,7 +195,7 @@ partial_dealloc(partialobject *pto)
 /* Merging keyword arguments using the vectorcall convention is messy, so
  * if we would need to do that, we stop using vectorcall and fall back
  * to using partial_call() instead. */
-_Py_NO_INLINE static PyObject *
+Py_NO_INLINE static PyObject *
 partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
                             PyObject *const *args, size_t nargsf,
                             PyObject *kwnames)
@@ -249,7 +277,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (PyVectorcall_Function(pto->fn) == NULL) {
+    if (_PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -262,6 +290,7 @@ partial_setvectorcall(partialobject *pto)
 }
 
 
+// Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
 partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
 {
@@ -305,16 +334,6 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     Py_DECREF(args2);
     Py_XDECREF(kwargs2);
     return res;
-}
-
-static int
-partial_traverse(partialobject *pto, visitproc visit, void *arg)
-{
-    Py_VISIT(pto->fn);
-    Py_VISIT(pto->args);
-    Py_VISIT(pto->kw);
-    Py_VISIT(pto->dict);
-    return 0;
 }
 
 PyDoc_STRVAR(partial_doc,
@@ -456,7 +475,7 @@ partial_setstate(partialobject *pto, PyObject *state)
 static PyMethodDef partial_methods[] = {
     {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
     {"__setstate__", (PyCFunction)partial_setstate, METH_O},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
@@ -469,6 +488,7 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_doc, (void *)partial_doc},
     {Py_tp_traverse, partial_traverse},
+    {Py_tp_clear, partial_clear},
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
@@ -481,7 +501,8 @@ static PyType_Spec partial_type_spec = {
     .name = "functools.partial",
     .basicsize = sizeof(partialobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-             Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
+             Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL |
+             Py_TPFLAGS_IMMUTABLETYPE,
     .slots = partial_type_slots
 };
 
@@ -506,14 +527,16 @@ static void
 keyobject_dealloc(keyobject *ko)
 {
     PyTypeObject *tp = Py_TYPE(ko);
-    keyobject_clear(ko);
-    PyObject_Free(ko);
+    PyObject_GC_UnTrack(ko);
+    (void)keyobject_clear(ko);
+    tp->tp_free(ko);
     Py_DECREF(tp);
 }
 
 static int
 keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(ko));
     Py_VISIT(ko->cmp);
     Py_VISIT(ko->object);
     return 0;
@@ -546,7 +569,8 @@ static PyType_Slot keyobject_type_slots[] = {
 static PyType_Spec keyobject_type_spec = {
     .name = "functools.KeyWrapper",
     .basicsize = sizeof(keyobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = keyobject_type_slots
 };
 
@@ -560,7 +584,7 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
         return NULL;
 
-    result = PyObject_New(keyobject, Py_TYPE(ko));
+    result = PyObject_GC_New(keyobject, Py_TYPE(ko));
     if (result == NULL) {
         return NULL;
     }
@@ -568,6 +592,7 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
     result->cmp = ko->cmp;
     Py_INCREF(object);
     result->object = object;
+    PyObject_GC_Track(result);
     return (PyObject *)result;
 }
 
@@ -609,32 +634,37 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     return answer;
 }
 
+/*[clinic input]
+_functools.cmp_to_key
+
+    mycmp: object
+        Function that compares two objects.
+
+Convert a cmp= function into a key= function.
+[clinic start generated code]*/
+
 static PyObject *
-functools_cmp_to_key(PyObject *self, PyObject *args, PyObject *kwds)
+_functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
+/*[clinic end generated code: output=71eaad0f4fc81f33 input=d1b76f231c0dfeb3]*/
 {
-    PyObject *cmp;
-    static char *kwargs[] = {"mycmp", NULL};
     keyobject *object;
     _functools_state *state;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:cmp_to_key", kwargs, &cmp))
-        return NULL;
-
-    state = get_functools_state(self);
-    object = PyObject_New(keyobject, state->keyobject_type);
+    state = get_functools_state(module);
+    object = PyObject_GC_New(keyobject, state->keyobject_type);
     if (!object)
         return NULL;
-    Py_INCREF(cmp);
-    object->cmp = cmp;
+    Py_INCREF(mycmp);
+    object->cmp = mycmp;
     object->object = NULL;
+    PyObject_GC_Track(object);
     return (PyObject *)object;
 }
 
-PyDoc_STRVAR(functools_cmp_to_key_doc,
-"Convert a cmp= function into a key= function.");
-
 /* reduce (used to be a builtin) ********************************************/
 
+// Not converted to argument clinic, because of `args` in-place modification.
+// AC will affect performance.
 static PyObject *
 functools_reduce(PyObject *self, PyObject *args)
 {
@@ -754,7 +784,7 @@ lru_list_elem_dealloc(lru_list_elem *link)
     PyTypeObject *tp = Py_TYPE(link);
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
-    PyObject_Free(link);
+    tp->tp_free(link);
     Py_DECREF(tp);
 }
 
@@ -766,7 +796,8 @@ static PyType_Slot lru_list_elem_type_slots[] = {
 static PyType_Spec lru_list_elem_type_spec = {
     .name = "functools._lru_list_elem",
     .basicsize = sizeof(lru_list_elem),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+             Py_TPFLAGS_IMMUTABLETYPE,
     .slots = lru_list_elem_type_slots
 };
 
@@ -1240,8 +1271,8 @@ static int
 lru_cache_tp_clear(lru_cache_object *self)
 {
     lru_list_elem *list = lru_cache_unlink_list(self);
-    Py_CLEAR(self->func);
     Py_CLEAR(self->cache);
+    Py_CLEAR(self->func);
     Py_CLEAR(self->kwd_mark);
     Py_CLEAR(self->lru_list_elem_type);
     Py_CLEAR(self->cache_info_type);
@@ -1260,7 +1291,7 @@ lru_cache_dealloc(lru_cache_object *obj)
         PyObject_ClearWeakRefs((PyObject*)obj);
     }
 
-    lru_cache_tp_clear(obj);
+    (void)lru_cache_tp_clear(obj);
     tp->tp_free(obj);
     Py_DECREF(tp);
 }
@@ -1281,25 +1312,41 @@ lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     return PyMethod_New(self, obj);
 }
 
-static PyObject *
-lru_cache_cache_info(lru_cache_object *self, PyObject *unused)
-{
-    if (self->maxsize == -1) {
-        return PyObject_CallFunction(self->cache_info_type, "nnOn",
-                                     self->hits, self->misses, Py_None,
-                                     PyDict_GET_SIZE(self->cache));
-    }
-    return PyObject_CallFunction(self->cache_info_type, "nnnn",
-                                 self->hits, self->misses, self->maxsize,
-                                 PyDict_GET_SIZE(self->cache));
-}
+/*[clinic input]
+_functools._lru_cache_wrapper.cache_info
+
+Report cache statistics
+[clinic start generated code]*/
 
 static PyObject *
-lru_cache_cache_clear(lru_cache_object *self, PyObject *unused)
+_functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
+/*[clinic end generated code: output=cc796a0b06dbd717 input=f05e5b6ebfe38645]*/
 {
-    lru_list_elem *list = lru_cache_unlink_list(self);
-    self->hits = self->misses = 0;
-    PyDict_Clear(self->cache);
+    lru_cache_object *_self = (lru_cache_object *) self;
+    if (_self->maxsize == -1) {
+        return PyObject_CallFunction(_self->cache_info_type, "nnOn",
+                                     _self->hits, _self->misses, Py_None,
+                                     PyDict_GET_SIZE(_self->cache));
+    }
+    return PyObject_CallFunction(_self->cache_info_type, "nnnn",
+                                 _self->hits, _self->misses, _self->maxsize,
+                                 PyDict_GET_SIZE(_self->cache));
+}
+
+/*[clinic input]
+_functools._lru_cache_wrapper.cache_clear
+
+Clear the cache and cache statistics
+[clinic start generated code]*/
+
+static PyObject *
+_functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
+/*[clinic end generated code: output=58423b35efc3e381 input=6ca59dba09b12584]*/
+{
+    lru_cache_object *_self = (lru_cache_object *) self;
+    lru_list_elem *list = lru_cache_unlink_list(_self);
+    _self->hits = _self->misses = 0;
+    PyDict_Clear(_self->cache);
     lru_cache_clear_list(list);
     Py_RETURN_NONE;
 }
@@ -1327,15 +1374,17 @@ lru_cache_deepcopy(PyObject *self, PyObject *unused)
 static int
 lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
         lru_list_elem *next = link->next;
         Py_VISIT(link->key);
         Py_VISIT(link->result);
+        Py_VISIT(Py_TYPE(link));
         link = next;
     }
-    Py_VISIT(self->func);
     Py_VISIT(self->cache);
+    Py_VISIT(self->func);
     Py_VISIT(self->kwd_mark);
     Py_VISIT(self->lru_list_elem_type);
     Py_VISIT(self->cache_info_type);
@@ -1361,8 +1410,8 @@ cache_info_type:    namedtuple class with the fields:\n\
 );
 
 static PyMethodDef lru_cache_methods[] = {
-    {"cache_info", (PyCFunction)lru_cache_cache_info, METH_NOARGS},
-    {"cache_clear", (PyCFunction)lru_cache_cache_clear, METH_NOARGS},
+    _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_INFO_METHODDEF
+    _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_CLEAR_METHODDEF
     {"__reduce__", (PyCFunction)lru_cache_reduce, METH_NOARGS},
     {"__copy__", (PyCFunction)lru_cache_copy, METH_VARARGS},
     {"__deepcopy__", (PyCFunction)lru_cache_deepcopy, METH_VARARGS},
@@ -1400,7 +1449,7 @@ static PyType_Spec lru_cache_type_spec = {
     .name = "functools._lru_cache_wrapper",
     .basicsize = sizeof(lru_cache_object),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-             Py_TPFLAGS_METHOD_DESCRIPTOR,
+             Py_TPFLAGS_METHOD_DESCRIPTOR | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = lru_cache_type_slots
 };
 
@@ -1412,8 +1461,7 @@ PyDoc_STRVAR(_functools_doc,
 
 static PyMethodDef _functools_methods[] = {
     {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
-    {"cmp_to_key",      (PyCFunction)(void(*)(void))functools_cmp_to_key,
-     METH_VARARGS | METH_KEYWORDS, functools_cmp_to_key_doc},
+    _FUNCTOOLS_CMP_TO_KEY_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1421,7 +1469,7 @@ static int
 _functools_exec(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
-    state->kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    state->kwd_mark = _PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
     if (state->kwd_mark == NULL) {
         return -1;
     }
@@ -1451,18 +1499,16 @@ _functools_exec(PyObject *module)
     if (state->keyobject_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->keyobject_type) < 0) {
-        return -1;
-    }
+    // keyobject_type is used only internally.
+    // So we don't expose it in module namespace.
 
     state->lru_list_elem_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &lru_list_elem_type_spec, NULL);
     if (state->lru_list_elem_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->lru_list_elem_type) < 0) {
-        return -1;
-    }
+    // lru_list_elem is used only in _lru_cache_wrapper.
+    // So we don't expose it in module namespace.
 
     return 0;
 }

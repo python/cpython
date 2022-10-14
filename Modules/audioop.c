@@ -5,13 +5,6 @@
 
 #include "Python.h"
 
-#if defined(__CHAR_UNSIGNED__)
-#if defined(signed)
-/* This module currently does not work on systems where only unsigned
-   characters are available.  Take it out of Setup.  Sorry. */
-#endif
-#endif
-
 static const int maxvals[] = {0, 0x7F, 0x7FFF, 0x7FFFFF, 0x7FFFFFFF};
 /* -1 trick is needed on Windows to support -0x80000000 without a warning */
 static const int minvals[] = {0, -0x80, -0x8000, -0x800000, -0x7FFFFFFF-1};
@@ -66,6 +59,8 @@ static const int16_t seg_uend[8] = {
 static int16_t
 search(int16_t val, const int16_t *table, int size)
 {
+    assert(0 <= size);
+    assert(size < INT16_MAX);
     int i;
 
     for (i = 0; i < size; i++) {
@@ -177,6 +172,7 @@ st_14linear2ulaw(int16_t pcm_val)       /* 2's complement (14-bit range) */
     if (seg >= 8)           /* out of range, return maximum value. */
         return (unsigned char) (0x7F ^ mask);
     else {
+        assert(seg >= 0);
         uval = (unsigned char) (seg << 4) | ((pcm_val >> (seg + 1)) & 0xF);
         return (uval ^ mask);
     }
@@ -304,16 +300,16 @@ static const int stepsizeTable[89] = {
 #define GETINT16(cp, i)         GETINTX(int16_t, (cp), (i))
 #define GETINT32(cp, i)         GETINTX(int32_t, (cp), (i))
 
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define GETINT24(cp, i)  (                              \
         ((unsigned char *)(cp) + (i))[2] +              \
-        (((unsigned char *)(cp) + (i))[1] << 8) +       \
-        (((signed char *)(cp) + (i))[0] << 16) )
+        (((unsigned char *)(cp) + (i))[1] * (1 << 8)) + \
+        (((signed char *)(cp) + (i))[0] * (1 << 16)) )
 #else
 #define GETINT24(cp, i)  (                              \
         ((unsigned char *)(cp) + (i))[0] +              \
-        (((unsigned char *)(cp) + (i))[1] << 8) +       \
-        (((signed char *)(cp) + (i))[2] << 16) )
+        (((unsigned char *)(cp) + (i))[1] * (1 << 8)) + \
+        (((signed char *)(cp) + (i))[2] * (1 << 16)) )
 #endif
 
 
@@ -321,7 +317,7 @@ static const int stepsizeTable[89] = {
 #define SETINT16(cp, i, val)    SETINTX(int16_t, (cp), (i), (val))
 #define SETINT32(cp, i, val)    SETINTX(int32_t, (cp), (i), (val))
 
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
 #define SETINT24(cp, i, val)  do {                              \
         ((unsigned char *)(cp) + (i))[2] = (int)(val);          \
         ((unsigned char *)(cp) + (i))[1] = (int)(val) >> 8;     \
@@ -354,10 +350,10 @@ static const int stepsizeTable[89] = {
     } while(0)
 
 
-#define GETSAMPLE32(size, cp, i)  (                     \
-        (size == 1) ? (int)GETINT8((cp), (i)) << 24 :   \
-        (size == 2) ? (int)GETINT16((cp), (i)) << 16 :  \
-        (size == 3) ? (int)GETINT24((cp), (i)) << 8 :   \
+#define GETSAMPLE32(size, cp, i)  (                           \
+        (size == 1) ? (int)GETINT8((cp), (i)) * (1 << 24) :   \
+        (size == 2) ? (int)GETINT16((cp), (i)) * (1 << 16) :  \
+        (size == 3) ? (int)GETINT24((cp), (i)) * (1 << 8) :   \
                       (int)GETINT32((cp), (i)))
 
 #define SETSAMPLE32(size, cp, i, val)  do {     \
@@ -1565,7 +1561,7 @@ audioop_ulaw2lin_impl(PyObject *module, Py_buffer *fragment, int width)
 
     cp = fragment->buf;
     for (i = 0; i < fragment->len*width; i += width) {
-        int val = st_ulaw2linear16(*cp++) << 16;
+        int val = st_ulaw2linear16(*cp++) * (1 << 16);
         SETSAMPLE32(width, ncp, i, val);
     }
     return rv;
@@ -1639,7 +1635,7 @@ audioop_alaw2lin_impl(PyObject *module, Py_buffer *fragment, int width)
     cp = fragment->buf;
 
     for (i = 0; i < fragment->len*width; i += width) {
-        val = st_alaw2linear16(*cp++) << 16;
+        val = st_alaw2linear16(*cp++) * (1 << 16);
         SETSAMPLE32(width, ncp, i, val);
     }
     return rv;
@@ -1764,7 +1760,7 @@ audioop_lin2adpcm_impl(PyObject *module, Py_buffer *fragment, int width,
 
         /* Step 6 - Output value */
         if ( bufferstep ) {
-            outputbuffer = (delta << 4) & 0xf0;
+            outputbuffer = (delta * (1 << 4)) & 0xf0;
         } else {
             *ncp++ = (delta & 0x0f) | outputbuffer;
         }
@@ -1882,7 +1878,7 @@ audioop_adpcm2lin_impl(PyObject *module, Py_buffer *fragment, int width,
         step = stepsizeTable[index];
 
         /* Step 6 - Output value */
-        SETSAMPLE32(width, ncp, i, valpred << 16);
+        SETSAMPLE32(width, ncp, i, valpred * (1 << 16));
     }
 
     rv = Py_BuildValue("(O(ii))", str, valpred, index);
@@ -1982,5 +1978,12 @@ static struct PyModuleDef audioopmodule = {
 PyMODINIT_FUNC
 PyInit_audioop(void)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "'audioop' is deprecated and slated for removal in "
+                     "Python 3.13",
+                     7)) {
+        return NULL;
+    }
+
     return PyModuleDef_Init(&audioopmodule);
 }

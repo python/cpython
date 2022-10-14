@@ -190,6 +190,7 @@ Paul Boddie
 Matthew Boedicker
 Robin Boerdijk
 Andra Bogildea
+Matt Bogosian
 Nikolay Bogoychev
 David Bolen
 Wouter Bolsterlee
@@ -197,6 +198,7 @@ Gawain Bolton
 Carl Friedrich Bolz-Tereick
 Forest Bond
 Gregory Bond
+David Bonner
 Angelin Booz
 Médéric Boquien
 Matias Bordese
@@ -227,6 +229,7 @@ Tom Bridgman
 Anthony Briggs
 Keith Briggs
 Tobias Brink
+Miguel Brito
 Dillon Brock
 Richard Brodie
 Michael Broghton
@@ -294,6 +297,7 @@ Michael Cetrulo
 Dave Chambers
 Pascal Chambon
 Nicholas Chammas
+Ofey Chan
 John Chandler
 Hye-Shik Chang
 Jeffrey Chang
@@ -305,6 +309,7 @@ Mitch Chapman
 Matt Chaput
 William Chargin
 Yogesh Chaudhari
+Gautam Chaudhuri
 David Chaum
 Nicolas Chauvat
 Jerry Chen
@@ -398,6 +403,7 @@ Lars Damerow
 Evan Dandrea
 Eric Daniel
 Scott David Daniels
+Derzsi Dániel
 Lawrence D'Anna
 Ben Darnell
 Kushal Das
@@ -426,6 +432,7 @@ Caleb Deveraux
 Catherine Devlin
 Scott Dial
 Alon Diamant
+Lital Natan
 Toby Dickenson
 Mark Dickinson
 Jack Diederich
@@ -511,6 +518,7 @@ Daniel Evers
 evilzero
 Winston Ewert
 Greg Ewing
+Sam Ezeh
 Martijn Faassen
 Clovis Fabricio
 Andreas Faerber
@@ -542,6 +550,7 @@ Nils Fischbeck
 Frederik Fix
 Tom Flanagan
 Matt Fleming
+Sean Fleming
 Hernán Martínez Foffani
 Benjamin Fogle
 Artem Fokin
@@ -583,6 +592,7 @@ Quentin Gallet-Gilles
 Riccardo Attilio Galli
 Raymund Galvin
 Nitin Ganatra
+Soumendra Ganguly (गङ्गोपाध्याय)
 Fred Gansevles
 Paul Ganssle
 Lars Marius Garshol
@@ -600,6 +610,7 @@ Marius Gedminas
 Jan-Philip Gehrcke
 Thomas Gellekum
 Gabriel Genellina
+Philip Georgi
 Christos Georgiou
 Elazar (אלעזר) Gershuni
 Ben Gertzfield
@@ -676,6 +687,7 @@ Anders Hammarquist
 Mark Hammond
 Harald Hanche-Olsen
 Manus Hand
+Andreas Hangauer
 Milton L. Hankins
 Carl Bordum Hansen
 Stephen Hansen
@@ -745,6 +757,7 @@ Albert Hofkamp
 Chris Hogan
 Tomas Hoger
 Jonathan Hogg
+Vladyslav Hoi
 Kamilla Holanda
 Steve Holden
 Akintayo Holder
@@ -794,6 +807,7 @@ Fredrik Håård
 Florian Höch
 Oleg Höfling
 Robert Hölzl
+Stefan Hölzl
 Catalin Iacob
 Mihai Ibanescu
 Ali Ikinci
@@ -816,6 +830,7 @@ Ben Jackson
 Paul Jackson
 Manuel Jacob
 David Jacobs
+Jeffrey C. Jacobs
 Kevin Jacobs
 Kjetil Jacobsen
 Shantanu Jain
@@ -905,6 +920,7 @@ Sanyam Khurana
 Tyler Kieft
 Mads Kiilerich
 Jason Killen
+Derek D. Kim
 Jan Kim
 Taek Joo Kim
 Sam Kimbrel
@@ -922,6 +938,7 @@ Ron Klatchko
 Reid Kleckner
 Carsten Klein
 Bastian Kleineidam
+Joel Klimont
 Bob Kline
 Matthias Klose
 Jeremy Kloth
@@ -970,15 +987,18 @@ Andrew Kuchling
 Jakub Kuczys
 Dave Kuhlman
 Jon Kuhn
+Andrei Kulakov
 Ilya Kulakov
 Upendra Kumar
 Toshio Kuratomi
 Ilia Kurenkov
 Vladimir Kushnir
 Erno Kuusela
+Kabir Kwatra
 Ross Lagerwall
 Cameron Laird
 Loïc Lajeanne
+Alexander Lakeev
 David Lam
 Thomas Lamb
 Valerie Lambert
@@ -1029,7 +1049,7 @@ Robert Lehmann
 Petri Lehtinen
 Luke Kenneth Casson Leighton
 John Leitch
-Tshepang Lekhonkhobe
+Tshepang Mbambo
 Marc-André Lemburg
 Mateusz Lenik
 John Lenton
@@ -1048,6 +1068,7 @@ Robert Li
 Xuanji Li
 Zekun Li
 Zheao Li
+Eli Libman
 Dan Lidral-Porter
 Robert van Liere
 Ross Light
@@ -1112,6 +1133,7 @@ Vincent Marchetti
 David Marek
 Doug Marien
 Sven Marnach
+John Marshall
 Alex Martelli
 Dennis Mårtensson
 Anthony Martin
@@ -1159,6 +1181,7 @@ Dimitri Merejkowsky
 Brian Merrell
 Bruce Merry
 Alexis Métaireau
+Carey Metcalfe
 Luke Mewburn
 Carl Meyer
 Kyle Meyer
@@ -1186,9 +1209,11 @@ Julien Miotte
 Andrii V. Mishkovskyi
 Dom Mitchell
 Dustin J. Mitchell
+Gideon Mitchell
 Tim Mitchell
 Zubin Mithra
 Florian Mladitsch
+Kevin Modzelewski
 Doug Moen
 Jakub Molinski
 Juliette Monsel
@@ -1211,6 +1236,7 @@ Alessandro Moura
 Pablo Mouzo
 Mher Movsisyan
 Ruslan Mstoi
+Marc Mueller
 Valentina Mukhamedzhanova
 Michael Mulich
 Sape Mullender
@@ -1284,6 +1310,7 @@ Ken Jin Ooi
 Piet van Oostrum
 Tomas Oppelstrup
 Jason Orendorff
+Yan "yyyyyyyan" Orestes
 Bastien Orivel
 orlnub123
 Douglas Orr
@@ -1297,6 +1324,7 @@ Peter Otten
 Michael Otteneder
 Richard Oudkerk
 Russel Owen
+Noah Oxer
 Joonas Paalasmaa
 Yaroslav Pankovych
 Martin Packman
@@ -1323,6 +1351,7 @@ William Park
 Claude Paroz
 Heikki Partanen
 Harri Pasanen
+Jeremiah Gabriel Pascual
 Gaël Pasgrimaud
 Feanil Patel
 Ashish Nitin Patil
@@ -1391,6 +1420,7 @@ John Popplewell
 Matheus Vieira Portela
 Davin Potts
 Guillaume Pratte
+Pedro Pregueiro
 Florian Preinstorfer
 Alex Prengère
 Amrit Prem
@@ -1414,8 +1444,10 @@ Ram Rachum
 Jeffrey Rackauckas
 Jérôme Radix
 Burton Radons
+Kirill (python273) R.
 Abhilash Raj
 Shorya Raj
+Ajith Ramachandran
 Dhushyanth Ramasamy
 Ashwin Ramaswami
 Jeff Ramnani
@@ -1433,6 +1465,7 @@ Edward K. Ream
 Chris Rebert
 Marc Recht
 John Redford
+Kalyan Reddy
 Terry J. Reedy
 Gareth Rees
 John Reese
@@ -1527,6 +1560,7 @@ Patrick Sabin
 Sébastien Sablé
 Amit Saha
 Suman Saha
+Koki Saito
 Hajime Saitou
 George Sakkis
 Victor Salgado
@@ -1565,6 +1599,7 @@ Ed Schouten
 Scott Schram
 Robin Schreiber
 Chad J. Schroeder
+Simon-Martin Schroeder
 Christian Schubert
 Sam Schulenburg
 Andreas Schwab
@@ -1618,6 +1653,7 @@ Yue Shuaijie
 Jaysinh Shukla
 Terrel Shumway
 Eric Siegerman
+Reilly Tucker Siemens
 Paul Sijben
 SilentGhost
 Tim Silk
@@ -1638,6 +1674,7 @@ J. Sipprell
 Ngalim Siregar
 Kragen Sitaker
 Kaartic Sivaraam
+Stanisław Skonieczny
 Roman Skurikhin
 Ville Skyttä
 Michael Sloan
@@ -1656,6 +1693,7 @@ Ryan Smith-Roberts
 Rafal Smotrzyk
 Josh Snider
 Eric Snow
+Nikita Sobolev
 Dirk Soede
 Nir Soffer
 Paul Sokolovsky
@@ -1663,6 +1701,7 @@ Evgeny Sologubov
 Cody Somerville
 Anthony Sottile
 Edoardo Spadolini
+Tom Sparrow
 Geoffrey Spear
 Clay Spence
 Stefan Sperling
@@ -1684,6 +1723,7 @@ Anthony Starks
 David Steele
 Oliver Steele
 Greg Stein
+Itai Steinherz
 Marek Stepniowski
 Baruch Sterin
 Chris Stern
@@ -1822,6 +1862,7 @@ Andi Vajda
 Case Van Horsen
 John Mark Vandenberg
 Kyle VanderBeek
+Wm. Keith van der Meulen
 Eric N. Vander Weele
 Andrew Vant
 Atul Varma
@@ -1861,9 +1902,12 @@ Wojtek Walczak
 Charles Waldman
 Richard Walker
 Larry Wall
+Jacob Walls
 Kevin Walzer
 Rodrigo Steinmuller Wanderley
 Dingyuan Wang
+Edward C Wang
+Jiahua Wang
 Ke Wang
 Liang-Bo Wang
 Greg Ward
@@ -1875,6 +1919,8 @@ Bob Watson
 Colin Watson
 David Watson
 Aaron Watters
+Alex Waygood
+Russel Webber
 Henrik Weber
 Leon Weber
 Steve Weber
@@ -1945,6 +1991,7 @@ Gordon Worley
 Darren Worrall
 Thomas Wouters
 Daniel Wozniak
+Simon Wrede
 Marcin Niemira
 Wei Wu
 Heiko Wundram
@@ -1952,10 +1999,12 @@ Doug Wyatt
 Xiang Zhang
 Robert Xiao
 Florent Xicluna
+Xinhang Xu
 Arnon Yaari
 Alakshendra Yadav
 Hirokazu Yamamoto
 Masayuki Yamamoto
+Jingchen Ye
 Ka-Ping Yee
 Chi Hsuan Yen
 Jason Yeo
@@ -1971,6 +2020,8 @@ Masazumi Yoshikawa
 Arnaud Ysmal
 Bernard Yue
 Moshe Zadka
+Bader Zaidan
+Yair Zak
 Elias Zamaria
 Milan Zamazal
 Artur Zaprzala
@@ -1983,6 +2034,7 @@ Yuxiao Zeng
 Uwe Zessin
 Cheng Zhang
 George Zhang
+Charlie Zhao
 Kai Zhu
 Tarek Ziadé
 Jelle Zijlstra

@@ -1,0 +1,2 @@
+regrtest now checks if a test leaks temporary files or directories if run
+with -jN option. Patch by Victor Stinner.

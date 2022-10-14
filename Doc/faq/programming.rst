@@ -35,7 +35,7 @@ debugging non-PythonWin programs.  PythonWin is available as part of
 as a part of the
 `ActivePython <https://www.activestate.com/products/python/>`_ distribution.
 
-`Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
+`Eric <https://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
 `trepan3k <https://github.com/rocky/python3-trepan/>`_ is a gdb-like debugger.
@@ -56,7 +56,7 @@ Are there tools to help find bugs or perform static analysis?
 
 Yes.
 
-`Pylint <https://www.pylint.org/>`_ and
+`Pylint <https://pylint.pycqa.org/en/latest/index.html>`_ and
 `Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
 help you catch bugs sooner.
 
@@ -65,6 +65,8 @@ Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
 `Pytype <https://github.com/google/pytype>`_ can check type hints in Python
 source code.
 
+
+.. _faq-create-standalone-binary:
 
 How can I create a stand-alone binary from a Python script?
 -----------------------------------------------------------
@@ -76,7 +78,7 @@ set of modules required by a program and bind these modules together with a
 Python binary to produce a single executable.
 
 One is to use the freeze tool, which is included in the Python source tree as
-``Tools/freeze``. It converts Python byte code to C arrays; a C compiler you can
+``Tools/freeze``. It converts Python byte code to C arrays; with a C compiler you can
 embed all your modules into a new program, which is then linked with the
 standard Python modules.
 
@@ -89,14 +91,15 @@ only contains those built-in modules which are actually used in the program.  It
 then compiles the generated C code and links it with the rest of the Python
 interpreter to form a self-contained binary which acts exactly like your script.
 
-Obviously, freeze requires a C compiler.  There are several other utilities
-which don't:
+The following packages can help with the creation of console and GUI
+executables:
 
-* `py2exe <http://www.py2exe.org/>`_ for Windows binaries
-* `py2app <https://github.com/ronaldoussoren/py2app>`_ for Mac OS X binaries
-* `cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ for cross-platform
-  binaries
-
+* `Nuitka <https://nuitka.net/>`_ (Cross-platform)
+* `PyInstaller <https://pyinstaller.org/>`_ (Cross-platform)
+* `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
+* `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
+* `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
+* `py2exe <https://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
@@ -291,7 +294,7 @@ It's good practice if you import modules in the following order:
 1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``
 2. third-party library modules (anything installed in Python's site-packages
    directory) -- e.g. mx.DateTime, ZODB, PIL.Image, etc.
-3. locally-developed modules
+3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
 problems with circular imports.  Gordon McMillan says:
@@ -406,8 +409,9 @@ What is the difference between arguments and parameters?
 
 :term:`Parameters <parameter>` are defined by the names that appear in a
 function definition, whereas :term:`arguments <argument>` are the values
-actually passed to a function when calling it.  Parameters define what types of
-arguments a function can accept.  For example, given the function definition::
+actually passed to a function when calling it.  Parameters define what
+:term:`kind of arguments <parameter>` a function can accept.  For
+example, given the function definition::
 
    def func(foo, bar=None, **kwargs):
        pass
@@ -731,7 +735,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`!lambda`.  See the following three examples, slightly adapted from Ulf Bartelt::
 
    from functools import reduce
 
@@ -744,7 +748,7 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
    f(x,f), range(10))))
 
    # Mandelbrot set
-   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,
+   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+'\n'+y,map(lambda y,
    Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,
    Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,
    i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y
@@ -767,7 +771,7 @@ What does the slash(/) in the parameter list of a function mean?
 
 A slash in the argument list of a function denotes that the parameters prior to
 it are positional-only.  Positional-only parameters are the ones without an
-externally-usable name.  Upon calling a function that accepts positional-only
+externally usable name.  Upon calling a function that accepts positional-only
 parameters, arguments are mapped to parameters based solely on their position.
 For example, :func:`divmod` is a function that accepts positional-only
 parameters. Its documentation looks like this::
@@ -831,6 +835,27 @@ is positive, there are many, and in virtually all of them it's more useful for
 ``i % j`` to be ``>= 0``.  If the clock says 10 now, what did it say 200 hours
 ago?  ``-190 % 12 == 2`` is useful; ``-190 % 12 == -10`` is a bug waiting to
 bite.
+
+
+How do I get int literal attribute instead of SyntaxError?
+----------------------------------------------------------
+
+Trying to lookup an ``int`` literal attribute in the normal manner gives
+a syntax error because the period is seen as a decimal point::
+
+   >>> 1.__class__
+     File "<stdin>", line 1
+     1.__class__
+      ^
+   SyntaxError: invalid decimal literal
+
+The solution is to separate the literal from the period
+with either a space or parentheses.
+
+   >>> 1 .__class__
+   <class 'int'>
+   >>> (1).__class__
+   <class 'int'>
 
 
 How do I convert a string to a number?
@@ -1041,7 +1066,7 @@ performance levels:
   detrimental to readability).
 
 If you have reached the limit of what pure Python can allow, there are tools
-to take you further away.  For example, `Cython <http://cython.org>`_ can
+to take you further away.  For example, `Cython <https://cython.org>`_ can
 compile a slightly modified version of Python code into a C extension, and
 can be used on many different platforms.  Cython can take advantage of
 compilation (and optional type annotations) to make your code significantly
@@ -1245,7 +1270,7 @@ use a list comprehension::
    A = [[None] * w for i in range(h)]
 
 Or, you can use an extension that provides a matrix datatype; `NumPy
-<http://www.numpy.org/>`_ is the best known.
+<https://numpy.org/>`_ is the best known.
 
 
 How do I apply a method to a sequence of objects?
@@ -1795,7 +1820,7 @@ for ``None``.  This reads like plain English in code and avoids confusion with
 other objects that may have boolean values that evaluate to false.
 
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create an singleton sentinel object
+value.  In those situations, you can create a singleton sentinel object
 guaranteed to be distinct from other objects.  For example, here is how
 to implement a method that behaves like :meth:`dict.pop`::
 
@@ -1822,6 +1847,136 @@ For example, here is the implementation of
             if v is value or v == value:
                 return True
         return False
+
+
+How can a subclass control what data is stored in an immutable instance?
+------------------------------------------------------------------------
+
+When subclassing an immutable type, override the :meth:`__new__` method
+instead of the :meth:`__init__` method.  The latter only runs *after* an
+instance is created, which is too late to alter data in an immutable
+instance.
+
+All of these immutable classes have a different signature than their
+parent class:
+
+.. testcode::
+
+    from datetime import date
+
+    class FirstOfMonthDate(date):
+        "Always choose the first day of the month"
+        def __new__(cls, year, month, day):
+            return super().__new__(cls, year, month, 1)
+
+    class NamedInt(int):
+        "Allow text names for some numbers"
+        xlat = {'zero': 0, 'one': 1, 'ten': 10}
+        def __new__(cls, value):
+            value = cls.xlat.get(value, value)
+            return super().__new__(cls, value)
+
+    class TitleStr(str):
+        "Convert str to name suitable for a URL path"
+        def __new__(cls, s):
+            s = s.lower().replace(' ', '-')
+            s = ''.join([c for c in s if c.isalnum() or c == '-'])
+            return super().__new__(cls, s)
+
+The classes can be used like this:
+
+.. doctest::
+
+    >>> FirstOfMonthDate(2012, 2, 14)
+    FirstOfMonthDate(2012, 2, 1)
+    >>> NamedInt('ten')
+    10
+    >>> NamedInt(20)
+    20
+    >>> TitleStr('Blog: Why Python Rocks')
+    'blog-why-python-rocks'
+
+
+.. _faq-cache-method-calls:
+
+How do I cache method calls?
+----------------------------
+
+The two principal tools for caching methods are
+:func:`functools.cached_property` and :func:`functools.lru_cache`.  The
+former stores results at the instance level and the latter at the class
+level.
+
+The *cached_property* approach only works with methods that do not take
+any arguments.  It does not create a reference to the instance.  The
+cached method result will be kept only as long as the instance is alive.
+
+The advantage is that when an instance is no longer used, the cached
+method result will be released right away.  The disadvantage is that if
+instances accumulate, so too will the accumulated method results.  They
+can grow without bound.
+
+The *lru_cache* approach works with methods that have hashable
+arguments.  It creates a reference to the instance unless special
+efforts are made to pass in weak references.
+
+The advantage of the least recently used algorithm is that the cache is
+bounded by the specified *maxsize*.  The disadvantage is that instances
+are kept alive until they age out of the cache or until the cache is
+cleared.
+
+This example shows the various techniques::
+
+    class Weather:
+        "Lookup weather information on a government website"
+
+        def __init__(self, station_id):
+            self._station_id = station_id
+            # The _station_id is private and immutable
+
+        def current_temperature(self):
+            "Latest hourly observation"
+            # Do not cache this because old results
+            # can be out of date.
+
+        @cached_property
+        def location(self):
+            "Return the longitude/latitude coordinates of the station"
+            # Result only depends on the station_id
+
+        @lru_cache(maxsize=20)
+        def historic_rainfall(self, date, units='mm'):
+            "Rainfall on a given date"
+            # Depends on the station_id, date, and units.
+
+The above example assumes that the *station_id* never changes.  If the
+relevant instance attributes are mutable, the *cached_property* approach
+can't be made to work because it cannot detect changes to the
+attributes.
+
+To make the *lru_cache* approach work when the *station_id* is mutable,
+the class needs to define the *__eq__* and *__hash__* methods so that
+the cache can detect relevant attribute updates::
+
+    class Weather:
+        "Example with a mutable station identifier"
+
+        def __init__(self, station_id):
+            self.station_id = station_id
+
+        def change_station(self, station_id):
+            self.station_id = station_id
+
+        def __eq__(self, other):
+            return self.station_id == other.station_id
+
+        def __hash__(self):
+            return hash(self.station_id)
+
+        @lru_cache(maxsize=20)
+        def historic_rainfall(self, date, units='cm'):
+            'Rainfall on a given date'
+            # Depends on the station_id, date, and units.
 
 
 Modules
@@ -1940,7 +2095,7 @@ Jim Roskind suggests performing steps in the following order in each module:
 * ``import`` statements
 * active code (including globals that are initialized from imported values).
 
-van Rossum doesn't like this approach much because the imports appear in a
+Van Rossum doesn't like this approach much because the imports appear in a
 strange place, but it does work.
 
 Matthias Urlichs recommends restructuring your code so that the recursive import

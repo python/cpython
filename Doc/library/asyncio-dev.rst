@@ -57,7 +57,7 @@ When the debug mode is enabled:
 * The execution time of the I/O selector is logged if it takes too long to
   perform an I/O operation.
 
-* Callbacks taking longer than 100ms are logged.  The
+* Callbacks taking longer than 100 milliseconds are logged.  The
   :attr:`loop.slow_callback_duration` attribute can be used to set the
   minimum execution duration in seconds that is considered "slow".
 
@@ -109,7 +109,7 @@ that the event loop runs in.
 
 There is currently no way to schedule coroutines or callbacks directly
 from a different process (such as one started with
-:mod:`multiprocessing`). The :ref:`Event Loop Methods <asyncio-event-loop>`
+:mod:`multiprocessing`). The :ref:`asyncio-event-loop-methods`
 section lists APIs that can read from pipes and watch file descriptors
 without blocking the event loop. In addition, asyncio's
 :ref:`Subprocess <asyncio-subprocess>` APIs provide a way to start a
@@ -146,6 +146,11 @@ The default log level is :py:data:`logging.INFO`, which can be easily
 adjusted::
 
    logging.getLogger("asyncio").setLevel(logging.WARNING)
+
+
+Network logging can block the event loop. It is recommended to use
+a separate thread for handling logs or use non-blocking IO. For example,
+see :ref:`blocking-handlers`.
 
 
 .. _asyncio-coroutine-not-scheduled:

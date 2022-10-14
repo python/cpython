@@ -619,7 +619,7 @@ class _Pickler:
                     "persistent IDs in protocol 0 must be ASCII strings")
 
     def save_reduce(self, func, args, state=None, listitems=None,
-                    dictitems=None, state_setter=None, obj=None):
+                    dictitems=None, state_setter=None, *, obj=None):
         # This API is called by some subclasses
 
         if not isinstance(args, tuple):
@@ -1173,7 +1173,7 @@ class _Unpickler:
         used in Python 3.  The *encoding* and *errors* tell pickle how
         to decode 8-bit string instances pickled by Python 2; these
         default to 'ASCII' and 'strict', respectively. *encoding* can be
-        'bytes' to read theses 8-bit string instances as bytes objects.
+        'bytes' to read these 8-bit string instances as bytes objects.
         """
         self._buffers = iter(buffers) if buffers is not None else None
         self._file_readline = file.readline

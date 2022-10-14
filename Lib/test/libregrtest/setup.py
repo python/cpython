@@ -5,6 +5,7 @@ import signal
 import sys
 import unittest
 from test import support
+from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 try:
     import gc
 except ImportError:
@@ -12,6 +13,9 @@ except ImportError:
 
 from test.libregrtest.utils import (setup_unraisable_hook,
                                     setup_threading_excepthook)
+
+
+UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
 
 
 def setup_tests(ns):
@@ -36,6 +40,7 @@ def setup_tests(ns):
         for signum in signals:
             faulthandler.register(signum, chain=True, file=stderr_fd)
 
+    _adjust_resource_limits()
     replace_stdout()
     support.record_original_stdout(sys.stdout)
 
@@ -63,7 +68,6 @@ def setup_tests(ns):
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
-        sys._deactivate_opcache()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
@@ -99,6 +103,13 @@ def setup_tests(ns):
         from test.support.testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
 
+    # Ensure there's a non-ASCII character in env vars at all times to force
+    # tests consider this case. See BPO-44647 for details.
+    if TESTFN_UNDECODABLE and os.supports_bytes_environ:
+        os.environb.setdefault(UNICODE_GUARD_ENV.encode(), TESTFN_UNDECODABLE)
+    elif FS_NONASCII:
+        os.environ.setdefault(UNICODE_GUARD_ENV, FS_NONASCII)
+
 
 def replace_stdout():
     """Set stdout encoder error handler to backslashreplace (as stderr error
@@ -124,3 +135,25 @@ def replace_stdout():
         sys.stdout.close()
         sys.stdout = stdout
     atexit.register(restore_stdout)
+
+
+def _adjust_resource_limits():
+    """Adjust the system resource limits (ulimit) if needed."""
+    try:
+        import resource
+        from resource import RLIMIT_NOFILE
+    except ImportError:
+        return
+    fd_limit, max_fds = resource.getrlimit(RLIMIT_NOFILE)
+    # On macOS the default fd limit is sometimes too low (256) for our
+    # test suite to succeed.  Raise it to something more reasonable.
+    # 1024 is a common Linux default.
+    desired_fds = 1024
+    if fd_limit < desired_fds and fd_limit < max_fds:
+        new_fd_limit = min(desired_fds, max_fds)
+        try:
+            resource.setrlimit(RLIMIT_NOFILE, (new_fd_limit, max_fds))
+            print(f"Raised RLIMIT_NOFILE: {fd_limit} -> {new_fd_limit}")
+        except (ValueError, OSError) as err:
+            print(f"Unable to raise RLIMIT_NOFILE from {fd_limit} to "
+                  f"{new_fd_limit}: {err}.")

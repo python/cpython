@@ -29,8 +29,8 @@ test_urlparse.py provides a good indicator of parsing behavior.
 
 from collections import namedtuple
 import functools
+import math
 import re
-import sys
 import types
 import warnings
 
@@ -740,12 +740,13 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
     if max_num_fields is not None:
-        num_fields = 1 + qs.count(separator)
+        num_fields = 1 + qs.count(separator) if qs else 0
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
 
     r = []
-    for name_value in qs.split(separator):
+    query_args = qs.split(separator) if qs else []
+    for name_value in query_args:
         if not name_value and not strict_parsing:
             continue
         nv = name_value.split('=', 1)
@@ -906,7 +907,14 @@ def quote_from_bytes(bs, safe='/'):
     if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
         return bs.decode()
     quoter = _byte_quoter_factory(safe)
-    return ''.join([quoter(char) for char in bs])
+    if (bs_len := len(bs)) < 200_000:
+        return ''.join(map(quoter, bs))
+    else:
+        # This saves memory - https://github.com/python/cpython/issues/95865
+        chunk_size = math.isqrt(bs_len)
+        chunks = [''.join(map(quoter, bs[i:i+chunk_size]))
+                  for i in range(0, bs_len, chunk_size)]
+        return ''.join(chunks)
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
               quote_via=quote_plus):
@@ -939,10 +947,9 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
             # but that's a minor nit.  Since the original implementation
             # allowed empty dicts that type of behavior probably should be
             # preserved for consistency
-        except TypeError:
-            ty, va, tb = sys.exc_info()
+        except TypeError as err:
             raise TypeError("not a valid non-string sequence "
-                            "or mapping object").with_traceback(tb)
+                            "or mapping object") from err
 
     l = []
     if not doseq:

@@ -10,7 +10,7 @@
 
 The :mod:`numbers` module (:pep:`3141`) defines a hierarchy of numeric
 :term:`abstract base classes <abstract base class>` which progressively define
-more operations.  None of the types defined in this module can be instantiated.
+more operations.  None of the types defined in this module are intended to be instantiated.
 
 
 .. class:: Number
@@ -58,10 +58,13 @@ The numeric tower
 
 .. class:: Rational
 
-   Subtypes :class:`Real` and adds
-   :attr:`~Rational.numerator` and :attr:`~Rational.denominator` properties, which
-   should be in lowest terms. With these, it provides a default for
+   Subtypes :class:`Real` and adds :attr:`~Rational.numerator` and
+   :attr:`~Rational.denominator` properties. It also provides a default for
    :func:`float`.
+
+   The :attr:`~Rational.numerator` and :attr:`~Rational.denominator` values
+   should be instances of :class:`Integral` and should be in lowest terms with
+   :attr:`~Rational.denominator` positive.
 
    .. attribute:: numerator
 
@@ -202,9 +205,9 @@ forward and reverse instances of any given operator. For example,
             if isinstance(a, Rational):
                 # Includes ints.
                 return monomorphic_operator(a, b)
-            elif isinstance(a, numbers.Real):
+            elif isinstance(a, Real):
                 return fallback_operator(float(a), float(b))
-            elif isinstance(a, numbers.Complex):
+            elif isinstance(a, Complex):
                 return fallback_operator(complex(a), complex(b))
             else:
                 return NotImplemented

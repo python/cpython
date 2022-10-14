@@ -46,7 +46,7 @@ directly specified in the ``InventoryItem`` definition shown above.
 Module contents
 ---------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special method`\s to classes, as described below.
@@ -79,7 +79,7 @@ Module contents
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
      class C:
         ...
 
@@ -172,7 +172,7 @@ Module contents
 
    - ``kw_only``: If true (the default value is ``False``), then all
      fields will be marked as keyword-only.  If a field is marked as
-     keyword-only, then the only affect is that the :meth:`__init__`
+     keyword-only, then the only effect is that the :meth:`__init__`
      parameter generated from a keyword-only field must be specified
      with a keyword when :meth:`__init__` is called.  There is no
      effect on any other aspect of dataclasses.  See the
@@ -187,6 +187,23 @@ Module contents
      is raised.
 
     .. versionadded:: 3.10
+
+    .. versionchanged:: 3.11
+       If a field name is already included in the ``__slots__``
+       of a base class, it will not be included in the generated ``__slots__``
+       to prevent `overriding them <https://docs.python.org/3/reference/datamodel.html#notes-on-using-slots>`_.
+       Therefore, do not use ``__slots__`` to retrieve the field names of a
+       dataclass. Use :func:`fields` instead.
+       To be able to determine inherited slots,
+       base class ``__slots__`` may be any iterable, but *not* an iterator.
+
+
+   - ``weakref_slot``: If true (the default is ``False``), add a slot
+     named "__weakref__", which is required to make an instance
+     weakref-able.  It is an error to specify ``weakref_slot=True``
+     without also specifying ``slots=True``.
+
+    .. versionadded:: 3.11
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
@@ -205,7 +222,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING):
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -221,10 +238,9 @@ Module contents
      c.mylist += [1, 2, 3]
 
    As shown above, the :const:`MISSING` value is a sentinel object used to
-   detect if the ``default`` and ``default_factory`` parameters are
-   provided.  This sentinel is used because ``None`` is a valid value
-   for ``default``.  No code should directly use the :const:`MISSING`
-   value.
+   detect if some parameters are provided by the user. This sentinel is
+   used because ``None`` is a valid value for some parameters with
+   a distinct meaning.  No code should directly use the :const:`MISSING` value.
 
    The parameters to :func:`field` are:
 
@@ -320,12 +336,15 @@ Module contents
    Raises :exc:`TypeError` if not passed a dataclass or instance of one.
    Does not return pseudo-fields which are ``ClassVar`` or ``InitVar``.
 
-.. function:: asdict(instance, *, dict_factory=dict)
+.. function:: asdict(obj, *, dict_factory=dict)
 
-   Converts the dataclass ``instance`` to a dict (by using the
+   Converts the dataclass ``obj`` to a dict (by using the
    factory function ``dict_factory``).  Each dataclass is converted
    to a dict of its fields, as ``name: value`` pairs.  dataclasses, dicts,
-   lists, and tuples are recursed into.  For example::
+   lists, and tuples are recursed into.  Other objects are copied with
+   :func:`copy.deepcopy`.
+
+   Example of using :func:`asdict` on nested dataclasses::
 
      @dataclass
      class Point:
@@ -342,23 +361,34 @@ Module contents
      c = C([Point(0, 0), Point(10, 4)])
      assert asdict(c) == {'mylist': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
 
-   Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
+   To create a shallow copy, the following workaround may be used::
 
-.. function:: astuple(instance, *, tuple_factory=tuple)
+     dict((field.name, getattr(obj, field.name)) for field in fields(obj))
 
-   Converts the dataclass ``instance`` to a tuple (by using the
+   :func:`asdict` raises :exc:`TypeError` if ``obj`` is not a dataclass
+   instance.
+
+.. function:: astuple(obj, *, tuple_factory=tuple)
+
+   Converts the dataclass ``obj`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
    to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into.
+   tuples are recursed into. Other objects are copied with
+   :func:`copy.deepcopy`.
 
    Continuing from the previous example::
 
      assert astuple(p) == (10, 20)
      assert astuple(c) == ([(0, 0), (10, 4)],)
 
-   Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
+   To create a shallow copy, the following workaround may be used::
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
+     tuple(getattr(obj, field.name) for field in dataclasses.fields(obj))
+
+   :func:`astuple` raises :exc:`TypeError` if ``obj`` is not a dataclass
+   instance.
+
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -367,8 +397,8 @@ Module contents
    or ``(name, type, Field)``.  If just ``name`` is supplied,
    ``typing.Any`` is used for ``type``.  The values of ``init``,
    ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
-   ``match_args``, ``kw_only``, and  ``slots`` have the same meaning as
-   they do in :func:`dataclass`.
+   ``match_args``, ``kw_only``, ``slots``, and ``weakref_slot`` have
+   the same meaning as they do in :func:`dataclass`.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
@@ -393,10 +423,10 @@ Module contents
          def add_one(self):
              return self.x + 1
 
-.. function:: replace(instance, /, **changes)
+.. function:: replace(obj, /, **changes)
 
-   Creates a new object of the same type as ``instance``, replacing
-   fields with values from ``changes``.  If ``instance`` is not a Data
+   Creates a new object of the same type as ``obj``, replacing
+   fields with values from ``changes``.  If ``obj`` is not a Data
    Class, raises :exc:`TypeError`.  If values in ``changes`` do not
    specify fields, raises :exc:`TypeError`.
 
@@ -421,7 +451,7 @@ Module contents
    ``replace()`` (or similarly named) method which handles instance
    copying.
 
-.. function:: is_dataclass(class_or_instance)
+.. function:: is_dataclass(obj)
 
    Return ``True`` if its parameter is a dataclass or an instance of one,
    otherwise return ``False``.
@@ -461,6 +491,8 @@ Module contents
 
    In a single dataclass, it is an error to specify more than one
    field whose type is :const:`KW_ONLY`.
+
+   .. versionadded:: 3.10
 
 .. exception:: FrozenInstanceError
 
@@ -640,74 +672,131 @@ re-ordered :meth:`__init__` parameter list.
 Default factory functions
 -------------------------
 
-   If a :func:`field` specifies a ``default_factory``, it is called with
-   zero arguments when a default value for the field is needed.  For
-   example, to create a new instance of a list, use::
+If a :func:`field` specifies a ``default_factory``, it is called with
+zero arguments when a default value for the field is needed.  For
+example, to create a new instance of a list, use::
 
-     mylist: list = field(default_factory=list)
+  mylist: list = field(default_factory=list)
 
-   If a field is excluded from :meth:`__init__` (using ``init=False``)
-   and the field also specifies ``default_factory``, then the default
-   factory function will always be called from the generated
-   :meth:`__init__` function.  This happens because there is no other
-   way to give the field an initial value.
+If a field is excluded from :meth:`__init__` (using ``init=False``)
+and the field also specifies ``default_factory``, then the default
+factory function will always be called from the generated
+:meth:`__init__` function.  This happens because there is no other
+way to give the field an initial value.
 
 Mutable default values
 ----------------------
 
-   Python stores default member variable values in class attributes.
-   Consider this example, not using dataclasses::
+Python stores default member variable values in class attributes.
+Consider this example, not using dataclasses::
 
-     class C:
-         x = []
-         def add(self, element):
-             self.x.append(element)
+  class C:
+      x = []
+      def add(self, element):
+          self.x.append(element)
 
-     o1 = C()
-     o2 = C()
-     o1.add(1)
-     o2.add(2)
-     assert o1.x == [1, 2]
-     assert o1.x is o2.x
+  o1 = C()
+  o2 = C()
+  o1.add(1)
+  o2.add(2)
+  assert o1.x == [1, 2]
+  assert o1.x is o2.x
 
-   Note that the two instances of class ``C`` share the same class
-   variable ``x``, as expected.
+Note that the two instances of class ``C`` share the same class
+variable ``x``, as expected.
 
-   Using dataclasses, *if* this code was valid::
+Using dataclasses, *if* this code was valid::
 
-     @dataclass
-     class D:
-         x: List = []
-         def add(self, element):
-             self.x += element
+  @dataclass
+  class D:
+      x: List = []
+      def add(self, element):
+          self.x += element
 
-   it would generate code similar to::
+it would generate code similar to::
 
-     class D:
-         x = []
-         def __init__(self, x=x):
-             self.x = x
-         def add(self, element):
-             self.x += element
+  class D:
+      x = []
+      def __init__(self, x=x):
+          self.x = x
+      def add(self, element):
+          self.x += element
 
-     assert D().x is D().x
+  assert D().x is D().x
 
-   This has the same issue as the original example using class ``C``.
-   That is, two instances of class ``D`` that do not specify a value
-   for ``x`` when creating a class instance will share the same copy
-   of ``x``.  Because dataclasses just use normal Python class
-   creation they also share this behavior.  There is no general way
-   for Data Classes to detect this condition.  Instead, the
-   :func:`dataclass` decorator will raise a :exc:`TypeError` if it
-   detects a default parameter of type ``list``, ``dict``, or ``set``.
-   This is a partial solution, but it does protect against many common
-   errors.
+This has the same issue as the original example using class ``C``.
+That is, two instances of class ``D`` that do not specify a value
+for ``x`` when creating a class instance will share the same copy
+of ``x``.  Because dataclasses just use normal Python class
+creation they also share this behavior.  There is no general way
+for Data Classes to detect this condition.  Instead, the
+:func:`dataclass` decorator will raise a :exc:`TypeError` if it
+detects an unhashable default parameter.  The assumption is that if
+a value is unhashable, it is mutable.  This is a partial solution,
+but it does protect against many common errors.
 
-   Using default factory functions is a way to create new instances of
-   mutable types as default values for fields::
+Using default factory functions is a way to create new instances of
+mutable types as default values for fields::
 
-     @dataclass
-     class D:
-         x: list = field(default_factory=list)
+  @dataclass
+  class D:
+      x: list = field(default_factory=list)
 
-     assert D().x is not D().x
+  assert D().x is not D().x
+
+.. versionchanged:: 3.11
+   Instead of looking for and disallowing objects of type ``list``,
+   ``dict``, or ``set``, unhashable objects are now not allowed as
+   default values.  Unhashability is used to approximate
+   mutability.
+
+Descriptor-typed fields
+-----------------------
+
+Fields that are assigned :ref:`descriptor objects <descriptors>` as their
+default value have the following special behaviors:
+
+* The value for the field passed to the dataclass's ``__init__`` method is
+  passed to the descriptor's ``__set__`` method rather than overwriting the
+  descriptor object.
+* Similarly, when getting or setting the field, the descriptor's
+  ``__get__`` or ``__set__`` method is called rather than returning or
+  overwriting the descriptor object.
+* To determine whether a field contains a default value, ``dataclasses``
+  will call the descriptor's ``__get__`` method using its class access
+  form (i.e. ``descriptor.__get__(obj=None, type=cls)``.  If the
+  descriptor returns a value in this case, it will be used as the
+  field's default. On the other hand, if the descriptor raises
+  :exc:`AttributeError` in this situation, no default value will be
+  provided for the field.
+
+::
+
+  class IntConversionDescriptor:
+    def __init__(self, *, default):
+      self._default = default
+
+    def __set_name__(self, owner, name):
+      self._name = "_" + name
+
+    def __get__(self, obj, type):
+      if obj is None:
+        return self._default
+
+      return getattr(obj, self._name, self._default)
+
+    def __set__(self, obj, value):
+      setattr(obj, self._name, int(value))
+
+  @dataclass
+  class InventoryItem:
+    quantity_on_hand: IntConversionDescriptor = IntConversionDescriptor(default=100)
+
+  i = InventoryItem()
+  print(i.quantity_on_hand)   # 100
+  i.quantity_on_hand = 2.5    # calls __set__ with 2.5
+  print(i.quantity_on_hand)   # 2
+
+Note that if a field is annotated with a descriptor type, but is not assigned
+a descriptor object as its default value, the field will act like a normal
+field.

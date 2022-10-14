@@ -81,8 +81,9 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is ``NULL``, the attribute is deleted, however this feature is
-   deprecated in favour of using :c:func:`PyObject_DelAttr`.
+   If *v* is ``NULL``, the attribute is deleted. This behaviour is deprecated
+   in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
+   plans to remove it.
 
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
@@ -92,7 +93,7 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is ``NULL``, the attribute is deleted, however this feature is
+   If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
 
@@ -125,6 +126,14 @@ Object Protocol
    A generic implementation for the getter of a ``__dict__`` descriptor. It
    creates the dictionary if necessary.
 
+   This function may also be called to get the :py:attr:`~object.__dict__`
+   of the object *o*. Pass ``NULL`` for *context* when calling it.
+   Since this function may need to allocate memory for the
+   dictionary, it may be more efficient to call :c:func:`PyObject_GetAttr`
+   when accessing an attribute on the object.
+
+   On failure, returns ``NULL`` with an exception set.
+
    .. versionadded:: 3.3
 
 
@@ -134,6 +143,16 @@ Object Protocol
    implementation does not allow the dictionary to be deleted.
 
    .. versionadded:: 3.3
+
+
+.. c:function:: PyObject** _PyObject_GetDictPtr(PyObject *obj)
+
+   Return a pointer to :py:attr:`~object.__dict__` of the object *obj*.
+   If there is no ``__dict__``, return ``NULL`` without setting an exception.
+
+   This function may need to allocate memory for the
+   dictionary, so it may be more efficient to call :c:func:`PyObject_GetAttr`
+   when accessing an attribute on the object.
 
 
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)
@@ -257,7 +276,7 @@ Object Protocol
 
    .. versionchanged:: 3.2
       The return type is now Py_hash_t.  This is a signed integer the same size
-      as Py_ssize_t.
+      as :c:type:`Py_ssize_t`.
 
 
 .. c:function:: Py_hash_t PyObject_HashNotImplemented(PyObject *o)
@@ -290,8 +309,8 @@ Object Protocol
    of object *o*. On failure, raises :exc:`SystemError` and returns ``NULL``.  This
    is equivalent to the Python expression ``type(o)``. This function increments the
    reference count of the return value. There's really no reason to use this
-   function instead of the common expression ``o->ob_type``, which returns a
-   pointer of type :c:type:`PyTypeObject*`, except when the incremented reference
+   function instead of the :c:func:`Py_TYPE()` function, which returns a
+   pointer of type :c:expr:`PyTypeObject*`, except when the incremented reference
    count is needed.
 
 
@@ -311,12 +330,12 @@ Object Protocol
    returned.  This is the equivalent to the Python expression ``len(o)``.
 
 
-.. c:function:: Py_ssize_t PyObject_LengthHint(PyObject *o, Py_ssize_t default)
+.. c:function:: Py_ssize_t PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
 
    Return an estimated length for the object *o*. First try to return its
    actual length, then an estimate using :meth:`~object.__length_hint__`, and
    finally return the default value. On error return ``-1``. This is the
-   equivalent to the Python expression ``operator.length_hint(o, default)``.
+   equivalent to the Python expression ``operator.length_hint(o, defaultvalue)``.
 
    .. versionadded:: 3.4
 
@@ -358,7 +377,7 @@ Object Protocol
    iterated.
 
 
-.. c:function:: PyObject* PyObject_GetAiter(PyObject *o)
+.. c:function:: PyObject* PyObject_GetAIter(PyObject *o)
 
    This is the equivalent to the Python expression ``aiter(o)``. Takes an
    :class:`AsyncIterable` object and returns an :class:`AsyncIterator` for it.

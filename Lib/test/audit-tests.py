@@ -6,6 +6,7 @@ module with arguments identifying each test.
 """
 
 import contextlib
+import os
 import sys
 
 
@@ -104,6 +105,32 @@ def test_block_add_hook_baseexception():
             # Adding this next hook should raise BaseException
             with TestHook() as hook2:
                 pass
+
+
+def test_marshal():
+    import marshal
+    o = ("a", "b", "c", 1, 2, 3)
+    payload = marshal.dumps(o)
+
+    with TestHook() as hook:
+        assertEqual(o, marshal.loads(marshal.dumps(o)))
+
+        try:
+            with open("test-marshal.bin", "wb") as f:
+                marshal.dump(o, f)
+            with open("test-marshal.bin", "rb") as f:
+                assertEqual(o, marshal.load(f))
+        finally:
+            os.unlink("test-marshal.bin")
+
+    actual = [(a[0], a[1]) for e, a in hook.seen if e == "marshal.dumps"]
+    assertSequenceEqual(actual, [(o, marshal.version)] * 2)
+
+    actual = [a[0] for e, a in hook.seen if e == "marshal.loads"]
+    assertSequenceEqual(actual, [payload])
+
+    actual = [e for e, a in hook.seen if e == "marshal.load"]
+    assertSequenceEqual(actual, ["marshal.load"])
 
 
 def test_pickle():
@@ -379,6 +406,48 @@ def test_sqlite3():
             pass
         else:
             raise RuntimeError("Expected sqlite3.load_extension to fail")
+
+
+def test_sys_getframe():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys."):
+            print(event, args[0].f_code.co_name)
+
+    sys.addaudithook(hook)
+    sys._getframe()
+
+
+def test_wmi_exec_query():
+    import _wmi
+
+    def hook(event, args):
+        if event.startswith("_wmi."):
+            print(event, args[0])
+
+    sys.addaudithook(hook)
+    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+
+def test_syslog():
+    import syslog
+
+    def hook(event, args):
+        if event.startswith("syslog."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    syslog.openlog('python')
+    syslog.syslog('test')
+    syslog.setlogmask(syslog.LOG_DEBUG)
+    syslog.closelog()
+    # implicit open
+    syslog.syslog('test2')
+    # open with default ident
+    syslog.openlog(logoption=syslog.LOG_NDELAY, facility=syslog.LOG_LOCAL0)
+    sys.argv = None
+    syslog.openlog()
+    syslog.closelog()
 
 
 if __name__ == "__main__":

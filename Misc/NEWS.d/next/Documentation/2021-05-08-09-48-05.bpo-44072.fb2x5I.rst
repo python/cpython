@@ -1,2 +1,0 @@
-Correct where in the numeric ABC hierarchy ``**`` support is added, i.e., in
-numbers.Complex, not numbers.Integral.

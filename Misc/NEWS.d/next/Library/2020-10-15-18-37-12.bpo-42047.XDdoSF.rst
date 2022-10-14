@@ -1,0 +1,1 @@
+Add :func:`threading.get_native_id` support for DragonFly BSD. Patch by David Carlier.
