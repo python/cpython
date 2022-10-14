@@ -44,7 +44,7 @@ help:
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
 	@echo "  check      to run a check for frequent markup errors"
 
-build:
+build: ensure-venv
 	-mkdir -p build
 # Look first for a Misc/NEWS file (building from a source release tarball
 # or old repo) and use that, otherwise look for a Misc/NEWS.d directory
@@ -139,6 +139,11 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
+		$(MAKE) ensure-venv; \
+	fi
+
+ensure-venv:
+	@if [ ! -d $(VENVDIR) ] ; then \
 		$(PYTHON) -m venv $(VENVDIR); \
 		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools; \
 		$(VENVDIR)/bin/python3 -m pip install -r requirements.txt; \
