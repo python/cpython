@@ -1,0 +1,3 @@
+When ``Py_DEBUG`` is enabled, ``Python/ceval.c`` is compiled with target
+labels, even if ``USE_COMPUTED_GOTOS`` was disabled.  This allows
+breakpoints to be set at those labels in (for instance) ``gdb``.
