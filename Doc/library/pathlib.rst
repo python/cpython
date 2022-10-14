@@ -580,6 +580,12 @@ Pure paths provide the following methods and properties:
         File "pathlib.py", line 941, in relative_to
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
+
+   When *walk_up* is False, the default, the path must start with *other*,
+   when it's True ``..`` entries may be added to form the relative path. In
+   all other cases, such as the paths referencing different drives,
+   :exc:`ValueError` is raised.::
+
       >>> p.relative_to('/usr', walk_up=True)
       PurePosixPath('../etc/passwd')
       >>> p.relative_to('foo', walk_up=True)
@@ -589,17 +595,12 @@ Pure paths provide the following methods and properties:
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not on the same drive as 'foo' OR one path is relative and the other is absolute.
 
-   When *walk_up* is False, the default, the path must start with *other*,
-   when it's True ``..`` entries may be added to form the relative path. In
-   all other cases, such as the paths referencing different drives,
-   :exc:`ValueError` is raised.
-
    .. warning::
       The *walk_up* option assumes that no symlinks are present in the path; you
       should call :meth:`~Path.resolve` first to ensure this.
 
-   .. versionadded:: 3.11
-      The *walk_up* argument (pre-3.11 behavior is the same as walk_up=False).
+   .. versionadded:: 3.12
+      The *walk_up* argument (pre-3.12 behavior is the same as walk_up=False).
 
 
 .. method:: PurePath.with_name(name)
