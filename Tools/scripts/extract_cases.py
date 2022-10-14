@@ -17,6 +17,13 @@ parser.add_argument("-c", "--compare", action="store_true")
 parser.add_argument("-q", "--quiet", action="store_true")
 
 
+inverse_specializations = {
+    specname: familyname
+    for familyname, specnames in dis._specializations.items()
+    for specname in specnames
+}
+
+
 def eopen(filename, mode="r"):
     if filename == "-":
         if "r" in mode:
@@ -44,6 +51,13 @@ def figure_stack_effect(opcode_name):
     # If stack effect is constant, return it as an int.
     # If it is variable or unknown, raise ValueError.
     # (It may be dis.stack_effect() that raises ValueError.)
+    if m := re.match(f"^(\w+)__(\w+)$", opcode_name):
+        # Super-instruction adds effect of both parts
+        first, second = m.groups()
+        return figure_stack_effect(first) + figure_stack_effect(second)
+    if opcode_name in inverse_specializations:
+        # Specialized instruction maps to unspecialized instruction
+        opcode_name = inverse_specializations[opcode_name]
     opcode = dis._all_opmap[opcode_name]
     if opcode in dis.hasarg:
         try:
