@@ -3543,10 +3543,10 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     return 0;
 }
 
-static void
-module_free(void *m)
+static int
+module_clear(PyObject *mod)
 {
-    asyncio_state *state = get_asyncio_state(m);
+    asyncio_state *state = get_asyncio_state(mod);
 
     Py_CLEAR(state->FutureIterType);
     Py_CLEAR(state->TaskStepMethWrapper_Type);
@@ -3574,13 +3574,13 @@ module_free(void *m)
     module_free_freelists();
 
     state->module_initialized = 0;
+    return 0;
 }
 
-static int
-module_clear(PyObject *mod)
+static void
+module_free(void *mod)
 {
-    module_free((PyObject *)mod);
-    return 0;
+    (void)module_clear((PyObject *)mod);
 }
 
 static int
@@ -3683,30 +3683,12 @@ static PyMethodDef asyncio_methods[] = {
     {NULL, NULL}
 };
 
-static struct PyModuleDef _asynciomodule = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_asyncio",
-    .m_doc = module_doc,
-    .m_size = sizeof(asyncio_state),
-    .m_methods = asyncio_methods,
-    .m_slots = NULL,
-    .m_traverse = module_traverse,
-    .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
-};
-
-
-PyMODINIT_FUNC
-PyInit__asyncio(void)
+static int
+module_exec(PyObject *mod)
 {
-    PyObject *m = PyModule_Create(&_asynciomodule);
-    if (m == NULL) {
-        return NULL;
-    }
-    asyncio_state *state = get_asyncio_state(m);
+    asyncio_state *state = get_asyncio_state(mod);
     if (module_init(state) < 0) {
-        Py_DECREF(m);
-        return NULL;
+        return -1;
     }
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \
@@ -3714,45 +3696,56 @@ PyInit__asyncio(void)
         tp = (PyTypeObject *)PyType_FromMetaclass(NULL, m, spec,        \
                                                   (PyObject *)base);    \
         if (tp == NULL) {                                               \
-            goto error;                                                 \
+            return -1;                                                  \
         }                                                               \
     } while (0)
 
-    CREATE_TYPE(m, state->TaskStepMethWrapper_Type, &TaskStepMethWrapper_spec, NULL);
-    CREATE_TYPE(m, state->PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec, NULL);
-    CREATE_TYPE(m, state->FutureIterType, &FutureIter_spec, NULL);
-    CREATE_TYPE(m, state->FutureType, &Future_spec, NULL);
-    CREATE_TYPE(m, state->TaskType, &Task_spec, state->FutureType);
+    CREATE_TYPE(mod, state->TaskStepMethWrapper_Type, &TaskStepMethWrapper_spec, NULL);
+    CREATE_TYPE(mod, state->PyRunningLoopHolder_Type, &PyRunningLoopHolder_spec, NULL);
+    CREATE_TYPE(mod, state->FutureIterType, &FutureIter_spec, NULL);
+    CREATE_TYPE(mod, state->FutureType, &Future_spec, NULL);
+    CREATE_TYPE(mod, state->TaskType, &Task_spec, state->FutureType);
 
 #undef CREATE_TYPE
 
-    if (PyModule_AddType(m, state->FutureType) < 0) {
-        Py_DECREF(m);
-        return NULL;
+    if (PyModule_AddType(mod, state->FutureType) < 0) {
+        return -1;
     }
 
-    if (PyModule_AddType(m, state->TaskType) < 0) {
-        Py_DECREF(m);
-        return NULL;
+    if (PyModule_AddType(mod, state->TaskType) < 0) {
+        return -1;
     }
 
-    Py_INCREF(state->all_tasks);
-    if (PyModule_AddObject(m, "_all_tasks", state->all_tasks) < 0) {
-        Py_DECREF(state->all_tasks);
-        Py_DECREF(m);
-        return NULL;
+    if (PyModule_AddObjectRef(mod, "_all_tasks", state->all_tasks) < 0) {
+        return -1;
     }
 
-    Py_INCREF(state->current_tasks);
-    if (PyModule_AddObject(m, "_current_tasks", state->current_tasks) < 0) {
-        Py_DECREF(state->current_tasks);
-        Py_DECREF(m);
-        return NULL;
+    if (PyModule_AddObjectRef(mod, "_current_tasks", state->current_tasks) < 0) {
+        return -1;
     }
 
-    return m;
+    return 0;
+}
 
-error:
-    Py_DECREF(m);
-    return NULL;
+static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, module_exec},
+    {0, NULL},
+};
+
+static struct PyModuleDef _asynciomodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_asyncio",
+    .m_doc = module_doc,
+    .m_size = sizeof(asyncio_state),
+    .m_methods = asyncio_methods,
+    .m_slots = module_slots,
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = (freefunc)module_free,
+};
+
+PyMODINIT_FUNC
+PyInit__asyncio(void)
+{
+    return PyModuleDef_Init(&_asynciomodule);
 }
