@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 
 import contextlib
@@ -162,7 +163,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
             try:
                 yield file_location, info
             finally:
-                support.unlink(file_location)
+                os_helper.unlink(file_location)
 
     def test_basic(self):
         # Test basic functionality.
@@ -176,8 +177,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
     def test_specified_path(self):
         # Make sure that specifying the location of the file to write to works.
         with self.urlretrieve(self.logo,
-                              support.TESTFN) as (file_location, info):
-            self.assertEqual(file_location, support.TESTFN)
+                              os_helper.TESTFN) as (file_location, info):
+            self.assertEqual(file_location, os_helper.TESTFN)
             self.assertTrue(os.path.exists(file_location))
             with open(file_location, 'rb') as f:
                 self.assertTrue(f.read(), "reading from temporary file failed")

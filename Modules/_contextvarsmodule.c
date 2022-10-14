@@ -30,30 +30,15 @@ static PyMethodDef _contextvars_methods[] = {
 static int
 _contextvars_exec(PyObject *m)
 {
-    Py_INCREF(&PyContext_Type);
-    if (PyModule_AddObject(m, "Context",
-                           (PyObject *)&PyContext_Type) < 0)
-    {
-        Py_DECREF(&PyContext_Type);
+    if (PyModule_AddType(m, &PyContext_Type) < 0) {
         return -1;
     }
-
-    Py_INCREF(&PyContextVar_Type);
-    if (PyModule_AddObject(m, "ContextVar",
-                           (PyObject *)&PyContextVar_Type) < 0)
-    {
-        Py_DECREF(&PyContextVar_Type);
+    if (PyModule_AddType(m, &PyContextVar_Type) < 0) {
         return -1;
     }
-
-    Py_INCREF(&PyContextToken_Type);
-    if (PyModule_AddObject(m, "Token",
-                           (PyObject *)&PyContextToken_Type) < 0)
-    {
-        Py_DECREF(&PyContextToken_Type);
+    if (PyModule_AddType(m, &PyContextToken_Type) < 0) {
         return -1;
     }
-
     return 0;
 }
 

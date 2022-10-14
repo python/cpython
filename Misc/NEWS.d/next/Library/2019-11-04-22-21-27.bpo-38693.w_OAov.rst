@@ -1,0 +1,1 @@
+:mod:`importlib` now uses f-strings internally instead of ``str.format``.

@@ -83,7 +83,7 @@ class check(Command):
             name, version, URL
 
         Recommended fields:
-            (author and author_email) or (maintainer and maintainer_email))
+            (author and author_email) or (maintainer and maintainer_email)
 
         Warns if any are missing.
         """
