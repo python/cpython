@@ -624,6 +624,11 @@ enum
 
 * ``EnumMeta`` renamed to ``EnumType`` (``EnumMeta`` kept as alias).
 
+* The output of ``Enum.__format__`` has changed to include both the enum name
+  and the member name (e.g. ``Enum.MEMBER``). In 3.10 and earlier it only
+  included the member name (e.g. ``MEMBER``). To restore the new behavior,
+  inherit from a subclass of ``ReprEnum``, such as ``IntEnum`` or ``StrEnum``.
+
 * ``StrEnum`` added -- enum members are and must be strings.
 
 * ``ReprEnum`` added -- causes only the ``__repr__`` to be modified, not the
