@@ -735,8 +735,9 @@ class StructTest(unittest.TestCase):
                 min_ = -2 ** (size * 8 - 1)
             error_msg = f"'{int_type}' format requires {min_} <= number <= {max_}"
             for number in [int(-1e50), min_ - 1, max_ + 1, int(1e50)]:
-                with self.assertRaisesRegex(struct.error, error_msg):
-                    struct.pack(fmt_str, number)
+                with self.subTest(format_str=fmt_str, number=number):
+                    with self.assertRaisesRegex(struct.error, error_msg):
+                        struct.pack(fmt_str, number)
 
         for prefix in '@=<>':
             for int_type in 'BHILQ':
