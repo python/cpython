@@ -241,6 +241,10 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequal(0, 'a' * 10, 'count', 'a\u0102')
         self.checkequal(0, 'a' * 10, 'count', 'a\U00100304')
         self.checkequal(0, '\u0102' * 10, 'count', '\u0102\U00100304')
+        # test subclass
+        class MyStr(str):
+            pass
+        self.checkequal(3, MyStr('aaa'), 'count', 'a')
 
     def test_find(self):
         string_tests.CommonTest.test_find(self)
@@ -2811,7 +2815,7 @@ class CAPITest(unittest.TestCase):
         # We cannot test the exact result,
         # because it returns a hex representation of a C pointer,
         # which is going to be different each time. But, we can test the format.
-        p_format_regex = r'^0x[a-zA-Z0-9]{8,}$'
+        p_format_regex = r'^0x[a-zA-Z0-9]{3,}$'
         p_format1 = PyUnicode_FromFormat(b'%p', 'abc')
         self.assertIsInstance(p_format1, str)
         self.assertRegex(p_format1, p_format_regex)
@@ -2819,7 +2823,7 @@ class CAPITest(unittest.TestCase):
         p_format2 = PyUnicode_FromFormat(b'%p %p', '123456', b'xyz')
         self.assertIsInstance(p_format2, str)
         self.assertRegex(p_format2,
-                         r'0x[a-zA-Z0-9]{8,} 0x[a-zA-Z0-9]{8,}')
+                         r'0x[a-zA-Z0-9]{3,} 0x[a-zA-Z0-9]{3,}')
 
         # Extra args are ignored:
         p_format3 = PyUnicode_FromFormat(b'%p', '123456', None, b'xyz')
@@ -3001,6 +3005,12 @@ class CAPITest(unittest.TestCase):
             for ch in uni:
                 self.assertEqual(unicode_count(uni, ch, 0, len(uni)), 1)
                 self.assertEqual(unicode_count(st, ch, 0, len(st)), 0)
+
+        # subclasses should still work
+        class MyStr(str):
+            pass
+
+        self.assertEqual(unicode_count(MyStr('aab'), 'a', 0, 3), 2)
 
     # Test PyUnicode_FindChar()
     @support.cpython_only

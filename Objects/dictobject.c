@@ -5720,6 +5720,20 @@ uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys)
     return v;
 }
 
+static inline int
+validate_watcher_id(PyInterpreterState *interp, int watcher_id)
+{
+    if (watcher_id < 0 || watcher_id >= DICT_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
+        return -1;
+    }
+    if (!interp->dict_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    return 0;
+}
+
 int
 PyDict_Watch(int watcher_id, PyObject* dict)
 {
@@ -5727,16 +5741,26 @@ PyDict_Watch(int watcher_id, PyObject* dict)
         PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
         return -1;
     }
-    if (watcher_id < 0 || watcher_id >= DICT_MAX_WATCHERS) {
-        PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
-        return -1;
-    }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!interp->dict_watchers[watcher_id]) {
-        PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
+    if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
     ((PyDictObject*)dict)->ma_version_tag |= (1LL << watcher_id);
+    return 0;
+}
+
+int
+PyDict_Unwatch(int watcher_id, PyObject* dict)
+{
+    if (!PyDict_Check(dict)) {
+        PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
+        return -1;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id)) {
+        return -1;
+    }
+    ((PyDictObject*)dict)->ma_version_tag &= ~(1LL << watcher_id);
     return 0;
 }
 
@@ -5759,13 +5783,8 @@ PyDict_AddWatcher(PyDict_WatchCallback callback)
 int
 PyDict_ClearWatcher(int watcher_id)
 {
-    if (watcher_id < 0 || watcher_id >= DICT_MAX_WATCHERS) {
-        PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
-        return -1;
-    }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!interp->dict_watchers[watcher_id]) {
-        PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
+    if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
     interp->dict_watchers[watcher_id] = NULL;

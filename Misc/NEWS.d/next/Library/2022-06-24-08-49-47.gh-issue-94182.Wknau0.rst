@@ -1,0 +1,1 @@
+run the :class:`asyncio.PidfdChildWatcher` on the running loop, this allows event loops to run subprocesses when there is no default event loop running on the main thread
