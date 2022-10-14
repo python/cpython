@@ -7,8 +7,7 @@
             JUMP_TO_INSTRUCTION(RESUME_QUICK);
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for RESUME_QUICK
-        inst(RESUME_QUICK, (?? -- ??)) {
+        inst(RESUME_QUICK, ( -- )) {
             PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
@@ -61,8 +60,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_FAST__LOAD_FAST
-        inst(LOAD_FAST__LOAD_FAST, (?? -- ??)) {
+        inst(LOAD_FAST__LOAD_FAST, ( -- __0, __1)) {
             PyObject *value = GETLOCAL(oparg);
             assert(value != NULL);
             NEXTOPARG();
@@ -76,8 +74,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_FAST__LOAD_CONST
-        inst(LOAD_FAST__LOAD_CONST, (?? -- ??)) {
+        inst(LOAD_FAST__LOAD_CONST, ( -- __0, __1)) {
             PyObject *value = GETLOCAL(oparg);
             assert(value != NULL);
             NEXTOPARG();
@@ -90,8 +87,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_FAST__LOAD_FAST
-        inst(STORE_FAST__LOAD_FAST, (?? -- ??)) {
+        inst(STORE_FAST__LOAD_FAST, ( -- )) {
             PyObject *value = POP();
             SETLOCAL(oparg, value);
             NEXTOPARG();
@@ -103,8 +99,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_FAST__STORE_FAST
-        inst(STORE_FAST__STORE_FAST, (?? -- ??)) {
+        inst(STORE_FAST__STORE_FAST, (__0, __1 -- )) {
             PyObject *value = POP();
             SETLOCAL(oparg, value);
             NEXTOPARG();
@@ -114,8 +109,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_CONST__LOAD_FAST
-        inst(LOAD_CONST__LOAD_FAST, (?? -- ??)) {
+        inst(LOAD_CONST__LOAD_FAST, ( -- __0, __1)) {
             PyObject *value = GETITEM(consts, oparg);
             NEXTOPARG();
             next_instr++;
@@ -188,8 +182,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_MULTIPLY_INT
-        inst(BINARY_OP_MULTIPLY_INT, (?? -- ??)) {
+        inst(BINARY_OP_MULTIPLY_INT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -208,8 +201,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_MULTIPLY_FLOAT
-        inst(BINARY_OP_MULTIPLY_FLOAT, (?? -- ??)) {
+        inst(BINARY_OP_MULTIPLY_FLOAT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -230,8 +222,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_SUBTRACT_INT
-        inst(BINARY_OP_SUBTRACT_INT, (?? -- ??)) {
+        inst(BINARY_OP_SUBTRACT_INT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -250,8 +241,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_SUBTRACT_FLOAT
-        inst(BINARY_OP_SUBTRACT_FLOAT, (?? -- ??)) {
+        inst(BINARY_OP_SUBTRACT_FLOAT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -271,8 +261,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_ADD_UNICODE
-        inst(BINARY_OP_ADD_UNICODE, (?? -- ??)) {
+        inst(BINARY_OP_ADD_UNICODE, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -291,8 +280,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_INPLACE_ADD_UNICODE
-        inst(BINARY_OP_INPLACE_ADD_UNICODE, (?? -- ??)) {
+        inst(BINARY_OP_INPLACE_ADD_UNICODE, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -328,8 +316,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_ADD_FLOAT
-        inst(BINARY_OP_ADD_FLOAT, (?? -- ??)) {
+        inst(BINARY_OP_ADD_FLOAT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -350,8 +337,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_ADD_INT
-        inst(BINARY_OP_ADD_INT, (?? -- ??)) {
+        inst(BINARY_OP_ADD_INT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *left = SECOND();
             PyObject *right = TOP();
@@ -424,8 +410,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_SUBSCR_ADAPTIVE
-        inst(BINARY_SUBSCR_ADAPTIVE, (?? -- ??)) {
+        inst(BINARY_SUBSCR_ADAPTIVE, (__0 -- )) {
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *sub = TOP();
@@ -443,8 +428,7 @@
             }
         }
 
-        // error: invalid opcode or oparg for BINARY_SUBSCR_LIST_INT
-        inst(BINARY_SUBSCR_LIST_INT, (?? -- ??)) {
+        inst(BINARY_SUBSCR_LIST_INT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *list = SECOND();
@@ -469,8 +453,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_SUBSCR_TUPLE_INT
-        inst(BINARY_SUBSCR_TUPLE_INT, (?? -- ??)) {
+        inst(BINARY_SUBSCR_TUPLE_INT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *tuple = SECOND();
@@ -495,8 +478,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_SUBSCR_DICT
-        inst(BINARY_SUBSCR_DICT, (?? -- ??)) {
+        inst(BINARY_SUBSCR_DICT, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *dict = SECOND();
             DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
@@ -518,8 +500,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_SUBSCR_GETITEM
-        inst(BINARY_SUBSCR_GETITEM, (?? -- ??)) {
+        inst(BINARY_SUBSCR_GETITEM, (__0 -- )) {
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
@@ -592,8 +573,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_SUBSCR_ADAPTIVE
-        inst(STORE_SUBSCR_ADAPTIVE, (?? -- ??)) {
+        inst(STORE_SUBSCR_ADAPTIVE, (__0, __1, __2 -- )) {
             _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 PyObject *sub = TOP();
@@ -611,8 +591,7 @@
             }
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_SUBSCR_LIST_INT
-        inst(STORE_SUBSCR_LIST_INT, (?? -- ??)) {
+        inst(STORE_SUBSCR_LIST_INT, (__0, __1, __2 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *list = SECOND();
@@ -638,8 +617,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_SUBSCR_DICT
-        inst(STORE_SUBSCR_DICT, (?? -- ??)) {
+        inst(STORE_SUBSCR_DICT, (__0, __1, __2 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *dict = SECOND();
@@ -1116,7 +1094,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for UNPACK_SEQUENCE_ADAPTIVE
+        // error: UNPACK_SEQUENCE has variable stack effect
         inst(UNPACK_SEQUENCE_ADAPTIVE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
@@ -1133,7 +1111,7 @@
             }
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for UNPACK_SEQUENCE_TWO_TUPLE
+        // error: UNPACK_SEQUENCE has variable stack effect
         inst(UNPACK_SEQUENCE_TWO_TUPLE, (?? -- ??)) {
             PyObject *seq = TOP();
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
@@ -1146,7 +1124,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for UNPACK_SEQUENCE_TUPLE
+        // error: UNPACK_SEQUENCE has variable stack effect
         inst(UNPACK_SEQUENCE_TUPLE, (?? -- ??)) {
             PyObject *seq = TOP();
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
@@ -1162,7 +1140,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for UNPACK_SEQUENCE_LIST
+        // error: UNPACK_SEQUENCE has variable stack effect
         inst(UNPACK_SEQUENCE_LIST, (?? -- ??)) {
             PyObject *seq = TOP();
             DEOPT_IF(!PyList_CheckExact(seq), UNPACK_SEQUENCE);
@@ -1363,7 +1341,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_GLOBAL_ADAPTIVE
+        // error: LOAD_GLOBAL has variable stack effect
         inst(LOAD_GLOBAL_ADAPTIVE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
@@ -1382,7 +1360,7 @@
             }
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_GLOBAL_MODULE
+        // error: LOAD_GLOBAL has variable stack effect
         inst(LOAD_GLOBAL_MODULE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
@@ -1404,7 +1382,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_GLOBAL_BUILTIN
+        // error: LOAD_GLOBAL has variable stack effect
         inst(LOAD_GLOBAL_BUILTIN, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
@@ -1830,7 +1808,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_ADAPTIVE
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_ADAPTIVE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
@@ -1850,7 +1828,7 @@
             }
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_INSTANCE_VALUE
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_INSTANCE_VALUE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -1876,7 +1854,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_MODULE
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_MODULE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -1902,7 +1880,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_WITH_HINT
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_WITH_HINT, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -1942,7 +1920,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_SLOT
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_SLOT, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -1965,7 +1943,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_CLASS
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_CLASS, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -1989,7 +1967,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_PROPERTY
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_PROPERTY, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
@@ -2028,7 +2006,7 @@
             goto start_frame;
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
@@ -2070,8 +2048,7 @@
             goto start_frame;
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_ATTR_ADAPTIVE
-        inst(STORE_ATTR_ADAPTIVE, (?? -- ??)) {
+        inst(STORE_ATTR_ADAPTIVE, (__0, __1 -- )) {
             assert(cframe.use_tracing == 0);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2090,8 +2067,7 @@
             }
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_ATTR_INSTANCE_VALUE
-        inst(STORE_ATTR_INSTANCE_VALUE, (?? -- ??)) {
+        inst(STORE_ATTR_INSTANCE_VALUE, (__0, __1 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2120,8 +2096,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_ATTR_WITH_HINT
-        inst(STORE_ATTR_WITH_HINT, (?? -- ??)) {
+        inst(STORE_ATTR_WITH_HINT, (__0, __1 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2173,8 +2148,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for STORE_ATTR_SLOT
-        inst(STORE_ATTR_SLOT, (?? -- ??)) {
+        inst(STORE_ATTR_SLOT, (__0, __1 -- )) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2210,8 +2184,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for COMPARE_OP_ADAPTIVE
-        inst(COMPARE_OP_ADAPTIVE, (?? -- ??)) {
+        inst(COMPARE_OP_ADAPTIVE, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2228,8 +2201,7 @@
             }
         }
 
-        // error: invalid opcode or oparg for COMPARE_OP_FLOAT_JUMP
-        inst(COMPARE_OP_FLOAT_JUMP, (?? -- ??)) {
+        inst(COMPARE_OP_FLOAT_JUMP, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
@@ -2260,8 +2232,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for COMPARE_OP_INT_JUMP
-        inst(COMPARE_OP_INT_JUMP, (?? -- ??)) {
+        inst(COMPARE_OP_INT_JUMP, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
@@ -2293,8 +2264,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for COMPARE_OP_STR_JUMP
-        inst(COMPARE_OP_STR_JUMP, (?? -- ??)) {
+        inst(COMPARE_OP_STR_JUMP, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
@@ -2597,8 +2567,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for JUMP_BACKWARD_QUICK
-        inst(JUMP_BACKWARD_QUICK, (?? -- ??)) {
+        inst(JUMP_BACKWARD_QUICK, ( -- )) {
             PREDICTED(JUMP_BACKWARD_QUICK);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -2747,7 +2716,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for FOR_ITER_ADAPTIVE
+        // error: FOR_ITER stack effect depends on jump flag
         inst(FOR_ITER_ADAPTIVE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
@@ -2763,7 +2732,7 @@
             }
         }
 
-        // error: invalid opcode or oparg for FOR_ITER_LIST
+        // error: FOR_ITER stack effect depends on jump flag
         inst(FOR_ITER_LIST, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyListIterObject *it = (_PyListIterObject *)TOP();
@@ -2787,7 +2756,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for FOR_ITER_RANGE
+        // error: FOR_ITER stack effect depends on jump flag
         inst(FOR_ITER_RANGE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
@@ -2932,7 +2901,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_ATTR_METHOD_WITH_VALUES
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_METHOD_WITH_VALUES, (?? -- ??)) {
             /* Cached method object */
             assert(cframe.use_tracing == 0);
@@ -2959,7 +2928,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_ATTR_METHOD_WITH_DICT
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_METHOD_WITH_DICT, (?? -- ??)) {
             /* Can be either a managed dict, or a tp_dictoffset offset.*/
             assert(cframe.use_tracing == 0);
@@ -2988,7 +2957,7 @@
             DISPATCH();
         }
 
-        // error: stack_effect: opcode requires oparg but oparg was not specified for LOAD_ATTR_METHOD_NO_DICT
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_METHOD_NO_DICT, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -3008,7 +2977,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for LOAD_ATTR_METHOD_LAZY_DICT
+        // error: LOAD_ATTR has variable stack effect
         inst(LOAD_ATTR_METHOD_LAZY_DICT, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
@@ -3032,7 +3001,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_BOUND_METHOD_EXACT_ARGS
+        // error: CALL has variable stack effect
         inst(CALL_BOUND_METHOD_EXACT_ARGS, (?? -- ??)) {
             DEOPT_IF(is_method(stack_pointer, oparg), CALL);
             PyObject *function = PEEK(oparg + 1);
@@ -3132,7 +3101,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_ADAPTIVE
+        // error: CALL has variable stack effect
         inst(CALL_ADAPTIVE, (?? -- ??)) {
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -3154,7 +3123,7 @@
             }
         }
 
-        // error: invalid opcode or oparg for CALL_PY_EXACT_ARGS
+        // error: CALL has variable stack effect
         inst(CALL_PY_EXACT_ARGS, (?? -- ??)) {
             PREDICTED(CALL_PY_EXACT_ARGS);
             assert(call_shape.kwnames == NULL);
@@ -3188,7 +3157,7 @@
             goto start_frame;
         }
 
-        // error: invalid opcode or oparg for CALL_PY_WITH_DEFAULTS
+        // error: CALL has variable stack effect
         inst(CALL_PY_WITH_DEFAULTS, (?? -- ??)) {
             assert(call_shape.kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
@@ -3229,7 +3198,7 @@
             goto start_frame;
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_TYPE_1
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_TYPE_1, (?? -- ??)) {
             assert(call_shape.kwnames == NULL);
             assert(cframe.use_tracing == 0);
@@ -3248,7 +3217,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_STR_1
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_STR_1, (?? -- ??)) {
             assert(call_shape.kwnames == NULL);
             assert(cframe.use_tracing == 0);
@@ -3271,7 +3240,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_TUPLE_1
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_TUPLE_1, (?? -- ??)) {
             assert(call_shape.kwnames == NULL);
             assert(oparg == 1);
@@ -3293,7 +3262,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_BUILTIN_CLASS
+        // error: CALL has variable stack effect
         inst(CALL_BUILTIN_CLASS, (?? -- ??)) {
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3322,7 +3291,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_BUILTIN_O
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_BUILTIN_O, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
@@ -3357,7 +3326,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_BUILTIN_FAST
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_BUILTIN_FAST, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
@@ -3398,7 +3367,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_BUILTIN_FAST_WITH_KEYWORDS
+        // error: CALL has variable stack effect
         inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
@@ -3438,7 +3407,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_LEN
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_LEN, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
@@ -3469,7 +3438,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_ISINSTANCE
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_ISINSTANCE, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
@@ -3503,7 +3472,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_LIST_APPEND
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_LIST_APPEND, (?? -- ??)) {
             assert(cframe.use_tracing == 0);
             assert(call_shape.kwnames == NULL);
@@ -3527,7 +3496,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_METHOD_DESCRIPTOR_O
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (?? -- ??)) {
             assert(call_shape.kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
@@ -3564,7 +3533,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+        // error: CALL has variable stack effect
         inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (?? -- ??)) {
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3602,7 +3571,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (?? -- ??)) {
             assert(call_shape.kwnames == NULL);
             assert(oparg == 0 || oparg == 1);
@@ -3637,7 +3606,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for CALL_NO_KW_METHOD_DESCRIPTOR_FAST
+        // error: CALL has variable stack effect
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (?? -- ??)) {
             assert(call_shape.kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
@@ -3886,8 +3855,7 @@
             DISPATCH();
         }
 
-        // error: invalid opcode or oparg for BINARY_OP_ADAPTIVE
-        inst(BINARY_OP_ADAPTIVE, (?? -- ??)) {
+        inst(BINARY_OP_ADAPTIVE, (__0 -- )) {
             assert(cframe.use_tracing == 0);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -3929,8 +3897,7 @@
             DISPATCH_GOTO();
         }
 
-        // error: invalid opcode or oparg for EXTENDED_ARG_QUICK
-        inst(EXTENDED_ARG_QUICK, (?? -- ??)) {
+        inst(EXTENDED_ARG_QUICK, ( -- )) {
             assert(cframe.use_tracing == 0);
             assert(oparg);
             int oldoparg = oparg;
