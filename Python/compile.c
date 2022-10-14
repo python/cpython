@@ -7934,8 +7934,8 @@ maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 static void
 scan_block_for_locals(basicblock *b, basicblock ***sp)
 {
+    // bit i is set if local i is potentially uninitialized
     uint64_t unsafe_mask = b->b_unsafe_locals_mask;
-    // mask & (1<<i) = 1 if local i is potentially uninitialized
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
         assert(instr->i_opcode != EXTENDED_ARG);
@@ -7992,8 +7992,8 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
         return -1;
     }
     Py_ssize_t blocknum = 0;
-    // state[oparg - 64] == blocknum if #oparg is guaranteed to be
-    // initialized, i.e., if it has had a previous LOAD_FAST or
+    // state[i - 64] == blocknum if local i is guaranteed to
+    // be initialized, i.e., if it has had a previous LOAD_FAST or
     // STORE_FAST within that basicblock (not followed by DELETE_FAST).
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         blocknum++;
@@ -8037,7 +8037,6 @@ static int
 add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
                                                 struct compiler *c)
 {
-    int nparams = (int)PyList_GET_SIZE(c->u->u_ste->ste_varnames);
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     if (nlocals == 0) {
         return 0;
@@ -8059,6 +8058,7 @@ add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
 
     // First origin of being uninitialized:
     // The non-parameter locals in the entry block.
+    int nparams = (int)PyList_GET_SIZE(c->u->u_ste->ste_varnames);
     uint64_t start_mask = 0;
     for (int i = nparams; i < nlocals; i++) {
         start_mask |= (uint64_t)1 << i;
