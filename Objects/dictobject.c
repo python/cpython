@@ -1240,6 +1240,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
     MAINTAIN_TRACKING(mp, key, value);
 
     if (ix == DKIX_EMPTY) {
+        uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_ADDED, mp, key, value);
         /* Insert into new slot. */
         mp->ma_keys->dk_version = 0;
         assert(old_value == NULL);
@@ -1274,7 +1275,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
             ep->me_value = value;
         }
         mp->ma_used++;
-        mp->ma_version_tag = DICT_NEXT_VERSION();
+        mp->ma_version_tag = new_version;
         mp->ma_keys->dk_usable--;
         mp->ma_keys->dk_nentries++;
         assert(mp->ma_keys->dk_usable >= 0);
@@ -1283,6 +1284,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
     }
 
     if (old_value != value) {
+        uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, mp, key, value);
         if (_PyDict_HasSplitTable(mp)) {
             mp->ma_values->values[ix] = value;
             if (old_value == NULL) {
@@ -1299,7 +1301,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
                 DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
             }
         }
-        mp->ma_version_tag = DICT_NEXT_VERSION();
+        mp->ma_version_tag = new_version;
     }
     Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
     ASSERT_CONSISTENT(mp);
@@ -1319,6 +1321,8 @@ insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
                     PyObject *value)
 {
     assert(mp->ma_keys == Py_EMPTY_KEYS);
+
+    uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_ADDED, mp, key, value);
 
     int unicode = PyUnicode_CheckExact(key);
     PyDictKeysObject *newkeys = new_keys_object(PyDict_LOG_MINSIZE, unicode);
@@ -1347,7 +1351,7 @@ insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
         ep->me_value = value;
     }
     mp->ma_used++;
-    mp->ma_version_tag = DICT_NEXT_VERSION();
+    mp->ma_version_tag = new_version;
     mp->ma_keys->dk_usable--;
     mp->ma_keys->dk_nentries++;
     return 0;
@@ -1910,7 +1914,7 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
 
 static int
 delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
-               PyObject *old_value)
+               PyObject *old_value, uint64_t new_version)
 {
     PyObject *old_key;
 
@@ -1918,7 +1922,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     assert(hashpos >= 0);
 
     mp->ma_used--;
-    mp->ma_version_tag = DICT_NEXT_VERSION();
+    mp->ma_version_tag = new_version;
     if (mp->ma_values) {
         assert(old_value == mp->ma_values->values[ix]);
         mp->ma_values->values[ix] = NULL;
@@ -1987,7 +1991,8 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
         return -1;
     }
 
-    return delitem_common(mp, hash, ix, old_value);
+    uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
+    return delitem_common(mp, hash, ix, old_value, new_version);
 }
 
 /* This function promises that the predicate -> deletion sequence is atomic
@@ -2028,10 +2033,12 @@ _PyDict_DelItemIf(PyObject *op, PyObject *key,
     hashpos = lookdict_index(mp->ma_keys, hash, ix);
     assert(hashpos >= 0);
 
-    if (res > 0)
-        return delitem_common(mp, hashpos, ix, old_value);
-    else
+    if (res > 0) {
+        uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
+        return delitem_common(mp, hashpos, ix, old_value, new_version);
+    } else {
         return 0;
+    }
 }
 
 
@@ -2052,11 +2059,12 @@ PyDict_Clear(PyObject *op)
         return;
     }
     /* Empty the dict... */
+    uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_CLEARED, mp, NULL, NULL);
     dictkeys_incref(Py_EMPTY_KEYS);
     mp->ma_keys = Py_EMPTY_KEYS;
     mp->ma_values = NULL;
     mp->ma_used = 0;
-    mp->ma_version_tag = DICT_NEXT_VERSION();
+    mp->ma_version_tag = new_version;
     /* ...then clear the keys and values */
     if (oldvalues != NULL) {
         n = oldkeys->dk_nentries;
@@ -2196,7 +2204,8 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
     }
     assert(old_value != NULL);
     Py_INCREF(old_value);
-    delitem_common(mp, hash, ix, old_value);
+    uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
+    delitem_common(mp, hash, ix, old_value, new_version);
 
     ASSERT_CONSISTENT(mp);
     return old_value;
@@ -2321,6 +2330,7 @@ Fail:
 static void
 dict_dealloc(PyDictObject *mp)
 {
+    _PyDict_NotifyEvent(PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
     PyDictValues *values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
@@ -2809,6 +2819,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
                     other->ma_used == okeys->dk_nentries &&
                     (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
                      USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)) {
+                uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_CLONED, mp, b, NULL);
                 PyDictKeysObject *keys = clone_combined_dict_keys(other);
                 if (keys == NULL) {
                     return -1;
@@ -2822,7 +2833,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
                 }
 
                 mp->ma_used = other->ma_used;
-                mp->ma_version_tag = DICT_NEXT_VERSION();
+                mp->ma_version_tag = new_version;
                 ASSERT_CONSISTENT(mp);
 
                 if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
@@ -3294,6 +3305,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         return NULL;
 
     if (ix == DKIX_EMPTY) {
+        uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_ADDED, mp, key, defaultobj);
         mp->ma_keys->dk_version = 0;
         value = defaultobj;
         if (mp->ma_keys->dk_usable <= 0) {
@@ -3328,12 +3340,13 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         Py_INCREF(value);
         MAINTAIN_TRACKING(mp, key, value);
         mp->ma_used++;
-        mp->ma_version_tag = DICT_NEXT_VERSION();
+        mp->ma_version_tag = new_version;
         mp->ma_keys->dk_usable--;
         mp->ma_keys->dk_nentries++;
         assert(mp->ma_keys->dk_usable >= 0);
     }
     else if (value == NULL) {
+        uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_ADDED, mp, key, defaultobj);
         value = defaultobj;
         assert(_PyDict_HasSplitTable(mp));
         assert(mp->ma_values->values[ix] == NULL);
@@ -3342,7 +3355,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         mp->ma_values->values[ix] = value;
         _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
         mp->ma_used++;
-        mp->ma_version_tag = DICT_NEXT_VERSION();
+        mp->ma_version_tag = new_version;
     }
 
     ASSERT_CONSISTENT(mp);
@@ -3415,6 +3428,7 @@ dict_popitem_impl(PyDictObject *self)
 {
     Py_ssize_t i, j;
     PyObject *res;
+    uint64_t new_version;
 
     /* Allocate the result tuple before checking the size.  Believe it
      * or not, this allocation could trigger a garbage collection which
@@ -3454,6 +3468,7 @@ dict_popitem_impl(PyDictObject *self)
         assert(i >= 0);
 
         key = ep0[i].me_key;
+        new_version = _PyDict_NotifyEvent(PyDict_EVENT_DELETED, self, key, NULL);
         hash = unicode_get_hash(key);
         value = ep0[i].me_value;
         ep0[i].me_key = NULL;
@@ -3468,6 +3483,7 @@ dict_popitem_impl(PyDictObject *self)
         assert(i >= 0);
 
         key = ep0[i].me_key;
+        new_version = _PyDict_NotifyEvent(PyDict_EVENT_DELETED, self, key, NULL);
         hash = ep0[i].me_hash;
         value = ep0[i].me_value;
         ep0[i].me_key = NULL;
@@ -3485,7 +3501,7 @@ dict_popitem_impl(PyDictObject *self)
     /* We can't dk_usable++ since there is DKIX_DUMMY in indices */
     self->ma_keys->dk_nentries = i;
     self->ma_used--;
-    self->ma_version_tag = DICT_NEXT_VERSION();
+    self->ma_version_tag = new_version;
     ASSERT_CONSISTENT(self);
     return res;
 }
@@ -5702,4 +5718,96 @@ uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys)
     uint32_t v = next_dict_keys_version++;
     dictkeys->dk_version = v;
     return v;
+}
+
+static inline int
+validate_watcher_id(PyInterpreterState *interp, int watcher_id)
+{
+    if (watcher_id < 0 || watcher_id >= DICT_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
+        return -1;
+    }
+    if (!interp->dict_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    return 0;
+}
+
+int
+PyDict_Watch(int watcher_id, PyObject* dict)
+{
+    if (!PyDict_Check(dict)) {
+        PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
+        return -1;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id)) {
+        return -1;
+    }
+    ((PyDictObject*)dict)->ma_version_tag |= (1LL << watcher_id);
+    return 0;
+}
+
+int
+PyDict_Unwatch(int watcher_id, PyObject* dict)
+{
+    if (!PyDict_Check(dict)) {
+        PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
+        return -1;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id)) {
+        return -1;
+    }
+    ((PyDictObject*)dict)->ma_version_tag &= ~(1LL << watcher_id);
+    return 0;
+}
+
+int
+PyDict_AddWatcher(PyDict_WatchCallback callback)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
+        if (!interp->dict_watchers[i]) {
+            interp->dict_watchers[i] = callback;
+            return i;
+        }
+    }
+
+    PyErr_SetString(PyExc_RuntimeError, "no more dict watcher IDs available");
+    return -1;
+}
+
+int
+PyDict_ClearWatcher(int watcher_id)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id)) {
+        return -1;
+    }
+    interp->dict_watchers[watcher_id] = NULL;
+    return 0;
+}
+
+void
+_PyDict_SendEvent(int watcher_bits,
+                  PyDict_WatchEvent event,
+                  PyDictObject *mp,
+                  PyObject *key,
+                  PyObject *value)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
+        if (watcher_bits & 1) {
+            PyDict_WatchCallback cb = interp->dict_watchers[i];
+            if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
+                // some dict modification paths (e.g. PyDict_Clear) can't raise, so we
+                // can't propagate exceptions from dict watchers.
+                PyErr_WriteUnraisable((PyObject *)mp);
+            }
+        }
+        watcher_bits >>= 1;
+    }
 }

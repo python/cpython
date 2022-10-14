@@ -645,9 +645,14 @@ add_load_fast_null_checks(PyCodeObject *co)
         }
         i += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
     }
-    if (changed) {
+    if (changed && co->_co_cached != NULL) {
         // invalidate cached co_code object
-        Py_CLEAR(co->_co_code);
+        Py_CLEAR(co->_co_cached->_co_code);
+        Py_CLEAR(co->_co_cached->_co_cellvars);
+        Py_CLEAR(co->_co_cached->_co_freevars);
+        Py_CLEAR(co->_co_cached->_co_varnames);
+        PyMem_Free(co->_co_cached);
+        co->_co_cached = NULL;
     }
 }
 
