@@ -377,8 +377,8 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 /* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
 #define ADAPTIVE_BACKOFF_BITS 4
-/* The initial counter value is 7 == 2**ADAPTIVE_BACKOFF_START - 1 */
-#define ADAPTIVE_BACKOFF_START 3
+/* The initial counter value is 1 == 2**ADAPTIVE_BACKOFF_START - 1 */
+#define ADAPTIVE_BACKOFF_START 1
 
 #define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
 

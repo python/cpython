@@ -771,7 +771,7 @@ dis_extended_arg_quick_code = """\
 """% (extended_arg_quick.__code__.co_firstlineno,
       extended_arg_quick.__code__.co_firstlineno + 1,)
 
-QUICKENING_WARMUP_DELAY = 8
+QUICKENING_WARMUP_DELAY = 2
 
 class DisTestBase(unittest.TestCase):
     "Common utilities for DisTests and TestDisTraceback"
