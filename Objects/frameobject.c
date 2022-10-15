@@ -603,7 +603,7 @@ _PyFrame_GetState(PyFrameObject *frame)
             if (_PyInterpreterFrame_LASTI(frame->f_frame) < 0) {
                 return FRAME_CREATED;
             }
-            switch (_PyOpcode_Deopt[_Py_OPCODE(*frame->f_frame->prev_instr)])
+            switch (_Py_OPCODE(*frame->f_frame->prev_instr))
             {
                 case COPY_FREE_VARS:
                 case MAKE_CELL:
