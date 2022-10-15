@@ -826,7 +826,7 @@ which incur interpreter overhead.
        data[:3] = 0, 0, 0
        limit = math.isqrt(n) + 1
        for p in compress(range(limit), data):
-           data[p*p : n : p+p] = bytearray(len(range(p*p, n, p+p)))
+           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
        data[2] = 1
        return iter_index(data, 1) if n > 2 else iter([])
 
