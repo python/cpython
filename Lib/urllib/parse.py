@@ -167,6 +167,8 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
+            if not isdigit(port):
+                raise ValueError(f"Port {port!r} contains non-numeric character(s)")
             try:
                 port = int(port, 10)
             except ValueError:
@@ -1138,6 +1140,8 @@ def _splitnport(host, defport=-1):
     if not delim:
         host = port
     elif port:
+        if not isdigit(port):
+            raise ValueError(f"Port {port!r} contains non-numeric character(s)")
         try:
             nport = int(port)
         except ValueError:
