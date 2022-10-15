@@ -1015,7 +1015,7 @@ and then convert decimal strings to numeric values using :func:`int` or
 if the line uses something other than whitespace as a separator.
 
 For more complicated input parsing, regular expressions are more powerful
-than C's :c:func:`sscanf` and better suited for the task.
+than C's ``sscanf`` and better suited for the task.
 
 
 What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
@@ -1343,9 +1343,9 @@ To see why this happens, you need to know that (a) if an object implements an
 :meth:`~object.__iadd__` magic method, it gets called when the ``+=`` augmented
 assignment
 is executed, and its return value is what gets used in the assignment statement;
-and (b) for lists, :meth:`__iadd__` is equivalent to calling :meth:`list.extend` on the list
+and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`~list.extend` on the list
 and returning the list.  That's why we say that for lists, ``+=`` is a
-"shorthand" for :meth:`list.extend`::
+"shorthand" for :meth:`~list.extend`::
 
     >>> a_list = []
     >>> a_list += [1]
@@ -1370,7 +1370,7 @@ Thus, in our tuple example what is happening is equivalent to::
      ...
    TypeError: 'tuple' object does not support item assignment
 
-The :meth:`__iadd__` succeeds, and thus the list is extended, but even though
+The :meth:`!__iadd__` succeeds, and thus the list is extended, but even though
 ``result`` points to the same object that ``a_tuple[0]`` already points to,
 that final assignment still results in an error, because tuples are immutable.
 
@@ -1550,7 +1550,7 @@ for more information about controlling attribute access.
 Note that for more general cases delegation can get trickier. When attributes
 must be set as well as retrieved, the class must define a :meth:`~object.__setattr__`
 method too, and it must do so carefully.  The basic implementation of
-:meth:`__setattr__` is roughly equivalent to the following::
+:meth:`!__setattr__` is roughly equivalent to the following::
 
    class X:
        ...
@@ -1558,7 +1558,7 @@ method too, and it must do so carefully.  The basic implementation of
            self.__dict__[name] = value
        ...
 
-Most :meth:`__setattr__` implementations must modify ``self.__dict__`` to store
+Most :meth:`!__setattr__` implementations must modify ``self.__dict__`` to store
 local state for self without causing an infinite recursion.
 
 
@@ -1698,15 +1698,15 @@ There are several possible reasons for this.
 
 The :keyword:`del` statement does not necessarily call :meth:`~object.__del__` -- it simply
 decrements the object's reference count, and if this reaches zero
-:meth:`__del__` is called.
+:meth:`!__del__` is called.
 
 If your data structures contain circular links (e.g. a tree where each child has
 a parent reference and each parent has a list of children) the reference counts
 will never go back to zero.  Once in a while Python runs an algorithm to detect
 such cycles, but the garbage collector might run some time after the last
-reference to your data structure vanishes, so your :meth:`__del__` method may be
+reference to your data structure vanishes, so your :meth:`!__del__` method may be
 called at an inconvenient and random time. This is inconvenient if you're trying
-to reproduce a problem. Worse, the order in which object's :meth:`__del__`
+to reproduce a problem. Worse, the order in which object's :meth:`!__del__`
 methods are executed is arbitrary.  You can run :func:`gc.collect` to force a
 collection, but there *are* pathological cases where objects will never be
 collected.
@@ -1714,7 +1714,7 @@ collected.
 Despite the cycle collector, it's still a good idea to define an explicit
 ``close()`` method on objects to be called whenever you're done with them.  The
 ``close()`` method can then remove attributes that refer to subobjects.  Don't
-call :meth:`__del__` directly -- :meth:`__del__` should call ``close()`` and
+call :meth:`!__del__` directly -- :meth:`!__del__` should call ``close()`` and
 ``close()`` should make sure that it can be called more than once for the same
 object.
 
@@ -1731,7 +1731,7 @@ and sibling references (if they need them!).
    Normally, calling :func:`sys.exc_clear` will take care of this by clearing
    the last recorded exception.
 
-Finally, if your :meth:`__del__` method raises an exception, a warning message
+Finally, if your :meth:`!__del__` method raises an exception, a warning message
 is printed to :data:`sys.stderr`.
 
 
@@ -1847,7 +1847,7 @@ identity tests.  This prevents the code from being confused by objects such as
 ``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
-:meth:`collections.abc.Sequence.__contains__`::
+:meth:`!collections.abc.Sequence.__contains__`::
 
     def __contains__(self, value):
         for v in self:
