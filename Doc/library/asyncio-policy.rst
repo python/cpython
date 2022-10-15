@@ -255,7 +255,6 @@ implementation used by the asyncio event loop:
 
    .. deprecated:: 3.12
 
-
 .. class:: SafeChildWatcher
 
    This implementation uses active event loop from the main thread to handle
