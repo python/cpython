@@ -11,6 +11,26 @@ The macros in this section are used for managing reference counts of Python
 objects.
 
 
+.. c:function:: Py_ssize_t Py_REFCNT(PyObject *o)
+
+   Get the reference count of the Python object *o*.
+
+   Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
+
+   .. versionchanged:: 3.11
+      The parameter type is no longer :c:expr:`const PyObject*`.
+
+   .. versionchanged:: 3.10
+      :c:func:`Py_REFCNT()` is changed to the inline static function.
+
+
+.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
+
+   Set the object *o* reference counter to *refcnt*.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: void Py_INCREF(PyObject *o)
 
    Increment the reference count for object *o*.
