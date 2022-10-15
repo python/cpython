@@ -2010,11 +2010,6 @@ sys__debugmallocstats_impl(PyObject *module)
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
-#ifdef Py_STATS
-/* Defined in ceval.c because it uses static globals in that file */
-extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
-#endif
-
 
 /*[clinic input]
 sys._clear_type_cache
