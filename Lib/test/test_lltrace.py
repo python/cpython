@@ -8,7 +8,7 @@ from test.support.script_helper import assert_python_ok
 
 def example():
     x = []
-    for i in range(1):
+    for i in range(0):
         x.append(i)
     x = "this is"
     y = "an example"
@@ -63,33 +63,32 @@ class TestLLTrace(unittest.TestCase):
         self.assertNotIn("dont_trace_1", stdout)
         self.assertNotIn("'dont_trace_2' in module", stdout)
 
-    # def test_lltrace_different_module(self):
-    #     stdout = self.run_code("""
-    #         from test import test_lltrace
-    #         test_lltrace.__lltrace__ = 1
-    #         test_lltrace.example()
-    #     """)
-    #     self.assertIn("'example' in module 'test.test_lltrace'", stdout)
-    #     self.assertIn('LOAD_CONST', stdout)
-    #     self.assertIn('FOR_ITER', stdout)
-    #     self.assertIn('this is an example', stdout)
-
-    #     # check that offsets match the output of dis.dis()
-    #     instr_map = {i.offset: i for i in dis.get_instructions(example)}
-    #     for line in stdout.splitlines():
-    #         offset, colon, opname_oparg = line.partition(":")
-    #         if not colon:
-    #             continue
-    #         offset = int(offset)
-    #         opname_oparg = opname_oparg.split()
-    #         if len(opname_oparg) == 2:
-    #             opname, oparg = opname_oparg
-    #             oparg = int(oparg)
-    #         else:
-    #             (opname,) = opname_oparg
-    #             oparg = None
-    #         self.assertEqual(instr_map[offset].opname, opname)
-    #         self.assertEqual(instr_map[offset].arg, oparg)
+    def test_lltrace_different_module(self):
+        stdout = self.run_code("""
+            from test import test_lltrace
+            test_lltrace.__lltrace__ = 1
+            test_lltrace.example()
+        """)
+        self.assertIn("'example' in module 'test.test_lltrace'", stdout)
+        self.assertIn('LOAD_CONST', stdout)
+        self.assertIn('FOR_ITER', stdout)
+        self.assertIn('this is an example', stdout)
+        # check that offsets match the output of dis.dis()
+        instr_map = {i.offset: i for i in dis.get_instructions(example, adaptive=True)}
+        for line in stdout.splitlines():
+            offset, colon, opname_oparg = line.partition(":")
+            if not colon:
+                continue
+            offset = int(offset)
+            opname_oparg = opname_oparg.split()
+            if len(opname_oparg) == 2:
+                opname, oparg = opname_oparg
+                oparg = int(oparg)
+            else:
+                (opname,) = opname_oparg
+                oparg = None
+            self.assertEqual(instr_map[offset].opname, opname)
+            self.assertEqual(instr_map[offset].arg, oparg)
 
     def test_lltrace_does_not_crash_on_subscript_operator(self):
         # If this test fails, it will reproduce a crash reported as
