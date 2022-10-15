@@ -634,24 +634,21 @@ enum
 * Added :class:`~enum.ReprEnum`,
   which only modifies the :meth:`~object.__repr__` of members
   while returning just their values for
-  :meth:`~object.__str__` and :meth:`~object.__format__`
+  :meth:`~object.__str__` and :meth:`~object.__format__`.
+  :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
+  now inherit from it, so their :func:`str` output now matches :func:`format`
+  (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``).
 
-* Added the :class:`~enum.FlagBoundary` enum,
-  containing the options for the *behavior* class parameter
-  to :class:`~enum.Flag` enums, controlling how to handle out-of-range values.
+* Added a new *boundary* class parameter to :class:`~enum.Flag` enums
+  and the :class:`~enum.FlagBoundary` enum with its options,
+  to control how to handle out-of-range flag values.
 
-* Added the :class:`~enum.EnumCheck` enum,
-  containing the flags to pass to the :meth:`~enum.verify` decorator
-  to control what constraints are checked.
+* Added the :func:`~enum.verify` enum decorator
+  and the :class:`~enum.EnumCheck` enum with its options,
+  to check enum classes against several specific constraints.
 
-* Added the :func:`~enum.verify` enum decorator,
-  to check the passed :class:`~enum.EnumCheck` constraints.
-
-* Added the :func:`~enum.member` decorator,
-  to ensure the decorated object is converted to an enum member.
-
-* Added the :func:`~enum.nonmember` decorator,
-  to ensure the decorated object is not converted to an enum member.
+* Added the :func:`~enum.member` and :func:`~enum.nonmember` decorators,
+  to ensure the decorated object is/is not converted to an enum member.
 
 * Added the :func:`~enum.property` decorator,
   which works like :func:`property` except for enums.
@@ -663,8 +660,8 @@ enum
   For example, ``'re.ASCII'`` for the :data:`~re.ASCII` member
   of :class:`re.RegexFlag` rather than ``'RegexFlag.ASCII'``.
 
-* Enhanced :class:`~enum.Flag`
-  to support length, iteration, and contains checks on its members.
+* Enhanced :class:`~enum.Flag` to support
+  :func:`len`, iteration and :keyword:`in`/:keyword:`not in` on its members.
 
 * Changed :class:`~enum.Enum` and :class:`~enum.Flag`
   so that members are now defined
@@ -676,11 +673,6 @@ enum
   while composite values (``3``, ``6``, ``10``, etc.) are considered aliases;
   inverted flags are coerced to their positive equivalent.
 
-* Changed :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
-  to inherit from :class:`~enum.ReprEnum`
-  so the :func:`str` output now matches :func:`format` output,
-  which is just the default string representation of their values
-  (so both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``).
 
 fractions
 ---------
