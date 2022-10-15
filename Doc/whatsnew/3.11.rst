@@ -633,11 +633,23 @@ enum
 
 * Added :class:`~enum.ReprEnum`,
   which only modifies the :meth:`~object.__repr__` of members
-  while returning just their values for
-  :meth:`~object.__str__` and :meth:`~object.__format__`.
-  :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
-  now inherit from it, so their :func:`str` output now matches :func:`format`
-  (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``).
+  while returning their literal values (rather than keys)
+  for :meth:`~object.__str__` and :meth:`~object.__format__`
+  (used by :func:`str`, :func:`format` and :term:`f-string`\s).
+
+* Changed :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
+  to now inherit from :class:`ReprEnum`,
+  so their :func:`str` output now matches :func:`format`
+  (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``,
+  whereas before ``str(AnIntEnum.ONE)`` returned ``'AnIntEnum.ONE'``.
+
+* Changed :meth:`Enum.__format__() <enum.Enum.__format__>`
+  (the default for :func:`format`, :meth:`str.format` and :term:`f-string`\s)
+  of enums with mixed-in types (e.g. :class:`int`, :class:`str`)
+  to also include the class name in the output, not just the member's key.
+  This matches the existing behavior of :meth:`enum.Enum.__str__`,
+  returning e.g. ``'AnEnum.MEMBER'`` for an enum ``AnEnum(str, Enum)``
+  instead of just ``'MEMBER'``.
 
 * Added a new *boundary* class parameter to :class:`~enum.Flag` enums
   and the :class:`~enum.FlagBoundary` enum with its options,
