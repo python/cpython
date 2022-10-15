@@ -478,6 +478,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(n_sequence_fields)
         STRUCT_FOR_ID(n_unnamed_fields)
         STRUCT_FOR_ID(name)
+        STRUCT_FOR_ID(name_from)
         STRUCT_FOR_ID(namespace_separator)
         STRUCT_FOR_ID(namespaces)
         STRUCT_FOR_ID(narg)
