@@ -1290,8 +1290,9 @@ These are not used in annotations. They are building blocks for creating generic
 
        c = concatenate('one', b'two')  # error: type variable 'A' can be either str or bytes in a function call, but not both
 
-    At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
-    :func:`isinstance` and :func:`issubclass` should not be used with types.
+    The functions :func:`isinstance` and :func:`issubclass` cannot be used
+    with type variables. At runtime, ``isinstance(x, T)`` will raise
+    :exc:`TypeError`.
 
     Type variables may be marked covariant or contravariant by passing
     ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
