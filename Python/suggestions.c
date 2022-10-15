@@ -204,7 +204,7 @@ offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
         return NULL;
     }
     // Add a trailer ". Did you mean: (...)?"
-    PyObject* result =  PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
+    PyObject* result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
     Py_DECREF(suggestion);
     return result;
 }
