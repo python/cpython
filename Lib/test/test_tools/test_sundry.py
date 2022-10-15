@@ -27,7 +27,11 @@ class TestSundryScripts(unittest.TestCase):
 
     skiplist = denylist + allowlist + other
 
-    def test_sundry(self):
+    # import logging registers "atfork" functions which keep indirectly the
+    # logging module dictionary alive. Mock the function to be able to unload
+    # cleanly the logging module.
+    @import_helper.mock_register_at_fork
+    def test_sundry(self, mock_os):
         old_modules = import_helper.modules_setup()
         try:
             for fn in os.listdir(scriptsdir):
