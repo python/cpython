@@ -5183,7 +5183,6 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin((*Ts,)[0]), Unpack)
         self.assertIs(get_origin(Unpack[Ts]), Unpack)
         self.assertIs(get_origin((*tuple[*Ts],)[0]), tuple)
-        import pdb; pdb.set_trace()
         get_origin(Unpack[Tuple[Unpack[Ts]]])
         self.assertIs(get_origin(Unpack[Tuple[Unpack[Ts]]]), typing.Tuple)
 
