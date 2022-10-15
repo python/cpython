@@ -1166,11 +1166,16 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(extended_arg_quick)
         self.do_disassembly_compare(got, dis_extended_arg_quick_code, True)
 
-    def get_cached_values(self, adaptive):
+    def get_cached_values(self, quickened, adaptive):
         def f():
             l = []
             for i in range(42):
                 l.append(i)
+        if quickened:
+            self.code_quicken(f)
+        else:
+            # "copy" the code to un-quicken it:
+            f.__code__ = f.__code__.replace()
         for instruction in dis.get_instructions(
             f, show_caches=True, adaptive=adaptive
         ):
@@ -1179,20 +1184,20 @@ class DisTests(DisTestBase):
 
     @cpython_only
     def test_show_caches(self):
-        for adaptive in (False, True):
-            with self.subTest(f"{adaptive=}"):
-                if adaptive:
-                    pattern = r"^(\w+: \d+)?$"
-                else:
-                    pattern = r"^(\w+: 0)?$"
-                caches = list(self.get_cached_values(adaptive))
-                for cache in caches:
-                    self.assertRegex(cache, pattern)
-                total_caches = 23
-                empty_caches = 8 if adaptive else total_caches
-                self.assertEqual(caches.count(""), empty_caches)
-                self.assertEqual(len(caches), total_caches)
-
+        for quickened in (False, True):
+            for adaptive in (False, True):
+                with self.subTest(f"{quickened=}, {adaptive=}"):
+                    if adaptive:
+                        pattern = r"^(\w+: \d+)?$"
+                    else:
+                        pattern = r"^(\w+: 0)?$"
+                    caches = list(self.get_cached_values(quickened, adaptive))
+                    for cache in caches:
+                        self.assertRegex(cache, pattern)
+                    total_caches = 23
+                    empty_caches = 8 if adaptive else total_caches
+                    self.assertEqual(caches.count(""), empty_caches)
+                    self.assertEqual(len(caches), total_caches)
 
 class DisWithFileTests(DisTests):
 
