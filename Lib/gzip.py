@@ -213,14 +213,6 @@ class GzipFile(_compression.BaseStream):
             self._write_gzip_header(compresslevel)
 
     @property
-    def filename(self):
-        import warnings
-        warnings.warn("use the name attribute", DeprecationWarning, 2)
-        if self.mode == WRITE and self.name[-3:] != ".gz":
-            return self.name + ".gz"
-        return self.name
-
-    @property
     def mtime(self):
         """Last modification time read from stream, or None"""
         return self._buffer.raw._last_mtime
@@ -587,7 +579,8 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     header = _create_simple_gzip_header(compresslevel, mtime)
     trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
     # Wbits=-15 creates a raw deflate block.
-    return header + zlib.compress(data, wbits=-15) + trailer
+    return (header + zlib.compress(data, level=compresslevel, wbits=-15) +
+            trailer)
 
 
 def decompress(data):

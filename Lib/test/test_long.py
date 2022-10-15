@@ -985,6 +985,10 @@ class LongTest(unittest.TestCase):
         self.assertEqual((-1122) >> 9, -3)
         self.assertEqual(2**128 >> 9, 2**119)
         self.assertEqual(-2**128 >> 9, -2**119)
+        # Exercise corner case of the current algorithm, where the result of
+        # shifting a two-limb int by the limb size still has two limbs.
+        self.assertEqual((1 - BASE*BASE) >> SHIFT, -BASE)
+        self.assertEqual((BASE - 1 - BASE*BASE) >> SHIFT, -BASE)
 
     def test_big_rshift(self):
         self.assertEqual(42 >> 32, 0)
@@ -1513,6 +1517,22 @@ class LongTest(unittest.TestCase):
         self.assertIs(type(i), myint3)
         self.assertEqual(i, 1)
         self.assertEqual(getattr(i, 'foo', 'none'), 'bar')
+
+        class ValidBytes:
+            def __bytes__(self):
+                return b'\x01'
+        class InvalidBytes:
+            def __bytes__(self):
+                return 'abc'
+        class MissingBytes: ...
+        class RaisingBytes:
+            def __bytes__(self):
+                1 / 0
+
+        self.assertEqual(int.from_bytes(ValidBytes()), 1)
+        self.assertRaises(TypeError, int.from_bytes, InvalidBytes())
+        self.assertRaises(TypeError, int.from_bytes, MissingBytes())
+        self.assertRaises(ZeroDivisionError, int.from_bytes, RaisingBytes())
 
     @support.cpython_only
     def test_from_bytes_small(self):

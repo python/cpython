@@ -42,6 +42,7 @@ module _codecs
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e1390e3da3cb9deb]*/
 
+#include "pycore_runtime.h"
 #include "clinic/_codecsmodule.c.h"
 
 /* --- Registry ----------------------------------------------------------- */

@@ -7,7 +7,8 @@ Logging Cookbook
 :Author: Vinay Sajip <vinay_sajip at red-dove dot com>
 
 This page contains a number of recipes related to logging, which have been found
-useful in the past.
+useful in the past. For links to tutorial and reference information, please see
+:ref:`cookbook-ref-links`.
 
 .. currentmodule:: logging
 
@@ -218,7 +219,7 @@ messages should not. Here's how you can achieve this::
    logging.basicConfig(level=logging.DEBUG,
                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                        datefmt='%m-%d %H:%M',
-                       filename='/temp/myapp.log',
+                       filename='/tmp/myapp.log',
                        filemode='w')
    # define a Handler which writes INFO messages or higher to the sys.stderr
    console = logging.StreamHandler()
@@ -268,6 +269,11 @@ are sent to both destinations.
 
 This example uses console and file handlers, but you can use any number and
 combination of handlers you choose.
+
+Note that the above choice of log filename ``/tmp/myapp.log`` implies use of a
+standard location for temporary files on POSIX systems. On Windows, you may need to
+choose a different directory name for the log - just ensure that the directory exists
+and that you have the permissions to create and update files in it.
 
 
 Configuration server example
@@ -325,6 +331,8 @@ configuration::
     s.close()
     print('complete')
 
+
+.. _blocking-handlers:
 
 Dealing with handlers that block
 --------------------------------
@@ -390,6 +398,14 @@ which, when run, will produce:
 .. code-block:: none
 
     MainThread: Look out!
+
+.. note:: Although the earlier discussion wasn't specifically talking about
+   async code, but rather about slow logging handlers, it should be noted that
+   when logging from async code, network and even file handlers could lead to
+   problems (blocking the event loop) because some logging is done from
+   :mod:`asyncio` internals. It might be best, if any async code is used in an
+   application, to use the above approach for logging, so that any blocking code
+   runs only in the ``QueueListener`` thread.
 
 .. versionchanged:: 3.5
    Prior to Python 3.5, the :class:`QueueListener` always passed every message
@@ -548,7 +564,7 @@ To run a logging listener in production, you may need to use a process-managemen
 such as `Supervisor <http://supervisord.org/>`_. `Here
 <https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
 provides the bare-bones files to run the above functionality using Supervisor: you
-will need to change the `/path/to/` parts in the Gist to reflect the actual paths you
+will need to change the ``/path/to/`` parts in the Gist to reflect the actual paths you
 want to use.
 
 
@@ -713,6 +729,254 @@ which, when run, produces something like:
     2010-09-06 22:38:15,301 d.e.f DEBUG    IP: 123.231.231.123 User: fred     A message at DEBUG level with 2 parameters
     2010-09-06 22:38:15,301 d.e.f INFO     IP: 123.231.231.123 User: fred     A message at INFO level with 2 parameters
 
+Use of ``contextvars``
+----------------------
+
+Since Python 3.7, the :mod:`contextvars` module has provided context-local storage
+which works for both :mod:`threading` and :mod:`asyncio` processing needs. This type
+of storage may thus be generally preferable to thread-locals. The following example
+shows how, in a multi-threaded environment, logs can populated with contextual
+information such as, for example, request attributes handled by web applications.
+
+For the purposes of illustration, say that you have different web applications, each
+independent of the other but running in the same Python process and using a library
+common to them. How can each of these applications have their own log, where all
+logging messages from the library (and other request processing code) are directed to
+the appropriate application's log file, while including in the log additional
+contextual information such as client IP, HTTP request method and client username?
+
+Let's assume that the library can be simulated by the following code:
+
+.. code-block:: python
+
+    # webapplib.py
+    import logging
+    import time
+
+    logger = logging.getLogger(__name__)
+
+    def useful():
+        # Just a representative event logged from the library
+        logger.debug('Hello from webapplib!')
+        # Just sleep for a bit so other threads get to run
+        time.sleep(0.01)
+
+We can simulate the multiple web applications by means of two simple classes,
+``Request`` and ``WebApp``. These simulate how real threaded web applications work -
+each request is handled by a thread:
+
+.. code-block:: python
+
+    # main.py
+    import argparse
+    from contextvars import ContextVar
+    import logging
+    import os
+    from random import choice
+    import threading
+    import webapplib
+
+    logger = logging.getLogger(__name__)
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    class Request:
+        """
+        A simple dummy request class which just holds dummy HTTP request method,
+        client IP address and client username
+        """
+        def __init__(self, method, ip, user):
+            self.method = method
+            self.ip = ip
+            self.user = user
+
+    # A dummy set of requests which will be used in the simulation - we'll just pick
+    # from this list randomly. Note that all GET requests are from 192.168.2.XXX
+    # addresses, whereas POST requests are from 192.16.3.XXX addresses. Three users
+    # are represented in the sample requests.
+
+    REQUESTS = [
+        Request('GET', '192.168.2.20', 'jim'),
+        Request('POST', '192.168.3.20', 'fred'),
+        Request('GET', '192.168.2.21', 'sheila'),
+        Request('POST', '192.168.3.21', 'jim'),
+        Request('GET', '192.168.2.22', 'fred'),
+        Request('POST', '192.168.3.22', 'sheila'),
+    ]
+
+    # Note that the format string includes references to request context information
+    # such as HTTP method, client IP and username
+
+    formatter = logging.Formatter('%(threadName)-11s %(appName)s %(name)-9s %(user)-6s %(ip)s %(method)-4s %(message)s')
+
+    # Create our context variables. These will be filled at the start of request
+    # processing, and used in the logging that happens during that processing
+
+    ctx_request = ContextVar('request')
+    ctx_appname = ContextVar('appname')
+
+    class InjectingFilter(logging.Filter):
+        """
+        A filter which injects context-specific information into logs and ensures
+        that only information for a specific webapp is included in its log
+        """
+        def __init__(self, app):
+            self.app = app
+
+        def filter(self, record):
+            request = ctx_request.get()
+            record.method = request.method
+            record.ip = request.ip
+            record.user = request.user
+            record.appName = appName = ctx_appname.get()
+            return appName == self.app.name
+
+    class WebApp:
+        """
+        A dummy web application class which has its own handler and filter for a
+        webapp-specific log.
+        """
+        def __init__(self, name):
+            self.name = name
+            handler = logging.FileHandler(name + '.log', 'w')
+            f = InjectingFilter(self)
+            handler.setFormatter(formatter)
+            handler.addFilter(f)
+            root.addHandler(handler)
+            self.num_requests = 0
+
+        def process_request(self, request):
+            """
+            This is the dummy method for processing a request. It's called on a
+            different thread for every request. We store the context information into
+            the context vars before doing anything else.
+            """
+            ctx_request.set(request)
+            ctx_appname.set(self.name)
+            self.num_requests += 1
+            logger.debug('Request processing started')
+            webapplib.useful()
+            logger.debug('Request processing finished')
+
+    def main():
+        fn = os.path.splitext(os.path.basename(__file__))[0]
+        adhf = argparse.ArgumentDefaultsHelpFormatter
+        ap = argparse.ArgumentParser(formatter_class=adhf, prog=fn,
+                                     description='Simulate a couple of web '
+                                                 'applications handling some '
+                                                 'requests, showing how request '
+                                                 'context can be used to '
+                                                 'populate logs')
+        aa = ap.add_argument
+        aa('--count', '-c', default=100, help='How many requests to simulate')
+        options = ap.parse_args()
+
+        # Create the dummy webapps and put them in a list which we can use to select
+        # from randomly
+        app1 = WebApp('app1')
+        app2 = WebApp('app2')
+        apps = [app1, app2]
+        threads = []
+        # Add a common handler which will capture all events
+        handler = logging.FileHandler('app.log', 'w')
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
+
+        # Generate calls to process requests
+        for i in range(options.count):
+            try:
+                # Pick an app at random and a request for it to process
+                app = choice(apps)
+                request = choice(REQUESTS)
+                # Process the request in its own thread
+                t = threading.Thread(target=app.process_request, args=(request,))
+                threads.append(t)
+                t.start()
+            except KeyboardInterrupt:
+                break
+
+        # Wait for the threads to terminate
+        for t in threads:
+            t.join()
+
+        for app in apps:
+            print('%s processed %s requests' % (app.name, app.num_requests))
+
+    if __name__ == '__main__':
+        main()
+
+If you run the above, you should find that roughly half the requests go
+into :file:`app1.log` and the rest into :file:`app2.log`, and the all the requests are
+logged to :file:`app.log`. Each webapp-specific log will contain only log entries for
+only that webapp, and the request information will be displayed consistently in the
+log (i.e. the information in each dummy request will always appear together in a log
+line). This is illustrated by the following shell output:
+
+.. code-block:: shell
+
+    ~/logging-contextual-webapp$ python main.py
+    app1 processed 51 requests
+    app2 processed 49 requests
+    ~/logging-contextual-webapp$ wc -l *.log
+      153 app1.log
+      147 app2.log
+      300 app.log
+      600 total
+    ~/logging-contextual-webapp$ head -3 app1.log
+    Thread-3 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    Thread-3 (process_request) app1 webapplib jim    192.168.3.21 POST Hello from webapplib!
+    Thread-5 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    ~/logging-contextual-webapp$ head -3 app2.log
+    Thread-1 (process_request) app2 __main__  sheila 192.168.2.21 GET  Request processing started
+    Thread-1 (process_request) app2 webapplib sheila 192.168.2.21 GET  Hello from webapplib!
+    Thread-2 (process_request) app2 __main__  jim    192.168.2.20 GET  Request processing started
+    ~/logging-contextual-webapp$ head app.log
+    Thread-1 (process_request) app2 __main__  sheila 192.168.2.21 GET  Request processing started
+    Thread-1 (process_request) app2 webapplib sheila 192.168.2.21 GET  Hello from webapplib!
+    Thread-2 (process_request) app2 __main__  jim    192.168.2.20 GET  Request processing started
+    Thread-3 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    Thread-2 (process_request) app2 webapplib jim    192.168.2.20 GET  Hello from webapplib!
+    Thread-3 (process_request) app1 webapplib jim    192.168.3.21 POST Hello from webapplib!
+    Thread-4 (process_request) app2 __main__  fred   192.168.2.22 GET  Request processing started
+    Thread-5 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    Thread-4 (process_request) app2 webapplib fred   192.168.2.22 GET  Hello from webapplib!
+    Thread-6 (process_request) app1 __main__  jim    192.168.3.21 POST Request processing started
+    ~/logging-contextual-webapp$ grep app1 app1.log | wc -l
+    153
+    ~/logging-contextual-webapp$ grep app2 app2.log | wc -l
+    147
+    ~/logging-contextual-webapp$ grep app1 app.log | wc -l
+    153
+    ~/logging-contextual-webapp$ grep app2 app.log | wc -l
+    147
+
+
+Imparting contextual information in handlers
+--------------------------------------------
+
+Each :class:`~Handler` has its own chain of filters.
+If you want to add contextual information to a :class:`LogRecord` without leaking
+it to other handlers, you can use a filter that returns
+a new :class:`~LogRecord` instead of modifying it in-place, as shown in the following script::
+
+    import copy
+    import logging
+
+    def filter(record: logging.LogRecord):
+        record = copy.copy(record)
+        record.user = 'jim'
+        return record
+
+    if __name__ == '__main__':
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(message)s from %(user)-8s')
+        handler.setFormatter(formatter)
+        handler.addFilter(filter)
+        logger.addHandler(handler)
+
+        logger.info('A log message')
 
 .. _multiple-processes:
 
@@ -2424,13 +2688,95 @@ You can of course use the conventional means of decoration::
         ...
 
 
+.. _buffered-smtp:
+
+Sending logging messages to email, with buffering
+-------------------------------------------------
+
+To illustrate how you can send log messages via email, so that a set number of
+messages are sent per email, you can subclass
+:class:`~logging.handlers.BufferingHandler`. In the following  example, which you can
+adapt to suit your specific needs, a simple test harness is provided which allows you
+to run the script with command line arguments specifying what you typically need to
+send things via SMTP. (Run the downloaded script with the ``-h`` argument to see the
+required and optional arguments.)
+
+.. code-block:: python
+
+    import logging
+    import logging.handlers
+    import smtplib
+
+    class BufferingSMTPHandler(logging.handlers.BufferingHandler):
+        def __init__(self, mailhost, port, username, password, fromaddr, toaddrs,
+                     subject, capacity):
+            logging.handlers.BufferingHandler.__init__(self, capacity)
+            self.mailhost = mailhost
+            self.mailport = port
+            self.username = username
+            self.password = password
+            self.fromaddr = fromaddr
+            if isinstance(toaddrs, str):
+                toaddrs = [toaddrs]
+            self.toaddrs = toaddrs
+            self.subject = subject
+            self.setFormatter(logging.Formatter("%(asctime)s %(levelname)-5s %(message)s"))
+
+        def flush(self):
+            if len(self.buffer) > 0:
+                try:
+                    smtp = smtplib.SMTP(self.mailhost, self.mailport)
+                    smtp.starttls()
+                    smtp.login(self.username, self.password)
+                    msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (self.fromaddr, ','.join(self.toaddrs), self.subject)
+                    for record in self.buffer:
+                        s = self.format(record)
+                        msg = msg + s + "\r\n"
+                    smtp.sendmail(self.fromaddr, self.toaddrs, msg)
+                    smtp.quit()
+                except Exception:
+                    if logging.raiseExceptions:
+                        raise
+                self.buffer = []
+
+    if __name__ == '__main__':
+        import argparse
+
+        ap = argparse.ArgumentParser()
+        aa = ap.add_argument
+        aa('host', metavar='HOST', help='SMTP server')
+        aa('--port', '-p', type=int, default=587, help='SMTP port')
+        aa('user', metavar='USER', help='SMTP username')
+        aa('password', metavar='PASSWORD', help='SMTP password')
+        aa('to', metavar='TO', help='Addressee for emails')
+        aa('sender', metavar='SENDER', help='Sender email address')
+        aa('--subject', '-s',
+           default='Test Logging email from Python logging module (buffering)',
+           help='Subject of email')
+        options = ap.parse_args()
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        h = BufferingSMTPHandler(options.host, options.port, options.user,
+                                 options.password, options.sender,
+                                 options.to, options.subject, 10)
+        logger.addHandler(h)
+        for i in range(102):
+            logger.info("Info index = %d", i)
+        h.flush()
+        h.close()
+
+If you run this script and your SMTP server is correctly set up, you should find that
+it sends eleven emails to the addressee you specify. The first ten emails will each
+have ten log messages, and the eleventh will have two messages. That makes up 102
+messages as specified in the script.
+
 .. _utc-formatting:
 
 Formatting times using UTC (GMT) via configuration
 --------------------------------------------------
 
 Sometimes you want to format times using UTC, which can be done using a class
-such as `UTCFormatter`, shown below::
+such as ``UTCFormatter``, shown below::
 
     import logging
     import time
@@ -2995,6 +3341,171 @@ refer to the comments in the code snippet for more detailed information.
     if __name__=='__main__':
         main()
 
+Logging to syslog with RFC5424 support
+--------------------------------------
+
+Although :rfc:`5424` dates from 2009, most syslog servers are configured by detault to
+use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
+in 2003, it supported the earlier (and only existing) protocol at the time. Since
+RFC5424 came out, as there has not been widespread deployment of it in syslog
+servers, the :class:`~logging.handlers.SysLogHandler` functionality has not been
+updated.
+
+RFC 5424 contains some useful features such as support for structured data, and if you
+need to be able to log to a syslog server with support for it, you can do so with a
+subclassed handler which looks something like this::
+
+    import datetime
+    import logging.handlers
+    import re
+    import socket
+    import time
+
+    class SysLogHandler5424(logging.handlers.SysLogHandler):
+
+        tz_offset = re.compile(r'([+-]\d{2})(\d{2})$')
+        escaped = re.compile(r'([\]"\\])')
+
+        def __init__(self, *args, **kwargs):
+            self.msgid = kwargs.pop('msgid', None)
+            self.appname = kwargs.pop('appname', None)
+            super().__init__(*args, **kwargs)
+
+        def format(self, record):
+            version = 1
+            asctime = datetime.datetime.fromtimestamp(record.created).isoformat()
+            m = self.tz_offset.match(time.strftime('%z'))
+            has_offset = False
+            if m and time.timezone:
+                hrs, mins = m.groups()
+                if int(hrs) or int(mins):
+                    has_offset = True
+            if not has_offset:
+                asctime += 'Z'
+            else:
+                asctime += f'{hrs}:{mins}'
+            try:
+                hostname = socket.gethostname()
+            except Exception:
+                hostname = '-'
+            appname = self.appname or '-'
+            procid = record.process
+            msgid = '-'
+            msg = super().format(record)
+            sdata = '-'
+            if hasattr(record, 'structured_data'):
+                sd = record.structured_data
+                # This should be a dict where the keys are SD-ID and the value is a
+                # dict mapping PARAM-NAME to PARAM-VALUE (refer to the RFC for what these
+                # mean)
+                # There's no error checking here - it's purely for illustration, and you
+                # can adapt this code for use in production environments
+                parts = []
+
+                def replacer(m):
+                    g = m.groups()
+                    return '\\' + g[0]
+
+                for sdid, dv in sd.items():
+                    part = f'[{sdid}'
+                    for k, v in dv.items():
+                        s = str(v)
+                        s = self.escaped.sub(replacer, s)
+                        part += f' {k}="{s}"'
+                    part += ']'
+                    parts.append(part)
+                sdata = ''.join(parts)
+            return f'{version} {asctime} {hostname} {appname} {procid} {msgid} {sdata} {msg}'
+
+You'll need to be familiar with RFC 5424 to fully understand the above code, and it
+may be that you have slightly different needs (e.g. for how you pass structural data
+to the log). Nevertheless, the above should be adaptable to your speciric needs. With
+the above handler, you'd pass structured data using something like this::
+
+    sd = {
+        'foo@12345': {'bar': 'baz', 'baz': 'bozz', 'fizz': r'buzz'},
+        'foo@54321': {'rab': 'baz', 'zab': 'bozz', 'zzif': r'buzz'}
+    }
+    extra = {'structured_data': sd}
+    i = 1
+    logger.debug('Message %d', i, extra=extra)
+
+How to treat a logger like an output stream
+-------------------------------------------
+
+Sometimes, you need to interface to a third-party API which expects a file-like
+object to write to, but you want to direct the API's output to a logger. You
+can do this using a class which wraps a logger with a file-like API.
+Here's a short script illustrating such a class:
+
+.. code-block:: python
+
+    import logging
+
+    class LoggerWriter:
+        def __init__(self, logger, level):
+            self.logger = logger
+            self.level = level
+
+        def write(self, message):
+            if message != '\n':  # avoid printing bare newlines, if you like
+                self.logger.log(self.level, message)
+
+        def flush(self):
+            # doesn't actually do anything, but might be expected of a file-like
+            # object - so optional depending on your situation
+            pass
+
+        def close(self):
+            # doesn't actually do anything, but might be expected of a file-like
+            # object - so optional depending on your situation. You might want
+            # to set a flag so that later calls to write raise an exception
+            pass
+
+    def main():
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger('demo')
+        info_fp = LoggerWriter(logger, logging.INFO)
+        debug_fp = LoggerWriter(logger, logging.DEBUG)
+        print('An INFO message', file=info_fp)
+        print('A DEBUG message', file=debug_fp)
+
+    if __name__ == "__main__":
+        main()
+
+When this script is run, it prints
+
+.. code-block:: text
+
+    INFO:demo:An INFO message
+    DEBUG:demo:A DEBUG message
+
+You could also use ``LoggerWriter`` to redirect ``sys.stdout`` and
+``sys.stderr`` by doing something like this:
+
+.. code-block:: python
+
+    import sys
+
+    sys.stdout = LoggerWriter(logger, logging.INFO)
+    sys.stderr = LoggerWriter(logger, logging.WARNING)
+
+You should do this *after* configuring logging for your needs. In the above
+example, the :func:`~logging.basicConfig` call does this (using the
+``sys.stderr`` value *before* it is overwritten by a ``LoggerWriter``
+instance). Then, you'd get this kind of result:
+
+.. code-block:: pycon
+
+    >>> print('Foo')
+    INFO:demo:Foo
+    >>> print('Bar', file=sys.stderr)
+    WARNING:demo:Bar
+    >>>
+
+Of course, these above examples show output according to the format used by
+:func:`~logging.basicConfig`, but you can use a different formatter when you
+configure logging.
 
 .. patterns-to-avoid:
 
@@ -3075,3 +3586,23 @@ the :ref:`existing mechanisms <context-info>` for passing contextual
 information into your logs and restrict the loggers created to those describing
 areas within your application (generally modules, but occasionally slightly
 more fine-grained than that).
+
+.. _cookbook-ref-links:
+
+Other resources
+---------------
+
+.. seealso::
+
+   Module :mod:`logging`
+      API reference for the logging module.
+
+   Module :mod:`logging.config`
+      Configuration API for the logging module.
+
+   Module :mod:`logging.handlers`
+      Useful handlers included with the logging module.
+
+   :ref:`Basic Tutorial <logging-basic-tutorial>`
+
+   :ref:`Advanced Tutorial <logging-advanced-tutorial>`

@@ -95,7 +95,7 @@ quadratic blowup entity expansion
   entity expansion, too. Instead of nested entities it repeats one large entity
   with a couple of thousand chars over and over again. The attack isn't as
   efficient as the exponential case but it avoids triggering parser countermeasures
-  that forbid deeply-nested entities.
+  that forbid deeply nested entities.
 
 external entity expansion
   Entity declarations can contain more than just text for replacement. They can
