@@ -810,14 +810,14 @@ which incur interpreter overhead.
        ]
 
    def sieve(n):
-      "Primes less than n"
-      # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
-      data = bytearray([1]) * n
-      data[:2] = 0, 0
-      limit = math.isqrt(n) + 1
-      for p in compress(range(limit), data):
-          data[p*p : n : p] = bytearray(len(range(p*p, n, p)))
-      return compress(count(), data)
+       "Primes less than n"
+       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       data = bytearray([1]) * n
+       data[:2] = 0, 0
+       limit = math.isqrt(n) + 1
+       for p in compress(range(limit), data):
+           data[p*p : n : p] = bytearray(len(range(p*p, n, p)))
+       return compress(count(), data)
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
