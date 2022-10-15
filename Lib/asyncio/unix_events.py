@@ -222,7 +222,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     await transp._wait()
                     raise
 
-            return transp
+        return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
         # Skip one iteration for callbacks to be executed
