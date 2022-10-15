@@ -283,7 +283,7 @@ Custom handling of levels
 
 Sometimes, you might want to do something slightly different from the standard
 handling of levels in handlers, where all levels above a threshold get
-processed by a handler. To do this, you need to use filters. Let's look at s
+processed by a handler. To do this, you need to use filters. Let's look at a
 scenario where you want to arrange things as follows:
 
 * Send messages of severity ``INFO`` and ``WARNING`` to ``sys.stdout``
