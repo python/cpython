@@ -339,14 +339,25 @@ class EnvBuilder:
                         shutil.copyfile(src, dst)
                         break
 
+    def _call_new_python(self, context, *py_args, **kwargs):
+        """Executes the newly created Python using safe-ish options"""
+        # gh-98251: We do not want to just use '-I' because that masks
+        # legitimate user preferences (such as not writing bytecode). All we
+        # really need is to ensure that the path variables do not overrule
+        # normal venv handling.
+        args = [context.env_exec_cmd, *py_args]
+        kwargs['env'] = env = os.environ.copy()
+        env['VIRTUAL_ENV'] = context.env_dir
+        env.pop('PYTHONHOME', None)
+        env.pop('PYTHONPATH', None)
+        kwargs['cwd'] = context.env_dir
+        kwargs['executable'] = context.env_exec_cmd
+        subprocess.check_output(args, **kwargs)
+
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
-        # We run ensurepip in isolated mode to avoid side effects from
-        # environment vars, the current directory and anything else
-        # intended for the global Python environment
-        cmd = [context.env_exec_cmd, '-Im', 'ensurepip', '--upgrade',
-                                                         '--default-pip']
-        subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        self._call_new_python(context, '-m', 'ensurepip', '--upgrade',
+                              '--default-pip', stderr=subprocess.STDOUT)
 
     def setup_scripts(self, context):
         """
@@ -445,9 +456,8 @@ class EnvBuilder:
         logger.debug(
             f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
-        cmd = [context.env_exec_cmd, '-m', 'pip', 'install', '--upgrade']
-        cmd.extend(CORE_VENV_DEPS)
-        subprocess.check_call(cmd)
+        self._call_new_python(context, '-m', 'pip', 'install', '--upgrade',
+                              *CORE_VENV_DEPS)
 
 
 def create(env_dir, system_site_packages=False, clear=False,
