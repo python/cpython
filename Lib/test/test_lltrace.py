@@ -73,6 +73,7 @@ class TestLLTrace(unittest.TestCase):
         self.assertIn('LOAD_CONST', stdout)
         self.assertIn('FOR_ITER', stdout)
         self.assertIn('this is an example', stdout)
+
         # check that offsets match the output of dis.dis()
         instr_map = {i.offset: i for i in dis.get_instructions(example, adaptive=True)}
         for line in stdout.splitlines():
