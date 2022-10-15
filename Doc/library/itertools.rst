@@ -1180,6 +1180,15 @@ which incur interpreter overhead.
     >>> all(factored(x) == expanded(x) for x in range(-10, 11))
     True
 
+    >>> list(iter_index('AABCADEAF', 'A'))
+    [0, 1, 4, 7]
+    >>> list(iter_index('AABCADEAF', 'B'))
+    [2]
+    >>> list(iter_index('AABCADEAF', 'X'))
+    []
+    >>> list(iter_index('', 'X'))
+    []
+
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
     >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
