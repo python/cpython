@@ -191,7 +191,7 @@ See :pep:`654` for more details.
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
-.. _whatsnew311-pep670:
+.. _whatsnew311-pep678:
 
 PEP 678: Exceptions can be enriched with notes
 ----------------------------------------------
@@ -205,6 +205,32 @@ See :pep:`678` for more details.
 
 (Contributed by Irit Katriel in :issue:`45607`.
 PEP written by Zac Hatfield-Dodds.)
+
+
+.. _whatsnew311-windows-launcher:
+
+Windows ``py.exe`` launcher improvements
+----------------------------------------
+
+The copy of the :ref:`launcher` included with Python 3.11 has been significantly
+updated. It now supports company/tag syntax as defined in :pep:`514` using the
+``-V:<company>/<tag>`` argument instead of the limited ``-<major>.<minor>``.
+This allows launching distributions other than ``PythonCore``,
+the one hosted on `python.org <https://python.org>`_.
+
+When using ``-V:`` selectors, either company or tag can be omitted, but all
+installs will be searched. For example, ``-V:OtherPython/`` will select the
+"best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
+will select the "best" distribution with tag ``3.11``.
+
+When using the legacy ``-<major>``, ``-<major>.<minor>``,
+``-<major>-<bitness>`` or ``-<major>.<minor>-<bitness>`` arguments,
+all existing behaviour should be preserved from past versions,
+and only releases from ``PythonCore`` will be selected.
+However, the ``-64`` suffix now implies "not 32-bit" (not necessarily x86-64),
+as there are multiple supported 64-bit platforms.
+32-bit runtimes are detected by checking the runtime's tag for a ``-32`` suffix.
+All releases of Python since 3.5 have included this in their 32-bit builds.
 
 
 .. _new-feat-related-type-hints-311:
@@ -401,87 +427,77 @@ See `this message from the Steering Council <https://mail.python.org/archives/li
 for more information.
 
 
-Windows py.exe launcher improvements
-------------------------------------
-
-The copy of :ref:`launcher` included with Python 3.11 has been significantly
-updated. It now supports company/tag syntax as defined in :pep:`514` using the
-``-V:<company>/<tag>`` argument instead of the limited ``-x.y`` argument. This
-allows launching distributions other than ``PythonCore``, which is the one
-obtained from `python.org <https://python.org>`_.
-
-When using ``-V:`` selectors, either company or tag can be omitted, but all
-installs will be searched. For example, ``-V:OtherPython/`` will select the
-"best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
-will select the "best" distribution with tag ``3.11``.
-
-When using legacy ``-x``, ``-x.y``, ``-x-ZZ`` or ``-x.y-ZZ`` arguments, all
-existing behaviour should be preserved from past versions. Only releases from
-``PythonCore`` will be selected. However, the ``-64`` suffix now implies "not
-32-bit", as there are multiple supported 64-bit platforms. 32-bit runtimes are
-detected by checking its tag for a ``-32`` suffix. All releases of Python
-since 3.5 have included this in their 32-bit builds.
-
+.. _whatsnew311-other-lang-changes:
 
 Other Language Changes
 ======================
 
-* Starred expressions can be used in :ref:`for statements<for>`. (See
-  :issue:`46725` for more details.)
+* Starred unpacking expressions can now be used in :keyword:`for` statements.
+  (See :issue:`46725` for more details.)
 
-* Asynchronous comprehensions are now allowed inside comprehensions in
-  asynchronous functions. Outer comprehensions implicitly become
-  asynchronous. (Contributed by Serhiy Storchaka in :issue:`33346`.)
-
-* A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
-  :meth:`contextlib.ExitStack.enter_context` and
-  :meth:`contextlib.AsyncExitStack.enter_async_context` for objects which do not
-  support the :term:`context manager` or :term:`asynchronous context manager`
-  protocols correspondingly.
-  (Contributed by Serhiy Storchaka in :issue:`44471`.)
+* Asynchronous :ref:`comprehensions <comprehensions>` are now allowed
+  inside comprehensions in :ref:`asynchronous functions <async def>`.
+  Outer comprehensions implicitly become asynchronous in this case.
+  (Contributed by Serhiy Storchaka in :issue:`33346`.)
 
 * A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
-  :keyword:`with` and :keyword:`async with` statements for objects which do not
-  support the :term:`context manager` or :term:`asynchronous context manager`
-  protocols correspondingly.
-  (Contributed by Serhiy Storchaka in :issue:`12022`.)
+  :keyword:`with` statements and :meth:`contextlib.ExitStack.enter_context`
+  for objects that do not support the :term:`context manager` protocol,
+  and in :keyword:`async with` statements and
+  :meth:`contextlib.AsyncExitStack.enter_async_context`
+  for objects not supporting the :term:`asynchronous context manager` protocol.
+  (Contributed by Serhiy Storchaka in :issue:`12022` and :issue:`44471`.)
 
-* Added :meth:`object.__getstate__` which provides the default
-  implementation of the ``__getstate__()`` method.  :mod:`Copying <copy>`
-  and :mod:`pickling <pickle>` instances of subclasses of builtin types
+* Added :meth:`object.__getstate__`, which provides the default
+  implementation of the :meth:`!__getstate__` method. :mod:`copy`\ing
+  and :mod:`pickle`\ing instances of subclasses of builtin types
   :class:`bytearray`, :class:`set`, :class:`frozenset`,
   :class:`collections.OrderedDict`, :class:`collections.deque`,
   :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
   pickles instance attributes implemented as :term:`slots <__slots__>`.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
 
-* Add :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
-  variable to not prepend a potentially unsafe path to :data:`sys.path` such as
-  the current directory, the script's directory or an empty string.
+* Added a :option:`-P` command line option
+  and a :envvar:`PYTHONSAFEPATH` environment variable,
+  which disable the automatic prepending to :data:`sys.path`
+  of the script's directory when running a script,
+  or the current directory when using :option:`-c` and :option:`-m`.
+  This ensures only stdlib and installed modules
+  are picked up by :keyword:`import`,
+  and avoids unintentionally or maliciously shadowing modules
+  with those in a local (and typically user-writable) directory.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
-* A ``"z"`` option was added to the format specification mini-language that
-  coerces negative zero to zero after rounding to the format precision.  See
-  :pep:`682` for more details.  (Contributed by John Belmonte in :gh:`90153`.)
+* A ``"z"`` option was added to the :ref:`formatspec` that
+  coerces negative to positive zero after rounding to the format precision.
+  See :pep:`682` for more details.
+  (Contributed by John Belmonte in :gh:`90153`.)
 
-* Bytes are no longer accepted on :attr:`sys.path`.  Support broke sometime
-  between Python 3.2 and 3.6 with no one noticing until after Python 3.10.0
-  was released. Bringing back support would also be problematic due to
-  interactions between :option:`-b` and :attr:`sys.path_importer_cache` when
-  there is a mixture of strings and bytes keys.
+* Bytes are no longer accepted on :data:`sys.path`.  Support broke sometime
+  between Python 3.2 and 3.6, with no one noticing until after Python 3.10.0
+  was released. In addition, bringing back support would be problematic due to
+  interactions between :option:`-b` and :data:`sys.path_importer_cache` when
+  there is a mixture of :class:`str` and :class:`bytes` keys.
   (Contributed by Thomas Grainger in :gh:`91181`.)
+
+
+.. _whatsnew311-other-implementation-changes:
 
 Other CPython Implementation Changes
 ====================================
 
-* Special methods :meth:`complex.__complex__` and :meth:`bytes.__bytes__` are implemented to
-  support :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
+* The special methods :meth:`~object.__complex__` for :class:`complex`
+  and :meth:`~object.__bytes__` for :class:`bytes` are implemented to support
+  the :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
   (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
 
-* ``siphash13`` is added as a new internal hashing algorithms. It has similar security
-  properties as ``siphash24`` but it is slightly faster for long inputs. ``str``, ``bytes``,
-  and some other types now use it as default algorithm for :func:`hash`. :pep:`552`
-  hash-based pyc files now use ``siphash13``, too.
+* ``siphash13`` is added as a new internal hashing algorithm.
+  It has similar security properties as ``siphash24``,
+  but it is slightly faster for long inputs.
+  :class:`str`, :class:`bytes`, and some other types
+  now use it as the default algorithm for :func:`hash`.
+  :pep:`552` :ref:`hash-based .pyc files <pyc-invalidation>`
+  now use ``siphash13`` too.
   (Contributed by Inada Naoki in :issue:`29410`.)
 
 * When an active exception is re-raised by a :keyword:`raise` statement with no parameters,
@@ -490,63 +506,93 @@ Other CPython Implementation Changes
   reflected in the re-raised exception.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
-* The interpreter state's representation of handled exceptions (a.k.a exc_info, or
-  _PyErr_StackItem) now has only the ``exc_value`` field, ``exc_type`` and ``exc_traceback``
-  have been removed as their values can be derived from ``exc_value``.
+* The interpreter state's representation of handled exceptions
+  (aka ``exc_info`` or ``_PyErr_StackItem``)
+  now only has the ``exc_value`` field; ``exc_type`` and ``exc_traceback``
+  have been removed, as they can be derived from ``exc_value``.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
-* A new command line option for the Windows installer ``AppendPath`` has been added.
-  It behaves similiar to ``PrependPath`` but appends the install and scripts directories
-  instead of prepending them.
+* A new :ref:`command line option <install-quiet-option>`, ``AppendPath``,
+  has been added for the Windows installer.
+  It behaves similarly to ``PrependPath``,
+  but appends the install and scripts directories instead of prepending them.
   (Contributed by Bastian Neuburger in :issue:`44934`.)
 
-* The :c:member:`PyConfig.module_search_paths_set` field must now be set to 1 for
+* The :c:member:`PyConfig.module_search_paths_set` field must now be set to ``1`` for
   initialization to use :c:member:`PyConfig.module_search_paths` to initialize
   :data:`sys.path`. Otherwise, initialization will recalculate the path and replace
   any values added to ``module_search_paths``.
 
-* The output of the :option:`--help` option is changed to fit inside 50 lines and 80
-  columns.  Information about :ref:`Python environment variables <using-on-envvars>`
-  and :option:`-X options <-X>` is available with the new :option:`--help-env` or
-  :option:`--help-xoptions` flags, and with :option:`--help-all`.
+* The output of the :option:`--help` option now fits in 50 lines/80 columns.
+  Information about :ref:`Python environment variables <using-on-envvars>`
+  and :option:`-X` options is now available using the respective
+  :option:`--help-env` and :option:`--help-xoptions` flags,
+  and with the new :option:`--help-all`.
   (Contributed by Éric Araujo in :issue:`46142`.)
 
+
+.. _whatsnew311-new-modules:
 
 New Modules
 ===========
 
-* A new module, :mod:`tomllib`, was added for parsing TOML.
+* :mod:`tomllib`: For parsing `TOML <https://toml.io/>`_.
+  See :pep:`680` for more details.
   (Contributed by Taneli Hukkinen in :issue:`40059`.)
 
-* :mod:`wsgiref.types`, containing WSGI-specific types for static type
-  checking, was added.
+* :mod:`wsgiref.types`:
+  :pep:`WSGI <3333>`-specific types for static type checking.
   (Contributed by Sebastian Rittau in :issue:`42012`.)
 
 
 Improved Modules
 ================
 
+.. _whatsnew311-asyncio:
+
 asyncio
 -------
 
-* Add raw datagram socket functions to the event loop:
-  :meth:`~asyncio.AbstractEventLoop.sock_sendto`,
-  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom` and
-  :meth:`~asyncio.AbstractEventLoop.sock_recvfrom_into`.
-  (Contributed by Alex Grönholm in :issue:`46805`.)
-
-* Add :meth:`~asyncio.streams.StreamWriter.start_tls` method for upgrading
-  existing stream-based connections to TLS. (Contributed by Ian Good in
-  :issue:`34975`.)
-
-* Add :class:`~asyncio.Barrier` class to the synchronization primitives of
-  the asyncio library. (Contributed by Yves Duprat and Andrew Svetlov in
-  :gh:`87518`.)
-
-* Add :class:`~asyncio.TaskGroup` class,
+* Added the :class:`~asyncio.TaskGroup` class,
   an :ref:`asynchronous context manager <async-context-managers>`
   holding a group of tasks that will wait for all of them upon exit.
-  (Contributed by Yury Seliganov and others.)
+  For new code this is recommended over using
+  :func:`~asyncio.create_task` and :func:`~asyncio.gather` directly.
+  (Contributed by Yury Selivanov and others in :gh:`90908`.)
+
+* Added :func:`~asyncio.timeout`, an asynchronous context manager for
+  setting a timeout on asynchronous operations. For new code this is
+  recommended over using :func:`~asyncio.wait_for` directly.
+  (Contributed by Andrew Svetlov in :gh:`90927`.)
+
+* Added the :class:`~asyncio.Runner` class, which exposes the machinery
+  used by :func:`~asyncio.run`.
+  (Contributed by Andrew Svetlov in :gh:`91218`.)
+
+* Added the :class:`~asyncio.Barrier` class to the synchronization
+  primitives in the asyncio library, and the related
+  :exc:`~asyncio.BrokenBarrierError` exception.
+  (Contributed by Yves Duprat and Andrew Svetlov in :gh:`87518`.)
+
+* Added keyword argument *all_errors* to :meth:`asyncio.loop.create_connection`
+  so that multiple connection errors can be raised as an :exc:`ExceptionGroup`.
+
+* Added the :meth:`asyncio.StreamWriter.start_tls` method for
+  upgrading existing stream-based connections to TLS.
+  (Contributed by Ian Good in :issue:`34975`.)
+
+* Added raw datagram socket functions to the event loop:
+  :meth:`~asyncio.loop.sock_sendto`,
+  :meth:`~asyncio.loop.sock_recvfrom` and
+  :meth:`~asyncio.loop.sock_recvfrom_into`.
+  These have implementations in :class:`~asyncio.SelectorEventLoop` and
+  :class:`~asyncio.ProactorEventLoop`.
+  (Contributed by Alex Grönholm in :issue:`46805`.)
+
+* Added :meth:`~asyncio.Task.cancelling` and
+  :meth:`~asyncio.Task.uncancel` methods to :class:`~asyncio.Task`.
+  These are primarily intended for internal use,
+  notably by :class:`~asyncio.TaskGroup`.
 
 contextlib
 ----------
@@ -677,7 +723,7 @@ hashlib
 IDLE and idlelib
 ----------------
 
-* Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+* Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
   Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 * Include prompts when saving Shell with inputs and outputs.
@@ -1621,6 +1667,10 @@ Removed
   Python's test suite."
   (Contributed by Victor Stinner in :issue:`46852`.)
 
+* Pynche --- The Pythonically Natural Color and Hue Editor --- has been moved out
+  of ``Tools/scripts`` and is `being developed independently
+  <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.
+
 Porting to Python 3.11
 ======================
 
@@ -1844,7 +1894,7 @@ Porting to Python 3.11
   fields of the result from the exception instance (the ``value`` field).
   (Contributed by Irit Katriel in :issue:`45711`.)
 
-* :c:type:`_frozen` has a new ``is_package`` field to indicate whether
+* :c:struct:`_frozen` has a new ``is_package`` field to indicate whether
   or not the frozen module is a package.  Previously, a negative value
   in the ``size`` field was the indicator.  Now only non-negative values
   be used for ``size``.

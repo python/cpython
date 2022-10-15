@@ -392,8 +392,8 @@ provides three different variants:
       contents of the file are output. If the file's MIME type starts with
       ``text/`` the file is opened in text mode; otherwise binary mode is used.
 
-      For example usage, see the implementation of the :func:`test` function
-      invocation in the :mod:`http.server` module.
+      For example usage, see the implementation of the ``test`` function
+      in :source:`Lib/http/server.py`.
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.

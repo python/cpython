@@ -9,6 +9,7 @@ import sys
 import threading
 import unittest
 from unittest import mock
+import warnings
 from test.support import socket_helper
 try:
     import ssl
@@ -791,8 +792,9 @@ os.close(fd)
         protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
         transport, _ = self.loop.run_until_complete(
             self.loop.connect_read_pipe(lambda: protocol, pipe))
-
-        watcher = asyncio.SafeChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            watcher = asyncio.SafeChildWatcher()
         watcher.attach_loop(self.loop)
         try:
             asyncio.set_child_watcher(watcher)
