@@ -276,6 +276,211 @@ choose a different directory name for the log - just ensure that the directory e
 and that you have the permissions to create and update files in it.
 
 
+.. _custom-level-handling:
+
+Custom handling of levels
+-------------------------
+
+Sometimes, you might want to do something slightly different from the standard
+handling of levels in handlers, where all levels above a threshold get
+processed by a handler. To do this, you need to use filters. Let's look at a
+scenario where you want to arrange things as follows:
+
+* Send messages of severity ``INFO`` and ``WARNING`` to ``sys.stdout``
+* Send messages of severity ``ERROR`` and above to ``sys.stderr``
+* Send messages of severity ``DEBUG`` and above to file ``app.log``
+
+Suppose you configure logging with the following JSON:
+
+.. code-block:: json
+
+    {
+        "version": 1,
+        "disable_existing_loggers": false,
+        "formatters": {
+            "simple": {
+                "format": "%(levelname)-8s - %(message)s"
+            }
+        },
+        "handlers": {
+            "stdout": {
+                "class": "logging.StreamHandler",
+                "level": "INFO",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout",
+            },
+            "stderr": {
+                "class": "logging.StreamHandler",
+                "level": "ERROR",
+                "formatter": "simple",
+                "stream": "ext://sys.stderr"
+            },
+            "file": {
+                "class": "logging.FileHandler",
+                "formatter": "simple",
+                "filename": "app.log",
+                "mode": "w"
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "stderr",
+                "stdout",
+                "file"
+            ]
+        }
+    }
+
+This configuration does *almost* what we want, except that ``sys.stdout`` would
+show messages of severity ``ERROR`` and above as well as ``INFO`` and
+``WARNING`` messages. To prevent this, we can set up a filter which excludes
+those messages and add it to the relevant handler. This can be configured by
+adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
+
+.. code-block:: json
+
+    "filters": {
+        "warnings_and_below": {
+            "()" : "__main__.filter_maker",
+            "level": "WARNING"
+        }
+    }
+
+and changing the section on the ``stdout`` handler to add it:
+
+.. code-block:: json
+
+    "stdout": {
+        "class": "logging.StreamHandler",
+        "level": "INFO",
+        "formatter": "simple",
+        "stream": "ext://sys.stdout",
+        "filters": ["warnings_and_below"]
+    }
+
+A filter is just a function, so we can define the ``filter_maker`` (a factory
+function) as follows:
+
+.. code-block:: python
+
+    def filter_maker(level):
+        level = getattr(logging, level)
+
+        def filter(record):
+            return record.levelno <= level
+
+        return filter
+
+This converts the string argument passed in to a numeric level, and returns a
+function which only returns ``True`` if the level of the passed in record is
+at or below the specified level. Note that in this example I have defined the
+``filter_maker`` in a test script ``main.py`` that I run from the command line,
+so its module will be ``__main__`` - hence the ``__main__.filter_maker`` in the
+filter configuration. You will need to change that if you define it in a
+different module.
+
+With the filter added, we can run ``main.py``, which in full is:
+
+.. code-block:: python
+
+    import json
+    import logging
+    import logging.config
+
+    CONFIG = '''
+    {
+        "version": 1,
+        "disable_existing_loggers": false,
+        "formatters": {
+            "simple": {
+                "format": "%(levelname)-8s - %(message)s"
+            }
+        },
+        "filters": {
+            "warnings_and_below": {
+                "()" : "__main__.filter_maker",
+                "level": "WARNING"
+            }
+        },
+        "handlers": {
+            "stdout": {
+                "class": "logging.StreamHandler",
+                "level": "INFO",
+                "formatter": "simple",
+                "stream": "ext://sys.stdout",
+                "filters": ["warnings_and_below"]
+            },
+            "stderr": {
+                "class": "logging.StreamHandler",
+                "level": "ERROR",
+                "formatter": "simple",
+                "stream": "ext://sys.stderr"
+            },
+            "file": {
+                "class": "logging.FileHandler",
+                "formatter": "simple",
+                "filename": "app.log",
+                "mode": "w"
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "stderr",
+                "stdout",
+                "file"
+            ]
+        }
+    }
+    '''
+
+    def filter_maker(level):
+        level = getattr(logging, level)
+
+        def filter(record):
+            return record.levelno <= level
+
+        return filter
+
+    logging.config.dictConfig(json.loads(CONFIG))
+    logging.debug('A DEBUG message')
+    logging.info('An INFO message')
+    logging.warning('A WARNING message')
+    logging.error('An ERROR message')
+    logging.critical('A CRITICAL message')
+
+And after running it like this:
+
+.. code-block:: shell
+
+    python main.py 2>stderr.log >stdout.log
+
+We can see the results are as expected:
+
+.. code-block:: shell
+
+    $ more *.log
+    ::::::::::::::
+    app.log
+    ::::::::::::::
+    DEBUG    - A DEBUG message
+    INFO     - An INFO message
+    WARNING  - A WARNING message
+    ERROR    - An ERROR message
+    CRITICAL - A CRITICAL message
+    ::::::::::::::
+    stderr.log
+    ::::::::::::::
+    ERROR    - An ERROR message
+    CRITICAL - A CRITICAL message
+    ::::::::::::::
+    stdout.log
+    ::::::::::::::
+    INFO     - An INFO message
+    WARNING  - A WARNING message
+
+
 Configuration server example
 ----------------------------
 
@@ -564,7 +769,7 @@ To run a logging listener in production, you may need to use a process-managemen
 such as `Supervisor <http://supervisord.org/>`_. `Here
 <https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
 provides the bare-bones files to run the above functionality using Supervisor: you
-will need to change the `/path/to/` parts in the Gist to reflect the actual paths you
+will need to change the ``/path/to/`` parts in the Gist to reflect the actual paths you
 want to use.
 
 
@@ -2776,7 +2981,7 @@ Formatting times using UTC (GMT) via configuration
 --------------------------------------------------
 
 Sometimes you want to format times using UTC, which can be done using a class
-such as `UTCFormatter`, shown below::
+such as ``UTCFormatter``, shown below::
 
     import logging
     import time
@@ -3430,6 +3635,82 @@ the above handler, you'd pass structured data using something like this::
     i = 1
     logger.debug('Message %d', i, extra=extra)
 
+How to treat a logger like an output stream
+-------------------------------------------
+
+Sometimes, you need to interface to a third-party API which expects a file-like
+object to write to, but you want to direct the API's output to a logger. You
+can do this using a class which wraps a logger with a file-like API.
+Here's a short script illustrating such a class:
+
+.. code-block:: python
+
+    import logging
+
+    class LoggerWriter:
+        def __init__(self, logger, level):
+            self.logger = logger
+            self.level = level
+
+        def write(self, message):
+            if message != '\n':  # avoid printing bare newlines, if you like
+                self.logger.log(self.level, message)
+
+        def flush(self):
+            # doesn't actually do anything, but might be expected of a file-like
+            # object - so optional depending on your situation
+            pass
+
+        def close(self):
+            # doesn't actually do anything, but might be expected of a file-like
+            # object - so optional depending on your situation. You might want
+            # to set a flag so that later calls to write raise an exception
+            pass
+
+    def main():
+        logging.basicConfig(level=logging.DEBUG)
+        logger = logging.getLogger('demo')
+        info_fp = LoggerWriter(logger, logging.INFO)
+        debug_fp = LoggerWriter(logger, logging.DEBUG)
+        print('An INFO message', file=info_fp)
+        print('A DEBUG message', file=debug_fp)
+
+    if __name__ == "__main__":
+        main()
+
+When this script is run, it prints
+
+.. code-block:: text
+
+    INFO:demo:An INFO message
+    DEBUG:demo:A DEBUG message
+
+You could also use ``LoggerWriter`` to redirect ``sys.stdout`` and
+``sys.stderr`` by doing something like this:
+
+.. code-block:: python
+
+    import sys
+
+    sys.stdout = LoggerWriter(logger, logging.INFO)
+    sys.stderr = LoggerWriter(logger, logging.WARNING)
+
+You should do this *after* configuring logging for your needs. In the above
+example, the :func:`~logging.basicConfig` call does this (using the
+``sys.stderr`` value *before* it is overwritten by a ``LoggerWriter``
+instance). Then, you'd get this kind of result:
+
+.. code-block:: pycon
+
+    >>> print('Foo')
+    INFO:demo:Foo
+    >>> print('Bar', file=sys.stderr)
+    WARNING:demo:Bar
+    >>>
+
+Of course, these above examples show output according to the format used by
+:func:`~logging.basicConfig`, but you can use a different formatter when you
+configure logging.
 
 .. patterns-to-avoid:
 
