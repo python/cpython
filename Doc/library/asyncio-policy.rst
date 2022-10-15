@@ -88,11 +88,15 @@ The abstract event loop policy base class is defined as follows:
 
       This function is Unix specific.
 
+      .. deprecated:: 3.12
+
    .. method:: set_child_watcher(watcher)
 
       Set the current child process watcher to *watcher*.
 
       This function is Unix specific.
+
+      .. deprecated:: 3.12
 
 
 .. _asyncio-policy-builtin:
@@ -158,11 +162,15 @@ implementation used by the asyncio event loop:
 
    Return the current child watcher for the current policy.
 
+   .. deprecated:: 3.12
+
 .. function:: set_child_watcher(watcher)
 
    Set the current child watcher to *watcher* for the current
    policy.  *watcher* must implement methods defined in the
    :class:`AbstractChildWatcher` base class.
+
+   .. deprecated:: 3.12
 
 .. note::
    Third-party event loops implementations might not support
@@ -245,6 +253,8 @@ implementation used by the asyncio event loop:
 
    .. versionadded:: 3.8
 
+   .. deprecated:: 3.12
+
 .. class:: SafeChildWatcher
 
    This implementation uses active event loop from the main thread to handle
@@ -257,6 +267,8 @@ implementation used by the asyncio event loop:
    This solution is as safe as :class:`MultiLoopChildWatcher` and has the same *O(N)*
    complexity but requires a running event loop in the main thread to work.
 
+   .. deprecated:: 3.12
+
 .. class:: FastChildWatcher
 
    This implementation reaps every terminated processes by calling
@@ -268,6 +280,8 @@ implementation used by the asyncio event loop:
 
    This solution requires a running event loop in the main thread to work, as
    :class:`SafeChildWatcher`.
+
+   .. deprecated:: 3.12
 
 .. class:: PidfdChildWatcher
 
