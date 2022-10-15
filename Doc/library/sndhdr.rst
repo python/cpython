@@ -63,21 +63,20 @@ from :func:`whathdr`: and :func:`what`:
 +------------+------------------------------------+
 | ``'aiff'`` | Audio Interchange Files            |
 +------------+------------------------------------+
-| ``'au'``   | AU Files                           |
+| ``'au'``   | Au Files                           |
 +------------+------------------------------------+
 | ``'hcom'`` | HCOM Files                         |
 +------------+------------------------------------+
-| ``'sndr'`` | SNDR Files                         |
 +------------+------------------------------------+
-| ``'sndt'`` | SNDT Files                         |
+| ``'sndt'`` | Sndtool Sound Files                |
 +------------+------------------------------------+
-| ``'voc'``  | VOC Files                          |
+| ``'voc'``  | Creative Labs Audio Files          |
 +------------+------------------------------------+
-| ``'wav'``  | WAV Files                          |
+| ``'wav'``  | Waveform Audio File Format Files   |
 +------------+------------------------------------+
-| ``'8svx'`` | 8SVX Files                         |
+| ``'8svx'`` | 8-Bit Sampled Voice Files          |
 +------------+------------------------------------+
-| ``'sb'``   | SB Files                           |
+| ``'sb'``   | Signed Byte Audio Data Files       |
 +------------+------------------------------------+
 | ``'ub'``   | UB Files                           |
 +------------+------------------------------------+
@@ -93,7 +92,9 @@ from :func:`whathdr`: and :func:`what`:
    The test function should return a string describing the image type if the test
    succeeded, or ``None`` if it failed.
 
-Example::
+Example:
+
+.. code-block:: pycon
 
    >>> import sndhdr
    >>> imghdr.what('bass.wav')
