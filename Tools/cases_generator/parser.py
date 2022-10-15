@@ -8,34 +8,35 @@ import lexer as lx
 class Lexer:
     def __init__(self, src):
         self.src = src
-        self.all_tokens = list(lx.tokenize(self.src))
-        self.tokens = [tkn for tkn in self.all_tokens if tkn.kind != "COMMENT"]
+        self.tokens = list(lx.tokenize(self.src))
         self.pos = 0
 
     def getpos(self):
         return self.pos
 
+    def eof(self):
+        return self.pos >= len(self.tokens)
+
     def reset(self, pos):
         assert 0 <= pos <= len(self.tokens), (pos, len(self.tokens))
         self.pos = pos
 
-    def peek(self):
-        if self.pos < len(self.tokens):
-            return self.tokens[self.pos]
-        return None
-
-    def next(self):
-        if self.pos < len(self.tokens):
-            self.pos += 1
-            return self.tokens[self.pos - 1]
-        return None
-
-    def eof(self):
-        return self.pos >= len(self.tokens)
-
     def backup(self):
         assert self.pos > 0
         self.pos -= 1
+
+    def next(self, raw=False):
+        while self.pos < len(self.tokens):
+            tok = self.tokens[self.pos]
+            self.pos += 1
+            if raw or tok.kind != "COMMENT":
+                return tok
+        return None
+
+    def peek(self, raw=False):
+        tok = self.next(raw=raw)
+        self.backup()
+        return tok
 
     def expect(self, kind):
         tkn = self.next()
@@ -66,7 +67,7 @@ class Parser(Lexer):
         tokens = []
         level = 0
         while True:
-            tkn = self.next()
+            tkn = self.next(raw=True)
             if tkn is None:
                 break
             if tkn.kind in (lx.LBRACE, lx.LPAREN, lx.LBRACKET):
@@ -135,7 +136,6 @@ class Parser(Lexer):
         # output (, output)*
         here = self.getpos()
         if outp := self.output():
-            print("OUTPUT", outp)
             near = self.getpos()
             if self.expect(lx.COMMA):
                 if rest := self.outputs():
