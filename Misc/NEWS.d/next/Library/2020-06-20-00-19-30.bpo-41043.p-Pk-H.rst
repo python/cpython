@@ -1,2 +1,0 @@
-Fixed the use of :func:`~glob.glob` in the stdlib: literal part of the path
-is now always correctly escaped.

@@ -1,1 +1,0 @@
-add arm64 to the allowable Mac OS arches in mpdecimal.h

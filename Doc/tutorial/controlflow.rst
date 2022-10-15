@@ -36,6 +36,9 @@ to avoid excessive indentation.  An  :keyword:`!if` ... :keyword:`!elif` ...
 :keyword:`!elif` ... sequence is a substitute for the ``switch`` or
 ``case`` statements found in other languages.
 
+If you're comparing the same value to several constants, or checking for specific types or
+attributes, you may also find the :keyword:`!match` statement useful. For more
+details see :ref:`tut-match`.
 
 .. _tut-for:
 
@@ -107,14 +110,14 @@ The given end point is never part of the generated sequence; ``range(10)`` gener
 is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
-    range(5, 10)
-       5, 6, 7, 8, 9
+    >>> list(range(5, 10))
+    [5, 6, 7, 8, 9]
 
-    range(0, 10, 3)
-       0, 3, 6, 9
+    >>> list(range(0, 10, 3))
+    [0, 3, 6, 9]
 
-    range(-10, -100, -30)
-      -10, -40, -70
+    >>> list(range(-10, -100, -30))
+    [-10, -40, -70]
 
 To iterate over the indices of a sequence, you can combine :func:`range` and
 :func:`len` as follows::
@@ -134,7 +137,7 @@ function, see :ref:`tut-loopidioms`.
 
 A strange thing happens if you just print a range::
 
-   >>> print(range(10))
+   >>> range(10)
    range(0, 10)
 
 In many ways the object returned by :func:`range` behaves as if it is a list,
@@ -152,13 +155,7 @@ that takes an iterable is :func:`sum`::
     6
 
 Later we will see more functions that return iterables and take iterables as
-arguments.  Lastly, maybe you are curious about how to get a list from a range.
-Here is the solution::
-
-   >>> list(range(4))
-   [0, 1, 2, 3]
-
-In chapter :ref:`tut-structures`, we will discuss in more detail about
+arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail about
 :func:`list`.
 
 .. _tut-break:
@@ -210,15 +207,16 @@ iteration of the loop::
     ...     if num % 2 == 0:
     ...         print("Found an even number", num)
     ...         continue
-    ...     print("Found a number", num)
+    ...     print("Found an odd number", num)
+    ...
     Found an even number 2
-    Found a number 3
+    Found an odd number 3
     Found an even number 4
-    Found a number 5
+    Found an odd number 5
     Found an even number 6
-    Found a number 7
+    Found an odd number 7
     Found an even number 8
-    Found a number 9
+    Found an odd number 9
 
 .. _tut-pass:
 
@@ -245,6 +243,176 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
    >>> def initlog(*args):
    ...     pass   # Remember to implement this!
    ...
+
+
+.. _tut-match:
+
+:keyword:`!match` Statements
+============================
+
+A :keyword:`match` statement takes an expression and compares its value to successive
+patterns given as one or more case blocks.  This is superficially
+similar to a switch statement in C, Java or JavaScript (and many
+other languages), but it's more similar to pattern matching in
+languages like Rust or Haskell. Only the first pattern that matches
+gets executed and it can also extract components (sequence elements
+or object attributes) from the value into variables.
+
+The simplest form compares a subject value against one or more literals::
+
+    def http_error(status):
+        match status:
+            case 400:
+                return "Bad request"
+            case 404:
+                return "Not found"
+            case 418:
+                return "I'm a teapot"
+            case _:
+                return "Something's wrong with the internet"
+
+Note the last block: the "variable name" ``_`` acts as a *wildcard* and
+never fails to match. If no case matches, none of the branches is executed.
+
+You can combine several literals in a single pattern using ``|`` ("or")::
+
+            case 401 | 403 | 404:
+                return "Not allowed"
+
+Patterns can look like unpacking assignments, and can be used to bind
+variables::
+
+    # point is an (x, y) tuple
+    match point:
+        case (0, 0):
+            print("Origin")
+        case (0, y):
+            print(f"Y={y}")
+        case (x, 0):
+            print(f"X={x}")
+        case (x, y):
+            print(f"X={x}, Y={y}")
+        case _:
+            raise ValueError("Not a point")
+
+Study that one carefully!  The first pattern has two literals, and can
+be thought of as an extension of the literal pattern shown above.  But
+the next two patterns combine a literal and a variable, and the
+variable *binds* a value from the subject (``point``).  The fourth
+pattern captures two values, which makes it conceptually similar to
+the unpacking assignment ``(x, y) = point``.
+
+If you are using classes to structure your data
+you can use the class name followed by an argument list resembling a
+constructor, but with the ability to capture attributes into variables::
+
+    class Point:
+        x: int
+        y: int
+
+    def where_is(point):
+        match point:
+            case Point(x=0, y=0):
+                print("Origin")
+            case Point(x=0, y=y):
+                print(f"Y={y}")
+            case Point(x=x, y=0):
+                print(f"X={x}")
+            case Point():
+                print("Somewhere else")
+            case _:
+                print("Not a point")
+
+You can use positional parameters with some builtin classes that provide an
+ordering for their attributes (e.g. dataclasses). You can also define a specific
+position for attributes in patterns by setting the ``__match_args__`` special
+attribute in your classes. If it's set to ("x", "y"), the following patterns are all
+equivalent (and all bind the ``y`` attribute to the ``var`` variable)::
+
+    Point(1, var)
+    Point(1, y=var)
+    Point(x=1, y=var)
+    Point(y=var, x=1)
+
+A recommended way to read patterns is to look at them as an extended form of what you
+would put on the left of an assignment, to understand which variables would be set to
+what.
+Only the standalone names (like ``var`` above) are assigned to by a match statement.
+Dotted names (like ``foo.bar``), attribute names (the ``x=`` and ``y=`` above) or class names
+(recognized by the "(...)" next to them like ``Point`` above) are never assigned to.
+
+Patterns can be arbitrarily nested.  For example, if we have a short
+list of points, we could match it like this::
+
+    match points:
+        case []:
+            print("No points")
+        case [Point(0, 0)]:
+            print("The origin")
+        case [Point(x, y)]:
+            print(f"Single point {x}, {y}")
+        case [Point(0, y1), Point(0, y2)]:
+            print(f"Two on the Y axis at {y1}, {y2}")
+        case _:
+            print("Something else")
+
+We can add an ``if`` clause to a pattern, known as a "guard".  If the
+guard is false, ``match`` goes on to try the next case block.  Note
+that value capture happens before the guard is evaluated::
+
+    match point:
+        case Point(x, y) if x == y:
+            print(f"Y=X at {x}")
+        case Point(x, y):
+            print(f"Not on the diagonal")
+
+Several other key features of this statement:
+
+- Like unpacking assignments, tuple and list patterns have exactly the
+  same meaning and actually match arbitrary sequences.  An important
+  exception is that they don't match iterators or strings.
+
+- Sequence patterns support extended unpacking: ``[x, y, *rest]`` and ``(x, y,
+  *rest)`` work similar to unpacking assignments.  The
+  name after ``*`` may also be ``_``, so ``(x, y, *_)`` matches a sequence
+  of at least two items without binding the remaining items.
+
+- Mapping patterns: ``{"bandwidth": b, "latency": l}`` captures the
+  ``"bandwidth"`` and ``"latency"`` values from a dictionary.  Unlike sequence
+  patterns, extra keys are ignored.  An unpacking like ``**rest`` is also
+  supported.  (But ``**_`` would be redundant, so it is not allowed.)
+
+- Subpatterns may be captured using the ``as`` keyword::
+
+      case (Point(x1, y1), Point(x2, y2) as p2): ...
+
+  will capture the second element of the input as ``p2`` (as long as the input is
+  a sequence of two points)
+
+- Most literals are compared by equality, however the singletons ``True``,
+  ``False`` and ``None`` are compared by identity.
+
+- Patterns may use named constants.  These must be dotted names
+  to prevent them from being interpreted as capture variable::
+
+      from enum import Enum
+      class Color(Enum):
+          RED = 'red'
+          GREEN = 'green'
+          BLUE = 'blue'
+
+      color = Color(input("Enter your choice of 'red', 'blue' or 'green': "))
+
+      match color:
+          case Color.RED:
+              print("I see red!")
+          case Color.GREEN:
+              print("Grass is green")
+          case Color.BLUE:
+              print("I'm feeling the blues :(")
+
+For a more detailed explanation and additional examples, you can look into
+:pep:`636` which is written in a tutorial format.
 
 .. _tut-functions:
 
@@ -297,7 +465,8 @@ referenced.
 The actual parameters (arguments) to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
 passed using *call by value* (where the *value* is always an object *reference*,
-not the value of the object). [#]_ When a function calls another function, a new
+not the value of the object). [#]_ When a function calls another function,
+or calls itself recursively, a new
 local symbol table is created for that call.
 
 A function definition associates the function name with the function object in
@@ -486,7 +655,7 @@ Here's an example that fails due to this restriction::
    >>> function(0, a=0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: function() got multiple values for keyword argument 'a'
+   TypeError: function() got multiple values for argument 'a'
 
 When a final formal parameter of the form ``**name`` is present, it receives a
 dictionary (see :ref:`typesmapping`) containing all keyword arguments except for
@@ -622,7 +791,7 @@ parameters as there is a ``/`` in the function definition::
    >>> pos_only_arg(arg=1)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: pos_only_arg() got an unexpected keyword argument 'arg'
+   TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
 
 The third function ``kwd_only_args`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
@@ -652,7 +821,7 @@ definition::
    >>> combined_example(pos_only=1, standard=2, kwd_only=3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: combined_example() got an unexpected keyword argument 'pos_only'
+   TypeError: combined_example() got some positional-only arguments passed as keyword arguments: 'pos_only'
 
 
 Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::
@@ -661,7 +830,7 @@ Finally, consider this function definition which has a potential collision betwe
         return 'name' in kwds
 
 There is no possible call that will make it return ``True`` as the keyword ``'name'``
-will always to bind to the first parameter. For example::
+will always bind to the first parameter. For example::
 
     >>> foo(1, **{'name': 2})
     Traceback (most recent call last):
@@ -717,7 +886,7 @@ zero or more normal arguments may occur. ::
        file.write(separator.join(args))
 
 
-Normally, these ``variadic`` arguments will be last in the list of formal
+Normally, these *variadic* arguments will be last in the list of formal
 parameters, because they scoop up all remaining input arguments that are
 passed to the function. Any formal parameters which occur after the ``*args``
 parameter are 'keyword-only' arguments, meaning that they can only be used as
@@ -868,7 +1037,7 @@ function.  Parameter annotations are defined by a colon after the parameter name
 by an expression evaluating to the value of the annotation.  Return annotations are
 defined by a literal ``->``, followed by an expression, between the parameter
 list and the colon denoting the end of the :keyword:`def` statement.  The
-following example has a positional argument, a keyword argument, and the return
+following example has a required argument, an optional argument, and the return
 value annotated::
 
    >>> def f(ham: str, eggs: str = 'eggs') -> str:

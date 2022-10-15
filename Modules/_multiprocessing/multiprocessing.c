@@ -14,8 +14,16 @@ class HANDLE_converter(CConverter):
     type = "HANDLE"
     format_unit = '"F_HANDLE"'
 
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=9fad6080b79ace91]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=3e537d244034affb]*/
 
 /*[clinic input]
 module _multiprocessing
@@ -183,65 +191,67 @@ static PyMethodDef module_methods[] = {
  * Initialize
  */
 
-static struct PyModuleDef multiprocessing_module = {
-    PyModuleDef_HEAD_INIT,
-    "_multiprocessing",
-    NULL,
-    -1,
-    module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-
-PyMODINIT_FUNC
-PyInit__multiprocessing(void)
+static int
+multiprocessing_exec(PyObject *module)
 {
-    PyObject *module, *temp, *value = NULL;
+#ifdef HAVE_MP_SEMAPHORE
 
-    /* Initialize module */
-    module = PyModule_Create(&multiprocessing_module);
-    if (!module)
-        return NULL;
+    PyTypeObject *semlock_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+                module, &_PyMp_SemLockType_spec, NULL);
 
-#if defined(MS_WINDOWS) ||                                              \
-  (defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED))
-    /* Add _PyMp_SemLock type to module */
-    if (PyType_Ready(&_PyMp_SemLockType) < 0)
-        return NULL;
-    Py_INCREF(&_PyMp_SemLockType);
-    {
-        PyObject *py_sem_value_max;
-        /* Some systems define SEM_VALUE_MAX as an unsigned value that
-         * causes it to be negative when used as an int (NetBSD).
-         *
-         * Issue #28152: Use (0) instead of 0 to fix a warning on dead code
-         * when using clang -Wunreachable-code. */
-        if ((int)(SEM_VALUE_MAX) < (0))
-            py_sem_value_max = PyLong_FromLong(INT_MAX);
-        else
-            py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
-        if (py_sem_value_max == NULL)
-            return NULL;
-        PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
-                             py_sem_value_max);
+    if (semlock_type == NULL) {
+        return -1;
     }
-    PyModule_AddObject(module, "SemLock", (PyObject*)&_PyMp_SemLockType);
+    int rc = PyModule_AddType(module, semlock_type);
+    Py_DECREF(semlock_type);
+    if (rc < 0) {
+        return -1;
+    }
+
+    PyObject *py_sem_value_max;
+    /* Some systems define SEM_VALUE_MAX as an unsigned value that
+     * causes it to be negative when used as an int (NetBSD).
+     *
+     * Issue #28152: Use (0) instead of 0 to fix a warning on dead code
+     * when using clang -Wunreachable-code. */
+    if ((int)(SEM_VALUE_MAX) < (0)) {
+        py_sem_value_max = PyLong_FromLong(INT_MAX);
+    }
+    else {
+        py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
+    }
+    if (py_sem_value_max == NULL) {
+        return -1;
+    }
+    if (PyDict_SetItemString(semlock_type->tp_dict, "SEM_VALUE_MAX",
+                         py_sem_value_max) < 0) {
+        Py_DECREF(py_sem_value_max);
+        return -1;
+    }
+    Py_DECREF(py_sem_value_max);
+
 #endif
 
     /* Add configuration macros */
-    temp = PyDict_New();
-    if (!temp)
-        return NULL;
+    PyObject *flags = PyDict_New();
+    if (!flags) {
+        return -1;
+    }
 
-#define ADD_FLAG(name)                                            \
-    value = Py_BuildValue("i", name);                             \
-    if (value == NULL) { Py_DECREF(temp); return NULL; }          \
-    if (PyDict_SetItemString(temp, #name, value) < 0) {           \
-        Py_DECREF(temp); Py_DECREF(value); return NULL; }         \
-    Py_DECREF(value)
+#define ADD_FLAG(name)                                          \
+    do {                                                        \
+        PyObject *value = PyLong_FromLong(name);                \
+        if (value == NULL) {                                    \
+            Py_DECREF(flags);                                   \
+            return -1;                                          \
+        }                                                       \
+        if (PyDict_SetItemString(flags, #name, value) < 0) {    \
+            Py_DECREF(flags);                                   \
+            Py_DECREF(value);                                   \
+            return -1;                                          \
+        }                                                       \
+        Py_DECREF(value);                                       \
+    } while (0)
 
 #if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
     ADD_FLAG(HAVE_SEM_OPEN);
@@ -256,8 +266,29 @@ PyInit__multiprocessing(void)
     ADD_FLAG(HAVE_BROKEN_SEM_UNLINK);
 #endif
 
-    if (PyModule_AddObject(module, "flags", temp) < 0)
-        return NULL;
+    if (PyModule_AddObject(module, "flags", flags) < 0) {
+        Py_DECREF(flags);
+        return -1;
+    }
 
-    return module;
+    return 0;
+}
+
+static PyModuleDef_Slot multiprocessing_slots[] = {
+    {Py_mod_exec, multiprocessing_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef multiprocessing_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_multiprocessing",
+    .m_size = 0,
+    .m_methods = module_methods,
+    .m_slots = multiprocessing_slots,
+};
+
+PyMODINIT_FUNC
+PyInit__multiprocessing(void)
+{
+    return PyModuleDef_Init(&multiprocessing_module);
 }

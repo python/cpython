@@ -1,4 +1,4 @@
-from test.support import run_unittest
+from pathlib import Path
 from test.support.import_helper import unload, CleanImport
 from test.support.warnings_helper import check_warnings
 import unittest
@@ -91,6 +91,45 @@ class PkgutilTests(unittest.TestCase):
         del sys.path[0]
 
         del sys.modules[pkg]
+
+    def test_issue44061_iter_modules(self):
+        #see: issue44061
+        zip = 'test_getdata_zipfile.zip'
+        pkg = 'test_getdata_zipfile'
+
+        # Include a LF and a CRLF, to test that binary data is read back
+        RESOURCE_DATA = b'Hello, world!\nSecond line\r\nThird line'
+
+        # Make a package with some resources
+        zip_file = os.path.join(self.dirname, zip)
+        z = zipfile.ZipFile(zip_file, 'w')
+
+        # Empty init.py
+        z.writestr(pkg + '/__init__.py', "")
+        # Resource files, res.txt
+        z.writestr(pkg + '/res.txt', RESOURCE_DATA)
+        z.close()
+
+        # Check we can read the resources
+        sys.path.insert(0, zip_file)
+        try:
+            res = pkgutil.get_data(pkg, 'res.txt')
+            self.assertEqual(res, RESOURCE_DATA)
+
+            # make sure iter_modules accepts Path objects
+            names = []
+            for moduleinfo in pkgutil.iter_modules([Path(zip_file)]):
+                self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
+                names.append(moduleinfo.name)
+            self.assertEqual(names, [pkg])
+        finally:
+            del sys.path[0]
+            sys.modules.pop(pkg, None)
+
+        # assert path must be None or list of paths
+        expected_msg = "path must be None or list of paths to look for modules in"
+        with self.assertRaisesRegex(ValueError, expected_msg):
+            list(pkgutil.iter_modules("invalid_path"))
 
     def test_unreadable_dir_on_syspath(self):
         # issue7367 - walk_packages failed if unreadable dir on sys.path
@@ -498,7 +537,8 @@ class ImportlibMigrationTests(unittest.TestCase):
 
     def check_deprecated(self):
         return check_warnings(
-            ("This emulation is deprecated, use 'importlib' instead",
+            ("This emulation is deprecated and slated for removal in "
+             "Python 3.12; use 'importlib' instead",
              DeprecationWarning))
 
     def test_importer_deprecated(self):
@@ -573,15 +613,19 @@ class ImportlibMigrationTests(unittest.TestCase):
             self.assertIsNone(pkgutil.get_importer("*??"))
             self.assertEqual(len(w.warnings), 0)
 
+    def test_issue44061(self):
+        try:
+            pkgutil.get_importer(Path("/home"))
+        except AttributeError:
+            self.fail("Unexpected AttributeError when calling get_importer")
+
     def test_iter_importers_avoids_emulation(self):
         with check_warnings() as w:
             for importer in pkgutil.iter_importers(): pass
             self.assertEqual(len(w.warnings), 0)
 
 
-def test_main():
-    run_unittest(PkgutilTests, PkgutilPEP302Tests, ExtendPathTests,
-                 NestedNamespacePackageTest, ImportlibMigrationTests)
+def tearDownModule():
     # this is necessary if test is run repeated (like when finding leaks)
     import zipimport
     import importlib
@@ -590,4 +634,4 @@ def test_main():
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -1,2 +1,0 @@
-:mod:`ensurepip` now disables the use of `pip` cache when installing the
-bundled versions of `pip` and `setuptools`.  Patch by Krzysztof Konopko.

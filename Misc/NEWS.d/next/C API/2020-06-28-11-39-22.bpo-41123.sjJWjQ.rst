@@ -1,1 +1,0 @@
-Removed ``PyUnicode_GetMax()``.

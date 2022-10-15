@@ -81,17 +81,41 @@ class TestRlcompleter(unittest.TestCase):
                               if x.startswith('s')])
 
     def test_excessive_getattr(self):
-        # Ensure getattr() is invoked no more than once per attribute
+        """Ensure getattr() is invoked no more than once per attribute"""
+
+        # note the special case for @property methods below; that is why
+        # we use __dir__ and __getattr__ in class Foo to create a "magic"
+        # class attribute 'bar'. This forces `getattr` to call __getattr__
+        # (which is doesn't necessarily do).
         class Foo:
             calls = 0
-            @property
-            def bar(self):
-                self.calls += 1
-                return None
+            bar = ''
+            def __getattribute__(self, name):
+                if name == 'bar':
+                    self.calls += 1
+                    return None
+                return super().__getattribute__(name)
+
         f = Foo()
         completer = rlcompleter.Completer(dict(f=f))
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertEqual(f.calls, 1)
+
+    def test_property_method_not_called(self):
+        class Foo:
+            _bar = 0
+            property_called = False
+
+            @property
+            def bar(self):
+                self.property_called = True
+                return self._bar
+
+        f = Foo()
+        completer = rlcompleter.Completer(dict(f=f))
+        self.assertEqual(completer.complete('f.b', 0), 'f.bar')
+        self.assertFalse(f.property_called)
+
 
     def test_uncreated_attr(self):
         # Attributes like properties and slots should be completed even when
@@ -114,6 +138,9 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('el', 0), 'elif ')
         self.assertEqual(completer.complete('el', 1), 'else')
         self.assertEqual(completer.complete('tr', 0), 'try:')
+        self.assertEqual(completer.complete('_', 0), '_')
+        self.assertEqual(completer.complete('match', 0), 'match ')
+        self.assertEqual(completer.complete('case', 0), 'case ')
 
     def test_duplicate_globals(self):
         namespace = {

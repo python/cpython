@@ -32,8 +32,8 @@ found in the dictionary of type objects.
 
 .. c:function:: int PyDescr_IsData(PyObject *descr)
 
-   Return true if the descriptor objects *descr* describes a data attribute, or
-   false if it describes a method.  *descr* must be a descriptor object; there is
+   Return non-zero if the descriptor objects *descr* describes a data attribute, or
+   ``0`` if it describes a method.  *descr* must be a descriptor object; there is
    no error checking.
 
 

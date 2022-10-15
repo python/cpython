@@ -1,1 +1,0 @@
-Added the *root_dir* and *dir_fd* parameters in :func:`glob.glob`.

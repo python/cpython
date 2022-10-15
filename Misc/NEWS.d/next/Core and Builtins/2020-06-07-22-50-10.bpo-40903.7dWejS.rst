@@ -1,1 +1,0 @@
-Fixed a possible segfault in the new PEG parser when producing error messages for invalid assignments of the form :code:`p=p=`. Patch by Pablo Galindo
