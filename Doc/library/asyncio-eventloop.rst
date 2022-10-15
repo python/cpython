@@ -1206,12 +1206,12 @@ Executing code in thread or process pools
                   pool, cpu_bound)
               print('custom process pool', result)
 
-      asyncio.run(main())
+      if __name__ == '__main__':
+          asyncio.run(main())
 
-   Note that on macOS, an entry point guard may be needed as the example would
-   otherwise cause a :exc:`RuntimeError`. See the `Changed in version 3.8 note
-   <https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods>`_
-   and `Safe importing of main module
+   Note that on Windows and macOS, the entry point guard may be necessary as the
+   example would otherwise cause a :exc:`RuntimeError`. For more details, see the
+   `Safe importing of main module
    <https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods>`_.
 
    This method returns a :class:`asyncio.Future` object.
