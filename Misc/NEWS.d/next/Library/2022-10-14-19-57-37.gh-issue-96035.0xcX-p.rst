@@ -1,0 +1,3 @@
+Fixes bug in urllib.parse.urlparse that causes certain port numbers
+containing whitespace, underscores, or plus and minus signs to be
+incorrectly accepted.
