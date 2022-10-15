@@ -1011,7 +1011,7 @@ Not as such.
 For simple input parsing, the easiest approach is usually to split the line into
 whitespace-delimited words using the :meth:`~str.split` method of string objects
 and then convert decimal strings to numeric values using :func:`int` or
-:func:`float`.  ``split()`` supports an optional "sep" parameter which is useful
+:func:`float`.  :meth:`!split()` supports an optional "sep" parameter which is useful
 if the line uses something other than whitespace as a separator.
 
 For more complicated input parsing, regular expressions are more powerful
@@ -1345,7 +1345,7 @@ assignment
 is executed, and its return value is what gets used in the assignment statement;
 and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`~list.extend` on the list
 and returning the list.  That's why we say that for lists, ``+=`` is a
-"shorthand" for :meth:`~list.extend`::
+"shorthand" for :meth:`!extend`::
 
     >>> a_list = []
     >>> a_list += [1]
@@ -1447,7 +1447,8 @@ See also :ref:`why-self`.
 How do I check if an object is an instance of a given class or of a subclass of it?
 -----------------------------------------------------------------------------------
 
-Use the built-in function ``isinstance(obj, cls)``.  You can check if an object
+Use the built-in function :func:`isinstance(obj, cls) <isinstance>`.  You can
+check if an object
 is an instance of any of a number of classes by providing a tuple instead of a
 single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
 check whether an object is one of Python's built-in types, e.g.
