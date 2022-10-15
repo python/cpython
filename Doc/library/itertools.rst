@@ -809,6 +809,16 @@ which incur interpreter overhead.
            for k in range(len(roots) + 1)
        ]
 
+   def iter_index(seq, value, start=0):
+       "Return indices where a value occurs in a sequence."
+       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
+       i = start - 1
+       try:
+           while True:
+               yield (i := seq.index(value, i+1))
+       except ValueError:
+           pass
+
    def sieve(n):
        "Primes less than n"
        # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
@@ -817,7 +827,7 @@ which incur interpreter overhead.
        limit = math.isqrt(n) + 1
        for p in compress(range(limit), data):
            data[p*p : n : p] = bytearray(len(range(p*p, n, p)))
-       return compress(count(), data)
+       return iter_index(data, 1)
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
