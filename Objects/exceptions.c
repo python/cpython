@@ -1558,7 +1558,7 @@ ImportError_getstate(PyImportErrorObject *self)
             Py_DECREF(dict);
             return NULL;
         }
-        if (self->path && PyDict_SetItem(dict, &_Py_ID(name_from), self->name_from) < 0) {
+        if (self->name_from && PyDict_SetItem(dict, &_Py_ID(name_from), self->name_from) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
