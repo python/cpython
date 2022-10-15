@@ -282,10 +282,10 @@ class Random(_random.Random):
     ## -------------------- integer methods  -------------------
 
     def randrange(self, start, stop=None, step=_ONE):
-        """Choose a random item from range(start, stop[, step]).
+        """Choose a random item from range(stop) or range(start, stop[, step]).
 
-        This fixes the problem with randint() which includes the
-        endpoint; in Python this is usually not what you want.
+        Roughly equivalent to ``choice(range(start, stop, step))`` but
+        supports arbitrarily large ranges and is optimized for common cases.
 
         """
 
