@@ -6081,6 +6081,43 @@ settrace_to_record(PyObject *self, PyObject *list)
 }
 
 static PyObject *negative_dictoffset(PyObject *, PyObject *);
+
+static PyObject *
+function_get_code(PyObject *self, PyObject *func)
+{
+    PyObject *code = PyFunction_GetCode(func);
+    if (code != NULL) {
+        Py_INCREF(code);
+        return code;
+    } else {
+        return NULL;
+    }
+}
+
+static PyObject *
+function_get_globals(PyObject *self, PyObject *func)
+{
+    PyObject *globals = PyFunction_GetGlobals(func);
+    if (globals != NULL) {
+        Py_INCREF(globals);
+        return globals;
+    } else {
+        return NULL;
+    }
+}
+
+static PyObject *
+function_get_module(PyObject *self, PyObject *func)
+{
+    PyObject *module = PyFunction_GetModule(func);
+    if (module != NULL) {
+        Py_INCREF(module);
+        return module;
+    } else {
+        return NULL;
+    }
+}
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 static PyObject *getargs_s_hash_int2(PyObject *, PyObject *, PyObject*);
@@ -6382,6 +6419,9 @@ static PyMethodDef TestMethods[] = {
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
+    {"function_get_code", function_get_code, METH_O, NULL},
+    {"function_get_globals", function_get_globals, METH_O, NULL},
+    {"function_get_module", function_get_module, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 
