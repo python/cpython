@@ -229,8 +229,8 @@ Now that Python sorting provides key-functions, this technique is not often need
 Comparison Functions
 ====================
 
-Unlike key functions that return an absolute values for sorting,
-a comparison function computes the relative ordering for two inputs.
+Unlike key functions that return an absolute value for sorting, a comparison
+function computes the relative ordering for two inputs.
 
 For example, a `balance scale
 <https://upload.wikimedia.org/wikipedia/commons/1/17/Balance_à_tabac_1850.JPG>`_
