@@ -650,6 +650,17 @@ supports sending logging messages to a remote or local Unix syslog.
 
       Closes the socket to the remote host.
 
+   .. method:: createSocket()
+
+      Tries to create a socket and, if it's not a datagram socket, connect it
+      to the other end. This method is called during handler initialization,
+      but it's not regarded as an error if the other end isn't listening at
+      this point - the method will be called again when emitting an event, if
+      but it's not regarded as an error if the other end isn't listening yet
+      --- the method will be called again when emitting an event,
+      if there is no socket at that point.
+
+      .. versionadded:: 3.11
 
    .. method:: emit(record)
 
