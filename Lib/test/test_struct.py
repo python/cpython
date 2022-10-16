@@ -738,6 +738,11 @@ class StructTest(unittest.TestCase):
                 with self.subTest(format_str=fmt_str, number=number):
                     with self.assertRaisesRegex(struct.error, error_msg):
                         struct.pack(fmt_str, number)
+            error_msg = "required argument is not an integer"
+            not_number = ""
+            with self.subTest(format_str=fmt_str, number=not_number):
+                with self.assertRaisesRegex(struct.error, error_msg):
+                    struct.pack(fmt_str, not_number)
 
         for prefix in '@=<>':
             for int_type in 'BHILQ':
