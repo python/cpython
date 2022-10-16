@@ -191,7 +191,7 @@ class pickling_metaclass(type):
         return (create_dynamic_class, self.reduce_args)
 
 def create_dynamic_class(name, bases):
-    result = pickling_metaclass(name, bases, dict())
+    result = pickling_metaclass(name, bases, {})
     result.reduce_args = (name, bases)
     return result
 

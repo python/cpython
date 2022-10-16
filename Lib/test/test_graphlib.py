@@ -194,9 +194,9 @@ class TestTopologicalSort(unittest.TestCase):
 
     def test_not_hashable_nodes(self):
         ts = graphlib.TopologicalSorter()
-        self.assertRaises(TypeError, ts.add, dict(), 1)
-        self.assertRaises(TypeError, ts.add, 1, dict())
-        self.assertRaises(TypeError, ts.add, dict(), dict())
+        self.assertRaises(TypeError, ts.add, {}, 1)
+        self.assertRaises(TypeError, ts.add, 1, {})
+        self.assertRaises(TypeError, ts.add, {}, {})
 
     def test_order_of_insertion_does_not_matter_between_groups(self):
         def get_groups(ts):

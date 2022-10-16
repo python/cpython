@@ -63,7 +63,7 @@ Use a metaclass with a __prepare__ static method.
     ...    @staticmethod
     ...    def __prepare__(*args, **kwds):
     ...        print("Prepare called:", args, kwds)
-    ...        return dict()
+    ...        return {}
     ...    def __new__(cls, name, bases, namespace, **kwds):
     ...        print("New called:", kwds)
     ...        return type.__new__(cls, name, bases, namespace)

@@ -92,7 +92,7 @@ class BuildCLibTestCase(support.TempdirManager,
         lib = [('name', {'sources': 'notvalid'})]
         self.assertRaises(DistutilsSetupError, cmd.build_libraries, lib)
 
-        lib = [('name', {'sources': list()})]
+        lib = [('name', {'sources': []})]
         cmd.build_libraries(lib)
 
         lib = [('name', {'sources': tuple()})]

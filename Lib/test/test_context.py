@@ -441,7 +441,7 @@ class HamtTest(unittest.TestCase):
         self.assertNotEqual(k1, k2)
         self.assertEqual(hash(k1), hash(k2))
 
-        d = dict()
+        d = {}
         d[k1] = 'a'
         d[k2] = 'b'
 
@@ -579,7 +579,7 @@ class HamtTest(unittest.TestCase):
 
         for _ in range(RUN_XTIMES):
             h = hamt()
-            d = dict()
+            d = {}
 
             for i in range(COLLECTION_SIZE):
                 key = KeyStr(i)

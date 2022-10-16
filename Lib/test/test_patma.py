@@ -2609,7 +2609,7 @@ class TestPatma(unittest.TestCase):
             dict(h=1, g=2, i=3, a=4, b=5, d=6, e=7, c=8, f=9, w=0),
             dict(g=0, b=-1, a=-2, c=-3, d=-4, e=-6, h=-7, i=-8, f=-9, w=0),
             dict(d=-2, f=-3, b=-4, g=-5, e=-6, i=-7, a=-8, h=-9, c=-10, w=0),
-            dict(),
+            {},
         ]
         self.assertEqual(f(range(10)), alts[0])
         self.assertEqual(f(range(1, 11)), alts[1])
@@ -2633,7 +2633,7 @@ class TestPatma(unittest.TestCase):
             dict(h=1, g=2, i=3, a=4, b=5, d=6, e=7, c=8, f=9, w=0, y=False, z=True),
             dict(g=0, b=-1, a=-2, c=-3, d=-4, e=-6, h=-7, i=-8, f=-9, w=0, y=False, z=True),
             dict(d=-2, f=-3, b=-4, g=-5, e=-6, i=-7, a=-8, h=-9, c=-10, w=0, y=False, z=True),
-            dict(),
+            {},
         ]
         self.assertEqual(f((False, range(10), True)), alts[0])
         self.assertEqual(f((False, range(1, 11), True)), alts[1])

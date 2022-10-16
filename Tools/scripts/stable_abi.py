@@ -55,7 +55,7 @@ UNIXY = MACOS or (sys.platform == "linux")  # XXX should this be "not Windows"?
 class Manifest:
     """Collection of `ABIItem`s forming the stable ABI/limited API."""
     def __init__(self):
-        self.contents = dict()
+        self.contents = {}
 
     def add(self, item):
         if item.name in self.contents:

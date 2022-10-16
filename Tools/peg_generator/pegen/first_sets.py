@@ -36,7 +36,7 @@ class FirstSetCalculator(GrammarVisitor):
     def __init__(self, rules: Dict[str, Rule]) -> None:
         self.rules = rules
         self.nullables = compute_nullables(rules)
-        self.first_sets: Dict[str, Set[str]] = dict()
+        self.first_sets: Dict[str, Set[str]] = {}
         self.in_process: Set[str] = set()
 
     def calculate(self) -> Dict[str, Set[str]]:

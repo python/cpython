@@ -6377,7 +6377,7 @@ class CapiTest(unittest.TestCase):
         self.assertFalse(is_date(ds, True))
 
         # Check that various other things are not dates at all
-        args = [tuple(), list(), 1, '2011-01-01',
+        args = [(), [], 1, '2011-01-01',
                 timedelta(1), timezone.utc, time(12, 00)]
         for arg in args:
             for exact in (True, False):
@@ -6402,7 +6402,7 @@ class CapiTest(unittest.TestCase):
         self.assertFalse(is_time(ts, True))
 
         # Check that various other things are not times
-        args = [tuple(), list(), 1, '2011-01-01',
+        args = [(), [], 1, '2011-01-01',
                 timedelta(1), timezone.utc, date(2011, 1, 1)]
 
         for arg in args:
@@ -6428,7 +6428,7 @@ class CapiTest(unittest.TestCase):
         self.assertFalse(is_datetime(dts, True))
 
         # Check that various other things are not datetimes
-        args = [tuple(), list(), 1, '2011-01-01',
+        args = [(), [], 1, '2011-01-01',
                 timedelta(1), timezone.utc, date(2011, 1, 1)]
 
         for arg in args:
@@ -6454,7 +6454,7 @@ class CapiTest(unittest.TestCase):
         self.assertFalse(is_timedelta(tds, True))
 
         # Check that various other things are not timedeltas
-        args = [tuple(), list(), 1, '2011-01-01',
+        args = [(), [], 1, '2011-01-01',
                 timezone.utc, date(2011, 1, 1), datetime(2011, 1, 1)]
 
         for arg in args:
@@ -6483,7 +6483,7 @@ class CapiTest(unittest.TestCase):
         self.assertFalse(is_tzinfo(tzis, True))
 
         # Check that various other things are not tzinfos
-        args = [tuple(), list(), 1, '2011-01-01',
+        args = [(), [], 1, '2011-01-01',
                 date(2011, 1, 1), datetime(2011, 1, 1)]
 
         for arg in args:

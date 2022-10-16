@@ -280,7 +280,7 @@ class TupleTest(seq_tests.CommonTest):
                (9, 1), (0, 0), (21, 5), (6, 1))
 
     def test_repr(self):
-        l0 = tuple()
+        l0 = ()
         l2 = (0, 1, 2)
         a0 = self.type2test(l0)
         a2 = self.type2test(l2)

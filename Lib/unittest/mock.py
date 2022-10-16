@@ -2176,7 +2176,7 @@ class AsyncMockMixin(Base):
         code_mock.co_flags = inspect.CO_COROUTINE
         self.__dict__['__code__'] = code_mock
         self.__dict__['__name__'] = 'AsyncMock'
-        self.__dict__['__defaults__'] = tuple()
+        self.__dict__['__defaults__'] = ()
         self.__dict__['__kwdefaults__'] = {}
         self.__dict__['__annotations__'] = None
 

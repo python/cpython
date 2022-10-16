@@ -1886,7 +1886,7 @@ class PatchTest(unittest.TestCase):
 
         with patch.object(foo, '__annotations__', dict([('s', 1, )])):
             self.assertEqual(foo.__annotations__, dict([('s', 1, )]))
-        self.assertEqual(foo.__annotations__, dict())
+        self.assertEqual(foo.__annotations__, {})
 
         def foo(*a, x=0):
             return x

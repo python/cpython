@@ -38,7 +38,7 @@ command_parse = subcommands.add_parser("parse", help="Benchmark parsing and gene
 
 def benchmark(func):
     def wrapper(*args):
-        times = list()
+        times = []
         for _ in range(3):
             start = time()
             result = func(*args)

@@ -417,7 +417,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # Testing Python subclass of dict...
         self.assertTrue(issubclass(dict, dict))
         self.assertIsInstance({}, dict)
-        d = dict()
+        d = {}
         self.assertEqual(d, {})
         self.assertIs(d.__class__, dict)
         self.assertIsInstance(d, dict)
@@ -2419,7 +2419,7 @@ order (MRO) for bases """
 
     def test_dict_constructors(self):
         # Testing dict constructor ...
-        d = dict()
+        d = {}
         self.assertEqual(d, {})
         d = dict({})
         self.assertEqual(d, {})

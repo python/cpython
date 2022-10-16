@@ -432,8 +432,8 @@ class TestPlistlib(unittest.TestCase):
             someMoreData = b"<lots of binary gunk>\0\1\2\3" * 10,
             nestedData = [b"<lots of binary gunk>\0\1\2\3" * 10],
             aDate = datetime.datetime(2004, 10, 26, 10, 33, 33),
-            anEmptyDict = dict(),
-            anEmptyList = list()
+            anEmptyDict = {},
+            anEmptyList = []
         )
         pl['\xc5benraa'] = "That was a unicode key."
         return pl

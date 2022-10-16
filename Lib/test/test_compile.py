@@ -603,7 +603,7 @@ if 1:
 
         # Also test when eval() and exec() do the compilation step
         self.assertEqual(eval(memoryview(b"1234")[1:-1]), 23)
-        namespace = dict()
+        namespace = {}
         exec(memoryview(b"ax = 123")[1:-1], namespace)
         self.assertEqual(namespace['x'], 12)
 

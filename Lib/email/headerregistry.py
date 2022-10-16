@@ -119,7 +119,7 @@ class Group:
 
         """
         self._display_name = display_name
-        self._addresses = tuple(addresses) if addresses else tuple()
+        self._addresses = tuple(addresses) if addresses else ()
 
     @property
     def display_name(self):

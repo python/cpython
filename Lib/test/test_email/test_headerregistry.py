@@ -1530,19 +1530,19 @@ class TestAddressAndGroup(TestEmailBase):
     def test_empty_group(self):
         g = Group('foo')
         self.assertEqual(g.display_name, 'foo')
-        self.assertEqual(g.addresses, tuple())
+        self.assertEqual(g.addresses, ())
         self.assertEqual(str(g), 'foo:;')
 
     def test_empty_group_list(self):
         g = Group('foo', addresses=[])
         self.assertEqual(g.display_name, 'foo')
-        self.assertEqual(g.addresses, tuple())
+        self.assertEqual(g.addresses, ())
         self.assertEqual(str(g), 'foo:;')
 
     def test_null_group(self):
         g = Group()
         self.assertIsNone(g.display_name)
-        self.assertEqual(g.addresses, tuple())
+        self.assertEqual(g.addresses, ())
         self.assertEqual(str(g), 'None:;')
 
     def test_group_with_addresses(self):
@@ -1569,13 +1569,13 @@ class TestAddressAndGroup(TestEmailBase):
     def test_display_name_quoting(self):
         g = Group('foo.bar')
         self.assertEqual(g.display_name, 'foo.bar')
-        self.assertEqual(g.addresses, tuple())
+        self.assertEqual(g.addresses, ())
         self.assertEqual(str(g), '"foo.bar":;')
 
     def test_display_name_blanks_not_quoted(self):
         g = Group('foo bar')
         self.assertEqual(g.display_name, 'foo bar')
-        self.assertEqual(g.addresses, tuple())
+        self.assertEqual(g.addresses, ())
         self.assertEqual(str(g), 'foo bar:;')
 
     def test_set_message_header_from_address(self):

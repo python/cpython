@@ -459,7 +459,7 @@ def permute_left_option_groups(l):
        (2, 3)
        (1, 2, 3)
     """
-    yield tuple()
+    yield ()
     accumulator = []
     for group in reversed(l):
         accumulator = list(group) + accumulator
@@ -474,7 +474,7 @@ def permute_right_option_groups(l):
       (1, 2)
       (1, 2, 3)
     """
-    yield tuple()
+    yield ()
     accumulator = []
     for group in l:
         accumulator.extend(group)

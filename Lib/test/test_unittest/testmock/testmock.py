@@ -1129,7 +1129,7 @@ class MockTest(unittest.TestCase):
         self.assertEqual(mock().mock_calls,
                          call.foo.bar().baz().call_list())
 
-        for kwargs in dict(), dict(name='bar'):
+        for kwargs in {}, dict(name='bar'):
             mock = MagicMock(**kwargs)
             int(mock.foo)
             expected = [('foo.__int__', (), {})]
@@ -1765,13 +1765,13 @@ class MockTest(unittest.TestCase):
             klasses.append(lambda K=Klass: K(spec_set=Anything))
 
         for Klass in klasses:
-            for kwargs in dict(), dict(spec_set=True):
+            for kwargs in {}, dict(spec_set=True):
                 mock = Klass()
                 #no error
                 mock.one, mock.two, mock.three
 
                 for One, Two in [(_One, _Two), (['one'], ['two'])]:
-                    for kwargs in dict(), dict(spec_set=True):
+                    for kwargs in {}, dict(spec_set=True):
                         mock.mock_add_spec(One, **kwargs)
 
                         mock.one

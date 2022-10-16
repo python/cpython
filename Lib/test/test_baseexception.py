@@ -109,7 +109,7 @@ class ExceptionClassTests(unittest.TestCase):
     def test_interface_no_arg(self):
         # Make sure that with no args that interface is correct
         exc = Exception()
-        results = ([len(exc.args), 0], [exc.args, tuple()],
+        results = ([len(exc.args), 0], [exc.args, ()],
                 [str(exc), ''],
                 [repr(exc), exc.__class__.__name__ + '()'])
         self.interface_test_driver(results)

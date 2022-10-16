@@ -1093,19 +1093,19 @@ Missing ':' before suites:
    SyntaxError: expected ':'
 
    >>> match x
-   ...   case list():
+   ...   case []:
    ...       pass
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
    >>> match x x:
-   ...   case list():
+   ...   case []:
    ...       pass
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
    >>> match x:
-   ...   case list()
+   ...   case []
    ...       pass
    Traceback (most recent call last):
    SyntaxError: expected ':'

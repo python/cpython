@@ -244,7 +244,7 @@ class Regrtest:
         # if testdir is set, then we are not running the python tests suite, so
         # don't add default tests to be executed or skipped (pass empty values)
         if self.ns.testdir:
-            alltests = findtests(self.ns.testdir, list(), set())
+            alltests = findtests(self.ns.testdir, [], set())
         else:
             alltests = findtests(self.ns.testdir, stdtests, nottests)
 
