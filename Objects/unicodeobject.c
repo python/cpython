@@ -8964,20 +8964,19 @@ _PyUnicode_InsertThousandsGrouping(
     return count;
 }
 
-
-Py_ssize_t
-PyUnicode_Count(PyObject *str,
-                PyObject *substr,
-                Py_ssize_t start,
-                Py_ssize_t end)
+static Py_ssize_t
+unicode_count_impl(PyObject *str,
+                   PyObject *substr,
+                   Py_ssize_t start,
+                   Py_ssize_t end)
 {
+    assert(PyUnicode_Check(str));
+    assert(PyUnicode_Check(substr));
+
     Py_ssize_t result;
     int kind1, kind2;
     const void *buf1 = NULL, *buf2 = NULL;
     Py_ssize_t len1, len2;
-
-    if (ensure_unicode(str) < 0 || ensure_unicode(substr) < 0)
-        return -1;
 
     kind1 = PyUnicode_KIND(str);
     kind2 = PyUnicode_KIND(substr);
@@ -8998,18 +8997,13 @@ PyUnicode_Count(PyObject *str,
             goto onError;
     }
 
+    // We don't reuse `anylib_count` here because of the explicit casts.
     switch (kind1) {
     case PyUnicode_1BYTE_KIND:
-        if (PyUnicode_IS_ASCII(str) && PyUnicode_IS_ASCII(substr))
-            result = asciilib_count(
-                ((const Py_UCS1*)buf1) + start, end - start,
-                buf2, len2, PY_SSIZE_T_MAX
-                );
-        else
-            result = ucs1lib_count(
-                ((const Py_UCS1*)buf1) + start, end - start,
-                buf2, len2, PY_SSIZE_T_MAX
-                );
+        result = ucs1lib_count(
+            ((const Py_UCS1*)buf1) + start, end - start,
+            buf2, len2, PY_SSIZE_T_MAX
+            );
         break;
     case PyUnicode_2BYTE_KIND:
         result = ucs2lib_count(
@@ -9037,6 +9031,18 @@ PyUnicode_Count(PyObject *str,
     if (kind2 != kind1)
         PyMem_Free((void *)buf2);
     return -1;
+}
+
+Py_ssize_t
+PyUnicode_Count(PyObject *str,
+                PyObject *substr,
+                Py_ssize_t start,
+                Py_ssize_t end)
+{
+    if (ensure_unicode(str) < 0 || ensure_unicode(substr) < 0)
+        return -1;
+
+    return unicode_count_impl(str, substr, start, end);
 }
 
 Py_ssize_t
@@ -9904,10 +9910,7 @@ anylib_count(int kind, PyObject *sstr, const void* sbuf, Py_ssize_t slen,
 {
     switch (kind) {
     case PyUnicode_1BYTE_KIND:
-        if (PyUnicode_IS_ASCII(sstr) && PyUnicode_IS_ASCII(str1))
-            return asciilib_count(sbuf, slen, buf1, len1, maxcount);
-        else
-            return ucs1lib_count(sbuf, slen, buf1, len1, maxcount);
+        return ucs1lib_count(sbuf, slen, buf1, len1, maxcount);
     case PyUnicode_2BYTE_KIND:
         return ucs2lib_count(sbuf, slen, buf1, len1, maxcount);
     case PyUnicode_4BYTE_KIND:
@@ -10857,62 +10860,16 @@ unicode_count(PyObject *self, PyObject *args)
     PyObject *substring = NULL;   /* initialize to fix a compiler warning */
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *result;
-    int kind1, kind2;
-    const void *buf1, *buf2;
-    Py_ssize_t len1, len2, iresult;
+    Py_ssize_t result;
 
     if (!parse_args_finds_unicode("count", args, &substring, &start, &end))
         return NULL;
 
-    kind1 = PyUnicode_KIND(self);
-    kind2 = PyUnicode_KIND(substring);
-    if (kind1 < kind2)
-        return PyLong_FromLong(0);
+    result = unicode_count_impl(self, substring, start, end);
+    if (result == -1)
+        return NULL;
 
-    len1 = PyUnicode_GET_LENGTH(self);
-    len2 = PyUnicode_GET_LENGTH(substring);
-    ADJUST_INDICES(start, end, len1);
-    if (end - start < len2)
-        return PyLong_FromLong(0);
-
-    buf1 = PyUnicode_DATA(self);
-    buf2 = PyUnicode_DATA(substring);
-    if (kind2 != kind1) {
-        buf2 = unicode_askind(kind2, buf2, len2, kind1);
-        if (!buf2)
-            return NULL;
-    }
-    switch (kind1) {
-    case PyUnicode_1BYTE_KIND:
-        iresult = ucs1lib_count(
-            ((const Py_UCS1*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    case PyUnicode_2BYTE_KIND:
-        iresult = ucs2lib_count(
-            ((const Py_UCS2*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    case PyUnicode_4BYTE_KIND:
-        iresult = ucs4lib_count(
-            ((const Py_UCS4*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    default:
-        Py_UNREACHABLE();
-    }
-
-    result = PyLong_FromSsize_t(iresult);
-
-    assert((kind2 == kind1) == (buf2 == PyUnicode_DATA(substring)));
-    if (kind2 != kind1)
-        PyMem_Free((void *)buf2);
-
-    return result;
+    return PyLong_FromSsize_t(result);
 }
 
 /*[clinic input]
