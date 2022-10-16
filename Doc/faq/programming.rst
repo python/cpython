@@ -296,9 +296,9 @@ using multiple imports per line uses less screen space.
 
 It's good practice if you import modules in the following order:
 
-1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``
+1. standard library modules -- e.g. :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod`re`
 2. third-party library modules (anything installed in Python's site-packages
-   directory) -- e.g. ``mx.DateTime``, ``ZODB``, ``PIL.Image``
+   directory) -- e.g. :mod:`!dateutil`, :mod:`requests`, :mod:`PIL.Image`
 3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
@@ -1345,7 +1345,7 @@ assignment
 is executed, and its return value is what gets used in the assignment statement;
 and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`~list.extend` on the list
 and returning the list.  That's why we say that for lists, ``+=`` is a
-"shorthand" for :meth:`!extend`::
+"shorthand" for :meth:`!list.extend`::
 
     >>> a_list = []
     >>> a_list += [1]
@@ -1559,7 +1559,8 @@ method too, and it must do so carefully.  The basic implementation of
            self.__dict__[name] = value
        ...
 
-Most :meth:`!__setattr__` implementations must modify ``self.__dict__`` to store
+Most :meth:`!__setattr__` implementations must modify
+:meth`self.__dict__ <object.__dict__>` to store
 local state for self without causing an infinite recursion.
 
 
@@ -1848,7 +1849,7 @@ identity tests.  This prevents the code from being confused by objects such as
 ``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
-:meth:`!collections.abc.Sequence.__contains__`::
+:meth:`collections.abc.Sequence.__contains__`::
 
     def __contains__(self, value):
         for v in self:
