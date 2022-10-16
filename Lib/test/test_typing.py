@@ -5248,6 +5248,8 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(Unpack[Ts]), (Ts,))
         self.assertEqual(get_args(tuple[*Ts]), (*Ts,))
         self.assertEqual(get_args(tuple[Unpack[Ts]]), (Unpack[Ts],))
+        self.assertEqual(get_args((*tuple[*Ts],)[0]), (*Ts,))
+        self.assertEqual(get_args(Unpack[tuple[Unpack[Ts]]]), (tuple[Unpack[Ts]],))
 
 
 class CollectionsAbcTests(BaseTestCase):
