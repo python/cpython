@@ -2998,7 +2998,7 @@ class SuggestionFormattingTestBase:
         sys.path.append(str(tmpdir))
         self.addCleanup(sys.path.pop)
 
-        mod_name = x = ''.join(random.choices(string.ascii_letters, k=16))
+        mod_name = ''.join(random.choices(string.ascii_letters, k=16))
         module = tmpdir / (mod_name + ".py")
         module.write_text(code)
 
