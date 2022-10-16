@@ -895,6 +895,41 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.eval_get_func_name(sum), "sum")  # c function
         self.assertEqual(_testcapi.eval_get_func_name(A), "type")
 
+    def test_function_get_code(self):
+        import types
+
+        def some():
+            pass
+
+        code = _testcapi.function_get_code(some)
+        self.assertIsInstance(code, types.CodeType)
+        self.assertEqual(code, some.__code__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_code(None)  # not a function
+
+    def test_function_get_globals(self):
+        def some():
+            pass
+
+        globals_ = _testcapi.function_get_globals(some)
+        self.assertIsInstance(globals_, dict)
+        self.assertEqual(globals_, some.__globals__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_globals(None)  # not a function
+
+    def test_function_get_module(self):
+        def some():
+            pass
+
+        module = _testcapi.function_get_module(some)
+        self.assertIsInstance(module, str)
+        self.assertEqual(module, some.__module__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_module(None)  # not a function
+
 
 class TestPendingCalls(unittest.TestCase):
 
