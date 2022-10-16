@@ -1709,33 +1709,36 @@ class PolicyTests(unittest.TestCase):
         self.assertIsNone(policy._watcher)
         unix_events.can_use_pidfd = mock.Mock()
         unix_events.can_use_pidfd.return_value = False
-        watcher = policy.get_child_watcher()
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
-
-        self.assertIs(watcher, policy.get_child_watcher())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
         unix_events.can_use_pidfd = mock.Mock()
         unix_events.can_use_pidfd.return_value = True
-        watcher = policy.get_child_watcher()
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
-
-        self.assertIs(watcher, policy.get_child_watcher())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             watcher = asyncio.FastChildWatcher()
+            policy.set_child_watcher(watcher)
 
-        policy.set_child_watcher(watcher)
         self.assertIs(policy._watcher, watcher)
-        self.assertIs(watcher, policy.get_child_watcher())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_thread(self):
 
@@ -1769,7 +1772,7 @@ class PolicyTests(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             watcher = asyncio.SafeChildWatcher()
-        policy.set_child_watcher(watcher)
+            policy.set_child_watcher(watcher)
         watcher.attach_loop(loop)
 
         self.assertIs(watcher._loop, loop)
