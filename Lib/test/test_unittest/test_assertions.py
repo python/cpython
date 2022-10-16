@@ -6,6 +6,11 @@ from test.support import gc_collect
 from itertools import product
 
 
+NAN = float('nan')
+INF = float('inf')
+NINF = float('-inf')
+
+
 class Test_Assertions(unittest.TestCase):
     def test_AlmostEqual(self):
         self.assertAlmostEqual(1.00000001, 1.0)
@@ -86,6 +91,25 @@ class Test_Assertions(unittest.TestCase):
 
         self.assertAlmostEqual(first_dt, second_dt, rel_delta=0.5)
         self.assertNotAlmostEqual(first_dt, second_dt, rel_delta=0.1)
+
+    def test_AlmostEqual_inf_nan(self):
+        for criterion in [{"places": 2}, {"delta": 0.5}, {"rel_delta": 0.2}]:
+            for n1, n2 in [(INF, INF), (NINF, NINF)]:
+                self.assertAlmostEqual(n1, n2, **criterion)
+                with self.assertRaises(self.failureException,
+                                       msg="%s %s should be equal with %s" % (n1, n2, criterion)):
+                    self.assertNotAlmostEqual(n1, n2, **criterion)
+
+            for n1, n2 in [(INF, NINF), (NINF, INF),
+                           (INF, 1), (1, INF),
+                           (NINF, 1), (1, NINF),
+                           (NAN, NAN),
+                           (NAN, 1), (1, NAN),
+                           (NAN, INF), (INF, NAN),
+                           (NAN, NINF), (NINF, NAN)]:
+                self.assertNotAlmostEqual(n1, n2, **criterion)
+                with self.assertRaises(self.failureException):
+                    self.assertAlmostEqual(n1, n2, **criterion)
 
     def test_assertRaises(self):
         def _raise(e):
