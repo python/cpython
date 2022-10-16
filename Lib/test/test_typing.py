@@ -1000,6 +1000,18 @@ class TypeVarTupleTests(BaseTestCase):
             with self.assertRaises(TypeError):
                 C[Unpack[Ts]]
 
+            B = A[T, *Ts, str, T2]
+            with self.assertRaises(TypeError):
+                B[int, *Ts]
+            with self.assertRaises(TypeError):
+                B[int, *Ts, *Ts]
+
+            C = A[T, Unpack[Ts], str, T2]
+            with self.assertRaises(TypeError):
+                C[int, Unpack[Ts]]
+            with self.assertRaises(TypeError):
+                C[int, Unpack[Ts], Unpack[Ts]]
+
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
         T = TypeVar('T')
@@ -1018,19 +1030,6 @@ class TypeVarTupleTests(BaseTestCase):
 
         self.assertEqual(repr(*tuple[*Ts]), '*tuple[*Ts]')
         self.assertEqual(repr(Unpack[Tuple[Unpack[Ts]]]), '*typing.Tuple[*Ts]')
-
-        for A in G1, G2, tuple, Tuple:
-            B = A[T, *Ts, str, T2]
-            with self.assertRaises(TypeError):
-                B[int, *Ts]
-            with self.assertRaises(TypeError):
-                B[int, *Ts, *Ts]
-
-            C = A[T, Unpack[Ts], str, T2]
-            with self.assertRaises(TypeError):
-                C[int, Unpack[Ts]]
-            with self.assertRaises(TypeError):
-                C[int, Unpack[Ts], Unpack[Ts]]
 
     def test_variadic_class_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
