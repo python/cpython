@@ -1209,10 +1209,10 @@ Executing code in thread or process pools
       if __name__ == '__main__':
           asyncio.run(main())
 
-   Note that on Windows and macOS, the entry point guard may be necessary as the
-   example would otherwise cause a :exc:`RuntimeError`. For more details, see the
-   `Safe importing of main module
-   <https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods>`_.
+   Note that the entry point guard (``if __name__ == '__main__'``)
+   is required for option 3 due to the peculiarities of :mod:`multiprocessing`,
+   which is used by :class:`~concurrent.futures.ProcessPoolExecutor.
+   See :ref:`Safe importing of main module <multiprocessing-safe-main-import>`.
 
    This method returns a :class:`asyncio.Future` object.
 
