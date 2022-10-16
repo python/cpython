@@ -753,6 +753,18 @@ locale
   ``locale.getpreferredencoding(False)`` but ignores the
   :ref:`Python UTF-8 Mode <utf8-mode>`.
 
+
+.. _whatsnew311-logging:
+
+logging
+-------
+
+* Added :func:`~logging.getLevelNamesMapping`
+  to return a mapping from logging level names (e.g. ``'CRITICAL'``)
+  to the values of their corresponding :ref:`levels` (e.g. ``50``, by default).
+  (Contributed by Andrei Kulakovin in :gh:`88024`.)
+
+
 math
 ----
 
