@@ -672,7 +672,7 @@ class TestBuglets(unittest.TestCase):
         for i in range(10):
             try:
                 raise Exception
-            except Exception:
+            except Exception or Exception:
                 pass
 
     def test_bpo_45773_pop_jump_if_true(self):
