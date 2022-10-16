@@ -8,6 +8,7 @@ import lexer as lx
 class Lexer:
     def __init__(self, src, filename=None):
         self.src = src
+        self.filename = filename
         self.tokens = list(lx.tokenize(self.src, filename=filename))
         self.pos = 0
 
@@ -45,6 +46,20 @@ class Lexer:
         self.backup()
         return None
 
+    def extract_line(self, line):
+        lines = self.src.splitlines()
+        if line > len(lines):
+            return ""
+        return lines[line - 1]
+
+    def make_syntax_error(self, message, tkn=None):
+        if tkn is None:
+            tkn = self.peek()
+        if tkn is None:
+            tkn = self.tokens[-1]
+        return lx.make_syntax_error(message,
+            self.filename, tkn.line, tkn.column, self.extract_line(tkn.line))
+
 
 @dataclass
 class InstHeader:
@@ -60,8 +75,6 @@ class Family:
 
 
 class Parser(Lexer):
-    def __init__(self, src, filename=None):
-        super().__init__(src, filename=filename)
 
     def c_blob(self):
         tokens = []
@@ -124,7 +137,8 @@ class Parser(Lexer):
                         if num := self.expect(lx.NUMBER):
                             if self.expect(lx.RBRACKET):
                                 return f"{tkn.text}[{arg.text}*{num.text}]"
-                raise SyntaxError("Expected argument in brackets")
+                raise self.make_syntax_error("Expected argument in brackets", tkn)
+
             return tkn.text
         if self.expect(lx.CONDOP):
             while self.expect(lx.CONDOP):
