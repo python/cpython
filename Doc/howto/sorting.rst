@@ -235,8 +235,9 @@ function computes the relative ordering for two inputs.
 For example, a `balance scale
 <https://upload.wikimedia.org/wikipedia/commons/1/17/Balance_à_tabac_1850.JPG>`_
 compares two samples giving a relative ordering: lighter, equal, or heavier.
-Likewise, a comparison functions such as ``cmp(a, b)`` will a negative value for
-less-than, zero if the inputs are equal, or a positive value for greater-than.
+Likewise, a comparison function such as ``cmp(a, b)`` will return a negative
+value for less-than, zero if the inputs are equal, or a positive value for
+greater-than.
 
 It is common to encounter comparison functions when translating algorithms from
 other languages.  Also, some libraries provide comparison functions as part of
