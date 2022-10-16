@@ -234,7 +234,7 @@ respectively.
 
 .. versionchanged:: 3.10
    ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-   See :pep:`612` for more information.
+   See :pep:`612` for more details.
 
 .. seealso::
    The documentation for :class:`ParamSpec` and :class:`Concatenate` provides
@@ -725,7 +725,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionchanged:: 3.10
       ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-      See :pep:`612` for more information.
+      See :pep:`612` for more details.
 
    .. seealso::
       The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
@@ -1050,8 +1050,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       is not a subtype of the former, since ``List`` is invariant.
       The responsibility of writing type-safe type guards is left to the user.
 
-   ``TypeGuard`` also works with type variables.  For more information, see
-   :pep:`647` (User-Defined Type Guards).
+   ``TypeGuard`` also works with type variables.  See :pep:`647` for more details.
 
    .. versionadded:: 3.10
 
@@ -1323,7 +1322,7 @@ These are not used in annotations. They are building blocks for creating generic
 
       func(C())  # Passes static type check
 
-   See :pep:`544` for details. Protocol classes decorated with
+   See :pep:`544` for more details. Protocol classes decorated with
    :func:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
    type signatures.
@@ -2127,7 +2126,7 @@ Functions and decorators
       def process(response):
           <actual implementation>
 
-   See :pep:`484` for details and comparison with other typing semantics.
+   See :pep:`484` for more details and comparison with other typing semantics.
 
 .. decorator:: final
 
