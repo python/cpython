@@ -296,9 +296,9 @@ using multiple imports per line uses less screen space.
 
 It's good practice if you import modules in the following order:
 
-1. standard library modules -- e.g. :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod`re`
+1. standard library modules -- e.g. :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod:`re`
 2. third-party library modules (anything installed in Python's site-packages
-   directory) -- e.g. :mod:`!dateutil`, :mod:`requests`, :mod:`PIL.Image`
+   directory) -- e.g. :mod:`!dateutil`, :mod:`!requests`, :mod:`!PIL.Image`
 3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
@@ -1560,7 +1560,7 @@ method too, and it must do so carefully.  The basic implementation of
        ...
 
 Most :meth:`!__setattr__` implementations must modify
-:meth`self.__dict__ <object.__dict__>` to store
+:meth:`self.__dict__ <object.__dict__>` to store
 local state for self without causing an infinite recursion.
 
 
