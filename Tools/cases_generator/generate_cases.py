@@ -41,8 +41,8 @@ class Instruction:
     c_code: list[str]  # Excludes outer {}, no trailing \n
 
 
-def parse_cases(src):
-    psr = parser.Parser(src)
+def parse_cases(src, filename):
+    psr = parser.Parser(src, filename=filename)
     instrs = []
     families = []
     while not psr.eof():
@@ -82,7 +82,7 @@ def main():
     args = arg_parser.parse_args()
     with eopen(args.input) as f:
         src = f.read()
-    instrs, families = parse_cases(src)
+    instrs, families = parse_cases(src, filename=args.input)
     if not args.quiet:
         ninstrs = len(instrs)
         nfamilies = len(families)

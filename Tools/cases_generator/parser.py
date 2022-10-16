@@ -6,9 +6,9 @@ import lexer as lx
 
 
 class Lexer:
-    def __init__(self, src):
+    def __init__(self, src, filename=None):
         self.src = src
-        self.tokens = list(lx.tokenize(self.src))
+        self.tokens = list(lx.tokenize(self.src, filename=filename))
         self.pos = 0
 
     def getpos(self):
@@ -60,8 +60,8 @@ class Family:
 
 
 class Parser(Lexer):
-    def __init__(self, src):
-        super().__init__(src)
+    def __init__(self, src, filename=None):
+        super().__init__(src, filename=filename)
 
     def c_blob(self):
         tokens = []

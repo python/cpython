@@ -128,6 +128,11 @@ for name in keywords:
     globals()[name] = name
 keywords = { name.lower() : name for name in keywords }
 
+
+def make_syntax_error(message, filename, line, column, line_text):
+    return SyntaxError(message, (filename, line, column, line_text))
+
+
 @dataclass(slots=True)
 class Token:
     kind: str
@@ -159,7 +164,8 @@ class Token:
         assert isinstance(txt, str)
         return Token(self.kind, txt, self.begin, self.end)
 
-def tokenize(src, line=1):
+
+def tokenize(src, line=1, filename=None):
     linestart = -1
     for m in matcher.finditer(src):
         start, end = m.span()
@@ -187,7 +193,11 @@ def tokenize(src, line=1):
         elif text[0] == '/' and text[1] in '/*':
             kind = COMMENT
         else:
-            raise SyntaxError(text)
+            lineend = src.find("\n", start)
+            if lineend == -1:
+                lineend = len(src)
+            raise make_syntax_error(f"Bad token: {text}",
+                filename, line, start-linestart+1, src[linestart:lineend])
         if kind == COMMENT:
             begin = line, start-linestart
             newlines = text.count('\n')
@@ -199,8 +209,10 @@ def tokenize(src, line=1):
         if kind != "\n":
             yield Token(kind, text, begin, (line, start-linestart+len(text)))
 
+
 __all__ = []
 __all__.extend([kind for kind in globals() if kind.upper() == kind])
+
 
 def to_text(tkns, dedent=0):
     res = []
@@ -219,9 +231,11 @@ def to_text(tkns, dedent=0):
         line, col = tkn.end
     return ''.join(res)
 
+
 if __name__ == "__main__":
     import sys
-    src = open(sys.argv[1]).read()
+    filename = sys.argv[1]
+    src = open(filename).read()
     # print(to_text(tokenize(src)))
-    for tkn in tokenize(src):
+    for tkn in tokenize(src, filename=filename):
         print(tkn)
