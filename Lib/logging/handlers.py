@@ -894,9 +894,9 @@ class SysLogHandler(logging.Handler):
         """
         Try to create a socket and, if it's not a datagram socket, connect it
         to the other end. This method is called during handler initialization,
-        but it's not regarded as an error if the other end isn't listening at
-        this point - the method will be called again when emitting an event, if
-        there is no socket at that point.
+        but it's not regarded as an error if the other end isn't listening yet
+        --- the method will be called again when emitting an event,
+        if there is no socket at that point.
         """
         address = self.address
         socktype = self.socktype
