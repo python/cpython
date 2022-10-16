@@ -5470,6 +5470,12 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+eval_get_func_name(PyObject *self, PyObject *func)
+{
+    return PyUnicode_FromString(PyEval_GetFuncName(func));
+}
+
+static PyObject *
 get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *result = PyDict_New();
@@ -5650,6 +5656,42 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
     assert(!_Py_IS_TYPE_SIGNED(unsigned int));
 
     Py_RETURN_NONE;
+}
+
+static PyObject *
+function_get_code(PyObject *self, PyObject *func)
+{
+    PyObject *code = PyFunction_GetCode(func);
+    if (code != NULL) {
+        Py_INCREF(code);
+        return code;
+    } else {
+        return NULL;
+    }
+}
+
+static PyObject *
+function_get_globals(PyObject *self, PyObject *func)
+{
+    PyObject *globals = PyFunction_GetGlobals(func);
+    if (globals != NULL) {
+        Py_INCREF(globals);
+        return globals;
+    } else {
+        return NULL;
+    }
+}
+
+static PyObject *
+function_get_module(PyObject *self, PyObject *func)
+{
+    PyObject *module = PyFunction_GetModule(func);
+    if (module != NULL) {
+        Py_INCREF(module);
+        return module;
+    } else {
+        return NULL;
+    }
 }
 
 
@@ -5925,6 +5967,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
@@ -5935,6 +5978,9 @@ static PyMethodDef TestMethods[] = {
     {"watch_dict", watch_dict, METH_VARARGS, NULL},
     {"unwatch_dict", unwatch_dict, METH_VARARGS, NULL},
     {"get_dict_watcher_events", get_dict_watcher_events, METH_NOARGS, NULL},
+    {"function_get_code", function_get_code, METH_O, NULL},
+    {"function_get_globals", function_get_globals, METH_O, NULL},
+    {"function_get_module", function_get_module, METH_O, NULL},
     {NULL, NULL} /* sentinel */
 };
 

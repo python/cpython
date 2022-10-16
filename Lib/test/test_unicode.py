@@ -445,10 +445,10 @@ class UnicodeTest(string_tests.CommonTest,
     def test_rsplit(self):
         string_tests.CommonTest.test_rsplit(self)
         # test mixed kinds
-        for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
+        for left, right in ('ba', 'юё', '\u0101\u0100', '\U00010301\U00010300'):
             left *= 9
             right *= 9
-            for delim in ('c', '\u0102', '\U00010302'):
+            for delim in ('c', 'ы', '\u0102', '\U00010302'):
                 self.checkequal([left + right],
                                 left + right, 'rsplit', delim)
                 self.checkequal([left, right],
@@ -457,6 +457,10 @@ class UnicodeTest(string_tests.CommonTest,
                                 left + right, 'rsplit', delim * 2)
                 self.checkequal([left, right],
                                 left + delim * 2 + right, 'rsplit', delim *2)
+
+            # Check `None` as well:
+            self.checkequal([left + right],
+                             left + right, 'rsplit', None)
 
     def test_partition(self):
         string_tests.MixinStrUnicodeUserStringTest.test_partition(self)
