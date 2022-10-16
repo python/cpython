@@ -31,11 +31,7 @@ class Test_Assertions(unittest.TestCase):
         self.assertRaises(self.failureException,
                           self.assertNotAlmostEqual, 0, .1+.1j, places=0)
 
-        self.assertAlmostEqual(float('inf'), float('inf'))
-        self.assertRaises(self.failureException, self.assertNotAlmostEqual,
-                          float('inf'), float('inf'))
-
-    def test_AmostEqualWithDelta(self):
+    def test_AlmostEqualWithDelta(self):
         self.assertAlmostEqual(1.1, 1.0, delta=0.5)
         self.assertAlmostEqual(1.0, 1.1, delta=0.5)
         self.assertNotAlmostEqual(1.1, 1.0, delta=0.05)
