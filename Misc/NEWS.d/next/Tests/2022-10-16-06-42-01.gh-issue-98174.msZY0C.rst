@@ -1,0 +1,1 @@
+Update test case `test_sendfile_fallback_close_peer_in_the_middle_of_receiving` to handle `OSError` of `EPROTOTYPE` on macOS.
