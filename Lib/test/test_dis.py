@@ -1212,7 +1212,7 @@ class DisWithFileTests(DisTests):
         return output.getvalue()
 
 
-if sys.flags.optimize:
+if dis.code_info.__doc__ is None:
     code_info_consts = "0: None"
 else:
     code_info_consts = "0: 'Formatted details of methods, functions, or code.'"
