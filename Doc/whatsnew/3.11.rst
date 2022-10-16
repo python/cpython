@@ -1565,15 +1565,17 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
   (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
 
-.. _whatsnew311-pending-removal-312:
+.. _whatsnew311-pending-removal:
+.. _whatsnew311-python-api-pending-removal:
 
 Pending Removal in Python 3.12
 ==============================
 
-The following APIs have been deprecated in earlier Python releases,
+The following Python APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.12.
 
-Python API:
+C APIs pending removal are
+:ref:`listed separately <whatsnew311-c-api-pending-removal>`.
 
 * :class:`pkgutil.ImpImporter`
 * :class:`pkgutil.ImpLoader`
@@ -1601,25 +1603,6 @@ Python API:
 * :func:`cgi.log`
 * :func:`sqlite3.OptimizedUnicode`
 * :func:`sqlite3.enable_shared_cache`
-
-C API:
-
-* :c:func:`PyUnicode_AS_DATA`
-* :c:func:`PyUnicode_AS_UNICODE`
-* :c:func:`PyUnicode_AsUnicodeAndSize`
-* :c:func:`PyUnicode_AsUnicode`
-* :c:func:`PyUnicode_FromUnicode`
-* :c:func:`PyUnicode_GET_DATA_SIZE`
-* :c:func:`PyUnicode_GET_SIZE`
-* :c:func:`PyUnicode_GetSize`
-* :c:func:`PyUnicode_IS_COMPACT`
-* :c:func:`PyUnicode_IS_READY`
-* :c:func:`PyUnicode_READY`
-* :c:func:`Py_UNICODE_WSTR_LENGTH`
-* :c:func:`_PyUnicode_AsUnicode`
-* :c:macro:`PyUnicode_WCHAR_KIND`
-* :c:type:`PyUnicodeObject`
-* :c:func:`PyUnicode_InternImmortal()`
 
 
 .. _whatsnew311-removed:
@@ -2256,6 +2239,32 @@ Deprecated
 
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)
+
+
+.. _whatsnew311-c-api-pending-removal:
+
+Pending Removal in Python 3.12
+------------------------------
+
+The following C APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.12.
+
+* :c:func:`PyUnicode_AS_DATA`
+* :c:func:`PyUnicode_AS_UNICODE`
+* :c:func:`PyUnicode_AsUnicodeAndSize`
+* :c:func:`PyUnicode_AsUnicode`
+* :c:func:`PyUnicode_FromUnicode`
+* :c:func:`PyUnicode_GET_DATA_SIZE`
+* :c:func:`PyUnicode_GET_SIZE`
+* :c:func:`PyUnicode_GetSize`
+* :c:func:`PyUnicode_IS_COMPACT`
+* :c:func:`PyUnicode_IS_READY`
+* :c:func:`PyUnicode_READY`
+* :c:func:`Py_UNICODE_WSTR_LENGTH`
+* :c:func:`_PyUnicode_AsUnicode`
+* :c:macro:`PyUnicode_WCHAR_KIND`
+* :c:type:`PyUnicodeObject`
+* :c:func:`PyUnicode_InternImmortal()`
 
 
 .. _whatsnew311-c-api-removed:
