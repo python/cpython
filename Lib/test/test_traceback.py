@@ -3013,7 +3013,7 @@ class SuggestionFormattingTestBase:
             except ImportError as e:
                 raise e from None
             except Exception as e:
-                self.fail("Expected ImportError but got {type(e)}")
+                self.fail(f"Expected ImportError but got {type(e)}")
         self.addCleanup(forget, modname)
 
         result_lines = self.get_exception(
