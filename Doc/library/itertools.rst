@@ -809,15 +809,26 @@ which incur interpreter overhead.
            for k in range(len(roots) + 1)
        ]
 
+   def iter_index(seq, value, start=0):
+       "Return indices where a value occurs in a sequence."
+       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
+       i = start - 1
+       try:
+           while True:
+               yield (i := seq.index(value, i+1))
+       except ValueError:
+           pass
+
    def sieve(n):
-      "Primes less than n"
-      # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
-      data = bytearray([1]) * n
-      data[:2] = 0, 0
-      limit = math.isqrt(n) + 1
-      for p in compress(range(limit), data):
-         data[p+p : n : p] = bytearray(len(range(p+p, n, p)))
-      return compress(count(), data)
+       "Primes less than n"
+       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       data = bytearray((0, 1)) * (n // 2)
+       data[:3] = 0, 0, 0
+       limit = math.isqrt(n) + 1
+       for p in compress(range(limit), data):
+           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
+       data[2] = 1
+       return iter_index(data, 1) if n > 2 else iter([])
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -1169,6 +1180,15 @@ which incur interpreter overhead.
     >>> expanded = lambda x: x**3 -4*x**2 -17*x + 60
     >>> all(factored(x) == expanded(x) for x in range(-10, 11))
     True
+
+    >>> list(iter_index('AABCADEAF', 'A'))
+    [0, 1, 4, 7]
+    >>> list(iter_index('AABCADEAF', 'B'))
+    [2]
+    >>> list(iter_index('AABCADEAF', 'X'))
+    []
+    >>> list(iter_index('', 'X'))
+    []
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
