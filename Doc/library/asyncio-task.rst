@@ -1130,14 +1130,17 @@ Task Object
 
       Request the Task to be cancelled.
 
-      This arranges for a :exc:`CancelledError` exception to be thrown
-      into the wrapped coroutine on the next cycle of the event loop.
+      If the Task has not yet started, it will be done with
+      :exc:`CancelledError` and will not be started.
 
+      If the Task has started,
+      a :exc:`CancelledError` exception will be thrown
+      into the wrapped coroutine on the next cycle of the event loop.
       The coroutine then has a chance to clean up or even deny the
       request by suppressing the exception with a :keyword:`try` ...
       ... ``except CancelledError`` ... :keyword:`finally` block.
       Therefore, unlike :meth:`Future.cancel`, :meth:`Task.cancel` does
-      not guarantee that the Task will be cancelled, although
+      not guarantee that a started Task will be cancelled, although
       suppressing cancellation completely is not common and is actively
       discouraged.
 
