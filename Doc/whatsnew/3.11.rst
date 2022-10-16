@@ -1418,9 +1418,14 @@ CPython bytecode changes
 
 
 .. _whatsnew311-deprecated:
+.. _whatsnew311-python-api-deprecated:
 
 Deprecated
 ==========
+
+This section lists Python APIs that have been deprecated in Python 3.11.
+
+Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
 
 * Chaining :class:`classmethod` descriptors (introduced in :issue:`19072`)
   is now deprecated.  It can no longer be used to wrap other descriptors
@@ -1618,9 +1623,14 @@ C API:
 
 
 .. _whatsnew311-removed:
+.. _whatsnew311-python-api-removed:
 
 Removed
 =======
+
+This section lists Python APIs that have been removed in Python 3.12.
+
+Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without
   an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
@@ -1712,18 +1722,16 @@ Removed
 
 
 .. _whatsnew311-porting:
+.. _whatsnew311-python-api-porting:
 
 Porting to Python 3.11
 ======================
 
 This section lists previously described changes and other bugfixes
-that may require changes to your code.
+in the Python API that may require changes to your Python code.
 
-
-.. _whatsnew311-porting-python-api:
-
-Changes in the Python API
--------------------------
+Porting notes for the C API are
+:ref:`listed separately <whatsnew311-c-api-porting>`.
 
 * Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
   executors to :meth:`loop.set_default_executor` following a deprecation in
