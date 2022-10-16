@@ -167,9 +167,6 @@ get_long(_structmodulestate *state, PyObject *v, long *p)
     x = PyLong_AsLong(v);
     Py_DECREF(v);
     if (x == (long)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -191,9 +188,6 @@ get_ulong(_structmodulestate *state, PyObject *v, unsigned long *p)
     x = PyLong_AsUnsignedLong(v);
     Py_DECREF(v);
     if (x == (unsigned long)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -214,9 +208,6 @@ get_longlong(_structmodulestate *state, PyObject *v, long long *p)
     x = PyLong_AsLongLong(v);
     Py_DECREF(v);
     if (x == (long long)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -237,9 +228,6 @@ get_ulonglong(_structmodulestate *state, PyObject *v, unsigned long long *p)
     x = PyLong_AsUnsignedLongLong(v);
     Py_DECREF(v);
     if (x == (unsigned long long)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -260,9 +248,6 @@ get_ssize_t(_structmodulestate *state, PyObject *v, Py_ssize_t *p)
     x = PyLong_AsSsize_t(v);
     Py_DECREF(v);
     if (x == (Py_ssize_t)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -283,9 +268,6 @@ get_size_t(_structmodulestate *state, PyObject *v, size_t *p)
     x = PyLong_AsSize_t(v);
     Py_DECREF(v);
     if (x == (size_t)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -546,7 +528,10 @@ np_byte(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     if (get_long(state, v, &x) < 0 || x < -128 || x > 127) {
-        RANGE_ERROR(state, x, f, 0, (unsigned char)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 0, (unsigned char)-1);
+        }
+        return -1;
     }
     *p = (char)x;
     return 0;
@@ -557,7 +542,10 @@ np_ubyte(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     if (get_long(state, v, &x) < 0 || x < 0 || x > 255) {
-        RANGE_ERROR(state, x, f, 1, (unsigned char)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 1, (unsigned char)-1);
+        }
+        return -1;
     }
     *(unsigned char *)p = (unsigned char)x;
     return 0;
@@ -581,7 +569,10 @@ np_short(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     short y;
     if (get_long(state, v, &x) < 0 || x < SHRT_MIN || x > SHRT_MAX) {
-        RANGE_ERROR(state, x, f, 0, (unsigned short)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 0, (unsigned short)-1);
+        }
+        return -1;
     }
     y = (short)x;
     memcpy(p, (char *)&y, sizeof y);
@@ -594,7 +585,10 @@ np_ushort(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     unsigned short y;
     if (get_long(state, v, &x) < 0 || x < 0 || x > USHRT_MAX) {
-        RANGE_ERROR(state, x, f, 1, (unsigned short)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 1, (unsigned short)-1);
+        }
+        return -1;
     }
     y = (unsigned short)x;
     memcpy(p, (char *)&y, sizeof y);
@@ -607,7 +601,10 @@ np_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     int y;
     if (get_long(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+        }
+        return -1;
     }
 #if (SIZEOF_LONG > SIZEOF_INT)
     if ((x < ((long)INT_MIN)) || (x > ((long)INT_MAX)))
@@ -624,7 +621,10 @@ np_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     unsigned long x;
     unsigned int y;
     if (get_ulong(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 1, (unsigned long)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 1, (unsigned long)-1);
+        }
+        return -1;
     }
     y = (unsigned int)x;
 #if (SIZEOF_LONG > SIZEOF_INT)
@@ -640,7 +640,10 @@ np_long(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     if (get_long(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 0, (unsigned long)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 0, (unsigned long)-1);
+        }
+        return -1;
     }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
@@ -651,7 +654,10 @@ np_ulong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     unsigned long x;
     if (get_ulong(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 1, (unsigned long)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 1, (unsigned long)-1);
+        }
+        return -1;
     }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
@@ -662,7 +668,10 @@ np_ssize_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     Py_ssize_t x;
     if (get_ssize_t(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 0, (unsigned long)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 0, (unsigned long)-1);
+        }
+        return -1;
     }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
@@ -673,7 +682,10 @@ np_size_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     size_t x;
     if (get_size_t(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 1,  (size_t)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 1, (size_t)-1);
+        }
+        return -1;
     }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
@@ -684,11 +696,13 @@ np_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long long x;
     if (get_longlong(state, v, &x) < 0) {
-        PyErr_Format(state->StructError,
-                     "'%c' format requires %lld <= number <= %lld",
-                     f->format,
-                     LLONG_MIN,
-                     LLONG_MAX);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            PyErr_Format(state->StructError,
+                         "'%c' format requires %lld <= number <= %lld",
+                         f->format,
+                         LLONG_MIN,
+                         LLONG_MAX);
+        }
         return -1;
     }
     memcpy(p, (char *)&x, sizeof x);
@@ -700,10 +714,12 @@ np_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
 {
     unsigned long long x;
     if (get_ulonglong(state, v, &x) < 0) {
-        PyErr_Format(state->StructError,
-                     "'%c' format requires 0 <= number <= %llu",
-                     f->format,
-                     ULLONG_MAX);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            PyErr_Format(state->StructError,
+                         "'%c' format requires 0 <= number <= %llu",
+                         f->format,
+                         ULLONG_MAX);
+        }
         return -1;
     }
     memcpy(p, (char *)&x, sizeof x);
@@ -911,7 +927,10 @@ bp_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
     if (get_long(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+        }
+        return -1;
     }
     i = f->size;
     if (i != SIZEOF_LONG) {
@@ -936,7 +955,10 @@ bp_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
     if (get_ulong(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 1, (unsigned int)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 1, (unsigned int)-1);
+        }
+        return -1;
     }
     i = f->size;
     if (i != SIZEOF_LONG) {
@@ -1165,7 +1187,10 @@ lp_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
     if (get_long(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 0, (unsigned int)-1);
+        }
+        return -1;
     }
     i = f->size;
     if (i != SIZEOF_LONG) {
@@ -1190,7 +1215,10 @@ lp_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
     if (get_ulong(state, v, &x) < 0) {
-        RANGE_ERROR(state, x, f, 1, (unsigned int)-1);
+        if (!PyErr_ExceptionMatches(state->StructError)) {
+            RANGE_ERROR(state, x, f, 1, (unsigned int)-1);
+        }
+        return -1;
     }
     i = f->size;
     if (i != SIZEOF_LONG) {
