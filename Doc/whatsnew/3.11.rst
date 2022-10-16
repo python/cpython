@@ -743,10 +743,10 @@ inspect
   for checking if the type of an object is a :class:`~types.MethodWrapperType`.
   (Contributed by Hakan Çelik in :issue:`29418`.)
 
-* Change the frame-related functions in the :mod:`inspect` module to return a
-  :class:`~inspect.FrameInfo` instance
-  (backwards compatible with the old :func:`~collections.namedtuple`-like
-  interface) that includes the extended :pep:`657` position information (end
+* Change the frame-related functions in the :mod:`inspect` module to return new
+  :class:`~inspect.FrameInfo` and :class:`~inspect.Traceback` class instances
+  (backwards compatible with the previous :term:`named tuple`-like interfaces)
+  that includes the extended :pep:`657` position information (end
   line number, column and end column). The affected functions are:
 
   * :func:`inspect.getframeinfo`
