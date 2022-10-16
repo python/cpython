@@ -254,7 +254,7 @@ Odds and Ends
 
 * For locale aware sorting, use :func:`locale.strxfrm` for a key function or
   :func:`locale.strcoll` for a comparison function.  This is necessary
-  because the "alphabetical" sort ordering can vary across cultures even
+  because "alphabetical" sort orderings can vary across cultures even
   if the underlying alphabet is the same.
 
 * The *reverse* parameter still maintains sort stability (so that records with
