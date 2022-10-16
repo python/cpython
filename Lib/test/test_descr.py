@@ -2419,7 +2419,7 @@ order (MRO) for bases """
 
     def test_dict_constructors(self):
         # Testing dict constructor ...
-        d = {}
+        d = dict()
         self.assertEqual(d, {})
         d = dict({})
         self.assertEqual(d, {})
