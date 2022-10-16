@@ -5,6 +5,7 @@
 import re
 import sys
 import collections
+from dataclasses import dataclass
 
 def choice(*opts):
     return "|".join("(%s)" % opt for opt in opts)
@@ -20,30 +21,7 @@ MINUSMINUS = r'--'
 ARROW = r'->'
 ELLIPSIS = r'\.\.\.'
 
-# Operators
-PLUS = r'\+'
-MINUS = r'-'
-TIMES = r'\*'
-DIVIDE = r'/'
-MOD = r'%'
-OR = r'\|'
-AND = r'&'
-NOT = r'~'
-XOR = r'\^'
-LSHIFT = r'<<'
-RSHIFT = r'>>'
-LOR = r'\|\|'
-LAND = r'&&'
-LNOT = r'!'
-LT = r'<'
-GT = r'>'
-LE = r'<='
-GE = r'>='
-EQ = r'=='
-NE = r'!='
-
 # Assignment operators
-EQUALS = r'='
 TIMESEQUAL = r'\*='
 DIVEQUAL = r'/='
 MODEQUAL = r'%='
@@ -54,6 +32,29 @@ RSHIFTEQUAL = r'>>='
 ANDEQUAL = r'&='
 OREQUAL = r'\|='
 XOREQUAL = r'\^='
+
+# Operators
+PLUS = r'\+'
+MINUS = r'-'
+TIMES = r'\*'
+DIVIDE = r'/'
+MOD = r'%'
+NOT = r'~'
+XOR = r'\^'
+LOR = r'\|\|'
+LAND = r'&&'
+LSHIFT = r'<<'
+RSHIFT = r'>>'
+LE = r'<='
+GE = r'>='
+EQ = r'=='
+NE = r'!='
+LT = r'<'
+GT = r'>'
+LNOT = r'!'
+OR = r'\|'
+AND = r'&'
+EQUALS = r'='
 
 # ?
 CONDOP = r'\?'
@@ -127,18 +128,12 @@ for name in keywords:
     globals()[name] = name
 keywords = { name.lower() : name for name in keywords }
 
-_Token = collections.namedtuple("Token", ("kind", "text", "begin", "end"))
-
+@dataclass(slots=True)
 class Token:
-
-    __slots__ = "kind", "text", "begin", "end"
-
-    def __init__(self, kind, text, begin, end):
-        assert isinstance(text, str)
-        self.kind = kind
-        self.text = text
-        self.begin = begin
-        self.end = end
+    kind: str
+    text: str
+    begin: tuple[int, int]
+    end: tuple[int, int]
 
     @property
     def line(self):
@@ -164,11 +159,6 @@ class Token:
         assert isinstance(txt, str)
         return Token(self.kind, txt, self.begin, self.end)
 
-    def __str__(self):
-        return f"Token({self.kind}, {self.text}, {self.begin}, {self.end})"
-
-    __repr__ = __str__
-
 def tokenize(src, line=1):
     linestart = -1
     for m in matcher.finditer(src):
@@ -178,6 +168,8 @@ def tokenize(src, line=1):
             kind = keywords[text]
         elif letter.match(text):
             kind = IDENTIFIER
+        elif text == '...':
+            kind = ELLIPSIS
         elif text[0] in '0123456789.':
             kind = NUMBER
         elif text[0] == '"':
