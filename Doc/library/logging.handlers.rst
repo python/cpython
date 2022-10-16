@@ -659,9 +659,9 @@ supports sending logging messages to a remote or local Unix syslog.
       but it's not regarded as an error if the other end isn't listening yet
       --- the method will be called again when emitting an event,
       if there is no socket at that point.
-      
+
       .. versionadded:: 3.11
-      
+
    .. method:: emit(record)
 
       The record is formatted, and then sent to the syslog server. If exception
