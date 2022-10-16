@@ -343,7 +343,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_simple_initialization_api(self):
         # _testembed now uses Py_InitializeFromConfig by default
         # This case specifically checks Py_Initialize(Ex) still works
-        out, err = self.run_embedded_interpreter("test_repeated_Py_Initialize")
+        out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
     def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):

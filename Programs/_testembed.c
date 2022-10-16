@@ -188,7 +188,7 @@ static int test_repeated_init_exec(void)
  * Test the Py_Initialize(Ex) convenience/compatibility wrappers
  ***************************************************************************/
 // This is here to help ensure there are no wrapper resource leaks (gh-96853)
-static int test_repeated_Py_Initialize(void)
+static int test_repeated_simple_init(void)
 {
     for (int i=1; i <= INIT_LOOPS; i++) {
         fprintf(stderr, "--- Loop #%d ---\n", i);
@@ -2066,7 +2066,7 @@ struct TestCase
 static struct TestCase TestCases[] = {
     // Python initialization
     {"test_repeated_init_exec", test_repeated_init_exec},
-    {"test_repeated_Py_Initialize", test_repeated_Py_Initialize},
+    {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
