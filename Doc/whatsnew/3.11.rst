@@ -906,6 +906,18 @@ sysconfig
   (Contributed by Miro Hrončok in :issue:`45413`.)
 
 
+.. _whatsnew311-tempfile:
+
+tempfile
+--------
+
+* :class:`~tempfile.SpooledTemporaryFile` now fully implements the methods
+  of the :class:`io.BufferedIOBase`/:class:`io.TextIOBase` base classes.
+  This lets them work correctly with APIs that expect file-like objects,
+  such as compression modules.
+  (Contributed by Carey Metcalfe in :gh:`70363`.)
+
+
 threading
 ---------
 
