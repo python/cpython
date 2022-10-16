@@ -434,8 +434,10 @@ attributes:
 
    Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
 
-   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
-   :meth:`~object().__eq__` and :meth:`~object().__repr__`
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object.__str__`,
+   :meth:`~object.__eq__` and :meth:`~object.__repr__`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: isroutine(object)
