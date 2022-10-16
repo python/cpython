@@ -126,6 +126,12 @@ asyncio
   if supported and :class:`~asyncio.ThreadedChildWatcher` otherwise).
   (Contributed by Kumar Aditya in :gh:`94597`.)
 
+* :func:`asyncio.set_child_watcher`, :func:`asyncio.get_child_watcher`,
+  :meth:`asyncio.AbstractEventLoopPolicy.set_child_watcher` and
+  :meth:`asyncio.AbstractEventLoopPolicy.get_child_watcher` are deprecated
+  and will be removed in Python 3.14.
+  (Contributed by Kumar Aditya in :gh:`94597`.)
+
 
 pathlib
 -------
