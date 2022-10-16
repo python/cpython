@@ -111,6 +111,14 @@ class ResourceFromZipsTest01(util.ZipSetupBase, unittest.TestCase):
             {'__init__.py', 'binary.file'},
         )
 
+    def test_as_file_directory(self):
+        with resources.as_file(resources.files('ziptestdata')) as data:
+            assert data.name == 'ziptestdata'
+            assert data.is_dir()
+            assert data.joinpath('subdirectory').is_dir()
+            assert len(list(data.iterdir()))
+        assert not data.parent.exists()
+
 
 class ResourceFromZipsTest02(util.ZipSetupBase, unittest.TestCase):
     ZIP_MODULE = zipdata02  # type: ignore
