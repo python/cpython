@@ -74,7 +74,9 @@ Important deprecations, removals or restrictions:
 New Features
 ============
 
-
+* New option *fold_space_newline* (default: ``False``) was added to
+  :class:`~textwrap.TextWrapper`. When set to true, newlines may be folded
+  into adjacent spaces; see class documentation for details.
 
 Other Language Changes
 ======================

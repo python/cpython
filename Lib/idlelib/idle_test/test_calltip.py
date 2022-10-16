@@ -96,12 +96,13 @@ Return the string obtained by replacing the leftmost \
 non-overlapping occurrences o...''')
 
     def test_signature_wrap(self):
+        # Test revised for 3.11, bpo-32397.
         if textwrap.TextWrapper.__doc__ is not None:
             self.assertEqual(get_spec(textwrap.TextWrapper), '''\
 (width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
     replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
-    drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
-    placeholder=' [...]')
+    drop_whitespace=True, break_on_hyphens=True, tabsize=8, fold_space_newline=False,
+    *, max_lines=None, placeholder=' [...]')
 Object for wrapping/filling text.  The public interface consists of
 the wrap() and fill() methods; the other methods are just there for
 subclasses to override in order to tweak the default behaviour.

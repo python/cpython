@@ -57,6 +57,10 @@ class TextWrapper:
         compound words.
       drop_whitespace (default: true)
         Drop leading and trailing whitespace from lines.
+      fold_space_newline (default: false)
+        When replacing whitespace (replace_whitespace=True), fold newlines into
+        adjoining space character if present.  This option allows to perform stable
+        text wrapping when combined with drop_whitespace=False.
       max_lines (default: None)
         Truncate wrapped lines.
       placeholder (default: ' [...]')
@@ -120,6 +124,7 @@ class TextWrapper:
                  drop_whitespace=True,
                  break_on_hyphens=True,
                  tabsize=8,
+                 fold_space_newline=False,
                  *,
                  max_lines=None,
                  placeholder=' [...]'):
@@ -135,7 +140,7 @@ class TextWrapper:
         self.tabsize = tabsize
         self.max_lines = max_lines
         self.placeholder = placeholder
-
+        self.fold_space_newline = fold_space_newline
 
     # -- Private methods -----------------------------------------------
     # (possibly useful for subclasses to override)
@@ -146,10 +151,20 @@ class TextWrapper:
         Munge whitespace in text: expand tabs and convert all other
         whitespace characters to spaces.  Eg. " foo\\tbar\\n\\nbaz"
         becomes " foo    bar  baz".
+
+        If `fold_space_newline=True`, fold newlines into adjacent space (if
+        present). This allows for stable wrapping when combined with
+        `drop_whitespace=False`, i.e. repeated wrapping operation results in
+        the same output.
         """
         if self.expand_tabs:
             text = text.expandtabs(self.tabsize)
         if self.replace_whitespace:
+            if self.fold_space_newline:
+                if re.search(r' \r?\n', text):
+                    text = re.sub(r' \r?\n', ' ', text)
+                if re.search(r'\r?\n ', text):
+                    text = re.sub(r'\r?\n ', ' ', text)
             text = text.translate(self.unicode_whitespace_trans)
         return text
 

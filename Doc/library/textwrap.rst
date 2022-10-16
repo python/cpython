@@ -22,7 +22,7 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, max_lines=None, \
-                   placeholder=' [...]')
+                   fold_space_newline=False, placeholder=' [...]')
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
@@ -40,7 +40,8 @@ functions should be good enough; otherwise, you should use an instance of
                    replace_whitespace=True, fix_sentence_endings=False, \
                    break_long_words=True, drop_whitespace=True, \
                    break_on_hyphens=True, tabsize=8, \
-                   max_lines=None, placeholder=' [...]')
+                   max_lines=None, fold_space_newline=False, \
+                   placeholder=' [...]')
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::
@@ -53,7 +54,7 @@ functions should be good enough; otherwise, you should use an instance of
 
 .. function:: shorten(text, width, *, fix_sentence_endings=False, \
                       break_long_words=True, break_on_hyphens=True, \
-                      placeholder=' [...]')
+                      placeholder=' [...]', fold_space_newline=False)
 
    Collapse and truncate the given *text* to fit in the given *width*.
 
@@ -206,6 +207,18 @@ hyphenated words; only then will long words be broken if necessary, unless
          be split into paragraphs (using :meth:`str.splitlines` or similar)
          which are wrapped separately.
 
+   .. attribute:: fold_space_newline
+
+      (default: ``False``) If true, and *replace_whitespace* is also ``True``,
+      newlines will be folded into adjacent spaces if present (if no adjacent
+      spaces, newlines are replaced by a space as normal).
+
+      .. note::
+
+         When combined with *drop_whitespace* set to ``False``, this option allows
+         for stable text wrapping, i.e. wrapping can be applied multiple times with
+         no changes after the first application.  Stable wrapping is not guaranteed with any
+         other options in this class.
 
    .. attribute:: drop_whitespace
 
