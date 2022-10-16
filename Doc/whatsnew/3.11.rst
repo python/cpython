@@ -912,7 +912,8 @@ tempfile
 --------
 
 * :class:`~tempfile.SpooledTemporaryFile` now fully implements the methods
-  of the :class:`io.BufferedIOBase`/:class:`io.TextIOBase` base classes.
+  of :class:`io.BufferedIOBase` or :class:`io.TextIOBase`
+  (depending on file mode).
   This lets them work correctly with APIs that expect file-like objects,
   such as compression modules.
   (Contributed by Carey Metcalfe in :gh:`70363`.)
