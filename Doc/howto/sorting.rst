@@ -234,18 +234,17 @@ a comparison function computes the relative ordering for two inputs.
 
 For example, a `balance scale
 <https://upload.wikimedia.org/wikipedia/commons/1/17/Balance_à_tabac_1850.JPG>`_
-compares two samples giving a relative ordering of lighter, heavier, or
-equal.   Likewise, comparison function ``cmp(a, b)`` returns a negative
-value for less-than, a positive value for greater-than, or zero if the
-inputs are equal.
+compares two samples giving a relative ordering: lighter, equal, or heavier.
+Likewise, a comparison functions such as ``cmp(a, b)`` will a negative value for
+less-than, zero if the inputs are equal, or a positive value for greater-than.
 
-It is common to find comparison functions when translating algorithms
-from other languages.  And sometimes, libraries provide comparison
-functions.  For example, :func:`locale.strcoll` is a comparison function.
+It is common to encounter comparison functions when translating algorithms from
+other languages.  Also, some libraries provide comparison functions as part of
+their API.  For example, :func:`locale.strcoll` is a comparison function.
 
 To accommodate those situations, Python provides
 :class:`functools.cmp_to_key` to wrap the comparison function
-making it usable as a key function::
+to make it usable as a key function::
 
     sorted(words, key=cmp_to_key(strcoll)
 
