@@ -97,7 +97,6 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
     PyObject *it;
     batchedobject *bo;
 
-    /* XXX Do we want do defined batched(it, n=0) as just an empty iterator ?*/
     if (n < 1) {
         PyErr_SetString(PyExc_ValueError, "n must be >= 1");
         return NULL;
