@@ -2039,6 +2039,18 @@ class TestVariousIteratorArgs(unittest.TestCase):
         self.assertRaises(TypeError, accumulate, N(s))
         self.assertRaises(ZeroDivisionError, list, accumulate(E(s)))
 
+    def test_batched(self):
+        s = 'abcde'
+        r = [['a', 'b'], ['c', 'd'], ['e']]
+        n = 2
+        for g in (G, Ig, L, R):     # XXX I(s) is failing
+            with self.subTest(g=g):
+                self.assertEqual(list(batched(g(s), n)), r)
+        self.assertEqual(list(batched(S(s), 2)), [])
+        self.assertRaises(TypeError, batched, X(s), 2)
+        self.assertRaises(TypeError, batched, N(s), 2)
+        self.assertRaises(ZeroDivisionError, list, batched(E(s), 2))
+
     def test_chain(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
