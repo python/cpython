@@ -1000,9 +1000,6 @@ basicblock_next_instr(basicblock *b)
 
 #define SET_LOC(c, x)
 
-// Artificial instructions
-#define UNSET_LOC(c)
-
 #define LOC(x) LOCATION((x)->lineno,          \
                         (x)->end_lineno,      \
                         (x)->col_offset,      \
@@ -2013,7 +2010,6 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             /* The finally block should appear to execute after the
              * statement causing the unwinding, so make the unwinding
              * instruction artificial */
-            UNSET_LOC(c);
             *ploc = NO_LOCATION;
             return 1;
 
@@ -2049,7 +2045,6 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             /* The exit block should appear to execute after the
              * statement causing the unwinding, so make the unwinding
              * instruction artificial */
-            UNSET_LOC(c);
             *ploc = NO_LOCATION;
             return 1;
 
@@ -2143,13 +2138,14 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
             VISIT(c, expr, st->v.Expr.value);
-            UNSET_LOC(c);
-            if (!compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store))
+            if (!compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store)) {
                 return 0;
+            }
         }
     }
-    for (; i < asdl_seq_LEN(stmts); i++)
+    for (; i < asdl_seq_LEN(stmts); i++) {
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
+    }
     return 1;
 }
 
@@ -2717,7 +2713,6 @@ compiler_class(struct compiler *c, stmt_ty s)
             return 0;
         }
         /* The following code is artificial */
-        UNSET_LOC(c);
         /* Return __classcell__ if it is referenced, otherwise return None */
         if (c->u->u_ste->ste_needs_class_closure) {
             /* Store __classcell__ into class namespace & return it */
@@ -3087,9 +3082,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     USE_LABEL(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
-    /* Mark jump as artificial */
-    UNSET_LOC(c);
-    ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, start);  /* artificial */
 
     USE_LABEL(c, cleanup);
 
@@ -3133,9 +3126,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* Success block for __anext__ */
     VISIT(c, expr, s->v.AsyncFor.target);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
-    /* Mark jump as artificial */
-    UNSET_LOC(c);
-    ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, start);  /* artificial */
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
@@ -3344,10 +3335,8 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, end);
 
-    UNSET_LOC(c);
-    loc = NO_LOCATION;
-    ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
-    ADDOP(c, loc, PUSH_EXC_INFO);
+    ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, cleanup);
+    ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
     if (!compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
@@ -3396,17 +3385,15 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     /* `finally` block */
     USE_LABEL(c, end);
 
-    UNSET_LOC(c);
-    loc = NO_LOCATION;
-    ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
-    ADDOP(c, loc, PUSH_EXC_INFO);
-    if (!compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL)) {
+    ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, cleanup);
+    ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
+    if (!compiler_push_fblock(c, NO_LOCATION, FINALLY_END, end, NO_LABEL, NULL)) {
         return 0;
     }
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
-    loc = location_of_last_executing_statement(s->v.Try.finalbody);
 
     compiler_pop_fblock(c, FINALLY_END, end);
+    loc = location_of_last_executing_statement(s->v.Try.finalbody);
     ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
@@ -3472,7 +3459,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, except);
 
-    UNSET_LOC(c);
     ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, cleanup);
     ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
@@ -3522,8 +3508,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* second # body */
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
-            /* name = None; del name; # Mark as artificial */
-            UNSET_LOC(c);
+            /* name = None; del name; # artificial */
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_EXCEPT);
@@ -3535,9 +3520,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* except: */
             USE_LABEL(c, cleanup_end);
 
-            /* name = None; del name; # Mark as artificial */
-            UNSET_LOC(c);
-
+            /* name = None; del name; # artificial */
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
             compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
@@ -3554,7 +3537,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
                 return 0;
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
-            UNSET_LOC(c);
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_EXCEPT);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
@@ -3562,8 +3544,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
         USE_LABEL(c, except);
     }
-    /* Mark as artificial */
-    UNSET_LOC(c);
+    /* artificial */
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NO_LABEL);
     ADDOP_I(c, NO_LOCATION, RERAISE, 0);
 
@@ -3649,7 +3630,6 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, except);
 
-    UNSET_LOC(c);
     ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, cleanup);
     ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
@@ -3724,8 +3704,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* second # body */
         VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
         compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
-        /* name = None; del name; # Mark as artificial */
-        UNSET_LOC(c);
+        /* name = None; del name; # artificial */
         ADDOP(c, NO_LOCATION, POP_BLOCK);
         if (handler->v.ExceptHandler.name) {
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
@@ -3737,9 +3716,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* except: */
         USE_LABEL(c, cleanup_end);
 
-        /* name = None; del name; # Mark as artificial */
-        UNSET_LOC(c);
-
+        /* name = None; del name; # artificial */
         if (handler->v.ExceptHandler.name) {
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
             compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
@@ -3759,8 +3736,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             ADDOP_JUMP(c, NO_LOCATION, JUMP, reraise_star);
         }
     }
-    /* Mark as artificial */
-    UNSET_LOC(c);
+    /* artificial */
     compiler_pop_fblock(c, EXCEPTION_GROUP_HANDLER, NO_LABEL);
     NEW_JUMP_TARGET_LABEL(c, reraise);
 
@@ -4006,9 +3982,7 @@ compiler_stmt_expr(struct compiler *c, location loc, expr_ty value)
     }
 
     VISIT(c, expr, value);
-    /* Mark POP_TOP as artificial */
-    UNSET_LOC(c);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_TOP);  /* artificial */
     return 1;
 }
 
@@ -5403,8 +5377,6 @@ compiler_async_comprehension_generator(struct compiler *c, location *ploc,
     compiler_pop_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start);
 
     USE_LABEL(c, except);
-    //UNSET_LOC(c);
-
     ADDOP(c, *ploc, END_ASYNC_FOR);
 
     return 1;
@@ -5567,7 +5539,6 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 
 static int
 compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
-    UNSET_LOC(c);
     NEW_JUMP_TARGET_LABEL(c, suppress);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
     ADDOP_I(c, NO_LOCATION, RERAISE, 2);
@@ -5759,10 +5730,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     else if (!compiler_with(c, s, pos))
             return 0;
 
-
-    /* Mark all following code as artificial */
-    UNSET_LOC(c);
-    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);  /* artificial */
     compiler_pop_fblock(c, WITH, block);
 
     /* End of body; start the cleanup. */
@@ -8710,7 +8678,6 @@ assemble(struct compiler *c, int addNone)
 
     /* Make sure every block that falls off the end returns None. */
     if (!basicblock_returns(CFG_BUILDER(c)->g_curblock)) {
-        UNSET_LOC(c);
         if (addNone) {
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
