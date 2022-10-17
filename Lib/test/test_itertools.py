@@ -1851,6 +1851,10 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(accumulate([1,2,a,3]), a)
 
+    def test_batched(self):
+        a = []
+        self.makecycle(batched([1,2,a,3], 2), a)
+
     def test_chain(self):
         a = []
         self.makecycle(chain(a), a)
