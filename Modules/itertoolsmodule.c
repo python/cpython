@@ -146,7 +146,6 @@ batched_next(batchedobject *bo)
     PyObject *item;
     PyObject *result;
 
-    // If the iterator has stopped, it should stay stopped
     if (it == NULL) {
         return NULL;
     }
