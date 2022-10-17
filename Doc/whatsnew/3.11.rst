@@ -633,7 +633,7 @@ enum
 
 * Added :class:`~enum.ReprEnum`,
   which only modifies the :meth:`~object.__repr__` of members
-  while returning their literal values (rather than keys)
+  while returning their literal values (rather than names)
   for :meth:`~object.__str__` and :meth:`~object.__format__`
   (used by :func:`str`, :func:`format` and :term:`f-string`\s).
 
@@ -674,6 +674,8 @@ enum
 
 * Enhanced :class:`~enum.Flag` to support
   :func:`len`, iteration and :keyword:`in`/:keyword:`not in` on its members.
+  For example, the following now works:
+  ``len(AFlag(3)) == 2 and list(AFlag(3)) == (AFlag.ONE, AFlag.TWO)``
 
 * Changed :class:`~enum.Enum` and :class:`~enum.Flag`
   so that members are now defined
