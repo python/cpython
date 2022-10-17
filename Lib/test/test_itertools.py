@@ -159,6 +159,44 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaises(TypeError):
             list(accumulate([10, 20], 100))
 
+    def test_batched(self):
+        self.assertEqual(list(batched('ABCDEFG', 3)),
+                             [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']])
+        self.assertEqual(list(batched('ABCDEFG', 2)),
+                             [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']])
+        self.assertEqual(list(batched('ABCDEFG', 1)),
+                             [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']])
+
+        with self.assertRaises(TypeError):          # Too few arguments
+            list(batched('ABCDEFG'))
+        with self.assertRaises(TypeError):
+            list(batched('ABCDEFG', 3, None))       # Too many arguments
+        with self.assertRaises(TypeError):
+            list(batched(None, 3))                  # Non-iterable input
+        with self.assertRaises(TypeError):
+            list(batched('ABCDEFG', 'hello'))       # n is a string
+        with self.assertRaises(ValueError):
+            list(batched('ABCDEFG', 0))             # n is zero
+        with self.assertRaises(ValueError):
+            list(batched('ABCDEFG', -1))            # n is negative
+
+        data = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        for n in range(1, 6):
+            for i in range(len(data)):
+                s = data[:i]
+                batches = list(batched(s, n))
+                with self.subTest(s, n, batches):
+                    # Order is preserved and no data is lost
+                    self.assertEqual(''.join(batches), s)
+                    # Each batch is an exact list
+                    self.assertTrue(all(type(batch) == list for batch in batches))
+                    # All but the last batch is of size n
+                    if batches:
+                        last_batch = batches.pop()
+                        self.assertTrue(all(len(batch) == n for batch in batches))
+                        self.assertTrue(len(last_batch) <= n)
+                        batches.append(last_batch)
+
     def test_chain(self):
 
         def chain2(*iterables):
