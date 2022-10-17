@@ -185,7 +185,8 @@ loops that truncate the stream.
    .. doctest::
 
       >>> flattened_data = ['roses', 'red', 'violets', 'blue', 'sugar', 'sweet']
-      >>> list(batched(flattened_data, 2))
+      >>> unflattened = list(batched(flattened_data, 2))
+      >>> unflattened
       [['roses', 'red'], ['violets', 'blue'], ['sugar', 'sweet']]
 
       >>> for batch in batched('ABCDEFG', 3):
