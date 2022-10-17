@@ -1786,7 +1786,7 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
                 yield batch
 
         for iterable, n in product(
-                ['', 'a', 'ab', 'abc', 'abcd', 'abcde', 'abcdef', 'abcdefg'],
+                ['', 'a', 'ab', 'abc', 'abcd', 'abcde', 'abcdef', 'abcdefg', None],
                 [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, None]):
             with self.subTest(iterable=iterable, n=n):
                 try:
