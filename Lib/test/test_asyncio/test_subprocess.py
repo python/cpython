@@ -752,15 +752,11 @@ if sys.platform != 'win32':
     class GenericWatcherTests(test_utils.TestCase):
 
         def test_create_subprocess_fails_with_inactive_watcher(self):
-            watcher = mock.create_autospec(
-                asyncio.AbstractChildWatcher,
-                **{"__enter__.return_value.is_active.return_value": False}
-            )
+            watcher = mock.create_autospec(asyncio.AbstractChildWatcher)
+            watcher.is_active.return_value = False
 
             async def execute():
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    asyncio.set_child_watcher(watcher)
+                asyncio.set_child_watcher(watcher)
 
                 with self.assertRaises(RuntimeError):
                     await subprocess.create_subprocess_exec(
@@ -774,9 +770,9 @@ if sys.platform != 'win32':
                     self.assertIsNone(runner.run(execute()))
             self.assertListEqual(watcher.mock_calls, [
                 mock.call.__enter__(),
-                mock.call.__enter__().is_active(),
+                mock.call.is_active(),
                 mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
-            ])
+            ], watcher.mock_calls)
 
 
         @unittest.skipUnless(
