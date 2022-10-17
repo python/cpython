@@ -431,8 +431,8 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # worries about external callers.
     if locals is None:
         locals = {}
-    if '_BUILTINS' not in locals:
-        locals['_BUILTINS'] = builtins
+    if '__BUILTINS__' not in locals:
+        locals['__BUILTINS__'] = builtins
     return_annotation = ''
     if return_type is not MISSING:
         locals['_return_type'] = return_type
@@ -462,7 +462,7 @@ def _field_assign(frozen, name, value, self_name):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'_BUILTINS.object.__setattr__({self_name},{name!r},{value})'
+        return f'__BUILTINS__.object.__setattr__({self_name},{name!r},{value})'
     return f'{self_name}.{name}={value}'
 
 
