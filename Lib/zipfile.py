@@ -553,7 +553,7 @@ class ZipInfo (object):
 
     def is_dir(self):
         """Return True if this archive member is a directory."""
-        return self.filename[-1] == '/'
+        return self.filename.endswith('/')
 
 
 # ZIP encryption uses the CRC32 one-byte primitive for scrambling some
@@ -1731,6 +1731,9 @@ class ZipFile:
             # filter illegal characters on Windows
             arcname = self._sanitize_windows_name(arcname, os.path.sep)
 
+        if not arcname:
+            raise ValueError("Empty filename.")
+
         targetpath = os.path.join(targetpath, arcname)
         targetpath = os.path.normpath(targetpath)
 
@@ -1820,7 +1823,7 @@ class ZipFile:
                             date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
             zinfo._compresslevel = self.compresslevel
-            if zinfo.filename[-1] == '/':
+            if zinfo.filename.endswith('/'):
                 zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
                 zinfo.external_attr |= 0x10           # MS-DOS directory flag
             else:
