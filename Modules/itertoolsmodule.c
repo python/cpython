@@ -154,7 +154,7 @@ batched_next(batchedobject *bo)
     }
     for (i=0 ; i < bo->batch_size ; i++) {
         item = (*Py_TYPE(it)->tp_iternext)(it);
-        if (item != NULL) {
+        if (item == NULL) {
             break;
         }
         if (PyList_Append(result, item) < 0) {
