@@ -825,12 +825,12 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(respurl, url)
 
         for url in [
-            "file://localhost:80%s" % urlpath,
+            "file://localhost:80/%s" % urlpath,
             "file:///file_does_not_exist.txt",
             "file://not-a-local-host.com//dir/file.txt",
-            "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
+            "file://%s:80/%s/%s" % (socket.gethostbyname('localhost'),
                                    os.getcwd(), TESTFN),
-            "file://somerandomhost.ontheinternet.com%s/%s" %
+            "file://somerandomhost.ontheinternet.com/%s/%s" %
             (os.getcwd(), TESTFN),
             ]:
             try:

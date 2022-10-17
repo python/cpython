@@ -32,6 +32,7 @@ import functools
 import math
 import re
 import types
+import collections
 import warnings
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
@@ -123,6 +124,18 @@ def _coerce_args(*args):
         return args + (_noop,)
     return _decode_args(args) + (_encode_result,)
 
+def _parse_hostinfo(netloc):
+    _, _, hostinfo = netloc.rpartition('@')
+    _, have_open_br, bracketed = hostinfo.partition('[')
+    if have_open_br:
+        hostname, _, port = bracketed.partition(']')
+        _, _, port = port.partition(':')
+    else:
+        hostname, _, port = hostinfo.partition(':')
+    if not port:
+        port = None
+    return hostname, port
+
 # Result objects are more helpful than simple tuples
 class _ResultMixinStr(object):
     """Standard approach to encoding parsed results from str to bytes"""
@@ -167,13 +180,7 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
-            try:
-                port = int(port, 10)
-            except ValueError:
-                message = f'Port could not be cast to integer value as {port!r}'
-                raise ValueError(message) from None
-            if not ( 0 <= port <= 65535):
-                raise ValueError("Port out of range 0-65535")
+            port = _validate_port(port)
         return port
 
     __class_getitem__ = classmethod(types.GenericAlias)
@@ -197,16 +204,7 @@ class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
     @property
     def _hostinfo(self):
         netloc = self.netloc
-        _, _, hostinfo = netloc.rpartition('@')
-        _, have_open_br, bracketed = hostinfo.partition('[')
-        if have_open_br:
-            hostname, _, port = bracketed.partition(']')
-            _, _, port = port.partition(':')
-        else:
-            hostname, _, port = hostinfo.partition(':')
-        if not port:
-            port = None
-        return hostname, port
+        return _parse_hostinfo(netloc)
 
 
 class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
@@ -402,6 +400,16 @@ def _splitparams(url):
         i = url.find(';')
     return url[:i], url[i+1:]
 
+def _validate_port(port_str):
+    try:
+        port = int(port_str, 10)
+    except ValueError:
+        message = f'Port could not be cast to integer value as {port_str!r}'
+        raise ValueError(message) from None
+    if not (0 <= port <= 65535):
+        raise ValueError("Port out of range 0-65535: %r" % port_str)
+    return port
+
 def _splitnetloc(url, start=0):
     delim = len(url)   # position of end of domain part of url, default is end
     for c in '/?#':    # look for delimiters; the order is NOT important
@@ -410,9 +418,7 @@ def _splitnetloc(url, start=0):
             delim = min(delim, wdelim)     # use earliest delim position
     return url[start:delim], url[delim:]   # return (domain, rest)
 
-def _checknetloc(netloc):
-    if not netloc or netloc.isascii():
-        return
+def _checknetloc_nfkc(netloc):
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
     import unicodedata
@@ -427,6 +433,14 @@ def _checknetloc(netloc):
         if c in netloc2:
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
+
+def _checknetloc(netloc):
+    if netloc and not netloc.isascii():
+        _checknetloc_nfkc(netloc)
+
+    _, port = _parse_hostinfo(netloc)
+    if port is not None:
+        _validate_port(port)
 
 # typed=True avoids BytesWarnings being emitted during cache key
 # comparison since this API supports both bytes and str input.

@@ -608,9 +608,8 @@ class UrlParseTestCase(unittest.TestCase):
 
         # Verify an illegal port raises ValueError
         url = b"HTTP://WWW.PYTHON.ORG:65536/doc/#frag"
-        p = urllib.parse.urlsplit(url)
         with self.assertRaisesRegex(ValueError, "out of range"):
-            p.port
+            urllib.parse.urlsplit(url)
 
     def test_urlsplit_remove_unsafe_bytes(self):
         # Remove ASCII tabs and newlines from input
@@ -660,10 +659,8 @@ class UrlParseTestCase(unittest.TestCase):
                         if bytes:
                             netloc = netloc.encode("ascii")
                             url = url.encode("ascii")
-                        p = parse(url)
-                        self.assertEqual(p.netloc, netloc)
                         with self.assertRaises(ValueError):
-                            p.port
+                            parse(url)
 
     def test_attributes_without_netloc(self):
         # This example is straight from RFC 3261.  It looks like it
@@ -1018,13 +1015,11 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_port_casting_failure_message(self):
         message = "Port could not be cast to integer value as 'oracle'"
-        p1 = urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
         with self.assertRaisesRegex(ValueError, message):
-            p1.port
+            urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
 
-        p2 = urllib.parse.urlsplit('http://Server=sde; Service=sde:oracle')
         with self.assertRaisesRegex(ValueError, message):
-            p2.port
+            urllib.parse.urlsplit('http://Server=sde; Service=sde:oracle')
 
     def test_telurl_params(self):
         p1 = urllib.parse.urlparse('tel:123-4;phone-context=+1-650-516')
