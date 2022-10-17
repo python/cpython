@@ -74,11 +74,11 @@ typedef struct {
 itertools.batched.__new__ as batched_new
     iterable: object
     n: Py_ssize_t
-Batch data into lists of length n. The last batch may be shorter.
+Batch data into lists of length n. The last batch may be shorter than n.
 
 Loops over the input iterable and accumulates data into lists
-upto size n.  The input is consumed lazily, just enough to
-fill a list.  The result is yielded as soon as a list is full
+up to size n.  The input is consumed lazily, just enough to
+fill a list.  The result is yielded as soon as a batch is full
 or when the input iterable is exhausted.
 
     >>> for batch in batched('ABCDEFG', 3):
@@ -92,7 +92,7 @@ or when the input iterable is exhausted.
 
 static PyObject *
 batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
-/*[clinic end generated code: output=7ebc954d655371b6 input=cde5922eeb597020]*/
+/*[clinic end generated code: output=7ebc954d655371b6 input=f28fd12cb52365f0]*/
 {
     PyObject *it;
     batchedobject *bo;
