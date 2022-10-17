@@ -1,5 +1,6 @@
 import unittest
 
+
 class ListSumTest(unittest.TestCase):
     def test_empty_list(self):
         ls = []
