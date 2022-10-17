@@ -65,8 +65,8 @@ static PyTypeObject pairwise_type;
 
 typedef struct {
     PyObject_HEAD
-    Py_ssize_t batch_size;
     PyObject *it;
+    Py_ssize_t batch_size;
 } batchedobject;
 
 /*[clinic input]
@@ -98,7 +98,11 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
     batchedobject *bo;
 
     if (n < 1) {
-        PyErr_SetString(PyExc_ValueError, "n must be >= 1");
+        /* We could define the n==0 case to return an empty iterator
+           but that is add odds with the idea that batching should
+           never throw-away input data.
+        */
+        PyErr_SetString(PyExc_ValueError, "n must be at least one");
         return NULL;
     }
     it = PyObject_GetIter(iterable);
