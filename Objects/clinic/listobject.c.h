@@ -104,8 +104,10 @@ PyDoc_STRVAR(list_extend__doc__,
     {"sum", (PyCFunction)list_sum, METH_NOARGS, list_sum__doc__},
 
 PyDoc_STRVAR(list_sum__doc__,
-"foo\n"
-);
+"sum($self)\n"
+"--\n"
+"\n"
+"Calcurate sum of elements in the list.");
 
 static PyObject *
 list_sum_impl(PyListObject *self);
