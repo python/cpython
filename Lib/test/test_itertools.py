@@ -185,7 +185,7 @@ class TestBasicOps(unittest.TestCase):
             for i in range(len(data)):
                 s = data[:i]
                 batches = list(batched(s, n))
-                with self.subTest(s, n, batches):
+                with self.subTest(s=s, n=n, batches=batches):
                     # Order is preserved and no data is lost
                     self.assertEqual(''.join(batches), s)
                     # Each batch is an exact list

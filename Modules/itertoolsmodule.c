@@ -104,7 +104,6 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
     }
     it = PyObject_GetIter(iterable);
     if (it == NULL) {
-        Py_DECREF(it);
         return NULL;
     }
 
