@@ -1000,31 +1000,6 @@ which incur interpreter overhead.
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
 
-   def random_product(*args, repeat=1):
-       "Random selection from itertools.product(*args, **kwds)"
-       pools = [tuple(pool) for pool in args] * repeat
-       return tuple(map(random.choice, pools))
-
-   def random_permutation(iterable, r=None):
-       "Random selection from itertools.permutations(iterable, r)"
-       pool = tuple(iterable)
-       r = len(pool) if r is None else r
-       return tuple(random.sample(pool, r))
-
-   def random_combination(iterable, r):
-       "Random selection from itertools.combinations(iterable, r)"
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = sorted(random.sample(range(n), r))
-       return tuple(pool[i] for i in indices)
-
-   def random_combination_with_replacement(iterable, r):
-       "Random selection from itertools.combinations_with_replacement(iterable, r)"
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = sorted(random.choices(range(n), k=r))
-       return tuple(pool[i] for i in indices)
-
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
        pool = tuple(iterable)
