@@ -189,7 +189,7 @@ class TestBasicOps(unittest.TestCase):
                     # Order is preserved and no data is lost
                     self.assertEqual(''.join(chain(*batches)), s)
                     # Each batch is an exact list
-                    self.assertTrue(all(type(batch) == list for batch in batches))
+                    self.assertTrue(all(type(batch) is list for batch in batches))
                     # All but the last batch is of size n
                     if batches:
                         last_batch = batches.pop()
