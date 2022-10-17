@@ -3,7 +3,7 @@
 import sys
 import tokenize
 
-SCRIPT_NAME = "Tools/scripts/generate_opcode_h.py"
+SCRIPT_NAME = "Tools/build/generate_opcode_h.py"
 PYTHON_OPCODE = "Lib/opcode.py"
 
 header = f"""
