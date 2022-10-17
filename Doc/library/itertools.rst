@@ -174,7 +174,7 @@ loops that truncate the stream.
 .. function:: batched(iterable, n)
 
    Batch data from the *iterable* into lists of length *n*. The last
-   batch may be shorter.
+   batch may be shorter than *n*.
 
    Loops over the input iterable and accumulates data into lists up to
    size *n*.  The input is consumed lazily, just enough to fill a list.
