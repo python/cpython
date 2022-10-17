@@ -855,6 +855,49 @@ list_append(PyListObject *self, PyObject *object)
 }
 
 /*[clinic input]
+list.sum
+
+Returns sum of the elements in the list.
+[clinic start generated code]*/
+
+static PyObject *
+list_sum_impl(PyListObject *self)
+{
+    PyObject *iter = PyObject_GetIter((PyObject*)self);
+
+    if (iter == NULL) {
+        // empty list
+        return NULL;
+    }
+    PyObject *result = PyLong_FromLong(0);
+
+    PyObject *temp;
+    PyObject *item;
+    
+    for(;;) {
+        item = PyIter_Next(iter);
+        if (item == NULL) {
+            // error, or end-of-list
+            if (PyErr_Occurred()) {
+                Py_DECREF(result);
+                result = NULL;
+            }
+            break;
+        }
+
+        temp = PyNumber_Add(result, item);
+        Py_DECREF(result);
+        Py_DECREF(item);
+        result = temp;
+        if (result == NULL) {
+            break;
+        }
+    }
+    Py_DECREF(iter);
+    return result;
+}
+
+/*[clinic input]
 list.extend
 
      iterable: object
@@ -2845,6 +2888,7 @@ static PyMethodDef list_methods[] = {
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF
+    LIST_SUM_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
