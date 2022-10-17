@@ -1,0 +1,1 @@
+Disallowed 'store_true', 'store_false', and 'store_const' actions for positional arguments in argparse module.
