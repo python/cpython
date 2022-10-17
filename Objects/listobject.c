@@ -952,6 +952,73 @@ list_max_impl(PyListObject *self)
 }
 
 /*[clinic input]
+list.min
+
+Returns minimum of the elements in the list.
+[clinic start generated code]*/
+
+static PyObject *
+list_min_impl(PyListObject *self)
+{
+    PyObject *iter = PyObject_GetIter((PyObject *)self);
+    if (iter == NULL)
+    {
+        return NULL;
+    }
+    PyObject *result = NULL;
+    PyObject *temp = NULL;
+    PyObject *item = NULL;
+
+    for (;;)
+    {
+        item = PyIter_Next(iter);
+        if (item == NULL)
+        {
+            if (PyErr_Occurred())
+            {
+                Py_DECREF(result);
+                result = NULL;
+            }
+            break;
+        }
+        if (result == NULL)
+        {
+            result = item;
+        }
+        else
+        {
+            int cmp = PyObject_RichCompareBool(item, result, Py_LT);
+            if (cmp < 0)
+            {
+                // error
+                Py_DECREF(item);
+            }
+            else if (cmp > 0)
+            {
+                Py_DECREF(result);
+                result = item;
+            }
+            else
+            {
+                Py_DECREF(item);
+            }
+            if (result == NULL)
+            {
+                break;
+            }
+        }
+    }
+
+    if (result == NULL)
+    {
+        PyErr_Format(PyExc_ValueError,
+                     "min() arg is an empty sequence");
+    }
+    Py_DECREF(iter);
+    return result;
+}
+
+/*[clinic input]
 list.extend
 
      iterable: object
