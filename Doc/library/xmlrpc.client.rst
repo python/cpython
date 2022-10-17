@@ -60,7 +60,7 @@ between conformable Python objects and XML on the wire.
    may be passed to calls.
    The *headers* parameter is an optional sequence of HTTP headers to send with
    each request, expressed as a sequence of 2-tuples representing the header
-   name and value. (e.g. `[('Header-Name', 'value')]`).
+   name and value. (e.g. ``[('Header-Name', 'value')]``).
    The obsolete *use_datetime* flag is similar to *use_builtin_types* but it
    applies only to date/time values.
 
