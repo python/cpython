@@ -116,8 +116,7 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
     }
     bo->batch_size = n;
     bo->it = it;
-    bo->it = it;
-    return  (PyObject *)bo;
+    return (PyObject *)bo;
 }
 
 static void
@@ -131,7 +130,9 @@ batched_dealloc(batchedobject *bo)
 static int
 batched_traverse(batchedobject *bo, visitproc visit, void *arg)
 {
-    Py_VISIT(bo->it);
+    if (bo->it != NULL) {
+        Py_VISIT(bo->it);
+    }
     return 0;
 }
 
