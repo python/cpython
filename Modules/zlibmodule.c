@@ -1440,22 +1440,6 @@ arrange_output_buffer_with_maximum(uint32_t *avail_out,
     return length;
 }
 
-static inline Py_ssize_t
-arrange_output_buffer(uint32_t *avail_out,
-                      uint8_t **next_out,
-                      PyObject **buffer,
-                      Py_ssize_t length)
-{
-    Py_ssize_t ret;
-
-    ret = arrange_output_buffer_with_maximum(avail_out, next_out, buffer,
-                                             length,
-                                             PY_SSIZE_T_MAX);
-    if (ret == -2)
-        PyErr_NoMemory();
-    return ret;
-}
-
 /* Decompress data of length self->avail_in_real in self->state.next_in. The 
    output buffer is allocated dynamically and returned. If the max_length is 
    of sufficiently low size, max_length is allocated immediately. At most 
