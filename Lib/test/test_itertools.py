@@ -1775,6 +1775,31 @@ class TestExamples(unittest.TestCase):
 
 class TestPurePythonRoughEquivalents(unittest.TestCase):
 
+    def test_batched_recipe(self):
+        def batched_recipe(iterable, n):
+            "Batch data into lists of length n. The last batch may be shorter."
+            # batched('ABCDEFG', 3) --> ABC DEF G
+            if n < 1:
+                raise ValueError('n must be at least one')
+            it = iter(iterable)
+            while (batch := list(islice(it, n))):
+                yield batch
+
+        for iterable, n in product(
+                ['', 'a', 'ab', 'abc', 'abcd', 'abcde', 'abcdef', 'abcdefg'],
+                [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, None]):
+            with self.subTest(iterable=iterable, n=n):
+                try:
+                    e1, r1 = None, list(batched(iterable, n))
+                except Exception as e:
+                    e1, r1 = type(e), None
+                try:
+                    e2, r2 = None, list(batched_recipe(iterable, n))
+                except Exception as e:
+                    e2, r2 = type(e), None
+                self.assertEqual(r1, r2)
+                self.assertEqual(e1, e2)
+
     @staticmethod
     def islice(iterable, *args):
         s = slice(*args)
