@@ -333,9 +333,15 @@ offer_suggestions_for_import_error(PyImportErrorObject *exc)
         return NULL;
     }
 
-    PyObject *suggestions = calculate_suggestions(dir, name);
+    PyObject *suggestion = calculate_suggestions(dir, name);
     Py_DECREF(dir);
-    return suggestions;
+    if (!suggestion) {
+        return NULL;
+    }
+
+    PyObject* result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
+    Py_DECREF(suggestion);
+    return result;
 }
 
 // Offer suggestions for a given exception. Returns a python string object containing the
