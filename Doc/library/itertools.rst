@@ -184,6 +184,10 @@ loops that truncate the stream.
 
    .. doctest::
 
+      >>> flattened_data = ['roses', 'red', 'violets', 'blue', 'sugar', 'sweet']
+      >>> list(batched(flattened_data, 2))
+      [['roses', 'red'], ['violets', 'blue'], ['sugar', 'sweet']]
+
       >>> for batch in batched('ABCDEFG', 3):
       ...     print(batch)
       ...
@@ -197,7 +201,7 @@ loops that truncate the stream.
           "Batch data into lists of length n. The last batch may be shorter."
           # batched('ABCDEFG', 3) --> ABC DEF G
           if n < 1:
-              raise ValueError
+              raise ValueError('n must be >= 1')
           it = iter(iterable)
           while (batch := list(islice(it, n))):
               yield batch
