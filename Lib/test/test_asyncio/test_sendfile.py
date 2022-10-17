@@ -492,7 +492,7 @@ class SendfileMixin(SendfileBase):
                 # macOS may raise OSError of EPROTOTYPE when writing to a
                 # socket that is in the process of closing down.
                 if e.errno == errno.EPROTOTYPE and sys.platform == "darwin":
-                    raise ConnectionError from e
+                    raise ConnectionError
                 else:
                     raise
 
