@@ -1078,7 +1078,7 @@ class PyFramePtr:
         return int(prev_instr - first_instr)
 
     def is_entry(self):
-        return self._f_special("is_entry", bool)
+        return self._f_special("cleanup", int) == 1
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)

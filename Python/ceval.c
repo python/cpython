@@ -864,7 +864,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define TRACE_FUNCTION_EXIT() \
     if (cframe.use_tracing) { \
         if (trace_function_exit(tstate, frame, retval)) { \
-            Py_DECREF(retval); \
+            Py_CLEAR(retval); \
             goto exit_unwind; \
         } \
     }
@@ -1057,10 +1057,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
 
-    frame->is_entry = true;
+    frame->cleanup = FRAME_CLEANUP_ENTRY;
     /* Push frame */
     frame->previous = prev_cframe->current_frame;
     cframe.current_frame = frame;
+
+    PyObject *retval = NULL;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
         tstate->c_recursion_remaining--;
@@ -1105,7 +1107,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         values are not visible to the cycle GC. \
         We choose -1 rather than 0 to assist debugging. \
         */ \
-    frame->stacktop = -1;
+    frame->stacktop = -1; \
+    retval = NULL;
 
 
 start_frame:
@@ -1702,6 +1705,7 @@ handle_eval_breaker:
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
+            frame->cleanup = FRAME_CLEANUP_INLINED_FUNCTION;
             goto start_frame;
         }
 
@@ -1861,24 +1865,12 @@ handle_eval_breaker:
         }
 
         TARGET(RETURN_VALUE) {
-            PyObject *retval = POP();
+            retval = POP();
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
-            _Py_LeaveRecursiveCallPy(tstate);
-            if (!frame->is_entry) {
-                frame = cframe.current_frame = pop_frame(tstate, frame);
-                _PyFrame_StackPush(frame, retval);
-                goto resume_frame;
-            }
-            _Py_LeaveRecursiveCallTstate(tstate);
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
-            assert(!_PyErr_Occurred(tstate));
-            return retval;
+            goto cleanup;
         }
 
         TARGET(GET_AITER) {
@@ -2012,7 +2004,6 @@ handle_eval_breaker:
         }
 
         TARGET(SEND) {
-            assert(frame->is_entry);
             assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
             PyObject *receiver = TOP();
@@ -2077,20 +2068,12 @@ handle_eval_breaker:
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(oparg == STACK_LEVEL());
-            assert(frame->is_entry);
-            PyObject *retval = POP();
+            retval = POP();
             _PyFrame_GetGenerator(frame)->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
-            _Py_LeaveRecursiveCallPy(tstate);
-            _Py_LeaveRecursiveCallTstate(tstate);
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
-            assert(!_PyErr_Occurred(tstate));
-            return retval;
+            goto cleanup;
         }
 
         TARGET(POP_EXCEPT) {
@@ -3149,6 +3132,7 @@ handle_eval_breaker:
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
+            frame->cleanup = FRAME_CLEANUP_INLINED_FUNCTION;
             goto start_frame;
         }
 
@@ -3190,6 +3174,7 @@ handle_eval_breaker:
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
+            frame->cleanup = FRAME_CLEANUP_INLINED_FUNCTION;
             goto start_frame;
         }
 
@@ -4203,6 +4188,7 @@ handle_eval_breaker:
                 new_frame->previous = frame;
                 cframe.current_frame = frame = new_frame;
                 CALL_STAT_INC(inlined_py_calls);
+                frame->cleanup = FRAME_CLEANUP_INLINED_FUNCTION;
                 goto start_frame;
             }
             /* Callable is not a normal Python function */
@@ -4287,6 +4273,7 @@ handle_eval_breaker:
             frame->prev_instr = next_instr - 1;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
+            frame->cleanup = FRAME_CLEANUP_INLINED_FUNCTION;
             goto start_frame;
         }
 
@@ -4327,6 +4314,7 @@ handle_eval_breaker:
             frame->prev_instr = next_instr - 1;
             new_frame->previous = frame;
             frame = cframe.current_frame = new_frame;
+            frame->cleanup = FRAME_CLEANUP_INLINED_FUNCTION;
             goto start_frame;
         }
 
@@ -4843,26 +4831,13 @@ handle_eval_breaker:
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-            _Py_LeaveRecursiveCallPy(tstate);
-            if (!frame->is_entry) {
-                _PyInterpreterFrame *prev = frame->previous;
-                _PyThreadState_PopFrame(tstate, frame);
-                frame = cframe.current_frame = prev;
-                _PyFrame_StackPush(frame, (PyObject *)gen);
-                goto resume_frame;
-            }
-            _Py_LeaveRecursiveCallTstate(tstate);
             /* Make sure that frame is in a valid state */
             frame->stacktop = 0;
             frame->f_locals = NULL;
             Py_INCREF(frame->f_funcobj);
             Py_INCREF(frame->f_code);
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
-            assert(!_PyErr_Occurred(tstate));
-            return (PyObject *)gen;
+            retval = (PyObject *)gen;
+            goto cleanup;
         }
 
         TARGET(BUILD_SLICE) {
@@ -5221,22 +5196,144 @@ exception_unwind:
     }
 
 exit_unwind:
-    assert(_PyErr_Occurred(tstate));
-    _Py_LeaveRecursiveCallPy(tstate);
-    if (frame->is_entry) {
-        /* Restore previous cframe and exit */
-        tstate->cframe = cframe.previous;
-        tstate->cframe->use_tracing = cframe.use_tracing;
-        assert(tstate->cframe->current_frame == frame->previous);
-        _Py_LeaveRecursiveCallTstate(tstate);
-        return NULL;
+    switch (frame->cleanup) {
+
+        case FRAME_CLEANUP_ENTRY:
+            tstate->cframe = cframe.previous;
+            tstate->cframe->use_tracing = cframe.use_tracing;
+            assert(tstate->cframe->current_frame == frame->previous);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(_PyErr_Occurred(tstate));
+            assert(retval == NULL);
+            return NULL;
+
+        case FRAME_CLEANUP_INLINED_CLASS:
+        case FRAME_CLEANUP_INLINED_FUNCTION:
+            frame = cframe.current_frame = pop_frame(tstate, frame);
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(_PyErr_Occurred(tstate));
+            assert(retval == NULL);
+            goto resume_with_error;
+
+        // XXX: This is not actually used!
+        case FRAME_CLEANUP_INLINED_GENERATOR:
+            frame = cframe.current_frame = pop_frame(tstate, frame);
+            // XXX: Most of this is just copy-pasted from genobject.c. Refactor
+            // to share a single implementation.
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            if (gen->gi_frame_state == FRAME_EXECUTING) {
+                gen->gi_frame_state = FRAME_COMPLETED;
+            }
+            tstate->exc_info = gen->gi_exc_state.previous_item;
+            gen->gi_exc_state.previous_item = NULL;
+            assert(tstate->cframe->current_frame == frame->previous);
+            // Don't keep the reference to previous any longer than necessary.
+            // It may keep a chain of frames alive or create a reference cycle:
+            frame->previous = NULL;
+            if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                const char *e = "generator raised StopIteration";
+                if (PyCoro_CheckExact(gen)) {
+                    e = "coroutine raised StopIteration";
+                }
+                else if (PyAsyncGen_CheckExact(gen)) {
+                    e = "async generator raised StopIteration";
+                }
+                _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", e);
+            }
+            else if (PyAsyncGen_CheckExact(gen) &&
+                    PyErr_ExceptionMatches(PyExc_StopAsyncIteration))
+            {
+                const char *e = "async generator raised StopAsyncIteration";
+                _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", e);
+            }
+            // Generator can't be rerun, so release the frame. First, clean the
+            // reference cycle through the stored exception traceback:
+            _PyErr_ClearExcState(&gen->gi_exc_state);
+            gen->gi_frame_state = FRAME_CLEARED;
+            _PyFrame_Clear(frame);
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(_PyErr_Occurred(tstate));
+            assert(retval == NULL);
+            goto resume_with_error;
+
     }
-    frame = cframe.current_frame = pop_frame(tstate, frame);
+    Py_UNREACHABLE();
 
 resume_with_error:
     SET_LOCALS_FROM_FRAME();
     goto error;
 
+cleanup:
+    switch (frame->cleanup) {
+
+        case FRAME_CLEANUP_ENTRY:
+            tstate->cframe = cframe.previous;
+            tstate->cframe->use_tracing = cframe.use_tracing;
+            assert(tstate->cframe->current_frame == frame->previous);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(!_PyErr_Occurred(tstate));
+            assert(retval);
+            return retval;
+
+        // XXX: This is not actually used yet!
+        case FRAME_CLEANUP_INLINED_CLASS:
+            if (!Py_IsNone(retval)) {
+                const char *e = "__init__() should return None, not '%.200s'";
+                PyErr_Format(PyExc_TypeError, e, Py_TYPE(retval)->tp_name);
+                Py_CLEAR(retval);
+                goto exit_unwind;
+            }
+            Py_DECREF(retval);
+            frame = cframe.current_frame = pop_frame(tstate, frame);
+            // frame's stack already has the new instance pushed:
+            assert(frame->f_code->co_nlocalsplus < frame->stacktop);
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(!_PyErr_Occurred(tstate));
+            assert(retval);
+            goto resume_frame;
+
+        case FRAME_CLEANUP_INLINED_FUNCTION:
+            frame = cframe.current_frame = pop_frame(tstate, frame);
+            _PyFrame_StackPush(frame, retval);
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(!_PyErr_Occurred(tstate));
+            assert(retval);
+            goto resume_frame;
+
+        // XXX: This is not actually used yet!
+        case FRAME_CLEANUP_INLINED_GENERATOR:
+            frame = cframe.current_frame = pop_frame(tstate, frame);
+            // XXX: Most of this is just copy-pasted from genobject.c. Refactor
+            // to share a single implementation:
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            if (gen->gi_frame_state == FRAME_EXECUTING) {
+                gen->gi_frame_state = FRAME_COMPLETED;
+            }
+            tstate->exc_info = gen->gi_exc_state.previous_item;
+            gen->gi_exc_state.previous_item = NULL;
+            assert(tstate->cframe->current_frame == frame->previous);
+            // Don't keep the reference to previous any longer than necessary.
+            // It may keep a chain of frames alive or create a reference cycle:
+            frame->previous = NULL;
+            if (gen->gi_frame_state == FRAME_SUSPENDED) {
+                _PyFrame_StackPush(frame, retval);
+            }
+            else {
+                PyObject *iterator = _PyFrame_StackPop(frame);
+                assert(iterator == (PyObject *)gen);
+                Py_DECREF(iterator);
+                _PyFrame_StackPush(frame, retval);
+                // XXX: Jump out of whatever loop we're in!
+            }
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(!_PyErr_Occurred(tstate));
+            assert(retval);
+            goto resume_frame;
+
+    }
+    Py_UNREACHABLE();
 }
 
 static void

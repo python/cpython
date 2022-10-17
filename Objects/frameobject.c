@@ -1342,7 +1342,7 @@ int _PyFrame_IsEntryFrame(PyFrameObject *frame)
 {
     assert(frame != NULL);
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame->f_frame->is_entry;
+    return frame->f_frame->cleanup = FRAME_CLEANUP_ENTRY;
 }
 
 

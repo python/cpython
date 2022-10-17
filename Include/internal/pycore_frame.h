@@ -45,6 +45,14 @@ enum _frameowner {
     FRAME_OWNED_BY_FRAME_OBJECT = 2
 };
 
+enum _frame_cleanup {
+    FRAME_CLEANUP_INVALID = 0,
+    FRAME_CLEANUP_ENTRY = 1,
+    FRAME_CLEANUP_INLINED_CLASS = 2,
+    FRAME_CLEANUP_INLINED_FUNCTION = 3,
+    FRAME_CLEANUP_INLINED_GENERATOR = 4,
+};
+
 typedef struct _PyInterpreterFrame {
     /* "Specials" section */
     PyObject *f_funcobj; /* Strong reference */
@@ -61,7 +69,7 @@ typedef struct _PyInterpreterFrame {
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
     int stacktop;     /* Offset of TOS from localsplus  */
-    bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
+    char cleanup;
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
@@ -109,7 +117,7 @@ _PyFrame_InitializeSpecials(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
-    frame->is_entry = false;
+    frame->cleanup = FRAME_CLEANUP_INVALID;
     frame->owner = FRAME_OWNED_BY_THREAD;
 }
 
