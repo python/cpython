@@ -199,7 +199,6 @@ loops that truncate the stream.
    Roughly equivalent to::
 
       def batched(iterable, n):
-          "Batch data into lists of length n. The last batch may be shorter."
           # batched('ABCDEFG', 3) --> ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
