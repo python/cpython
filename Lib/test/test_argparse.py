@@ -4714,6 +4714,15 @@ class TestInvalidArgumentConstructors(TestCase):
     def test_required_positional(self):
         self.assertTypeError('foo', required=True)
 
+    def test_positionals_with_store_true_action(self):
+        self.assertTypeError('foo', action='store_true')
+
+    def test_positionals_with_store_false_action(self):
+        self.assertTypeError('foo', action='store_false')
+
+    def test_positionals_with_store_const_action(self):
+        self.assertTypeError('foo', action='store_const', const='bar')
+
     def test_user_defined_action(self):
 
         class Success(Exception):
