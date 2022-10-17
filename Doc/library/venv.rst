@@ -24,6 +24,7 @@ Python installation, known as the virtual environment's "base" Python, and may
 be optionally isolated from the base's site packages, meaning
 that packages installed in the base environment will not be accessible from
 the virtual environment.
+
 A virtual environment is therefore a powerful and convenient concept which
 allows quick, and relatively light-weight, Python environment creation.
 
