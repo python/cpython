@@ -2376,7 +2376,7 @@ static int
 compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 {
     location loc = LOC(annotation);
-    ADDOP_LOAD_CONST_NEW(c, loc, _PyAST_ExprAsUnicode(annotation)); // CHANGED
+    ADDOP_LOAD_CONST_NEW(c, loc, _PyAST_ExprAsUnicode(annotation));
     return 1;
 }
 
@@ -3354,10 +3354,10 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     loc = location_of_last_executing_statement(s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
 
-    ADDOP_I(c, loc, RERAISE, 0);  // CHANGED
+    ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
-    POP_EXCEPT_AND_RERAISE(c, loc);  // CHANGED
+    POP_EXCEPT_AND_RERAISE(c, loc);
 
     USE_LABEL(c, exit);
     return 1;
@@ -3407,10 +3407,10 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
     loc = location_of_last_executing_statement(s->v.Try.finalbody);
 
     compiler_pop_fblock(c, FINALLY_END, end);
-    ADDOP_I(c, loc, RERAISE, 0);  // CHANGED
+    ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
-    POP_EXCEPT_AND_RERAISE(c, loc);  // CHANGED
+    POP_EXCEPT_AND_RERAISE(c, loc);
 
     USE_LABEL(c, exit);
     return 1;
@@ -6030,7 +6030,7 @@ static int
 check_ann_expr(struct compiler *c, expr_ty e)
 {
     VISIT(c, expr, e);
-    ADDOP(c, LOC(e), POP_TOP); // CHANGED
+    ADDOP(c, LOC(e), POP_TOP);
     return 1;
 }
 
@@ -6266,14 +6266,14 @@ compiler_slice(struct compiler *c, expr_ty s)
         VISIT(c, expr, s->v.Slice.lower);
     }
     else {
-        ADDOP_LOAD_CONST(c, LOC(s), Py_None);  // CHANGED
+        ADDOP_LOAD_CONST(c, LOC(s), Py_None);
     }
 
     if (s->v.Slice.upper) {
         VISIT(c, expr, s->v.Slice.upper);
     }
     else {
-        ADDOP_LOAD_CONST(c, LOC(s), Py_None);  // CHANGED
+        ADDOP_LOAD_CONST(c, LOC(s), Py_None);
     }
 
     if (s->v.Slice.step) {
@@ -7091,7 +7091,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, loc, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JUMP(c, NO_LOCATION, JUMP, end); // CHANGED
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
         // of the body
