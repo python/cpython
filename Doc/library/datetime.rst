@@ -2246,7 +2246,7 @@ where historical changes have been made to civil time.
   two digits of ``offset.hours`` and ``offset.minutes`` respectively.
 
   .. versionchanged:: 3.6
-     Name generated from ``offset=timedelta(0)`` is now plain `'UTC'`, not
+     Name generated from ``offset=timedelta(0)`` is now plain ``'UTC'``, not
      ``'UTC+00:00'``.
 
 
