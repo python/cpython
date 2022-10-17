@@ -2217,16 +2217,20 @@ class NamespacesTests(unittest.TestCase):
     @unittest.skipUnless(os.path.exists('/proc/self/ns/uts'), 'need /proc/self/ns/uts')
     @support.requires_linux_version(3, 0, 0)
     def test_unshare_setns(self):
-        rc, out, err = self.subprocess("""if 1:
+        rc, _, err = self.subprocess("""if 1:
             import os
             import sys
             fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
             try:
-                print(os.readlink('/proc/self/ns/uts'))
+                original = os.readlink('/proc/self/ns/uts')
                 os.unshare(os.CLONE_NEWUTS)
-                print(os.readlink('/proc/self/ns/uts'))
+                new = os.readlink('/proc/self/ns/uts')
+                if original == new:
+                    raise Exception('os.unshare failed')
                 os.setns(fd, os.CLONE_NEWUTS)
-                print(os.readlink('/proc/self/ns/uts'))
+                restored = os.readlink('/proc/self/ns/uts')
+                if original != restored:
+                    raise Exception('os.setns failed')
             except OSError as e:
                 sys.stderr.write(str(e.errno))
                 sys.exit(2)
@@ -2241,9 +2245,6 @@ class NamespacesTests(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertEqual(err, ())
-        original, new, back = out
-        self.assertNotEqual(original, new)
-        self.assertEqual(original, back)
 
 
 def tearDownModule():
