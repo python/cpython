@@ -2043,7 +2043,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
         s = 'abcde'
         r = [['a', 'b'], ['c', 'd'], ['e']]
         n = 2
-        for g in (G, Ig, L, R):     # XXX I(s) is failing
+        for g in (G, I, Ig, L, R):
             with self.subTest(g=g):
                 self.assertEqual(list(batched(g(s), n)), r)
         self.assertEqual(list(batched(S(s), 2)), [])

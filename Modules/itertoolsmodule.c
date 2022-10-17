@@ -155,7 +155,7 @@ batched_next(batchedobject *bo)
         return NULL;
     }
     for (i=0 ; i < bo->batch_size ; i++) {
-        item = (*Py_TYPE(it)->tp_iternext)(it);
+        item = PyIter_Next(it);
         if (item == NULL) {
             break;
         }
