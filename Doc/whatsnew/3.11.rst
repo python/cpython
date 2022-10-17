@@ -1899,6 +1899,17 @@ New Features
 Porting to Python 3.11
 ----------------------
 
+* Some macros have been converted to static inline functions to avoid
+  `macro pitfalls <https://gcc.gnu.org/onlinedocs/cpp/Macro-Pitfalls.html>`_.
+  The change should be mostly transparent to users,
+  as the replacement functions will cast their arguments to the expected types
+  to avoid compiler warnings due to static type checks.
+  However, when the limited C API is set to >=3.11,
+  these casts are not done,
+  and callers will need to cast arguments to their expected types.
+  See :pep:`670` for more details.
+  (Contributed by Victor Stinner and Erlend E. Aasland in :gh:`89653`.)
+
 * :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
   arguments, the interpreter now derives those values from the exception
   instance (the ``value`` argument). The function still steals references
