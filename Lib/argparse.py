@@ -1540,6 +1540,11 @@ class _ActionsContainer(object):
             msg = _("'required' is an invalid argument for positionals")
             raise TypeError(msg)
 
+        # make sure 'store_true' action is not specified
+        if 'action' in kwargs and kwargs.get('action') == 'store_true':
+            msg = _("'store_true' is an invalid action for positionals")
+            raise TypeError(msg)
+
         # mark positional arguments as required if at least one is
         # always required
         if kwargs.get('nargs') not in [OPTIONAL, ZERO_OR_MORE]:
