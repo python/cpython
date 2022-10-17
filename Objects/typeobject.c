@@ -406,7 +406,7 @@ int
 PyType_ClearWatcher(int watcher_id)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (validate_watcher_id(interp, watcher_id)) {
+    if (validate_watcher_id(interp, watcher_id) < 0) {
         return -1;
     }
     interp->type_watchers[watcher_id] = NULL;
@@ -424,7 +424,7 @@ PyType_Watch(int watcher_id, PyObject* obj)
     }
     PyTypeObject *type = (PyTypeObject *)obj;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (validate_watcher_id(interp, watcher_id)) {
+    if (validate_watcher_id(interp, watcher_id) < 0) {
         return -1;
     }
     // ensure we will get a callback on the next modification

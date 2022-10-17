@@ -2,7 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 import _thread
 import importlib.machinery
 import importlib.util
@@ -1612,6 +1612,9 @@ class TestTypeWatchers(unittest.TestCase):
     ERROR = 1    # unconditionally sets and signals a RuntimeException
     WRAP = 2     # appends modified type wrapped in list to global event list
 
+    # duplicating the C constant
+    TYPE_MAX_WATCHERS = 8
+
     def add_watcher(self, kind=TYPES):
         return _testcapi.add_type_watcher(kind)
 
@@ -1727,7 +1730,7 @@ class TestTypeWatchers(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
             self.watch(-1, C)
         with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
-            self.watch(8, C)  # TYPE_MAX_WATCHERS = 8
+            self.watch(self.TYPE_MAX_WATCHERS, C)
 
     def test_watch_unassigned_watcher_id(self):
         class C: pass
@@ -1744,13 +1747,30 @@ class TestTypeWatchers(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
             self.unwatch(-1, C)
         with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
-            self.unwatch(8, C)  # TYPE_MAX_WATCHERS = 8
+            self.unwatch(self.TYPE_MAX_WATCHERS, C)
 
     def test_unwatch_unassigned_watcher_id(self):
         class C: pass
         with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
             self.unwatch(1, C)
 
+    def test_clear_out_of_range_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
+            self.clear_watcher(-1)
+        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
+            self.clear_watcher(self.TYPE_MAX_WATCHERS)
+
+    def test_clear_unassigned_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
+            self.clear_watcher(1)
+
+    def test_no_more_ids_available(self):
+        contexts = [self.watcher() for i in range(self.TYPE_MAX_WATCHERS)]
+        with ExitStack() as stack:
+            for ctx in contexts:
+                stack.enter_context(ctx)
+            with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
+                self.add_watcher()
 
 
 if __name__ == "__main__":
