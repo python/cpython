@@ -1,13 +1,13 @@
-On Linux the :mod:`multiprocessing` module when configured to use the
-``"forkserver"`` start method has switched back to using filesystem backed unix
-domain sockets by default for communication with the fork server. No longer
-using Linux's abstract socket namespace by default. Abstract sockets have no
-permissions and could thus allow any user on the system in the same `network
+On Linux the :mod:`multiprocessing` module, when configured by code to use the
+``"forkserver"`` start method, has switched back to using filesystem backed
+unix domain sockets by default for communication with the *forkserver* process.
+No longer using Linux's abstract socket namespace by default. Abstract sockets
+have no permissions and could allow any user on the system in the same `network
 namespace <https://man7.org/linux/man-pages/man7/network_namespaces.7.html>`_
 (often the whole system) to inject code into the multiprocessing *forkserver*
 process as a potential privilege escalation. Filesystem based socket
-permissions are restricted to the forkserver user as with Python 3.8 and
-earlier.
+permissions are restricted to the *forkserver* process user as in Python 3.8
+and earlier.
 
 This prevents Linux `CVE-2022-42919
 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-42919>`_ in code that
