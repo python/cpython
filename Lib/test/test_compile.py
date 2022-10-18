@@ -1208,6 +1208,24 @@ f(
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=1)
 
+    def test_multiline_assert(self):
+        snippet = """\
+assert (a > 0 and
+        bb > 0 and
+        ccc == 4), "error msg"
+"""
+
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_ASSERTION_ERROR',
+            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+        #  The "error msg":
+        self.assertOpcodeSourcePositionIs(compiled_code, 'LOAD_CONST',
+            line=3, end_line=3, column=19, end_column=30, occurrence=4)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
+            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RAISE_VARARGS',
+            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+
     def test_very_long_line_end_offset(self):
         # Make sure we get the correct column offset for offsets
         # too large to store in a byte.
