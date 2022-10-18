@@ -2883,9 +2883,18 @@ list_subscript(PyListObject* self, PyObject* item)
             if (_PyIndex_Check(i)) {
                 PyObject *newlist;
                 newlist = list_subscript(self, i);
-                if (PyList_Check(newlist)) {
-                    return list_subscript((PyListObject *)newlist, PyTuple_GetSlice(item, 1, len));
+                if (newlist) {
+                    return list_subscript(_PyList_CAST(newlist), PyTuple_GetSlice(item, 1, len));
                 }
+                else {
+                    return newlist;
+                }
+            }
+            else {
+                PyErr_Format(PyExc_TypeError,
+                             "list index must be an integer",
+                             Py_TYPE(i)->tp_name);
+                return NULL;
             }
         }
         else if (len == 0 && PyErr_Occurred()) {
