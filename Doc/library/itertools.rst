@@ -474,10 +474,17 @@ loops that truncate the stream.
    Afterward, elements are returned consecutively unless *step* is set higher than
    one which results in items being skipped.  If *stop* is ``None``, then iteration
    continues until the iterator is exhausted, if at all; otherwise, it stops at the
-   specified position.  Unlike regular slicing, :func:`islice` does not support
-   negative values for *start*, *stop*, or *step*.  Can be used to extract related
-   fields from data where the internal structure has been flattened (for example, a
-   multi-line report may list a name field on every third line).  Roughly equivalent to::
+   specified position.
+
+   If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
+   then the step defaults to one.
+
+   Unlike regular slicing, :func:`islice` does not support negative values for
+   *start*, *stop*, or *step*.  Can be used to extract related fields from
+   data where the internal structure has been flattened (for example, a
+   multi-line report may list a name field on every third line).
+
+   Roughly equivalent to::
 
       def islice(iterable, *args):
           # islice('ABCDEFG', 2) --> A B
@@ -504,8 +511,6 @@ loops that truncate the stream.
               for i, element in zip(range(i + 1, stop), iterable):
                   pass
 
-   If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
-   then the step defaults to one.
 
 .. function:: pairwise(iterable)
 
