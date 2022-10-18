@@ -99,14 +99,17 @@ class TestStaggered(unittest.IsolatedAsyncioTestCase):
     async def test_simultaneous_success_fail(self):
         # There's a potential race condition here:
         # https://github.com/python/cpython/issues/86296
-        for _ in range(50):
+        # As with any race condition, it can be difficult to reproduce.
+        # This test may not fail every time.
+        for i in range(201):
+            time_unit = 0.0001 * i
             winner_result, winner_idx, exceptions = await staggered_race(
                 (
-                    self.get_waiting_coroutine_factory(0, 0.1, True),
-                    self.get_waiting_coroutine_factory(1, 0.05, False),
+                    self.get_waiting_coroutine_factory(0, time_unit*2, True),
+                    self.get_waiting_coroutine_factory(1, time_unit, False),
                     self.get_waiting_coroutine_factory(2, 0.05, True)
                 ),
-                0.05,
+                time_unit,
             )
             self.assertEqual(winner_result, 0)
             self.assertEqual(winner_idx, 0)
