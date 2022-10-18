@@ -759,7 +759,7 @@ also give ideas about ways that the tools can be combined -- for example, how
 `compress()` and `range()` can work together.  The recipes also show patterns
 for using itertools with the :mod:`operator` and :mod:`collections` modules as
 well as with the built-in itertools such as ``map()``, ``filter()``,
-``reversed()``, and `enumerate()`.
+``reversed()``, and ``enumerate()``.
 
 A secondary purpose of the recipes is to serve as an incubator.  The
 ``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
