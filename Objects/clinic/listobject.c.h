@@ -150,7 +150,7 @@ list_max(PyListObject *self, PyObject *Py_UNUSED(ignored)) {
     return list_max_impl(self);
 }
 
-#define LIST_MAX_METHODDEF \
+#define LIST_MIN_METHODDEF \
     {"min", (PyCFunction)list_min, METH_NOARGS, list_min__doc__},
 
 PyDoc_STRVAR(list_min__doc__,
