@@ -681,9 +681,7 @@ loops that truncate the stream.
 
    The following Python code helps explain what *tee* does (although the actual
    implementation is more complex and uses only a single underlying
-   :abbr:`FIFO (first-in, first-out)` queue).
-
-   Roughly equivalent to::
+   :abbr:`FIFO (first-in, first-out)` queue)::
 
         def tee(iterable, n=2):
             it = iter(iterable)
@@ -700,7 +698,7 @@ loops that truncate the stream.
                     yield mydeque.popleft()
             return tuple(gen(d) for d in deques)
 
-   Once :func:`tee` has made a split, the original *iterable* should not be
+   Once :func:`tee` has been created, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
