@@ -10,6 +10,10 @@
 .. testsetup::
 
    from itertools import *
+   import collections
+   import math
+   import operator
+   import random
 
 --------------
 
