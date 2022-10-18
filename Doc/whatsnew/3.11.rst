@@ -58,44 +58,49 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.11.
    Brevity is key.
 
-- Python 3.11 is between 10-60% faster than Python 3.10. On average, we measured a
-  1.25x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
+* Python 3.11 is between 10-60% faster than Python 3.10.
+  On average, we measured a 1.25x speedup on the standard benchmark suite.
+  See :ref:`whatsnew311-faster-cpython` for details.
 
 .. PEP-sized items next.
 
 New syntax features:
 
-* :pep:`654`: Exception Groups and ``except*``.
+* :ref:`whatsnew311-pep654`
 
 New built-in features:
 
-* :pep:`678`: Enriching Exceptions with Notes.
+* :ref:`whatsnew311-pep678`
 
 New standard library modules:
 
-* :pep:`680`: ``tomllib`` — Support for Parsing TOML in the Standard Library.
+* :pep:`680`: :mod:`tomllib` —
+  Support for parsing `TOML <https://toml.io/>`_ in the Standard Library
 
 Interpreter improvements:
 
-* :pep:`657`: Include Fine Grained Error Locations in Tracebacks.
+* :ref:`whatsnew311-pep657`
 * New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
-  variable to disable automatically prepending a potentially unsafe path
-  (the working dir or script directory, depending on invocation)
-  to :data:`sys.path`.
+  variable to :ref:`disable automatically prepending potentially unsafe paths
+  <whatsnew311-pythonsafepath>` to :data:`sys.path`
 
 New typing features:
 
-* :pep:`646`: Variadic generics.
-* :pep:`655`: Marking individual TypedDict items as required or potentially missing.
-* :pep:`673`: ``Self`` type.
-* :pep:`675`: Arbitrary literal string type.
-* :pep:`681`: Data Class Transforms.
+* :ref:`whatsnew311-pep646`
+* :ref:`whatsnew311-pep655`
+* :ref:`whatsnew311-pep673`
+* :ref:`whatsnew311-pep675`
+* :ref:`whatsnew311-pep681`
 
-Important deprecations, removals or restrictions:
+Important deprecations, removals and restrictions:
 
-* :pep:`594`: Removing dead batteries from the standard library.
-* :pep:`624`: Remove ``Py_UNICODE`` encoder APIs.
-* :pep:`670`: Convert macros to functions in the Python C API.
+* :pep:`594`:
+  :ref:`Many legacy standard library modules have been deprecated
+  <whatsnew311-pep594>` and will be removed in Python 3.13
+* :pep:`624`:
+  :ref:`Py_UNICODE encoder APIs have been removed <whatsnew311-pep624>`
+* :pep:`670`:
+  :ref:`Macros converted to static inline functions <whatsnew311-pep670>`
 
 
 .. _whatsnew311-features:
@@ -105,8 +110,8 @@ New Features
 
 .. _whatsnew311-pep657:
 
-PEP 657: Enhanced error locations in tracebacks
------------------------------------------------
+PEP 657: Fine-grained error locations in tracebacks
+---------------------------------------------------
 
 When printing tracebacks, the interpreter will now point to the exact expression
 that caused the error, instead of just the line. For example:
@@ -381,7 +386,7 @@ Kumar Srinivasan and Graham Bleaney.)
 
 .. _whatsnew311-pep681:
 
-PEP 681: Data Class Transforms
+PEP 681: Data class transforms
 ------------------------------
 
 :data:`~typing.dataclass_transform` may be used to
@@ -456,6 +461,8 @@ Other Language Changes
   :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
   pickles instance attributes implemented as :term:`slots <__slots__>`.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
+
+.. _whatsnew311-pythonsafepath:
 
 * Added a :option:`-P` command line option
   and a :envvar:`PYTHONSAFEPATH` environment variable,
@@ -1546,11 +1553,7 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
   removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
   (Contributed by Victor Stinner in :gh:`90817`.)
 
-* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
-  deprecated since at least Python 3.6. Their documentation and deprecation
-  warnings have now been updated to note they will removed in Python 3.12
-  (:pep:`594`).
-  (Contributed by Hugo van Kemenade in :issue:`47022`.)
+.. _whatsnew311-pep594:
 
 * :pep:`594` led to the deprecations of the following modules which are
   slated for removal in Python 3.13:
@@ -1577,6 +1580,11 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
+
+* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+  deprecated since at least Python 3.6. Their documentation and deprecation
+  warnings have now been updated to note they will removed in Python 3.12.
+  (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
 * More strict rules will be applied now applied for numerical group references
   and group names in regular expressions in future Python versions.
@@ -1969,6 +1977,8 @@ New Features
 
 Porting to Python 3.11
 ----------------------
+
+.. _whatsnew311-pep670:
 
 * Some macros have been converted to static inline functions to avoid
   `macro pitfalls <https://gcc.gnu.org/onlinedocs/cpp/Macro-Pitfalls.html>`_.
@@ -2377,6 +2387,8 @@ Removed
 * Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
   API).
   (Contributed by Victor Stinner in :issue:`45412`.)
+
+.. _whatsnew311-pep624:
 
 * Remove the :c:type:`Py_UNICODE` encoder APIs,
   as they have been deprecated since Python 3.3,
