@@ -48,6 +48,7 @@ Iterator            Arguments               Results                             
 Iterator                        Arguments                       Results                                             Example
 ============================    ============================    =================================================   =============================================================
 :func:`accumulate`              p [,func]                       p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) --> 1 3 6 10 15``
+:func:`batched`                 p, n                            [p0, p1, ..., p_n-1], ...                           ``batched('ABCDEFG', n=3) --> ABC DEF G``
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) --> A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
@@ -169,6 +170,44 @@ loops that truncate the stream.
 
     .. versionchanged:: 3.8
        Added the optional *initial* parameter.
+
+
+.. function:: batched(iterable, n)
+
+   Batch data from the *iterable* into lists of length *n*. The last
+   batch may be shorter than *n*.
+
+   Loops over the input iterable and accumulates data into lists up to
+   size *n*.  The input is consumed lazily, just enough to fill a list.
+   The result is yielded as soon as the batch is full or when the input
+   iterable is exhausted:
+
+   .. doctest::
+
+      >>> flattened_data = ['roses', 'red', 'violets', 'blue', 'sugar', 'sweet']
+      >>> unflattened = list(batched(flattened_data, 2))
+      >>> unflattened
+      [['roses', 'red'], ['violets', 'blue'], ['sugar', 'sweet']]
+
+      >>> for batch in batched('ABCDEFG', 3):
+      ...     print(batch)
+      ...
+      ['A', 'B', 'C']
+      ['D', 'E', 'F']
+      ['G']
+
+   Roughly equivalent to::
+
+      def batched(iterable, n):
+          # batched('ABCDEFG', 3) --> ABC DEF G
+          if n < 1:
+              raise ValueError('n must be at least one')
+          it = iter(iterable)
+          while (batch := list(islice(it, n))):
+              yield batch
+
+    .. versionadded:: 3.12
+
 
 .. function:: chain(*iterables)
 
@@ -858,13 +897,6 @@ which incur interpreter overhead.
        else:
            raise ValueError('Expected fill, strict, or ignore')
 
-   def batched(iterable, n):
-       "Batch data into lists of length n. The last batch may be shorter."
-       # batched('ABCDEFG', 3) --> ABC DEF G
-       it = iter(iterable)
-       while (batch := list(islice(it, n))):
-           yield batch
-
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
        # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
@@ -999,31 +1031,6 @@ which incur interpreter overhead.
        # first_true([a,b,c], x) --> a or b or c or x
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
-
-   def random_product(*args, repeat=1):
-       "Random selection from itertools.product(*args, **kwds)"
-       pools = [tuple(pool) for pool in args] * repeat
-       return tuple(map(random.choice, pools))
-
-   def random_permutation(iterable, r=None):
-       "Random selection from itertools.permutations(iterable, r)"
-       pool = tuple(iterable)
-       r = len(pool) if r is None else r
-       return tuple(random.sample(pool, r))
-
-   def random_combination(iterable, r):
-       "Random selection from itertools.combinations(iterable, r)"
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = sorted(random.sample(range(n), r))
-       return tuple(pool[i] for i in indices)
-
-   def random_combination_with_replacement(iterable, r):
-       "Random selection from itertools.combinations_with_replacement(iterable, r)"
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = sorted(random.choices(range(n), k=r))
-       return tuple(pool[i] for i in indices)
 
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
@@ -1235,36 +1242,6 @@ which incur interpreter overhead.
 
     >>> list(grouper('abcdefg', n=3, incomplete='ignore'))
     [('a', 'b', 'c'), ('d', 'e', 'f')]
-
-    >>> list(batched('ABCDEFG', 3))
-    [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']]
-    >>> list(batched('ABCDEF', 3))
-    [['A', 'B', 'C'], ['D', 'E', 'F']]
-    >>> list(batched('ABCDE', 3))
-    [['A', 'B', 'C'], ['D', 'E']]
-    >>> list(batched('ABCD', 3))
-    [['A', 'B', 'C'], ['D']]
-    >>> list(batched('ABC', 3))
-    [['A', 'B', 'C']]
-    >>> list(batched('AB', 3))
-    [['A', 'B']]
-    >>> list(batched('A', 3))
-    [['A']]
-    >>> list(batched('', 3))
-    []
-    >>> list(batched('ABCDEFG', 2))
-    [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']]
-    >>> list(batched('ABCDEFG', 1))
-    [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']]
-    >>> list(batched('ABCDEFG', 0))
-    []
-    >>> list(batched('ABCDEFG', -1))
-    Traceback (most recent call last):
-      ...
-    ValueError: Stop argument for islice() must be None or an integer: 0 <= x <= sys.maxsize.
-    >>> s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    >>> all(list(flatten(batched(s[:n], 5))) == list(s[:n]) for n in range(len(s)))
-    True
 
     >>> list(triplewise('ABCDEFG'))
     [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
