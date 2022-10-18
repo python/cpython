@@ -9,7 +9,8 @@
 static PyObject *
 bool_repr(PyObject *self)
 {
-    return self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
+    PyObject *res = self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
+    return Py_NewRef(res);
 }
 
 /* Function to return a bool from a C long */

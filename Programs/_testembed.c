@@ -279,7 +279,7 @@ static int test_pre_initialization_sys_options(void)
      * relying on the caller to keep the passed in strings alive.
      */
     const wchar_t *static_warnoption = L"once";
-    const wchar_t *static_xoption = L"utf8=1";
+    const wchar_t *static_xoption = L"also_not_an_option=2";
     size_t warnoption_len = wcslen(static_warnoption);
     size_t xoption_len = wcslen(static_xoption);
     wchar_t *dynamic_once_warnoption = \
@@ -298,7 +298,7 @@ static int test_pre_initialization_sys_options(void)
     PySys_AddWarnOption(L"module");
     PySys_AddWarnOption(L"default");
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
-    PySys_AddXOption(L"dev=2");
+    PySys_AddXOption(L"not_an_option=1");
     PySys_AddXOption(dynamic_xoption);
 
     /* Delete the dynamic options early */
@@ -367,6 +367,8 @@ static int test_bpo20891(void)
     Py_END_ALLOW_THREADS
 
     PyThread_free_lock(lock);
+
+    Py_Finalize();
 
     return 0;
 }
@@ -589,7 +591,7 @@ static int test_init_from_config(void)
         L"-W",
         L"cmdline_warnoption",
         L"-X",
-        L"dev",
+        L"cmdline_xoption",
         L"-c",
         L"pass",
         L"arg2",
@@ -597,9 +599,10 @@ static int test_init_from_config(void)
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
-    wchar_t* xoptions[2] = {
-        L"dev=3",
-        L"utf8",
+    wchar_t* xoptions[3] = {
+        L"config_xoption1=3",
+        L"config_xoption2=",
+        L"config_xoption3",
     };
     config_set_wide_string_list(&config, &config.xoptions,
                                 Py_ARRAY_LENGTH(xoptions), xoptions);
@@ -680,6 +683,9 @@ static int test_init_from_config(void)
 
     config._isolated_interpreter = 1;
 
+    putenv("PYTHONINTMAXSTRDIGITS=6666");
+    config.int_max_str_digits = 31337;
+
     init_from_config_clear(&config);
 
     dump_config();
@@ -745,6 +751,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONIOENCODING=iso8859-1:replace");
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
     putenv("PYTHONSAFEPATH=1");
+    putenv("PYTHONINTMAXSTRDIGITS=4567");
 }
 
 
@@ -1423,6 +1430,7 @@ fail:
 
 static int test_init_sys_add(void)
 {
+    PySys_AddXOption(L"sysadd_xoption");
     PySys_AddXOption(L"faulthandler");
     PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
 
@@ -1434,14 +1442,14 @@ static int test_init_sys_add(void)
         L"-W",
         L"ignore:::cmdline_warnoption",
         L"-X",
-        L"utf8",
+        L"cmdline_xoption",
     };
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
     PyStatus status;
     status = PyWideStringList_Append(&config.xoptions,
-                                     L"dev");
+                                     L"config_xoption");
     if (PyStatus_Exception(status)) {
         goto fail;
     }
@@ -1545,6 +1553,46 @@ static int test_init_setpythonhome(void)
 
     Py_Initialize();
     dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_is_python_build(void)
+{
+    // gh-91985: in-tree builds fail to check for build directory landmarks
+    // under the effect of 'home' or PYTHONHOME environment variable.
+    char *env = getenv("TESTHOME");
+    if (!env) {
+        error("missing TESTHOME env var");
+        return 1;
+    }
+    wchar_t *home = Py_DecodeLocale(env, NULL);
+    if (home == NULL) {
+        error("failed to decode TESTHOME");
+        return 1;
+    }
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    config_set_string(&config, &config.home, home);
+    PyMem_RawFree(home);
+    putenv("TESTHOME=");
+
+    // Use an impossible value so we can detect whether it isn't updated
+    // during initialization.
+    config._is_python_build = INT_MAX;
+    env = getenv("NEGATIVE_ISPYTHONBUILD");
+    if (env && strcmp(env, "0") != 0) {
+        config._is_python_build = INT_MIN;
+    }
+    init_from_config_clear(&config);
+    Py_Finalize();
+    // Second initialization
+    config._is_python_build = -1;
+    init_from_config_clear(&config);
+    dump_config();  // home and _is_python_build are cached in _Py_path_config
     Py_Finalize();
     return 0;
 }
@@ -1906,6 +1954,73 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
+static void wrap_allocator(PyMemAllocatorEx *allocator);
+static void unwrap_allocator(PyMemAllocatorEx *allocator);
+
+static void *
+malloc_wrapper(void *ctx, size_t size)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    unwrap_allocator(allocator);
+    PyEval_GetFrame();  // BOOM!
+    wrap_allocator(allocator);
+    return allocator->malloc(allocator->ctx, size);
+}
+
+static void *
+calloc_wrapper(void *ctx, size_t nelem, size_t elsize)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    return allocator->calloc(allocator->ctx, nelem, elsize);
+}
+
+static void *
+realloc_wrapper(void *ctx, void *ptr, size_t new_size)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    return allocator->realloc(allocator->ctx, ptr, new_size);
+}
+
+static void
+free_wrapper(void *ctx, void *ptr)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    allocator->free(allocator->ctx, ptr);
+}
+
+static void
+wrap_allocator(PyMemAllocatorEx *allocator)
+{
+    PyMem_GetAllocator(PYMEM_DOMAIN_OBJ, allocator);
+    PyMemAllocatorEx wrapper = {
+        .malloc = &malloc_wrapper,
+        .calloc = &calloc_wrapper,
+        .realloc = &realloc_wrapper,
+        .free = &free_wrapper,
+        .ctx = allocator,
+    };
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &wrapper);
+}
+
+static void
+unwrap_allocator(PyMemAllocatorEx *allocator)
+{
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, allocator);
+}
+
+static int
+test_get_incomplete_frame(void)
+{
+    _testembed_Py_Initialize();
+    PyMemAllocatorEx allocator;
+    wrap_allocator(&allocator);
+    // Force an allocation with an incomplete (generator) frame:
+    int result = PyRun_SimpleString("(_ for _ in ())");
+    unwrap_allocator(&allocator);
+    Py_Finalize();
+    return result;
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -1965,6 +2080,7 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
+    {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},
@@ -1987,6 +2103,7 @@ static struct TestCase TestCases[] = {
 #ifndef MS_WINDOWS
     {"test_frozenmain", test_frozenmain},
 #endif
+    {"test_get_incomplete_frame", test_get_incomplete_frame},
 
     {NULL, NULL}
 };

@@ -8,6 +8,7 @@ import _ast
 import tempfile
 import types
 import textwrap
+import warnings
 from test import support
 from test.support import script_helper, requires_debug_ranges
 from test.support.os_helper import FakePath
@@ -108,9 +109,9 @@ class TestSpecifics(unittest.TestCase):
         exec('z = a', g, d)
         self.assertEqual(d['z'], 12)
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_extended_arg(self):
-        # default: 1000 * 2.5 = 2500 repetitions
-        repeat = int(sys.getrecursionlimit() * 2.5)
+        repeat = 2000
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = '''
@@ -161,7 +162,7 @@ if 1:
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
         lines = list(co.co_lines())
-        self.assertEqual(lines[0][2], None)
+        self.assertEqual(lines[0][2], 0)
         self.assertEqual(lines[1][2], 257)
 
     def test_literals_with_leading_zeroes(self):
@@ -196,6 +197,19 @@ if 1:
         self.assertEqual(eval("-0b000000000010"), -2)
         self.assertEqual(eval("0o777"), 511)
         self.assertEqual(eval("-0o0000010"), -8)
+
+    def test_int_literals_too_long(self):
+        n = 3000
+        source = f"a = 1\nb = 2\nc = {'3'*n}\nd = 4"
+        with support.adjust_int_max_str_digits(n):
+            compile(source, "<long_int_pass>", "exec")  # no errors.
+        with support.adjust_int_max_str_digits(n-1):
+            with self.assertRaises(SyntaxError) as err_ctx:
+                compile(source, "<long_int_fail>", "exec")
+            exc = err_ctx.exception
+            self.assertEqual(exc.lineno, 3)
+            self.assertIn('Exceeds the limit ', str(exc))
+            self.assertIn(' Consider hexadecimal ', str(exc))
 
     def test_unary_minus(self):
         # Verify treatment of unary minus on negative numbers SF bug #660455
@@ -480,9 +494,8 @@ if 1:
             code = compile('pass', filename, 'exec')
             self.assertEqual(code.co_filename, 'file.py')
         for filename in bytearray(b'file.py'), memoryview(b'file.py'):
-            with self.assertWarns(DeprecationWarning):
-                code = compile('pass', filename, 'exec')
-            self.assertEqual(code.co_filename, 'file.py')
+            with self.assertRaises(TypeError):
+                compile('pass', filename, 'exec')
         self.assertRaises(TypeError, compile, 'pass', list(b'file.py'), 'exec')
 
     @support.cpython_only
@@ -529,7 +542,7 @@ if 1:
             with open(fn, "wb") as fp:
                 fp.write(src)
             res = script_helper.run_python_until_end(fn)[0]
-        self.assertIn(b"Non-UTF-8", res.err)
+        self.assertIn(b"source code cannot contain null bytes", res.err)
 
     def test_yet_more_evil_still_undecodable(self):
         # Issue #25388
@@ -539,9 +552,10 @@ if 1:
             with open(fn, "wb") as fp:
                 fp.write(src)
             res = script_helper.run_python_until_end(fn)[0]
-        self.assertIn(b"Non-UTF-8", res.err)
+        self.assertIn(b"source code cannot contain null bytes", res.err)
 
     @support.cpython_only
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
         # Expected limit is sys.getrecursionlimit() * the scaling factor
         # in symtable.c (currently 3)
@@ -575,9 +589,9 @@ if 1:
     def test_null_terminated(self):
         # The source code is null-terminated internally, but bytes-like
         # objects are accepted, which could be not terminated.
-        with self.assertRaisesRegex(ValueError, "cannot contain null"):
+        with self.assertRaisesRegex(SyntaxError, "cannot contain null"):
             compile("123\x00", "<dummy>", "eval")
-        with self.assertRaisesRegex(ValueError, "cannot contain null"):
+        with self.assertRaisesRegex(SyntaxError, "cannot contain null"):
             compile(memoryview(b"123\x00"), "<dummy>", "eval")
         code = compile(memoryview(b"123\x00")[1:-1], "<dummy>", "eval")
         self.assertEqual(eval(code), 23)
@@ -613,7 +627,7 @@ if 1:
             exec(code, ns)
             f1 = ns['f1']
             f2 = ns['f2']
-            self.assertIs(f1.__code__, f2.__code__)
+            self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
             self.check_constant(f1, const)
             self.assertEqual(repr(f1()), repr(const))
 
@@ -626,7 +640,7 @@ if 1:
         # Note: "lambda: ..." emits "LOAD_CONST Ellipsis",
         # whereas "lambda: Ellipsis" emits "LOAD_GLOBAL Ellipsis"
         f1, f2 = lambda: ..., lambda: ...
-        self.assertIs(f1.__code__, f2.__code__)
+        self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, Ellipsis)
         self.assertEqual(repr(f1()), repr(Ellipsis))
 
@@ -641,7 +655,7 @@ if 1:
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
         f1, f2 = lambda x: x in {0}, lambda x: x in {0}
-        self.assertIs(f1.__code__, f2.__code__)
+        self.assertIs(f1.__code__.co_consts, f2.__code__.co_consts)
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
@@ -655,10 +669,22 @@ if 1:
 
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
 
+    @support.cpython_only
+    def test_strip_unused_consts(self):
+        def f():
+            "docstring"
+            if True:
+                return "used"
+            else:
+                return "unused"
+
+        self.assertEqual(f.__code__.co_consts,
+                         ("docstring", True, "used"))
+
     # Stripping unused constants is not a strict requirement for the
     # Python semantics, it's a more an implementation detail.
     @support.cpython_only
-    def test_strip_unused_consts(self):
+    def test_strip_unused_None(self):
         # Python 3.10rc1 appended None to co_consts when None is not used
         # at all. See bpo-45056.
         def f1():
@@ -1026,6 +1052,67 @@ if 1:
         for instr in dis.Bytecode(while_not_chained):
             self.assertNotEqual(instr.opname, "EXTENDED_ARG")
 
+    @support.cpython_only
+    def test_uses_slice_instructions(self):
+
+        def check_op_count(func, op, expected):
+            actual = 0
+            for instr in dis.Bytecode(func):
+                if instr.opname == op:
+                    actual += 1
+            self.assertEqual(actual, expected)
+
+        def load():
+            return x[a:b] + x [a:] + x[:b] + x[:]
+
+        def store():
+            x[a:b] = y
+            x [a:] = y
+            x[:b] = y
+            x[:] = y
+
+        def long_slice():
+            return x[a:b:c]
+
+        def aug():
+            x[a:b] += y
+
+        check_op_count(load, "BINARY_SLICE", 4)
+        check_op_count(load, "BUILD_SLICE", 0)
+        check_op_count(store, "STORE_SLICE", 4)
+        check_op_count(store, "BUILD_SLICE", 0)
+        check_op_count(long_slice, "BUILD_SLICE", 1)
+        check_op_count(long_slice, "BINARY_SLICE", 0)
+        check_op_count(aug, "BINARY_SLICE", 1)
+        check_op_count(aug, "STORE_SLICE", 1)
+        check_op_count(aug, "BUILD_SLICE", 0)
+
+    def test_compare_positions(self):
+        for opname, op in [
+            ("COMPARE_OP", "<"),
+            ("COMPARE_OP", "<="),
+            ("COMPARE_OP", ">"),
+            ("COMPARE_OP", ">="),
+            ("CONTAINS_OP", "in"),
+            ("CONTAINS_OP", "not in"),
+            ("IS_OP", "is"),
+            ("IS_OP", "is not"),
+        ]:
+            expr = f'a {op} b {op} c'
+            expected_positions = 2 * [(2, 2, 0, len(expr))]
+            for source in [
+                f"\\\n{expr}", f'if \\\n{expr}: x', f"x if \\\n{expr} else y"
+            ]:
+                code = compile(source, "<test>", "exec")
+                actual_positions = [
+                    instruction.positions
+                    for instruction in dis.get_instructions(code)
+                    if instruction.opname == opname
+                ]
+                with self.subTest(source):
+                    self.assertEqual(actual_positions, expected_positions)
+
+
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers
@@ -1054,6 +1141,8 @@ class TestSourcePositions(unittest.TestCase):
 
         # Check against the positions in the code object.
         for (line, end_line, col, end_col) in code.co_positions():
+            if line == 0:
+                continue # This is an artificial module-start line
             # If the offset is not None (indicating missing data), ensure that
             # it was part of one of the AST nodes.
             if line is not None:
@@ -1143,6 +1232,148 @@ f(
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=1, end_line=1, column=0, end_column=27, occurrence=4)
 
+    def test_multiline_assert_rewritten_as_method_call(self):
+        # GH-94694: Don't crash if pytest rewrites a multiline assert as a
+        # method call with the same location information:
+        tree = ast.parse("assert (\n42\n)")
+        old_node = tree.body[0]
+        new_node = ast.Expr(
+            ast.Call(
+                ast.Attribute(
+                    ast.Name("spam", ast.Load()),
+                    "eggs",
+                    ast.Load(),
+                ),
+                [],
+                [],
+            )
+        )
+        ast.copy_location(new_node, old_node)
+        ast.fix_missing_locations(new_node)
+        tree.body[0] = new_node
+        compile(tree, "<test>", "exec")
+
+    def test_push_null_load_global_positions(self):
+        source_template = """
+        import abc, dis
+        import ast as art
+
+        abc = None
+        dix = dis
+        ast = art
+
+        def f():
+        {}
+        """
+        for body in [
+            "    abc.a()",
+            "    art.a()",
+            "    ast.a()",
+            "    dis.a()",
+            "    dix.a()",
+            "    abc[...]()",
+            "    art()()",
+            "   (ast or ...)()",
+            "   [dis]()",
+            "   (dix + ...)()",
+        ]:
+            with self.subTest(body):
+                namespace = {}
+                source = textwrap.dedent(source_template.format(body))
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', SyntaxWarning)
+                    exec(source, namespace)
+                code = namespace["f"].__code__
+                self.assertOpcodeSourcePositionIs(
+                    code,
+                    "LOAD_GLOBAL",
+                    line=10,
+                    end_line=10,
+                    column=4,
+                    end_column=7,
+                )
+
+    def test_attribute_augassign(self):
+        source = "(\n lhs  \n   .    \n     rhs      \n       ) += 42"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "LOAD_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+        self.assertOpcodeSourcePositionIs(
+            code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+
+    def test_attribute_del(self):
+        source = "del (\n lhs  \n   .    \n     rhs      \n       )"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "DELETE_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+
+    def test_attribute_load(self):
+        source = "(\n lhs  \n   .    \n     rhs      \n       )"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "LOAD_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+
+    def test_attribute_store(self):
+        source = "(\n lhs  \n   .    \n     rhs      \n       ) = 42"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "STORE_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+
+    def test_method_call(self):
+        source = "(\n lhs  \n   .    \n     rhs      \n       )()"
+        code = compile(source, "<test>", "exec")
+        self.assertOpcodeSourcePositionIs(
+            code, "LOAD_ATTR", line=4, end_line=4, column=5, end_column=8
+        )
+        self.assertOpcodeSourcePositionIs(
+            code, "CALL", line=4, end_line=5, column=5, end_column=10
+        )
+
+    def test_weird_attribute_position_regressions(self):
+        def f():
+            (bar.
+        baz)
+            (bar.
+        baz(
+        ))
+            files().setdefault(
+                0
+            ).setdefault(
+                0
+            )
+        for line, end_line, column, end_column in f.__code__.co_positions():
+            self.assertIsNotNone(line)
+            self.assertIsNotNone(end_line)
+            self.assertIsNotNone(column)
+            self.assertIsNotNone(end_column)
+            self.assertLessEqual((line, column), (end_line, end_column))
+
+    @support.cpython_only
+    def test_column_offset_deduplication(self):
+        # GH-95150: Code with different column offsets shouldn't be merged!
+        for source in [
+            "lambda: a",
+            "(a for b in c)",
+            "[a for b in c]",
+            "{a for b in c}",
+            "{a: b for c in d}",
+        ]:
+            with self.subTest(source):
+                code = compile(f"{source}, {source}", "<test>", "eval")
+                self.assertEqual(len(code.co_consts), 2)
+                self.assertIsInstance(code.co_consts[0], types.CodeType)
+                self.assertIsInstance(code.co_consts[1], types.CodeType)
+                self.assertNotEqual(code.co_consts[0], code.co_consts[1])
+                self.assertNotEqual(
+                    list(code.co_consts[0].co_positions()),
+                    list(code.co_consts[1].co_positions()),
+                )
+
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
@@ -1206,6 +1437,12 @@ class TestExpressionStackSize(unittest.TestCase):
         code = "def f(x):\n"
         code += "   x and x\n" * self.N
         self.check_stack_size(code)
+
+    def test_stack_3050(self):
+        M = 3050
+        code = "x," * M + "=t"
+        # This raised on 3.10.0 to 3.10.5
+        compile(code, "<foo>", "single")
 
 
 class TestStackSizeStability(unittest.TestCase):

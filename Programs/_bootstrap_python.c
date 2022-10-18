@@ -2,7 +2,7 @@
 /* Frozen modules bootstrap
  *
  * Limited and restricted Python interpreter to run
- * "Tools/scripts/deepfreeze.py" on systems with no or older Python
+ * "Tools/build/deepfreeze.py" on systems with no or older Python
  * interpreter.
  */
 
