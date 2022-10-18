@@ -625,9 +625,7 @@ loops that truncate the stream.
 .. function:: repeat(object[, times])
 
    Make an iterator that returns *object* over and over again. Runs indefinitely
-   unless the *times* argument is specified. Used as argument to :func:`map` for
-   invariant parameters to the called function.  Also used with :func:`zip` to
-   create an invariant part of a tuple record.
+   unless the *times* argument is specified.
 
    Roughly equivalent to::
 
