@@ -752,14 +752,28 @@ Itertools Recipes
 This section shows recipes for creating an extended toolset using the existing
 itertools as building blocks.
 
+The primary purpose of the itertools recipes is educational.  The recipes show
+various ways of thinking about individual tools -- for example, that
+``chain.from_iterable`` is related to the concept of flattening.  The recipes
+also give ideas about ways that the tools can be combined -- for example, how
+`compress()` and `range()` can work together.  The recipes also show patterns
+for using itertools with the :mod:`operator` and :mod:`collections` modules as
+well as with the built-in itertools such as ``map()``, ``filter()``,
+``reversed()``, and `enumerate()`.
+
+A secondary purpose of the recipes is to serve as an incubator.  The
+``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
+recipes.  Currently, the ``iter_index()`` recipe is being tested to see
+whether it proves its worth.
+
 Substantially all of these recipes and many, many others can be installed from
 the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
 on the Python Package Index::
 
     python -m pip install more-itertools
 
-The extended tools offer the same high performance as the underlying toolset.
-The superior memory performance is kept by processing elements one at a time
+Many of the recipes offer the same high performance as the underlying toolset.
+Superior memory performance is kept by processing elements one at a time
 rather than bringing the whole iterable into memory all at once. Code volume is
 kept small by linking the tools together in a functional style which helps
 eliminate temporary variables.  High speed is retained by preferring
