@@ -118,6 +118,42 @@ list_sum(PyListObject *self, PyObject *Py_UNUSED(ignored))
     return list_sum_impl(self);
 }
 
+#define LIST_MAX_METHODDEF \
+    {"max", (PyCFunction)list_max, METH_NOARGS, list_max__doc__},
+
+PyDoc_STRVAR(list_max__doc__,
+"max($self)\n"
+"--\n"
+"\n"
+"Calcurate maximum of elements in the list.");
+
+static PyObject *
+list_max_impl(PyListObject *self);
+
+static PyObject *
+list_max(PyListObject *self, PyObject *Py_UNUSED(ignored)) {
+    return list_max_impl(self);
+}
+
+#define LIST_MAX_METHODDEF \
+    {"min", (PyCFunction)list_min, METH_NOARGS, list_min__doc__},
+
+PyDoc_STRVAR(list_min__doc__,
+             "min($self)\n"
+             "--\n"
+             "\n"
+             "Calcurate minimum of elements in the list.");
+
+static PyObject *
+list_min_impl(PyListObject *self);
+
+static PyObject *
+list_min(PyListObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return list_min_impl(self);
+}
+
+
 #define LIST_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)list_extend, METH_O, list_extend__doc__},
 
