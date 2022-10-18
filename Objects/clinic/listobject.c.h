@@ -101,7 +101,10 @@ PyDoc_STRVAR(list_extend__doc__,
 "Extend list by appending elements from the iterable.");
 
 PyDoc_STRVAR(list_map__doc__,
-"hoge\n"
+"map($self, callable function)\n"
+"---\n"
+"\n"
+"attach function to each list element"
 );
 
 #define LIST_MAP_METHODDEF \
