@@ -79,6 +79,10 @@ New Features
 Other Language Changes
 ======================
 
+* A backslash-character pair that is not a valid escape sequence now generates
+  a :exc:`SyntaxError`.
+  (Contributed by Victor Stinner in :gh:`98401`.)
+
 * :class:`types.MappingProxyType` instances are now hashable if the underlying
   mapping is hashable.
   (Contributed by Serhiy Storchaka in :gh:`87995`.)

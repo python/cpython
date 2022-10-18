@@ -1,0 +1,2 @@
+A backslash-character pair that is not a valid escape sequence now generates
+a :exc:`SyntaxError`. Patch by Victor Stinner.

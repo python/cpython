@@ -1192,13 +1192,10 @@ PyObject *PyBytes_DecodeEscape(const char *s,
             }
         }
         else {
-            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid escape sequence '\\%c'",
-                                 c) < 0)
-            {
-                Py_DECREF(result);
-                return NULL;
-            }
+            PyErr_Format(PyExc_SyntaxError,
+                         "invalid escape sequence '\\%c'", c);
+            Py_DECREF(result);
+            return NULL;
         }
     }
     return result;

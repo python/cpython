@@ -29,9 +29,9 @@ a literal backslash, one might have to write ``'\\\\'`` as the pattern
 string, because the regular expression must be ``\\``, and each
 backslash must be expressed as ``\\`` inside a regular Python string
 literal. Also, please note that any invalid escape sequences in Python's
-usage of the backslash in string literals now generate a :exc:`DeprecationWarning`
-and in the future this will become a :exc:`SyntaxError`. This behaviour
-will happen even if it is a valid escape sequence for a regular expression.
+usage of the backslash in string literals now generate a :exc:`SyntaxError`.
+This behaviour will happen even if it is a valid escape sequence for a regular
+expression.
 
 The solution is to use Python's raw string notation for regular expression
 patterns; backslashes are not handled in any special way in a string literal

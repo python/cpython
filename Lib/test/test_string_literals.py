@@ -109,23 +109,12 @@ class TestLiterals(unittest.TestCase):
         for b in range(1, 128):
             if b in b"""\n\r"'01234567NU\\abfnrtuvx""":
                 continue
-            with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(SyntaxError):
                 self.assertEqual(eval(r"'\%c'" % b), '\\' + chr(b))
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=DeprecationWarning)
+        with self.assertRaises(SyntaxError) as cm:
             eval("'''\n\\z'''")
-        self.assertEqual(len(w), 1)
-        self.assertEqual(str(w[0].message), r"invalid escape sequence '\z'")
-        self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 1)
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('error', category=DeprecationWarning)
-            with self.assertRaises(SyntaxError) as cm:
-                eval("'''\n\\z'''")
-            exc = cm.exception
-        self.assertEqual(w, [])
+        exc = cm.exception
         self.assertEqual(exc.msg, r"invalid escape sequence '\z'")
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
@@ -186,16 +175,15 @@ class TestLiterals(unittest.TestCase):
         for b in range(1, 128):
             if b in b"""\n\r"'01234567\\abfnrtvx""":
                 continue
-            with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(SyntaxError):
                 self.assertEqual(eval(r"b'\%c'" % b), b'\\' + bytes([b]))
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=DeprecationWarning)
+        with self.assertRaises(SyntaxError) as cm:
             eval("b'''\n\\z'''")
-        self.assertEqual(len(w), 1)
-        self.assertEqual(str(w[0].message), r"invalid escape sequence '\z'")
-        self.assertEqual(w[0].filename, '<string>')
-        self.assertEqual(w[0].lineno, 1)
+        exc = cm.exception
+        self.assertEqual(exc.msg, r"invalid escape sequence '\z'")
+        self.assertEqual(exc.filename, '<string>')
+        self.assertEqual(exc.lineno, 1)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=DeprecationWarning)

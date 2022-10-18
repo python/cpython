@@ -13,38 +13,42 @@ warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token 
 {
     unsigned char c = *first_invalid_escape;
     int octal = ('4' <= c && c <= '7');
-    PyObject *msg =
-        octal
-        ? PyUnicode_FromFormat("invalid octal escape sequence '\\%.3s'",
-                               first_invalid_escape)
-        : PyUnicode_FromFormat("invalid escape sequence '\\%c'", c);
-    if (msg == NULL) {
-        return -1;
-    }
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, p->tok->filename,
-                                 t->lineno, NULL, NULL) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
-            /* Replace the DeprecationWarning exception with a SyntaxError
-               to get a more accurate error report */
-            PyErr_Clear();
 
-            /* This is needed, in order for the SyntaxError to point to the token t,
-               since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
-               error location, if p->known_err_token is not set. */
-            p->known_err_token = t;
-            if (octal) {
+    if (octal) {
+        PyObject *msg = PyUnicode_FromFormat(
+                            "invalid octal escape sequence '\\%.3s'",
+                            first_invalid_escape);
+        if (msg == NULL) {
+            return -1;
+        }
+        if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, p->tok->filename,
+                                     t->lineno, NULL, NULL) < 0) {
+            if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+                /* Replace the DeprecationWarning exception with a SyntaxError
+                   to get a more accurate error report */
+                PyErr_Clear();
+
+                /* This is needed, in order for the SyntaxError to point to the token t,
+                   since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
+                   error location, if p->known_err_token is not set. */
+                p->known_err_token = t;
                 RAISE_SYNTAX_ERROR("invalid octal escape sequence '\\%.3s'",
                                    first_invalid_escape);
             }
-            else {
-                RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", c);
-            }
+            Py_DECREF(msg);
+            return -1;
         }
         Py_DECREF(msg);
+        return 0;
+    }
+    else {
+        /* This is needed, in order for the SyntaxError to point to the token t,
+           since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
+           error location, if p->known_err_token is not set. */
+        p->known_err_token = t;
+        RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", c);
         return -1;
     }
-    Py_DECREF(msg);
-    return 0;
 }
 
 static PyObject *

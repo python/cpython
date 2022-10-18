@@ -313,7 +313,7 @@ class CodeopTests(unittest.TestCase):
                 (".*literal", SyntaxWarning),
                 (".*invalid", DeprecationWarning),
                 ) as w:
-            compile_command(r"'\e' is 0")
+            compile_command(r"'\777' is 0")
             self.assertEqual(len(w.warnings), 2)
 
         # bpo-41520: check SyntaxWarning treated as an SyntaxError
@@ -324,21 +324,21 @@ class CodeopTests(unittest.TestCase):
         # Check DeprecationWarning treated as an SyntaxError
         with warnings.catch_warnings(), self.assertRaises(SyntaxError):
             warnings.simplefilter('error', DeprecationWarning)
-            compile_command(r"'\e'", symbol='exec')
+            compile_command(r"'\777'", symbol='exec')
 
     def test_incomplete_warning(self):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
-            self.assertIncomplete("'\\e' + (")
+            self.assertIncomplete("'\\777' + (")
         self.assertEqual(w, [])
 
     def test_invalid_warning(self):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
-            self.assertInvalid("'\\e' 1")
+            self.assertInvalid("'\\777' 1")
         self.assertEqual(len(w), 1)
         self.assertEqual(w[0].category, DeprecationWarning)
-        self.assertRegex(str(w[0].message), 'invalid escape sequence')
+        self.assertRegex(str(w[0].message), 'invalid octal escape sequence')
         self.assertEqual(w[0].filename, '<input>')
 
 
