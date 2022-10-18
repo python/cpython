@@ -54,7 +54,7 @@ Jython
    Python implemented in Java.  This implementation can be used as a scripting
    language for Java applications, or can be used to create applications using the
    Java class libraries.  It is also often used to create tests for Java libraries.
-   More information can be found at `the Jython website <http://www.jython.org/>`_.
+   More information can be found at `the Jython website <https://www.jython.org/>`_.
 
 Python for .NET
    This implementation actually uses the CPython implementation, but is a managed
@@ -66,7 +66,7 @@ IronPython
    An alternate Python for .NET.  Unlike Python.NET, this is a complete Python
    implementation that generates IL, and compiles Python code directly to .NET
    assemblies.  It was created by Jim Hugunin, the original creator of Jython.  For
-   more information, see `the IronPython website <http://ironpython.net/>`_.
+   more information, see `the IronPython website <https://ironpython.net/>`_.
 
 PyPy
    An implementation of Python written completely in Python. It supports several
@@ -74,7 +74,7 @@ PyPy
    and a Just in Time compiler. One of the goals of the project is to encourage
    experimentation with the language itself by making it easier to modify the
    interpreter (since it is written in Python).  Additional information is
-   available on `the PyPy project's home page <http://pypy.org/>`_.
+   available on `the PyPy project's home page <https://pypy.org/>`_.
 
 Each of these implementations varies in some way from the language as documented
 in this manual, or introduces specific information beyond what's covered in the

@@ -115,12 +115,12 @@ Complex Numbers as Python Objects
 
 .. c:function:: double PyComplex_RealAsDouble(PyObject *op)
 
-   Return the real part of *op* as a C :c:type:`double`.
+   Return the real part of *op* as a C :c:expr:`double`.
 
 
 .. c:function:: double PyComplex_ImagAsDouble(PyObject *op)
 
-   Return the imaginary part of *op* as a C :c:type:`double`.
+   Return the imaginary part of *op* as a C :c:expr:`double`.
 
 
 .. c:function:: Py_complex PyComplex_AsCComplex(PyObject *op)

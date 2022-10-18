@@ -297,7 +297,7 @@ initial state. Therefore a class may define a special method named
        self.data = []
 
 When a class defines an :meth:`__init__` method, class instantiation
-automatically invokes :meth:`__init__` for the newly-created class instance.  So
+automatically invokes :meth:`__init__` for the newly created class instance.  So
 in this example, a new, initialized instance can be obtained by::
 
    x = MyClass()
@@ -581,7 +581,8 @@ this::
        .
        <statement-N>
 
-The name :class:`BaseClassName` must be defined in a scope containing the
+The name :class:`BaseClassName` must be defined in a
+namespace accessible from the scope containing the
 derived class definition.  In place of a base class name, other arbitrary
 expressions are also allowed.  This can be useful, for example, when the base
 class is defined in another module::

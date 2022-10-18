@@ -496,11 +496,7 @@ _hamt_dump_format(_PyUnicodeWriter *writer, const char *format, ...)
     int ret;
 
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
 

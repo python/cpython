@@ -134,6 +134,9 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
     if (func->func_version != 0) {
         return func->func_version;
     }
+    if (func->vectorcall != _PyFunction_Vectorcall) {
+        return 0;
+    }
     if (next_func_version == 0) {
         return 0;
     }
@@ -207,6 +210,14 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
     ((PyFunctionObject *)op)->func_version = 0;
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
+}
+
+void
+PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
+{
+    assert(func != NULL);
+    func->func_version = 0;
+    func->vectorcall = vectorcall;
 }
 
 PyObject *
@@ -300,7 +311,6 @@ func_get_annotation_dict(PyFunctionObject *op)
         }
         Py_SETREF(op->func_annotations, ann_dict);
     }
-    Py_INCREF(op->func_annotations);
     assert(PyDict_Check(op->func_annotations));
     return op->func_annotations;
 }
@@ -532,7 +542,11 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         if (op->func_annotations == NULL)
             return NULL;
     }
-    return func_get_annotation_dict(op);
+    PyObject *d = func_get_annotation_dict(op);
+    if (d) {
+        Py_INCREF(d);
+    }
+    return d;
 }
 
 static int
