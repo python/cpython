@@ -698,7 +698,7 @@ loops that truncate the stream.
                     yield mydeque.popleft()
             return tuple(gen(d) for d in deques)
 
-   Once :func:`tee` has been created, the original *iterable* should not be
+   Once a :func:`tee` has been created, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
