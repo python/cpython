@@ -145,6 +145,58 @@ class BaseEventTests(test_utils.TestCase):
                                                    socket.SOCK_STREAM,
                                                    socket.IPPROTO_TCP))
 
+    def test_interleave_ipaddrs(self):
+        addrinfos = [
+            (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
+            (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2)),
+            (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3)),
+            (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4)),
+            (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
+            (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6)),
+            (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7)),
+            (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8)),
+        ]
+
+        self.assertEqual(
+            [
+                (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
+                (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
+                (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2)),
+                (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6)),
+                (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3)),
+                (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7)),
+                (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4)),
+                (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8)),
+            ],
+            base_events._interleave_addrinfos(addrinfos)
+        )
+
+    def test_interleave_ipaddrs_first_address_family_count(self):
+        addrinfos = [
+            (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
+            (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2)),
+            (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3)),
+            (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4)),
+            (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
+            (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6)),
+            (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7)),
+            (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8)),
+        ]
+
+        self.assertEqual(
+            [
+                (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
+                (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2)),
+                (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
+                (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3)),
+                (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6)),
+                (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4)),
+                (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7)),
+                (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8)),
+            ],
+            base_events._interleave_addrinfos(addrinfos, 2)
+        )
+
 
 class BaseEventLoopTests(test_utils.TestCase):
 
@@ -1430,6 +1482,65 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             local_addr=(None, 8080))
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
+
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'no IPv6 support')
+    @patch_socket
+    def test_create_connection_happy_eyeballs(self, m_socket):
+
+        class MyProto(asyncio.Protocol):
+            pass
+
+        async def getaddrinfo(*args, **kw):
+            return [(socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
+                    (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5))]
+
+        async def sock_connect(sock, address):
+            if address[0] == '2001:db8::1':
+                await asyncio.sleep(1)
+            sock.connect(address)
+
+        self.loop._add_reader = mock.Mock()
+        self.loop._add_writer = mock.Mock()
+        self.loop.getaddrinfo = getaddrinfo
+        self.loop.sock_connect = sock_connect
+
+        coro = self.loop.create_connection(MyProto, 'example.com', 80, happy_eyeballs_delay=0.3)
+        transport, protocol = self.loop.run_until_complete(coro)
+        try:
+            sock = transport._sock
+            sock.connect.assert_called_with(('192.0.2.1', 5))
+        finally:
+            transport.close()
+            test_utils.run_briefly(self.loop)  # allow transport to close
+
+    @patch_socket
+    def test_create_connection_happy_eyeballs_ipv4_only(self, m_socket):
+
+        class MyProto(asyncio.Protocol):
+            pass
+
+        async def getaddrinfo(*args, **kw):
+            return [(socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
+                    (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6))]
+
+        async def sock_connect(sock, address):
+            if address[0] == '192.0.2.1':
+                await asyncio.sleep(1)
+            sock.connect(address)
+
+        self.loop._add_reader = mock.Mock()
+        self.loop._add_writer = mock.Mock()
+        self.loop.getaddrinfo = getaddrinfo
+        self.loop.sock_connect = sock_connect
+
+        coro = self.loop.create_connection(MyProto, 'example.com', 80, happy_eyeballs_delay=0.3)
+        transport, protocol = self.loop.run_until_complete(coro)
+        try:
+            sock = transport._sock
+            sock.connect.assert_called_with(('192.0.2.2', 6))
+        finally:
+            transport.close()
+            test_utils.run_briefly(self.loop)  # allow transport to close
 
     @patch_socket
     def test_create_connection_bluetooth(self, m_socket):
