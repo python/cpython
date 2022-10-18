@@ -16,24 +16,21 @@
 --------------
 
 .. _venv-def:
+.. _venv-intro:
 
-The :mod:`venv` module provides support for creating lightweight "virtual
-environments" with their own independent set of Python packages installed in
-their site directories. A virtual environment is created on top of an existing
+The :mod:`!venv` module supports creating lightweight "virtual environments",
+each with their own independent set of Python packages installed in
+their :mod:`site` directories.
+A virtual environment is created on top of an existing
 Python installation, known as the virtual environment's "base" Python, and may
-be optionally isolated from the base's site packages, meaning
-that packages installed in the base environment will not be accessible from
-the virtual environment.
-
-A virtual environment is therefore a powerful and convenient concept which
-allows quick, and relatively light-weight, Python environment creation.
+optionally be isolated from the packages in the base environment,
+so only those explicitly installed in the virtual environment are available.
 
 When used from within a virtual environment, common installation tools such as
-setuptools_ and pip_ will install Python packages
-into the virtual environment's site directory without needing to be told to do
-so explicitly.
+`pip`_ will install Python packages into a virtual environment
+without needing to be told to do so explicitly.
 
-See :pep:`405` for more information about Python virtual environments.
+See :pep:`405` for more background on Python virtual environments.
 
 .. seealso::
 
@@ -47,8 +44,10 @@ Creating virtual environments
 
 .. include:: /using/venv-create.inc
 
-Further venv detail
--------------------
+.. _venv-explanation:
+
+How venvs work
+--------------
 
 When a virtual environment is running, the attributes :attr:`sys.prefix` and
 :attr:`sys.exec_prefix` point to the prefix directory of the virtual
@@ -57,56 +56,60 @@ environment, whereas :attr:`sys.base_prefix` and
 installation which was used to create the virtual environment (known as the
 virtual environment's base environment). It is sufficient to check
 ``sys.prefix == sys.base_prefix`` to determine if the current interpreter is
-a virtual environment.
+running from a virtual environment.
 
-A virtual environment may be "activated" using a script in the virtual
-environment's binary directory. This will prepend the virtual environment's
-binary directory to your path, so that running "python" will invoke the virtual
-environment's Python interpreter and you can run
-installed scripts without having to use their full path. The invocation of the
-activation script is platform-specific (``<venv>`` must be replaced by the path
-of the directory containing the virtual environment):
+A virtual environment may be "activated" using a script in its binary directory
+(``bin`` on POSIX; ``Scripts`` on Windows).
+This will prepend that directory to your :envvar:`!PATH`, so that running
+:program:`!python` will invoke the environment's Python interpreter
+and you can run installed scripts without having to use their full path.
+The invocation of the activation script is platform-specific
+(:samp:`{<venv>}` must be replaced by the path to the directory
+containing the virtual environment):
 
-+-------------+-----------------+-----------------------------------------+
-| Platform    | Shell           | Command to activate virtual environment |
-+=============+=================+=========================================+
-| POSIX       | bash/zsh        | $ source <venv>/bin/activate            |
-+-------------+-----------------+-----------------------------------------+
-|             | fish            | $ source <venv>/bin/activate.fish       |
-+-------------+-----------------+-----------------------------------------+
-|             | csh/tcsh        | $ source <venv>/bin/activate.csh        |
-+-------------+-----------------+-----------------------------------------+
-|             | PowerShell Core | $ <venv>/bin/Activate.ps1               |
-+-------------+-----------------+-----------------------------------------+
-| Windows     | cmd.exe         | C:\\> <venv>\\Scripts\\activate.bat     |
-+-------------+-----------------+-----------------------------------------+
-|             | PowerShell      | PS C:\\> <venv>\\Scripts\\Activate.ps1  |
-+-------------+-----------------+-----------------------------------------+
++-------------+------------+--------------------------------------------------+
+| Platform    | Shell      | Command to activate virtual environment          |
++=============+============+==================================================+
+| POSIX       | bash/zsh   | :samp:`$ source {<venv>}/bin/activate`           |
+|             +------------+--------------------------------------------------+
+|             | fish       | :samp:`$ source {<venv>}/bin/activate.fish`      |
+|             +------------+--------------------------------------------------+
+|             | csh/tcsh   | :samp:`$ source {<venv>}/bin/activate.csh`       |
+|             +------------+--------------------------------------------------+
+|             | PowerShell | :samp:`$ {<venv>}/bin/Activate.ps1`              |
++-------------+------------+--------------------------------------------------+
+| Windows     | cmd.exe    | :samp:`C:\\> {<venv>}\\Scripts\\activate.bat`    |
+|             +------------+--------------------------------------------------+
+|             | PowerShell | :samp:`PS C:\\> {<venv>}\\Scripts\\Activate.ps1` |
++-------------+------------+--------------------------------------------------+
 
 .. versionadded:: 3.4
-   ``fish`` and ``csh`` activation scripts.
+   :program:`!fish` and :program:`!csh` activation scripts.
 
 .. versionadded:: 3.8
    PowerShell activation scripts installed under POSIX for PowerShell Core
    support.
 
-You don't specifically *need* to activate an environment, and all scripts
-installed in a virtual environment should be runnable without activating it.
-In order to achieve this, scripts installed into virtual environments have
-a "shebang" line which points to the virtual environment's Python interpreter.
-This means that the script will run with that interpreter regardless of the
-value of ``PATH``. On Windows, "shebang" line processing is supported if
-you have the Python Launcher for Windows installed (this was added to Python
-in 3.3 - see :pep:`397` for more details). Thus, double-clicking an installed
-script in a Windows Explorer window should run the script with the correct
-interpreter without there needing to be any reference to its virtual
-environment in :envvar:`PATH`.
+You don't specifically *need* to activate a virtual environment,
+as you can just specify the full path to that environment's
+Python interpreter when invoking Python.
+Furthermore, all scripts installed in the environment
+should be runnable without activating it.
 
-When a virtual environment has been activated, the :envvar:`VIRTUAL_ENV`
-environment variable is set to the path of the virtual environment. Since it
-is not a requirement to explicitly activate a virtual environment in order
-to use it, the :envvar:`VIRTUAL_ENV` environment variable cannot be relied
-upon to determine whether a Python environment is virtual or not.
+In order to achieve this, scripts installed into virtual environments have
+a "shebang" line which points to the environment's Python interpreter,
+i.e. :samp:`#!/{<path-to-venv>}/bin/python`.
+This means that the script will run with that interpreter regardless of the
+value of :envvar:`!PATH`. On Windows, "shebang" line processing is supported if
+you have the :ref:`launcher` installed. Thus, double-clicking an installed
+script in a Windows Explorer window should run it with the correct interpreter
+without the environment needing to be activated or on the :envvar:`!PATH`.
+
+When a virtual environment has been activated, the :envvar:`!VIRTUAL_ENV`
+environment variable is set to the path of the environment.
+Since explicitly activating a virtual environment is not required to use it,
+:envvar:`!VIRTUAL_ENV` cannot be relied upon to determine
+whether a virtual environment is being used.
 
 .. warning:: Because scripts installed in environments should not expect the
    environment to be activated, their shebang lines contain the absolute paths
@@ -122,15 +125,9 @@ upon to determine whether a Python environment is virtual or not.
    environment in its new location. Otherwise, software installed into the
    environment may not work as expected.
 
-You can deactivate a virtual environment by typing "deactivate" in your shell.
+You can deactivate a virtual environment by typing ``deactivate`` in your shell.
 The exact mechanism is platform-specific and is an internal implementation
-detail (typically a script or shell function will be used).
-
-
-.. note:: When a virtual environment is active, any options that change the
-   installation path will be ignored from all :mod:`distutils` configuration
-   files to prevent projects being inadvertently installed outside of the
-   virtual environment.
+detail (typically, a script or shell function will be used).
 
 
 .. _venv-api:
