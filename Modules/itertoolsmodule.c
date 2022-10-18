@@ -149,7 +149,7 @@ batched_next(batchedobject *bo)
     if (it == NULL) {
         return NULL;
     }
-    result = PyList_New(0);
+    result = PyList_New(bo->batch_size);
     if (result == NULL) {
         return NULL;
     }
@@ -158,12 +158,14 @@ batched_next(batchedobject *bo)
         if (item == NULL) {
             break;
         }
-        if (PyList_Append(result, item) < 0) {
-            Py_DECREF(item);
-            Py_DECREF(result);
+        PyList_SET_ITEM(result, i, item);
+    }
+    if (i < bo->batch_size) {
+        PyObject *short_list = PyList_GetSlice(result, 0, i);
+        Py_SETREF(result, short_list);
+        if (result == NULL) {
             return NULL;
         }
-        Py_DECREF(item);
     }
     if (PyList_GET_SIZE(result) > 0) {
         return result;
