@@ -844,15 +844,25 @@ which incur interpreter overhead.
            for k in range(len(roots) + 1)
        ]
 
-   def iter_index(seq, value, start=0):
-       "Return indices where a value occurs in a sequence."
+   def iter_index(iterable, value, start=0):
+       "Return indices where a value occurs in a sequence or iterable."
        # iter_index('AABCADEAF', 'A') --> 0 1 4 7
-       i = start - 1
        try:
-           while True:
-               yield (i := seq.index(value, i+1))
-       except ValueError:
-           pass
+           seq_index = iterable.index
+       except AttributeError:
+           # Slow path for general iterables
+           it = islice(iterable, start, None)
+           for i, element in enumerate(it, start):
+               if element is value or element == value:
+                   yield i
+       else:
+           # Fast path for sequences
+           i = start - 1
+           try:
+               while True:
+                   yield (i := seq_index(value, i+1))
+           except ValueError:
+               pass
 
    def sieve(n):
        "Primes less than n"
@@ -1191,6 +1201,18 @@ which incur interpreter overhead.
     >>> list(iter_index('AABCADEAF', 'X'))
     []
     >>> list(iter_index('', 'X'))
+    []
+    >>> list(iter_index('AABCADEAF', 'A', 1))
+    [1, 4, 7]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 1))
+    [1, 4, 7]
+    >>> list(iter_index('AABCADEAF', 'A', 2))
+    [4, 7]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 2))
+    [4, 7]
+    >>> list(iter_index('AABCADEAF', 'A', 10))
+    []
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 10))
     []
 
     >>> list(sieve(30))
