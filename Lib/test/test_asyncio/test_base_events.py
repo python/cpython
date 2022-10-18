@@ -145,7 +145,7 @@ class BaseEventTests(test_utils.TestCase):
                                                    socket.SOCK_STREAM,
                                                    socket.IPPROTO_TCP))
 
-    def test_interleave_ipaddrs(self):
+    def test_interleave_addrinfos(self):
         SIX_A = (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1))
         SIX_B = (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2))
         SIX_C = (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3))
