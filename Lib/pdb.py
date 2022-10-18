@@ -131,7 +131,7 @@ class _rstr(str):
         return self
 
 
-class ScriptTarget(str):
+class _ScriptTarget(str):
     def __new__(cls, val):
         # Mutate self to be the "real path".
         res = super().__new__(cls, os.path.realpath(val))
@@ -167,7 +167,7 @@ class ScriptTarget(str):
             return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
 
 
-class ModuleTarget(str):
+class _ModuleTarget(str):
     def check(self):
         try:
             self._details
@@ -1625,7 +1625,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    def _run(self, target: Union[ModuleTarget, ScriptTarget]):
+    def _run(self, target: Union[_ModuleTarget, _ScriptTarget]):
         # When bdb sets tracing, a number of call and line events happen
         # BEFORE debugger even reaches user's code (and the exact sequence of
         # events depends on python version). Take special measures to
@@ -1789,7 +1789,7 @@ def main():
     commands = [optarg for opt, optarg in opts if opt in ['-c', '--command']]
 
     module_indicated = any(opt in ['-m'] for opt, optarg in opts)
-    cls = ModuleTarget if module_indicated else ScriptTarget
+    cls = _ModuleTarget if module_indicated else _ScriptTarget
     target = cls(args[0])
 
     target.check()

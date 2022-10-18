@@ -48,6 +48,7 @@ Iterator            Arguments               Results                             
 Iterator                        Arguments                       Results                                             Example
 ============================    ============================    =================================================   =============================================================
 :func:`accumulate`              p [,func]                       p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) --> 1 3 6 10 15``
+:func:`batched`                 p, n                            [p0, p1, ..., p_n-1], ...                           ``batched('ABCDEFG', n=3) --> ABC DEF G``
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) --> A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
@@ -169,6 +170,44 @@ loops that truncate the stream.
 
     .. versionchanged:: 3.8
        Added the optional *initial* parameter.
+
+
+.. function:: batched(iterable, n)
+
+   Batch data from the *iterable* into lists of length *n*. The last
+   batch may be shorter than *n*.
+
+   Loops over the input iterable and accumulates data into lists up to
+   size *n*.  The input is consumed lazily, just enough to fill a list.
+   The result is yielded as soon as the batch is full or when the input
+   iterable is exhausted:
+
+   .. doctest::
+
+      >>> flattened_data = ['roses', 'red', 'violets', 'blue', 'sugar', 'sweet']
+      >>> unflattened = list(batched(flattened_data, 2))
+      >>> unflattened
+      [['roses', 'red'], ['violets', 'blue'], ['sugar', 'sweet']]
+
+      >>> for batch in batched('ABCDEFG', 3):
+      ...     print(batch)
+      ...
+      ['A', 'B', 'C']
+      ['D', 'E', 'F']
+      ['G']
+
+   Roughly equivalent to::
+
+      def batched(iterable, n):
+          # batched('ABCDEFG', 3) --> ABC DEF G
+          if n < 1:
+              raise ValueError('n must be at least one')
+          it = iter(iterable)
+          while (batch := list(islice(it, n))):
+              yield batch
+
+    .. versionadded:: 3.12
+
 
 .. function:: chain(*iterables)
 
@@ -314,7 +353,7 @@ loops that truncate the stream.
 
       def count(start=0, step=1):
           # count(10) --> 10 11 12 13 14 ...
-          # count(2.5, 0.5) -> 2.5 3.0 3.5 ...
+          # count(2.5, 0.5) --> 2.5 3.0 3.5 ...
           n = start
           while True:
               yield n
@@ -668,7 +707,7 @@ loops that truncate the stream.
    the tee objects being informed.
 
    ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
-   raised when using simultaneously iterators returned by the same :func:`tee`
+   raised when simultaneously using iterators returned by the same :func:`tee`
    call, even if the original *iterable* is threadsafe.
 
    This itertool may require significant auxiliary storage (depending on how
@@ -739,7 +778,7 @@ which incur interpreter overhead.
 
    def prepend(value, iterator):
        "Prepend a single value in front of an iterator"
-       # prepend(1, [2, 3, 4]) -> 1 2 3 4
+       # prepend(1, [2, 3, 4]) --> 1 2 3 4
        return chain([value], iterator)
 
    def tabulate(function, start=0):
@@ -775,10 +814,7 @@ which incur interpreter overhead.
        return sum(map(pred, iterable))
 
    def pad_none(iterable):
-       """Returns the sequence elements and then returns None indefinitely.
-
-       Useful for emulating the behavior of the built-in map() function.
-       """
+       "Returns the sequence elements and then returns None indefinitely."
        return chain(iterable, repeat(None))
 
    def ncycles(iterable, n):
@@ -799,6 +835,39 @@ which incur interpreter overhead.
        for x in chain(signal, repeat(0, n-1)):
            window.append(x)
            yield sum(map(operator.mul, kernel, window))
+
+   def polynomial_from_roots(roots):
+       """Compute a polynomial's coefficients from its roots.
+
+          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
+       """
+       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
+       roots = list(map(operator.neg, roots))
+       return [
+           sum(map(math.prod, combinations(roots, k)))
+           for k in range(len(roots) + 1)
+       ]
+
+   def iter_index(seq, value, start=0):
+       "Return indices where a value occurs in a sequence."
+       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
+       i = start - 1
+       try:
+           while True:
+               yield (i := seq.index(value, i+1))
+       except ValueError:
+           pass
+
+   def sieve(n):
+       "Primes less than n"
+       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       data = bytearray((0, 1)) * (n // 2)
+       data[:3] = 0, 0, 0
+       limit = math.isqrt(n) + 1
+       for p in compress(range(limit), data):
+           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
+       data[2] = 1
+       return iter_index(data, 1) if n > 2 else iter([])
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -830,12 +899,12 @@ which incur interpreter overhead.
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
-       # triplewise('ABCDEFG') -> ABC BCD CDE DEF EFG
+       # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
        for (a, _), (b, c) in pairwise(pairwise(iterable)):
            yield a, b, c
 
    def sliding_window(iterable, n):
-       # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
        it = iter(iterable)
        window = collections.deque(islice(it, n), maxlen=n)
        if len(window) == n:
@@ -963,31 +1032,6 @@ which incur interpreter overhead.
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
 
-   def random_product(*args, repeat=1):
-       "Random selection from itertools.product(*args, **kwds)"
-       pools = [tuple(pool) for pool in args] * repeat
-       return tuple(map(random.choice, pools))
-
-   def random_permutation(iterable, r=None):
-       "Random selection from itertools.permutations(iterable, r)"
-       pool = tuple(iterable)
-       r = len(pool) if r is None else r
-       return tuple(random.sample(pool, r))
-
-   def random_combination(iterable, r):
-       "Random selection from itertools.combinations(iterable, r)"
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = sorted(random.sample(range(n), r))
-       return tuple(pool[i] for i in indices)
-
-   def random_combination_with_replacement(iterable, r):
-       "Random selection from itertools.combinations_with_replacement(iterable, r)"
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = sorted(random.choices(range(n), k=r))
-       return tuple(pool[i] for i in indices)
-
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
        pool = tuple(iterable)
@@ -1067,6 +1111,7 @@ which incur interpreter overhead.
     >>> import operator
     >>> import collections
     >>> import math
+    >>> import random
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -1116,7 +1161,6 @@ which incur interpreter overhead.
     >>> list(repeatfunc(pow, 5, 2, 3))
     [8, 8, 8, 8, 8]
 
-    >>> import random
     >>> take(5, map(int, repeatfunc(random.random)))
     [0, 0, 0, 0, 0]
 
@@ -1137,10 +1181,44 @@ which incur interpreter overhead.
     >>> list(convolve(data, [1, -2, 1]))
     [20, 0, -36, 24, -20, 20, -20, -4, 16]
 
+    >>> polynomial_from_roots([5, -4, 3])
+    [1, -4, -17, 60]
+    >>> factored = lambda x: (x - 5) * (x + 4) * (x - 3)
+    >>> expanded = lambda x: x**3 -4*x**2 -17*x + 60
+    >>> all(factored(x) == expanded(x) for x in range(-10, 11))
+    True
+
+    >>> list(iter_index('AABCADEAF', 'A'))
+    [0, 1, 4, 7]
+    >>> list(iter_index('AABCADEAF', 'B'))
+    [2]
+    >>> list(iter_index('AABCADEAF', 'X'))
+    []
+    >>> list(iter_index('', 'X'))
+    []
+
+    >>> list(sieve(30))
+    [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(101))
+    True
+    >>> len(list(sieve(100)))
+    25
+    >>> len(list(sieve(1_000)))
+    168
+    >>> len(list(sieve(10_000)))
+    1229
+    >>> len(list(sieve(100_000)))
+    9592
+    >>> len(list(sieve(1_000_000)))
+    78498
+    >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
+    >>> set(sieve(10_000)).isdisjoint(carmichael)
+    True
+
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 
-    >>> import random
     >>> random.seed(85753098575309)
     >>> list(repeatfunc(random.random, 3))
     [0.16370491282496968, 0.45889608687313455, 0.3747076837820118]

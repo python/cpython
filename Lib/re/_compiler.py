@@ -28,21 +28,14 @@ _REPEATING_CODES = {
     POSSESSIVE_REPEAT: (POSSESSIVE_REPEAT, SUCCESS, POSSESSIVE_REPEAT_ONE),
 }
 
-class _CompileData:
-    __slots__ = ('code', 'repeat_count')
-    def __init__(self):
-        self.code = []
-        self.repeat_count = 0
-
 def _combine_flags(flags, add_flags, del_flags,
                    TYPE_FLAGS=_parser.TYPE_FLAGS):
     if add_flags & TYPE_FLAGS:
         flags &= ~TYPE_FLAGS
     return (flags | add_flags) & ~del_flags
 
-def _compile(data, pattern, flags):
+def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
-    code = data.code
     emit = code.append
     _len = len
     LITERAL_CODES = _LITERAL_CODES
@@ -115,7 +108,7 @@ def _compile(data, pattern, flags):
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 emit(SUCCESS)
                 code[skip] = _len(code) - skip
             else:
@@ -123,11 +116,7 @@ def _compile(data, pattern, flags):
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
-                # now op is in (MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT)
-                if op != POSSESSIVE_REPEAT:
-                    emit(data.repeat_count)
-                    data.repeat_count += 1
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 code[skip] = _len(code) - skip
                 emit(REPEATING_CODES[op][1])
         elif op is SUBPATTERN:
@@ -136,7 +125,7 @@ def _compile(data, pattern, flags):
                 emit(MARK)
                 emit((group-1)*2)
             # _compile_info(code, p, _combine_flags(flags, add_flags, del_flags))
-            _compile(data, p, _combine_flags(flags, add_flags, del_flags))
+            _compile(code, p, _combine_flags(flags, add_flags, del_flags))
             if group:
                 emit(MARK)
                 emit((group-1)*2+1)
@@ -148,7 +137,7 @@ def _compile(data, pattern, flags):
             # pop their stack if they reach it
             emit(ATOMIC_GROUP)
             skip = _len(code); emit(0)
-            _compile(data, av, flags)
+            _compile(code, av, flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
         elif op in SUCCESS_CODES:
@@ -163,7 +152,7 @@ def _compile(data, pattern, flags):
                 if lo != hi:
                     raise error("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
-            _compile(data, av[1], flags)
+            _compile(code, av[1], flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
         elif op is AT:
@@ -182,7 +171,7 @@ def _compile(data, pattern, flags):
             for av in av[1]:
                 skip = _len(code); emit(0)
                 # _compile_info(code, av, flags)
-                _compile(data, av, flags)
+                _compile(code, av, flags)
                 emit(JUMP)
                 tailappend(_len(code)); emit(0)
                 code[skip] = _len(code) - skip
@@ -210,12 +199,12 @@ def _compile(data, pattern, flags):
             emit(op)
             emit(av[0]-1)
             skipyes = _len(code); emit(0)
-            _compile(data, av[1], flags)
+            _compile(code, av[1], flags)
             if av[2]:
                 emit(JUMP)
                 skipno = _len(code); emit(0)
                 code[skipyes] = _len(code) - skipyes + 1
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 code[skipno] = _len(code) - skipno
             else:
                 code[skipyes] = _len(code) - skipyes + 1
@@ -582,17 +571,17 @@ def isstring(obj):
 def _code(p, flags):
 
     flags = p.state.flags | flags
-    data = _CompileData()
+    code = []
 
     # compile info block
-    _compile_info(data.code, p, flags)
+    _compile_info(code, p, flags)
 
     # compile the pattern
-    _compile(data, p.data, flags)
+    _compile(code, p.data, flags)
 
-    data.code.append(SUCCESS)
+    code.append(SUCCESS)
 
-    return data
+    return code
 
 def _hex_code(code):
     return '[%s]' % ', '.join('%#0*x' % (_sre.CODESIZE*2+2, x) for x in code)
@@ -693,20 +682,13 @@ def dis(code):
                     else:
                         print_(FAILURE)
                 i += 1
-            elif op in (REPEAT_ONE, MIN_REPEAT_ONE,
+            elif op in (REPEAT, REPEAT_ONE, MIN_REPEAT_ONE,
                         POSSESSIVE_REPEAT, POSSESSIVE_REPEAT_ONE):
                 skip, min, max = code[i: i+3]
                 if max == MAXREPEAT:
                     max = 'MAXREPEAT'
                 print_(op, skip, min, max, to=i+skip)
                 dis_(i+3, i+skip)
-                i += skip
-            elif op is REPEAT:
-                skip, min, max, repeat_index = code[i: i+4]
-                if max == MAXREPEAT:
-                    max = 'MAXREPEAT'
-                print_(op, skip, min, max, repeat_index, to=i+skip)
-                dis_(i+4, i+skip)
                 i += skip
             elif op is GROUPREF_EXISTS:
                 arg, skip = code[i: i+2]
@@ -762,11 +744,11 @@ def compile(p, flags=0):
     else:
         pattern = None
 
-    data = _code(p, flags)
+    code = _code(p, flags)
 
     if flags & SRE_FLAG_DEBUG:
         print()
-        dis(data.code)
+        dis(code)
 
     # map in either direction
     groupindex = p.state.groupdict
@@ -775,6 +757,7 @@ def compile(p, flags=0):
         indexgroup[i] = k
 
     return _sre.compile(
-        pattern, flags | p.state.flags, data.code,
-        p.state.groups-1, groupindex, tuple(indexgroup),
-        data.repeat_count)
+        pattern, flags | p.state.flags, code,
+        p.state.groups-1,
+        groupindex, tuple(indexgroup)
+        )

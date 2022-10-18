@@ -2154,6 +2154,17 @@ class FinalizeTestCase(unittest.TestCase):
         self.assertTrue(b'ZeroDivisionError' in err)
 
 
+class ModuleTestCase(unittest.TestCase):
+    def test_names(self):
+        for name in ('ReferenceType', 'ProxyType', 'CallableProxyType',
+                     'WeakMethod', 'WeakSet', 'WeakKeyDictionary', 'WeakValueDictionary'):
+            obj = getattr(weakref, name)
+            if name != 'WeakSet':
+                self.assertEqual(obj.__module__, 'weakref')
+            self.assertEqual(obj.__name__, name)
+            self.assertEqual(obj.__qualname__, name)
+
+
 libreftest = """ Doctest for examples in the library reference: weakref.rst
 
 >>> from test.support import gc_collect

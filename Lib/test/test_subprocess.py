@@ -238,6 +238,12 @@ class ProcessTestCase(BaseTestCase):
                 input=None, universal_newlines=True)
         self.assertNotIn('XX', output)
 
+    def test_check_output_input_none_encoding_errors(self):
+        output = subprocess.check_output(
+                [sys.executable, "-c", "print('foo')"],
+                input=None, encoding='utf-8', errors='ignore')
+        self.assertIn('foo', output)
+
     def test_check_output_stdout_arg(self):
         # check_output() refuses to accept 'stdout' argument
         with self.assertRaises(ValueError) as c:
