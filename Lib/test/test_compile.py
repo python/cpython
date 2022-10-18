@@ -494,9 +494,8 @@ if 1:
             code = compile('pass', filename, 'exec')
             self.assertEqual(code.co_filename, 'file.py')
         for filename in bytearray(b'file.py'), memoryview(b'file.py'):
-            with self.assertWarns(DeprecationWarning):
-                code = compile('pass', filename, 'exec')
-            self.assertEqual(code.co_filename, 'file.py')
+            with self.assertRaises(TypeError):
+                compile('pass', filename, 'exec')
         self.assertRaises(TypeError, compile, 'pass', list(b'file.py'), 'exec')
 
     @support.cpython_only
