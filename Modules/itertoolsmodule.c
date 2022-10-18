@@ -58,7 +58,7 @@ static PyTypeObject pairwise_type;
 /* Note:  The built-in zip() function includes a "strict" argument
    that is needed because that function can silently truncate data
    and there is no easy way for a user to detect that condition.
-   The same reasoning does not apply to batches() which never drops
+   The same reasoning does not apply to batched() which never drops
    data.  Instead, it produces a shorter list which can be handled
    as the user sees fit.
  */
@@ -99,7 +99,7 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
 
     if (n < 1) {
         /* We could define the n==0 case to return an empty iterator
-           but that is add odds with the idea that batching should
+           but that is at odds with the idea that batching should
            never throw-away input data.
         */
         PyErr_SetString(PyExc_ValueError, "n must be at least one");
