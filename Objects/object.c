@@ -282,13 +282,10 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                 s = PyObject_Str(op);
             else
                 s = PyObject_Repr(op);
-            if (s == NULL)
+            if (s == NULL) {
                 ret = -1;
-            else if (PyBytes_Check(s)) {
-                fwrite(PyBytes_AS_STRING(s), 1,
-                       PyBytes_GET_SIZE(s), fp);
             }
-            else if (PyUnicode_Check(s)) {
+            else {
                 PyObject *t;
                 t = PyUnicode_AsEncodedString(s, "utf-8", "backslashreplace");
                 if (t == NULL) {
@@ -299,12 +296,6 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                            PyBytes_GET_SIZE(t), fp);
                     Py_DECREF(t);
                 }
-            }
-            else {
-                PyErr_Format(PyExc_TypeError,
-                             "str() or repr() returned '%.100s'",
-                             Py_TYPE(s)->tp_name);
-                ret = -1;
             }
             Py_XDECREF(s);
         }
