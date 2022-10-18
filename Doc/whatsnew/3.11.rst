@@ -561,6 +561,8 @@ New Modules
   (Contributed by Sebastian Rittau in :issue:`42012`.)
 
 
+.. _whatsnew311-improved-modules:
+
 Improved Modules
 ================
 
@@ -1093,6 +1095,8 @@ fcntl
   the ``FD_CLOEXEC`` flag in addition.
 
 
+.. _whatsnew311-optimizations:
+
 Optimizations
 =============
 
@@ -1144,6 +1148,8 @@ This section covers specific optimizations independent of the
   (Contributed by Dong-hee Na in :issue:`44987`.)
 
 
+.. _whatsnew311-faster-cpython:
+
 Faster CPython
 ==============
 
@@ -1156,11 +1162,16 @@ could be up to 10-60% faster.
 This project focuses on two major areas in Python: faster startup and faster
 runtime. Other optimizations not under this project are listed in `Optimizations`_.
 
+
+.. _whatsnew311-faster-startup:
+
 Faster Startup
 --------------
 
+.. _whatsnew311-faster-imports:
+
 Frozen imports / Static code objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Python caches bytecode in the :ref:`__pycache__<tut-pycache>` directory to
 speed up module loading.
@@ -1185,11 +1196,16 @@ impact for short-running programs using Python.
 (Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
 
 
+.. _whatsnew311-faster-runtime:
+
 Faster Runtime
 --------------
 
+.. _whatsnew311-lazy-python-frames:
+
 Cheaper, lazy Python frames
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Python frames are created whenever Python calls a Python function. This frame
 holds execution information. The following are new frame optimizations:
 
@@ -1206,10 +1222,13 @@ up significantly. We measured a 3-7% speedup in pyperformance.
 
 (Contributed by Mark Shannon in :issue:`44590`.)
 
+
 .. _inline-calls:
+.. _whatsnew311-inline-calls:
 
 Inlined Python function calls
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 During a Python function call, Python will call an evaluating C function to
 interpret that function's code. This effectively limits pure Python recursion to
 what's safe for the C stack.
@@ -1226,8 +1245,12 @@ We measured a 1-3% improvement in pyperformance.
 
 (Contributed by Pablo Galindo and Mark Shannon in :issue:`45256`.)
 
+
+.. _whatsnew311-pep659:
+
 PEP 659: Specializing Adaptive Interpreter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 :pep:`659` is one of the key parts of the faster CPython project. The general
 idea is that while Python is a dynamic language, most code has regions where
 objects and types rarely change. This concept is known as *type stability*.
@@ -1309,6 +1332,8 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
        be sped up by :issue:`45947`.
 
 
+.. _whatsnew311-faster-cpython-misc:
+
 Misc
 ----
 
@@ -1319,6 +1344,9 @@ Misc
 * A more concise representation of exceptions in the interpreter reduced the
   time required for catching an exception by about 10%.
   (Contributed by Irit Katriel in :issue:`45711`.)
+
+
+.. _whatsnew311-faster-cpython-faq:
 
 FAQ
 ---
@@ -1354,6 +1382,8 @@ FAQ
 | A: No. We're still exploring other optimizations.
 
 
+.. _whatsnew311-faster-cpython-about:
+
 About
 -----
 
@@ -1362,6 +1392,8 @@ funded by Microsoft to work on this full-time. Pablo Galindo Salgado is also
 funded by Bloomberg LP to work on the project part-time. Finally, many
 contributors are volunteers from the community.
 
+
+.. _whatsnew311-bytecode-changes:
 
 CPython bytecode changes
 ========================
@@ -1419,8 +1451,16 @@ CPython bytecode changes
 * :opcode:`RESUME` has been added. It is a no-op. Performs internal tracing,
   debugging and optimization checks.
 
+
+.. _whatsnew311-deprecated:
+.. _whatsnew311-python-api-deprecated:
+
 Deprecated
 ==========
+
+This section lists Python APIs that have been deprecated in Python 3.11.
+
+Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
 
 * Chaining :class:`classmethod` descriptors (introduced in :issue:`19072`)
   is now deprecated.  It can no longer be used to wrap other descriptors
@@ -1561,13 +1601,17 @@ Deprecated
   (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
 
+.. _whatsnew311-pending-removal:
+.. _whatsnew311-python-api-pending-removal:
+
 Pending Removal in Python 3.12
 ==============================
 
-The following APIs have been deprecated in earlier Python releases,
+The following Python APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.12.
 
-Python API:
+C APIs pending removal are
+:ref:`listed separately <whatsnew311-c-api-pending-removal>`.
 
 * :class:`pkgutil.ImpImporter`
 * :class:`pkgutil.ImpLoader`
@@ -1596,28 +1640,16 @@ Python API:
 * :func:`sqlite3.OptimizedUnicode`
 * :func:`sqlite3.enable_shared_cache`
 
-C API:
 
-* :c:func:`PyUnicode_AS_DATA`
-* :c:func:`PyUnicode_AS_UNICODE`
-* :c:func:`PyUnicode_AsUnicodeAndSize`
-* :c:func:`PyUnicode_AsUnicode`
-* :c:func:`PyUnicode_FromUnicode`
-* :c:func:`PyUnicode_GET_DATA_SIZE`
-* :c:func:`PyUnicode_GET_SIZE`
-* :c:func:`PyUnicode_GetSize`
-* :c:func:`PyUnicode_IS_COMPACT`
-* :c:func:`PyUnicode_IS_READY`
-* :c:func:`PyUnicode_READY`
-* :c:func:`Py_UNICODE_WSTR_LENGTH`
-* :c:func:`_PyUnicode_AsUnicode`
-* :c:macro:`PyUnicode_WCHAR_KIND`
-* :c:type:`PyUnicodeObject`
-* :c:func:`PyUnicode_InternImmortal()`
-
+.. _whatsnew311-removed:
+.. _whatsnew311-python-api-removed:
 
 Removed
 =======
+
+This section lists Python APIs that have been removed in Python 3.12.
+
+Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without
   an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
@@ -1711,15 +1743,18 @@ Removed
   of ``Tools/scripts`` and is `being developed independently
   <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.
 
+
+.. _whatsnew311-porting:
+.. _whatsnew311-python-api-porting:
+
 Porting to Python 3.11
 ======================
 
 This section lists previously described changes and other bugfixes
-that may require changes to your code.
+in the Python API that may require changes to your Python code.
 
-
-Changes in the Python API
--------------------------
+Porting notes for the C API are
+:ref:`listed separately <whatsnew311-c-api-porting>`.
 
 * Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
   executors to :meth:`loop.set_default_executor` following a deprecation in
@@ -1767,6 +1802,9 @@ Changes in the Python API
   It can be set to describe C extension clases to the VM, but should be regarded
   as meaningless when read. To get the pointer to the object's dictionary call
   :c:func:`PyObject_GenericGetDict` instead.
+
+
+.. _whatsnew311-build-changes:
 
 Build Changes
 =============
@@ -1855,8 +1893,12 @@ Build Changes
   (Contributed by Serhiy Storchaka in :issue:`46996`.)
 
 
+.. _whatsnew311-c-api:
+
 C API Changes
 =============
+
+.. _whatsnew311-c-api-new-features:
 
 New Features
 ------------
@@ -1920,6 +1962,9 @@ New Features
 
 * Added the :c:member:`PyConfig.safe_path` member.
   (Contributed by Victor Stinner in :gh:`57684`.)
+
+
+.. _whatsnew311-c-api-porting:
 
 Porting to Python 3.11
 ----------------------
@@ -2220,6 +2265,9 @@ Porting to Python 3.11
   paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
   to retrieve :data:`sys.path` as a Python list object and modify it directly.
 
+
+.. _whatsnew311-c-api-deprecated:
+
 Deprecated
 ----------
 
@@ -2244,6 +2292,35 @@ Deprecated
 
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)
+
+
+.. _whatsnew311-c-api-pending-removal:
+
+Pending Removal in Python 3.12
+------------------------------
+
+The following C APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.12.
+
+* :c:func:`PyUnicode_AS_DATA`
+* :c:func:`PyUnicode_AS_UNICODE`
+* :c:func:`PyUnicode_AsUnicodeAndSize`
+* :c:func:`PyUnicode_AsUnicode`
+* :c:func:`PyUnicode_FromUnicode`
+* :c:func:`PyUnicode_GET_DATA_SIZE`
+* :c:func:`PyUnicode_GET_SIZE`
+* :c:func:`PyUnicode_GetSize`
+* :c:func:`PyUnicode_IS_COMPACT`
+* :c:func:`PyUnicode_IS_READY`
+* :c:func:`PyUnicode_READY`
+* :c:func:`Py_UNICODE_WSTR_LENGTH`
+* :c:func:`_PyUnicode_AsUnicode`
+* :c:macro:`PyUnicode_WCHAR_KIND`
+* :c:type:`PyUnicodeObject`
+* :c:func:`PyUnicode_InternImmortal()`
+
+
+.. _whatsnew311-c-api-removed:
 
 Removed
 -------
