@@ -2953,7 +2953,7 @@ compiler_jump_if(struct compiler *c, location *ploc,
 
     /* general implementation */
     VISIT(c, expr, e);
-    ADDOP_JUMP(c, *ploc, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
     return 1;
 }
 
