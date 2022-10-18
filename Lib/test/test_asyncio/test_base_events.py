@@ -146,55 +146,24 @@ class BaseEventTests(test_utils.TestCase):
                                                    socket.IPPROTO_TCP))
 
     def test_interleave_ipaddrs(self):
-        addrinfos = [
-            (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
-            (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2)),
-            (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3)),
-            (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4)),
-            (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
-            (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6)),
-            (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7)),
-            (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8)),
-        ]
+        SIX_A = (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1))
+        SIX_B = (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2))
+        SIX_C = (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3))
+        SIX_D = (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4))
+        FOUR_A = (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5))
+        FOUR_B = (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6))
+        FOUR_C = (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7))
+        FOUR_D = (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8))
 
+        addrinfos = [SIX_A, SIX_B, SIX_C, SIX_D, FOUR_A, FOUR_B, FOUR_C, FOUR_D]
+        expected = [SIX_A, FOUR_A, SIX_B, FOUR_B, SIX_C, FOUR_C, SIX_D, FOUR_D]
+
+        self.assertEqual(expected, base_events._interleave_addrinfos(addrinfos))
+
+        expected_fafc_2 = [SIX_A, SIX_B, FOUR_A, SIX_C, FOUR_B, SIX_D, FOUR_C, FOUR_D]
         self.assertEqual(
-            [
-                (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
-                (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
-                (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2)),
-                (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6)),
-                (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3)),
-                (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7)),
-                (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4)),
-                (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8)),
-            ],
-            base_events._interleave_addrinfos(addrinfos)
-        )
-
-    def test_interleave_ipaddrs_first_address_family_count(self):
-        addrinfos = [
-            (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
-            (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2)),
-            (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3)),
-            (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4)),
-            (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
-            (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6)),
-            (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7)),
-            (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8)),
-        ]
-
-        self.assertEqual(
-            [
-                (socket.AF_INET6, 0, 0, '', ('2001:db8::1', 1)),
-                (socket.AF_INET6, 0, 0, '', ('2001:db8::2', 2)),
-                (socket.AF_INET, 0, 0, '', ('192.0.2.1', 5)),
-                (socket.AF_INET6, 0, 0, '', ('2001:db8::3', 3)),
-                (socket.AF_INET, 0, 0, '', ('192.0.2.2', 6)),
-                (socket.AF_INET6, 0, 0, '', ('2001:db8::4', 4)),
-                (socket.AF_INET, 0, 0, '', ('192.0.2.3', 7)),
-                (socket.AF_INET, 0, 0, '', ('192.0.2.4', 8)),
-            ],
-            base_events._interleave_addrinfos(addrinfos, 2)
+            expected_fafc_2,
+            base_events._interleave_addrinfos(addrinfos, first_address_family_count=2),
         )
 
 
