@@ -99,7 +99,7 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
 
     if (n < 1) {
         /* We could define the n==0 case to return an empty iterator
-           but that is add odds with the idea that batching should
+           but that is at odds with the idea that batching should
            never throw-away input data.
         */
         PyErr_SetString(PyExc_ValueError, "n must be at least one");
