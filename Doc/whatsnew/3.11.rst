@@ -1128,26 +1128,28 @@ fcntl
 Optimizations
 =============
 
-* Compiler now optimizes simple C-style formatting with literal format
-  containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
-  fast as corresponding f-string expression.
+* The compiler now optimizes simple
+  :ref:`printf-style % formatting <old-string-formatting>` on string literals
+  containing only the format codes ``%s``, ``%r`` and ``%a`` and makes it as
+  fast as a corresponding :term:`f-string` expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
 
-* "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
-  almost eliminated when no exception is raised.
+* "Zero-cost" exceptions are implemented, eliminating the cost
+  of :keyword:`try` statements when no exception is raised.
   (Contributed by Mark Shannon in :issue:`40222`.)
 
-* Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
+* Pure ASCII strings are now normalized in constant time by
+  :func:`unicodedata.normalize`.
   (Contributed by Dong-hee Na in :issue:`44987`.)
 
-* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now up
-  to 10 times or more faster for large arguments (the speed up is larger for
-  larger *k*).
+* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now
+  ≈10 times faster for large arguments (with a larger speedup for larger *k*).
   (Contributed by Serhiy Storchaka in :issue:`37295`.)
 
-* Dict don't store hash value when all inserted keys are Unicode objects.
-  This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
-  becomes 272 bytes from 352 bytes on 64bit platform.
+* Dictionaries don't store hash values when all keys are Unicode objects,
+  decreasing :class:`dict` size.
+  For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
+  is reduced from 352 bytes to 272 bytes (23% smaller) on 64-bit platforms.
   (Contributed by Inada Naoki in :issue:`46845`.)
 
 * :mod:`re`'s regular expression matching engine has been partially refactored,
