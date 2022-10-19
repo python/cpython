@@ -2197,33 +2197,22 @@ class TestPosixWeaklinking(unittest.TestCase):
 class NamespacesTests(unittest.TestCase):
     """Tests for os.unshare() and os.setns()."""
 
-    @support.requires_subprocess()
-    def subprocess(self, code):
-        import subprocess
-        with subprocess.Popen((sys.executable, '-c', code),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            encoding="utf-8"
-        ) as p:
-            p.wait()
-            return (
-                p.returncode,
-                tuple(p.stdout),
-                tuple(p.stderr),
-            )
-
     @unittest.skipUnless(hasattr(os, 'unshare'), 'needs os.unshare()')
     @unittest.skipUnless(hasattr(os, 'setns'), 'needs os.setns()')
     @unittest.skipUnless(os.path.exists('/proc/self/ns/uts'), 'need /proc/self/ns/uts')
     @support.requires_linux_version(3, 0, 0)
     def test_unshare_setns(self):
-        rc, _, err = self.subprocess("""if 1:
+        code = """if 1:
+            import errno
             import os
-            import sys
             fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
             try:
                 original = os.readlink('/proc/self/ns/uts')
-                os.unshare(os.CLONE_NEWUTS)
+                try:
+                    os.unshare(os.CLONE_NEWUTS)
+                except OSError as e:
+                    if e.errno not in (errno.ENOSPC,):
+                        raise
                 new = os.readlink('/proc/self/ns/uts')
                 if original == new:
                     raise Exception('os.unshare failed')
@@ -2231,20 +2220,18 @@ class NamespacesTests(unittest.TestCase):
                 restored = os.readlink('/proc/self/ns/uts')
                 if original != restored:
                     raise Exception('os.setns failed')
+            except PermissionError:
+                # The calling process did not have the required privileges
+                # for this operation
+                pass
             except OSError as e:
-                sys.stderr.write(str(e.errno))
-                sys.exit(2)
+                if e.errno not in (errno.ENOSYS, errno.EINVAL, errno.ENOMEM):
+                    raise
             finally:
                 os.close(fd)
-            """)
+            """
 
-        if rc == 2:
-            e = int(err[0])
-            self.assertIn(e, (errno.EPERM, errno.EINVAL, errno.ENOSPC, errno.ENOSYS))
-            self.skipTest(f"could not call os.unshare / os.setns [Errno {e}].")
-
-        self.assertEqual(rc, 0)
-        self.assertEqual(err, ())
+        assert_python_ok("-c", code)
 
 
 def tearDownModule():
