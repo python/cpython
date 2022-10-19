@@ -1138,11 +1138,29 @@ Optimizations
   fast as a corresponding :term:`f-string` expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
 
+* Integer division (``//``) is better tuned for optimization by compilers.
+  It is now around 20% faster on x86-64 when dividing an :class:`int`
+  by a value smaller than ``2**30``.
+  (Contributed by Gregory P. Smith and Tim Peters in :gh:`90564`.)
+
+* :func:`sum` is now nearly 30% faster for integers smaller than ``2**30``.
+  (Contributed by Stefan Behnel in :gh:`68264`.)
+
+* Resizing lists is streamlined for the common case,
+  speeding up :meth:`list.append` by ≈15%
+  and simple :term:`list comprehension`\s by up to 20-30%
+  (Contributed by Dennis Sweeney in :gh:`91165`.)
+
 * Dictionaries don't store hash values when all keys are Unicode objects,
   decreasing :class:`dict` size.
   For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
   is reduced from 352 bytes to 272 bytes (23% smaller) on 64-bit platforms.
   (Contributed by Inada Naoki in :issue:`46845`.)
+
+* Using :class:`asyncio.DatagramProtocol` is now orders of magnitude faster
+  when transferring large files over UDP,
+  with speeds over 100 times higher for a ≈60 MiB file.
+  (Contributed by msoxzw in :gh:`91487`.)
 
 * :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now
   ≈10 times faster for large arguments (with a larger speedup for larger *k*).
@@ -1153,6 +1171,12 @@ Optimizations
   result, Python 3.11 executes the `pyperformance regular expression benchmarks
   <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
   faster than Python 3.10.
+
+* The :mod:`statistics` functions :func:`~statistics.mean`,
+  :func:`~statistics.variance` and :func:`~statistics.stdev` now consume
+  iterators in one pass rather than converting them to a :class:`list` first.
+  This is twice as fast and can save substantial memory.
+  (Contributed by Raymond Hettinger in :gh:`90415`.)
 
 * :func:`unicodedata.normalize`
   now normalizes pure-ASCII strings in constant time.
