@@ -33,13 +33,17 @@ can be customized by end users easily.
 
 .. seealso::
 
+   Module :mod:`tomllib`
+      TOML is a well-specified format for application configuration files.
+      It is specifically designed to be an improved version of INI.
+
    Module :mod:`shlex`
-      Support for creating Unix shell-like mini-languages which can be used as
-      an alternate format for application configuration files.
+      Support for creating Unix shell-like mini-languages which can also
+      be used for application configuration files.
 
    Module :mod:`json`
-      The json module implements a subset of JavaScript syntax which can also
-      be used for this purpose.
+      The ``json`` module implements a subset of JavaScript syntax which is
+      sometimes used for configuration, but does not support comments.
 
 
 .. testsetup::

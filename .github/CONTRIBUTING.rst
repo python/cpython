@@ -4,21 +4,9 @@ Contributing to Python
 Build Status
 ------------
 
-- main
+- `Buildbot status overview <https://buildbot.python.org/all/#/release_status>`_
 
-  + `Stable buildbots <https://buildbot.python.org/3.x.stable/>`_
-
-- 3.9
-
-  + `Stable buildbots <https://buildbot.python.org/3.9.stable/>`_
-
-- 3.8
-
-  + `Stable buildbots <https://buildbot.python.org/3.8.stable/>`_
-
-- 3.7
-
-  + `Stable buildbots <https://buildbot.python.org/3.7.stable/>`_
+- `GitHub Actions status <https://github.com/python/cpython/actions/workflows/build.yml>`_
 
 
 Thank You

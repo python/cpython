@@ -550,6 +550,51 @@ _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
 }
 
 
+static PyObject *
+get_interp_settings(PyObject *self, PyObject *args)
+{
+    int interpid = -1;
+    if (!PyArg_ParseTuple(args, "|i:get_interp_settings", &interpid)) {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = NULL;
+    if (interpid < 0) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        interp = tstate ? tstate->interp : _PyInterpreterState_Main();
+    }
+    else if (interpid == 0) {
+        interp = _PyInterpreterState_Main();
+    }
+    else {
+        PyErr_Format(PyExc_NotImplementedError,
+                     "%zd", interpid);
+        return NULL;
+    }
+    assert(interp != NULL);
+
+    PyObject *settings = PyDict_New();
+    if (settings == NULL) {
+        return NULL;
+    }
+
+    /* Add the feature flags. */
+    PyObject *flags = PyLong_FromUnsignedLong(interp->feature_flags);
+    if (flags == NULL) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+    int res = PyDict_SetItemString(settings, "feature_flags", flags);
+    Py_DECREF(flags);
+    if (res != 0) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+
+    return settings;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -569,6 +614,7 @@ static PyMethodDef TestMethods[] = {
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
+    {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

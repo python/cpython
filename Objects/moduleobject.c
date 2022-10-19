@@ -291,23 +291,27 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
     for (cur_slot = def->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
-        if (cur_slot->slot == Py_mod_create) {
-            if (create) {
+        switch (cur_slot->slot) {
+            case Py_mod_create:
+                if (create) {
+                    PyErr_Format(
+                        PyExc_SystemError,
+                        "module %s has multiple create slots",
+                        name);
+                    goto error;
+                }
+                create = cur_slot->value;
+                break;
+            case Py_mod_exec:
+                has_execution_slots = 1;
+                break;
+            default:
+                assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
                     PyExc_SystemError,
-                    "module %s has multiple create slots",
-                    name);
+                    "module %s uses unknown slot ID %i",
+                    name, cur_slot->slot);
                 goto error;
-            }
-            create = cur_slot->value;
-        } else if (cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT) {
-            PyErr_Format(
-                PyExc_SystemError,
-                "module %s uses unknown slot ID %i",
-                name, cur_slot->slot);
-            goto error;
-        } else {
-            has_execution_slots = 1;
         }
     }
 

@@ -1,3 +1,0 @@
-Fix a regression in the :mod:`sqlite3` where statement objects were not
-properly cleared and reset after use in cursor iters. The regression was
-introduced by PR 27884 in Python 3.11a1. Patch by Erlend E. Aasland.

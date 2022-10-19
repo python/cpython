@@ -1,2 +1,0 @@
-In :class:`QueueHandler`, clear ``stack_info`` from :class:`LogRecord` to
-prevent stack trace from being written twice.

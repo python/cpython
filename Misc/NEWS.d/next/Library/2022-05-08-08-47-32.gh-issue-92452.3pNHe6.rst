@@ -1,0 +1,2 @@
+Fixed a race condition that could cause :func:`sysconfig.get_config_var` to
+incorrectly return :const:`None` in multi-threaded programs.

@@ -2303,6 +2303,7 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_TOBYTES_METHODDEF
     ARRAY_ARRAY_TOUNICODE_METHODDEF
     ARRAY_ARRAY___SIZEOF___METHODDEF
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}  /* sentinel */
 };
 

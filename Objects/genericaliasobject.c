@@ -458,6 +458,13 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     }
     for (Py_ssize_t iarg = 0, jarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
+        if (PyType_Check(arg)) {
+            Py_INCREF(arg);
+            PyTuple_SET_ITEM(newargs, jarg, arg);
+            jarg++;
+            continue;
+        }
+
         int unpack = _is_unpacked_typevartuple(arg);
         if (unpack < 0) {
             Py_DECREF(newargs);

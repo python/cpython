@@ -1584,6 +1584,22 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
 
+>>> import a from b
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z from b.y.z
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a from b as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z from b.y.z as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
 

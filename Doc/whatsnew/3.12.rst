@@ -70,10 +70,31 @@ Important deprecations, removals or restrictions:
 
 * :pep:`623`, Remove wstr from Unicode
 
+Improved Error Messages
+=======================
+
+* Improve the :exc:`SyntaxError` error message when the user types ``import x
+  from y`` instead of ``from y import x``. Contributed by Pablo Galindo in :gh:`98931`.
+
+    >>> import a.y.z from b.y.z
+    Traceback (most recent call last):
+      File "<stdin>", line 1
+        import a.y.z from b.y.z
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    SyntaxError: Did you mean to use 'from ... import ...' instead?
 
 New Features
 ============
 
+* Add :ref:`perf_profiling` through the new
+  environment variable :envvar:`PYTHONPERFSUPPORT`,
+  the new command-line option :option:`-X perf <-X>`,
+  as well as the new :func:`sys.activate_stack_trampoline`,
+  :func:`sys.deactivate_stack_trampoline`,
+  and :func:`sys.is_stack_trampoline_active` APIs.
+  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
 
 
 Other Language Changes
@@ -109,6 +130,12 @@ New Modules
 Improved Modules
 ================
 
+array
+-----
+
+* The :class:`array.array` class now supports subscripting, making it a
+  :term:`generic type`. (Contributed by Jelle Zijlstra in :gh:`98658`.)
+
 asyncio
 -------
 
@@ -132,13 +159,17 @@ asyncio
   and will be removed in Python 3.14.
   (Contributed by Kumar Aditya in :gh:`94597`.)
 
-
 pathlib
 -------
 
 * Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
   all file or directory names within them, similar to :func:`os.walk`.
   (Contributed by Stanislav Zmiev in :gh:`90385`.)
+
+* Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
+  to allow the insertion of ``..`` entries in the result; this behavior is
+  more consistent with :func:`os.path.relpath`.
+  (Contributed by Domenico Ragusa in :issue:`40358`.)
 
 dis
 ---
@@ -194,6 +225,19 @@ tempfile
 The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
 *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
+sys
+---
+
+* Add :func:`sys.activate_stack_trampoline` and
+  :func:`sys.deactivate_stack_trampoline` for activating and deactivating
+  stack profiler trampolines,
+  and :func:`sys.is_stack_trampoline_active` for querying if stack profiler
+  trampolines are active.
+  (Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
+
+
 Optimizations
 =============
 
@@ -204,6 +248,11 @@ Optimizations
 * Added experimental support for using the BOLT binary optimizer in the build
   process, which improves performance by 1-5%.
   (Contributed by Kevin Modzelewski in :gh:`90536`.)
+
+* Speed up the regular expression substitution (functions :func:`re.sub` and
+  :func:`re.subn` and corresponding :class:`re.Pattern` methods) for
+  replacement strings containing group references by 2--3 times.
+  (Contributed by Serhiy Storchaka in :gh:`91524`.)
 
 
 CPython bytecode changes
@@ -401,10 +450,6 @@ Removed
 
   (Contributed by Erlend E. Aasland in :gh:`92548`.)
 
-* The ``--experimental-isolated-subinterpreters`` configure flag
-  (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
-  have been removed.
-
 * ``smtpd`` has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
   Use aiosmtpd_ PyPI module or any other
@@ -519,6 +564,11 @@ Changes in the Python API
   in Python 3.9.
   (Contributed by Victor Stinner in :gh:`94352`.)
 
+* The :mod:`os` module no longer accepts bytes-like paths, like
+  :class:`bytearray` and :class:`memoryview` types: only the exact
+  :class:`bytes` type is accepted for bytes strings.
+  (Contributed by Victor Stinner in :gh:`98393`.)
+
 
 Build Changes
 =============
@@ -586,6 +636,12 @@ New Features
   :c:func:`PyDict_AddWatch` and related APIs to be called whenever a dictionary
   is modified. This is intended for use by optimizing interpreters, JIT
   compilers, or debuggers.
+  (Contributed by Carl Meyer in :gh:`91052`.)
+
+* Added :c:func:`PyType_AddWatcher` and :c:func:`PyType_Watch` API to register
+  callbacks to receive notification on changes to a type.
+  (Contributed by Carl Meyer in :gh:`91051`.)
+
 
 Porting to Python 3.12
 ----------------------
@@ -634,6 +690,11 @@ Porting to Python 3.12
   :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
   To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
+
+* The :c:func:`PyUnicode_FSDecoder` function no longer accepts bytes-like
+  paths, like :class:`bytearray` and :class:`memoryview` types: only the exact
+  :class:`bytes` type is accepted for bytes strings.
+  (Contributed by Victor Stinner in :gh:`98393`.)
 
 Deprecated
 ----------

@@ -1,0 +1,3 @@
+Fix a bug in the :mod:`typing` tests where a test relying on CPython-specific
+implementation details was not decorated with ``@cpython_only`` and was not
+skipped on other implementations.

@@ -1,0 +1,2 @@
+Update Windows builds to zlib v1.2.13.  v1.2.12 has CVE-2022-37434, but
+the vulnerable ``inflateGetHeader`` API is not used by Python.

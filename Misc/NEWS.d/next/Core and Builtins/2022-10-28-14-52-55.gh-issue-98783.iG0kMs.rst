@@ -1,0 +1,2 @@
+Fix multiple crashes in debug mode when ``str`` subclasses
+are used instead of ``str`` itself.

@@ -1,0 +1,4 @@
+Fix subscription of type aliases containing bare generic types or types like
+:class:`~typing.TypeVar`: for example ``tuple[A, T][int]`` and
+``tuple[TypeVar, T][int]``, where ``A`` is a generic type, and ``T`` is a
+type variable.

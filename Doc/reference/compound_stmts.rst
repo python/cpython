@@ -343,7 +343,7 @@ the case of :keyword:`except`, but in the case of exception groups we can have
 partial matches when the type matches some of the exceptions in the group.
 This means that multiple :keyword:`!except*` clauses can execute,
 each handling part of the exception group.
-Each clause executes once and handles an exception group
+Each clause executes at most once and handles an exception group
 of all matching exceptions.  Each exception in the group is handled by at most
 one :keyword:`!except*` clause, the first that matches it. ::
 
@@ -364,9 +364,21 @@ one :keyword:`!except*` clause, the first that matches it. ::
        | ValueError: 1
        +------------------------------------
 
+
 Any remaining exceptions that were not handled by any :keyword:`!except*`
 clause are re-raised at the end, combined into an exception group along with
 all exceptions that were raised from within :keyword:`!except*` clauses.
+
+If the raised exception is not an exception group and its type matches
+one of the :keyword:`!except*` clauses, it is caught and wrapped by an
+exception group with an empty message string. ::
+
+   >>> try:
+   ...     raise BlockingIOError
+   ... except* BlockingIOError as e:
+   ...     print(repr(e))
+   ...
+   ExceptionGroup('', (BlockingIOError()))
 
 An :keyword:`!except*` clause must have a matching type,
 and this type cannot be a subclass of :exc:`BaseExceptionGroup`.

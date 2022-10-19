@@ -1,0 +1,1 @@
+Allow ``BUILTINS`` to be a valid field name for frozen dataclasses.

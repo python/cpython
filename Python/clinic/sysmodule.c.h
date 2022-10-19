@@ -1204,7 +1204,7 @@ PyDoc_STRVAR(sys_activate_stack_trampoline__doc__,
 "activate_stack_trampoline($module, backend, /)\n"
 "--\n"
 "\n"
-"Activate the perf profiler trampoline.");
+"Activate stack profiler trampoline *backend*.");
 
 #define SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
     {"activate_stack_trampoline", (PyCFunction)sys_activate_stack_trampoline, METH_O, sys_activate_stack_trampoline__doc__},
@@ -1241,7 +1241,9 @@ PyDoc_STRVAR(sys_deactivate_stack_trampoline__doc__,
 "deactivate_stack_trampoline($module, /)\n"
 "--\n"
 "\n"
-"Dectivate the perf profiler trampoline.");
+"Deactivate the current stack profiler trampoline backend.\n"
+"\n"
+"If no stack profiler is activated, this function has no effect.");
 
 #define SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
     {"deactivate_stack_trampoline", (PyCFunction)sys_deactivate_stack_trampoline, METH_NOARGS, sys_deactivate_stack_trampoline__doc__},
@@ -1259,7 +1261,7 @@ PyDoc_STRVAR(sys_is_stack_trampoline_active__doc__,
 "is_stack_trampoline_active($module, /)\n"
 "--\n"
 "\n"
-"Returns *True* if the perf profiler trampoline is active.");
+"Return *True* if a stack profiler trampoline is active.");
 
 #define SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF    \
     {"is_stack_trampoline_active", (PyCFunction)sys_is_stack_trampoline_active, METH_NOARGS, sys_is_stack_trampoline_active__doc__},
@@ -1316,4 +1318,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=eae6e8244fbebee9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79228e569529129c input=a9049054013a1b77]*/

@@ -1,0 +1,4 @@
+``Py_InitializeEx`` now correctly calls ``PyConfig_Clear`` after initializing
+the interpreter (the omission didn't cause a memory leak only because none
+of the dynamically allocated config fields are populated by the wrapper
+function)

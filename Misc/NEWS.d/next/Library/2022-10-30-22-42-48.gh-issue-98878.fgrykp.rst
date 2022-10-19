@@ -1,0 +1,2 @@
+Use the frame bound builtins when offering a name suggestion in
+:mod:`traceback` to prevent crashing when ``__builtins__`` is not a dict.

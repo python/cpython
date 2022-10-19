@@ -1334,6 +1334,12 @@ class LongTest(unittest.TestCase):
                          b'\xff\xff\xff\xff\xff')
         self.assertRaises(OverflowError, (1).to_bytes, 0, 'big')
 
+        # gh-98783
+        class SubStr(str):
+            pass
+        self.assertEqual((0).to_bytes(1, SubStr('big')), b'\x00')
+        self.assertEqual((0).to_bytes(0, SubStr('little')), b'')
+
     def test_from_bytes(self):
         def check(tests, byteorder, signed=False):
             def equivalent_python(byte_array, byteorder, signed=False):
@@ -1533,6 +1539,12 @@ class LongTest(unittest.TestCase):
         self.assertRaises(TypeError, int.from_bytes, InvalidBytes())
         self.assertRaises(TypeError, int.from_bytes, MissingBytes())
         self.assertRaises(ZeroDivisionError, int.from_bytes, RaisingBytes())
+
+        # gh-98783
+        class SubStr(str):
+            pass
+        self.assertEqual(int.from_bytes(b'', SubStr('big')), 0)
+        self.assertEqual(int.from_bytes(b'\x00', SubStr('little')), 0)
 
     @support.cpython_only
     def test_from_bytes_small(self):

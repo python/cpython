@@ -146,6 +146,9 @@ See :ref:`__slots__ documentation <slots>` for details.
    prevent their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
 
+   Accessing an attribute of the proxy object after the referent is
+   garbage collected raises :exc:`ReferenceError`.
+
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.

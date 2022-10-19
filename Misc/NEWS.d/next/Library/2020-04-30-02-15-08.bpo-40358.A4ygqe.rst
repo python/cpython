@@ -1,0 +1,1 @@
+Add walk_up argument in :meth:`pathlib.PurePath.relative_to`.

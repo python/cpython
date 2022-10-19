@@ -1,0 +1,4 @@
+Use complete source locations to simplify detection of ``__future__``
+imports which are not at the beginning of the file. Also corrects the offset
+in the exception raised in one case, which was off by one and impeded
+highlighting.

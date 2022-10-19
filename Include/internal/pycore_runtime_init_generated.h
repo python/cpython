@@ -987,6 +987,7 @@ extern "C" {
                 INIT_ID(n_sequence_fields), \
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
+                INIT_ID(name_from), \
                 INIT_ID(namespace_separator), \
                 INIT_ID(namespaces), \
                 INIT_ID(narg), \
@@ -998,6 +999,7 @@ extern "C" {
                 INIT_ID(node_depth), \
                 INIT_ID(node_offset), \
                 INIT_ID(ns), \
+                INIT_ID(nstype), \
                 INIT_ID(number), \
                 INIT_ID(obj), \
                 INIT_ID(object), \
@@ -2285,6 +2287,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(name);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(name_from);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(namespace_separator);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(namespaces);
@@ -2306,6 +2310,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(node_offset);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(ns);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(nstype);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(number);
     PyUnicode_InternInPlace(&string);
@@ -6502,6 +6508,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(name));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(name_from)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(name_from));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(namespace_separator)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(namespace_separator));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6544,6 +6554,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(ns)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(ns));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(nstype)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(nstype));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(number)) < _PyObject_IMMORTAL_REFCNT) {

@@ -1437,6 +1437,10 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         new_args = []
         for old_arg in self.__args__:
 
+            if isinstance(old_arg, type):
+                new_args.append(old_arg)
+                continue
+
             substfunc = getattr(old_arg, '__typing_subst__', None)
             if substfunc:
                 new_arg = substfunc(new_arg_by_param[old_arg])

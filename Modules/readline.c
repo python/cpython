@@ -1258,9 +1258,9 @@ setup_readline(readlinestate *mod_state)
     rl_attempted_completion_function = flex_complete;
     /* Set Python word break characters */
     completer_word_break_characters =
-        rl_completer_word_break_characters =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
+    rl_completer_word_break_characters = completer_word_break_characters;
 
     mod_state->begidx = PyLong_FromLong(0L);
     mod_state->endidx = PyLong_FromLong(0L);

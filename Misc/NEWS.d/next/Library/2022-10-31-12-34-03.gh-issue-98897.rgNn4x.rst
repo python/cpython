@@ -1,0 +1,1 @@
+Fix memory leak in :func:`math.dist` when both points don't have the same dimension. Patch by Kumar Aditya.

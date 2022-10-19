@@ -2177,6 +2177,14 @@ _Py_GetConfig(void)
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
 
+
+int
+_PyInterpreterState_HasFeature(PyInterpreterState *interp, unsigned long feature)
+{
+    return ((interp->feature_flags & feature) != 0);
+}
+
+
 #define MINIMUM_OVERHEAD 1000
 
 static PyObject **

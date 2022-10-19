@@ -1,0 +1,2 @@
+Update uname docs to clarify the special nature of the platform attribute
+and to indicate when it became late-bound.

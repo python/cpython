@@ -994,7 +994,7 @@ requesting iterator-2 and its corresponding key.
 The functools module
 ====================
 
-The :mod:`functools` module in Python 2.5 contains some higher-order functions.
+The :mod:`functools` module contains some higher-order functions.
 A **higher-order function** takes one or more functions as input and returns a
 new function.  The most useful tool in this module is the
 :func:`functools.partial` function.

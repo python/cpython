@@ -194,7 +194,10 @@ yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
 
 assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
 
-import_stmt[stmt_ty]: import_name | import_from
+import_stmt[stmt_ty]: 
+    | invalid_import
+    | import_name
+    | import_from
 
 # Import statements
 # -----------------
@@ -1230,6 +1233,10 @@ invalid_group:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use starred expression here") }
     | '(' a='**' expression ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use double starred expression here") }
+invalid_import:
+    | a='import' dotted_name 'from' dotted_name {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "Did you mean to use 'from ... import ...' instead?") }
+ 
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }

@@ -987,3 +987,28 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Audioop
+-------
+The audioop module uses the code base in g771.c file of the SoX project::
+    Programming the AdLib/Sound Blaster
+    FM Music Chips
+    Version 2.0 (24 Feb 1992)
+    Copyright (c) 1991, 1992 by Jeffrey S. Lee
+    jlee@smylex.uucp
+    Warranty and Copyright Policy
+    This document is provided on an "as-is" basis, and its author makes
+    no warranty or representation, express or implied, with respect to
+    its quality performance or fitness for a particular purpose.  In no
+    event will the author of this document be liable for direct, indirect,
+    special, incidental, or consequential damages arising out of the use
+    or inability to use the information contained within.  Use of this
+    document is at your own risk.
+    This file may be used and copied freely so long as the applicable
+    copyright notices are retained, and no modifications are made to the
+    text of the document.  No money shall be charged for its distribution
+    beyond reasonable shipping, handling and duplication costs, nor shall
+    proprietary changes be made to this document so that it cannot be
+    distributed freely.  This document may not be included in published
+    material or commercial packages without the written consent of its
+    author.

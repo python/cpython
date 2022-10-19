@@ -1305,6 +1305,62 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertIn("Fatal Python error: Py_EndInterpreter: "
                       "not the last thread", err.decode())
 
+    def _check_allowed(self, before_start='', *,
+                       allowed=True,
+                       daemon_allowed=True,
+                       daemon=False,
+                       ):
+        subinterp_code = textwrap.dedent(f"""
+            import test.support
+            import threading
+            def func():
+                print('this should not have run!')
+            t = threading.Thread(target=func, daemon={daemon})
+            {before_start}
+            t.start()
+            """)
+        script = textwrap.dedent(f"""
+            import test.support
+            test.support.run_in_subinterp_with_config(
+                {subinterp_code!r},
+                allow_fork=True,
+                allow_exec=True,
+                allow_threads={allowed},
+                allow_daemon_threads={daemon_allowed},
+            )
+            """)
+        with test.support.SuppressCrashReport():
+            _, _, err = assert_python_ok("-c", script)
+        return err.decode()
+
+    @cpython_only
+    def test_threads_not_allowed(self):
+        err = self._check_allowed(
+            allowed=False,
+            daemon_allowed=False,
+            daemon=False,
+        )
+        self.assertIn('RuntimeError', err)
+
+    @cpython_only
+    def test_daemon_threads_not_allowed(self):
+        with self.subTest('via Thread()'):
+            err = self._check_allowed(
+                allowed=True,
+                daemon_allowed=False,
+                daemon=True,
+            )
+            self.assertIn('RuntimeError', err)
+
+        with self.subTest('via Thread.daemon setter'):
+            err = self._check_allowed(
+                't.daemon = True',
+                allowed=True,
+                daemon_allowed=False,
+                daemon=False,
+            )
+            self.assertIn('RuntimeError', err)
+
 
 class ThreadingExceptionTests(BaseTestCase):
     # A RuntimeError should be raised if Thread.start() is called

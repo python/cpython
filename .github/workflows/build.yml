@@ -41,7 +41,7 @@ jobs:
         id: check
         run: |
           if [ -z "$GITHUB_BASE_REF" ]; then
-            echo '::set-output name=run_tests::true'
+            echo "run_tests=true" >> $GITHUB_OUTPUT
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
             # git diff "origin/$GITHUB_BASE_REF..." (3 dots) may be more
@@ -57,7 +57,7 @@ jobs:
             # into the PR branch anyway.
             #
             # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
           fi
 
   check_generated_files:
