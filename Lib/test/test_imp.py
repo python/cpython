@@ -397,21 +397,20 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             create_builtin(spec)
 
+        import builtins
         class UnicodeSubclass(str):
             pass
         class GoodSpec:
-            name = UnicodeSubclass("sys")
+            name = UnicodeSubclass("builtins")
         spec = GoodSpec()
         bltin = create_builtin(spec)
-        import sys
-        self.assertEqual(bltin, sys)
+        self.assertEqual(bltin, builtins)
 
         class UnicodeSubclassFakeSpec(str):
             def __init__(self, name):
                 self.name = self
         spec = UnicodeSubclassFakeSpec("builtins")
         bltin = create_builtin(spec)
-        import builtins
         self.assertEqual(bltin, builtins)
 
 class ReloadTests(unittest.TestCase):
