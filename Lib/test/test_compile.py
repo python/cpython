@@ -1249,6 +1249,19 @@ assert (a > 0 and
         self.assertOpcodeSourcePositionIs(compiled_code, 'RAISE_VARARGS',
             line=1, end_line=3, column=0, end_column=30, occurrence=1)
 
+    def test_return_inside_with(self):
+        snippet = """\
+def f(x):
+    with x:
+        return 42
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        g = {}
+        exec(compiled_code, g)
+        compiled_code = g['f'].__code__
+        self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
+            line=3, end_line=3, column=8, end_column=17)
+
     def test_very_long_line_end_offset(self):
         # Make sure we get the correct column offset for offsets
         # too large to store in a byte.

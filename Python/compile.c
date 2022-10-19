@@ -3194,16 +3194,16 @@ compiler_while(struct compiler *c, stmt_ty s)
 static int
 compiler_return(struct compiler *c, stmt_ty s)
 {
-    location loc = LOC(s);
     int preserve_tos = ((s->v.Return.value != NULL) &&
                         (s->v.Return.value->kind != Constant_kind));
-    if (c->u->u_ste->ste_type != FunctionBlock)
-        return compiler_error(c, loc, "'return' outside function");
+    if (c->u->u_ste->ste_type != FunctionBlock) {
+        return compiler_error(c, LOC(s), "'return' outside function");
+    }
     if (s->v.Return.value != NULL &&
         c->u->u_ste->ste_coroutine && c->u->u_ste->ste_generator)
     {
-            return compiler_error(
-                c, loc, "'return' with value in async generator");
+        return compiler_error(
+            c, LOC(s), "'return' with value in async generator");
     }
 
     if (preserve_tos) {
@@ -3211,27 +3211,24 @@ compiler_return(struct compiler *c, stmt_ty s)
     } else {
         /* Emit instruction with line number for return value */
         if (s->v.Return.value != NULL) {
-            SET_LOC(c, s->v.Return.value);
-            loc = LOC(s->v.Return.value);
-            ADDOP(c, loc, NOP);
+            ADDOP(c, LOC(s->v.Return.value), NOP);
         }
     }
     if (s->v.Return.value == NULL || s->v.Return.value->lineno != s->lineno) {
-        SET_LOC(c, s);
-        loc = LOC(s);
-        ADDOP(c, loc, NOP);
+        ADDOP(c, LOC(s), NOP);
     }
 
-    if (!compiler_unwind_fblock_stack(c, &loc, preserve_tos, NULL))
+    location loc = LOC(s);
+    if (!compiler_unwind_fblock_stack(c, &loc, preserve_tos, NULL)) {
         return 0;
+    }
     if (s->v.Return.value == NULL) {
-        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADDOP_LOAD_CONST(c, LOC(s), Py_None);
     }
     else if (!preserve_tos) {
-        ADDOP_LOAD_CONST(c, loc, s->v.Return.value->v.Constant.value);
+        ADDOP_LOAD_CONST(c, LOC(s), s->v.Return.value->v.Constant.value);
     }
-    ADDOP(c, loc, RETURN_VALUE);
-
+    ADDOP(c, LOC(s), RETURN_VALUE);
     return 1;
 }
 
