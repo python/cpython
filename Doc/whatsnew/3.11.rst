@@ -1169,12 +1169,6 @@ This section covers specific optimizations independent of the
   ≈10 times faster for large arguments (with a larger speedup for larger *k*).
   (Contributed by Serhiy Storchaka in :issue:`37295`.)
 
-* :mod:`re`'s regular expression matching engine has been partially refactored,
-  and now uses computed gotos (or "threaded code") on supported platforms. As a
-  result, Python 3.11 executes the `pyperformance regular expression benchmarks
-  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
-  faster than Python 3.10.
-
 * The :mod:`statistics` functions :func:`~statistics.mean`,
   :func:`~statistics.variance` and :func:`~statistics.stdev` now consume
   iterators in one pass rather than converting them to a :class:`list` first.
