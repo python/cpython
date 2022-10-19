@@ -92,6 +92,11 @@ Module Contents
       the bitwise operators without losing their :class:`IntFlag` membership.
       :class:`IntFlag` members are also subclasses of :class:`int`. (`Notes`_)
 
+   :class:`ReprEnum`
+
+      Used by ``IntEnum``, ``StrEnum``, and ``IntFlag`` to keep the ``str()`` of
+      the mixed-in type.
+
    :class:`EnumCheck`
 
       An enumeration with the values ``CONTINUOUS``, ``NAMED_FLAGS``, and
@@ -132,9 +137,19 @@ Module Contents
 
       Do not make ``obj`` a member.  Can be used as a decorator.
 
+   :func:`global_enum`
+
+      Modify the ``str()`` and ``repr()`` of an enum to show its module instead of
+      its class -- should only be used if the enum members will be exported to the
+      global namespace.
+
+   :func:`show_flag_values`
+
+      Return a list of all power-of-two integers contained in a flag.
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
 
 ---------------
 
@@ -573,6 +588,17 @@ Data Types
       better support the *replacement of existing constants* use-case.
       :meth:`__format__` was already :func:`int.__format__` for that same reason.
 
+.. class:: ReprEnum
+
+   *ReprEum* uses the *repr()* of *Enum*, but the *str()* of the mixed-in data type:
+
+      * :meth:`int.__str__` for *IntEnum* and *IntFlag*
+      * :meth:`str.__str__` for *StrEnum*
+
+   Inherit from *ReprEnum* when mixing in a data type when the *str()* output should
+   not be changed to the *Enum*-default *str()*.
+
+   .. versionadded:: 3.11
 
 .. class:: EnumCheck
 
@@ -805,6 +831,20 @@ Utilities and Decorators
 .. decorator:: nonmember
 
    A decorator for use in enums: its target will not become a member.
+
+   .. versionadded:: 3.11
+
+.. decorator:: global_enum
+
+   A decorator to change the *str()* and *repr()* of an enum to show the module
+   of the enum instead of its class.  Should only be used when the enum members
+   are exported to the global namespace (see *re.RegexFlag* for an example).
+
+   .. versionadded:: 3.11
+
+.. function:: show_flag_values
+
+   Return a list of all power-of-two integers contained in a flag.
 
    .. versionadded:: 3.11
 
