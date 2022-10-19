@@ -2144,7 +2144,7 @@ Changes to Python's build process and to the C API include:
 
 * New functions: :c:func:`PyLong_AsLongAndOverflow` and
   :c:func:`PyLong_AsLongLongAndOverflow`  approximates a Python long
-  integer as a C :c:type:`long` or :c:type:`long long`.
+  integer as a C :c:expr:`long` or :c:expr:`long long`.
   If the number is too large to fit into
   the output type, an *overflow* flag is set and returned to the caller.
   (Contributed by Case Van Horsen; :issue:`7528` and :issue:`7767`.)
@@ -2202,7 +2202,7 @@ Changes to Python's build process and to the C API include:
 * New format codes: the :c:func:`PyFormat_FromString`,
   :c:func:`PyFormat_FromStringV`, and :c:func:`PyErr_Format` functions now
   accept ``%lld`` and ``%llu`` format codes for displaying
-  C's :c:type:`long long` types.
+  C's :c:expr:`long long` types.
   (Contributed by Mark Dickinson; :issue:`7228`.)
 
 * The complicated interaction between threads and process forking has
@@ -2485,8 +2485,8 @@ In the standard library:
 
 * The ElementTree library, :mod:`xml.etree`, no longer escapes
   ampersands and angle brackets when outputting an XML processing
-  instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
-  or comment (which looks like `<!-- comment -->`).
+  instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
+  or comment (which looks like ``<!-- comment -->``).
   (Patch by Neil Muller; :issue:`2746`.)
 
 * The :meth:`~StringIO.StringIO.readline` method of :class:`~StringIO.StringIO` objects now does

@@ -38,7 +38,7 @@ the :mod:`io` APIs instead.
 
 .. c:function:: int PyObject_AsFileDescriptor(PyObject *p)
 
-   Return the file descriptor associated with *p* as an :c:type:`int`.  If the
+   Return the file descriptor associated with *p* as an :c:expr:`int`.  If the
    object is an integer, its value is returned.  If not, the
    object's :meth:`~io.IOBase.fileno` method is called if it exists; the
    method must return an integer, which is returned as the file descriptor

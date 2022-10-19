@@ -1152,12 +1152,11 @@ handle_eval_breaker:
 
     {
     /* Start instructions */
-#if USE_COMPUTED_GOTOS
-    {
-#else
+#if !USE_COMPUTED_GOTOS
     dispatch_opcode:
-        switch (opcode) {
+        switch (opcode)
 #endif
+        {
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
@@ -3252,6 +3251,7 @@ handle_eval_breaker:
             uint16_t hint = cache->index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
             PyObject *value, *old_value;
+            uint64_t new_version;
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
@@ -3259,6 +3259,7 @@ handle_eval_breaker:
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 STACK_SHRINK(1);
                 value = POP();
+                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             else {
@@ -3268,6 +3269,7 @@ handle_eval_breaker:
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 STACK_SHRINK(1);
                 value = POP();
+                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             Py_DECREF(old_value);
@@ -3277,7 +3279,7 @@ handle_eval_breaker:
                 _PyObject_GC_TRACK(dict);
             }
             /* PEP 509 */
-            dict->ma_version_tag = DICT_NEXT_VERSION();
+            dict->ma_version_tag = new_version;
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
             DISPATCH();
@@ -5099,23 +5101,23 @@ handle_eval_breaker:
 /* Specialization misses */
 
 miss:
-    {
-        STAT_INC(opcode, miss);
-        opcode = _PyOpcode_Deopt[opcode];
-        STAT_INC(opcode, miss);
-        /* The counter is always the first cache entry: */
-        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
-        *counter -= 1;
-        if (*counter == 0) {
-            int adaptive_opcode = _PyOpcode_Adaptive[opcode];
-            assert(adaptive_opcode);
-            _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
-            STAT_INC(opcode, deopt);
-            *counter = adaptive_counter_start();
+        {
+            STAT_INC(opcode, miss);
+            opcode = _PyOpcode_Deopt[opcode];
+            STAT_INC(opcode, miss);
+            /* The counter is always the first cache entry: */
+            _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
+            *counter -= 1;
+            if (*counter == 0) {
+                int adaptive_opcode = _PyOpcode_Adaptive[opcode];
+                assert(adaptive_opcode);
+                _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
+                STAT_INC(opcode, deopt);
+                *counter = adaptive_counter_start();
+            }
+            next_instr--;
+            DISPATCH_GOTO();
         }
-        next_instr--;
-        DISPATCH_GOTO();
-    }
 
 unbound_local_error:
         {

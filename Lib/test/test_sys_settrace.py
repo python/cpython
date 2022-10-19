@@ -834,9 +834,8 @@ class TraceTestCase(unittest.TestCase):
              (5, 'line'),
              (6, 'line'),
              (7, 'line'),
-             (10, 'line'),
-             (13, 'line'),
-             (13, 'return')])
+             (10, 'line')] +
+             ([(13, 'line'), (13, 'return')] if __debug__ else [(10, 'return')]))
 
     def test_continue_through_finally(self):
 
@@ -871,9 +870,8 @@ class TraceTestCase(unittest.TestCase):
              (6, 'line'),
              (7, 'line'),
              (10, 'line'),
-             (3, 'line'),
-             (13, 'line'),
-             (13, 'return')])
+             (3, 'line')] +
+             ([(13, 'line'), (13, 'return')] if __debug__ else [(3, 'return')]))
 
     def test_return_through_finally(self):
 
