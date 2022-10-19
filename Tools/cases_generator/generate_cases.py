@@ -14,7 +14,7 @@ import lexer
 import parser
 
 arg_parser = argparse.ArgumentParser()
-arg_parser.add_argument("-i", "--input", type=str, default="Python/bytecodes.inst")
+arg_parser.add_argument("-i", "--input", type=str, default="Python/bytecodes.c")
 arg_parser.add_argument("-o", "--output", type=str, default="Python/cases.h")
 arg_parser.add_argument("-c", "--compare", action="store_true")
 arg_parser.add_argument("-q", "--quiet", action="store_true")

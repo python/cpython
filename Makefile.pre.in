@@ -1447,12 +1447,12 @@ regen-opcode-targets:
 
 .PHONY: regen-cases
 regen-cases:
-	# Regenerate Python/cases.h from Python/bytecodes.inst
+	# Regenerate Python/cases.h from Python/bytecodes.c
 	# using Tools/cases_generator/generate_cases.py
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
-		-i $(srcdir)/Python/bytecodes.inst \
+		-i $(srcdir)/Python/bytecodes.c \
 		-o $(srcdir)/Python/cases.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/cases.h $(srcdir)/Python/cases.h.new
 

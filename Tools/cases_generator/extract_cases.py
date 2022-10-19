@@ -1,6 +1,9 @@
 """Extract the main interpreter switch cases."""
 
-# Reads cases from ceval.c, writes to bytecodes.inst.
+# Reads cases from ceval.c, writes to bytecodes.c.
+# (This file is not meant to be compiled, but it has a .c extension
+# so tooling like VS Code can be fooled into thinking it is C code.
+# This helps editing and browsing the code.)
 #
 # The script generate_cases.py regenerates the cases.
 
@@ -12,7 +15,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", type=str, default="Python/ceval.c")
-parser.add_argument("-o", "--output", type=str, default="Python/bytecodes.inst")
+parser.add_argument("-o", "--output", type=str, default="Python/bytecodes.c")
 parser.add_argument("-c", "--compare", action="store_true")
 parser.add_argument("-q", "--quiet", action="store_true")
 
