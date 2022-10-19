@@ -1128,23 +1128,15 @@ fcntl
 Optimizations
 =============
 
+* "Zero-cost" exceptions are implemented, eliminating the cost
+  of :keyword:`try` statements when no exception is raised.
+  (Contributed by Mark Shannon in :issue:`40222`.)
+
 * The compiler now optimizes simple
   :ref:`printf-style % formatting <old-string-formatting>` on string literals
   containing only the format codes ``%s``, ``%r`` and ``%a`` and makes it as
   fast as a corresponding :term:`f-string` expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
-
-* "Zero-cost" exceptions are implemented, eliminating the cost
-  of :keyword:`try` statements when no exception is raised.
-  (Contributed by Mark Shannon in :issue:`40222`.)
-
-* Pure ASCII strings are now normalized in constant time by
-  :func:`unicodedata.normalize`.
-  (Contributed by Dong-hee Na in :issue:`44987`.)
-
-* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now
-  ≈10 times faster for large arguments (with a larger speedup for larger *k*).
-  (Contributed by Serhiy Storchaka in :issue:`37295`.)
 
 * Dictionaries don't store hash values when all keys are Unicode objects,
   decreasing :class:`dict` size.
@@ -1152,11 +1144,19 @@ Optimizations
   is reduced from 352 bytes to 272 bytes (23% smaller) on 64-bit platforms.
   (Contributed by Inada Naoki in :issue:`46845`.)
 
+* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now
+  ≈10 times faster for large arguments (with a larger speedup for larger *k*).
+  (Contributed by Serhiy Storchaka in :issue:`37295`.)
+
 * :mod:`re`'s regular expression matching engine has been partially refactored,
   and now uses computed gotos (or "threaded code") on supported platforms. As a
   result, Python 3.11 executes the `pyperformance regular expression benchmarks
   <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
   faster than Python 3.10.
+
+* :func:`unicodedata.normalize`
+  now normalizes pure-ASCII strings in constant time.
+  (Contributed by Dong-hee Na in :issue:`44987`.)
 
 
 .. _whatsnew311-faster-cpython:
