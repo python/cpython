@@ -32,8 +32,7 @@ The :func:`getmembers` function retrieves the members of an object such as a
 class or module. The functions whose names begin with "is" are mainly
 provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
-attributes, but note that some module attributes are in the process of being
-depreciated (see `this issue <https://github.com/python/cpython/issues/65961>`_).
+attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. this function name is too big to fit in the ascii-art table below
 .. |coroutine-origin-link| replace:: :func:`sys.set_coroutine_origin_tracking_depth`
@@ -41,32 +40,6 @@ depreciated (see `this issue <https://github.com/python/cpython/issues/65961>`_)
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
-| module    | __cached__        | the path where a compiled |
-|           |                   | version is stored         |
-+-----------+-------------------+---------------------------+
-|           | __doc__           | documentation string      |
-+-----------+-------------------+---------------------------+
-|           | __file__          | filename (missing for     |
-|           |                   | built-in modules)         |
-+-----------+-------------------+---------------------------+
-|           | __loader__        | loader used to load the   |
-|           |                   | module                    |
-+-----------+-------------------+---------------------------+
-|           | __name__          | name of the module        |
-+-----------+-------------------+---------------------------+
-|           | __path__          | list of strings specifying|
-|           |                   | the search path within a  |
-|           |                   | package (not set for      |
-|           |                   | modules)                  |
-+-----------+-------------------+---------------------------+
-|           | __package__       | parent package for the    |
-|           |                   | module/package            |
-+-----------+-------------------+---------------------------+
-|           | __spec__          | specification for the     |
-|           |                   | module's                  |
-|           |                   | import-system-related     |
-|           |                   | state                     |
-+-----------+-------------------+---------------------------+
 | class     | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
