@@ -1298,32 +1298,32 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 | Operation     | Form               | Specialization                                        | Operation speedup | Contributor(s)    |
 |               |                    |                                                       | (up to)           |                   |
 +===============+====================+=======================================================+===================+===================+
-| Binary        | ``x+x; x*x; x-x;`` | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
-| operations    |                    | such as ``int``, ``float``, and ``str`` take custom   |                   | Dong-hee Na,      |
-|               |                    | fast paths for their underlying types.                |                   | Brandt Bucher,    |
+| Binary        | ``x + x``          | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
+| operations    |                    | such as :class:`int`, :class:`float` and :class:`str` |                   | Dong-hee Na,      |
+|               | ``x - x``          | take custom fast paths for their underlying types.    |                   | Brandt Bucher,    |
 |               |                    |                                                       |                   | Dennis Sweeney    |
+|               | ``x * x``          |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Subscript     | ``a[i]``           | Subscripting container types such as ``list``,        | 10-25%            | Irit Katriel,     |
-|               |                    | ``tuple`` and ``dict`` directly index the underlying  |                   | Mark Shannon      |
-|               |                    | data structures.                                      |                   |                   |
+| Subscript     | ``a[i]``           | Subscripting container types such as :class:`list`,   | 10-25%            | Irit Katriel,     |
+|               |                    | :class:`tuple` and :class:`dict` directly index       |                   | Mark Shannon      |
+|               |                    | the underlying data structures.                       |                   |                   |
 |               |                    |                                                       |                   |                   |
-|               |                    | Subscripting custom ``__getitem__``                   |                   |                   |
+|               |                    | Subscripting custom :meth:`~object.__getitem__`       |                   |                   |
 |               |                    | is also inlined similar to :ref:`inline-calls`.       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Store         | ``a[i] = z``       | Similar to subscripting specialization above.         | 10-25%            | Dennis Sweeney    |
 | subscript     |                    |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Calls         | ``f(arg)``         | Calls to common builtin (C) functions and types such  | 20%               | Mark Shannon,     |
-|               | ``C(arg)``         | as ``len`` and ``str`` directly call their underlying |                   | Ken Jin           |
-|               |                    | C version. This avoids going through the internal     |                   |                   |
-|               |                    | calling convention.                                   |                   |                   |
-|               |                    |                                                       |                   |                   |
+|               |                    | as :func:`len` and :class:`str` directly call their   |                   | Ken Jin           |
+|               | ``C(arg)``         | underlying C version. This avoids going through the   |                   |                   |
+|               |                    | internal calling convention.                          |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``print``          | The object's index in the globals/builtins namespace  | [1]_              | Mark Shannon      |
-| global        | ``len``            | is cached. Loading globals and builtins require       |                   |                   |
-| variable      |                    | zero namespace lookups.                               |                   |                   |
+| Load          | ``print()``        | The object's index in the globals/builtins namespace  | [#load-global]_   | Mark Shannon      |
+| global        |                    | is cached. Loading globals and builtins require       |                   |                   |
+| variable      | ``len()``          | zero namespace lookups.                               |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [2]_              | Mark Shannon      |
+| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [#load-attr]_     | Mark Shannon      |
 | attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
 |               |                    | In most cases, attribute loading will require zero    |                   |                   |
 |               |                    | namespace lookups.                                    |                   |                   |
@@ -1335,14 +1335,15 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 | Store         | ``o.attr = z``     | Similar to load attribute optimization.               | 2%                | Mark Shannon      |
 | attribute     |                    |                                                       | in pyperformance  |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Unpack        | ``*seq``           | Specialized for common containers such as ``list``    | 8%                | Brandt Bucher     |
-| Sequence      |                    | and ``tuple``. Avoids internal calling convention.    |                   |                   |
+| Unpack        | ``*seq``           | Specialized for common containers such as             | 8%                | Brandt Bucher     |
+| Sequence      |                    | :class:`list` and :class:`tuple`.                     |                   |                   |
+|               |                    | Avoids internal calling convention.                   |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 
-.. [1] A similar optimization already existed since Python 3.8.  3.11
-       specializes for more forms and reduces some overhead.
+.. [#load-global] A similar optimization already existed since Python 3.8.
+       3.11 specializes for more forms and reduces some overhead.
 
-.. [2] A similar optimization already existed since Python 3.10.
+.. [#load-attr] A similar optimization already existed since Python 3.10.
        3.11 specializes for more forms. Furthermore, all attribute loads should
        be sped up by :issue:`45947`.
 
