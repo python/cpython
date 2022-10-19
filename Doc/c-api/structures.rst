@@ -392,9 +392,6 @@ Accessing attributes of extension types
    struct member.  Its fields are:
 
    .. c:member:: const char* PyMethodDef.name
-   
-      Name of the member.
-      
    .. c:member:: int PyMethodDef.type
    
       The type of the member in the C struct.
@@ -409,7 +406,7 @@ Accessing attributes of extension types
       
    .. c:member:: const char* PyMethodDef.doc
       
-      points to the contents of the docstring
+      Points to the contents of the docstring.
       
 
    :c:member:`PyMethodDef.type` can be one of many ``T_`` macros corresponding to various C
