@@ -166,7 +166,7 @@ batched_next(batchedobject *bo)
         Py_DECREF(result);
         return NULL;
     }
-    if (i < bo->batch_size) {
+    if (i < n) {
         PyObject *short_list = PyList_GetSlice(result, 0, i);
         Py_SETREF(result, short_list);
     }
