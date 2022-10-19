@@ -10,6 +10,10 @@
 .. testsetup::
 
    from itertools import *
+   import collections
+   import math
+   import operator
+   import random
 
 --------------
 
@@ -133,10 +137,9 @@ loops that truncate the stream.
     There are a number of uses for the *func* argument.  It can be set to
     :func:`min` for a running minimum, :func:`max` for a running maximum, or
     :func:`operator.mul` for a running product.  Amortization tables can be
-    built by accumulating interest and applying payments.  First-order
-    `recurrence relations <https://en.wikipedia.org/wiki/Recurrence_relation>`_
-    can be modeled by supplying the initial value in the iterable and using only
-    the accumulated total in *func* argument::
+    built by accumulating interest and applying payments:
+
+    .. doctest::
 
       >>> data = [3, 4, 6, 2, 1, 9, 0, 7, 5, 8]
       >>> list(accumulate(data, operator.mul))     # running product
@@ -148,17 +151,6 @@ loops that truncate the stream.
       >>> cashflows = [1000, -90, -90, -90, -90]
       >>> list(accumulate(cashflows, lambda bal, pmt: bal*1.05 + pmt))
       [1000, 960.0, 918.0, 873.9000000000001, 827.5950000000001]
-
-      # Chaotic recurrence relation https://en.wikipedia.org/wiki/Logistic_map
-      >>> logistic_map = lambda x, _:  r * x * (1 - x)
-      >>> r = 3.8
-      >>> x0 = 0.4
-      >>> inputs = repeat(x0, 36)     # only the initial value is used
-      >>> [format(x, '.2f') for x in accumulate(inputs, logistic_map)]
-      ['0.40', '0.91', '0.30', '0.81', '0.60', '0.92', '0.29', '0.79', '0.63',
-       '0.88', '0.39', '0.90', '0.33', '0.84', '0.52', '0.95', '0.18', '0.57',
-       '0.93', '0.25', '0.71', '0.79', '0.63', '0.88', '0.39', '0.91', '0.32',
-       '0.83', '0.54', '0.95', '0.20', '0.60', '0.91', '0.30', '0.80', '0.60']
 
     See :func:`functools.reduce` for a similar function that returns only the
     final accumulated value.
@@ -206,7 +198,7 @@ loops that truncate the stream.
           while (batch := list(islice(it, n))):
               yield batch
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 
 .. function:: chain(*iterables)
@@ -241,10 +233,10 @@ loops that truncate the stream.
 
    The combination tuples are emitted in lexicographic ordering according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
-   the combination tuples will be produced in sorted order.
+   the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeat
+   value.  So if the input elements are unique, there will be no repeated
    values in each combination.
 
    Roughly equivalent to::
@@ -290,7 +282,7 @@ loops that truncate the stream.
 
    The combination tuples are emitted in lexicographic ordering according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
-   the combination tuples will be produced in sorted order.
+   the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, the generated combinations
@@ -449,14 +441,17 @@ loops that truncate the stream.
       class groupby:
           # [k for k, g in groupby('AAAABBBCCDAABBB')] --> A B C D A B
           # [list(g) for k, g in groupby('AAAABBBCCD')] --> AAAA BBB CC D
+
           def __init__(self, iterable, key=None):
               if key is None:
                   key = lambda x: x
               self.keyfunc = key
               self.it = iter(iterable)
               self.tgtkey = self.currkey = self.currvalue = object()
+
           def __iter__(self):
               return self
+
           def __next__(self):
               self.id = object()
               while self.currkey == self.tgtkey:
@@ -464,6 +459,7 @@ loops that truncate the stream.
                   self.currkey = self.keyfunc(self.currvalue)
               self.tgtkey = self.currkey
               return (self.currkey, self._grouper(self.tgtkey, self.id))
+
           def _grouper(self, tgtkey, id):
               while self.id is id and self.currkey == tgtkey:
                   yield self.currvalue
@@ -482,10 +478,17 @@ loops that truncate the stream.
    Afterward, elements are returned consecutively unless *step* is set higher than
    one which results in items being skipped.  If *stop* is ``None``, then iteration
    continues until the iterator is exhausted, if at all; otherwise, it stops at the
-   specified position.  Unlike regular slicing, :func:`islice` does not support
-   negative values for *start*, *stop*, or *step*.  Can be used to extract related
-   fields from data where the internal structure has been flattened (for example, a
-   multi-line report may list a name field on every third line).  Roughly equivalent to::
+   specified position.
+
+   If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
+   then the step defaults to one.
+
+   Unlike regular slicing, :func:`islice` does not support negative values for
+   *start*, *stop*, or *step*.  Can be used to extract related fields from
+   data where the internal structure has been flattened (for example, a
+   multi-line report may list a name field on every third line).
+
+   Roughly equivalent to::
 
       def islice(iterable, *args):
           # islice('ABCDEFG', 2) --> A B
@@ -512,8 +515,6 @@ loops that truncate the stream.
               for i, element in zip(range(i + 1, stop), iterable):
                   pass
 
-   If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
-   then the step defaults to one.
 
 .. function:: pairwise(iterable)
 
@@ -542,13 +543,13 @@ loops that truncate the stream.
    of the *iterable* and all possible full-length permutations
    are generated.
 
-   The permutation tuples are emitted in lexicographic ordering according to
+   The permutation tuples are emitted in lexicographic order according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
-   the combination tuples will be produced in sorted order.
+   the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeat
-   values in each permutation.
+   value.  So if the input elements are unique, there will be no repeated
+   values within a permutation.
 
    Roughly equivalent to::
 
@@ -628,9 +629,7 @@ loops that truncate the stream.
 .. function:: repeat(object[, times])
 
    Make an iterator that returns *object* over and over again. Runs indefinitely
-   unless the *times* argument is specified. Used as argument to :func:`map` for
-   invariant parameters to the called function.  Also used with :func:`zip` to
-   create an invariant part of a tuple record.
+   unless the *times* argument is specified.
 
    Roughly equivalent to::
 
@@ -644,7 +643,9 @@ loops that truncate the stream.
                   yield object
 
    A common use for *repeat* is to supply a stream of constant values to *map*
-   or *zip*::
+   or *zip*:
+
+   .. doctest::
 
       >>> list(map(pow, range(10), repeat(2)))
       [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
@@ -653,9 +654,12 @@ loops that truncate the stream.
 
    Make an iterator that computes the function using arguments obtained from
    the iterable.  Used instead of :func:`map` when argument parameters are already
-   grouped in tuples from a single iterable (the data has been "pre-zipped").  The
-   difference between :func:`map` and :func:`starmap` parallels the distinction
-   between ``function(a,b)`` and ``function(*c)``. Roughly equivalent to::
+   grouped in tuples from a single iterable (when the data has been
+   "pre-zipped").
+
+   The difference between :func:`map` and :func:`starmap` parallels the
+   distinction between ``function(a,b)`` and ``function(*c)``. Roughly
+   equivalent to::
 
       def starmap(function, iterable):
           # starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000
@@ -683,9 +687,7 @@ loops that truncate the stream.
 
    The following Python code helps explain what *tee* does (although the actual
    implementation is more complex and uses only a single underlying
-   :abbr:`FIFO (first-in, first-out)` queue).
-
-   Roughly equivalent to::
+   :abbr:`FIFO (first-in, first-out)` queue)::
 
         def tee(iterable, n=2):
             it = iter(iterable)
@@ -702,7 +704,7 @@ loops that truncate the stream.
                     yield mydeque.popleft()
             return tuple(gen(d) for d in deques)
 
-   Once :func:`tee` has made a split, the original *iterable* should not be
+   Once a :func:`tee` has been created, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
@@ -756,14 +758,28 @@ Itertools Recipes
 This section shows recipes for creating an extended toolset using the existing
 itertools as building blocks.
 
+The primary purpose of the itertools recipes is educational.  The recipes show
+various ways of thinking about individual tools — for example, that
+``chain.from_iterable`` is related to the concept of flattening.  The recipes
+also give ideas about ways that the tools can be combined — for example, how
+`compress()` and `range()` can work together.  The recipes also show patterns
+for using itertools with the :mod:`operator` and :mod:`collections` modules as
+well as with the built-in itertools such as ``map()``, ``filter()``,
+``reversed()``, and ``enumerate()``.
+
+A secondary purpose of the recipes is to serve as an incubator.  The
+``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
+recipes.  Currently, the ``iter_index()`` recipe is being tested to see
+whether it proves its worth.
+
 Substantially all of these recipes and many, many others can be installed from
 the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
 on the Python Package Index::
 
     python -m pip install more-itertools
 
-The extended tools offer the same high performance as the underlying toolset.
-The superior memory performance is kept by processing elements one at a time
+Many of the recipes offer the same high performance as the underlying toolset.
+Superior memory performance is kept by processing elements one at a time
 rather than bringing the whole iterable into memory all at once. Code volume is
 kept small by linking the tools together in a functional style which helps
 eliminate temporary variables.  High speed is retained by preferring
@@ -848,15 +864,25 @@ which incur interpreter overhead.
            for k in range(len(roots) + 1)
        ]
 
-   def iter_index(seq, value, start=0):
-       "Return indices where a value occurs in a sequence."
+   def iter_index(iterable, value, start=0):
+       "Return indices where a value occurs in a sequence or iterable."
        # iter_index('AABCADEAF', 'A') --> 0 1 4 7
-       i = start - 1
        try:
-           while True:
-               yield (i := seq.index(value, i+1))
-       except ValueError:
-           pass
+           seq_index = iterable.index
+       except AttributeError:
+           # Slow path for general iterables
+           it = islice(iterable, start, None)
+           for i, element in enumerate(it, start):
+               if element is value or element == value:
+                   yield i
+       else:
+           # Fast path for sequences
+           i = start - 1
+           try:
+               while True:
+                   yield (i := seq_index(value, i+1))
+           except ValueError:
+               pass
 
    def sieve(n):
        "Primes less than n"
@@ -978,16 +1004,19 @@ which incur interpreter overhead.
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
        # unique_everseen('ABBCcAD', str.lower) --> A B C D
        seen = set()
-       seen_add = seen.add
        if key is None:
            for element in filterfalse(seen.__contains__, iterable):
-               seen_add(element)
+               seen.add(element)
                yield element
+           # Note: The steps shown above are intended to demonstrate
+           # filterfalse(). For order preserving deduplication,
+           # a better solution is:
+           #     yield from dict.fromkeys(iterable)
        else:
            for element in iterable:
                k = key(element)
                if k not in seen:
-                   seen_add(k)
+                   seen.add(k)
                    yield element
 
    def unique_justseen(iterable, key=None):
@@ -1195,6 +1224,18 @@ which incur interpreter overhead.
     >>> list(iter_index('AABCADEAF', 'X'))
     []
     >>> list(iter_index('', 'X'))
+    []
+    >>> list(iter_index('AABCADEAF', 'A', 1))
+    [1, 4, 7]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 1))
+    [1, 4, 7]
+    >>> list(iter_index('AABCADEAF', 'A', 2))
+    [4, 7]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 2))
+    [4, 7]
+    >>> list(iter_index('AABCADEAF', 'A', 10))
+    []
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 10))
     []
 
     >>> list(sieve(30))
