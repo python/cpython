@@ -7,6 +7,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include <stddef.h>
+#include <stdio.h>
 
 /*[clinic input]
 class list "PyListObject *" "&PyList_Type"

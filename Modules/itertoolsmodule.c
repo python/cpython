@@ -160,14 +160,14 @@ batched_next(batchedobject *bo)
         }
         PyList_SET_ITEM(result, i, item);
     }
-    if (i < bo->batch_size) {
+    if (i > 0 && i < bo->batch_size) {
         PyObject *short_list = PyList_GetSlice(result, 0, i);
         Py_SETREF(result, short_list);
         if (result == NULL) {
             return NULL;
         }
     }
-    if (PyList_GET_SIZE(result) > 0) {
+    if (i > 0) {
         return result;
     }
     Py_CLEAR(bo->it);
