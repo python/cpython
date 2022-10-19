@@ -3960,7 +3960,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 static int
 compiler_assert(struct compiler *c, stmt_ty s)
 {
-    location loc = LOC(s);
     /* Always emit a warning if the test is a non-zero length tuple */
     if ((s->v.Assert.test->kind == Tuple_kind &&
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) ||
@@ -3968,23 +3967,26 @@ compiler_assert(struct compiler *c, stmt_ty s)
          PyTuple_Check(s->v.Assert.test->v.Constant.value) &&
          PyTuple_Size(s->v.Assert.test->v.Constant.value) > 0))
     {
-        if (!compiler_warn(c, loc, "assertion is always true, "
-                                   "perhaps remove parentheses?"))
+        if (!compiler_warn(c, LOC(s), "assertion is always true, "
+                                      "perhaps remove parentheses?"))
         {
             return 0;
         }
     }
-    if (c->c_optimize)
+    if (c->c_optimize) {
         return 1;
+    }
     NEW_JUMP_TARGET_LABEL(c, end);
-    if (!compiler_jump_if(c, &loc, s->v.Assert.test, end, 1))
+    location loc = LOC(s);
+    if (!compiler_jump_if(c, &loc, s->v.Assert.test, end, 1)) {
         return 0;
-    ADDOP(c, loc, LOAD_ASSERTION_ERROR);
+    }
+    ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, loc, CALL, 0);
+        ADDOP_I(c, LOC(s), CALL, 0);
     }
-    ADDOP_I(c, loc, RAISE_VARARGS, 1);
+    ADDOP_I(c, LOC(s), RAISE_VARARGS, 1);
 
     USE_LABEL(c, end);
     return 1;
