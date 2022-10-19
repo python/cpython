@@ -468,15 +468,13 @@ async def wait_for(fut, timeout):
         try:
             await waiter
         except exceptions.CancelledError:
-            if fut.done():
-                return fut.result()
-            else:
+            if not fut.done():
                 fut.remove_done_callback(cb)
                 # We must ensure that the task is not running
                 # after wait_for() returns.
                 # See https://bugs.python.org/issue32751
                 await _cancel_and_wait(fut, loop=loop)
-                raise
+            raise
 
         if fut.done():
             return fut.result()
