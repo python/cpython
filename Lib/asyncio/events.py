@@ -775,9 +775,6 @@ def set_event_loop_policy(policy):
     _event_loop_policy = policy
 
 
-get_event_loop = get_running_loop
-
-
 def set_event_loop(loop):
     """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
     get_event_loop_policy().set_event_loop(loop)
