@@ -508,9 +508,6 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
     def _loop_writing(self, fut=None):
         try:
-            if self._conn_lost:
-                return
-
             assert fut is self._write_fut
             self._write_fut = None
             if fut:
