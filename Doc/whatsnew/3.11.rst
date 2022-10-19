@@ -1108,12 +1108,24 @@ warnings
   providing a more concise way to locally ignore warnings or convert them to errors.
   (Contributed by Zac Hatfield-Dodds in :issue:`47074`.)
 
+
+.. _whatsnew311-zipfile:
+
 zipfile
 -------
 
-* Added support for specifying member name encoding for reading
-  metadata in the zipfile's directory and file headers.
+* Added support for specifying member name encoding for reading metadata
+  in a :class:`~zipfile.ZipFile`'s directory and file headers.
   (Contributed by Stephen J. Turnbull and Serhiy Storchaka in :issue:`28080`.)
+
+* Added :meth:`ZipFile.mkdir() <zipfile.ZipFile.mkdir>`
+  for creating new directories inside ZIP archives.
+  (Contributed by Sam Ezeh in :gh:`49083`.)
+
+* Added :attr:`~zipfile.Path.stem`, :attr:`~zipfile.Path.suffix`
+  and :attr:`~zipfile.Path.suffixes` to :class:`zipfile.Path`.
+  (Contributed by Miguel Brito in :gh:`88261`.)
+
 
 fcntl
 -----
