@@ -3860,18 +3860,18 @@ class OSErrorTests(unittest.TestCase):
 
         for filenames, func, *func_args in funcs:
             for name in filenames:
-                try:
-                    if isinstance(name, (str, bytes)):
+                if not isinstance(name, (str, bytes)):
+                    with self.assertRaises(TypeError):
                         func(name, *func_args)
-                    else:
-                        with self.assertWarnsRegex(DeprecationWarning, 'should be'):
-                            func(name, *func_args)
-                except OSError as err:
-                    self.assertIs(err.filename, name, str(func))
-                except UnicodeDecodeError:
-                    pass
                 else:
-                    self.fail("No exception thrown by {}".format(func))
+                    try:
+                        func(name, *func_args)
+                    except OSError as err:
+                        self.assertIs(err.filename, name, str(func))
+                    except UnicodeDecodeError:
+                        pass
+                    else:
+                        self.fail("No exception thrown by {}".format(func))
 
 class CPUCountTests(unittest.TestCase):
     def test_cpu_count(self):
@@ -4350,16 +4350,8 @@ class TestScandir(unittest.TestCase):
 
         for cls in bytearray, memoryview:
             path_bytes = cls(os.fsencode(self.path))
-            with self.assertWarns(DeprecationWarning):
-                entries = list(os.scandir(path_bytes))
-            self.assertEqual(len(entries), 1, entries)
-            entry = entries[0]
-
-            self.assertEqual(entry.name, b'file.txt')
-            self.assertEqual(entry.path,
-                             os.fsencode(os.path.join(self.path, 'file.txt')))
-            self.assertIs(type(entry.name), bytes)
-            self.assertIs(type(entry.path), bytes)
+            with self.assertRaises(TypeError):
+                list(os.scandir(path_bytes))
 
     @unittest.skipUnless(os.listdir in os.supports_fd,
                          'fd support for listdir required for this test.')

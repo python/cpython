@@ -1,0 +1,1 @@
+Fix source location of 'assert' bytecodes.

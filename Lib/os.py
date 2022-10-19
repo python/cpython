@@ -288,7 +288,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         dirpath, dirnames, filenames
 
     dirpath is a string, the path to the directory.  dirnames is a list of
-    the names of the subdirectories in dirpath (excluding '.' and '..').
+    the names of the subdirectories in dirpath (including symlinks to directories,
+    and excluding '.' and '..').
     filenames is a list of the names of the non-directory files in dirpath.
     Note that the names in the lists are just names, with no path components.
     To get a full path (which begins with top) to a file or directory in

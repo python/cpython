@@ -485,7 +485,7 @@ Process-wide parameters
    interpreter will change the contents of this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    .. deprecated:: 3.11
 
@@ -636,7 +636,7 @@ Process-wide parameters
    if required after calling :c:func:`Py_Initialize`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    The path argument is copied internally, so the caller may free it after the
    call completes.
@@ -751,7 +751,7 @@ Process-wide parameters
      directory (``"."``).
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -787,7 +787,7 @@ Process-wide parameters
    :option:`-I`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -813,7 +813,7 @@ Process-wide parameters
    this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:type:`wchar_*` string.
+   :c:expr:`wchar_*` string.
 
    .. deprecated:: 3.11
 
@@ -956,11 +956,11 @@ from a C thread is::
    /* Release the thread. No Python API allowed beyond this point. */
    PyGILState_Release(gstate);
 
-Note that the :c:func:`PyGILState_\*` functions assume there is only one global
+Note that the ``PyGILState_*`` functions assume there is only one global
 interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
-:c:func:`PyGILState_\*` API is unsupported.
+``PyGILState_*`` API is unsupported.
 
 
 .. _fork-and-threads:
@@ -1023,7 +1023,7 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :attr:`interp` (:c:type:`PyInterpreterState *`), which points to
+   data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
    this thread's interpreter state.
 
 
@@ -1400,8 +1400,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    exception (if any) for the thread is cleared. This raises no exceptions.
 
    .. versionchanged:: 3.7
-      The type of the *id* parameter changed from :c:type:`long` to
-      :c:type:`unsigned long`.
+      The type of the *id* parameter changed from :c:expr:`long` to
+      :c:expr:`unsigned long`.
 
 .. c:function:: void PyEval_AcquireThread(PyThreadState *tstate)
 
@@ -1587,7 +1587,7 @@ operations executed by such objects may affect the wrong (sub-)interpreter's
 dictionary of loaded modules. It is equally important to avoid sharing
 objects from which the above are reachable.
 
-Also note that combining this functionality with :c:func:`PyGILState_\*` APIs
+Also note that combining this functionality with ``PyGILState_*`` APIs
 is delicate, because these APIs assume a bijection between Python thread states
 and OS-level threads, an assumption broken by the presence of sub-interpreters.
 It is highly recommended that you don't switch sub-interpreters between a pair
@@ -1863,7 +1863,7 @@ The Python interpreter provides low-level support for thread-local storage
 (TLS) which wraps the underlying native TLS implementation to support the
 Python-level thread local storage API (:class:`threading.local`).  The
 CPython C level APIs are similar to those offered by pthreads and Windows:
-use a thread key and functions to associate a :c:type:`void*` value per
+use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
 The GIL does *not* need to be held when calling these functions; they supply
@@ -1874,8 +1874,8 @@ you need to include :file:`pythread.h` to use thread-local storage.
 
 .. note::
    None of these API functions handle memory management on behalf of the
-   :c:type:`void*` values.  You need to allocate and deallocate them yourself.
-   If the :c:type:`void*` values happen to be :c:type:`PyObject*`, these
+   :c:expr:`void*` values.  You need to allocate and deallocate them yourself.
+   If the :c:expr:`void*` values happen to be :c:expr:`PyObject*`, these
    functions don't do refcount operations on them either.
 
 .. _thread-specific-storage-api:
@@ -1885,7 +1885,7 @@ Thread Specific Storage (TSS) API
 
 TSS API is introduced to supersede the use of the existing TLS API within the
 CPython interpreter.  This API uses a new type :c:type:`Py_tss_t` instead of
-:c:type:`int` to represent thread keys.
+:c:expr:`int` to represent thread keys.
 
 .. versionadded:: 3.7
 
@@ -1929,11 +1929,11 @@ is not possible due to its implementation being opaque at build time.
    Free the given *key* allocated by :c:func:`PyThread_tss_alloc`, after
    first calling :c:func:`PyThread_tss_delete` to ensure any associated
    thread locals have been unassigned. This is a no-op if the *key*
-   argument is `NULL`.
+   argument is ``NULL``.
 
    .. note::
       A freed key becomes a dangling pointer. You should reset the key to
-      `NULL`.
+      ``NULL``.
 
 
 Methods
@@ -1971,14 +1971,14 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
 
 .. c:function:: int PyThread_tss_set(Py_tss_t *key, void *value)
 
-   Return a zero value to indicate successfully associating a :c:type:`void*`
+   Return a zero value to indicate successfully associating a :c:expr:`void*`
    value with a TSS key in the current thread.  Each thread has a distinct
-   mapping of the key to a :c:type:`void*` value.
+   mapping of the key to a :c:expr:`void*` value.
 
 
 .. c:function:: void* PyThread_tss_get(Py_tss_t *key)
 
-   Return the :c:type:`void*` value associated with a TSS key in the current
+   Return the :c:expr:`void*` value associated with a TSS key in the current
    thread.  This returns ``NULL`` if no value is associated with the key in the
    current thread.
 

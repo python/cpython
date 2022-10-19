@@ -136,9 +136,16 @@ Glossary
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
-      A value associated with an object which is referenced by name using
-      dotted expressions.  For example, if an object *o* has an attribute
+      A value associated with an object which is usually referenced by name
+      using dotted expressions.
+      For example, if an object *o* has an attribute
       *a* it would be referenced as *o.a*.
+
+      It is possible to give an object an attribute whose name is not an
+      identifier as defined by :ref:`identifiers`, for example using
+      :func:`setattr`, if the object allows it.
+      Such an attribute will not be accessible using a dotted expression,
+      and would instead need to be retrieved with :func:`getattr`.
 
    awaitable
       An object that can be used in an :keyword:`await` expression.  Can be
@@ -202,6 +209,16 @@ Glossary
 
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
+
+   callable
+      A callable is an object that can be called, possibly with a set
+      of arguments (see :term:`argument`), with the following syntax::
+
+         callable(argument1, argument2, ...)
+
+      A :term:`function`, and by extension a :term:`method`, is a callable.
+      An instance of a class that implements the :meth:`~object.__call__`
+      method is also a callable.
 
    callback
       A subroutine function which is passed as an argument to be executed at
