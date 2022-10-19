@@ -163,8 +163,9 @@ def write_cases(f, cases):
 
 
 def write_families(f):
-    for opcode, family in dis._specializations.items():
-        print(f"family({opcode}) = {' + '.join(family)};", file=f)
+    for opcode, specializations in dis._specializations.items():
+        members = ' + '.join([opcode] + specializations)
+        print(f"family({opcode.lower()}) = {members};", file=f)
 
 
 def compare(oldfile, newfile, quiet=False):
