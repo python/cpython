@@ -214,7 +214,7 @@ class TestResult(object):
 
             if value is not None:
                 for c in (value.__cause__, value.__context__):
-                    if c is not None:
+                    if c is not None and c is not value:
                         excs.append((type(c), c, c.__traceback__))
         return ret
 
