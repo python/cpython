@@ -7,8 +7,8 @@ Type Objects
 
 Perhaps one of the most important structures of the Python object system is the
 structure that defines a new type: the :c:type:`PyTypeObject` structure.  Type
-objects can be handled using any of the :c:func:`PyObject_\*` or
-:c:func:`PyType_\*` functions, but do not offer much that's interesting to most
+objects can be handled using any of the ``PyObject_*`` or
+``PyType_*`` functions, but do not offer much that's interesting to most
 Python applications. These objects are fundamental to how objects behave, so
 they are very important to the interpreter itself and to any extension module
 that implements new types.
@@ -1519,8 +1519,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    If the instances of this type are weakly referenceable, this field is greater
    than zero and contains the offset in the instance structure of the weak
    reference list head (ignoring the GC header, if present); this offset is used by
-   :c:func:`PyObject_ClearWeakRefs` and the :c:func:`PyWeakref_\*` functions.  The
-   instance structure needs to include a field of type :c:type:`PyObject*` which is
+   :c:func:`PyObject_ClearWeakRefs` and the ``PyWeakref_*`` functions.  The
+   instance structure needs to include a field of type :c:expr:`PyObject*` which is
    initialized to ``NULL``.
 
    Do not confuse this field with :c:member:`~PyTypeObject.tp_weaklist`; that is the list head for
@@ -2356,13 +2356,13 @@ Buffer Object Structures
    steps:
 
    (1) Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
-       set :c:data:`view->obj` to ``NULL`` and return ``-1``.
+       set :c:expr:`view->obj` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.
 
    (3) Increment an internal counter for the number of exports.
 
-   (4) Set :c:data:`view->obj` to *exporter* and increment :c:data:`view->obj`.
+   (4) Set :c:expr:`view->obj` to *exporter* and increment :c:expr:`view->obj`.
 
    (5) Return ``0``.
 
@@ -2370,10 +2370,10 @@ Buffer Object Structures
    schemes can be used:
 
    * Re-export: Each member of the tree acts as the exporting object and
-     sets :c:data:`view->obj` to a new reference to itself.
+     sets :c:expr:`view->obj` to a new reference to itself.
 
    * Redirect: The buffer request is redirected to the root object of the
-     tree. Here, :c:data:`view->obj` will be a new reference to the root
+     tree. Here, :c:expr:`view->obj` will be a new reference to the root
      object.
 
    The individual fields of *view* are described in section
@@ -2415,7 +2415,7 @@ Buffer Object Structures
    *view* argument.
 
 
-   This function MUST NOT decrement :c:data:`view->obj`, since that is
+   This function MUST NOT decrement :c:expr:`view->obj`, since that is
    done automatically in :c:func:`PyBuffer_Release` (this scheme is
    useful for breaking reference cycles).
 

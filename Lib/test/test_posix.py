@@ -634,7 +634,7 @@ class PosixTester(unittest.TestCase):
         self.assertTrue(posix.stat(os_helper.TESTFN))
         self.assertTrue(posix.stat(os.fsencode(os_helper.TESTFN)))
 
-        self.assertWarnsRegex(DeprecationWarning,
+        self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, bytearray(os.fsencode(os_helper.TESTFN)))
         self.assertRaisesRegex(TypeError,
@@ -841,11 +841,8 @@ class PosixTester(unittest.TestCase):
 
     def test_listdir_bytes_like(self):
         for cls in bytearray, memoryview:
-            with self.assertWarns(DeprecationWarning):
-                names = posix.listdir(cls(b'.'))
-            self.assertIn(os.fsencode(os_helper.TESTFN), names)
-            for name in names:
-                self.assertIs(type(name), bytes)
+            with self.assertRaises(TypeError):
+                posix.listdir(cls(b'.'))
 
     @unittest.skipUnless(posix.listdir in os.supports_fd,
                          "test needs fd support for posix.listdir()")
@@ -2089,6 +2086,28 @@ class TestPosixWeaklinking(unittest.TestCase):
 
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.mkdir("dir", dir_fd=0)
+
+    def test_mkfifo(self):
+        self._verify_available("HAVE_MKFIFOAT")
+        if self.mac_ver >= (13, 0):
+            self.assertIn("HAVE_MKFIFOAT", posix._have_functions)
+
+        else:
+            self.assertNotIn("HAVE_MKFIFOAT", posix._have_functions)
+
+            with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
+                os.mkfifo("path", dir_fd=0)
+
+    def test_mknod(self):
+        self._verify_available("HAVE_MKNODAT")
+        if self.mac_ver >= (13, 0):
+            self.assertIn("HAVE_MKNODAT", posix._have_functions)
+
+        else:
+            self.assertNotIn("HAVE_MKNODAT", posix._have_functions)
+
+            with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
+                os.mknod("path", dir_fd=0)
 
     def test_rename_replace(self):
         self._verify_available("HAVE_RENAMEAT")

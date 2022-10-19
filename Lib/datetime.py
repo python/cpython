@@ -1033,7 +1033,11 @@ class date:
             self._day, self._year)
 
     def strftime(self, fmt):
-        "Format using strftime()."
+        """
+        Format using strftime().
+
+        Example: "%d/%m/%Y, %H:%M:%S"
+        """
         return _wrap_strftime(self, fmt, self.timetuple())
 
     def __format__(self, fmt):

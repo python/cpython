@@ -299,69 +299,6 @@ Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
 #-----------------------
-# statically initialized
-
-# argument clinic
-Objects/clinic/odictobject.c.h	OrderedDict_fromkeys	_kwtuple	-
-Objects/clinic/odictobject.c.h	OrderedDict_setdefault	_kwtuple	-
-Objects/clinic/odictobject.c.h	OrderedDict_pop	_kwtuple	-
-Objects/clinic/odictobject.c.h	OrderedDict_popitem	_kwtuple	-
-Objects/clinic/odictobject.c.h	OrderedDict_move_to_end	_kwtuple	-
-Objects/clinic/funcobject.c.h	func_new	_kwtuple	-
-Objects/clinic/longobject.c.h	long_new	_kwtuple	-
-Objects/clinic/longobject.c.h	int_to_bytes	_kwtuple	-
-Objects/clinic/longobject.c.h	int_from_bytes	_kwtuple	-
-Objects/clinic/listobject.c.h	list_sort	_kwtuple	-
-Objects/clinic/bytearrayobject.c.h	bytearray___init__	_kwtuple	-
-Objects/clinic/bytearrayobject.c.h	bytearray_translate	_kwtuple	-
-Objects/clinic/bytearrayobject.c.h	bytearray_split	_kwtuple	-
-Objects/clinic/bytearrayobject.c.h	bytearray_rsplit	_kwtuple	-
-Objects/clinic/bytearrayobject.c.h	bytearray_decode	_kwtuple	-
-Objects/clinic/bytearrayobject.c.h	bytearray_splitlines	_kwtuple	-
-Objects/clinic/bytearrayobject.c.h	bytearray_hex	_kwtuple	-
-Objects/clinic/memoryobject.c.h	memoryview	_kwtuple	-
-Objects/clinic/memoryobject.c.h	memoryview_cast	_kwtuple	-
-Objects/clinic/memoryobject.c.h	memoryview_tobytes	_kwtuple	-
-Objects/clinic/memoryobject.c.h	memoryview_hex	_kwtuple	-
-Objects/clinic/enumobject.c.h	enum_new	_kwtuple	-
-Objects/clinic/structseq.c.h	structseq_new	_kwtuple	-
-Objects/clinic/descrobject.c.h	mappingproxy_new	_kwtuple	-
-Objects/clinic/descrobject.c.h	property_init	_kwtuple	-
-Objects/clinic/codeobject.c.h	code_replace	_kwtuple	-
-Objects/clinic/codeobject.c.h	code__varname_from_oparg	_kwtuple	-
-Objects/clinic/moduleobject.c.h	module___init__	_kwtuple	-
-Objects/clinic/bytesobject.c.h	bytes_split	_kwtuple	-
-Objects/clinic/bytesobject.c.h	bytes_rsplit	_kwtuple	-
-Objects/clinic/bytesobject.c.h	bytes_translate	_kwtuple	-
-Objects/clinic/bytesobject.c.h	bytes_decode	_kwtuple	-
-Objects/clinic/bytesobject.c.h	bytes_splitlines	_kwtuple	-
-Objects/clinic/bytesobject.c.h	bytes_hex	_kwtuple	-
-Objects/clinic/bytesobject.c.h	bytes_new	_kwtuple	-
-Objects/clinic/unicodeobject.c.h	unicode_encode	_kwtuple	-
-Objects/clinic/unicodeobject.c.h	unicode_expandtabs	_kwtuple	-
-Objects/clinic/unicodeobject.c.h	unicode_split	_kwtuple	-
-Objects/clinic/unicodeobject.c.h	unicode_rsplit	_kwtuple	-
-Objects/clinic/unicodeobject.c.h	unicode_splitlines	_kwtuple	-
-Objects/clinic/unicodeobject.c.h	unicode_new	_kwtuple	-
-Objects/clinic/complexobject.c.h	complex_new	_kwtuple	-
-Python/clinic/traceback.c.h	tb_new	_kwtuple	-
-Python/clinic/_warnings.c.h	warnings_warn	_kwtuple	-
-Python/clinic/_warnings.c.h	warnings_warn_explicit	_kwtuple	-
-Python/clinic/bltinmodule.c.h	builtin___import__	_kwtuple	-
-Python/clinic/bltinmodule.c.h	builtin_compile	_kwtuple	-
-Python/clinic/bltinmodule.c.h	builtin_exec	_kwtuple	-
-Python/clinic/bltinmodule.c.h	builtin_pow	_kwtuple	-
-Python/clinic/bltinmodule.c.h	builtin_print	_kwtuple	-
-Python/clinic/bltinmodule.c.h	builtin_round	_kwtuple	-
-Python/clinic/bltinmodule.c.h	builtin_sum	_kwtuple	-
-Python/clinic/import.c.h	_imp_find_frozen	_kwtuple	-
-Python/clinic/import.c.h	_imp_source_hash	_kwtuple	-
-Python/clinic/Python-tokenize.c.h	tokenizeriter_new	_kwtuple	-
-Python/clinic/sysmodule.c.h	sys_addaudithook	_kwtuple	-
-Python/clinic/sysmodule.c.h	sys_set_coroutine_origin_tracking_depth	_kwtuple	-
-Python/clinic/sysmodule.c.h	sys_set_int_max_str_digits	_kwtuple	-
-
-#-----------------------
 # cached - initialized once
 
 # manually cached PyUnicodeObject
@@ -440,9 +377,9 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 # lazy
 Objects/floatobject.c	-	double_format	-
 Objects/floatobject.c	-	float_format	-
-Objects/longobject.c	PyLong_FromString	log_base_BASE	-
-Objects/longobject.c	PyLong_FromString	convwidth_base	-
-Objects/longobject.c	PyLong_FromString	convmultmax_base	-
+Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
+Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
+Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
 Objects/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
@@ -568,7 +505,6 @@ Modules/_io/stringio.c	-	PyStringIO_Type	-
 Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/textio.c	-	PyTextIOBase_Type	-
 Modules/_io/textio.c	-	PyTextIOWrapper_Type	-
-# XXX This should have been found by the analyzer but wasn't:
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
@@ -601,7 +537,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 # statically initializd pointer to static type
 # XXX should be const?
-# XXX This should have been found by the analyzer but wasn't:
 Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 
 # initialized once

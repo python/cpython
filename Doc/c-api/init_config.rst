@@ -828,6 +828,24 @@ PyConfig
 
       Default: ``0``.
 
+   .. c:member:: int int_max_str_digits
+
+      Configures the :ref:`integer string conversion length limitation
+      <int_max_str_digits>`.  An initial value of ``-1`` means the value will
+      be taken from the command line or environment or otherwise default to
+      4300 (:data:`sys.int_info.default_max_str_digits`).  A value of ``0``
+      disables the limitation.  Values greater than zero but less than 640
+      (:data:`sys.int_info.str_digits_check_threshold`) are unsupported and
+      will produce an error.
+
+      Configured by the :option:`-X int_max_str_digits <-X>` command line
+      flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment varable.
+
+      Default: ``-1`` in Python mode.  4300
+      (:data:`sys.int_info.default_max_str_digits`) in isolated mode.
+
+      .. versionadded:: 3.12
+
    .. c:member:: int isolated
 
       If greater than ``0``, enable isolated mode:
