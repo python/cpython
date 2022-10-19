@@ -2000,8 +2000,7 @@ class Helper:
             try:
                 self.help(request)
             except ImportError as e:
-                self.output.write(str(e))
-                self.output.write("\n")
+                self.output.write(f'{e}\n')
         else:
             self.intro()
             self.interact()
