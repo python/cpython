@@ -1367,35 +1367,47 @@ Misc
 FAQ
 ---
 
-| Q: How should I write my code to utilize these speedups?
-|
-| A: You don't have to change your code. Write Pythonic code that follows common
-  best practices. The Faster CPython project optimizes for common code
-  patterns we observe.
-|
-|
-| Q: Will CPython 3.11 use more memory?
-|
-| A: Maybe not. We don't expect memory use to exceed 20% more than 3.10.
-  This is offset by memory optimizations for frame objects and object
-  dictionaries as mentioned above.
-|
-|
-| Q: I don't see any speedups in my workload. Why?
-|
-| A: Certain code won't have noticeable benefits. If your code spends most of
-  its time on I/O operations, or already does most of its
-  computation in a C extension library like numpy, there won't be significant
-  speedup. This project currently benefits pure-Python workloads the most.
-|
-| Furthermore, the pyperformance figures are a geometric mean. Even within the
-  pyperformance benchmarks, certain benchmarks have slowed down slightly, while
-  others have sped up by nearly 2x!
-|
-|
-| Q: Is there a JIT compiler?
-|
-| A: No. We're still exploring other optimizations.
+.. _faster-cpython-faq-my-code:
+
+How should I write my code to utilize these speedups?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You don't have to change your code. Write Pythonic code that follows common
+best practices. The Faster CPython project optimizes for common code
+patterns we observe.
+
+
+.. _faster-cpython-faq-memory:
+
+Will CPython 3.11 use more memory?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Maybe not. We don't expect memory use to exceed 20% more than 3.10.
+This is offset by memory optimizations for frame objects and object
+dictionaries as mentioned above.
+
+
+.. _faster-cpython-ymmv:
+
+I don't see any speedups in my workload. Why?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Certain code won't have noticeable benefits. If your code spends most of
+its time on I/O operations, or already does most of its
+computation in a C extension library like numpy, there won't be significant
+speedup. This project currently benefits pure-Python workloads the most.
+
+Furthermore, the pyperformance figures are a geometric mean. Even within the
+pyperformance benchmarks, certain benchmarks have slowed down slightly, while
+others have sped up by nearly 2x!
+
+
+.. _faster-cpython-jit:
+
+Is there a JIT compiler?
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+No. We're still exploring other optimizations.
 
 
 .. _whatsnew311-faster-cpython-about:
