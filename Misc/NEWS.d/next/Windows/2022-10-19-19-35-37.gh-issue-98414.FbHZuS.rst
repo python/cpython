@@ -1,0 +1,3 @@
+Fix :file:`py.exe` launcher handling of ``-V:<company>/`` option when
+default preferences have been set in environment variables or configuration
+files.
