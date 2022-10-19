@@ -37,8 +37,6 @@ See :pep:`405` for more background on Python virtual environments.
    `Python Packaging User Guide: Creating and using virtual environments
    <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
-.. include:: ../includes/wasm-notavail.rst
-
 Creating virtual environments
 -----------------------------
 
