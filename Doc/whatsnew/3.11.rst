@@ -1162,15 +1162,16 @@ Optimizations
 Faster CPython
 ==============
 
-CPython 3.11 is on average `25% faster <https://github.com/faster-cpython/ideas#published-results>`_
-than CPython 3.10 when measured with the
+CPython 3.11 is an average of
+`25% faster <https://github.com/faster-cpython/ideas#published-results>`_
+than CPython 3.10 as measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
-and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
-could be up to 10-60% faster.
+when compiled with GCC on Ubuntu Linux.
+Depending on your workload, the overall speedup could likely be 10-60%.
 
 This project focuses on two major areas in Python:
 :ref:`whatsnew311-faster-startup` and :ref:`whatsnew311-faster-runtime`.
-Other optimizations not under this project are listed in
+Optimizations not covered by this project are listed separately under
 :ref:`whatsnew311-optimizations`.
 
 
@@ -1196,7 +1197,7 @@ Previously in 3.10, Python module execution looked like this:
 In Python 3.11, the core modules essential for Python startup are "frozen".
 This means that their :ref:`codeobjects` (and bytecode)
 are statically allocated by the interpreter.
-This reduces the steps in module execution process to this:
+This reduces the steps in module execution process to:
 
 .. code-block:: text
 
@@ -1205,7 +1206,7 @@ This reduces the steps in module execution process to this:
 Interpreter startup is now 10-15% faster in Python 3.11. This has a big
 impact for short-running programs using Python.
 
-(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
+(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in many issues.)
 
 
 .. _whatsnew311-faster-runtime:
@@ -1218,8 +1219,9 @@ Faster Runtime
 Cheaper, lazy Python frames
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Python frames are created whenever Python calls a Python function. This frame
-holds execution information. The following are new frame optimizations:
+Python frames, holding execution information,
+are created whenever Python calls a Python function.
+The following are new frame optimizations:
 
 - Streamlined the frame creation process.
 - Avoided memory allocation by generously re-using frame space on the C stack.
@@ -1228,7 +1230,7 @@ holds execution information. The following are new frame optimizations:
 
 Old-style :ref:`frame objects <frame-objects>`
 are now created only when requested by debuggers
-or by Python introspection functions such as :func:`sys._getframe` or
+or by Python introspection functions such as :func:`sys._getframe` and
 :func:`inspect.currentframe`. For most user code, no frame objects are
 created at all. As a result, nearly all Python functions calls have sped
 up significantly. We measured a 3-7% speedup in pyperformance.
@@ -1250,9 +1252,9 @@ In 3.11, when CPython detects Python code calling another Python function,
 it sets up a new frame, and "jumps" to the new code inside the new frame. This
 avoids calling the C interpreting function altogether.
 
-Most Python function calls now consume no C stack space. This speeds up
-most of such calls. In simple recursive functions like fibonacci or
-factorial, a 1.7x speedup was observed. This also means recursive functions
+Most Python function calls now consume no C stack space, speeding them up.
+In simple recursive functions like fibonacci or
+factorial, we observed a 1.7x speedup. This also means recursive functions
 can recurse significantly deeper
 (if the user increases the recursion limit with :func:`sys.setrecursionlimit`).
 We measured a 1-3% improvement in pyperformance.
@@ -1265,7 +1267,7 @@ We measured a 1-3% improvement in pyperformance.
 PEP 659: Specializing Adaptive Interpreter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:pep:`659` is one of the key parts of the faster CPython project. The general
+:pep:`659` is one of the key parts of the Faster CPython project. The general
 idea is that while Python is a dynamic language, most code has regions where
 objects and types rarely change. This concept is known as *type stability*.
 
@@ -1278,14 +1280,14 @@ Python caches the results of expensive operations directly in the
 :term:`bytecode`.
 
 The specializer will also combine certain common instruction pairs into one
-superinstruction. This reduces the overhead during execution.
+superinstruction, reducing the overhead during execution.
 
 Python will only specialize
 when it sees code that is "hot" (executed multiple times). This prevents Python
-from wasting time for run-once code. Python can also de-specialize when code is
+from wasting time on run-once code. Python can also de-specialize when code is
 too dynamic or when the use changes. Specialization is attempted periodically,
-and specialization attempts are not too expensive. This allows specialization
-to adapt to new circumstances.
+and specialization attempts are not too expensive,
+allowing it to adapt to new circumstances.
 
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
 See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
@@ -1353,8 +1355,8 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 Misc
 ----
 
-* Objects now require less memory due to lazily created object namespaces. Their
-  namespace dictionaries now also share keys more freely.
+* Objects now require less memory due to lazily created object namespaces.
+  Their namespace dictionaries now also share keys more freely.
   (Contributed Mark Shannon in :issue:`45340` and :issue:`40116`.)
 
 * A more concise representation of exceptions in the interpreter reduced the
@@ -1372,9 +1374,9 @@ FAQ
 How should I write my code to utilize these speedups?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You don't have to change your code. Write Pythonic code that follows common
-best practices. The Faster CPython project optimizes for common code
-patterns we observe.
+Write Pythonic code that follows common best practices;
+you don't have to change your code.
+The Faster CPython project optimizes for common code patterns we observe.
 
 
 .. _faster-cpython-faq-memory:
@@ -1382,7 +1384,7 @@ patterns we observe.
 Will CPython 3.11 use more memory?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Maybe not. We don't expect memory use to exceed 20% more than 3.10.
+Maybe not; we don't expect memory use to exceed 20% higher than 3.10.
 This is offset by memory optimizations for frame objects and object
 dictionaries as mentioned above.
 
@@ -1394,8 +1396,8 @@ I don't see any speedups in my workload. Why?
 
 Certain code won't have noticeable benefits. If your code spends most of
 its time on I/O operations, or already does most of its
-computation in a C extension library like numpy, there won't be significant
-speedup. This project currently benefits pure-Python workloads the most.
+computation in a C extension library like NumPy, there won't be significant
+speedups. This project currently benefits pure-Python workloads the most.
 
 Furthermore, the pyperformance figures are a geometric mean. Even within the
 pyperformance benchmarks, certain benchmarks have slowed down slightly, while
