@@ -482,13 +482,13 @@ static int compiler_try_star_except(struct compiler *, stmt_ty);
 static int compiler_set_qualname(struct compiler *);
 
 static int compiler_sync_comprehension_generator(
-                                      struct compiler *c, location *ploc,
+                                      struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
 static int compiler_async_comprehension_generator(
-                                      struct compiler *c, location *ploc,
+                                      struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
@@ -5190,7 +5190,7 @@ ex_call:
 
 
 static int
-compiler_comprehension_generator(struct compiler *c, location *ploc,
+compiler_comprehension_generator(struct compiler *c, location loc,
                                  asdl_comprehension_seq *generators, int gen_index,
                                  int depth,
                                  expr_ty elt, expr_ty val, int type)
@@ -5199,15 +5199,15 @@ compiler_comprehension_generator(struct compiler *c, location *ploc,
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return compiler_async_comprehension_generator(
-            c, ploc, generators, gen_index, depth, elt, val, type);
+            c, loc, generators, gen_index, depth, elt, val, type);
     } else {
         return compiler_sync_comprehension_generator(
-            c, ploc, generators, gen_index, depth, elt, val, type);
+            c, loc, generators, gen_index, depth, elt, val, type);
     }
 }
 
 static int
-compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
+compiler_sync_comprehension_generator(struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type)
@@ -5225,7 +5225,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
         c->u->u_argcount = 1;
-        ADDOP_I(c, *ploc, LOAD_FAST, 0);
+        ADDOP_I(c, loc, LOAD_FAST, 0);
     }
     else {
         /* Sub-iter - calculate on the fly */
@@ -5252,13 +5252,13 @@ compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
         }
         if (IS_LABEL(start)) {
             VISIT(c, expr, gen->iter);
-            ADDOP(c, *ploc, GET_ITER);
+            ADDOP(c, loc, GET_ITER);
         }
     }
     if (IS_LABEL(start)) {
         depth++;
         USE_LABEL(c, start);
-        ADDOP_JUMP(c, *ploc, FOR_ITER, anchor);
+        ADDOP_JUMP(c, loc, FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
 
@@ -5266,13 +5266,13 @@ compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, ploc, e, if_cleanup, 0)) {
+        if (!compiler_jump_if(c, &loc, e, if_cleanup, 0)) {
             return 0;
         }
     }
 
     if (++gen_index < asdl_seq_LEN(generators)) {
-        if (!compiler_comprehension_generator(c, ploc,
+        if (!compiler_comprehension_generator(c, loc,
                                               generators, gen_index, depth,
                                               elt, val, type)) {
             return 0;
@@ -5325,7 +5325,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
 }
 
 static int
-compiler_async_comprehension_generator(struct compiler *c, location *ploc,
+compiler_async_comprehension_generator(struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators,
                                       int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type)
@@ -5340,39 +5340,39 @@ compiler_async_comprehension_generator(struct compiler *c, location *ploc,
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
         c->u->u_argcount = 1;
-        ADDOP_I(c, *ploc, LOAD_FAST, 0);
+        ADDOP_I(c, loc, LOAD_FAST, 0);
     }
     else {
         /* Sub-iter - calculate on the fly */
         VISIT(c, expr, gen->iter);
-        ADDOP(c, *ploc, GET_AITER);
+        ADDOP(c, loc, GET_AITER);
     }
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
-    if (!compiler_push_fblock(c, *ploc, ASYNC_COMPREHENSION_GENERATOR,
+    if (!compiler_push_fblock(c, loc, ASYNC_COMPREHENSION_GENERATOR,
                               start, NO_LABEL, NULL)) {
         return 0;
     }
 
-    ADDOP_JUMP(c, *ploc, SETUP_FINALLY, except);
-    ADDOP(c, *ploc, GET_ANEXT);
-    ADDOP_LOAD_CONST(c, *ploc, Py_None);
-    ADD_YIELD_FROM(c, *ploc, 1);
-    ADDOP(c, *ploc, POP_BLOCK);
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
+    ADDOP(c, loc, GET_ANEXT);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+    ADDOP(c, loc, POP_BLOCK);
     VISIT(c, expr, gen->target);
 
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, ploc, e, if_cleanup, 0)) {
+        if (!compiler_jump_if(c, &loc, e, if_cleanup, 0)) {
             return 0;
         }
     }
 
     depth++;
     if (++gen_index < asdl_seq_LEN(generators)) {
-        if (!compiler_comprehension_generator(c, ploc,
+        if (!compiler_comprehension_generator(c, loc,
                                               generators, gen_index, depth,
                                               elt, val, type)) {
             return 0;
@@ -5420,7 +5420,7 @@ compiler_async_comprehension_generator(struct compiler *c, location *ploc,
 
     USE_LABEL(c, except);
 
-    ADDOP(c, *ploc, END_ASYNC_FOR);
+    ADDOP(c, loc, END_ASYNC_FOR);
 
     return 1;
 }
@@ -5479,7 +5479,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP_I(c, loc, op, 0);
     }
 
-    if (!compiler_comprehension_generator(c, &loc, generators, 0, 0,
+    if (!compiler_comprehension_generator(c, loc, generators, 0, 0,
                                           elt, val, type)) {
         goto error_in_scope;
     }
