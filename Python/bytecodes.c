@@ -1,3 +1,16 @@
+#include "Python.h"
+#include "opcode.h"
+
+#define inst(name, stack_effect) case name:
+
+#define family(name) static int family_##name
+
+static void
+dummy_func(unsigned char opcode)
+{
+    switch (opcode) {
+
+// BEGIN BYTECODES //
         inst(NOP, ( -- )) {
             DISPATCH();
         }
@@ -3878,6 +3891,14 @@
         inst(CACHE, ( -- )) {
             Py_UNREACHABLE();
         }
+
+
+// END BYTECODES //
+
+    }
+}
+
+// Families go below this point //
 
 family(binary_op) = BINARY_OP + BINARY_OP_ADAPTIVE + BINARY_OP_ADD_FLOAT + BINARY_OP_ADD_INT + BINARY_OP_ADD_UNICODE + BINARY_OP_INPLACE_ADD_UNICODE + BINARY_OP_MULTIPLY_FLOAT + BINARY_OP_MULTIPLY_INT + BINARY_OP_SUBTRACT_FLOAT + BINARY_OP_SUBTRACT_INT;
 family(binary_subscr) = BINARY_SUBSCR + BINARY_SUBSCR_ADAPTIVE + BINARY_SUBSCR_DICT + BINARY_SUBSCR_GETITEM + BINARY_SUBSCR_LIST_INT + BINARY_SUBSCR_TUPLE_INT;

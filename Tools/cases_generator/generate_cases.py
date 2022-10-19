@@ -81,7 +81,10 @@ def write_cases(f, instrs):
 def main():
     args = arg_parser.parse_args()
     with eopen(args.input) as f:
-        src = f.read()
+        srclines = f.read().splitlines()
+    begin = srclines.index("// BEGIN BYTECODES //")
+    end = srclines.index("// END BYTECODES //")
+    src = "\n".join(srclines[begin+1 : end])
     instrs, families = parse_cases(src, filename=args.input)
     if not args.quiet:
         ninstrs = len(instrs)

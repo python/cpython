@@ -16,6 +16,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", type=str, default="Python/ceval.c")
 parser.add_argument("-o", "--output", type=str, default="Python/bytecodes.c")
+parser.add_argument("-t", "--template", type=str, default="Tools/cases_generator/bytecodes_template.c")
 parser.add_argument("-c", "--compare", action="store_true")
 parser.add_argument("-q", "--quiet", action="store_true")
 
@@ -203,19 +204,21 @@ def compare(oldfile, newfile, quiet=False):
 
 def main():
     args = parser.parse_args()
-    input = args.input
-    output = args.output
-    with eopen(input) as f:
+    with eopen(args.input) as f:
         cases = read_cases(f)
+    with open(args.template) as f:
+        prolog, epilog = f.read().split("// INSERT CASES HERE //", 1)
     if not args.quiet:
-        print(f"// Read {len(cases)} cases from {input}", file=sys.stderr)
-    with eopen(output, "w") as f:
+        print(f"// Read {len(cases)} cases from {args.input}", file=sys.stderr)
+    with eopen(args.output, "w") as f:
+        f.write(prolog)
         write_cases(f, cases)
+        f.write(epilog)
         write_families(f)
     if not args.quiet:
-        print(f"// Wrote {len(cases)} cases to {output}", file=sys.stderr)
+        print(f"// Wrote {len(cases)} cases to {args.output}", file=sys.stderr)
     if args.compare:
-        compare(input, output, args.quiet)
+        compare(args.input, args.output, args.quiet)
 
 
 if __name__ == "__main__":
