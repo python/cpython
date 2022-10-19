@@ -1130,19 +1130,31 @@ Task Object
 
       Request the Task to be cancelled.
 
-      If the Task has not yet started, it will be done with
-      :exc:`CancelledError` and will not be started.
+      If the Task has not yet started, it will be *cancelled*
+      and will not be started.
 
-      If the Task has started,
+      If the Task has started and is not yet *done*,
       a :exc:`CancelledError` exception will be thrown
-      into the wrapped coroutine on the next cycle of the event loop.
+      into the wrapped coroutine on the next cycle of the event loop,
+      except for two special cases:
+
+      - If :meth:`cancel` is called from the wrapped coroutine
+        which then raises an exception, the Task is *done*
+        with that exception and the cancellation has no effect.
+
+      - If :meth:`cancel` is called from the wrapped coroutine
+        which then returns a result, that result is discarded and
+        the Task is *cancelled*.
+
       The coroutine then has a chance to clean up or even deny the
       request by suppressing the exception with a :keyword:`try` ...
       ... ``except CancelledError`` ... :keyword:`finally` block.
       Therefore, unlike :meth:`Future.cancel`, :meth:`Task.cancel` does
-      not guarantee that a started Task will be cancelled, although
+      not guarantee that the Task will be cancelled, although
       suppressing cancellation completely is not common and is actively
       discouraged.
+
+      If the Task is already *done*, calling :meth:`cancel` has no effect.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.
