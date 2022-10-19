@@ -1,0 +1,4 @@
+On entry to ``PyEval_EvalFrameDefault()`` an additional, internal, shim
+frame is pushed. This simplifies the return and yield bytecode instructions.
+Only debuggers and profiles that inspect the stack of frames should be
+impacted.
