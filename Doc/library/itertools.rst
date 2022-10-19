@@ -887,6 +887,8 @@ which incur interpreter overhead.
    def batched(iterable, n):
        "Batch data into lists of length n. The last batch may be shorter."
        # batched('ABCDEFG', 3) --> ABC DEF G
+       if n < 1:
+           raise ValueError('n must be at least one')
        it = iter(iterable)
        while (batch := list(islice(it, n))):
            yield batch
@@ -1272,12 +1274,6 @@ which incur interpreter overhead.
     [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']]
     >>> list(batched('ABCDEFG', 1))
     [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']]
-    >>> list(batched('ABCDEFG', 0))
-    []
-    >>> list(batched('ABCDEFG', -1))
-    Traceback (most recent call last):
-      ...
-    ValueError: Stop argument for islice() must be None or an integer: 0 <= x <= sys.maxsize.
     >>> s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     >>> all(list(flatten(batched(s[:n], 5))) == list(s[:n]) for n in range(len(s)))
     True
