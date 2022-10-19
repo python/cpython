@@ -49,12 +49,12 @@ Creating virtual environments
 How venvs work
 --------------
 
-When a virtual environment is running, the attributes :attr:`sys.prefix` and
-:attr:`sys.exec_prefix` point to the prefix directory of the virtual
-environment, whereas :attr:`sys.base_prefix` and
-:attr:`sys.base_exec_prefix` point to the non-virtual environment Python
-installation which was used to create the virtual environment (known as the
-virtual environment's base environment). It is sufficient to check
+When a Python interpreter is running from a virtual environment,
+:data:`sys.prefix` and :data:`sys.exec_prefix`
+point to the directories of the virtual environment,
+whereas :data:`sys.base_prefix` and :data:`sys.base_exec_prefix`
+point to those of the base Python used to create the environment.
+It is sufficient to check
 ``sys.prefix == sys.base_prefix`` to determine if the current interpreter is
 running from a virtual environment.
 
