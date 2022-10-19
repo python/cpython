@@ -1363,6 +1363,13 @@ Misc
   time required for catching an exception by about 10%.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
+* :mod:`re`'s regular expression matching engine has been partially refactored,
+  and now uses computed gotos (or "threaded code") on supported platforms. As a
+  result, Python 3.11 executes the `pyperformance regular expression benchmarks
+  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
+  faster than Python 3.10.
+  (Contributed by Brandt Bucher in :gh:`91404`.)
+
 
 .. _whatsnew311-faster-cpython-faq:
 
