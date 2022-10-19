@@ -1425,7 +1425,9 @@ Cursor objects
 
    .. method:: fetchone()
 
-      Return the next row of a query result set as a :class:`tuple`.
+      If :attr:`~Connection.row_factory` is ``None``,
+      return the next row query result set as a :class:`tuple`.
+      Else, pass it to the row factory and return its result.
       Return ``None`` if no more data is available.
 
 
@@ -2274,7 +2276,8 @@ If the connection attribute :attr:`~Connection.isolation_level`
 is not ``None``,
 new transactions are implicitly opened before
 :meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes
-``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements.
+``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements;
+for other statements, no implicit transaction handling is performed.
 Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
 to respectively commit and roll back pending transactions.
 You can choose the underlying `SQLite transaction behaviour`_ —

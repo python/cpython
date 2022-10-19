@@ -806,18 +806,37 @@ static const formatdef native_table[] = {
 /* Big-endian routines. *****************************************************/
 
 static PyObject *
-bu_int(_structmodulestate *state, const char *p, const formatdef *f)
+bu_short(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    long x = 0;
-    Py_ssize_t i = f->size;
+    unsigned long x = 0;
+
+    /* This function is only ever used in the case f->size == 2. */
+    assert(f->size == 2);
+    Py_ssize_t i = 2;
     const unsigned char *bytes = (const unsigned char *)p;
     do {
         x = (x<<8) | *bytes++;
     } while (--i > 0);
-    /* Extend the sign bit. */
-    if (SIZEOF_LONG > f->size)
-        x |= -(x & (1L << ((8 * f->size) - 1)));
-    return PyLong_FromLong(x);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    x = (x ^ 0x8000U) - 0x8000U;
+    return PyLong_FromLong(x & 0x8000U ? -1 - (long)(~x) : (long)x);
+}
+
+static PyObject *
+bu_int(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    unsigned long x = 0;
+
+    /* This function is only ever used in the case f->size == 4. */
+    assert(f->size == 4);
+    Py_ssize_t i = 4;
+    const unsigned char *bytes = (const unsigned char *)p;
+    do {
+        x = (x<<8) | *bytes++;
+    } while (--i > 0);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    x = (x ^ 0x80000000U) - 0x80000000U;
+    return PyLong_FromLong(x & 0x80000000U ? -1 - (long)(~x) : (long)x);
 }
 
 static PyObject *
@@ -835,16 +854,19 @@ bu_uint(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 bu_longlong(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    long long x = 0;
-    Py_ssize_t i = f->size;
+    unsigned long long x = 0;
+
+    /* This function is only ever used in the case f->size == 8. */
+    assert(f->size == 8);
+    Py_ssize_t i = 8;
     const unsigned char *bytes = (const unsigned char *)p;
     do {
         x = (x<<8) | *bytes++;
     } while (--i > 0);
-    /* Extend the sign bit. */
-    if (SIZEOF_LONG_LONG > f->size)
-        x |= -(x & ((long long)1 << ((8 * f->size) - 1)));
-    return PyLong_FromLongLong(x);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    x = (x ^ 0x8000000000000000U) - 0x8000000000000000U;
+    return PyLong_FromLongLong(
+        x & 0x8000000000000000U ? -1 - (long long)(~x) : (long long)x);
 }
 
 static PyObject *
@@ -1009,7 +1031,7 @@ static formatdef bigendian_table[] = {
     {'c',       1,              0,              nu_char,        np_char},
     {'s',       1,              0,              NULL},
     {'p',       1,              0,              NULL},
-    {'h',       2,              0,              bu_int,         bp_int},
+    {'h',       2,              0,              bu_short,       bp_int},
     {'H',       2,              0,              bu_uint,        bp_uint},
     {'i',       4,              0,              bu_int,         bp_int},
     {'I',       4,              0,              bu_uint,        bp_uint},
@@ -1027,18 +1049,37 @@ static formatdef bigendian_table[] = {
 /* Little-endian routines. *****************************************************/
 
 static PyObject *
-lu_int(_structmodulestate *state, const char *p, const formatdef *f)
+lu_short(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    long x = 0;
-    Py_ssize_t i = f->size;
+    unsigned long x = 0;
+
+    /* This function is only ever used in the case f->size == 2. */
+    assert(f->size == 2);
+    Py_ssize_t i = 2;
     const unsigned char *bytes = (const unsigned char *)p;
     do {
         x = (x<<8) | bytes[--i];
     } while (i > 0);
-    /* Extend the sign bit. */
-    if (SIZEOF_LONG > f->size)
-        x |= -(x & (1L << ((8 * f->size) - 1)));
-    return PyLong_FromLong(x);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    x = (x ^ 0x8000U) - 0x8000U;
+    return PyLong_FromLong(x & 0x8000U ? -1 - (long)(~x) : (long)x);
+}
+
+static PyObject *
+lu_int(_structmodulestate *state, const char *p, const formatdef *f)
+{
+    unsigned long x = 0;
+
+    /* This function is only ever used in the case f->size == 4. */
+    assert(f->size == 4);
+    Py_ssize_t i = 4;
+    const unsigned char *bytes = (const unsigned char *)p;
+    do {
+        x = (x<<8) | bytes[--i];
+    } while (i > 0);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    x = (x ^ 0x80000000U) - 0x80000000U;
+    return PyLong_FromLong(x & 0x80000000U ? -1 - (long)(~x) : (long)x);
 }
 
 static PyObject *
@@ -1056,16 +1097,19 @@ lu_uint(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 lu_longlong(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    long long x = 0;
-    Py_ssize_t i = f->size;
+    unsigned long long x = 0;
+
+    /* This function is only ever used in the case f->size == 8. */
+    assert(f->size == 8);
+    Py_ssize_t i = 8;
     const unsigned char *bytes = (const unsigned char *)p;
     do {
         x = (x<<8) | bytes[--i];
     } while (i > 0);
-    /* Extend the sign bit. */
-    if (SIZEOF_LONG_LONG > f->size)
-        x |= -(x & ((long long)1 << ((8 * f->size) - 1)));
-    return PyLong_FromLongLong(x);
+    /* Extend sign, avoiding implementation-defined or undefined behaviour. */
+    x = (x ^ 0x8000000000000000U) - 0x8000000000000000U;
+    return PyLong_FromLongLong(
+        x & 0x8000000000000000U ? -1 - (long long)(~x) : (long long)x);
 }
 
 static PyObject *
@@ -1213,7 +1257,7 @@ static formatdef lilendian_table[] = {
     {'c',       1,              0,              nu_char,        np_char},
     {'s',       1,              0,              NULL},
     {'p',       1,              0,              NULL},
-    {'h',       2,              0,              lu_int,         lp_int},
+    {'h',       2,              0,              lu_short,       lp_int},
     {'H',       2,              0,              lu_uint,        lp_uint},
     {'i',       4,              0,              lu_int,         lp_int},
     {'I',       4,              0,              lu_uint,        lp_uint},
@@ -1433,28 +1477,9 @@ prepare_s(PyStructObject *self)
     return -1;
 }
 
-static PyObject *
-s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyObject *self;
-
-    assert(type != NULL);
-    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
-    assert(alloc_func != NULL);
-
-    self = alloc_func(type, 0);
-    if (self != NULL) {
-        PyStructObject *s = (PyStructObject*)self;
-        s->s_format = Py_NewRef(Py_None);
-        s->s_codes = NULL;
-        s->s_size = -1;
-        s->s_len = -1;
-    }
-    return self;
-}
-
 /*[clinic input]
-Struct.__init__
+@classmethod
+Struct.__new__
 
     format: object
 
@@ -1466,16 +1491,24 @@ the format string.
 See help(struct) for more on format strings.
 [clinic start generated code]*/
 
-static int
-Struct___init___impl(PyStructObject *self, PyObject *format)
-/*[clinic end generated code: output=b8e80862444e92d0 input=192a4575a3dde802]*/
+static PyObject *
+Struct_impl(PyTypeObject *type, PyObject *format)
+/*[clinic end generated code: output=49468b044e334308 input=8b91868eb1df0e28]*/
 {
-    int ret = 0;
+    allocfunc alloc = PyType_GetSlot(type, Py_tp_alloc);
+    assert(alloc != NULL);
+    PyStructObject *self = (PyStructObject *)alloc(type, 0);
+
+    if (self == NULL) {
+        return NULL;
+    }
 
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
-        if (format == NULL)
-            return -1;
+        if (format == NULL) {
+            Py_DECREF(self);
+            return NULL;
+        }
     }
     else {
         Py_INCREF(format);
@@ -1483,18 +1516,23 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 
     if (!PyBytes_Check(format)) {
         Py_DECREF(format);
+        Py_DECREF(self);
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
                      "not %.200s",
                      _PyType_Name(Py_TYPE(format)));
-        return -1;
+        return NULL;
     }
 
-    Py_SETREF(self->s_format, format);
+    self->s_format = format;
 
-    ret = prepare_s(self);
-    return ret;
+    if (prepare_s(self) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    return (PyObject *)self;
 }
+
 
 static int
 s_clear(PyStructObject *s)
@@ -2100,9 +2138,8 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_methods, s_methods},
     {Py_tp_members, s_members},
     {Py_tp_getset, s_getsetlist},
-    {Py_tp_init, Struct___init__},
+    {Py_tp_new, Struct},
     {Py_tp_alloc, PyType_GenericAlloc},
-    {Py_tp_new, s_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0},
 };

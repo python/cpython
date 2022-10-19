@@ -49,6 +49,8 @@ struct _ceval_state {
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
+    /* The GC is ready to be executed */
+    _Py_atomic_int gc_scheduled;
     struct _pending_calls pending;
 };
 
@@ -144,6 +146,8 @@ struct _is {
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
 
+    PyDict_WatchCallback dict_watchers[DICT_MAX_WATCHERS];
+
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
@@ -175,8 +179,6 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
-
-    int int_max_str_digits;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.
