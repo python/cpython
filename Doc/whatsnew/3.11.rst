@@ -1167,7 +1167,7 @@ CPython 3.11 is an average of
 than CPython 3.10 as measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
 when compiled with GCC on Ubuntu Linux.
-Depending on your workload, the overall speedup could likely be 10-60%.
+Depending on your workload, the overall speedup could be 10-60%.
 
 This project focuses on two major areas in Python:
 :ref:`whatsnew311-faster-startup` and :ref:`whatsnew311-faster-runtime`.
@@ -1287,7 +1287,7 @@ when it sees code that is "hot" (executed multiple times). This prevents Python
 from wasting time on run-once code. Python can also de-specialize when code is
 too dynamic or when the use changes. Specialization is attempted periodically,
 and specialization attempts are not too expensive,
-allowing it to adapt to new circumstances.
+allowing specialization to adapt to new circumstances.
 
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
 See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
