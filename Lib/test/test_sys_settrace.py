@@ -2796,12 +2796,8 @@ class TestEdgeCases(unittest.TestCase):
                 sys.settrace(bar)
 
         sys.settrace(A())
-        with support.catch_unraisable_exception() as cm:
-            sys.settrace(foo)
-            self.assertEqual(cm.unraisable.object, A.__del__)
-            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
-
-        self.assertEqual(sys.gettrace(), foo)
+        sys.settrace(foo)
+        self.assertEqual(sys.gettrace(), bar)
 
 
     def test_same_object(self):
