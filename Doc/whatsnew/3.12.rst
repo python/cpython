@@ -515,6 +515,11 @@ Changes in the Python API
   in Python 3.9.
   (Contributed by Victor Stinner in :gh:`94352`.)
 
+* The :mod:`os` module no longer accepts bytes-like paths, like
+  :class:`bytearray` and :class:`memoryview` types: only the exact
+  :class:`bytes` type is accepted for bytes strings.
+  (Contributed by Victor Stinner in :gh:`98393`.)
+
 
 Build Changes
 =============
@@ -630,6 +635,11 @@ Porting to Python 3.12
   :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
   To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
+
+* The :c:func:`PyUnicode_FSDecoder` function no longer accepts bytes-like
+  paths, like :class:`bytearray` and :class:`memoryview` types: only the exact
+  :class:`bytes` type is accepted for bytes strings.
+  (Contributed by Victor Stinner in :gh:`98393`.)
 
 Deprecated
 ----------
