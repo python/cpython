@@ -1359,6 +1359,10 @@ Misc
   Their namespace dictionaries now also share keys more freely.
   (Contributed Mark Shannon in :issue:`45340` and :issue:`40116`.)
 
+* "Zero-cost" exceptions are implemented, eliminating the cost
+  of :keyword:`try` statements when no exception is raised.
+  (Contributed by Mark Shannon in :issue:`40222`.)
+
 * A more concise representation of exceptions in the interpreter reduced the
   time required for catching an exception by about 10%.
   (Contributed by Irit Katriel in :issue:`45711`.)
