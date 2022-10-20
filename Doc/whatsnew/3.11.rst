@@ -1131,10 +1131,6 @@ Optimizations
 This section covers specific optimizations independent of the
 :ref:`whatsnew311-faster-cpython` project, which is covered in its own section.
 
-* "Zero-cost" exceptions are implemented, eliminating the cost
-  of :keyword:`try` statements when no exception is raised.
-  (Contributed by Mark Shannon in :issue:`40222`.)
-
 * The compiler now optimizes simple
   :ref:`printf-style % formatting <old-string-formatting>` on string literals
   containing only the format codes ``%s``, ``%r`` and ``%a`` and makes it as
