@@ -402,19 +402,17 @@
         }
 
         TARGET(BINARY_SUBSCR) {
-            _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-            if (cframe.use_tracing || opcode != BINARY_SUBSCR) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *sub = TOP();
-                PyObject *container = SECOND();
-                next_instr--;
-                if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
-                    goto error;
+            if (!cframe.use_tracing) {
+                _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *sub = TOP();
+                    PyObject *container = SECOND();
+                    next_instr--;
+                    if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
                 }
-                DISPATCH_SAME_OPARG();
-            }
-            else {
                 STAT_INC(BINARY_SUBSCR, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
@@ -557,19 +555,17 @@
         }
 
         TARGET(STORE_SUBSCR) {
-            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
-            if (cframe.use_tracing || opcode != STORE_SUBSCR) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *sub = TOP();
-                PyObject *container = SECOND();
-                next_instr--;
-                if (_Py_Specialize_StoreSubscr(container, sub, next_instr) < 0) {
-                    goto error;
+            if (!cframe.use_tracing) {
+                _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *sub = TOP();
+                    PyObject *container = SECOND();
+                    next_instr--;
+                    if (_Py_Specialize_StoreSubscr(container, sub, next_instr) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
                 }
-                DISPATCH_SAME_OPARG();
-            }
-            else {
                 STAT_INC(STORE_SUBSCR, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
@@ -1120,16 +1116,14 @@
         }
 
         TARGET(UNPACK_SEQUENCE) {
-            _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
-            if (cframe.use_tracing || opcode != UNPACK_SEQUENCE) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *seq = TOP();
-                next_instr--;
-                _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
-                DISPATCH_SAME_OPARG();
-            }
-            else {
+            if (!cframe.use_tracing) {
+                _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *seq = TOP();
+                    next_instr--;
+                    _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
+                    DISPATCH_SAME_OPARG();
+                }
                 STAT_INC(UNPACK_SEQUENCE, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
@@ -1301,18 +1295,16 @@
         }
 
         TARGET(LOAD_GLOBAL) {
-            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
-            if (cframe.use_tracing || opcode != LOAD_GLOBAL) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *name = GETITEM(names, oparg>>1);
-                next_instr--;
-                if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
-                    goto error;
+            if (!cframe.use_tracing) {
+                _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *name = GETITEM(names, oparg>>1);
+                    next_instr--;
+                    if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
                 }
-                DISPATCH_SAME_OPARG();
-            }
-            else {
                 STAT_INC(LOAD_GLOBAL, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
@@ -1758,19 +1750,17 @@
         }
 
         TARGET(LOAD_ATTR) {
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (cframe.use_tracing || opcode != LOAD_ATTR) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *owner = TOP();
-                PyObject *name = GETITEM(names, oparg>>1);
-                next_instr--;
-                if (_Py_Specialize_LoadAttr(owner, next_instr, name) < 0) {
-                    goto error;
+            if (!cframe.use_tracing) {
+                _PyAttrCache *cache = (_PyAttrCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *owner = TOP();
+                    PyObject *name = GETITEM(names, oparg>>1);
+                    next_instr--;
+                    if (_Py_Specialize_LoadAttr(owner, next_instr, name) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
                 }
-                DISPATCH_SAME_OPARG();
-            }
-            else {
                 STAT_INC(LOAD_ATTR, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
@@ -2035,19 +2025,17 @@
         }
 
         TARGET(STORE_ATTR) {
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (cframe.use_tracing || opcode != STORE_ATTR) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *owner = TOP();
-                PyObject *name = GETITEM(names, oparg);
-                next_instr--;
-                if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
-                    goto error;
+            if (!cframe.use_tracing) {
+                _PyAttrCache *cache = (_PyAttrCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *owner = TOP();
+                    PyObject *name = GETITEM(names, oparg);
+                    next_instr--;
+                    if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
                 }
-                DISPATCH_SAME_OPARG();
-            }
-            else {
                 STAT_INC(STORE_ATTR, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
@@ -2168,25 +2156,23 @@
         }
 
         TARGET(COMPARE_OP_GENERIC) {
-            GO_TO_INSTRUCTION(COMPARE_OP);
+            goto compare_op;
         }
 
         TARGET(COMPARE_OP) {
-            PREDICTED(COMPARE_OP);
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            if (cframe.use_tracing || opcode != COMPARE_OP) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *right = TOP();
-                PyObject *left = SECOND();
-                next_instr--;
-                _Py_Specialize_CompareOp(left, right, next_instr, oparg);
-                DISPATCH_SAME_OPARG();
-            }
-            else {
+            if (!cframe.use_tracing) {
+                _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *right = TOP();
+                    PyObject *left = SECOND();
+                    next_instr--;
+                    _Py_Specialize_CompareOp(left, right, next_instr, oparg);
+                    DISPATCH_SAME_OPARG();
+                }
                 STAT_INC(COMPARE_OP, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
+        compare_op:
             assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -2680,15 +2666,13 @@
         }
 
         TARGET(FOR_ITER) {
-            _PyForIterCache *cache = (_PyForIterCache *)next_instr;
-            if (cframe.use_tracing || opcode != FOR_ITER) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                next_instr--;
-                _Py_Specialize_ForIter(TOP(), next_instr);
-                DISPATCH_SAME_OPARG();
-            }
-            else {
+            if (!cframe.use_tracing) {
+                _PyForIterCache *cache = (_PyForIterCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    next_instr--;
+                    _Py_Specialize_ForIter(TOP(), next_instr);
+                    DISPATCH_SAME_OPARG();
+                }
                 STAT_INC(FOR_ITER, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
@@ -3003,22 +2987,20 @@
         }
 
         TARGET(CALL) {
-            _PyCallCache *cache = (_PyCallCache *)next_instr;
-            if (cframe.use_tracing || opcode != CALL) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                next_instr--;
-                int is_meth = is_method(stack_pointer, oparg);
-                int nargs = oparg + is_meth;
-                PyObject *callable = PEEK(nargs + 1);
-                int err = _Py_Specialize_Call(callable, next_instr, nargs,
-                                              call_shape.kwnames);
-                if (err < 0) {
-                    goto error;
+            if (!cframe.use_tracing) {
+                _PyCallCache *cache = (_PyCallCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    next_instr--;
+                    int is_meth = is_method(stack_pointer, oparg);
+                    int nargs = oparg + is_meth;
+                    PyObject *callable = PEEK(nargs + 1);
+                    int err = _Py_Specialize_Call(callable, next_instr, nargs,
+                                                  call_shape.kwnames);
+                    if (err < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
                 }
-                DISPATCH_SAME_OPARG();
-            }
-            else {
                 STAT_INC(CALL, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
@@ -3791,25 +3773,24 @@
         }
 
         TARGET(BINARY_OP_GENERIC) {
-            GO_TO_INSTRUCTION(BINARY_OP);
+            goto binary_op;
         }
 
         TARGET(BINARY_OP) {
-            PREDICTED(BINARY_OP);
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            if (cframe.use_tracing || opcode != BINARY_OP) {
-            }
-            else if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                PyObject *lhs = SECOND();
-                PyObject *rhs = TOP();
-                next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                DISPATCH_SAME_OPARG();
-            }
-            else {
+            if (!cframe.use_tracing) {
+                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *lhs = SECOND();
+                    PyObject *rhs = TOP();
+                    next_instr--;
+                    _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                    DISPATCH_SAME_OPARG();
+                }
                 STAT_INC(BINARY_OP, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
+        binary_op:
+            ;  // Why is this still a thing in 2022?
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
             assert(0 <= oparg);

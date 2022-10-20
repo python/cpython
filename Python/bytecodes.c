@@ -3875,6 +3875,7 @@ dummy_func(
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
         binary_op:
+            ;  // Why is this still a thing in 2022?
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
             assert(0 <= oparg);
@@ -3902,7 +3903,7 @@ dummy_func(
         inst(EXTENDED_ARG) {
             assert(oparg);
             opcode = _Py_OPCODE(*next_instr);
-            if (!cframe.use_tracing) {
+            if (cframe.use_tracing) {
                 // Deoptimize the next opcode to avoid breaking tracing
                 // guarantees in quickened instructions:
                 opcode = _PyOpcode_Deopt[opcode];
