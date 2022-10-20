@@ -2167,7 +2167,12 @@
             DISPATCH();
         }
 
+        TARGET(COMPARE_OP_GENERIC) {
+            GO_TO_INSTRUCTION(COMPARE_OP);
+        }
+
         TARGET(COMPARE_OP) {
+            PREDICTED(COMPARE_OP);
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (cframe.use_tracing || opcode != COMPARE_OP) {
             }
@@ -3785,7 +3790,12 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_OP_GENERIC) {
+            GO_TO_INSTRUCTION(BINARY_OP);
+        }
+
         TARGET(BINARY_OP) {
+            PREDICTED(BINARY_OP);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (cframe.use_tracing || opcode != BINARY_OP) {
             }

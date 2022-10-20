@@ -2246,8 +2246,13 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
+        inst(COMPARE_OP_GENERIC) {
+            GO_TO_INSTRUCTION(COMPARE_OP);
+        }
+
         // stack effect: (__0 -- )
         inst(COMPARE_OP) {
+            PREDICTED(COMPARE_OP);
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (cframe.use_tracing || opcode != COMPARE_OP) {
             }
@@ -3868,8 +3873,14 @@ dummy_func(
             Py_INCREF(peek);
             PUSH(peek);
         }
+
+        inst(BINARY_OP_GENERIC) {
+            GO_TO_INSTRUCTION(BINARY_OP);
+        }
+
         // stack effect: (__0 -- )
         inst(BINARY_OP) {
+            PREDICTED(BINARY_OP);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (cframe.use_tracing || opcode != BINARY_OP) {
             }
@@ -3950,7 +3961,7 @@ dummy_func(
 
 family(binary_op) = {
     BINARY_OP, BINARY_OP_ADD_FLOAT,
-    BINARY_OP_ADD_INT, BINARY_OP_ADD_UNICODE, BINARY_OP_INPLACE_ADD_UNICODE,
+    BINARY_OP_ADD_INT, BINARY_OP_ADD_UNICODE, BINARY_OP_GENERIC, BINARY_OP_INPLACE_ADD_UNICODE,
     BINARY_OP_MULTIPLY_FLOAT, BINARY_OP_MULTIPLY_INT, BINARY_OP_SUBTRACT_FLOAT,
     BINARY_OP_SUBTRACT_INT };
 family(binary_subscr) = {
@@ -3965,7 +3976,7 @@ family(call) = {
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
 family(compare_op) = {
-    COMPARE_OP, COMPARE_OP_FLOAT_JUMP,
+    COMPARE_OP, COMPARE_OP_FLOAT_JUMP, COMPARE_OP_GENERIC,
     COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP };
 family(for_iter) = {
     FOR_ITER, FOR_ITER_LIST,

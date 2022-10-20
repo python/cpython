@@ -1883,16 +1883,16 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             break;
-// #ifndef Py_STATS
-//         default:
-//             // These operators don't have any available specializations. Rather
-//             // than repeatedly attempting to specialize them, just convert them
-//             // back to BINARY_OP (unless we're collecting stats, where it's more
-//             // important to get accurate hit counts for the unadaptive version
-//             // and each of the different failure types):
-//             _Py_SET_OPCODE(*instr, BINARY_OP);
-//             return;
-// #endif
+#ifndef Py_STATS
+        default:
+            // These operators don't have any available specializations. Rather
+            // than repeatedly attempting to specialize them, just convert them
+            // back to BINARY_OP (unless we're collecting stats, where it's more
+            // important to get accurate hit counts for the unadaptive version
+            // and each of the different failure types):
+            _Py_SET_OPCODE(*instr, BINARY_OP_GENERIC);
+            return;
+#endif
     }
     SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     STAT_INC(BINARY_OP, failure);
@@ -1965,17 +1965,17 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         // we're collecting stats, where it's more important to get accurate hit
         // counts for the unadaptive version and each of the different failure
         // types):
-// #ifndef Py_STATS
-//         _Py_SET_OPCODE(*instr, COMPARE_OP);
-//         return;
-// #else
+#ifndef Py_STATS
+        _Py_SET_OPCODE(*instr, COMPARE_OP_GENERIC);
+        return;
+#else
         if (next_opcode == EXTENDED_ARG) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_EXTENDED_ARG);
             goto failure;
         }
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
-// #endif
+#endif
     }
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];
