@@ -13,7 +13,7 @@ Function            Description
 mean                Arithmetic mean (average) of data.
 fmean               Fast, floating point arithmetic mean.
 power_mean          Generalized mean of data given an exponent.   
-root_mean_square    The quadratic mean of data.
+quadratic_mean   The quadratic mean of data.
 geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
 median              Median (middle value) of data.
