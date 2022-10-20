@@ -1024,9 +1024,9 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-        except ImportError:
+            d = dir(mod)
+        except Exception:
             return None
-        d = dir(mod)
     else:
         assert isinstance(exc_value, NameError)
         # find most recent frame
