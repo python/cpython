@@ -2211,7 +2211,7 @@ class NamespacesTests(unittest.TestCase):
                 try:
                     os.unshare(os.CLONE_NEWUTS)
                 except OSError as e:
-                    if e.errno not in (errno.ENOSPC,):
+                    if e.errno != errno.ENOSPC:
                         raise
                 new = os.readlink('/proc/self/ns/uts')
                 if original == new:
