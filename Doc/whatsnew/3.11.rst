@@ -1414,6 +1414,17 @@ CPython bytecode changes
   taken when reading or modifying raw, adaptive bytecode containing quickened
   data.
 
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`,
+  which is used in certain loops where it is undesirable to handle interrupts.
+
+* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`,
+  :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
+  :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
+  opcodes to speed up conditional jumps.
+
+* Added the :opcode:`RESUME` opcode. It is a no-op,
+  and performs internal tracing, debugging and optimization checks.
+
 * Replaced all numeric :opcode:`!BINARY_*` and :opcode:`!INPLACE_*` instructions
   with a single :opcode:`BINARY_OP` implementation.
 
@@ -1423,14 +1434,6 @@ CPython bytecode changes
   and :opcode:`KW_NAMES`.
   This decouples the argument shifting for methods from the handling of
   keyword arguments and allows better specialization of calls.
-
-* Removed :opcode:`!COPY_DICT_WITHOUT_KEYS` and :opcode:`!GEN_START`.
-
-* Changed :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS`
-  to no longer push an additional boolean value
-  indicating whether the match succeeded or failed.
-  Instead, they indicate failure with ``None``
-  (where a tuple of extracted values would otherwise be).
 
 * Replaced several stack manipulation instructions
   (:opcode:`!DUP_TOP`, :opcode:`!DUP_TOP_TWO`, :opcode:`!ROT_TWO`,
@@ -1443,24 +1446,21 @@ CPython bytecode changes
 
 * Replaced :opcode:`!JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
-* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`,
-  which is used in certain loops where it is undesirable to handle interrupts.
-
 * Replaced :opcode:`!POP_JUMP_IF_TRUE` and :opcode:`!POP_JUMP_IF_FALSE` by
   the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`,
   :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
   :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
 
-* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`,
-  :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
-  :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
-  opcodes to speed up conditional jumps.
+* Removed :opcode:`!COPY_DICT_WITHOUT_KEYS` and :opcode:`!GEN_START`.
 
 * Changed :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP`
   to now be relative rather than absolute.
 
-* Added the :opcode:`RESUME` opcode. It is a no-op,
-  and performs internal tracing, debugging and optimization checks.
+* Changed :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS`
+  to no longer push an additional boolean value
+  indicating whether the match succeeded or failed.
+  Instead, they indicate failure with ``None``
+  (where a tuple of extracted values would otherwise be).
 
 
 .. _whatsnew311-deprecated:
