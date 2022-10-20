@@ -3091,7 +3091,7 @@ class SuggestionFormattingTestBase:
                 self.assertNotIn("'pytho'", actual)
 
     def test_import_from_suggestions_do_not_trigger_for_big_namespaces(self):
-        # A module with lots of names will not be consider for suggestions.
+        # A module with lots of names will not be considered for suggestions.
         chunks = [f"index_{index} = " for index in range(200)]
         chunks.append(" None")
         code = " ".join(chunks)
