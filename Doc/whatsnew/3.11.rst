@@ -1414,51 +1414,54 @@ CPython bytecode changes
   taken when reading or modifying raw, adaptive bytecode containing quickened
   data.
 
-* Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
-  :opcode:`BINARY_OP` implementation.
+* Replaced all numeric :opcode:`!BINARY_*` and :opcode:`!INPLACE_*` instructions
+  with a single :opcode:`BINARY_OP` implementation.
 
-* Replaced the three call instructions: :opcode:`CALL_FUNCTION`,
-  :opcode:`CALL_FUNCTION_KW` and :opcode:`CALL_METHOD` with
+* Replaced the three call instructions :opcode:`!CALL_FUNCTION`,
+  :opcode:`!CALL_FUNCTION_KW` and :opcode:`!CALL_METHOD` with
   :opcode:`PUSH_NULL`, :opcode:`PRECALL`, :opcode:`CALL`,
   and :opcode:`KW_NAMES`.
   This decouples the argument shifting for methods from the handling of
   keyword arguments and allows better specialization of calls.
 
-* Removed ``COPY_DICT_WITHOUT_KEYS`` and ``GEN_START``.
+* Removed :opcode:`!COPY_DICT_WITHOUT_KEYS` and :opcode:`!GEN_START`.
 
 * :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
   boolean value indicating whether the match succeeded or failed. Instead, they
-  indicate failure with :const:`None` (where a tuple of extracted values would
+  indicate failure with ``None`` (where a tuple of extracted values would
   otherwise be).
 
-* Replace several stack manipulation instructions (``DUP_TOP``, ``DUP_TOP_TWO``,
-  ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
-  :opcode:`COPY` and :opcode:`SWAP` instructions.
+* Replaced several stack manipulation instructions
+  (:opcode:`!DUP_TOP`, :opcode:`!DUP_TOP_TWO`, :opcode:`!ROT_TWO`,
+  :opcode:`!ROT_THREE`, :opcode:`!ROT_FOUR`, and :opcode:`!ROT_N`)
+  with new :opcode:`COPY` and :opcode:`SWAP` instructions.
 
-* Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
+* Replaced :opcode:`!JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH`, which
   performs the check but does not jump.
 
-* Replaced :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
+* Replaced :opcode:`!JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
   performs the check but does not jump.
 
-* Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
+* Replaced :opcode:`!JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
-* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it
-  is undesirable to handle interrupts.
+* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`,
+  which is used in certain loops where it is undesirable to handle interrupts.
 
-* Replaced :opcode:`POP_JUMP_IF_TRUE` and :opcode:`POP_JUMP_IF_FALSE` by
-  the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`, :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
+* Replaced :opcode:`!POP_JUMP_IF_TRUE` and :opcode:`!POP_JUMP_IF_FALSE` by
+  the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`,
+  :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
   :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
 
-* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`, :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
+* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`,
+  :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
   :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
   opcodes to speed up conditional jumps.
 
 * :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP` are now
   relative rather than absolute.
 
-* :opcode:`RESUME` has been added. It is a no-op. Performs internal tracing,
-  debugging and optimization checks.
+* :opcode:`RESUME` has been added. It is a no-op,
+  and performs internal tracing, debugging and optimization checks.
 
 
 .. _whatsnew311-deprecated:
