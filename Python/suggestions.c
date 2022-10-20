@@ -322,7 +322,7 @@ offer_suggestions_for_import_error(PyImportErrorObject *exc)
         return NULL;
     }
 
-    PyObject* mod = PyImport_Import(mod_name);
+    PyObject* mod = PyImport_GetModule(mod_name);
     if (mod == NULL) {
         return NULL;
     }
