@@ -3910,28 +3910,21 @@ dummy_func(
         // stack effect: ( -- )
         inst(EXTENDED_ARG) {
             assert(oparg);
+            opcode = _Py_OPCODE(*next_instr);
+            if (cframe.use_tracing) {
+                // Deoptimize the next opcode to avoid breaking tracing
+                // guarantees in quickened instructions:
+                opcode = _PyOpcode_Deopt[opcode];
+                PRE_DISPATCH_GOTO();
+            }
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
-            // We might be tracing. To avoid breaking tracing guarantees in
-            // quickened instructions, always deoptimize the next opcode:
-            opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
-            PRE_DISPATCH_GOTO();
             // CPython hasn't traced the following instruction historically
             // (DO_TRACING would clobber our extended oparg anyways), so just
             // skip our usual cframe.use_tracing check before dispatch. Also,
             // make sure the next instruction isn't a RESUME, since that needs
             // to trace properly (and shouldn't have an extended arg anyways):
             assert(opcode != RESUME);
-            DISPATCH_GOTO();
-        }
-
-        // stack effect: ( -- )
-        inst(EXTENDED_ARG_QUICK) {
-            assert(cframe.use_tracing == 0);
-            assert(oparg);
-            int oldoparg = oparg;
-            NEXTOPARG();
-            oparg |= oldoparg << 8;
             DISPATCH_GOTO();
         }
 
@@ -3974,7 +3967,6 @@ family(call) = {
 family(compare_op) = {
     COMPARE_OP, COMPARE_OP_FLOAT_JUMP,
     COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP };
-family(extended_arg) = { EXTENDED_ARG, EXTENDED_ARG_QUICK };
 family(for_iter) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };

@@ -362,10 +362,6 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                         opname in opcode._specialized_instructions
                         # Exclude superinstructions:
                         and "__" not in opname
-                        # Exclude adaptive instructions:
-                        and not opname.endswith("_ADAPTIVE")
-                        # Exclude "quick" instructions:
-                        and not opname.endswith("_QUICK")
                     ):
                         return True
                 return False
