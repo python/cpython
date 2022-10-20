@@ -12,6 +12,7 @@ Function            Description
 ==================  ==================================================
 mean                Arithmetic mean (average) of data.
 fmean               Fast, floating point arithmetic mean.
+power_mean          Generalized mean of data given an exponent.   
 root_mean_square    The quadratic mean of data.
 geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
@@ -205,13 +206,15 @@ def _sum(data):
     T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, total, count)
 
-def _power_sum(data, power=2):
+def _power_sum(data, exponent = 2):
     """ _power_sum -> float
     calculates the sum of every number in the data to a certain exponent given by power
+    
+    for each number in data, is raises it to the given exponent and adds it to the total sum of the dataset
     """
     sum = 0.0
     for i in data:
-        sum += i
+        sum += i ** exponent
      return sum
 
 def _ss(data, c=None):
@@ -533,9 +536,26 @@ def fmean(data, weights=None):
         raise StatisticsError('sum of weights must be non-zero')
     return num / den
 
-def root_mean_square(data):
-    """returns the root mean square of a given dataset"""
-    return (_power_sum(data, power=2)/len(data)) ** 0.5
+def power_mean(data, power):
+    """
+    returns the generalized mean of a given dataset given an exponent
+    https://en.wikipedia.org/wiki/Generalized_mean
+    
+    the generalized mean is equal to the powerth root of the _power_sum() of the dataset
+    
+    >>>power_mean([1.0,2.0,3.0], 1)
+    2.0
+    >>>power_mean([1.0,2.0,3.0], 2) #quadratic mean
+    3.741657387
+    >>>power_mean([1.0,2.0,3.0], 3) #cubic mean
+    3.20753433
+    """
+    sum = _power_sum(data, exponent = power)
+    return sum ** 1/power
+
+def quadratic_mean(data):
+    """returns the root mean square or quadratic mean of a given dataset"""
+    return power_mean(data, 2)
 
 def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
