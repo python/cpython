@@ -378,6 +378,40 @@ class ImportTests(unittest.TestCase):
             mod = imp.load_module('mymod', file, path, description)
         self.assertEqual(mod.x, 42)
 
+    def test_issue98354(self):
+        # _imp.create_builtin should raise TypeError
+        # if 'name' attribute of 'spec' argument is not a 'str' instance
+
+        create_builtin = support.get_attribute(_imp, "create_builtin")
+
+        class FakeSpec:
+            def __init__(self, name):
+                self.name = self
+        spec = FakeSpec("time")
+        with self.assertRaises(TypeError):
+            create_builtin(spec)
+
+        class FakeSpec2:
+            name = [1, 2, 3, 4]
+        spec = FakeSpec2()
+        with self.assertRaises(TypeError):
+            create_builtin(spec)
+
+        import builtins
+        class UnicodeSubclass(str):
+            pass
+        class GoodSpec:
+            name = UnicodeSubclass("builtins")
+        spec = GoodSpec()
+        bltin = create_builtin(spec)
+        self.assertEqual(bltin, builtins)
+
+        class UnicodeSubclassFakeSpec(str):
+            def __init__(self, name):
+                self.name = self
+        spec = UnicodeSubclassFakeSpec("builtins")
+        bltin = create_builtin(spec)
+        self.assertEqual(bltin, builtins)
 
 class ReloadTests(unittest.TestCase):
 
