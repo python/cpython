@@ -620,39 +620,46 @@ _PyFrame_GetState(PyFrameObject *frame)
     Py_UNREACHABLE();
 }
 
-static void
-add_load_fast_null_checks(PyCodeObject *co)
+static bool
+op_exists(PyCodeObject *co, int opcode, int oparg, int start, int stop)
 {
-    int changed = 0;
+    // This only works when opcode is a non-quickened form:
+    assert(_PyOpcode_Deopt[opcode] == opcode);
+    int check_oparg = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(co);
-    for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
-        int opcode = _Py_OPCODE(instructions[i]);
-        switch (opcode) {
-            case LOAD_FAST:
-            case LOAD_FAST__LOAD_FAST:
-            case LOAD_FAST__LOAD_CONST:
-                changed = 1;
-                _Py_SET_OPCODE(instructions[i], LOAD_FAST_CHECK);
-                break;
-            case LOAD_CONST__LOAD_FAST:
-                changed = 1;
-                _Py_SET_OPCODE(instructions[i], LOAD_CONST);
-                break;
-            case STORE_FAST__LOAD_FAST:
-                changed = 1;
-                _Py_SET_OPCODE(instructions[i], STORE_FAST);
-                break;
+    while (start < stop) {
+        int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[start])];
+        check_oparg |= _Py_OPARG(instructions[start]);
+        if (check_opcode == opcode && check_oparg == oparg) {
+            return true;
         }
-        i += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+        if (check_opcode == EXTENDED_ARG) {
+            check_oparg <<= 8;
+        }
+        else {
+            check_oparg = 0;
+        }
+        start += 1 + _PyOpcode_Caches[check_opcode];
     }
-    if (changed && co->_co_cached != NULL) {
-        // invalidate cached co_code object
-        Py_CLEAR(co->_co_cached->_co_code);
-        Py_CLEAR(co->_co_cached->_co_cellvars);
-        Py_CLEAR(co->_co_cached->_co_freevars);
-        Py_CLEAR(co->_co_cached->_co_varnames);
-        PyMem_Free(co->_co_cached);
-        co->_co_cached = NULL;
+    return false;
+}
+
+static void
+maybe_bind_fast_local(_PyInterpreterFrame *f, int i)
+{
+    PyCodeObject *co = f->f_code;
+    if (f->localsplus[i] == NULL && op_exists(co, LOAD_FAST, i, 0, Py_SIZE(co)))
+    {
+        // We're being overly-cautious here (it's too expensive to run a full
+        // flow analysis), but at least one instruction expects i to be bound.
+        // Rather than crashing (or changing co_code), just bind None instead:
+        const char *e = "cannot leave local name %R unbound (assigning None)";
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 0, e, name)) {
+            // It's okay if frame_obj is NULL, just try anyways:
+            PyErr_WriteUnraisable((PyObject *)f->frame_obj);
+        }
+        f->localsplus[i] = Py_NewRef(Py_None);
     }
 }
 
@@ -745,8 +752,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    add_load_fast_null_checks(f->f_frame->f_code);
-
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
     int len = (int)Py_SIZE(f->f_frame->f_code);
@@ -825,6 +830,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             Py_XDECREF(v);
         }
         start_stack = pop_value(start_stack);
+    }
+    // Populate any NULL locals that might be needed:
+    for (int i = 0; i < f->f_frame->f_code->co_nlocalsplus; i++) {
+        maybe_bind_fast_local(f->f_frame, i);
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
@@ -1108,31 +1117,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     return f;
 }
 
-static int
-_PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
-{
-    // This only works when opcode is a non-quickened form:
-    assert(_PyOpcode_Deopt[opcode] == opcode);
-    int check_oparg = 0;
-    for (_Py_CODEUNIT *instruction = _PyCode_CODE(frame->f_code);
-         instruction < frame->prev_instr; instruction++)
-    {
-        int check_opcode = _PyOpcode_Deopt[_Py_OPCODE(*instruction)];
-        check_oparg |= _Py_OPARG(*instruction);
-        if (check_opcode == opcode && check_oparg == oparg) {
-            return 1;
-        }
-        if (check_opcode == EXTENDED_ARG) {
-            check_oparg <<= 8;
-        }
-        else {
-            check_oparg = 0;
-        }
-        instruction += _PyOpcode_Caches[check_opcode];
-    }
-    return 0;
-}
-
 int
 _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     /* Merge fast locals into f->f_locals */
@@ -1195,7 +1179,8 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
                 // run yet.
                 if (value != NULL) {
                     if (PyCell_Check(value) &&
-                            _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
+                        op_exists(co, MAKE_CELL, i, 0, lasti))
+                    {
                         // (likely) MAKE_CELL must have executed already.
                         value = PyCell_GET(value);
                     }
@@ -1269,7 +1254,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     }
     fast = _PyFrame_GetLocalsArray(frame);
     co = frame->f_code;
-    bool added_null_checks = false;
+    int lasti = _PyInterpreterFrame_LASTI(frame);
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1289,10 +1274,6 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
             }
         }
         PyObject *oldvalue = fast[i];
-        if (!added_null_checks && oldvalue != NULL && value == NULL) {
-            add_load_fast_null_checks(co);
-            added_null_checks = true;
-        }
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
@@ -1302,8 +1283,8 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
         }
         else if (kind & CO_FAST_CELL && oldvalue != NULL) {
             /* Same test as in PyFrame_FastToLocals() above. */
-            if (PyCell_Check(oldvalue) &&
-                    _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
+            if (PyCell_Check(oldvalue) && op_exists(co, MAKE_CELL, i, 0, lasti))
+            {
                 // (likely) MAKE_CELL must have executed already.
                 cell = oldvalue;
             }
@@ -1321,6 +1302,8 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
         else if (value != oldvalue) {
             Py_XINCREF(value);
             Py_XSETREF(fast[i], value);
+            // Populate any NULL locals that might be needed:
+            maybe_bind_fast_local(frame, i);
         }
         Py_XDECREF(value);
     }

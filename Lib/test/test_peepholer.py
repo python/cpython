@@ -819,8 +819,8 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         code = textwrap.dedent("""\
             def f():
                 x = 2
-                L = 3
-                L = 4
+                if not x:
+                    return 4
                 for i in range(55):
                     x + 6
                 del x
@@ -832,15 +832,22 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         exec(code, ns)
         f = ns['f']
         self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
         def trace(frame, event, arg):
             if event == 'line' and frame.f_lineno == 9:
-                frame.f_lineno = 2
+                frame.f_lineno = 3
                 sys.settrace(None)
                 return None
             return trace
-        sys.settrace(trace)
-        f()
-        self.assertNotInBytecode(f, "LOAD_FAST")
+        e = r"cannot leave local name 'x' unbound \(assigning None\)"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            result = f()
+        self.assertEqual(result, 4)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
 
     def make_function_with_no_checks(self):
         code = textwrap.dedent("""\
@@ -862,16 +869,20 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
 
     def test_deleting_local_adds_check(self):
         f = self.make_function_with_no_checks()
+        co_code = f.__code__.co_code
         def trace(frame, event, arg):
             if event == 'line' and frame.f_lineno == 4:
                 del frame.f_locals["x"]
                 sys.settrace(None)
                 return None
             return trace
-        sys.settrace(trace)
-        f()
-        self.assertNotInBytecode(f, "LOAD_FAST")
-        self.assertInBytecode(f, "LOAD_FAST_CHECK")
+        e = r"cannot leave local name 'x' unbound \(assigning None\)"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            f()
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
 
     def test_modifying_local_does_not_add_check(self):
         f = self.make_function_with_no_checks()
