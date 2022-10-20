@@ -94,8 +94,8 @@ Module Contents
 
    :class:`ReprEnum`
 
-      Used by ``IntEnum``, ``StrEnum``, and ``IntFlag`` to keep the ``str()`` of
-      the mixed-in type.
+      Used by :class:`IntEnum`, :class:`StrEnum`, and :class:`IntFlag`
+      to keep the :class:`str() <str>` of the mixed-in type.
 
    :class:`EnumCheck`
 
@@ -139,9 +139,10 @@ Module Contents
 
    :func:`global_enum`
 
-      Modify the ``str()`` and ``repr()`` of an enum to show its module instead of
-      its class -- should only be used if the enum members will be exported to the
-      global namespace.
+      Modify the :class:`str() <str>` and :func:`repr` of an enum
+      to show its members as belonging to the module instead of its class.
+      Should only be used if the enum members will be exported to the
+      module global namespace.
 
    :func:`show_flag_values`
 
@@ -590,13 +591,16 @@ Data Types
 
 .. class:: ReprEnum
 
-   *ReprEum* uses the *repr()* of *Enum*, but the *str()* of the mixed-in data type:
+   :class:`!ReprEum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
+   but the :class:`str() <str>` of the mixed-in data type:
 
-      * :meth:`int.__str__` for *IntEnum* and *IntFlag*
-      * :meth:`str.__str__` for *StrEnum*
+      * :meth:`int.__str__` for :class:`IntEnum` and :class:`IntFlag`
+      * :meth:`str.__str__` for :class:`StrEnum`
 
-   Inherit from *ReprEnum* when mixing in a data type when the *str()* output should
-   not be changed to the *Enum*-default *str()*.
+   Inherit from :class:`!ReprEnum` when mixing in a data type when the
+   :class:`str() <str>` output should not be changed to the
+   :class:`Enum`-default :meth:`str() <Enum.__str__>`.
+
 
    .. versionadded:: 3.11
 
@@ -836,15 +840,17 @@ Utilities and Decorators
 
 .. decorator:: global_enum
 
-   A decorator to change the *str()* and *repr()* of an enum to show the module
-   of the enum instead of its class.  Should only be used when the enum members
-   are exported to the global namespace (see *re.RegexFlag* for an example).
+   A decorator to change the :class:`str() <str>` and :func:`repr` of an enum
+   to show its members as belonging to the module instead of its class.
+   Should only be used when the enum members are exported
+   to the module global namespace (see class:`re.RegexFlag` for an example).
+
 
    .. versionadded:: 3.11
 
-.. function:: show_flag_values
+.. function:: show_flag_values(value)
 
-   Return a list of all power-of-two integers contained in a flag.
+   Return a list of all power-of-two integers contained in a flag *value*.
 
    .. versionadded:: 3.11
 
