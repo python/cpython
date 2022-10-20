@@ -408,21 +408,20 @@ Accessing attributes of extension types
 
    .. c:member:: const char* PyMemberDef.name
    .. c:member:: int PyMemberDef.type
-   
+
       The type of the member in the C struct.
-      
+
    .. c:member:: Py_ssize_t PyMemberDef.offset
-   
+
       The offset in bytes that the member is located on the type’s object struct.
 
    .. c:member:: int PyMemberDef.flags
-   
+
       Flag bits indicating if the field should be read-only or writable.
-      
+
    .. c:member:: const char* PyMemberDef.doc
-      
+
       Points to the contents of the docstring.
-      
 
    :c:member:`PyMemberDef.type` can be one of many ``T_`` macros corresponding to various C
    types.  When the member is accessed in Python, it will be converted to the
