@@ -142,6 +142,7 @@ static PyObject *
 batched_next(batchedobject *bo)
 {
     Py_ssize_t i;
+    Py_ssize_t n = bo->batch_size;
     PyObject *it = bo->it;
     PyObject *item;
     PyObject *result;
@@ -149,28 +150,27 @@ batched_next(batchedobject *bo)
     if (it == NULL) {
         return NULL;
     }
-    result = PyList_New(0);
+    result = PyList_New(n);
     if (result == NULL) {
         return NULL;
     }
-    for (i=0 ; i < bo->batch_size ; i++) {
+    for (i=0 ; i < n ; i++) {
         item = PyIter_Next(it);
         if (item == NULL) {
             break;
         }
-        if (PyList_Append(result, item) < 0) {
-            Py_DECREF(item);
-            Py_DECREF(result);
-            return NULL;
-        }
-        Py_DECREF(item);
+        PyList_SET_ITEM(result, i, item);
     }
-    if (PyList_GET_SIZE(result) > 0) {
-        return result;
+    if (i == 0) {
+        Py_CLEAR(bo->it);
+        Py_DECREF(result);
+        return NULL;
     }
-    Py_CLEAR(bo->it);
-    Py_DECREF(result);
-    return NULL;
+    if (i < n) {
+        PyObject *short_list = PyList_GetSlice(result, 0, i);
+        Py_SETREF(result, short_list);
+    }
+    return result;
 }
 
 static PyTypeObject batched_type = {
