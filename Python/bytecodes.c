@@ -31,7 +31,6 @@ dummy_func(
 
 // BEGIN BYTECODES //
         inst(NOP, ( -- )) {
-            DISPATCH();
         }
 
         inst(RESUME, ( -- )) {
@@ -46,7 +45,6 @@ dummy_func(
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }
-            DISPATCH();
         }
 
         inst(LOAD_CLOSURE, ( -- __0)) {
@@ -57,7 +55,6 @@ dummy_func(
             }
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(LOAD_FAST_CHECK, ( -- __0)) {
@@ -67,7 +64,6 @@ dummy_func(
             }
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(LOAD_FAST, ( -- __0)) {
@@ -75,7 +71,6 @@ dummy_func(
             assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(LOAD_CONST, ( -- __0)) {
@@ -83,13 +78,11 @@ dummy_func(
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(STORE_FAST, (__0 -- )) {
             PyObject *value = POP();
             SETLOCAL(oparg, value);
-            DISPATCH();
         }
 
         inst(LOAD_FAST__LOAD_FAST, ( -- __0, __1)) {
@@ -103,7 +96,6 @@ dummy_func(
             assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(LOAD_FAST__LOAD_CONST, ( -- __0, __1)) {
@@ -116,7 +108,6 @@ dummy_func(
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(STORE_FAST__LOAD_FAST, ( -- )) {
@@ -128,7 +119,6 @@ dummy_func(
             assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(STORE_FAST__STORE_FAST, (__0, __1 -- )) {
@@ -138,7 +128,6 @@ dummy_func(
             next_instr++;
             value = POP();
             SETLOCAL(oparg, value);
-            DISPATCH();
         }
 
         inst(LOAD_CONST__LOAD_FAST, ( -- __0, __1)) {
@@ -151,19 +140,16 @@ dummy_func(
             assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(POP_TOP, (__0 -- )) {
             PyObject *value = POP();
             Py_DECREF(value);
-            DISPATCH();
         }
 
         inst(PUSH_NULL, ( -- __0)) {
             /* Use BASIC_PUSH as NULL is not a valid object pointer */
             BASIC_PUSH(NULL);
-            DISPATCH();
         }
 
         inst(UNARY_POSITIVE, ( -- )) {
@@ -173,7 +159,6 @@ dummy_func(
             SET_TOP(res);
             if (res == NULL)
                 goto error;
-            DISPATCH();
         }
 
         inst(UNARY_NEGATIVE, ( -- )) {
@@ -183,7 +168,6 @@ dummy_func(
             SET_TOP(res);
             if (res == NULL)
                 goto error;
-            DISPATCH();
         }
 
         inst(UNARY_NOT, ( -- )) {
@@ -211,7 +195,6 @@ dummy_func(
             SET_TOP(res);
             if (res == NULL)
                 goto error;
-            DISPATCH();
         }
 
         inst(BINARY_OP_MULTIPLY_INT, (__0 -- )) {
@@ -230,7 +213,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            DISPATCH();
         }
 
         inst(BINARY_OP_MULTIPLY_FLOAT, (__0 -- )) {
@@ -251,7 +233,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            DISPATCH();
         }
 
         inst(BINARY_OP_SUBTRACT_INT, (__0 -- )) {
@@ -270,7 +251,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            DISPATCH();
         }
 
         inst(BINARY_OP_SUBTRACT_FLOAT, (__0 -- )) {
@@ -290,7 +270,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            DISPATCH();
         }
 
         inst(BINARY_OP_ADD_UNICODE, (__0 -- )) {
@@ -309,7 +288,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            DISPATCH();
         }
 
         inst(BINARY_OP_INPLACE_ADD_UNICODE, (__0 -- )) {
@@ -345,7 +323,6 @@ dummy_func(
             }
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
-            DISPATCH();
         }
 
         inst(BINARY_OP_ADD_FLOAT, (__0 -- )) {
@@ -366,7 +343,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            DISPATCH();
         }
 
         inst(BINARY_OP_ADD_INT, (__0 -- )) {
@@ -385,7 +361,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            DISPATCH();
         }
 
         inst(BINARY_SUBSCR, (__0 -- )) {
@@ -399,7 +374,6 @@ dummy_func(
             if (res == NULL)
                 goto error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            DISPATCH();
         }
 
         inst(BINARY_SLICE, (__0, __1 -- )) {
@@ -418,7 +392,6 @@ dummy_func(
             }
             SET_TOP(res);
             Py_DECREF(container);
-            DISPATCH();
         }
 
         inst(STORE_SLICE, (__0, __1, __2, __3 -- )) {
@@ -439,7 +412,6 @@ dummy_func(
             STACK_SHRINK(2);
             Py_DECREF(v);
             Py_DECREF(container);
-            DISPATCH();
         }
 
         inst(BINARY_SUBSCR_ADAPTIVE, (__0 -- )) {
@@ -482,7 +454,6 @@ dummy_func(
             SET_TOP(res);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            DISPATCH();
         }
 
         inst(BINARY_SUBSCR_TUPLE_INT, (__0 -- )) {
@@ -507,7 +478,6 @@ dummy_func(
             SET_TOP(res);
             Py_DECREF(tuple);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            DISPATCH();
         }
 
         inst(BINARY_SUBSCR_DICT, (__0 -- )) {
@@ -529,7 +499,6 @@ dummy_func(
             SET_TOP(res);
             Py_DECREF(dict);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            DISPATCH();
         }
 
         inst(BINARY_SUBSCR_GETITEM, (__0 -- )) {
@@ -571,7 +540,6 @@ dummy_func(
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0)
                 goto error;
             PREDICT(JUMP_BACKWARD_QUICK);
-            DISPATCH();
         }
 
         inst(SET_ADD, (__0 -- )) {
@@ -583,7 +551,6 @@ dummy_func(
             if (err != 0)
                 goto error;
             PREDICT(JUMP_BACKWARD_QUICK);
-            DISPATCH();
         }
 
         inst(STORE_SUBSCR, (__0, __1, __2 -- )) {
@@ -602,7 +569,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
-            DISPATCH();
         }
 
         inst(STORE_SUBSCR_ADAPTIVE, (__0, __1, __2 -- )) {
@@ -646,7 +612,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
-            DISPATCH();
         }
 
         inst(STORE_SUBSCR_DICT, (__0, __1, __2 -- )) {
@@ -663,7 +628,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
-            DISPATCH();
         }
 
         inst(DELETE_SUBSCR, (__0, __1 -- )) {
@@ -677,7 +641,6 @@ dummy_func(
             Py_DECREF(sub);
             if (err != 0)
                 goto error;
-            DISPATCH();
         }
 
         inst(PRINT_EXPR, (__0 -- )) {
@@ -695,7 +658,6 @@ dummy_func(
             if (res == NULL)
                 goto error;
             Py_DECREF(res);
-            DISPATCH();
         }
 
         inst(RAISE_VARARGS, (__array[oparg] -- )) {
@@ -782,7 +744,6 @@ dummy_func(
             }
 
             SET_TOP(iter);
-            DISPATCH();
         }
 
         inst(GET_ANEXT, ( -- __0)) {
@@ -833,7 +794,6 @@ dummy_func(
 
             PUSH(awaitable);
             PREDICT(LOAD_CONST);
-            DISPATCH();
         }
 
         inst(GET_AWAITABLE, ( -- )) {
@@ -868,7 +828,6 @@ dummy_func(
             }
 
             PREDICT(LOAD_CONST);
-            DISPATCH();
         }
 
         // error: SEND stack effect depends on jump flag
@@ -918,7 +877,6 @@ dummy_func(
             assert(gen_status == PYGEN_NEXT);
             assert(retval != NULL);
             PUSH(retval);
-            DISPATCH();
         }
 
         inst(ASYNC_GEN_WRAP, ( -- )) {
@@ -930,7 +888,6 @@ dummy_func(
             }
             SET_TOP(w);
             Py_DECREF(v);
-            DISPATCH();
         }
 
         inst(YIELD_VALUE, ( -- )) {
@@ -959,7 +916,6 @@ dummy_func(
             PyObject *value = exc_info->exc_value;
             exc_info->exc_value = POP();
             Py_XDECREF(value);
-            DISPATCH();
         }
 
         inst(RERAISE, (__0 -- )) {
@@ -997,7 +953,6 @@ dummy_func(
             }
 
             PUSH(val);
-            DISPATCH();
         }
 
         inst(END_ASYNC_FOR, (__0, __1 -- )) {
@@ -1040,7 +995,6 @@ dummy_func(
             PyObject *value = PyExc_AssertionError;
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(LOAD_BUILD_CLASS, ( -- __0)) {
@@ -1067,7 +1021,6 @@ dummy_func(
                 }
             }
             PUSH(bc);
-            DISPATCH();
         }
 
         inst(STORE_NAME, (__0 -- )) {
@@ -1088,7 +1041,6 @@ dummy_func(
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            DISPATCH();
         }
 
         inst(DELETE_NAME, ( -- )) {
@@ -1107,7 +1059,6 @@ dummy_func(
                                      name);
                 goto error;
             }
-            DISPATCH();
         }
 
         inst(UNPACK_SEQUENCE, (__0 -- __array[oparg])) {
@@ -1121,7 +1072,6 @@ dummy_func(
             STACK_GROW(oparg);
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-            DISPATCH();
         }
 
         inst(UNPACK_SEQUENCE_ADAPTIVE, (__0 -- __array[oparg])) {
@@ -1149,7 +1099,6 @@ dummy_func(
             PUSH(Py_NewRef(PyTuple_GET_ITEM(seq, 0)));
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-            DISPATCH();
         }
 
         inst(UNPACK_SEQUENCE_TUPLE, (__0 -- __array[oparg])) {
@@ -1164,7 +1113,6 @@ dummy_func(
             }
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-            DISPATCH();
         }
 
         inst(UNPACK_SEQUENCE_LIST, (__0 -- __array[oparg])) {
@@ -1179,7 +1127,6 @@ dummy_func(
             }
             Py_DECREF(seq);
             JUMPBY(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-            DISPATCH();
         }
 
         // error: UNPACK_EX has irregular stack effect
@@ -1193,7 +1140,6 @@ dummy_func(
             }
             STACK_GROW(totalargs);
             Py_DECREF(seq);
-            DISPATCH();
         }
 
         inst(STORE_ATTR, (__0, __1 -- )) {
@@ -1210,7 +1156,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-            DISPATCH();
         }
 
         inst(DELETE_ATTR, (__0 -- )) {
@@ -1221,7 +1166,6 @@ dummy_func(
             Py_DECREF(owner);
             if (err != 0)
                 goto error;
-            DISPATCH();
         }
 
         inst(STORE_GLOBAL, (__0 -- )) {
@@ -1232,7 +1176,6 @@ dummy_func(
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            DISPATCH();
         }
 
         inst(DELETE_GLOBAL, ( -- )) {
@@ -1246,7 +1189,6 @@ dummy_func(
                 }
                 goto error;
             }
-            DISPATCH();
         }
 
         inst(LOAD_NAME, ( -- __0)) {
@@ -1310,7 +1252,6 @@ dummy_func(
                 }
             }
             PUSH(v);
-            DISPATCH();
         }
 
         // error: LOAD_GLOBAL has irregular stack effect
@@ -1364,7 +1305,6 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STACK_GROW(push_null);
             PUSH(v);
-            DISPATCH();
         }
 
         // error: LOAD_GLOBAL has irregular stack effect
@@ -1405,7 +1345,6 @@ dummy_func(
             STACK_GROW(push_null+1);
             Py_INCREF(res);
             SET_TOP(res);
-            DISPATCH();
         }
 
         // error: LOAD_GLOBAL has irregular stack effect
@@ -1431,7 +1370,6 @@ dummy_func(
             STACK_GROW(push_null+1);
             Py_INCREF(res);
             SET_TOP(res);
-            DISPATCH();
         }
 
         inst(DELETE_FAST, ( -- )) {
@@ -1452,7 +1390,6 @@ dummy_func(
                 goto resume_with_error;
             }
             SETLOCAL(oparg, cell);
-            DISPATCH();
         }
 
         inst(DELETE_DEREF, ( -- )) {
@@ -1500,7 +1437,6 @@ dummy_func(
                 Py_INCREF(value);
             }
             PUSH(value);
-            DISPATCH();
         }
 
         inst(LOAD_DEREF, ( -- __0)) {
@@ -1512,7 +1448,6 @@ dummy_func(
             }
             Py_INCREF(value);
             PUSH(value);
-            DISPATCH();
         }
 
         inst(STORE_DEREF, (__0 -- )) {
@@ -1521,7 +1456,6 @@ dummy_func(
             PyObject *oldobj = PyCell_GET(cell);
             PyCell_SET(cell, v);
             Py_XDECREF(oldobj);
-            DISPATCH();
         }
 
         inst(COPY_FREE_VARS, ( -- )) {
@@ -1536,7 +1470,6 @@ dummy_func(
                 Py_INCREF(o);
                 frame->localsplus[offset + i] = o;
             }
-            DISPATCH();
         }
 
         inst(BUILD_STRING, (__array[oparg] -- __0)) {
@@ -1550,7 +1483,6 @@ dummy_func(
                 Py_DECREF(item);
             }
             PUSH(str);
-            DISPATCH();
         }
 
         inst(BUILD_TUPLE, (__array[oparg] -- __0)) {
@@ -1559,7 +1491,6 @@ dummy_func(
             if (tup == NULL)
                 goto error;
             PUSH(tup);
-            DISPATCH();
         }
 
         inst(BUILD_LIST, (__array[oparg] -- __0)) {
@@ -1571,7 +1502,6 @@ dummy_func(
                 PyList_SET_ITEM(list, oparg, item);
             }
             PUSH(list);
-            DISPATCH();
         }
 
         inst(LIST_TO_TUPLE, ( -- )) {
@@ -1582,7 +1512,6 @@ dummy_func(
                 goto error;
             }
             PUSH(tuple);
-            DISPATCH();
         }
 
         inst(LIST_EXTEND, (__0 -- )) {
@@ -1603,7 +1532,6 @@ dummy_func(
             }
             Py_DECREF(none_val);
             Py_DECREF(iterable);
-            DISPATCH();
         }
 
         inst(SET_UPDATE, (__0 -- )) {
@@ -1614,7 +1542,6 @@ dummy_func(
             if (err < 0) {
                 goto error;
             }
-            DISPATCH();
         }
 
         inst(BUILD_SET, (__array[oparg] -- __0)) {
@@ -1635,7 +1562,6 @@ dummy_func(
                 goto error;
             }
             PUSH(set);
-            DISPATCH();
         }
 
         inst(BUILD_MAP, (__array[oparg*2] -- __0)) {
@@ -1651,7 +1577,6 @@ dummy_func(
                 Py_DECREF(POP());
             }
             PUSH(map);
-            DISPATCH();
         }
 
         inst(SETUP_ANNOTATIONS, ( -- )) {
@@ -1706,7 +1631,6 @@ dummy_func(
                     Py_DECREF(ann_dict);
                 }
             }
-            DISPATCH();
         }
 
         inst(BUILD_CONST_KEY_MAP, (__array[oparg] -- )) {
@@ -1730,7 +1654,6 @@ dummy_func(
                 Py_DECREF(POP());
             }
             PUSH(map);
-            DISPATCH();
         }
 
         inst(DICT_UPDATE, (__0 -- )) {
@@ -1746,7 +1669,6 @@ dummy_func(
                 goto error;
             }
             Py_DECREF(update);
-            DISPATCH();
         }
 
         inst(DICT_MERGE, (__0 -- )) {
@@ -1760,7 +1682,6 @@ dummy_func(
             }
             Py_DECREF(update);
             PREDICT(CALL_FUNCTION_EX);
-            DISPATCH();
         }
 
         inst(MAP_ADD, (__0, __1 -- )) {
@@ -1775,7 +1696,6 @@ dummy_func(
                 goto error;
             }
             PREDICT(JUMP_BACKWARD_QUICK);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1825,7 +1745,6 @@ dummy_func(
             Py_DECREF(owner);
             SET_TOP(res);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1871,7 +1790,6 @@ dummy_func(
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1897,7 +1815,6 @@ dummy_func(
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1937,7 +1854,6 @@ dummy_func(
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1960,7 +1876,6 @@ dummy_func(
             SET_TOP(res);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1984,7 +1899,6 @@ dummy_func(
             SET_TOP(res);
             Py_DECREF(cls);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -2113,7 +2027,6 @@ dummy_func(
             }
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-            DISPATCH();
         }
 
         inst(STORE_ATTR_WITH_HINT, (__0, __1 -- )) {
@@ -2165,7 +2078,6 @@ dummy_func(
             dict->ma_version_tag = new_version;
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-            DISPATCH();
         }
 
         inst(STORE_ATTR_SLOT, (__0, __1 -- )) {
@@ -2185,7 +2097,6 @@ dummy_func(
             Py_XDECREF(old_value);
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-            DISPATCH();
         }
 
         inst(COMPARE_OP, (__0 -- )) {
@@ -2201,7 +2112,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            DISPATCH();
         }
 
         inst(COMPARE_OP_ADAPTIVE, (__0 -- )) {
@@ -2249,7 +2159,6 @@ dummy_func(
             else {
                 JUMPBY(1 + oparg);
             }
-            DISPATCH();
         }
 
         inst(COMPARE_OP_INT_JUMP, (__0 -- )) {
@@ -2281,7 +2190,6 @@ dummy_func(
             else {
                 JUMPBY(1 + oparg);
             }
-            DISPATCH();
         }
 
         inst(COMPARE_OP_STR_JUMP, (__0 -- )) {
@@ -2314,7 +2222,6 @@ dummy_func(
             else {
                 JUMPBY(1 + oparg);
             }
-            DISPATCH();
         }
 
         inst(IS_OP, (__0 -- )) {
@@ -2326,7 +2233,6 @@ dummy_func(
             SET_TOP(b);
             Py_DECREF(left);
             Py_DECREF(right);
-            DISPATCH();
         }
 
         inst(CONTAINS_OP, (__0 -- )) {
@@ -2341,7 +2247,6 @@ dummy_func(
             PyObject *b = (res^oparg) ? Py_True : Py_False;
             Py_INCREF(b);
             PUSH(b);
-            DISPATCH();
         }
 
         inst(CHECK_EG_MATCH, ( -- )) {
@@ -2382,7 +2287,6 @@ dummy_func(
                 PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
                 Py_DECREF(exc_value);
             }
-            DISPATCH();
         }
 
         inst(CHECK_EXC_MATCH, ( -- )) {
@@ -2397,7 +2301,6 @@ dummy_func(
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
             PUSH(Py_NewRef(res ? Py_True : Py_False));
-            DISPATCH();
         }
 
         inst(IMPORT_NAME, (__0 -- )) {
@@ -2411,7 +2314,6 @@ dummy_func(
             SET_TOP(res);
             if (res == NULL)
                 goto error;
-            DISPATCH();
         }
 
         inst(IMPORT_STAR, (__0 -- )) {
@@ -2434,7 +2336,6 @@ dummy_func(
             Py_DECREF(from);
             if (err != 0)
                 goto error;
-            DISPATCH();
         }
 
         inst(IMPORT_FROM, ( -- __0)) {
@@ -2445,12 +2346,10 @@ dummy_func(
             PUSH(res);
             if (res == NULL)
                 goto error;
-            DISPATCH();
         }
 
         inst(JUMP_FORWARD, ( -- )) {
             JUMPBY(oparg);
-            DISPATCH();
         }
 
         inst(JUMP_BACKWARD, ( -- )) {
@@ -2479,7 +2378,6 @@ dummy_func(
                 else
                     goto error;
             }
-            DISPATCH();
         }
 
         inst(POP_JUMP_IF_TRUE, (__0 -- )) {
@@ -2502,7 +2400,6 @@ dummy_func(
                 else
                     goto error;
             }
-            DISPATCH();
         }
 
         inst(POP_JUMP_IF_NOT_NONE, (__0 -- )) {
@@ -2511,7 +2408,6 @@ dummy_func(
                 JUMPBY(oparg);
             }
             Py_DECREF(value);
-            DISPATCH();
         }
 
         inst(POP_JUMP_IF_NONE, (__0 -- )) {
@@ -2523,7 +2419,6 @@ dummy_func(
             else {
                 Py_DECREF(value);
             }
-            DISPATCH();
         }
 
         // error: JUMP_IF_FALSE_OR_POP stack effect depends on jump flag
@@ -2548,7 +2443,6 @@ dummy_func(
                 JUMPBY(oparg);
             else
                 goto error;
-            DISPATCH();
         }
 
         // error: JUMP_IF_TRUE_OR_POP stack effect depends on jump flag
@@ -2574,7 +2468,6 @@ dummy_func(
             }
             else
                 goto error;
-            DISPATCH();
         }
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, ( -- )) {
@@ -2584,7 +2477,6 @@ dummy_func(
              * (see bpo-30039).
              */
             JUMPBY(-oparg);
-            DISPATCH();
         }
 
         inst(JUMP_BACKWARD_QUICK, ( -- )) {
@@ -2592,7 +2484,6 @@ dummy_func(
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(GET_LEN, ( -- __0)) {
@@ -2606,7 +2497,6 @@ dummy_func(
                 goto error;
             }
             PUSH(len_o);
-            DISPATCH();
         }
 
         inst(MATCH_CLASS, (__0, __1 -- )) {
@@ -2634,7 +2524,6 @@ dummy_func(
                 SET_TOP(Py_None);
             }
             Py_DECREF(subject);
-            DISPATCH();
         }
 
         inst(MATCH_MAPPING, ( -- __0)) {
@@ -2644,7 +2533,6 @@ dummy_func(
             Py_INCREF(res);
             PUSH(res);
             PREDICT(POP_JUMP_IF_FALSE);
-            DISPATCH();
         }
 
         inst(MATCH_SEQUENCE, ( -- __0)) {
@@ -2654,7 +2542,6 @@ dummy_func(
             Py_INCREF(res);
             PUSH(res);
             PREDICT(POP_JUMP_IF_FALSE);
-            DISPATCH();
         }
 
         inst(MATCH_KEYS, ( -- __0)) {
@@ -2666,7 +2553,6 @@ dummy_func(
                 goto error;
             }
             PUSH(values_or_none);
-            DISPATCH();
         }
 
         inst(GET_ITER, ( -- )) {
@@ -2677,7 +2563,6 @@ dummy_func(
             SET_TOP(iter);
             if (iter == NULL)
                 goto error;
-            DISPATCH();
         }
 
         inst(GET_YIELD_FROM_ITER, ( -- )) {
@@ -2706,7 +2591,6 @@ dummy_func(
                     goto error;
             }
             PREDICT(LOAD_CONST);
-            DISPATCH();
         }
 
         // error: FOR_ITER stack effect depends on jump flag
@@ -2733,7 +2617,6 @@ dummy_func(
             STACK_SHRINK(1);
             Py_DECREF(iter);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            DISPATCH();
         }
 
         // error: FOR_ITER stack effect depends on jump flag
@@ -2773,7 +2656,6 @@ dummy_func(
             STACK_SHRINK(1);
             Py_DECREF(it);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            DISPATCH();
         }
 
         // error: FOR_ITER stack effect depends on jump flag
@@ -2797,7 +2679,6 @@ dummy_func(
             }
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
-            DISPATCH();
         }
 
         inst(BEFORE_ASYNC_WITH, ( -- __0)) {
@@ -2833,7 +2714,6 @@ dummy_func(
                 goto error;
             PUSH(res);
             PREDICT(GET_AWAITABLE);
-            DISPATCH();
         }
 
         inst(BEFORE_WITH, ( -- __0)) {
@@ -2869,7 +2749,6 @@ dummy_func(
                 goto error;
             }
             PUSH(res);
-            DISPATCH();
         }
 
         inst(WITH_EXCEPT_START, ( -- __0)) {
@@ -2898,7 +2777,6 @@ dummy_func(
                 goto error;
 
             PUSH(res);
-            DISPATCH();
         }
 
         inst(PUSH_EXC_INFO, ( -- __0)) {
@@ -2918,7 +2796,6 @@ dummy_func(
             assert(PyExceptionInstance_Check(value));
             exc_info->exc_value = value;
 
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -2945,7 +2822,6 @@ dummy_func(
             SET_TOP(res);
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -2974,7 +2850,6 @@ dummy_func(
             SET_TOP(res);
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -2994,7 +2869,6 @@ dummy_func(
             SET_TOP(res);
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -3018,7 +2892,6 @@ dummy_func(
             SET_TOP(res);
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            DISPATCH();
         }
 
         inst(CALL_BOUND_METHOD_EXACT_ARGS, (__0, __array[oparg] -- )) {
@@ -3040,7 +2913,6 @@ dummy_func(
             assert(call_shape.kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
             call_shape.kwnames = GETITEM(consts, oparg);
-            DISPATCH();
         }
 
         inst(CALL, (__0, __array[oparg] -- )) {
@@ -3116,7 +2988,6 @@ dummy_func(
             }
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_ADAPTIVE, (__0, __array[oparg] -- )) {
@@ -3228,7 +3099,6 @@ dummy_func(
             Py_DECREF(obj);
             STACK_SHRINK(2);
             SET_TOP(res);
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_STR_1, (__0, __array[oparg] -- )) {
@@ -3250,7 +3120,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_TUPLE_1, (__0, __array[oparg] -- )) {
@@ -3271,7 +3140,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_BUILTIN_CLASS, (__0, __array[oparg] -- )) {
@@ -3299,7 +3167,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_BUILTIN_O, (__0, __array[oparg] -- )) {
@@ -3333,7 +3200,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_BUILTIN_FAST, (__0, __array[oparg] -- )) {
@@ -3373,7 +3239,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (__0, __array[oparg] -- )) {
@@ -3412,7 +3277,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_LEN, (__0, __array[oparg] -- )) {
@@ -3442,7 +3306,6 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_ISINSTANCE, (__0, __array[oparg] -- )) {
@@ -3475,7 +3338,6 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_LIST_APPEND, (__0, __array[oparg] -- )) {
@@ -3498,7 +3360,6 @@ dummy_func(
             STACK_SHRINK(2);
             Py_DECREF(list);
             Py_DECREF(callable);
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_O, (__0, __array[oparg] -- )) {
@@ -3534,7 +3395,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (__0, __array[oparg] -- )) {
@@ -3571,7 +3431,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS, (__0, __array[oparg] -- )) {
@@ -3605,7 +3464,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST, (__0, __array[oparg] -- )) {
@@ -3640,7 +3498,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         // error: CALL_FUNCTION_EX has irregular stack effect
@@ -3679,7 +3536,6 @@ dummy_func(
                 goto error;
             }
             CHECK_EVAL_BREAKER();
-            DISPATCH();
         }
 
         // error: MAKE_FUNCTION has irregular stack effect
@@ -3711,7 +3567,6 @@ dummy_func(
             }
 
             PUSH((PyObject *)func);
-            DISPATCH();
         }
 
         inst(RETURN_GENERATOR, ( -- )) {
@@ -3766,7 +3621,6 @@ dummy_func(
             SET_TOP(slice);
             if (slice == NULL)
                 goto error;
-            DISPATCH();
         }
 
         // error: FORMAT_VALUE has irregular stack effect
@@ -3827,7 +3681,6 @@ dummy_func(
             }
 
             PUSH(result);
-            DISPATCH();
         }
 
         inst(COPY, ( -- __0)) {
@@ -3835,7 +3688,6 @@ dummy_func(
             PyObject *peek = PEEK(oparg);
             Py_INCREF(peek);
             PUSH(peek);
-            DISPATCH();
         }
 
         inst(BINARY_OP, (__0 -- )) {
@@ -3853,7 +3705,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            DISPATCH();
         }
 
         inst(BINARY_OP_ADAPTIVE, (__0 -- )) {
@@ -3878,7 +3729,6 @@ dummy_func(
             PyObject *top = TOP();
             SET_TOP(PEEK(oparg));
             PEEK(oparg) = top;
-            DISPATCH();
         }
 
         inst(EXTENDED_ARG, ( -- )) {

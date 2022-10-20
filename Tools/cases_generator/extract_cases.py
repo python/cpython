@@ -163,7 +163,18 @@ def read_cases(f):
 
 def write_cases(f, cases):
     for case in cases:
-        print(case.rstrip() + "\n", file=f)
+        caselines = case.splitlines()
+        while caselines[-1].strip() == "":
+            caselines.pop()
+        if caselines[-1].strip() == "}":
+            caselines.pop()
+        else:
+            raise ValueError("case does not end with '}'")
+        if caselines[-1].strip() == "DISPATCH();":
+            caselines.pop()
+        caselines.append("        }")
+        case = "\n".join(caselines)
+        print(case + "\n", file=f)
 
 
 def write_families(f):
