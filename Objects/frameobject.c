@@ -767,6 +767,31 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         PyErr_SetString(PyExc_ValueError, msg);
         return -1;
     }
+    // Populate any NULL locals that the compiler might have "proven" to exist
+    // in the new location. Rather than crashing or changing co_code, just bind
+    // None instead:
+    int unbound = 0;
+    for (int i = 0; i < f->f_frame->f_code->co_nlocalsplus; i++) {
+        // Counting every unbound local is overly-cautious, but a full flow
+        // analysis (like we do in the compiler) is probably too expensive:
+        unbound += f->f_frame->localsplus[i] == NULL;
+    }
+    if (unbound) {
+        const char *e = "assigning None to %d unbound local%s";
+        const char *s = (unbound == 1) ? "" : "s";
+        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 0, e, unbound, s)) {
+            return -1;
+        }
+        // Do this in a second pass to avoid writing a bunch of Nones when
+        // warnings are being treated as errors and the previous bit raises:
+        for (int i = 0; i < f->f_frame->f_code->co_nlocalsplus; i++) {
+            if (f->f_frame->localsplus[i] == NULL) {
+                f->f_frame->localsplus[i] = Py_NewRef(Py_None);
+                unbound--;
+            }
+        }
+        assert(unbound == 0);
+    }
     if (state == FRAME_SUSPENDED) {
         /* Account for value popped by yield */
         start_stack = pop_value(start_stack);
@@ -787,31 +812,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             Py_XDECREF(v);
         }
         start_stack = pop_value(start_stack);
-    }
-    // Populate any NULL locals that the compiler might have "proven" to exist
-    // in the new location. Rather than crashing or changing co_code, just bind
-    // None instead:
-    int empty = 0;
-    for (int i = 0; i < f->f_frame->f_code->co_nlocalsplus; i++) {
-        // Counting every unbound local is overly-cautious, but a full flow
-        // analysis (like we do in the compiler) is probably too expensive:
-        empty += f->f_frame->localsplus[i] == NULL;
-    }
-    if (empty) {
-        const char *e = "assigning None to %d unbound local%s";
-        const char *s = (empty == 1) ? "" : "s";
-        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 0, e, empty, s)) {
-            return -1;
-        }
-        // Do this in a second pass to avoid writing a bunch of Nones when
-        // warnings are being treated as errors and the previous bit raises:
-        for (int i = 0; i < f->f_frame->f_code->co_nlocalsplus; i++) {
-            if (f->f_frame->localsplus[i] == NULL) {
-                f->f_frame->localsplus[i] = Py_NewRef(Py_None);
-                empty--;
-            }
-        }
-        assert(empty == 0);
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
