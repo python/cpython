@@ -375,8 +375,12 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 /* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
 #define ADAPTIVE_BACKOFF_BITS 4
-/* The initial counter value is 1 == 2**ADAPTIVE_BACKOFF_START - 1 */
-#define ADAPTIVE_BACKOFF_START 1
+
+#define ADAPTIVE_BACKOFF_START_VALUE 1
+#define ADAPTIVE_BACKOFF_START_BACKOFF 1 // 2**0 <= 1 < 2**1
+
+#define ADAPTIVE_BACKOFF_RESTART_VALUE 52
+#define ADAPTIVE_BACKOFF_RESTART_BACKOFF 6 // 2**5 <= 53 < 2**6
 
 #define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
 
@@ -389,8 +393,14 @@ adaptive_counter_bits(int value, int backoff) {
 
 static inline uint16_t
 adaptive_counter_start(void) {
-    unsigned int value = (1 << ADAPTIVE_BACKOFF_START) - 1;
-    return adaptive_counter_bits(value, ADAPTIVE_BACKOFF_START);
+    return adaptive_counter_bits(ADAPTIVE_BACKOFF_START_VALUE,
+                                 ADAPTIVE_BACKOFF_START_BACKOFF);
+}
+
+static inline uint16_t
+adaptive_counter_restart(void) {
+    return adaptive_counter_bits(ADAPTIVE_BACKOFF_RESTART_VALUE,
+                                 ADAPTIVE_BACKOFF_RESTART_BACKOFF);
 }
 
 static inline uint16_t

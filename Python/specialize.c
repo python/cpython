@@ -296,19 +296,6 @@ _PyCode_Quicken(PyCodeObject *code)
     }
 }
 
-static inline int
-miss_counter_start(void) {
-    /* Starting value for the counter.
-     * This value needs to be not too low, otherwise
-     * it would cause excessive de-optimization.
-     * Neither should it be too high, or that would delay
-     * de-optimization excessively when it is needed.
-     * A value around 50 seems to work, and we choose a
-     * prime number to avoid artifacts.
-     */
-    return 53;
-}
-
 #define SIMPLE_FUNCTION 0
 
 /* Common */
@@ -825,12 +812,13 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 fail:
     STAT_INC(LOAD_ATTR, failure);
     assert(!PyErr_Occurred());
+    _Py_SET_OPCODE(*instr, LOAD_ATTR);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return 0;
 success:
     STAT_INC(LOAD_ATTR, success);
     assert(!PyErr_Occurred());
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
     return 0;
 }
 
@@ -908,12 +896,13 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 fail:
     STAT_INC(STORE_ATTR, failure);
     assert(!PyErr_Occurred());
+    _Py_SET_OPCODE(*instr, STORE_ATTR);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return 0;
 success:
     STAT_INC(STORE_ATTR, success);
     assert(!PyErr_Occurred());
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
     return 0;
 }
 
@@ -1166,12 +1155,13 @@ _Py_Specialize_LoadGlobal(
 fail:
     STAT_INC(LOAD_GLOBAL, failure);
     assert(!PyErr_Occurred());
+    _Py_SET_OPCODE(*instr, LOAD_GLOBAL);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return 0;
 success:
     STAT_INC(LOAD_GLOBAL, success);
     assert(!PyErr_Occurred());
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
     return 0;
 }
 
@@ -1326,12 +1316,13 @@ _Py_Specialize_BinarySubscr(
 fail:
     STAT_INC(BINARY_SUBSCR, failure);
     assert(!PyErr_Occurred());
+    _Py_SET_OPCODE(*instr, BINARY_SUBSCR);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return 0;
 success:
     STAT_INC(BINARY_SUBSCR, success);
     assert(!PyErr_Occurred());
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
     return 0;
 }
 
@@ -1430,12 +1421,13 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
 fail:
     STAT_INC(STORE_SUBSCR, failure);
     assert(!PyErr_Occurred());
+    _Py_SET_OPCODE(*instr, STORE_SUBSCR);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return 0;
 success:
     STAT_INC(STORE_SUBSCR, success);
     assert(!PyErr_Occurred());
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
     return 0;
 }
 
@@ -1743,12 +1735,13 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     if (fail) {
         STAT_INC(CALL, failure);
         assert(!PyErr_Occurred());
+        _Py_SET_OPCODE(*instr, CALL);
         cache->counter = adaptive_counter_backoff(cache->counter);
     }
     else {
         STAT_INC(CALL, success);
         assert(!PyErr_Occurred());
-        cache->counter = miss_counter_start();
+        cache->counter = adaptive_counter_restart();
     }
     return 0;
 }
@@ -1896,11 +1889,12 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     }
     SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     STAT_INC(BINARY_OP, failure);
+    _Py_SET_OPCODE(*instr, BINARY_OP);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;
 success:
     STAT_INC(BINARY_OP, success);
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
 }
 
 
@@ -2016,11 +2010,12 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
 failure:
     STAT_INC(COMPARE_OP, failure);
+    _Py_SET_OPCODE(*instr, COMPARE_OP);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;
 success:
     STAT_INC(COMPARE_OP, success);
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
 }
 
 #ifdef Py_STATS
@@ -2066,11 +2061,12 @@ _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr, int oparg)
     SPECIALIZATION_FAIL(UNPACK_SEQUENCE, unpack_sequence_fail_kind(seq));
 failure:
     STAT_INC(UNPACK_SEQUENCE, failure);
+    _Py_SET_OPCODE(*instr, UNPACK_SEQUENCE);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;
 success:
     STAT_INC(UNPACK_SEQUENCE, success);
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
 }
 
 #ifdef Py_STATS
@@ -2164,9 +2160,10 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
     SPECIALIZATION_FAIL(FOR_ITER,
                         _PySpecialization_ClassifyIterator(iter));
     STAT_INC(FOR_ITER, failure);
+    _Py_SET_OPCODE(*instr, FOR_ITER);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;
 success:
     STAT_INC(FOR_ITER, success);
-    cache->counter = miss_counter_start();
+    cache->counter = adaptive_counter_restart();
 }
