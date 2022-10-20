@@ -852,7 +852,15 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
 
-#define DEOPT_IF(cond, instname) if (cond) { goto miss; }
+#define DEOPT_IF(cond, instname)                      \
+    if (cond) {                                       \
+        STAT_INC(opcode, miss);                       \
+        STAT_INC(instname, miss);                     \
+        next_instr--;                                 \
+        assert(instname == _PyOpcode_Deopt[opcode]);  \
+        opcode = instname;                            \
+        DISPATCH_GOTO();                              \
+    }
 
 
 #define GLOBALS() frame->f_globals
@@ -1243,17 +1251,6 @@ handle_eval_breaker:
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
-
-/* Specialization misses */
-
-miss:
-        {
-            STAT_INC(opcode, miss);
-            opcode = _PyOpcode_Deopt[opcode];
-            STAT_INC(opcode, miss);
-            next_instr--;
-            DISPATCH_GOTO();
-        }
 
 unbound_local_error:
         {
