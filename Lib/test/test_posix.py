@@ -2205,14 +2205,17 @@ class NamespacesTests(unittest.TestCase):
         code = """if 1:
             import errno
             import os
+            import sys
             fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
             try:
                 original = os.readlink('/proc/self/ns/uts')
                 try:
                     os.unshare(os.CLONE_NEWUTS)
                 except OSError as e:
-                    if e.errno != errno.ENOSPC:
-                        raise
+                    if e.errno == errno.ENOSPC:
+                        # skip test if limit is exceeded
+                        sys.exit()
+                    raise
                 new = os.readlink('/proc/self/ns/uts')
                 if original == new:
                     raise Exception('os.unshare failed')
