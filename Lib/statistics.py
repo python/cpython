@@ -12,6 +12,7 @@ Function            Description
 ==================  ==================================================
 mean                Arithmetic mean (average) of data.
 fmean               Fast, floating point arithmetic mean.
+root_mean_square    The quadratic mean of data.
 geometric_mean      Geometric mean of data.
 harmonic_mean       Harmonic mean of data.
 median              Median (middle value) of data.
@@ -535,6 +536,7 @@ def fmean(data, weights=None):
 def root_mean_square(data):
     """returns the root mean square of a given dataset"""
     return (_power_sum(data, power=2)/len(data)) ** 0.5
+
 def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
 
