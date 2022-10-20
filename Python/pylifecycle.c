@@ -2058,21 +2058,21 @@ error:
 }
 
 PyThreadState *
-_Py_NewInterpreter(int isolated_subinterpreter)
+_Py_NewInterpreter(const PyInterpreterConfig *config)
 {
     PyThreadState *tstate = NULL;
-    PyStatus status = new_interpreter(&tstate, isolated_subinterpreter);
+    PyStatus status = new_interpreter(&tstate, config->isolated);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
     return tstate;
-
 }
 
 PyThreadState *
 Py_NewInterpreter(void)
 {
-    return _Py_NewInterpreter(0);
+    PyInterpreterConfig config = { 0 };
+    return _Py_NewInterpreter(&config);
 }
 
 /* Delete an interpreter and its last thread.  This requires that the

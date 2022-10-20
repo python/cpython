@@ -245,6 +245,12 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
     Py_ssize_t length, wchar_t **items);
 
 
+/* --- PyInterpreterConfig ------------------------------------ */
+
+typedef struct {
+    int isolated;
+} PyInterpreterConfig;
+
 /* --- Helper functions --------------------------------------- */
 
 /* Get the original command line arguments, before Python modified them.
