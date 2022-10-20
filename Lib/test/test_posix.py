@@ -634,7 +634,7 @@ class PosixTester(unittest.TestCase):
         self.assertTrue(posix.stat(os_helper.TESTFN))
         self.assertTrue(posix.stat(os.fsencode(os_helper.TESTFN)))
 
-        self.assertWarnsRegex(DeprecationWarning,
+        self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, bytearray(os.fsencode(os_helper.TESTFN)))
         self.assertRaisesRegex(TypeError,
@@ -841,11 +841,8 @@ class PosixTester(unittest.TestCase):
 
     def test_listdir_bytes_like(self):
         for cls in bytearray, memoryview:
-            with self.assertWarns(DeprecationWarning):
-                names = posix.listdir(cls(b'.'))
-            self.assertIn(os.fsencode(os_helper.TESTFN), names)
-            for name in names:
-                self.assertIs(type(name), bytes)
+            with self.assertRaises(TypeError):
+                posix.listdir(cls(b'.'))
 
     @unittest.skipUnless(posix.listdir in os.supports_fd,
                          "test needs fd support for posix.listdir()")
