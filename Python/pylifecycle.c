@@ -480,6 +480,8 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
         }
     }
 
+    tstate->interp->long_state.max_str_digits = config->int_max_str_digits;
+
     // Update the sys module for the new configuration
     if (_PySys_UpdateConfig(tstate) < 0) {
         return -1;
