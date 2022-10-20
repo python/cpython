@@ -488,14 +488,16 @@ PyType_Modified(PyTypeObject *type)
 
     if (type->tp_watched) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        char bits = type->tp_watched;
-        for (int i = 0; i < TYPE_MAX_WATCHERS; i++) {
+        int bits = type->tp_watched;
+        int i = 0;
+        while(bits && i < TYPE_MAX_WATCHERS) {
             if (bits & 1) {
                 PyType_WatchCallback cb = interp->type_watchers[i];
                 if (cb && (cb(type) < 0)) {
                     PyErr_WriteUnraisable((PyObject *)type);
                 }
             }
+            i += 1;
             bits >>= 1;
         }
     }
