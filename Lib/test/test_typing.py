@@ -4367,7 +4367,7 @@ class MethodHolder:
 class OverloadTests(BaseTestCase):
 
     def test_overload_fails(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(NotImplementedError):
 
             @overload
             def blah():
