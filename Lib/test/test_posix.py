@@ -2225,6 +2225,10 @@ class NamespacesTests(unittest.TestCase):
                 # for this operation
                 pass
             except OSError as e:
+                # Skip the test on these errors:
+                # - ENOSYS: syscall not available
+                # - EINVAL: kernel was not configured with the CONFIG_UTS_NS option
+                # - ENOMEM: not enough memory
                 if e.errno not in (errno.ENOSYS, errno.EINVAL, errno.ENOMEM):
                     raise
             finally:
