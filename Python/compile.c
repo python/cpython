@@ -482,13 +482,13 @@ static int compiler_try_star_except(struct compiler *, stmt_ty);
 static int compiler_set_qualname(struct compiler *);
 
 static int compiler_sync_comprehension_generator(
-                                      struct compiler *c, location *ploc,
+                                      struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
 static int compiler_async_comprehension_generator(
-                                      struct compiler *c, location *ploc,
+                                      struct compiler *c, location loc,
                                       asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
@@ -2953,7 +2953,7 @@ compiler_jump_if(struct compiler *c, location *ploc,
 
     /* general implementation */
     VISIT(c, expr, e);
-    ADDOP_JUMP(c, *ploc, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
     return 1;
 }
 
@@ -3960,7 +3960,6 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 static int
 compiler_assert(struct compiler *c, stmt_ty s)
 {
-    location loc = LOC(s);
     /* Always emit a warning if the test is a non-zero length tuple */
     if ((s->v.Assert.test->kind == Tuple_kind &&
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) ||
@@ -3968,23 +3967,26 @@ compiler_assert(struct compiler *c, stmt_ty s)
          PyTuple_Check(s->v.Assert.test->v.Constant.value) &&
          PyTuple_Size(s->v.Assert.test->v.Constant.value) > 0))
     {
-        if (!compiler_warn(c, loc, "assertion is always true, "
-                                   "perhaps remove parentheses?"))
+        if (!compiler_warn(c, LOC(s), "assertion is always true, "
+                                      "perhaps remove parentheses?"))
         {
             return 0;
         }
     }
-    if (c->c_optimize)
+    if (c->c_optimize) {
         return 1;
+    }
     NEW_JUMP_TARGET_LABEL(c, end);
-    if (!compiler_jump_if(c, &loc, s->v.Assert.test, end, 1))
+    location loc = LOC(s);
+    if (!compiler_jump_if(c, &loc, s->v.Assert.test, end, 1)) {
         return 0;
-    ADDOP(c, loc, LOAD_ASSERTION_ERROR);
+    }
+    ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
-        ADDOP_I(c, loc, CALL, 0);
+        ADDOP_I(c, LOC(s), CALL, 0);
     }
-    ADDOP_I(c, loc, RAISE_VARARGS, 1);
+    ADDOP_I(c, LOC(s), RAISE_VARARGS, 1);
 
     USE_LABEL(c, end);
     return 1;
@@ -5188,7 +5190,7 @@ ex_call:
 
 
 static int
-compiler_comprehension_generator(struct compiler *c, location *ploc,
+compiler_comprehension_generator(struct compiler *c, location loc,
                                  asdl_comprehension_seq *generators, int gen_index,
                                  int depth,
                                  expr_ty elt, expr_ty val, int type)
@@ -5197,35 +5199,33 @@ compiler_comprehension_generator(struct compiler *c, location *ploc,
     gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
     if (gen->is_async) {
         return compiler_async_comprehension_generator(
-            c, ploc, generators, gen_index, depth, elt, val, type);
+            c, loc, generators, gen_index, depth, elt, val, type);
     } else {
         return compiler_sync_comprehension_generator(
-            c, ploc, generators, gen_index, depth, elt, val, type);
+            c, loc, generators, gen_index, depth, elt, val, type);
     }
 }
 
 static int
-compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
-                                      asdl_comprehension_seq *generators, int gen_index,
-                                      int depth,
+compiler_sync_comprehension_generator(struct compiler *c, location loc,
+                                      asdl_comprehension_seq *generators,
+                                      int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type)
 {
     /* generate code for the iterator, then each of the ifs,
        and then write to the element */
 
-    comprehension_ty gen;
-    Py_ssize_t i, n;
-
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, if_cleanup);
     NEW_JUMP_TARGET_LABEL(c, anchor);
 
-    gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
+    comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
+                                                          gen_index);
 
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
         c->u->u_argcount = 1;
-        ADDOP_I(c, *ploc, LOAD_FAST, 0);
+        ADDOP_I(c, loc, LOAD_FAST, 0);
     }
     else {
         /* Sub-iter - calculate on the fly */
@@ -5252,29 +5252,34 @@ compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
         }
         if (IS_LABEL(start)) {
             VISIT(c, expr, gen->iter);
-            ADDOP(c, *ploc, GET_ITER);
+            ADDOP(c, loc, GET_ITER);
         }
     }
     if (IS_LABEL(start)) {
         depth++;
         USE_LABEL(c, start);
-        ADDOP_JUMP(c, *ploc, FOR_ITER, anchor);
+        ADDOP_JUMP(c, loc, FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
 
     /* XXX this needs to be cleaned up...a lot! */
-    n = asdl_seq_LEN(gen->ifs);
-    for (i = 0; i < n; i++) {
+    Py_ssize_t n = asdl_seq_LEN(gen->ifs);
+    for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, ploc, e, if_cleanup, 0))
+        if (!compiler_jump_if(c, &loc, e, if_cleanup, 0)) {
             return 0;
+        }
     }
 
-    if (++gen_index < asdl_seq_LEN(generators))
-        if (!compiler_comprehension_generator(c, ploc,
+    if (++gen_index < asdl_seq_LEN(generators)) {
+        if (!compiler_comprehension_generator(c, loc,
                                               generators, gen_index, depth,
-                                              elt, val, type))
-        return 0;
+                                              elt, val, type)) {
+            return 0;
+        }
+    }
+
+    location elt_loc = LOC(elt);
 
     /* only append after the last for generator */
     if (gen_index >= asdl_seq_LEN(generators)) {
@@ -5282,23 +5287,27 @@ compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
         switch (type) {
         case COMP_GENEXP:
             VISIT(c, expr, elt);
-            ADDOP_YIELD(c, *ploc);
-            ADDOP(c, *ploc, POP_TOP);
+            ADDOP_YIELD(c, elt_loc);
+            ADDOP(c, elt_loc, POP_TOP);
             break;
         case COMP_LISTCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, *ploc, LIST_APPEND, depth + 1);
+            ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, *ploc, SET_ADD, depth + 1);
+            ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             break;
         case COMP_DICTCOMP:
             /* With '{k: v}', k is evaluated before v, so we do
                the same. */
             VISIT(c, expr, elt);
             VISIT(c, expr, val);
-            ADDOP_I(c, *ploc, MAP_ADD, depth + 1);
+            elt_loc = LOCATION(elt->lineno,
+                               val->end_lineno,
+                               elt->col_offset,
+                               val->end_col_offset);
+            ADDOP_I(c, elt_loc, MAP_ADD, depth + 1);
             break;
         default:
             return 0;
@@ -5307,7 +5316,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
 
     USE_LABEL(c, if_cleanup);
     if (IS_LABEL(start)) {
-        ADDOP_JUMP(c, *ploc, JUMP, start);
+        ADDOP_JUMP(c, elt_loc, JUMP, start);
 
         USE_LABEL(c, anchor);
     }
@@ -5316,81 +5325,88 @@ compiler_sync_comprehension_generator(struct compiler *c, location *ploc,
 }
 
 static int
-compiler_async_comprehension_generator(struct compiler *c, location *ploc,
-                                      asdl_comprehension_seq *generators, int gen_index,
-                                      int depth,
+compiler_async_comprehension_generator(struct compiler *c, location loc,
+                                      asdl_comprehension_seq *generators,
+                                      int gen_index, int depth,
                                       expr_ty elt, expr_ty val, int type)
 {
-    comprehension_ty gen;
-    Py_ssize_t i, n;
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, if_cleanup);
 
-    gen = (comprehension_ty)asdl_seq_GET(generators, gen_index);
+    comprehension_ty gen = (comprehension_ty)asdl_seq_GET(generators,
+                                                          gen_index);
 
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
         c->u->u_argcount = 1;
-        ADDOP_I(c, *ploc, LOAD_FAST, 0);
+        ADDOP_I(c, loc, LOAD_FAST, 0);
     }
     else {
         /* Sub-iter - calculate on the fly */
         VISIT(c, expr, gen->iter);
-        ADDOP(c, *ploc, GET_AITER);
+        ADDOP(c, loc, GET_AITER);
     }
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
-    if (!compiler_push_fblock(c, *ploc, ASYNC_COMPREHENSION_GENERATOR,
+    if (!compiler_push_fblock(c, loc, ASYNC_COMPREHENSION_GENERATOR,
                               start, NO_LABEL, NULL)) {
         return 0;
     }
 
-    ADDOP_JUMP(c, *ploc, SETUP_FINALLY, except);
-    ADDOP(c, *ploc, GET_ANEXT);
-    ADDOP_LOAD_CONST(c, *ploc, Py_None);
-    ADD_YIELD_FROM(c, *ploc, 1);
-    ADDOP(c, *ploc, POP_BLOCK);
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
+    ADDOP(c, loc, GET_ANEXT);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+    ADDOP(c, loc, POP_BLOCK);
     VISIT(c, expr, gen->target);
 
-    n = asdl_seq_LEN(gen->ifs);
-    for (i = 0; i < n; i++) {
+    Py_ssize_t n = asdl_seq_LEN(gen->ifs);
+    for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, ploc, e, if_cleanup, 0))
+        if (!compiler_jump_if(c, &loc, e, if_cleanup, 0)) {
             return 0;
+        }
     }
 
     depth++;
-    if (++gen_index < asdl_seq_LEN(generators))
-        if (!compiler_comprehension_generator(c, ploc,
+    if (++gen_index < asdl_seq_LEN(generators)) {
+        if (!compiler_comprehension_generator(c, loc,
                                               generators, gen_index, depth,
-                                              elt, val, type))
-        return 0;
+                                              elt, val, type)) {
+            return 0;
+        }
+    }
 
+    location elt_loc = LOC(elt);
     /* only append after the last for generator */
     if (gen_index >= asdl_seq_LEN(generators)) {
         /* comprehension specific code */
         switch (type) {
         case COMP_GENEXP:
             VISIT(c, expr, elt);
-            ADDOP_YIELD(c, *ploc);
-            ADDOP(c, *ploc, POP_TOP);
+            ADDOP_YIELD(c, elt_loc);
+            ADDOP(c, elt_loc, POP_TOP);
             break;
         case COMP_LISTCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, *ploc, LIST_APPEND, depth + 1);
+            ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             break;
         case COMP_SETCOMP:
             VISIT(c, expr, elt);
-            ADDOP_I(c, *ploc, SET_ADD, depth + 1);
+            ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             break;
         case COMP_DICTCOMP:
             /* With '{k: v}', k is evaluated before v, so we do
                the same. */
             VISIT(c, expr, elt);
             VISIT(c, expr, val);
-            ADDOP_I(c, *ploc, MAP_ADD, depth + 1);
+            elt_loc = LOCATION(elt->lineno,
+                               val->end_lineno,
+                               elt->col_offset,
+                               val->end_col_offset);
+            ADDOP_I(c, elt_loc, MAP_ADD, depth + 1);
             break;
         default:
             return 0;
@@ -5398,14 +5414,13 @@ compiler_async_comprehension_generator(struct compiler *c, location *ploc,
     }
 
     USE_LABEL(c, if_cleanup);
-    ADDOP_JUMP(c, *ploc, JUMP, start);
+    ADDOP_JUMP(c, elt_loc, JUMP, start);
 
     compiler_pop_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start);
 
     USE_LABEL(c, except);
-    //UNSET_LOC(c);
 
-    ADDOP(c, *ploc, END_ASYNC_FOR);
+    ADDOP(c, loc, END_ASYNC_FOR);
 
     return 1;
 }
@@ -5464,12 +5479,13 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         ADDOP_I(c, loc, op, 0);
     }
 
-    if (!compiler_comprehension_generator(c, &loc, generators, 0, 0,
-                                          elt, val, type))
+    if (!compiler_comprehension_generator(c, loc, generators, 0, 0,
+                                          elt, val, type)) {
         goto error_in_scope;
+    }
 
     if (type != COMP_GENEXP) {
-        ADDOP(c, loc, RETURN_VALUE);
+        ADDOP(c, LOC(e), RETURN_VALUE);
     }
 
     co = assemble(c, 1);
