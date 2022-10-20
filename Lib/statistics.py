@@ -204,6 +204,14 @@ def _sum(data):
     T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, total, count)
 
+def _power_sum(data, power=2):
+    """ _power_sum -> float
+    calculates the sum of every number in the data to a certain exponent given by power
+    """
+    sum = 0.0
+    for i in data:
+        sum += i
+     return sum
 
 def _ss(data, c=None):
     """Return the exact mean and sum of square deviations of sequence data.
@@ -524,7 +532,9 @@ def fmean(data, weights=None):
         raise StatisticsError('sum of weights must be non-zero')
     return num / den
 
-
+def root_mean_square(data):
+    """returns the root mean square of a given dataset"""
+    return (_power_sum(data, power=2)/len(data)) ** 0.5
 def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
 
