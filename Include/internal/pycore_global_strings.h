@@ -489,6 +489,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(node_depth)
         STRUCT_FOR_ID(node_offset)
         STRUCT_FOR_ID(ns)
+        STRUCT_FOR_ID(nstype)
         STRUCT_FOR_ID(number)
         STRUCT_FOR_ID(obj)
         STRUCT_FOR_ID(object)
