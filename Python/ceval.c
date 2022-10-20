@@ -2083,7 +2083,7 @@ handle_eval_breaker:
         TARGET(YIELD_VALUE) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
-            // or throw() call.R
+            // or throw() call.
             assert(oparg == STACK_LEVEL());
             assert(frame != &pyframe);
             PyObject *retval = POP();
