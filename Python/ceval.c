@@ -1255,9 +1255,7 @@ miss:
             _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
             *counter -= 1;
             if (*counter == 0) {
-                int adaptive_opcode = _PyOpcode_Adaptive[opcode];
-                assert(adaptive_opcode);
-                _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
+                _Py_SET_OPCODE(next_instr[-1], opcode);
                 STAT_INC(opcode, deopt);
                 *counter = adaptive_counter_start();
             }

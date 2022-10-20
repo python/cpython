@@ -16,21 +16,6 @@
  * ./adaptive.md
  */
 
-/* Map from opcode to adaptive opcode.
-  Values of zero are ignored. */
-uint8_t _PyOpcode_Adaptive[256] = {
-    [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
-    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
-    [BINARY_SUBSCR] = BINARY_SUBSCR_ADAPTIVE,
-    [STORE_SUBSCR] = STORE_SUBSCR_ADAPTIVE,
-    [CALL] = CALL_ADAPTIVE,
-    [STORE_ATTR] = STORE_ATTR_ADAPTIVE,
-    [BINARY_OP] = BINARY_OP_ADAPTIVE,
-    [COMPARE_OP] = COMPARE_OP_ADAPTIVE,
-    [UNPACK_SEQUENCE] = UNPACK_SEQUENCE_ADAPTIVE,
-    [FOR_ITER] = FOR_ITER_ADAPTIVE,
-};
-
 #ifdef Py_STATS
 PyStats _py_stats_struct = { 0 };
 PyStats *_py_stats = &_py_stats_struct;
@@ -143,7 +128,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     fprintf(out, "opcode[%d].specializable : 1\n", BINARY_SLICE);
     fprintf(out, "opcode[%d].specializable : 1\n", STORE_SLICE);
     for (int i = 0; i < 256; i++) {
-        if (_PyOpcode_Adaptive[i]) {
+        if (_PyOpcode_Caches[i]) {
             fprintf(out, "opcode[%d].specializable : 1\n", i);
         }
         PRINT_STAT(i, specialization.success);
@@ -283,15 +268,13 @@ _PyCode_Quicken(PyCodeObject *code)
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
-        uint8_t adaptive_opcode = _PyOpcode_Adaptive[opcode];
-        if (adaptive_opcode) {
-            _Py_SET_OPCODE(instructions[i], adaptive_opcode);
+        int caches = _PyOpcode_Caches[opcode];
+        if (caches) {
             instructions[i + 1] = adaptive_counter_start();
             previous_opcode = -1;
-            i += _PyOpcode_Caches[opcode];
+            i += caches;
         }
         else {
-            assert(!_PyOpcode_Caches[opcode]);
             switch (opcode) {
                 case EXTENDED_ARG:
                     _Py_SET_OPCODE(instructions[i], EXTENDED_ARG_QUICK);
@@ -1477,7 +1460,6 @@ static int
 specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                       PyObject *kwnames)
 {
-    assert(_Py_OPCODE(*instr) == CALL_ADAPTIVE);
     PyTypeObject *tp = _PyType_CAST(callable);
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PYTHON_CLASS);
@@ -1539,7 +1521,6 @@ static int
 specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
                              int nargs, PyObject *kwnames)
 {
-    assert(_Py_OPCODE(*instr) == CALL_ADAPTIVE);
     if (kwnames) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
         return -1;
@@ -1591,7 +1572,6 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
                    PyObject *kwnames, bool bound_method)
 {
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-    assert(_Py_OPCODE(*instr) == CALL_ADAPTIVE);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
     /* Don't specialize if PEP 523 is active */
@@ -1646,7 +1626,6 @@ static int
 specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                   PyObject *kwnames)
 {
-    assert(_Py_OPCODE(*instr) == CALL_ADAPTIVE);
     if (PyCFunction_GET_FUNCTION(callable) == NULL) {
         return 1;
     }
@@ -1921,16 +1900,16 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             break;
-#ifndef Py_STATS
-        default:
-            // These operators don't have any available specializations. Rather
-            // than repeatedly attempting to specialize them, just convert them
-            // back to BINARY_OP (unless we're collecting stats, where it's more
-            // important to get accurate hit counts for the unadaptive version
-            // and each of the different failure types):
-            _Py_SET_OPCODE(*instr, BINARY_OP);
-            return;
-#endif
+// #ifndef Py_STATS
+//         default:
+//             // These operators don't have any available specializations. Rather
+//             // than repeatedly attempting to specialize them, just convert them
+//             // back to BINARY_OP (unless we're collecting stats, where it's more
+//             // important to get accurate hit counts for the unadaptive version
+//             // and each of the different failure types):
+//             _Py_SET_OPCODE(*instr, BINARY_OP);
+//             return;
+// #endif
     }
     SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     STAT_INC(BINARY_OP, failure);
@@ -2003,17 +1982,17 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         // we're collecting stats, where it's more important to get accurate hit
         // counts for the unadaptive version and each of the different failure
         // types):
-#ifndef Py_STATS
-        _Py_SET_OPCODE(*instr, COMPARE_OP);
-        return;
-#else
+// #ifndef Py_STATS
+//         _Py_SET_OPCODE(*instr, COMPARE_OP);
+//         return;
+// #else
         if (next_opcode == EXTENDED_ARG) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_EXTENDED_ARG);
             goto failure;
         }
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
-#endif
+// #endif
     }
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];

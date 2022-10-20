@@ -512,9 +512,8 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
             for i in range(size):
                 offset += 2
                 # Only show the fancy argrepr for a CACHE instruction when it's
-                # the first entry for a particular cache value and the
-                # instruction using it is actually quickened:
-                if i == 0 and op != deop:
+                # the first entry for a particular cache value:
+                if i == 0:
                     data = code[offset: offset + 2 * size]
                     argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
                 else:

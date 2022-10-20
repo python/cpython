@@ -741,7 +741,7 @@ dis_loop_test_quickened_code = """\
            LOAD_CONST               1 ((1, 2, 3))
            LIST_EXTEND              1
            LOAD_CONST               2 (3)
-           BINARY_OP_ADAPTIVE       5 (*)
+           BINARY_OP                5 (*)
            GET_ITER
         >> FOR_ITER_LIST           15 (to 50)
            STORE_FAST               0 (i)
@@ -1200,7 +1200,7 @@ class DisTests(DisTestBase):
                     for cache in caches:
                         self.assertRegex(cache, pattern)
                     total_caches = 23
-                    empty_caches = 8 if adaptive else total_caches
+                    empty_caches = 8
                     self.assertEqual(caches.count(""), empty_caches)
                     self.assertEqual(len(caches), total_caches)
 

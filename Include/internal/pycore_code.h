@@ -91,8 +91,6 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
-extern uint8_t _PyOpcode_Adaptive[256];
-
 // Borrowed references to common callables:
 struct callable_cache {
     PyObject *isinstance;
