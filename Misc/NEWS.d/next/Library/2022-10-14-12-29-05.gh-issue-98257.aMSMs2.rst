@@ -1,0 +1,3 @@
+Make :func:`sys.setprofile` and :func:`sys.settrace` functions reentrant.  They
+can no long fail with: ``RuntimeError("Cannot install a trace function while
+another trace function is being installed")``. Patch by Victor Stinner.

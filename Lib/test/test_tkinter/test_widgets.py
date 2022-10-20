@@ -759,6 +759,164 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self.checkPixelsParam(widget, 'yscrollincrement',
                               10, 0, 11.2, 13.6, -10, '0.1i')
 
+    def _test_option_joinstyle(self, c, factory):
+        for joinstyle in 'bevel', 'miter', 'round':
+            i = factory(joinstyle=joinstyle)
+            self.assertEqual(c.itemcget(i, 'joinstyle'), joinstyle)
+        self.assertRaises(TclError, factory, joinstyle='spam')
+
+    def _test_option_smooth(self, c, factory):
+        for smooth in 1, True, '1', 'true', 'yes', 'on':
+            i = factory(smooth=smooth)
+            self.assertEqual(c.itemcget(i, 'smooth'), 'true')
+        for smooth in 0, False, '0', 'false', 'no', 'off':
+            i = factory(smooth=smooth)
+            self.assertEqual(c.itemcget(i, 'smooth'), '0')
+        i = factory(smooth=True, splinestep=30)
+        self.assertEqual(c.itemcget(i, 'smooth'), 'true')
+        self.assertEqual(c.itemcget(i, 'splinestep'), '30')
+        i = factory(smooth='raw', splinestep=30)
+        self.assertEqual(c.itemcget(i, 'smooth'), 'raw')
+        self.assertEqual(c.itemcget(i, 'splinestep'), '30')
+        self.assertRaises(TclError, factory, smooth='spam')
+
+    def test_create_rectangle(self):
+        c = self.create()
+        i1 = c.create_rectangle(20, 30, 60, 10)
+        self.assertEqual(c.coords(i1), [20.0, 10.0, 60.0, 30.0])
+        self.assertEqual(c.bbox(i1), (19, 9, 61, 31))
+
+        i2 = c.create_rectangle([21, 31, 61, 11])
+        self.assertEqual(c.coords(i2), [21.0, 11.0, 61.0, 31.0])
+        self.assertEqual(c.bbox(i2), (20, 10, 62, 32))
+
+        i3 = c.create_rectangle((22, 32), (62, 12))
+        self.assertEqual(c.coords(i3), [22.0, 12.0, 62.0, 32.0])
+        self.assertEqual(c.bbox(i3), (21, 11, 63, 33))
+
+        i4 = c.create_rectangle([(23, 33), (63, 13)])
+        self.assertEqual(c.coords(i4), [23.0, 13.0, 63.0, 33.0])
+        self.assertEqual(c.bbox(i4), (22, 12, 64, 34))
+
+        self.assertRaises(TclError, c.create_rectangle, 20, 30, 60)
+        self.assertRaises(TclError, c.create_rectangle, [20, 30, 60])
+        self.assertRaises(TclError, c.create_rectangle, 20, 30, 40, 50, 60, 10)
+        self.assertRaises(TclError, c.create_rectangle, [20, 30, 40, 50, 60, 10])
+        self.assertRaises(TclError, c.create_rectangle, 20, 30)
+        self.assertRaises(TclError, c.create_rectangle, [20, 30])
+        self.assertRaises(IndexError, c.create_rectangle)
+        self.assertRaises(IndexError, c.create_rectangle, [])
+
+    def test_create_line(self):
+        c = self.create()
+        i1 = c.create_line(20, 30, 40, 50, 60, 10)
+        self.assertEqual(c.coords(i1), [20.0, 30.0, 40.0, 50.0, 60.0, 10.0])
+        self.assertEqual(c.bbox(i1), (18, 8, 62, 52))
+        self.assertEqual(c.itemcget(i1, 'arrow'), 'none')
+        self.assertEqual(c.itemcget(i1, 'arrowshape'), '8 10 3')
+        self.assertEqual(c.itemcget(i1, 'capstyle'), 'butt')
+        self.assertEqual(c.itemcget(i1, 'joinstyle'), 'round')
+        self.assertEqual(c.itemcget(i1, 'smooth'), '0')
+        self.assertEqual(c.itemcget(i1, 'splinestep'), '12')
+
+        i2 = c.create_line([21, 31, 41, 51, 61, 11])
+        self.assertEqual(c.coords(i2), [21.0, 31.0, 41.0, 51.0, 61.0, 11.0])
+        self.assertEqual(c.bbox(i2), (19, 9, 63, 53))
+
+        i3 = c.create_line((22, 32), (42, 52), (62, 12))
+        self.assertEqual(c.coords(i3), [22.0, 32.0, 42.0, 52.0, 62.0, 12.0])
+        self.assertEqual(c.bbox(i3), (20, 10, 64, 54))
+
+        i4 = c.create_line([(23, 33), (43, 53), (63, 13)])
+        self.assertEqual(c.coords(i4), [23.0, 33.0, 43.0, 53.0, 63.0, 13.0])
+        self.assertEqual(c.bbox(i4), (21, 11, 65, 55))
+
+        self.assertRaises(TclError, c.create_line, 20, 30, 60)
+        self.assertRaises(TclError, c.create_line, [20, 30, 60])
+        self.assertRaises(TclError, c.create_line, 20, 30)
+        self.assertRaises(TclError, c.create_line, [20, 30])
+        self.assertRaises(IndexError, c.create_line)
+        self.assertRaises(IndexError, c.create_line, [])
+
+        for arrow in 'none', 'first', 'last', 'both':
+            i = c.create_line(20, 30, 60, 10, arrow=arrow)
+            self.assertEqual(c.itemcget(i, 'arrow'), arrow)
+        i = c.create_line(20, 30, 60, 10, arrow='first', arrowshape=[10, 15, 5])
+        self.assertEqual(c.itemcget(i, 'arrowshape'), '10 15 5')
+        self.assertRaises(TclError, c.create_line, 20, 30, 60, 10, arrow='spam')
+
+        for capstyle in 'butt', 'projecting', 'round':
+            i = c.create_line(20, 30, 60, 10, capstyle=capstyle)
+            self.assertEqual(c.itemcget(i, 'capstyle'), capstyle)
+        self.assertRaises(TclError, c.create_line, 20, 30, 60, 10, capstyle='spam')
+
+        self._test_option_joinstyle(c,
+                lambda **kwargs: c.create_line(20, 30, 40, 50, 60, 10, **kwargs))
+        self._test_option_smooth(c,
+                lambda **kwargs: c.create_line(20, 30, 60, 10, **kwargs))
+
+    def test_create_polygon(self):
+        c = self.create()
+        i1 = c.create_polygon(20, 30, 40, 50, 60, 10)
+        self.assertEqual(c.coords(i1), [20.0, 30.0, 40.0, 50.0, 60.0, 10.0])
+        self.assertEqual(c.bbox(i1), (19, 9, 61, 51))
+        self.assertEqual(c.itemcget(i1, 'joinstyle'), 'round')
+        self.assertEqual(c.itemcget(i1, 'smooth'), '0')
+        self.assertEqual(c.itemcget(i1, 'splinestep'), '12')
+
+        i2 = c.create_polygon([21, 31, 41, 51, 61, 11])
+        self.assertEqual(c.coords(i2), [21.0, 31.0, 41.0, 51.0, 61.0, 11.0])
+        self.assertEqual(c.bbox(i2), (20, 10, 62, 52))
+
+        i3 = c.create_polygon((22, 32), (42, 52), (62, 12))
+        self.assertEqual(c.coords(i3), [22.0, 32.0, 42.0, 52.0, 62.0, 12.0])
+        self.assertEqual(c.bbox(i3), (21, 11, 63, 53))
+
+        i4 = c.create_polygon([(23, 33), (43, 53), (63, 13)])
+        self.assertEqual(c.coords(i4), [23.0, 33.0, 43.0, 53.0, 63.0, 13.0])
+        self.assertEqual(c.bbox(i4), (22, 12, 64, 54))
+
+        self.assertRaises(TclError, c.create_polygon, 20, 30, 60)
+        self.assertRaises(TclError, c.create_polygon, [20, 30, 60])
+        self.assertRaises(IndexError, c.create_polygon)
+        self.assertRaises(IndexError, c.create_polygon, [])
+
+        self._test_option_joinstyle(c,
+                lambda **kwargs: c.create_polygon(20, 30, 40, 50, 60, 10, **kwargs))
+        self._test_option_smooth(c,
+                lambda **kwargs: c.create_polygon(20, 30, 40, 50, 60, 10, **kwargs))
+
+    def test_coords(self):
+        c = self.create()
+        i = c.create_line(20, 30, 40, 50, 60, 10, tags='x')
+        self.assertEqual(c.coords(i), [20.0, 30.0, 40.0, 50.0, 60.0, 10.0])
+        self.assertEqual(c.coords('x'), [20.0, 30.0, 40.0, 50.0, 60.0, 10.0])
+        self.assertEqual(c.bbox(i), (18, 8, 62, 52))
+
+        c.coords(i, 50, 60, 70, 80, 90, 40)
+        self.assertEqual(c.coords(i), [50.0, 60.0, 70.0, 80.0, 90.0, 40.0])
+        self.assertEqual(c.bbox(i), (48, 38, 92, 82))
+
+        c.coords(i, [21, 31, 41, 51, 61, 11])
+        self.assertEqual(c.coords(i), [21.0, 31.0, 41.0, 51.0, 61.0, 11.0])
+
+        c.coords(i, 20, 30, 60, 10)
+        self.assertEqual(c.coords(i), [20.0, 30.0, 60.0, 10.0])
+        self.assertEqual(c.bbox(i), (18, 8, 62, 32))
+
+        self.assertRaises(TclError, c.coords, i, 20, 30, 60)
+        self.assertRaises(TclError, c.coords, i, [20, 30, 60])
+        self.assertRaises(TclError, c.coords, i, 20, 30)
+        self.assertRaises(TclError, c.coords, i, [20, 30])
+
+        c.coords(i, '20', '30c', '60i', '10p')
+        coords = c.coords(i)
+        self.assertIsInstance(coords, list)
+        self.assertEqual(len(coords), 4)
+        self.assertEqual(coords[0], 20)
+        for i in range(4):
+            self.assertIsInstance(coords[i], float)
+
     @requires_tcl(8, 6)
     def test_moveto(self):
         widget = self.create()
