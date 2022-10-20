@@ -1182,7 +1182,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
                 // run yet.
                 if (value != NULL) {
                     if (PyCell_Check(value) &&
-                        _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
+                            _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
                         // (likely) MAKE_CELL must have executed already.
                         value = PyCell_GET(value);
                     }
@@ -1303,7 +1303,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
         else if (value != oldvalue) {
             if (value == NULL) {
                 // Probably can't delete this, since the compiler's flow
-                // analysis may have already "proved" that it exists here:
+                // analysis may have already "proven" that it exists here:
                 const char *e = "assigning None to unbound local %R";
                 if (PyErr_WarnFormat(PyExc_RuntimeWarning, 0, e, name)) {
                     // It's okay if frame_obj is NULL, just try anyways:
