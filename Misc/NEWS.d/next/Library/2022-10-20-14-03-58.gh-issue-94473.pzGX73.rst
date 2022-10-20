@@ -1,0 +1,3 @@
+Flatten arguments in :meth:`tkinter.Canvas.coords`. It now accepts not only
+``x1, y1, x2, y2, ...`` and ``[x1, y1, x2, y2, ...]``, but also ``(x1, y1),
+(x2, y2), ...`` and ``[(x1, y1), (x2, y2), ...]``.
