@@ -206,7 +206,7 @@ Incremental (de)compression
       will be set to ``True``.
 
       Attempting to decompress data after the end of stream is reached
-      raises an `EOFError`.  Any data found after the end of the
+      raises an :exc:`EOFError`.  Any data found after the end of the
       stream is ignored and saved in the :attr:`~.unused_data` attribute.
 
       .. versionchanged:: 3.5
@@ -303,7 +303,7 @@ Using :class:`BZ2Compressor` for incremental compression:
     >>> out = out + comp.flush()
 
 The example above uses a very "nonrandom" stream of data
-(a stream of `b"z"` chunks).  Random data tends to compress poorly,
+(a stream of ``b"z"`` chunks).  Random data tends to compress poorly,
 while ordered, repetitive data usually yields a high compression ratio.
 
 Writing and reading a bzip2-compressed file in binary mode:

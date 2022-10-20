@@ -39,6 +39,11 @@ provides backports of these new features to older versions of Python.
 For a summary of deprecated features and a deprecation timeline, please see
 `Deprecation Timeline of Major Features`_.
 
+.. seealso::
+
+   The documentation at https://typing.readthedocs.io/ serves as useful reference
+   for type system features, useful typing related tools and typing best practices.
+
 
 .. _relevant-peps:
 
@@ -100,7 +105,7 @@ A type alias is defined by assigning the type to the alias. In this example,
    def scale(scalar: float, vector: Vector) -> Vector:
        return [scalar * num for num in vector]
 
-   # typechecks; a list of floats qualifies as a Vector.
+   # passes type checking; a list of floats qualifies as a Vector.
    new_vector = scale(2.0, [1.0, -4.2, 5.4])
 
 Type aliases are useful for simplifying complex type signatures. For example::
@@ -142,10 +147,10 @@ of the original type. This is useful in helping catch logical errors::
    def get_user_name(user_id: UserId) -> str:
        ...
 
-   # typechecks
+   # passes type checking
    user_a = get_user_name(UserId(42351))
 
-   # does not typecheck; an int is not a UserId
+   # fails type checking; an int is not a UserId
    user_b = get_user_name(-1)
 
 You may still perform all ``int`` operations on a variable of type ``UserId``,
@@ -171,7 +176,7 @@ It is invalid to create a subtype of ``Derived``::
 
    UserId = NewType('UserId', int)
 
-   # Fails at runtime and does not typecheck
+   # Fails at runtime and does not pass type checking
    class AdminUserId(UserId): pass
 
 However, it is possible to create a :class:`NewType` based on a 'derived' ``NewType``::
@@ -243,7 +248,7 @@ respectively.
 
 .. versionchanged:: 3.10
    ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-   See :pep:`612` for more information.
+   See :pep:`612` for more details.
 
 .. seealso::
    The documentation for :class:`ParamSpec` and :class:`Concatenate` provides
@@ -458,12 +463,12 @@ value of type :data:`Any` and assign it to any variable::
    s = a           # OK
 
    def foo(item: Any) -> int:
-       # Typechecks; 'item' could be any type,
+       # Passes type checking; 'item' could be any type,
        # and that type might have a 'bar' method
        item.bar()
        ...
 
-Notice that no typechecking is performed when assigning a value of type
+Notice that no type checking is performed when assigning a value of type
 :data:`Any` to a more precise type. For example, the static type checker did
 not report an error when assigning ``a`` to ``s`` even though ``s`` was
 declared to be of type :class:`str` and receives an :class:`int` value at
@@ -495,20 +500,20 @@ reject almost all operations on it, and assigning it to a variable (or using
 it as a return value) of a more specialized type is a type error. For example::
 
    def hash_a(item: object) -> int:
-       # Fails; an object does not have a 'magic' method.
+       # Fails type checking; an object does not have a 'magic' method.
        item.magic()
        ...
 
    def hash_b(item: Any) -> int:
-       # Typechecks
+       # Passes type checking
        item.magic()
        ...
 
-   # Typechecks, since ints and strs are subclasses of object
+   # Passes type checking, since ints and strs are subclasses of object
    hash_a(42)
    hash_a("foo")
 
-   # Typechecks, since Any is compatible with all types
+   # Passes type checking, since Any is compatible with all types
    hash_b(42)
    hash_b("foo")
 
@@ -626,6 +631,8 @@ These can be used as types in annotations and do not support ``[]``.
    that generate type checker errors could be vulnerable to an SQL
    injection attack.
 
+   See :pep:`675` for more details.
+
    .. versionadded:: 3.11
 
 .. data:: Never
@@ -716,7 +723,7 @@ These can be used as types in annotations and do not support ``[]``.
      of the ``cls`` parameter.
    - Annotating an :meth:`~object.__enter__` method which returns self.
 
-   For more information, see :pep:`673`.
+   See :pep:`673` for more details.
 
    .. versionadded:: 3.11
 
@@ -847,7 +854,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionchanged:: 3.10
       ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-      See :pep:`612` for more information.
+      See :pep:`612` for more details.
 
    .. seealso::
       The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
@@ -1033,8 +1040,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    Special typing constructs that mark individual keys of a :class:`TypedDict`
    as either required or non-required respectively.
 
-   For more information, see :class:`TypedDict` and
-   :pep:`655` ("Marking individual TypedDict items as required or potentially missing").
+   See :class:`TypedDict` and :pep:`655` for more details.
 
    .. versionadded:: 3.11
 
@@ -1185,8 +1191,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       is not a subtype of the former, since ``list`` is invariant.
       The responsibility of writing type-safe type guards is left to the user.
 
-   ``TypeGuard`` also works with type variables.  For more information, see
-   :pep:`647` (User-Defined Type Guards).
+   ``TypeGuard`` also works with type variables.  See :pep:`647` for more details.
 
    .. versionadded:: 3.10
 
@@ -1386,7 +1391,7 @@ These are not used in annotations. They are building blocks for creating generic
     to ``call_soon`` match the types of the (positional) arguments of
     ``callback``.
 
-    For more details on type variable tuples, see :pep:`646`.
+    See :pep:`646` for more details on type variable tuples.
 
     .. versionadded:: 3.11
 
@@ -1549,7 +1554,7 @@ These are not used in annotations. They are building blocks for creating generic
 
       func(C())  # Passes static type check
 
-   See :pep:`544` for details. Protocol classes decorated with
+   See :pep:`544` for more details. Protocol classes decorated with
    :func:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
    type signatures.
@@ -2625,7 +2630,7 @@ Functions and decorators
       def process(response):
           <actual implementation>
 
-   See :pep:`484` for details and comparison with other typing semantics.
+   See :pep:`484` for more details and comparison with other typing semantics.
 
    .. versionchanged:: 3.11
       Overloaded functions can now be introspected at runtime using

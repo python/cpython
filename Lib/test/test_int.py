@@ -650,7 +650,8 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         self.assertEqual(len(huge_decimal), digits)
         # Ensuring that we chose a slow enough conversion to measure.
         # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
-        if seconds_to_convert < 0.005:
+        # Some OSes have a low res 1/64s timer, skip if hard to measure.
+        if seconds_to_convert < 1/64:
             raise unittest.SkipTest('"slow" conversion took only '
                                     f'{seconds_to_convert} seconds.')
 
@@ -662,7 +663,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
                 str(huge_int)
             seconds_to_fail_huge = get_time() - start
         self.assertIn('conversion', str(err.exception))
-        self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
+        self.assertLessEqual(seconds_to_fail_huge, seconds_to_convert/2)
 
         # Now we test that a conversion that would take 30x as long also fails
         # in a similarly fast fashion.
@@ -673,7 +674,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
             str(extra_huge_int)
         seconds_to_fail_extra_huge = get_time() - start
         self.assertIn('conversion', str(err.exception))
-        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
+        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/2)
 
     def test_denial_of_service_prevented_str_to_int(self):
         """Regression test: ensure we fail before performing O(N**2) work."""
@@ -691,7 +692,8 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         seconds_to_convert = get_time() - start
         # Ensuring that we chose a slow enough conversion to measure.
         # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
-        if seconds_to_convert < 0.005:
+        # Some OSes have a low res 1/64s timer, skip if hard to measure.
+        if seconds_to_convert < 1/64:
             raise unittest.SkipTest('"slow" conversion took only '
                                     f'{seconds_to_convert} seconds.')
 
@@ -701,7 +703,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
                 int(huge)
             seconds_to_fail_huge = get_time() - start
         self.assertIn('conversion', str(err.exception))
-        self.assertLess(seconds_to_fail_huge, seconds_to_convert/8)
+        self.assertLessEqual(seconds_to_fail_huge, seconds_to_convert/2)
 
         # Now we test that a conversion that would take 30x as long also fails
         # in a similarly fast fashion.
@@ -712,7 +714,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
             int(extra_huge)
         seconds_to_fail_extra_huge = get_time() - start
         self.assertIn('conversion', str(err.exception))
-        self.assertLess(seconds_to_fail_extra_huge, seconds_to_convert/8)
+        self.assertLessEqual(seconds_to_fail_extra_huge, seconds_to_convert/2)
 
     def test_power_of_two_bases_unlimited(self):
         """The limit does not apply to power of 2 bases."""
@@ -767,6 +769,26 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         base = 36
         with self.subTest(base=base):
             self._other_base_helper(base)
+
+    def test_int_max_str_digits_is_per_interpreter(self):
+        # Changing the limit in one interpreter does not change others.
+        code = """if 1:
+        # Subinterpreters maintain and enforce their own limit
+        import sys
+        sys.set_int_max_str_digits(2323)
+        try:
+            int('3'*3333)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Expected a int max str digits ValueError.')
+        """
+        with support.adjust_int_max_str_digits(4000):
+            before_value = sys.get_int_max_str_digits()
+            self.assertEqual(support.run_in_subinterp(code), 0,
+                             'subinterp code failure, check stderr.')
+            after_value = sys.get_int_max_str_digits()
+            self.assertEqual(before_value, after_value)
 
 
 class IntSubclassStrDigitLimitsTests(IntStrDigitLimitsTests):

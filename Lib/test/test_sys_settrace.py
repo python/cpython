@@ -834,9 +834,8 @@ class TraceTestCase(unittest.TestCase):
              (5, 'line'),
              (6, 'line'),
              (7, 'line'),
-             (10, 'line'),
-             (13, 'line'),
-             (13, 'return')])
+             (10, 'line')] +
+             ([(13, 'line'), (13, 'return')] if __debug__ else [(10, 'return')]))
 
     def test_continue_through_finally(self):
 
@@ -871,9 +870,8 @@ class TraceTestCase(unittest.TestCase):
              (6, 'line'),
              (7, 'line'),
              (10, 'line'),
-             (3, 'line'),
-             (13, 'line'),
-             (13, 'return')])
+             (3, 'line')] +
+             ([(13, 'line'), (13, 'return')] if __debug__ else [(3, 'return')]))
 
     def test_return_through_finally(self):
 
@@ -1720,6 +1718,20 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
                 pass
         finally:
             sys.settrace(existing)
+
+    def test_line_event_raises_before_opcode_event(self):
+        exception = ValueError("BOOM!")
+        def trace(frame, event, arg):
+            if event == "line":
+                raise exception
+            frame.f_trace_opcodes = True
+            return trace
+        def f():
+            pass
+        with self.assertRaises(ValueError) as caught:
+            sys.settrace(trace)
+            f()
+        self.assertIs(caught.exception, exception)
 
 
 # 'Jump' tests: assigning to frame.f_lineno within a trace function
@@ -2784,12 +2796,8 @@ class TestEdgeCases(unittest.TestCase):
                 sys.settrace(bar)
 
         sys.settrace(A())
-        with support.catch_unraisable_exception() as cm:
-            sys.settrace(foo)
-            self.assertEqual(cm.unraisable.object, A.__del__)
-            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
-
-        self.assertEqual(sys.gettrace(), foo)
+        sys.settrace(foo)
+        self.assertEqual(sys.gettrace(), bar)
 
 
     def test_same_object(self):

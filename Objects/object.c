@@ -14,7 +14,6 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
-#include "pycore_typeobject.h"    // _PyTypes_InitSlotDefs()
 #include "pycore_unionobject.h"   // _PyUnion_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
 
@@ -283,31 +282,22 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                 s = PyObject_Str(op);
             else
                 s = PyObject_Repr(op);
-            if (s == NULL)
+            if (s == NULL) {
                 ret = -1;
-            else if (PyBytes_Check(s)) {
-                fwrite(PyBytes_AS_STRING(s), 1,
-                       PyBytes_GET_SIZE(s), fp);
             }
-            else if (PyUnicode_Check(s)) {
-                PyObject *t;
-                t = PyUnicode_AsEncodedString(s, "utf-8", "backslashreplace");
+            else {
+                assert(PyUnicode_Check(s));
+                const char *t;
+                Py_ssize_t len;
+                t = PyUnicode_AsUTF8AndSize(s, &len);
                 if (t == NULL) {
                     ret = -1;
                 }
                 else {
-                    fwrite(PyBytes_AS_STRING(t), 1,
-                           PyBytes_GET_SIZE(t), fp);
-                    Py_DECREF(t);
+                    fwrite(t, 1, len, fp);
                 }
+                Py_DECREF(s);
             }
-            else {
-                PyErr_Format(PyExc_TypeError,
-                             "str() or repr() returned '%.100s'",
-                             Py_TYPE(s)->tp_name);
-                ret = -1;
-            }
-            Py_XDECREF(s);
         }
     }
     if (ret == 0) {
@@ -1352,6 +1342,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         PyErr_Format(PyExc_AttributeError,
                      "'%.50s' object has no attribute '%U'",
                      tp->tp_name, name);
+
+        set_attribute_error_context(obj, name);
     }
   done:
     Py_XDECREF(descr);
@@ -1834,23 +1826,6 @@ PyObject _Py_NotImplementedStruct = {
     _PyObject_EXTRA_INIT
     1, &_PyNotImplemented_Type
 };
-
-PyStatus
-_PyTypes_InitState(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    PyStatus status = _PyTypes_InitSlotDefs();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    return _PyStatus_OK();
-}
-
-
 
 #ifdef MS_WINDOWS
 extern PyTypeObject PyHKEY_Type;

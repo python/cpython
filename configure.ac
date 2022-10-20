@@ -1774,7 +1774,7 @@ then
 fi
 AC_MSG_RESULT($PROFILE_TASK)
 
-# Make llvm-relatec checks work on systems where llvm tools are not installed with their
+# Make llvm-related checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
 # non-suffixed name in their versioned llvm directory.
 
@@ -1828,8 +1828,10 @@ esac
 if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
-      dnl flag to disable lto during linking
       LDFLAGS_NOLTO="-fno-lto"
+      dnl Clang linker requires -flto in order to link objects with LTO information.
+      dnl Thin LTO is faster and works for object files with full LTO information, too.
+      AX_CHECK_COMPILE_FLAG([-flto=thin],[LDFLAGS_NOLTO="-flto=thin"],[LDFLAGS_NOLTO="-flto"])
       AC_SUBST(LLVM_AR)
       AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
       AC_SUBST(LLVM_AR_FOUND)
@@ -1863,8 +1865,15 @@ if test "$Py_LTO" = 'true' ; then
           # Any changes made here should be reflected in the GCC+Darwin case below
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
-            LTOCFLAGS="-flto"
+            # Check that ThinLTO is accepted.
+            AX_CHECK_COMPILE_FLAG([-flto=thin],[
+              LTOFLAGS="-flto=thin -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+              LTOCFLAGS="-flto=thin"
+              ],[
+              LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+              LTOCFLAGS="-flto"
+              ]
+            )
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto=${Py_LTO_POLICY}"
@@ -1873,7 +1882,8 @@ if test "$Py_LTO" = 'true' ; then
         *)
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto"
+            # Check that ThinLTO is accepted
+            AX_CHECK_COMPILE_FLAG([-flto=thin],[LTOFLAGS="-flto=thin"],[LTOFLAGS="-flto"])
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
@@ -5073,6 +5083,9 @@ AC_CHECK_FUNCS(setpgrp,
     [])
 )
 
+# check for namespace functions
+AC_CHECK_FUNCS([setns unshare])
+
 dnl We search for both crypt and crypt_r as one or the other may be defined
 dnl libxcrypt provides <crypt.h> and libcrypt with crypt_r() since
 dnl at least 3.1.1 from 2015.
@@ -7095,6 +7108,7 @@ AS_CASE([$ac_sys_system],
     dnl curses and tkinter user interface are not available.
     dnl dbm and gdbm aren't available, too.
     dnl Emscripten and WASI provide only stubs for pwd, grp APIs.
+    dnl resource functions (get/setrusage) are stubs, too.
     PY_STDLIB_MOD_SET_NA(
       [_curses],
       [_curses_panel],
@@ -7110,6 +7124,7 @@ AS_CASE([$ac_sys_system],
       [nis],
       [ossaudiodev],
       [pwd],
+      [resource],
       [spwd],
       [syslog],
     )
@@ -7118,7 +7133,6 @@ AS_CASE([$ac_sys_system],
         dnl These modules are not particularly useful in browsers.
         PY_STDLIB_MOD_SET_NA(
           [fcntl],
-          [resource],
           [readline],
           [termios],
         )
@@ -7130,7 +7144,6 @@ AS_CASE([$ac_sys_system],
           [_ctypes_test],
           [fcntl],
           [mmap],
-          [resource],
           [termios],
         )
       ]

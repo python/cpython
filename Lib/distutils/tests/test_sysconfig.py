@@ -48,6 +48,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         self.assertIsInstance(cvars, dict)
         self.assertTrue(cvars)
 
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')

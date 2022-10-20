@@ -125,7 +125,7 @@ See :ref:`json-commandline` for detailed documentation.
 
 .. note::
 
-   JSON is a subset of `YAML <http://yaml.org/>`_ 1.2.  The JSON produced by
+   JSON is a subset of `YAML <https://yaml.org/>`_ 1.2.  The JSON produced by
    this module's default settings (in particular, the default *separators*
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
@@ -258,7 +258,7 @@ Basic Usage
    be used to use another datatype or parser for JSON integers
    (e.g. :class:`float`).
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       The default *parse_int* of :func:`int` now limits the maximum length of
       the integer string via the interpreter's :ref:`integer string
       conversion length limitation <int_max_str_digits>` to help avoid denial

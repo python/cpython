@@ -5289,13 +5289,12 @@ class TestResourceTracker(unittest.TestCase):
         # Check that killing process does not leak named semaphores
         #
         cmd = '''if 1:
-            import time, os, tempfile
+            import time, os
             import multiprocessing as mp
             from multiprocessing import resource_tracker
             from multiprocessing.shared_memory import SharedMemory
 
             mp.set_start_method("spawn")
-            rand = tempfile._RandomNameSequence()
 
 
             def create_and_register_resource(rtype):
@@ -5432,6 +5431,14 @@ class TestResourceTracker(unittest.TestCase):
         r.close()
 
         self.assertTrue(is_resource_tracker_reused)
+
+    def test_too_long_name_resource(self):
+        # gh-96819: Resource names that will make the length of a write to a pipe
+        # greater than PIPE_BUF are not allowed
+        rtype = "shared_memory"
+        too_long_name_resource = "a" * (512 - len(rtype))
+        with self.assertRaises(ValueError):
+            resource_tracker.register(too_long_name_resource, rtype)
 
 
 class TestSimpleQueue(unittest.TestCase):
@@ -5691,45 +5698,48 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     @classmethod
     def _test_list(cls, obj):
-        assert obj[0] == 5
-        assert obj.count(5) == 1
-        assert obj.index(5) == 0
+        case = unittest.TestCase()
+        case.assertEqual(obj[0], 5)
+        case.assertEqual(obj.count(5), 1)
+        case.assertEqual(obj.index(5), 0)
         obj.sort()
         obj.reverse()
         for x in obj:
             pass
-        assert len(obj) == 1
-        assert obj.pop(0) == 5
+        case.assertEqual(len(obj), 1)
+        case.assertEqual(obj.pop(0), 5)
 
     def test_list(self):
         o = self.manager.list()
         o.append(5)
         self.run_worker(self._test_list, o)
-        assert not o
+        self.assertIsNotNone(o)
         self.assertEqual(len(o), 0)
 
     @classmethod
     def _test_dict(cls, obj):
-        assert len(obj) == 1
-        assert obj['foo'] == 5
-        assert obj.get('foo') == 5
-        assert list(obj.items()) == [('foo', 5)]
-        assert list(obj.keys()) == ['foo']
-        assert list(obj.values()) == [5]
-        assert obj.copy() == {'foo': 5}
-        assert obj.popitem() == ('foo', 5)
+        case = unittest.TestCase()
+        case.assertEqual(len(obj), 1)
+        case.assertEqual(obj['foo'], 5)
+        case.assertEqual(obj.get('foo'), 5)
+        case.assertListEqual(list(obj.items()), [('foo', 5)])
+        case.assertListEqual(list(obj.keys()), ['foo'])
+        case.assertListEqual(list(obj.values()), [5])
+        case.assertDictEqual(obj.copy(), {'foo': 5})
+        case.assertTupleEqual(obj.popitem(), ('foo', 5))
 
     def test_dict(self):
         o = self.manager.dict()
         o['foo'] = 5
         self.run_worker(self._test_dict, o)
-        assert not o
+        self.assertIsNotNone(o)
         self.assertEqual(len(o), 0)
 
     @classmethod
     def _test_value(cls, obj):
-        assert obj.value == 1
-        assert obj.get() == 1
+        case = unittest.TestCase()
+        case.assertEqual(obj.value, 1)
+        case.assertEqual(obj.get(), 1)
         obj.set(2)
 
     def test_value(self):
@@ -5740,10 +5750,11 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     @classmethod
     def _test_array(cls, obj):
-        assert obj[0] == 0
-        assert obj[1] == 1
-        assert len(obj) == 2
-        assert list(obj) == [0, 1]
+        case = unittest.TestCase()
+        case.assertEqual(obj[0], 0)
+        case.assertEqual(obj[1], 1)
+        case.assertEqual(len(obj), 2)
+        case.assertListEqual(list(obj), [0, 1])
 
     def test_array(self):
         o = self.manager.Array('i', [0, 1])
@@ -5751,8 +5762,9 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     @classmethod
     def _test_namespace(cls, obj):
-        assert obj.x == 0
-        assert obj.y == 1
+        case = unittest.TestCase()
+        case.assertEqual(obj.x, 0)
+        case.assertEqual(obj.y, 1)
 
     def test_namespace(self):
         o = self.manager.Namespace()

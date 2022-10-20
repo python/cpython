@@ -1,0 +1,2 @@
+Bugfix: :func:`PyFunction_GetAnnotations` should return a borrowed
+reference. It was returning a new reference.
