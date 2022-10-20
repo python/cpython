@@ -167,7 +167,7 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
-            if port.isdigit():
+            if port.isdigit() and port.isascii():
                 port = int(port)
             else:
                 raise ValueError(f"Port could not be cast to integer value as {port!r}")
@@ -1137,7 +1137,7 @@ def _splitnport(host, defport=-1):
     if not delim:
         host = port
     elif port:
-        if port.isdigit():
+        if port.isdigit() and port.isascii():
             nport = int(port)
         else:
             nport = None
