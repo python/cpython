@@ -2281,12 +2281,26 @@ _Py_MakeTrampoline(const uint8_t *code, int codelen, int stacksize, const char *
     if (name == NULL) {
         goto cleanup;
     }
-    co_code = PyBytes_FromStringAndSize(code, codelen);
+    co_code = PyBytes_FromStringAndSize((const char *)code, codelen);
     if (co_code == NULL) {
         goto cleanup;
     }
-    const char loc[2] = { 0x80 | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3) | 3, 0 };
-    lines = PyBytes_FromStringAndSize(loc, 2);
+    int code_units = codelen/2;
+    int loc_entries = (code_units + 7)/8;
+    uint8_t *loc_table = PyMem_Malloc(loc_entries);
+    if (loc_table == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (int i = 0; i < loc_entries-1; i++) {
+         loc_table[i] = 0x80 | (PY_CODE_LOCATION_INFO_NONE << 3) | 7;
+         code_units -= 8;
+    }
+    assert(loc_entries > 0);
+    assert(code_units > 0 && code_units <= 8);
+    loc_table[loc_entries-1] = 0x80 |
+        (PY_CODE_LOCATION_INFO_NONE << 3) | (code_units-1);
+    lines = PyBytes_FromStringAndSize((const char *)loc_table, 2);
     if (lines == NULL) {
         goto cleanup;
     }
@@ -2317,6 +2331,7 @@ _Py_MakeTrampoline(const uint8_t *code, int codelen, int stacksize, const char *
 
     codeobj = _PyCode_New(&con);
 cleanup:
+    PyMem_Free(loc_table);
     Py_XDECREF(name);
     Py_XDECREF(co_code);
     Py_XDECREF(lines);
