@@ -395,7 +395,7 @@ This section has just been a quick overview of the new features, giving enough
 of an explanation to start you programming, but many details have been
 simplified or ignored.  Where should you go to get a more complete picture?
 
-https://docs.python.org/dev/howto/descriptor.html is a lengthy tutorial introduction to
+The :ref:`descriptorhowto` is a lengthy tutorial introduction to
 the descriptor features, written by Guido van Rossum. If my description has
 whetted your appetite, go read this tutorial next, because it goes into much
 more detail about the new features while still remaining quite easy to read.
