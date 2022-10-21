@@ -846,22 +846,30 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
-
-#define DEOPT_IF(COND, INSTNAME)                                 \
-    if (COND) {                                                  \
-        /* This is only a single jump on release builds! */      \
+#ifdef Py_STATS
+#define UPDATE_MISS_STATS(INSTNAME)                              \
+    do {                                                         \
         STAT_INC(opcode, miss);                                  \
-        STAT_INC(INSTNAME, miss);                                \
+        STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
         if (ADAPTIVE_COUNTER_IS_ZERO(*next_instr)) {             \
-            STAT_INC(INSTNAME, deopt);                           \
+            STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
         else {                                                   \
             /* This is about to be (incorrectly) incremented: */ \
-            STAT_DEC(INSTNAME, deferred);                        \
+            STAT_DEC((INSTNAME), deferred);                      \
         }                                                        \
-        assert(_PyOpcode_Deopt[opcode] == INSTNAME);             \
-        GO_TO_INSTRUCTION(INSTNAME);                             \
+    } while (0)
+#else
+#define UPDATE_MISS_STATS(INSTNAME) ((void)0)
+#endif
+
+#define DEOPT_IF(COND, INSTNAME)                            \
+    if ((COND)) {                                           \
+        /* This is only a single jump on release builds! */ \
+        UPDATE_MISS_STATS((INSTNAME));                      \
+        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+        GO_TO_INSTRUCTION(INSTNAME);                        \
     }
 
 
