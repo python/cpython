@@ -1342,8 +1342,6 @@ int _PyFrame_IsEntryFrame(PyFrameObject *frame)
     assert(frame != NULL);
     _PyInterpreterFrame *f = frame->f_frame;
     assert(!_PyFrame_IsIncomplete(f));
-    assert(f->owner == FRAME_OWNED_BY_FRAME_OBJECT ||
-           f->owner == FRAME_OWNED_BY_GENERATOR);
     if (f->previous == NULL) {
         return 0;
     }
