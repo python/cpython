@@ -237,7 +237,6 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(FooException):
             await foo()
 
-    @unittest.skip("TODO")
     async def test_wait_for_self_cancellation(self):
         async def inner():
             try:
@@ -257,7 +256,6 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         # Test that wait_for itself is properly cancellable
         # even when the initial task holds up the initial cancellation.
         task = asyncio.create_task(wait)
-        await asyncio.sleep(0.2)
         task.cancel()
 
         with self.assertRaises(asyncio.CancelledError):
