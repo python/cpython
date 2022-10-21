@@ -914,10 +914,22 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     }
 
 #define ADAPTIVE_COUNTER_IS_ZERO(COUNTER) \
-    ((COUNTER) < (1<<ADAPTIVE_BACKOFF_BITS))
+    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == 0)
 
-#define DECREMENT_ADAPTIVE_COUNTER(COUNTER) \
-    ((COUNTER) -= (1<<ADAPTIVE_BACKOFF_BITS))
+#define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
+    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
+
+#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
+    do {                                              \
+        assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
+        (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
+    } while (0);
+
+#define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
+    do {                                             \
+        assert(!ADAPTIVE_COUNTER_IS_MAX((COUNTER))); \
+        (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
+    } while (0);
 
 static int
 trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
@@ -1243,6 +1255,14 @@ handle_eval_breaker:
             PRE_DISPATCH_GOTO();
         }
         opcode = _PyOpcode_Deopt[opcode];
+        if (_PyOpcode_Caches[opcode]) {
+            _Py_CODEUNIT *counter = &next_instr[1];
+            // The instruction is going to decrement the counter, so we need to
+            // increment it here to make sure it doesn't try to specialize:
+            if (!ADAPTIVE_COUNTER_IS_MAX(*counter)) {
+                INCREMENT_ADAPTIVE_COUNTER(*counter);
+            }
+        }
         DISPATCH_GOTO();
     }
 
