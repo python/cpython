@@ -1414,16 +1414,28 @@ CPython bytecode changes
   taken when reading or modifying raw, adaptive bytecode containing quickened
   data.
 
+* Added :opcode:`COPY_FREE_VARS` to avoid needing special caller-side code
+  to handle calling closures.
+
 * Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`,
   which is used in certain loops where it is undesirable to handle interrupts.
+
+* Added :opcode:`MAKE_CELL` to create a new :ref:`cell object <cell-objects>`.
 
 * Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`,
   :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
   :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
   opcodes to speed up conditional jumps.
 
+* Added :opcode:`PUSH_EXC_INFO` for use in exception handlers
+  and :opcode:`PREP_RERAISE_STAR` for the new
+  :ref:`exception groups and except* <whatsnew311-pep654>`.
+
 * Added the :opcode:`RESUME` opcode. It is a no-op,
   and performs internal tracing, debugging and optimization checks.
+
+* Added :opcode:`RETURN_GENERATOR`, :opcode:`SEND` and :opcode:`ASYNC_GEN_WRAP`,
+  used in generators and co-routines.
 
 * Replaced all numeric :opcode:`!BINARY_*` and :opcode:`!INPLACE_*` instructions
   with a single :opcode:`BINARY_OP` implementation.
@@ -1451,7 +1463,11 @@ CPython bytecode changes
   :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
   :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
 
-* Removed :opcode:`!COPY_DICT_WITHOUT_KEYS` and :opcode:`!GEN_START`.
+* Replaced :opcode:`!SETUP_WITH` and :opcode:`!SETUP_ASYNC_WITH`
+  with :opcode:`BEFORE_WITH`.
+
+* Removed opcodes :opcode:`!COPY_DICT_WITHOUT_KEYS`, :opcode:`!GEN_START`,
+  :opcode:`!POP_BLOCK`, :opcode:`!SETUP_FINALLY` and :opcode:`!YIELD_FROM`.
 
 * Changed :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP`
   to now be relative rather than absolute.
