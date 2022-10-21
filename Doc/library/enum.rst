@@ -594,11 +594,11 @@ Data Types
    :class:`!ReprEum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
    but the :class:`str() <str>` of the mixed-in data type:
 
-      * :meth:`int.__str__` for :class:`IntEnum` and :class:`IntFlag`
-      * :meth:`str.__str__` for :class:`StrEnum`
+      * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
+      * :meth:`!str.__str__` for :class:`StrEnum`
 
-   Inherit from :class:`!ReprEnum` when mixing in a data type when the
-   :class:`str() <str>` output should not be changed to the
+   Inherit from :class:`!ReprEnum` to keep the :class:`str() <str> / :func:`format`
+   of the mixed-in data type instead of using the
    :class:`Enum`-default :meth:`str() <Enum.__str__>`.
 
 
@@ -843,7 +843,7 @@ Utilities and Decorators
    A decorator to change the :class:`str() <str>` and :func:`repr` of an enum
    to show its members as belonging to the module instead of its class.
    Should only be used when the enum members are exported
-   to the module global namespace (see class:`re.RegexFlag` for an example).
+   to the module global namespace (see :class:`re.RegexFlag` for an example).
 
 
    .. versionadded:: 3.11
