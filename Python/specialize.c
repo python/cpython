@@ -1082,7 +1082,7 @@ fail:
     return 0;
 }
 
-int
+void
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
     _Py_CODEUNIT *instr, PyObject *name)
@@ -1157,12 +1157,11 @@ fail:
     assert(!PyErr_Occurred());
     _Py_SET_OPCODE(*instr, LOAD_GLOBAL);
     cache->counter = adaptive_counter_backoff(cache->counter);
-    return 0;
+    return;
 success:
     STAT_INC(LOAD_GLOBAL, success);
     assert(!PyErr_Occurred());
     cache->counter = adaptive_counter_cooldown();
-    return 0;
 }
 
 #ifdef Py_STATS
@@ -1250,7 +1249,7 @@ function_get_version(PyObject *o, int opcode)
     return version;
 }
 
-int
+void
 _Py_Specialize_BinarySubscr(
      PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
 {
@@ -1318,15 +1317,14 @@ fail:
     assert(!PyErr_Occurred());
     _Py_SET_OPCODE(*instr, BINARY_SUBSCR);
     cache->counter = adaptive_counter_backoff(cache->counter);
-    return 0;
+    return;
 success:
     STAT_INC(BINARY_SUBSCR, success);
     assert(!PyErr_Occurred());
     cache->counter = adaptive_counter_cooldown();
-    return 0;
 }
 
-int
+void
 _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
 {
     _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)(instr + 1);
@@ -1423,12 +1421,11 @@ fail:
     assert(!PyErr_Occurred());
     _Py_SET_OPCODE(*instr, STORE_SUBSCR);
     cache->counter = adaptive_counter_backoff(cache->counter);
-    return 0;
+    return;
 success:
     STAT_INC(STORE_SUBSCR, success);
     assert(!PyErr_Occurred());
     cache->counter = adaptive_counter_cooldown();
-    return 0;
 }
 
 static int
@@ -1697,7 +1694,7 @@ call_fail_kind(PyObject *callable)
 /* TODO:
     - Specialize calling classes.
 */
-int
+void
 _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                     PyObject *kwnames)
 {
@@ -1743,7 +1740,6 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         assert(!PyErr_Occurred());
         cache->counter = adaptive_counter_cooldown();
     }
-    return 0;
 }
 
 #ifdef Py_STATS
