@@ -213,10 +213,6 @@ typedef struct PyConfig {
     // If equal to 0, stop Python initialization before the "main" phase.
     int _init_main;
 
-    // If non-zero, disallow threads, subprocesses, and fork.
-    // Default: 0.
-    int _isolated_interpreter;
-
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;
 } PyConfig;

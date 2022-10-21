@@ -2027,7 +2027,6 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
-    interp->config._isolated_interpreter = config->isolated;
 
     init_interp_settings(interp, config);
 

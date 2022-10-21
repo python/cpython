@@ -496,7 +496,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'check_hash_pycs_mode': 'default',
         'pathconfig_warnings': 1,
         '_init_main': 1,
-        '_isolated_interpreter': 0,
         'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
@@ -881,8 +880,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
-
-            '_isolated_interpreter': 1,
         }
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
