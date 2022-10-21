@@ -752,9 +752,12 @@ pycore_init_types(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
-static const char INTERPRETER_TRAMPOLINE_CODE[] = {
-    0, 0,
+static const uint8_t INTERPRETER_TRAMPOLINE_CODE[] = {
+    /* Put a NOP at the start, so that the IP points into
+     * the code, rather than before it */
+    NOP, 0,
     INTERPRETER_EXIT, 0,
+    /* RESUME at end makes sure that the frame appears incomplete */
     RESUME, 0
 };
 
@@ -792,7 +795,9 @@ pycore_init_builtins(PyThreadState *tstate)
     assert(object__getattribute__);
     interp->callable_cache.object__getattribute__ = object__getattribute__;
     interp->interpreter_trampoline = _Py_MakeTrampoline(
-        INTERPRETER_TRAMPOLINE_CODE, sizeof(INTERPRETER_TRAMPOLINE_CODE), 1, "<interpreter trampoline>");
+        INTERPRETER_TRAMPOLINE_CODE,
+        sizeof(INTERPRETER_TRAMPOLINE_CODE),
+        1, "<interpreter trampoline>");
     if (interp->interpreter_trampoline == NULL) {
         return _PyStatus_ERR("failed to create interpreter trampoline.");
     }

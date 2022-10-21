@@ -48,12 +48,12 @@ enum _frameowner {
 
 typedef struct _PyInterpreterFrame {
     /* "Specials" section */
-    PyObject *f_funcobj; /* Strong reference. Only valid for Python frames */
-    PyObject *f_globals; /* Borrowed reference. Only valid for Python frames */
-    PyObject *f_builtins; /* Borrowed reference. Only valid for Python frames */
-    PyObject *f_locals; /* Strong reference, may be NULL. Only valid for Python frames */
+    PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
+    PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
+    PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
+    PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyCodeObject *f_code; /* Strong reference */
-    PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid for Python frames */
+    PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     /* Linkage section */
     struct _PyInterpreterFrame *previous;
     // NOTE: This is not necessarily the last instruction started in the given
@@ -62,8 +62,7 @@ typedef struct _PyInterpreterFrame {
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
     int stacktop;  /* Offset of TOS from localsplus  */
-    int yield_offset: 28;
-    int owner: 4;
+    char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;

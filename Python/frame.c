@@ -127,7 +127,6 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
      * to have cleared the enclosing generator, if any. */
     assert(frame->owner != FRAME_OWNED_BY_GENERATOR ||
         _PyFrame_GetGenerator(frame)->gi_frame_state == FRAME_CLEARED);
-    assert(frame->owner != FRAME_CLEARED);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
@@ -142,12 +141,10 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
-    frame->stacktop = 0;
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
     Py_DECREF(frame->f_code);
-    frame->owner = FRAME_CLEARED;
 }
 
 int

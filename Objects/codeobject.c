@@ -2270,7 +2270,7 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
 }
 
 PyCodeObject *
-_Py_MakeTrampoline(const char *code, int codelen, int stacksize, const char *cname)
+_Py_MakeTrampoline(const uint8_t *code, int codelen, int stacksize, const char *cname)
 {
     PyObject *name = NULL;
     PyObject *co_code = NULL;

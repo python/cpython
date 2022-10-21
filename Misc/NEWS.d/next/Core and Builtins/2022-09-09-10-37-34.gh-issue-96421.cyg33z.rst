@@ -1,4 +1,0 @@
-When calling into Python code from C code, though PyEval_EvalFrame or
-related C-API function, a shim frame in inserted into the call stack. This
-should be invisible to all Python and most C extensions, but out-of-process
-debuggers, profilers and debuggers need to be aware of this.

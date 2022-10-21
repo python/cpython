@@ -1066,7 +1066,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     pyframe.prev_instr = code;
     pyframe.stacktop = 0;
     pyframe.owner = FRAME_OWNED_BY_CSTACK;
-    pyframe.yield_offset = 0;
     /* Push frame */
     pyframe.previous = prev_cframe->current_frame;
     frame->previous = &pyframe;
@@ -2095,7 +2094,6 @@ handle_eval_breaker:
             _PyInterpreterFrame *gen_frame = frame;
             frame = cframe.current_frame = gen_frame->previous;
             gen_frame->previous = NULL;
-            frame->prev_instr += frame->yield_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
