@@ -1904,7 +1904,7 @@ static int test_init_main_interpreter_settings(void)
     _testembed_Py_Initialize();
     (void) PyRun_SimpleStringFlags(
         "import _testinternalcapi, json; "
-        "print(json.dumps(_testinternalcapi.get_interp_settings()))",
+        "print(json.dumps(_testinternalcapi.get_interp_settings(0)))",
         0);
     Py_Finalize();
     return 0;

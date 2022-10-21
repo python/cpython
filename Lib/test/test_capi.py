@@ -1084,6 +1084,46 @@ class SubinterpreterTest(unittest.TestCase):
         # test fails, assume that the environment in this process may
         # be altered and suspect.
 
+    def test_configured_settings(self):
+        """
+        The config with which an interpreter is created corresponds
+        1-to-1 with the new interpreter's settings.  This test verifies
+        that they match.
+        """
+        import json
+
+        THREADS = 1<<10
+        FORK = 1<<15
+        SUBPROCESS = 1<<16
+
+        for config, expected in {
+            (True, True, True): THREADS | FORK | SUBPROCESS,
+            (False, False, False): 0,
+            (False, True, True): THREADS | SUBPROCESS,
+        }.items():
+            allow_fork, allow_subprocess, allow_threads = config
+            expected = {
+                'feature_flags': expected,
+            }
+            with self.subTest(config):
+                r, w = os.pipe()
+                with os.fdopen(r) as stdout:
+                    support.run_in_subinterp_with_config(
+                        textwrap.dedent(f'''
+                            import _testinternalcapi, json, os
+                            settings = _testinternalcapi.get_interp_settings()
+                            with os.fdopen({w}, "w") as stdin:
+                                json.dump(settings, stdin)
+                            '''),
+                        allow_fork=allow_fork,
+                        allow_subprocess=allow_subprocess,
+                        allow_threads=allow_threads,
+                    )
+                    out = stdout.read()
+                settings = json.loads(out)
+
+                self.assertEqual(settings, expected)
+
     def test_mutate_exception(self):
         """
         Exceptions saved in global module state get shared between
