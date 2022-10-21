@@ -743,12 +743,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
-/* Get opcode and oparg from original instructions, not quickened form. */
-#define TRACING_NEXTOPARG() do { \
-        NEXTOPARG(); \
-        opcode = _PyOpcode_Deopt[opcode]; \
-    } while (0)
-
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
     predict the second code when the first is run.  For example,
@@ -1186,7 +1180,8 @@ handle_eval_breaker:
         if (INSTR_OFFSET() >= frame->f_code->_co_firsttraceable) {
             int instr_prev = _PyInterpreterFrame_LASTI(frame);
             frame->prev_instr = next_instr;
-            TRACING_NEXTOPARG();
+            NEXTOPARG();
+            // No _PyOpcode_Deopt here, since RESUME has no optimized forms:
             if (opcode == RESUME) {
                 if (oparg < 2) {
                     CHECK_EVAL_BREAKER();
@@ -1233,8 +1228,21 @@ handle_eval_breaker:
                 }
             }
         }
-        TRACING_NEXTOPARG();
+        NEXTOPARG();
         PRE_DISPATCH_GOTO();
+        // No _PyOpcode_Deopt here, since EXTENDED_ARG has no optimized forms:
+        while (opcode == EXTENDED_ARG) {
+            // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
+            // Inline the instruction here, so we can avoid branching there:
+            INSTRUCTION_START();
+            opcode = _Py_OPCODE(*next_instr);
+            oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            // Make sure the next instruction isn't a RESUME, since that needs
+            // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
+            assert(opcode != RESUME);
+            PRE_DISPATCH_GOTO();
+        }
+        opcode = _PyOpcode_Deopt[opcode];
         DISPATCH_GOTO();
     }
 
