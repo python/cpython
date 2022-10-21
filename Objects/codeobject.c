@@ -2302,7 +2302,7 @@ _Py_MakeShimCode(const _PyShimCodeDef *codedef)
     assert(code_units > 0 && code_units <= 8);
     loc_table[loc_entries-1] = 0x80 |
         (PY_CODE_LOCATION_INFO_NONE << 3) | (code_units-1);
-    lines = PyBytes_FromStringAndSize((const char *)loc_table, 2);
+    lines = PyBytes_FromStringAndSize((const char *)loc_table, loc_entries);
     if (lines == NULL) {
         goto cleanup;
     }
