@@ -1,0 +1,3 @@
+Fix an issue where member descriptors (such as those for
+:attr:`~object.__slots__`) could behave incorrectly or crash instead of
+raising a :exc:`TypeError` when accessed via an instance of an invalid type.
