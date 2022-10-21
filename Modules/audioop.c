@@ -1,3 +1,33 @@
+/* The audioop module uses the code base in g777.c file of the Sox project.
+ * Source: https://web.archive.org/web/19970716121258/http://www.spies.com/Sox/Archive/soxgamma.tar.gz
+ *                 Programming the AdLib/Sound Blaster
+ *                              FM Music Chips
+ *                          Version 2.0 (24 Feb 1992)
+ *
+ *                 Copyright (c) 1991, 1992 by Jeffrey S. Lee
+ *
+ *                               jlee@smylex.uucp
+ *
+ *
+ *
+ *                       Warranty and Copyright Policy
+ *
+ *     This document is provided on an "as-is" basis, and its author makes
+ *     no warranty or representation, express or implied, with respect to
+ *    its quality performance or fitness for a particular purpose.  In no
+ *    event will the author of this document be liable for direct, indirect,
+ *    special, incidental, or consequential damages arising out of the use
+ *    or inability to use the information contained within.  Use of this
+ *    document is at your own risk.
+ *
+ *    This file may be used and copied freely so long as the applicable
+ *    copyright notices are retained, and no modifications are made to the
+ *    text of the document.  No money shall be charged for its distribution
+ *    beyond reasonable shipping, handling and duplication costs, nor shall
+ *    proprietary changes be made to this document so that it cannot be
+ *    distributed freely.  This document may not be included in published
+ *    material or commercial packages without the written consent of its
+ *    author. */
 
 /* audioopmodule - Module to detect peak values in arrays */
 
@@ -28,20 +58,6 @@ fbound(double val, double minval, double maxval)
 }
 
 
-/* Code shamelessly stolen from sox, 12.17.7, g711.c
-** (c) Craig Reese, Joe Campbell and Jeff Poskanzer 1989 */
-
-/* From g711.c:
- *
- * December 30, 1994:
- * Functions linear2alaw, linear2ulaw have been updated to correctly
- * convert unquantized 16 bit values.
- * Tables for direct u- to A-law and A- to u-law conversions have been
- * corrected.
- * Borge Lindberg, Center for PersonKommunikation, Aalborg University.
- * bli@cpk.auc.dk
- *
- */
 #define BIAS 0x84   /* define the add-in bias for 16 bit samples */
 #define CLIP 32635
 #define SIGN_BIT        (0x80)          /* Sign bit for an A-law byte. */
