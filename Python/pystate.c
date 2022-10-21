@@ -2177,6 +2177,15 @@ _Py_GetConfig(void)
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
 
+
+int
+_PyInterpreterState_HasFeature(PyInterpreterState *interp, unsigned long feature)
+{
+    assert(feature & (Py_RTFLAGS_FORK | Py_RTFLAGS_SUBPROCESS | Py_RTFLAGS_THREADS));
+    return interp->config._isolated_interpreter;
+}
+
+
 #define MINIMUM_OVERHEAD 1000
 
 static PyObject **
