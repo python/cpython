@@ -126,6 +126,12 @@ asyncio
   if supported and :class:`~asyncio.ThreadedChildWatcher` otherwise).
   (Contributed by Kumar Aditya in :gh:`94597`.)
 
+* :func:`asyncio.set_child_watcher`, :func:`asyncio.get_child_watcher`,
+  :meth:`asyncio.AbstractEventLoopPolicy.set_child_watcher` and
+  :meth:`asyncio.AbstractEventLoopPolicy.get_child_watcher` are deprecated
+  and will be removed in Python 3.14.
+  (Contributed by Kumar Aditya in :gh:`94597`.)
+
 
 pathlib
 -------
@@ -395,10 +401,6 @@ Removed
 
   (Contributed by Erlend E. Aasland in :gh:`92548`.)
 
-* The ``--experimental-isolated-subinterpreters`` configure flag
-  (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
-  have been removed.
-
 * ``smtpd`` has been removed according to the schedule in :pep:`594`,
   having been deprecated in Python 3.4.7 and 3.5.4.
   Use aiosmtpd_ PyPI module or any other
@@ -512,6 +514,11 @@ Changes in the Python API
   exception, rather than reading :data:`sys.stdin`. The feature was deprecated
   in Python 3.9.
   (Contributed by Victor Stinner in :gh:`94352`.)
+
+* The :mod:`os` module no longer accepts bytes-like paths, like
+  :class:`bytearray` and :class:`memoryview` types: only the exact
+  :class:`bytes` type is accepted for bytes strings.
+  (Contributed by Victor Stinner in :gh:`98393`.)
 
 
 Build Changes
@@ -628,6 +635,11 @@ Porting to Python 3.12
   :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
   To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
+
+* The :c:func:`PyUnicode_FSDecoder` function no longer accepts bytes-like
+  paths, like :class:`bytearray` and :class:`memoryview` types: only the exact
+  :class:`bytes` type is accepted for bytes strings.
+  (Contributed by Victor Stinner in :gh:`98393`.)
 
 Deprecated
 ----------

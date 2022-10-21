@@ -58,44 +58,49 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.11.
    Brevity is key.
 
-- Python 3.11 is between 10-60% faster than Python 3.10. On average, we measured a
-  1.25x speedup on the standard benchmark suite. See `Faster CPython`_ for details.
+* Python 3.11 is between 10-60% faster than Python 3.10.
+  On average, we measured a 1.25x speedup on the standard benchmark suite.
+  See :ref:`whatsnew311-faster-cpython` for details.
 
 .. PEP-sized items next.
 
 New syntax features:
 
-* :pep:`654`: Exception Groups and ``except*``.
+* :ref:`whatsnew311-pep654`
 
 New built-in features:
 
-* :pep:`678`: Enriching Exceptions with Notes.
+* :ref:`whatsnew311-pep678`
 
 New standard library modules:
 
-* :pep:`680`: ``tomllib`` — Support for Parsing TOML in the Standard Library.
+* :pep:`680`: :mod:`tomllib` —
+  Support for parsing `TOML <https://toml.io/>`_ in the Standard Library
 
 Interpreter improvements:
 
-* :pep:`657`: Include Fine Grained Error Locations in Tracebacks.
+* :ref:`whatsnew311-pep657`
 * New :option:`-P` command line option and :envvar:`PYTHONSAFEPATH` environment
-  variable to disable automatically prepending a potentially unsafe path
-  (the working dir or script directory, depending on invocation)
-  to :data:`sys.path`.
+  variable to :ref:`disable automatically prepending potentially unsafe paths
+  <whatsnew311-pythonsafepath>` to :data:`sys.path`
 
 New typing features:
 
-* :pep:`646`: Variadic generics.
-* :pep:`655`: Marking individual TypedDict items as required or potentially missing.
-* :pep:`673`: ``Self`` type.
-* :pep:`675`: Arbitrary literal string type.
-* :pep:`681`: Data Class Transforms.
+* :ref:`whatsnew311-pep646`
+* :ref:`whatsnew311-pep655`
+* :ref:`whatsnew311-pep673`
+* :ref:`whatsnew311-pep675`
+* :ref:`whatsnew311-pep681`
 
-Important deprecations, removals or restrictions:
+Important deprecations, removals and restrictions:
 
-* :pep:`594`: Removing dead batteries from the standard library.
-* :pep:`624`: Remove ``Py_UNICODE`` encoder APIs.
-* :pep:`670`: Convert macros to functions in the Python C API.
+* :pep:`594`:
+  :ref:`Many legacy standard library modules have been deprecated
+  <whatsnew311-pep594>` and will be removed in Python 3.13
+* :pep:`624`:
+  :ref:`Py_UNICODE encoder APIs have been removed <whatsnew311-pep624>`
+* :pep:`670`:
+  :ref:`Macros converted to static inline functions <whatsnew311-pep670>`
 
 
 .. _whatsnew311-features:
@@ -105,8 +110,8 @@ New Features
 
 .. _whatsnew311-pep657:
 
-PEP 657: Enhanced error locations in tracebacks
------------------------------------------------
+PEP 657: Fine-grained error locations in tracebacks
+---------------------------------------------------
 
 When printing tracebacks, the interpreter will now point to the exact expression
 that caused the error, instead of just the line. For example:
@@ -381,7 +386,7 @@ Kumar Srinivasan and Graham Bleaney.)
 
 .. _whatsnew311-pep681:
 
-PEP 681: Data Class Transforms
+PEP 681: Data class transforms
 ------------------------------
 
 :data:`~typing.dataclass_transform` may be used to
@@ -457,6 +462,8 @@ Other Language Changes
   pickles instance attributes implemented as :term:`slots <__slots__>`.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
 
+.. _whatsnew311-pythonsafepath:
+
 * Added a :option:`-P` command line option
   and a :envvar:`PYTHONSAFEPATH` environment variable,
   which disable the automatic prepending to :data:`sys.path`
@@ -530,6 +537,17 @@ Other CPython Implementation Changes
   and with the new :option:`--help-all`.
   (Contributed by Éric Araujo in :issue:`46142`.)
 
+* Converting between :class:`int` and :class:`str` in bases other than 2
+  (binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+  now raises a :exc:`ValueError` if the number of digits in string form is
+  above a limit to avoid potential denial of service attacks due to the
+  algorithmic complexity. This is a mitigation for `CVE-2020-10735
+  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+  This limit can be configured or disabled by environment variable, command
+  line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+  length limitation <int_max_str_digits>` documentation.  The default limit
+  is 4300 digits in string form.
+
 
 .. _whatsnew311-new-modules:
 
@@ -544,6 +562,8 @@ New Modules
   :pep:`WSGI <3333>`-specific types for static type checking.
   (Contributed by Sebastian Rittau in :issue:`42012`.)
 
+
+.. _whatsnew311-improved-modules:
 
 Improved Modules
 ================
@@ -619,48 +639,74 @@ datetime
   formats (barring only those that support fractional hours and minutes).
   (Contributed by Paul Ganssle in :gh:`80010`.)
 
+
+.. _whatsnew311-enum:
+
 enum
 ----
 
-* ``EnumMeta`` renamed to ``EnumType`` (``EnumMeta`` kept as alias).
+* Renamed :class:`!EnumMeta` to :class:`~enum.EnumType`
+  (:class:`!EnumMeta` kept as an alias).
 
-* ``StrEnum`` added -- enum members are and must be strings.
+* Added :class:`~enum.StrEnum`,
+  with members that can be used as (and must be) strings.
 
-* ``ReprEnum`` added -- causes only the ``__repr__`` to be modified, not the
-  ``__str__`` nor the ``__format__``.
+* Added :class:`~enum.ReprEnum`,
+  which only modifies the :meth:`~object.__repr__` of members
+  while returning their literal values (rather than names)
+  for :meth:`~object.__str__` and :meth:`~object.__format__`
+  (used by :func:`str`, :func:`format` and :term:`f-string`\s).
 
-* ``FlagBoundary`` added -- controls behavior when invalid values are given to
-  a flag.
+* Changed :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
+  to now inherit from :class:`ReprEnum`,
+  so their :func:`str` output now matches :func:`format`
+  (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``,
+  whereas before ``str(AnIntEnum.ONE)`` returned ``'AnIntEnum.ONE'``.
 
-* ``EnumCheck`` added -- used by ``verify`` to ensure various constraints.
+* Changed :meth:`Enum.__format__() <enum.Enum.__format__>`
+  (the default for :func:`format`, :meth:`str.format` and :term:`f-string`\s)
+  of enums with mixed-in types (e.g. :class:`int`, :class:`str`)
+  to also include the class name in the output, not just the member's key.
+  This matches the existing behavior of :meth:`enum.Enum.__str__`,
+  returning e.g. ``'AnEnum.MEMBER'`` for an enum ``AnEnum(str, Enum)``
+  instead of just ``'MEMBER'``.
 
-* ``verify`` added -- function to ensure given ``EnumCheck`` constraints.
+* Added a new *boundary* class parameter to :class:`~enum.Flag` enums
+  and the :class:`~enum.FlagBoundary` enum with its options,
+  to control how to handle out-of-range flag values.
 
-* ``member`` added -- decorator to ensure given object is converted to an enum
-  member.
+* Added the :func:`~enum.verify` enum decorator
+  and the :class:`~enum.EnumCheck` enum with its options,
+  to check enum classes against several specific constraints.
 
-* ``nonmember`` added -- decorator to ensure given object is not converted to
-  an enum member.
+* Added the :func:`~enum.member` and :func:`~enum.nonmember` decorators,
+  to ensure the decorated object is/is not converted to an enum member.
 
-* ``property`` added -- use instead of ``types.DynamicClassAttribute``.
+* Added the :func:`~enum.property` decorator,
+  which works like :func:`property` except for enums.
+  Use this instead of :func:`types.DynamicClassAttribute`.
 
-* ``global_enum`` added -- enum decorator to adjust ``__repr__`` and ``__str__``
-  to show members in the global context -- see ``re.RegexFlag`` for an example.
+* Added the :func:`~enum.global_enum` enum decorator,
+  which adjusts :meth:`~object.__repr__` and :meth:`~object.__str__`
+  to show values as members of their module rather than the enum class.
+  For example, ``'re.ASCII'`` for the :data:`~re.ASCII` member
+  of :class:`re.RegexFlag` rather than ``'RegexFlag.ASCII'``.
 
-* ``Flag`` enhancements: members support length,  iteration, and containment
-  checks.
+* Enhanced :class:`~enum.Flag` to support
+  :func:`len`, iteration and :keyword:`in`/:keyword:`not in` on its members.
+  For example, the following now works:
+  ``len(AFlag(3)) == 2 and list(AFlag(3)) == (AFlag.ONE, AFlag.TWO)``
 
-* ``Enum``/``Flag`` fixes: members are now defined before ``__init_subclass__``
-  is called; ``dir()`` now includes methods, etc., from mixed-in data types.
+* Changed :class:`~enum.Enum` and :class:`~enum.Flag`
+  so that members are now defined
+  before :meth:`~object.__init_subclass__` is called;
+  :func:`dir` now includes methods, etc., from mixed-in data types.
 
-* ``Flag`` fixes: only primary values (power of two) are considered canonical
-  while composite values (3, 6, 10, etc.) are considered aliases;  inverted
-  flags are coerced to their positive equivalent.
+* Changed :class:`~enum.Flag`
+  to only consider primary values (power of two) canonical
+  while composite values (``3``, ``6``, ``10``, etc.) are considered aliases;
+  inverted flags are coerced to their positive equivalent.
 
-* ``IntEnum`` / ``IntFlag`` / ``StrEnum`` fixes: these now inherit from
-  ``ReprEnum`` so the ``str()`` output now matches ``format()`` output,
-  which is the data types' (so both ``str(AnIntEnum.ONE)`` and
-  ``format(AnIntEnum.ONE)`` is equal to ``'1'``).
 
 fractions
 ---------
@@ -752,6 +798,26 @@ locale
 * Add :func:`locale.getencoding` to get the current locale encoding. It is similar to
   ``locale.getpreferredencoding(False)`` but ignores the
   :ref:`Python UTF-8 Mode <utf8-mode>`.
+
+
+.. _whatsnew311-logging:
+
+logging
+-------
+
+* Added :func:`~logging.getLevelNamesMapping`
+  to return a mapping from logging level names (e.g. ``'CRITICAL'``)
+  to the values of their corresponding :ref:`levels` (e.g. ``50``, by default).
+  (Contributed by Andrei Kulakovin in :gh:`88024`.)
+
+* Added a :meth:`~logging.handlers.SysLogHandler.createSocket` method
+  to :class:`~logging.handlers.SysLogHandler`, to match
+  :meth:`SocketHandler.createSocket()
+  <logging.handlers.SocketHandler.createSocket>`.
+  It is called automatically during handler initialization
+  and when emitting an event, if there is no active socket.
+  (Contributed by Kirill Pinchuk in :gh:`88457`.)
+
 
 math
 ----
@@ -1062,12 +1128,24 @@ warnings
   providing a more concise way to locally ignore warnings or convert them to errors.
   (Contributed by Zac Hatfield-Dodds in :issue:`47074`.)
 
+
+.. _whatsnew311-zipfile:
+
 zipfile
 -------
 
-* Added support for specifying member name encoding for reading
-  metadata in the zipfile's directory and file headers.
+* Added support for specifying member name encoding for reading metadata
+  in a :class:`~zipfile.ZipFile`'s directory and file headers.
   (Contributed by Stephen J. Turnbull and Serhiy Storchaka in :issue:`28080`.)
+
+* Added :meth:`ZipFile.mkdir() <zipfile.ZipFile.mkdir>`
+  for creating new directories inside ZIP archives.
+  (Contributed by Sam Ezeh in :gh:`49083`.)
+
+* Added :attr:`~zipfile.Path.stem`, :attr:`~zipfile.Path.suffix`
+  and :attr:`~zipfile.Path.suffixes` to :class:`zipfile.Path`.
+  (Contributed by Miguel Brito in :gh:`88261`.)
+
 
 fcntl
 -----
@@ -1076,6 +1154,8 @@ fcntl
   are supported, the former equals to ``dup2`` usage while the latter set
   the ``FD_CLOEXEC`` flag in addition.
 
+
+.. _whatsnew311-optimizations:
 
 Optimizations
 =============
@@ -1109,6 +1189,8 @@ Optimizations
   faster than Python 3.10.
 
 
+.. _whatsnew311-faster-cpython:
+
 Faster CPython
 ==============
 
@@ -1121,11 +1203,16 @@ could be up to 10-60% faster.
 This project focuses on two major areas in Python: faster startup and faster
 runtime. Other optimizations not under this project are listed in `Optimizations`_.
 
+
+.. _whatsnew311-faster-startup:
+
 Faster Startup
 --------------
 
+.. _whatsnew311-faster-imports:
+
 Frozen imports / Static code objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Python caches bytecode in the :ref:`__pycache__<tut-pycache>` directory to
 speed up module loading.
@@ -1150,11 +1237,16 @@ impact for short-running programs using Python.
 (Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
 
 
+.. _whatsnew311-faster-runtime:
+
 Faster Runtime
 --------------
 
+.. _whatsnew311-lazy-python-frames:
+
 Cheaper, lazy Python frames
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Python frames are created whenever Python calls a Python function. This frame
 holds execution information. The following are new frame optimizations:
 
@@ -1171,10 +1263,13 @@ up significantly. We measured a 3-7% speedup in pyperformance.
 
 (Contributed by Mark Shannon in :issue:`44590`.)
 
+
 .. _inline-calls:
+.. _whatsnew311-inline-calls:
 
 Inlined Python function calls
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 During a Python function call, Python will call an evaluating C function to
 interpret that function's code. This effectively limits pure Python recursion to
 what's safe for the C stack.
@@ -1191,8 +1286,12 @@ We measured a 1-3% improvement in pyperformance.
 
 (Contributed by Pablo Galindo and Mark Shannon in :issue:`45256`.)
 
+
+.. _whatsnew311-pep659:
+
 PEP 659: Specializing Adaptive Interpreter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 :pep:`659` is one of the key parts of the faster CPython project. The general
 idea is that while Python is a dynamic language, most code has regions where
 objects and types rarely change. This concept is known as *type stability*.
@@ -1274,6 +1373,8 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
        be sped up by :issue:`45947`.
 
 
+.. _whatsnew311-faster-cpython-misc:
+
 Misc
 ----
 
@@ -1284,6 +1385,9 @@ Misc
 * A more concise representation of exceptions in the interpreter reduced the
   time required for catching an exception by about 10%.
   (Contributed by Irit Katriel in :issue:`45711`.)
+
+
+.. _whatsnew311-faster-cpython-faq:
 
 FAQ
 ---
@@ -1319,6 +1423,8 @@ FAQ
 | A: No. We're still exploring other optimizations.
 
 
+.. _whatsnew311-faster-cpython-about:
+
 About
 -----
 
@@ -1327,6 +1433,8 @@ funded by Microsoft to work on this full-time. Pablo Galindo Salgado is also
 funded by Bloomberg LP to work on the project part-time. Finally, many
 contributors are volunteers from the community.
 
+
+.. _whatsnew311-bytecode-changes:
 
 CPython bytecode changes
 ========================
@@ -1384,8 +1492,16 @@ CPython bytecode changes
 * :opcode:`RESUME` has been added. It is a no-op. Performs internal tracing,
   debugging and optimization checks.
 
+
+.. _whatsnew311-deprecated:
+.. _whatsnew311-python-api-deprecated:
+
 Deprecated
 ==========
+
+This section lists Python APIs that have been deprecated in Python 3.11.
+
+Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
 
 * Chaining :class:`classmethod` descriptors (introduced in :issue:`19072`)
   is now deprecated.  It can no longer be used to wrap other descriptors
@@ -1469,11 +1585,7 @@ Deprecated
   removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
   (Contributed by Victor Stinner in :gh:`90817`.)
 
-* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
-  deprecated since at least Python 3.6. Their documentation and deprecation
-  warnings have now been updated to note they will removed in Python 3.12
-  (:pep:`594`).
-  (Contributed by Hugo van Kemenade in :issue:`47022`.)
+.. _whatsnew311-pep594:
 
 * :pep:`594` led to the deprecations of the following modules which are
   slated for removal in Python 3.13:
@@ -1501,6 +1613,11 @@ Deprecated
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
 
+* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+  deprecated since at least Python 3.6. Their documentation and deprecation
+  warnings have now been updated to note they will removed in Python 3.12.
+  (Contributed by Hugo van Kemenade in :issue:`47022`.)
+
 * More strict rules will be applied now applied for numerical group references
   and group names in regular expressions in future Python versions.
   Only sequence of ASCII digits will be now accepted as a numerical reference.
@@ -1525,13 +1642,17 @@ Deprecated
   (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
 
+.. _whatsnew311-pending-removal:
+.. _whatsnew311-python-api-pending-removal:
+
 Pending Removal in Python 3.12
 ==============================
 
-The following APIs have been deprecated in earlier Python releases,
+The following Python APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.12.
 
-Python API:
+C APIs pending removal are
+:ref:`listed separately <whatsnew311-c-api-pending-removal>`.
 
 * :class:`pkgutil.ImpImporter`
 * :class:`pkgutil.ImpLoader`
@@ -1560,28 +1681,16 @@ Python API:
 * :func:`sqlite3.OptimizedUnicode`
 * :func:`sqlite3.enable_shared_cache`
 
-C API:
 
-* :c:func:`PyUnicode_AS_DATA`
-* :c:func:`PyUnicode_AS_UNICODE`
-* :c:func:`PyUnicode_AsUnicodeAndSize`
-* :c:func:`PyUnicode_AsUnicode`
-* :c:func:`PyUnicode_FromUnicode`
-* :c:func:`PyUnicode_GET_DATA_SIZE`
-* :c:func:`PyUnicode_GET_SIZE`
-* :c:func:`PyUnicode_GetSize`
-* :c:func:`PyUnicode_IS_COMPACT`
-* :c:func:`PyUnicode_IS_READY`
-* :c:func:`PyUnicode_READY`
-* :c:func:`Py_UNICODE_WSTR_LENGTH`
-* :c:func:`_PyUnicode_AsUnicode`
-* :c:macro:`PyUnicode_WCHAR_KIND`
-* :c:type:`PyUnicodeObject`
-* :c:func:`PyUnicode_InternImmortal()`
-
+.. _whatsnew311-removed:
+.. _whatsnew311-python-api-removed:
 
 Removed
 =======
+
+This section lists Python APIs that have been removed in Python 3.12.
+
+Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without
   an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
@@ -1667,19 +1776,26 @@ Removed
   Python's test suite."
   (Contributed by Victor Stinner in :issue:`46852`.)
 
+* The ``--experimental-isolated-subinterpreters`` configure flag
+  (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
+  have been removed.
+
 * Pynche --- The Pythonically Natural Color and Hue Editor --- has been moved out
   of ``Tools/scripts`` and is `being developed independently
   <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.
+
+
+.. _whatsnew311-porting:
+.. _whatsnew311-python-api-porting:
 
 Porting to Python 3.11
 ======================
 
 This section lists previously described changes and other bugfixes
-that may require changes to your code.
+in the Python API that may require changes to your Python code.
 
-
-Changes in the Python API
--------------------------
+Porting notes for the C API are
+:ref:`listed separately <whatsnew311-c-api-porting>`.
 
 * Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
   executors to :meth:`loop.set_default_executor` following a deprecation in
@@ -1727,6 +1843,9 @@ Changes in the Python API
   It can be set to describe C extension clases to the VM, but should be regarded
   as meaningless when read. To get the pointer to the object's dictionary call
   :c:func:`PyObject_GenericGetDict` instead.
+
+
+.. _whatsnew311-build-changes:
 
 Build Changes
 =============
@@ -1815,8 +1934,12 @@ Build Changes
   (Contributed by Serhiy Storchaka in :issue:`46996`.)
 
 
+.. _whatsnew311-c-api:
+
 C API Changes
 =============
+
+.. _whatsnew311-c-api-new-features:
 
 New Features
 ------------
@@ -1881,8 +2004,24 @@ New Features
 * Added the :c:member:`PyConfig.safe_path` member.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
+
+.. _whatsnew311-c-api-porting:
+
 Porting to Python 3.11
 ----------------------
+
+.. _whatsnew311-pep670:
+
+* Some macros have been converted to static inline functions to avoid
+  `macro pitfalls <https://gcc.gnu.org/onlinedocs/cpp/Macro-Pitfalls.html>`_.
+  The change should be mostly transparent to users,
+  as the replacement functions will cast their arguments to the expected types
+  to avoid compiler warnings due to static type checks.
+  However, when the limited C API is set to >=3.11,
+  these casts are not done,
+  and callers will need to cast arguments to their expected types.
+  See :pep:`670` for more details.
+  (Contributed by Victor Stinner and Erlend E. Aasland in :gh:`89653`.)
 
 * :c:func:`PyErr_SetExcInfo()` no longer uses the ``type`` and ``traceback``
   arguments, the interpreter now derives those values from the exception
@@ -2167,6 +2306,9 @@ Porting to Python 3.11
   paths and then modify them, finish initialization and use :c:func:`PySys_GetObject`
   to retrieve :data:`sys.path` as a Python list object and modify it directly.
 
+
+.. _whatsnew311-c-api-deprecated:
+
 Deprecated
 ----------
 
@@ -2191,6 +2333,35 @@ Deprecated
 
 * Deprecate the ``ob_shash`` member of the :c:type:`PyBytesObject`. Use :c:func:`PyObject_Hash` instead.
   (Contributed by Inada Naoki in :issue:`46864`.)
+
+
+.. _whatsnew311-c-api-pending-removal:
+
+Pending Removal in Python 3.12
+------------------------------
+
+The following C APIs have been deprecated in earlier Python releases,
+and will be removed in Python 3.12.
+
+* :c:func:`PyUnicode_AS_DATA`
+* :c:func:`PyUnicode_AS_UNICODE`
+* :c:func:`PyUnicode_AsUnicodeAndSize`
+* :c:func:`PyUnicode_AsUnicode`
+* :c:func:`PyUnicode_FromUnicode`
+* :c:func:`PyUnicode_GET_DATA_SIZE`
+* :c:func:`PyUnicode_GET_SIZE`
+* :c:func:`PyUnicode_GetSize`
+* :c:func:`PyUnicode_IS_COMPACT`
+* :c:func:`PyUnicode_IS_READY`
+* :c:func:`PyUnicode_READY`
+* :c:func:`Py_UNICODE_WSTR_LENGTH`
+* :c:func:`_PyUnicode_AsUnicode`
+* :c:macro:`PyUnicode_WCHAR_KIND`
+* :c:type:`PyUnicodeObject`
+* :c:func:`PyUnicode_InternImmortal()`
+
+
+.. _whatsnew311-c-api-removed:
 
 Removed
 -------
@@ -2248,6 +2419,8 @@ Removed
 * Remove the ``HAVE_PY_SET_53BIT_PRECISION`` macro (moved to the internal C
   API).
   (Contributed by Victor Stinner in :issue:`45412`.)
+
+.. _whatsnew311-pep624:
 
 * Remove the :c:type:`Py_UNICODE` encoder APIs,
   as they have been deprecated since Python 3.3,
