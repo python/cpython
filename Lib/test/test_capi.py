@@ -1149,14 +1149,13 @@ class SubinterpreterTest(unittest.TestCase):
 
         THREADS = 1<<10
         FORK = 1<<15
-        SUBPROCESS = 1<<16
 
-        features = ['fork', 'subprocess', 'threads']
+        features = ['fork', 'threads']
         kwlist = [f'allow_{n}' for n in features]
         for config, expected in {
-            (True, True, True): FORK | SUBPROCESS | THREADS,
-            (False, False, False): 0,
-            (False, True, True): SUBPROCESS | THREADS,
+            (True, True): FORK | THREADS,
+            (False, False): 0,
+            (False, True): THREADS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {

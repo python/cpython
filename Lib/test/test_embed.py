@@ -1650,10 +1650,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_init_main_interpreter_settings(self):
         THREADS = 1<<10
         FORK = 1<<15
-        SUBPROCESS = 1<<16
         expected = {
             # All optional features should be enabled.
-            'feature_flags': THREADS | FORK | SUBPROCESS,
+            'feature_flags': THREADS | FORK,
         }
         out, err = self.run_embedded_interpreter(
             'test_init_main_interpreter_settings',

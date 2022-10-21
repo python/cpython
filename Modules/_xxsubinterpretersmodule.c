@@ -2005,7 +2005,6 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     PyThreadState *save_tstate = _PyThreadState_GET();
     const _PyInterpreterConfig config = {
         .allow_fork = !isolated,
-        .allow_subprocess = !isolated,
         .allow_threads = !isolated,
     };
     // XXX Possible GILState issues?

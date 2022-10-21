@@ -618,9 +618,6 @@ init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *con
     if (config->allow_fork) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
     }
-    if (config->allow_subprocess) {
-        interp->feature_flags |= Py_RTFLAGS_SUBPROCESS;
-    }
     if (config->allow_threads) {
         interp->feature_flags |= Py_RTFLAGS_THREADS;
     }

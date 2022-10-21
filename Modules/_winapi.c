@@ -1089,13 +1089,6 @@ _winapi_CreateProcess_impl(PyObject *module,
         return NULL;
     }
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_SUBPROCESS)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "subprocess not supported for isolated subinterpreters");
-        return NULL;
-    }
-
     ZeroMemory(&si, sizeof(si));
     si.StartupInfo.cb = sizeof(si);
 
