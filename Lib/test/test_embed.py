@@ -1649,10 +1649,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_main_interpreter_settings(self):
         THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
         FORK = 1<<15
         expected = {
             # All optional features should be enabled.
-            'feature_flags': THREADS | FORK,
+            'feature_flags': FORK | THREADS | DAEMON_THREADS,
         }
         out, err = self.run_embedded_interpreter(
             'test_init_main_interpreter_settings',

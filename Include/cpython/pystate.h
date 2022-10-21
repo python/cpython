@@ -14,6 +14,9 @@ might not be allowed in the current interpreter (i.e. os.fork() would fail).
 /* Set if threads are allowed. */
 #define Py_RTFLAGS_THREADS (1UL << 10)
 
+/* Set if daemon threads are allowed. */
+#define Py_RTFLAGS_DAEMON_THREADS (1UL << 11)
+
 /* Set if os.fork() is allowed. */
 #define Py_RTFLAGS_FORK (1UL << 15)
 

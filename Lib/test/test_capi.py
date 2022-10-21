@@ -1148,14 +1148,15 @@ class SubinterpreterTest(unittest.TestCase):
         import json
 
         THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
         FORK = 1<<15
 
-        features = ['fork', 'threads']
+        features = ['fork', 'threads', 'daemon_threads']
         kwlist = [f'allow_{n}' for n in features]
         for config, expected in {
-            (True, True): FORK | THREADS,
-            (False, False): 0,
-            (False, True): THREADS,
+            (True, True, True): FORK | THREADS | DAEMON_THREADS,
+            (False, False, False): 0,
+            (False, True, False): THREADS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {

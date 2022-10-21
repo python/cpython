@@ -2006,6 +2006,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     const _PyInterpreterConfig config = {
         .allow_fork = !isolated,
         .allow_threads = !isolated,
+        .allow_daemon_threads = !isolated,
     };
     // XXX Possible GILState issues?
     PyThreadState *tstate = _Py_NewInterpreterFromConfig(&config);
