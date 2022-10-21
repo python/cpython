@@ -6750,8 +6750,14 @@ type_ready_set_new(PyTypeObject *type)
             }
         }
         else {
-            // tp_new is NULL: inherit tp_new from base
-            type->tp_new = base->tp_new;
+            // set tp_new to object_new if base class is not instantiable
+            if (base->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION) {
+                type->tp_new = object_new;
+            }
+            else {
+                // tp_new is NULL: inherit tp_new from base
+                type->tp_new = base->tp_new;
+            }
         }
     }
     else {
