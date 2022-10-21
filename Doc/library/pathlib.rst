@@ -1250,7 +1250,7 @@ call fails (for example because the path doesn't exist).
    (func, path, exc_info) where func is platform and implementation
    dependent; path is the argument to that function that caused it to
    fail; and exc_info is a tuple returned by :func:`sys.exc_info`.
-   
+
    Unlike :func:`shutil.rmtree`, *on_error* to ``None`` means ignore all errors.
 
 .. method:: Path.samefile(other_path)
