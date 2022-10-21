@@ -612,10 +612,10 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 
 
 static void
-init_interp_settings(PyInterpreterState *interp, const PyConfig *config)
+init_interp_settings(PyInterpreterState *interp, const PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
-    if (!config->_isolated_interpreter) {
+    if (!config->isolated) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
         interp->feature_flags |= Py_RTFLAGS_SUBPROCESS;
         interp->feature_flags |= Py_RTFLAGS_THREADS;
@@ -650,7 +650,7 @@ init_interp_create_gil(PyThreadState *tstate)
 
 static PyStatus
 pycore_create_interpreter(_PyRuntimeState *runtime,
-                          const PyConfig *config,
+                          const PyConfig *src_config,
                           PyThreadState **tstate_p)
 {
     /* Auto-thread-state API */
@@ -665,12 +665,15 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
     assert(_Py_IsMainInterpreter(interp));
 
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    init_interp_settings(interp, config);
+    const PyInterpreterConfig config = {
+        .isolated = 0,
+    };
+    init_interp_settings(interp, &config);
 
     PyThreadState *tstate = PyThreadState_New(interp);
     if (tstate == NULL) {
@@ -2026,7 +2029,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     }
     interp->config._isolated_interpreter = config->isolated;
 
-    init_interp_settings(interp, src_config);
+    init_interp_settings(interp, config);
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
