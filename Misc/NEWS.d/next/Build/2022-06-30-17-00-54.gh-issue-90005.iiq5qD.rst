@@ -1,0 +1,1 @@
+Fix building ``_ctypes`` extension without ``pkg-config``.

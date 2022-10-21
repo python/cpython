@@ -183,6 +183,8 @@ automatically enabled, if available on your platform (see
    Automatic enabling of tab-completion and history editing.
 
 
+.. _using-on-generic-options:
+
 Generic options
 ~~~~~~~~~~~~~~~
 
@@ -190,8 +192,28 @@ Generic options
                -h
                --help
 
-   Print a short description of all command line options.
+   Print a short description of all command line options and corresponding
+   environment variables and exit.
 
+.. cmdoption:: --help-env
+
+   Print a short description of Python-specific environment variables
+   and exit.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --help-xoptions
+
+   Print a description of implementation-specific :option:`-X` options
+   and exit.
+
+   .. versionadded:: 3.11
+
+.. cmdoption:: --help-all
+
+   Print complete usage information and exit.
+
+   .. versionadded:: 3.11
 
 .. cmdoption:: -V
                --version
@@ -211,6 +233,7 @@ Generic options
 
    .. versionadded:: 3.6
       The ``-VV`` option.
+
 
 .. _using-on-misc-options:
 
@@ -248,8 +271,11 @@ Miscellaneous options
 
 .. cmdoption:: -d
 
-   Turn on parser debugging output (for expert only, depending on compilation
-   options).  See also :envvar:`PYTHONDEBUG`.
+   Turn on parser debugging output (for expert only).
+   See also the :envvar:`PYTHONDEBUG` environment variable.
+
+   This option requires a :ref:`debug build of Python <debug-build>`, otherwise
+   it's ignored.
 
 
 .. cmdoption:: -E
@@ -342,7 +368,7 @@ Miscellaneous options
    between repeated invocations of Python.
 
    Hash randomization is intended to provide protection against a
-   denial-of-service caused by carefully-chosen inputs that exploit the worst
+   denial-of-service caused by carefully chosen inputs that exploit the worst
    case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
    http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
@@ -438,7 +464,7 @@ Miscellaneous options
    whether the actual warning category of the message is a subclass of the
    specified warning category.
 
-   The *module* field matches the (fully-qualified) module name; this match is
+   The *module* field matches the (fully qualified) module name; this match is
    case-sensitive.
 
    The *lineno* field matches the line number, where zero matches all line
@@ -456,6 +482,7 @@ Miscellaneous options
 
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
+
 
 .. cmdoption:: -x
 
@@ -478,6 +505,9 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
+   * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
+     length limitation <int_max_str_digits>`.  See also
+     :envvar:`PYTHONINTMAXSTRDIGITS`.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
@@ -508,6 +538,12 @@ Miscellaneous options
      development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off".
+   * ``-X perf`` to activate compatibility mode with the ``perf`` profiler.
+     When this option is activated, the Linux ``perf`` profiler will be able to
+     report Python calls. This option is only available on some platforms and
+     will do nothing if is not supported on the current system. The default value
+     is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`
+     for more information.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -549,6 +585,12 @@ Miscellaneous options
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
 
+   .. versionadded:: 3.11
+      The ``-X int_max_str_digits`` option.
+
+   .. versionadded:: 3.12
+      The ``-X perf`` option.
+
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -557,7 +599,7 @@ Options you shouldn't use
 
    Reserved for use by Jython_.
 
-.. _Jython: http://www.jython.org/
+.. _Jython: https://www.jython.org/
 
 
 .. _using-on-envvars:
@@ -660,6 +702,9 @@ conflict.
    :option:`-d` option.  If set to an integer, it is equivalent to specifying
    :option:`-d` multiple times.
 
+   This environment variable requires a :ref:`debug build of Python
+   <debug-build>`, otherwise it's ignored.
+
 
 .. envvar:: PYTHONINSPECT
 
@@ -724,6 +769,13 @@ conflict.
 
    .. versionadded:: 3.2.3
 
+.. envvar:: PYTHONINTMAXSTRDIGITS
+
+   If this variable is set to an integer, it is used to configure the
+   interpreter's global :ref:`integer string conversion length limitation
+   <int_max_str_digits>`.
+
+   .. versionadded:: 3.11
 
 .. envvar:: PYTHONIOENCODING
 
@@ -950,7 +1002,7 @@ conflict.
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
-   .. availability:: \*nix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.
@@ -994,6 +1046,13 @@ conflict.
 
    .. versionadded:: 3.11
 
+.. envvar:: PYTHONPERFSUPPORT
+
+   If this variable is set to a nonzero value, it activates compatibility mode
+   with the ``perf`` profiler so Python calls can be detected by it. See the
+   :ref:`perf_profiling` section for more information.
+
+   .. versionadded:: 3.12
 
 
 Debug-mode variables

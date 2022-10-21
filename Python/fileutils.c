@@ -603,9 +603,9 @@ _Py_DecodeLocaleEx(const char* arg, wchar_t **wstr, size_t *wlen,
     return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
                             errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_DecodeUTF8Ex(arg, strlen(arg), wstr, wlen, reason,
@@ -795,9 +795,9 @@ encode_locale_ex(const wchar_t *text, char **str, size_t *error_pos,
     return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
                             raw_malloc, errors);
 #else
-    int use_utf8 = (Py_UTF8Mode == 1);
+    int use_utf8 = (_PyRuntime.preconfig.utf8_mode >= 1);
 #ifdef MS_WINDOWS
-    use_utf8 |= !Py_LegacyWindowsFSEncodingFlag;
+    use_utf8 |= (_PyRuntime.preconfig.legacy_windows_fs_encoding == 0);
 #endif
     if (use_utf8) {
         return _Py_EncodeUTF8Ex(text, str, error_pos, reason,
@@ -2366,7 +2366,7 @@ _Py_dup(int fd)
         return -1;
     }
 
-#else
+#elif HAVE_DUP
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     fd = dup(fd);
@@ -2383,6 +2383,10 @@ _Py_dup(int fd)
         _Py_END_SUPPRESS_IPH
         return -1;
     }
+#else
+    errno = ENOTSUP;
+    PyErr_SetFromErrno(PyExc_OSError);
+    return -1;
 #endif
     return fd;
 }

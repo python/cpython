@@ -25,6 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -32,9 +33,6 @@ Using the :mod:`subprocess` Module
 The recommended approach to invoking subprocesses is to use the :func:`run`
 function for all use cases it can handle. For more advanced use cases, the
 underlying :class:`Popen` interface can be used directly.
-
-The :func:`run` function was added in Python 3.5; if you need to retain
-compatibility with older versions, see the :ref:`call-function-trio` section.
 
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
@@ -195,7 +193,10 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
     .. attribute:: output
 
         Output of the child process if it was captured by :func:`run` or
-        :func:`check_output`.  Otherwise, ``None``.
+        :func:`check_output`.  Otherwise, ``None``.  This is always
+        :class:`bytes` when any output was captured regardless of the
+        ``text=True`` setting.  It may remain ``None`` instead of ``b''``
+        when no output was observed.
 
     .. attribute:: stdout
 
@@ -204,7 +205,9 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
     .. attribute:: stderr
 
         Stderr output of the child process if it was captured by :func:`run`.
-        Otherwise, ``None``.
+        Otherwise, ``None``.  This is always :class:`bytes` when stderr output
+        was captured regardless of the ``text=True`` setting.  It may remain
+        ``None`` instead of ``b''`` when no stderr output was observed.
 
     .. versionadded:: 3.3
 
@@ -362,7 +365,7 @@ functions.
 
    .. warning::
 
-      For maximum reliability, use a fully-qualified path for the executable.
+      For maximum reliability, use a fully qualified path for the executable.
       To search for an unqualified name on :envvar:`PATH`, use
       :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
       is the recommended way to launch the current Python interpreter again,
@@ -826,7 +829,7 @@ Instances of the :class:`Popen` class have the following methods:
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
       CTRL_BREAK_EVENT can be sent to processes started with a *creationflags*
-      parameter which includes `CREATE_NEW_PROCESS_GROUP`.
+      parameter which includes ``CREATE_NEW_PROCESS_GROUP``.
 
 
 .. method:: Popen.terminate()
@@ -1476,7 +1479,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/kill $$')
       (-15, '')
 
-   .. availability:: POSIX & Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3.4
       Windows support was added.
@@ -1498,7 +1501,7 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   .. availability:: POSIX & Windows.
+   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.3.4
       Windows support added
@@ -1556,7 +1559,7 @@ On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 
-If you ever encounter a presumed highly-unusual situation where you need to
+If you ever encounter a presumed highly unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
 :attr:`subprocess._USE_VFORK` attribute to a false value.
 

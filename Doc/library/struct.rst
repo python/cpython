@@ -82,7 +82,7 @@ The module defines the following exception and functions:
 
    Iteratively unpack from the buffer *buffer* according to the format
    string *format*.  This function returns an iterator which will read
-   equally-sized chunks from the buffer until all its contents have been
+   equally sized chunks from the buffer until all its contents have been
    consumed.  The buffer's size in bytes must be a multiple of the size
    required by the format, as reflected by :func:`calcsize`.
 
@@ -146,9 +146,10 @@ If the first character is not one of these, ``'@'`` is assumed.
 
 Native byte order is big-endian or little-endian, depending on the host
 system. For example, Intel x86 and AMD64 (x86-64) are little-endian;
-Motorola 68000 and PowerPC G5 are big-endian; ARM and Intel Itanium feature
-switchable endianness (bi-endian). Use ``sys.byteorder`` to check the
-endianness of your system.
+IBM z and most legacy architectures are big-endian;
+and ARM, RISC-V and IBM Power feature switchable endianness
+(bi-endian, though the former two are nearly always little-endian in practice).
+Use ``sys.byteorder`` to check the endianness of your system.
 
 Native size and alignment are determined using the C compiler's
 ``sizeof`` expression.  This is always combined with native byte order.
@@ -195,46 +196,46 @@ platform-dependent.
 +========+==========================+====================+================+============+
 | ``x``  | pad byte                 | no value           |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``c``  | :c:type:`char`           | bytes of length 1  | 1              |            |
+| ``c``  | :c:expr:`char`           | bytes of length 1  | 1              |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``b``  | :c:type:`signed char`    | integer            | 1              | \(1), \(2) |
+| ``b``  | :c:expr:`signed char`    | integer            | 1              | \(1), \(2) |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``B``  | :c:type:`unsigned char`  | integer            | 1              | \(2)       |
+| ``B``  | :c:expr:`unsigned char`  | integer            | 1              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``?``  | :c:type:`_Bool`          | bool               | 1              | \(1)       |
+| ``?``  | :c:expr:`_Bool`          | bool               | 1              | \(1)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``h``  | :c:type:`short`          | integer            | 2              | \(2)       |
+| ``h``  | :c:expr:`short`          | integer            | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``H``  | :c:type:`unsigned short` | integer            | 2              | \(2)       |
+| ``H``  | :c:expr:`unsigned short` | integer            | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``i``  | :c:type:`int`            | integer            | 4              | \(2)       |
+| ``i``  | :c:expr:`int`            | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``I``  | :c:type:`unsigned int`   | integer            | 4              | \(2)       |
+| ``I``  | :c:expr:`unsigned int`   | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``l``  | :c:type:`long`           | integer            | 4              | \(2)       |
+| ``l``  | :c:expr:`long`           | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``L``  | :c:type:`unsigned long`  | integer            | 4              | \(2)       |
+| ``L``  | :c:expr:`unsigned long`  | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``q``  | :c:type:`long long`      | integer            | 8              | \(2)       |
+| ``q``  | :c:expr:`long long`      | integer            | 8              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``Q``  | :c:type:`unsigned long   | integer            | 8              | \(2)       |
+| ``Q``  | :c:expr:`unsigned long   | integer            | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
+| ``n``  | :c:expr:`ssize_t`        | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
+| ``N``  | :c:expr:`size_t`         | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``e``  | \(6)                     | float              | 2              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``f``  | :c:type:`float`          | float              | 4              | \(4)       |
+| ``f``  | :c:expr:`float`          | float              | 4              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``d``  | :c:type:`double`         | float              | 8              | \(4)       |
+| ``d``  | :c:expr:`double`         | float              | 8              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``s``  | :c:type:`char[]`         | bytes              |                |            |
+| ``s``  | :c:expr:`char[]`         | bytes              |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``p``  | :c:type:`char[]`         | bytes              |                |            |
+| ``p``  | :c:expr:`char[]`         | bytes              |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``P``  | :c:type:`void \*`        | integer            |                | \(5)       |
+| ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 
 .. versionchanged:: 3.3
@@ -249,8 +250,8 @@ Notes:
 (1)
    .. index:: single: ? (question mark); in struct format strings
 
-   The ``'?'`` conversion code corresponds to the :c:type:`_Bool` type defined by
-   C99. If this type is not available, it is simulated using a :c:type:`char`. In
+   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type defined by
+   C99. If this type is not available, it is simulated using a :c:expr:`char`. In
    standard mode, it is always represented by one byte.
 
 (2)
@@ -466,6 +467,6 @@ The :mod:`struct` module also defines the following type:
 
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 
-.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_floating_point#IEEE_754-2008
+.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision
 
 .. _IETF RFC 1700: https://tools.ietf.org/html/rfc1700

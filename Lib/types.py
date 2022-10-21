@@ -60,7 +60,7 @@ except TypeError as exc:
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C, _c, _ag  # Not for export
+del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
@@ -80,7 +80,7 @@ def resolve_bases(bases):
     updated = False
     shift = 0
     for i, base in enumerate(bases):
-        if isinstance(base, type) and not isinstance(base, GenericAlias):
+        if isinstance(base, type):
             continue
         if not hasattr(base, "__mro_entries__"):
             continue

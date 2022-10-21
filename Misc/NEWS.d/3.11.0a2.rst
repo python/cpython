@@ -702,16 +702,6 @@ details. Patch by Jochem Schulenklopper.
 
 ..
 
-.. bpo: 10572
-.. date: 2021-01-07-01-25-38
-.. nonce: gEEZ9z
-.. section: Library
-
-Move :mod:`sqlite3` tests to ``/Lib/test/test_sqlite3``. Patch by Erlend E.
-Aasland.
-
-..
-
 .. bpo: 41374
 .. date: 2020-07-27-19-21-05
 .. nonce: cd-kFL
@@ -953,6 +943,16 @@ compare normalized paths. Patch by Victor Stinner.
 Fix test_name_error_suggestions_do_not_trigger_for_too_many_locals() of
 test_exceptions if a directory name contains "a1" (like "Python-3.11.0a1"):
 use a stricter regular expression. Patch by Victor Stinner.
+
+..
+
+.. bpo: 10572
+.. date: 2021-01-07-01-25-38
+.. nonce: gEEZ9z
+.. section: Tests
+
+Rename :mod:`sqlite3` tests from ``test_sqlite`` to ``test_sqlite3``, and
+relocate them to ``Lib/test/test_sqlite3``. Patch by Erlend E. Aasland.
 
 ..
 

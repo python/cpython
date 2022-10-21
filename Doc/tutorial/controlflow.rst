@@ -253,8 +253,10 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
 A :keyword:`match` statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  This is superficially
 similar to a switch statement in C, Java or JavaScript (and many
-other languages), but it can also extract components (sequence elements or
-object attributes) from the value into variables.
+other languages), but it's more similar to pattern matching in
+languages like Rust or Haskell. Only the first pattern that matches
+gets executed and it can also extract components (sequence elements
+or object attributes) from the value into variables.
 
 The simplest form compares a subject value against one or more literals::
 
