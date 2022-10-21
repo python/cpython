@@ -1246,7 +1246,7 @@ handle_eval_breaker:
         while (opcode == EXTENDED_ARG) {
             // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
             // Inline the EXTENDED_ARG here, so we can avoid branching there:
-            INSTRUCTION_START();
+            INSTRUCTION_START(EXTENDED_ARG);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
             // Make sure the next instruction isn't a RESUME, since that needs
