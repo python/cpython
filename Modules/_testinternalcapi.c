@@ -550,6 +550,29 @@ _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
 }
 
 
+static PyObject *
+get_interp_settings(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = _PyInterpreterState_Main();
+    PyObject *flags = PyLong_FromUnsignedLong(interp->feature_flags);
+    if (flags == NULL) {
+        return NULL;
+    }
+    PyObject *settings = PyDict_New();
+    if (settings == NULL) {
+        Py_DECREF(flags);
+        return NULL;
+    }
+    int res = PyDict_SetItemString(settings, "feature_flags", flags);
+    Py_DECREF(flags);
+    if (res != 0) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+    return settings;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -569,6 +592,7 @@ static PyMethodDef TestMethods[] = {
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
+    {"get_interp_settings", get_interp_settings, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

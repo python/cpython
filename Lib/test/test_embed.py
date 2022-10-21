@@ -1647,6 +1647,25 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 self.check_all_configs("test_init_use_frozen_modules", config,
                                        api=API_PYTHON, env=env)
 
+    def test_init_main_interpreter_settings(self):
+        THREADS = 1<<10
+        FORK = 1<<15
+        SUBPROCESS = 1<<16
+        expected = {
+            # All optional features should be enabled.
+            'feature_flags': THREADS | FORK | SUBPROCESS,
+        }
+        out, err = self.run_embedded_interpreter(
+            'test_init_main_interpreter_settings',
+        )
+        self.assertEqual(err, '')
+        try:
+            out = json.loads(out)
+        except json.JSONDecodeError:
+            self.fail(f'fail to decode stdout: {out!r}')
+
+        self.assertEqual(out, expected)
+
 
 class SetConfigTests(unittest.TestCase):
     def test_set_config(self):
