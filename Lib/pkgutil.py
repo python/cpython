@@ -465,6 +465,10 @@ def get_loader(module_or_name):
     If the named module is not already imported, its containing package
     (if any) is imported, in order to establish the package __path__.
     """
+    warnings.warn("`pkgutil.get_loader` is deprecated since Python 3.12; "
+                  "this function is slated for removal in Python 3.14, "
+                  "use `importlib.util.find_spec` instead",
+                  DeprecationWarning)
     if module_or_name in sys.modules:
         module_or_name = sys.modules[module_or_name]
         if module_or_name is None:
@@ -489,6 +493,10 @@ def find_loader(fullname):
     importlib.util.find_spec that converts most failures to ImportError
     and only returns the loader rather than the full spec
     """
+    warnings.warn("`pkgutil.find_loader` is deprecated since Python 3.12; "
+                  "this function is slated for removal in Python 3.14, "
+                  "use `importlib.util.find_spec` instead",
+                  DeprecationWarning)
     if fullname.startswith('.'):
         msg = "Relative module name {!r} not supported".format(fullname)
         raise ImportError(msg)

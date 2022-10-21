@@ -1,0 +1,1 @@
+Deprecate :func:`pkgutil.find_module` and :func:`pkgutil.get_module`.

@@ -251,6 +251,10 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
+* :func:`pkgutil.find_module` and :func:`pkgutil.get_module`
+  now raise :exc:`DeprecationWarning`,
+  use :func:`importlib.util.find_spec` instead.
+
 
 Pending Removal in Python 3.13
 ------------------------------
