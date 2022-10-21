@@ -189,7 +189,7 @@ wider range of codecs when working with binary files:
 
    .. note::
 
-      If ``encoding`` is not None, then the
+      If *encoding* is not ``None``, then the
       underlying encoded files are always opened in binary mode.
       No automatic conversion of ``'\n'`` is done on reading and writing.
       The *mode* argument may be any binary mode acceptable to the built-in
