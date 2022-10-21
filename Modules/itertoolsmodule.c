@@ -157,30 +157,31 @@ batched_next(batchedobject *bo)
     for (i=0 ; i < n ; i++) {
         item = (*Py_TYPE(it)->tp_iternext)(it);
         if (item == NULL) {
-            if (PyErr_Occurred()) {
-                if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
-                    PyErr_Clear();
-                } else {
-                    /* input raised an exception other than StopIteration */
-                    Py_CLEAR(bo->it);
-                    Py_DECREF(result);
-                    return NULL;
-                }
-            }
-            break;
+            goto null_item;
         }
         PyList_SET_ITEM(result, i, item);
+    }
+    return result;
+
+ null_item:
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            PyErr_Clear();
+        } else {
+            /* input raised an exception other than StopIteration */
+            Py_CLEAR(bo->it);
+            Py_DECREF(result);
+            return NULL;
+        }
     }
     if (i == 0) {
         Py_CLEAR(bo->it);
         Py_DECREF(result);
         return NULL;
     }
-    if (i < n) {
-        PyObject *short_list = PyList_GetSlice(result, 0, i);
-        Py_SETREF(result, short_list);
-    }
-    return result;
+    PyObject *short_list = PyList_GetSlice(result, 0, i);
+    Py_DECREF(result);
+    return short_list;
 }
 
 static PyTypeObject batched_type = {
