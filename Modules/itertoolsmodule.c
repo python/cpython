@@ -154,8 +154,9 @@ batched_next(batchedobject *bo)
     if (result == NULL) {
         return NULL;
     }
+    iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
     for (i=0 ; i < n ; i++) {
-        item = (*Py_TYPE(it)->tp_iternext)(it);
+        item = iternext(it);
         if (item == NULL) {
             goto null_item;
         }
