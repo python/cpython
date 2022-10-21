@@ -269,7 +269,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* first clean reference cycle through stored exception traceback */
     _PyErr_ClearExcState(&gen->gi_exc_state);
 
-    gen->gi_frame_state = FRAME_CLEARED;
+    assert(gen->gi_frame_state == FRAME_CLEARED);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
