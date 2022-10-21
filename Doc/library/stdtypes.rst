@@ -4372,9 +4372,7 @@ A dictionary's keys are *almost* arbitrary values.  Values that are not
 mutable types (that are compared by value rather than by object identity) may
 not be used as keys.
 Values that compare equal (such as ``1``, ``1.0``, and ``True``)
-can be used interchangeably to index the same dictionary entry.  (Note
-however, that since computers store floating-point numbers as approximations it
-is usually unwise to use them as dictionary keys.)
+can be used interchangeably to index the same dictionary entry.
 
 .. class:: dict(**kwargs)
            dict(mapping, **kwargs)
