@@ -375,7 +375,7 @@ exception group with an empty message string. ::
 
    >>> try:
    ...     raise BlockingIOError
-   ... except* OSError as e:
+   ... except* BlockingIOError as e:
    ...     print(repr(e))
    ...
    ExceptionGroup('', (BlockingIOError()))
