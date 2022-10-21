@@ -155,7 +155,7 @@ batched_next(batchedobject *bo)
         return NULL;
     }
     iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
-    PyObject **items = PySequence_Fast_ITEMS(result);
+    PyObject **items = _PyList_ITEMS(result);
     for (i=0 ; i < n ; i++) {
         item = iternext(it);
         if (item == NULL) {
