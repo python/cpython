@@ -13,9 +13,9 @@ import importlib
 from test.support.script_helper import assert_python_failure
 
 
-class LoaderTests(abc.LoaderTests):
+class LoaderTests:
 
-    """Test load_module() for extension modules."""
+    """Test ExtensionFileLoader."""
 
     def setUp(self):
         if not self.machinery.EXTENSION_SUFFIXES:
@@ -32,15 +32,6 @@ class LoaderTests(abc.LoaderTests):
             warnings.simplefilter("ignore", DeprecationWarning)
             return self.loader.load_module(fullname)
 
-    def test_load_module_API(self):
-        # Test the default argument for load_module().
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            self.loader.load_module()
-            self.loader.load_module(None)
-            with self.assertRaises(ImportError):
-                self.load_module('XXX')
-
     def test_equality(self):
         other = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
                                                    util.EXTENSIONS.file_path)
@@ -50,6 +41,15 @@ class LoaderTests(abc.LoaderTests):
         other = self.machinery.ExtensionFileLoader('_' + util.EXTENSIONS.name,
                                                    util.EXTENSIONS.file_path)
         self.assertNotEqual(self.loader, other)
+
+    def test_load_module_API(self):
+        # Test the default argument for load_module().
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            self.loader.load_module()
+            self.loader.load_module(None)
+            with self.assertRaises(ImportError):
+                self.load_module('XXX')
 
     def test_module(self):
         with util.uncache(util.EXTENSIONS.name):
@@ -68,12 +68,6 @@ class LoaderTests(abc.LoaderTests):
     # No extension module in a package available for testing.
     test_lacking_parent = None
 
-    def test_module_reuse(self):
-        with util.uncache(util.EXTENSIONS.name):
-            module1 = self.load_module(util.EXTENSIONS.name)
-            module2 = self.load_module(util.EXTENSIONS.name)
-            self.assertIs(module1, module2)
-
     # No easy way to trigger a failure after a successful import.
     test_state_after_failure = None
 
@@ -83,6 +77,12 @@ class LoaderTests(abc.LoaderTests):
             self.load_module(name)
         self.assertEqual(cm.exception.name, name)
 
+    def test_module_reuse(self):
+        with util.uncache(util.EXTENSIONS.name):
+            module1 = self.load_module(util.EXTENSIONS.name)
+            module2 = self.load_module(util.EXTENSIONS.name)
+            self.assertIs(module1, module2)
+
     def test_is_package(self):
         self.assertFalse(self.loader.is_package(util.EXTENSIONS.name))
         for suffix in self.machinery.EXTENSION_SUFFIXES:
@@ -90,9 +90,92 @@ class LoaderTests(abc.LoaderTests):
             loader = self.machinery.ExtensionFileLoader('pkg', path)
             self.assertTrue(loader.is_package('pkg'))
 
+
 (Frozen_LoaderTests,
  Source_LoaderTests
  ) = util.test_both(LoaderTests, machinery=machinery)
+
+
+class SinglePhaseExtensionModuleTests(abc.LoaderTests):
+    # Test loading extension modules without multi-phase initialization.
+
+    def setUp(self):
+        if not self.machinery.EXTENSION_SUFFIXES:
+            raise unittest.SkipTest("Requires dynamic loading support.")
+        self.name = '_testsinglephase'
+        if self.name in sys.builtin_module_names:
+            raise unittest.SkipTest(
+                f"{self.name} is a builtin module"
+            )
+        finder = self.machinery.FileFinder(None)
+        self.spec = importlib.util.find_spec(self.name)
+        assert self.spec
+        self.loader = self.machinery.ExtensionFileLoader(
+            self.name, self.spec.origin)
+
+    def load_module(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return self.loader.load_module(self.name)
+
+    def load_module_by_name(self, fullname):
+        # Load a module from the test extension by name.
+        origin = self.spec.origin
+        loader = self.machinery.ExtensionFileLoader(fullname, origin)
+        spec = importlib.util.spec_from_loader(fullname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        return module
+
+    def test_module(self):
+        # Test loading an extension module.
+        with util.uncache(self.name):
+            module = self.load_module()
+            for attr, value in [('__name__', self.name),
+                                ('__file__', self.spec.origin),
+                                ('__package__', '')]:
+                self.assertEqual(getattr(module, attr), value)
+            with self.assertRaises(AttributeError):
+                module.__path__
+            self.assertIs(module, sys.modules[self.name])
+            self.assertIsInstance(module.__loader__,
+                                  self.machinery.ExtensionFileLoader)
+
+    # No extension module as __init__ available for testing.
+    test_package = None
+
+    # No extension module in a package available for testing.
+    test_lacking_parent = None
+
+    # No easy way to trigger a failure after a successful import.
+    test_state_after_failure = None
+
+    def test_unloadable(self):
+        name = 'asdfjkl;'
+        with self.assertRaises(ImportError) as cm:
+            self.load_module_by_name(name)
+        self.assertEqual(cm.exception.name, name)
+
+    def test_unloadable_nonascii(self):
+        # Test behavior with nonexistent module with non-ASCII name.
+        name = 'fo\xf3'
+        with self.assertRaises(ImportError) as cm:
+            self.load_module_by_name(name)
+        self.assertEqual(cm.exception.name, name)
+
+    # It may make sense to add the equivalent to
+    # the following MultiPhaseExtensionModuleTests tests:
+    #
+    #  * test_nonmodule
+    #  * test_nonmodule_with_methods
+    #  * test_bad_modules
+    #  * test_nonascii
+
+
+(Frozen_SinglePhaseExtensionModuleTests,
+ Source_SinglePhaseExtensionModuleTests
+ ) = util.test_both(SinglePhaseExtensionModuleTests, machinery=machinery)
+
 
 class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     # Test loading extension modules with multi-phase initialization (PEP 489).

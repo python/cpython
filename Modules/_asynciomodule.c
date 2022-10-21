@@ -3,10 +3,11 @@
 #endif
 
 #include "Python.h"
-#include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_runtime_init.h"  // _Py_ID()
-#include <stddef.h>               // offsetof()
+#include "pycore_pyerrors.h"        // _PyErr_ClearExcState()
+#include "pycore_pystate.h"         // _PyThreadState_GET()
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_global_objects.h"  // _Py_ID()
+#include <stddef.h>                 // offsetof()
 
 
 /*[clinic input]

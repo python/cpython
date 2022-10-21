@@ -13,7 +13,6 @@
 
 #undef Py_BUILD_CORE_MODULE
 #undef Py_BUILD_CORE_BUILTIN
-#define NEEDS_PY_IDENTIFIER
 
 /* Always enable assertions */
 #undef NDEBUG
@@ -3358,7 +3357,6 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
 static void
 slot_tp_del(PyObject *self)
 {
-    _Py_IDENTIFIER(__tp_del__);
     PyObject *del, *res;
     PyObject *error_type, *error_value, *error_traceback;
 
@@ -3369,15 +3367,21 @@ slot_tp_del(PyObject *self)
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
+    PyObject *tp_del = PyUnicode_InternFromString("__tp_del__");
+    if (tp_del == NULL) {
+        PyErr_WriteUnraisable(NULL);
+        PyErr_Restore(error_type, error_value, error_traceback);
+        return;
+    }
     /* Execute __del__ method, if any. */
-    del = _PyObject_LookupSpecialId(self, &PyId___tp_del__);
+    del = _PyType_Lookup(Py_TYPE(self), tp_del);
+    Py_DECREF(tp_del);
     if (del != NULL) {
-        res = PyObject_CallNoArgs(del);
+        res = PyObject_CallOneArg(del, self);
         if (res == NULL)
             PyErr_WriteUnraisable(del);
         else
             Py_DECREF(res);
-        Py_DECREF(del);
     }
 
     /* Restore the saved exception. */
@@ -4699,7 +4703,6 @@ dict_get_version(PyObject *self, PyObject *args)
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(send);
     PyGenObject *gen;
 
     if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
@@ -4716,7 +4719,7 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
          because we check for signals before every bytecode operation.
      */
     raise(SIGINT);
-    return _PyObject_CallMethodIdOneArg((PyObject *)gen, &PyId_send, Py_None);
+    return PyObject_CallMethod((PyObject *)gen, "send", "O", Py_None);
 }
 
 
@@ -5605,6 +5608,38 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+test_frame_getvar(PyObject *self, PyObject *args)
+{
+    PyObject *frame, *name;
+    if (!PyArg_ParseTuple(args, "OO", &frame, &name)) {
+        return NULL;
+    }
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+
+    return PyFrame_GetVar((PyFrameObject *)frame, name);
+}
+
+static PyObject *
+test_frame_getvarstring(PyObject *self, PyObject *args)
+{
+    PyObject *frame;
+    const char *name;
+    if (!PyArg_ParseTuple(args, "Oy", &frame, &name)) {
+        return NULL;
+    }
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+
+    return PyFrame_GetVarString((PyFrameObject *)frame, name);
+}
+
+
+static PyObject *
 eval_get_func_name(PyObject *self, PyObject *func)
 {
     return PyUnicode_FromString(PyEval_GetFuncName(func));
@@ -6291,6 +6326,8 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
+    {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
     {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},

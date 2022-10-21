@@ -1,0 +1,3 @@
+Remove PCbuild/lib.pyproj: it's not used for anything, is only a minor
+convenience for Visual Studio users (who probably mostly don't even know
+about it), and it takes a lot of maintenance effort to keep updated.

@@ -1,3 +1,8 @@
+# TODO: This module was deprecated and removed from CPython 3.12
+# Now it is a test-only helper. Any attempts to rewrite exising tests that
+# are using this module and remove it completely are appreciated!
+# See: https://github.com/python/cpython/issues/72719
+
 # -*- Mode: Python; tab-width: 4 -*-
 #       Id: asynchat.py,v 2.26 2000/09/07 22:29:26 rushing Exp
 #       Author: Sam Rushing <rushing@nightmare.com>
@@ -45,15 +50,10 @@ command will be accumulated (using your own 'collect_incoming_data'
 method) up to the terminator, and then control will be returned to
 you - by calling your self.found_terminator() method.
 """
-import asyncore
+
 from collections import deque
 
-from warnings import _deprecated
-
-_DEPRECATION_MSG = ('The {name} module is deprecated and will be removed in '
-                    'Python {remove}. The recommended replacement is asyncio')
-_deprecated(__name__, _DEPRECATION_MSG, remove=(3, 12))
-
+from test.support import asyncore
 
 
 class async_chat(asyncore.dispatcher):

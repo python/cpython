@@ -1,0 +1,2 @@
+Print exception class name instead of its string representation when raising
+errors from :mod:`ctypes` calls.

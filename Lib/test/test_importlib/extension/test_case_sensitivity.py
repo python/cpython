@@ -8,7 +8,7 @@ importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 
 
-@unittest.skipIf(util.EXTENSIONS.filename is None, '_testcapi not available')
+@unittest.skipIf(util.EXTENSIONS.filename is None, f'{util.EXTENSIONS.name} not available')
 @util.case_insensitive_tests
 class ExtensionModuleCaseSensitivityTest(util.CASEOKTestBase):
 

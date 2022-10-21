@@ -79,6 +79,25 @@ See also :ref:`Reflection <reflection>`.
    .. versionadded:: 3.11
 
 
+.. c:function:: PyObject* PyFrame_GetVar(PyFrameObject *frame, PyObject *name)
+
+   Get the variable *name* of *frame*.
+
+   * Return a :term:`strong reference` to the variable value on success.
+   * Raise :exc:`NameError` and return ``NULL`` if the variable does not exist.
+   * Raise an exception and return ``NULL`` on error.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: PyObject* PyFrame_GetVarString(PyFrameObject *frame, const char *name)
+
+   Similar to :c:func:`PyFrame_GetVar`, but the variable name is a C string
+   encoded in UTF-8.
+
+   .. versionadded:: 3.12
+
+
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
    Get the *frame*'s ``f_locals`` attribute (:class:`dict`).

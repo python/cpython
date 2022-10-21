@@ -1,0 +1,1 @@
+Remove modules :mod:`asyncore` and :mod:`asynchat`, which were deprecated by :pep:`594`.

@@ -1,0 +1,4 @@
+Rather than changing :attr:`~types.CodeType.co_code`, the interpreter will
+now display a :exc:`RuntimeWarning` and assign :const:`None` to any fast
+locals that are left unbound after jumps or :keyword:`del`
+statements executed while tracing.

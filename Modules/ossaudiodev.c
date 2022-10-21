@@ -20,7 +20,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -542,9 +541,7 @@ oss_self(PyObject *self, PyObject *unused)
 static PyObject *
 oss_exit(PyObject *self, PyObject *unused)
 {
-    _Py_IDENTIFIER(close);
-
-    PyObject *ret = _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    PyObject *ret = PyObject_CallMethod(self, "close", NULL);
     if (!ret)
         return NULL;
     Py_DECREF(ret);

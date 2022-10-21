@@ -1,0 +1,1 @@
+Fix failure in :keyword:`except* <except_star>` with unhashable exceptions.

@@ -147,6 +147,7 @@ _testcapi
 _testconsole
 _testimportmultiple
 _testmultiphase
+_testsinglephase
 _tkinter
 pyexpat
 select

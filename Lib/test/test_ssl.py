@@ -9,6 +9,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import asyncore
 import socket
 import select
 import time
@@ -28,9 +29,6 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
-
-
-asyncore = warnings_helper.import_deprecated('asyncore')
 
 
 ssl = import_helper.import_module("ssl")

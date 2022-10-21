@@ -172,9 +172,7 @@ static FNFCIGETTEMPFILE(cb_gettempfile)
 static FNFCISTATUS(cb_status)
 {
     if (pv) {
-        _Py_IDENTIFIER(status);
-
-        PyObject *result = _PyObject_CallMethodId(pv, &PyId_status, "iii", typeStatus, cb1, cb2);
+        PyObject *result = PyObject_CallMethod(pv, "status", "iii", typeStatus, cb1, cb2);
         if (result == NULL)
             return -1;
         Py_DECREF(result);
@@ -185,9 +183,7 @@ static FNFCISTATUS(cb_status)
 static FNFCIGETNEXTCABINET(cb_getnextcabinet)
 {
     if (pv) {
-        _Py_IDENTIFIER(getnextcabinet);
-
-        PyObject *result = _PyObject_CallMethodId(pv, &PyId_getnextcabinet, "i", pccab->iCab);
+        PyObject *result = PyObject_CallMethod(pv, "getnextcabinet", "i", pccab->iCab);
         if (result == NULL)
             return -1;
         if (!PyBytes_Check(result)) {
