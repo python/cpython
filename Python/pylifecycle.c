@@ -615,9 +615,13 @@ static void
 init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
-    if (!config->isolated) {
+    if (config->allow_fork) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
+    }
+    if (config->allow_subprocess) {
         interp->feature_flags |= Py_RTFLAGS_SUBPROCESS;
+    }
+    if (config->allow_threads) {
         interp->feature_flags |= Py_RTFLAGS_THREADS;
     }
 }
@@ -670,9 +674,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    const _PyInterpreterConfig config = {
-        .isolated = 0,
-    };
+    const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
     init_interp_settings(interp, &config);
 
     PyThreadState *tstate = PyThreadState_New(interp);
@@ -2075,7 +2077,7 @@ _Py_NewInterpreterFromConfig(const _PyInterpreterConfig *config)
 PyThreadState *
 Py_NewInterpreter(void)
 {
-    _PyInterpreterConfig config = { 0 };
+    const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
     return _Py_NewInterpreterFromConfig(&config);
 }
 

@@ -244,8 +244,17 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
 /* --- PyInterpreterConfig ------------------------------------ */
 
 typedef struct {
-    int isolated;
+    int allow_fork;
+    int allow_subprocess;
+    int allow_threads;
 } _PyInterpreterConfig;
+
+#define _PyInterpreterConfig_LEGACY_INIT \
+    { \
+        .allow_fork = 1, \
+        .allow_subprocess = 1, \
+        .allow_threads = 1, \
+    }
 
 /* --- Helper functions --------------------------------------- */
 
