@@ -2270,24 +2270,26 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
 }
 
 PyCodeObject *
-_Py_MakeTrampoline(const uint8_t *code, int codelen, int stacksize, const char *cname)
+_Py_MakeShimCode(const _PyShimCodeDef *codedef)
 {
     PyObject *name = NULL;
     PyObject *co_code = NULL;
     PyObject *lines = NULL;
     PyCodeObject *codeobj = NULL;
+    uint8_t *loc_table = NULL;
 
-    name = _PyUnicode_FromASCII(cname, strlen(cname));
+    name = _PyUnicode_FromASCII(codedef->cname, strlen(codedef->cname));
     if (name == NULL) {
         goto cleanup;
     }
-    co_code = PyBytes_FromStringAndSize((const char *)code, codelen);
+    co_code = PyBytes_FromStringAndSize(
+        (const char *)codedef->code, codedef->codelen);
     if (co_code == NULL) {
         goto cleanup;
     }
-    int code_units = codelen/2;
+    int code_units = codedef->codelen/2;
     int loc_entries = (code_units + 7)/8;
-    uint8_t *loc_table = PyMem_Malloc(loc_entries);
+    loc_table = PyMem_Malloc(loc_entries);
     if (loc_table == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -2324,14 +2326,16 @@ _Py_MakeTrampoline(const uint8_t *code, int codelen, int stacksize, const char *
         .posonlyargcount = 0,
         .kwonlyargcount = 0,
 
-        .stacksize = stacksize,
+        .stacksize = codedef->stacksize,
 
         .exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
     };
 
     codeobj = _PyCode_New(&con);
 cleanup:
-    PyMem_Free(loc_table);
+    if (loc_table) {
+        PyMem_Free(loc_table);
+    }
     Py_XDECREF(name);
     Py_XDECREF(co_code);
     Py_XDECREF(lines);

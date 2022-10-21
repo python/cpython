@@ -752,13 +752,20 @@ pycore_init_types(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
-static const uint8_t INTERPRETER_TRAMPOLINE_CODE[] = {
+static const uint8_t INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
-     * the code, rather than before it */
+    * the code, rather than before it */
     NOP, 0,
     INTERPRETER_EXIT, 0,
     /* RESUME at end makes sure that the frame appears incomplete */
     RESUME, 0
+};
+
+static const _PyShimCodeDef INTERPRETER_TRAMPOLINE_CODEDEF = {
+    INTERPRETER_TRAMPOLINE_INSTRUCTIONS,
+    sizeof(INTERPRETER_TRAMPOLINE_INSTRUCTIONS),
+    1,
+    "<interpreter trampoline>"
 };
 
 static PyStatus
@@ -794,10 +801,7 @@ pycore_init_builtins(PyThreadState *tstate)
     PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
     assert(object__getattribute__);
     interp->callable_cache.object__getattribute__ = object__getattribute__;
-    interp->interpreter_trampoline = _Py_MakeTrampoline(
-        INTERPRETER_TRAMPOLINE_CODE,
-        sizeof(INTERPRETER_TRAMPOLINE_CODE),
-        1, "<interpreter trampoline>");
+    interp->interpreter_trampoline = _Py_MakeShimCode(&INTERPRETER_TRAMPOLINE_CODEDEF);
     if (interp->interpreter_trampoline == NULL) {
         return _PyStatus_ERR("failed to create interpreter trampoline.");
     }
