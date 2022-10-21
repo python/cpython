@@ -49,6 +49,8 @@ struct _ceval_state {
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
+    /* The GC is ready to be executed */
+    _Py_atomic_int gc_scheduled;
     struct _pending_calls pending;
 };
 
@@ -64,6 +66,11 @@ struct atexit_state {
     atexit_callback **callbacks;
     int ncallbacks;
     int callback_len;
+};
+
+
+struct _Py_long_state {
+    int max_str_digits;
 };
 
 
@@ -159,9 +166,11 @@ struct _is {
     struct atexit_state atexit;
 
     PyObject *audit_hooks;
+    PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
 
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
+    struct _Py_long_state long_state;
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;

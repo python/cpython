@@ -3102,8 +3102,12 @@ class Signature:
                             parameters_ex = (param,)
                             break
                         else:
-                            msg = 'missing a required argument: {arg!r}'
-                            msg = msg.format(arg=param.name)
+                            if param.kind == _KEYWORD_ONLY:
+                                argtype = ' keyword-only'
+                            else:
+                                argtype = ''
+                            msg = 'missing a required{argtype} argument: {arg!r}'
+                            msg = msg.format(arg=param.name, argtype=argtype)
                             raise TypeError(msg) from None
             else:
                 # We have a positional argument to process

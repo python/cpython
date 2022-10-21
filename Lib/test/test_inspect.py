@@ -3898,7 +3898,8 @@ class TestSignatureBind(unittest.TestCase):
             self.call(test, 1, bar=2, spam='ham')
 
         with self.assertRaisesRegex(TypeError,
-                                     "missing a required argument: 'bar'"):
+                                     "missing a required keyword-only "
+                                     "argument: 'bar'"):
             self.call(test, 1)
 
         def test(foo, *, bar, **bin):

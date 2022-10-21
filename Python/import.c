@@ -1021,6 +1021,14 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "name must be string, not %.200s",
+                     Py_TYPE(name)->tp_name);
+        Py_DECREF(name);
+        return NULL;
+    }
+
     PyObject *mod = create_builtin(tstate, name, spec);
     Py_DECREF(name);
     return mod;
