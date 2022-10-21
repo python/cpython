@@ -611,6 +611,18 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 }
 
 
+static void
+init_interp_settings(PyInterpreterState *interp, const PyConfig *config)
+{
+    assert(interp->feature_flags == 0);
+    if (!config->_isolated_interpreter) {
+        interp->feature_flags |= Py_RTFLAGS_FORK;
+        interp->feature_flags |= Py_RTFLAGS_SUBPROCESS;
+        interp->feature_flags |= Py_RTFLAGS_THREADS;
+    }
+}
+
+
 static PyStatus
 init_interp_create_gil(PyThreadState *tstate)
 {
@@ -657,6 +669,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+    init_interp_settings(interp, config);
 
     PyThreadState *tstate = PyThreadState_New(interp);
     if (tstate == NULL) {
@@ -1947,18 +1961,6 @@ Py_Finalize(void)
 }
 
 
-static void
-init_interp_set_flags(PyInterpreterState *interp, const PyConfig *config)
-{
-    assert(interp->feature_flags == 0);
-    if (!config->_isolated_interpreter) {
-        interp->feature_flags |= Py_RTFLAGS_FORK;
-        interp->feature_flags |= Py_RTFLAGS_SUBPROCESS;
-        interp->feature_flags |= Py_RTFLAGS_THREADS;
-    }
-}
-
-
 /* Create and initialize a new interpreter and thread, and return the
    new thread.  This requires that Py_Initialize() has been called
    first.
@@ -1973,7 +1975,7 @@ init_interp_set_flags(PyInterpreterState *interp, const PyConfig *config)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
+new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 {
     PyStatus status;
 
@@ -2007,24 +2009,24 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
 
     /* Copy the current interpreter config into the new interpreter */
-    const PyConfig *config;
+    const PyConfig *src_config;
     if (save_tstate != NULL) {
-        config = _PyInterpreterState_GetConfig(save_tstate->interp);
+        src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
     {
         /* No current thread state, copy from the main interpreter */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
-        config = _PyInterpreterState_GetConfig(main_interp);
+        src_config = _PyInterpreterState_GetConfig(main_interp);
     }
 
-    status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&interp->config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
-    interp->config._isolated_interpreter = isolated_subinterpreter;
+    interp->config._isolated_interpreter = config->isolated;
 
-    init_interp_set_flags(interp, config);
+    init_interp_settings(interp, src_config);
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2061,7 +2063,7 @@ PyThreadState *
 _Py_NewInterpreter(const PyInterpreterConfig *config)
 {
     PyThreadState *tstate = NULL;
-    PyStatus status = new_interpreter(&tstate, config->isolated);
+    PyStatus status = new_interpreter(&tstate, config);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
