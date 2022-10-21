@@ -21974,13 +21974,13 @@ invalid_try_stmt_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*"));
-        Token * _keyword;
         Token * _literal;
         asdl_seq * _loop0_203_var;
         asdl_seq * _loop0_205_var;
         void *_tmp_204_var;
+        Token * a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 620))  // token='try'
+            (a = _PyPegen_expect_token(p, 620))  // token='try'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -21992,7 +21992,7 @@ invalid_try_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*"));
-            _res = RAISE_SYNTAX_ERROR ( "cannot have both 'except' and 'except*' on the same 'try'" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot have both 'except' and 'except*' on the same 'try'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

@@ -3356,6 +3356,31 @@ class SuggestionFormattingTestBase:
 
         actual = self.get_suggestion(func)
         self.assertNotIn("blech", actual)
+    
+    def test_name_error_with_instance(self):
+        class A:
+            def __init__(self):
+                self.blech = None
+            def foo(self):
+                blich = 1
+                x = blech
+
+        instance = A()
+        actual = self.get_suggestion(instance.foo)
+        self.assertIn("self.blech", actual)
+
+    def test_unbound_local_error_with_instance(self):
+        class A:
+            def __init__(self):
+                self.blech = None
+            def foo(self):
+                blich = 1
+                x = blech
+                blech = 1
+
+        instance = A()
+        actual = self.get_suggestion(instance.foo)
+        self.assertNotIn("self.blech", actual)
 
     def test_unbound_local_error_does_not_match(self):
         def func():

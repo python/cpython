@@ -2745,6 +2745,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                               _new_parent=parent,
                               **kwargs)
             mock._mock_children[entry] = new
+            new.return_value = child_klass()
             _check_signature(original, new, skipfirst=skipfirst)
 
         # so functions created with _set_signature become instance attributes,

@@ -306,6 +306,26 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
+    def test_nested_gen_except_loop(self):
+        def gen():
+            for i in range(100):
+                self.assertIsInstance(sys.exception(), TypeError)
+                yield "doing"
+
+        def outer():
+            try:
+                raise TypeError
+            except:
+                for x in gen():
+                    yield x
+
+        try:
+            raise ValueError
+        except Exception:
+            for x in outer():
+                self.assertEqual(x, "doing")
+        self.assertEqual(sys.exception(), None)
+
     def test_except_throw_exception_context(self):
         def gen():
             try:

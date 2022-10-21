@@ -322,6 +322,7 @@ _specializations = {
     "FOR_ITER": [
         "FOR_ITER_LIST",
         "FOR_ITER_RANGE",
+        "FOR_ITER_GEN",
     ],
     "LOAD_ATTR": [
         # These potentially push [NULL, bound method] onto the stack.

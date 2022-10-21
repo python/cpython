@@ -1,0 +1,3 @@
+Expose :data:`~socket.ETH_P_ALL` and some of the
+:ref:`ETHERTYPE_* constants <socket-ethernet-types>` in :mod:`socket`.
+Patch by Noam Cohen.

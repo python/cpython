@@ -1,0 +1,3 @@
+Add specialization of :opcode:`FOR_ITER` for generators. Saves multiple
+layers of dispatch and checking to get from the :opcode:`FOR_ITER`
+instruction in the caller to the :opcode:`RESUME` in the generator.

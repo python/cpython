@@ -1254,8 +1254,8 @@ invalid_try_stmt:
     | a='try' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
     | 'try' ':' block !('except' | 'finally') { RAISE_SYNTAX_ERROR("expected 'except' or 'finally' block") }
-    | 'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block* {
-        RAISE_SYNTAX_ERROR("cannot have both 'except' and 'except*' on the same 'try'") }
+    | a='try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block* {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot have both 'except' and 'except*' on the same 'try'") }
 invalid_except_stmt:
     | 'except' '*'? a=expression ',' expressions ['as' NAME ] ':' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }

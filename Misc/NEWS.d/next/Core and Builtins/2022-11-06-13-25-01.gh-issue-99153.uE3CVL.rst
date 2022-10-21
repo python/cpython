@@ -1,0 +1,1 @@
+Fix location of :exc:`SyntaxError` for a :keyword:`try` block with both  :keyword:`except` and :keyword:`except* <except_star>`.

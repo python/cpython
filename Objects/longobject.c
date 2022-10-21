@@ -4628,7 +4628,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* k-ary values.  If the exponent is large enough, table is
      * precomputed so that table[i] == a**(2*i+1) % c for i in
      * range(EXP_TABLE_LEN).
-     * Note: this is uninitialzed stack trash: don't pay to set it to known
+     * Note: this is uninitialized stack trash: don't pay to set it to known
      * values unless it's needed. Instead ensure that num_table_entries is
      * set to the number of entries actually filled whenever a branch to the
      * Error or Done labels is possible.

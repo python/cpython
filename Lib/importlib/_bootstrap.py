@@ -580,7 +580,7 @@ def _module_repr_from_spec(spec):
         if spec.loader is None:
             return f'<module {name!r}>'
         else:
-            return f'<module {name!r} ({spec.loader!r})>'
+            return f'<module {name!r} (namespace) from {list(spec.loader._path)}>'
     else:
         if spec.has_location:
             return f'<module {name!r} from {spec.origin!r}>'

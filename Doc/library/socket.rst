@@ -189,8 +189,11 @@ created.  Socket addresses are represented as follows:
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
-  - *proto* - An in network-byte-order integer specifying the Ethernet
-    protocol number.
+  - *proto* - The Ethernet protocol number.
+    May be :data:`ETH_P_ALL` to capture all protocols,
+    one of the :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
+    or any other Ethernet protocol number.
+    Value must be in network-byte-order.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
@@ -508,6 +511,19 @@ Constants
    .. availability:: Linux >= 2.2.
 
 
+.. data:: ETH_P_ALL
+
+   :data:`!ETH_P_ALL` can be used in the :class:`~socket.socket`
+   constructor as *proto* for the :const:`AF_PACKET` family in order to
+   capture every packet, regardless of protocol.
+
+   For more information, see the :manpage:`packet(7)` manpage.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+
 .. data:: AF_RDS
           PF_RDS
           SOL_RDS
@@ -637,6 +653,22 @@ Constants
    .. availability:: Windows.
 
    .. versionadded:: 3.12
+
+.. _socket-ethernet-types:
+
+.. data:: ETHERTYPE_ARP
+          ETHERTYPE_IP
+          ETHERTYPE_IPV6
+          ETHERTYPE_VLAN
+
+   `IEEE 802.3 protocol number
+   <https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.txt>`_.
+   constants.
+
+   .. availability:: Linux, FreeBSD, macOS.
+
+   .. versionadded:: 3.12
+
 
 Functions
 ^^^^^^^^^
