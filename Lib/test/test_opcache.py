@@ -195,7 +195,7 @@ class TestLoadAttrCache(unittest.TestCase):
             with self.assertRaises(TypeError):
                 f(o)
 
-    def test_store_shadowed_slot_should_raise_type_error(self):
+    def test_store_shadowing_slot_should_raise_type_error(self):
         class Class:
             __slots__ = ("slot",)
 
