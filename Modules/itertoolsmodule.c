@@ -155,8 +155,18 @@ batched_next(batchedobject *bo)
         return NULL;
     }
     for (i=0 ; i < n ; i++) {
-        item = PyIter_Next(it);
+        item = (*Py_TYPE(it)->tp_iternext)(it);
         if (item == NULL) {
+            if (PyErr_Occurred()) {
+                if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                    PyErr_Clear();
+                } else {
+                    /* input raised an exception other than StopIteration */
+                    Py_CLEAR(bo->it);
+                    Py_DECREF(result);
+                    return NULL;
+                }
+            }
             break;
         }
         PyList_SET_ITEM(result, i, item);
