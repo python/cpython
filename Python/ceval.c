@@ -1041,7 +1041,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
 
     _PyCFrame cframe;
-    _PyInterpreterFrame  pyframe;
+    _PyInterpreterFrame  entry_frame;
     PyObject *kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
 
     /* WARNING: Because the _PyCFrame lives on the C stack,
@@ -1055,20 +1055,21 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     assert(tstate->interp->interpreter_trampoline != NULL);
 #ifdef Py_DEBUG
-    pyframe.f_funcobj = (PyObject*)0xaaa0;
-    pyframe.f_locals = (PyObject*)0xaaa1;
-    pyframe.frame_obj = (PyFrameObject*)0xaaa2;
-    pyframe.f_globals = (PyObject*)0xaaa3;
-    pyframe.f_builtins = (PyObject*)0xaaa4;
+    /* Set these to invalid but identifiable values for debugging. */
+    entry_frame.f_funcobj = (PyObject*)0xaaa0;
+    entry_frame.f_locals = (PyObject*)0xaaa1;
+    entry_frame.frame_obj = (PyFrameObject*)0xaaa2;
+    entry_frame.f_globals = (PyObject*)0xaaa3;
+    entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    pyframe.f_code = tstate->interp->interpreter_trampoline;
-    _Py_CODEUNIT *code = _PyCode_CODE(tstate->interp->interpreter_trampoline);
-    pyframe.prev_instr = code;
-    pyframe.stacktop = 0;
-    pyframe.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.f_code = tstate->interp->interpreter_trampoline;
+    entry_frame.prev_instr =
+        _PyCode_CODE(tstate->interp->interpreter_trampoline);
+    entry_frame.stacktop = 0;
+    entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     /* Push frame */
-    pyframe.previous = prev_cframe->current_frame;
-    frame->previous = &pyframe;
+    entry_frame.previous = prev_cframe->current_frame;
+    frame->previous = &entry_frame;
     cframe.current_frame = frame;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
@@ -1125,7 +1126,7 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        if (frame != &pyframe) {
+        if (frame != &entry_frame) {
             int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
             if (r < 0) {
                 goto exit_unwind;
@@ -1862,7 +1863,7 @@ handle_eval_breaker:
         }
 
         TARGET(INTERPRETER_EXIT) {
-            assert(frame == &pyframe);
+            assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             PyObject *retval = POP();
             assert(EMPTY());
@@ -1882,7 +1883,7 @@ handle_eval_breaker:
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &pyframe);
+            assert(frame != &entry_frame);
             frame = cframe.current_frame = pop_frame(tstate, frame);
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
@@ -2019,7 +2020,7 @@ handle_eval_breaker:
         }
 
         TARGET(SEND) {
-            assert(frame != &pyframe);
+            assert(frame != &entry_frame);
             assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
             PyObject *receiver = TOP();
@@ -2084,7 +2085,7 @@ handle_eval_breaker:
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(oparg == STACK_LEVEL());
-            assert(frame != &pyframe);
+            assert(frame != &entry_frame);
             PyObject *retval = POP();
             _PyFrame_GetGenerator(frame)->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4847,7 +4848,7 @@ handle_eval_breaker:
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &pyframe);
+            assert(frame != &entry_frame);
             _PyInterpreterFrame *prev = frame->previous;
             gen_frame->previous = NULL;
             _PyThreadState_PopFrame(tstate, frame);
@@ -5142,7 +5143,7 @@ error:
 #endif
 
         /* Log traceback info. */
-        assert(frame != &pyframe);
+        assert(frame != &entry_frame);
         if (!_PyFrame_IsIncomplete(frame)) {
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
             if (f != NULL) {
@@ -5215,9 +5216,9 @@ exception_unwind:
 exit_unwind:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame != &pyframe);
+    assert(frame != &entry_frame);
     frame = cframe.current_frame = pop_frame(tstate, frame);
-    if (frame == &pyframe) {
+    if (frame == &entry_frame) {
         assert(_PyFrame_IsIncomplete(frame));
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
