@@ -815,7 +815,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a73")
         self.assertInBytecode(f, 'LOAD_FAST', "a73")
 
-    def test_setting_lineno_warns_and_assigns_none_0(self):
+    def test_setting_lineno_no_undefined(self):
         code = textwrap.dedent(f"""\
             def f():
                 x = y = 2
@@ -847,7 +847,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
-    def test_setting_lineno_warns_and_assigns_none_1(self):
+    def test_setting_lineno_one_undefined(self):
         code = textwrap.dedent(f"""\
             def f():
                 x = y = 2
@@ -881,7 +881,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
-    def test_setting_lineno_warns_and_assigns_none_2(self):
+    def test_setting_lineno_two_undefined(self):
         code = textwrap.dedent(f"""\
             def f():
                 x = y = 2

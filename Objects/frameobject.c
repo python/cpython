@@ -1311,7 +1311,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 }
                 value = Py_NewRef(Py_None);
             }
-            Py_XINCREF(value);
+            Py_INCREF(value);
             Py_XSETREF(fast[i], value);
         }
         Py_XDECREF(value);
