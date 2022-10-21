@@ -2007,7 +2007,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         .isolated = isolated,
     };
     // XXX Possible GILState issues?
-    PyThreadState *tstate = _Py_NewInterpreter(&config);
+    PyThreadState *tstate = _Py_NewInterpreterFromConfig(&config);
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to

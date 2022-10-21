@@ -2062,7 +2062,7 @@ error:
 }
 
 PyThreadState *
-_Py_NewInterpreter(const _PyInterpreterConfig *config)
+_Py_NewInterpreterFromConfig(const _PyInterpreterConfig *config)
 {
     PyThreadState *tstate = NULL;
     PyStatus status = new_interpreter(&tstate, config);
@@ -2076,7 +2076,7 @@ PyThreadState *
 Py_NewInterpreter(void)
 {
     _PyInterpreterConfig config = { 0 };
-    return _Py_NewInterpreter(&config);
+    return _Py_NewInterpreterFromConfig(&config);
 }
 
 /* Delete an interpreter and its last thread.  This requires that the
