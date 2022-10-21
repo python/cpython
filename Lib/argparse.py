@@ -1542,11 +1542,10 @@ class _ActionsContainer(object):
 
         # make sure 'store_true', 'store_false', or 'store_const' action
         # is not specified
-        if 'action' in kwargs:
-            action = kwargs.get('action')
-            if action in ('store_true', 'store_false', 'store_const'):
-                msg = _("{action} is an invalid action for positionals", {'action': action})
-                raise TypeError(msg)
+        action = kwargs.get('action')
+        if action in ('store_true', 'store_false', 'store_const'):
+            msg = _("{action} is an invalid action for positionals", {'action': action})
+            raise TypeError(msg)
 
         # mark positional arguments as required if at least one is
         # always required
