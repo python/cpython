@@ -44,6 +44,7 @@ CO_FAST_LOCAL = 0x20
 CO_FAST_CELL = 0x40
 CO_FAST_FREE = 0x80
 
+next_code_version = 1
 
 def get_localsplus(code: types.CodeType):
     a = collections.defaultdict(int)
@@ -228,6 +229,7 @@ class Printer:
 
 
     def generate_code(self, name: str, code: types.CodeType) -> str:
+        global next_code_version
         # The ordering here matches PyCode_NewWithPosOnlyArgs()
         # (but see below).
         co_consts = self.generate(name + "_consts", code.co_consts)
@@ -270,6 +272,8 @@ class Printer:
             self.write(f".co_nplaincellvars = {nplaincellvars},")
             self.write(f".co_ncellvars = {ncellvars},")
             self.write(f".co_nfreevars = {nfreevars},")
+            self.write(f".co_version = {next_code_version},")
+            next_code_version += 1
             self.write(f".co_localsplusnames = {co_localsplusnames},")
             self.write(f".co_localspluskinds = {co_localspluskinds},")
             self.write(f".co_filename = {co_filename},")
