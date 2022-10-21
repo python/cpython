@@ -245,7 +245,7 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
 
 typedef struct {
     int isolated;
-} PyInterpreterConfig;
+} _PyInterpreterConfig;
 
 /* --- Helper functions --------------------------------------- */
 

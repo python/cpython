@@ -2003,7 +2003,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
-    PyInterpreterConfig config = {
+    _PyInterpreterConfig config = {
         .isolated = isolated,
     };
     // XXX Possible GILState issues?

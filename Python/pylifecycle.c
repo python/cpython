@@ -612,7 +612,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 
 
 static void
-init_interp_settings(PyInterpreterState *interp, const PyInterpreterConfig *config)
+init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
     if (!config->isolated) {
@@ -670,7 +670,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    const PyInterpreterConfig config = {
+    const _PyInterpreterConfig config = {
         .isolated = 0,
     };
     init_interp_settings(interp, &config);
@@ -1978,7 +1978,7 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
+new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
 {
     PyStatus status;
 
@@ -2062,7 +2062,7 @@ error:
 }
 
 PyThreadState *
-_Py_NewInterpreter(const PyInterpreterConfig *config)
+_Py_NewInterpreter(const _PyInterpreterConfig *config)
 {
     PyThreadState *tstate = NULL;
     PyStatus status = new_interpreter(&tstate, config);
@@ -2075,7 +2075,7 @@ _Py_NewInterpreter(const PyInterpreterConfig *config)
 PyThreadState *
 Py_NewInterpreter(void)
 {
-    PyInterpreterConfig config = { 0 };
+    _PyInterpreterConfig config = { 0 };
     return _Py_NewInterpreter(&config);
 }
 
