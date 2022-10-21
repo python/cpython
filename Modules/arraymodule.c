@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_abstract.h"      // _PY_BUFFER_MUTABLE_BUFFER_GETSET
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat
 #include "structmember.h"         // PyMemberDef
@@ -2277,6 +2278,7 @@ static PyGetSetDef array_getsets [] = {
      "the typecode character used to create the array"},
     {"itemsize", (getter) array_get_itemsize, NULL,
      "the size, in bytes, of one array item"},
+    _PY_BUFFER_MUTABLE_BUFFER_GETSET
     {NULL}
 };
 

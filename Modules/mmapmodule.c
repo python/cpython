@@ -24,6 +24,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "pycore_abstract.h"      // _PY_BUFFER_MUTABLE_BUFFER_GETSET
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
 #include "structmember.h"         // PyMemberDef
@@ -887,6 +888,7 @@ static struct PyMethodDef mmap_object_methods[] = {
 
 static PyGetSetDef mmap_object_getset[] = {
     {"closed", (getter) mmap_closed_get, NULL, NULL},
+    _PY_BUFFER_MUTABLE_BUFFER_GETSET
     {NULL}
 };
 

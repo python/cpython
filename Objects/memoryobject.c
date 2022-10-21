@@ -11,7 +11,7 @@
  */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _PY_BUFFER_MUTABLE_BUFFER_GETSET
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include <stddef.h>               // offsetof()
@@ -3186,6 +3186,7 @@ static PyGetSetDef memory_getsetlist[] = {
     {"c_contiguous",    (getter)memory_c_contiguous,   NULL, memory_c_contiguous_doc},
     {"f_contiguous",    (getter)memory_f_contiguous,   NULL, memory_f_contiguous_doc},
     {"contiguous",      (getter)memory_contiguous,     NULL, memory_contiguous_doc},
+    _PY_BUFFER_MUTABLE_BUFFER_GETSET
     {NULL, NULL, NULL, NULL},
 };
 

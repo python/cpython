@@ -19,6 +19,10 @@ _PyIndex_Check(PyObject *obj)
 PyObject *_PyNumber_PowerNoMod(PyObject *lhs, PyObject *rhs);
 PyObject *_PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs);
 
+PyAPI_FUNC(PyObject *) _PyBuffer_MutableBufferGetter(PyObject *instance, void *ignored);
+
+#define _PY_BUFFER_MUTABLE_BUFFER_GETSET { "__mutable_buffer__", _PyBuffer_MutableBufferGetter, NULL, NULL },
+
 #ifdef __cplusplus
 }
 #endif

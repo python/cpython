@@ -457,15 +457,12 @@ class Buffer(metaclass=ABCMeta):
 class MutableBuffer(Buffer):
 
     __slots__ = ()
-
-    @abstractmethod
-    def __release_buffer__(self, buffer: memoryview, /) -> None:
-        pass
+    __mutable_buffer__ = True
 
     @classmethod
     def __subclasshook__(cls, C):
         if cls is MutableBuffer:
-            return _check_methods(C, "__buffer__", "__release_buffer__")
+            return _check_methods(C, "__buffer__", "__mutable_buffer__")
         return NotImplemented
 
 

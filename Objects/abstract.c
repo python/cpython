@@ -2967,3 +2967,8 @@ _Py_FreeCharPArray(char *const array[])
     }
     PyMem_Free((void*)array);
 }
+
+PyObject *
+_PyBuffer_MutableBufferGetter(PyObject *instance, void *ignored) {
+    Py_RETURN_TRUE;
+}

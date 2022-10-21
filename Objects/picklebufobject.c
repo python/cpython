@@ -2,6 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_abstract.h"      // _PY_BUFFER_MUTABLE_BUFFER_GETSET
 #include <stddef.h>
 
 typedef struct {
@@ -203,6 +204,10 @@ static PyMethodDef picklebuf_methods[] = {
     {NULL,      NULL}
 };
 
+static PyGetSetDef picklebuf_getset[] = {
+    _PY_BUFFER_MUTABLE_BUFFER_GETSET
+    {NULL}
+};
 PyTypeObject PyPickleBuffer_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "pickle.PickleBuffer",
@@ -216,4 +221,5 @@ PyTypeObject PyPickleBuffer_Type = {
     .tp_weaklistoffset = offsetof(PyPickleBufferObject, weakreflist),
     .tp_as_buffer = &picklebuf_as_buffer,
     .tp_methods = picklebuf_methods,
+    .tp_getset = picklebuf_getset,
 };

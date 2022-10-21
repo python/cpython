@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_abstract.h"      // _PyBuffer_MutableBufferGetter
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -6094,16 +6095,24 @@ type_add_getset(PyTypeObject *type)
 
     PyObject *dict = type->tp_dict;
     for (; gsp->name != NULL; gsp++) {
-        PyObject *descr = PyDescr_NewGetSet(type, gsp);
-        if (descr == NULL) {
-            return -1;
-        }
-
-        if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (gsp->get == _PyBuffer_MutableBufferGetter) {
+            PyObject *name = PyUnicode_FromString(gsp->name);
+            if (PyDict_SetDefault(dict, name, Py_True) == NULL) {
+                Py_DECREF(name);
+                return -1;
+            }
+            Py_DECREF(name);
+        } else {
+            PyObject *descr = PyDescr_NewGetSet(type, gsp);
+            if (descr == NULL) {
+                return -1;
+            }
+            if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
+                Py_DECREF(descr);
+                return -1;
+            }
             Py_DECREF(descr);
-            return -1;
         }
-        Py_DECREF(descr);
     }
     return 0;
 }

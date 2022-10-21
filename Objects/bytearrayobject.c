@@ -2,7 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check(), _PY_BUFFER_MUTABLE_BUFFER_GETSET
 #include "pycore_bytes_methods.h"
 #include "pycore_bytesobject.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
@@ -2289,6 +2289,11 @@ Construct a mutable bytearray object from:\n\
 
 static PyObject *bytearray_iter(PyObject *seq);
 
+static PyGetSetDef bytearray_getset[] = {
+    _PY_BUFFER_MUTABLE_BUFFER_GETSET
+    {NULL}
+};
+
 PyTypeObject PyByteArray_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytearray",
@@ -2320,7 +2325,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_iternext */
     bytearray_methods,                  /* tp_methods */
     0,                                  /* tp_members */
-    0,                                  /* tp_getset */
+    bytearray_getset,                   /* tp_getset */
     0,                                  /* tp_base */
     0,                                  /* tp_dict */
     0,                                  /* tp_descr_get */
