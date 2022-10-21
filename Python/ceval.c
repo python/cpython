@@ -1233,7 +1233,7 @@ handle_eval_breaker:
         // No _PyOpcode_Deopt here, since EXTENDED_ARG has no optimized forms:
         while (opcode == EXTENDED_ARG) {
             // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
-            // Inline the instruction here, so we can avoid branching there:
+            // Inline the EXTENDED_ARG here, so we can avoid branching there:
             INSTRUCTION_START();
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
