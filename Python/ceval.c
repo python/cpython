@@ -3820,7 +3820,7 @@ handle_eval_breaker:
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 next_instr--;
-                _Py_Specialize_ForIter(TOP(), next_instr);
+                _Py_Specialize_ForIter(TOP(), next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             else {
@@ -3847,7 +3847,9 @@ handle_eval_breaker:
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            STACK_SHRINK(1);
+            Py_DECREF(it);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
@@ -3859,7 +3861,9 @@ handle_eval_breaker:
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
             if (r->index >= r->len) {
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+                STACK_SHRINK(1);
+                Py_DECREF(r);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
                 DISPATCH();
             }
             long value = (long)(r->start +
