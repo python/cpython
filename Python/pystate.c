@@ -2181,8 +2181,7 @@ _Py_GetConfig(void)
 int
 _PyInterpreterState_HasFeature(PyInterpreterState *interp, unsigned long feature)
 {
-    assert(feature & (Py_RTFLAGS_FORK | Py_RTFLAGS_SUBPROCESS | Py_RTFLAGS_THREADS));
-    return interp->config._isolated_interpreter;
+    return ((interp->feature_flags & feature) != 0);
 }
 
 

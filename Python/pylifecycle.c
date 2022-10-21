@@ -1947,6 +1947,18 @@ Py_Finalize(void)
 }
 
 
+static void
+init_interp_set_flags(PyInterpreterState *interp, const PyConfig *config)
+{
+    assert(interp->feature_flags == 0);
+    if (!config->_isolated_interpreter) {
+        interp->feature_flags |= Py_RTFLAGS_FORK;
+        interp->feature_flags |= Py_RTFLAGS_SUBPROCESS;
+        interp->feature_flags |= Py_RTFLAGS_THREADS;
+    }
+}
+
+
 /* Create and initialize a new interpreter and thread, and return the
    new thread.  This requires that Py_Initialize() has been called
    first.
@@ -2006,12 +2018,13 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
         config = _PyInterpreterState_GetConfig(main_interp);
     }
 
-
     status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
     interp->config._isolated_interpreter = isolated_subinterpreter;
+
+    init_interp_set_flags(interp, config);
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
