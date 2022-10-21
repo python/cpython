@@ -1,0 +1,4 @@
+On Windows, when the Python test suite is run with the ``-jN`` option, the
+ANSI code page is now used as the encoding for the stdout temporary file,
+rather than using UTF-8 which can lead to decoding errors. Patch by Victor
+Stinner.
