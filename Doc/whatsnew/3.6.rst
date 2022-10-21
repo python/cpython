@@ -2052,7 +2052,7 @@ tkinter
 The :mod:`tkinter.tix` module is now deprecated.  :mod:`tkinter` users
 should use :mod:`tkinter.ttk` instead.
 
-.. _whatsnew-3.6-venv:
+.. _whatsnew36-venv:
 
 venv
 ~~~~

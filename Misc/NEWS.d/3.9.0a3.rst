@@ -805,7 +805,7 @@ event loop only if called from the main thread.
 .. section: Documentation
 
 Add an entry for ``__module__`` in the "function" & "method" sections of the
-:ref:`inspect docs types and members table <inspect-types>`.
+:mod:`inspect` docs' :ref:`inspect-types` table.
 
 ..
 
