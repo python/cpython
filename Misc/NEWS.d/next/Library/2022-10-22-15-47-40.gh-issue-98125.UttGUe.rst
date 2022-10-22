@@ -1,0 +1,2 @@
+Adds the no clobber argument to shutil copytree to allow users to copy files
+only if they do not exist.
