@@ -434,8 +434,10 @@ attributes:
 
    Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
 
-   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
-   :meth:`~object().__eq__` and :meth:`~object().__repr__`
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object.__str__`,
+   :meth:`~object.__eq__` and :meth:`~object.__repr__`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: isroutine(object)
@@ -1206,12 +1208,13 @@ is considered deprecated and may be removed in the future.
       number, start column offset, and end column offset associated with the
       instruction being executed by the frame this record corresponds to.
 
-.. versionchanged:: 3.5
-   Return a named tuple instead of a tuple.
+   .. versionchanged:: 3.5
+      Return a :term:`named tuple` instead of a :class:`tuple`.
 
-.. versionchanged:: 3.11
-   Changed the return object from a named tuple to a regular object (that is
-   backwards compatible with the previous named tuple).
+   .. versionchanged:: 3.11
+      :class:`!FrameInfo` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. class:: Traceback
 
@@ -1244,6 +1247,11 @@ is considered deprecated and may be removed in the future.
       line number, start column offset, and end column offset associated with
       the instruction being executed by the frame this traceback corresponds
       to.
+
+   .. versionchanged:: 3.11
+      :class:`!Traceback` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. note::
 
