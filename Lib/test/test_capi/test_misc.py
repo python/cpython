@@ -1297,17 +1297,20 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
 
-        features = ['fork', 'exec', 'threads', 'daemon_threads']
+        features = ['fork', 'exec', 'threads', 'daemon_threads', 'extensions']
         kwlist = [f'allow_{n}' for n in features]
+        kwlist[-1] = 'check_multi_interp_extensions'
         for config, expected in {
-            (True, True, True, True): FORK | EXEC | THREADS | DAEMON_THREADS,
-            (False, False, False, False): 0,
-            (False, False, True, False): THREADS,
+            (True, True, True, True, True):
+                FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
+            (False, False, False, False, False): 0,
+            (False, False, True, False, True): THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {

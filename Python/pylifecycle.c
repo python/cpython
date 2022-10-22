@@ -642,6 +642,10 @@ init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *con
     if (config->allow_daemon_threads) {
         interp->feature_flags |= Py_RTFLAGS_DAEMON_THREADS;
     }
+
+    if (config->check_multi_interp_extensions) {
+        interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
+    }
 }
 
 

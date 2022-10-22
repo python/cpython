@@ -11,6 +11,9 @@ is available in a given context.  For example, forking the process
 might not be allowed in the current interpreter (i.e. os.fork() would fail).
 */
 
+/* Set if import should check a module for subinterpreter support. */
+#define Py_RTFLAGS_MULTI_INTERP_EXTENSIONS (1UL << 8)
+
 /* Set if threads are allowed. */
 #define Py_RTFLAGS_THREADS (1UL << 10)
 
