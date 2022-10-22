@@ -5470,6 +5470,12 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+eval_get_func_name(PyObject *self, PyObject *func)
+{
+    return PyUnicode_FromString(PyEval_GetFuncName(func));
+}
+
+static PyObject *
 get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *result = PyDict_New();
@@ -5649,6 +5655,164 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
     assert(_Py_IS_TYPE_SIGNED(int));
     assert(!_Py_IS_TYPE_SIGNED(unsigned int));
 
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+function_get_code(PyObject *self, PyObject *func)
+{
+    PyObject *code = PyFunction_GetCode(func);
+    if (code != NULL) {
+        Py_INCREF(code);
+        return code;
+    } else {
+        return NULL;
+    }
+}
+
+static PyObject *
+function_get_globals(PyObject *self, PyObject *func)
+{
+    PyObject *globals = PyFunction_GetGlobals(func);
+    if (globals != NULL) {
+        Py_INCREF(globals);
+        return globals;
+    } else {
+        return NULL;
+    }
+}
+
+static PyObject *
+function_get_module(PyObject *self, PyObject *func)
+{
+    PyObject *module = PyFunction_GetModule(func);
+    if (module != NULL) {
+        Py_INCREF(module);
+        return module;
+    } else {
+        return NULL;
+    }
+}
+
+
+// type watchers
+
+static PyObject *g_type_modified_events;
+static int g_type_watchers_installed;
+
+static int
+type_modified_callback(PyTypeObject *type)
+{
+    assert(PyList_Check(g_type_modified_events));
+    if(PyList_Append(g_type_modified_events, (PyObject *)type) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+type_modified_callback_wrap(PyTypeObject *type)
+{
+    assert(PyList_Check(g_type_modified_events));
+    PyObject *list = PyList_New(0);
+    if (!list) {
+        return -1;
+    }
+    if (PyList_Append(list, (PyObject *)type) < 0) {
+        Py_DECREF(list);
+        return -1;
+    }
+    if (PyList_Append(g_type_modified_events, list) < 0) {
+        Py_DECREF(list);
+        return -1;
+    }
+    Py_DECREF(list);
+    return 0;
+}
+
+static int
+type_modified_callback_error(PyTypeObject *type)
+{
+    PyErr_SetString(PyExc_RuntimeError, "boom!");
+    return -1;
+}
+
+static PyObject *
+add_type_watcher(PyObject *self, PyObject *kind)
+{
+    int watcher_id;
+    assert(PyLong_Check(kind));
+    long kind_l = PyLong_AsLong(kind);
+    if (kind_l == 2) {
+        watcher_id = PyType_AddWatcher(type_modified_callback_wrap);
+    } else if (kind_l == 1) {
+        watcher_id = PyType_AddWatcher(type_modified_callback_error);
+    } else {
+        watcher_id = PyType_AddWatcher(type_modified_callback);
+    }
+    if (watcher_id < 0) {
+        return NULL;
+    }
+    if (!g_type_watchers_installed) {
+        assert(!g_type_modified_events);
+        if (!(g_type_modified_events = PyList_New(0))) {
+            return NULL;
+        }
+    }
+    g_type_watchers_installed++;
+    return PyLong_FromLong(watcher_id);
+}
+
+static PyObject *
+clear_type_watcher(PyObject *self, PyObject *watcher_id)
+{
+    if (PyType_ClearWatcher(PyLong_AsLong(watcher_id))) {
+        return NULL;
+    }
+    g_type_watchers_installed--;
+    if (!g_type_watchers_installed) {
+        assert(g_type_modified_events);
+        Py_CLEAR(g_type_modified_events);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_type_modified_events(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (!g_type_modified_events) {
+        PyErr_SetString(PyExc_RuntimeError, "no watchers active");
+        return NULL;
+    }
+    Py_INCREF(g_type_modified_events);
+    return g_type_modified_events;
+}
+
+static PyObject *
+watch_type(PyObject *self, PyObject *args)
+{
+    PyObject *type;
+    int watcher_id;
+    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &type)) {
+        return NULL;
+    }
+    if (PyType_Watch(watcher_id, type)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unwatch_type(PyObject *self, PyObject *args)
+{
+    PyObject *type;
+    int watcher_id;
+    if (!PyArg_ParseTuple(args, "iO", &watcher_id, &type)) {
+        return NULL;
+    }
+    if (PyType_Unwatch(watcher_id, type)) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -5925,6 +6089,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
@@ -5935,6 +6100,14 @@ static PyMethodDef TestMethods[] = {
     {"watch_dict", watch_dict, METH_VARARGS, NULL},
     {"unwatch_dict", unwatch_dict, METH_VARARGS, NULL},
     {"get_dict_watcher_events", get_dict_watcher_events, METH_NOARGS, NULL},
+    {"function_get_code", function_get_code, METH_O, NULL},
+    {"function_get_globals", function_get_globals, METH_O, NULL},
+    {"function_get_module", function_get_module, METH_O, NULL},
+    {"add_type_watcher", add_type_watcher, METH_O, NULL},
+    {"clear_type_watcher", clear_type_watcher, METH_O, NULL},
+    {"watch_type", watch_type, METH_VARARGS, NULL},
+    {"unwatch_type", unwatch_type, METH_VARARGS, NULL},
+    {"get_type_modified_events", get_type_modified_events, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

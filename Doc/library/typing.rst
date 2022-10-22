@@ -248,7 +248,7 @@ respectively.
 
 .. versionchanged:: 3.10
    ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-   See :pep:`612` for more information.
+   See :pep:`612` for more details.
 
 .. seealso::
    The documentation for :class:`ParamSpec` and :class:`Concatenate` provides
@@ -723,7 +723,7 @@ These can be used as types in annotations and do not support ``[]``.
      of the ``cls`` parameter.
    - Annotating an :meth:`~object.__enter__` method which returns self.
 
-   For more information, see :pep:`673`.
+   See :pep:`673` for more details.
 
    .. versionadded:: 3.11
 
@@ -854,7 +854,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionchanged:: 3.10
       ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-      See :pep:`612` for more information.
+      See :pep:`612` for more details.
 
    .. seealso::
       The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
@@ -1040,8 +1040,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    Special typing constructs that mark individual keys of a :class:`TypedDict`
    as either required or non-required respectively.
 
-   For more information, see :class:`TypedDict` and
-   :pep:`655` ("Marking individual TypedDict items as required or potentially missing").
+   See :class:`TypedDict` and :pep:`655` for more details.
 
    .. versionadded:: 3.11
 
@@ -1192,8 +1191,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       is not a subtype of the former, since ``list`` is invariant.
       The responsibility of writing type-safe type guards is left to the user.
 
-   ``TypeGuard`` also works with type variables.  For more information, see
-   :pep:`647` (User-Defined Type Guards).
+   ``TypeGuard`` also works with type variables.  See :pep:`647` for more details.
 
    .. versionadded:: 3.10
 
@@ -1393,7 +1391,7 @@ These are not used in annotations. They are building blocks for creating generic
     to ``call_soon`` match the types of the (positional) arguments of
     ``callback``.
 
-    For more details on type variable tuples, see :pep:`646`.
+    See :pep:`646` for more details on type variable tuples.
 
     .. versionadded:: 3.11
 
@@ -1556,7 +1554,7 @@ These are not used in annotations. They are building blocks for creating generic
 
       func(C())  # Passes static type check
 
-   See :pep:`544` for details. Protocol classes decorated with
+   See :pep:`544` for more details. Protocol classes decorated with
    :func:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
    type signatures.
@@ -2632,7 +2630,7 @@ Functions and decorators
       def process(response):
           <actual implementation>
 
-   See :pep:`484` for details and comparison with other typing semantics.
+   See :pep:`484` for more details and comparison with other typing semantics.
 
    .. versionchanged:: 3.11
       Overloaded functions can now be introspected at runtime using

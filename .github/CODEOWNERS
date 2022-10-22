@@ -55,7 +55,7 @@ Python/traceback.c            @iritkatriel
 /Lib/html/                    @ezio-melotti
 /Lib/_markupbase.py           @ezio-melotti
 /Lib/test/test_html*.py       @ezio-melotti
-/Tools/scripts/*html5*        @ezio-melotti
+/Tools/build/parse_html5_entities.py   @ezio-melotti
 
 # Import (including importlib).
 # Ignoring importlib.h so as to not get flagged on
@@ -135,7 +135,7 @@ Lib/ast.py                    @isidentical
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra
+**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra @AlexWaygood
 
 **/*asyncore                  @giampaolo
 **/*asynchat                  @giampaolo
