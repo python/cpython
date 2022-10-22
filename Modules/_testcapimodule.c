@@ -1236,6 +1236,71 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_module_get_filename(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Case: regular filename from module
+    const char *filename_char1 = "test_module_name_mgf1.py";
+    PyObject *filename1 = PyUnicode_FromString(filename_char1);
+    if (filename1 == NULL) {
+        return NULL;
+    }
+
+    PyObject *module1 = PyModule_New("test_module_name_mgf1");
+    if (module1 == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddObjectRef(module1, "__file__", filename1) < 0) {
+        return NULL;  // `filename1` is incremented afterwards
+    }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    const char *result1 = PyModule_GetFilename(module1);
+#pragma GCC diagnostic pop
+
+    if (strcmp(result1, filename_char1) != 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "Filename '%s' does not match '%s'",
+                     filename_char1, result1);
+        goto error;
+    }
+
+    // Case: module without `__file__`
+    PyObject *module2 = PyModule_New("test_module_name_mgf2");
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    PyModule_GetFilename(module2);
+#pragma GCC diagnostic pop
+
+    if (PyErr_ExceptionMatches(PyExc_SystemError)) {
+        PyErr_Clear();
+    } else {
+        goto error;
+    }
+
+    // Case: not a module
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    PyModule_GetFilename(PyLong_FromLong(1));
+#pragma GCC diagnostic pop
+
+    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+        PyErr_Clear();
+    } else {
+        goto error;
+    }
+
+    // Success:
+    Py_DECREF(filename1);
+    Py_RETURN_NONE;
+
+error:
+    Py_DECREF(filename1);
+    return NULL;
+}
+
 
 static PyObject *
 get_args(PyObject *self, PyObject *args)
@@ -5891,6 +5956,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
+    {"test_module_get_filename",  test_module_get_filename,      METH_NOARGS},
     {"get_kwargs", _PyCFunction_CAST(get_kwargs),
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
