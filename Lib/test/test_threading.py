@@ -1324,6 +1324,7 @@ class SubinterpThreadingTests(BaseTestCase):
             test.support.run_in_subinterp_with_config(
                 {subinterp_code!r},
                 allow_fork=True,
+                allow_exec=True,
                 allow_threads={allowed},
                 allow_daemon_threads={daemon_allowed},
             )

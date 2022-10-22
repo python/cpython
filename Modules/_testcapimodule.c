@@ -3231,6 +3231,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
     int allow_fork = -1;
+    int allow_exec = -1;
     int allow_threads = -1;
     int allow_daemon_threads = -1;
     int r;
@@ -3240,17 +3241,22 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
     static char *kwlist[] = {"code",
                              "allow_fork",
+                             "allow_exec",
                              "allow_threads",
                              "allow_daemon_threads",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppp:run_in_subinterp_with_config", kwlist,
-                    &code, &allow_fork,
+                    "s$pppp:run_in_subinterp_with_config", kwlist,
+                    &code, &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads)) {
         return NULL;
     }
     if (allow_fork < 0) {
         PyErr_SetString(PyExc_ValueError, "missing allow_fork");
+        return NULL;
+    }
+    if (allow_exec < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
         return NULL;
     }
     if (allow_threads < 0) {
@@ -3268,6 +3274,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
     const _PyInterpreterConfig config = {
         .allow_fork = allow_fork,
+        .allow_exec = allow_exec,
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
     };

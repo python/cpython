@@ -245,6 +245,7 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
 
 typedef struct {
     int allow_fork;
+    int allow_exec;
     int allow_threads;
     int allow_daemon_threads;
 } _PyInterpreterConfig;
@@ -252,6 +253,7 @@ typedef struct {
 #define _PyInterpreterConfig_LEGACY_INIT \
     { \
         .allow_fork = 1, \
+        .allow_exec = 1, \
         .allow_threads = 1, \
         .allow_daemon_threads = 1, \
     }

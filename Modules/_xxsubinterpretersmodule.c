@@ -2005,6 +2005,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     PyThreadState *save_tstate = _PyThreadState_GET();
     const _PyInterpreterConfig config = {
         .allow_fork = !isolated,
+        .allow_exec = !isolated,
         .allow_threads = !isolated,
         .allow_daemon_threads = !isolated,
     };

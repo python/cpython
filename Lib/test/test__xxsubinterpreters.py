@@ -856,6 +856,22 @@ class RunStringTests(TestBase):
 
             self.assertEqual(out, 'it worked!')
 
+    def test_os_exec(self):
+        expected = 'spam spam spam spam spam'
+        subinterp = interpreters.create()
+        script, file = _captured_script(f"""
+            import os, sys
+            try:
+                os.execl(sys.executable)
+            except RuntimeError:
+                print('{expected}', end='')
+            """)
+        with file:
+            interpreters.run_string(subinterp, script)
+            out = file.read()
+
+        self.assertEqual(out, expected)
+
     @support.requires_fork()
     def test_fork(self):
         import tempfile
