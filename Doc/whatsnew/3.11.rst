@@ -775,22 +775,33 @@ IDLE and idlelib
 * Include prompts when saving Shell with inputs and outputs.
   (Contributed by Terry Jan Reedy in :gh:`95191`.)
 
+
+.. _whatsnew311-inspect:
+
 inspect
 -------
-* Add :func:`inspect.getmembers_static`: return all members without
+
+* Add :func:`~inspect.getmembers_static` to return all members without
   triggering dynamic lookup via the descriptor protocol. (Contributed by
   Weipeng Hong in :issue:`30533`.)
 
-* Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
-  :class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
+* Add :func:`~inspect.ismethodwrapper`
+  for checking if the type of an object is a :class:`~types.MethodWrapperType`.
+  (Contributed by Hakan Çelik in :issue:`29418`.)
 
-* Change the frame-related functions in the :mod:`inspect` module to return a
-  regular object (that is backwards compatible with the old tuple-like
-  interface) that include the extended :pep:`657` position information (end
+* Change the frame-related functions in the :mod:`inspect` module to return new
+  :class:`~inspect.FrameInfo` and :class:`~inspect.Traceback` class instances
+  (backwards compatible with the previous :term:`named tuple`-like interfaces)
+  that includes the extended :pep:`657` position information (end
   line number, column and end column). The affected functions are:
-  :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
-  :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
-  :gh:`88116`.)
+
+  * :func:`inspect.getframeinfo`
+  * :func:`inspect.getouterframes`
+  * :func:`inspect.getinnerframes`,
+  * :func:`inspect.stack`
+  * :func:`inspect.trace`
+
+  (Contributed by Pablo Galindo in :gh:`88116`.)
 
 locale
 ------
