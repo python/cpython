@@ -1407,6 +1407,59 @@ contributors are volunteers from the community.
 CPython bytecode changes
 ========================
 
++-------------------------------------------+-------------------------------------------+
+| Old Opcode(s)                             | New Opcode(s)                             |
++===============+===========================+===========================================+
+|                                           | | :opcode:`ASYNC_GEN_WRAP`                |
+|                                           | | :opcode:`CACHE`                         |
+|                                           | | :opcode:`COPY_FREE_VARS`                |
+|                                           | | :opcode:`JUMP_BACKWARD_NO_INTERRUPT`    |
+|                                           | | :opcode:`MAKE_CELL`                     |
+|                                           | | :opcode:`POP_JUMP_BACKWARD_IF_NONE`     |
+|                                           | | :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE` |
+|                                           | | :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`  |
+|                                           | | :opcode:`POP_JUMP_FORWARD_IF_NONE`      |
+|                                           | | :opcode:`PREP_RERAISE_STAR`             |
+|                                           | | :opcode:`PUSH_EXC_INFO`                 |
+|                                           | | :opcode:`RESUME`                        |
+|                                           | | :opcode:`RETURN_GENERATOR`              |
+|                                           | | :opcode:`SEND`                          |
++-------------------------------------------+-------------------------------------------+
+| | :opcode:`!BINARY_*`                     | :opcode:`BINARY_OP`                       |
+| | :opcode:`!INPLACE_*`                    |                                           |
++-------------------------------------------+-------------------------------------------+
+| | :opcode:`!CALL_FUNCTION`                | | :opcode:`CALL`                          |
+| | :opcode:`!CALL_FUNCTION_KW`             | | :opcode:`KW_NAMES`                      |
+| | :opcode:`!CALL_METHOD`                  | | :opcode:`PRECALL`                       |
+|                                           | | :opcode:`PUSH_NULL`                     |
++-------------------------------------------+-------------------------------------------+
+| | :opcode:`!DUP_TOP`                      | | :opcode:`COPY`                          |
+| | :opcode:`!DUP_TOP_TWO`                  | | :opcode:`SWAP`                          |
+| | :opcode:`!ROT_TWO`                      |                                           |
+| | :opcode:`!ROT_THREE`                    |                                           |
+| | :opcode:`!ROT_FOUR`                     |                                           |
+| | :opcode:`!ROT_N`                        |                                           |
++-------------------------------------------+-------------------------------------------+
+| :opcode:`!JUMP_ABSOLUTE`                  | :opcode:`JUMP_BACKWARD`                   |
++-------------------------------------------+-------------------------------------------+
+| :opcode:`!JUMP_IF_NOT_EXC_MATCH`          | :opcode:`CHECK_EXC_MATCH`                 |
++-------------------------------------------+-------------------------------------------+
+| :opcode:`!JUMP_IF_NOT_EG_MATCH`           | :opcode:`CHECK_EG_MATCH`                  |
++-------------------------------------------+-------------------------------------------+
+| :opcode:`!POP_JUMP_IF_FALSE`              | | :opcode:`POP_JUMP_BACKWARD_IF_FALSE`    |
+|                                           | | :opcode:`POP_JUMP_FORWARD_IF_FALSE`     |
++-------------------------------------------+-------------------------------------------+
+| :opcode:`!POP_JUMP_IF_TRUE`               | | :opcode:`POP_JUMP_BACKWARD_IF_TRUE`     |
+|                                           | | :opcode:`POP_JUMP_FORWARD_IF_TRUE`      |
++-------------------------------------------+-------------------------------------------+
+| | :opcode:`!COPY_DICT_WITHOUT_KEYS`       |                                           |
+| | :opcode:`!GEN_START`                    |                                           |
+| | :opcode:`!POP_BLOCK`                    |                                           |
+| | :opcode:`!SETUP_FINALLY`                |                                           |
+| | :opcode:`!YIELD_FROM`                   |                                           |
++-------------------------------------------+-------------------------------------------+
+
+
 * The bytecode now contains inline cache entries, which take the form of
   :opcode:`CACHE` instructions. Many opcodes expect to be followed by an exact
   number of caches, and instruct the interpreter to skip over them at runtime.
