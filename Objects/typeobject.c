@@ -6741,7 +6741,11 @@ type_ready_set_new(PyTypeObject *type)
         type->tp_flags |= Py_TPFLAGS_DISALLOW_INSTANTIATION;
     }
 
-    if (!(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
+    if (type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION) {
+        // Py_TPFLAGS_DISALLOW_INSTANTIATION sets tp_new to NULL
+        type->tp_new = NULL;
+    }
+    else {
         if (type->tp_new != NULL) {
             // If "__new__" key does not exists in the type dictionary,
             // set it to tp_new_wrapper().
@@ -6760,10 +6764,7 @@ type_ready_set_new(PyTypeObject *type)
             }
         }
     }
-    else {
-        // Py_TPFLAGS_DISALLOW_INSTANTIATION sets tp_new to NULL
-        type->tp_new = NULL;
-    }
+
     return 0;
 }
 
