@@ -181,9 +181,9 @@ batched_next(batchedobject *bo)
         Py_DECREF(result);
         return NULL;
     }
-    PyObject *short_list = PyList_GetSlice(result, 0, i);
-    Py_DECREF(result);
-    return short_list;
+    /* Elements in result[i:] are still NULL */
+    Py_SET_SIZE(result, i);
+    return result;
 }
 
 static PyTypeObject batched_type = {
