@@ -290,7 +290,7 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_wait_for_cancel_suppressed(self):
         # See https://github.com/python/cpython/issues/84849
-        # https://github.com/python/cpython/pull/28149
+        # See https://github.com/python/cpython/pull/28149
 
         async def return_42():
             try:
@@ -322,6 +322,7 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         task.cancel()
         with self.assertRaises(asyncio.CancelledError):
             await task
+        self.assertFalse(reached_end)
 
 
 if __name__ == '__main__':
