@@ -196,7 +196,7 @@ See :pep:`654` for more details.
 Irit Katriel, Yury Selivanov and Guido van Rossum.)
 
 
-.. _whatsnew311-pep670:
+.. _whatsnew311-pep678:
 
 PEP 678: Exceptions can be enriched with notes
 ----------------------------------------------
@@ -383,9 +383,10 @@ See :pep:`675` for more details.
 (Contributed by Jelle Zijlstra in :issue:`47088`. PEP written by Pradeep
 Kumar Srinivasan and Graham Bleaney.)
 
+
 .. _whatsnew311-pep681:
 
-PEP 681: Data Class Transforms
+PEP 681: Data class transforms
 ------------------------------
 
 :data:`~typing.dataclass_transform` may be used to
@@ -430,6 +431,8 @@ has been put on hold indefinitely.
 See `this message from the Steering Council <https://mail.python.org/archives/list/python-dev@python.org/message/VIZEBX5EYMSYIJNDBF6DMUMZOCWHARSO/>`__
 for more information.
 
+
+.. _whatsnew311-other-lang-changes:
 
 Other Language Changes
 ======================
