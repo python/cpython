@@ -647,35 +647,35 @@ class PurePath(object):
             abs_parts = [drv, root] + parts[1:]
         else:
             abs_parts = parts
-        to_drv, to_root, to_parts = self._parse_args(other)
-        if to_root:
-            to_abs_parts = [to_drv, to_root] + to_parts[1:]
+        other_drv, other_root, other_parts = self._parse_args(other)
+        if other_root:
+            other_abs_parts = [other_drv, other_root] + other_parts[1:]
         else:
-            to_abs_parts = to_parts
-        n = len(to_abs_parts)
-        cf = self._flavour.casefold_parts
-        common = 0
-        for p, tp in zip(cf(abs_parts), cf(to_abs_parts)):
-            if p != tp:
+            other_abs_parts = other_parts
+        num_parts = len(other_abs_parts)
+        casefold = self._flavour.casefold_parts
+        num_common_parts = 0
+        for part, other_part in zip(casefold(abs_parts), casefold(other_abs_parts)):
+            if part != other_part:
                 break
-            common += 1
+            num_common_parts += 1
         if walk_up:
-            failure = root != to_root
-            if drv or to_drv:
-                failure = cf([drv]) != cf([to_drv]) or (failure and n > 1)
+            failure = root != other_root
+            if drv or other_drv:
+                failure = casefold([drv]) != casefold([other_drv]) or (failure and num_parts > 1)
             error_message = "{!r} is not on the same drive as {!r}"
-            up_parts = (n-common)*['..']
+            up_parts = (num_parts-num_common_parts)*['..']
         else:
-            failure = (root or drv) if n == 0 else common != n
+            failure = (root or drv) if num_parts == 0 else num_common_parts != num_parts
             error_message = "{!r} is not in the subpath of {!r}"
             up_parts = []
         error_message += " OR one path is relative and the other is absolute."
         if failure:
-            formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
+            formatted = self._format_parsed_parts(other_drv, other_root, other_parts)
             raise ValueError(error_message.format(str(self), str(formatted)))
-        path_parts = up_parts + abs_parts[common:]
-        return self._from_parsed_parts('', root if common == 1 else '',
-                                       path_parts)
+        path_parts = up_parts + abs_parts[num_common_parts:]
+        new_root = root if num_common_parts == 1 else ''
+        return self._from_parsed_parts('', new_root, path_parts)
 
     def is_relative_to(self, *other):
         """Return True if the path is relative to another path or False.
