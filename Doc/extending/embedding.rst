@@ -280,7 +280,7 @@ program.  There is no need to recompile Python itself using C++.
 Freezing Modules in Manually Embedded Python
 ============================================
 
-While it is possible to use frozen modules in embedded python if the main module
+It is possible to use frozen modules in embedded Python if the main module
 is also frozen. It seems people are bitten when they don't have their main module
 frozen and use ``PyRun_SimpleString`` that contains their main module(s) but
 also depend on an frozen module (like the ``__hello__`` module). However if we
@@ -304,8 +304,8 @@ wanted to add our own module to the frozen list we would normally do this::
 
 .. note::
    The reason why this example includes ``importlib.h`` and
-   ``importlib_external.h`` is because of the fact that your embedded
-   interpreter might need them to run properly (load the python standard
+   ``importlib_external.h`` is because of the fact that the embedded
+   interpreter might need them to run properly (load the Python standard
    library from an zip file or the sources like normally). Also in order
    for your compiler to work you must point it to the Python subdirectory
    in an active clone of the cpython repository or source tarball.
@@ -314,8 +314,8 @@ wanted to add our own module to the frozen list we would normally do this::
 
 As you can see the above code will compile (with an warning on Windows
 which will export ``PyImport_FrozenModules`` on the embedded python program).
-This is not what we want. And if we were to run it with ``myprogram`` We will
-get this traceback on running the string based main module(s).
+This is not what we want. And if we were to run it with ``myprogram`` we will
+get the following traceback on running the string-based main module(s).
 
 .. code-block:: py
 
@@ -349,7 +349,7 @@ And then in the main() C or C++ function in your embedded interpreter add this l
 
     PyImport_FrozenModules = _PyImport_FrozenModules;
 
-Now your Embedded python *should* be able to load your frozen modules perfectly fine.
+Now your embedded Python should be able to load your frozen modules perfectly fine.
 
 .. note::
    This logic was borrowed from Programs/_freeze_importlib.c. Also using this method is
