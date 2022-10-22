@@ -6750,9 +6750,9 @@ type_ready_set_new(PyTypeObject *type)
             }
         }
         else {
-            // set tp_new to object_new if base class is not instantiable
+            // set tp_new to generic one if base class is not instantiable
             if (base->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION) {
-                type->tp_new = object_new;
+                type->tp_new = PyType_GenericNew;
             }
             else {
                 // tp_new is NULL: inherit tp_new from base
