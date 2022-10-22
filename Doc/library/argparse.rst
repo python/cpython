@@ -31,7 +31,7 @@ Core Functionality
 
 The :mod:`argparse` module's support for command-line interfaces is built
 around an instance of :class:`argparse.ArgumentParser`.  It is a container for
-argument specifications and has options that apply the parser as whole::
+argument specifications and has options that apply to the parser as whole::
 
    parser = argparse.ArgumentParser(
                        prog = 'ProgramName',
@@ -63,12 +63,12 @@ Name                   Description                                              
 action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
 choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
 const_                 Store a constant value
-default_               Default value used when an argument is not provided         Defaults to *None*
+default_               Default value used when an argument is not provided         Defaults to :const:`None`
 dest_                  Specify the attribute name used in the result namespace
 help_                  Help message for an argument
 metavar_               Alternate display name for the argument as shown in help
 nargs_                 Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, ``'+'``, or ``argparse.REMAINDER``
-required_              Indicate whether an argument is required or optional        ``True`` or ``False``
+required_              Indicate whether an argument is required or optional        :const:`True` or :const:`False`
 type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
 ====================== =========================================================== ==========================================================================================================================
 
@@ -201,9 +201,9 @@ ArgumentParser objects
    * usage_ - The string describing the program usage (default: generated from
      arguments added to parser)
 
-   * description_ - Text to display before the argument help (default: none)
+   * description_ - Text to display before the argument help (default: :const:`None`)
 
-   * epilog_ - Text to display after the argument help (default: none)
+   * epilog_ - Text to display after the argument help (default: :const:`None`)
 
    * parents_ - A list of :class:`ArgumentParser` objects whose arguments should
      also be included
@@ -214,21 +214,21 @@ ArgumentParser objects
      (default: '-')
 
    * fromfile_prefix_chars_ - The set of characters that prefix files from
-     which additional arguments should be read (default: ``None``)
+     which additional arguments should be read (default: :const:`None`)
 
    * argument_default_ - The global default value for arguments
-     (default: ``None``)
+     (default: :const:`None`)
 
    * conflict_handler_ - The strategy for resolving conflicting optionals
      (usually unnecessary)
 
-   * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``)
+   * add_help_ - Add a ``-h/--help`` option to the parser (default: :const:`True`)
 
    * allow_abbrev_ - Allows long options to be abbreviated if the
-     abbreviation is unambiguous. (default: ``True``)
+     abbreviation is unambiguous. (default: :const:`True`)
 
    * exit_on_error_ - Determines whether or not ArgumentParser exits with
-     error info when an error occurs. (default: ``True``)
+     error info when an error occurs. (default: :const:`True`)
 
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
@@ -578,7 +578,7 @@ is considered equivalent to the expression ``['-f', 'foo', '-f', 'bar']``.
 :class:`ArgumentParser` uses :term:`filesystem encoding and error handler`
 to read the file containing arguments.
 
-The ``fromfile_prefix_chars=`` argument defaults to ``None``, meaning that
+The ``fromfile_prefix_chars=`` argument defaults to :const:`None`, meaning that
 arguments will never be treated as file references.
 
 .. versionchanged:: 3.12
@@ -617,7 +617,7 @@ Normally, when you pass an argument list to the
 :meth:`~ArgumentParser.parse_args` method of an :class:`ArgumentParser`,
 it :ref:`recognizes abbreviations <prefix-matching>` of long options.
 
-This feature can be disabled by setting ``allow_abbrev`` to ``False``::
+This feature can be disabled by setting ``allow_abbrev`` to :const:`False`::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', allow_abbrev=False)
    >>> parser.add_argument('--foobar', action='store_true')
@@ -691,7 +691,7 @@ help will be printed:
     --foo FOO   foo help
 
 Occasionally, it may be useful to disable the addition of this help option.
-This can be achieved by passing ``False`` as the ``add_help=`` argument to
+This can be achieved by passing :const:`False` as the ``add_help=`` argument to
 :class:`ArgumentParser`::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', add_help=False)
@@ -723,7 +723,7 @@ Normally, when you pass an invalid argument list to the :meth:`~ArgumentParser.p
 method of an :class:`ArgumentParser`, it will exit with error info.
 
 If the user would like to catch errors manually, the feature can be enabled by setting
-``exit_on_error`` to ``False``::
+``exit_on_error`` to :const:`False`::
 
    >>> parser = argparse.ArgumentParser(exit_on_error=False)
    >>> parser.add_argument('--integers', type=int)
@@ -833,7 +833,7 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo='1')
 
 * ``'store_const'`` - This stores the value specified by the const_ keyword
-  argument; note that the const_ keyword argument defaults to ``None``.  The
+  argument; note that the const_ keyword argument defaults to :const:`None`.  The
   ``'store_const'`` action is most commonly used with optional arguments that
   specify some sort of flag.  For example::
 
@@ -843,9 +843,9 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=42)
 
 * ``'store_true'`` and ``'store_false'`` - These are special cases of
-  ``'store_const'`` used for storing the values ``True`` and ``False``
-  respectively.  In addition, they create default values of ``False`` and
-  ``True`` respectively.  For example::
+  ``'store_const'`` used for storing the values :const:`True` and :const:`False`
+  respectively.  In addition, they create default values of :const:`False` and
+  :const:`True` respectively.  For example::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_true')
@@ -867,7 +867,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
 * ``'append_const'`` - This stores a list, and appends the value specified by
   the const_ keyword argument to the list; note that the const_ keyword
-  argument defaults to ``None``. The ``'append_const'`` action is typically
+  argument defaults to :const:`None`. The ``'append_const'`` action is typically
   useful when multiple arguments need to store constants to the same list. For
   example::
 
@@ -885,7 +885,7 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(['-vvv'])
     Namespace(verbose=3)
 
-  Note, the *default* will be ``None`` unless explicitly set to *0*.
+  Note, the *default* will be :const:`None` unless explicitly set to *0*.
 
 * ``'help'`` - This prints a complete help message for all the options in the
   current parser and then exits. By default a help action is automatically
@@ -1056,7 +1056,7 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   ``const`` value to one of the attributes of the object returned by
   :meth:`~ArgumentParser.parse_args`. See the action_ description for examples.
   If ``const`` is not provided to :meth:`~ArgumentParser.add_argument`, it will
-  receive a default value of ``None``.
+  receive a default value of :const:`None`.
 
 
 * When :meth:`~ArgumentParser.add_argument` is called with option strings
@@ -1064,7 +1064,7 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   argument that can be followed by zero or one command-line arguments.
   When parsing the command line, if the option string is encountered with no
   command-line argument following it, the value of ``const`` will be assumed to
-  be ``None`` instead.  See the nargs_ description for examples.
+  be :const:`None` instead.  See the nargs_ description for examples.
 
 .. versionchanged:: 3.11
    ``const=None`` by default, including when ``action='append_const'`` or
@@ -1077,7 +1077,7 @@ default
 
 All optional arguments and some positional arguments may be omitted at the
 command line.  The ``default`` keyword argument of
-:meth:`~ArgumentParser.add_argument`, whose value defaults to ``None``,
+:meth:`~ArgumentParser.add_argument`, whose value defaults to :const:`None`,
 specifies what value should be used if the command-line argument is not present.
 For optional arguments, the ``default`` value is used when the option string
 was not present at the command line::
@@ -1178,7 +1178,7 @@ User defined functions can be used as well:
    Namespace(short_title='"the-tale-of-two-citi')
 
 The :func:`bool` function is not recommended as a type converter.  All it does
-is convert empty strings to ``False`` and non-empty strings to ``True``.
+is convert empty strings to :const:`False` and non-empty strings to :const:`True`.
 This is usually not what is desired.
 
 In general, the ``type`` keyword is a convenience that should only be used for
@@ -1252,7 +1252,7 @@ required
 
 In general, the :mod:`argparse` module assumes that flags like ``-f`` and ``--bar``
 indicate *optional* arguments, which can always be omitted at the command line.
-To make an option *required*, ``True`` can be specified for the ``required=``
+To make an option *required*, :const:`True` can be specified for the ``required=``
 keyword argument to :meth:`~ArgumentParser.add_argument`::
 
    >>> parser = argparse.ArgumentParser()
@@ -1643,7 +1643,7 @@ unambiguous (the prefix matches a unique option)::
    PROG: error: ambiguous option: -ba could match -badger, -bacon
 
 An error is produced for arguments that could produce more than one options.
-This feature can be disabled by setting :ref:`allow_abbrev` to ``False``.
+This feature can be disabled by setting :ref:`allow_abbrev` to :const:`False`.
 
 .. _args:
 
@@ -1732,7 +1732,7 @@ Sub-commands
      positional arguments
 
    * description - description for the sub-parser group in help output, by
-     default ``None``
+     default :const:`None`
 
    * prog - usage information that will be displayed with sub-command help,
      by default the name of the program and any positional arguments before the
@@ -1745,15 +1745,15 @@ Sub-commands
      encountered at the command line
 
    * dest_ - name of the attribute under which sub-command name will be
-     stored; by default ``None`` and no value is stored
+     stored; by default :const:`None` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
-     ``False`` (added in 3.7)
+     :const:`False` (added in 3.7)
 
-   * help_ - help for sub-parser group in help output, by default ``None``
+   * help_ - help for sub-parser group in help output, by default :const:`None`
 
    * metavar_ - string presenting available sub-commands in help; by default it
-     is ``None`` and presents sub-commands in form {cmd1, cmd2, ..}
+     is :const:`None` and presents sub-commands in form {cmd1, cmd2, ..}
 
    Some example usage::
 
@@ -2110,14 +2110,14 @@ formatting methods are available:
 .. method:: ArgumentParser.print_usage(file=None)
 
    Print a brief description of how the :class:`ArgumentParser` should be
-   invoked on the command line.  If *file* is ``None``, :data:`sys.stdout` is
+   invoked on the command line.  If *file* is :const:`None`, :data:`sys.stdout` is
    assumed.
 
 .. method:: ArgumentParser.print_help(file=None)
 
    Print a help message, including the program usage and information about the
    arguments registered with the :class:`ArgumentParser`.  If *file* is
-   ``None``, :data:`sys.stdout` is assumed.
+   :const:`None`, :data:`sys.stdout` is assumed.
 
 There are also variants of these methods that simply return a string instead of
 printing it:
