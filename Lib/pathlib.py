@@ -673,8 +673,9 @@ class PurePath(object):
         if failure:
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
             raise ValueError(error_message.format(str(self), str(formatted)))
+        path_parts = up_parts + abs_parts[common:]
         return self._from_parsed_parts('', root if common == 1 else '',
-                                       up_parts+abs_parts[common:])
+                                       path_parts)
 
     def is_relative_to(self, *other):
         """Return True if the path is relative to another path or False.
