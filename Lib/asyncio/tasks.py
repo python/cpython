@@ -440,10 +440,8 @@ async def wait_for(fut, timeout):
 
     This function is a coroutine.
     """
-    if timeout is None:
-        return await fut
 
-    if timeout <= 0:
+    if timeout is not None and timeout <= 0:
         fut = ensure_future(fut)
 
         if fut.done():
