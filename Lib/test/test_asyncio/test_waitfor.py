@@ -288,6 +288,41 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
     async def test_cancel_wait_for(self):
         await self._test_cancel_wait_for(60.0)
 
+    async def test_wait_for_cancel_suppressed(self):
+        # See https://github.com/python/cpython/issues/84849
+        # https://github.com/python/cpython/pull/28149
+
+        async def return_42():
+            try:
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                return 42
+
+        res = await asyncio.wait_for(return_42(), timeout=0.1)
+        self.assertEqual(res, 42)
+
+
+    async def test_wait_for_issue86296(self):
+        # See https://github.com/python/cpython/issues/86296
+
+        async def inner():
+            return
+
+        reached_end = False
+
+        async def with_for_coro():
+            await asyncio.wait_for(inner(), timeout=100)
+            await asyncio.sleep(1)
+            nonlocal reached_end
+            reached_end = True
+
+        task = asyncio.create_task(with_for_coro())
+        await asyncio.sleep(0)
+        self.assertFalse(task.done())
+        task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+
 
 if __name__ == '__main__':
     unittest.main()
