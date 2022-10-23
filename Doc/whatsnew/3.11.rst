@@ -1447,36 +1447,36 @@ New opcodes
 Replaced opcodes
 ----------------
 
-+-----------------------------------+------------------------------------+-----------------------------------------+
-| New Opcode(s)                     | Replaced Opcode(s)                 | Notes                                   |
-+===================================+====================================+=========================================+
-| :opcode:`BEFORE_WITH`             | | :opcode:`!SETUP_WITH`            | :keyword:`with` block setup             |
-|                                   | | :opcode:`!SETUP_ASYNC_WITH`      |                                         |
-+-----------------------------------+------------------------------------+-----------------------------------------+
-| :opcode:`BINARY_OP`               | | :opcode:`!BINARY_*`              | Replaced all numeric binary/in-place    |
-|                                   | | :opcode:`!INPLACE_*`             | opcodes with a single opcode            |
-+-----------------------------------+------------------------------------+-----------------------------------------+
-| | :opcode:`CALL`                  | | :opcode:`!CALL_FUNCTION`         | Decouples argument shifting for methods |
-| | :opcode:`KW_NAMES`              | | :opcode:`!CALL_FUNCTION_KW`      | from handling of keyword arguments;     |
-| | :opcode:`PRECALL`               | | :opcode:`!CALL_METHOD`           | allows better specialization of calls   |
-| | :opcode:`PUSH_NULL`             |                                    |                                         |
-+-----------------------------------+------------------------------------+-----------------------------------------+
-| | :opcode:`CHECK_EXC_MATCH`       | | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | Now performs check                      |
-| | :opcode:`CHECK_EG_MATCH`        | | :opcode:`!JUMP_IF_NOT_EG_MATCH`  | but doesn't jump                        |
-+-----------------------------------+------------------------------------+-----------------------------------------+
-| | :opcode:`COPY`                  | | :opcode:`!DUP_TOP`               | Stack manipulation instructions         |
-| | :opcode:`SWAP`                  | | :opcode:`!DUP_TOP_TWO`           |                                         |
-|                                   | | :opcode:`!ROT_TWO`               |                                         |
-|                                   | | :opcode:`!ROT_THREE`             |                                         |
-|                                   | | :opcode:`!ROT_FOUR`              |                                         |
-|                                   | | :opcode:`!ROT_N`                 |                                         |
-+-----------------------------------+------------------------------------+-----------------------------------------+
-| | :opcode:`JUMP_BACKWARD`         | | :opcode:`!JUMP_ABSOLUTE`         | All jump opcodes now relative;          |
-| | :opcode:`POP_JUMP_BACKWARD_IF_* | | :opcode:`!POP_JUMP_IF_FALSE`     | arg is offset from current instruction  |
-|   <POP_JUMP_BACKWARD_IF_TRUE>`    | | :opcode:`!POP_JUMP_IF_TRUE`      | rather than absolute location           |
-| | :opcode:`POP_JUMP_FORWARD_IF_*  |                                    | and most op names contain direction;    |
-|   <POP_JUMP_FORWARD_IF_TRUE>`     |                                    | added ``NONE`` & ``NOT_NONE`` variants  |
-+-----------------------------------+------------------------------------+-----------------------------------------+
++------------------------------------+-----------------------------------+-----------------------------------------+
+| Replaced Opcode(s)                 | New Opcode(s)                     | Notes                                   |
++====================================+===================================+=========================================+
+| | :opcode:`!BINARY_*`              | :opcode:`BINARY_OP`               | Replaced all numeric binary/in-place    |
+| | :opcode:`!INPLACE_*`             |                                   | opcodes with a single opcode            |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!CALL_FUNCTION`         | | :opcode:`CALL`                  | Decouples argument shifting for methods |
+| | :opcode:`!CALL_FUNCTION_KW`      | | :opcode:`KW_NAMES`              | from handling of keyword arguments;     |
+| | :opcode:`!CALL_METHOD`           | | :opcode:`PRECALL`               | allows better specialization of calls   |
+|                                    | | :opcode:`PUSH_NULL`             |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!DUP_TOP`               | | :opcode:`COPY`                  | Stack manipulation instructions         |
+| | :opcode:`!DUP_TOP_TWO`           | | :opcode:`SWAP`                  |                                         |
+| | :opcode:`!ROT_TWO`               |                                   |                                         |
+| | :opcode:`!ROT_THREE`             |                                   |                                         |
+| | :opcode:`!ROT_FOUR`              |                                   |                                         |
+| | :opcode:`!ROT_N`                 |                                   |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | | :opcode:`CHECK_EXC_MATCH`       | Now performs check but doesn't jump     |
+| | :opcode:`!JUMP_IF_NOT_EG_MATCH`  | | :opcode:`CHECK_EG_MATCH`        |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!JUMP_ABSOLUTE`         | | :opcode:`JUMP_BACKWARD`         | All jump opcodes now relative;          |
+| | :opcode:`!POP_JUMP_IF_FALSE`     | | :opcode:`POP_JUMP_BACKWARD_IF_* | arg is offset from current instruction  |
+| | :opcode:`!POP_JUMP_IF_TRUE`      |   <POP_JUMP_BACKWARD_IF_TRUE>`    | rather than absolute location;          |
+|                                    | | :opcode:`POP_JUMP_FORWARD_IF_*  | added ``NONE`` & ``NOT_NONE`` variants  |
+|                                    |   <POP_JUMP_FORWARD_IF_TRUE>`     |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`             | :keyword:`with` block setup             |
+| | :opcode:`!SETUP_ASYNC_WITH`      |                                   |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
 
 
 .. _whatsnew311-removed-opcodes:
