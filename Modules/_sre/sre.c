@@ -757,13 +757,9 @@ import(const char* module, const char* function)
 {
     PyObject* func;
 
-    name = PyUnicode_FromString(module);
-    if (!name)
-        return NULL;
     func = _PyImport_GetModuleAttrString(module, function);
     if (!func)
         return NULL;
-    Py_DECREF(mod);
     return func;
 }
 
