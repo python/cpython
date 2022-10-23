@@ -1,0 +1,1 @@
+The Py_TPFLAGS_DISALLOW_INSTANTIATION flag is no longer inheritable in child types: if this flag is set on parent type, child types by default are instantiable
