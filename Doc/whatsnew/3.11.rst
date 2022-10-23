@@ -1468,15 +1468,20 @@ Replaced opcodes
 | | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | | :opcode:`CHECK_EXC_MATCH`       | Now performs check but doesn't jump     |
 | | :opcode:`!JUMP_IF_NOT_EG_MATCH`  | | :opcode:`CHECK_EG_MATCH`        |                                         |
 +------------------------------------+-----------------------------------+-----------------------------------------+
-| | :opcode:`!JUMP_ABSOLUTE`         | | :opcode:`JUMP_BACKWARD`         | All jump opcodes now relative;          |
-| | :opcode:`!POP_JUMP_IF_FALSE`     | | :opcode:`POP_JUMP_BACKWARD_IF_* | arg is offset from current instruction  |
-| | :opcode:`!POP_JUMP_IF_TRUE`      |   <POP_JUMP_BACKWARD_IF_TRUE>`    | rather than absolute location;          |
-|                                    | | :opcode:`POP_JUMP_FORWARD_IF_*  | added ``NONE`` & ``NOT_NONE`` variants  |
+| | :opcode:`!JUMP_ABSOLUTE`         | | :opcode:`JUMP_BACKWARD`         | See [#bytecode-jump]_;                  |
+| | :opcode:`!POP_JUMP_IF_FALSE`     | | :opcode:`POP_JUMP_BACKWARD_IF_* | ``TRUE``, ``FALSE``,                    |
+| | :opcode:`!POP_JUMP_IF_TRUE`      |   <POP_JUMP_BACKWARD_IF_TRUE>`    | ``NONE`` and ``NOT_NONE`` variants      |
+|                                    | | :opcode:`POP_JUMP_FORWARD_IF_*  | for each direction                      |
 |                                    |   <POP_JUMP_FORWARD_IF_TRUE>`     |                                         |
 +------------------------------------+-----------------------------------+-----------------------------------------+
 | | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`             | :keyword:`with` block setup             |
 | | :opcode:`!SETUP_ASYNC_WITH`      |                                   |                                         |
 +------------------------------------+-----------------------------------+-----------------------------------------+
+
+.. [#bytecode-jump] All jump opcodes are now relative, including the
+   existing :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP`.
+   The argument is now an offset from the current instruction
+   rather than an absolute location.
 
 
 .. _whatsnew311-changed-opcodes:
@@ -1485,9 +1490,6 @@ Replaced opcodes
 
 Changed/removed opcodes
 -----------------------
-
-* Changed :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP`
-  to be relative rather than absolute.
 
 * Changed :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS`
   to no longer push an additional boolean value to indicate success/failure.
