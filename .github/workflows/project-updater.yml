@@ -5,6 +5,10 @@ on:
     types:
       - opened
       - labeled
+  pull_request:
+    types:
+      - opened
+      - labeled
 
 permissions:
   contents: read
