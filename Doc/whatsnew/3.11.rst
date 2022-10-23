@@ -1407,44 +1407,65 @@ contributors are volunteers from the community.
 CPython bytecode changes
 ========================
 
-
-
 .. _whatsnew311-added-opcodes:
+.. _whatsnew311-replaced-opcodes:
+.. _whatsnew311-added-replaced-opcodes:
 
-Added Opcodes
--------------
+Added/Replaced Opcodes
+----------------------
 
-+-------------------------------------------+-------------------------------------------------------------------------+
-| New Opcode(s)                             | Notes                                                                   |
-+===========================================+=========================================================================+
-| | :opcode:`ASYNC_GEN_WRAP`                | Used in generators and co-routines                                      |
-| | :opcode:`RETURN_GENERATOR`              |                                                                         |
-| | :opcode:`SEND`                          |                                                                         |
-+-------------------------------------------+-------------------------------------------------------------------------+
-| :opcode:`CACHE`                           | Inline cache entries [#opcode-cache]_                                   |
-+-------------------------------------------+-------------------------------------------------------------------------+
-| :opcode:`COPY_FREE_VARS`                  | Avoids needing special caller-side code                                 |
-|                                           | to handle calling closures                                              |
-+-------------------------------------------+-------------------------------------------------------------------------+
-| :opcode:`JUMP_BACKWARD_NO_INTERRUPT`      | Used in certain loops where                                             |
-|                                           | it is undesirable to handle interrupts                                  |
-+-------------------------------------------+-------------------------------------------------------------------------+
-| :opcode:`MAKE_CELL`                       | Creates new :ref:`cell-objects`                                         |
-+-------------------------------------------+-------------------------------------------------------------------------+
-| | :opcode:`POP_JUMP_BACKWARD_IF_NONE`     | Speeds up conditional jumps                                             |
-| | :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE` |                                                                         |
-| | :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`  |                                                                         |
-| | :opcode:`POP_JUMP_FORWARD_IF_NONE`      |                                                                         |
-+-------------------------------------------+-------------------------------------------------------------------------+
-| :opcode:`PREP_RERAISE_STAR`               | Handles the new                                                         |
-|                                           | :ref:`exception groups and except*                                      |
-|                                           | <whatsnew311-pep654>`                                                   |
-+-------------------------------------------+-------------------------------------------------------------------------+
-| :opcode:`PUSH_EXC_INFO`                   | For use in exception handlers                                           |
-+-------------------------------------------+-------------------------------------------------------------------------+
-| :opcode:`RESUME`                          | No-op; performs internal tracing,                                       |
-|                                           | debugging and optimization checks                                       |
-+-------------------------------------------+-------------------------------------------------------------------------+
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| New Opcode(s)                             | Replaced Opcode(s)                 | Notes                                   |
++===========================================+====================================+=========================================+
+| | :opcode:`ASYNC_GEN_WRAP`                |                                    | Used in generators and co-routines      |
+| | :opcode:`RETURN_GENERATOR`              |                                    |                                         |
+| | :opcode:`SEND`                          |                                    |                                         |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`BEFORE_WITH`                     | | :opcode:`!SETUP_WITH`            | :keyword:`with` block setup             |
+|                                           | | :opcode:`!SETUP_ASYNC_WITH`      |                                         |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`BINARY_OP`                       | | :opcode:`!BINARY_*`              | Replaced all numeric binary/in-place    |
+|                                           | | :opcode:`!INPLACE_*`             | opcodes with a single opcode            |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`CACHE`                           |                                    | Inline cache entries [#opcode-cache]_   |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`CALL`                          | | :opcode:`!CALL_FUNCTION`         | Decouples argument shifting for methods |
+| | :opcode:`KW_NAMES`                      | | :opcode:`!CALL_FUNCTION_KW`      | from handling of keyword arguments;     |
+| | :opcode:`PRECALL`                       | | :opcode:`!CALL_METHOD`           | allows better specialization of calls   |
+| | :opcode:`PUSH_NULL`                     |                                    |                                         |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`CHECK_EXC_MATCH`               | | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | Now performs check                      |
+| | :opcode:`CHECK_EG_MATCH`                | | :opcode:`!JUMP_IF_NOT_EG_MATCH`  | but doesn't jump                        |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`COPY`                          | | :opcode:`!DUP_TOP`               | Stack manipulation instructions         |
+| | :opcode:`SWAP`                          | | :opcode:`!DUP_TOP_TWO`           |                                         |
+|                                           | | :opcode:`!ROT_TWO`               |                                         |
+|                                           | | :opcode:`!ROT_THREE`             |                                         |
+|                                           | | :opcode:`!ROT_FOUR`              |                                         |
+|                                           | | :opcode:`!ROT_N`                 |                                         |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`COPY_FREE_VARS`                  |                                    | Avoids needing special caller-side code |
+|                                           |                                    | for closures                            |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`JUMP_BACKWARD_NO_INTERRUPT`      |                                    | For certain loops where                 |
+|                                           |                                    | handling interrupts is undesirable      |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`JUMP_BACKWARD`                 | | :opcode:`!JUMP_ABSOLUTE`         | All jump opcodes now relative;          |
+| | :opcode:`POP_JUMP_BACKWARD_IF_*         | | :opcode:`!POP_JUMP_IF_FALSE`     | arg is offset from current instruction  |
+|   <POP_JUMP_BACKWARD_IF_TRUE>`            | | :opcode:`!POP_JUMP_IF_TRUE`      | rather than absolute location           |
+| | :opcode:`POP_JUMP_FORWARD_IF_*          |                                    | and most op names contain direction;    |
+|   <POP_JUMP_FORWARD_IF_TRUE>`             |                                    | added ``NONE`` & ``NOT_NONE`` variants  |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`MAKE_CELL`                       |                                    | Creates new :ref:`cell-objects`         |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`PREP_RERAISE_STAR`               |                                    | Handles the :ref:`new exception groups  |
+|                                           |                                    | <whatsnew311-pep654>`                   |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`PUSH_EXC_INFO`                   |                                    | For use in exception handlers           |
++-------------------------------------------+------------------------------------+-----------------------------------------+
+| :opcode:`RESUME`                          |                                    | No-op; performs internal tracing,       |
+|                                           |                                    | debugging and optimization checks       |
++-------------------------------------------+------------------------------------+-----------------------------------------+
 
 .. [#opcode-cache] The bytecode now contains inline cache entries,
    which take the form of :opcode:`CACHE` instructions.
@@ -1453,52 +1474,6 @@ Added Opcodes
    Populated caches can look like arbitrary instructions,
    so great care should be taken when reading or modifying
    raw, adaptive bytecode containing quickened data.
-
-
-.. _whatsnew311-replaced-opcodes:
-
-Replaced Opcodes
-----------------
-
-+------------------------------------+----------------------------------------+--------------------+
-| Removed Opcode(s)                  | New Opcode(s)                          | Notes              |
-+===============+====================+========================================+====================+
-| | :opcode:`!BINARY_*`              | :opcode:`BINARY_OP`                    | [#opcode-binary]_  |
-| | :opcode:`!INPLACE_*`             |                                        |                    |
-+------------------------------------+----------------------------------------+--------------------+
-| | :opcode:`!CALL_FUNCTION`         | | :opcode:`CALL`                       | [#opcode-call]_    |
-| | :opcode:`!CALL_FUNCTION_KW`      | | :opcode:`KW_NAMES`                   |                    |
-| | :opcode:`!CALL_METHOD`           | | :opcode:`PRECALL`                    |                    |
-|                                    | | :opcode:`PUSH_NULL`                  |                    |
-+------------------------------------+----------------------------------------+--------------------+
-| | :opcode:`!DUP_TOP`               | | :opcode:`COPY`                       | Stack manipulation |
-| | :opcode:`!DUP_TOP_TWO`           | | :opcode:`SWAP`                       |                    |
-| | :opcode:`!ROT_TWO`               |                                        |                    |
-| | :opcode:`!ROT_THREE`             |                                        |                    |
-| | :opcode:`!ROT_FOUR`              |                                        |                    |
-| | :opcode:`!ROT_N`                 |                                        |                    |
-+------------------------------------+----------------------------------------+--------------------+
-| :opcode:`!JUMP_ABSOLUTE`           | :opcode:`JUMP_BACKWARD`                | Now relative       |
-+------------------------------------+----------------------------------------+--------------------+
-| | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | | :opcode:`CHECK_EXC_MATCH`            | Now performs check |
-| | :opcode:`!JUMP_IF_NOT_EG_MATCH`  | | :opcode:`CHECK_EG_MATCH`             | but doesn't jump   |
-+------------------------------------+----------------------------------------+--------------------+
-| | :opcode:`!POP_JUMP_IF_FALSE`     | | :opcode:`POP_JUMP_BACKWARD_IF_FALSE` | Now relative       |
-| |                                  | | :opcode:`POP_JUMP_FORWARD_IF_FALSE`  |                    |
-| | :opcode:`!POP_JUMP_IF_TRUE`      | | :opcode:`POP_JUMP_BACKWARD_IF_TRUE`  |                    |
-| |                                  | | :opcode:`POP_JUMP_FORWARD_IF_TRUE`   |                    |
-+------------------------------------+----------------------------------------+--------------------+
-| | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`                  | :keyword:`with`    |
-| | :opcode:`!SETUP_ASYNC_WITH`      |                                        | block setup        |
-+------------------------------------+----------------------------------------+--------------------+
-
-.. [#opcode-binary] Replaced all numeric :opcode:`!BINARY_*`
-   and :opcode:`!INPLACE_*` instructions
-   with a single :opcode:`BINARY_OP` implementation.
-
-.. [#opcode-call] Decouples the argument shifting for methods
-   from the handling of keyword arguments
-   and allows better specialization of calls.
 
 
 .. _whatsnew311-removed-opcodes:
