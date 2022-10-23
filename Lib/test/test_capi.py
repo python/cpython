@@ -754,9 +754,18 @@ class CAPITest(unittest.TestCase):
 
     def test_non_instantiable_type(self):
         Py_TPFLAGS_DISALLOW_INSTANTIATION = 1 << 7
+
+        types = (
+            # Py_TPFLAGS_DISALLOW_INSTANTIATION is set
+            # as a result of setting tp_base and tp_new to NULL 
+            _testcapi.NonInstantiableAuto,
+            # Py_TPFLAGS_DISALLOW_INSTANTIATION is set manually on type's tp_flags field
+            _testcapi.NonInstantiable
+        )
+
         subtypes = [_testcapi.StaticSubtypeOfNonInstantiable]
 
-        for tp in (_testcapi.NonInstantiableAuto, _testcapi.NonInstantiable):
+        for tp in types:
             # Py_TPFLAGS_DISALLOW_INSTANTIATION flag is present in tp_flags
             self.assertEqual(tp.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION,
                              Py_TPFLAGS_DISALLOW_INSTANTIATION);

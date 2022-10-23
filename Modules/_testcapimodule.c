@@ -6654,6 +6654,35 @@ static PyTypeObject ContainerNoGC_type = {
 };
 
 
+static PyTypeObject NonInstantiableAuto_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testcapi.NonInstantiableAuto",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_base = NULL,
+    .tp_new = NULL
+};
+
+
+static PyTypeObject NonInstantiable_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testcapi.NonInstantiable",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_new = PyType_GenericNew
+};
+
+
+static PyTypeObject StaticSubtypeOfNonInstantiable_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testcapi.StaticSubtypeOfNonInstantiable",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_base = &NonInstantiable_type,
+    .tp_new = PyType_GenericNew
+};
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -6786,6 +6815,22 @@ PyInit__testcapi(void)
     if (PyModule_AddObject(m, "ContainerNoGC",
                            (PyObject *) &ContainerNoGC_type) < 0)
         return NULL;
+
+    if (PyType_Ready(&NonInstantiableAuto_type) < 0)
+        return NULL;
+    Py_INCREF(&NonInstantiableAuto_type);
+    PyModule_AddObject(m, "NonInstantiableAuto", (PyObject *)&NonInstantiableAuto_type);
+
+    if (PyType_Ready(&NonInstantiable_type) < 0)
+        return NULL;
+    Py_INCREF(&NonInstantiable_type);
+    PyModule_AddObject(m, "NonInstantiable", (PyObject *)&NonInstantiable_type);
+
+    if (PyType_Ready(&StaticSubtypeOfNonInstantiable_type) < 0)
+        return NULL;
+    Py_INCREF(&StaticSubtypeOfNonInstantiable_type);
+    PyModule_AddObject(m, "StaticSubtypeOfNonInstantiable", (PyObject *)&StaticSubtypeOfNonInstantiable_type);
+
 
     /* Include tests from the _testcapi/ directory */
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {
