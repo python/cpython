@@ -757,7 +757,7 @@ class CAPITest(unittest.TestCase):
 
         types = (
             # Py_TPFLAGS_DISALLOW_INSTANTIATION is set
-            # as a result of setting tp_base and tp_new to NULL 
+            # as a result of setting tp_base and tp_new to NULL
             _testcapi.NonInstantiableAuto,
             # Py_TPFLAGS_DISALLOW_INSTANTIATION is set manually on type's tp_flags field
             _testcapi.NonInstantiable

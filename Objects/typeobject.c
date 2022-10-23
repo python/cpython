@@ -6759,7 +6759,7 @@ type_ready_set_new(PyTypeObject *type)
                 type->tp_new = PyType_GenericNew;
             }
             else {
-                // tp_new is NULL: inherit tp_new from base
+                // inherit tp_new from base
                 type->tp_new = base->tp_new;
             }
         }
