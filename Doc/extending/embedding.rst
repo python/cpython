@@ -286,21 +286,21 @@ frozen and use ``PyRun_SimpleString`` that contains their main module(s) but
 also depend on an frozen module (like the ``__hello__`` module). However if we
 wanted to add our own module to the frozen list we would normally do this::
 
-    #include <importlib.h>
-    #include <importlib_external.h>
-    #include "mymodule.h"
+   #include <importlib.h>
+   #include <importlib_external.h>
+   #include "mymodule.h"
 
-    static const struct _frozen _PyImport_FrozenModules[] = {
-        /* importlib */
-        {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
-        {"_frozen_importlib_external", _Py_M__importlib_external,
-            (int)sizeof(_Py_M__importlib_external)},
-        /* mymodule */
-       {"mymodule", M_mymodule, (int)sizeof(M_mymodule)},
-       {0, 0, 0} /* sentinel */
-    };
+   static const struct _frozen _PyImport_FrozenModules[] = {
+       /* importlib */
+       {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
+       {"_frozen_importlib_external", _Py_M__importlib_external,
+           (int)sizeof(_Py_M__importlib_external)},
+       /* mymodule */
+      {"mymodule", M_mymodule, (int)sizeof(M_mymodule)},
+      {0, 0, 0} /* sentinel */
+   };
 
-    const struct _frozen * PyImport_FrozenModules = _PyImport_FrozenModules;
+   const struct _frozen * PyImport_FrozenModules = _PyImport_FrozenModules;
 
 .. note::
    The reason why this example includes ``importlib.h`` and
@@ -319,9 +319,9 @@ get the following traceback on running the string-based main module(s).
 
 .. code-block:: py
 
-    Traceback (most recent call last):
-      File "<string>", line 1, in <module>
-    ModuleNotFoundError: No module named 'mymodule'
+   Traceback (most recent call last):
+     File "<string>", line 1, in <module>
+   ModuleNotFoundError: No module named 'mymodule'
 
 There is got to be a better way to have what we want but to also make python
 aware of our ``mymodule`` being an frozen module. This module could be
@@ -331,23 +331,23 @@ currently is.
 
 The fix to this is to change the C code above to::
 
-    #include <importlib.h>
-    #include <importlib_external.h>
-    #include "mymodule.h"
+   #include <importlib.h>
+   #include <importlib_external.h>
+   #include "mymodule.h"
 
-    static const struct _frozen _PyImport_FrozenModules[] = {
-        /* importlib */
-        {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
-        {"_frozen_importlib_external", _Py_M__importlib_external,
-            (int)sizeof(_Py_M__importlib_external)},
-        /* mymodule */
-       {"mymodule", M_mymodule, (int)sizeof(M_mymodule)},
-       {0, 0, 0} /* sentinel */
-    };
+   static const struct _frozen _PyImport_FrozenModules[] = {
+       /* importlib */
+       {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
+       {"_frozen_importlib_external", _Py_M__importlib_external,
+           (int)sizeof(_Py_M__importlib_external)},
+       /* mymodule */
+      {"mymodule", M_mymodule, (int)sizeof(M_mymodule)},
+      {0, 0, 0} /* sentinel */
+   };
 
 And then in the main() C or C++ function in your embedded interpreter add this line::
 
-    PyImport_FrozenModules = _PyImport_FrozenModules;
+   PyImport_FrozenModules = _PyImport_FrozenModules;
 
 Now your embedded Python should be able to load your frozen modules perfectly fine.
 
