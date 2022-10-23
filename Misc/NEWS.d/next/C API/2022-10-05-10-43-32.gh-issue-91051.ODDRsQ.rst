@@ -1,0 +1,2 @@
+Add :c:func:`PyType_Watch` and related APIs to allow callbacks on
+:c:func:`PyType_Modified`.

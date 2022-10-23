@@ -277,7 +277,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             frame!
             """
             nonlocal sneaky_frame_object
-            sneaky_frame_object = sys._getframe().f_back
+            sneaky_frame_object = sys._getframe().f_back.f_back
             # We're done here:
             gc.callbacks.remove(callback)
 

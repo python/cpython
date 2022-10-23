@@ -92,6 +92,11 @@ Module Contents
       the bitwise operators without losing their :class:`IntFlag` membership.
       :class:`IntFlag` members are also subclasses of :class:`int`. (`Notes`_)
 
+   :class:`ReprEnum`
+
+      Used by :class:`IntEnum`, :class:`StrEnum`, and :class:`IntFlag`
+      to keep the :class:`str() <str>` of the mixed-in type.
+
    :class:`EnumCheck`
 
       An enumeration with the values ``CONTINUOUS``, ``NAMED_FLAGS``, and
@@ -132,9 +137,20 @@ Module Contents
 
       Do not make ``obj`` a member.  Can be used as a decorator.
 
+   :func:`global_enum`
+
+      Modify the :class:`str() <str>` and :func:`repr` of an enum
+      to show its members as belonging to the module instead of its class.
+      Should only be used if the enum members will be exported to the
+      module global namespace.
+
+   :func:`show_flag_values`
+
+      Return a list of all power-of-two integers contained in a flag.
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
 
 ---------------
 
@@ -411,7 +427,7 @@ Data Types
 
    .. note:: There are places in the stdlib that check for an exact :class:`str`
              instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
-             instead of ``isinstance(str, unknown)``), and in those locations you
+             instead of ``isinstance(unknown, str)``), and in those locations you
              will need to use ``str(StrEnum.member)``.
 
    .. note::
@@ -573,6 +589,20 @@ Data Types
       better support the *replacement of existing constants* use-case.
       :meth:`__format__` was already :func:`int.__format__` for that same reason.
 
+.. class:: ReprEnum
+
+   :class:`!ReprEum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
+   but the :class:`str() <str>` of the mixed-in data type:
+
+      * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
+      * :meth:`!str.__str__` for :class:`StrEnum`
+
+   Inherit from :class:`!ReprEnum` to keep the :class:`str() <str> / :func:`format`
+   of the mixed-in data type instead of using the
+   :class:`Enum`-default :meth:`str() <Enum.__str__>`.
+
+
+   .. versionadded:: 3.11
 
 .. class:: EnumCheck
 
@@ -805,6 +835,22 @@ Utilities and Decorators
 .. decorator:: nonmember
 
    A decorator for use in enums: its target will not become a member.
+
+   .. versionadded:: 3.11
+
+.. decorator:: global_enum
+
+   A decorator to change the :class:`str() <str>` and :func:`repr` of an enum
+   to show its members as belonging to the module instead of its class.
+   Should only be used when the enum members are exported
+   to the module global namespace (see :class:`re.RegexFlag` for an example).
+
+
+   .. versionadded:: 3.11
+
+.. function:: show_flag_values(value)
+
+   Return a list of all power-of-two integers contained in a flag *value*.
 
    .. versionadded:: 3.11
 

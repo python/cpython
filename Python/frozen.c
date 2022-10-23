@@ -8,7 +8,7 @@
  * These files must be regenerated any time the corresponding .pyc
  * file would change (including with changes to the compiler, bytecode
  * format, marshal format).  This can be done with "make regen-frozen".
- * That make target just runs Tools/scripts/freeze_modules.py.
+ * That make target just runs Tools/build/freeze_modules.py.
  *
  * The freeze_modules.py script also determines which modules get
  * frozen.  Update the list at the top of the script to add, remove,

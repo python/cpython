@@ -5083,6 +5083,9 @@ AC_CHECK_FUNCS(setpgrp,
     [])
 )
 
+# check for namespace functions
+AC_CHECK_FUNCS([setns unshare])
+
 dnl We search for both crypt and crypt_r as one or the other may be defined
 dnl libxcrypt provides <crypt.h> and libcrypt with crypt_r() since
 dnl at least 3.1.1 from 2015.
