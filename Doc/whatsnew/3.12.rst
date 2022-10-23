@@ -205,6 +205,11 @@ Optimizations
   process, which improves performance by 1-5%.
   (Contributed by Kevin Modzelewski in :gh:`90536`.)
 
+* Speed up the regular expression substitution (functions :func:`re.sub` and
+  :func:`re.subn` and corresponding :class:`re.Pattern` methods) for
+  replacement strings containing group references by 2--3 times.
+  (Contributed by Serhiy Storchaka in :gh:`91524`.)
+
 
 CPython bytecode changes
 ========================
