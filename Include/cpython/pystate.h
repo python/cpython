@@ -46,7 +46,7 @@ typedef struct _PyCFrame {
      * discipline and make sure that instances of this struct cannot
      * accessed outside of their lifetime.
      */
-    int use_tracing;
+    uint8_t use_tracing;  // 0 or 255 (or'ed into opcode, hence 8-bit type)
     /* Pointer to the currently executing frame (it can be NULL) */
     struct _PyInterpreterFrame *current_frame;
     struct _PyCFrame *previous;
@@ -95,8 +95,10 @@ struct _ts {
     /* Was this thread state statically allocated? */
     int _static;
 
-    int recursion_remaining;
-    int recursion_limit;
+    int py_recursion_remaining;
+    int py_recursion_limit;
+
+    int c_recursion_remaining;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -202,6 +204,16 @@ struct _ts {
     _PyCFrame root_cframe;
 };
 
+/* WASI has limited call stack. Python's recursion limit depends on code
+   layout, optimization, and WASI runtime. Wasmtime can handle about 700
+   recursions, sometimes less. 500 is a more conservative limit. */
+#ifndef C_RECURSION_LIMIT
+#  ifdef __wasi__
+#    define C_RECURSION_LIMIT 500
+#  else
+#    define C_RECURSION_LIMIT 800
+#  endif
+#endif
 
 /* other API */
 
@@ -279,7 +291,10 @@ PyAPI_FUNC(const PyConfig*) _PyInterpreterState_GetConfig(PyInterpreterState *in
    for example.
 
    Python must be preinitialized to call this method.
-   The caller must hold the GIL. */
+   The caller must hold the GIL.
+
+   Once done with the configuration, PyConfig_Clear() must be called to clear
+   it. */
 PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
     struct PyConfig *config);
 

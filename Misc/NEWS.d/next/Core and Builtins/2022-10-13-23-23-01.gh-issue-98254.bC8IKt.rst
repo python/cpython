@@ -1,0 +1,3 @@
+Modules from the standard library are now potentially suggested as part of the
+error messages displayed by the interpreter when an :exc:`NameError` is raised
+to the top level. Patch by Pablo Galindo

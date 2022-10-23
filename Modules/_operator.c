@@ -839,7 +839,7 @@ _operator__compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
                     PyUnicode_GET_LENGTH(a),
                     PyUnicode_GET_LENGTH(b));
     }
-    /* fallback to buffer interface for bytes, bytesarray and other */
+    /* fallback to buffer interface for bytes, bytearray and other */
     else {
         Py_buffer view_a;
         Py_buffer view_b;
@@ -893,7 +893,7 @@ PyDoc_STRVAR(_operator_call__doc__,
 "Same as obj(*args, **kwargs).");
 
 #define _OPERATOR_CALL_METHODDEF    \
-    {"call", (PyCFunction)(void(*)(void))_operator_call, METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
+    {"call", _PyCFunction_CAST(_operator_call), METH_FASTCALL | METH_KEYWORDS, _operator_call__doc__},
 
 static PyObject *
 _operator_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1162,8 +1162,7 @@ static PyMemberDef itemgetter_members[] = {
 };
 
 PyDoc_STRVAR(itemgetter_doc,
-"itemgetter(item, ...) --> itemgetter object\n\
-\n\
+"itemgetter(item, /, *items)\n--\n\n\
 Return a callable object that fetches the given item(s) from its operand.\n\
 After f = itemgetter(2), the call f(r) returns r[2].\n\
 After g = itemgetter(2, 5, 3), the call g(r) returns (r[2], r[5], r[3])");
@@ -1230,9 +1229,6 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* prepare attr while checking args */
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
-        Py_ssize_t item_len;
-        const void *data;
-        unsigned int kind;
         int dot_count;
 
         if (!PyUnicode_Check(item)) {
@@ -1245,9 +1241,9 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(attr);
             return NULL;
         }
-        item_len = PyUnicode_GET_LENGTH(item);
-        kind = PyUnicode_KIND(item);
-        data = PyUnicode_DATA(item);
+        Py_ssize_t item_len = PyUnicode_GET_LENGTH(item);
+        int kind = PyUnicode_KIND(item);
+        const void *data = PyUnicode_DATA(item);
 
         /* check whether the string is dotted */
         dot_count = 0;
@@ -1526,8 +1522,7 @@ static PyMemberDef attrgetter_members[] = {
 };
 
 PyDoc_STRVAR(attrgetter_doc,
-"attrgetter(attr, ...) --> attrgetter object\n\
-\n\
+"attrgetter(attr, /, *attrs)\n--\n\n\
 Return a callable object that fetches the given attribute(s) from its operand.\n\
 After f = attrgetter('name'), the call f(r) returns r.name.\n\
 After g = attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).\n\
@@ -1755,16 +1750,11 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
         return Py_BuildValue("ON", Py_TYPE(mc), newargs);
     }
     else {
-        PyObject *functools;
         PyObject *partial;
         PyObject *constructor;
         PyObject *newargs[2];
 
-        functools = PyImport_ImportModule("functools");
-        if (!functools)
-            return NULL;
-        partial = PyObject_GetAttr(functools, &_Py_ID(partial));
-        Py_DECREF(functools);
+        partial = _PyImport_GetModuleAttrString("functools", "partial");
         if (!partial)
             return NULL;
 
@@ -1783,8 +1773,7 @@ static PyMethodDef methodcaller_methods[] = {
     {NULL}
 };
 PyDoc_STRVAR(methodcaller_doc,
-"methodcaller(name, ...) --> methodcaller object\n\
-\n\
+"methodcaller(name, /, *args, **kwargs)\n--\n\n\
 Return a callable object that calls the given method on its operand.\n\
 After f = methodcaller('name'), the call f(r) returns r.name().\n\
 After g = methodcaller('name', 'date', foo=1), the call g(r) returns\n\

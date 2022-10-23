@@ -432,9 +432,13 @@ class catch_warnings(object):
     named 'warnings' and imported under that name. This argument is only useful
     when testing the warnings module itself.
 
+    If the 'action' argument is not None, the remaining arguments are passed
+    to warnings.simplefilter() as if it were called immediately on entering the
+    context.
     """
 
-    def __init__(self, *, record=False, module=None):
+    def __init__(self, *, record=False, module=None,
+                 action=None, category=Warning, lineno=0, append=False):
         """Specify whether to record warnings and if an alternative module
         should be used other than sys.modules['warnings'].
 
@@ -445,6 +449,10 @@ class catch_warnings(object):
         self._record = record
         self._module = sys.modules['warnings'] if module is None else module
         self._entered = False
+        if action is None:
+            self._filter = None
+        else:
+            self._filter = (action, category, lineno, append)
 
     def __repr__(self):
         args = []
@@ -464,6 +472,8 @@ class catch_warnings(object):
         self._module._filters_mutated()
         self._showwarning = self._module.showwarning
         self._showwarnmsg_impl = self._module._showwarnmsg_impl
+        if self._filter is not None:
+            simplefilter(*self._filter)
         if self._record:
             log = []
             self._module._showwarnmsg_impl = log.append

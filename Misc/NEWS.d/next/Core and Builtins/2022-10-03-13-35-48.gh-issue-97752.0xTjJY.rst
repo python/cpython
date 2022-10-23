@@ -1,0 +1,2 @@
+Fix possible data corruption or crashes when accessing the ``f_back`` member
+of newly-created generator or coroutine frames.

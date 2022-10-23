@@ -26,7 +26,7 @@ import functools
 # trying the import.  So __all__ is also fiddled at the end of the file.
 __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
            "setlocale", "resetlocale", "localeconv", "strcoll", "strxfrm",
-           "str", "atof", "atoi", "format", "format_string", "currency",
+           "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
            "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding"]
 
@@ -246,21 +246,6 @@ def format_string(f, val, grouping=False, monetary=False):
     val = tuple(new_val)
 
     return new_f % val
-
-def format(percent, value, grouping=False, monetary=False, *additional):
-    """Deprecated, use format_string instead."""
-    import warnings
-    warnings.warn(
-        "This method will be removed in a future version of Python. "
-        "Use 'locale.format_string()' instead.",
-        DeprecationWarning, stacklevel=2
-    )
-
-    match = _percent_re.match(percent)
-    if not match or len(match.group())!= len(percent):
-        raise ValueError(("format() must be given exactly one %%char "
-                         "format specifier, %s not valid") % repr(percent))
-    return _format(percent, value, grouping, monetary, *additional)
 
 def currency(val, symbol=True, grouping=False, international=False):
     """Formats val according to the currency settings
@@ -633,7 +618,17 @@ def resetlocale(category=LC_ALL):
         getdefaultlocale(). category defaults to LC_ALL.
 
     """
-    _setlocale(category, _build_localename(getdefaultlocale()))
+    import warnings
+    warnings.warn(
+        'Use locale.setlocale(locale.LC_ALL, "") instead',
+        DeprecationWarning, stacklevel=2
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        loc = getdefaultlocale()
+
+    _setlocale(category, _build_localename(loc))
 
 
 try:
@@ -655,6 +650,11 @@ try:
 except NameError:
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using."""
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn(
+                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
         return getencoding()
@@ -663,6 +663,12 @@ else:
     def getpreferredencoding(do_setlocale=True):
         """Return the charset that the user is likely using,
         according to the system configuration."""
+
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn(
+                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
 

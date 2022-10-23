@@ -14,6 +14,7 @@ This module can be used to create the cached byte-code files at library
 installation time, which makes them available for use even by users who don't
 have write permission to the library directories.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Command-line use
 ----------------

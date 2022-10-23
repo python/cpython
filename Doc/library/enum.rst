@@ -92,6 +92,11 @@ Module Contents
       the bitwise operators without losing their :class:`IntFlag` membership.
       :class:`IntFlag` members are also subclasses of :class:`int`. (`Notes`_)
 
+   :class:`ReprEnum`
+
+      Used by :class:`IntEnum`, :class:`StrEnum`, and :class:`IntFlag`
+      to keep the :class:`str() <str>` of the mixed-in type.
+
    :class:`EnumCheck`
 
       An enumeration with the values ``CONTINUOUS``, ``NAMED_FLAGS``, and
@@ -124,9 +129,28 @@ Module Contents
       Enum class decorator that checks user-selectable constraints on an
       enumeration.
 
+   :func:`member`
+
+      Make ``obj`` a member.  Can be used as a decorator.
+
+   :func:`nonmember`
+
+      Do not make ``obj`` a member.  Can be used as a decorator.
+
+   :func:`global_enum`
+
+      Modify the :class:`str() <str>` and :func:`repr` of an enum
+      to show its members as belonging to the module instead of its class.
+      Should only be used if the enum members will be exported to the
+      module global namespace.
+
+   :func:`show_flag_values`
+
+      Return a list of all power-of-two integers contained in a flag.
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
 
 ---------------
 
@@ -166,13 +190,6 @@ Data Types
 
         >>> dir(Color)
         ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
-
-   .. method:: EnumType.__getattr__(cls, name)
-
-      Returns the Enum member in *cls* matching *name*, or raises an :exc:`AttributeError`::
-
-        >>> Color.GREEN
-        <Color.GREEN: 2>
 
    .. method:: EnumType.__getitem__(cls, name)
 
@@ -410,7 +427,7 @@ Data Types
 
    .. note:: There are places in the stdlib that check for an exact :class:`str`
              instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
-             instead of ``isinstance(str, unknown)``), and in those locations you
+             instead of ``isinstance(unknown, str)``), and in those locations you
              will need to use ``str(StrEnum.member)``.
 
    .. note::
@@ -572,6 +589,20 @@ Data Types
       better support the *replacement of existing constants* use-case.
       :meth:`__format__` was already :func:`int.__format__` for that same reason.
 
+.. class:: ReprEnum
+
+   :class:`!ReprEum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
+   but the :class:`str() <str>` of the mixed-in data type:
+
+      * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
+      * :meth:`!str.__str__` for :class:`StrEnum`
+
+   Inherit from :class:`!ReprEnum` to keep the :class:`str() <str> / :func:`format`
+   of the mixed-in data type instead of using the
+   :class:`Enum`-default :meth:`str() <Enum.__str__>`.
+
+
+   .. versionadded:: 3.11
 
 .. class:: EnumCheck
 
@@ -752,6 +783,10 @@ Utilities and Decorators
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
+   .. note:: in 3.13 the default ``"generate_next_value_`` will always return
+             the highest member value incremented by 1, and will fail if any
+             member is an incompatible type.
+
 .. decorator:: property
 
    A decorator similar to the built-in *property*, but specifically for
@@ -788,6 +823,34 @@ Utilities and Decorators
    A :keyword:`class` decorator specifically for enumerations.  Members from
    :class:`EnumCheck` are used to specify which constraints should be checked
    on the decorated enumeration.
+
+   .. versionadded:: 3.11
+
+.. decorator:: member
+
+   A decorator for use in enums: its target will become a member.
+
+   .. versionadded:: 3.11
+
+.. decorator:: nonmember
+
+   A decorator for use in enums: its target will not become a member.
+
+   .. versionadded:: 3.11
+
+.. decorator:: global_enum
+
+   A decorator to change the :class:`str() <str>` and :func:`repr` of an enum
+   to show its members as belonging to the module instead of its class.
+   Should only be used when the enum members are exported
+   to the module global namespace (see :class:`re.RegexFlag` for an example).
+
+
+   .. versionadded:: 3.11
+
+.. function:: show_flag_values(value)
+
+   Return a list of all power-of-two integers contained in a flag *value*.
 
    .. versionadded:: 3.11
 

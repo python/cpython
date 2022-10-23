@@ -417,6 +417,12 @@ Standard names are defined for the following types:
 
       .. versionadded:: 3.9
 
+   .. describe:: hash(proxy)
+
+      Return a hash of the underlying mapping.
+
+      .. versionadded:: 3.12
+
 
 Additional Utility Classes and Functions
 ----------------------------------------

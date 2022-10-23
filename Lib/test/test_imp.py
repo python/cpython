@@ -8,11 +8,10 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
+from test.support import warnings_helper
 import unittest
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import imp
+imp = warnings_helper.import_deprecated('imp')
 import _imp
 
 
@@ -67,11 +66,7 @@ class ImportTests(unittest.TestCase):
         self.test_strings = mod.test_strings
         self.test_path = mod.__path__
 
-    def test_import_encoded_module(self):
-        for modname, encoding, teststr in self.test_strings:
-            mod = importlib.import_module('test.encoded_modules.'
-                                          'module_' + modname)
-            self.assertEqual(teststr, mod.test)
+    # test_import_encoded_module moved to test_source_encoding.py
 
     def test_find_module_encoding(self):
         for mod, encoding, _ in self.test_strings:
@@ -383,6 +378,40 @@ class ImportTests(unittest.TestCase):
             mod = imp.load_module('mymod', file, path, description)
         self.assertEqual(mod.x, 42)
 
+    def test_issue98354(self):
+        # _imp.create_builtin should raise TypeError
+        # if 'name' attribute of 'spec' argument is not a 'str' instance
+
+        create_builtin = support.get_attribute(_imp, "create_builtin")
+
+        class FakeSpec:
+            def __init__(self, name):
+                self.name = self
+        spec = FakeSpec("time")
+        with self.assertRaises(TypeError):
+            create_builtin(spec)
+
+        class FakeSpec2:
+            name = [1, 2, 3, 4]
+        spec = FakeSpec2()
+        with self.assertRaises(TypeError):
+            create_builtin(spec)
+
+        import builtins
+        class UnicodeSubclass(str):
+            pass
+        class GoodSpec:
+            name = UnicodeSubclass("builtins")
+        spec = GoodSpec()
+        bltin = create_builtin(spec)
+        self.assertEqual(bltin, builtins)
+
+        class UnicodeSubclassFakeSpec(str):
+            def __init__(self, name):
+                self.name = self
+        spec = UnicodeSubclassFakeSpec("builtins")
+        bltin = create_builtin(spec)
+        self.assertEqual(bltin, builtins)
 
 class ReloadTests(unittest.TestCase):
 

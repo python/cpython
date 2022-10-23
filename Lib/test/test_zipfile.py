@@ -124,8 +124,9 @@ class AbstractTestsWithSourceFile:
                 self.assertEqual(info.filename, nm)
                 self.assertEqual(info.file_size, len(self.data))
 
-            # Check that testzip doesn't raise an exception
-            zipfp.testzip()
+            # Check that testzip thinks the archive is ok
+            # (it returns None if all contents could be read properly)
+            self.assertIsNone(zipfp.testzip())
 
     def test_basic(self):
         for f in get_files(self):
@@ -748,8 +749,8 @@ class AbstractTestZip64InSmallFiles:
                 self.assertEqual(info.filename, nm)
                 self.assertEqual(info.file_size, len(self.data))
 
-            # Check that testzip doesn't raise an exception
-            zipfp.testzip()
+            # Check that testzip thinks the archive is valid
+            self.assertIsNone(zipfp.testzip())
 
     def test_basic(self):
         for f in get_files(self):
@@ -1440,6 +1441,8 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(san(r',,?,C:,foo,bar/z', ','), r'_,C_,foo,bar/z')
         self.assertEqual(san(r'a\b,c<d>e|f"g?h*i', ','), r'a\b,c_d_e_f_g_h_i')
         self.assertEqual(san('../../foo../../ba..r', '/'), r'foo/ba..r')
+        self.assertEqual(san('  /  /foo  /  /ba  r', '/'), r'foo/ba  r')
+        self.assertEqual(san(' . /. /foo ./ . /. ./ba .r', '/'), r'foo/ba .r')
 
     def test_extract_hackers_arcnames_common_cases(self):
         common_hacknames = [
@@ -1740,6 +1743,17 @@ class OtherTests(unittest.TestCase):
             fp.write("short file")
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN)
 
+    def test_negative_central_directory_offset_raises_BadZipFile(self):
+        # Zip file containing an empty EOCD record
+        buffer = bytearray(b'PK\x05\x06' + b'\0'*18)
+
+        # Set the size of the central directory bytes to become 1,
+        # causing the central directory offset to become negative
+        for dirsize in 1, 2**32-1:
+            buffer[12:16] = struct.pack('<L', dirsize)
+            f = io.BytesIO(buffer)
+            self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, f)
+
     def test_closed_zip_raises_ValueError(self):
         """Verify that testzip() doesn't swallow inappropriate exceptions."""
         data = io.BytesIO()
@@ -2019,6 +2033,7 @@ class OtherTests(unittest.TestCase):
                 fp.seek(bloc, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), bloc)
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                self.assertEqual(fp.tell(), bloc + 5)
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)
@@ -2036,6 +2051,7 @@ class OtherTests(unittest.TestCase):
                 fp.seek(bloc, os.SEEK_CUR)
                 self.assertEqual(fp.tell(), bloc)
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
+                self.assertEqual(fp.tell(), bloc + 5)
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)
@@ -3391,8 +3407,19 @@ class EncodedMetadataTests(unittest.TestCase):
         for name in self.file_names:
             self.assertIn(name, listing)
 
+    def test_cli_with_metadata_encoding_extract(self):
         os.mkdir(TESTFN2)
         self.addCleanup(rmtree, TESTFN2)
+        # Depending on locale, extracted file names can be not encodable
+        # with the filesystem encoding.
+        for fn in self.file_names:
+            try:
+                os.stat(os.path.join(TESTFN2, fn))
+            except OSError:
+                pass
+            except UnicodeEncodeError:
+                self.skipTest(f'cannot encode file name {fn!r}')
+
         zipfile.main(["--metadata-encoding=shift_jis", "-e", TESTFN, TESTFN2])
         listing = os.listdir(TESTFN2)
         for name in self.file_names:

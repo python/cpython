@@ -99,7 +99,6 @@ typedef struct
     PyObject* NotSupportedError;
 } pysqlite_Connection;
 
-int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 

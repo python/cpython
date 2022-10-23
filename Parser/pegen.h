@@ -3,8 +3,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include <token.h>
 #include <pycore_ast.h>
+#include <pycore_token.h>
 
 #if 0
 #define PyPARSE_YIELD_IS_KEYWORD        0x0001
@@ -78,6 +78,7 @@ typedef struct {
     Token *known_err_token;
     int level;
     int call_invalid_rules;
+    int debug;
 } Parser;
 
 typedef struct {

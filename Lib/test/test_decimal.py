@@ -37,7 +37,7 @@ from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_legacy_unicode_capi, check_sanitizer)
 from test.support import (TestFailed,
                           run_with_locale, cpython_only,
-                          darwin_malloc_err_warning)
+                          darwin_malloc_err_warning, is_emscripten)
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -2526,6 +2526,15 @@ class CUsabilityTest(UsabilityTest):
 class PyUsabilityTest(UsabilityTest):
     decimal = P
 
+    def setUp(self):
+        super().setUp()
+        self._previous_int_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(7000)
+
+    def tearDown(self):
+        sys.set_int_max_str_digits(self._previous_int_limit)
+        super().tearDown()
+
 class PythonAPItests(unittest.TestCase):
 
     def test_abc(self):
@@ -3665,6 +3674,40 @@ class ContextWithStatement(unittest.TestCase):
         self.assertIsNot(new_ctx, set_ctx, 'did not copy the context')
         self.assertIs(set_ctx, enter_ctx, '__enter__ returned wrong context')
 
+    def test_localcontext_kwargs(self):
+        with self.decimal.localcontext(
+            prec=10, rounding=ROUND_HALF_DOWN,
+            Emin=-20, Emax=20, capitals=0,
+            clamp=1
+        ) as ctx:
+            self.assertEqual(ctx.prec, 10)
+            self.assertEqual(ctx.rounding, self.decimal.ROUND_HALF_DOWN)
+            self.assertEqual(ctx.Emin, -20)
+            self.assertEqual(ctx.Emax, 20)
+            self.assertEqual(ctx.capitals, 0)
+            self.assertEqual(ctx.clamp, 1)
+
+        self.assertRaises(TypeError, self.decimal.localcontext, precision=10)
+
+        self.assertRaises(ValueError, self.decimal.localcontext, Emin=1)
+        self.assertRaises(ValueError, self.decimal.localcontext, Emax=-1)
+        self.assertRaises(ValueError, self.decimal.localcontext, capitals=2)
+        self.assertRaises(ValueError, self.decimal.localcontext, clamp=2)
+
+        self.assertRaises(TypeError, self.decimal.localcontext, rounding="")
+        self.assertRaises(TypeError, self.decimal.localcontext, rounding=1)
+
+        self.assertRaises(TypeError, self.decimal.localcontext, flags="")
+        self.assertRaises(TypeError, self.decimal.localcontext, traps="")
+        self.assertRaises(TypeError, self.decimal.localcontext, Emin="")
+        self.assertRaises(TypeError, self.decimal.localcontext, Emax="")
+
+    def test_local_context_kwargs_does_not_overwrite_existing_argument(self):
+        ctx = self.decimal.getcontext()
+        ctx.prec = 28
+        with self.decimal.localcontext(prec=10) as ctx2:
+            self.assertEqual(ctx.prec, 28)
+
     def test_nested_with_statements(self):
         # Use a copy of the supplied context in the block
         Decimal = self.decimal.Decimal
@@ -4592,6 +4635,15 @@ class CCoverage(Coverage):
 class PyCoverage(Coverage):
     decimal = P
 
+    def setUp(self):
+        super().setUp()
+        self._previous_int_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(7000)
+
+    def tearDown(self):
+        sys.set_int_max_str_digits(self._previous_int_limit)
+        super().tearDown()
+
 class PyFunctionality(unittest.TestCase):
     """Extra functionality in decimal.py"""
 
@@ -5486,6 +5538,7 @@ class CWhitebox(unittest.TestCase):
 
         with localcontext() as c:
 
+            c.prec = 9
             c.traps[InvalidOperation] = True
             c.traps[Overflow] = True
             c.traps[Underflow] = True
@@ -5570,6 +5623,7 @@ class CWhitebox(unittest.TestCase):
     # Issue 41540:
     @unittest.skipIf(sys.platform.startswith("aix"),
                      "AIX: default ulimit: test is flaky because of extreme over-allocation")
+    @unittest.skipIf(is_emscripten, "Test is unstable on Emscripten")
     @unittest.skipIf(check_sanitizer(address=True, memory=True),
                      "ASAN/MSAN sanitizer defaults to crashing "
                      "instead of returning NULL for malloc failure.")
