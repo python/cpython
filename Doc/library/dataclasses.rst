@@ -578,8 +578,8 @@ value is not provided when creating the class::
   @dataclass
   class C:
       i: int
-      j: int = None
-      database: InitVar[DatabaseType] = None
+      j: int | None = None
+      database: InitVar[DatabaseType | None] = None
 
       def __post_init__(self, database):
           if self.j is None and database is not None:
