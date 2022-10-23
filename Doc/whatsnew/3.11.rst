@@ -1527,6 +1527,10 @@ Changed Opcodes
   Instead, they indicate failure with ``None``
   (where a tuple of extracted values would otherwise be).
 
+* Changed opcodes that work with exceptions to reflect them
+  now being represented as one item on the stack instead of three
+  (see :gh:`89874`).
+
 
 .. _whatsnew311-deprecated:
 .. _whatsnew311-python-api-deprecated:
