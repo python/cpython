@@ -1071,7 +1071,13 @@ exit:
 PyDoc_STRVAR(_sre_template__doc__,
 "template($module, pattern, template, /)\n"
 "--\n"
-"\n");
+"\n"
+"\n"
+"\n"
+"  template\n"
+"    A list containing interleaved literal strings (str or bytes) and group\n"
+"    indices (int), as returned by re._parser.parse_template():\n"
+"        [literal1, group1, ..., literalN, groupN]");
 
 #define _SRE_TEMPLATE_METHODDEF    \
     {"template", _PyCFunction_CAST(_sre_template), METH_FASTCALL, _sre_template__doc__},
@@ -1454,4 +1460,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=e90b95b6691bdbfa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3ba72156dd71572 input=a9049054013a1b77]*/
