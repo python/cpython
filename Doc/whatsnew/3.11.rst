@@ -1493,35 +1493,29 @@ CPython bytecode changes
   indicate failure with :const:`None` (where a tuple of extracted values would
   otherwise be).
 
-* Replace several stack manipulation instructions (``DUP_TOP``, ``DUP_TOP_TWO``,
+* Replaced several stack manipulation instructions (``DUP_TOP``, ``DUP_TOP_TWO``,
   ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
   :opcode:`COPY` and :opcode:`SWAP` instructions.
 
-* Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
-  performs the check but does not jump.
-
-* Replaced :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
-  performs the check but does not jump.
+* Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` and :opcode:`JUMP_IF_NOT_EG_MATCH`
+  by :opcode:`CHECK_EXC_MATCH` and :opcode:`JUMP_IF_NOT_EG_MATCH` which
+  perform the check but do not jump.
 
 * Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
 
 * Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it
   is undesirable to handle interrupts.
 
-* Replaced :opcode:`POP_JUMP_IF_TRUE` and :opcode:`POP_JUMP_IF_FALSE` by
-  the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`, :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
-  :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
-
-* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`, :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
-  :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
-  opcodes to speed up conditional jumps.
-
-* :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP` are now
-  relative rather than absolute.
+* All jump opcodes are now relative: the arg is an offset from the current
+  instruction rather than an absolute location to jump to, and the op name
+  typically includes the direction of the jump (FORWARD/BACKWARD).
 
 * :opcode:`RESUME` has been added. It is a no-op. Performs internal tracing,
   debugging and optimization checks.
 
+* opcodes that work with exceptions were adjusted to the change in the
+  representation of exceptions on the stack from three items to one. (see
+  :issue:`45711`).
 
 .. _whatsnew311-deprecated:
 .. _whatsnew311-python-api-deprecated:
