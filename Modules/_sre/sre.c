@@ -752,17 +752,6 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
     return match;
 }
 
-static PyObject*
-import(const char* module, const char* function)
-{
-    PyObject* func;
-
-    func = _PyImport_GetModuleAttrString(module, function);
-    if (!func)
-        return NULL;
-    return func;
-}
-
 /*[clinic input]
 _sre.SRE_Pattern.findall
 
@@ -1032,7 +1021,7 @@ compile_template(_sremodulestate *module_state,
     /* delegate to Python code */
     PyObject *func = module_state->compile_template;
     if (func == NULL) {
-        func = import("re", "_compile_template");
+        func = _PyImport_GetModuleAttrString("re", "_compile_template");
         if (func == NULL) {
             return NULL;
         }
