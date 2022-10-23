@@ -752,6 +752,29 @@ class CAPITest(unittest.TestCase):
         MutableBase.meth = lambda self: 'changed'
         self.assertEqual(instance.meth(), 'changed')
 
+    def test_non_instantiable_type(self):
+        Py_TPFLAGS_DISALLOW_INSTANTIATION = 1 << 7
+        subtypes = [_testcapi.StaticSubtypeOfNonInstantiable]
+
+        for tp in (_testcapi.NonInstantiableAuto, _testcapi.NonInstantiable):
+            # Py_TPFLAGS_DISALLOW_INSTANTIATION flag is present in tp_flags
+            self.assertEqual(tp.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                             Py_TPFLAGS_DISALLOW_INSTANTIATION);
+
+            # TypeError is raised on attempt to instantiate type
+            with self.assertRaisesRegex(TypeError, f"cannot create '_testcapi.{tp.__name__}' instances"):
+                tp()
+
+            subtp = type("SubtypeOf" + tp.__name__, (tp,), {})
+            subtypes.append(subtp)
+
+        for subtp in subtypes:
+            # tp_flags of subtype does not contain Py_TPFLAGS_DISALLOW_INSTANTIATION flag
+            self.assertEqual(subtp.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION, 0)
+
+            # subtype is instantiable
+            instance = subtp()
+            self.assertEqual(type(instance).__name__, subtp.__name__)
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
