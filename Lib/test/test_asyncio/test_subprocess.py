@@ -184,24 +184,25 @@ class SubprocessMixin:
             self.assertEqual(-signal.SIGKILL, returncode)
 
     def test_kill_issue43884(self):
-        # This test create a new process group so that killing process
-        # kills the process and all its children.
-        blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(100000000)"'
+        if sys.platform == 'win32':
+            blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(100000000)"'
+        else:
+            blocking_shell_command = 'sleep 1; sleep 1'
         creationflags = 0
         if sys.platform == 'win32':
             from subprocess import CREATE_NEW_PROCESS_GROUP
+            # On windows create a new process group so that killing process
+            # kills the process and all its children.
             creationflags = CREATE_NEW_PROCESS_GROUP
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
-            creationflags=creationflags, start_new_session=True)
+            creationflags=creationflags)
         )
         self.loop.run_until_complete(asyncio.sleep(1))
         if sys.platform == 'win32':
             proc.send_signal(signal.CTRL_BREAK_EVENT)
-            # On windows it is an alias of terminate which sets the return code
-            proc.kill()
-        else:
-            os.killpg(proc.pid, signal.SIGKILL)
+        # On windows it is an alias of terminate which sets the return code
+        proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
         if sys.platform == 'win32':
             self.assertIsInstance(returncode, int)
