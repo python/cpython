@@ -154,22 +154,34 @@ batched_next(batchedobject *bo)
     if (result == NULL) {
         return NULL;
     }
+    iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
+    PyObject **items = _PyList_ITEMS(result);
     for (i=0 ; i < n ; i++) {
-        item = PyIter_Next(it);
+        item = iternext(it);
         if (item == NULL) {
-            break;
+            goto null_item;
         }
-        PyList_SET_ITEM(result, i, item);
+        items[i] = item;
+    }
+    return result;
+
+ null_item:
+    if (PyErr_Occurred()) {
+        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            /* Input raised an exception other than StopIteration */
+            Py_CLEAR(bo->it);
+            Py_DECREF(result);
+            return NULL;
+        }
+        PyErr_Clear();
     }
     if (i == 0) {
         Py_CLEAR(bo->it);
         Py_DECREF(result);
         return NULL;
     }
-    if (i < n) {
-        PyObject *short_list = PyList_GetSlice(result, 0, i);
-        Py_SETREF(result, short_list);
-    }
+    /* Elements in result[i:] are still NULL */
+    Py_SET_SIZE(result, i);
     return result;
 }
 

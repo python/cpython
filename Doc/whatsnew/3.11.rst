@@ -775,22 +775,33 @@ IDLE and idlelib
 * Include prompts when saving Shell with inputs and outputs.
   (Contributed by Terry Jan Reedy in :gh:`95191`.)
 
+
+.. _whatsnew311-inspect:
+
 inspect
 -------
-* Add :func:`inspect.getmembers_static`: return all members without
+
+* Add :func:`~inspect.getmembers_static` to return all members without
   triggering dynamic lookup via the descriptor protocol. (Contributed by
   Weipeng Hong in :issue:`30533`.)
 
-* Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
-  :class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
+* Add :func:`~inspect.ismethodwrapper`
+  for checking if the type of an object is a :class:`~types.MethodWrapperType`.
+  (Contributed by Hakan Çelik in :issue:`29418`.)
 
-* Change the frame-related functions in the :mod:`inspect` module to return a
-  regular object (that is backwards compatible with the old tuple-like
-  interface) that include the extended :pep:`657` position information (end
+* Change the frame-related functions in the :mod:`inspect` module to return new
+  :class:`~inspect.FrameInfo` and :class:`~inspect.Traceback` class instances
+  (backwards compatible with the previous :term:`named tuple`-like interfaces)
+  that includes the extended :pep:`657` position information (end
   line number, column and end column). The affected functions are:
-  :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
-  :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
-  :gh:`88116`.)
+
+  * :func:`inspect.getframeinfo`
+  * :func:`inspect.getouterframes`
+  * :func:`inspect.getinnerframes`,
+  * :func:`inspect.stack`
+  * :func:`inspect.trace`
+
+  (Contributed by Pablo Galindo in :gh:`88116`.)
 
 locale
 ------
@@ -1160,33 +1171,52 @@ fcntl
 Optimizations
 =============
 
-* Compiler now optimizes simple C-style formatting with literal format
-  containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
-  fast as corresponding f-string expression.
+This section covers specific optimizations independent of the
+:ref:`whatsnew311-faster-cpython` project, which is covered in its own section.
+
+* The compiler now optimizes simple
+  :ref:`printf-style % formatting <old-string-formatting>` on string literals
+  containing only the format codes ``%s``, ``%r`` and ``%a`` and makes it as
+  fast as a corresponding :term:`f-string` expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
 
-* "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
-  almost eliminated when no exception is raised.
-  (Contributed by Mark Shannon in :issue:`40222`.)
+* Integer division (``//``) is better tuned for optimization by compilers.
+  It is now around 20% faster on x86-64 when dividing an :class:`int`
+  by a value smaller than ``2**30``.
+  (Contributed by Gregory P. Smith and Tim Peters in :gh:`90564`.)
 
-* Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
-  (Contributed by Dong-hee Na in :issue:`44987`.)
+* :func:`sum` is now nearly 30% faster for integers smaller than ``2**30``.
+  (Contributed by Stefan Behnel in :gh:`68264`.)
 
-* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now up
-  to 10 times or more faster for large arguments (the speed up is larger for
-  larger *k*).
-  (Contributed by Serhiy Storchaka in :issue:`37295`.)
+* Resizing lists is streamlined for the common case,
+  speeding up :meth:`list.append` by ≈15%
+  and simple :term:`list comprehension`\s by up to 20-30%
+  (Contributed by Dennis Sweeney in :gh:`91165`.)
 
-* Dict don't store hash value when all inserted keys are Unicode objects.
-  This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
-  becomes 272 bytes from 352 bytes on 64bit platform.
+* Dictionaries don't store hash values when all keys are Unicode objects,
+  decreasing :class:`dict` size.
+  For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
+  is reduced from 352 bytes to 272 bytes (23% smaller) on 64-bit platforms.
   (Contributed by Inada Naoki in :issue:`46845`.)
 
-* :mod:`re`'s regular expression matching engine has been partially refactored,
-  and now uses computed gotos (or "threaded code") on supported platforms. As a
-  result, Python 3.11 executes the `pyperformance regular expression benchmarks
-  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
-  faster than Python 3.10.
+* Using :class:`asyncio.DatagramProtocol` is now orders of magnitude faster
+  when transferring large files over UDP,
+  with speeds over 100 times higher for a ≈60 MiB file.
+  (Contributed by msoxzw in :gh:`91487`.)
+
+* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now
+  ≈10 times faster for large arguments (with a larger speedup for larger *k*).
+  (Contributed by Serhiy Storchaka in :issue:`37295`.)
+
+* The :mod:`statistics` functions :func:`~statistics.mean`,
+  :func:`~statistics.variance` and :func:`~statistics.stdev` now consume
+  iterators in one pass rather than converting them to a :class:`list` first.
+  This is twice as fast and can save substantial memory.
+  (Contributed by Raymond Hettinger in :gh:`90415`.)
+
+* :func:`unicodedata.normalize`
+  now normalizes pure-ASCII strings in constant time.
+  (Contributed by Dong-hee Na in :issue:`44987`.)
 
 
 .. _whatsnew311-faster-cpython:
