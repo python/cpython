@@ -1479,35 +1479,27 @@ Replaced opcodes
 +------------------------------------+-----------------------------------+-----------------------------------------+
 
 
-.. _whatsnew311-removed-opcodes:
-
-Removed Opcodes
----------------
-
-* :opcode:`!COPY_DICT_WITHOUT_KEYS`
-* :opcode:`!GEN_START`
-* :opcode:`!POP_BLOCK`
-* :opcode:`!SETUP_FINALLY`
-* :opcode:`!YIELD_FROM`
-
-
 .. _whatsnew311-changed-opcodes:
+.. _whatsnew311-removed-opcodes:
+.. _whatsnew311-changed-removed-opcodes:
 
-Changed Opcodes
----------------
+Changed/removed opcodes
+-----------------------
 
 * Changed :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP`
-  to now be relative rather than absolute.
+  to be relative rather than absolute.
 
 * Changed :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS`
-  to no longer push an additional boolean value
-  indicating whether the match succeeded or failed.
-  Instead, they indicate failure with ``None``
-  (where a tuple of extracted values would otherwise be).
+  to no longer push an additional boolean value to indicate success/failure.
+  Instead, ``None`` is pushed on failure
+  in place of the tuple of extracted values.
 
 * Changed opcodes that work with exceptions to reflect them
   now being represented as one item on the stack instead of three
   (see :gh:`89874`).
+
+* Removed :opcode:`!COPY_DICT_WITHOUT_KEYS`, :opcode:`!GEN_START`,
+  :opcode:`!POP_BLOCK`, :opcode:`!SETUP_FINALLY` and :opcode:`!YIELD_FROM`.
 
 
 .. _whatsnew311-deprecated:
