@@ -1660,9 +1660,22 @@ This section lists Python APIs that have been removed in Python 3.12.
 
 Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
-* Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
-  as it is unusable without the external :mod:`!mailman` package.
-  (Contributed by Dong-hee Na in :issue:`35800`.)
+* Removed the :func:`!@asyncio.coroutine` :term:`decorator`
+  enabling legacy generator-based coroutines to be compatible with
+  :keyword:`async` / :keyword:`await` code.
+  The function has been deprecated since Python 3.8 and the removal was
+  initially scheduled for Python 3.10. Use :keyword:`async def` instead.
+  (Contributed by Illia Volochii in :issue:`43216`.)
+
+* Removed :class:`!asyncio.coroutines.CoroWrapper` used for wrapping legacy
+  generator-based coroutine objects in the debug mode.
+  (Contributed by Illia Volochii in :issue:`43216`.)
+
+* Due to significant security concerns, the *reuse_address* parameter of
+  :meth:`asyncio.loop.create_datagram_endpoint`, disabled in Python 3.9, is
+  now entirely removed. This is because of the behavior of the socket option
+  ``SO_REUSEADDR`` in UDP.
+  (Contributed by Hugo van Kemenade in :issue:`45129`.)
 
 * Removed the :mod:`!binhex` module, deprecated in Python 3.9.
   Also removed the related, similarly-deprecated :mod:`binascii` functions:
@@ -1680,12 +1693,6 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   Use ``bdist_wheel`` (wheel packages) instead.
   (Contributed by Hugo van Kemenade in :issue:`45124`.)
 
-* Due to significant security concerns, the *reuse_address* parameter of
-  :meth:`asyncio.loop.create_datagram_endpoint`, disabled in Python 3.9, is
-  now entirely removed. This is because of the behavior of the socket option
-  ``SO_REUSEADDR`` in UDP.
-  (Contributed by Hugo van Kemenade in :issue:`45129`.)
-
 * Removed the :meth:`~object.__getitem__` methods of
   :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
@@ -1700,20 +1707,6 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   and the *codeset* parameter of :func:`!translation` and :func:`!install`,
   since they are only used for the :func:`!l*gettext` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
-
-* Removed the :func:`!@asyncio.coroutine` :term:`decorator`
-  enabling legacy generator-based coroutines to be compatible with
-  :keyword:`async` / :keyword:`await` code.
-  The function has been deprecated since Python 3.8 and the removal was
-  initially scheduled for Python 3.10. Use :keyword:`async def` instead.
-  (Contributed by Illia Volochii in :issue:`43216`.)
-
-* Removed :class:`!asyncio.coroutines.CoroWrapper` used for wrapping legacy
-  generator-based coroutine objects in the debug mode.
-  (Contributed by Illia Volochii in :issue:`43216`.)
-
-* Removed the deprecated :meth:`!split` method of :class:`!_tkinter.TkappType`.
-  (Contributed by Erlend E. Aasland in :issue:`38371`.)
 
 * Removed from the :mod:`inspect` module:
 
@@ -1731,14 +1724,21 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
-* Removed namespace package support from :mod:`unittest` discovery.
-  It was introduced in Python 3.4 but has been broken since Python 3.7.
-  (Contributed by Inada Naoki in :issue:`23882`.)
-
 * Removed the :meth:`~object.__class_getitem__` method
   from :class:`pathlib.PurePath`,
   because it was not used and added by mistake in previous versions.
   (Contributed by Nikita Sobolev in :issue:`46483`.)
+
+* Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
+  as it is unusable without the external :mod:`!mailman` package.
+  (Contributed by Dong-hee Na in :issue:`35800`.)
+
+* Removed the deprecated :meth:`!split` method of :class:`!_tkinter.TkappType`.
+  (Contributed by Erlend E. Aasland in :issue:`38371`.)
+
+* Removed namespace package support from :mod:`unittest` discovery.
+  It was introduced in Python 3.4 but has been broken since Python 3.7.
+  (Contributed by Inada Naoki in :issue:`23882`.)
 
 * Removed the undocumented private :meth:`!float.__set_format__()` method,
   previously known as :meth:`!float.__setformat__()` in Python 3.7.
