@@ -1,23 +1,24 @@
 """Tests for selector_events.py"""
 
 import collections
-import sys
 import selectors
 import socket
+import sys
 import unittest
+from asyncio import selector_events
 from unittest import mock
+
 try:
     import ssl
 except ImportError:
     ssl = None
 
 import asyncio
-from asyncio.selector_events import BaseSelectorEventLoop
-from asyncio.selector_events import _SelectorTransport
-from asyncio.selector_events import _SelectorSocketTransport
-from asyncio.selector_events import _SelectorDatagramTransport
+from asyncio.selector_events import (BaseSelectorEventLoop,
+                                     _SelectorDatagramTransport,
+                                     _SelectorSocketTransport,
+                                     _SelectorTransport)
 from test.test_asyncio import utils as test_utils
-
 
 MOCK_ANY = mock.ANY
 
@@ -746,7 +747,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(self.sock.sendmsg.called)
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
 
-    @unittest.skipUnless(hasattr(socket.socket, 'sendmsg'), 'no sendmsg')
+    @unittest.skipUnless(selector_events.HAVE_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_full(self):
         data = memoryview(b'data')
         self.sock.sendmsg = mock.Mock()
@@ -759,7 +760,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(self.sock.sendmsg.called)
         self.assertFalse(self.loop.writers)
 
-    @unittest.skipUnless(hasattr(socket.socket, 'sendmsg'), 'no sendmsg')
+    @unittest.skipUnless(selector_events.HAVE_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_partial(self):
 
         data = memoryview(b'data')
