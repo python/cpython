@@ -407,9 +407,9 @@ Accessing attributes of extension types
    struct member.  Its fields are:
 
    .. c:member:: const char* PyMemberDef.name
-   
+
          Name of the member
-   
+
    .. c:member:: int PyMemberDef.type
 
       The type of the member in the C struct.
