@@ -309,34 +309,52 @@ def _syscmd_ver(system='', release='', version='',
         version = _norm_version(version)
     return system, release, version
 
-_WIN32_CLIENT_RELEASES = {
-    (5, 0): "2000",
-    (5, 1): "XP",
-    # Strictly, 5.2 client is XP 64-bit, but platform.py historically
-    # has always called it 2003 Server
-    (5, 2): "2003Server",
-    (5, None): "post2003",
+try:
+    import _wmi
+except ImportError:
+    def _wmi_query(*keys):
+        raise OSError("not supported")
+else:
+    def _wmi_query(table, *keys):
+        table = {
+            "OS": "Win32_OperatingSystem",
+            "CPU": "Win32_Processor",
+        }[table]
+        data = _wmi.exec_query("SELECT {} FROM {}".format(
+            ",".join(keys),
+            table,
+        )).split("\0")
+        split_data = (i.partition("=") for i in data)
+        dict_data = {i[0]: i[2] for i in split_data}
+        return (dict_data[k] for k in keys)
 
-    (6, 0): "Vista",
-    (6, 1): "7",
-    (6, 2): "8",
-    (6, 3): "8.1",
-    (6, None): "post8.1",
 
-    (10, 0): "10",
-    (10, None): "post10",
-}
+_WIN32_CLIENT_RELEASES = [
+    ((10, 1, 0), "post11"),
+    ((10, 0, 22000), "11"),
+    ((6, 4, 0), "10"),
+    ((6, 3, 0), "8.1"),
+    ((6, 2, 0), "8"),
+    ((6, 1, 0), "7"),
+    ((6, 0, 0), "Vista"),
+    ((5, 2, 3790), "XP64"),
+    ((5, 2, 0), "XPMedia"),
+    ((5, 1, 0), "XP"),
+    ((5, 0, 0), "2000"),
+]
 
-# Server release name lookup will default to client names if necessary
-_WIN32_SERVER_RELEASES = {
-    (5, 2): "2003Server",
-
-    (6, 0): "2008Server",
-    (6, 1): "2008ServerR2",
-    (6, 2): "2012Server",
-    (6, 3): "2012ServerR2",
-    (6, None): "post2012ServerR2",
-}
+_WIN32_SERVER_RELEASES = [
+    ((10, 1, 0), "post2022Server"),
+    ((10, 0, 20348), "2022Server"),
+    ((10, 0, 17763), "2019Server"),
+    ((6, 4, 0), "2016Server"),
+    ((6, 3, 0), "2012ServerR2"),
+    ((6, 2, 0), "2012Server"),
+    ((6, 1, 0), "2008ServerR2"),
+    ((6, 0, 0), "2008Server"),
+    ((5, 2, 0), "2003Server"),
+    ((5, 0, 0), "2000Server"),
+]
 
 def win32_is_iot():
     return win32_edition() in ('IoTUAP', 'NanoServer', 'WindowsCoreHeadless', 'IoTEdgeOS')
@@ -359,22 +377,40 @@ def win32_edition():
 
     return None
 
-def win32_ver(release='', version='', csd='', ptype=''):
+def _win32_ver(version, csd, ptype):
+    # Try using WMI first, as this is the canonical source of data
+    try:
+        (version, product_type, ptype, spmajor, spminor)  = _wmi_query(
+            'OS',
+            'Version',
+            'ProductType',
+            'BuildType',
+            'ServicePackMajorVersion',
+            'ServicePackMinorVersion',
+        )
+        is_client = (int(product_type) == 1)
+        if spminor and spminor != '0':
+            csd = f'SP{spmajor}.{spminor}'
+        else:
+            csd = f'SP{spmajor}'
+        return version, csd, ptype, is_client
+    except OSError:
+        pass
+
+    # Fall back to a combination of sys.getwindowsversion and "ver"
     try:
         from sys import getwindowsversion
     except ImportError:
-        return release, version, csd, ptype
+        return version, csd, ptype, True
 
     winver = getwindowsversion()
+    is_client = (getattr(winver, 'product_type', 1) == 1)
     try:
-        major, minor, build = map(int, _syscmd_ver()[2].split('.'))
+        version = _syscmd_ver()[2]
+        major, minor, build = map(int, version.split('.'))
     except ValueError:
         major, minor, build = winver.platform_version or winver[:3]
-    version = '{0}.{1}.{2}'.format(major, minor, build)
-
-    release = (_WIN32_CLIENT_RELEASES.get((major, minor)) or
-               _WIN32_CLIENT_RELEASES.get((major, None)) or
-               release)
+        version = '{0}.{1}.{2}'.format(major, minor, build)
 
     # getwindowsversion() reflect the compatibility mode Python is
     # running under, and so the service pack value is only going to be
@@ -385,12 +421,6 @@ def win32_ver(release='', version='', csd='', ptype=''):
         except AttributeError:
             if csd[:13] == 'Service Pack ':
                 csd = 'SP' + csd[13:]
-
-    # VER_NT_SERVER = 3
-    if getattr(winver, 'product_type', None) == 3:
-        release = (_WIN32_SERVER_RELEASES.get((major, minor)) or
-                   _WIN32_SERVER_RELEASES.get((major, None)) or
-                   release)
 
     try:
         try:
@@ -406,6 +436,18 @@ def win32_ver(release='', version='', csd='', ptype=''):
                 ptype = winreg.QueryValueEx(key, 'CurrentType')[0]
         except OSError:
             pass
+
+    return version, csd, ptype, is_client
+
+def win32_ver(release='', version='', csd='', ptype=''):
+    is_client = False
+
+    version, csd, ptype, is_client = _win32_ver(version, csd, ptype)
+
+    if version:
+        intversion = tuple(map(int, version.split('.')))
+        releases = _WIN32_CLIENT_RELEASES if is_client else _WIN32_SERVER_RELEASES
+        release = next((r for v, r in releases if v <= intversion), release)
 
     return release, version, csd, ptype
 
@@ -725,6 +767,21 @@ def _get_machine_win32():
     # http://www.geocities.com/rick_lively/MANUALS/ENV/MSWIN/PROCESSI.HTM
 
     # WOW64 processes mask the native architecture
+    try:
+        [arch, *_] = _wmi_query('CPU', 'Architecture')
+    except OSError:
+        pass
+    else:
+        try:
+            arch = ['x86', 'MIPS', 'Alpha', 'PowerPC', None,
+                    'ARM', 'ia64', None, None,
+                    'AMD64', None, None, 'ARM64',
+            ][int(arch)]
+        except (ValueError, IndexError):
+            pass
+        else:
+            if arch:
+                return arch
     return (
         os.environ.get('PROCESSOR_ARCHITEW6432', '') or
         os.environ.get('PROCESSOR_ARCHITECTURE', '')
@@ -738,7 +795,12 @@ class _Processor:
         return func() or ''
 
     def get_win32():
-        return os.environ.get('PROCESSOR_IDENTIFIER', _get_machine_win32())
+        try:
+            manufacturer, caption = _wmi_query('CPU', 'Manufacturer', 'Caption')
+        except OSError:
+            return os.environ.get('PROCESSOR_IDENTIFIER', _get_machine_win32())
+        else:
+            return f'{caption}, {manufacturer}'
 
     def get_OpenVMS():
         try:

@@ -32,6 +32,13 @@ typedef uint16_t _Py_CODEUNIT;
 #define _Py_SET_OPCODE(word, opcode) \
     do { ((unsigned char *)&(word))[0] = (opcode); } while (0)
 
+typedef struct {
+    PyObject *_co_code;
+    PyObject *_co_varnames;
+    PyObject *_co_cellvars;
+    PyObject *_co_freevars;
+} _PyCoCached;
+
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
 #define _PyCode_DEF(SIZE) {                                                    \
@@ -90,7 +97,7 @@ typedef uint16_t _Py_CODEUNIT;
     PyObject *co_qualname;        /* unicode (qualname, for reference) */      \
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
-    PyObject *_co_code;           /* cached co_code object/attribute */        \
+    _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     char *_co_linearray;          /* array of line offsets */                  \
     /* Scratch space for extra data relating to the code object.               \
@@ -210,6 +217,12 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
 /* Equivalent to getattr(code, 'co_code') in Python.
    Returns a strong reference to a bytes object. */
 PyAPI_FUNC(PyObject *) PyCode_GetCode(PyCodeObject *code);
+/* Equivalent to getattr(code, 'co_varnames') in Python. */
+PyAPI_FUNC(PyObject *) PyCode_GetVarnames(PyCodeObject *code);
+/* Equivalent to getattr(code, 'co_cellvars') in Python. */
+PyAPI_FUNC(PyObject *) PyCode_GetCellvars(PyCodeObject *code);
+/* Equivalent to getattr(code, 'co_freevars') in Python. */
+PyAPI_FUNC(PyObject *) PyCode_GetFreevars(PyCodeObject *code);
 
 typedef enum _PyCodeLocationInfoKind {
     /* short forms are 0 to 9 */

@@ -69,7 +69,7 @@ Tuple Objects
 
    Return the slice of the tuple pointed to by *p* between *low* and *high*,
    or ``NULL`` on failure.  This is the equivalent of the Python expression
-   ``p[low:high]``.  Indexing from the end of the list is not supported.
+   ``p[low:high]``.  Indexing from the end of the tuple is not supported.
 
 
 .. c:function:: int PyTuple_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -161,7 +161,7 @@ type.
 .. c:type:: PyStructSequence_Field
 
    Describes a field of a struct sequence. As a struct sequence is modeled as a
-   tuple, all fields are typed as :c:type:`PyObject*`.  The index in the
+   tuple, all fields are typed as :c:expr:`PyObject*`.  The index in the
    :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 

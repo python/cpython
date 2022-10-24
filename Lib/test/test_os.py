@@ -1607,6 +1607,10 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_exist_ok_existing_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
         mode = 0o777
@@ -1621,6 +1625,10 @@ class MakedirTests(unittest.TestCase):
         # Issue #25583: A drive root could raise PermissionError on Windows
         os.makedirs(os.path.abspath('/'), exist_ok=True)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_exist_ok_s_isgid_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
         S_ISGID = stat.S_ISGID
@@ -3657,6 +3665,19 @@ class TermsizeTests(unittest.TestCase):
             raise
         self.assertEqual(expected, actual)
 
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows specific test')
+    def test_windows_fd(self):
+        """Check if get_terminal_size() returns a meaningful value in Windows"""
+        try:
+            conout = open('conout$', 'w')
+        except OSError:
+            self.skipTest('failed to open conout$')
+        with conout:
+            size = os.get_terminal_size(conout.fileno())
+
+        self.assertGreaterEqual(size.columns, 0)
+        self.assertGreaterEqual(size.lines, 0)
+
 
 @unittest.skipUnless(hasattr(os, 'memfd_create'), 'requires os.memfd_create')
 @support.requires_linux_version(3, 17)
@@ -3839,18 +3860,18 @@ class OSErrorTests(unittest.TestCase):
 
         for filenames, func, *func_args in funcs:
             for name in filenames:
-                try:
-                    if isinstance(name, (str, bytes)):
+                if not isinstance(name, (str, bytes)):
+                    with self.assertRaises(TypeError):
                         func(name, *func_args)
-                    else:
-                        with self.assertWarnsRegex(DeprecationWarning, 'should be'):
-                            func(name, *func_args)
-                except OSError as err:
-                    self.assertIs(err.filename, name, str(func))
-                except UnicodeDecodeError:
-                    pass
                 else:
-                    self.fail("No exception thrown by {}".format(func))
+                    try:
+                        func(name, *func_args)
+                    except OSError as err:
+                        self.assertIs(err.filename, name, str(func))
+                    except UnicodeDecodeError:
+                        pass
+                    else:
+                        self.fail("No exception thrown by {}".format(func))
 
 class CPUCountTests(unittest.TestCase):
     def test_cpu_count(self):
@@ -4329,16 +4350,8 @@ class TestScandir(unittest.TestCase):
 
         for cls in bytearray, memoryview:
             path_bytes = cls(os.fsencode(self.path))
-            with self.assertWarns(DeprecationWarning):
-                entries = list(os.scandir(path_bytes))
-            self.assertEqual(len(entries), 1, entries)
-            entry = entries[0]
-
-            self.assertEqual(entry.name, b'file.txt')
-            self.assertEqual(entry.path,
-                             os.fsencode(os.path.join(self.path, 'file.txt')))
-            self.assertIs(type(entry.name), bytes)
-            self.assertIs(type(entry.path), bytes)
+            with self.assertRaises(TypeError):
+                list(os.scandir(path_bytes))
 
     @unittest.skipUnless(os.listdir in os.supports_fd,
                          'fd support for listdir required for this test.')

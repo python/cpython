@@ -1,0 +1,2 @@
+Support reading wave files with the ``WAVE_FORMAT_EXTENSIBLE`` format in the
+:mod:`wave` module.
