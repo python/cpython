@@ -1834,7 +1834,7 @@ C APIs pending removal are
 Removed
 =======
 
-This section lists Python APIs that have been removed in Python 3.12.
+This section lists Python APIs that have been removed in Python 3.11.
 
 Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
