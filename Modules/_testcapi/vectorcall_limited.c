@@ -32,6 +32,101 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
     return self;
 }
 
+static PyObject *test_vectorcall(PyObject* self, PyObject *callable) {
+    PyObject *args[3], *kwname, *kwnames;
+
+    args[0] = NULL;
+    args[1] = PyUnicode_FromString("foo");
+    args[2] = PyUnicode_FromString("bar");
+    kwname = PyUnicode_InternFromString("baz");
+    kwnames = PyTuple_New(1);
+
+    if (!args[1] || !args[2] || !kwname || !kwnames ||
+        PyTuple_SetItem(kwnames, 0, kwname)) {
+        Py_XDECREF(args[1]);
+        Py_XDECREF(args[2]);
+        Py_XDECREF(kwnames);
+        return NULL;
+    }
+
+    PyObject *result = PyObject_Vectorcall(
+        callable,
+        args + 1,
+        1 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames
+    );
+
+    Py_DECREF(args[1]);
+    Py_DECREF(args[2]);
+    Py_DECREF(kwnames);
+
+    return result;
+}
+
+static PyObject *test_vectorcall_dict(PyObject* self, PyObject *callable) {
+    PyObject *args[2], *kwargs, *kwarg;
+
+    args[0] = NULL;
+    args[1] = PyUnicode_FromString("foo");
+    kwarg = PyUnicode_FromString("bar");
+    kwargs = PyDict_New();
+
+    if (!args[1] || !kwarg || !kwargs ||
+        PyDict_SetItemString(kwargs, "baz", kwarg)) {
+        Py_XDECREF(args[1]);
+        Py_XDECREF(kwarg);
+        Py_XDECREF(kwargs);
+        return NULL;
+    }
+
+    PyObject *result = PyObject_VectorcallDict(
+        callable,
+        args + 1,
+        1 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwargs
+    );
+
+    Py_DECREF(args[1]);
+    Py_DECREF(kwarg);
+    Py_DECREF(kwargs);
+
+    return result;
+}
+
+static PyObject *test_vectorcall_method(PyObject* self, PyObject *callable) {
+    PyObject *name, *args[3], *kwname, *kwnames;
+
+    name = PyUnicode_FromString("f");
+    args[0] = callable;
+    args[1] = PyUnicode_FromString("foo");
+    args[2] = PyUnicode_FromString("bar");
+    kwname = PyUnicode_InternFromString("baz");
+    kwnames = PyTuple_New(1);
+
+    if (!name || !args[1] || !args[2] || !kwname || !kwnames ||
+        PyTuple_SetItem(kwnames, 0, kwname)) {
+        Py_XDECREF(name);
+        Py_XDECREF(args[1]);
+        Py_XDECREF(args[2]);
+        Py_XDECREF(kwnames);
+        return NULL;
+    }
+
+    PyObject *result = PyObject_VectorcallMethod(
+        name,
+        args,
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames
+    );
+
+    Py_DECREF(name);
+    Py_DECREF(args[1]);
+    Py_DECREF(args[2]);
+    Py_DECREF(kwnames);
+
+    return result;
+}
+
 static PyMemberDef LimitedVectorCallClass_members[] = {
     {"__vectorcalloffset__", T_PYSSIZET, sizeof(PyObject), READONLY},
     {NULL}
@@ -58,6 +153,9 @@ static PyMethodDef TestMethods[] = {
      * (Empty list left here as template/example, since using
      * PyModule_AddFunctions isn't very common.)
      */
+    {"test_vectorcall", test_vectorcall, METH_O},
+    {"test_vectorcall_method", test_vectorcall_method, METH_O},
+    {"test_vectorcall_dict", test_vectorcall_dict, METH_O},
     {NULL},
 };
 
