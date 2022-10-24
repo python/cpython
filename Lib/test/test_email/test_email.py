@@ -1779,8 +1779,7 @@ class TestMIMEText(unittest.TestCase):
         msg = MIMEText(teststr)
         lines = msg.as_string()
         for line in lines:
-            self.assertTrue(len(line) <= 998)
-
+            self.assertLessEqual(len(line), 998, 'This line is too long')
 
 
 # Test complicated multipart/* messages
