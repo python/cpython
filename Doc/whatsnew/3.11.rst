@@ -1768,9 +1768,6 @@ Standard Library
 .. _whatsnew311-pending-removal:
 .. _whatsnew311-python-api-pending-removal:
 
-.. _whatsnew311-pending-removal:
-.. _whatsnew311-python-api-pending-removal:
-
 Pending Removal in Python 3.12
 ==============================
 
