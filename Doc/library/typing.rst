@@ -1791,7 +1791,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.Container` now supports ``[]``. See :pep:`585`
       and :ref:`types-genericalias`.
 
-.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
+.. class:: ItemsView(MappingView, AbstractSet[tuple[KT_co, VT_co]])
 
    A generic version of :class:`collections.abc.ItemsView`.
 
@@ -1799,7 +1799,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.ItemsView` now supports ``[]``. See :pep:`585`
       and :ref:`types-genericalias`.
 
-.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+.. class:: KeysView(MappingView, AbstractSet[KT_co])
 
    A generic version of :class:`collections.abc.KeysView`.
 
@@ -1819,7 +1819,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.Mapping` now supports ``[]``. See :pep:`585`
       and :ref:`types-genericalias`.
 
-.. class:: MappingView(Sized, Iterable[T_co])
+.. class:: MappingView(Sized)
 
    A generic version of :class:`collections.abc.MappingView`.
 
@@ -1859,7 +1859,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.Sequence` now supports ``[]``. See :pep:`585`
       and :ref:`types-genericalias`.
 
-.. class:: ValuesView(MappingView[VT_co])
+.. class:: ValuesView(MappingView, Collection[_VT_co])
 
    A generic version of :class:`collections.abc.ValuesView`.
 
