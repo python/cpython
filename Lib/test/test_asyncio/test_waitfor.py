@@ -314,7 +314,8 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         else:
             assert inner_action == 'result'
             inner.set_result('inner result')
-        waitfor_task.cancel()
+        if do_cancel:
+            waitfor_task.cancel()
         return await waitfor_task
 
     async def test_simultaneous_self_cancel_and_inner_result(self):
