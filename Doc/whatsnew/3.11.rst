@@ -1627,27 +1627,25 @@ C APIs pending removal are
 * :envvar:`PYTHONTHREADDEBUG`
 * :func:`importlib.find_loader`
 * :func:`importlib.util.module_for_loader`
-* :func:`importlib.util.set_loader_wrapper`
-* :func:`importlib.util.set_package_wrapper`
+* :func:`!importlib.util.set_loader_wrapper`
+* :func:`!importlib.util.set_package_wrapper`
 * :meth:`importlib.abc.Loader.module_repr`
-* :meth:`importlib.abc.Loadermodule_repr`
-* :meth:`importlib.abc.MetaPathFinder.find_module`
 * :meth:`importlib.abc.MetaPathFinder.find_module`
 * :meth:`importlib.abc.PathEntryFinder.find_loader`
 * :meth:`importlib.abc.PathEntryFinder.find_module`
-* :meth:`importlib.machinery.BuiltinImporter.find_module`
-* :meth:`importlib.machinery.BuiltinLoader.module_repr`
-* :meth:`importlib.machinery.FileFinder.find_loader`
-* :meth:`importlib.machinery.FileFinder.find_module`
-* :meth:`importlib.machinery.FrozenImporter.find_module`
-* :meth:`importlib.machinery.FrozenLoader.module_repr`
+* :meth:`!importlib.machinery.BuiltinImporter.find_module`
+* :meth:`!importlib.machinery.BuiltinLoader.module_repr`
+* :meth:`!importlib.machinery.FileFinder.find_loader`
+* :meth:`!importlib.machinery.FileFinder.find_module`
+* :meth:`!importlib.machinery.FrozenImporter.find_module`
+* :meth:`!importlib.machinery.FrozenLoader.module_repr`
 * :meth:`importlib.machinery.PathFinder.find_module`
-* :meth:`importlib.machinery.WindowsRegistryFinder.find_module`
+* :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`
 * :meth:`pathlib.Path.link_to`
-* The entire :ref:`distutils namespace <distutils-deprecated>`
-* :func:`cgi.log`
-* :func:`sqlite3.OptimizedUnicode`
-* :func:`sqlite3.enable_shared_cache`
+* The entire :ref:`distutils package <distutils-deprecated>`
+* :func:`!cgi.log`
+* :func:`!sqlite3.OptimizedUnicode`
+* :func:`!sqlite3.enable_shared_cache`
 
 
 .. _whatsnew311-removed:
