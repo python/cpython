@@ -1,1 +1,0 @@
-Change default child watcher to :class:`~asyncio.PidfdChildWatcher` on Linux systems which supports it. Patch by Kumar Aditya.

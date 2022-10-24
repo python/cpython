@@ -1,3 +1,0 @@
-Wrap network errors consistently in urllib FTP support, so the test suite
-doesn't fail when a network is available but the public internet is not
-reachable.

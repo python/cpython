@@ -1,1 +1,0 @@
-Always round the allocated size for lists up to the nearest even number.

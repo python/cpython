@@ -1,1 +1,0 @@
-Implement :func:`os.setns` and  :func:`os.unshare` for Linux. Patch by Noam Cohen.

@@ -1,1 +1,0 @@
-The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`, :class:`~asyncio.FastChildWatcher` and :class:`~asyncio.SafeChildWatcher` are deprecated and will be removed in Python 3.14. Patch by Kumar Aditya.

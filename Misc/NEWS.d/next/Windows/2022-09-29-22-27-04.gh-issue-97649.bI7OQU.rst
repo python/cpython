@@ -1,1 +1,0 @@
-The ``Tools`` directory is no longer installed on Windows

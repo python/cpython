@@ -1,2 +1,0 @@
-Platforms ``wasm32-unknown-emscripten`` and ``wasm32-unknown-wasi`` have
-been promoted to :pep:`11` tier 3 platform support.
