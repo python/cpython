@@ -1,0 +1,5 @@
+Disallowing subprocess in subinterpreters is no longer supported. Instead,
+``os.exec()`` can now be disallowed.  Disallowing daemon threads is now
+supported.  Disallowing all threads is still allowed, but is never done by
+default.  Note that the options are only available through
+``_Py_NewInterpreterFromConfig()``, which isn't a public API.
