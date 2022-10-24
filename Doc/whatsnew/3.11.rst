@@ -1660,21 +1660,23 @@ This section lists Python APIs that have been removed in Python 3.12.
 
 Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
-* :class:`smtpd.MailmanProxy` is now removed as it is unusable without
-  an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
+* Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
+  as it is unusable without the external :mod:`!mailman` package.
+  (Contributed by Dong-hee Na in :issue:`35800`.)
 
-* The ``binhex`` module, deprecated in Python 3.9, is now removed.
-  The following :mod:`binascii` functions, deprecated in Python 3.9, are now
-  also removed:
+* Removed the :mod:`!binhex` module, deprecated in Python 3.9.
+  Also removed the related, similarly-deprecated :mod:`binascii` functions:
 
-  * ``a2b_hqx()``, ``b2a_hqx()``;
-  * ``rlecode_hqx()``, ``rledecode_hqx()``.
+  * :func:`!binascii.a2b_hqx`
+  * :func:`!binascii.b2a_hqx`
+  * :func:`!binascii.rlecode_hqx`
+  * :func:`!binascii.rldecode_hqx`
 
   The :func:`binascii.crc_hqx` function remains available.
 
   (Contributed by Victor Stinner in :issue:`45085`.)
 
-* The distutils ``bdist_msi`` command, deprecated in Python 3.9, is now removed.
+* Removed the :mod:`distutils` ``bdist_msi`` command deprecated in Python 3.9.
   Use ``bdist_wheel`` (wheel packages) instead.
   (Contributed by Hugo van Kemenade in :issue:`45124`.)
 
@@ -1684,71 +1686,72 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   ``SO_REUSEADDR`` in UDP.
   (Contributed by Hugo van Kemenade in :issue:`45129`.)
 
-* Removed :meth:`__getitem__` methods of
+* Removed the :meth:`~object.__getitem__` methods of
   :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
   (Contributed by Hugo van Kemenade in :issue:`45132`.)
 
-* The following deprecated functions and methods are removed in the :mod:`gettext`
-  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
-  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
-
-  Function :func:`~gettext.bind_textdomain_codeset`, methods
-  :meth:`~gettext.NullTranslations.output_charset` and
-  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
-  parameter of functions :func:`~gettext.translation` and
-  :func:`~gettext.install` are also removed, since they are only used for
-  the ``l*gettext()`` functions.
+* Removed the deprecated :mod:`gettext` functions
+  :func:`!lgettext`, :func:`!ldgettext`,
+  :func:`!lngettext` and :func:`!ldngettext`.
+  Also removed the :func:`!bind_textdomain_codeset` function,
+  the :meth:`!NullTranslations.output_charset` and
+  :meth:`!NullTranslations.set_output_charset` methods,
+  and the *codeset* parameter of :func:`!translation` and :func:`!install`,
+  since they are only used for the :func:`!l*gettext` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
 
-* The :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator` enabling
-  legacy generator-based coroutines to be compatible with async/await code.
+* Removed the :func:`!@asyncio.coroutine` :term:`decorator`
+  enabling legacy generator-based coroutines to be compatible with
+  :keyword:`async` / :keyword:`await` code.
   The function has been deprecated since Python 3.8 and the removal was
   initially scheduled for Python 3.10. Use :keyword:`async def` instead.
   (Contributed by Illia Volochii in :issue:`43216`.)
 
-* :class:`asyncio.coroutines.CoroWrapper` used for wrapping legacy
+* Removed :class:`!asyncio.coroutines.CoroWrapper` used for wrapping legacy
   generator-based coroutine objects in the debug mode.
   (Contributed by Illia Volochii in :issue:`43216`.)
 
-* Removed the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
+* Removed the deprecated :meth:`!split` method of :class:`!_tkinter.TkappType`.
   (Contributed by Erlend E. Aasland in :issue:`38371`.)
 
 * Removed from the :mod:`inspect` module:
 
-  * the ``getargspec`` function, deprecated since Python 3.0;
+  * The :func:`!getargspec` function, deprecated since Python 3.0;
     use :func:`inspect.signature` or :func:`inspect.getfullargspec` instead.
 
-  * the ``formatargspec`` function, deprecated since Python 3.5;
-    use the :func:`inspect.signature` function and :class:`Signature` object
-    directly.
+  * The :func:`!formatargspec` function, deprecated since Python 3.5;
+    use the :func:`inspect.signature` function
+    or the :class:`inspect.Signature` object directly.
 
-  * the undocumented ``Signature.from_builtin`` and ``Signature.from_function``
-    functions, deprecated since Python 3.5; use the
-    :meth:`Signature.from_callable() <inspect.Signature.from_callable>` method
-    instead.
+  * The undocumented :meth:`!Signature.from_builtin`
+    and :meth:`!Signature.from_function` methods, deprecated since Python 3.5;
+    use the :meth:`Signature.from_callable() <inspect.Signature.from_callable>`
+    method instead.
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
-* Remove namespace package support from unittest discovery. It was introduced in
-  Python 3.4 but has been broken since Python 3.7.
+* Removed namespace package support from :mod:`unittest` discovery.
+  It was introduced in Python 3.4 but has been broken since Python 3.7.
   (Contributed by Inada Naoki in :issue:`23882`.)
 
-* Remove ``__class_getitem__`` method from :class:`pathlib.PurePath`,
+* Removed the :meth:`~object.__class_getitem__` method
+  from :class:`pathlib.PurePath`,
   because it was not used and added by mistake in previous versions.
   (Contributed by Nikita Sobolev in :issue:`46483`.)
 
-* Remove the undocumented private ``float.__set_format__()`` method, previously
-  known as ``float.__setformat__()`` in Python 3.7. Its docstring said: "You
-  probably don't want to use this function. It exists mainly to be used in
-  Python's test suite."
+* Removed the undocumented private :meth:`!float.__set_format__()` method,
+  previously known as :meth:`!float.__setformat__()` in Python 3.7.
+  Its docstring said: "You probably don't want to use this function.
+  It exists mainly to be used in Python's test suite."
   (Contributed by Victor Stinner in :issue:`46852`.)
 
-* The ``--experimental-isolated-subinterpreters`` configure flag
-  (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
+* The :option:`!--experimental-isolated-subinterpreters` configure flag
+  (and corresponding :c:macro:`!EXPERIMENTAL_ISOLATED_SUBINTERPRETERS` macro)
   have been removed.
 
-* Pynche --- The Pythonically Natural Color and Hue Editor --- has been moved out
+* `Pynche <https://pypi.org/project/pynche/>`_
+  --- The Pythonically Natural Color and Hue Editor --- has been moved out
   of ``Tools/scripts`` and is `being developed independently
   <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.
 
