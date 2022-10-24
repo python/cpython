@@ -2395,6 +2395,21 @@ exec_builtin_or_dynamic(PyObject *mod) {
     return PyModule_ExecDef(mod, def);
 }
 
+int
+_PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    if (_PyInterpreterState_HasFeature(
+                interp, Py_RTFLAGS_MULTI_INTERP_EXTENSIONS)) {
+        assert(!_Py_IsMainInterpreter(interp));
+        PyErr_Format(PyExc_ImportError,
+                     "module %s does not support loading in subinterpreters",
+                     name);
+        return -1;
+    }
+    return 0;
+}
+
 #ifdef HAVE_DYNAMIC_LOADING
 
 /*[clinic input]
