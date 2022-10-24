@@ -1,0 +1,255 @@
+.. date: 2022-09-28-17-09-37
+.. gh-issue: 97616
+.. nonce: K1e3Xs
+.. release date: 2022-10-24
+.. section: Security
+
+Fix multiplying a list by an integer (``list *= int``): detect the integer
+overflow when the new allocated length is close to the maximum size. Issue
+reported by Jordan Limor.  Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-07-10-42-00
+.. gh-issue: 97514
+.. nonce: Yggdsl
+.. section: Security
+
+On Linux the :mod:`multiprocessing` module returns to using filesystem
+backed unix domain sockets for communication with the *forkserver* process
+instead of the Linux abstract socket namespace.  Only code that chooses to
+use the :ref:`"forkserver" start method <multiprocessing-start-methods>` is
+affected.
+
+Abstract sockets have no permissions and could allow any user on the system
+in the same `network namespace
+<https://man7.org/linux/man-pages/man7/network_namespaces.7.html>`_ (often
+the whole system) to inject code into the multiprocessing *forkserver*
+process. This was a potential privilege escalation. Filesystem based socket
+permissions restrict this to the *forkserver* process user as was the
+default in Python 3.8 and earlier.
+
+This prevents Linux `CVE-2022-42919
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-42919>`_.
+
+..
+
+.. date: 2022-10-06-02-11-34
+.. gh-issue: 97002
+.. nonce: Zvsk71
+.. section: Core and Builtins
+
+Fix an issue where several frame objects could be backed by the same
+interpreter frame, possibly leading to corrupted memory and hard crashes of
+the interpreter.
+
+..
+
+.. date: 2022-10-03-13-35-48
+.. gh-issue: 97752
+.. nonce: 0xTjJY
+.. section: Core and Builtins
+
+Fix possible data corruption or crashes when accessing the ``f_back`` member
+of newly-created generator or coroutine frames.
+
+..
+
+.. date: 2022-09-21-16-06-37
+.. gh-issue: 96975
+.. nonce: BmE0XY
+.. section: Core and Builtins
+
+Fix a crash occurring when :c:func:`PyEval_GetFrame` is called while the
+topmost Python frame is in a partially-initialized state.
+
+..
+
+.. date: 2022-09-21-14-38-31
+.. gh-issue: 96848
+.. nonce: WuoLzU
+.. section: Core and Builtins
+
+Fix command line parsing: reject :option:`-X int_max_str_digits <-X>` option
+with no value (invalid) when the :envvar:`PYTHONINTMAXSTRDIGITS` environment
+variable is set to a valid limit. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-18-08-47-40
+.. gh-issue: 96821
+.. nonce: Co2iOq
+.. section: Core and Builtins
+
+Fix undefined behaviour in ``_testcapimodule.c``.
+
+..
+
+.. date: 2022-09-16-19-02-40
+.. gh-issue: 95778
+.. nonce: cJmnst
+.. section: Core and Builtins
+
+When :exc:`ValueError` is raised if an integer is larger than the limit,
+mention the :func:`sys.set_int_max_str_digits` function in the error
+message. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-05-19-20-44
+.. gh-issue: 96587
+.. nonce: bVxhX2
+.. section: Core and Builtins
+
+Correctly raise ``SyntaxError`` on exception groups (:pep:`654`) on python
+versions prior to 3.11
+
+..
+
+.. bpo: 42316
+.. date: 2020-11-15-02-08-43
+.. nonce: LqdkWK
+.. section: Core and Builtins
+
+Document some places where an assignment expression needs parentheses.
+
+..
+
+.. date: 2022-10-16-15-31-50
+.. gh-issue: 98331
+.. nonce: Y5kPOX
+.. section: Library
+
+Update the bundled copies of pip and setuptools to versions 22.3 and 65.5.0
+respectively.
+
+..
+
+.. date: 2022-10-06-23-42-00
+.. gh-issue: 90985
+.. nonce: s280JY
+.. section: Library
+
+Earlier in 3.11 we deprecated ``asyncio.Task.cancel("message")``. We
+realized we were too harsh, and have undeprecated it.
+
+..
+
+.. date: 2022-09-25-23-24-52
+.. gh-issue: 97545
+.. nonce: HZLSNt
+.. section: Library
+
+Make Semaphore run faster.
+
+..
+
+.. date: 2022-09-24-18-56-23
+.. gh-issue: 96865
+.. nonce: o9WUkW
+.. section: Library
+
+fix Flag to use boundary CONFORM
+
+This restores previous Flag behavior of allowing flags with non-sequential
+values to be combined; e.g.
+
+class Skip(Flag):         TWO = 2         EIGHT = 8
+
+Skip.TWO | Skip.EIGHT -> <Skip.TWO|EIGHT: 10>
+
+..
+
+.. date: 2022-05-25-15-57-39
+.. gh-issue: 90155
+.. nonce: YMstB5
+.. section: Library
+
+Fix broken :class:`asyncio.Semaphore` when acquire is cancelled.
+
+..
+
+.. date: 2022-10-02-10-58-52
+.. gh-issue: 97741
+.. nonce: 39l023
+.. section: Documentation
+
+Fix ``!`` in c domain ref target syntax via a ``conf.py`` patch, so it works
+as intended to disable ref target resolution.
+
+..
+
+.. date: 2022-05-20-18-42-10
+.. gh-issue: 93031
+.. nonce: c2RdJe
+.. section: Documentation
+
+Update tutorial introduction output to use 3.10+ SyntaxError invalid range.
+
+..
+
+.. date: 2022-10-20-17-49-50
+.. gh-issue: 95027
+.. nonce: viRpJB
+.. section: Tests
+
+On Windows, when the Python test suite is run with the ``-jN`` option, the
+ANSI code page is now used as the encoding for the stdout temporary file,
+rather than using UTF-8 which can lead to decoding errors. Patch by Victor
+Stinner.
+
+..
+
+.. date: 2022-09-11-14-23-49
+.. gh-issue: 96729
+.. nonce: W4uBWL
+.. section: Build
+
+Ensure that Windows releases built with ``Tools\msi\buildrelease.bat`` are
+upgradable to and from official Python releases.
+
+..
+
+.. date: 2022-10-19-20-00-28
+.. gh-issue: 98360
+.. nonce: O2m6YG
+.. section: Windows
+
+Fixes :mod:`multiprocessing` spawning child processes on Windows from a
+virtual environment to ensure that child processes that also use
+:mod:`multiprocessing` to spawn more children will recognize that they are
+in a virtual environment.
+
+..
+
+.. date: 2022-10-19-19-35-37
+.. gh-issue: 98414
+.. nonce: FbHZuS
+.. section: Windows
+
+Fix :file:`py.exe` launcher handling of ``-V:<company>/`` option when
+default preferences have been set in environment variables or configuration
+files.
+
+..
+
+.. date: 2022-09-29-23-08-49
+.. gh-issue: 90989
+.. nonce: no89Q2
+.. section: Windows
+
+Clarify some text in the Windows installer.
+
+..
+
+.. date: 2022-10-05-15-26-58
+.. gh-issue: 97897
+.. nonce: Rf-C6u
+.. section: macOS
+
+The macOS 13 SDK includes support for the ``mkfifoat`` and ``mknodat``
+system calls. Using the ``dir_fd`` option with either :func:`os.mkfifo` or
+:func:`os.mknod` could result in a segfault if cpython is built with the
+macOS 13 SDK but run on an earlier version of macOS. Prevent this by adding
+runtime support for detection of these system calls ("weaklinking") as is
+done for other newer syscalls on macOS.
