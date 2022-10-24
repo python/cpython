@@ -949,6 +949,18 @@ sqlite3
   (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`.)
 
 
+.. _whatsnew311-string:
+
+string
+------
+
+* Add :meth:`~string.Template.get_identifiers`
+  and :meth:`~string.Template.is_valid` to :class:`string.Template`,
+  which respectively return all valid placeholders,
+  and whether any invalid placeholders are present.
+  (Contributed by Ben Kehoe in :gh:`90465`.)
+
+
 sys
 ---
 
