@@ -1809,11 +1809,6 @@ Porting notes for the C API are
   Therefore, this could change the captured output in these cases.
   (Contributed by Ma Lin in :issue:`35859`.)
 
-* :c:member:`~PyTypeObject.tp_dictoffset` should be treated as write-only.
-  It can be set to describe C extension classwa to the VM, but should be regarded
-  as meaningless when read. To get the pointer to the object's dictionary, call
-  :c:func:`PyObject_GenericGetDict` instead.
-
 
 .. _whatsnew311-build-changes:
 
