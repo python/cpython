@@ -1,0 +1,7 @@
+Added the methods ``PyObject_Vectorcall``, ``PyObject_VectorcallDict`` and
+``PyObject_VectorcallMethod`` to the limited API along with the auxiliary
+macro constant ``PY_VECTORCALL_ARGUMENTS_OFFSET``.
+
+The availability of these functions enables more efficient PEP-590 vector
+calls from binary extension modules that avoid argument boxing/unboxing
+overheads.
