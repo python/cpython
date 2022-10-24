@@ -2004,7 +2004,11 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     // Create and initialize the new interpreter
     // (with all optional features disabled).
     PyThreadState *save_tstate = _PyThreadState_GET();
-    _PyInterpreterConfig config = { 0 };
+    _PyInterpreterConfig config = {
+        .allow_fork = !isolated,
+        .allow_subprocess = !isolated,
+        .allow_threads = !isolated,
+    };
     // XXX Possible GILState issues?
     PyThreadState *tstate = _Py_NewInterpreterFromConfig(&config);
     PyThreadState_Swap(save_tstate);
