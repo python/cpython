@@ -1766,8 +1766,28 @@ C APIs pending removal are
 * :meth:`pathlib.Path.link_to`
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`
-* :mod:`unittest` ``fail*`` and ``assert*`` :ref:`deprecated-aliases`
 * :envvar:`PYTHONTHREADDEBUG` environment variable
+* :mod:`unittest` ``fail*`` and ``assert*`` deprecated-aliases:
+
+    ============================ =============================== ===============
+       Deprecated alias           Method Name                     Deprecated in
+    ============================ =============================== ===============
+     ``failUnless``               :meth:`.assertTrue`             3.1
+     ``failIf``                   :meth:`.assertFalse`            3.1
+     ``failUnlessEqual``          :meth:`.assertEqual`            3.1
+     ``failIfEqual``              :meth:`.assertNotEqual`         3.1
+     ``failUnlessAlmostEqual``    :meth:`.assertAlmostEqual`      3.1
+     ``failIfAlmostEqual``        :meth:`.assertNotAlmostEqual`   3.1
+     ``failUnlessRaises``         :meth:`.assertRaises`           3.1
+     ``assert_``                  :meth:`.assertTrue`             3.2
+     ``assertEquals``             :meth:`.assertEqual`            3.2
+     ``assertNotEquals``          :meth:`.assertNotEqual`         3.2
+     ``assertAlmostEquals``       :meth:`.assertAlmostEqual`      3.2
+     ``assertNotAlmostEquals``    :meth:`.assertNotAlmostEqual`   3.2
+     ``assertRegexpMatches``      :meth:`.assertRegex`            3.2
+     ``assertRaisesRegexp``       :meth:`.assertRaisesRegex`      3.2
+     ``assertNotRegexpMatches``   :meth:`.assertNotRegex`         3.5
+    ============================ =============================== ===============
 
 .. _whatsnew311-removed:
 .. _whatsnew311-python-api-removed:
