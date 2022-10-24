@@ -911,7 +911,7 @@ sysconfig
 tempfile
 --------
 
-* :class:`~tempfile.SpooledTemporaryFile` now fully implements the methods
+* :class:`~tempfile.SpooledTemporaryFile` objects now fully implements the methods
   of :class:`io.BufferedIOBase` or :class:`io.TextIOBase`
   (depending on file mode).
   This lets them work correctly with APIs that expect file-like objects,
