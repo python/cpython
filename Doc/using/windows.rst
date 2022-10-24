@@ -869,12 +869,17 @@ minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
-executable :envvar:`PATH` for a Python executable. This corresponds to the
-behaviour of the Unix ``env`` program, which performs a :envvar:`PATH` search.
+executable :envvar:`PATH` for an executable. This corresponds to the behaviour
+of the Unix ``env`` program, which performs a :envvar:`PATH` search.  Note that
+this can find and run non-Python executables if specified in the shebang line [#]_.
 If an executable matching the first argument after the ``env`` command cannot
 be found, it will be handled as described below. Additionally, the environment
 variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set (to any value) to skip
 this additional search.
+
+.. [#] This can cause surprising effects with `#!/usr/bin/env bash` or other
+   non-Python interpreters meant to trampoline into Python, as this could select
+   a WSL `bash`, causing the script to run under WSL instead of running natively.
 
 
 Arguments in shebang lines
