@@ -1,4 +1,0 @@
-Fix the Python path configuration used to initialized :data:`sys.path` at
-Python startup. Paths are no longer encoded to UTF-8/strict to avoid encoding
-errors if it contains surrogate characters (bytes paths are decoded with the
-surrogateescape error handler). Patch by Victor Stinner.

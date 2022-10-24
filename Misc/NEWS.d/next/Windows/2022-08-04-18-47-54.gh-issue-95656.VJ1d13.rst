@@ -1,2 +1,0 @@
-Enable the :meth:`~sqlite3.Connection.enable_load_extension` :mod:`sqlite3`
-API.
