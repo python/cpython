@@ -1509,25 +1509,15 @@ Modules
 * :pep:`594` led to the deprecations of the following modules
   slated for removal in Python 3.13:
 
-  * :mod:`aifc`
-  * :mod:`audioop`
-  * :mod:`cgi`
-  * :mod:`cgitb`
-  * :mod:`chunk`
-  * :mod:`crypt`
-  * :mod:`imghdr`
-  * :mod:`mailcap`
-  * :mod:`msilib`
-  * :mod:`nis`
-  * :mod:`nntplib`
-  * :mod:`ossaudiodev`
-  * :mod:`pipes`
-  * :mod:`sndhdr`
-  * :mod:`spwd`
-  * :mod:`sunau`
-  * :mod:`telnetlib`
-  * :mod:`uu`
-  * :mod:`xdrlib`
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+  | :mod:`aifc`         | :mod:`chunk`        | :mod:`msilib`       | :mod:`pipes`        | :mod:`telnetlib`    |
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+  | :mod:`audioop`      | :mod:`crypt`        | :mod:`nis`          | :mod:`sndhdr`       | :mod:`uu`           |
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+  | :mod:`cgi`          | :mod:`imghdr`       | :mod:`nntplib`      | :mod:`spwd`         | :mod:`xdrlib`       |
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+  | :mod:`cgitb`        | :mod:`mailcap`      | :mod:`ossaudiodev`  | :mod:`sunau`        |                     |
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
