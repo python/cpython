@@ -1432,7 +1432,7 @@ New opcodes
 
 * :opcode:`MAKE_CELL`, to create :ref:`cell-objects`.
 
-* :opcode:`PREP_RERAISE_STAR`,
+* :opcode:`CHECK_EG_MATCH`  and  :opcode:`PREP_RERAISE_STAR`,
   to handle the :ref:`new exception groups and except* <whatsnew311-pep654>`
   added in :pep:`654`.
 
@@ -1466,7 +1466,6 @@ Replaced opcodes
 | | :opcode:`!ROT_N`                 |                                   |                                         |
 +------------------------------------+-----------------------------------+-----------------------------------------+
 | | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | | :opcode:`CHECK_EXC_MATCH`       | Now performs check but doesn't jump     |
-| | :opcode:`!JUMP_IF_NOT_EG_MATCH`  | | :opcode:`CHECK_EG_MATCH`        |                                         |
 +------------------------------------+-----------------------------------+-----------------------------------------+
 | | :opcode:`!JUMP_ABSOLUTE`         | | :opcode:`JUMP_BACKWARD`         | See [#bytecode-jump]_;                  |
 | | :opcode:`!POP_JUMP_IF_FALSE`     | | :opcode:`POP_JUMP_BACKWARD_IF_* | ``TRUE``, ``FALSE``,                    |
