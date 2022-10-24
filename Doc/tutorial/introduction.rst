@@ -210,7 +210,8 @@ Another is to add a blank character before the quote and then remove it::
 
    >>> fn = r'C:\this\will\work\ '.strip()
 
-It is also possible to use :func:`os.path.join` (by leaving the last parameter empty).
+It is also possible to use :func:`os.path.join` to append a backslash on Windows
+(by leaving the last parameter empty).
 
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
