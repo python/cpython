@@ -1622,8 +1622,12 @@ and will be removed in Python 3.12.
 C APIs pending removal are
 :ref:`listed separately <whatsnew311-c-api-pending-removal>`.
 
-* :envvar:`PYTHONTHREADDEBUG`
-* The entire :ref:`distutils package <distutils-deprecated>`
+* The :mod:`asynchat` module
+* The :mod:`asyncore` module
+* The :ref:`entire distutils package <distutils-deprecated>`
+* The :mod:`imp` module
+* The :class:`typing.io <typing.IO>` namespace
+* The :class:`typing.re <typing.Pattern>` namespace
 * :func:`!cgi.log`
 * :func:`importlib.find_loader`
 * :meth:`importlib.abc.Loader.module_repr`
@@ -1646,7 +1650,8 @@ C APIs pending removal are
 * :meth:`pathlib.Path.link_to`
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`
-
+* :mod:`unittest` ``fail*`` and ``assert*`` :ref:`deprecated-aliases`
+* :envvar:`PYTHONTHREADDEBUG` environment variable
 
 .. _whatsnew311-removed:
 .. _whatsnew311-python-api-removed:
