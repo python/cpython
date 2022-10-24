@@ -32,7 +32,7 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
     return self;
 }
 
-static PyObject *test_vectorcall(PyObject* self, PyObject *callable) {
+static PyObject *call_vectorcall(PyObject* self, PyObject *callable) {
     PyObject *args[3], *kwname, *kwnames;
 
     args[0] = NULL;
@@ -63,7 +63,7 @@ static PyObject *test_vectorcall(PyObject* self, PyObject *callable) {
     return result;
 }
 
-static PyObject *test_vectorcall_dict(PyObject* self, PyObject *callable) {
+static PyObject *call_vectorcall_dict(PyObject* self, PyObject *callable) {
     PyObject *args[2], *kwargs, *kwarg;
 
     args[0] = NULL;
@@ -93,7 +93,7 @@ static PyObject *test_vectorcall_dict(PyObject* self, PyObject *callable) {
     return result;
 }
 
-static PyObject *test_vectorcall_method(PyObject* self, PyObject *callable) {
+static PyObject *call_vectorcall_method(PyObject* self, PyObject *callable) {
     PyObject *name, *args[3], *kwname, *kwnames;
 
     name = PyUnicode_FromString("f");
@@ -153,9 +153,9 @@ static PyMethodDef TestMethods[] = {
      * (Empty list left here as template/example, since using
      * PyModule_AddFunctions isn't very common.)
      */
-    {"test_vectorcall", test_vectorcall, METH_O},
-    {"test_vectorcall_method", test_vectorcall_method, METH_O},
-    {"test_vectorcall_dict", test_vectorcall_dict, METH_O},
+    {"call_vectorcall", call_vectorcall, METH_O},
+    {"call_vectorcall_method", call_vectorcall_method, METH_O},
+    {"call_vectorcall_dict", call_vectorcall_dict, METH_O},
     {NULL},
 };
 

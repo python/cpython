@@ -819,7 +819,7 @@ class TestPEP590(unittest.TestCase):
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing(self):
-        from _testcapi import test_vectorcall
+        from _testcapi import call_vectorcall
 
         args_captured = []
         kwargs_captured = []
@@ -829,13 +829,13 @@ class TestPEP590(unittest.TestCase):
             kwargs_captured.append(kwargs)
             return "success"
 
-        self.assertEqual(test_vectorcall(f), "success")
+        self.assertEqual(call_vectorcall(f), "success")
         self.assertEqual(args_captured, [("foo",)])
         self.assertEqual(kwargs_captured, [{"baz": "bar"}])
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing_dict(self):
-        from _testcapi import test_vectorcall_dict
+        from _testcapi import call_vectorcall_dict
 
         args_captured = []
         kwargs_captured = []
@@ -845,13 +845,13 @@ class TestPEP590(unittest.TestCase):
             kwargs_captured.append(kwargs)
             return "success"
 
-        self.assertEqual(test_vectorcall_dict(f), "success")
+        self.assertEqual(call_vectorcall_dict(f), "success")
         self.assertEqual(args_captured, [("foo",)])
         self.assertEqual(kwargs_captured, [{"baz": "bar"}])
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing_method(self):
-        from _testcapi import test_vectorcall_method
+        from _testcapi import call_vectorcall_method
 
         args_captured = []
         kwargs_captured = []
@@ -862,7 +862,7 @@ class TestPEP590(unittest.TestCase):
                 kwargs_captured.append(kwargs)
                 return "success"
 
-        self.assertEqual(test_vectorcall_method(TestInstance()), "success")
+        self.assertEqual(call_vectorcall_method(TestInstance()), "success")
         self.assertEqual(args_captured, [("foo",)])
         self.assertEqual(kwargs_captured, [{"baz": "bar"}])
 
