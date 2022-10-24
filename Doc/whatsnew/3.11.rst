@@ -1818,40 +1818,66 @@ Porting notes for the C API are
 Build Changes
 =============
 
-* Building Python now requires a
-  `C11 <https://en.cppreference.com/w/c/11>`_ compiler.
-  `Optional C11 features
-  <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
-  are not required.
-  (Contributed by Victor Stinner in :issue:`46656`.)
+* CPython now has :pep:`11` :pep:`Tier 3 support <11#tier-3>` for
+  cross compiling to the `WebAssembly <https://webassembly.org/>`_ platforms
+  `Emscripten <https://emscripten.org/>`_
+  (``wasm32-unknown-emscripten``, i.e. Python in the browser)
+  and `WebAssembly System Interface (WASI) <https://wasi.dev/>`_
+  (``wasm32-unknown-wasi``).
+  The effort is inspired by previous work like `Pyodide <https://pyodide.org/>`_.
+  These platforms provide a limited subset of POSIX APIs; Python standard
+  libraries features and modules related to networking, processes, threading,
+  signals, mmap, and users/groups are not available or don't work.
+  (Emscripten contributed by Christian Heimes and Ethan Smith in :gh:`84461`
+  and WASI contributed by Christian Heimes in :gh:`90473`;
+  platforms promoted in :gh:`95085`)
 
-* Building Python now requires support for
-  `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating point numbers.
-  (Contributed by Victor Stinner in :issue:`46917`.)
+* Building Python now requires:
+
+  * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler.
+    `Optional C11 features
+    <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
+    are not required.
+    (Contributed by Victor Stinner in :issue:`46656`.)
+
+  * Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
+    floating point numbers.
+    (Contributed by Victor Stinner in :issue:`46917`.)
+
+  * Support for `floating point Not-a-Number (NaN)
+    <https://en.wikipedia.org/wiki/NaN#Floating_point>`_,
+    as the :c:macro:`!Py_NO_NAN` macro has been removed.
+    (Contributed by Victor Stinner in :issue:`46656`.)
+
+  * A `C99 <https://en.cppreference.com/w/c/99>`_
+    ``<math.h>`` header file providing the
+    :c:func:`!copysign`, :c:func:`!hypot`, :c:func:`!isfinite`,
+    :c:func:`!isinf`, :c:func:`!isnan`, and :c:func:`!round` functions
+    (contributed by Victor Stinner in :issue:`45440`);
+    and a :c:data:`!NAN` constant or the :c:func:`!__builtin_nan` function
+    (Contributed by Victor Stinner in :issue:`46640`).
+
+* The :mod:`tkinter` package now requires `Tcl/Tk <https://www.tcl.tk>`_
+  version 8.5.12 or newer.
+  (Contributed by Serhiy Storchaka in :issue:`46996`.)
+
+* Build dependencies, compiler flags, and linker flags for most stdlib
+  extension modules are now detected by :program:`configure`. libffi, libnsl,
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk, and uuid flags
+  are detected by `pkg-config
+  <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ (when available).
+  :mod:`tkinter` now requires a pkg-config command
+  to detect development settings for `Tcl/Tk`_ headers and libraries.
+  (Contributed by Christian Heimes and Erlend Egeberg Aasland in
+  :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
+
+* libpython is no longer linked against libcrypt.
+  (Contributed by Mike Gilbert in :issue:`45433`.)
 
 * CPython can now be built with the
   `ThinLTO <https://clang.llvm.org/docs/ThinLTO.html>`_ option
   via passing ``thin`` to :option:`--with-lto`, i.e. ``--with-lto=thin``.
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
-
-* libpython is no longer linked against libcrypt.
-  (Contributed by Mike Gilbert in :issue:`45433`.)
-
-* Building Python now requires a `C99 <https://en.cppreference.com/w/c/99>`_
-  ``<math.h>`` header file providing the following functions:
-  :c:func:`!copysign`, :c:func:`!hypot`, :c:func:`!isfinite`,
-  :c:func:`!isinf`, :c:func:`!isnan`, and :c:func:`!round`.
-  (Contributed by Victor Stinner in :issue:`45440`.)
-
-* Building Python now requires a `C99 <https://en.cppreference.com/w/c/99>`_
-  ``<math.h>`` header file providing a :c:data:`!NAN` constant,
-  or the :c:func:`!__builtin_nan` built-in function.
-  (Contributed by Victor Stinner in :issue:`46640`.)
-
-* Building Python now requires support for `floating point Not-a-Number (NaN)
-  <https://en.wikipedia.org/wiki/NaN#Floating_point>`_,
-  as the :c:macro:`!Py_NO_NAN` macro has been removed.
-  (Contributed by Victor Stinner in :issue:`46656`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`!--without-freelists` can be used to disable all freelists
@@ -1863,16 +1889,6 @@ Build Changes
   test modules can be linked statically into a main binary or library.
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
-
-* Build dependencies, compiler flags, and linker flags for most stdlib
-  extension modules are now detected by :program:`configure`. libffi, libnsl,
-  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk, and uuid flags
-  are detected by `pkg-config
-  <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ (when available).
-  :mod:`tkinter` now requires a pkg-config command
-  to detect development settings for `Tcl/Tk`_ headers and libraries.
-  (Contributed by Christian Heimes and Erlend Egeberg Aasland in
-  :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
 
   .. note::
      Use the environment variables :envvar:`!TCLTK_CFLAGS` and
@@ -1886,23 +1902,6 @@ Build Changes
      The directory ``Misc/rhel7`` contains ``.pc`` files and instructions
      on how to build Python with RHEL 7's and CentOS 7's Tcl/Tk and OpenSSL.
 
-* CPython now has :pep:`11` :pep:`Tier 3 support <11#tier-3>`
-  for cross compiling to the `Emscripten <https://emscripten.org/>`_
-  `WebAssembly <https://webassembly.org/>`_ platform
-  ``wasm32-unknown-emscripten``, i.e. Python in the browser.
-  The effort is inspired by previous work like `Pyodide <https://pyodide.org/>`_.
-  Emscripten provides a limited subset of POSIX APIs; Python standard
-  libraries features and modules related to networking, processes, threading,
-  signals, mmap, and users/groups are not available or don't work.
-  (Contributed by Christian Heimes and Ethan Smith in :gh:`84461`,
-  promoted in :gh:`95085`)
-
-* CPython also now has :pep:`11` :pep:`Tier 3 support <11#tier-3>` for cross
-  compiling to the `WebAssembly System Interface (WASI) <https://wasi.dev/>`_
-  `WebAssembly <https://webassembly.org/>`_ platform ``wasm32-unknown-wasi``.
-  Like Emscripten, only a subset of Python's standard library works on WASI.
-  (Contributed by Christian Heimes in :gh:`90473`, promoted in :gh:`95085`)
-
 * CPython will now use 30-bit digits by default for the Python :class:`int`
   implementation. Previously, the default was to use 30-bit digits on platforms
   with ``SIZEOF_VOID_P >= 8``, and 15-bit digits otherwise. It's still possible
@@ -1911,10 +1910,6 @@ Build Changes
   or (for Windows) the ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``,
   but this option may be removed at some point in the future.
   (Contributed by Mark Dickinson in :issue:`45569`.)
-
-* The :mod:`tkinter` package now requires `Tcl/Tk <https://www.tcl.tk>`_
-  version 8.5.12 or newer.
-  (Contributed by Serhiy Storchaka in :issue:`46996`.)
 
 
 .. _whatsnew311-c-api:
