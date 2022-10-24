@@ -289,6 +289,70 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
     async def test_cancel_wait_for(self):
         await self._test_cancel_wait_for(60.0)
 
+    async def simultaneous_self_cancel_and_inner_result(
+        self,
+        do_cancel,
+        waitfor_timeout,
+        inner_action,
+    ):
+        """Construct scenario where external cancellation, exceeding timeout and
+        awaitable becoming done all happen simultaneously.
+        inner_acion is one of 'cancel', 'exception' or 'result'.
+        if do_cancel, the wait_for() call is cancelled at the same time when
+        inner_action is executed.
+        If waitfor_timeout == 0.1, then the timeout should happen at the same
+        time as well."""
+        loop = asyncio.get_running_loop()
+        inner = loop.create_future()
+        waitfor_task = asyncio.create_task(
+            asyncio.wait_for(inner, timeout=waitfor_timeout))
+        await asyncio.sleep(0.1)
+        if inner_action == 'cancel':
+            inner.cancel()
+        elif inner_action == 'exception':
+            inner.set_exception(RuntimeError('inner exception'))
+        else:
+            assert inner_action == 'result'
+            inner.set_result('inner result')
+        waitfor_task.cancel()
+        return await waitfor_task
+
+    async def test_simultaneous_self_cancel_and_inner_result(self):
+        for timeout in (0.1, 10, None):
+            with self.subTest(waitfor_timeout=timeout):
+                with self.assertRaises(asyncio.CancelledError):
+                    await self.simultaneous_self_cancel_and_inner_result(
+                        True, timeout, 'result')
+
+    async def test_simultaneous_self_cancel_and_inner_exc(self):
+        for timeout in (0.1, 10, None):
+            with self.subTest(waitfor_timeout=timeout):
+                with self.assertRaises(RuntimeError):
+                    await self.simultaneous_self_cancel_and_inner_result(
+                        True, timeout, 'exception')
+
+    async def test_simultaneous_self_cancel_and_inner_cancel(self):
+        for timeout in (0.1, 10, None):
+            with self.subTest(waitfor_timeout=timeout):
+                with self.assertRaises(asyncio.CancelledError):
+                    await self.simultaneous_self_cancel_and_inner_result(
+                        True, timeout, 'cancel')
+
+    async def test_simultaneous_inner_result_and_timeout(self):
+        result = await self.simultaneous_self_cancel_and_inner_result(
+            False, 0.1, 'result')
+        self.assertEqual(result, 'inner result')
+
+    async def test_simultaneous_inner_exc_and_timeout(self):
+        with self.assertRaises(RuntimeError):
+            await self.simultaneous_self_cancel_and_inner_result(
+                False, 0.1, 'exception')
+
+    async def test_simultaneous_inner_cancel_and_timeout(self):
+        with self.assertRaises(asyncio.CancelledError):
+            await self.simultaneous_self_cancel_and_inner_result(
+                False, 0.1, 'cancel')
+
 
 if __name__ == '__main__':
     unittest.main()
