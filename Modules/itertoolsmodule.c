@@ -142,6 +142,7 @@ static PyObject *
 batched_next(batchedobject *bo)
 {
     Py_ssize_t i;
+    Py_ssize_t n = bo->batch_size;
     PyObject *it = bo->it;
     PyObject *item;
     PyObject *result;
@@ -149,28 +150,39 @@ batched_next(batchedobject *bo)
     if (it == NULL) {
         return NULL;
     }
-    result = PyList_New(0);
+    result = PyList_New(n);
     if (result == NULL) {
         return NULL;
     }
-    for (i=0 ; i < bo->batch_size ; i++) {
-        item = PyIter_Next(it);
+    iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
+    PyObject **items = _PyList_ITEMS(result);
+    for (i=0 ; i < n ; i++) {
+        item = iternext(it);
         if (item == NULL) {
-            break;
+            goto null_item;
         }
-        if (PyList_Append(result, item) < 0) {
-            Py_DECREF(item);
+        items[i] = item;
+    }
+    return result;
+
+ null_item:
+    if (PyErr_Occurred()) {
+        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            /* Input raised an exception other than StopIteration */
+            Py_CLEAR(bo->it);
             Py_DECREF(result);
             return NULL;
         }
-        Py_DECREF(item);
+        PyErr_Clear();
     }
-    if (PyList_GET_SIZE(result) > 0) {
-        return result;
+    if (i == 0) {
+        Py_CLEAR(bo->it);
+        Py_DECREF(result);
+        return NULL;
     }
-    Py_CLEAR(bo->it);
-    Py_DECREF(result);
-    return NULL;
+    /* Elements in result[i:] are still NULL */
+    Py_SET_SIZE(result, i);
+    return result;
 }
 
 static PyTypeObject batched_type = {

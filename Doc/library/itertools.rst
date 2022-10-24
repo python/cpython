@@ -198,7 +198,7 @@ loops that truncate the stream.
           while (batch := list(islice(it, n))):
               yield batch
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 
 .. function:: chain(*iterables)

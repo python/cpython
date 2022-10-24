@@ -51,13 +51,6 @@ static const char copyright[] =
 
 #include <ctype.h>
 
-/* name of this module, minus the leading underscore */
-#if !defined(SRE_MODULE)
-#define SRE_MODULE "sre"
-#endif
-
-#define SRE_PY_MODULE "re"
-
 /* defining this one enables tracing */
 #undef VERBOSE
 
@@ -254,6 +247,8 @@ typedef struct {
     PyTypeObject *Pattern_Type;
     PyTypeObject *Match_Type;
     PyTypeObject *Scanner_Type;
+    PyTypeObject *Template_Type;
+    PyObject *compile_template;  // reference to re._compile_template
 } _sremodulestate;
 
 static _sremodulestate *
@@ -757,23 +752,6 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
     return match;
 }
 
-static PyObject*
-call(const char* module, const char* function, PyObject* args)
-{
-    PyObject* func;
-    PyObject* result;
-
-    if (!args)
-        return NULL;
-    func = _PyImport_GetModuleAttrString(module, function);
-    if (!func)
-        return NULL;
-    result = PyObject_CallObject(func, args);
-    Py_DECREF(func);
-    Py_DECREF(args);
-    return result;
-}
-
 /*[clinic input]
 _sre.SRE_Pattern.findall
 
@@ -1036,6 +1014,57 @@ error:
 
 }
 
+static PyObject *
+compile_template(_sremodulestate *module_state,
+                 PatternObject *pattern, PyObject *template)
+{
+    /* delegate to Python code */
+    PyObject *func = module_state->compile_template;
+    if (func == NULL) {
+        func = _PyImport_GetModuleAttrString("re", "_compile_template");
+        if (func == NULL) {
+            return NULL;
+        }
+        Py_XSETREF(module_state->compile_template, func);
+    }
+
+    PyObject *args[] = {(PyObject *)pattern, template};
+    PyObject *result = PyObject_Vectorcall(func, args, 2, NULL);
+
+    if (result == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
+        /* If the replacement string is unhashable (e.g. bytearray),
+         * convert it to the basic type (str or bytes) and repeat. */
+        if (PyUnicode_Check(template) && !PyUnicode_CheckExact(template)) {
+            PyErr_Clear();
+            template = _PyUnicode_Copy(template);
+        }
+        else if (PyObject_CheckBuffer(template) && !PyBytes_CheckExact(template)) {
+            PyErr_Clear();
+            template = PyBytes_FromObject(template);
+        }
+        else {
+            return NULL;
+        }
+        if (template == NULL) {
+            return NULL;
+        }
+        args[1] = template;
+        result = PyObject_Vectorcall(func, args, 2, NULL);
+        Py_DECREF(template);
+    }
+
+    if (result != NULL && Py_TYPE(result) != module_state->Template_Type) {
+        PyErr_Format(PyExc_RuntimeError,
+                    "the result of compiling a replacement string is %.200s",
+                    Py_TYPE(result)->tp_name);
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
+}
+
+static PyObject *expand_template(TemplateObject *, MatchObject *); /* Forward */
+
 static PyObject*
 pattern_subx(_sremodulestate* module_state,
              PatternObject* self,
@@ -1055,14 +1084,14 @@ pattern_subx(_sremodulestate* module_state,
     Py_ssize_t n;
     Py_ssize_t i, b, e;
     int isbytes, charsize;
-    int filter_is_callable;
+    enum {LITERAL, TEMPLATE, CALLABLE} filter_type;
     Py_buffer view;
 
     if (PyCallable_Check(ptemplate)) {
         /* sub/subn takes either a function or a template */
         filter = ptemplate;
         Py_INCREF(filter);
-        filter_is_callable = 1;
+        filter_type = CALLABLE;
     } else {
         /* if not callable, check if it's a literal string */
         int literal;
@@ -1082,16 +1111,22 @@ pattern_subx(_sremodulestate* module_state,
         if (literal) {
             filter = ptemplate;
             Py_INCREF(filter);
-            filter_is_callable = 0;
+            filter_type = LITERAL;
         } else {
             /* not a literal; hand it over to the template compiler */
-            filter = call(
-                SRE_PY_MODULE, "_subx",
-                PyTuple_Pack(2, self, ptemplate)
-                );
+            filter = compile_template(module_state, self, ptemplate);
             if (!filter)
                 return NULL;
-            filter_is_callable = PyCallable_Check(filter);
+
+            assert(Py_TYPE(filter) == module_state->Template_Type);
+            if (Py_SIZE(filter) == 0) {
+                Py_INCREF(((TemplateObject *)filter)->literal);
+                Py_SETREF(filter, ((TemplateObject *)filter)->literal);
+                filter_type = LITERAL;
+            }
+            else {
+                filter_type = TEMPLATE;
+            }
         }
     }
 
@@ -1142,12 +1177,19 @@ pattern_subx(_sremodulestate* module_state,
 
         }
 
-        if (filter_is_callable) {
+        if (filter_type != LITERAL) {
             /* pass match object through filter */
             match = pattern_new_match(module_state, self, &state, 1);
             if (!match)
                 goto error;
-            item = PyObject_CallOneArg(filter, match);
+            if (filter_type == TEMPLATE) {
+                item = expand_template((TemplateObject *)filter,
+                                       (MatchObject *)match);
+            }
+            else {
+                assert(filter_type == CALLABLE);
+                item = PyObject_CallOneArg(filter, match);
+            }
             Py_DECREF(match);
             if (!item)
                 goto error;
@@ -1480,6 +1522,69 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     }
 
     return (PyObject*) self;
+}
+
+/*[clinic input]
+_sre.template
+
+    pattern: object
+    template: object(subclass_of="&PyList_Type")
+        A list containing interleaved literal strings (str or bytes) and group
+        indices (int), as returned by re._parser.parse_template():
+            [literal1, group1, ..., literalN, groupN]
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
+/*[clinic end generated code: output=d51290e596ebca86 input=af55380b27f02942]*/
+{
+    /* template is a list containing interleaved literal strings (str or bytes)
+     * and group indices (int), as returned by _parser.parse_template:
+     * [literal1, group1, literal2, ..., literalN].
+     */
+    _sremodulestate *module_state = get_sre_module_state(module);
+    TemplateObject *self = NULL;
+    Py_ssize_t n = PyList_GET_SIZE(template);
+    if ((n & 1) == 0 || n < 1) {
+        goto bad_template;
+    }
+    n /= 2;
+    self = PyObject_GC_NewVar(TemplateObject, module_state->Template_Type, n);
+    if (!self)
+        return NULL;
+    self->chunks = 1 + 2*n;
+    self->literal = PyList_GET_ITEM(template, 0);
+    Py_INCREF(self->literal);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        Py_ssize_t index = PyLong_AsSsize_t(PyList_GET_ITEM(template, 2*i+1));
+        if (index == -1 && PyErr_Occurred()) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        if (index < 0) {
+            goto bad_template;
+        }
+        self->items[i].index = index;
+
+        PyObject *literal = PyList_GET_ITEM(template, 2*i+2);
+        // Skip empty literals.
+        if ((PyUnicode_Check(literal) && !PyUnicode_GET_LENGTH(literal)) ||
+            (PyBytes_Check(literal) && !PyBytes_GET_SIZE(literal)))
+        {
+            literal = NULL;
+            self->chunks--;
+        }
+        Py_XINCREF(literal);
+        self->items[i].literal = literal;
+    }
+    return (PyObject*) self;
+
+bad_template:
+    PyErr_SetString(PyExc_TypeError, "invalid template");
+    Py_XDECREF(self);
+    return NULL;
 }
 
 /* -------------------------------------------------------------------- */
@@ -2096,11 +2201,14 @@ static PyObject *
 _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template)
 /*[clinic end generated code: output=931b58ccc323c3a1 input=4bfdb22c2f8b146a]*/
 {
-    /* delegate to Python code */
-    return call(
-        SRE_PY_MODULE, "_expand",
-        PyTuple_Pack(3, self->pattern, self, template)
-        );
+    _sremodulestate *module_state = get_sre_module_state_by_class(Py_TYPE(self));
+    PyObject *filter = compile_template(module_state, self->pattern, template);
+    if (filter == NULL) {
+        return NULL;
+    }
+    PyObject *result = expand_template((TemplateObject *)filter, self);
+    Py_DECREF(filter);
+    return result;
 }
 
 static PyObject*
@@ -2685,6 +2793,112 @@ pattern_scanner(_sremodulestate *module_state,
     return (PyObject*) scanner;
 }
 
+/* -------------------------------------------------------------------- */
+/* template methods */
+
+static int
+template_traverse(TemplateObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->literal);
+    for (Py_ssize_t i = 0, n = Py_SIZE(self); i < n; i++) {
+        Py_VISIT(self->items[i].literal);
+    }
+    return 0;
+}
+
+static int
+template_clear(TemplateObject *self)
+{
+    Py_CLEAR(self->literal);
+    for (Py_ssize_t i = 0, n = Py_SIZE(self); i < n; i++) {
+        Py_CLEAR(self->items[i].literal);
+    }
+    return 0;
+}
+
+static void
+template_dealloc(TemplateObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+
+    PyObject_GC_UnTrack(self);
+    (void)template_clear(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyObject *
+expand_template(TemplateObject *self, MatchObject *match)
+{
+    if (Py_SIZE(self) == 0) {
+        Py_INCREF(self->literal);
+        return self->literal;
+    }
+
+    PyObject *result = NULL;
+    Py_ssize_t count = 0;  // the number of non-empty chunks
+    /* For small number of strings use a buffer allocated on the stack,
+     * otherwise use a list object. */
+    PyObject *buffer[10];
+    PyObject **out = buffer;
+    PyObject *list = NULL;
+    if (self->chunks > (int)Py_ARRAY_LENGTH(buffer) ||
+        !PyUnicode_Check(self->literal))
+    {
+        list = PyList_New(self->chunks);
+        if (!list) {
+            return NULL;
+        }
+        out = &PyList_GET_ITEM(list, 0);
+    }
+
+    Py_INCREF(self->literal);
+    out[count++] = self->literal;
+    for (Py_ssize_t i = 0; i < Py_SIZE(self); i++) {
+        Py_ssize_t index = self->items[i].index;
+        if (index >= match->groups) {
+            PyErr_SetString(PyExc_IndexError, "no such group");
+            goto cleanup;
+        }
+        PyObject *item = match_getslice_by_index(match, index, Py_None);
+        if (item == NULL) {
+            goto cleanup;
+        }
+        if (item != Py_None) {
+            Py_INCREF(item);
+            out[count++] = item;
+        }
+        Py_DECREF(item);
+
+        PyObject *literal = self->items[i].literal;
+        if (literal != NULL) {
+            Py_INCREF(literal);
+            out[count++] = literal;
+        }
+    }
+
+    if (PyUnicode_Check(self->literal)) {
+        result = _PyUnicode_JoinArray(&_Py_STR(empty), out, count);
+    }
+    else {
+        Py_SET_SIZE(list, count);
+        result = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), list);
+    }
+
+cleanup:
+    if (list) {
+        Py_DECREF(list);
+    }
+    else {
+        for (Py_ssize_t i = 0; i < count; i++) {
+            Py_DECREF(out[i]);
+        }
+    }
+    return result;
+}
+
+
 static Py_hash_t
 pattern_hash(PatternObject *self)
 {
@@ -2907,15 +3121,32 @@ static PyType_Slot scanner_slots[] = {
 };
 
 static PyType_Spec scanner_spec = {
-    .name = "_" SRE_MODULE ".SRE_Scanner",
+    .name = "_sre.SRE_Scanner",
     .basicsize = sizeof(ScannerObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = scanner_slots,
 };
 
+static PyType_Slot template_slots[] = {
+    {Py_tp_dealloc, template_dealloc},
+    {Py_tp_traverse, template_traverse},
+    {Py_tp_clear, template_clear},
+    {0, NULL},
+};
+
+static PyType_Spec template_spec = {
+    .name = "_sre.SRE_Template",
+    .basicsize = sizeof(TemplateObject),
+    .itemsize = sizeof(((TemplateObject *)0)->items[0]),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
+    .slots = template_slots,
+};
+
 static PyMethodDef _functions[] = {
     _SRE_COMPILE_METHODDEF
+    _SRE_TEMPLATE_METHODDEF
     _SRE_GETCODESIZE_METHODDEF
     _SRE_ASCII_ISCASED_METHODDEF
     _SRE_UNICODE_ISCASED_METHODDEF
@@ -2932,6 +3163,8 @@ sre_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Pattern_Type);
     Py_VISIT(state->Match_Type);
     Py_VISIT(state->Scanner_Type);
+    Py_VISIT(state->Template_Type);
+    Py_VISIT(state->compile_template);
 
     return 0;
 }
@@ -2944,6 +3177,8 @@ sre_clear(PyObject *module)
     Py_CLEAR(state->Pattern_Type);
     Py_CLEAR(state->Match_Type);
     Py_CLEAR(state->Scanner_Type);
+    Py_CLEAR(state->Template_Type);
+    Py_CLEAR(state->compile_template);
 
     return 0;
 }
@@ -2984,6 +3219,7 @@ sre_exec(PyObject *m)
     CREATE_TYPE(m, state->Pattern_Type, &pattern_spec);
     CREATE_TYPE(m, state->Match_Type, &match_spec);
     CREATE_TYPE(m, state->Scanner_Type, &scanner_spec);
+    CREATE_TYPE(m, state->Template_Type, &template_spec);
 
     if (PyModule_AddIntConstant(m, "MAGIC", SRE_MAGIC) < 0) {
         goto error;
@@ -3013,7 +3249,7 @@ static PyModuleDef_Slot sre_slots[] = {
 
 static struct PyModuleDef sremodule = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_" SRE_MODULE,
+    .m_name = "_sre",
     .m_size = sizeof(_sremodulestate),
     .m_methods = _functions,
     .m_slots = sre_slots,

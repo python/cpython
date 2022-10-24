@@ -69,6 +69,11 @@ struct atexit_state {
 };
 
 
+struct _Py_long_state {
+    int max_str_digits;
+};
+
+
 /* interpreter state */
 
 /* PyInterpreterState holds the global state for one of the runtime's
@@ -161,9 +166,11 @@ struct _is {
     struct atexit_state atexit;
 
     PyObject *audit_hooks;
+    PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
 
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
+    struct _Py_long_state long_state;
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;

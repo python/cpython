@@ -369,6 +369,13 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100", data["env.tag"])
 
+    def test_filter_to_company_with_default(self):
+        company = "PythonTestSuite"
+        data = self.run_py([f"-V:{company}/"], env=dict(PY_PYTHON="3.0"))
+        self.assertEqual("X.Y.exe", data["LaunchCommand"])
+        self.assertEqual(company, data["env.company"])
+        self.assertEqual("3.100", data["env.tag"])
+
     def test_filter_to_tag(self):
         company = "PythonTestSuite"
         data = self.run_py([f"-V:3.100"])

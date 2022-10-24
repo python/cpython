@@ -3712,6 +3712,71 @@ Of course, the examples above show output according to the format used by
 :func:`~logging.basicConfig`, but you can use a different formatter when you
 configure logging.
 
+Note that with the above scheme, you are somewhat at the mercy of buffering and
+the sequence of write calls which you are intercepting. For example, with the
+definition of ``LoggerWriter`` above, if you have the snippet
+
+.. code-block:: python
+
+    sys.stderr = LoggerWriter(logger, logging.WARNING)
+    1 / 0
+
+then running the script results in
+
+.. code-block:: text
+
+    WARNING:demo:Traceback (most recent call last):
+
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/test.py", line 53, in <module>
+
+    WARNING:demo:
+    WARNING:demo:main()
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/test.py", line 49, in main
+
+    WARNING:demo:
+    WARNING:demo:1 / 0
+    WARNING:demo:ZeroDivisionError
+    WARNING:demo::
+    WARNING:demo:division by zero
+
+As you can see, this output isn't ideal. That's because the underlying code
+which writes to ``sys.stderr`` makes mutiple writes, each of which results in a
+separate logged line (for example, the last three lines above). To get around
+this problem, you need to buffer things and only output log lines when newlines
+are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
+
+.. code-block:: python
+
+    class BufferingLoggerWriter(LoggerWriter):
+        def __init__(self, logger, level):
+            super().__init__(logger, level)
+            self.buffer = ''
+
+        def write(self, message):
+            if '\n' not in message:
+                self.buffer += message
+            else:
+                parts = message.split('\n')
+                if self.buffer:
+                    s = self.buffer + parts.pop(0)
+                    self.logger.log(self.level, s)
+                self.buffer = parts.pop()
+                for part in parts:
+                    self.logger.log(self.level, part)
+
+This just buffers up stuff until a newline is seen, and then logs complete
+lines. With this approach, you get better output:
+
+.. code-block:: text
+
+    WARNING:demo:Traceback (most recent call last):
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/main.py", line 55, in <module>
+    WARNING:demo:    main()
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/main.py", line 52, in main
+    WARNING:demo:    1/0
+    WARNING:demo:ZeroDivisionError: division by zero
+
+
 .. patterns-to-avoid:
 
 Patterns to avoid
