@@ -1653,7 +1653,7 @@ Modules
 
 * The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
-  warnings have now been updated to note they will removed in Python 3.12.
+  warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
 * The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
@@ -1672,8 +1672,8 @@ Standard Library
 ----------------
 
 * The following have been deprecated in :mod:`configparser` since Python 3.2.
-  Their deprecation warnings have now been updated to note they will removed in
-  Python 3.12:
+  Their deprecation warnings have now been updated to note they will be removed
+  in Python 3.12:
 
   * the :class:`!configparser.SafeConfigParser` class
   * the :attr:`!configparser.ParsingError.filename` property
