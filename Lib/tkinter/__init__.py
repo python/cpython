@@ -1648,7 +1648,10 @@ class Misc:
         try:
             e.type = EventType(T)
         except ValueError:
-            e.type = T
+            try:
+                e.type = EventType(str(T))
+            except ValueError:
+                e.type = T
         try:
             e.widget = self._nametowidget(W)
         except KeyError:
