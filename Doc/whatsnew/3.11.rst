@@ -1765,11 +1765,6 @@ in the Python API that may require changes to your Python code.
 Porting notes for the C API are
 :ref:`listed separately <whatsnew311-c-api-porting>`.
 
-* Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
-  executors to :meth:`asyncio.loop.set_default_executor`
-  following a deprecation in Python 3.8.
-  (Contributed by Illia Volochii in :issue:`43234`.)
-
 * :func:`open`, :func:`io.open`, :func:`codecs.open` and
   :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
   in the file mode. In Python 3, "universal newline" mode is used by default
@@ -1779,15 +1774,30 @@ Porting notes for the C API are
   to these functions controls how universal newlines work.
   (Contributed by Victor Stinner in :issue:`37330`.)
 
-* The :mod:`pdb` module now reads the :file:`.pdbrc` configuration file with
-  the ``'UTF-8'`` encoding.
-  (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
+* :class:`ast.AST` node positions are now validated when provided to
+  :func:`compile` and other related functions. If invalid positions are detected,
+  a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
+
+* Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
+  executors to :meth:`asyncio.loop.set_default_executor`
+  following a deprecation in Python 3.8.
+  (Contributed by Illia Volochii in :issue:`43234`.)
 
 * :mod:`calendar`: The :class:`calendar.LocaleTextCalendar` and
   :class:`calendar.LocaleHTMLCalendar` classes now use
   :func:`locale.getlocale`, instead of using :func:`locale.getdefaultlocale`,
   if no locale is specified.
   (Contributed by Victor Stinner in :issue:`46659`.)
+
+* The :mod:`pdb` module now reads the :file:`.pdbrc` configuration file with
+  the ``'UTF-8'`` encoding.
+  (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
+
+* The *population* parameter of :func:`random.sample` must be a sequence,
+  and automatic conversion of :class:`set`\s to :class:`list`\s
+  is no longer supported. Also, if the sample size
+  is larger than the population size, a :exc:`ValueError` is raised.
+  (Contributed by Raymond Hettinger in :issue:`40465`.)
 
 * In :mod:`re` :ref:`re-syntax`, global inline flags (e.g. ``(?i)``)
   can now only be used at the start of regular expressions.
@@ -1798,16 +1808,6 @@ Porting notes for the C API are
   in rare cases, could cause capture groups to get the wrong result.
   Therefore, this could change the captured output in these cases.
   (Contributed by Ma Lin in :issue:`35859`.)
-
-* The *population* parameter of :func:`random.sample` must be a sequence,
-  and automatic conversion of :class:`set`\s to :class:`list`\s
-  is no longer supported. Also, if the sample size
-  is larger than the population size, a :exc:`ValueError` is raised.
-  (Contributed by Raymond Hettinger in :issue:`40465`.)
-
-* :class:`ast.AST` node positions are now validated when provided to
-  :func:`compile` and other related functions. If invalid positions are detected,
-  a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
 
 * :c:member:`~PyTypeObject.tp_dictoffset` should be treated as write-only.
   It can be set to describe C extension classwa to the VM, but should be regarded
