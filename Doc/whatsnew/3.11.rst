@@ -1582,9 +1582,9 @@ Standard Library
   removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
   (Contributed by Victor Stinner in :gh:`90817`.)
 
-* More strict rules will now be applied for numerical group references
+* Stricter rules will now be applied for numerical group references
   and group names in :ref:`regular expressions <re-syntax>`.
-  Only sequences of ASCII digits will be now accepted as a numerical reference,
+  Only sequences of ASCII digits will now be accepted as a numerical reference,
   and the group name in :class:`bytes` patterns and replacement strings
   can only contain ASCII letters, digits and underscores.
   For now, a deprecation warning is raised for syntax violating these rules.
