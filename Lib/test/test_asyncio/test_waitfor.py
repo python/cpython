@@ -310,13 +310,13 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 
         reached_end = False
 
-        async def with_for_coro():
+        async def wait_for_coro():
             await asyncio.wait_for(inner(), timeout=100)
             await asyncio.sleep(1)
             nonlocal reached_end
             reached_end = True
 
-        task = asyncio.create_task(with_for_coro())
+        task = asyncio.create_task(wait_for_coro())
         await asyncio.sleep(0)
         self.assertFalse(task.done())
         task.cancel()
