@@ -62,10 +62,11 @@ class Lexer:
 
 
 @dataclass
-class InstHeader:
+class InstDef:
     name: str
     inputs: list[str]
     outputs: list[str]
+    blob: list[lx.Token]
 
 
 @dataclass
@@ -74,7 +75,31 @@ class Family:
     members: list[str]
 
 
+@dataclass
+class Block:
+    tokens: list[lx.Token]
+
+
 class Parser(Lexer):
+    # TODO: Make all functions reset the input pointer
+    # when they return None, and raise when they know
+    # that something is wrong.
+
+    def inst_def(self):
+        if header := self.inst_header():
+            if block := self.block():
+                header.blob = block.tokens
+                return header
+            raise self.make_syntax_error("Expected block")
+        return None
+
+    def block(self):
+        if self.expect(lx.LBRACE):
+            tokens = self.c_blob()
+            if self.expect(lx.RBRACE):
+                return Block(tokens)
+            raise self.make_syntax_error("Expected '}'")
+        return None
 
     def c_blob(self):
         tokens = []
@@ -94,7 +119,7 @@ class Parser(Lexer):
         return tokens
 
     def inst_header(self):
-        # inst(NAME, (inputs -- outputs)) {
+        # inst(NAME, (inputs -- outputs))
         # TODO: Error out when there is something unexpected.
         here = self.getpos()
         # TODO: Make INST a keyword in the lexer.
@@ -102,16 +127,23 @@ class Parser(Lexer):
             if (self.expect(lx.LPAREN)
                     and (tkn := self.expect(lx.IDENTIFIER))):
                 name = tkn.text
-                if self.expect(lx.COMMA) and self.expect(lx.LPAREN):
-                    inp = self.inputs() or []
-                    if self.expect(lx.MINUSMINUS):
-                        outp = self.outputs() or []
-                        if (self.expect(lx.RPAREN)
-                                and self.expect(lx.RPAREN)
-                                and self.expect(lx.LBRACE)):
-                            return InstHeader(name, inp, outp)
+                if self.expect(lx.COMMA):
+                    inp, outp = self.stack_effect()
+                    if (self.expect(lx.RPAREN)
+                            and self.peek().kind == lx.LBRACE):
+                        return InstDef(name, inp, outp, [])
         self.reset(here)
         return None
+
+    def stack_effect(self):
+        # '(' [inputs] '--' [outputs] ')'
+        if self.expect(lx.LPAREN):
+            inp = self.inputs() or []
+            if self.expect(lx.MINUSMINUS):
+                outp = self.outputs() or []
+                if self.expect(lx.RPAREN):
+                    return inp, outp
+        raise self.make_syntax_error("Expected stack effect")
 
     def inputs(self):
         # input (, input)*

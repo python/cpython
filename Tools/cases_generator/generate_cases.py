@@ -45,12 +45,10 @@ def parse_cases(src, filename):
     instrs = []
     families = []
     while not psr.eof():
-        if inst := psr.inst_header():
-            blob = psr.c_blob()
+        if inst := psr.inst_def():
+            blob = inst.blob
             blobtext = lexer.to_text(blob)
             bloblines = blobtext.splitlines()
-            if not psr.expect(lexer.RBRACE):
-                raise psr.make_syntax_error("No '}' at end of code block")
             instrs.append(Instruction(inst.name, inst.inputs, inst.outputs, bloblines))
         elif fam := psr.family_def():
             families.append(fam)
