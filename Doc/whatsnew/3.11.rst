@@ -1767,7 +1767,7 @@ C APIs pending removal are
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`
 * :envvar:`PYTHONTHREADDEBUG` environment variable
-* :mod:`unittest` ``fail*`` and ``assert*`` deprecated-aliases:
+* The following deprecated aliases in :mod:`unittest`:
 
     ============================ =============================== ===============
        Deprecated alias           Method Name                     Deprecated in
