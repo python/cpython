@@ -1,1 +1,1 @@
-Fix hang in ``subprocess.wait_closed()`` in :mod:`asyncio` with :class:`~asyncio.ProactorEventLoop`. Patch by Kumar Aditya.
+Fix hang on Windows in ``subprocess.wait_closed()`` in :mod:`asyncio` with :class:`~asyncio.ProactorEventLoop`. Patch by Kumar Aditya.
