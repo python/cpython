@@ -1593,10 +1593,6 @@ Changed/removed opcodes
 .. _whatsnew311-deprecated:
 .. _whatsnew311-python-api-deprecated:
 
-
-.. _whatsnew311-deprecated:
-.. _whatsnew311-python-api-deprecated:
-
 Deprecated
 ==========
 
