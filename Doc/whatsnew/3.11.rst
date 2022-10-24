@@ -1799,6 +1799,10 @@ Porting notes for the C API are
   is larger than the population size, a :exc:`ValueError` is raised.
   (Contributed by Raymond Hettinger in :issue:`40465`.)
 
+* The *random* optional parameter of :func:`random.shuffle` was removed.
+  It was previously an arbitrary random function to use for the shuffle;
+  now, :func:`random.random` (its previous default) will always be used.
+
 * In :mod:`re` :ref:`re-syntax`, global inline flags (e.g. ``(?i)``)
   can now only be used at the start of regular expressions.
   Using them elsewhere has been deprecated since Python 3.6.
