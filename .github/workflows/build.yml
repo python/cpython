@@ -84,8 +84,7 @@ jobs:
           make -j4
       - name: Check for changes in the ABI
         run: |
-          make check-abidump
-          if [ $? -ne 0 ] ; then
+          if ! make check-abidump; then
             echo "Generated ABI file is not up to date."
             echo "Please, add the release manager of this branch as a reviewer of this PR."
             echo ""
