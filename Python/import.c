@@ -2442,18 +2442,23 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     PyThreadState *tstate = _PyThreadState_GET();
     mod = import_find_extension(tstate, name, path);
-    if (mod != NULL || PyErr_Occurred()) {
-        Py_DECREF(name);
-        Py_DECREF(path);
-        return mod;
+    if (mod != NULL) {
+        const char *name_buf = PyUnicode_AsUTF8(name);
+        assert(name_buf != NULL);
+        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+            Py_DECREF(mod);
+            mod = NULL;
+        }
+        goto finally;
+    }
+    else if (PyErr_Occurred()) {
+        goto finally;
     }
 
     if (file != NULL) {
         fp = _Py_fopen_obj(path, "r");
         if (fp == NULL) {
-            Py_DECREF(name);
-            Py_DECREF(path);
-            return NULL;
+            goto finally;
         }
     }
     else
@@ -2461,10 +2466,12 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
 
-    Py_DECREF(name);
-    Py_DECREF(path);
     if (fp)
         fclose(fp);
+
+finally:
+    Py_DECREF(name);
+    Py_DECREF(path);
     return mod;
 }
 

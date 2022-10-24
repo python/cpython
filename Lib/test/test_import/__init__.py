@@ -1456,6 +1456,22 @@ class SubinterpImportTests(unittest.TestCase):
         out = os.read(r, 100)
         self.assertEqual(out, b'okay')
 
+    def check_incompatible_shared(self, name):
+        # Differences from check_compatible_shared():
+        #  * verify that import fails
+        #  * "strict" is always True
+        __import__(name)
+
+        r, w = self.pipe()
+        ret = run_in_subinterp_with_config(
+            self.import_script(name, w),
+            **self.RUN_KWARGS,
+            check_multi_interp_extensions=True,
+        )
+        self.assertEqual(ret, 0)
+        out = os.read(r, 100).decode('utf-8')
+        self.assertEqual(out, f'ImportError: module {name} does not support loading in subinterpreters')
+
     def check_compatible_isolated(self, name, *, strict=False):
         # Differences from check_compatible_shared():
         #  * subinterpreter in a new process
@@ -1476,6 +1492,26 @@ class SubinterpImportTests(unittest.TestCase):
             '''))
         self.assertEqual(err, b'')
         self.assertEqual(out, b'okay')
+
+    def check_incompatible_isolated(self, name):
+        # Differences from check_compatible_isolated():
+        #  * verify that import fails
+        #  * "strict" is always True
+        _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
+            import _testcapi, sys
+            assert {name!r} not in sys.modules, {name!r}
+            ret = _testcapi.run_in_subinterp_with_config(
+                {self.import_script(name, "sys.stdout.fileno()")!r},
+                **{self.RUN_KWARGS},
+                check_multi_interp_extensions=True,
+            )
+            assert ret == 0, ret
+            '''))
+        self.assertEqual(err, b'')
+        self.assertEqual(
+            out.decode('utf-8'),
+            f'ImportError: module {name} does not support loading in subinterpreters',
+        )
 
     def test_builtin_compat(self):
         module = 'sys'
@@ -1500,9 +1536,9 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{module}: not strict'):
             self.check_compatible_shared(module, strict=False)
         with self.subTest(f'{module}: strict, shared'):
-            self.check_compatible_shared(module)
+            self.check_incompatible_shared(module)
         with self.subTest(f'{module}: strict, isolated'):
-            self.check_compatible_isolated(module)
+            self.check_incompatible_isolated(module)
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_compat(self):
