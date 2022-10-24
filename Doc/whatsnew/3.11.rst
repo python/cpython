@@ -1471,6 +1471,13 @@ This section lists Python APIs that have been deprecated in Python 3.11.
 
 Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
 
+
+.. _whatsnew311-deprecated-language:
+.. _whatsnew311-deprecated-builtins:
+
+Language/Builtins
+-----------------
+
 * Chaining :class:`classmethod` descriptors (introduced in :issue:`19072`)
   is now deprecated.  It can no longer be used to wrap other descriptors
   such as :class:`property`.  The core design of this feature was flawed
@@ -1485,76 +1492,17 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
   eventually a :exc:`SyntaxError`.
   (Contributed by Serhiy Storchaka in :gh:`81548`.)
 
-* The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
-  are now deprecated and may not be able to parse Python 3.10 or newer.
-  See :pep:`617`, introducing the new PEG parser, for details.
-  (Contributed by Victor Stinner in :issue:`40360`.)
-
-* Undocumented modules :mod:`!sre_compile`, :mod:`!sre_constants`
-  and :mod:`!sre_parse` are now deprecated.
-  (Contributed by Serhiy Storchaka in :issue:`47152`.)
-
-* :class:`!webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
-  It is untested, undocumented, and not used by :mod:`webbrowser` itself.
-  (Contributed by Dong-hee Na in :issue:`42255`.)
-
-* The behavior of returning a value from a :class:`~unittest.TestCase` and
-  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
-  default ``None`` value) is now deprecated.
-
-* Deprecated the following not-formally-documented :mod:`unittest` functions,
-  scheduled for removal in Python 3.13:
-
-  * :func:`!unittest.findTestCases`
-  * :func:`!unittest.makeSuite`
-  * :func:`!unittest.getTestCaseNames`
-
-  Use :class:`~unittest.TestLoader` methods instead:
-
-  * :meth:`unittest.TestLoader.loadTestsFromModule`
-  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
-  * :meth:`unittest.TestLoader.getTestCaseNames`
-
-  (Contributed by Erlend E. Aasland in :issue:`5846`.)
-
-* :func:`turtle.settiltangle` has been deprecated since Python 3.1;
-  it now emits a deprecation warning and will be removed in Python 3.13. Use
-  :func:`turtle.tiltangle` instead (it was earlier incorrectly marked
-  as deprecated, and its docstring is now corrected).
-  (Contributed by Hugo van Kemenade in :issue:`45837`.)
-
 * The delegation of :func:`int` to :meth:`~object.__trunc__` is now deprecated.
   Calling ``int(a)`` when ``type(a)`` implements :meth:`!__trunc__` but not
   :meth:`~object.__int__` or :meth:`~object.__index__` now raises
   a :exc:`DeprecationWarning`.
   (Contributed by Zackery Spytz in :issue:`44977`.)
 
-* The following have been deprecated in :mod:`configparser` since Python 3.2.
-  Their deprecation warnings have now been updated to note they will removed in
-  Python 3.12:
 
-  * the :class:`!configparser.SafeConfigParser` class
-  * the :attr:`!configparser.ParsingError.filename` property
-  * the :meth:`configparser.RawConfigParser.readfp` method
+.. _whatsnew311-deprecated-modules:
 
-  (Contributed by Hugo van Kemenade in :issue:`45173`.)
-
-* :class:`!configparser.LegacyInterpolation` has been deprecated in the docstring
-  since Python 3.2, and is not listed in the :mod:`configparser` documentation.
-  It now emits a :exc:`DeprecationWarning` and will be removed
-  in Python 3.13. Use :class:`configparser.BasicInterpolation` or
-  :class:`configparser.ExtendedInterpolation` instead.
-  (Contributed by Hugo van Kemenade in :issue:`46607`.)
-
-* The :func:`locale.getdefaultlocale` function is deprecated and will be
-  removed in Python 3.13. Use :func:`locale.setlocale`,
-  :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
-  :func:`locale.getlocale` functions instead.
-  (Contributed by Victor Stinner in :gh:`90817`.)
-
-* The :func:`locale.resetlocale` function is deprecated and will be
-  removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
-  (Contributed by Victor Stinner in :gh:`90817`.)
+Modules
+-------
 
 .. _whatsnew311-pep594:
 
@@ -1589,6 +1537,48 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
   warnings have now been updated to note they will removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
+* The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
+  are now deprecated and may not be able to parse Python 3.10 or newer.
+  See :pep:`617`, introducing the new PEG parser, for details.
+  (Contributed by Victor Stinner in :issue:`40360`.)
+
+* Undocumented modules :mod:`!sre_compile`, :mod:`!sre_constants`
+  and :mod:`!sre_parse` are now deprecated.
+  (Contributed by Serhiy Storchaka in :issue:`47152`.)
+
+
+.. _whatsnew311-deprecated-stdlib:
+
+Standard Library
+----------------
+
+* The following have been deprecated in :mod:`configparser` since Python 3.2.
+  Their deprecation warnings have now been updated to note they will removed in
+  Python 3.12:
+
+  * the :class:`!configparser.SafeConfigParser` class
+  * the :attr:`!configparser.ParsingError.filename` property
+  * the :meth:`configparser.RawConfigParser.readfp` method
+
+  (Contributed by Hugo van Kemenade in :issue:`45173`.)
+
+* :class:`!configparser.LegacyInterpolation` has been deprecated in the docstring
+  since Python 3.2, and is not listed in the :mod:`configparser` documentation.
+  It now emits a :exc:`DeprecationWarning` and will be removed
+  in Python 3.13. Use :class:`configparser.BasicInterpolation` or
+  :class:`configparser.ExtendedInterpolation` instead.
+  (Contributed by Hugo van Kemenade in :issue:`46607`.)
+
+* The :func:`locale.getdefaultlocale` function is deprecated and will be
+  removed in Python 3.13. Use :func:`locale.setlocale`,
+  :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
+  :func:`locale.getlocale` functions instead.
+  (Contributed by Victor Stinner in :gh:`90817`.)
+
+* The :func:`locale.resetlocale` function is deprecated and will be
+  removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`90817`.)
+
 * More strict rules will now be applied for numerical group references
   and group names in :ref:`regular expressions <re-syntax>`.
   Only sequences of ASCII digits will be now accepted as a numerical reference,
@@ -1596,6 +1586,18 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
   can only contain ASCII letters, digits and underscores.
   For now, a deprecation warning is raised for syntax violating these rules.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+* In the :mod:`re` module, the :func:`!re.template` function
+  and the corresponding :data:`!re.TEMPLATE` and :data:`!re.T` flags
+  are deprecated, as they were undocumented and lacked an obvious purpose.
+  They will be removed in Python 3.13.
+  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
+
+* :func:`turtle.settiltangle` has been deprecated since Python 3.1;
+  it now emits a deprecation warning and will be removed in Python 3.13. Use
+  :func:`turtle.tiltangle` instead (it was earlier incorrectly marked
+  as deprecated, and its docstring is now corrected).
+  (Contributed by Hugo van Kemenade in :issue:`45837`.)
 
 * :class:`typing.Text`, which exists solely to provide compatibility support
   between Python 2 and Python 3 code, is now deprecated. Its removal is
@@ -1607,11 +1609,28 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
   is now deprecated. Support will be removed in Python 3.13. (Contributed by
   Jingchen Ye in :gh:`90224`.)
 
-* In the :mod:`re` module, the :func:`!re.template` function
-  and the corresponding :data:`!re.TEMPLATE` and :data:`!re.T` flags
-  are deprecated, as they were undocumented and lacked an obvious purpose.
-  They will be removed in Python 3.13.
-  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
+* :class:`!webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
+  It is untested, undocumented, and not used by :mod:`webbrowser` itself.
+  (Contributed by Dong-hee Na in :issue:`42255`.)
+
+* The behavior of returning a value from a :class:`~unittest.TestCase` and
+  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
+  default ``None`` value) is now deprecated.
+
+* Deprecated the following not-formally-documented :mod:`unittest` functions,
+  scheduled for removal in Python 3.13:
+
+  * :func:`!unittest.findTestCases`
+  * :func:`!unittest.makeSuite`
+  * :func:`!unittest.getTestCaseNames`
+
+  Use :class:`~unittest.TestLoader` methods instead:
+
+  * :meth:`unittest.TestLoader.loadTestsFromModule`
+  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
+  * :meth:`unittest.TestLoader.getTestCaseNames`
+
+  (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
 
 .. _whatsnew311-pending-removal:
