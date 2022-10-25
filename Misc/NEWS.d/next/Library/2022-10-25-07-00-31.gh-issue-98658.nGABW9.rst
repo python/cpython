@@ -1,0 +1,2 @@
+The :class:`array.array` class now supports subscripting, making it a
+:term:`generic type`.

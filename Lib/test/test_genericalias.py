@@ -2,6 +2,7 @@
 
 import unittest
 import pickle
+from array import array
 import copy
 from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
@@ -124,7 +125,8 @@ class BaseTest(unittest.TestCase):
                      ShareableList,
                      Future, _WorkItem,
                      Morsel,
-                     DictReader, DictWriter]
+                     DictReader, DictWriter,
+                     array]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
     if ValueProxy is not None:
