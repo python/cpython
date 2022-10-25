@@ -1,7 +1,7 @@
 import unittest
 from test.support import import_helper
 
-ac_tester = import_helper.import_module('_testclinicfunctionality')
+ac_tester = import_helper.import_module('_testclinic')
 
 
 class TestClinicFunctionality(unittest.TestCase):

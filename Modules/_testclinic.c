@@ -9,12 +9,12 @@
 
 #include "Python.h"
 
-#include "clinic/_testclinicfunctionality.c.h"
+#include "clinic/_testclinic.c.h"
 
 /*[clinic input]
-module  _testclinicfunctionality
+module  _testclinic
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=19bd80db1aefb188]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d4981b80d6efdb12]*/
 
 /*[clinic input]
 test_empty_function
@@ -99,9 +99,9 @@ static PyMethodDef tester_methods[] = {
         {NULL, NULL}
 };
 
-static struct PyModuleDef _testclinicfunctionality_module = {
+static struct PyModuleDef _testclinic_module = {
         PyModuleDef_HEAD_INIT,
-        "_testclinicfunctionality",
+        "_testclinic",
         NULL,
         0,
         tester_methods,
@@ -112,7 +112,7 @@ static struct PyModuleDef _testclinicfunctionality_module = {
 };
 
 PyMODINIT_FUNC
-PyInit__testclinicfunctionality(void)
+PyInit__testclinic(void)
 {
-    return PyModule_Create(&_testclinicfunctionality_module);
+    return PyModule_Create(&_testclinic_module);
 }
