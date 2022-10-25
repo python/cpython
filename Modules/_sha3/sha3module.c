@@ -65,7 +65,7 @@
 #endif
 
 /* Prevent bus errors on platforms requiring aligned accesses such ARM. */
-#if HAVE_ALIGNED_REQUIRED && !defined(NO_MISALIGNED_ACCESSES)
+#if defined(HAVE_ALIGNED_REQUIRED) && !defined(NO_MISALIGNED_ACCESSES)
 #define NO_MISALIGNED_ACCESSES
 #endif
 
