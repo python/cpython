@@ -669,6 +669,7 @@ Several other key features:
           GREEN = 1
           BLUE = 2
 
+      color = Color.GREEN
       match color:
           case Color.RED:
               print("I see red!")
@@ -1183,7 +1184,7 @@ and will be incorrect in some rare cases, including some ``_``-s in
 
 New in 3.10 maintenance releases.
 
-Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
 Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 Include prompts when saving Shell with inputs and outputs.
@@ -2151,8 +2152,7 @@ Porting to Python 3.10
 * The ``PY_SSIZE_T_CLEAN`` macro must now be defined to use
   :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` formats which use
   ``#``: ``es#``, ``et#``, ``s#``, ``u#``, ``y#``, ``z#``, ``U#`` and ``Z#``.
-  See :ref:`Parsing arguments and building values
-  <arg-parsing>` and the :pep:`353`.
+  See :ref:`arg-parsing` and :pep:`353`.
   (Contributed by Victor Stinner in :issue:`40943`.)
 
 * Since :c:func:`Py_REFCNT()` is changed to the inline static function,
@@ -2183,8 +2183,7 @@ Porting to Python 3.10
   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome` and
   :c:func:`Py_GetProgramName` functions now return ``NULL`` if called before
   :c:func:`Py_Initialize` (before Python is initialized). Use the new
-  :ref:`Python Initialization Configuration API <init-config>` to get the
-  :ref:`Python Path Configuration.  <init-path-config>`.
+  :ref:`init-config` API to get the :ref:`init-path-config`.
   (Contributed by Victor Stinner in :issue:`42260`.)
 
 * :c:func:`PyList_SET_ITEM`, :c:func:`PyTuple_SET_ITEM` and
@@ -2198,7 +2197,7 @@ Porting to Python 3.10
   ``picklebufobject.h``, ``pyarena.h``, ``pyctype.h``, ``pydebug.h``,
   ``pyfpe.h``, and ``pytime.h`` have been moved to the ``Include/cpython``
   directory. These files must not be included directly, as they are already
-  included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
+  included in ``Python.h``; see :ref:`api-includes`. If they have
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Nicholas Sim in :issue:`35134`.)
 

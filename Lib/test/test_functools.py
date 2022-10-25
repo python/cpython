@@ -17,6 +17,7 @@ import weakref
 import gc
 from weakref import proxy
 import contextlib
+from inspect import Signature
 
 from test.support import import_helper
 from test.support import threading_helper
@@ -941,6 +942,10 @@ class TestCmpToKey:
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.abc.Hashable)
 
+    def test_cmp_to_signature(self):
+        self.assertEqual(str(Signature.from_callable(self.cmp_to_key)),
+                         '(mycmp)')
+
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
@@ -1852,6 +1857,13 @@ class TestLRU:
 
         for ref in refs:
             self.assertIsNone(ref())
+
+    def test_common_signatures(self):
+        def orig(): ...
+        lru = self.module.lru_cache(1)(orig)
+
+        self.assertEqual(str(Signature.from_callable(lru.cache_info)), '()')
+        self.assertEqual(str(Signature.from_callable(lru.cache_clear)), '()')
 
 
 @py_functools.lru_cache()

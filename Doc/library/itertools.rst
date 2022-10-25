@@ -10,6 +10,10 @@
 .. testsetup::
 
    from itertools import *
+   import collections
+   import math
+   import operator
+   import random
 
 --------------
 
@@ -48,6 +52,7 @@ Iterator            Arguments               Results                             
 Iterator                        Arguments                       Results                                             Example
 ============================    ============================    =================================================   =============================================================
 :func:`accumulate`              p [,func]                       p0, p0+p1, p0+p1+p2, ...                            ``accumulate([1,2,3,4,5]) --> 1 3 6 10 15``
+:func:`batched`                 p, n                            [p0, p1, ..., p_n-1], ...                           ``batched('ABCDEFG', n=3) --> ABC DEF G``
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) --> A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
@@ -132,10 +137,9 @@ loops that truncate the stream.
     There are a number of uses for the *func* argument.  It can be set to
     :func:`min` for a running minimum, :func:`max` for a running maximum, or
     :func:`operator.mul` for a running product.  Amortization tables can be
-    built by accumulating interest and applying payments.  First-order
-    `recurrence relations <https://en.wikipedia.org/wiki/Recurrence_relation>`_
-    can be modeled by supplying the initial value in the iterable and using only
-    the accumulated total in *func* argument::
+    built by accumulating interest and applying payments:
+
+    .. doctest::
 
       >>> data = [3, 4, 6, 2, 1, 9, 0, 7, 5, 8]
       >>> list(accumulate(data, operator.mul))     # running product
@@ -148,17 +152,6 @@ loops that truncate the stream.
       >>> list(accumulate(cashflows, lambda bal, pmt: bal*1.05 + pmt))
       [1000, 960.0, 918.0, 873.9000000000001, 827.5950000000001]
 
-      # Chaotic recurrence relation https://en.wikipedia.org/wiki/Logistic_map
-      >>> logistic_map = lambda x, _:  r * x * (1 - x)
-      >>> r = 3.8
-      >>> x0 = 0.4
-      >>> inputs = repeat(x0, 36)     # only the initial value is used
-      >>> [format(x, '.2f') for x in accumulate(inputs, logistic_map)]
-      ['0.40', '0.91', '0.30', '0.81', '0.60', '0.92', '0.29', '0.79', '0.63',
-       '0.88', '0.39', '0.90', '0.33', '0.84', '0.52', '0.95', '0.18', '0.57',
-       '0.93', '0.25', '0.71', '0.79', '0.63', '0.88', '0.39', '0.91', '0.32',
-       '0.83', '0.54', '0.95', '0.20', '0.60', '0.91', '0.30', '0.80', '0.60']
-
     See :func:`functools.reduce` for a similar function that returns only the
     final accumulated value.
 
@@ -169,6 +162,44 @@ loops that truncate the stream.
 
     .. versionchanged:: 3.8
        Added the optional *initial* parameter.
+
+
+.. function:: batched(iterable, n)
+
+   Batch data from the *iterable* into lists of length *n*. The last
+   batch may be shorter than *n*.
+
+   Loops over the input iterable and accumulates data into lists up to
+   size *n*.  The input is consumed lazily, just enough to fill a list.
+   The result is yielded as soon as the batch is full or when the input
+   iterable is exhausted:
+
+   .. doctest::
+
+      >>> flattened_data = ['roses', 'red', 'violets', 'blue', 'sugar', 'sweet']
+      >>> unflattened = list(batched(flattened_data, 2))
+      >>> unflattened
+      [['roses', 'red'], ['violets', 'blue'], ['sugar', 'sweet']]
+
+      >>> for batch in batched('ABCDEFG', 3):
+      ...     print(batch)
+      ...
+      ['A', 'B', 'C']
+      ['D', 'E', 'F']
+      ['G']
+
+   Roughly equivalent to::
+
+      def batched(iterable, n):
+          # batched('ABCDEFG', 3) --> ABC DEF G
+          if n < 1:
+              raise ValueError('n must be at least one')
+          it = iter(iterable)
+          while (batch := list(islice(it, n))):
+              yield batch
+
+   .. versionadded:: 3.12
+
 
 .. function:: chain(*iterables)
 
@@ -202,10 +233,10 @@ loops that truncate the stream.
 
    The combination tuples are emitted in lexicographic ordering according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
-   the combination tuples will be produced in sorted order.
+   the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeat
+   value.  So if the input elements are unique, there will be no repeated
    values in each combination.
 
    Roughly equivalent to::
@@ -251,7 +282,7 @@ loops that truncate the stream.
 
    The combination tuples are emitted in lexicographic ordering according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
-   the combination tuples will be produced in sorted order.
+   the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, the generated combinations
@@ -314,7 +345,7 @@ loops that truncate the stream.
 
       def count(start=0, step=1):
           # count(10) --> 10 11 12 13 14 ...
-          # count(2.5, 0.5) -> 2.5 3.0 3.5 ...
+          # count(2.5, 0.5) --> 2.5 3.0 3.5 ...
           n = start
           while True:
               yield n
@@ -410,14 +441,17 @@ loops that truncate the stream.
       class groupby:
           # [k for k, g in groupby('AAAABBBCCDAABBB')] --> A B C D A B
           # [list(g) for k, g in groupby('AAAABBBCCD')] --> AAAA BBB CC D
+
           def __init__(self, iterable, key=None):
               if key is None:
                   key = lambda x: x
               self.keyfunc = key
               self.it = iter(iterable)
               self.tgtkey = self.currkey = self.currvalue = object()
+
           def __iter__(self):
               return self
+
           def __next__(self):
               self.id = object()
               while self.currkey == self.tgtkey:
@@ -425,6 +459,7 @@ loops that truncate the stream.
                   self.currkey = self.keyfunc(self.currvalue)
               self.tgtkey = self.currkey
               return (self.currkey, self._grouper(self.tgtkey, self.id))
+
           def _grouper(self, tgtkey, id):
               while self.id is id and self.currkey == tgtkey:
                   yield self.currvalue
@@ -443,10 +478,17 @@ loops that truncate the stream.
    Afterward, elements are returned consecutively unless *step* is set higher than
    one which results in items being skipped.  If *stop* is ``None``, then iteration
    continues until the iterator is exhausted, if at all; otherwise, it stops at the
-   specified position.  Unlike regular slicing, :func:`islice` does not support
-   negative values for *start*, *stop*, or *step*.  Can be used to extract related
-   fields from data where the internal structure has been flattened (for example, a
-   multi-line report may list a name field on every third line).  Roughly equivalent to::
+   specified position.
+
+   If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
+   then the step defaults to one.
+
+   Unlike regular slicing, :func:`islice` does not support negative values for
+   *start*, *stop*, or *step*.  Can be used to extract related fields from
+   data where the internal structure has been flattened (for example, a
+   multi-line report may list a name field on every third line).
+
+   Roughly equivalent to::
 
       def islice(iterable, *args):
           # islice('ABCDEFG', 2) --> A B
@@ -473,8 +515,6 @@ loops that truncate the stream.
               for i, element in zip(range(i + 1, stop), iterable):
                   pass
 
-   If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
-   then the step defaults to one.
 
 .. function:: pairwise(iterable)
 
@@ -503,13 +543,13 @@ loops that truncate the stream.
    of the *iterable* and all possible full-length permutations
    are generated.
 
-   The permutation tuples are emitted in lexicographic ordering according to
+   The permutation tuples are emitted in lexicographic order according to
    the order of the input *iterable*. So, if the input *iterable* is sorted,
-   the combination tuples will be produced in sorted order.
+   the output tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
-   value.  So if the input elements are unique, there will be no repeat
-   values in each permutation.
+   value.  So if the input elements are unique, there will be no repeated
+   values within a permutation.
 
    Roughly equivalent to::
 
@@ -589,9 +629,7 @@ loops that truncate the stream.
 .. function:: repeat(object[, times])
 
    Make an iterator that returns *object* over and over again. Runs indefinitely
-   unless the *times* argument is specified. Used as argument to :func:`map` for
-   invariant parameters to the called function.  Also used with :func:`zip` to
-   create an invariant part of a tuple record.
+   unless the *times* argument is specified.
 
    Roughly equivalent to::
 
@@ -605,7 +643,9 @@ loops that truncate the stream.
                   yield object
 
    A common use for *repeat* is to supply a stream of constant values to *map*
-   or *zip*::
+   or *zip*:
+
+   .. doctest::
 
       >>> list(map(pow, range(10), repeat(2)))
       [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
@@ -614,9 +654,12 @@ loops that truncate the stream.
 
    Make an iterator that computes the function using arguments obtained from
    the iterable.  Used instead of :func:`map` when argument parameters are already
-   grouped in tuples from a single iterable (the data has been "pre-zipped").  The
-   difference between :func:`map` and :func:`starmap` parallels the distinction
-   between ``function(a,b)`` and ``function(*c)``. Roughly equivalent to::
+   grouped in tuples from a single iterable (when the data has been
+   "pre-zipped").
+
+   The difference between :func:`map` and :func:`starmap` parallels the
+   distinction between ``function(a,b)`` and ``function(*c)``. Roughly
+   equivalent to::
 
       def starmap(function, iterable):
           # starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000
@@ -644,9 +687,7 @@ loops that truncate the stream.
 
    The following Python code helps explain what *tee* does (although the actual
    implementation is more complex and uses only a single underlying
-   :abbr:`FIFO (first-in, first-out)` queue).
-
-   Roughly equivalent to::
+   :abbr:`FIFO (first-in, first-out)` queue)::
 
         def tee(iterable, n=2):
             it = iter(iterable)
@@ -663,7 +704,7 @@ loops that truncate the stream.
                     yield mydeque.popleft()
             return tuple(gen(d) for d in deques)
 
-   Once :func:`tee` has made a split, the original *iterable* should not be
+   Once a :func:`tee` has been created, the original *iterable* should not be
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
@@ -717,14 +758,28 @@ Itertools Recipes
 This section shows recipes for creating an extended toolset using the existing
 itertools as building blocks.
 
+The primary purpose of the itertools recipes is educational.  The recipes show
+various ways of thinking about individual tools — for example, that
+``chain.from_iterable`` is related to the concept of flattening.  The recipes
+also give ideas about ways that the tools can be combined — for example, how
+`compress()` and `range()` can work together.  The recipes also show patterns
+for using itertools with the :mod:`operator` and :mod:`collections` modules as
+well as with the built-in itertools such as ``map()``, ``filter()``,
+``reversed()``, and ``enumerate()``.
+
+A secondary purpose of the recipes is to serve as an incubator.  The
+``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
+recipes.  Currently, the ``iter_index()`` recipe is being tested to see
+whether it proves its worth.
+
 Substantially all of these recipes and many, many others can be installed from
 the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
 on the Python Package Index::
 
     python -m pip install more-itertools
 
-The extended tools offer the same high performance as the underlying toolset.
-The superior memory performance is kept by processing elements one at a time
+Many of the recipes offer the same high performance as the underlying toolset.
+Superior memory performance is kept by processing elements one at a time
 rather than bringing the whole iterable into memory all at once. Code volume is
 kept small by linking the tools together in a functional style which helps
 eliminate temporary variables.  High speed is retained by preferring
@@ -739,7 +794,7 @@ which incur interpreter overhead.
 
    def prepend(value, iterator):
        "Prepend a single value in front of an iterator"
-       # prepend(1, [2, 3, 4]) -> 1 2 3 4
+       # prepend(1, [2, 3, 4]) --> 1 2 3 4
        return chain([value], iterator)
 
    def tabulate(function, start=0):
@@ -775,10 +830,7 @@ which incur interpreter overhead.
        return sum(map(pred, iterable))
 
    def pad_none(iterable):
-       """Returns the sequence elements and then returns None indefinitely.
-
-       Useful for emulating the behavior of the built-in map() function.
-       """
+       "Returns the sequence elements and then returns None indefinitely."
        return chain(iterable, repeat(None))
 
    def ncycles(iterable, n):
@@ -812,6 +864,37 @@ which incur interpreter overhead.
            for k in range(len(roots) + 1)
        ]
 
+   def iter_index(iterable, value, start=0):
+       "Return indices where a value occurs in a sequence or iterable."
+       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
+       try:
+           seq_index = iterable.index
+       except AttributeError:
+           # Slow path for general iterables
+           it = islice(iterable, start, None)
+           for i, element in enumerate(it, start):
+               if element is value or element == value:
+                   yield i
+       else:
+           # Fast path for sequences
+           i = start - 1
+           try:
+               while True:
+                   yield (i := seq_index(value, i+1))
+           except ValueError:
+               pass
+
+   def sieve(n):
+       "Primes less than n"
+       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       data = bytearray((0, 1)) * (n // 2)
+       data[:3] = 0, 0, 0
+       limit = math.isqrt(n) + 1
+       for p in compress(range(limit), data):
+           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
+       data[2] = 1
+       return iter_index(data, 1) if n > 2 else iter([])
+
    def flatten(list_of_lists):
        "Flatten one level of nesting"
        return chain.from_iterable(list_of_lists)
@@ -842,12 +925,12 @@ which incur interpreter overhead.
 
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
-       # triplewise('ABCDEFG') -> ABC BCD CDE DEF EFG
+       # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
        for (a, _), (b, c) in pairwise(pairwise(iterable)):
            yield a, b, c
 
    def sliding_window(iterable, n):
-       # sliding_window('ABCDEFG', 4) -> ABCD BCDE CDEF DEFG
+       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
        it = iter(iterable)
        window = collections.deque(islice(it, n), maxlen=n)
        if len(window) == n:
@@ -921,16 +1004,19 @@ which incur interpreter overhead.
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
        # unique_everseen('ABBCcAD', str.lower) --> A B C D
        seen = set()
-       seen_add = seen.add
        if key is None:
            for element in filterfalse(seen.__contains__, iterable):
-               seen_add(element)
+               seen.add(element)
                yield element
+           # Note: The steps shown above are intended to demonstrate
+           # filterfalse(). For order preserving deduplication,
+           # a better solution is:
+           #     yield from dict.fromkeys(iterable)
        else:
            for element in iterable:
                k = key(element)
                if k not in seen:
-                   seen_add(k)
+                   seen.add(k)
                    yield element
 
    def unique_justseen(iterable, key=None):
@@ -974,31 +1060,6 @@ which incur interpreter overhead.
        # first_true([a,b,c], x) --> a or b or c or x
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
-
-   def random_product(*args, repeat=1):
-       "Random selection from itertools.product(*args, **kwds)"
-       pools = [tuple(pool) for pool in args] * repeat
-       return tuple(map(random.choice, pools))
-
-   def random_permutation(iterable, r=None):
-       "Random selection from itertools.permutations(iterable, r)"
-       pool = tuple(iterable)
-       r = len(pool) if r is None else r
-       return tuple(random.sample(pool, r))
-
-   def random_combination(iterable, r):
-       "Random selection from itertools.combinations(iterable, r)"
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = sorted(random.sample(range(n), r))
-       return tuple(pool[i] for i in indices)
-
-   def random_combination_with_replacement(iterable, r):
-       "Random selection from itertools.combinations_with_replacement(iterable, r)"
-       pool = tuple(iterable)
-       n = len(pool)
-       indices = sorted(random.choices(range(n), k=r))
-       return tuple(pool[i] for i in indices)
 
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
@@ -1079,6 +1140,7 @@ which incur interpreter overhead.
     >>> import operator
     >>> import collections
     >>> import math
+    >>> import random
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -1128,7 +1190,6 @@ which incur interpreter overhead.
     >>> list(repeatfunc(pow, 5, 2, 3))
     [8, 8, 8, 8, 8]
 
-    >>> import random
     >>> take(5, map(int, repeatfunc(random.random)))
     [0, 0, 0, 0, 0]
 
@@ -1156,10 +1217,49 @@ which incur interpreter overhead.
     >>> all(factored(x) == expanded(x) for x in range(-10, 11))
     True
 
+    >>> list(iter_index('AABCADEAF', 'A'))
+    [0, 1, 4, 7]
+    >>> list(iter_index('AABCADEAF', 'B'))
+    [2]
+    >>> list(iter_index('AABCADEAF', 'X'))
+    []
+    >>> list(iter_index('', 'X'))
+    []
+    >>> list(iter_index('AABCADEAF', 'A', 1))
+    [1, 4, 7]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 1))
+    [1, 4, 7]
+    >>> list(iter_index('AABCADEAF', 'A', 2))
+    [4, 7]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 2))
+    [4, 7]
+    >>> list(iter_index('AABCADEAF', 'A', 10))
+    []
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 10))
+    []
+
+    >>> list(sieve(30))
+    [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+    >>> small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+    >>> all(list(sieve(n)) == [p for p in small_primes if p < n] for n in range(101))
+    True
+    >>> len(list(sieve(100)))
+    25
+    >>> len(list(sieve(1_000)))
+    168
+    >>> len(list(sieve(10_000)))
+    1229
+    >>> len(list(sieve(100_000)))
+    9592
+    >>> len(list(sieve(1_000_000)))
+    78498
+    >>> carmichael = {561, 1105, 1729, 2465, 2821, 6601, 8911}  # https://oeis.org/A002997
+    >>> set(sieve(10_000)).isdisjoint(carmichael)
+    True
+
     >>> list(flatten([('a', 'b'), (), ('c', 'd', 'e'), ('f',), ('g', 'h', 'i')]))
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 
-    >>> import random
     >>> random.seed(85753098575309)
     >>> list(repeatfunc(random.random, 3))
     [0.16370491282496968, 0.45889608687313455, 0.3747076837820118]

@@ -29,6 +29,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 
 from collections import namedtuple
 import functools
+import math
 import re
 import types
 import warnings
@@ -166,12 +167,11 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
-            try:
-                port = int(port, 10)
-            except ValueError:
-                message = f'Port could not be cast to integer value as {port!r}'
-                raise ValueError(message) from None
-            if not ( 0 <= port <= 65535):
+            if port.isdigit() and port.isascii():
+                port = int(port)
+            else:
+                raise ValueError(f"Port could not be cast to integer value as {port!r}")
+            if not (0 <= port <= 65535):
                 raise ValueError("Port out of range 0-65535")
         return port
 
@@ -906,7 +906,14 @@ def quote_from_bytes(bs, safe='/'):
     if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
         return bs.decode()
     quoter = _byte_quoter_factory(safe)
-    return ''.join(map(quoter, bs))
+    if (bs_len := len(bs)) < 200_000:
+        return ''.join(map(quoter, bs))
+    else:
+        # This saves memory - https://github.com/python/cpython/issues/95865
+        chunk_size = math.isqrt(bs_len)
+        chunks = [''.join(map(quoter, bs[i:i+chunk_size]))
+                  for i in range(0, bs_len, chunk_size)]
+        return ''.join(chunks)
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
               quote_via=quote_plus):
@@ -1124,15 +1131,15 @@ def splitnport(host, defport=-1):
 def _splitnport(host, defport=-1):
     """Split host and port, returning numeric port.
     Return given default port if no ':' found; defaults to -1.
-    Return numerical port if a valid number are found after ':'.
+    Return numerical port if a valid number is found after ':'.
     Return None if ':' but not a valid number."""
     host, delim, port = host.rpartition(':')
     if not delim:
         host = port
     elif port:
-        try:
+        if port.isdigit() and port.isascii():
             nport = int(port)
-        except ValueError:
+        else:
             nport = None
         return host, nport
     return host, defport

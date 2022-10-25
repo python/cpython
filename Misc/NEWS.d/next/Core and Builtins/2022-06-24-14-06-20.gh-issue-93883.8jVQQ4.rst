@@ -1,1 +1,0 @@
-Revise the display strategy of traceback enhanced error locations.  The indicators are only shown when the location doesn't span the whole line.

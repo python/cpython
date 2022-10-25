@@ -167,8 +167,14 @@ BaseException_setstate(PyObject *self, PyObject *state)
             return NULL;
         }
         while (PyDict_Next(state, &i, &d_key, &d_value)) {
-            if (PyObject_SetAttr(self, d_key, d_value) < 0)
+            Py_INCREF(d_key);
+            Py_INCREF(d_value);
+            int res = PyObject_SetAttr(self, d_key, d_value);
+            Py_DECREF(d_value);
+            Py_DECREF(d_key);
+            if (res < 0) {
                 return NULL;
+            }
         }
     }
     Py_RETURN_NONE;
