@@ -1,8 +1,10 @@
 import os
 import sys
+import io
 import subprocess
 from test import support
 import unittest
+import unittest.mock
 import test.test_unittest
 from test.test_unittest.test_result import BufferedWriter
 
@@ -31,7 +33,7 @@ class Test_TestProgram(unittest.TestCase):
         test = object()
 
         class FakeRunner(object):
-            def run(self, test):
+            def run(self, test, debug=False):
                 self.test = test
                 return result
 
@@ -83,7 +85,7 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_defaultTest_with_string(self):
         class FakeRunner(object):
-            def run(self, test):
+            def run(self, test, debug=False):
                 self.test = test
                 return True
 
@@ -98,7 +100,7 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_defaultTest_with_iterable(self):
         class FakeRunner(object):
-            def run(self, test):
+            def run(self, test, debug=False):
                 self.test = test
                 return True
 
@@ -165,6 +167,7 @@ class Test_TestProgram(unittest.TestCase):
         class Error(Exception):
             pass
         def test_raise(self):
+            self = self
             raise self.Error
 
     class TestRaiseLoader(unittest.TestLoader):
@@ -191,6 +194,37 @@ class Test_TestProgram(unittest.TestCase):
             argv=["TestRaise"],
             testRunner=unittest.TextTestRunner(stream=io.StringIO()),
             testLoader=self.TestRaiseLoader())
+
+    def test_pdb(self):
+        from test.test_pdb import PdbTestInput
+        # post-mortem
+        out, err = io.StringIO(), io.StringIO()
+        try:
+            with unittest.mock.patch('sys.stdout', out),\
+                    unittest.mock.patch('sys.stderr', err),\
+                    PdbTestInput(['c']):
+                p = unittest.main(
+                    argv=["TestRaise", "--pdb"],
+                    testRunner=unittest.TextTestRunner(stream=err),
+                    testLoader=self.TestRaiseLoader())
+        except SystemExit:
+            assert '-> raise self.Error\n(Pdb)' in out.getvalue()
+            assert 'FAILED (errors=1)' in err.getvalue()
+        else:
+            raise AssertionError
+        # --trace
+        out, err = io.StringIO(), io.StringIO()
+        try:
+            with unittest.mock.patch('sys.stdout', out), PdbTestInput(['c']):
+                p = unittest.main(
+                    argv=["TestRaise", "--trace"],
+                    testRunner=unittest.TextTestRunner(stream=err),
+                    testLoader=self.TestRaiseLoader())
+        except SystemExit:
+            assert '-> self = self\n(Pdb)' in out.getvalue()
+            assert 'FAILED (errors=1)' in err.getvalue()
+        else:
+            raise AssertionError
 
 
 class InitialisableProgram(unittest.TestProgram):
@@ -221,7 +255,7 @@ class FakeRunner(object):
             FakeRunner.raiseError -= 1
             raise TypeError
 
-    def run(self, test):
+    def run(self, test, debug=False):
         FakeRunner.test = test
         return RESULT
 
@@ -359,6 +393,13 @@ class TestCommandLineArgs(unittest.TestCase):
         program.testRunner = FakeRunner
         program.parseArgs([None, '--debug'])
         self.assertTrue(program.debug)
+        program.parseArgs([None, '--pdb'])
+        self.assertTrue(program.pdb)
+        program.parseArgs([None, '--pm=pdb'])
+        self.assertEqual(program.pm, 'pdb')
+        program.parseArgs([None, '--trace'])
+        self.assertTrue(program.trace)
+
 
     def testRunTestsOldRunnerClass(self):
         program = self.program
@@ -493,7 +534,7 @@ class TestCommandLineArgs(unittest.TestCase):
             # Use -E to ignore PYTHONSAFEPATH env var
             cmd = [sys.executable, '-E', '-m', 'unittest'] + args
             p = subprocess.Popen(cmd,
-                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, cwd=os.path.dirname(__file__))
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, cwd=os.path.dirname(__file__) or '.')
             with p:
                 _, stderr = p.communicate()
             return stderr.decode()
