@@ -1,1 +1,1 @@
-Added *Command-Line Usage* section for :mod:`mimetypes`.
+Added *Command-Line Usage* section for :mod:`mimetypes`. Patch by Oleg Iarygin.
