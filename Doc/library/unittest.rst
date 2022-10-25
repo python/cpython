@@ -220,6 +220,25 @@ Command-line options
 
    See `Signal Handling`_ for the functions that provide this functionality.
 
+.. cmdoption:: --debug
+
+   On test fail or error the test run terminates immediately with original
+   exception - similar to normal script execution. Useful for seamless external
+   post-mortem handling.
+
+.. cmdoption:: --pdb
+
+   Runs ``pdb.post_mortem()`` upon each error. Short for ``--pm=pdb``
+
+.. cmdoption:: --pm
+
+   Run custom post-mortem debugger (module or class) upon each error.
+   Examples: ``--pm=pywin.debugger``, ``--pm=IPython.terminal.debugger.Pdb``
+
+.. cmdoption:: --trace
+
+   Break at the beginning of each test using :mod:`pdb` or the debugger set by ``--pm``
+
 .. cmdoption:: -f, --failfast
 
    Stop the test run on the first error or failure.
@@ -252,6 +271,9 @@ Command-line options
 
 .. versionadded:: 3.7
    The command-line option ``-k``.
+
+.. versionadded:: 3.12
+   The command-line options ``--debug``, ``--pdb`` and ``--pm``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -2228,7 +2250,8 @@ Loading and running tests
 
 .. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, \
                    testLoader=unittest.defaultTestLoader, exit=True, verbosity=1, \
-                   failfast=None, catchbreak=None, buffer=None, warnings=None)
+                   failfast=None, catchbreak=None, buffer=None, warnings=None, \
+                   debug=False)
 
    A command-line program that loads a set of tests from *module* and runs them;
    this is primarily for making test modules conveniently executable.
@@ -2279,6 +2302,12 @@ Loading and running tests
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
 
+   When *debug* is ``True`` (corresponding to ``--debug``) execution terminates
+   with original exception upon the first error. When *debug* is the name of a
+   debugger module or class - for example ":mod:`pdb`" - then post-mortem debugging is
+   run upon each error.
+
+
    .. versionchanged:: 3.1
       The *exit* parameter was added.
 
@@ -2289,6 +2318,9 @@ Loading and running tests
    .. versionchanged:: 3.4
       The *defaultTest* parameter was changed to also accept an iterable of
       test names.
+
+   .. versionchanged:: 3.12
+      The *debug* parameter was added.
 
 
 load_tests Protocol
