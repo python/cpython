@@ -256,8 +256,9 @@ Creating Tasks
 
    .. note::
 
-      :meth:`asyncio.TaskGroup.create_task` is a newer alternative
-      that allows for convenient waiting for a group of related tasks.
+      :meth:`asyncio.TaskGroup.create_task` is a new alternative
+      based on `structural concurrency principles <https://en.wikipedia.org/wiki/Structured_concurrency>`_ 
+      that allows for waiting for a group of related tasks with strong safety guarantees.
 
    .. important::
 
@@ -340,7 +341,7 @@ Example::
         async with asyncio.TaskGroup() as tg:
             task1 = tg.create_task(some_coro(...))
             task2 = tg.create_task(another_coro(...))
-        print("Both tasks have completed now.")
+        print(f"Both tasks have completed now: {task1.result()}, {task2.result()}")
 
 The ``async with`` statement will wait for all tasks in the group to finish.
 While waiting, new tasks may still be added to the group
@@ -459,8 +460,11 @@ Running Tasks Concurrently
    Tasks/Futures to be cancelled.
 
    .. note::
-      A more modern way to create and run tasks concurrently and
-      wait for their completion is :class:`asyncio.TaskGroup`.
+      A new alternative to create and run tasks concurrently and
+      wait for their completion is :class:`asyncio.TaskGroup`. While *TaskGroup*
+      provides strong safety guarantees for scheduling a nesting of subtasks, *gather* comes in handy
+      for tasks that do not schedule subtasks and need to have their results consumed eagerly 
+      (i.e. when destructuring the result(s) into a tuple).
 
    .. _asyncio_example_gather:
 
