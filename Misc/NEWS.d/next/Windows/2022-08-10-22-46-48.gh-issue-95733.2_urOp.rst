@@ -1,2 +1,0 @@
-Make certain requirements of the Windows Store package optional to allow
-installing on earlier updates of Windows.

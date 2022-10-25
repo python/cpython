@@ -1,1 +1,0 @@
-The compiler now avoids quadratic behavior when finding which instructions should use the :opcode:`LOAD_FAST_CHECK` opcode.
