@@ -4,6 +4,7 @@
 
 :Release: |release|
 :Date: |today|
+:Editor: Pablo Galindo Salgado
 
 .. Rules for maintenance:
 
@@ -1593,10 +1594,6 @@ Changed/removed opcodes
 .. _whatsnew311-deprecated:
 .. _whatsnew311-python-api-deprecated:
 
-
-.. _whatsnew311-deprecated:
-.. _whatsnew311-python-api-deprecated:
-
 Deprecated
 ==========
 
@@ -1768,9 +1765,6 @@ Standard Library
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
-
-.. _whatsnew311-pending-removal:
-.. _whatsnew311-python-api-pending-removal:
 
 .. _whatsnew311-pending-removal:
 .. _whatsnew311-python-api-pending-removal:

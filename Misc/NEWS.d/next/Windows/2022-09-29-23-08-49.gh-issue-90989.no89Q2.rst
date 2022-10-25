@@ -1,1 +1,0 @@
-Clarify some text in the Windows installer.
