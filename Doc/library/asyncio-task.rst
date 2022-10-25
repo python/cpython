@@ -257,7 +257,7 @@ Creating Tasks
    .. note::
 
       :meth:`asyncio.TaskGroup.create_task` is a new alternative
-      based on `structural concurrency principles <https://en.wikipedia.org/wiki/Structured_concurrency>`_ 
+      based on `structural concurrency principles <https://en.wikipedia.org/wiki/Structured_concurrency>`_
       that allows for waiting for a group of related tasks with strong safety guarantees.
 
    .. important::
@@ -461,10 +461,14 @@ Running Tasks Concurrently
 
    .. note::
       A new alternative to create and run tasks concurrently and
-      wait for their completion is :class:`asyncio.TaskGroup`. While *TaskGroup*
-      provides strong safety guarantees for scheduling a nesting of subtasks, *gather* comes in handy
-      for tasks that do not schedule subtasks and need to have their results consumed eagerly 
-      (i.e. when destructuring the result(s) into a tuple).
+      wait for their completion is :class:`asyncio.TaskGroup`. *TaskGroup*
+      provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks.
+      That is, if a task (or a subtask, a task scheduled by a task)
+      raises an exception, *TaskGroup* will, while *gather* will not,
+      cancel the remaining scheduled tasks). However the terser *gather* might be
+      preferred for *Iterable* of tasks which individually handle their own exceptions, or more
+      generally, when having some tasks survive the cancellation
+      of others is an acceptable outcome.
 
    .. _asyncio_example_gather:
 
