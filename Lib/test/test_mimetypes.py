@@ -287,13 +287,9 @@ class MiscTestCase(unittest.TestCase):
 class MimetypesCliTestCase(unittest.TestCase):
 
     @classmethod
-    def to_string(cls, stream):
-        return stream.decode('ascii').strip()
-
-    @classmethod
     def mimetypes_cmd(cls, *args, **kwargs):
         result, _ = run_python_until_end('-m', 'mimetypes', *args)
-        return result.rc, cls.to_string(result.out), cls.to_string(result.err)
+        return result.rc, result.out.decode(), result.err.decode()
 
     def test_help_option(self):
         retcode, out, err = self.mimetypes_cmd('-h')
