@@ -901,10 +901,7 @@ class HTTPConnection:
         else:
             self._tunnel_headers.clear()
 
-        for header in self._tunnel_headers.keys():
-            if header.lower() == "host":
-                break
-        else:
+        if "host" not in [x.lower() for x in self._tunnel_headers.keys()]:
             encoded_host = self._tunnel_host.encode("idna").decode("ascii")
             self._tunnel_headers["Host"] = "%s:%d" % (
                 encoded_host, self._tunnel_port)
