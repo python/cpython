@@ -834,22 +834,6 @@ class TestPEP590(unittest.TestCase):
         self.assertEqual(kwargs_captured, [{"baz": "bar"}])
 
     @requires_limited_api
-    def test_vectorcall_limited_outgoing_dict(self):
-        from _testcapi import call_vectorcall_dict
-
-        args_captured = []
-        kwargs_captured = []
-
-        def f(*args, **kwargs):
-            args_captured.append(args)
-            kwargs_captured.append(kwargs)
-            return "success"
-
-        self.assertEqual(call_vectorcall_dict(f), "success")
-        self.assertEqual(args_captured, [("foo",)])
-        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
-
-    @requires_limited_api
     def test_vectorcall_limited_outgoing_method(self):
         from _testcapi import call_vectorcall_method
 
