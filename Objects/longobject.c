@@ -2358,23 +2358,26 @@ pylong_int_from_string(const char *start, const char *end, PyLongObject **res)
 {
     PyObject *mod = PyImport_ImportModule("_pylong");
     if (mod == NULL) {
-        return -1;
+        goto error;
     }
     PyObject *s = PyUnicode_FromStringAndSize(start, end-start);
     if (s == NULL) {
-        return -1;
+        goto error;
     }
     PyObject *result = PyObject_CallMethod(mod, "int_from_string", "O", s);
     Py_DECREF(s);
     Py_DECREF(mod);
     if (result == NULL) {
-        return -1;
+        goto error;
     }
     if (!PyLong_Check(result)) {
         PyErr_SetString(PyExc_TypeError, "an integer is required");
-        return -1;
+        goto error;
     }
     *res = (PyLongObject *)result;
+    return 0;
+error:
+    *res = NULL;
     return 0;
 }
 #endif /* WITH_PYLONG_MODULE */
