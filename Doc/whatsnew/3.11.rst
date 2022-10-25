@@ -620,9 +620,9 @@ asyncio
 contextlib
 ----------
 
-Added non parallel-safe :func:`~contextlib.chdir` context manager to change
-the current working directory and then restore it on exit. Simple wrapper
-around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
+* Added non parallel-safe :func:`~contextlib.chdir` context manager to change
+  the current working directory and then restore it on exit. Simple wrapper
+  around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
 
 
 .. _whatsnew311-dataclasses:
@@ -643,6 +643,7 @@ datetime
 
 * Add :attr:`datetime.UTC`, a convenience alias for
   :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
+
 * :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
   :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
   formats (barring only those that support fractional hours and minutes).
@@ -1197,7 +1198,8 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
 unicodedata
 -----------
 
-* The Unicode database has been updated to version 14.0.0. (Contributed by  Benjamin Peterson in :issue:`45190`).
+* The Unicode database has been updated to version 14.0.0.
+  (Contributed by Benjamin Peterson in :issue:`45190`).
 
 
 .. _whatsnew311-unittest:
