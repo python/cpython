@@ -1283,7 +1283,7 @@ assert (a > 0 and
         self.assertOpcodeSourcePositionIs(compiled_code, 'YIELD_VALUE',
             line=1, end_line=2, column=1, end_column=8, occurrence=2)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_VALUE',
-            line=6, end_line=6, column=23, end_column=30, occurrence=1)
+            line=1, end_line=6, column=0, end_column=32, occurrence=1)
 
     def test_multiline_list_comprehension(self):
         snippet = """\
