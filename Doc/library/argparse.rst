@@ -598,7 +598,7 @@ pairs.  Sometimes however, it may be useful to specify a single parser-wide
 default for arguments.  This can be accomplished by passing the
 ``argument_default=`` keyword argument to :class:`ArgumentParser`.  For example,
 to globally suppress attribute creation on :meth:`~ArgumentParser.parse_args`
-calls, we supply ``argument_default=SUPPRESS``::
+calls, we supply ``argument_default=argparse.SUPPRESS``::
 
    >>> parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
    >>> parser.add_argument('--foo')
