@@ -548,7 +548,6 @@ SYMBOL_NAMES = (
     "PyObject_Str",
     "PyObject_Type",
     "PyObject_Vectorcall",
-    "PyObject_VectorcallDict",
     "PyObject_VectorcallMethod",
     "PyProperty_Type",
     "PyRangeIter_Type",

@@ -71,6 +71,14 @@ PyAPI_FUNC(vectorcallfunc) PyVectorcall_Function(PyObject *callable);
 #define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
 #define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
 
+/* Same as PyObject_Vectorcall except that keyword arguments are passed as
+   dict, which may be NULL if there are no keyword arguments. */
+PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
+    PyObject *callable,
+    PyObject *const *args,
+    size_t nargsf,
+    PyObject *kwargs);
+
 // Same as PyObject_Vectorcall(), except without keyword arguments
 PyAPI_FUNC(PyObject *) _PyObject_FastCall(
     PyObject *func,

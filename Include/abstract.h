@@ -249,14 +249,6 @@ PyAPI_FUNC(PyObject *) PyObject_Vectorcall(
     size_t nargsf,
     PyObject *kwnames);
 
-/* Same as PyObject_Vectorcall except that keyword arguments are passed as
-   dict, which may be NULL if there are no keyword arguments. */
-PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
-    PyObject *callable,
-    PyObject *const *args,
-    size_t nargsf,
-    PyObject *kwargs);
-
 /* Call the method 'name' on args[0] with arguments in args[1..nargsf-1]. */
 PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
     PyObject *name, PyObject *const *args,
