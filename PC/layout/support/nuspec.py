@@ -3,6 +3,7 @@ Provides .props file.
 """
 
 import os
+import sys
 
 from .constants import *
 
@@ -13,7 +14,8 @@ PYTHON_NUSPEC_NAME = "python.nuspec"
 NUSPEC_DATA = {
     "PYTHON_TAG": VER_DOT,
     "PYTHON_VERSION": os.getenv("PYTHON_NUSPEC_VERSION"),
-    "FILELIST": r'    <file src="**\*" target="tools" />',
+    "FILELIST": r'    <file src="**\*" exclude="python.png" target="tools" />',
+    "GIT": sys._git,
 }
 
 NUSPEC_PLATFORM_DATA = dict(
@@ -29,7 +31,7 @@ if not NUSPEC_DATA["PYTHON_VERSION"]:
         VER_DOT, VER_MICRO, "-" if VER_SUFFIX else "", VER_SUFFIX
     )
 
-FILELIST_WITH_PROPS = r"""    <file src="**\*" exclude="python.props" target="tools" />
+FILELIST_WITH_PROPS = r"""    <file src="**\*" exclude="python.png;python.props" target="tools" />
     <file src="python.props" target="build\native" />"""
 
 NUSPEC_TEMPLATE = r"""<?xml version="1.0"?>
@@ -42,10 +44,13 @@ NUSPEC_TEMPLATE = r"""<?xml version="1.0"?>
     <license type="file">tools\LICENSE.txt</license>
     <projectUrl>https://www.python.org/</projectUrl>
     <description>Installs {PYTHON_BITNESS} Python for use in build scenarios.</description>
+    <icon>images\python.png</icon>
     <iconUrl>https://www.python.org/static/favicon.ico</iconUrl>
     <tags>python</tags>
+    <repository type="git" url="https://github.com/Python/CPython.git" commit="{GIT[2]}" />
   </metadata>
   <files>
+    <file src="python.png" target="images" />
 {FILELIST}
   </files>
 </package>
@@ -70,3 +75,4 @@ def get_nuspec_layout(ns):
             data["FILELIST"] = FILELIST_WITH_PROPS
         nuspec = NUSPEC_TEMPLATE.format_map(data)
         yield "python.nuspec", ("python.nuspec", nuspec.encode("utf-8"))
+        yield "python.png", ns.source / "PC" / "icons" / "logox128.png"

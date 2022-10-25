@@ -4,6 +4,8 @@
 #include <windows.h>
 #endif
 
+#include <stdlib.h>               // qsort()
+
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
 
 /* some functions handy for testing */
@@ -1032,14 +1034,30 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #endif
 
+#ifdef MS_WIN32
+
+// i38748: c stub for testing stack corruption 
+// When executing a Python callback with a long and a long long
+
+typedef long(__stdcall *_test_i38748_funcType)(long, long long);
+
+EXPORT(long) _test_i38748_runCallback(_test_i38748_funcType callback, int a, int b) {
+    return callback(a, b);
+}
+
+#endif
+
+static struct PyModuleDef_Slot _ctypes_test_slots[] = {
+    {0, NULL}
+};
 
 static struct PyModuleDef _ctypes_testmodule = {
     PyModuleDef_HEAD_INIT,
     "_ctypes_test",
     NULL,
-    -1,
+    0,
     module_methods,
-    NULL,
+    _ctypes_test_slots,
     NULL,
     NULL,
     NULL
@@ -1048,5 +1066,5 @@ static struct PyModuleDef _ctypes_testmodule = {
 PyMODINIT_FUNC
 PyInit__ctypes_test(void)
 {
-    return PyModule_Create(&_ctypes_testmodule);
+    return PyModuleDef_Init(&_ctypes_testmodule);
 }

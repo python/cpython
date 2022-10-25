@@ -32,19 +32,12 @@
 @rem VS 2017 and later provide vswhere.exe, which can be used
 @if not exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" goto :skip_vswhere
 @set _Py_MSBuild_Root=
-@for /F "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -property installationPath -latest -prerelease') DO @(set _Py_MSBuild_Root=%%i\MSBuild)
+@for /F "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -property installationPath -latest -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64') DO @(set _Py_MSBuild_Root=%%i\MSBuild)
 @if not defined _Py_MSBuild_Root goto :skip_vswhere
 @for %%j in (Current 15.0) DO @if exist "%_Py_MSBuild_Root%\%%j\Bin\msbuild.exe" (set MSBUILD="%_Py_MSBuild_Root%\%%j\Bin\msbuild.exe")
 @set _Py_MSBuild_Root=
 @if defined MSBUILD @if exist %MSBUILD% (set _Py_MSBuild_Source=Visual Studio installation) & goto :found
 :skip_vswhere
-
-@rem VS 2017 sets exactly one install as the "main" install, so we may find MSBuild in there.
-@reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32 >nul 2>nul
-@if NOT ERRORLEVEL 1 @for /F "tokens=1,2*" %%i in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7" /v 15.0 /reg:32') DO @(
-    @if "%%i"=="15.0" @if exist "%%k\MSBuild\15.0\Bin\msbuild.exe" @(set MSBUILD="%%k\MSBuild\15.0\Bin\msbuild.exe")
-)
-@if exist %MSBUILD% (set _Py_MSBuild_Source=Visual Studio 2017 registry) & goto :found
 
 @rem VS 2015 and earlier register MSBuild separately, so we can find it.
 @reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0" /v MSBuildToolsPath /reg:32 >nul 2>nul

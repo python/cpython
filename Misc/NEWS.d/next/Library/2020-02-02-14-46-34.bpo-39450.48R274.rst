@@ -1,2 +1,0 @@
-Striped whitespace from docstring before returning it from
-:func:`unittest.case.shortDescription`.

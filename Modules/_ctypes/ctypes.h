@@ -11,6 +11,21 @@
 #define PARAMFLAG_FLCID 0x4
 #endif
 
+/*
+ * bpo-13097: Max number of arguments CFuncPtr._argtypes_ and
+ * _ctypes_callproc() will accept.
+ *
+ * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
+ * to avoid allocating a massive buffer on the stack.
+ */
+#ifndef CTYPES_MAX_ARGCOUNT
+  #ifdef __EMSCRIPTEN__
+    #define CTYPES_MAX_ARGCOUNT 1000
+  #else
+    #define CTYPES_MAX_ARGCOUNT 1024
+  #endif
+#endif
+
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
@@ -208,7 +223,7 @@ typedef struct {
     PyObject *checker;
     int flags;                  /* calling convention and such */
 
-    /* pep3118 fields, pointers neeed PyMem_Free */
+    /* pep3118 fields, pointers need PyMem_Free */
     char *format;
     int ndim;
     Py_ssize_t *shape;
@@ -343,10 +358,6 @@ extern PyObject *PyExc_ArgError;
 extern char *_ctypes_conversion_encoding;
 extern char *_ctypes_conversion_errors;
 
-#if defined(HAVE_WCHAR_H)
-#  define CTYPES_UNICODE
-#endif
-
 
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
@@ -364,6 +375,14 @@ PyObject *_ctypes_get_errobj(int **pspace);
 
 #ifdef MS_WIN32
 extern PyObject *ComError;
+#endif
+
+#ifdef USING_MALLOC_CLOSURE_DOT_C
+void Py_ffi_closure_free(void *p);
+void *Py_ffi_closure_alloc(size_t size, void** codeloc);
+#else
+#define Py_ffi_closure_free ffi_closure_free
+#define Py_ffi_closure_alloc ffi_closure_alloc
 #endif
 
 /*

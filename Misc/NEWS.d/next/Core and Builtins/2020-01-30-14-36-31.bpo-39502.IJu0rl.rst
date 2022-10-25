@@ -1,2 +1,0 @@
-Fix :func:`time.localtime` on 64-bit AIX  to support years before 1902 and after 2038.
-Patch by M Felt.

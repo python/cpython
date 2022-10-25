@@ -1,1 +1,0 @@
-Expanded :func:`math.gcd` and :func:`math.lcm` to handle multiple arguments.

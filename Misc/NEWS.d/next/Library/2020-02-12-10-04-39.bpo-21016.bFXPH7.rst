@@ -1,4 +1,0 @@
-The :mod:`pydoc` and :mod:`trace` modules now use the :mod:`sysconfig`
-module to get the path to the Python standard library, to support uncommon
-installation path like ``/usr/lib64/python3.9/`` on Fedora.
-Patch by Jan Matějek.

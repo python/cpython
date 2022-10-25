@@ -1,2 +1,0 @@
-Fix to clear the interpreter state only after clearing module globals to
-guarantee module state access from C Extensions during runtime destruction

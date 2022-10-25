@@ -29,7 +29,8 @@ argument in quotes and using leading spaces.  Multiple -s options are
 treated similarly.
 
 If -n is not given, a suitable number of loops is calculated by trying
-successive powers of 10 until the total time is at least 0.2 seconds.
+increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
+total time is at least 0.2 seconds.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  It differs between versions.  The code here doesn't try
@@ -71,6 +72,7 @@ def inner(_it, _timer{init}):
     _t0 = _timer()
     for _i in _it:
         {stmt}
+        pass
     _t1 = _timer()
     return _t1 - _t0
 """
@@ -257,10 +259,9 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "process",
-                                    "verbose", "unit=", "help"])
+                                    "process", "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
         print("use -h/--help for command line help")

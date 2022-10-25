@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_bz2_BZ2Compressor_compress__doc__,
 "compress($self, data, /)\n"
 "--\n"
@@ -65,52 +71,6 @@ _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
     return _bz2_BZ2Compressor_flush_impl(self);
 }
 
-PyDoc_STRVAR(_bz2_BZ2Compressor___init____doc__,
-"BZ2Compressor(compresslevel=9, /)\n"
-"--\n"
-"\n"
-"Create a compressor object for compressing data incrementally.\n"
-"\n"
-"  compresslevel\n"
-"    Compression level, as a number between 1 and 9.\n"
-"\n"
-"For one-shot compression, use the compress() function instead.");
-
-static int
-_bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel);
-
-static int
-_bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    int compresslevel = 9;
-
-    if (Py_IS_TYPE(self, &BZ2Compressor_Type) &&
-        !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
-        goto exit;
-    }
-    if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
-        goto exit;
-    }
-    if (PyTuple_GET_SIZE(args) < 1) {
-        goto skip_optional;
-    }
-    if (PyFloat_Check(PyTuple_GET_ITEM(args, 0))) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
-    if (compresslevel == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _bz2_BZ2Compressor___init___impl((BZ2Compressor *)self, compresslevel);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
@@ -131,7 +91,7 @@ PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "the unused_data attribute.");
 
 #define _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)(void(*)(void))_bz2_BZ2Decompressor_decompress, METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
+    {"decompress", _PyCFunction_CAST(_bz2_BZ2Decompressor_decompress), METH_FASTCALL|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
@@ -141,8 +101,31 @@ static PyObject *
 _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(data), &_Py_ID(max_length), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"data", "max_length", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decompress",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
@@ -162,14 +145,9 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -190,34 +168,4 @@ exit:
 
     return return_value;
 }
-
-PyDoc_STRVAR(_bz2_BZ2Decompressor___init____doc__,
-"BZ2Decompressor()\n"
-"--\n"
-"\n"
-"Create a decompressor object for decompressing data incrementally.\n"
-"\n"
-"For one-shot decompression, use the decompress() function instead.");
-
-static int
-_bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self);
-
-static int
-_bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-
-    if (Py_IS_TYPE(self, &BZ2Decompressor_Type) &&
-        !_PyArg_NoPositional("BZ2Decompressor", args)) {
-        goto exit;
-    }
-    if (Py_IS_TYPE(self, &BZ2Decompressor_Type) &&
-        !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
-        goto exit;
-    }
-    return_value = _bz2_BZ2Decompressor___init___impl((BZ2Decompressor *)self);
-
-exit:
-    return return_value;
-}
-/*[clinic end generated code: output=3f3f1e788fe28ee1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=829bed4097cf2e63 input=a9049054013a1b77]*/
