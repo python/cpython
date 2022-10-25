@@ -668,7 +668,7 @@ enum
   (used by :func:`str`, :func:`format` and :term:`f-string`\s).
 
 * Changed :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
-  to now inherit from :class:`ReprEnum`,
+  to now inherit from :class:`~enum.ReprEnum`,
   so their :func:`str` output now matches :func:`format`
   (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``,
   whereas before ``str(AnIntEnum.ONE)`` returned ``'AnIntEnum.ONE'``.
@@ -723,7 +723,7 @@ enum
 fcntl
 -----
 
-* On FreeBSD, the :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` flags respectively
+* On FreeBSD, the :data:`!F_DUP2FD` and :data:`!F_DUP2FD_CLOEXEC` flags respectively
   are supported, the former equals to ``dup2`` usage while the latter set
   the ``FD_CLOEXEC`` flag in addition.
 
@@ -1022,7 +1022,7 @@ sys
 * :func:`sys.exc_info` now derives the ``type`` and ``traceback`` fields
   from the ``value`` (the exception instance), so when an exception is
   modified while it is being handled, the changes are reflected in
-  the results of subsequent calls to :func:`exc_info`.
+  the results of subsequent calls to :func:`!exc_info`.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
 * Add :func:`sys.exception` which returns the active exception instance
@@ -1164,7 +1164,7 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
-* The :meth:`__init__` method of :class:`~typing.Protocol` subclasses
+* The :meth:`~object.__init__` method of :class:`~typing.Protocol` subclasses
   is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
 
 * The representation of empty tuple types (``Tuple[()]``) is simplified.
