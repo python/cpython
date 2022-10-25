@@ -622,7 +622,7 @@ np_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     unsigned int y;
     if (get_ulong(state, v, &x) < 0) {
         if (!PyErr_ExceptionMatches(state->StructError)) {
-            RANGE_ERROR(state, x, f, 1, (unsigned long)-1);
+            RANGE_ERROR(state, x, f, 1, (unsigned int)-1);
         }
         return -1;
     }
@@ -669,7 +669,7 @@ np_ssize_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     Py_ssize_t x;
     if (get_ssize_t(state, v, &x) < 0) {
         if (!PyErr_ExceptionMatches(state->StructError)) {
-            RANGE_ERROR(state, x, f, 0, (unsigned long)-1);
+            RANGE_ERROR(state, x, f, 0, (size_t)-1);
         }
         return -1;
     }
