@@ -872,6 +872,69 @@ _findCommand(SearchInfo *search, const wchar_t *command, int commandLength)
 
 
 int
+_useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangLength)
+{
+    wchar_t buffer[MAXLEN];
+    wchar_t script[MAXLEN];
+    wchar_t command[MAXLEN];
+
+    int commandLength = 0;
+    int quoteCount = 0;
+    int slashCount = 0;
+
+    if (!shebang || !shebangLength) {
+        return 0;
+    }
+
+    wchar_t *pC = command;
+    for (int i = 0; i < shebangLength; ++i) {
+        wchar_t c = shebang[i];
+        if ((isspace(c) || c == L'\r' || c == L'\n') && !quoteCount) {
+            commandLength = i;
+            break;
+        } else if (c == L'"') {
+            if (slashCount % 2 == 0) {
+                quoteCount = quoteCount ? 0 : 1;
+            }
+            slashCount = 0;
+        } else if (c == L'/' || c == L'\\') {
+            slashCount += 1;
+            // also normalise the slash
+            *pC++ = L'\\';
+        } else {
+            slashCount = 0;
+            *pC++ = c;
+        }
+    }
+    *pC = L'\0';
+
+    if (!GetCurrentDirectoryW(MAXLEN, buffer) ||
+        wcsncpy_s(script, MAXLEN, search->scriptFile, search->scriptFileLength) ||
+        FAILED(PathCchCombineEx(buffer, MAXLEN, buffer, script,
+                                PATHCCH_ALLOW_LONG_PATHS)) ||
+        FAILED(PathCchRemoveFileSpec(buffer, MAXLEN)) ||
+        FAILED(PathCchCombineEx(buffer, MAXLEN, buffer, command,
+                                PATHCCH_ALLOW_LONG_PATHS))
+    ) {
+        return RC_NO_MEMORY;
+    }
+
+    int n = (int)wcsnlen(buffer, MAXLEN);
+    wchar_t *path = allocSearchInfoBuffer(search, n + 1);
+    if (!path) {
+        return RC_NO_MEMORY;
+    }
+    wcscpy_s(path, n + 1, buffer);
+    search->executablePath = path;
+    if (commandLength) {
+        search->executableArgs = &shebang[commandLength];
+        search->executableArgsLength = shebangLength - commandLength;
+    }
+    return 0;
+}
+
+
+int
 checkShebang(SearchInfo *search)
 {
     // Do not check shebang if a tag was provided or if no script file
@@ -963,7 +1026,6 @@ checkShebang(SearchInfo *search)
         L"/usr/bin/env ",
         L"/usr/bin/",
         L"/usr/local/bin/",
-        L"",
         NULL
     };
 
@@ -1012,11 +1074,14 @@ checkShebang(SearchInfo *search)
                 debug(L"# Found shebang command but could not execute it: %.*s\n",
                     commandLength, command);
             }
-            break;
+            // search is done by this point
+            return 0;
         }
     }
 
-    return 0;
+    // Unrecognised commands are joined to the script's directory and treated
+    // as the executable path
+    return _useShebangAsExecutable(search, shebang, shebangLength);
 }
 
 
