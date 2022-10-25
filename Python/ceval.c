@@ -1152,12 +1152,11 @@ handle_eval_breaker:
 
     {
     /* Start instructions */
-#if USE_COMPUTED_GOTOS
-    {
-#else
+#if !USE_COMPUTED_GOTOS
     dispatch_opcode:
-        switch (opcode) {
+        switch (opcode)
 #endif
+        {
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
@@ -5102,23 +5101,23 @@ handle_eval_breaker:
 /* Specialization misses */
 
 miss:
-    {
-        STAT_INC(opcode, miss);
-        opcode = _PyOpcode_Deopt[opcode];
-        STAT_INC(opcode, miss);
-        /* The counter is always the first cache entry: */
-        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
-        *counter -= 1;
-        if (*counter == 0) {
-            int adaptive_opcode = _PyOpcode_Adaptive[opcode];
-            assert(adaptive_opcode);
-            _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
-            STAT_INC(opcode, deopt);
-            *counter = adaptive_counter_start();
+        {
+            STAT_INC(opcode, miss);
+            opcode = _PyOpcode_Deopt[opcode];
+            STAT_INC(opcode, miss);
+            /* The counter is always the first cache entry: */
+            _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
+            *counter -= 1;
+            if (*counter == 0) {
+                int adaptive_opcode = _PyOpcode_Adaptive[opcode];
+                assert(adaptive_opcode);
+                _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
+                STAT_INC(opcode, deopt);
+                *counter = adaptive_counter_start();
+            }
+            next_instr--;
+            DISPATCH_GOTO();
         }
-        next_instr--;
-        DISPATCH_GOTO();
-    }
 
 unbound_local_error:
         {
@@ -6344,38 +6343,23 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
-    static int reentrant = 0;
-    if (reentrant) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError, "Cannot install a profile function "
-                         "while another profile function is being installed");
-        reentrant = 0;
-        return -1;
-    }
-    reentrant = 1;
-
     /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
     PyThreadState *current_tstate = _PyThreadState_GET();
     if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
-        reentrant = 0;
         return -1;
     }
 
-    PyObject *profileobj = tstate->c_profileobj;
-
-    tstate->c_profilefunc = NULL;
-    tstate->c_profileobj = NULL;
-    /* Must make sure that tracing is not ignored if 'profileobj' is freed */
-    _PyThreadState_UpdateTracingState(tstate);
-    Py_XDECREF(profileobj);
-
-    Py_XINCREF(arg);
-    tstate->c_profileobj = arg;
     tstate->c_profilefunc = func;
-
+    PyObject *old_profileobj = tstate->c_profileobj;
+    tstate->c_profileobj = Py_XNewRef(arg);
     /* Flag that tracing or profiling is turned on */
     _PyThreadState_UpdateTracingState(tstate);
-    reentrant = 0;
+
+    // gh-98257: Only call Py_XDECREF() once the new profile function is fully
+    // set, so it's safe to call sys.setprofile() again (reentrant call).
+    Py_XDECREF(old_profileobj);
+
     return 0;
 }
 
@@ -6417,39 +6401,23 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
-    static int reentrant = 0;
-
-    if (reentrant) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError, "Cannot install a trace function "
-                         "while another trace function is being installed");
-        reentrant = 0;
-        return -1;
-    }
-    reentrant = 1;
-
     /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
     PyThreadState *current_tstate = _PyThreadState_GET();
     if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
-        reentrant = 0;
         return -1;
     }
 
-    PyObject *traceobj = tstate->c_traceobj;
-
-    tstate->c_tracefunc = NULL;
-    tstate->c_traceobj = NULL;
-    /* Must make sure that profiling is not ignored if 'traceobj' is freed */
-    _PyThreadState_UpdateTracingState(tstate);
-    Py_XINCREF(arg);
-    Py_XDECREF(traceobj);
-    tstate->c_traceobj = arg;
     tstate->c_tracefunc = func;
-
+    PyObject *old_traceobj = tstate->c_traceobj;
+    tstate->c_traceobj = Py_XNewRef(arg);
     /* Flag that tracing or profiling is turned on */
     _PyThreadState_UpdateTracingState(tstate);
 
-    reentrant = 0;
+    // gh-98257: Only call Py_XDECREF() once the new trace function is fully
+    // set, so it's safe to call sys.settrace() again (reentrant call).
+    Py_XDECREF(old_traceobj);
+
     return 0;
 }
 

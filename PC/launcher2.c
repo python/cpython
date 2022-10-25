@@ -653,6 +653,7 @@ parseCommandLine(SearchInfo *search)
                     search->tag = argStart;
                 }
                 search->tagLength = (int)(tail - search->tag);
+                search->allowDefaults = false;
                 search->restOfCmdLine = tail;
             } else if (MATCHES(L"0") || MATCHES(L"-list")) {
                 search->list = true;
