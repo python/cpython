@@ -1,5 +1,6 @@
 import io
 import mimetypes
+from os import linesep
 import pathlib
 import sys
 import unittest.mock
@@ -306,34 +307,34 @@ class MimetypesCliTestCase(unittest.TestCase):
     def test_guess_extension(self):
         retcode, out, err = self.mimetypes_cmd('-l', '-e', 'image/jpg')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, '.jpg')
+        self.assertEqual(out, f'.jpg{linesep}')
         self.assertEqual(err, '')
 
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, "I don't know anything about type image/jpg")
+        self.assertEqual(err, f"I don't know anything about type image/jpg{linesep}")
 
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpeg')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, '.jpg')
+        self.assertEqual(out, f'.jpg{linesep}')
         self.assertEqual(err, '')
 
     def test_guess_type(self):
         retcode, out, err = self.mimetypes_cmd('-l', 'foo.webp')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, 'type: image/webp encoding: None')
+        self.assertEqual(out, f'type: image/webp encoding: None{linesep}')
         self.assertEqual(err, '')
 
     @unittest.skipIf(
         sys.platform == 'darwin',
-        'mime.types knows the whole common_types so they are marked as strict'
+        'macOS lists common_types in mime.types thus making them always known'
     )
     def test_guess_type_conflicting_with_mimetypes(self):
         retcode, out, err = self.mimetypes_cmd('foo.webp')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, "I don't know anything about type foo.webp")
+        self.assertEqual(err, f"I don't know anything about type foo.webp{linesep}")
 
 if __name__ == "__main__":
     unittest.main()
