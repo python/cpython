@@ -2001,8 +2001,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    // Create and initialize the new interpreter
-    // (with all optional features disabled).
+    // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
     _PyInterpreterConfig config = {
         .allow_fork = !isolated,
