@@ -241,6 +241,9 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+   In case gzip (de)compression is a bottleneck the `python-isal
+   <https://github.com/pycompression/python-isal>`_ package speeds up
+   (de)compression with a mostly compatible API.
 
 .. program:: gzip
 
