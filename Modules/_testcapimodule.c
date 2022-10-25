@@ -3263,7 +3263,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
     PyThreadState_Swap(NULL);
 
-    _PyInterpreterConfig config = {
+    const _PyInterpreterConfig config = {
         .allow_fork = allow_fork,
         .allow_subprocess = allow_subprocess,
         .allow_threads = allow_threads,

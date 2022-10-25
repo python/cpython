@@ -2003,7 +2003,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
-    _PyInterpreterConfig config = {
+    const _PyInterpreterConfig config = {
         .allow_fork = !isolated,
         .allow_subprocess = !isolated,
         .allow_threads = !isolated,
