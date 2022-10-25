@@ -6900,7 +6900,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
             name, pkgname_or_unknown
         );
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        PyErr_SetImportError(errmsg, pkgname, NULL);
+        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, NULL, name);
     }
     else {
         PyObject *spec = PyObject_GetAttr(v, &_Py_ID(__spec__));
@@ -6913,7 +6913,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
 
         errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        PyErr_SetImportError(errmsg, pkgname, pkgpath);
+        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
     }
 
     Py_XDECREF(errmsg);

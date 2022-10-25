@@ -707,9 +707,16 @@ class TracebackException:
             self.offset = exc_value.offset
             self.end_offset = exc_value.end_offset
             self.msg = exc_value.msg
+        elif exc_type and issubclass(exc_type, ImportError) and \
+                getattr(exc_value, "name_from", None) is not None:
+            wrong_name = getattr(exc_value, "name_from", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                self._str += f". Did you mean: '{suggestion}'?"
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
-            suggestion = _compute_suggestion_error(exc_value, exc_traceback)
+            wrong_name = getattr(exc_value, "name", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
             if issubclass(exc_type, NameError):
@@ -1005,14 +1012,19 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
-def _compute_suggestion_error(exc_value, tb):
-    wrong_name = getattr(exc_value, "name", None)
+def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
             d = dir(obj)
+        except Exception:
+            return None
+    elif isinstance(exc_value, ImportError):
+        try:
+            mod = __import__(exc_value.name)
+            d = dir(mod)
         except Exception:
             return None
     else:
