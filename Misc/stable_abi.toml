@@ -2,7 +2,7 @@
 # Please append new items at the end.
 
 # The syntax of this file is not fixed.
-# It is designed to be read only by Tools/stable_abi.py, which can change
+# It is designed to be read only by Tools/build/stable_abi.py, which can change
 # without notice.
 
 # For the history of the stable ABI prior to this file,

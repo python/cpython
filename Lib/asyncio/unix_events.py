@@ -197,30 +197,31 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                                          extra=None, **kwargs):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
-            with events.get_child_watcher() as watcher:
-                if not watcher.is_active():
-                    # Check early.
-                    # Raising exception before process creation
-                    # prevents subprocess execution if the watcher
-                    # is not ready to handle it.
-                    raise RuntimeError("asyncio.get_child_watcher() is not activated, "
-                                    "subprocess support is not installed.")
-                waiter = self.create_future()
-                transp = _UnixSubprocessTransport(self, protocol, args, shell,
-                                                stdin, stdout, stderr, bufsize,
-                                                waiter=waiter, extra=extra,
-                                                **kwargs)
+            watcher = events.get_child_watcher()
 
-                watcher.add_child_handler(transp.get_pid(),
-                                        self._child_watcher_callback, transp)
-                try:
-                    await waiter
-                except (SystemExit, KeyboardInterrupt):
-                    raise
-                except BaseException:
-                    transp.close()
-                    await transp._wait()
-                    raise
+        with watcher:
+            if not watcher.is_active():
+                # Check early.
+                # Raising exception before process creation
+                # prevents subprocess execution if the watcher
+                # is not ready to handle it.
+                raise RuntimeError("asyncio.get_child_watcher() is not activated, "
+                                "subprocess support is not installed.")
+            waiter = self.create_future()
+            transp = _UnixSubprocessTransport(self, protocol, args, shell,
+                                            stdin, stdout, stderr, bufsize,
+                                            waiter=waiter, extra=extra,
+                                            **kwargs)
+            watcher.add_child_handler(transp.get_pid(),
+                                    self._child_watcher_callback, transp)
+            try:
+                await waiter
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException:
+                transp.close()
+                await transp._wait()
+                raise
 
         return transp
 

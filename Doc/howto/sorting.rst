@@ -186,8 +186,8 @@ The `Timsort <https://en.wikipedia.org/wiki/Timsort>`_ algorithm used in Python
 does multiple sorts efficiently because it can take advantage of any ordering
 already present in a dataset.
 
-The Old Way Using Decorate-Sort-Undecorate
-==========================================
+Decorate-Sort-Undecorate
+========================
 
 This idiom is called Decorate-Sort-Undecorate after its three steps:
 
@@ -226,90 +226,36 @@ after Randal L. Schwartz, who popularized it among Perl programmers.
 
 Now that Python sorting provides key-functions, this technique is not often needed.
 
+Comparison Functions
+====================
 
-The Old Way Using the *cmp* Parameter
-=====================================
+Unlike key functions that return an absolute value for sorting, a comparison
+function computes the relative ordering for two inputs.
 
-Many constructs given in this HOWTO assume Python 2.4 or later. Before that,
-there was no :func:`sorted` builtin and :meth:`list.sort` took no keyword
-arguments. Instead, all of the Py2.x versions supported a *cmp* parameter to
-handle user specified comparison functions.
+For example, a `balance scale
+<https://upload.wikimedia.org/wikipedia/commons/1/17/Balance_à_tabac_1850.JPG>`_
+compares two samples giving a relative ordering: lighter, equal, or heavier.
+Likewise, a comparison function such as ``cmp(a, b)`` will return a negative
+value for less-than, zero if the inputs are equal, or a positive value for
+greater-than.
 
-In Py3.0, the *cmp* parameter was removed entirely (as part of a larger effort to
-simplify and unify the language, eliminating the conflict between rich
-comparisons and the :meth:`__cmp__` magic method).
+It is common to encounter comparison functions when translating algorithms from
+other languages.  Also, some libraries provide comparison functions as part of
+their API.  For example, :func:`locale.strcoll` is a comparison function.
 
-In Py2.x, sort allowed an optional function which can be called for doing the
-comparisons. That function should take two arguments to be compared and then
-return a negative value for less-than, return zero if they are equal, or return
-a positive value for greater-than. For example, we can do:
+To accommodate those situations, Python provides
+:class:`functools.cmp_to_key` to wrap the comparison function
+to make it usable as a key function::
 
-.. doctest::
-
-    >>> def numeric_compare(x, y):
-    ...     return x - y
-    >>> sorted([5, 2, 4, 1, 3], cmp=numeric_compare) # doctest: +SKIP
-    [1, 2, 3, 4, 5]
-
-Or you can reverse the order of comparison with:
-
-.. doctest::
-
-    >>> def reverse_numeric(x, y):
-    ...     return y - x
-    >>> sorted([5, 2, 4, 1, 3], cmp=reverse_numeric) # doctest: +SKIP
-    [5, 4, 3, 2, 1]
-
-When porting code from Python 2.x to 3.x, the situation can arise when you have
-the user supplying a comparison function and you need to convert that to a key
-function. The following wrapper makes that easy to do:
-
-.. testcode::
-
-    def cmp_to_key(mycmp):
-        'Convert a cmp= function into a key= function'
-        class K:
-            def __init__(self, obj, *args):
-                self.obj = obj
-            def __lt__(self, other):
-                return mycmp(self.obj, other.obj) < 0
-            def __gt__(self, other):
-                return mycmp(self.obj, other.obj) > 0
-            def __eq__(self, other):
-                return mycmp(self.obj, other.obj) == 0
-            def __le__(self, other):
-                return mycmp(self.obj, other.obj) <= 0
-            def __ge__(self, other):
-                return mycmp(self.obj, other.obj) >= 0
-            def __ne__(self, other):
-                return mycmp(self.obj, other.obj) != 0
-        return K
-
-.. doctest::
-    :hide:
-
-    >>> sorted([5, 2, 4, 1, 3], key=cmp_to_key(reverse_numeric))
-    [5, 4, 3, 2, 1]
-
-To convert to a key function, just wrap the old comparison function:
-
-.. testsetup::
-
-    from functools import cmp_to_key
-
-.. doctest::
-
-    >>> sorted([5, 2, 4, 1, 3], key=cmp_to_key(reverse_numeric))
-    [5, 4, 3, 2, 1]
-
-In Python 3.2, the :func:`functools.cmp_to_key` function was added to the
-:mod:`functools` module in the standard library.
+    sorted(words, key=cmp_to_key(strcoll)
 
 Odds and Ends
 =============
 
 * For locale aware sorting, use :func:`locale.strxfrm` for a key function or
-  :func:`locale.strcoll` for a comparison function.
+  :func:`locale.strcoll` for a comparison function.  This is necessary
+  because "alphabetical" sort orderings can vary across cultures even
+  if the underlying alphabet is the same.
 
 * The *reverse* parameter still maintains sort stability (so that records with
   equal keys retain the original order). Interestingly, that effect can be
