@@ -1167,7 +1167,7 @@ These are not used in annotations. They are building blocks for creating generic
            # Use a type variable to show that the return type
            # will always be an instance of whatever ``cls`` is
            @classmethod
-           def with_circumference(cls: type[C], circumference: float) -> C:
+           def with_circumference(cls: Type[C], circumference: float) -> C:
                """Create a circle with the specified circumference"""
                radius = circumference / (math.pi * 2)
                return cls(radius)
