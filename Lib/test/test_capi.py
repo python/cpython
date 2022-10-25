@@ -1084,6 +1084,7 @@ class SubinterpreterTest(unittest.TestCase):
         # test fails, assume that the environment in this process may
         # be altered and suspect.
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_configured_settings(self):
         """
         The config with which an interpreter is created corresponds
@@ -1096,29 +1097,27 @@ class SubinterpreterTest(unittest.TestCase):
         FORK = 1<<15
         SUBPROCESS = 1<<16
 
+        features = ['fork', 'subprocess', 'threads']
+        kwlist = [f'allow_{n}' for n in features]
         for config, expected in {
-            (True, True, True): THREADS | FORK | SUBPROCESS,
+            (True, True, True): FORK | SUBPROCESS | THREADS,
             (False, False, False): 0,
-            (False, True, True): THREADS | SUBPROCESS,
+            (False, True, True): SUBPROCESS | THREADS,
         }.items():
-            allow_fork, allow_subprocess, allow_threads = config
+            kwargs = dict(zip(kwlist, config))
             expected = {
                 'feature_flags': expected,
             }
             with self.subTest(config):
                 r, w = os.pipe()
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi, json, os
+                    settings = _testinternalcapi.get_interp_settings()
+                    with os.fdopen({w}, "w") as stdin:
+                        json.dump(settings, stdin)
+                    ''')
                 with os.fdopen(r) as stdout:
-                    support.run_in_subinterp_with_config(
-                        textwrap.dedent(f'''
-                            import _testinternalcapi, json, os
-                            settings = _testinternalcapi.get_interp_settings()
-                            with os.fdopen({w}, "w") as stdin:
-                                json.dump(settings, stdin)
-                            '''),
-                        allow_fork=allow_fork,
-                        allow_subprocess=allow_subprocess,
-                        allow_threads=allow_threads,
-                    )
+                    support.run_in_subinterp_with_config(script, **kwargs)
                     out = stdout.read()
                 settings = json.loads(out)
 
