@@ -1335,8 +1335,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # gh-93696: stdlib frozen modules provide a useful __file__
         # this workaround can be removed with the closure of gh-89815
         if filename.startswith("<frozen"):
-            if "__file__" in self.curframe.f_globals:
-                filename = self.curframe.f_globals["__file__"]
+            tmp = self.curframe.f_globals.get("__file__")
+            if isinstance(tmp, str):
+                filename = tmp
         breaklist = self.get_file_breaks(filename)
         try:
             lines = linecache.getlines(filename, self.curframe.f_globals)
