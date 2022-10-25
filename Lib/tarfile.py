@@ -2163,10 +2163,10 @@ class TarFile(object):
 
         # Create all upper directories.
         upperdirs = os.path.dirname(targetpath)
-        if upperdirs and not os.path.exists(upperdirs):
+        if upperdirs:
             # Create directories that are not part of the archive with
             # default permissions.
-            os.makedirs(upperdirs)
+            os.makedirs(upperdirs, exist_ok=True)
 
         if tarinfo.islnk() or tarinfo.issym():
             self._dbg(1, "%s -> %s" % (tarinfo.name, tarinfo.linkname))
