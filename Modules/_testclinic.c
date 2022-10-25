@@ -93,22 +93,17 @@ gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
 }
 
 static PyMethodDef tester_methods[] = {
-        TEST_EMPTY_FUNCTION_METHODDEF
-        GH_32092_OOB_METHODDEF
-        GH_32092_KW_PASS_METHODDEF
-        {NULL, NULL}
+    TEST_EMPTY_FUNCTION_METHODDEF
+    GH_32092_OOB_METHODDEF
+    GH_32092_KW_PASS_METHODDEF
+    {NULL, NULL}
 };
 
 static struct PyModuleDef _testclinic_module = {
-        PyModuleDef_HEAD_INIT,
-        "_testclinic",
-        NULL,
-        0,
-        tester_methods,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testclinic",
+    .m_size = 0,
+    .m_methods = tester_methods,
 };
 
 PyMODINIT_FUNC
