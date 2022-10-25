@@ -614,12 +614,18 @@ asyncio
   These are primarily intended for internal use,
   notably by :class:`~asyncio.TaskGroup`.
 
+
+.. _whatsnew311-contextlib:
+
 contextlib
 ----------
 
 Added non parallel-safe :func:`~contextlib.chdir` context manager to change
 the current working directory and then restore it on exit. Simple wrapper
 around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
+
+
+.. _whatsnew311-dataclasses:
 
 dataclasses
 -----------
@@ -628,6 +634,9 @@ dataclasses
   :term:`hashable` instead of any object which is not an instance of
   :class:`dict`, :class:`list` or :class:`set`. (Contributed by Eric V. Smith in
   :issue:`44674`.)
+
+
+.. _whatsnew311-datetime:
 
 datetime
 --------
@@ -708,6 +717,8 @@ enum
   inverted flags are coerced to their positive equivalent.
 
 
+.. _whatsnew311-fractions:
+
 fractions
 ---------
 
@@ -717,6 +728,9 @@ fractions
 * :class:`~fractions.Fraction` now implements an ``__int__`` method, so
   that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
   (Contributed by Mark Dickinson in :issue:`44547`.)
+
+
+.. _whatsnew311-functools:
 
 functools
 ---------
@@ -748,6 +762,9 @@ functools
 
   (Contributed by Yurii Karabas in :issue:`46014`.)
 
+
+.. _whatsnew311-hashlib:
+
 hashlib
 -------
 
@@ -765,6 +782,9 @@ hashlib
 * Add :func:`hashlib.file_digest`, a helper function for efficient hashing
   of files or file-like objects.
   (Contributed by Christian Heimes in :gh:`89313`.)
+
+
+.. _whatsnew311-idle:
 
 IDLE and idlelib
 ----------------
@@ -803,6 +823,9 @@ inspect
 
   (Contributed by Pablo Galindo in :gh:`88116`.)
 
+
+.. _whatsnew311-locale:
+
 locale
 ------
 
@@ -830,6 +853,8 @@ logging
   (Contributed by Kirill Pinchuk in :gh:`88457`.)
 
 
+.. _whatsnew311-math:
+
 math
 ----
 
@@ -849,6 +874,8 @@ math
   (Contributed by Victor Stinner in :issue:`46917`.)
 
 
+.. _whatsnew311-operator:
+
 operator
 --------
 
@@ -856,6 +883,8 @@ operator
   ``operator.call(obj, *args, **kwargs) == obj(*args, **kwargs)``.
   (Contributed by Antony Lee in :issue:`44019`.)
 
+
+.. _whatsnew311-os:
 
 os
 --
@@ -865,6 +894,8 @@ os
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
 
+.. _whatsnew311-pathlib:
+
 pathlib
 -------
 
@@ -873,6 +904,9 @@ pathlib
   :data:`~os.sep` or :data:`~os.altsep`.
   (Contributed by Eisuke Kawasima in :issue:`22276` and :issue:`33392`.)
 
+
+.. _whatsnew311-re:
+
 re
 --
 
@@ -880,12 +914,17 @@ re
   ``?+``, ``{m,n}+``) are now supported in regular expressions.
   (Contributed by Jeffrey C. Jacobs and Serhiy Storchaka in :issue:`433030`.)
 
+
+.. _whatsnew311-shutil:
+
 shutil
 ------
 
 * Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
   (Contributed by Serhiy Storchaka in :issue:`46245`.)
 
+
+.. _whatsnew311-socket:
 
 socket
 ------
@@ -897,6 +936,9 @@ socket
   failure to connect, an :exc:`ExceptionGroup` containing all errors
   instead of only raising the last error.
   (Contributed by Irit Katriel in :issue:`29980`.)
+
+
+.. _whatsnew311-sqlite3:
 
 sqlite3
 -------
@@ -961,6 +1003,8 @@ string
   (Contributed by Ben Kehoe in :gh:`90465`.)
 
 
+.. _whatsnew311-sys:
+
 sys
 ---
 
@@ -977,6 +1021,8 @@ sys
 * Add the :data:`sys.flags.safe_path <sys.flags>` flag.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
+
+.. _whatsnew311-sysconfig:
 
 sysconfig
 ---------
@@ -1008,6 +1054,8 @@ tempfile
   (Contributed by Carey Metcalfe in :gh:`70363`.)
 
 
+.. _whatsnew311-threading:
+
 threading
 ---------
 
@@ -1018,6 +1066,8 @@ threading
   by system clock changes.
   (Contributed by Victor Stinner in :issue:`41710`.)
 
+
+.. _whatsnew311-time:
 
 time
 ----
@@ -1036,6 +1086,8 @@ time
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
 
+.. _whatsnew311-traceback:
+
 traceback
 ---------
 
@@ -1048,6 +1100,8 @@ traceback
   formatted :exc:`~traceback.TracebackException` instance to a file.
   (Contributed by Irit Katriel in :issue:`33809`.)
 
+
+.. _whatsnew311-typing:
 
 typing
 ------
@@ -1118,6 +1172,8 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   by Nikita Sobolev in :gh:`90729`.)
 
 
+.. _whatsnew311-tkinter:
+
 tkinter
 -------
 
@@ -1126,11 +1182,15 @@ tkinter
   (Contributed by Serhiy Storchaka in :gh:`91827`.)
 
 
+.. _whatsnew311-unicodedata:
+
 unicodedata
 -----------
 
 * The Unicode database has been updated to version 14.0.0. (Contributed by  Benjamin Peterson in :issue:`45190`).
 
+
+.. _whatsnew311-unittest:
 
 unittest
 --------
@@ -1144,6 +1204,8 @@ unittest
   (Contributed by Serhiy Storchaka in :issue:`45046`.)
 
 
+.. _whatsnew311-venv:
+
 venv
 ----
 
@@ -1156,6 +1218,9 @@ venv
   scheme without changing behavior of virtual environments.
   Third party code that also creates new virtual environments should do the same.
   (Contributed by Miro Hrončok in :issue:`45413`.)
+
+
+.. _whatsnew311-warnings:
 
 warnings
 --------
@@ -1182,6 +1247,8 @@ zipfile
   and :attr:`~zipfile.Path.suffixes` to :class:`zipfile.Path`.
   (Contributed by Miguel Brito in :gh:`88261`.)
 
+
+.. _whatsnew311-fcntl:
 
 fcntl
 -----
