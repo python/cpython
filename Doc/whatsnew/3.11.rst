@@ -717,6 +717,16 @@ enum
   inverted flags are coerced to their positive equivalent.
 
 
+.. _whatsnew311-fcntl:
+
+fcntl
+-----
+
+* On FreeBSD, the :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` flags respectively
+  are supported, the former equals to ``dup2`` usage while the latter set
+  the ``FD_CLOEXEC`` flag in addition.
+
+
 .. _whatsnew311-fractions:
 
 fractions
@@ -1086,6 +1096,16 @@ time
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
 
+.. _whatsnew311-tkinter:
+
+tkinter
+-------
+
+* Added method ``info_patchlevel()`` which returns the exact version of
+  the Tcl library as a named tuple similar to :data:`sys.version_info`.
+  (Contributed by Serhiy Storchaka in :gh:`91827`.)
+
+
 .. _whatsnew311-traceback:
 
 traceback
@@ -1172,16 +1192,6 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   by Nikita Sobolev in :gh:`90729`.)
 
 
-.. _whatsnew311-tkinter:
-
-tkinter
--------
-
-* Added method ``info_patchlevel()`` which returns the exact version of
-  the Tcl library as a named tuple similar to :data:`sys.version_info`.
-  (Contributed by Serhiy Storchaka in :gh:`91827`.)
-
-
 .. _whatsnew311-unicodedata:
 
 unicodedata
@@ -1246,16 +1256,6 @@ zipfile
 * Added :attr:`~zipfile.Path.stem`, :attr:`~zipfile.Path.suffix`
   and :attr:`~zipfile.Path.suffixes` to :class:`zipfile.Path`.
   (Contributed by Miguel Brito in :gh:`88261`.)
-
-
-.. _whatsnew311-fcntl:
-
-fcntl
------
-
-* On FreeBSD, the :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` flags respectively
-  are supported, the former equals to ``dup2`` usage while the latter set
-  the ``FD_CLOEXEC`` flag in addition.
 
 
 .. _whatsnew311-optimizations:
