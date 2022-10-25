@@ -193,7 +193,10 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: output
 
         Output of the child process if it was captured by :func:`run` or
-        :func:`check_output`.  Otherwise, ``None``.
+        :func:`check_output`.  Otherwise, ``None``.  This is always
+        :class:`bytes` when any output was captured regardless of the
+        ``text=True`` setting.  It may remain ``None`` instead of ``b''``
+        when no output was observed.
 
     .. attribute:: stdout
 
@@ -202,7 +205,9 @@ underlying :class:`Popen` interface can be used directly.
     .. attribute:: stderr
 
         Stderr output of the child process if it was captured by :func:`run`.
-        Otherwise, ``None``.
+        Otherwise, ``None``.  This is always :class:`bytes` when stderr output
+        was captured regardless of the ``text=True`` setting.  It may remain
+        ``None`` instead of ``b''`` when no stderr output was observed.
 
     .. versionadded:: 3.3
 
@@ -824,7 +829,7 @@ Instances of the :class:`Popen` class have the following methods:
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
       CTRL_BREAK_EVENT can be sent to processes started with a *creationflags*
-      parameter which includes `CREATE_NEW_PROCESS_GROUP`.
+      parameter which includes ``CREATE_NEW_PROCESS_GROUP``.
 
 
 .. method:: Popen.terminate()

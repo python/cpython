@@ -1,1 +1,0 @@
-Add keyword argument ``all_errors`` to ``asyncio.create_connection`` so that multiple connection errors can be raised as an ``ExceptionGroup``.

@@ -1,3 +1,0 @@
-Reduces the size of a "simple" Python object from 8 to 6 words by moving the
-weakreflist pointer into the pre-header directly before the object's
-dict/values pointer.

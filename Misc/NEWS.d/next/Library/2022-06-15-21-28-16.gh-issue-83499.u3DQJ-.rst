@@ -1,1 +1,0 @@
-Fix double closing of file description in :mod:`tempfile`.

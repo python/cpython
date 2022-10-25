@@ -1,5 +1,0 @@
-The internal field ``_PyInterpreterFrame.f_func`` is renamed to
-``_PyInterpreterFrame.f_funcobj`` and may be any object. The ``f_globals``
-and ``f_builtin`` fields may hold junk values.
-
-It is safest to treat the ``_PyInterpreterFrame`` struct as opaque.

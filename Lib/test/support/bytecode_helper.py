@@ -17,6 +17,7 @@ class BytecodeTestCase(unittest.TestCase):
 
     def assertInBytecode(self, x, opname, argval=_UNSPECIFIED):
         """Returns instr if opname is found, otherwise throws AssertionError"""
+        self.assertIn(opname, dis.opmap)
         for instr in dis.get_instructions(x):
             if instr.opname == opname:
                 if argval is _UNSPECIFIED or instr.argval == argval:
@@ -31,6 +32,7 @@ class BytecodeTestCase(unittest.TestCase):
 
     def assertNotInBytecode(self, x, opname, argval=_UNSPECIFIED):
         """Throws AssertionError if opname is found"""
+        self.assertIn(opname, dis.opmap)
         for instr in dis.get_instructions(x):
             if instr.opname == opname:
                 disassembly = self.get_disassembly_as_string(x)

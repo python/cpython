@@ -1,1 +1,0 @@
-Specialize ``LOAD_ATTR`` for ``property()`` attributes.

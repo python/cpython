@@ -3,6 +3,7 @@
 
 #include "pycore_pyerrors.h"
 #include "pycore_code.h"        // _PyCode_GetVarnames()
+#include "stdlib_module_names.h"  // _Py_stdlib_module_names
 
 #define MAX_CANDIDATE_ITEMS 750
 #define MAX_STRING_SIZE 40
@@ -175,7 +176,7 @@ calculate_suggestions(PyObject *dir,
 }
 
 static PyObject *
-offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
+get_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
 {
     PyObject *name = exc->name; // borrowed reference
     PyObject *obj = exc->obj; // borrowed reference
@@ -195,35 +196,25 @@ offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
     return suggestions;
 }
 
-
 static PyObject *
-offer_suggestions_for_name_error(PyNameErrorObject *exc)
+offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
 {
-    PyObject *name = exc->name; // borrowed reference
-    PyTracebackObject *traceback = (PyTracebackObject *) exc->traceback; // borrowed reference
-    // Abort if we don't have a variable name or we have an invalid one
-    // or if we don't have a traceback to work with
-    if (name == NULL || !PyUnicode_CheckExact(name) ||
-        traceback == NULL || !Py_IS_TYPE(traceback, &PyTraceBack_Type)
-    ) {
+    PyObject* suggestion = get_suggestions_for_attribute_error(exc);
+    if (suggestion == NULL) {
         return NULL;
     }
+    // Add a trailer ". Did you mean: (...)?"
+    PyObject* result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
+    Py_DECREF(suggestion);
+    return result;
+}
 
-    // Move to the traceback of the exception
-    while (1) {
-        PyTracebackObject *next = traceback->tb_next;
-        if (next == NULL || !Py_IS_TYPE(next, &PyTraceBack_Type)) {
-            break;
-        }
-        else {
-            traceback = next;
-        }
-    }
-
-    PyFrameObject *frame = traceback->tb_frame;
-    assert(frame != NULL);
+static PyObject *
+get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
+{
     PyCodeObject *code = PyFrame_GetCode(frame);
     assert(code != NULL && code->co_localsplusnames != NULL);
+
     PyObject *varnames = _PyCode_GetVarnames(code);
     if (varnames == NULL) {
         return NULL;
@@ -259,6 +250,66 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     Py_DECREF(dir);
 
     return suggestions;
+}
+
+static bool
+is_name_stdlib_module(PyObject* name)
+{
+    const char* the_name = PyUnicode_AsUTF8(name);
+    Py_ssize_t len = Py_ARRAY_LENGTH(_Py_stdlib_module_names);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (strcmp(the_name, _Py_stdlib_module_names[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static PyObject *
+offer_suggestions_for_name_error(PyNameErrorObject *exc)
+{
+    PyObject *name = exc->name; // borrowed reference
+    PyTracebackObject *traceback = (PyTracebackObject *) exc->traceback; // borrowed reference
+    // Abort if we don't have a variable name or we have an invalid one
+    // or if we don't have a traceback to work with
+    if (name == NULL || !PyUnicode_CheckExact(name) ||
+        traceback == NULL || !Py_IS_TYPE(traceback, &PyTraceBack_Type)
+    ) {
+        return NULL;
+    }
+
+    // Move to the traceback of the exception
+    while (1) {
+        PyTracebackObject *next = traceback->tb_next;
+        if (next == NULL || !Py_IS_TYPE(next, &PyTraceBack_Type)) {
+            break;
+        }
+        else {
+            traceback = next;
+        }
+    }
+
+    PyFrameObject *frame = traceback->tb_frame;
+    assert(frame != NULL);
+
+    PyObject* suggestion = get_suggestions_for_name_error(name, frame);
+    bool is_stdlib_module = is_name_stdlib_module(name);
+
+    if (suggestion == NULL && !is_stdlib_module) {
+        return NULL;
+    }
+
+    // Add a trailer ". Did you mean: (...)?"
+    PyObject* result = NULL;
+    if (!is_stdlib_module) {
+        result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
+    } else if (suggestion == NULL) {
+        result = PyUnicode_FromFormat(". Did you forget to import %R?", name);
+    } else {
+        result = PyUnicode_FromFormat(". Did you mean: %R? Or did you forget to import %R?", suggestion, name);
+    }
+    Py_XDECREF(suggestion);
+    return result;
 }
 
 // Offer suggestions for a given exception. Returns a python string object containing the

@@ -1,5 +1,0 @@
-:class:`~xml.etree.ElementTree.ElementTree` method
-:meth:`~xml.etree.ElementTree.ElementTree.write` and function
-:func:`~xml.etree.ElementTree.tostring` now use the text file's encoding
-("UTF-8" if not available) instead of locale encoding in XML declaration
-when ``encoding="unicode"`` is specified.

@@ -1,2 +1,0 @@
-Emscripten and WASI have no home directory and cannot provide :pep:`370`
-user site directory.

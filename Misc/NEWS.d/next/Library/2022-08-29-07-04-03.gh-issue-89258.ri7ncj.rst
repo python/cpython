@@ -1,2 +1,0 @@
-Added a :meth:`~logging.Logger.getChildren` method to
-:class:`logging.Logger`, to get the immediate child loggers of a logger.
