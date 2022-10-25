@@ -35,8 +35,8 @@ interpreter.
       which take the form of :opcode:`CACHE` instructions. These instructions
       are hidden by default, but can be shown by passing ``show_caches=True`` to
       any :mod:`dis` utility. Furthermore, the interpreter now adapts the
-      bytecode to specialize it for the types of objects it encounters. The
-      adapted bytecode can be shown by passing ``adaptive=True``.
+      bytecode to specialize it for different runtime conditions. The
+      adaptive bytecode can be shown by passing ``adaptive=True``.
 
 
 Example: Given the function :func:`myfunc`::
