@@ -189,7 +189,7 @@ class TextTestRunner(object):
     def _makeResult(self):
         return self.resultclass(self.stream, self.descriptions, self.verbosity)
 
-    def run(self, test):
+    def run(self, test, debug=False):
         "Run the given test case or test suite."
         result = self._makeResult()
         registerResult(result)
@@ -205,7 +205,10 @@ class TextTestRunner(object):
             if startTestRun is not None:
                 startTestRun()
             try:
-                test(result)
+                if debug:
+                    test(result, debug=debug)
+                else:
+                    test(result)
             finally:
                 stopTestRun = getattr(result, 'stopTestRun', None)
                 if stopTestRun is not None:

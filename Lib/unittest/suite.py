@@ -4,6 +4,7 @@ import sys
 
 from . import case
 from . import util
+from . import result
 
 __unittest = True
 
@@ -57,11 +58,14 @@ class BaseTestSuite(object):
         for test in tests:
             self.addTest(test)
 
-    def run(self, result):
+    def run(self, result, debug=False):
         for index, test in enumerate(self):
             if result.shouldStop:
                 break
-            test(result)
+            if debug:
+                test(result, debug=debug)
+            else:
+                test(result)
             if self._cleanup:
                 self._removeTestAtIndex(index)
         return result
@@ -118,10 +122,20 @@ class TestSuite(BaseTestSuite):
                     getattr(result, '_moduleSetUpFailed', False)):
                     continue
 
-            if not debug:
-                test(result)
-            else:
-                test.debug()
+            try:
+                if debug:
+                    test(result, debug=debug)
+                else:
+                    test(result)
+            except:
+                def pm_teardown(self=self, result=result, topLevel=topLevel):
+                    # delayed post-mortem (--debug) teardown when frame is finally recycled
+                    if topLevel:
+                        self._tearDownPreviousClass(None, result)
+                        self._handleModuleTearDown(result)
+                        result._testRunEntered = False
+                frame_holds = case._AutoDelRunner(pm_teardown)  # noqa
+                raise
 
             if self._cleanup:
                 self._removeTestAtIndex(index)
@@ -372,8 +386,5 @@ def _isnotsuite(test):
     return False
 
 
-class _DebugResult(object):
+class _DebugResult(result.TestResult):
     "Used by the TestSuite to hold previous class when running in debug."
-    _previousTestClass = None
-    _moduleSetUpFailed = False
-    shouldStop = False

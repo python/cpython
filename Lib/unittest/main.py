@@ -62,11 +62,13 @@ class TestProgram(object):
     verbosity = 1
     failfast = catchbreak = buffer = progName = warnings = testNamePatterns = None
     _discovery_parser = None
+    trace = pdb = pm = None
 
     def __init__(self, module='__main__', defaultTest=None, argv=None,
                     testRunner=None, testLoader=loader.defaultTestLoader,
                     exit=True, verbosity=1, failfast=None, catchbreak=None,
-                    buffer=None, warnings=None, *, tb_locals=False):
+                    buffer=None, warnings=None, *, tb_locals=False,
+                    debug=False):
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -82,6 +84,7 @@ class TestProgram(object):
         self.verbosity = verbosity
         self.buffer = buffer
         self.tb_locals = tb_locals
+        self.debug = debug
         if warnings is None and not sys.warnoptions:
             # even if DeprecationWarnings are ignored by default
             # print them anyway unless other warnings settings are
@@ -178,6 +181,14 @@ class TestProgram(object):
         parser.add_argument('--locals', dest='tb_locals',
                             action='store_true',
                             help='Show local variables in tracebacks')
+        parser.add_argument('--debug', action='store_true',
+                            help='Run the given tests in debug "crash" mode')
+        parser.add_argument('--pdb', action='store_true',
+                            help='Run pdb.post_mortem() upon error, like "--pm=pdb"')
+        parser.add_argument('--pm', metavar='MOD_OR_CLASS',
+                            help='Run custom debugger upon error')
+        parser.add_argument('--trace', action='store_true',
+                            help='Trace debug each test using pdb or custom debugger')
         if self.failfast is None:
             parser.add_argument('-f', '--failfast', dest='failfast',
                                 action='store_true',
@@ -271,7 +282,18 @@ class TestProgram(object):
         else:
             # it is assumed to be a TestRunner instance
             testRunner = self.testRunner
-        self.result = testRunner.run(self.test)
+        if self.pdb:
+            assert not self.debug, "use one of --debug, --pdb, --pm=MOD"
+            self.debug = "pdb"
+        if self.pm:
+            assert not self.debug, "use one of --debug, --pdb, --pm=MOD"
+            self.debug = self.pm
+        if self.trace:
+            self.debug = ("trace", self.pm or "pdb")
+        if self.debug:
+            self.result = testRunner.run(self.test, debug=self.debug)
+        else:
+            self.result = testRunner.run(self.test)
         if self.exit:
             sys.exit(not self.result.wasSuccessful())
 

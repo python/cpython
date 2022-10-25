@@ -48,6 +48,7 @@ class _Outcome(object):
         self.result_supports_subtests = hasattr(result, "addSubTest")
         self.success = True
         self.expectedFailure = None
+        self.debug = False
 
     @contextlib.contextmanager
     def testPartExecutor(self, test_case, subTest=False):
@@ -63,23 +64,50 @@ class _Outcome(object):
         except _ShouldStop:
             pass
         except:
-            exc_info = sys.exc_info()
             if self.expecting_failure:
-                self.expectedFailure = exc_info
+                self.expectedFailure = sys.exc_info()
             else:
                 self.success = False
                 if subTest:
-                    self.result.addSubTest(test_case.test_case, test_case, exc_info)
+                    self.result.addSubTest(test_case.test_case, test_case, sys.exc_info())
                 else:
-                    _addError(self.result, test_case, exc_info)
-            # explicitly break a reference cycle:
-            # exc_info -> frame -> exc_info
-            exc_info = None
+                    _addError(self.result, test_case, sys.exc_info())
+                if self.debug:
+                    if isinstance(self.debug, str):
+                        # --pm=pdb : Run pdb or custom pm debugger inline and continue
+                        deb = _load_debugger(self.debug)
+                        traceback.print_exc()
+                        if isinstance(deb, type):
+                            deb = deb()
+                            deb.reset()
+                            deb.interaction(None, sys.exc_info()[2])
+                        else:
+                            deb.post_mortem(sys.exc_info()[2])
+                    else:
+                        # --debug : Terminate the test run with original exception
+                        if not subTest:
+                            self.pm_frame_holds.append(_AutoDelRunner(self.pm_cleanup))
+                        raise
         else:
             if subTest and self.success:
                 self.result.addSubTest(test_case.test_case, test_case, None)
         finally:
             self.success = self.success and old_success
+
+class _AutoDelRunner(object):
+    def __init__(self, func):
+        self.func = func
+    def __del__(self):
+        self.func()
+
+def _load_debugger(name):
+    mod, fr = name, None
+    if "." in mod:
+        mod, fr = mod.rsplit('.', 1)
+    deb = __import__(mod, fromlist=fr and (fr,) or ())
+    if fr:
+        deb = getattr(deb, fr)
+    return deb
 
 
 def _addSkip(result, test_case, reason):
@@ -586,7 +614,20 @@ class TestCase(object):
     def _callCleanup(self, function, /, *args, **kwargs):
         function(*args, **kwargs)
 
-    def run(self, result=None):
+    def run(self, result=None, debug=False):
+        testMethod = getattr(self, self._testMethodName)
+
+        if isinstance(debug, tuple) and debug[0] == "trace":
+            deb = _load_debugger(debug[1])
+            if isinstance(deb, type):
+                deb = deb()
+            debug = False
+            testMethod_org = testMethod
+            @functools.wraps(testMethod_org)
+            def trace_wrapper(*args, **kwargs):
+                deb.runcall(testMethod_org, *args, **kwargs)
+            testMethod = trace_wrapper
+
         if result is None:
             result = self.defaultTestResult()
             startTestRun = getattr(result, 'startTestRun', None)
@@ -598,7 +639,6 @@ class TestCase(object):
 
         result.startTest(self)
         try:
-            testMethod = getattr(self, self._testMethodName)
             if (getattr(self.__class__, "__unittest_skip__", False) or
                 getattr(testMethod, "__unittest_skip__", False)):
                 # If the class or method was skipped.
@@ -612,6 +652,17 @@ class TestCase(object):
                 getattr(testMethod, "__unittest_expecting_failure__", False)
             )
             outcome = _Outcome(result)
+            if debug:
+                outcome.debug = debug
+                # delayed post-mortem (--debug) cleanup when frame is finally recycled
+                def pm_cleanup1(self=self):
+                    self.doCleanups()
+                def pm_cleanup2(self=self):
+                    self._callTearDown()
+                    self.doCleanups()
+                outcome.pm_cleanup = pm_cleanup1
+                outcome.pm_frame_holds = frame_holds = []  # noqa
+
             try:
                 self._outcome = outcome
 
@@ -619,11 +670,16 @@ class TestCase(object):
                     self._callSetUp()
                 if outcome.success:
                     outcome.expecting_failure = expecting_failure
+                    if debug:
+                        outcome.pm_cleanup = pm_cleanup2
                     with outcome.testPartExecutor(self):
                         self._callTestMethod(testMethod)
                     outcome.expecting_failure = False
+                    if debug:
+                        outcome.pm_cleanup = pm_cleanup1
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
+
                 self.doCleanups()
 
                 if outcome.success:
