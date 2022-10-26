@@ -36,7 +36,6 @@ static PyObject *call_vectorcall(PyObject* self, PyObject *callable) {
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *kwname = NULL, *kwnames = NULL, *result = NULL;
 
-    args[0] = NULL;
     args[1] = PyUnicode_FromString("foo");
     if (!args[1]) {
         goto leave;
