@@ -1,1 +1,0 @@
-Guard MSVC-specific code in socketmodule.c with ``#ifdef _MSC_VER``.

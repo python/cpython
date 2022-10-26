@@ -13,7 +13,9 @@ from distutils.archive_util import (check_archive_formats, make_tarball,
                                     ARCHIVE_FORMATS)
 from distutils.spawn import find_executable, spawn
 from distutils.tests import support
-from test.support import check_warnings, run_unittest, patch, change_cwd
+from test.support import run_unittest, patch
+from test.support.os_helper import change_cwd
+from test.support.warnings_helper import check_warnings
 
 try:
     import grp
@@ -122,12 +124,13 @@ class ArchiveUtilTestCase(support.TempdirManager,
         try:
             names = tar.getnames()
             names.sort()
-            return tuple(names)
+            return names
         finally:
             tar.close()
 
-    _created_files = ('dist', 'dist/file1', 'dist/file2',
-                      'dist/sub', 'dist/sub/file3', 'dist/sub2')
+    _zip_created_files = ['dist/', 'dist/file1', 'dist/file2',
+                          'dist/sub/', 'dist/sub/file3', 'dist/sub2/']
+    _created_files = [p.rstrip('/') for p in _zip_created_files]
 
     def _create_files(self):
         # creating something to tar
@@ -244,8 +247,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         tarball = base_name + '.zip'
         self.assertTrue(os.path.exists(tarball))
         with zipfile.ZipFile(tarball) as zf:
-            self.assertEqual(sorted(zf.namelist()),
-                             ['dist/file1', 'dist/file2', 'dist/sub/file3'])
+            self.assertEqual(sorted(zf.namelist()), self._zip_created_files)
 
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
     def test_make_zipfile_no_zlib(self):
@@ -271,8 +273,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
                          [((tarball, "w"), {'compression': zipfile.ZIP_STORED})])
         self.assertTrue(os.path.exists(tarball))
         with zipfile.ZipFile(tarball) as zf:
-            self.assertEqual(sorted(zf.namelist()),
-                             ['dist/file1', 'dist/file2', 'dist/sub/file3'])
+            self.assertEqual(sorted(zf.namelist()), self._zip_created_files)
 
     def test_check_archive_formats(self):
         self.assertEqual(check_archive_formats(['gztar', 'xxx', 'zip']),
@@ -389,7 +390,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
             archive.close()
 
 def test_suite():
-    return unittest.makeSuite(ArchiveUtilTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(ArchiveUtilTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

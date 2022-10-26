@@ -25,7 +25,7 @@ events until either processing is finished or an error condition occurs.
    maliciously constructed data.  If you need to parse untrusted or
    unauthenticated data see :ref:`xml-vulnerabilities`.
 
-.. versionchanged:: 3.8
+.. versionchanged:: 3.7.1
 
    The SAX parser no longer processes general external entities by default to
    increase security by default. To enable processing of external entities,
@@ -114,8 +114,8 @@ DOMEventStream Objects
 
 .. class:: DOMEventStream(stream, parser, bufsize)
 
-   .. deprecated:: 3.8
-      Support for :meth:`sequence protocol <__getitem__>` is deprecated.
+   .. versionchanged:: 3.11
+      Support for :meth:`__getitem__` method has been removed.
 
    .. method:: getEvent()
 
@@ -144,4 +144,3 @@ DOMEventStream Objects
                   print(node.toxml())
 
    .. method:: DOMEventStream.reset()
-

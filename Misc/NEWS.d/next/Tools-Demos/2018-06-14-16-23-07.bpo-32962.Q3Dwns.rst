@@ -1,2 +1,0 @@
-python-gdb now catchs ``UnicodeDecodeError`` exceptions when calling
-``string()``.

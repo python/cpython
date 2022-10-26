@@ -6,6 +6,10 @@
 Queues
 ======
 
+**Source code:** :source:`Lib/asyncio/queues.py`
+
+------------------------------------------------
+
 asyncio queues are designed to be similar to classes of the
 :mod:`queue` module.  Although asyncio queues are not thread-safe,
 they are designed to be used specifically in async/await code.
@@ -19,7 +23,7 @@ See also the `Examples`_ section below.
 Queue
 =====
 
-.. class:: Queue(maxsize=0, \*, loop=None)
+.. class:: Queue(maxsize=0)
 
    A first in, first out (FIFO) queue.
 
@@ -31,6 +35,10 @@ Queue
    Unlike the standard library threading :mod:`queue`, the size of
    the queue is always known and can be returned by calling the
    :meth:`qsize` method.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
@@ -64,7 +72,7 @@ Queue
       Block until all items in the queue have been received and processed.
 
       The count of unfinished tasks goes up whenever an item is added
-      to the queue. The count goes down whenever a consumer thread calls
+      to the queue. The count goes down whenever a consumer coroutine calls
       :meth:`task_done` to indicate that the item was retrieved and all
       work on it is complete.  When the count of unfinished tasks drops
       to zero, :meth:`join` unblocks.
