@@ -1503,7 +1503,7 @@ class PythonSymlink:
 
             self._env = {k.upper(): os.getenv(k) for k in os.environ}
             self._env["PYTHONHOME"] = os.path.dirname(self.real)
-            if sysconfig.is_python_build(True):
+            if sysconfig.is_python_build():
                 self._env["PYTHONPATH"] = STDLIB_DIR
     else:
         def _platform_specific(self):
