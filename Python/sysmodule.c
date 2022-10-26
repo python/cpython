@@ -3317,6 +3317,7 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     COPY_WSTR("exec_prefix", config->exec_prefix);
     COPY_WSTR("base_exec_prefix", config->base_exec_prefix);
     COPY_WSTR("platlibdir", config->platlibdir);
+    COPY_WSTR("build_prefix", config->build_prefix);
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);

@@ -197,6 +197,7 @@ typedef struct PyConfig {
     wchar_t *base_prefix;
     wchar_t *exec_prefix;
     wchar_t *base_exec_prefix;
+    wchar_t *build_prefix;
 
     /* --- Parameter only used by Py_Main() ---------- */
     int skip_source_first_line;

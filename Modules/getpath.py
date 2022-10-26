@@ -509,6 +509,9 @@ if ((not home_was_set and real_executable_dir and not py_setpath)
         config['_is_python_build'] = 1
 
 
+config['build_prefix'] = build_prefix
+
+
 # ******************************************************************************
 # CALCULATE prefix AND exec_prefix
 # ******************************************************************************

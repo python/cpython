@@ -144,6 +144,15 @@ always available.
    .. versionadded:: 3.3
 
 
+.. data:: build_prefix
+
+   Set during Python startup, before ``site.py`` is run. If running Python from
+   source, the value will be set to the build path, otherwise it will be set to
+   :const:`None`.
+
+   .. versionadded:: 3.12
+
+
 .. data:: byteorder
 
    An indicator of the native byte order.  This will have the value ``'big'`` on

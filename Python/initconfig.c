@@ -731,6 +731,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
     CLEAR(config->base_exec_prefix);
+    CLEAR(config->build_prefix);
     CLEAR(config->platlibdir);
 
     CLEAR(config->filesystem_encoding);
@@ -985,6 +986,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTR_ATTR(base_prefix);
     COPY_WSTR_ATTR(exec_prefix);
     COPY_WSTR_ATTR(base_exec_prefix);
+    COPY_WSTR_ATTR(build_prefix);
     COPY_WSTR_ATTR(platlibdir);
 
     COPY_ATTR(site_import);
@@ -1094,6 +1096,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(base_prefix);
     SET_ITEM_WSTR(exec_prefix);
     SET_ITEM_WSTR(base_exec_prefix);
+    SET_ITEM_WSTR(build_prefix);
     SET_ITEM_WSTR(platlibdir);
     SET_ITEM_INT(site_import);
     SET_ITEM_INT(bytes_warning);
@@ -1407,6 +1410,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_WSTR_OPT(base_prefix);
     GET_WSTR_OPT(exec_prefix);
     GET_WSTR_OPT(base_exec_prefix);
+    GET_WSTR_OPT(build_prefix);
 
     GET_UINT(skip_source_first_line);
     GET_WSTR_OPT(run_command);
@@ -3172,6 +3176,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     DUMP_SYS(_base_executable);
     DUMP_SYS(base_prefix);
     DUMP_SYS(base_exec_prefix);
+    DUMP_SYS(build_prefix);
     DUMP_SYS(platlibdir);
     DUMP_SYS(executable);
     DUMP_SYS(prefix);
