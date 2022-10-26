@@ -39,10 +39,10 @@ can be customized by end users easily.
 
    Module :mod:`shlex`
       Support for creating Unix shell-like mini-languages which can also
-      be used for this purpose.
+      be used for application configuration files.
 
    Module :mod:`json`
-      The json module implements a subset of JavaScript syntax which is
+      The ``json`` module implements a subset of JavaScript syntax which is
       sometimes used for configuration, but does not support comments.
 
 
