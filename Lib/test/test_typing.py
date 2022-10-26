@@ -50,6 +50,8 @@ from test import _typed_dict_helper
 py_typing = import_helper.import_fresh_module('typing', blocked=['_typing'])
 c_typing = import_helper.import_fresh_module('typing', fresh=['_typing'])
 
+CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
+
 
 class BaseTestCase(TestCase):
 
