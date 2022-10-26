@@ -1351,7 +1351,7 @@ These are not used in annotations. They are building blocks for creating generic
         Shape = TypeVarTuple('Shape')
         class Array(Generic[*Shape]):
             def __getitem__(self, key: tuple[*Shape]) -> float: ...
-            def __abs__(self) -> Array[*Shape]: ...
+            def __abs__(self) -> "Array[*Shape]": ...
             def get_shape(self) -> tuple[*Shape]: ...
 
     Type variable tuples can be happily combined with normal type variables::
@@ -2057,7 +2057,7 @@ Abstract Base Classes
 Corresponding to collections in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-.. class:: AbstractSet(Sized, Collection[T_co])
+.. class:: AbstractSet(Collection[T_co])
 
    A generic version of :class:`collections.abc.Set`.
 
@@ -2113,7 +2113,7 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.KeysView` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
+.. class:: Mapping(Collection[KT], Generic[KT, VT_co])
 
    A generic version of :class:`collections.abc.Mapping`.
    This type can be used as follows::

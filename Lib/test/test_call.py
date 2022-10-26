@@ -140,9 +140,9 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                itertools.product, 0, repeat=1, foo=2)
 
     def test_varargs15_kw(self):
-        msg = r"^ImportError\(\) takes at most 2 keyword arguments \(3 given\)$"
+        msg = r"^ImportError\(\) takes at most 3 keyword arguments \(4 given\)$"
         self.assertRaisesRegex(TypeError, msg,
-                               ImportError, 0, name=1, path=2, foo=3)
+                               ImportError, 0, name=1, path=2, name_from=3, foo=3)
 
     def test_varargs16_kw(self):
         msg = r"^min\(\) takes at most 2 keyword arguments \(3 given\)$"

@@ -1,2 +1,0 @@
-Fix an issue where lookups of metaclass descriptors may be ignored when an
-identically-named attribute also exists on the class itself.
