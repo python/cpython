@@ -1,0 +1,1 @@
+Make :func:`asyncio.wait_for` not ignore external cancellation if the inner awaitable becomes done at the same time. Patch by twisteroid ambassador.
