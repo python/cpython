@@ -413,6 +413,15 @@ The Python compiler currently generates the following bytecode instructions.
    Removes the top-of-stack (TOS) item.
 
 
+.. opcode:: END_FOR
+
+   Removes the top two values from the stack.
+   Equivalent to POP_TOP; POP_TOP.
+   Used to clean up at the end of loops, hence the name.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: COPY (i)
 
    Push the *i*-th item to the top of the stack. The item is not removed from its
