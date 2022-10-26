@@ -1,1 +1,0 @@
-Replace ``assert`` statements with ``raise AssertionError()`` in :class:`~wsgiref.BaseHandler` so that the tested behaviour is maintained running with optimizations ``(-O)``.

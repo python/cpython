@@ -3474,7 +3474,7 @@ AC_MSG_RESULT([$perf_trampoline])
 
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
-  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
   dnl perf needs frame pointers for unwinding, include compiler option in debug builds
   AS_VAR_IF([Py_DEBUG], [true], [
@@ -5082,6 +5082,9 @@ AC_CHECK_FUNCS(setpgrp,
     [AC_DEFINE(SETPGRP_HAVE_ARG, 1, [Define if setpgrp() must be called as setpgrp(0, 0).])],
     [])
 )
+
+# check for namespace functions
+AC_CHECK_FUNCS([setns unshare])
 
 dnl We search for both crypt and crypt_r as one or the other may be defined
 dnl libxcrypt provides <crypt.h> and libcrypt with crypt_r() since

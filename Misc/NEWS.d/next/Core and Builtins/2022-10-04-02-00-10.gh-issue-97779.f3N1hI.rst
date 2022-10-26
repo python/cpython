@@ -1,1 +1,0 @@
-Ensure that all Python frame objects are backed by "complete" frames.
