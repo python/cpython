@@ -42,7 +42,7 @@ import typing
 import weakref
 import types
 
-from test.support import import_helper, captured_stderr
+from test.support import import_helper, captured_stderr, cpython_only
 from test import mod_generics_cache
 from test import _typed_dict_helper
 
@@ -4635,6 +4635,7 @@ class OverloadTests(BaseTestCase):
 
         blah()
 
+    @cpython_only  # gh-98713
     def test_overload_on_compiled_functions(self):
         with patch("typing._overload_registry",
                    defaultdict(lambda: defaultdict(dict))):
