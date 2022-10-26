@@ -404,6 +404,18 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
+    def test_mapping_has_key(self):
+        dct = {'a': 1}
+        self.assertTrue(_testcapi.mapping_has_key(dct, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct, 'b'))
+
+        class SubDict(dict):
+            pass
+
+        dct2 = SubDict({'a': 1})
+        self.assertTrue(_testcapi.mapping_has_key(dct2, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct2, 'b'))
+
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
     def test_negative_refcount(self):
@@ -1083,6 +1095,45 @@ class SubinterpreterTest(unittest.TestCase):
         # "being modified by test_capi" per test.regrtest.  So if this
         # test fails, assume that the environment in this process may
         # be altered and suspect.
+
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_configured_settings(self):
+        """
+        The config with which an interpreter is created corresponds
+        1-to-1 with the new interpreter's settings.  This test verifies
+        that they match.
+        """
+        import json
+
+        THREADS = 1<<10
+        FORK = 1<<15
+        SUBPROCESS = 1<<16
+
+        features = ['fork', 'subprocess', 'threads']
+        kwlist = [f'allow_{n}' for n in features]
+        for config, expected in {
+            (True, True, True): FORK | SUBPROCESS | THREADS,
+            (False, False, False): 0,
+            (False, True, True): SUBPROCESS | THREADS,
+        }.items():
+            kwargs = dict(zip(kwlist, config))
+            expected = {
+                'feature_flags': expected,
+            }
+            with self.subTest(config):
+                r, w = os.pipe()
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi, json, os
+                    settings = _testinternalcapi.get_interp_settings()
+                    with os.fdopen({w}, "w") as stdin:
+                        json.dump(settings, stdin)
+                    ''')
+                with os.fdopen(r) as stdout:
+                    support.run_in_subinterp_with_config(script, **kwargs)
+                    out = stdout.read()
+                settings = json.loads(out)
+
+                self.assertEqual(settings, expected)
 
     def test_mutate_exception(self):
         """
