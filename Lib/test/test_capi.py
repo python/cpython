@@ -371,6 +371,18 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
+    def test_mapping_has_key(self):
+        dct = {'a': 1}
+        self.assertTrue(_testcapi.mapping_has_key(dct, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct, 'b'))
+
+        class SubDict(dict):
+            pass
+
+        dct2 = SubDict({'a': 1})
+        self.assertTrue(_testcapi.mapping_has_key(dct2, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct2, 'b'))
+
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
     def test_negative_refcount(self):
