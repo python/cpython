@@ -403,8 +403,9 @@ class Base(object):
 class NonCallableMock(Base):
     """A non-callable version of `Mock`"""
 
-    # Store a mutex as a class attribute to protect concurrent accesses to
-    # a NonCallableMock's other attributes.
+    # Store a mutex as a class attribute in order to protect concurrent access
+    # to mock attributes. Using a class attribute allows all NonCallableMock
+    # instances to share the mutex for simplicity.
     _lock = RLock()
 
     def __new__(cls, /, *args, **kw):
