@@ -163,6 +163,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # cure it, but maybe using DisconnectEx() would be better.
             if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
                 self._sock.shutdown(socket.SHUT_RDWR)
+            self._sock.close()
             self._sock = None
             server = self._server
             if server is not None:
