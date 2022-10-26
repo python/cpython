@@ -33,68 +33,97 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
 }
 
 static PyObject *call_vectorcall(PyObject* self, PyObject *callable) {
-    PyObject *args[3], *kwname, *kwnames;
+    PyObject *args[3] = { NULL, NULL, NULL };
+    PyObject *kwname = NULL, *kwnames = NULL, *result = NULL;
 
     args[0] = NULL;
     args[1] = PyUnicode_FromString("foo");
-    args[2] = PyUnicode_FromString("bar");
-    kwname = PyUnicode_InternFromString("baz");
-    kwnames = PyTuple_New(1);
-
-    if (!args[1] || !args[2] || !kwname || !kwnames ||
-        PyTuple_SetItem(kwnames, 0, kwname))
-    {
-        Py_XDECREF(args[1]);
-        Py_XDECREF(args[2]);
-        Py_XDECREF(kwnames);
-        return NULL;
+    if (!args[1]) {
+        goto leave;
     }
 
-    PyObject *result = PyObject_Vectorcall(
+    args[2] = PyUnicode_FromString("bar");
+    if (!args[2]) {
+        goto leave;
+    }
+
+    kwname = PyUnicode_InternFromString("baz");
+    if (!kwname) {
+        goto leave;
+    }
+
+    kwnames = PyTuple_New(1);
+    if (!kwnames) {
+        goto leave;
+    }
+
+    if (PyTuple_SetItem(kwnames, 0, kwname)) {
+        goto leave;
+    }
+
+    result = PyObject_Vectorcall(
         callable,
         args + 1,
         1 | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames
     );
 
-    Py_DECREF(args[1]);
-    Py_DECREF(args[2]);
-    Py_DECREF(kwnames);
+leave:
+    Py_XDECREF(args[1]);
+    Py_XDECREF(args[2]);
+    Py_XDECREF(kwnames);
 
     return result;
 }
 
 static PyObject *call_vectorcall_method(PyObject* self, PyObject *callable) {
-    PyObject *name, *args[3], *kwname, *kwnames;
+    PyObject *args[3] = { NULL, NULL, NULL };
+    PyObject *name = NULL, *kwname = NULL,
+             *kwnames = NULL, *result = NULL;
 
     name = PyUnicode_FromString("f");
-    args[0] = callable;
-    args[1] = PyUnicode_FromString("foo");
-    args[2] = PyUnicode_FromString("bar");
-    kwname = PyUnicode_InternFromString("baz");
-    kwnames = PyTuple_New(1);
-
-    if (!name || !args[1] || !args[2] || !kwname || !kwnames ||
-        PyTuple_SetItem(kwnames, 0, kwname))
-    {
-        Py_XDECREF(name);
-        Py_XDECREF(args[1]);
-        Py_XDECREF(args[2]);
-        Py_XDECREF(kwnames);
-        return NULL;
+    if (!name) {
+        goto leave;
     }
 
-    PyObject *result = PyObject_VectorcallMethod(
+    args[0] = callable;
+    args[1] = PyUnicode_FromString("foo");
+    if (!args[1]) {
+        goto leave;
+    }
+
+    args[2] = PyUnicode_FromString("bar");
+    if (!args[2]) {
+        goto leave;
+    }
+
+    kwname = PyUnicode_InternFromString("baz");
+    if (!kwname) {
+        goto leave;
+    }
+
+    kwnames = PyTuple_New(1);
+    if (!kwnames) {
+        goto leave;
+    }
+
+    if (PyTuple_SetItem(kwnames, 0, kwname)) {
+        goto leave;
+    }
+
+
+    result = PyObject_VectorcallMethod(
         name,
         args,
         2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames
     );
 
-    Py_DECREF(name);
-    Py_DECREF(args[1]);
-    Py_DECREF(args[2]);
-    Py_DECREF(kwnames);
+leave:
+    Py_XDECREF(name);
+    Py_XDECREF(args[1]);
+    Py_XDECREF(args[2]);
+    Py_XDECREF(kwnames);
 
     return result;
 }
