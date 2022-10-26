@@ -163,14 +163,12 @@ the :option:`!-X` option takes precedence over the environment variable.
 Example, using the environment variable::
 
    $ PYTHONPERFSUPPORT=1
-   $ python script1.py
-   $ python script2.py
-   $ python script3.py
+   $ python script.py
    $ perf report -g -i perf.data
 
 Example, using the :option:`!-X` option::
 
-   $ python -X perf script1.py
+   $ python -X perf script.py
    $ perf report -g -i perf.data
 
 Example, using the :mod:`sys` APIs in file :file:`example.py`:

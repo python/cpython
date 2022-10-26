@@ -64,8 +64,8 @@ Module Objects
    If *module* is not a module object (or a subtype of a module object),
    :exc:`SystemError` is raised and ``NULL`` is returned.
 
-   It is recommended extensions use other :c:func:`PyModule_\*` and
-   :c:func:`PyObject_\*` functions rather than directly manipulate a module's
+   It is recommended extensions use other ``PyModule_*`` and
+   ``PyObject_*`` functions rather than directly manipulate a module's
    :attr:`~object.__dict__`.
 
 

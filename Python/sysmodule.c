@@ -1218,7 +1218,7 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
 
     /* Reject too low new limit if the current recursion depth is higher than
        the new low-water mark. */
-    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    int depth = tstate->py_recursion_limit - tstate->py_recursion_remaining;
     if (depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
@@ -1717,7 +1717,7 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 /*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->config.int_max_str_digits);
+    return PyLong_FromLong(interp->long_state.max_str_digits);
 }
 
 /*[clinic input]
@@ -1734,7 +1734,7 @@ sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
-        tstate->interp->config.int_max_str_digits = maxdigits;
+        tstate->interp->long_state.max_str_digits = maxdigits;
         Py_RETURN_NONE;
     } else {
         PyErr_Format(
@@ -2014,11 +2014,6 @@ sys__debugmallocstats_impl(PyObject *module)
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
-#ifdef Py_STATS
-/* Defined in ceval.c because it uses static globals in that file */
-extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
@@ -2219,9 +2214,6 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
-#ifdef Py_STATS
-    {"getdxp", _Py_GetDXProfile, METH_VARARGS},
-#endif
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
     SYS__GETQUICKENEDCOUNT_METHODDEF

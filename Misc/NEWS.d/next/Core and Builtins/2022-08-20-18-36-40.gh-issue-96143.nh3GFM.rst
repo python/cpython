@@ -1,8 +1,0 @@
-Add :ref:`perf_profiling` through the new
-environment variable :envvar:`PYTHONPERFSUPPORT`,
-the new command-line option :option:`-X perf <-X>`,
-as well as the new :func:`sys.activate_stack_trampoline`,
-:func:`sys.deactivate_stack_trampoline`,
-and :func:`sys.is_stack_trampoline_active` APIs.
-Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
-with contributions from Gregory P. Smith [Google] and Mark Shannon.

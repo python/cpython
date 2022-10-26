@@ -298,7 +298,7 @@ Here are the methods of the :class:`Message` class:
    In a model generated from bytes, any header values that (in contravention of
    the RFCs) contain non-ASCII bytes will, when retrieved through this
    interface, be represented as :class:`~email.header.Header` objects with
-   a charset of `unknown-8bit`.
+   a charset of ``unknown-8bit``.
 
 
    .. method:: __len__()

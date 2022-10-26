@@ -302,7 +302,8 @@ for third-party software incorporated in the Python distribution.
 Mersenne Twister
 ----------------
 
-The :mod:`_random` module includes code based on a download from
+The :mod:`!_random` C extension underlying the :mod:`random` module
+includes code based on a download from
 http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html. The following are
 the verbatim comments from the original code::
 
@@ -819,7 +820,8 @@ sources unless the build is configured ``--with-system-expat``::
 libffi
 ------
 
-The :mod:`_ctypes` extension is built using an included copy of the libffi
+The :mod:`!_ctypes` C extension underlying the :mod:`ctypes` module
+is built using an included copy of the libffi
 sources unless the build is configured ``--with-system-libffi``::
 
    Copyright (c) 1996-2008  Red Hat, Inc and others.
@@ -920,7 +922,8 @@ on the cfuhash project::
 libmpdec
 --------
 
-The :mod:`_decimal` module is built using an included copy of the libmpdec
+The :mod:`!_decimal` C extension underlying the :mod:`decimal` module
+is built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
    Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
@@ -984,3 +987,28 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Audioop
+-------
+The audioop module uses the code base in g771.c file of the SoX project::
+    Programming the AdLib/Sound Blaster
+    FM Music Chips
+    Version 2.0 (24 Feb 1992)
+    Copyright (c) 1991, 1992 by Jeffrey S. Lee
+    jlee@smylex.uucp
+    Warranty and Copyright Policy
+    This document is provided on an "as-is" basis, and its author makes
+    no warranty or representation, express or implied, with respect to
+    its quality performance or fitness for a particular purpose.  In no
+    event will the author of this document be liable for direct, indirect,
+    special, incidental, or consequential damages arising out of the use
+    or inability to use the information contained within.  Use of this
+    document is at your own risk.
+    This file may be used and copied freely so long as the applicable
+    copyright notices are retained, and no modifications are made to the
+    text of the document.  No money shall be charged for its distribution
+    beyond reasonable shipping, handling and duplication costs, nor shall
+    proprietary changes be made to this document so that it cannot be
+    distributed freely.  This document may not be included in published
+    material or commercial packages without the written consent of its
+    author.

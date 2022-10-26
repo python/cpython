@@ -1023,28 +1023,30 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
         zip_filename = os.path.abspath(zip_filename)
     return zip_filename
 
+_make_tarball.supports_root_dir = True
+_make_zipfile.supports_root_dir = True
+
 # Maps the name of the archive format to a tuple containing:
 # * the archiving function
 # * extra keyword arguments
 # * description
-# * does it support the root_dir argument?
 _ARCHIVE_FORMATS = {
     'tar':   (_make_tarball, [('compress', None)],
-              "uncompressed tar file", True),
+              "uncompressed tar file"),
 }
 
 if _ZLIB_SUPPORTED:
     _ARCHIVE_FORMATS['gztar'] = (_make_tarball, [('compress', 'gzip')],
-                                "gzip'ed tar-file", True)
-    _ARCHIVE_FORMATS['zip'] = (_make_zipfile, [], "ZIP file", True)
+                                "gzip'ed tar-file")
+    _ARCHIVE_FORMATS['zip'] = (_make_zipfile, [], "ZIP file")
 
 if _BZ2_SUPPORTED:
     _ARCHIVE_FORMATS['bztar'] = (_make_tarball, [('compress', 'bzip2')],
-                                "bzip2'ed tar-file", True)
+                                "bzip2'ed tar-file")
 
 if _LZMA_SUPPORTED:
     _ARCHIVE_FORMATS['xztar'] = (_make_tarball, [('compress', 'xz')],
-                                "xz'ed tar-file", True)
+                                "xz'ed tar-file")
 
 def get_archive_formats():
     """Returns a list of supported formats for archiving and unarchiving.
@@ -1075,7 +1077,7 @@ def register_archive_format(name, function, extra_args=None, description=''):
         if not isinstance(element, (tuple, list)) or len(element) !=2:
             raise TypeError('extra_args elements are : (arg_name, value)')
 
-    _ARCHIVE_FORMATS[name] = (function, extra_args, description, False)
+    _ARCHIVE_FORMATS[name] = (function, extra_args, description)
 
 def unregister_archive_format(name):
     del _ARCHIVE_FORMATS[name]
@@ -1114,10 +1116,10 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     if base_dir is None:
         base_dir = os.curdir
 
-    support_root_dir = format_info[3]
+    supports_root_dir = getattr(func, 'supports_root_dir', False)
     save_cwd = None
     if root_dir is not None:
-        if support_root_dir:
+        if supports_root_dir:
             # Support path-like base_name here for backwards-compatibility.
             base_name = os.fspath(base_name)
             kwargs['root_dir'] = root_dir
