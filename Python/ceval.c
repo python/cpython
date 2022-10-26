@@ -1298,6 +1298,14 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(END_FOR) {
+            PyObject *value = POP();
+            Py_DECREF(value);
+            value = POP();
+            Py_DECREF(value);
+            DISPATCH();
+        }
+
         TARGET(UNARY_POSITIVE) {
             PyObject *value = TOP();
             PyObject *res = PyNumber_Positive(value);
@@ -3844,7 +3852,11 @@ handle_eval_breaker:
                 _PyErr_Clear(tstate);
             }
             /* iterator ended normally */
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg] == END_FOR));
+            STACK_SHRINK(1);
+            Py_DECREF(iter);
+            /* Skip END_FOR */
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
