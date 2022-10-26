@@ -1926,8 +1926,8 @@ FileType objects
       Namespace(out=<_io.TextIOWrapper name='file.txt' mode='w' encoding='UTF-8'>, raw=<_io.FileIO name='raw.dat' mode='wb'>)
 
    FileType objects understand the pseudo-argument ``'-'`` and automatically
-   convert this into ``sys.stdin`` for readable :class:`FileType` objects and
-   ``sys.stdout`` for writable :class:`FileType` objects::
+   convert this into :data:`sys.stdin` for readable :class:`FileType` objects and
+   :data:`sys.stdout`` for writable :class:`FileType` objects::
 
       >>> parser = argparse.ArgumentParser()
       >>> parser.add_argument('infile', type=argparse.FileType('r'))
