@@ -626,6 +626,41 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return 1;
 }
 
+static int
+fold_set(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
+{
+    asdl_expr_seq *elts = node->v.Set.elts;
+    expr_ty item;
+    PyObject *constant;
+
+    if (asdl_seq_LEN(elts) != 1) {
+        return 1;
+    }
+
+    item = asdl_seq_GET(elts, 0);
+    if (item->kind != Starred_kind ||
+            item->v.Starred.value->kind != Constant_kind)
+    {
+        return 1;
+    }
+
+    constant = item->v.Starred.value->v.Constant.value;
+    if (!PySequence_Check(constant)) {
+        return 1;
+    }
+    if (Py_SIZE(constant) == 0) {
+        elts = _Py_asdl_expr_seq_new(0, arena);
+        if (!elts) {
+            return 0;
+        }
+        node->v.Set.elts = elts;
+    }
+    else if (Py_SIZE(constant) == 1) {
+        return make_const(item, PySequence_GetItem(constant, 0), arena);
+    }
+    return 1;
+}
+
 static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
@@ -738,6 +773,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case Set_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Set.elts);
+        CALL(fold_set, expr_ty, node_);
         break;
     case ListComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.ListComp.elt);
