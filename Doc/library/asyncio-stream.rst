@@ -183,7 +183,8 @@ StreamReader
 .. class:: StreamReader
 
    Represents a reader object that provides APIs to read data
-   from the IO stream.
+   from the IO stream. As an :term:`asynchronous iterable`, the
+   object supports the :keyword:`async for` statement.
 
    It is not recommended to instantiate *StreamReader* objects
    directly; use :func:`open_connection` and :func:`start_server`
