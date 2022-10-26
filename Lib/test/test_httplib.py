@@ -1,4 +1,3 @@
-import copy
 import enum
 import errno
 from http import client, HTTPStatus
@@ -2230,7 +2229,7 @@ class TunnelTests(TestCase):
         tunnel_host = 'destination.com'
         tunnel_port = 8888
         tunnel_headers = {'User-Agent': 'Mozilla/5.0 (compatible, MSIE 11)'}
-        tunnel_headers_after = copy.copy(tunnel_headers)
+        tunnel_headers_after = tunnel_headers.copy()
         tunnel_headers_after['Host'] = '%s:%d' % (tunnel_host, tunnel_port)
         self.conn.set_tunnel(tunnel_host, port=tunnel_port,
                              headers=tunnel_headers)
