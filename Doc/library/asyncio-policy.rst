@@ -7,21 +7,28 @@
 Policies
 ========
 
-An event loop policy is a global per-process object that controls
-the management of the event loop. Each event loop has a default
-policy, which can be changed and customized using the policy API.
+An event loop policy is a global object
+used to get and set the current :ref:`event loop <asyncio-event-loop>`,
+as well as create new event loops.
+The default policy can be :ref:`replaced <asyncio-policy-get-set>` with
+:ref:`built-in alternatives <asyncio-policy-builtin>`
+to use different event loop implementations,
+or substituted by a :ref:`custom policy <asyncio-custom-policies>`
+that can override these behaviors.
 
-A policy defines the notion of *context* and manages a
-separate event loop per context. The default policy
-defines *context* to be the current thread.
+The :ref:`policy object <asyncio-policy-objects>`
+gets and sets a separate event loop per *context*.
+This is per-thread by default,
+though custom policies could define *context* differently.
 
-By using a custom event loop policy, the behavior of
-:func:`get_event_loop`, :func:`set_event_loop`, and
-:func:`new_event_loop` functions can be customized.
+Custom event loop policies can control the behavior of
+:func:`get_event_loop`, :func:`set_event_loop`, and :func:`new_event_loop`.
 
 Policy objects should implement the APIs defined
 in the :class:`AbstractEventLoopPolicy` abstract base class.
 
+
+.. _asyncio-policy-get-set:
 
 Getting and Setting the Policy
 ==============================
@@ -39,6 +46,8 @@ for the current process:
 
    If *policy* is set to ``None``, the default policy is restored.
 
+
+.. _asyncio-policy-objects:
 
 Policy Objects
 ==============
@@ -79,12 +88,18 @@ The abstract event loop policy base class is defined as follows:
 
       This function is Unix specific.
 
+      .. deprecated:: 3.12
+
    .. method:: set_child_watcher(watcher)
 
       Set the current child process watcher to *watcher*.
 
       This function is Unix specific.
 
+      .. deprecated:: 3.12
+
+
+.. _asyncio-policy-builtin:
 
 asyncio ships with the following built-in policies:
 
@@ -117,6 +132,7 @@ asyncio ships with the following built-in policies:
 
    .. availability:: Windows.
 
+
 .. _asyncio-watchers:
 
 Process Watchers
@@ -146,11 +162,15 @@ implementation used by the asyncio event loop:
 
    Return the current child watcher for the current policy.
 
+   .. deprecated:: 3.12
+
 .. function:: set_child_watcher(watcher)
 
    Set the current child watcher to *watcher* for the current
    policy.  *watcher* must implement methods defined in the
    :class:`AbstractChildWatcher` base class.
+
+   .. deprecated:: 3.12
 
 .. note::
    Third-party event loops implementations might not support
@@ -233,6 +253,8 @@ implementation used by the asyncio event loop:
 
    .. versionadded:: 3.8
 
+   .. deprecated:: 3.12
+
 .. class:: SafeChildWatcher
 
    This implementation uses active event loop from the main thread to handle
@@ -244,6 +266,8 @@ implementation used by the asyncio event loop:
 
    This solution is as safe as :class:`MultiLoopChildWatcher` and has the same *O(N)*
    complexity but requires a running event loop in the main thread to work.
+
+   .. deprecated:: 3.12
 
 .. class:: FastChildWatcher
 
@@ -257,6 +281,8 @@ implementation used by the asyncio event loop:
    This solution requires a running event loop in the main thread to work, as
    :class:`SafeChildWatcher`.
 
+   .. deprecated:: 3.12
+
 .. class:: PidfdChildWatcher
 
    This implementation polls process file descriptors (pidfds) to await child
@@ -269,6 +295,8 @@ implementation used by the asyncio event loop:
 
    .. versionadded:: 3.9
 
+
+.. _asyncio-custom-policies:
 
 Custom Policies
 ===============

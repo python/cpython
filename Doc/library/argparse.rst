@@ -2031,7 +2031,26 @@ Mutual exclusion
 
    Note that currently mutually exclusive argument groups do not support the
    *title* and *description* arguments of
-   :meth:`~ArgumentParser.add_argument_group`.
+   :meth:`~ArgumentParser.add_argument_group`. However, a mutually exclusive
+   group can be added to an argument group that has a title and description.
+   For example::
+
+     >>> parser = argparse.ArgumentParser(prog='PROG')
+     >>> group = parser.add_argument_group('Group title', 'Group description')
+     >>> exclusive_group = group.add_mutually_exclusive_group(required=True)
+     >>> exclusive_group.add_argument('--foo', help='foo help')
+     >>> exclusive_group.add_argument('--bar', help='bar help')
+     >>> parser.print_help()
+     usage: PROG [-h] (--foo FOO | --bar BAR)
+
+     options:
+       -h, --help  show this help message and exit
+
+     Group title:
+       Group description
+
+       --foo FOO   foo help
+       --bar BAR   bar help
 
    .. versionchanged:: 3.11
     Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`

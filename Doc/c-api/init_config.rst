@@ -828,6 +828,24 @@ PyConfig
 
       Default: ``0``.
 
+   .. c:member:: int int_max_str_digits
+
+      Configures the :ref:`integer string conversion length limitation
+      <int_max_str_digits>`.  An initial value of ``-1`` means the value will
+      be taken from the command line or environment or otherwise default to
+      4300 (:data:`sys.int_info.default_max_str_digits`).  A value of ``0``
+      disables the limitation.  Values greater than zero but less than 640
+      (:data:`sys.int_info.str_digits_check_threshold`) are unsupported and
+      will produce an error.
+
+      Configured by the :option:`-X int_max_str_digits <-X>` command line
+      flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment varable.
+
+      Default: ``-1`` in Python mode.  4300
+      (:data:`sys.int_info.default_max_str_digits`) in isolated mode.
+
+      .. versionadded:: 3.12
+
    .. c:member:: int isolated
 
       If greater than ``0``, enable isolated mode:
@@ -1154,6 +1172,20 @@ PyConfig
       :envvar:`PYTHONTRACEMALLOC` environment variable.
 
       Default: ``-1`` in Python mode, ``0`` in isolated mode.
+
+   .. c:member:: int perf_profiling
+
+      Enable compatibility mode with the perf profiler?
+
+      If non-zero, initialize the perf trampoline. See :ref:`perf_profiling`
+      for more information.
+
+      Set by :option:`-X perf <-X>` command line option and by the
+      :envvar:`PYTHONPERFSUPPORT` environment variable.
+
+      Default: ``-1``.
+
+      .. versionadded:: 3.12
 
    .. c:member:: int use_environment
 

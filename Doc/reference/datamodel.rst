@@ -316,7 +316,7 @@ Sequences
 
          A string is a sequence of values that represent Unicode code points.
          All the code points in the range ``U+0000 - U+10FFFF`` can be
-         represented in a string.  Python doesn't have a :c:type:`char` type;
+         represented in a string.  Python doesn't have a :c:expr:`char` type;
          instead, every code point in the string is represented as a string
          object with length ``1``.  The built-in function :func:`ord`
          converts a code point from its string form to an integer in the
@@ -2995,6 +2995,11 @@ generators, coroutines do not directly support iteration.
    when iterating over the :meth:`~object.__await__` return value, described
    above.  If the exception is not caught in the coroutine, it propagates
    back to the caller.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
 
 .. method:: coroutine.close()
 

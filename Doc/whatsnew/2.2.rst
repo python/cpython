@@ -983,7 +983,7 @@ New and Improved Modules
   Jun-ichiro "itojun" Hagino.)
 
 * Two new format characters were added to the :mod:`struct` module for 64-bit
-  integers on platforms that support the C :c:type:`long long` type.  ``q`` is for
+  integers on platforms that support the C :c:expr:`long long` type.  ``q`` is for
   a signed 64-bit integer, and ``Q`` is for an unsigned one.  The value is
   returned in Python's long integer type.  (Contributed by Tim Peters.)
 
@@ -1102,7 +1102,7 @@ code, none of the changes described here will affect you very much.
 * A different argument parsing function, :c:func:`PyArg_UnpackTuple`, has been
   added that's simpler and presumably faster.  Instead of specifying a format
   string, the caller simply gives the minimum and maximum number of arguments
-  expected, and a set of pointers to :c:type:`PyObject\*` variables that will be
+  expected, and a set of pointers to :c:expr:`PyObject*` variables that will be
   filled in with argument values.
 
 * Two new flags :const:`METH_NOARGS` and :const:`METH_O` are available in method

@@ -61,8 +61,10 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
     def test_make_socket_transport(self):
         m = mock.Mock()
         self.loop.add_reader = mock.Mock()
+        self.loop._ensure_fd_no_transport = mock.Mock()
         transport = self.loop._make_socket_transport(m, asyncio.Protocol())
         self.assertIsInstance(transport, _SelectorSocketTransport)
+        self.assertEqual(self.loop._ensure_fd_no_transport.call_count, 1)
 
         # Calling repr() must not fail when the event loop is closed
         self.loop.close()
@@ -78,8 +80,10 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.add_writer = mock.Mock()
         self.loop.remove_reader = mock.Mock()
         self.loop.remove_writer = mock.Mock()
+        self.loop._ensure_fd_no_transport = mock.Mock()
         with self.assertRaises(RuntimeError):
             self.loop._make_ssl_transport(m, m, m, m)
+        self.assertEqual(self.loop._ensure_fd_no_transport.call_count, 1)
 
     def test_close(self):
         class EventLoop(BaseSelectorEventLoop):
