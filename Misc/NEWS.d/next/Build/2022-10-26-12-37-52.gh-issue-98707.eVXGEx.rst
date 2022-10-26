@@ -1,0 +1,4 @@
+Don't let ``--with-system-libmpdec`` or ``--with-system-expat`` use the
+vendored headers of libmpdec or expact. When the ``--with-system-...`` flag
+is passed to ``./configure``, the ``Modules/_decimal/libmpdec`` or
+``Modules/expat`` directory can be safely removed before building Python.
