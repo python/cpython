@@ -59,7 +59,7 @@ EQUALS = r'='
 # ?
 CONDOP = r'\?'
 
-# Delimeters
+# Delimiters
 LPAREN = r'\('
 RPAREN = r'\)'
 LBRACKET = r'\['
@@ -176,6 +176,8 @@ def tokenize(src, line=1, filename=None):
             kind = IDENTIFIER
         elif text == '...':
             kind = ELLIPSIS
+        elif text == '.':
+            kind = PERIOD
         elif text[0] in '0123456789.':
             kind = NUMBER
         elif text[0] == '"':
