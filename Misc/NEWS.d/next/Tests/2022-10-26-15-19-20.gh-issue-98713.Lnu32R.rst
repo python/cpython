@@ -1,0 +1,3 @@
+Fix a bug in test suite when cpython-specific implementation details were
+not covered by ``@cpython_only`` and were not skipped on other
+implementations.
