@@ -1,0 +1,1 @@
+Fold constant unpacking in sets where the constant is a sequence with a length of 0 or 1. Patch by Jeremiah Gabriel Pascual.
