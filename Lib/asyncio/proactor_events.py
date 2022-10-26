@@ -52,6 +52,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         super().__init__(extra, loop)
         self._set_extra(sock)
         self._sock = sock
+        self._sock_called_close = False
         self.set_protocol(protocol)
         self._server = server
         self._buffer = None  # None or bytearray.
@@ -161,8 +162,12 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             # cure it, but maybe using DisconnectEx() would be better.
             if hasattr(self._sock, 'shutdown') and self._sock.fileno() != -1:
                 self._sock.shutdown(socket.SHUT_RDWR)
-            self._sock.close()
+            # We can't call sock._close() indiscriminately because something
+            # else might be calling _call_connection_lost again.
+            if not self._sock_called_close:
+                self._sock.close()
             self._sock = None
+            self._sock_called_close = True
             server = self._server
             if server is not None:
                 server._detach()
