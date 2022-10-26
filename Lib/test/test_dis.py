@@ -148,7 +148,7 @@ dis_bug708901 = """\
 
 %3d        JUMP_BACKWARD            4 (to 30)
 
-%3d     >> POP_TOP
+%3d     >> END_FOR
            LOAD_CONST               0 (None)
            RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno,
@@ -700,7 +700,7 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
            BINARY_OP                0 (+)
            LIST_APPEND              2
            JUMP_BACKWARD            9 (to 8)
-        >> POP_TOP
+        >> END_FOR
            RETURN_VALUE
 """ % (dis_nested_1,
        __file__,
@@ -750,7 +750,7 @@ dis_loop_test_quickened_code = """\
            POP_TOP
            JUMP_BACKWARD_QUICK     17 (to 16)
 
-%3d     >> POP_TOP
+%3d     >> END_FOR
            LOAD_CONST               0 (None)
            RETURN_VALUE
 """ % (loop_test.__code__.co_firstlineno,
@@ -1570,7 +1570,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='JUMP_BACKWARD', opcode=140, arg=30, argval=28, argrepr='to 28', offset=86, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=88, starts_line=8, is_jump_target=True, positions=None),
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=14, argval=120, argrepr='to 120', offset=90, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=92, starts_line=3, is_jump_target=True, positions=None),
+  Instruction(opname='END_FOR', opcode=4, arg=None, argval=None, argrepr='', offset=92, starts_line=3, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_GLOBAL', opcode=116, arg=3, argval='print', argrepr='NULL + print', offset=94, starts_line=10, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=106, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='CALL', opcode=171, arg=1, argval=1, argrepr='', offset=108, starts_line=None, is_jump_target=False, positions=None),
