@@ -496,7 +496,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'check_hash_pycs_mode': 'default',
         'pathconfig_warnings': 1,
         '_init_main': 1,
-        '_isolated_interpreter': 0,
         'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
@@ -881,8 +880,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
-
-            '_isolated_interpreter': 1,
         }
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
@@ -1649,6 +1646,25 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             with self.subTest(repr(raw)):
                 self.check_all_configs("test_init_use_frozen_modules", config,
                                        api=API_PYTHON, env=env)
+
+    def test_init_main_interpreter_settings(self):
+        THREADS = 1<<10
+        FORK = 1<<15
+        SUBPROCESS = 1<<16
+        expected = {
+            # All optional features should be enabled.
+            'feature_flags': THREADS | FORK | SUBPROCESS,
+        }
+        out, err = self.run_embedded_interpreter(
+            'test_init_main_interpreter_settings',
+        )
+        self.assertEqual(err, '')
+        try:
+            out = json.loads(out)
+        except json.JSONDecodeError:
+            self.fail(f'fail to decode stdout: {out!r}')
+
+        self.assertEqual(out, expected)
 
 
 class SetConfigTests(unittest.TestCase):
