@@ -879,8 +879,8 @@ _useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangL
     wchar_t command[MAXLEN];
 
     int commandLength = 0;
-    int quoteCount = 0;
-    int slashCount = 0;
+    int inQuote = 0;
+    int afterSlash = 0;
 
     if (!shebang || !shebangLength) {
         return 0;
@@ -889,20 +889,28 @@ _useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangL
     wchar_t *pC = command;
     for (int i = 0; i < shebangLength; ++i) {
         wchar_t c = shebang[i];
-        if ((isspace(c) || c == L'\r' || c == L'\n') && !quoteCount) {
+        if ((isspace(c) || c == L'\r' || c == L'\n') && !inQuote) {
             commandLength = i;
             break;
         } else if (c == L'"') {
-            if (slashCount % 2 == 0) {
-                quoteCount = quoteCount ? 0 : 1;
+            if (!afterSlash) {
+                // non-escaped quote. either way, we don't add it to the path
+                inQuote = !inQuote;
             }
-            slashCount = 0;
+            afterSlash = 0;
         } else if (c == L'/' || c == L'\\') {
-            slashCount += 1;
-            // also normalise the slash
-            *pC++ = L'\\';
+            if (afterSlash) {
+                // escaped slash
+                *pC++ = L'\\';
+                afterSlash = 0;
+            } else {
+                afterSlash = 1;
+            }
         } else {
-            slashCount = 0;
+            if (afterSlash) {
+                *pC++ = L'\\';
+                afterSlash = 0;
+            }
             *pC++ = c;
         }
     }
