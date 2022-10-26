@@ -557,7 +557,7 @@ Connection objects
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
       Return the new cursor object.
 
-   .. method:: create_function(name, narg, func, \*, deterministic=False)
+   .. method:: create_function(name, narg, func, *, deterministic=False)
 
       Create or remove a user-defined SQL function.
 
@@ -855,7 +855,7 @@ Connection objects
          con.close()
 
 
-   .. method:: backup(target, \*, pages=-1, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       Create a backup of an SQLite database.
 
