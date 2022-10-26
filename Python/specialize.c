@@ -2193,22 +2193,20 @@ int
 #endif
 
 void
-_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
+_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
 {
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
     PyTypeObject *tp = Py_TYPE(iter);
-    if (_Py_OPCODE(instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1]) == POP_TOP) {
-        _Py_CODEUNIT next = instr[1+INLINE_CACHE_ENTRIES_FOR_ITER];
-        int next_op = _PyOpcode_Deopt[_Py_OPCODE(next)];
-        if (tp == &PyListIter_Type) {
-            _Py_SET_OPCODE(*instr, FOR_ITER_LIST);
-            goto success;
-        }
-        else if (tp == &PyRangeIter_Type && next_op == STORE_FAST) {
-            _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
-            goto success;
-        }
+    _Py_CODEUNIT next = instr[1+INLINE_CACHE_ENTRIES_FOR_ITER];
+    int next_op = _PyOpcode_Deopt[_Py_OPCODE(next)];
+    if (tp == &PyListIter_Type) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_LIST);
+        goto success;
+    }
+    else if (tp == &PyRangeIter_Type && next_op == STORE_FAST) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
+        goto success;
     }
     SPECIALIZATION_FAIL(FOR_ITER,
                         _PySpecialization_ClassifyIterator(iter));

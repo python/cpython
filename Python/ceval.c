@@ -3865,7 +3865,7 @@ handle_eval_breaker:
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 next_instr--;
-                _Py_Specialize_ForIter(TOP(), next_instr, oparg);
+                _Py_Specialize_ForIter(TOP(), next_instr);
                 DISPATCH_SAME_OPARG();
             }
             else {
