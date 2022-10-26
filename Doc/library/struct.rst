@@ -61,6 +61,7 @@ The module defines the following exception and functions:
    write the packed bytes into the writable buffer *buffer* starting at
    position *offset*.  Note that *offset* is a required argument.
 
+
 .. function:: unpack(format, buffer)
 
    Unpack from the buffer *buffer* (presumably packed by ``pack(format, ...)``)
