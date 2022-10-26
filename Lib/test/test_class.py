@@ -740,6 +740,77 @@ class ClassTests(unittest.TestCase):
         class A(0, *range(1, 8), **d, foo='bar'): pass
         self.assertEqual(A, (tuple(range(8)), {'foo': 'bar'}))
 
+    def testPyObjectPrintObject(self):
+        import os
+        import test.support.os_helper as os_helper
+        from test.support import import_helper
+
+        _testcapi = import_helper.import_module('_testcapi')
+
+        class PrintableObject:
+
+            def __repr__(self):
+                return "spam spam spam"
+
+            def __str__(self):
+                return "egg egg egg"
+
+        obj = PrintableObject()
+        output_filename = os_helper.TESTFN
+        # Test repr printing
+        _testcapi.call_pyobject_print(obj, output_filename, False)
+        with open(output_filename, 'r') as output_file:
+            self.assertEqual(output_file.read(), repr(obj))
+        # Test str printing
+        _testcapi.call_pyobject_print(obj, output_filename, True)
+        with open(output_filename, 'r') as output_file:
+            self.assertEqual(output_file.read(), str(obj))
+
+        os.remove(output_filename)
+
+    def testPyObjectPrintNULL(self):
+        import os
+        import test.support.os_helper as os_helper
+        from test.support import import_helper
+
+        _testcapi = import_helper.import_module('_testcapi')
+
+        output_filename = os_helper.TESTFN
+        # Test repr printing
+        _testcapi.pyobject_print_null(output_filename)
+        with open(output_filename, 'r') as output_file:
+            self.assertEqual(output_file.read(), '<nil>')
+
+        os.remove(output_filename)
+
+    def testPyObjectPrintNoRefObject(self):
+        import os
+        import test.support.os_helper as os_helper
+        from test.support import import_helper
+
+        _testcapi = import_helper.import_module('_testcapi')
+
+        output_filename = os_helper.TESTFN
+        # Test repr printing
+        correct_output = _testcapi.pyobject_print_noref_object(output_filename)
+        with open(output_filename, 'r') as output_file:
+            self.assertEqual(output_file.read(), correct_output)
+
+        os.remove(output_filename)
+
+    def testPyObjectPrintOSError(self):
+        import os
+        import test.support.os_helper as os_helper
+        from test.support import import_helper
+
+        _testcapi = import_helper.import_module('_testcapi')
+
+        output_filename = os_helper.TESTFN
+        open(output_filename, "w+").close()
+        with self.assertRaises(OSError):
+            _testcapi.pyobject_print_os_error(output_filename)
+
+        os.remove(output_filename)
 
 if __name__ == '__main__':
     unittest.main()
