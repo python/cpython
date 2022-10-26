@@ -3,7 +3,7 @@
 # Licensed to the PSF under a contributor agreement.
 
 from test import support, test_tools
-from test.support import os_helper
+from test.support import import_helper, os_helper
 from unittest import TestCase
 import collections
 import inspect
@@ -818,6 +818,24 @@ class ClinicExternalTest(TestCase):
         # Don't change the file modification time
         # if the content does not change
         self.assertEqual(new_mtime_ns, old_mtime_ns)
+
+
+ac_tester = import_helper.import_module('_testclinic')
+
+
+class TestClinicFunctionality(unittest.TestCase):
+    locals().update((name, getattr(ac_tester, name))
+                    for name in dir(ac_tester) if name.startswith('test_'))
+
+    def test_gh_32092_oob(self):
+        res = ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
+        expect = (1, 2, (3, 4), 5, 6)
+        self.assertEqual(res, expect)
+
+    def test_gh_32092_kw_pass(self):
+        res = ac_tester.gh_32092_kw_pass(1, 2, 3)
+        expect = (1, (2, 3), None)
+        self.assertEqual(res, expect)
 
 
 if __name__ == "__main__":
