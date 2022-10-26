@@ -35,8 +35,7 @@ PyDoc_STRVAR(gh_32092_oob__doc__,
 "`_PyArg_UnpackKeywordsWithVararg` .\n"
 "\n"
 "Calling this function by gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)\n"
-"to trigger this bug (crash).\n"
-"Expected return: (1, 2, (3, 4), 5, 6)");
+"to trigger this bug (crash).");
 
 #define GH_32092_OOB_METHODDEF    \
     {"gh_32092_oob", _PyCFunction_CAST(gh_32092_oob), METH_FASTCALL|METH_KEYWORDS, gh_32092_oob__doc__},
@@ -117,8 +116,7 @@ PyDoc_STRVAR(gh_32092_kw_pass__doc__,
 "`builtin_kw_pass_poc` is incorrect.\n"
 "\n"
 "Calling this function by gh_32092_kw_pass(1, 2, 3)\n"
-"to trigger this bug (crash).\n"
-"Expected return: (1, (2, 3), None)");
+"to trigger this bug (crash).");
 
 #define GH_32092_KW_PASS_METHODDEF    \
     {"gh_32092_kw_pass", _PyCFunction_CAST(gh_32092_kw_pass), METH_FASTCALL|METH_KEYWORDS, gh_32092_kw_pass__doc__},
@@ -179,4 +177,4 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=da33e7aa2f9377db input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f1f47303a227104b input=a9049054013a1b77]*/

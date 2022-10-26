@@ -44,22 +44,15 @@ Array index out-of-bound bug in function
 
 Calling this function by gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
 to trigger this bug (crash).
-Expected return: (1, 2, (3, 4), 5, 6)
 
 [clinic start generated code]*/
 
 static PyObject *
 gh_32092_oob_impl(PyObject *module, PyObject *pos1, PyObject *pos2,
                   PyObject *varargs, PyObject *kw1, PyObject *kw2)
-/*[clinic end generated code: output=ee259c130054653f input=91d8e227acf93b02]*/
+/*[clinic end generated code: output=ee259c130054653f input=568c6276e3fdef62]*/
 {
-    PyObject *tuple = PyTuple_New(5);
-    PyTuple_SET_ITEM(tuple, 0, Py_NewRef(pos1));
-    PyTuple_SET_ITEM(tuple, 1, Py_NewRef(pos2));
-    PyTuple_SET_ITEM(tuple, 2, Py_NewRef(varargs));
-    PyTuple_SET_ITEM(tuple, 3, Py_NewRef(kw1));
-    PyTuple_SET_ITEM(tuple, 4, Py_NewRef(kw2));
-    return tuple;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -76,20 +69,15 @@ The calculation of `noptargs` in AC-generated function
 
 Calling this function by gh_32092_kw_pass(1, 2, 3)
 to trigger this bug (crash).
-Expected return: (1, (2, 3), None)
 
 [clinic start generated code]*/
 
 static PyObject *
 gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
                       PyObject *kw)
-/*[clinic end generated code: output=4a2bbe4f7c8604e9 input=5fc48f72f49193b6]*/
+/*[clinic end generated code: output=4a2bbe4f7c8604e9 input=5bfe6191e1e7a2fb]*/
 {
-    PyObject *tuple = PyTuple_New(3);
-    PyTuple_SET_ITEM(tuple, 0, Py_NewRef(pos));
-    PyTuple_SET_ITEM(tuple, 1, Py_NewRef(args));
-    PyTuple_SET_ITEM(tuple, 2, Py_NewRef(kw));
-    return tuple;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef tester_methods[] = {
