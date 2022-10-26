@@ -474,9 +474,6 @@ async def wait_for(fut, timeout):
                 # See https://bugs.python.org/issue32751
                 fut.remove_done_callback(cb)
                 await _cancel_and_wait(fut, loop=loop)
-            exc = fut.exception()
-            if exc:  # If fut.cancelled(), this will raise CancelledError
-                raise exc
             raise
 
         if fut.done():
