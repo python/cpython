@@ -1,0 +1,1 @@
+Fix asyncio ``drain`` closing a non-existent socket multiple times.
