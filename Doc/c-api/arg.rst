@@ -51,8 +51,8 @@ There are three ways strings and buffers can be converted to C:
 
 *  .. _c-arg-borrowed-buffer:
 
-   Other formats take a read-only :term:`bytes-like object`, such as
-   :class:`bytes` or :class:`str`, and provide a ``const char *`` pointer to
+   Other formats take a :class:`str` or a read-only :term:`bytes-like object`,
+   such as :class:`bytes`, and provide a ``const char *`` pointer to
    its buffer.
    In this case the buffer is "borrowed": it is managed by the corresponding
    Python object, and shares the lifetime of this object.
@@ -64,7 +64,7 @@ There are three ways strings and buffers can be converted to C:
    but also some read-only objects such as :class:`memoryview` of
    :class:`bytes`.
 
-   Besides this ``bf_releasebuffer`` requirement, the functions do not verify
+   Besides this ``bf_releasebuffer`` requirement, there is no check to verify
    whether the input object is immutable (e.g. whether it would honor a request
    for a writable buffer, or whether another thread can mutate the data).
 
