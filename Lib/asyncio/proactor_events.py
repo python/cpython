@@ -152,6 +152,8 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._loop.call_soon(self._call_connection_lost, exc)
 
     def _call_connection_lost(self, exc):
+        if self._called_connection_lost:
+            return
         try:
             self._protocol.connection_lost(exc)
         finally:
