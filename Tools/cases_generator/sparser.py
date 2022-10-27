@@ -63,7 +63,7 @@ class NullStmt(Node):
 
 @dataclass
 class VarDecl(Node):
-    type: Token
+    type: Node
     name: Token
     init: Node | None
 
@@ -179,21 +179,23 @@ class SParser(EParser):
             self.require(lx.SEMI)
             return expr
 
+    @contextual
     def declaration(self):
-        tok = self.peek()
-        if not tok:
+        if not (type := self.type_name()):
             return None
-        # TODO: Do it for real
-        if tok.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE):
-            type = self.next()
-            name = self.require(lx.IDENTIFIER)
+        stars = 0
+        while self.expect(lx.TIMES):
+            stars += 1
+        if name := self.expect(lx.IDENTIFIER):
             if self.expect(lx.EQUALS):
                 init = self.expr()
                 if not init:
                     raise self.make_syntax_error("Expected initialization expression")
+                self.require(lx.SEMI)
             else:
                 init = None
-            self.require(lx.SEMI)
+                if not (self.expect(lx.SEMI)):
+                    return None
             return VarDecl(type, name, init)
 
 
@@ -218,6 +220,8 @@ if __name__ == "__main__":
         print(src)
         print("=== text ===")
         print(x.text)
+        print("=== data ===")
+        print(x)
         print("=== === ===")
         print("FAIL")
     else:
