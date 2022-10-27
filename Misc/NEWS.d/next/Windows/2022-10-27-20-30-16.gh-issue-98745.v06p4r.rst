@@ -1,0 +1,1 @@
+Enable the :file:`py.exe` launcher to install 3.12 when requested.

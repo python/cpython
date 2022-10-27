@@ -1755,7 +1755,8 @@ struct StoreSearchInfo {
 
 
 struct StoreSearchInfo STORE_SEARCH[] = {
-    { L"3", /* 3.10 */ L"9PJPW5LDXLZ5" },
+    { L"3", /* 3.11 */ L"9NRWMJP3717K" },
+    { L"3.12", L"9NCVDN91XZQP" },
     { L"3.11", L"9NRWMJP3717K" },
     { L"3.10", L"9PJPW5LDXLZ5" },
     { L"3.9", L"9P7QFQMJRFP7" },
