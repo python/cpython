@@ -2208,12 +2208,8 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
         _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
         goto success;
     }
-    else {
-        SPECIALIZATION_FAIL(FOR_ITER,
-                            _PySpecialization_ClassifyIterator(iter));
-        goto failure;
-    }
-failure:
+    SPECIALIZATION_FAIL(FOR_ITER,
+                        _PySpecialization_ClassifyIterator(iter));
     STAT_INC(FOR_ITER, failure);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;

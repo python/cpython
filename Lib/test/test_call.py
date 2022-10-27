@@ -812,11 +812,43 @@ class TestPEP590(unittest.TestCase):
             assert_equal("overridden", get_a(x))
 
     @requires_limited_api
-    def test_vectorcall_limited(self):
+    def test_vectorcall_limited_incoming(self):
         from _testcapi import pyobject_vectorcall
         obj = _testcapi.LimitedVectorCallClass()
         self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
 
+    @requires_limited_api
+    def test_vectorcall_limited_outgoing(self):
+        from _testcapi import call_vectorcall
+
+        args_captured = []
+        kwargs_captured = []
+
+        def f(*args, **kwargs):
+            args_captured.append(args)
+            kwargs_captured.append(kwargs)
+            return "success"
+
+        self.assertEqual(call_vectorcall(f), "success")
+        self.assertEqual(args_captured, [("foo",)])
+        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
+
+    @requires_limited_api
+    def test_vectorcall_limited_outgoing_method(self):
+        from _testcapi import call_vectorcall_method
+
+        args_captured = []
+        kwargs_captured = []
+
+        class TestInstance:
+            def f(self, *args, **kwargs):
+                args_captured.append(args)
+                kwargs_captured.append(kwargs)
+                return "success"
+
+        self.assertEqual(call_vectorcall_method(TestInstance()), "success")
+        self.assertEqual(args_captured, [("foo",)])
+        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
 
 class A:
     def method_two_args(self, x, y):
