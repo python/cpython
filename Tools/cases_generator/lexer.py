@@ -129,7 +129,9 @@ for name in keywords:
 keywords = { name.lower() : name for name in keywords }
 
 
-def make_syntax_error(message, filename, line, column, line_text):
+def make_syntax_error(
+    message: str, filename: str, line: int, column: int, line_text: str,
+) -> SyntaxError:
     return SyntaxError(message, (filename, line, column, line_text))
 
 
@@ -216,8 +218,8 @@ __all__ = []
 __all__.extend([kind for kind in globals() if kind.upper() == kind])
 
 
-def to_text(tkns, dedent=0):
-    res = []
+def to_text(tkns: list[Token], dedent: int = 0) -> str:
+    res: list[str] = []
     line, col = -1, 1+dedent
     for tkn in tkns:
         if line == -1:
