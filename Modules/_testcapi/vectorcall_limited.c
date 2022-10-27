@@ -32,7 +32,9 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
     return self;
 }
 
-static PyObject *call_vectorcall(PyObject* self, PyObject *callable) {
+static PyObject *
+call_vectorcall(PyObject* self, PyObject *callable)
+{
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *kwname = NULL, *kwnames = NULL, *result = NULL;
 
@@ -75,7 +77,9 @@ leave:
     return result;
 }
 
-static PyObject *call_vectorcall_method(PyObject* self, PyObject *callable) {
+static PyObject *
+call_vectorcall_method(PyObject* self, PyObject *callable)
+{
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *name = NULL, *kwname = NULL,
              *kwnames = NULL, *result = NULL;
