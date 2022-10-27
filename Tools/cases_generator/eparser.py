@@ -226,29 +226,32 @@ class EParser(PLexer):
         term = self.term()
         if not term:
             return None
-        if self.expect(lx.LPAREN):
-            args: list[Node] = []
-            while arg := self.expr():
-                args.append(arg)
-                if not self.expect(lx.COMMA):
-                    break
-            self.require(lx.RPAREN)
-            return Call(term, args)
-        if self.expect(lx.LBRACKET):
-            index = self.expr()
-            if not index:
-                raise self.make_syntax_error("Expected index expression")
-            self.require(lx.RBRACKET)
-            return Index(term, index)
-        if self.expect(lx.PERIOD):
-            name = self.require(lx.IDENTIFIER)
-            return Period(term, name)
-        if self.expect(lx.ARROW):
-            name = self.require(lx.IDENTIFIER)
-            return Arrow(term, name)
-        if (tok := self.expect(lx.PLUSPLUS)) or (tok := self.expect(lx.MINUSMINUS)):
-            return PostfixOp(term, tok)
-        # TODO: Others
+        while True:
+            if self.expect(lx.LPAREN):
+                args: list[Node] = []
+                while arg := self.expr():
+                    args.append(arg)
+                    if not self.expect(lx.COMMA):
+                        break
+                self.require(lx.RPAREN)
+                term = Call(term, args)
+            elif self.expect(lx.LBRACKET):
+                index = self.expr()
+                if not index:
+                    raise self.make_syntax_error("Expected index expression")
+                self.require(lx.RBRACKET)
+                term = Index(term, index)
+            elif self.expect(lx.PERIOD):
+                name = self.require(lx.IDENTIFIER)
+                term = Period(term, name)
+            elif self.expect(lx.ARROW):
+                name = self.require(lx.IDENTIFIER)
+                term = Arrow(term, name)
+            elif (tok := self.expect(lx.PLUSPLUS)) or (tok := self.expect(lx.MINUSMINUS)):
+                term = PostfixOp(term, tok)
+            else:
+                # TODO: Others
+                break
         return term
 
     @contextual
