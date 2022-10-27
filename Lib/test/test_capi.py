@@ -942,6 +942,48 @@ class CAPITest(unittest.TestCase):
         with self.assertRaises(SystemError):
             _testcapi.function_get_module(None)  # not a function
 
+    def test_function_get_defaults(self):
+        def some(pos_only='p', zero=0, optional=None):
+            pass
+
+        defaults = _testcapi.function_get_defaults(some)
+        self.assertEqual(defaults, ('p', 0, None))
+        self.assertEqual(defaults, some.__defaults__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_module(None)  # not a function
+
+    def test_function_set_defaults(self):
+        def some(pos_only='p', zero=0, optional=None):
+            pass
+
+        old_defaults = ('p', 0, None)
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_defaults(some, 1)  # not tuple or None
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        new_defaults = ('q', 1, None)
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        class tuplesub(tuple): ...  # tuple subclasses must work
+
+        new_defaults = tuplesub(((1, 2), ['a', 'b'], None))
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        # `None` is special, it sets `defaults` to `NULL`,
+        # it needs special handling in `_testcapi`:
+        _testcapi.function_set_defaults(some, None)
+        self.assertEqual(_testcapi.function_get_defaults(some), None)
+        self.assertEqual(some.__defaults__, None)
+
 
 class TestPendingCalls(unittest.TestCase):
 
