@@ -32,7 +32,7 @@ import sys as _sys
 from itertools import chain as _chain
 from itertools import repeat as _repeat
 from itertools import starmap as _starmap
-from itertools import islice as _isclice
+from itertools import islice as _islice
 from keyword import iskeyword as _iskeyword
 from operator import eq as _eq
 from operator import itemgetter as _itemgetter
@@ -1032,7 +1032,7 @@ class ChainMap(_collections_abc.MutableMapping):
 
     def copy(self):
         'New ChainMap or subclass with a new copy of maps[0] and refs to maps[1:]'
-        return self.__class__(self.maps[0].copy(), *_isclice(self.maps, 1, None))
+        return self.__class__(self.maps[0].copy(), *_islice(self.maps, 1, None))
 
     __copy__ = copy
 
@@ -1050,7 +1050,7 @@ class ChainMap(_collections_abc.MutableMapping):
     @property
     def parents(self):                          # like Django's Context.pop()
         'New ChainMap from maps[1:].'
-        return self.__class__(*_isclice(self.maps, 1, None))
+        return self.__class__(*_islice(self.maps, 1, None))
 
     def __setitem__(self, key, value):
         self.maps[0][key] = value
