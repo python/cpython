@@ -106,7 +106,7 @@ string_char = r"""([^"\\\n]|"""+escape_sequence+')'
 str_re = '"'+string_char+'*"'
 STRING = 'STRING'
 char = r'\'.\''
-CHAR = 'CHAR'
+CHARACTER = 'CHARACTER'
 
 comment_re = r'//.*|/\*([^*]|\*[^/])*\*/'
 COMMENT = 'COMMENT'
@@ -191,7 +191,7 @@ def tokenize(src, line=1, filename=None):
             line += 1
             kind = '\n'
         elif text[0] == "'":
-            kind = CHAR
+            kind = CHARACTER
         elif text[0] == '#':
             kind = MACRO
         elif text[0] == '/' and text[1] in '/*':
