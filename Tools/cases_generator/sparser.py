@@ -108,7 +108,7 @@ class SParser(EParser):
         # TODO: switch, case, default, label
         if kind == lx.SEMI:
             return self.empty_stmt()
-        if decl := self.declaration():
+        if decl := self.decl_stmt():
             return decl
         return self.expr_stmt()
 
@@ -126,7 +126,7 @@ class SParser(EParser):
     def for_stmt(self):
         if self.expect(lx.FOR):
             self.require(lx.LPAREN)
-            init = self.expr()
+            init = self.decl() or self.expr()
             self.require(lx.SEMI)
             cond = self.expr()
             self.require(lx.SEMI)
@@ -180,7 +180,13 @@ class SParser(EParser):
             return expr
 
     @contextual
-    def declaration(self):
+    def decl_stmt(self):
+        if decl := self.decl():
+            if self.expect(lx.SEMI):
+                return decl
+
+    @contextual
+    def decl(self):
         if not (type := self.type_name()):
             return None
         stars = 0
@@ -191,11 +197,8 @@ class SParser(EParser):
                 init = self.expr()
                 if not init:
                     raise self.make_syntax_error("Expected initialization expression")
-                self.require(lx.SEMI)
             else:
                 init = None
-                if not (self.expect(lx.SEMI)):
-                    return None
             return VarDecl(type, name, init)
 
 
