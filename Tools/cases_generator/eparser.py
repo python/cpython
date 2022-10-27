@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ast import literal_eval
 from dataclasses import dataclass, field
 from typing import NamedTuple, Callable, TypeVar
 
@@ -119,10 +120,17 @@ class Number(Node):
     @property
     def value(self):
         text = self.tok.text
+        if text.startswith("'"):
+            return ord(literal_eval(text))
         try:
             return int(text)
         except ValueError:
             return float(text)
+
+
+@dataclass
+class String(Node):
+    tok: Token
 
 
 @dataclass
@@ -292,6 +300,10 @@ class EParser(PLexer):
             return None
         if token.kind == lx.NUMBER:
             return Number(token)
+        if token.kind == lx.STRING:
+            return String(token)
+        if token.kind == lx.CHARACTER:
+            return Number(token)  # NB!
         if token.kind == lx.IDENTIFIER:
             return Name(token)
         if token.kind == lx.LPAREN:
