@@ -516,6 +516,14 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("3.100", data["SearchInfo.tag"])
         self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
 
+    def test_python_shebang(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! python -prearg") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+
     def test_py2_shebang(self):
         with self.py_ini(TEST_PY_COMMANDS):
             with self.script("#! /usr/bin/python2 -prearg") as script:

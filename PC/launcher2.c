@@ -1034,12 +1034,19 @@ checkShebang(SearchInfo *search)
         L"/usr/bin/env ",
         L"/usr/bin/",
         L"/usr/local/bin/",
+        L"python",
         NULL
     };
 
     for (const wchar_t **tmpl = shebangTemplates; *tmpl; ++tmpl) {
         if (_shebangStartsWith(shebang, shebangLength, *tmpl, &command)) {
             commandLength = 0;
+            // Normally "python" is the start of the command, but we also need it
+            // as a shebang prefix for back-compat. We move the command marker back
+            // if we match on that one.
+            if (0 == wcscmp(*tmpl, L"python")) {
+                command -= 6;
+            }
             while (command[commandLength] && !isspace(command[commandLength])) {
                 commandLength += 1;
             }
