@@ -1,0 +1,2 @@
+When building Pyton out-of-tree, don't crash during ``make
+regen-test-levenshtein``.
