@@ -1446,18 +1446,13 @@ Importing a source file directly
 
 To import a Python source file directly, use the following recipe::
 
-  import importlib.util
+  # importing a source file directly
+  from importlib._bootstrap_external import SourceFileLoader as Loader
+  module = Loader("your_module_name", "path/to/module").load_module()
+
+  # and if you want it to be saved in sys.modules:
   import sys
-
-  # For illustrative purposes.
-  import tokenize
-  file_path = tokenize.__file__
-  module_name = tokenize.__name__
-
-  spec = importlib.util.spec_from_file_location(module_name, file_path)
-  module = importlib.util.module_from_spec(spec)
-  sys.modules[module_name] = module
-  spec.loader.exec_module(module)
+  sys.modules["your_module_name"] = module
 
 
 Implementing lazy imports
