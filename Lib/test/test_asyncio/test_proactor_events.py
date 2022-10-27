@@ -290,7 +290,12 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._closing = True
         tr._force_close(None)
         test_utils.run_briefly(self.loop)
-        self.assertFalse(self.protocol.connection_lost.called)
+        # See https://github.com/python/cpython/issues/89237
+        # `protocol.connection_lost` should be called even if
+        # the transport was closed forcefully otherwise
+        # the resources held by protocol will never be freed
+        # and waiters will never be notified leading to hang.
+        self.assertTrue(self.protocol.connection_lost.called)
 
     def test_fatal_error_2(self):
         tr = self.socket_transport()

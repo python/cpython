@@ -391,7 +391,7 @@ Pure paths provide the following methods and properties:
 
       If you want to walk an arbitrary filesystem path upwards, it is
       recommended to first call :meth:`Path.resolve` so as to resolve
-      symlinks and eliminate `".."` components.
+      symlinks and eliminate ``".."`` components.
 
 
 .. data:: PurePath.name
