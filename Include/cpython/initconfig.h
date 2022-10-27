@@ -250,6 +250,14 @@ typedef struct {
     int allow_daemon_threads;
 } _PyInterpreterConfig;
 
+#define _PyInterpreterConfig_INIT \
+    { \
+        .allow_fork = 0, \
+        .allow_exec = 0, \
+        .allow_threads = 1, \
+        .allow_daemon_threads = 0, \
+    }
+
 #define _PyInterpreterConfig_LEGACY_INIT \
     { \
         .allow_fork = 1, \
