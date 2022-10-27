@@ -1,6 +1,7 @@
 import unittest
 from test import support
 from test.support import warnings_helper
+from test.support.bytecode_helper import BytecodeTestCase
 import gc
 import weakref
 import operator
@@ -355,7 +356,7 @@ class TestJointOps:
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, self.thetype)
 
-class TestSet(TestJointOps, unittest.TestCase):
+class TestSet(TestJointOps, BytecodeTestCase, unittest.TestCase):
     thetype = set
     basetype = set
 
@@ -634,6 +635,20 @@ class TestSet(TestJointOps, unittest.TestCase):
         myobj = TestRichSetCompare()
         myset >= myobj
         self.assertTrue(myobj.le_called)
+
+    def test_set_unpack_bytecode(self):
+        code = compile("{*()}", "<string>", "eval")
+        self.assertNotInBytecode(code, "SET_UPDATE")
+
+        code = compile("{*(1,)}", "<string>", "eval")
+        self.assertNotInBytecode(code, "SET_UPDATE")
+        self.assertInBytecode(code, "BUILD_SET", 1)
+
+        code = compile("{*(1, 2)}", "<string>", "eval")
+        self.assertInBytecode(code, "SET_UPDATE")
+
+        code = compile("{*(x,)}", "<string>", "eval")
+        self.assertInBytecode(code, "SET_UPDATE")
 
     @unittest.skipUnless(hasattr(set, "test_c_api"),
                          'C API test only available in a debug build')
