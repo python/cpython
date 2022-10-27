@@ -68,9 +68,19 @@ class Cast(Node):
 
 
 @dataclass
-class Type(Node):
+class PointerType(Node):
+    # *type; **type is represented as PointerType(PointerType(type))
+    type: Node
+
+
+@dataclass
+class NumericType(Node):
+    number_type: list[Token]  # int, register unsigned long, char, float, etc.
+
+
+@dataclass
+class NamedType(Node):
     name: Token
-    stars: int
 
 
 @dataclass
@@ -251,14 +261,26 @@ class EParser(PLexer):
 
     @contextual
     def type(self):
-        token = self.peek()
-        if token and token.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE, lx.IDENTIFIER):
-            type = self.next()
-            assert type
-            stars = 0
-            while self.expect(lx.TIMES):
-                stars += 1
-            return Type(type, stars)            
+        if not (type := self.type_name()):
+            return None
+        while self.expect(lx.TIMES):
+            type = PointerType(type)
+        # TODO: [] and ()
+        return type
+
+    @contextual
+    def type_name(self):
+        if not (token := self.peek()):
+            return None
+        # TODO: unsigned, short, long
+        # TODO: const, volatile, extern, register, etc.
+        if token.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE):
+            self.next()
+            return NumericType([token])
+        if token.kind == lx.IDENTIFIER:
+            # TODO: Check the list of known typedefs
+            self.next()
+            return NamedType(token)
 
     @contextual
     def term(self) -> Node | None:
