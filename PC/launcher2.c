@@ -889,7 +889,7 @@ _useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangL
     wchar_t *pC = command;
     for (int i = 0; i < shebangLength; ++i) {
         wchar_t c = shebang[i];
-        if ((isspace(c) || c == L'\r' || c == L'\n') && !inQuote) {
+        if (isspace(c) && !inQuote) {
             commandLength = i;
             break;
         } else if (c == L'"') {
