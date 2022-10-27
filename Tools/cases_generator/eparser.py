@@ -252,7 +252,7 @@ class EParser(PLexer):
     @contextual
     def type(self):
         token = self.peek()
-        if token and token.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE):
+        if token and token.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE, lx.IDENTIFIER):
             type = self.next()
             assert type
             stars = 0
