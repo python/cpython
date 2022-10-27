@@ -17,7 +17,8 @@ All Python objects ultimately share a small number of fields at the beginning
 of the object's representation in memory.  These are represented by the
 :c:type:`PyObject` and :c:type:`PyVarObject` types, which are defined, in turn,
 by the expansions of some macros also used, whether directly or indirectly, in
-the definition of all other Python objects.
+the definition of all other Python objects.  Additional macros can be found
+under :ref:`reference counting <countingrefs>`.
 
 
 .. c:type:: PyObject
@@ -117,26 +118,6 @@ the definition of all other Python objects.
 .. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
 
    Set the object *o* type to *type*.
-
-   .. versionadded:: 3.9
-
-
-.. c:function:: Py_ssize_t Py_REFCNT(PyObject *o)
-
-   Get the reference count of the Python object *o*.
-
-   Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
-
-   .. versionchanged:: 3.11
-      The parameter type is no longer :c:expr:`const PyObject*`.
-
-   .. versionchanged:: 3.10
-      :c:func:`Py_REFCNT()` is changed to the inline static function.
-
-
-.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
-
-   Set the object *o* reference counter to *refcnt*.
 
    .. versionadded:: 3.9
 

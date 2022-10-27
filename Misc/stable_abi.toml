@@ -2,7 +2,7 @@
 # Please append new items at the end.
 
 # The syntax of this file is not fixed.
-# It is designed to be read only by Tools/stable_abi.py, which can change
+# It is designed to be read only by Tools/build/stable_abi.py, which can change
 # without notice.
 
 # For the history of the stable ABI prior to this file,
@@ -2292,4 +2292,10 @@
 [function.PyVectorcall_Call]
     added = '3.12'
 [typedef.vectorcallfunc]
+    added = '3.12'
+[function.PyObject_Vectorcall]
+    added = '3.12'
+[function.PyObject_VectorcallMethod]
+    added = '3.12'
+[macro.PY_VECTORCALL_ARGUMENTS_OFFSET]
     added = '3.12'
