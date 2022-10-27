@@ -153,10 +153,6 @@ static PyType_Spec LimitedVectorCallClass_spec = {
 };
 
 static PyMethodDef TestMethods[] = {
-    /* Add module methods here.
-     * (Empty list left here as template/example, since using
-     * PyModule_AddFunctions isn't very common.)
-     */
     {"call_vectorcall", call_vectorcall, METH_O},
     {"call_vectorcall_method", call_vectorcall_method, METH_O},
     {NULL},
