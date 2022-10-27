@@ -74,6 +74,15 @@ Important deprecations, removals or restrictions:
 New Features
 ============
 
+* Add :ref:`perf_profiling` through the new
+  environment variable :envvar:`PYTHONPERFSUPPORT`,
+  the new command-line option :option:`-X perf <-X>`,
+  as well as the new :func:`sys.activate_stack_trampoline`,
+  :func:`sys.deactivate_stack_trampoline`,
+  and :func:`sys.is_stack_trampoline_active` APIs.
+  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
 
 
 Other Language Changes
@@ -193,6 +202,19 @@ tempfile
 
 The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
 *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+
+sys
+---
+
+* Add :func:`sys.activate_stack_trampoline` and
+  :func:`sys.deactivate_stack_trampoline` for activating and deactivating
+  stack profiler trampolines,
+  and :func:`sys.is_stack_trampoline_active` for querying if stack profiler
+  trampolines are active.
+  (Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
+
 
 Optimizations
 =============
