@@ -614,12 +614,18 @@ asyncio
   These are primarily intended for internal use,
   notably by :class:`~asyncio.TaskGroup`.
 
+
+.. _whatsnew311-contextlib:
+
 contextlib
 ----------
 
-Added non parallel-safe :func:`~contextlib.chdir` context manager to change
-the current working directory and then restore it on exit. Simple wrapper
-around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
+* Added non parallel-safe :func:`~contextlib.chdir` context manager to change
+  the current working directory and then restore it on exit. Simple wrapper
+  around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
+
+
+.. _whatsnew311-dataclasses:
 
 dataclasses
 -----------
@@ -629,11 +635,15 @@ dataclasses
   :class:`dict`, :class:`list` or :class:`set`. (Contributed by Eric V. Smith in
   :issue:`44674`.)
 
+
+.. _whatsnew311-datetime:
+
 datetime
 --------
 
 * Add :attr:`datetime.UTC`, a convenience alias for
   :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
+
 * :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
   :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
   formats (barring only those that support fractional hours and minutes).
@@ -658,7 +668,7 @@ enum
   (used by :func:`str`, :func:`format` and :term:`f-string`\s).
 
 * Changed :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
-  to now inherit from :class:`ReprEnum`,
+  to now inherit from :class:`~enum.ReprEnum`,
   so their :func:`str` output now matches :func:`format`
   (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``,
   whereas before ``str(AnIntEnum.ONE)`` returned ``'AnIntEnum.ONE'``.
@@ -708,6 +718,18 @@ enum
   inverted flags are coerced to their positive equivalent.
 
 
+.. _whatsnew311-fcntl:
+
+fcntl
+-----
+
+* On FreeBSD, the :data:`!F_DUP2FD` and :data:`!F_DUP2FD_CLOEXEC` flags respectively
+  are supported, the former equals to ``dup2`` usage while the latter set
+  the ``FD_CLOEXEC`` flag in addition.
+
+
+.. _whatsnew311-fractions:
+
 fractions
 ---------
 
@@ -717,6 +739,9 @@ fractions
 * :class:`~fractions.Fraction` now implements an ``__int__`` method, so
   that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
   (Contributed by Mark Dickinson in :issue:`44547`.)
+
+
+.. _whatsnew311-functools:
 
 functools
 ---------
@@ -748,6 +773,9 @@ functools
 
   (Contributed by Yurii Karabas in :issue:`46014`.)
 
+
+.. _whatsnew311-hashlib:
+
 hashlib
 -------
 
@@ -765,6 +793,9 @@ hashlib
 * Add :func:`hashlib.file_digest`, a helper function for efficient hashing
   of files or file-like objects.
   (Contributed by Christian Heimes in :gh:`89313`.)
+
+
+.. _whatsnew311-idle:
 
 IDLE and idlelib
 ----------------
@@ -803,6 +834,9 @@ inspect
 
   (Contributed by Pablo Galindo in :gh:`88116`.)
 
+
+.. _whatsnew311-locale:
+
 locale
 ------
 
@@ -830,6 +864,8 @@ logging
   (Contributed by Kirill Pinchuk in :gh:`88457`.)
 
 
+.. _whatsnew311-math:
+
 math
 ----
 
@@ -849,6 +885,8 @@ math
   (Contributed by Victor Stinner in :issue:`46917`.)
 
 
+.. _whatsnew311-operator:
+
 operator
 --------
 
@@ -856,6 +894,8 @@ operator
   ``operator.call(obj, *args, **kwargs) == obj(*args, **kwargs)``.
   (Contributed by Antony Lee in :issue:`44019`.)
 
+
+.. _whatsnew311-os:
 
 os
 --
@@ -865,6 +905,8 @@ os
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
 
+.. _whatsnew311-pathlib:
+
 pathlib
 -------
 
@@ -873,6 +915,9 @@ pathlib
   :data:`~os.sep` or :data:`~os.altsep`.
   (Contributed by Eisuke Kawasima in :issue:`22276` and :issue:`33392`.)
 
+
+.. _whatsnew311-re:
+
 re
 --
 
@@ -880,12 +925,17 @@ re
   ``?+``, ``{m,n}+``) are now supported in regular expressions.
   (Contributed by Jeffrey C. Jacobs and Serhiy Storchaka in :issue:`433030`.)
 
+
+.. _whatsnew311-shutil:
+
 shutil
 ------
 
 * Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
   (Contributed by Serhiy Storchaka in :issue:`46245`.)
 
+
+.. _whatsnew311-socket:
 
 socket
 ------
@@ -897,6 +947,9 @@ socket
   failure to connect, an :exc:`ExceptionGroup` containing all errors
   instead of only raising the last error.
   (Contributed by Irit Katriel in :issue:`29980`.)
+
+
+.. _whatsnew311-sqlite3:
 
 sqlite3
 -------
@@ -961,13 +1014,15 @@ string
   (Contributed by Ben Kehoe in :gh:`90465`.)
 
 
+.. _whatsnew311-sys:
+
 sys
 ---
 
 * :func:`sys.exc_info` now derives the ``type`` and ``traceback`` fields
   from the ``value`` (the exception instance), so when an exception is
   modified while it is being handled, the changes are reflected in
-  the results of subsequent calls to :func:`exc_info`.
+  the results of subsequent calls to :func:`!exc_info`.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
 * Add :func:`sys.exception` which returns the active exception instance
@@ -977,6 +1032,8 @@ sys
 * Add the :data:`sys.flags.safe_path <sys.flags>` flag.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
+
+.. _whatsnew311-sysconfig:
 
 sysconfig
 ---------
@@ -1008,6 +1065,8 @@ tempfile
   (Contributed by Carey Metcalfe in :gh:`70363`.)
 
 
+.. _whatsnew311-threading:
+
 threading
 ---------
 
@@ -1018,6 +1077,8 @@ threading
   by system clock changes.
   (Contributed by Victor Stinner in :issue:`41710`.)
 
+
+.. _whatsnew311-time:
 
 time
 ----
@@ -1036,6 +1097,18 @@ time
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
 
+.. _whatsnew311-tkinter:
+
+tkinter
+-------
+
+* Added method ``info_patchlevel()`` which returns the exact version of
+  the Tcl library as a named tuple similar to :data:`sys.version_info`.
+  (Contributed by Serhiy Storchaka in :gh:`91827`.)
+
+
+.. _whatsnew311-traceback:
+
 traceback
 ---------
 
@@ -1048,6 +1121,8 @@ traceback
   formatted :exc:`~traceback.TracebackException` instance to a file.
   (Contributed by Irit Katriel in :issue:`33809`.)
 
+
+.. _whatsnew311-typing:
 
 typing
 ------
@@ -1089,7 +1164,7 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
-* The :meth:`__init__` method of :class:`~typing.Protocol` subclasses
+* The :meth:`~object.__init__` method of :class:`~typing.Protocol` subclasses
   is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
 
 * The representation of empty tuple types (``Tuple[()]``) is simplified.
@@ -1118,19 +1193,16 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   by Nikita Sobolev in :gh:`90729`.)
 
 
-tkinter
--------
-
-* Added method ``info_patchlevel()`` which returns the exact version of
-  the Tcl library as a named tuple similar to :data:`sys.version_info`.
-  (Contributed by Serhiy Storchaka in :gh:`91827`.)
-
+.. _whatsnew311-unicodedata:
 
 unicodedata
 -----------
 
-* The Unicode database has been updated to version 14.0.0. (Contributed by  Benjamin Peterson in :issue:`45190`).
+* The Unicode database has been updated to version 14.0.0.
+  (Contributed by Benjamin Peterson in :issue:`45190`).
 
+
+.. _whatsnew311-unittest:
 
 unittest
 --------
@@ -1144,6 +1216,8 @@ unittest
   (Contributed by Serhiy Storchaka in :issue:`45046`.)
 
 
+.. _whatsnew311-venv:
+
 venv
 ----
 
@@ -1156,6 +1230,9 @@ venv
   scheme without changing behavior of virtual environments.
   Third party code that also creates new virtual environments should do the same.
   (Contributed by Miro Hrončok in :issue:`45413`.)
+
+
+.. _whatsnew311-warnings:
 
 warnings
 --------
@@ -1181,14 +1258,6 @@ zipfile
 * Added :attr:`~zipfile.Path.stem`, :attr:`~zipfile.Path.suffix`
   and :attr:`~zipfile.Path.suffixes` to :class:`zipfile.Path`.
   (Contributed by Miguel Brito in :gh:`88261`.)
-
-
-fcntl
------
-
-* On FreeBSD, the :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` flags respectively
-  are supported, the former equals to ``dup2`` usage while the latter set
-  the ``FD_CLOEXEC`` flag in addition.
 
 
 .. _whatsnew311-optimizations:
@@ -1653,7 +1722,7 @@ Modules
 
 * The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
-  warnings have now been updated to note they will removed in Python 3.12.
+  warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
 * The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
@@ -1672,8 +1741,8 @@ Standard Library
 ----------------
 
 * The following have been deprecated in :mod:`configparser` since Python 3.2.
-  Their deprecation warnings have now been updated to note they will removed in
-  Python 3.12:
+  Their deprecation warnings have now been updated to note they will be removed
+  in Python 3.12:
 
   * the :class:`!configparser.SafeConfigParser` class
   * the :attr:`!configparser.ParsingError.filename` property
@@ -1834,7 +1903,7 @@ C APIs pending removal are
 Removed
 =======
 
-This section lists Python APIs that have been removed in Python 3.12.
+This section lists Python APIs that have been removed in Python 3.11.
 
 Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 

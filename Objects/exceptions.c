@@ -1464,11 +1464,12 @@ SimpleExtendsException(PyExc_BaseException, KeyboardInterrupt,
 static int
 ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"name", "path", 0};
+    static char *kwlist[] = {"name", "path", "name_from", 0};
     PyObject *empty_tuple;
     PyObject *msg = NULL;
     PyObject *name = NULL;
     PyObject *path = NULL;
+    PyObject *name_from = NULL;
 
     if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1)
         return -1;
@@ -1476,8 +1477,8 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     empty_tuple = PyTuple_New(0);
     if (!empty_tuple)
         return -1;
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OO:ImportError", kwlist,
-                                     &name, &path)) {
+    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OOO:ImportError", kwlist,
+                                     &name, &path, &name_from)) {
         Py_DECREF(empty_tuple);
         return -1;
     }
@@ -1488,6 +1489,9 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
 
     Py_XINCREF(path);
     Py_XSETREF(self->path, path);
+
+    Py_XINCREF(name_from);
+    Py_XSETREF(self->name_from, name_from);
 
     if (PyTuple_GET_SIZE(args) == 1) {
         msg = PyTuple_GET_ITEM(args, 0);
@@ -1504,6 +1508,7 @@ ImportError_clear(PyImportErrorObject *self)
     Py_CLEAR(self->msg);
     Py_CLEAR(self->name);
     Py_CLEAR(self->path);
+    Py_CLEAR(self->name_from);
     return BaseException_clear((PyBaseExceptionObject *)self);
 }
 
@@ -1521,6 +1526,7 @@ ImportError_traverse(PyImportErrorObject *self, visitproc visit, void *arg)
     Py_VISIT(self->msg);
     Py_VISIT(self->name);
     Py_VISIT(self->path);
+    Py_VISIT(self->name_from);
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
@@ -1540,7 +1546,7 @@ static PyObject *
 ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
-    if (self->name || self->path) {
+    if (self->name || self->path || self->name_from) {
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
         if (dict == NULL)
             return NULL;
@@ -1549,6 +1555,10 @@ ImportError_getstate(PyImportErrorObject *self)
             return NULL;
         }
         if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (self->name_from && PyDict_SetItem(dict, &_Py_ID(name_from), self->name_from) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
@@ -1588,6 +1598,8 @@ static PyMemberDef ImportError_members[] = {
         PyDoc_STR("module name")},
     {"path", T_OBJECT, offsetof(PyImportErrorObject, path), 0,
         PyDoc_STR("module path")},
+    {"name_from", T_OBJECT, offsetof(PyImportErrorObject, name_from), 0,
+        PyDoc_STR("name imported from module")},
     {NULL}  /* Sentinel */
 };
 
