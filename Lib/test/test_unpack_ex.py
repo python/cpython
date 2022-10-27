@@ -95,6 +95,12 @@ Set display element unpacking
       ...
     TypeError: 'int' object is not iterable
 
+    >>> b, c, d = {*()}, {*(1,)}, {*(4, 5)}
+    >>> b
+    set()
+    >>> b == set() and c == {1} and d == {4, 5}
+    True
+
 Dict display element unpacking
 
     >>> kwds = {'z': 0, 'w': 12}
