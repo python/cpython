@@ -1,17 +1,21 @@
+# C expression parser
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import NamedTuple, Callable
+from typing import NamedTuple, Callable, TypeVar
 
 import lexer as lx
-from plexer import Lexer
+from plexer import PLexer
+
 Token = lx.Token
 
 
-def contextual(func: Callable[[Parser], Node|None]):
+T = TypeVar("T", bound="EParser")
+def contextual(func: Callable[[T], Node|None]) -> Callable[[T], Node|None]:
     # Decorator to wrap grammar methods.
     # Resets position if `func` returns None.
-    def contextual_wrapper(self: Parser) -> Node|None:
+    def contextual_wrapper(self: T) -> Node|None:
         begin = self.getpos()
         res = func(self)
         if res is None:
@@ -24,7 +28,7 @@ def contextual(func: Callable[[Parser], Node|None]):
 
 
 class Context(NamedTuple):
-    owner: Lexer
+    owner: PLexer
     begin: int
     end: int
 
@@ -36,68 +40,12 @@ class Node:
     @property
     def text(self) -> str:
         context = self.context
+        if not context:
+            return ""
         tokens = context.owner.tokens
         begin = context.begin
         end = context.end
         return lx.to_text(tokens[begin:end])
-
-
-@dataclass
-class Block(Node):
-    stmts: list[Node]
-
-
-@dataclass
-class ForStmt(Node):
-    init: Node | None
-    cond: Node | None
-    next: Node | None
-    body: Node
-
-
-@dataclass
-class IfStmt(Node):
-    cond: Node
-    body: Node
-    orelse: Node | None
-
-
-@dataclass
-class WhileStmt(Node):
-    cond: Node
-    body: Node
-
-
-@dataclass
-class BreakStmt():
-    pass
-
-
-@dataclass
-class ContinueStmt():
-    pass
-
-
-@dataclass
-class ReturnStmt(Node):
-    expr: Node | None
-
-
-@dataclass
-class GotoStmt(Node):
-    label: Token
-
-
-@dataclass
-class NullStmt(Node):
-    pass
-
-
-@dataclass
-class VarDecl(Node):
-    type: Token
-    name: Token
-    init: Node | None
 
 
 @dataclass
@@ -160,11 +108,11 @@ class Number(Node):
 
     @property
     def value(self):
-        v = self.tok.value
+        text = self.tok.text
         try:
-            return int(v)
+            return int(text)
         except ValueError:
-            return float(v)
+            return float(text)
 
 
 @dataclass
@@ -230,136 +178,12 @@ INFIX_OPS = {
 }
 
 
-class Parser(Lexer):
-
-    @contextual
-    def stmt(self) -> Node | None:
-        if self.eof():
-            return None
-        kind = self.peek().kind
-        if kind == lx.LBRACE:
-            return self.block()
-        if kind == lx.FOR:
-            return self.for_stmt()
-        if kind == lx.IF:
-            return self.if_stmt()
-        if kind == lx.WHILE:
-            return self.while_stmt()
-        # TODO: switch
-        if kind == lx.BREAK:
-            self.next()
-            self.require(lx.SEMI)
-            return BreakStmt()
-        if kind == lx.CONTINUE:
-            self.next()
-            self.require(lx.SEMI)
-            return ContinueStmt()
-        if kind == lx.RETURN:
-            self.next()
-            expr = self.expr()  # May be None
-            self.require(lx.SEMI)
-            return ReturnStmt(expr)
-        if kind == lx.GOTO:
-            self.next()
-            label = self.require(lx.IDENTIFIER)
-            self.require(lx.SEMI)
-            return GotoStmt(label)
-        # TODO: switch, case, default, label
-        if kind == lx.SEMI:
-            return self.empty_stmt()
-        if decl := self.declaration():
-            return decl
-        return self.expr_stmt()
-
-    @contextual
-    def block(self):
-        if self.expect(lx.LBRACE):
-            stmts = []
-            while s := self.stmt():
-                stmts.append(s)
-            if not self.expect(lx.RBRACE):
-                raise self.make_syntax_error("Expected '}'")
-            return Block(stmts)
-
-    @contextual
-    def for_stmt(self):
-        if self.expect(lx.FOR):
-            self.require(lx.LPAREN)
-            init = self.expr()
-            self.require(lx.SEMI)
-            cond = self.expr()
-            self.require(lx.SEMI)
-            next = self.expr()
-            self.require(lx.RPAREN)
-            body = self.stmt()
-            if not body:
-                raise self.make_syntax_error("Expected statement")
-            return ForStmt(init, cond, next, body)
-
-    @contextual
-    def if_stmt(self):
-        if self.expect(lx.IF):
-            self.require(lx.LPAREN)
-            cond = self.expr()
-            if not cond:
-                raise self.make_syntax_error("Expected expression")
-            self.require(lx.RPAREN)
-            body = self.stmt()
-            if not body:
-                raise self.make_syntax_error("Expected statement")
-            orelse = None
-            if self.expect(lx.ELSE):
-                orelse = self.stmt()
-                if not orelse:
-                    raise self.make_syntax_error("Expected statement")
-            return IfStmt(cond, body, orelse)
-
-    @contextual
-    def while_stmt(self):
-        if self.expect(lx.WHILE):
-            self.require(lx.LPAREN)
-            cond = self.expr()
-            if not cond:
-                raise self.make_syntax_error("Expected expression")
-            self.require(lx.RPAREN)
-            body = self.stmt()
-            if not body:
-                raise self.make_syntax_error("Expected statement")
-            return WhileStmt(cond, body)
-
-    @contextual
-    def empty_stmt(self):
-        if self.expect(lx.SEMI):
-            return NullStmt()
-
-    @contextual
-    def expr_stmt(self):
-        if expr := self.expr():
-            self.require(lx.SEMI)
-            return expr
-
-    def declaration(self):
-        tok = self.peek()
-        if not tok:
-            return None
-        # TODO: Do it for real
-        if tok.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE):
-            type = self.next()
-            name = self.require(lx.IDENTIFIER)
-            if self.expect(lx.EQUALS):
-                init = self.expr()
-                if not init:
-                    raise self.make_syntax_error("Expected initialization expression")
-            else:
-                init = None
-            self.require(lx.SEMI)
-            return VarDecl(type, name, init)
-
+class EParser(PLexer):
 
     @contextual
     def expr(self) -> Node | None:
         # TODO: All the other forms of expressions
-        things = []
+        things: list[Node|Token] = []  # TODO: list[tuple[Token|None, Node]]
         if not (term := self.full_term()):
             return None
         things.append(term)
@@ -381,7 +205,11 @@ class Parser(Lexer):
     def full_term(self) -> Node | None:
         tok = self.peek()
         if tok and tok.kind in PREFIX_OPS:
-            return PrefixOp(self.next(), self.full_term())
+            self.next()
+            term = self.full_term()
+            if not term:
+                raise self.make_syntax_error(f"Expected term following {tok}")
+            return PrefixOp(tok, term)
         # TODO: SIZEOF
         if cast := self.cast():
             return cast
@@ -389,7 +217,7 @@ class Parser(Lexer):
         if not term:
             return None
         if self.expect(lx.LPAREN):
-            args = []
+            args: list[Node] = []
             while arg := self.expr():
                 args.append(arg)
                 if not self.expect(lx.COMMA):
@@ -398,6 +226,8 @@ class Parser(Lexer):
             return Call(term, args)
         if self.expect(lx.LBRACKET):
             index = self.expr()
+            if not index:
+                raise self.make_syntax_error("Expected index expression")
             self.require(lx.RBRACKET)
             return Index(term, index)
         if self.expect(lx.PERIOD):
@@ -421,9 +251,10 @@ class Parser(Lexer):
 
     @contextual
     def type(self):
-        tok = self.peek()
-        if tok.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE):
+        token = self.peek()
+        if token and token.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE):
             type = self.next()
+            assert type
             stars = 0
             while self.expect(lx.TIMES):
                 stars += 1
@@ -432,6 +263,8 @@ class Parser(Lexer):
     @contextual
     def term(self) -> Node | None:
         token = self.next()
+        if not token:
+            return None
         if token.kind == lx.NUMBER:
             return Number(token)
         if token.kind == lx.IDENTIFIER:
@@ -440,7 +273,6 @@ class Parser(Lexer):
             expr = self.expr()
             self.require(lx.RPAREN)
             return expr
-        self.backup()
         return None
 
     def infix_op(self) -> Token | None:
@@ -467,14 +299,16 @@ if __name__ == "__main__":
     else:
         filename = None
         src = "if (x) { x.foo; // comment\n}"
-    p = Parser(src, filename)
-    x = p.stmt()
+    p = EParser(src, filename)
+    x = p.expr()
     assert x, p.getpos()
     if x.text.rstrip() != src.rstrip():
         print("=== src ===")
         print(src)
         print("=== text ===")
         print(x.text)
+        print("=== data ===")
+        print(x)
         print("=== === ===")
         print("FAIL")
     else:

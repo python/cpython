@@ -2,7 +2,7 @@ import lexer as lx
 Token = lx.Token
 
 
-class Lexer:
+class PLexer:
     def __init__(self, src: str, filename: str|None = None):
         self.src = src
         self.filename = filename
@@ -29,6 +29,7 @@ class Lexer:
 
     def next(self, raw: bool = False) -> Token | None:
         # Return next token and advance position; None if at EOF
+        # TODO: Return synthetic EOF token instead of None?
         while self.pos < len(self.tokens):
             tok = self.tokens[self.pos]
             self.pos += 1
@@ -52,9 +53,10 @@ class Lexer:
     def expect(self, kind: str) -> Token | None:
         # Return next token and advance position if kind matches
         tkn = self.next()
-        if tkn is not None and tkn.kind == kind:
-            return tkn
-        self.backup()
+        if tkn is not None:
+            if tkn.kind == kind:
+                return tkn
+            self.backup()
         return None
 
     def require(self, kind: str) -> Token:
