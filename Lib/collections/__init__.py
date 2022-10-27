@@ -1011,7 +1011,7 @@ class ChainMap(_collections_abc.MutableMapping):
         return len(set().union(*self.maps))     # reuses stored hash values if possible
 
     def __iter__(self):
-        lazy_views = (keyview.keys() for keyview in reversed(self.maps))
+        lazy_views = (key_view.keys() for key_view in reversed(self.maps))
         d = dict.fromkeys(_chain.from_iterable(lazy_views))
         return iter(d)
 
