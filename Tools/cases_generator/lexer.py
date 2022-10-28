@@ -105,7 +105,7 @@ escape_sequence = r"""(\\("""+simple_escape+'|'+decimal_escape+'|'+hex_escape+')
 string_char = r"""([^"\\\n]|"""+escape_sequence+')'
 str_re = '"'+string_char+'*"'
 STRING = 'STRING'
-char = r'\'.\''
+char = r'\'.\''  # TODO: escape sequence
 CHARACTER = 'CHARACTER'
 
 comment_re = r'//.*|/\*([^*]|\*[^/])*\*/'
@@ -169,6 +169,7 @@ class Token:
 
 def tokenize(src, line=1, filename=None):
     linestart = -1
+    # TODO: finditer() skips over unrecognized characters, e.g. '@'
     for m in matcher.finditer(src):
         start, end = m.span()
         text = m.group(0)
