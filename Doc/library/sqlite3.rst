@@ -1271,11 +1271,9 @@ Connection objects
         transaction control. See :attr:`isolation_level`.
         This is currently the default value of *autocommit*.
 
-      Changing *autocommit* to ``False`` when there is an open transaction will
-      implicitly commit the transaction and open a new one.
+      Changing *autocommit* to ``False`` will open a new transaction.
 
-      Changing *autocommit* to ``True`` when there is an open transaction will
-      implicitly commit the transaction.
+      Changing *autocommit* to ``True`` will commit any pending transaction.
 
       See :ref:`sqlite3-controlling-transactions` for more details.
 

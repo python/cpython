@@ -457,12 +457,12 @@ class AutocommitAttribute(unittest.TestCase):
                 self.assertTrue(cx.in_transaction)
 
     def test_autocommit_explicit_then_disabled(self):
-        expected = ["BEGIN DEFERRED", "COMMIT", "BEGIN"]
+        expected = ["BEGIN DEFERRED"]
         with memory_database(autocommit=True) as cx:
             self.assertFalse(cx.in_transaction)
             with self.check_stmt_trace(cx, expected):
                 cx.execute("BEGIN DEFERRED")
-                cx.autocommit = False  # should commit, then begin
+                cx.autocommit = False  # should now be a no-op
                 self.assertTrue(cx.in_transaction)
 
     def test_autocommit_enabled_ctx_mgr(self):
