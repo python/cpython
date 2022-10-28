@@ -154,9 +154,10 @@ ArgumentParser objects
    * usage_ - The string describing the program usage (default: generated from
      arguments added to parser)
 
-   * description_ - Text to display before the argument help (default: none)
+   * description_ - Text to display before the argument help
+     (by default, no text)
 
-   * epilog_ - Text to display after the argument help (default: none)
+   * epilog_ - Text to display after the argument help (by default, no text)
 
    * parents_ - A list of :class:`ArgumentParser` objects whose arguments should
      also be included
@@ -1831,8 +1832,8 @@ FileType objects
       Namespace(out=<_io.TextIOWrapper name='file.txt' mode='w' encoding='UTF-8'>, raw=<_io.FileIO name='raw.dat' mode='wb'>)
 
    FileType objects understand the pseudo-argument ``'-'`` and automatically
-   convert this into ``sys.stdin`` for readable :class:`FileType` objects and
-   ``sys.stdout`` for writable :class:`FileType` objects::
+   convert this into :data:`sys.stdin` for readable :class:`FileType` objects and
+   :data:`sys.stdout` for writable :class:`FileType` objects::
 
       >>> parser = argparse.ArgumentParser()
       >>> parser.add_argument('infile', type=argparse.FileType('r'))
