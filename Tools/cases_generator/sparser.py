@@ -37,6 +37,18 @@ class WhileStmt(Node):
 
 
 @dataclass
+class SwitchStmt(Node):
+    expr: Node
+    block: Node  # Cases are not syntactically part of this
+
+
+@dataclass
+class CaseStmt(Node):
+    expr: Node | None  # None for default
+    block: Node
+
+
+@dataclass
 class BreakStmt(Node):
     pass
 
@@ -91,7 +103,12 @@ class SParser(EParser):
             return self.if_stmt()
         if kind == lx.WHILE:
             return self.while_stmt()
-        # TODO: switch
+        if kind == lx.SWITCH:
+            return self.switch_stmt()
+        if kind == lx.CASE:
+            return self.case_stmt()
+        if kind == lx.DEFAULT:
+            return self.default_stmt()
         if kind == lx.BREAK:
             self.next()
             self.require(lx.SEMI)
@@ -171,6 +188,38 @@ class SParser(EParser):
             if not body:
                 raise self.make_syntax_error("Expected statement")
             return WhileStmt(cond, body)
+
+    @contextual
+    def switch_stmt(self):
+        if self.expect(lx.SWITCH):
+            if self.expect(lx.LPAREN):
+                expr = self.expr()
+                if not expr:
+                    raise self.make_syntax_error("Expected expression")
+                self.require(lx.RPAREN)
+                block = self.block()
+                return SwitchStmt(expr, block)
+
+    @contextual
+    def case_stmt(self):
+        if self.expect(lx.CASE):
+            expr = self.expr()
+            if expr is None:
+                raise self.make_syntax_error("Expected expression")
+            self.require(lx.COLON)
+            stmt = self.stmt()
+            if stmt is None:
+                raise self.make_syntax_error("Expected statement")
+            return CaseStmt(expr, stmt)
+
+    @contextual
+    def default_stmt(self):
+        if self.expect(lx.DEFAULT):
+            self.require(lx.COLON)
+            stmt = self.stmt()
+            if stmt is None:
+                raise self.make_syntax_error("Expected statement")
+            return CaseStmt(None, stmt)
 
     @contextual
     def null_stmt(self):
