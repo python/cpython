@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import re
 import sys
 
-import lexer
+import sparser
 import parser
 
 arg_parser = argparse.ArgumentParser()
@@ -37,23 +37,21 @@ class Instruction:
     opcode_name: str
     inputs: list[str]
     outputs: list[str]
-    c_code: list[str]  # Excludes outer {}, no trailing \n
+    block: sparser.Block
 
 
-def parse_cases(src, filename):
+def parse_cases(src: str, filename: str|None = None) -> tuple[list[Instruction], list[parser.Family]]:
     psr = parser.Parser(src, filename=filename)
-    instrs = []
-    families = []
+    instrs: list[Instruction] = []
+    families: list[parser.Family] = []
     while not psr.eof():
         if inst := psr.inst_def():
-            blob = inst.blob
-            blobtext = lexer.to_text(blob)
-            bloblines = blobtext.splitlines()
-            instrs.append(Instruction(inst.name, inst.inputs, inst.outputs, bloblines))
+            assert inst.block
+            instrs.append(Instruction(inst.name, inst.inputs, inst.outputs, inst.block))
         elif fam := psr.family_def():
             families.append(fam)
         else:
-            raise psr.make_syntax_error(f"Unexpected token {psr.peek().text!r}")
+            raise psr.make_syntax_error(f"Unexpected token")
     return instrs, families
 
 
@@ -78,22 +76,22 @@ def write_cases(f, instrs):
     f.write("// Do not edit!\n")
     for instr in instrs:
         assert isinstance(instr, Instruction)
-        f.write(f"\n{indent}TARGET({instr.opcode_name}) {{\n")
-        input = ", ".join(instr.inputs)
-        output = ", ".join(instr.outputs)
-        # f.write(f"{indent}    // {input} -- {output}\n")
-        for line in instr.c_code:
-            if line:
-                f.write(f"{line}\n")
-            else:
-                f.write("\n")
-        if instr.c_code:
-            last_line = strip_indent(indent + "    ", instr.c_code[-1])
-        else:
-            last_line = ""
-        if not (last_line and DISPATCH_LIKE.match(last_line)):
-            f.write(f"{indent}    DISPATCH();\n")
-        f.write(f"{indent}}}\n")
+        f.write(f"\n{indent}TARGET({instr.opcode_name}) {instr.block.text.lstrip()}\n")
+        # input = ", ".join(instr.inputs)
+        # output = ", ".join(instr.outputs)
+        # # f.write(f"{indent}    // {input} -- {output}\n")
+        # for line in instr.c_code:
+        #     if line:
+        #         f.write(f"{line}\n")
+        #     else:
+        #         f.write("\n")
+        # if instr.c_code:
+        #     last_line = strip_indent(indent + "    ", instr.c_code[-1])
+        # else:
+        #     last_line = ""
+        # if not (last_line and DISPATCH_LIKE.match(last_line)):
+        #     f.write(f"{indent}    DISPATCH();\n")
+        # f.write(f"{indent}}}\n")
 
 
 def main():
