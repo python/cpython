@@ -596,8 +596,11 @@ When *walk_up* is False (the default), the path must start with *other*.
       ValueError: '/etc/passwd' is not on the same drive as 'foo' OR one path is relative and the other is absolute.
 
    .. warning::
-      The *walk_up* option assumes that no symlinks are present in the path;
-      call :meth:`~Path.resolve` first if necessary to resolve symlinks.
+      This function is part of :class:`PurePath` and works with strings.
+      It does not check or access the underlying file structure.
+      This can impact the *walk_up* option as it assumes that no symlinks
+      are present in the path; call :meth:`~Path.resolve` first if
+      necessary to resolve symlinks.
 
    .. versionadded:: 3.12
       The *walk_up* argument (old behavior is the same as ``walk_up=False``).
