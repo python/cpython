@@ -1071,6 +1071,8 @@ call fails (for example because the path doesn't exist).
    relative to the current working directory, *not* the directory of the Path
    object.
 
+   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
+
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
 
