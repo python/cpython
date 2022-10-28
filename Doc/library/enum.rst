@@ -427,7 +427,7 @@ Data Types
 
    .. note:: There are places in the stdlib that check for an exact :class:`str`
              instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
-             instead of ``isinstance(str, unknown)``), and in those locations you
+             instead of ``isinstance(unknown, str)``), and in those locations you
              will need to use ``str(StrEnum.member)``.
 
    .. note::

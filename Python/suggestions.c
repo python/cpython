@@ -312,6 +312,38 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     return result;
 }
 
+static PyObject *
+offer_suggestions_for_import_error(PyImportErrorObject *exc)
+{
+    PyObject *mod_name = exc->name; // borrowed reference
+    PyObject *name = exc->name_from; // borrowed reference
+    if (name == NULL || mod_name == NULL || name == Py_None ||
+        !PyUnicode_CheckExact(name) || !PyUnicode_CheckExact(mod_name)) {
+        return NULL;
+    }
+
+    PyObject* mod = PyImport_GetModule(mod_name);
+    if (mod == NULL) {
+        return NULL;
+    }
+
+    PyObject *dir = PyObject_Dir(mod);
+    Py_DECREF(mod);
+    if (dir == NULL) {
+        return NULL;
+    }
+
+    PyObject *suggestion = calculate_suggestions(dir, name);
+    Py_DECREF(dir);
+    if (!suggestion) {
+        return NULL;
+    }
+
+    PyObject* result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
+    Py_DECREF(suggestion);
+    return result;
+}
+
 // Offer suggestions for a given exception. Returns a python string object containing the
 // suggestions. This function returns NULL if no suggestion was found or if an exception happened,
 // users must call PyErr_Occurred() to disambiguate.
@@ -324,6 +356,8 @@ _Py_Offer_Suggestions(PyObject *exception)
         result = offer_suggestions_for_attribute_error((PyAttributeErrorObject *) exception);
     } else if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_NameError)) {
         result = offer_suggestions_for_name_error((PyNameErrorObject *) exception);
+    } else if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_ImportError)) {
+        result = offer_suggestions_for_import_error((PyImportErrorObject *) exception);
     }
     return result;
 }

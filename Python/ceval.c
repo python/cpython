@@ -1298,6 +1298,14 @@ handle_eval_breaker:
             DISPATCH();
         }
 
+        TARGET(END_FOR) {
+            PyObject *value = POP();
+            Py_DECREF(value);
+            value = POP();
+            Py_DECREF(value);
+            DISPATCH();
+        }
+
         TARGET(UNARY_POSITIVE) {
             PyObject *value = TOP();
             PyObject *res = PyNumber_Positive(value);
@@ -3844,9 +3852,11 @@ handle_eval_breaker:
                 _PyErr_Clear(tstate);
             }
             /* iterator ended normally */
+            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
             STACK_SHRINK(1);
             Py_DECREF(iter);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            /* Skip END_FOR */
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
@@ -3884,7 +3894,7 @@ handle_eval_breaker:
             }
             STACK_SHRINK(1);
             Py_DECREF(it);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
@@ -3898,7 +3908,7 @@ handle_eval_breaker:
             if (r->index >= r->len) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
                 DISPATCH();
             }
             long value = (long)(r->start +
@@ -6900,7 +6910,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
             name, pkgname_or_unknown
         );
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        PyErr_SetImportError(errmsg, pkgname, NULL);
+        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, NULL, name);
     }
     else {
         PyObject *spec = PyObject_GetAttr(v, &_Py_ID(__spec__));
@@ -6913,7 +6923,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
 
         errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        PyErr_SetImportError(errmsg, pkgname, pkgpath);
+        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
     }
 
     Py_XDECREF(errmsg);

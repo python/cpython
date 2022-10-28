@@ -987,6 +987,7 @@ extern "C" {
                 INIT_ID(n_sequence_fields), \
                 INIT_ID(n_unnamed_fields), \
                 INIT_ID(name), \
+                INIT_ID(name_from), \
                 INIT_ID(namespace_separator), \
                 INIT_ID(namespaces), \
                 INIT_ID(narg), \
@@ -2285,6 +2286,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(n_unnamed_fields);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(name);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(name_from);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(namespace_separator);
     PyUnicode_InternInPlace(&string);
@@ -6503,6 +6506,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(name)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(name));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(name_from)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(name_from));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(namespace_separator)) < _PyObject_IMMORTAL_REFCNT) {
