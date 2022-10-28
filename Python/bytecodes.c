@@ -152,6 +152,13 @@ dummy_func(
             BASIC_PUSH(NULL);
         }
 
+        inst(END_FOR, (__0, __1 -- )) {
+            PyObject *value = POP();
+            Py_DECREF(value);
+            value = POP();
+            Py_DECREF(value);
+        }
+
         inst(UNARY_POSITIVE, ( -- )) {
             PyObject *value = TOP();
             PyObject *res = PyNumber_Positive(value);
@@ -2593,8 +2600,7 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        // error: FOR_ITER stack effect depends on jump flag
-        inst(FOR_ITER, (?? -- ??)) {
+        inst(FOR_ITER, ( -- __0)) {
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
@@ -2614,13 +2620,14 @@ dummy_func(
                 _PyErr_Clear(tstate);
             }
             /* iterator ended normally */
+            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
             STACK_SHRINK(1);
             Py_DECREF(iter);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            /* Skip END_FOR */
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
         }
 
-        // error: FOR_ITER stack effect depends on jump flag
-        inst(FOR_ITER_ADAPTIVE, (?? -- ??)) {
+        inst(FOR_ITER_ADAPTIVE, ( -- __0)) {
             assert(cframe.use_tracing == 0);
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2635,8 +2642,7 @@ dummy_func(
             }
         }
 
-        // error: FOR_ITER stack effect depends on jump flag
-        inst(FOR_ITER_LIST, (?? -- ??)) {
+        inst(FOR_ITER_LIST, ( -- __0)) {
             assert(cframe.use_tracing == 0);
             _PyListIterObject *it = (_PyListIterObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, FOR_ITER);
@@ -2655,11 +2661,10 @@ dummy_func(
             }
             STACK_SHRINK(1);
             Py_DECREF(it);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
         }
 
-        // error: FOR_ITER stack effect depends on jump flag
-        inst(FOR_ITER_RANGE, (?? -- ??)) {
+        inst(FOR_ITER_RANGE, ( -- __0)) {
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
@@ -2669,7 +2674,7 @@ dummy_func(
             if (r->index >= r->len) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
                 DISPATCH();
             }
             long value = (long)(r->start +

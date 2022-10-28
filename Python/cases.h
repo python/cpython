@@ -137,6 +137,14 @@
             DISPATCH();
         }
 
+        TARGET(END_FOR) {
+            PyObject *value = POP();
+            Py_DECREF(value);
+            value = POP();
+            Py_DECREF(value);
+            DISPATCH();
+        }
+
         TARGET(UNARY_POSITIVE) {
             PyObject *value = TOP();
             PyObject *res = PyNumber_Positive(value);
@@ -2683,9 +2691,11 @@
                 _PyErr_Clear(tstate);
             }
             /* iterator ended normally */
+            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
             STACK_SHRINK(1);
             Py_DECREF(iter);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            /* Skip END_FOR */
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
@@ -2723,7 +2733,7 @@
             }
             STACK_SHRINK(1);
             Py_DECREF(it);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
@@ -2737,7 +2747,7 @@
             if (r->index >= r->len) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
                 DISPATCH();
             }
             long value = (long)(r->start +
