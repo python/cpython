@@ -1555,6 +1555,38 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+.. function:: activate_stack_trampoline(backend, /)
+
+   Activate the stack profiler trampoline *backend*.
+   The only supported backend is ``"perf"``.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      * :ref:`perf_profiling`
+      * https://perf.wiki.kernel.org
+
+.. function:: deactivate_stack_trampoline()
+
+   Deactivate the current stack profiler trampoline backend.
+
+   If no stack profiler is activated, this function has no effect.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+.. function:: is_stack_trampoline_active()
+
+   Return ``True`` if a stack profiler trampoline is active.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the :term:`filesystem encoding and error handler` to 'mbcs' and

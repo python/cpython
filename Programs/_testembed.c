@@ -681,8 +681,6 @@ static int test_init_from_config(void)
 
     config.safe_path = 1;
 
-    config._isolated_interpreter = 1;
-
     putenv("PYTHONINTMAXSTRDIGITS=6666");
     config.int_max_str_digits = 31337;
 
@@ -1901,6 +1899,18 @@ static int test_unicode_id_init(void)
 }
 
 
+static int test_init_main_interpreter_settings(void)
+{
+    _testembed_Py_Initialize();
+    (void) PyRun_SimpleStringFlags(
+        "import _testinternalcapi, json; "
+        "print(json.dumps(_testinternalcapi.get_interp_settings(0)))",
+        0);
+    Py_Finalize();
+    return 0;
+}
+
+
 #ifndef MS_WINDOWS
 #include "test_frozenmain.h"      // M_test_frozenmain
 
@@ -2087,6 +2097,7 @@ static struct TestCase TestCases[] = {
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
+    {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
