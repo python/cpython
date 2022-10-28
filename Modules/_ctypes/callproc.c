@@ -1019,7 +1019,7 @@ void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
 
     PyErr_Fetch(&tp, &v, &tb);
     PyErr_NormalizeException(&tp, &v, &tb);
-    cls_str = PyUnicode_FromString(((PyTypeObject *)tp)->tp_name);
+    cls_str = PyType_GetName((PyTypeObject *)tp);
     if (cls_str) {
         PyUnicode_AppendAndDel(&s, cls_str);
         PyUnicode_AppendAndDel(&s, PyUnicode_FromString(": "));
