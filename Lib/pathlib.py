@@ -626,10 +626,13 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
-    def relative_to(self, *other):
+    def relative_to(self, *other, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
-        a subpath of the other path), raise ValueError.
+        related to the other path), raise ValueError.
+
+        The *walk_up* parameter controls whether `..` may be used to resolve
+        the path.
         """
         # For the purpose of this method, drive and root are considered
         # separate parts, i.e.:
@@ -644,20 +647,35 @@ class PurePath(object):
             abs_parts = [drv, root] + parts[1:]
         else:
             abs_parts = parts
-        to_drv, to_root, to_parts = self._parse_args(other)
-        if to_root:
-            to_abs_parts = [to_drv, to_root] + to_parts[1:]
+        other_drv, other_root, other_parts = self._parse_args(other)
+        if other_root:
+            other_abs_parts = [other_drv, other_root] + other_parts[1:]
         else:
-            to_abs_parts = to_parts
-        n = len(to_abs_parts)
-        cf = self._flavour.casefold_parts
-        if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
-            formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
-            raise ValueError("{!r} is not in the subpath of {!r}"
-                    " OR one path is relative and the other is absolute."
-                             .format(str(self), str(formatted)))
-        return self._from_parsed_parts('', root if n == 1 else '',
-                                       abs_parts[n:])
+            other_abs_parts = other_parts
+        num_parts = len(other_abs_parts)
+        casefold = self._flavour.casefold_parts
+        num_common_parts = 0
+        for part, other_part in zip(casefold(abs_parts), casefold(other_abs_parts)):
+            if part != other_part:
+                break
+            num_common_parts += 1
+        if walk_up:
+            failure = root != other_root
+            if drv or other_drv:
+                failure = casefold([drv]) != casefold([other_drv]) or (failure and num_parts > 1)
+            error_message = "{!r} is not on the same drive as {!r}"
+            up_parts = (num_parts-num_common_parts)*['..']
+        else:
+            failure = (root or drv) if num_parts == 0 else num_common_parts != num_parts
+            error_message = "{!r} is not in the subpath of {!r}"
+            up_parts = []
+        error_message += " OR one path is relative and the other is absolute."
+        if failure:
+            formatted = self._format_parsed_parts(other_drv, other_root, other_parts)
+            raise ValueError(error_message.format(str(self), str(formatted)))
+        path_parts = up_parts + abs_parts[num_common_parts:]
+        new_root = root if num_common_parts == 1 else ''
+        return self._from_parsed_parts('', new_root, path_parts)
 
     def is_relative_to(self, *other):
         """Return True if the path is relative to another path or False.
