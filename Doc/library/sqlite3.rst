@@ -1250,25 +1250,23 @@ Connection objects
 
    .. attribute:: autocommit
 
-      Get or set :pep:`249`-compliant transaction behaviour.
+      This attribute controls :pep:`249`-compliant transaction behaviour.
       *autocommit* has three allowed values:
 
-      * ``False``: :pep:`249`-compliant transaction behaviour,
-        implying that a transaction is always open.
+      * ``False``: select :pep:`249`-compliant transaction behaviour,
+        implying that :mod:`!sqlite3` ensures a transaction is always open.
         Use :meth:`~Connection.commit` and :meth:`~Connection.rollback` to
         close transactions.
-        Closing a transaction immediately opens a new one.
-        Transactions are opened by a ``BEGIN`` (``DEFERRED``) statement.
 
         This will be the default value of *autocommit* in Python 3.14.
 
       * ``True``: Use SQLite's `autocommit mode`_.
-        You are also free to :meth:`execute` custom transaction statements.
         :meth:`~Connection.commit` and :meth:`~Connection.rollback`
         have no effect in this mode.
 
       * :data:`DEPRECATED_TRANSACTION_CONTROL`: Pre-Python 3.12 compliant
         transaction control. See :attr:`isolation_level`.
+
         This is currently the default value of *autocommit*.
 
       Changing *autocommit* to ``False`` will open a new transaction.
@@ -1281,8 +1279,8 @@ Connection objects
 
          The :pep:`249`-compliant autocommit feature and the SQLite autocommit
          mode are two related, but different concepts.
-         Query the SQLite autocommit mode using the :attr:`in_transaction`
-         attribute.
+         Use :attr:`~Connection.in_transaction` to query the low-level SQLite
+         autocommit mode.
 
       .. versionadded:: 3.12
 
@@ -2338,8 +2336,10 @@ Explanation
 Transaction control via the ``autocommit`` attribute
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use the :attr:`~Connection.autocommit` attribute to select a transaction mode.
-This attribute can also be set when :func:`connecting <connect>`.
+Use the :attr:`~Connection.autocommit` attribute to select
+transaction control mode.
+This attribute should preferrably be set using the *autocommit* parameter
+of :func:`connect`.
 
 Currently, *autocommit* defaults to :const:`DEPRECATED_TRANSACTION_CONTROL`.
 This causes transaction control to be selected using the
@@ -2349,13 +2349,17 @@ See :ref:`sqlite3-deprecated-transaction-control` for more information.
 Starting in Python 3.14, *autocommit* will default to ``False``,
 which will imply :pep:`249`-compliant transaction control, meaning:
 
-* A transaction is always open.
-* Transactions should be committed using :meth:`~Connection.commit`.
-* Transactions should be rolled back using :meth:`~Connection.rollback`.
-* ``commit()`` and ``rollback()``
-  will implicitly open a new transaction immediately after execution.
-* An implicit rollback is performed if the database is closed with pending
-  changes.
+* :mod:`!sqlite3` ensures that a transaction is always open,
+  meaning :meth:`~Connection.commit` and :meth:`~Connection.rollback`
+  will implicitly open new transactions immediately after closing
+  the pending transaction.
+  :mod:`!sqlite3` uses ``BEGIN DEFERRED`` statements when opening transactions.
+* Transactions should be committed explicitly
+  using :meth:`!~Connection.commit`.
+* Transactions should be rolled back explicitly
+  using :meth:`!~Connection.rollback`.
+* An implicit rollback is performed if the database is closed with
+  pending changes.
 
 Set *autocommit* to ``True`` to enable SQLite's `autocommit mode`_.
 In this mode, :meth:`~Connection.commit()` and :meth:`~Connection.rollback()`
