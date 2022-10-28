@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import lexer as lx
-from eparser import EParser, contextual, Node, PointerType
+from eparser import EParser, contextual, Node, PointerType, ArrayType
 
 Token = lx.Token
 
@@ -83,6 +83,11 @@ class VarDecl(Node):
     type: Node
     name: Token
     init: Node | None
+
+
+@dataclass
+class InitializerList(Node):
+    exprs: list[Node]
 
 
 class SParser(EParser):
@@ -253,14 +258,29 @@ class SParser(EParser):
         while self.expect(lx.TIMES):
             stars += 1
         if name := self.expect(lx.IDENTIFIER):
+            while self.expect(lx.LBRACKET):
+                expr = self.expr()
+                if not expr:
+                    raise self.make_syntax_error("Expected dimension expression")
+                self.require(lx.RBRACKET)
+                type = ArrayType(type, expr)
+            for _ in range(stars):
+                type = PointerType(type)
             if self.expect(lx.EQUALS):
-                init = self.expr()
+                if self.expect(lx.LBRACE):
+                    exprs = []
+                    while expr := self.expr():
+                        exprs.append(expr)
+                        if not self.expect(lx.COMMA):
+                            break
+                    self.require(lx.RBRACE)
+                    init = InitializerList(exprs)
+                else:
+                    init = self.expr()
                 if not init:
                     raise self.make_syntax_error("Expected initialization expression")
             else:
                 init = None
-            for _ in range(stars):
-                type = PointerType(type)
             return VarDecl(type, name, init)
 
 

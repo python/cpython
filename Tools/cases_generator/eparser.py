@@ -80,6 +80,12 @@ class PointerType(Node):
 
 
 @dataclass
+class ArrayType(Node):
+    type: Node
+    size: Node | None
+
+
+@dataclass
 class NumericType(Node):
     number_type: list[Token]  # int, register unsigned long, char, float, etc.
 
@@ -297,7 +303,7 @@ class EParser(PLexer):
             return None
         while self.expect(lx.TIMES):
             type = PointerType(type)
-        # TODO: [] and ()
+        # TODO: [] and () -- ArrayType and FunctionType
         return type
 
     @contextual
