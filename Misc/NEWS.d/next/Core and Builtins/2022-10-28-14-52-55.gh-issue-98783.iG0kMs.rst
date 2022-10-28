@@ -1,0 +1,2 @@
+Fix multiple crashes when ``str`` subclasses where used instead of ``str``
+itself.
