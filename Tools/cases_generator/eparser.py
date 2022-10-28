@@ -13,7 +13,8 @@ Token = lx.Token
 
 
 T = TypeVar("T", bound="EParser")
-def contextual(func: Callable[[T], Node|None]) -> Callable[[T], Node|None]:
+S = TypeVar("S", bound="Node")
+def contextual(func: Callable[[T], S|None]) -> Callable[[T], S|None]:
     # Decorator to wrap grammar methods.
     # Resets position if `func` returns None.
     def contextual_wrapper(self: T) -> Node|None:
