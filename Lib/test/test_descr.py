@@ -3605,8 +3605,8 @@ order (MRO) for bases """
         class Some:
             pass
         Some.__module__ = StrSub('example')
-        self.assertEqual(repr(Some), type.__repr__(Some))  # should not crash
-        self.assertEqual(repr(Some()), Some().__repr__())  # should not crash
+        self.assertIsInstance(repr(Some), str)  # should not crash
+        self.assertIsInstance(repr(Some()), str)  # should not crash
 
     def test_keyword_arguments(self):
         # Testing keyword arguments to __init__, __call__...
