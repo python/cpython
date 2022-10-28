@@ -60,7 +60,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
         return 1;
     }
 
-    Py_ssize_tn = asdl_seq_LEN(mod->v.Module.body);
+    Py_ssize_t n = asdl_seq_LEN(mod->v.Module.body);
     if (n == 0) {
         return 1;
     }
