@@ -130,7 +130,7 @@ class Number(Node):
 
 @dataclass
 class String(Node):
-    tok: Token
+    tokens: list[Token]
 
 
 @dataclass
@@ -301,7 +301,11 @@ class EParser(PLexer):
         if token.kind == lx.NUMBER:
             return Number(token)
         if token.kind == lx.STRING:
-            return String(token)
+            strings: list[Token] = [token]
+            while token := self.expect(lx.STRING):
+                strings.append(token)
+            assert strings
+            return String(strings)
         if token.kind == lx.CHARACTER:
             return Number(token)  # NB!
         if token.kind == lx.IDENTIFIER:
