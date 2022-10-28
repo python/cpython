@@ -75,7 +75,7 @@ def always_exits(node: eparser.Node):
             if isinstance(term, eparser.Name):
                 text = term.tok.text
                 return (text.startswith("JUMP_TO_") or
-                        text == "DISPATCH_GOTO" or
+                        text.startswith("DISPATCH") or
                         text == "Py_UNREACHABLE")
 
     return False
