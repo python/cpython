@@ -1,3 +1,10 @@
+"""Object-oriented filesystem paths.
+
+This module provides classes to represent abstract paths and concrete
+paths with operations that have semantics appropriate for different
+operating systems.
+"""
+
 import fnmatch
 import functools
 import io
@@ -54,41 +61,16 @@ class _Flavour(object):
         self.join = self.sep.join
 
     def parse_parts(self, parts):
-        parsed = []
+        if not parts:
+            return '', '', []
         sep = self.sep
         altsep = self.altsep
-        drv = root = ''
-        it = reversed(parts)
-        for part in it:
-            if not part:
-                continue
-            if altsep:
-                part = part.replace(altsep, sep)
-            drv, root, rel = self.splitroot(part)
-            if sep in rel:
-                for x in reversed(rel.split(sep)):
-                    if x and x != '.':
-                        parsed.append(sys.intern(x))
-            else:
-                if rel and rel != '.':
-                    parsed.append(sys.intern(rel))
-            if drv or root:
-                if not drv:
-                    # If no drive is present, try to find one in the previous
-                    # parts. This makes the result of parsing e.g.
-                    # ("C:", "/", "a") reasonably intuitive.
-                    for part in it:
-                        if not part:
-                            continue
-                        if altsep:
-                            part = part.replace(altsep, sep)
-                        drv = self.splitroot(part)[0]
-                        if drv:
-                            break
-                break
-        if drv or root:
-            parsed.append(drv + root)
-        parsed.reverse()
+        path = self.pathmod.join(*parts)
+        if altsep:
+            path = path.replace(altsep, sep)
+        drv, root, rel = self.splitroot(path)
+        unfiltered_parsed = [drv + root] + rel.split(sep)
+        parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
 
     def join_parsed_parts(self, drv, root, parts, drv2, root2, parts2):
@@ -292,6 +274,8 @@ class _WildcardSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
+            # We must close the scandir() object before proceeding to
+            # avoid exhausting file descriptors when globbing deep trees.
             with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
@@ -323,6 +307,8 @@ class _RecursiveWildcardSelector(_Selector):
     def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
         try:
+            # We must close the scandir() object before proceeding to
+            # avoid exhausting file descriptors when globbing deep trees.
             with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
@@ -1200,23 +1186,9 @@ class Path(PurePath):
 
     def is_mount(self):
         """
-        Check if this path is a POSIX mount point
+        Check if this path is a mount point
         """
-        # Need to exist and be a dir
-        if not self.exists() or not self.is_dir():
-            return False
-
-        try:
-            parent_dev = self.parent.stat().st_dev
-        except OSError:
-            return False
-
-        dev = self.stat().st_dev
-        if dev != parent_dev:
-            return True
-        ino = self.stat().st_ino
-        parent_ino = self.parent.stat().st_ino
-        return ino == parent_ino
+        return self._flavour.pathmod.ismount(self)
 
     def is_symlink(self):
         """
@@ -1310,6 +1282,49 @@ class Path(PurePath):
 
         return self
 
+    def walk(self, top_down=True, on_error=None, follow_symlinks=False):
+        """Walk the directory tree from this directory, similar to os.walk()."""
+        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
+        return self._walk(top_down, on_error, follow_symlinks)
+
+    def _walk(self, top_down, on_error, follow_symlinks):
+        # We may not have read permission for self, in which case we can't
+        # get a list of the files the directory contains. os.walk
+        # always suppressed the exception then, rather than blow up for a
+        # minor reason when (say) a thousand readable directories are still
+        # left to visit. That logic is copied here.
+        try:
+            scandir_it = self._scandir()
+        except OSError as error:
+            if on_error is not None:
+                on_error(error)
+            return
+
+        with scandir_it:
+            dirnames = []
+            filenames = []
+            for entry in scandir_it:
+                try:
+                    is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+                except OSError:
+                    # Carried over from os.path.isdir().
+                    is_dir = False
+
+                if is_dir:
+                    dirnames.append(entry.name)
+                else:
+                    filenames.append(entry.name)
+
+        if top_down:
+            yield self, dirnames, filenames
+
+        for dirname in dirnames:
+            dirpath = self._make_child_relpath(dirname)
+            yield from dirpath._walk(top_down, on_error, follow_symlinks)
+
+        if not top_down:
+            yield self, dirnames, filenames
+
 
 class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.
@@ -1324,6 +1339,3 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def is_mount(self):
-        raise NotImplementedError("Path.is_mount() is unsupported on this system")

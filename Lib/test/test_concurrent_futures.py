@@ -485,7 +485,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
                 t = ThreadPoolExecutor()
                 t.submit(sleep_and_print, .1, "apple")
                 t.shutdown(wait=False, cancel_futures=True)
-            """.format(executor_type=self.executor_type.__name__))
+            """)
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
         self.assertFalse(err)
@@ -931,6 +931,33 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             for _ in range(50):
                 with futures.ProcessPoolExecutor(1, mp_context=mp.get_context('fork')) as workers:
                     workers.submit(tuple)
+
+    def test_executor_map_current_future_cancel(self):
+        stop_event = threading.Event()
+        log = []
+
+        def log_n_wait(ident):
+            log.append(f"{ident=} started")
+            try:
+                stop_event.wait()
+            finally:
+                log.append(f"{ident=} stopped")
+
+        with self.executor_type(max_workers=1) as pool:
+            # submit work to saturate the pool
+            fut = pool.submit(log_n_wait, ident="first")
+            try:
+                with contextlib.closing(
+                    pool.map(log_n_wait, ["second", "third"], timeout=0)
+                ) as gen:
+                    with self.assertRaises(TimeoutError):
+                        next(gen)
+            finally:
+                stop_event.set()
+            fut.result()
+        # ident='second' is cancelled as a result of raising a TimeoutError
+        # ident='third' is cancelled because it remained in the collection of futures
+        self.assertListEqual(log, ["ident='first' started", "ident='first' stopped"])
 
 
 class ProcessPoolExecutorTest(ExecutorTest):

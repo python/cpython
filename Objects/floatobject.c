@@ -162,11 +162,18 @@ float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
     double x;
     const char *end;
     const char *last = s + len;
-    /* strip space */
+    /* strip leading whitespace */
     while (s < last && Py_ISSPACE(*s)) {
         s++;
     }
+    if (s == last) {
+        PyErr_Format(PyExc_ValueError,
+                     "could not convert string to float: "
+                     "%R", obj);
+        return NULL;
+    }
 
+    /* strip trailing whitespace */
     while (s < last - 1 && Py_ISSPACE(last[-1])) {
         last--;
     }
@@ -1992,7 +1999,8 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&FloatInfoType,
+                                          &floatinfo_desc) < 0) {
             return _PyStatus_ERR("can't init float info type");
         }
     }
