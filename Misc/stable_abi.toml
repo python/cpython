@@ -2293,3 +2293,9 @@
     added = '3.12'
 [typedef.vectorcallfunc]
     added = '3.12'
+[function.PyObject_Vectorcall]
+    added = '3.12'
+[function.PyObject_VectorcallMethod]
+    added = '3.12'
+[macro.PY_VECTORCALL_ARGUMENTS_OFFSET]
+    added = '3.12'

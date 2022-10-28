@@ -58,6 +58,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_py_abc",
 "_pydecimal",
 "_pyio",
+"_pylong",
 "_queue",
 "_random",
 "_scproxy",

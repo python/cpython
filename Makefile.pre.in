@@ -426,6 +426,7 @@ PYTHON_OBJS=	\
 		Python/formatter_unicode.o \
 		Python/fileutils.o \
 		Python/suggestions.o \
+		Python/perf_trampoline.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
@@ -479,7 +480,6 @@ OBJECT_OBJS=	\
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
-		Objects/perf_trampoline.o \
 		@PERF_TRAMPOLINE_OBJ@
 
 DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
@@ -961,7 +961,7 @@ regen-test-frozenmain: $(BUILDPYTHON)
 .PHONY: regen-test-levenshtein
 regen-test-levenshtein:
 	# Regenerate Lib/test/levenshtein_examples.json
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_levenshtein_examples.py Lib/test/levenshtein_examples.json
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_levenshtein_examples.py $(srcdir)/Lib/test/levenshtein_examples.json
 
 .PHONY: regen-re
 regen-re: $(BUILDPYTHON)
@@ -2370,7 +2370,7 @@ config.status:	$(srcdir)/configure
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
-Objects/asm_trampoline.o: $(srcdir)/Objects/asm_trampoline.S
+Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 # Some make's put the object file in the current directory

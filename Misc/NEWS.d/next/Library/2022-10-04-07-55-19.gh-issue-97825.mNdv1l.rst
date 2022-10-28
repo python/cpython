@@ -1,1 +1,0 @@
-Fixes :exc:`AttributeError` when :meth:`subprocess.check_output` is used with argument ``input=None`` and either of the arguments *encoding* or *errors* are used.
