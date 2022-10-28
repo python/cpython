@@ -23,15 +23,18 @@ def contextual(func: Callable[[T], Node|None]) -> Callable[[T], Node|None]:
             self.setpos(begin)
             return
         end = self.getpos()
-        res.context = Context(self, begin, end)
+        res.context = Context(begin, end, self)
         return res
     return contextual_wrapper
 
 
 class Context(NamedTuple):
-    owner: PLexer
     begin: int
     end: int
+    owner: PLexer = None
+
+    def __repr__(self):
+        return f"Context({self.begin}, {self.end})"
 
 
 @dataclass
