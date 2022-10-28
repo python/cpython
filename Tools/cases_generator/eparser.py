@@ -201,6 +201,17 @@ INFIX_OPS = {
 }
 
 
+NUMERIC_TYPES = {
+    lx.UNSIGNED,
+    lx.SIGNED,
+    lx.CHAR,
+    lx.SHORT,
+    lx.INT,
+    lx.LONG,
+    lx.FLOAT,
+    lx.DOUBLE,
+}
+
 class EParser(PLexer):
 
     @contextual
@@ -293,12 +304,15 @@ class EParser(PLexer):
     def type_name(self):
         if not (token := self.peek()):
             return None
-        # TODO: unsigned, short, long
-        # TODO: const, volatile, extern, register, etc.
-        if token.kind in (lx.INT, lx.CHAR, lx.FLOAT, lx.DOUBLE):
+        # TODO: const, volatile, register, etc.
+        tokens = []
+        while token and token.kind in NUMERIC_TYPES:
+            tokens.append(token)
             self.next()
-            return NumericType([token])
-        if token.kind == lx.IDENTIFIER:
+            token = self.peek()
+        if tokens:
+            return NumericType(tokens)
+        if token and token.kind == lx.IDENTIFIER:
             # TODO: Check the list of known typedefs
             self.next()
             return NamedType(token)
