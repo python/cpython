@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import lexer as lx
-from eparser import EParser, contextual, Node
+from eparser import EParser, contextual, Node, PointerType
 
 Token = lx.Token
 
@@ -62,6 +62,11 @@ class NullStmt(Node):
 
 
 @dataclass
+class DeclStmt(Node):
+    decls: list[Node]
+
+
+@dataclass
 class VarDecl(Node):
     type: Node
     name: Token
@@ -107,7 +112,7 @@ class SParser(EParser):
             return GotoStmt(label)
         # TODO: switch, case, default, label
         if kind == lx.SEMI:
-            return self.empty_stmt()
+            return self.null_stmt()
         if decl := self.decl_stmt():
             return decl
         return self.expr_stmt()
@@ -126,8 +131,7 @@ class SParser(EParser):
     def for_stmt(self):
         if self.expect(lx.FOR):
             self.require(lx.LPAREN)
-            init = self.decl() or self.expr()
-            self.require(lx.SEMI)
+            init = self.decl_stmt() or self.expr_stmt() or self.null_stmt()
             cond = self.expr()
             self.require(lx.SEMI)
             next = self.expr()
@@ -169,7 +173,7 @@ class SParser(EParser):
             return WhileStmt(cond, body)
 
     @contextual
-    def empty_stmt(self):
+    def null_stmt(self):
         if self.expect(lx.SEMI):
             return NullStmt()
 
@@ -181,14 +185,21 @@ class SParser(EParser):
 
     @contextual
     def decl_stmt(self):
-        if decl := self.decl():
-            if self.expect(lx.SEMI):
-                return decl
-
-    @contextual
-    def decl(self):
         if not (type := self.type_name()):
             return None
+        decl = self.decl(type)
+        if not decl:
+            return None
+        decls = [decl]
+        while self.expect(lx.COMMA):
+            decl = self.decl(type)
+            if decl is None:
+                raise self.make_syntax_error("Expected declaration")
+            decls.append(decl)
+        self.require(lx.SEMI)
+        return DeclStmt(decls)
+
+    def decl(self, type: Node):
         stars = 0
         while self.expect(lx.TIMES):
             stars += 1
@@ -199,6 +210,8 @@ class SParser(EParser):
                     raise self.make_syntax_error("Expected initialization expression")
             else:
                 init = None
+            for _ in range(stars):
+                type = PointerType(type)
             return VarDecl(type, name, init)
 
 
