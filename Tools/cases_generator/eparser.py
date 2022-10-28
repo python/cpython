@@ -57,8 +57,13 @@ class InfixOp(Node):
 
 
 @dataclass
+class ConditionalMiddle(Node):
+    # Syntactically, '?expr:' is a binary operator
+    middle: Node
+
+@dataclass
 class PrefixOp(Node):
-    op: Token
+    op: Token | ConditionalMiddle
     expr: Node
 
 
@@ -200,12 +205,17 @@ class EParser(PLexer):
 
     @contextual
     def expr(self) -> Node | None:
-        # TODO: All the other forms of expressions
         things: list[Node|Token] = []  # TODO: list[tuple[Token|None, Node]]
         if not (term := self.full_term()):
             return None
         things.append(term)
-        while (op := self.infix_op()):
+        while (q := self.expect(lx.CONDOP)) or (op := self.infix_op()):
+            if q:
+                middle = self.full_term()
+                if not middle:
+                    raise self.make_syntax_error("Expected expression")
+                self.require(lx.COLON)
+                op = ConditionalMiddle(middle)
             things.append(op)
             if not (term := self.full_term()):
                 raise self.make_syntax_error(f"Expected term following {op}")
