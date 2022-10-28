@@ -1,2 +1,1 @@
-When building Python out-of-tree, don't crash during ``make
-regen-test-levenshtein``.
+Fix ``make regen-test-levenshtein`` for out-of-tree builds.
