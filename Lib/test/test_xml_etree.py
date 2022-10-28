@@ -3717,10 +3717,6 @@ class IOTest(unittest.TestCase):
 
     def test_write_to_filename_as_unicode(self):
         self.addCleanup(os_helper.unlink, TESTFN)
-        with open(TESTFN, 'w') as f:
-            encoding = f.encoding
-        os_helper.unlink(TESTFN)
-
         tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         tree.write(TESTFN, encoding='unicode')
         with open(TESTFN, 'rb') as f:
