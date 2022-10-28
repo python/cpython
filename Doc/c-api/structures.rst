@@ -497,11 +497,11 @@ Accessing attributes of extension types
 
       Optional C function to set or delete the attribute, if omitted the attribute is readonly.
 
-   .. c:member:: const char\* PyGetSetDef.doc
+   .. c:member:: const char* PyGetSetDef.doc
 
       optional docstring
 
-   .. c:member:: void \* PyGetSetDef.closure
+   .. c:member:: void* PyGetSetDef.closure
 
       Optional function pointer, providing additional data for getter and setter.
 
