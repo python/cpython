@@ -1288,30 +1288,6 @@ Connection objects
 
       .. versionadded:: 3.12
 
-   .. attribute:: isolation_level
-
-      This attribute controls the deprecated transaction handling
-      performed by :mod:`!sqlite3`.
-      If set to ``None``, transactions are never implicitly opened.
-      If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
-      corresponding to the underlying `SQLite transaction behaviour`_,
-      implicit transaction management is performed.
-
-      If not overridden by the *isolation_level* parameter of :func:`connect`,
-      the default is ``""``, which is an alias for ``"DEFERRED"``.
-
-      See :ref:`sqlite3-deprecated-transaction-control` for more details.
-
-   .. attribute:: in_transaction
-
-      This read-only attribute corresponds to the low-level SQLite
-      `autocommit mode`_.
-
-      ``True`` if a transaction is active (there are uncommitted changes),
-      ``False`` otherwise.
-
-      .. versionadded:: 3.2
-
    .. attribute:: in_transaction
 
       This read-only attribute corresponds to the low-level SQLite
