@@ -62,7 +62,7 @@ The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed
 through the :attr:`itemsize` attribute.
 
-The module defines the following items:
+The module defines the following item:
 
 
 .. data:: typecodes
