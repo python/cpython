@@ -961,7 +961,7 @@ regen-test-frozenmain: $(BUILDPYTHON)
 .PHONY: regen-test-levenshtein
 regen-test-levenshtein:
 	# Regenerate Lib/test/levenshtein_examples.json
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_levenshtein_examples.py Lib/test/levenshtein_examples.json
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_levenshtein_examples.py $(srcdir)/Lib/test/levenshtein_examples.json
 
 .PHONY: regen-re
 regen-re: $(BUILDPYTHON)
