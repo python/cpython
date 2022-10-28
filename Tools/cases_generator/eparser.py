@@ -86,6 +86,12 @@ class ArrayType(Node):
 
 
 @dataclass
+class FunctionType(Node):
+    type: Node
+    args: list[Node]
+
+
+@dataclass
 class NumericType(Node):
     number_type: list[Token]  # int, register unsigned long, char, float, etc.
 
@@ -208,6 +214,7 @@ INFIX_OPS = {
 
 
 NUMERIC_TYPES = {
+    lx.VOID,
     lx.UNSIGNED,
     lx.SIGNED,
     lx.CHAR,
@@ -303,7 +310,19 @@ class EParser(PLexer):
             return None
         while self.expect(lx.TIMES):
             type = PointerType(type)
-        # TODO: [] and () -- ArrayType and FunctionType
+        # TODO: []
+        while self.expect(lx.LPAREN):
+            if self.expect(lx.TIMES):
+                self.require(lx.RPAREN)
+                type = PointerType(type)
+                continue
+            args: list[Node] = []
+            while arg := self.type():
+                args.append(arg)
+                if not self.expect(lx.COMMA):
+                    break
+            self.require(lx.RPAREN)
+            type = FunctionType(type, args)
         return type
 
     @contextual
