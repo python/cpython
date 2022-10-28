@@ -529,7 +529,7 @@ help message:
   line-wrapping---\ :mod:`optparse` takes care of wrapping lines and making
   the help output look good.
 
-* options that take a value indicate this fact in their automatically-generated
+* options that take a value indicate this fact in their automatically generated
   help message, e.g. for the "mode" option::
 
      -m MODE, --mode=MODE
@@ -539,7 +539,7 @@ help message:
   :mod:`optparse` converts the destination variable name to uppercase and uses
   that for the meta-variable.  Sometimes, that's not what you want---for
   example, the ``--filename`` option explicitly sets ``metavar="FILE"``,
-  resulting in this automatically-generated option description::
+  resulting in this automatically generated option description::
 
      -f FILE, --filename=FILE
 
@@ -1449,7 +1449,7 @@ intelligently and add conflicting options to it::
    parser.add_option("-n", "--dry-run", ..., help="do no harm")
    parser.add_option("-n", "--noisy", ..., help="be noisy")
 
-At this point, :mod:`optparse` detects that a previously-added option is already
+At this point, :mod:`optparse` detects that a previously added option is already
 using the ``-n`` option string.  Since ``conflict_handler`` is ``"resolve"``,
 it resolves the situation by removing ``-n`` from the earlier option's list of
 option strings.  Now ``--dry-run`` is the only way for the user to activate
@@ -1460,7 +1460,7 @@ that option.  If the user asks for help, the help message will reflect that::
      ...
      -n, --noisy   be noisy
 
-It's possible to whittle away the option strings for a previously-added option
+It's possible to whittle away the option strings for a previously added option
 until there are none left, and the user has no way of invoking that option from
 the command-line.  In that case, :mod:`optparse` removes that option completely,
 so it doesn't show up in help text or anywhere else. Carrying on with our

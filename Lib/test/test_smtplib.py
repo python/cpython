@@ -24,9 +24,9 @@ from test.support import threading_helper
 from test.support import warnings_helper
 from unittest.mock import Mock
 
+from . import smtpd
 
 asyncore = warnings_helper.import_deprecated('asyncore')
-smtpd = warnings_helper.import_deprecated('smtpd')
 
 
 support.requires_working_socket(module=True)

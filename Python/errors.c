@@ -688,11 +688,7 @@ _PyErr_FormatFromCauseTstate(PyThreadState *tstate, PyObject *exception,
                              const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatVFromCause(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -703,11 +699,7 @@ _PyErr_FormatFromCause(PyObject *exception, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatVFromCause(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -983,9 +975,10 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 
 #endif /* MS_WINDOWS */
 
-PyObject *
-PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
-    PyObject *name, PyObject *path)
+static PyObject *
+_PyErr_SetImportErrorSubclassWithNameFrom(
+    PyObject *exception, PyObject *msg,
+    PyObject *name, PyObject *path, PyObject* from_name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int issubclass;
@@ -1013,6 +1006,10 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
     if (path == NULL) {
         path = Py_None;
     }
+    if (from_name == NULL) {
+        from_name = Py_None;
+    }
+
 
     kwargs = PyDict_New();
     if (kwargs == NULL) {
@@ -1022,6 +1019,9 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
         goto done;
     }
     if (PyDict_SetItemString(kwargs, "path", path) < 0) {
+        goto done;
+    }
+    if (PyDict_SetItemString(kwargs, "name_from", from_name) < 0) {
         goto done;
     }
 
@@ -1034,6 +1034,20 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
 done:
     Py_DECREF(kwargs);
     return NULL;
+}
+
+
+PyObject *
+PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
+    PyObject *name, PyObject *path)
+{
+    return _PyErr_SetImportErrorSubclassWithNameFrom(exception, msg, name, path, NULL);
+}
+
+PyObject *
+_PyErr_SetImportErrorWithNameFrom(PyObject *msg, PyObject *name, PyObject *path, PyObject* from_name)
+{
+    return _PyErr_SetImportErrorSubclassWithNameFrom(PyExc_ImportError, msg, name, path, from_name);
 }
 
 PyObject *
@@ -1096,11 +1110,7 @@ _PyErr_Format(PyThreadState *tstate, PyObject *exception,
               const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatV(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -1112,11 +1122,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatV(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -1245,8 +1251,8 @@ _PyErr_InitTypes(PyInterpreterState *interp)
     }
 
     if (UnraisableHookArgsType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&UnraisableHookArgsType,
-                                       &UnraisableHookArgs_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&UnraisableHookArgsType,
+                                          &UnraisableHookArgs_desc) < 0) {
             return _PyStatus_ERR("failed to initialize UnraisableHookArgs type");
         }
     }

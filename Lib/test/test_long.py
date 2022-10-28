@@ -1518,6 +1518,22 @@ class LongTest(unittest.TestCase):
         self.assertEqual(i, 1)
         self.assertEqual(getattr(i, 'foo', 'none'), 'bar')
 
+        class ValidBytes:
+            def __bytes__(self):
+                return b'\x01'
+        class InvalidBytes:
+            def __bytes__(self):
+                return 'abc'
+        class MissingBytes: ...
+        class RaisingBytes:
+            def __bytes__(self):
+                1 / 0
+
+        self.assertEqual(int.from_bytes(ValidBytes()), 1)
+        self.assertRaises(TypeError, int.from_bytes, InvalidBytes())
+        self.assertRaises(TypeError, int.from_bytes, MissingBytes())
+        self.assertRaises(ZeroDivisionError, int.from_bytes, RaisingBytes())
+
     @support.cpython_only
     def test_from_bytes_small(self):
         # bpo-46361

@@ -52,7 +52,7 @@ Notes:
 
    .. versionchanged:: 3.9
       ``array('u')`` now uses ``wchar_t`` as C type instead of deprecated
-      ``Py_UNICODE``. This change doesn't affect to its behavior because
+      ``Py_UNICODE``. This change doesn't affect its behavior because
       ``Py_UNICODE`` is alias of ``wchar_t`` since Python 3.3.
 
    .. deprecated-removed:: 3.3 4.0

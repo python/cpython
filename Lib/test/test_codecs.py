@@ -9,7 +9,6 @@ from unittest import mock
 
 from test import support
 from test.support import os_helper
-from test.support import warnings_helper
 
 try:
     import _testcapi
@@ -709,7 +708,8 @@ class UTF16Test(ReadTest, unittest.TestCase):
                                          "spamspam", self.spambe)
 
     def test_bug691291(self):
-        # Files are always opened in binary mode, even if no binary mode was
+        # If encoding is not None, then
+        # files are always opened in binary mode, even if no binary mode was
         # specified.  This means that no automatic conversion of '\n' is done
         # on reading and writing.
         s1 = 'Hello\r\nworld\r\n'

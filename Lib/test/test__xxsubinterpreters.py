@@ -45,12 +45,11 @@ def _wait_for_interp_to_run(interp, timeout=None):
     # run subinterpreter eariler than the main thread in multiprocess.
     if timeout is None:
         timeout = support.SHORT_TIMEOUT
-    start_time = time.monotonic()
-    deadline = start_time + timeout
-    while not interpreters.is_running(interp):
-        if time.monotonic() > deadline:
-            raise RuntimeError('interp is not running')
-        time.sleep(0.010)
+    for _ in support.sleeping_retry(timeout, error=False):
+        if interpreters.is_running(interp):
+            break
+    else:
+        raise RuntimeError('interp is not running')
 
 
 @contextlib.contextmanager

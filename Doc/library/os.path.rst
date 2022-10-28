@@ -16,7 +16,7 @@ files see :func:`open`, and for accessing the filesystem see the :mod:`os`
 module. The path parameters can be passed as strings, or bytes, or any object
 implementing the :class:`os.PathLike` protocol.
 
-Unlike a unix shell, Python does not do any *automatic* path expansions.
+Unlike a Unix shell, Python does not do any *automatic* path expansions.
 Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
 explicitly when an application desires shell-like path expansion.  (See also
 the :mod:`glob` module.)
@@ -335,7 +335,7 @@ the :mod:`glob` module.)
 
   .. note::
       On POSIX systems, in accordance with `IEEE Std 1003.1 2013 Edition; 4.13
-      Pathname Resolution <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
+      Pathname Resolution <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
       if a pathname begins with exactly two slashes, the first component
       following the leading characters may be interpreted in an implementation-defined
       manner, although more than two leading characters shall be treated as a
@@ -469,7 +469,7 @@ the :mod:`glob` module.)
       ("c:", "/dir")
 
    If the path contains a UNC path, drive will contain the host name
-   and share, up to but not including the fourth separator::
+   and share::
 
       >>> splitdrive("//host/computer/dir")
       ("//host/computer", "/dir")

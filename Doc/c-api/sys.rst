@@ -21,9 +21,11 @@ Operating System Utilities
 
    Return true (nonzero) if the standard I/O file *fp* with name *filename* is
    deemed interactive.  This is the case for files for which ``isatty(fileno(fp))``
-   is true.  If the global flag :c:data:`Py_InteractiveFlag` is true, this function
+   is true.  If the :c:member:`PyConfig.interactive` is non-zero, this function
    also returns true if the *filename* pointer is ``NULL`` or if the name is equal to
    one of the strings ``'<stdin>'`` or ``'???'``.
+
+   This function must not be called before Python is initialized.
 
 
 .. c:function:: void PyOS_BeforeFork()
@@ -105,7 +107,7 @@ Operating System Utilities
 
    Return the current signal handler for signal *i*.  This is a thin wrapper around
    either :c:func:`sigaction` or :c:func:`signal`.  Do not call those functions
-   directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:type:`void
+   directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:expr:`void
    (\*)(int)`.
 
 
@@ -114,7 +116,7 @@ Operating System Utilities
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
    This is a thin wrapper around either :c:func:`sigaction` or :c:func:`signal`.  Do
    not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
-   alias for :c:type:`void (\*)(int)`.
+   alias for :c:expr:`void (\*)(int)`.
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
@@ -165,7 +167,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
+      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero;
 
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
@@ -207,7 +209,7 @@ Operating System Utilities
 
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
-      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero.
+      :c:member:`PyConfig.legacy_windows_fs_encoding` is zero.
 
 
 .. _systemfunctions:
@@ -377,7 +379,7 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
-   The hook function is of type :c:type:`int (*)(const char *event, PyObject
+   The hook function is of type :c:expr:`int (*)(const char *event, PyObject
    *args, void *userData)`, where *args* is guaranteed to be a
    :c:type:`PyTupleObject`. The hook function is always called with the GIL
    held by the Python interpreter that raised the event.

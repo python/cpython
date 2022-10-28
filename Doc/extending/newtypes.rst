@@ -175,7 +175,7 @@ example::
    }
 
 If no :c:member:`~PyTypeObject.tp_repr` handler is specified, the interpreter will supply a
-representation that uses the type's :c:member:`~PyTypeObject.tp_name` and a uniquely-identifying
+representation that uses the type's :c:member:`~PyTypeObject.tp_name` and a uniquely identifying
 value for the object.
 
 The :c:member:`~PyTypeObject.tp_str` handler is to :func:`str` what the :c:member:`~PyTypeObject.tp_repr` handler
@@ -207,8 +207,8 @@ a special case, for which the new value passed to the handler is ``NULL``.
 
 Python supports two pairs of attribute handlers; a type that supports attributes
 only needs to implement the functions for one pair.  The difference is that one
-pair takes the name of the attribute as a :c:type:`char\*`, while the other
-accepts a :c:type:`PyObject\*`.  Each type can use whichever pair makes more
+pair takes the name of the attribute as a :c:expr:`char\*`, while the other
+accepts a :c:expr:`PyObject*`.  Each type can use whichever pair makes more
 sense for the implementation's convenience. ::
 
    getattrfunc  tp_getattr;        /* char * version */
@@ -219,7 +219,7 @@ sense for the implementation's convenience. ::
 
 If accessing attributes of an object is always a simple operation (this will be
 explained shortly), there are generic implementations which can be used to
-provide the :c:type:`PyObject\*` version of the attribute management functions.
+provide the :c:expr:`PyObject*` version of the attribute management functions.
 The actual need for type-specific attribute handlers almost completely
 disappeared starting with Python 2.2, though there are many examples which have
 not been updated to use some of the new generic mechanism that is available.
@@ -339,9 +339,9 @@ of ``NULL`` is required.
 Type-specific Attribute Management
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For simplicity, only the :c:type:`char\*` version will be demonstrated here; the
-type of the name parameter is the only difference between the :c:type:`char\*`
-and :c:type:`PyObject\*` flavors of the interface. This example effectively does
+For simplicity, only the :c:expr:`char\*` version will be demonstrated here; the
+type of the name parameter is the only difference between the :c:expr:`char\*`
+and :c:expr:`PyObject*` flavors of the interface. This example effectively does
 the same thing as the generic example above, but does not use the generic
 support added in Python 2.2.  It explains how the handler functions are
 called, so that if you do need to extend their functionality, you'll understand
@@ -570,43 +570,28 @@ performance-critical objects (such as numbers).
 .. seealso::
    Documentation for the :mod:`weakref` module.
 
-For an object to be weakly referencable, the extension type must do two things:
+For an object to be weakly referencable, the extension type must set the
+``Py_TPFLAGS_MANAGED_WEAKREF`` bit of the :c:member:`~PyTypeObject.tp_flags`
+field. The legacy :c:member:`~PyTypeObject.tp_weaklistoffset` field should
+be left as zero.
 
-#. Include a :c:type:`PyObject\*` field in the C object structure dedicated to
-   the weak reference mechanism.  The object's constructor should leave it
-   ``NULL`` (which is automatic when using the default
-   :c:member:`~PyTypeObject.tp_alloc`).
-
-#. Set the :c:member:`~PyTypeObject.tp_weaklistoffset` type member
-   to the offset of the aforementioned field in the C object structure,
-   so that the interpreter knows how to access and modify that field.
-
-Concretely, here is how a trivial object structure would be augmented
-with the required field::
-
-   typedef struct {
-       PyObject_HEAD
-       PyObject *weakreflist;  /* List of weak references */
-   } TrivialObject;
-
-And the corresponding member in the statically-declared type object::
+Concretely, here is how the statically declared type object would look::
 
    static PyTypeObject TrivialType = {
        PyVarObject_HEAD_INIT(NULL, 0)
        /* ... other members omitted for brevity ... */
-       .tp_weaklistoffset = offsetof(TrivialObject, weakreflist),
+       .tp_flags = Py_TPFLAGS_MANAGED_WEAKREF | ...,
    };
 
+
 The only further addition is that ``tp_dealloc`` needs to clear any weak
-references (by calling :c:func:`PyObject_ClearWeakRefs`) if the field is
-non-``NULL``::
+references (by calling :c:func:`PyObject_ClearWeakRefs`)::
 
    static void
    Trivial_dealloc(TrivialObject *self)
    {
        /* Clear weakrefs first before calling any destructors */
-       if (self->weakreflist != NULL)
-           PyObject_ClearWeakRefs((PyObject *) self);
+       PyObject_ClearWeakRefs((PyObject *) self);
        /* ... remainder of destruction code omitted for brevity ... */
        Py_TYPE(self)->tp_free((PyObject *) self);
    }

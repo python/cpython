@@ -48,7 +48,7 @@ module _imp
 PyStatus
 _PyImportZip_Init(PyThreadState *tstate)
 {
-    PyObject *path_hooks, *zipimport;
+    PyObject *path_hooks;
     int err = 0;
 
     path_hooks = PySys_GetObject("path_hooks");
@@ -63,32 +63,22 @@ _PyImportZip_Init(PyThreadState *tstate)
         PySys_WriteStderr("# installing zipimport hook\n");
     }
 
-    zipimport = PyImport_ImportModule("zipimport");
-    if (zipimport == NULL) {
-        _PyErr_Clear(tstate); /* No zip import module -- okay */
+    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
+    if (zipimporter == NULL) {
+        _PyErr_Clear(tstate); /* No zipimporter object -- okay */
         if (verbose) {
-            PySys_WriteStderr("# can't import zipimport\n");
+            PySys_WriteStderr("# can't import zipimport.zipimporter\n");
         }
     }
     else {
-        PyObject *zipimporter = PyObject_GetAttr(zipimport, &_Py_ID(zipimporter));
-        Py_DECREF(zipimport);
-        if (zipimporter == NULL) {
-            _PyErr_Clear(tstate); /* No zipimporter object -- okay */
-            if (verbose) {
-                PySys_WriteStderr("# can't import zipimport.zipimporter\n");
-            }
+        /* sys.path_hooks.insert(0, zipimporter) */
+        err = PyList_Insert(path_hooks, 0, zipimporter);
+        Py_DECREF(zipimporter);
+        if (err < 0) {
+            goto error;
         }
-        else {
-            /* sys.path_hooks.insert(0, zipimporter) */
-            err = PyList_Insert(path_hooks, 0, zipimporter);
-            Py_DECREF(zipimporter);
-            if (err < 0) {
-                goto error;
-            }
-            if (verbose) {
-                PySys_WriteStderr("# installed zipimport hook\n");
-            }
+        if (verbose) {
+            PySys_WriteStderr("# installed zipimport hook\n");
         }
     }
 
@@ -1031,6 +1021,14 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "name must be string, not %.200s",
+                     Py_TYPE(name)->tp_name);
+        Py_DECREF(name);
+        return NULL;
+    }
+
     PyObject *mod = create_builtin(tstate, name, spec);
     Py_DECREF(name);
     return mod;
@@ -1583,7 +1581,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                 goto error;
             }
             else if (equal == 0) {
-                if (PyErr_WarnEx(PyExc_ImportWarning,
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
                         "__package__ != __spec__.parent", 1) < 0) {
                     goto error;
                 }
@@ -2630,6 +2628,37 @@ PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
     newtab[0].initfunc = initfunc;
 
     return PyImport_ExtendInittab(newtab);
+}
+
+
+PyObject *
+_PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
+{
+    PyObject *mod = PyImport_Import(modname);
+    if (mod == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyObject_GetAttr(mod, attrname);
+    Py_DECREF(mod);
+    return result;
+}
+
+PyObject *
+_PyImport_GetModuleAttrString(const char *modname, const char *attrname)
+{
+    PyObject *pmodname = PyUnicode_FromString(modname);
+    if (pmodname == NULL) {
+        return NULL;
+    }
+    PyObject *pattrname = PyUnicode_FromString(attrname);
+    if (pattrname == NULL) {
+        Py_DECREF(pmodname);
+        return NULL;
+    }
+    PyObject *result = _PyImport_GetModuleAttr(pmodname, pattrname);
+    Py_DECREF(pattrname);
+    Py_DECREF(pmodname);
+    return result;
 }
 
 #ifdef __cplusplus

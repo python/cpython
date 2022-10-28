@@ -36,10 +36,11 @@ typedef struct _PyPathConfig {
     wchar_t *program_name;
     /* Set by Py_SetPythonHome() or PYTHONHOME environment variable */
     wchar_t *home;
+    int _is_python_build;
 } _PyPathConfig;
 
 #  define _PyPathConfig_INIT \
-      {.module_search_path = NULL}
+      {.module_search_path = NULL, ._is_python_build = 0}
 
 
 _PyPathConfig _Py_path_config = _PyPathConfig_INIT;
@@ -72,6 +73,7 @@ _PyPathConfig_ClearGlobal(void)
     CLEAR(calculated_module_search_path);
     CLEAR(program_name);
     CLEAR(home);
+    _Py_path_config._is_python_build = 0;
 
 #undef CLEAR
 
@@ -99,15 +101,25 @@ _PyPathConfig_ReadGlobal(PyConfig *config)
         } \
     } while (0)
 
+#define COPY_INT(ATTR) \
+    do { \
+        assert(_Py_path_config.ATTR >= 0); \
+        if ((_Py_path_config.ATTR >= 0) && (config->ATTR <= 0)) { \
+            config->ATTR = _Py_path_config.ATTR; \
+        } \
+    } while (0)
+
     COPY(prefix);
     COPY(exec_prefix);
     COPY(stdlib_dir);
     COPY(program_name);
     COPY(home);
     COPY2(executable, program_full_path);
+    COPY_INT(_is_python_build);
     // module_search_path must be initialised - not read
 #undef COPY
 #undef COPY2
+#undef COPY_INT
 
 done:
     return status;
@@ -137,14 +149,23 @@ _PyPathConfig_UpdateGlobal(const PyConfig *config)
         } \
     } while (0)
 
+#define COPY_INT(ATTR) \
+    do { \
+        if (config->ATTR > 0) { \
+            _Py_path_config.ATTR = config->ATTR; \
+        } \
+    } while (0)
+
     COPY(prefix);
     COPY(exec_prefix);
     COPY(stdlib_dir);
     COPY(program_name);
     COPY(home);
     COPY2(program_full_path, executable);
+    COPY_INT(_is_python_build);
 #undef COPY
 #undef COPY2
+#undef COPY_INT
 
     PyMem_RawFree(_Py_path_config.module_search_path);
     _Py_path_config.module_search_path = NULL;
