@@ -880,7 +880,6 @@ _useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangL
 
     int commandLength = 0;
     int inQuote = 0;
-    int afterSlash = 0;
 
     if (!shebang || !shebangLength) {
         return 0;
@@ -893,24 +892,10 @@ _useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangL
             commandLength = i;
             break;
         } else if (c == L'"') {
-            if (!afterSlash) {
-                // non-escaped quote. either way, we don't add it to the path
-                inQuote = !inQuote;
-            }
-            afterSlash = 0;
+            inQuote = !inQuote;
         } else if (c == L'/' || c == L'\\') {
-            if (afterSlash) {
-                // escaped slash
-                *pC++ = L'\\';
-                afterSlash = 0;
-            } else {
-                afterSlash = 1;
-            }
+            *pC++ = L'\\';
         } else {
-            if (afterSlash) {
-                *pC++ = L'\\';
-                afterSlash = 0;
-            }
             *pC++ = c;
         }
     }

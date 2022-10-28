@@ -650,10 +650,17 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             data["stdout"].strip(),
         )
 
-    def test_literal_shebang_quoted_escape(self):
-        with self.script(f'#! "some random\\\\\\" app\\\\\\\\" -witharg') as script:
+        with self.script(f'#! some" random "app -witharg') as script:
             data = self.run_py([script])
         self.assertEqual(
-            f'"{script.parent}\\some random\\ app\\\\" -witharg {script}',
+            f'"{script.parent}\\some random app" -witharg {script}',
+            data["stdout"].strip(),
+        )
+
+    def test_literal_shebang_quoted_escape(self):
+        with self.script(f'#! some\\" random "app -witharg') as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f'"{script.parent}\\some\\ random app" -witharg {script}',
             data["stdout"].strip(),
         )
