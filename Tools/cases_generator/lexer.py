@@ -85,7 +85,7 @@ id_re = r'[a-zA-Z_][0-9a-zA-Z_]*'
 IDENTIFIER = 'IDENTIFIER'
 
 suffix = r'([uU]?[lL]?[lL]?)'
-octal = '0[0-7]*'+suffix
+octal = r'0[0-7]+' + suffix
 hex = r'0[xX][0-9a-fA-F]+'
 decimal_digits = r'(0|[1-9][0-9]*)'
 decimal = decimal_digits + suffix
@@ -95,7 +95,7 @@ exponent = r"""([eE][-+]?[0-9]+)"""
 fraction = r"""([0-9]*\.[0-9]+)|([0-9]+\.)"""
 float = '(((('+fraction+')'+exponent+'?)|([0-9]+'+exponent+'))[FfLl]?)'
 
-number_re = choice(float, octal, hex, decimal)
+number_re = choice(octal, hex, float, decimal)
 NUMBER = 'NUMBER'
 
 simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
@@ -239,7 +239,10 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
 if __name__ == "__main__":
     import sys
     filename = sys.argv[1]
-    src = open(filename).read()
+    if filename == "-c":
+        src = sys.argv[2]
+    else:
+        src = open(filename).read()
     # print(to_text(tokenize(src)))
     for tkn in tokenize(src, filename=filename):
         print(tkn)
