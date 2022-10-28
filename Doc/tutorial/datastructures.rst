@@ -106,7 +106,7 @@ An example that uses most of the list methods::
     0
     >>> fruits.index('banana')
     3
-    >>> fruits.index('banana', 4)  # Find next banana starting a position 4
+    >>> fruits.index('banana', 4)  # Find next banana starting at position 4
     6
     >>> fruits.reverse()
     >>> fruits

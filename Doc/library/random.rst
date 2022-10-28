@@ -130,9 +130,9 @@ Functions for integers
 
    The positional argument pattern matches the :func:`range` function.
 
-   Keyword arguments should not be used because they can interpreted
-   in unexpected ways. For example ``range(start=100)`` is interpreted
-   as ``range(0, 100, 1)``.
+   Keyword arguments should not be used because they can be interpreted
+   in unexpected ways. For example ``randrange(start=100)`` is interpreted
+   as ``randrange(0, 100, 1)``.
 
    .. versionchanged:: 3.2
       :meth:`randrange` is more sophisticated about producing equally distributed
@@ -152,7 +152,7 @@ Functions for integers
 .. function:: getrandbits(k)
 
    Returns a non-negative Python integer with *k* random bits. This method
-   is supplied with the MersenneTwister generator and some other generators
+   is supplied with the Mersenne Twister generator and some other generators
    may also provide it as an optional part of the API. When available,
    :meth:`getrandbits` enables :meth:`randrange` to handle arbitrarily large
    ranges.
@@ -566,21 +566,52 @@ Simulation of arrival times and service deliveries for a multiserver queue::
    including simulation, sampling, shuffling, and cross-validation.
 
    `Economics Simulation
-   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
+   <https://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
    a simulation of a marketplace by
-   `Peter Norvig <http://norvig.com/bio.html>`_ that shows effective
+   `Peter Norvig <https://norvig.com/bio.html>`_ that shows effective
    use of many of the tools and distributions provided by this module
    (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
 
    `A Concrete Introduction to Probability (using Python)
-   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
-   a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
+   <https://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
+   a tutorial by `Peter Norvig <https://norvig.com/bio.html>`_ covering
    the basics of probability theory, how to write simulations, and
    how to perform data analysis using Python.
 
 
 Recipes
 -------
+
+These recipes show how to efficiently make random selections
+from the combinatoric iterators in the :mod:`itertools` module:
+
+.. testcode::
+   import random
+
+   def random_product(*args, repeat=1):
+       "Random selection from itertools.product(*args, **kwds)"
+       pools = [tuple(pool) for pool in args] * repeat
+       return tuple(map(random.choice, pools))
+
+   def random_permutation(iterable, r=None):
+       "Random selection from itertools.permutations(iterable, r)"
+       pool = tuple(iterable)
+       r = len(pool) if r is None else r
+       return tuple(random.sample(pool, r))
+
+   def random_combination(iterable, r):
+       "Random selection from itertools.combinations(iterable, r)"
+       pool = tuple(iterable)
+       n = len(pool)
+       indices = sorted(random.sample(range(n), r))
+       return tuple(pool[i] for i in indices)
+
+   def random_combination_with_replacement(iterable, r):
+       "Random selection from itertools.combinations_with_replacement(iterable, r)"
+       pool = tuple(iterable)
+       n = len(pool)
+       indices = sorted(random.choices(range(n), k=r))
+       return tuple(pool[i] for i in indices)
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly

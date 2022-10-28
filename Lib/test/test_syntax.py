@@ -334,7 +334,12 @@ From ast_for_arguments():
 >>> def f(x, y=1, z):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: non-default argument follows default argument
+SyntaxError: parameter without a default follows parameter with a default
+
+>>> def f(x, /, y=1, z):
+...     pass
+Traceback (most recent call last):
+SyntaxError: parameter without a default follows parameter with a default
 
 >>> def f(x, None):
 ...     pass
@@ -554,6 +559,14 @@ SyntaxError: expected default value expression
 >>> lambda a,d=,c: None
 Traceback (most recent call last):
 SyntaxError: expected default value expression
+
+>>> lambda a,d=3,c: None
+Traceback (most recent call last):
+SyntaxError: parameter without a default follows parameter with a default
+
+>>> lambda a,/,d=3,c: None
+Traceback (most recent call last):
+SyntaxError: parameter without a default follows parameter with a default
 
 >>> import ast; ast.parse('''
 ... def f(

@@ -16,7 +16,7 @@ files see :func:`open`, and for accessing the filesystem see the :mod:`os`
 module. The path parameters can be passed as strings, or bytes, or any object
 implementing the :class:`os.PathLike` protocol.
 
-Unlike a unix shell, Python does not do any *automatic* path expansions.
+Unlike a Unix shell, Python does not do any *automatic* path expansions.
 Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
 explicitly when an application desires shell-like path expansion.  (See also
 the :mod:`glob` module.)

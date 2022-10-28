@@ -49,6 +49,9 @@ The :mod:`functools` module defines the following functions:
         >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
         479001600
 
+   The cache is threadsafe so the wrapped function can be used in multiple
+   threads.
+
    .. versionadded:: 3.9
 
 
@@ -140,11 +143,14 @@ The :mod:`functools` module defines the following functions:
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
 
+   The cache is threadsafe so the wrapped function can be used in multiple
+   threads.
+
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be hashable.
 
    Distinct argument patterns may be considered to be distinct calls with
-   separate cache entries.  For example, `f(a=1, b=2)` and `f(b=2, a=1)`
+   separate cache entries.  For example, ``f(a=1, b=2)`` and ``f(b=2, a=1)``
    differ in their keyword argument order and may have two separate cache
    entries.
 
@@ -190,6 +196,9 @@ The :mod:`functools` module defines the following functions:
 
    The cache keeps references to the arguments and return values until they age
    out of the cache or until the cache is cleared.
+
+   If a method is cached, the ``self`` instance argument is included in the
+   cache.  See :ref:`faq-cache-method-calls`
 
    An `LRU (least recently used) cache
    <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_

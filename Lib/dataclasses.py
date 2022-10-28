@@ -320,15 +320,25 @@ class _DataclassParams:
                  'order',
                  'unsafe_hash',
                  'frozen',
+                 'match_args',
+                 'kw_only',
+                 'slots',
+                 'weakref_slot',
                  )
 
-    def __init__(self, init, repr, eq, order, unsafe_hash, frozen):
+    def __init__(self,
+                 init, repr, eq, order, unsafe_hash, frozen,
+                 match_args, kw_only, slots, weakref_slot):
         self.init = init
         self.repr = repr
         self.eq = eq
         self.order = order
         self.unsafe_hash = unsafe_hash
         self.frozen = frozen
+        self.match_args = match_args
+        self.kw_only = kw_only
+        self.slots = slots
+        self.weakref_slot = weakref_slot
 
     def __repr__(self):
         return ('_DataclassParams('
@@ -337,7 +347,11 @@ class _DataclassParams:
                 f'eq={self.eq!r},'
                 f'order={self.order!r},'
                 f'unsafe_hash={self.unsafe_hash!r},'
-                f'frozen={self.frozen!r}'
+                f'frozen={self.frozen!r},'
+                f'match_args={self.match_args!r},'
+                f'kw_only={self.kw_only!r},'
+                f'slots={self.slots!r},'
+                f'weakref_slot={self.weakref_slot!r}'
                 ')')
 
 
@@ -429,6 +443,10 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # Compute the text of the entire function.
     txt = f' def {name}({args}){return_annotation}:\n{body}'
 
+    # Free variables in exec are resolved in the global namespace.
+    # The global namespace we have is user-provided, so we can't modify it for
+    # our purposes. So we put the things we need into locals and introduce a
+    # scope to allow the function we're creating to close over them.
     local_vars = ', '.join(locals.keys())
     txt = f"def __create_fn__({local_vars}):\n{txt}\n return {name}"
     ns = {}
@@ -901,7 +919,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         globals = {}
 
     setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order,
-                                           unsafe_hash, frozen))
+                                           unsafe_hash, frozen,
+                                           match_args, kw_only,
+                                           slots, weakref_slot))
 
     # Find our base classes in reverse MRO order, and exclude
     # ourselves.  In reversed order so that more derived classes
@@ -920,10 +940,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             if getattr(b, _PARAMS).frozen:
                 any_frozen_base = True
 
-    # Annotations that are defined in this class (not in base
-    # classes).  If __annotations__ isn't present, then this class
-    # adds no new annotations.  We use this to compute fields that are
-    # added by this class.
+    # Annotations defined specifically in this class (not in base classes).
     #
     # Fields are found from cls_annotations, which is guaranteed to be
     # ordered.  Default values are from class attributes, if a field
@@ -932,7 +949,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # actual default value.  Pseudo-fields ClassVars and InitVars are
     # included, despite the fact that they're not real fields.  That's
     # dealt with later.
-    cls_annotations = cls.__dict__.get('__annotations__', {})
+    cls_annotations = inspect.get_annotations(cls)
 
     # Now find fields in our class.  While doing so, validate some
     # things, and set the default values (as class attributes) where
@@ -1308,6 +1325,14 @@ def _asdict_inner(obj, dict_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
+    elif isinstance(obj, dict) and hasattr(type(obj), 'default_factory'):
+        # obj is a defaultdict, which has a different constructor from
+        # dict as it requires the default_factory as its first arg.
+        # https://bugs.python.org/issue35540
+        result = type(obj)(getattr(obj, 'default_factory'))
+        for k, v in obj.items():
+            result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
+        return result
     elif isinstance(obj, dict):
         return type(obj)((_asdict_inner(k, dict_factory),
                           _asdict_inner(v, dict_factory))

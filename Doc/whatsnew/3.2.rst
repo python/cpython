@@ -973,7 +973,7 @@ sites do not finish before midnight, the barrier times-out and the ballots are
 sealed and deposited in a queue for later handling.
 
 See `Barrier Synchronization Patterns
-<http://osl.cs.illinois.edu/media/papers/karmani-2009-barrier_synchronization_pattern.pdf>`_
+<https://osl.cs.illinois.edu/media/papers/karmani-2009-barrier_synchronization_pattern.pdf>`_
 for more examples of how barriers can be used in parallel computing.  Also, there is
 a simple but thorough explanation of barriers in `The Little Book of Semaphores
 <https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf>`_, *section 3.6*.
@@ -1746,7 +1746,7 @@ names.
   instead of module names for running specific tests (:issue:`10620`).  The new
   test discovery can find tests within packages, locating any test importable
   from the top-level directory.  The top-level directory can be specified with
-  the `-t` option, a pattern for matching files with ``-p``, and a directory to
+  the ``-t`` option, a pattern for matching files with ``-p``, and a directory to
   start discovery with ``-s``:
 
   .. code-block:: shell-session
@@ -1857,7 +1857,7 @@ asyncore
 
 :class:`asyncore.dispatcher` now provides a
 :meth:`~asyncore.dispatcher.handle_accepted()` method
-returning a `(sock, addr)` pair which is called when a connection has actually
+returning a ``(sock, addr)`` pair which is called when a connection has actually
 been established with a new remote endpoint. This is supposed to be used as a
 replacement for old :meth:`~asyncore.dispatcher.handle_accept()` and avoids
 the user  to call :meth:`~asyncore.dispatcher.accept()` directly.
@@ -2418,7 +2418,7 @@ Unicode
 =======
 
 Python has been updated to `Unicode 6.0.0
-<http://unicode.org/versions/Unicode6.0.0/>`_.  The update to the standard adds
+<https://unicode.org/versions/Unicode6.0.0/>`_.  The update to the standard adds
 over 2,000 new characters including `emoji <https://en.wikipedia.org/wiki/Emoji>`_
 symbols which are important for mobile phones.
 
@@ -2426,7 +2426,7 @@ In addition, the updated standard has altered the character properties for two
 Kannada characters (U+0CF1, U+0CF2) and one New Tai Lue numeric character
 (U+19DA), making the former eligible for use in identifiers while disqualifying
 the latter.  For more information, see `Unicode Character Database Changes
-<http://www.unicode.org/versions/Unicode6.0.0/#Database_Changes>`_.
+<https://www.unicode.org/versions/Unicode6.0.0/#Database_Changes>`_.
 
 
 Codecs

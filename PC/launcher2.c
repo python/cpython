@@ -393,12 +393,6 @@ typedef struct {
     // only currently possible high priority environment is an active virtual
     // environment
     bool lowPriorityTag;
-    // if true, we had an old-style tag with '-64' suffix, and so do not
-    // want to match tags like '3.x-32'
-    bool exclude32Bit;
-    // if true, we had an old-style tag with '-32' suffix, and so *only*
-    // want to match tags like '3.x-32'
-    bool only32Bit;
     // if true, allow PEP 514 lookup to override 'executable'
     bool allowExecutableOverride;
     // if true, allow a nearby pyvenv.cfg to locate the executable
@@ -483,8 +477,6 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG_2(tag, tagLength);
     DEBUG_BOOL(oldStyleTag);
     DEBUG_BOOL(lowPriorityTag);
-    DEBUG_BOOL(exclude32Bit);
-    DEBUG_BOOL(only32Bit);
     DEBUG_BOOL(allowDefaults);
     DEBUG_BOOL(allowExecutableOverride);
     DEBUG_BOOL(windowed);
@@ -649,17 +641,6 @@ parseCommandLine(SearchInfo *search)
                 search->tagLength = argLen;
                 search->oldStyleTag = true;
                 search->restOfCmdLine = tail;
-                // If the tag ends with -64, we want to exclude 32-bit runtimes
-                // (If the tag ends with -32, it will be filtered later)
-                if (argLen > 3) {
-                    if (0 == _compareArgument(&arg[argLen - 3], 3, L"-64", 3)) {
-                        search->tagLength -= 3;
-                        search->exclude32Bit = true;
-                    } else if (0 == _compareArgument(&arg[argLen - 3], 3, L"-32", 3)) {
-                        search->tagLength -= 3;
-                        search->only32Bit = true;
-                    }
-                }
             } else if (STARTSWITH(L"V:") || STARTSWITH(L"-version:")) {
                 // Arguments starting with 'V:' specify company and/or tag
                 const wchar_t *argStart = wcschr(arg, L':') + 1;
@@ -672,6 +653,7 @@ parseCommandLine(SearchInfo *search)
                     search->tag = argStart;
                 }
                 search->tagLength = (int)(tail - search->tag);
+                search->allowDefaults = false;
                 search->restOfCmdLine = tail;
             } else if (MATCHES(L"0") || MATCHES(L"-list")) {
                 search->list = true;
@@ -1087,6 +1069,7 @@ checkDefaults(SearchInfo *search)
         if (!slash) {
             search->tag = tag;
             search->tagLength = n;
+            search->oldStyleTag = true;
         } else {
             search->company = tag;
             search->companyLength = (int)(slash - tag);
@@ -1966,10 +1949,25 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
             }
         } else if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
             // Old-style tags can only match PythonCore entries
-            if (_startsWith(env->tag, -1, search->tag, search->tagLength)) {
-                if (search->exclude32Bit && _is32Bit(env)) {
+
+            // If the tag ends with -64, we want to exclude 32-bit runtimes
+            // (If the tag ends with -32, it will be filtered later)
+            int tagLength = search->tagLength;
+            bool exclude32Bit = false, only32Bit = false;
+            if (tagLength > 3) {
+                if (0 == _compareArgument(&search->tag[tagLength - 3], 3, L"-64", 3)) {
+                    tagLength -= 3;
+                    exclude32Bit = true;
+                } else if (0 == _compareArgument(&search->tag[tagLength - 3], 3, L"-32", 3)) {
+                    tagLength -= 3;
+                    only32Bit = true;
+                }
+            }
+
+            if (_startsWith(env->tag, -1, search->tag, tagLength)) {
+                if (exclude32Bit && _is32Bit(env)) {
                     debug(L"# Excluding %s/%s because it looks like 32bit\n", env->company, env->tag);
-                } else if (search->only32Bit && !_is32Bit(env)) {
+                } else if (only32Bit && !_is32Bit(env)) {
                     debug(L"# Excluding %s/%s because it doesn't look 32bit\n", env->company, env->tag);
                 } else {
                     *best = env;
