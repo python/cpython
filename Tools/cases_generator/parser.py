@@ -3,125 +3,39 @@
 from dataclasses import dataclass
 
 import lexer as lx
-
-
-class Lexer:
-    def __init__(self, src, filename=None):
-        self.src = src
-        self.filename = filename
-        self.tokens = list(lx.tokenize(self.src, filename=filename))
-        self.pos = 0
-
-    def getpos(self):
-        return self.pos
-
-    def eof(self):
-        return self.pos >= len(self.tokens)
-
-    def reset(self, pos):
-        assert 0 <= pos <= len(self.tokens), (pos, len(self.tokens))
-        self.pos = pos
-
-    def backup(self):
-        assert self.pos > 0
-        self.pos -= 1
-
-    def next(self, raw=False):
-        while self.pos < len(self.tokens):
-            tok = self.tokens[self.pos]
-            self.pos += 1
-            if raw or tok.kind != "COMMENT":
-                return tok
-        return None
-
-    def peek(self, raw=False):
-        tok = self.next(raw=raw)
-        self.backup()
-        return tok
-
-    def expect(self, kind):
-        tkn = self.next()
-        if tkn is not None and tkn.kind == kind:
-            return tkn
-        self.backup()
-        return None
-
-    def extract_line(self, line):
-        lines = self.src.splitlines()
-        if line > len(lines):
-            return ""
-        return lines[line - 1]
-
-    def make_syntax_error(self, message, tkn=None):
-        if tkn is None:
-            tkn = self.peek()
-        if tkn is None:
-            tkn = self.tokens[-1]
-        return lx.make_syntax_error(message,
-            self.filename, tkn.line, tkn.column, self.extract_line(tkn.line))
+from eparser import Node, contextual
+import sparser
 
 
 @dataclass
-class InstDef:
+class InstDef(Node):
     name: str
     inputs: list[str]
     outputs: list[str]
-    blob: list[lx.Token]
+    block: Node | None
 
 
 @dataclass
-class Family:
+class Family(Node):
     name: str
     members: list[str]
 
 
-@dataclass
-class Block:
-    tokens: list[lx.Token]
+class Parser(sparser.SParser):
 
-
-class Parser(Lexer):
-    # TODO: Make all functions reset the input pointer
-    # when they return None, and raise when they know
-    # that something is wrong.
-
-    def inst_def(self):
+    @contextual
+    def inst_def(self) -> InstDef | None:
         if header := self.inst_header():
             if block := self.block():
-                header.blob = block.tokens
+                header.block = block
                 return header
             raise self.make_syntax_error("Expected block")
         return None
 
-    def block(self):
-        if self.expect(lx.LBRACE):
-            tokens = self.c_blob()
-            if self.expect(lx.RBRACE):
-                return Block(tokens)
-            raise self.make_syntax_error("Expected '}'")
-        return None
-
-    def c_blob(self):
-        tokens = []
-        level = 0
-        while True:
-            tkn = self.next(raw=True)
-            if tkn is None:
-                break
-            if tkn.kind in (lx.LBRACE, lx.LPAREN, lx.LBRACKET):
-                level += 1
-            elif tkn.kind in (lx.RBRACE, lx.RPAREN, lx.RBRACKET):
-                level -= 1
-                if level < 0:
-                    self.backup()
-                    break
-            tokens.append(tkn)
-        return tokens
-
+    @contextual
     def inst_header(self):
         # inst(NAME, (inputs -- outputs))
         # TODO: Error out when there is something unexpected.
-        here = self.getpos()
         # TODO: Make INST a keyword in the lexer.
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "inst":
             if (self.expect(lx.LPAREN)
@@ -132,7 +46,6 @@ class Parser(Lexer):
                     if (self.expect(lx.RPAREN)
                             and self.peek().kind == lx.LBRACE):
                         return InstDef(name, inp, outp, [])
-        self.reset(here)
         return None
 
     def stack_effect(self):
@@ -153,9 +66,9 @@ class Parser(Lexer):
             if self.expect(lx.COMMA):
                 if rest := self.inputs():
                     return [inp] + rest
-            self.reset(near)
+            self.setpos(near)
             return [inp]
-        self.reset(here)
+        self.setpos(here)
         return None
 
     def input(self):
@@ -186,15 +99,16 @@ class Parser(Lexer):
             if self.expect(lx.COMMA):
                 if rest := self.outputs():
                     return [outp] + rest
-            self.reset(near)
+            self.setpos(near)
             return [outp]
-        self.reset(here)
+        self.setpos(here)
         return None
 
     def output(self):
         return self.input()  # TODO: They're not quite the same.
 
-    def family_def(self):
+    @contextual
+    def family_def(self) -> Family | None:
         here = self.getpos()
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "family":
             if self.expect(lx.LPAREN):
@@ -205,7 +119,6 @@ class Parser(Lexer):
                             if members := self.members():
                                 if self.expect(lx.SEMI):
                                     return Family(name, members)
-        self.reset(here)
         return None
 
     def members(self):
@@ -215,7 +128,21 @@ class Parser(Lexer):
             if self.expect(lx.PLUS):
                 if rest := self.members():
                     return [tkn.text] + rest
-            self.reset(near)
+            self.setpos(near)
             return [tkn.text]
-        self.reset(here)
+        self.setpos(here)
         return None
+
+
+if __name__ == "__main__":
+    import sys
+    filename = sys.argv[1]
+    with open(filename) as f:
+        src = f.read()
+    srclines = src.splitlines()
+    begin = srclines.index("// BEGIN BYTECODES //")
+    end = srclines.index("// END BYTECODES //")
+    src = "\n".join(srclines[begin+1 : end])
+    parser = Parser(src, filename)
+    x = parser.inst_def()
+    print(x)
