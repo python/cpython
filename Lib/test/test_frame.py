@@ -2,6 +2,7 @@ import gc
 import re
 import sys
 import textwrap
+import traceback
 import types
 import unittest
 import weakref
@@ -110,6 +111,25 @@ class ClearTest(unittest.TestCase):
         # Clearing the frame closes the generator
         f.clear()
         self.assertTrue(endly)
+
+    def test_clear_suspended_generator(self):
+        # Attempting to clear a suspended generator frame is forbidden.
+        def g():
+            for i in range(5):
+                try:
+                    1/0
+                except ZeroDivisionError as e:
+                    yield (e, i)
+
+        gen = g()
+        res = []
+        for e, i in gen:
+            res.append(i)
+            with self.assertRaises(RuntimeError):
+                f = e.__traceback__.tb_frame
+                self.assertIsNotNone(f)
+                f.clear()
+        self.assertEqual(res, list(range(5)))
 
     def test_lineno_with_tracing(self):
         def record_line():

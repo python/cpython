@@ -949,7 +949,8 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
     if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyFrame_GetGenerator(f->f_frame);
-        if (gen->gi_frame_state == FRAME_EXECUTING) {
+        if (gen->gi_frame_state == FRAME_EXECUTING ||
+            gen->gi_frame_state == FRAME_SUSPENDED) {
             goto running;
         }
         _PyGen_Finalize((PyObject *)gen);
