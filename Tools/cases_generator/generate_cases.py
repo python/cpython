@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import re
 import sys
 
+import eparser
 import sparser
 import parser
 
@@ -55,20 +56,30 @@ def parse_cases(src: str, filename: str|None = None) -> tuple[list[Instruction],
     return instrs, families
 
 
-def strip_indent(indent, line):
-    if line.startswith(indent):
-        return line[len(indent):]
-    return ""
+def always_exits(node: eparser.Node):
+    match node:
+        case sparser.Block(stmts):
+            if stmts:
+                i = len(stmts) - 1
+                while i >= 0 and isinstance(stmts[i], sparser.NullStmt):
+                    i -= 1
+                if i >= 0:
+                    return always_exits(stmts[i])
+        case sparser.IfStmt(_, body, orelse):
+            return always_exits(body) and always_exits(orelse)
+        case sparser.GotoStmt():
+            return True
+        case sparser.ReturnStmt():
+            return True
+        case eparser.Call(term):
+            if isinstance(term, eparser.Name):
+                text = term.tok.text
+                return (text.startswith("JUMP_TO_") or
+                        text == "DISPATCH_GOTO" or
+                        text == "Py_UNREACHABLE")
 
-DISPATCH_LIKE = re.compile(
-    r"|".join([
-        r"goto\b",
-        r"return\b",
-        r"JUMP_",
-        r"DISPATCH_GOTO",
-        r"Py_UNREACHABLE",
-    ])
-)
+    return False
+
 
 def write_cases(f, instrs):
     indent = "        "
@@ -76,22 +87,32 @@ def write_cases(f, instrs):
     f.write("// Do not edit!\n")
     for instr in instrs:
         assert isinstance(instr, Instruction)
-        f.write(f"\n{indent}TARGET({instr.opcode_name}) {instr.block.text.lstrip()}\n")
+        f.write(f"\n{indent}TARGET({instr.opcode_name}) {{\n")
         # input = ", ".join(instr.inputs)
         # output = ", ".join(instr.outputs)
-        # # f.write(f"{indent}    // {input} -- {output}\n")
-        # for line in instr.c_code:
-        #     if line:
-        #         f.write(f"{line}\n")
-        #     else:
-        #         f.write("\n")
-        # if instr.c_code:
-        #     last_line = strip_indent(indent + "    ", instr.c_code[-1])
-        # else:
-        #     last_line = ""
-        # if not (last_line and DISPATCH_LIKE.match(last_line)):
-        #     f.write(f"{indent}    DISPATCH();\n")
-        # f.write(f"{indent}}}\n")
+        # f.write(f"{indent}    // {input} -- {output}\n")
+        blocklines = instr.block.text.splitlines(True)
+        # Remove blank lines from ends
+        while blocklines and not blocklines[0].strip():
+            blocklines.pop(0)
+        while blocklines and not blocklines[-1].strip():
+            blocklines.pop()
+        # Remove leading '{' and trailing '}'
+        assert blocklines and blocklines[0].strip() == "{"
+        assert blocklines and blocklines[-1].strip() == "}"
+        blocklines.pop()
+        blocklines.pop(0)
+        # Remove trailing blank lines
+        while blocklines and not blocklines[-1].strip():
+            blocklines.pop()
+        # Write the body
+        for line in blocklines:
+            f.write(line)
+        # Add a DISPATCH() unless the block always exits
+        if not always_exits(instr.block):
+            f.write(f"{indent}    DISPATCH();\n")
+        # Write trailing '}'
+        f.write(f"{indent}}}\n")
 
 
 def main():
