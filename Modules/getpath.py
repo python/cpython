@@ -33,6 +33,7 @@
 # PREFIX            -- [in] sysconfig.get_config_var(...)
 # EXEC_PREFIX       -- [in] sysconfig.get_config_var(...)
 # PYTHONPATH        -- [in] sysconfig.get_config_var(...)
+# WITH_NEXT_FRAMEWORK   -- [in] sysconfig.get_config_var(...)
 # VPATH             -- [in] sysconfig.get_config_var(...)
 # PLATLIBDIR        -- [in] sysconfig.get_config_var(...)
 # PYDEBUGEXT        -- [in, opt] '_d' on Windows for debug builds
@@ -127,7 +128,7 @@
 # checked by looking for the BUILDDIR_TXT file, which contains the
 # relative path to the platlib dir. The executable_dir value is
 # derived from joining the VPATH preprocessor variable to the
-# directory containing pybuilddir.txt. If it is not found, the 
+# directory containing pybuilddir.txt. If it is not found, the
 # BUILD_LANDMARK file is found, which is part of the source tree.
 # prefix is then found by searching up for a file that should only
 # exist in the source tree, and the stdlib dir is set to prefix/Lib.
@@ -187,7 +188,7 @@ if os_name == 'posix' or os_name == 'darwin':
 
 elif os_name == 'nt':
     BUILDDIR_TXT = 'pybuilddir.txt'
-    BUILD_LANDMARK = r'..\..\Modules\Setup.local'
+    BUILD_LANDMARK = f'{VPATH}\\Modules\\Setup.local'
     DEFAULT_PROGRAM_NAME = f'python'
     STDLIB_SUBDIR = 'Lib'
     STDLIB_LANDMARKS = [f'{STDLIB_SUBDIR}\\os.py', f'{STDLIB_SUBDIR}\\os.pyc']
@@ -227,6 +228,7 @@ ENV_PYTHONPATH = config['pythonpath_env']
 use_environment = config.get('use_environment', 1)
 
 pythonpath = config.get('module_search_paths')
+pythonpath_was_set = config.get('module_search_paths_set')
 
 real_executable_dir = None
 stdlib_dir = None
@@ -277,7 +279,7 @@ elif os_name == 'darwin':
     # executable path was provided in the config.
     real_executable = executable
 
-if not executable and program_name:
+if not executable and program_name and ENV_PATH:
     # Resolve names against PATH.
     # NOTE: The use_environment value is ignored for this lookup.
     # To properly isolate, launch Python with a full path.
@@ -301,9 +303,19 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
     # If set, these variables imply that we should be using them as
     # sys.executable and when searching for venvs. However, we should
     # use the argv0 path for prefix calculation
-    base_executable = executable
+
+    if os_name == 'darwin' and WITH_NEXT_FRAMEWORK:
+        # In a framework build the binary in {sys.exec_prefix}/bin is
+        # a stub executable that execs the real interpreter in an
+        # embedded app bundle. That bundle is an implementation detail
+        # and should not affect base_executable.
+        base_executable = f"{dirname(library)}/bin/python{VERSION_MAJOR}.{VERSION_MINOR}"
+    else:
+        base_executable = executable
+
     if not real_executable:
-        real_executable = executable
+        real_executable = base_executable
+        #real_executable_dir = dirname(real_executable)
     executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
     executable_dir = dirname(executable)
 
@@ -339,11 +351,11 @@ if not home and not py_setpath:
         try:
             # Read pyvenv.cfg from one level above executable
             pyvenvcfg = readlines(joinpath(venv_prefix, VENV_LANDMARK))
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError):
             # Try the same directory as executable
             pyvenvcfg = readlines(joinpath(venv_prefix2, VENV_LANDMARK))
             venv_prefix = venv_prefix2
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError):
         venv_prefix = None
         pyvenvcfg = []
 
@@ -351,7 +363,18 @@ if not home and not py_setpath:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
             executable_dir = real_executable_dir = value.strip()
-            base_executable = joinpath(executable_dir, basename(executable))
+            if not base_executable:
+                # First try to resolve symlinked executables, since that may be
+                # more accurate than assuming the executable in 'home'.
+                try:
+                    base_executable = realpath(executable)
+                    if base_executable == executable:
+                        # No change, so probably not a link. Clear it and fall back
+                        base_executable = ''
+                except OSError:
+                    pass
+                if not base_executable:
+                    base_executable = joinpath(executable_dir, basename(executable))
             break
     else:
         venv_prefix = None
@@ -399,7 +422,7 @@ if not real_executable_dir:
 # ******************************************************************************
 
 # The contents of an optional ._pth file are used to totally override
-# sys.path calcualation. Its presence also implies isolated mode and
+# sys.path calculation. Its presence also implies isolated mode and
 # no-site (unless explicitly requested)
 pth = None
 pth_dir = None
@@ -407,24 +430,22 @@ pth_dir = None
 # Calling Py_SetPythonHome() or Py_SetPath() will override ._pth search,
 # but environment variables and command-line options cannot.
 if not py_setpath and not home_was_set:
-    # Check adjacent to the main DLL/dylib/so
-    if library:
-        try:
-            pth = readlines(library.rpartition('.')[0] + '._pth')
-            pth_dir = dirname(library)
-        except FileNotFoundError:
-            pass
-
-    # Check adjacent to the original executable, even if we
-    # redirected to actually launch Python. This may allow a
-    # venv to override the base_executable's ._pth file, but
-    # it cannot override the library's one.
-    if not pth_dir:
-        try:
-            pth = readlines(executable.rpartition('.')[0] + '._pth')
-            pth_dir = dirname(executable)
-        except FileNotFoundError:
-            pass
+    # 1. Check adjacent to the main DLL/dylib/so (if set)
+    # 2. Check adjacent to the original executable
+    # 3. Check adjacent to our actual executable
+    # This may allow a venv to override the base_executable's
+    # ._pth file, but it cannot override the library's one.
+    for p in [library, executable, real_executable]:
+        if p:
+            if os_name == 'nt' and (hassuffix(p, 'exe') or hassuffix(p, 'dll')):
+                p = p.rpartition('.')[0]
+            p += '._pth'
+            try:
+                pth = readlines(p)
+                pth_dir = dirname(p)
+                break
+            except OSError:
+                pass
 
     # If we found a ._pth file, disable environment and home
     # detection now. Later, we will do the rest.
@@ -440,7 +461,8 @@ if not py_setpath and not home_was_set:
 
 build_prefix = None
 
-if not home_was_set and real_executable_dir and not py_setpath:
+if ((not home_was_set and real_executable_dir and not py_setpath)
+        or config.get('_is_python_build', 0) > 0):
     # Detect a build marker and use it to infer prefix, exec_prefix,
     # stdlib_dir and the platstdlib_dir directories.
     try:
@@ -449,7 +471,11 @@ if not home_was_set and real_executable_dir and not py_setpath:
             readlines(joinpath(real_executable_dir, BUILDDIR_TXT))[0],
         )
         build_prefix = joinpath(real_executable_dir, VPATH)
-    except FileNotFoundError:
+    except IndexError:
+        # File exists but is empty
+        platstdlib_dir = real_executable_dir
+        build_prefix = joinpath(real_executable_dir, VPATH)
+    except (FileNotFoundError, PermissionError):
         if isfile(joinpath(real_executable_dir, BUILD_LANDMARK)):
             build_prefix = joinpath(real_executable_dir, VPATH)
             if os_name == 'nt':
@@ -500,6 +526,8 @@ else:
         prefix, had_delim, exec_prefix = home.partition(DELIM)
         if not had_delim:
             exec_prefix = prefix
+        # Reset the standard library directory if it was already set
+        stdlib_dir = None
 
 
     # First try to detect prefix by looking alongside our runtime library, if known
@@ -600,8 +628,8 @@ if py_setpath:
     config['module_search_paths'] = py_setpath.split(DELIM)
     config['module_search_paths_set'] = 1
 
-elif not pythonpath:
-    # If pythonpath was already set, we leave it alone.
+elif not pythonpath_was_set:
+    # If pythonpath was already explicitly set or calculated, we leave it alone.
     # This won't matter in normal use, but if an embedded host is trying to
     # recalculate paths while running then we do not want to change it.
     pythonpath = []
@@ -638,19 +666,12 @@ elif not pythonpath:
                     i = 0
                     while True:
                         try:
-                            keyname = winreg.EnumKey(key, i)
-                            subkey = winreg.OpenKeyEx(key, keyname)
-                            if not subkey:
-                                continue
-                            try:
-                                v = winreg.QueryValue(subkey)
-                            finally:
-                                winreg.CloseKey(subkey)
-                            if isinstance(v, str):
-                                pythonpath.append(v)
-                            i += 1
+                            v = winreg.QueryValue(key, winreg.EnumKey(key, i))
                         except OSError:
                             break
+                        if isinstance(v, str):
+                            pythonpath.append(v)
+                        i += 1
                 finally:
                     winreg.CloseKey(key)
             except OSError:
@@ -662,14 +683,17 @@ elif not pythonpath:
             pythonpath.append(joinpath(prefix, p))
 
     # Then add stdlib_dir and platstdlib_dir
-    if stdlib_dir:
-        pythonpath.append(stdlib_dir)
-    if platstdlib_dir:
-        if os_name == 'nt' and venv_prefix:
-            # QUIRK: Windows appends executable_dir instead of platstdlib_dir
-            # when in a venv
-            pythonpath.append(executable_dir)
-        else:
+    if os_name == 'nt' and venv_prefix:
+        # QUIRK: Windows generates paths differently in a venv
+        if platstdlib_dir:
+            pythonpath.append(platstdlib_dir)
+        if stdlib_dir:
+            pythonpath.append(stdlib_dir)
+        pythonpath.append(executable_dir)
+    else:
+        if stdlib_dir:
+            pythonpath.append(stdlib_dir)
+        if platstdlib_dir:
             pythonpath.append(platstdlib_dir)
 
     config['module_search_paths'] = pythonpath
@@ -695,6 +719,7 @@ if pth:
     config['isolated'] = 1
     config['use_environment'] = 0
     config['site_import'] = 0
+    config['safe_path'] = 1
     pythonpath = []
     for line in pth:
         line = line.partition('#')[0].strip()

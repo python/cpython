@@ -433,9 +433,9 @@ to make sure everything functions as expected in both versions of Python.
 
 
 .. _caniusepython3: https://pypi.org/project/caniusepython3
-.. _cheat sheet: http://python-future.org/compatible_idioms.html
+.. _cheat sheet: https://python-future.org/compatible_idioms.html
 .. _coverage.py: https://pypi.org/project/coverage
-.. _Futurize: http://python-future.org/automatic_conversion.html
+.. _Futurize: https://python-future.org/automatic_conversion.html
 .. _importlib2: https://pypi.org/project/importlib2
 .. _Modernize: https://python-modernize.readthedocs.io/
 .. _mypy: http://mypy-lang.org/
@@ -445,7 +445,7 @@ to make sure everything functions as expected in both versions of Python.
 .. _Python 3 Q & A: https://ncoghlan-devs-python-notes.readthedocs.io/en/latest/python3/questions_and_answers.html
 
 .. _pytype: https://github.com/google/pytype
-.. _python-future: http://python-future.org/
+.. _python-future: https://python-future.org/
 .. _python-porting: https://mail.python.org/pipermail/python-porting/
 .. _six: https://pypi.org/project/six
 .. _tox: https://pypi.org/project/tox

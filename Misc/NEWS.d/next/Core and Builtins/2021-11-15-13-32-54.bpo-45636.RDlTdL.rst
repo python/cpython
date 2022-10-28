@@ -1,2 +1,0 @@
-Simplify the implementation of :opcode:`BINARY_OP` by indexing into an array
-of function pointers (rather than switching on the oparg).

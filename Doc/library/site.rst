@@ -276,4 +276,6 @@ value greater than 2 if there is an error.
 
 .. seealso::
 
-   :pep:`370` -- Per user site-packages directory
+   * :pep:`370` -- Per user site-packages directory
+   * :ref:`sys-path-init` -- The initialization of :data:`sys.path`.
+

@@ -1,2 +1,0 @@
-Allocate space for the interpreter frame in the frame object, to avoid an
-additional allocation when the frame object outlives the frame activation.

@@ -1,2 +1,0 @@
-``configure`` now creates ``Modules/Setup.stdlib`` with conditionally
-enabled/disabled extension module lines. The file is not used, yet.

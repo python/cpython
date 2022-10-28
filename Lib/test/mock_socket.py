@@ -33,7 +33,7 @@ class MockFile:
 
 
 class MockSocket:
-    """Mock socket object used by smtplib tests.
+    """Mock socket object used by the smtplib tests.
     """
     def __init__(self, family=None):
         global _reply_data

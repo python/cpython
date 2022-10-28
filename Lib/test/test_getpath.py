@@ -2,7 +2,6 @@ import copy
 import ntpath
 import pathlib
 import posixpath
-import sys
 import unittest
 
 from test.support import verbose
@@ -100,6 +99,7 @@ class MockGetPathTests(unittest.TestCase):
             module_search_paths_set=1,
             module_search_paths=[
                 r"C:\Python\python98.zip",
+                r"C:\Python\DLLs",
                 r"C:\Python\Lib",
                 r"C:\Python",
             ],
@@ -208,6 +208,36 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_buildtree_pythonhome_win32(self):
+        "Test an out-of-build-tree layout on Windows with PYTHONHOME override."
+        ns = MockNTNamespace(
+            argv0=r"C:\Out\python.exe",
+            real_executable=r"C:\Out\python.exe",
+            ENV_PYTHONHOME=r"C:\CPython",
+        )
+        ns.add_known_xfile(r"C:\Out\python.exe")
+        ns.add_known_file(r"C:\CPython\Lib\os.py")
+        ns.add_known_file(r"C:\Out\pybuilddir.txt", [""])
+        expected = dict(
+            executable=r"C:\Out\python.exe",
+            base_executable=r"C:\Out\python.exe",
+            prefix=r"C:\CPython",
+            exec_prefix=r"C:\CPython",
+            # This build_prefix is a miscalculation, because we have
+            # moved the output direction out of the prefix.
+            # Specify PYTHONHOME to get the correct prefix/exec_prefix
+            build_prefix="C:\\",
+            _is_python_build=1,
+            module_search_paths_set=1,
+            module_search_paths=[
+                r"C:\Out\python98.zip",
+                r"C:\CPython\Lib",
+                r"C:\Out",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_normal_posix(self):
         "Test a 'standard' install layout on *nix"
         ns = MockPosixNamespace(
@@ -285,6 +315,38 @@ class MockGetPathTests(unittest.TestCase):
             prefix="/usr",
             exec_prefix="/usr",
             base_executable="/usr/bin/python",
+            base_prefix="/usr",
+            base_exec_prefix="/usr",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/usr/lib/python98.zip",
+                "/usr/lib/python9.8",
+                "/usr/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_venv_changed_name_posix(self):
+        "Test a venv layout on *nix."
+        ns = MockPosixNamespace(
+            argv0="python",
+            PREFIX="/usr",
+            ENV_PATH="/venv/bin:/usr/bin",
+        )
+        ns.add_known_xfile("/usr/bin/python3")
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_link("/venv/bin/python", "/usr/bin/python3")
+        ns.add_known_file("/usr/lib/python9.8/os.py")
+        ns.add_known_dir("/usr/lib/python9.8/lib-dynload")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /usr/bin"
+        ])
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/usr",
+            exec_prefix="/usr",
+            base_executable="/usr/bin/python3",
             base_prefix="/usr",
             base_exec_prefix="/usr",
             module_search_paths_set=1,
@@ -378,6 +440,182 @@ class MockGetPathTests(unittest.TestCase):
                 "/usr/lib64/python98.zip",
                 "/usr/lib64/python9.8",
                 "/usr/lib64/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_framework_macos(self):
+        """ Test framework layout on macOS
+
+        This layout is primarily detected using a compile-time option
+        (WITH_NEXT_FRAMEWORK).
+        """
+        ns = MockPosixNamespace(
+            os_name="darwin",
+            argv0="/Library/Frameworks/Python.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/Python",
+            WITH_NEXT_FRAMEWORK=1,
+            PREFIX="/Library/Frameworks/Python.framework/Versions/9.8",
+            EXEC_PREFIX="/Library/Frameworks/Python.framework/Versions/9.8",
+            ENV___PYVENV_LAUNCHER__="/Library/Frameworks/Python.framework/Versions/9.8/bin/python9.8",
+            real_executable="/Library/Frameworks/Python.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/Python",
+            library="/Library/Frameworks/Python.framework/Versions/9.8/Python",
+        )
+        ns.add_known_xfile("/Library/Frameworks/Python.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/Python")
+        ns.add_known_xfile("/Library/Frameworks/Python.framework/Versions/9.8/bin/python9.8")
+        ns.add_known_dir("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/lib-dynload")
+        ns.add_known_file("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/os.py")
+
+        # This is definitely not the stdlib (see discusion in bpo-46890)
+        #ns.add_known_file("/Library/Frameworks/lib/python98.zip")
+
+        expected = dict(
+            executable="/Library/Frameworks/Python.framework/Versions/9.8/bin/python9.8",
+            prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            exec_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            base_executable="/Library/Frameworks/Python.framework/Versions/9.8/bin/python9.8",
+            base_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            base_exec_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/Library/Frameworks/Python.framework/Versions/9.8/lib/python98.zip",
+                "/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8",
+                "/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_alt_framework_macos(self):
+        """ Test framework layout on macOS with alternate framework name
+
+        ``--with-framework-name=DebugPython``
+
+        This layout is primarily detected using a compile-time option
+        (WITH_NEXT_FRAMEWORK).
+        """
+        ns = MockPosixNamespace(
+            argv0="/Library/Frameworks/DebugPython.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/DebugPython",
+            os_name="darwin",
+            WITH_NEXT_FRAMEWORK=1,
+            PREFIX="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            EXEC_PREFIX="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            ENV___PYVENV_LAUNCHER__="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
+            real_executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/DebugPython",
+            library="/Library/Frameworks/DebugPython.framework/Versions/9.8/DebugPython",
+            PYTHONPATH=None,
+            ENV_PYTHONHOME=None,
+            ENV_PYTHONEXECUTABLE=None,
+            executable_dir=None,
+            py_setpath=None,
+        )
+        ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/DebugPython")
+        ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8")
+        ns.add_known_dir("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/lib-dynload")
+        ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/os.py")
+
+        # This is definitely not the stdlib (see discusion in bpo-46890)
+        #ns.add_known_xfile("/Library/lib/python98.zip")
+        expected = dict(
+            executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
+            prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            exec_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            base_executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
+            base_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            base_exec_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python98.zip",
+                "/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8",
+                "/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_venv_framework_macos(self):
+        """Test a venv layout on macOS using a framework build
+        """
+        venv_path = "/tmp/workdir/venv"
+        ns = MockPosixNamespace(
+            os_name="darwin",
+            argv0="/Library/Frameworks/Python.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/Python",
+            WITH_NEXT_FRAMEWORK=1,
+            PREFIX="/Library/Frameworks/Python.framework/Versions/9.8",
+            EXEC_PREFIX="/Library/Frameworks/Python.framework/Versions/9.8",
+            ENV___PYVENV_LAUNCHER__=f"{venv_path}/bin/python",
+            real_executable="/Library/Frameworks/Python.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/Python",
+            library="/Library/Frameworks/Python.framework/Versions/9.8/Python",
+        )
+        ns.add_known_dir(venv_path)
+        ns.add_known_dir(f"{venv_path}/bin")
+        ns.add_known_dir(f"{venv_path}/lib")
+        ns.add_known_dir(f"{venv_path}/lib/python9.8")
+        ns.add_known_xfile(f"{venv_path}/bin/python")
+        ns.add_known_xfile("/Library/Frameworks/Python.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/Python")
+        ns.add_known_xfile("/Library/Frameworks/Python.framework/Versions/9.8/bin/python9.8")
+        ns.add_known_dir("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/lib-dynload")
+        ns.add_known_xfile("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/os.py")
+        ns.add_known_file(f"{venv_path}/pyvenv.cfg", [
+            "home = /Library/Frameworks/Python.framework/Versions/9.8/bin"
+        ])
+        expected = dict(
+            executable=f"{venv_path}/bin/python",
+            prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            exec_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            base_executable="/Library/Frameworks/Python.framework/Versions/9.8/bin/python9.8",
+            base_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            base_exec_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/Library/Frameworks/Python.framework/Versions/9.8/lib/python98.zip",
+                "/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8",
+                "/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+    def test_venv_alt_framework_macos(self):
+        """Test a venv layout on macOS using a framework build
+
+        ``--with-framework-name=DebugPython``
+        """
+        venv_path = "/tmp/workdir/venv"
+        ns = MockPosixNamespace(
+            os_name="darwin",
+            argv0="/Library/Frameworks/DebugPython.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/DebugPython",
+            WITH_NEXT_FRAMEWORK=1,
+            PREFIX="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            EXEC_PREFIX="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            ENV___PYVENV_LAUNCHER__=f"{venv_path}/bin/python",
+            real_executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/DebugPython",
+            library="/Library/Frameworks/DebugPython.framework/Versions/9.8/DebugPython",
+        )
+        ns.add_known_dir(venv_path)
+        ns.add_known_dir(f"{venv_path}/bin")
+        ns.add_known_dir(f"{venv_path}/lib")
+        ns.add_known_dir(f"{venv_path}/lib/python9.8")
+        ns.add_known_xfile(f"{venv_path}/bin/python")
+        ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/Resources/Python.app/Contents/MacOS/DebugPython")
+        ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8")
+        ns.add_known_dir("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/lib-dynload")
+        ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/os.py")
+        ns.add_known_file(f"{venv_path}/pyvenv.cfg", [
+            "home = /Library/Frameworks/DebugPython.framework/Versions/9.8/bin"
+        ])
+        expected = dict(
+            executable=f"{venv_path}/bin/python",
+            prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            exec_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            base_executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
+            base_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            base_exec_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python98.zip",
+                "/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8",
+                "/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/lib-dynload",
             ],
         )
         actual = getpath(ns, expected)
@@ -503,7 +741,7 @@ DEFAULT_NAMESPACE = dict(
     VERSION_MINOR=8,    # of testing
     PYWINVER=None,
     EXE_SUFFIX=None,
-    
+
     ENV_PATH="",
     ENV_PYTHONHOME="",
     ENV_PYTHONEXECUTABLE="",
@@ -703,12 +941,15 @@ class MockWinreg:
                 return n.removeprefix(prefix)
         raise OSError("end of enumeration")
 
-    def QueryValue(self, hkey):
+    def QueryValue(self, hkey, subkey):
         if verbose:
-            print(f"QueryValue({hkey})")
+            print(f"QueryValue({hkey}, {subkey})")
         hkey = hkey.casefold()
         if hkey not in self.open:
             raise RuntimeError("key is not open")
+        if subkey:
+            subkey = subkey.casefold()
+            hkey = f'{hkey}\\{subkey}'
         try:
             return self.keys[hkey]
         except KeyError:
@@ -721,6 +962,7 @@ class MockPosixNamespace(dict):
         self["config"] = DEFAULT_CONFIG.copy()
         self["os_name"] = "posix"
         self["PLATLIBDIR"] = "lib"
+        self["WITH_NEXT_FRAMEWORK"] = 0
         super().__init__(*a, **kw)
         if argv0:
             self["config"]["orig_argv"] = [argv0]

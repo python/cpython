@@ -59,7 +59,7 @@ getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
 {
     PyObject *r = NULL;
     PyObject *pathobj;
-    const wchar_t *path;
+    wchar_t *path;
     if (!PyArg_ParseTuple(args, "U", &pathobj)) {
         return NULL;
     }
@@ -67,8 +67,8 @@ getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
     path = PyUnicode_AsWideCharString(pathobj, &len);
     if (path) {
         wchar_t *abs;
-        if (_Py_abspath(path, &abs) == 0 && abs) {
-            r = PyUnicode_FromWideChar(_Py_normpath(abs, -1), -1);
+        if (_Py_abspath((const wchar_t *)_Py_normpath(path, -1), &abs) == 0 && abs) {
+            r = PyUnicode_FromWideChar(abs, -1);
             PyMem_RawFree((void *)abs);
         } else {
             PyErr_SetString(PyExc_OSError, "failed to make path absolute");
@@ -82,27 +82,32 @@ getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_basename(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    const char *path;
-    if (!PyArg_ParseTuple(args, "s", &path)) {
+    PyObject *path;
+    if (!PyArg_ParseTuple(args, "U", &path)) {
         return NULL;
     }
-    const char *name = strrchr(path, SEP);
-    return PyUnicode_FromString(name ? name + 1 : path);
+    Py_ssize_t end = PyUnicode_GET_LENGTH(path);
+    Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
+    if (pos < 0) {
+        return Py_NewRef(path);
+    }
+    return PyUnicode_Substring(path, pos + 1, end);
 }
 
 
 static PyObject *
 getpath_dirname(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    const char *path;
-    if (!PyArg_ParseTuple(args, "s", &path)) {
+    PyObject *path;
+    if (!PyArg_ParseTuple(args, "U", &path)) {
         return NULL;
     }
-    const char *name = strrchr(path, SEP);
-    if (!name) {
+    Py_ssize_t end = PyUnicode_GET_LENGTH(path);
+    Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
+    if (pos < 0) {
         return PyUnicode_FromStringAndSize(NULL, 0);
     }
-    return PyUnicode_FromStringAndSize(path, (name - path));
+    return PyUnicode_Substring(path, 0, pos);
 }
 
 
@@ -141,7 +146,7 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
     if (path) {
         suffix = PyUnicode_AsWideCharString(suffixobj, &suffixLen);
         if (suffix) {
-            if (suffixLen < len ||
+            if (suffixLen > len ||
 #ifdef MS_WINDOWS
                 wcsicmp(&path[len - suffixLen], suffix) != 0
 #else
@@ -230,7 +235,7 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-            SUCCEEDED(PathCchFindExtension(path, cchPath, &ext)) &&
+            SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&
             (CompareStringOrdinal(ext, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
             ? Py_True : Py_False;
 #else
@@ -256,7 +261,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     Py_ssize_t n = PyTuple_GET_SIZE(args);
     if (n == 0) {
-        return PyUnicode_FromString(NULL);
+        return PyUnicode_FromStringAndSize(NULL, 0);
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
@@ -386,11 +391,11 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
     wchar_t *p1 = wbuffer;
     wchar_t *p2 = p1;
     while ((p2 = wcschr(p1, L'\n')) != NULL) {
-        size_t cb = p2 - p1;
-        while (cb && (p1[cb] == L'\n' || p1[cb] == L'\r')) {
+        Py_ssize_t cb = p2 - p1;
+        while (cb >= 0 && (p1[cb] == L'\n' || p1[cb] == L'\r')) {
             --cb;
         }
-        PyObject *u = PyUnicode_FromWideChar(p1, cb + 1);
+        PyObject *u = PyUnicode_FromWideChar(p1, cb >= 0 ? cb + 1 : 0);
         if (!u || PyList_Append(r, u) < 0) {
             Py_XDECREF(u);
             Py_CLEAR(r);
@@ -755,10 +760,9 @@ library_to_dict(PyObject *dict, const char *key)
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
 #elif defined(WITH_NEXT_FRAMEWORK)
-    static const char modPath[MAXPATHLEN + 1];
+    static char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;
     if (modPathInitialized < 0) {
-        NSModule pythonModule;
         modPathInitialized = 0;
 
         /* On Mac OS X we have a special case if we're running from a framework.
@@ -766,12 +770,17 @@ library_to_dict(PyObject *dict, const char *key)
            which is in the framework, not relative to the executable, which may
            be outside of the framework. Except when we're in the build
            directory... */
-        pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
-
-        /* Use dylib functions to find out where the framework was loaded from */
-        const char *path = NSLibraryNameForModule(pythonModule);
-        if (path) {
-            strncpy(modPath, path, MAXPATHLEN);
+        NSSymbol symbol = NSLookupAndBindSymbol("_Py_Initialize");
+        if (symbol != NULL) {
+            NSModule pythonModule = NSModuleForSymbol(symbol);
+            if (pythonModule != NULL) {
+                /* Use dylib functions to find out where the framework was loaded from */
+                const char *path = NSLibraryNameForModule(pythonModule);
+                if (path) {
+                    strncpy(modPath, path, MAXPATHLEN);
+                    modPathInitialized = 1;
+                }
+            }
         }
     }
     if (modPathInitialized > 0) {
@@ -783,7 +792,7 @@ library_to_dict(PyObject *dict, const char *key)
 
 
 PyObject *
-_Py_Get_Getpath_CodeObject()
+_Py_Get_Getpath_CodeObject(void)
 {
     return PyMarshal_ReadObjectFromString(
         (const char*)_Py_M__getpath, sizeof(_Py_M__getpath));
@@ -872,6 +881,11 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 #else
         !decode_to_dict(dict, "os_name", "posix") ||
 #endif
+#ifdef WITH_NEXT_FRAMEWORK
+        !int_to_dict(dict, "WITH_NEXT_FRAMEWORK", 1) ||
+#else
+        !int_to_dict(dict, "WITH_NEXT_FRAMEWORK", 0) ||
+#endif
         !decode_to_dict(dict, "PREFIX", PREFIX) ||
         !decode_to_dict(dict, "EXEC_PREFIX", EXEC_PREFIX) ||
         !decode_to_dict(dict, "PYTHONPATH", PYTHONPATH) ||
@@ -939,3 +953,4 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     return _PyStatus_OK();
 }
+
