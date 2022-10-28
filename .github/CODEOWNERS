@@ -134,6 +134,8 @@ Lib/ast.py                    @isidentical
 
 **/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra
 
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
 
