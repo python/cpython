@@ -125,17 +125,19 @@
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && (c->u->u_ste->ste_type == ModuleBlock))
 
-typedef struct location_ {
-    int lineno;
-    int end_lineno;
-    int col_offset;
-    int end_col_offset;
-} location;
+typedef PyCompilerSrcLocation location;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const location){(LNO), (END_LNO), (COL), (END_COL)})
 
 static location NO_LOCATION = {-1, -1, -1, -1};
+
+#define LOCATION_IS_GT(L1, L2) \
+    (((L1).lineno > (L2).end_lineno) || \
+     (((L1).lineno == (L2).end_lineno) && \
+      ((L1).col_offset > (L2).end_col_offset)))
+
+#define LOC(x) SRC_LOCATION_FROM_AST(x)
 
 typedef struct jump_target_label_ {
     int id;
@@ -1011,11 +1013,6 @@ basicblock_next_instr(basicblock *b)
 
 // Artificial instructions
 #define UNSET_LOC(c)
-
-#define LOC(x) LOCATION((x)->lineno,          \
-                        (x)->end_lineno,      \
-                        (x)->col_offset,      \
-                        (x)->end_col_offset)
 
 
 /* Return the stack effect of opcode with argument oparg.
@@ -3910,59 +3907,61 @@ compiler_import(struct compiler *c, stmt_ty s)
 static int
 compiler_from_import(struct compiler *c, stmt_ty s)
 {
-    location loc = LOC(s);
-    Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
-    PyObject *names;
+    Py_ssize_t n = asdl_seq_LEN(s->v.ImportFrom.names);
 
-    ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromLong(s->v.ImportFrom.level));
+    ADDOP_LOAD_CONST_NEW(c, LOC(s), PyLong_FromLong(s->v.ImportFrom.level));
 
-    names = PyTuple_New(n);
-    if (!names)
+    PyObject *names = PyTuple_New(n);
+    if (!names) {
         return 0;
+    }
 
     /* build up the names */
-    for (i = 0; i < n; i++) {
+    for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
         Py_INCREF(alias->name);
         PyTuple_SET_ITEM(names, i, alias->name);
     }
 
-    if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module &&
-        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__")) {
+    if (LOCATION_IS_GT(LOC(s), c->c_future->ff_location) &&
+        s->v.ImportFrom.module &&
+        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
+    {
         Py_DECREF(names);
-        return compiler_error(c, loc, "from __future__ imports must occur "
+        return compiler_error(c, LOC(s), "from __future__ imports must occur "
                               "at the beginning of the file");
     }
-    ADDOP_LOAD_CONST_NEW(c, loc, names);
+    ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
 
     if (s->v.ImportFrom.module) {
-        ADDOP_NAME(c, loc, IMPORT_NAME, s->v.ImportFrom.module, names);
+        ADDOP_NAME(c, LOC(s), IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
         _Py_DECLARE_STR(empty, "");
-        ADDOP_NAME(c, loc, IMPORT_NAME, &_Py_STR(empty), names);
+        ADDOP_NAME(c, LOC(s), IMPORT_NAME, &_Py_STR(empty), names);
     }
-    for (i = 0; i < n; i++) {
+    for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
         identifier store_name;
 
         if (i == 0 && PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             assert(n == 1);
-            ADDOP(c, loc, IMPORT_STAR);
+            ADDOP(c, LOC(s), IMPORT_STAR);
             return 1;
         }
 
-        ADDOP_NAME(c, loc, IMPORT_FROM, alias->name, names);
+        ADDOP_NAME(c, LOC(s), IMPORT_FROM, alias->name, names);
         store_name = alias->name;
-        if (alias->asname)
+        if (alias->asname) {
             store_name = alias->asname;
+        }
 
-        if (!compiler_nameop(c, loc, store_name, Store)) {
+        if (!compiler_nameop(c, LOC(s), store_name, Store)) {
             return 0;
         }
     }
     /* remove imported module */
-    ADDOP(c, loc, POP_TOP);
+    ADDOP(c, LOC(s), POP_TOP);
     return 1;
 }
 
