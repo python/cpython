@@ -3619,48 +3619,25 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
 int
 PyUnicode_FSDecoder(PyObject* arg, void* addr)
 {
-    int is_buffer = 0;
-    PyObject *path = NULL;
-    PyObject *output = NULL;
     if (arg == NULL) {
         Py_DECREF(*(PyObject**)addr);
         *(PyObject**)addr = NULL;
         return 1;
     }
 
-    is_buffer = PyObject_CheckBuffer(arg);
-    if (!is_buffer) {
-        path = PyOS_FSPath(arg);
-        if (path == NULL) {
-            return 0;
-        }
-    }
-    else {
-        path = arg;
-        Py_INCREF(arg);
+    PyObject *path = PyOS_FSPath(arg);
+    if (path == NULL) {
+        return 0;
     }
 
+    PyObject *output = NULL;
     if (PyUnicode_Check(path)) {
         output = path;
     }
-    else if (PyBytes_Check(path) || is_buffer) {
-        PyObject *path_bytes = NULL;
-
-        if (!PyBytes_Check(path) &&
-            PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "path should be string, bytes, or os.PathLike, not %.200s",
-            Py_TYPE(arg)->tp_name)) {
-                Py_DECREF(path);
-            return 0;
-        }
-        path_bytes = PyBytes_FromObject(path);
+    else if (PyBytes_Check(path)) {
+        output = PyUnicode_DecodeFSDefaultAndSize(PyBytes_AS_STRING(path),
+                                                  PyBytes_GET_SIZE(path));
         Py_DECREF(path);
-        if (!path_bytes) {
-            return 0;
-        }
-        output = PyUnicode_DecodeFSDefaultAndSize(PyBytes_AS_STRING(path_bytes),
-                                                  PyBytes_GET_SIZE(path_bytes));
-        Py_DECREF(path_bytes);
         if (!output) {
             return 0;
         }
@@ -3672,6 +3649,7 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
         Py_DECREF(path);
         return 0;
     }
+
     if (findchar(PyUnicode_DATA(output), PyUnicode_KIND(output),
                  PyUnicode_GET_LENGTH(output), 0, 1) >= 0) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");

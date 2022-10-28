@@ -1,2 +1,0 @@
-Correctly raise ``SyntaxError`` on exception groups (:pep:`654`) on python
-versions prior to 3.11
