@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _howto-clinic:
+
 **********************
 Argument Clinic How-To
 **********************

@@ -2962,7 +2962,6 @@ _PyObject_DebugMallocStats(FILE *out)
      * will be living in full pools -- would be a shame to miss them.
      */
     for (i = 0; i < maxarenas; ++i) {
-        uint j;
         uintptr_t base = arenas[i].address;
 
         /* Skip arenas which are not allocated. */
@@ -2981,8 +2980,7 @@ _PyObject_DebugMallocStats(FILE *out)
 
         /* visit every pool in the arena */
         assert(base <= (uintptr_t) arenas[i].pool_address);
-        for (j = 0; base < (uintptr_t) arenas[i].pool_address;
-             ++j, base += POOL_SIZE) {
+        for (; base < (uintptr_t) arenas[i].pool_address; base += POOL_SIZE) {
             poolp p = (poolp)base;
             const uint sz = p->szidx;
             uint freeblocks;
