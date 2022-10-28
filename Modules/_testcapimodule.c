@@ -2021,6 +2021,7 @@ call_pyobject_print(PyObject *self, PyObject * args)
     }
 
     if (PyObject_Print(object, fp, flags) < 0) {
+        fclose(fp);
         return NULL;
     }
 
@@ -2042,6 +2043,7 @@ pyobject_print_null(PyObject *self, PyObject *args)
     fp = _Py_fopen_obj(filename, "w+");
 
     if (PyObject_Print(NULL, fp, 0) < 0) {
+        fclose(fp);
         return NULL;
     }
 
@@ -2071,6 +2073,7 @@ pyobject_print_noref_object(PyObject *self, PyObject *args)
     fp = _Py_fopen_obj(filename, "w+");
 
     if (PyObject_Print(test_string, fp, 0) < 0){
+        fclose(fp);
         return NULL;
     }
 
@@ -2096,6 +2099,7 @@ pyobject_print_os_error(PyObject *self, PyObject *args)
     fp = _Py_fopen_obj(filename, "r");
 
     if (PyObject_Print(test_string, fp, 0) < 0) {
+        fclose(fp);
         return NULL;
     }
 
