@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import lexer as lx
-from eparser import EParser, contextual, Node, PointerType, ArrayType
+from eparser import EParser, contextual, Node, PointerType, ArrayType, FunctionType
 
 Token = lx.Token
 
@@ -282,6 +282,23 @@ class SParser(EParser):
             else:
                 init = None
             return VarDecl(type, name, init)
+        # int **(*func)(int, int)
+        if self.expect(lx.LPAREN):
+            if self.expect(lx.TIMES):
+                if name := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.LPAREN):
+                            args: list[Node] = []
+                            while arg := self.type():
+                                args.append(arg)
+                                if not self.expect(lx.COMMA):
+                                    break
+                            if self.expect(lx.RPAREN):
+                                for _ in range(stars):
+                                    type = PointerType(type)
+                                type = FunctionType(type, args)
+                                # TODO: Initializer
+                                return VarDecl(type, name, None)
 
 
 if __name__ == "__main__":
