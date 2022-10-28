@@ -96,7 +96,7 @@ if __name__ == "__main__":
     else:
         filename = None
         src = "if (x) { x.foo; // comment\n}"
-    p = Lexer(src, filename)
+    p = PLexer(src, filename)
     while not p.eof():
         tok = p.next(raw=True)
         left = repr(tok)
