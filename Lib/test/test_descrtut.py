@@ -212,6 +212,7 @@ You can get the information from the list type:
      'extend',
      'index',
      'insert',
+     'len',
      'pop',
      'remove',
      'reverse',

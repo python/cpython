@@ -268,6 +268,14 @@ class ListTest(list_tests.CommonTest):
         3 in lst
         lst = [X(), X()]
         X() in lst
+    
+    def test_len_empty(self):
+        lst = []
+        self.assertEqual(lst.len(), 0)
+    
+    def test_len_basic(self):
+        lst = [1, 2, 3]
+        self.assertEqual(lst.len(), 3)
 
 
 if __name__ == "__main__":
