@@ -2533,6 +2533,23 @@ PyList_Sort(PyObject *v)
 }
 
 /*[clinic input]
+list.len
+
+Return the number of items in a list.
+[clinic start generated code]*/
+static PyObject *list_len_impl(PyListObject *self) {
+    Py_ssize_t res;
+    
+    res = PyList_Size((PyObject *)self);
+    if (res < 0)
+    {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    return PyLong_FromSsize_t(res);
+}
+
+/*[clinic input]
 list.reverse
 
 Reverse *IN PLACE*.
@@ -2843,6 +2860,7 @@ static PyMethodDef list_methods[] = {
     LIST_REMOVE_METHODDEF
     LIST_INDEX_METHODDEF
     LIST_COUNT_METHODDEF
+    LIST_LEN_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},

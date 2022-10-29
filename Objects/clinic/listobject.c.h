@@ -244,6 +244,24 @@ list_reverse(PyListObject *self, PyObject *Py_UNUSED(ignored))
     return list_reverse_impl(self);
 }
 
+PyDoc_STRVAR(list_len__doc__,
+             "len($self, /)\n"
+             "--\n"
+             "\n"
+             "Return the number of items in a list.");
+
+#define LIST_LEN_METHODDEF \
+    {"len", (PyCFunction)list_len, METH_NOARGS, list_len__doc__},
+
+static PyObject *
+list_len_impl(PyListObject *self);
+
+static PyObject *
+list_len(PyListObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return list_len_impl(self);
+}
+
 PyDoc_STRVAR(list_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
 "--\n"
