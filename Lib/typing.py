@@ -1440,6 +1440,8 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             substfunc = getattr(old_arg, '__typing_subst__', None)
             if substfunc:
                 new_arg = substfunc(new_arg_by_param[old_arg])
+            elif not isinstance(old_arg, (_GenericAlias, GenericAlias, types.UnionType)):
+                new_arg = old_arg
             else:
                 subparams = getattr(old_arg, '__parameters__', ())
                 if not subparams:
