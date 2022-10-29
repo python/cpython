@@ -851,7 +851,7 @@ class Path(PurePath):
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
-        """Yields path objects of the directory contents.
+        """Yield path objects of the directory contents.
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
