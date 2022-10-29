@@ -2658,7 +2658,10 @@ zoneinfomodule_exec(PyObject *m)
     }
 
     Py_INCREF(&PyZoneInfo_ZoneInfoType);
-    PyModule_AddObject(m, "ZoneInfo", (PyObject *)&PyZoneInfo_ZoneInfoType);
+    if (PyModule_AddObject(m, "ZoneInfo", (PyObject *)&PyZoneInfo_ZoneInfoType) < 0) {
+        Py_DECREF(&PyZoneInfo_ZoneInfoType);
+        goto error;
+    }
 
     /* Populate imports */
     _tzpath_find_tzfile =
