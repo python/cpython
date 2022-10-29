@@ -1,2 +1,2 @@
 Fix multiple crashes in debug mode when ``str`` subclasses
-where used instead of ``str`` itself.
+are used instead of ``str`` itself.
