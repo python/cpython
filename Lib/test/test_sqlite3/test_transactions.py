@@ -368,7 +368,7 @@ class IsolationLevelPostInit(unittest.TestCase):
 
 
 class AutocommitAttribute(unittest.TestCase):
-    """Test PEP-249 compliant autocommit behaviour."""
+    """Test PEP 249-compliant autocommit behaviour."""
     compat = sqlite.DEPRECATED_TRANSACTION_CONTROL
 
     @contextmanager
