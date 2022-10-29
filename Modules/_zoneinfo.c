@@ -2657,9 +2657,7 @@ zoneinfomodule_exec(PyObject *m)
         goto error;
     }
 
-    Py_INCREF(&PyZoneInfo_ZoneInfoType);
-    if (PyModule_AddObject(m, "ZoneInfo", (PyObject *)&PyZoneInfo_ZoneInfoType) < 0) {
-        Py_DECREF(&PyZoneInfo_ZoneInfoType);
+    if (PyModule_AddObjectRef(m, "ZoneInfo", (PyObject *)&PyZoneInfo_ZoneInfoType) < 0) {
         goto error;
     }
 
