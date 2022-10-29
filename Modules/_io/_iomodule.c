@@ -705,8 +705,10 @@ PyInit__io(void)
     /* BlockingIOError, for compatibility */
     Py_INCREF(PyExc_BlockingIOError);
     if (PyModule_AddObject(m, "BlockingIOError",
-                           (PyObject *) PyExc_BlockingIOError) < 0)
+                           (PyObject *) PyExc_BlockingIOError) < 0) {
+        Py_DECREF(PyExc_BlockingIOError);
         goto fail;
+    }
 
     // Set type base classes
     PyFileIO_Type.tp_base = &PyRawIOBase_Type;
