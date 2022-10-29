@@ -731,9 +731,9 @@ _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b)
 /*
  * timing safe compare
  *
- * Returns 1 of the strings are equal.
+ * Returns 1 if the strings are equal.
  * In case of len(a) != len(b) the function tries to keep the timing
- * dependent on the length of b. CPU cache locally may still alter timing
+ * dependent on the length of b. CPU cache locality may still alter timing
  * a bit.
  */
 static int
