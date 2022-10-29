@@ -804,6 +804,56 @@ class TracebackErrorLocationCaretTestBase:
         ]
         self.assertEqual(actual, expected)
 
+    def test_wide_characters_unicode_with_problematic_byte_offset(self):
+        def f():
+            ｗｉｄｔｈ
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            f"    ｗｉｄｔｈ",
+        ]
+        self.assertEqual(actual, expected)
+
+
+    def test_byte_offset_with_wide_characters_middle(self):
+        def f():
+            ｗｉｄｔｈ = 1
+            raise ValueError(ｗｉｄｔｈ)
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
+            f"    raise ValueError(ｗｉｄｔｈ)",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_byte_offset_multiline(self):
+        def f():
+            ｗｗｗ = 1
+            ｔｈ = 0
+
+            print(1, ｗｗｗ(
+                    ｔｈ))
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 4}, in f",
+            f"    print(1, ｗｗｗ(",
+            f"             ^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
+
 
 @requires_debug_ranges()
 class PurePythonTracebackErrorCaretTests(
