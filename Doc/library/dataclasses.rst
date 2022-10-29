@@ -81,7 +81,7 @@ Module contents
 
      @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
      class C:
-        ...
+         ...
 
    The parameters to :func:`dataclass` are:
 
@@ -482,10 +482,10 @@ Module contents
 
     @dataclass
     class Point:
-      x: float
-      _: KW_ONLY
-      y: float
-      z: float
+        x: float
+        _: KW_ONLY
+        y: float
+        z: float
 
     p = Point(0, y=1.5, z=2.0)
 
@@ -773,24 +773,24 @@ default value have the following special behaviors:
 ::
 
   class IntConversionDescriptor:
-    def __init__(self, *, default):
-      self._default = default
+      def __init__(self, *, default):
+          self._default = default
 
-    def __set_name__(self, owner, name):
-      self._name = "_" + name
+      def __set_name__(self, owner, name):
+          self._name = "_" + name
 
-    def __get__(self, obj, type):
-      if obj is None:
-        return self._default
+      def __get__(self, obj, type):
+          if obj is None:
+              return self._default
 
-      return getattr(obj, self._name, self._default)
+          return getattr(obj, self._name, self._default)
 
-    def __set__(self, obj, value):
-      setattr(obj, self._name, int(value))
+      def __set__(self, obj, value):
+          setattr(obj, self._name, int(value))
 
   @dataclass
   class InventoryItem:
-    quantity_on_hand: IntConversionDescriptor = IntConversionDescriptor(default=100)
+      quantity_on_hand: IntConversionDescriptor = IntConversionDescriptor(default=100)
 
   i = InventoryItem()
   print(i.quantity_on_hand)   # 100
