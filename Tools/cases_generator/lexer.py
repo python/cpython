@@ -76,7 +76,7 @@ operators = { op: pattern for op, pattern in globals().items() if op == op.upper
 for op in operators:
     globals()[op] = op
 opmap = { pattern.replace("\\", "") or '\\' : op for op, pattern in operators.items() }
-    
+
 # Macros
 macro = r'# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)'
 MACRO = 'MACRO'
@@ -153,11 +153,11 @@ class Token:
     @property
     def end_line(self):
         return self.end[0]
- 
+
     @property
     def end_column(self):
         return self.end[1]
- 
+
     @property
     def width(self):
         return self.end[1] - self.begin[1]
