@@ -1,11 +1,16 @@
 # Python WebAssembly (WASM) build
 
-**WARNING: WASM support is highly experimental! Lots of features are not working yet.**
+**WARNING: WASM support is work-in-progress! Lots of features are not working yet.**
 
 This directory contains configuration and helpers to facilitate cross
-compilation of CPython to WebAssembly (WASM). For now we support
-*wasm32-emscripten* builds for modern browser and for *Node.js*. WASI
-(*wasm32-wasi*) is work-in-progress
+compilation of CPython to WebAssembly (WASM). Python supports Emscripten
+(*wasm32-emscripten*) and WASI (*wasm32-wasi*) targets. Emscripten builds
+run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
+use WASM runtimes such as *wasmtime*.
+
+Users and developers are encouraged to use the script
+`Tools/wasm/wasm_build.py`. The tool automates the build process and provides
+assistance with installation of SDKs.
 
 ## wasm32-emscripten build
 
@@ -17,7 +22,7 @@ access the file system directly.
 
 Cross compiling to the wasm32-emscripten platform needs the
 [Emscripten](https://emscripten.org/) SDK and a build Python interpreter.
-Emscripten 3.1.8 or newer are recommended. All commands below are relative
+Emscripten 3.1.19 or newer are recommended. All commands below are relative
 to a repository checkout.
 
 Christian Heimes maintains a container image with Emscripten SDK, Python
@@ -35,7 +40,13 @@ docker run --rm -ti -v $(pwd):/python-wasm/cpython -w /python-wasm/cpython quay.
 
 ### Compile a build Python interpreter
 
-From within the container, run the following commands:
+From within the container, run the following command:
+
+```shell
+./Tools/wasm/wasm_build.py build
+```
+
+The command is roughly equivalent to:
 
 ```shell
 mkdir -p builddir/build
@@ -45,13 +56,13 @@ make -j$(nproc)
 popd
 ```
 
-### Fetch and build additional emscripten ports
+### Cross-compile to wasm32-emscripten for browser
 
 ```shell
-embuilder build zlib bzip2
+./Tools/wasm/wasm_build.py emscripten-browser
 ```
 
-### Cross compile to wasm32-emscripten for browser
+The command is roughly equivalent to:
 
 ```shell
 mkdir -p builddir/emscripten-browser
@@ -85,14 +96,21 @@ and header files with debug builds.
 ### Cross compile to wasm32-emscripten for node
 
 ```shell
-mkdir -p builddir/emscripten-node
-pushd builddir/emscripten-node
+./Tools/wasm/wasm_build.py emscripten-browser-dl
+```
+
+The command is roughly equivalent to:
+
+```shell
+mkdir -p builddir/emscripten-node-dl
+pushd builddir/emscripten-node-dl
 
 CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
   emconfigure ../../configure -C \
     --host=wasm32-unknown-emscripten \
     --build=$(../../config.guess) \
     --with-emscripten-target=node \
+    --enable-wasm-dynamic-linking \
     --with-build-python=$(pwd)/../build/python
 
 emmake make -j$(nproc)
@@ -100,7 +118,7 @@ popd
 ```
 
 ```shell
-node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node/python.js
+node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node-dl/python.js
 ```
 
 (``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
@@ -199,6 +217,15 @@ Node builds use ``NODERAWFS``.
 - Node RawFS allows direct access to the host file system without need to
   perform ``FS.mount()`` call.
 
+## wasm64-emscripten
+
+- wasm64 requires recent NodeJS and ``--experimental-wasm-memory64``.
+- ``EM_JS`` functions must return ``BigInt()``.
+- ``Py_BuildValue()`` format strings must match size of types. Confusing 32
+  and 64 bits types leads to memory corruption, see
+  [gh-95876](https://github.com/python/cpython/issues/95876) and
+  [gh-95878](https://github.com/python/cpython/issues/95878).
+
 # Hosting Python WASM builds
 
 The simple REPL terminal uses SharedArrayBuffer. For security reasons
@@ -233,6 +260,12 @@ WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
 The script ``wasi-env`` sets necessary compiler and linker flags as well as
 ``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
 ``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
+
+```shell
+./Tools/wasm/wasm_build.py wasi
+```
+
+The command is roughly equivalent to:
 
 ```shell
 mkdir -p builddir/wasi
@@ -308,26 +341,46 @@ if os.name == "posix":
 ```python
 >>> import os, sys
 >>> os.uname()
-posix.uname_result(sysname='Emscripten', nodename='emscripten', release='1.0', version='#1', machine='wasm32')
+posix.uname_result(
+    sysname='Emscripten',
+    nodename='emscripten',
+    release='3.1.19',
+    version='#1',
+    machine='wasm32'
+)
 >>> os.name
 'posix'
 >>> sys.platform
 'emscripten'
 >>> sys._emscripten_info
 sys._emscripten_info(
-    emscripten_version=(3, 1, 8),
-    runtime='Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0',
+    emscripten_version=(3, 1, 10),
+    runtime='Mozilla/5.0 (X11; Linux x86_64; rv:104.0) Gecko/20100101 Firefox/104.0',
     pthreads=False,
     shared_memory=False
 )
+```
+
+```python
 >>> sys._emscripten_info
-sys._emscripten_info(emscripten_version=(3, 1, 8), runtime='Node.js v14.18.2', pthreads=True, shared_memory=True)
+sys._emscripten_info(
+    emscripten_version=(3, 1, 19),
+    runtime='Node.js v14.18.2',
+    pthreads=True,
+    shared_memory=True
+)
 ```
 
 ```python
 >>> import os, sys
 >>> os.uname()
-posix.uname_result(sysname='wasi', nodename='(none)', release='0.0.0', version='0.0.0', machine='wasm32')
+posix.uname_result(
+    sysname='wasi',
+    nodename='(none)',
+    release='0.0.0',
+    version='0.0.0',
+    machine='wasm32'
+)
 >>> os.name
 'posix'
 >>> sys.platform
@@ -418,7 +471,8 @@ embuilder build --pic zlib bzip2 MINIMAL_PIC
 
 **NOTE**: WASI-SDK's clang may show a warning on Fedora:
 ``/lib64/libtinfo.so.6: no version information available``,
-[RHBZ#1875587](https://bugzilla.redhat.com/show_bug.cgi?id=1875587).
+[RHBZ#1875587](https://bugzilla.redhat.com/show_bug.cgi?id=1875587). The
+warning can be ignored.
 
 ```shell
 export WASI_VERSION=16
@@ -443,6 +497,8 @@ ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 
 ### WASI debugging
 
-* ``wasmtime run -g`` generates debugging symbols for gdb and lldb.
+* ``wasmtime run -g`` generates debugging symbols for gdb and lldb. The
+  feature is currently broken, see
+  https://github.com/bytecodealliance/wasmtime/issues/4669 .
 * The environment variable ``RUST_LOG=wasi_common`` enables debug and
   trace logging.

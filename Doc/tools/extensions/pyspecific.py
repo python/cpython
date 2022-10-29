@@ -37,10 +37,6 @@ except ImportError:
     from sphinx.domains.python import PyClassmember as PyMethod
     from sphinx.domains.python import PyModulelevel as PyFunction
 
-# Support for checking for suspicious markup
-
-import suspicious
-
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
@@ -100,33 +96,24 @@ def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 class ImplementationDetail(Directive):
 
     has_content = True
-    required_arguments = 0
-    optional_arguments = 1
     final_argument_whitespace = True
 
     # This text is copied to templates/dummy.html
     label_text = 'CPython implementation detail:'
 
     def run(self):
+        self.assert_has_content()
         pnode = nodes.compound(classes=['impl-detail'])
         label = translators['sphinx'].gettext(self.label_text)
         content = self.content
         add_text = nodes.strong(label, label)
-        if self.arguments:
-            n, m = self.state.inline_text(self.arguments[0], self.lineno)
-            pnode.append(nodes.paragraph('', '', *(n + m)))
         self.state.nested_parse(content, self.content_offset, pnode)
-        if pnode.children and isinstance(pnode[0], nodes.paragraph):
-            content = nodes.inline(pnode[0].rawsource, translatable=True)
-            content.source = pnode[0].source
-            content.line = pnode[0].line
-            content += pnode[0].children
-            pnode[0].replace_self(nodes.paragraph('', '', content,
-                                                  translatable=False))
-            pnode[0].insert(0, add_text)
-            pnode[0].insert(1, nodes.Text(' '))
-        else:
-            pnode.insert(0, nodes.paragraph('', '', add_text))
+        content = nodes.inline(pnode[0].rawsource, translatable=True)
+        content.source = pnode[0].source
+        content.line = pnode[0].line
+        content += pnode[0].children
+        pnode[0].replace_self(nodes.paragraph(
+            '', '', add_text, nodes.Text(' '), content, translatable=False))
         return [pnode]
 
 
@@ -695,7 +682,6 @@ def setup(app):
     app.add_directive('audit-event-table', AuditEventListDirective)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
-    app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')

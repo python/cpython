@@ -1,1 +1,0 @@
-Ensure that timeouts scheduled with :class:`asyncio.Timeout` that have already expired are delivered promptly.

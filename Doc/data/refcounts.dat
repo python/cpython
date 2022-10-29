@@ -796,9 +796,17 @@ PyEval_SetProfile:void:::
 PyEval_SetProfile:Py_tracefunc:func::
 PyEval_SetProfile:PyObject*:obj:+1:
 
+PyEval_SetProfileAllThreads:void:::
+PyEval_SetProfileAllThreads:Py_tracefunc:func::
+PyEval_SetProfileAllThreads:PyObject*:obj:+1:
+
 PyEval_SetTrace:void:::
 PyEval_SetTrace:Py_tracefunc:func::
 PyEval_SetTrace:PyObject*:obj:+1:
+
+PyEval_SetTraceAllThreads:void:::
+PyEval_SetTraceAllThreads:Py_tracefunc:func::
+PyEval_SetTraceAllThreads:PyObject*:obj:+1:
 
 PyEval_EvalCode:PyObject*::+1:
 PyEval_EvalCode:PyObject*:co:0:

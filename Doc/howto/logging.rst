@@ -555,14 +555,14 @@ raw message.  If there is no date format string, the default date format is:
 
     %Y-%m-%d %H:%M:%S
 
-with the milliseconds tacked on at the end. The ``style`` is one of `%`, '{'
-or '$'. If one of these is not specified, then '%' will be used.
+with the milliseconds tacked on at the end. The ``style`` is one of ``'%'``,
+``'{'``, or ``'$'``. If one of these is not specified, then ``'%'`` will be used.
 
-If the ``style`` is '%', the message format string uses
+If the ``style`` is ``'%'``, the message format string uses
 ``%(<dictionary key>)s`` styled string substitution; the possible keys are
-documented in :ref:`logrecord-attributes`. If the style is '{', the message
+documented in :ref:`logrecord-attributes`. If the style is ``'{'``, the message
 format string is assumed to be compatible with :meth:`str.format` (using
-keyword arguments), while if the style is '$' then the message format string
+keyword arguments), while if the style is ``'$'`` then the message format string
 should conform to what is expected by :meth:`string.Template.substitute`.
 
 .. versionchanged:: 3.2

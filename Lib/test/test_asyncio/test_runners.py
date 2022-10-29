@@ -455,6 +455,20 @@ class RunnerTests(BaseTest):
             ):
                 runner.run(coro())
 
+    def test_set_event_loop_called_once(self):
+        # See https://github.com/python/cpython/issues/95736
+        async def coro():
+            pass
+
+        policy = asyncio.get_event_loop_policy()
+        policy.set_event_loop = mock.Mock()
+        runner = asyncio.Runner()
+        runner.run(coro())
+        runner.run(coro())
+
+        self.assertEqual(1, policy.set_event_loop.call_count)
+        runner.close()
+
 
 if __name__ == '__main__':
     unittest.main()
