@@ -1,0 +1,1 @@
+Add extra type check in ``_determine_new_args`` to avoid a bug with parameterizing generics.
