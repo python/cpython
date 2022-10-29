@@ -259,7 +259,7 @@ Module functions
                       isolation_level="DEFERRED", check_same_thread=True, \
                       factory=sqlite3.Connection, cached_statements=128, \
                       uri=False, \*, \
-                      autocommit=sqlite3.DEPRECATED_TRANSACTION_CONTROL)
+                      autocommit=sqlite3.COMPAT_TRANSACTIONAL_CONTROL)
 
    Open a connection to an SQLite database.
 
@@ -326,9 +326,9 @@ Module functions
        See :attr:`Connection.autocommit` and
        :ref:`sqlite3-transaction-control-autocommit` for more information.
        *autocommit* currently defaults to
-       :data:`~sqlite3.DEPRECATED_TRANSACTION_CONTROL`.
-       The default will change to ``False`` in Python 3.14.
-   :type autocommit: bool | DEPRECATED_TRANSACTION_CONTROL
+       :data:`~sqlite3.COMPAT_TRANSACTIONAL_CONTROL`.
+       The default will change to ``False`` in a future Python release.
+   :type autocommit: bool | COMPAT_TRANSACTIONAL_CONTROL
 
    :rtype: Connection
 
@@ -430,7 +430,7 @@ Module functions
 Module constants
 ^^^^^^^^^^^^^^^^
 
-.. data:: DEPRECATED_TRANSACTION_CONTROL
+.. data:: COMPAT_TRANSACTIONAL_CONTROL
 
    Set :attr:`~Connection.autocommit` to this constant to select
    old style (pre-Python 3.12) transaction control behaviour.
@@ -651,7 +651,7 @@ Connection objects
       Close the database connection.
       If :attr:`autocommit` is ``False``,
       any pending transaction is implicitly rolled back.
-      If :attr:`autocommit` is `True` or :const:`DEPRECATED_TRANSACTION_CONTROL`
+      If :attr:`autocommit` is `True` or :const:`COMPAT_TRANSACTIONAL_CONTROL`
       no implicit transaction control is executed.
       Make sure to :meth:`commit` before closing
       to avoid losing pending changes.
@@ -1260,13 +1260,13 @@ Connection objects
         Use :meth:`~Connection.commit` and :meth:`~Connection.rollback` to
         close transactions.
 
-        This will be the default value of *autocommit* in Python 3.14.
+        This is the recommended value of *autocommit*.
 
       * ``True``: Use SQLite's `autocommit mode`_.
         :meth:`~Connection.commit` and :meth:`~Connection.rollback`
         have no effect in this mode.
 
-      * :data:`DEPRECATED_TRANSACTION_CONTROL`:
+      * :data:`COMPAT_TRANSACTIONAL_CONTROL`:
         Pre-Python 3.12 (non-:pep:`249`-compliant) transaction control.
         See :attr:`isolation_level`.
 
@@ -1438,7 +1438,7 @@ Cursor objects
       call.
 
       If :attr:`~Connection.autocommit` is
-      :data:`DEPRECATED_TRANSACTION_CONTROL`,
+      :data:`COMPAT_TRANSACTIONAL_CONTROL`,
       :attr:`~Connection.isolation_level` is not ``None``,
       *sql* is an ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statement,
       and there is no open transaction,
@@ -1468,7 +1468,7 @@ Cursor objects
 
       Execute the SQL statements in *sql_script*.
       If the :attr:`~Connection.autocommit` is
-      :data:`DEPRECATED_TRANSACTION_CONTROL`
+      :data:`COMPAT_TRANSACTIONAL_CONTROL`
       and there is a pending transaction,
       an implicit ``COMMIT`` statement is executed first.
       No other implicit transaction control is performed;
@@ -2342,20 +2342,15 @@ Transaction control
 .. _sqlite3-transaction-control-autocommit:
 
 Transaction control via the ``autocommit`` attribute
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-Use the :attr:`Connection.autocommit` attribute to select the
-transaction control mode.
+The recommended way of controlling transaction behaviour is through
+the :attr:`Connection.autocommit` attribute.
 This attribute should preferrably be set using the *autocommit* parameter
 of :func:`connect`.
 
-Currently, *autocommit* defaults to :const:`DEPRECATED_TRANSACTION_CONTROL`,
-which means transaction control behaviour is controlled using the
-:attr:`Connection.isolation_level` attribute.
-See :ref:`sqlite3-transaction-control-isolation-level` for more information.
-
-Starting in Python 3.14, *autocommit* will default to ``False``,
-which will imply :pep:`249`-compliant transaction control.
+It is recommended to set *autocommit* to ``False``,
+implying :pep:`249`-compliant transaction control.
 This means:
 
 * :mod:`!sqlite3` ensures that a transaction is always open,
@@ -2374,6 +2369,11 @@ Set *autocommit* to ``True`` to enable SQLite's `autocommit mode`_.
 In this mode, :meth:`~Connection.commit()` and :meth:`~Connection.rollback()`
 have no effect.
 
+Set *autocommit* to :const:`COMPAT_TRANSACTIONAL_CONTROL`
+to leave transaction control behaviour to the
+:attr:`Connection.isolation_level` attribute.
+See :ref:`sqlite3-transaction-control-isolation-level` for more information.
+
 .. note::
 
    :attr:`~Connection.autocommit` and SQLite's `autocommit mode`_
@@ -2387,8 +2387,8 @@ have no effect.
 
 .. _sqlite3-transaction-control-isolation-level:
 
-Transaction control via the ``isolation_level`` attribute (deprecated)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Transaction control via the ``isolation_level`` attribute
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 .. note::
 
@@ -2397,7 +2397,7 @@ Transaction control via the ``isolation_level`` attribute (deprecated)
    See :ref:`sqlite3-transaction-control-autocommit`.
 
 If :attr:`Connection.autocommit` is set to
-:data:`DEPRECATED_TRANSACTION_CONTROL`,
+:data:`COMPAT_TRANSACTIONAL_CONTROL`,
 transaction behaviour is controlled using
 the :attr:`Connection.isolation_level` attribute.
 

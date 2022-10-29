@@ -47,7 +47,7 @@ PyDoc_STRVAR(module_connect_doc,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
 "        isolation_level='', check_same_thread=True,\n"
 "        factory=ConnectionType, cached_statements=128, uri=False, *,\n"
-"        autocommit=sqlite3.DEPRECATED_TRANSACTION_CONTROL)\n"
+"        autocommit=sqlite3.COMPAT_TRANSACTIONAL_CONTROL)\n"
 "--\n"
 "\n"
 "Opens a connection to the SQLite database file database.\n"
@@ -707,7 +707,7 @@ module_exec(PyObject *module)
         goto error;
     }
 
-    if (PyModule_AddIntMacro(module, DEPRECATED_TRANSACTION_CONTROL) < 0) {
+    if (PyModule_AddIntMacro(module, COMPAT_TRANSACTIONAL_CONTROL) < 0) {
         goto error;
     }
 

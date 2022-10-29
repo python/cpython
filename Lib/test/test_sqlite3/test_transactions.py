@@ -369,7 +369,7 @@ class IsolationLevelPostInit(unittest.TestCase):
 
 class AutocommitAttribute(unittest.TestCase):
     """Test PEP 249-compliant autocommit behaviour."""
-    compat = sqlite.DEPRECATED_TRANSACTION_CONTROL
+    compat = sqlite.COMPAT_TRANSACTIONAL_CONTROL
 
     @contextmanager
     def check_stmt_trace(self, cx, expected, reset=True):
@@ -385,13 +385,13 @@ class AutocommitAttribute(unittest.TestCase):
     def test_autocommit_default(self):
         with memory_database() as cx:
             self.assertEqual(cx.autocommit,
-                             sqlite.DEPRECATED_TRANSACTION_CONTROL)
+                             sqlite.COMPAT_TRANSACTIONAL_CONTROL)
 
     def test_autocommit_setget(self):
         dataset = (
             True,
             False,
-            sqlite.DEPRECATED_TRANSACTION_CONTROL,
+            sqlite.COMPAT_TRANSACTIONAL_CONTROL,
         )
         for mode in dataset:
             with self.subTest(mode=mode):
@@ -402,7 +402,7 @@ class AutocommitAttribute(unittest.TestCase):
                     self.assertEqual(cx.autocommit, mode)
 
     def test_autocommit_setget_invalid(self):
-        msg = "autocommit must be True, False, or.*DEPRECATED"
+        msg = "autocommit must be True, False, or.*COMPAT"
         for mode in "a", 12, (), None:
             with self.subTest(mode=mode):
                 with self.assertRaisesRegex(ValueError, msg):

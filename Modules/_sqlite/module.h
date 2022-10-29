@@ -26,7 +26,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-#define DEPRECATED_TRANSACTION_CONTROL -1
+#define COMPAT_TRANSACTIONAL_CONTROL -1
 
 #define PYSQLITE_VERSION "2.6.0"
 #define MODULE_NAME "sqlite3"
