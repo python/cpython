@@ -851,8 +851,9 @@ class Path(PurePath):
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
-        """Iterate over the files in this directory.  Does not include
-        the special paths '.' and '..'.
+        """Yields path objects of the directory contents.
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
         """
         for name in os.listdir(self):
             yield self._make_child_relpath(name)
