@@ -109,11 +109,7 @@ class BaseTaskTests:
         self.assertTrue(hasattr(t, '_cancel_message'))
         self.assertEqual(t._cancel_message, None)
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing 'msg' argument"
-        ):
-            t.cancel('my message')
+        t.cancel('my message')
         self.assertEqual(t._cancel_message, 'my message')
 
         with self.assertRaises(asyncio.CancelledError) as cm:
@@ -125,11 +121,7 @@ class BaseTaskTests:
         async def coro():
             pass
         t = self.new_task(self.loop, coro())
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing 'msg' argument"
-        ):
-            t.cancel('my message')
+        t.cancel('my message')
         t._cancel_message = 'my new message'
         self.assertEqual(t._cancel_message, 'my new message')
 
@@ -706,14 +698,7 @@ class BaseTaskTests:
                 async def coro():
                     task = self.new_task(loop, sleep())
                     await asyncio.sleep(0)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            task.cancel(*cancel_args)
-                    else:
-                        task.cancel(*cancel_args)
+                    task.cancel(*cancel_args)
                     done, pending = await asyncio.wait([task])
                     task.result()
 
@@ -747,14 +732,7 @@ class BaseTaskTests:
                 async def coro():
                     task = self.new_task(loop, sleep())
                     await asyncio.sleep(0)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            task.cancel(*cancel_args)
-                    else:
-                        task.cancel(*cancel_args)
+                    task.cancel(*cancel_args)
                     done, pending = await asyncio.wait([task])
                     task.exception()
 
@@ -777,17 +755,10 @@ class BaseTaskTests:
             fut.set_result(None)
             await asyncio.sleep(10)
 
-        def cancel(task, msg):
-            with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "Passing 'msg' argument"
-            ):
-                task.cancel(msg)
-
         async def coro():
             inner_task = self.new_task(loop, sleep())
             await fut
-            loop.call_soon(cancel, inner_task, 'msg')
+            loop.call_soon(inner_task.cancel, 'msg')
             try:
                 await inner_task
             except asyncio.CancelledError as ex:
@@ -813,11 +784,7 @@ class BaseTaskTests:
         async def coro():
             task = self.new_task(loop, sleep())
             # We deliberately leave out the sleep here.
-            with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "Passing 'msg' argument"
-            ):
-                task.cancel('my message')
+            task.cancel('my message')
             done, pending = await asyncio.wait([task])
             task.exception()
 
@@ -2179,14 +2146,7 @@ class BaseTaskTests:
                 async def main():
                     qwe = self.new_task(loop, test())
                     await asyncio.sleep(0.2)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            qwe.cancel(*cancel_args)
-                    else:
-                        qwe.cancel(*cancel_args)
+                    qwe.cancel(*cancel_args)
                     await qwe
 
                 try:

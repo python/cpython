@@ -1152,12 +1152,11 @@ handle_eval_breaker:
 
     {
     /* Start instructions */
-#if USE_COMPUTED_GOTOS
-    {
-#else
+#if !USE_COMPUTED_GOTOS
     dispatch_opcode:
-        switch (opcode) {
+        switch (opcode)
 #endif
+        {
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
@@ -1296,6 +1295,14 @@ handle_eval_breaker:
         TARGET(PUSH_NULL) {
             /* Use BASIC_PUSH as NULL is not a valid object pointer */
             BASIC_PUSH(NULL);
+            DISPATCH();
+        }
+
+        TARGET(END_FOR) {
+            PyObject *value = POP();
+            Py_DECREF(value);
+            value = POP();
+            Py_DECREF(value);
             DISPATCH();
         }
 
@@ -3252,6 +3259,7 @@ handle_eval_breaker:
             uint16_t hint = cache->index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
             PyObject *value, *old_value;
+            uint64_t new_version;
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
@@ -3259,6 +3267,7 @@ handle_eval_breaker:
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 STACK_SHRINK(1);
                 value = POP();
+                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             else {
@@ -3268,6 +3277,7 @@ handle_eval_breaker:
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 STACK_SHRINK(1);
                 value = POP();
+                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             Py_DECREF(old_value);
@@ -3277,7 +3287,7 @@ handle_eval_breaker:
                 _PyObject_GC_TRACK(dict);
             }
             /* PEP 509 */
-            dict->ma_version_tag = DICT_NEXT_VERSION();
+            dict->ma_version_tag = new_version;
             Py_DECREF(owner);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
             DISPATCH();
@@ -3842,9 +3852,11 @@ handle_eval_breaker:
                 _PyErr_Clear(tstate);
             }
             /* iterator ended normally */
+            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
             STACK_SHRINK(1);
             Py_DECREF(iter);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            /* Skip END_FOR */
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
@@ -3882,7 +3894,7 @@ handle_eval_breaker:
             }
             STACK_SHRINK(1);
             Py_DECREF(it);
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
@@ -3896,7 +3908,7 @@ handle_eval_breaker:
             if (r->index >= r->len) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
                 DISPATCH();
             }
             long value = (long)(r->start +
@@ -5099,23 +5111,23 @@ handle_eval_breaker:
 /* Specialization misses */
 
 miss:
-    {
-        STAT_INC(opcode, miss);
-        opcode = _PyOpcode_Deopt[opcode];
-        STAT_INC(opcode, miss);
-        /* The counter is always the first cache entry: */
-        _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
-        *counter -= 1;
-        if (*counter == 0) {
-            int adaptive_opcode = _PyOpcode_Adaptive[opcode];
-            assert(adaptive_opcode);
-            _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
-            STAT_INC(opcode, deopt);
-            *counter = adaptive_counter_start();
+        {
+            STAT_INC(opcode, miss);
+            opcode = _PyOpcode_Deopt[opcode];
+            STAT_INC(opcode, miss);
+            /* The counter is always the first cache entry: */
+            _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
+            *counter -= 1;
+            if (*counter == 0) {
+                int adaptive_opcode = _PyOpcode_Adaptive[opcode];
+                assert(adaptive_opcode);
+                _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
+                STAT_INC(opcode, deopt);
+                *counter = adaptive_counter_start();
+            }
+            next_instr--;
+            DISPATCH_GOTO();
         }
-        next_instr--;
-        DISPATCH_GOTO();
-    }
 
 unbound_local_error:
         {
@@ -6341,38 +6353,23 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
-    static int reentrant = 0;
-    if (reentrant) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError, "Cannot install a profile function "
-                         "while another profile function is being installed");
-        reentrant = 0;
-        return -1;
-    }
-    reentrant = 1;
-
     /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
     PyThreadState *current_tstate = _PyThreadState_GET();
     if (_PySys_Audit(current_tstate, "sys.setprofile", NULL) < 0) {
-        reentrant = 0;
         return -1;
     }
 
-    PyObject *profileobj = tstate->c_profileobj;
-
-    tstate->c_profilefunc = NULL;
-    tstate->c_profileobj = NULL;
-    /* Must make sure that tracing is not ignored if 'profileobj' is freed */
-    _PyThreadState_UpdateTracingState(tstate);
-    Py_XDECREF(profileobj);
-
-    Py_XINCREF(arg);
-    tstate->c_profileobj = arg;
     tstate->c_profilefunc = func;
-
+    PyObject *old_profileobj = tstate->c_profileobj;
+    tstate->c_profileobj = Py_XNewRef(arg);
     /* Flag that tracing or profiling is turned on */
     _PyThreadState_UpdateTracingState(tstate);
-    reentrant = 0;
+
+    // gh-98257: Only call Py_XDECREF() once the new profile function is fully
+    // set, so it's safe to call sys.setprofile() again (reentrant call).
+    Py_XDECREF(old_profileobj);
+
     return 0;
 }
 
@@ -6414,39 +6411,23 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* The caller must hold the GIL */
     assert(PyGILState_Check());
 
-    static int reentrant = 0;
-
-    if (reentrant) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError, "Cannot install a trace function "
-                         "while another trace function is being installed");
-        reentrant = 0;
-        return -1;
-    }
-    reentrant = 1;
-
     /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
     PyThreadState *current_tstate = _PyThreadState_GET();
     if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
-        reentrant = 0;
         return -1;
     }
 
-    PyObject *traceobj = tstate->c_traceobj;
-
-    tstate->c_tracefunc = NULL;
-    tstate->c_traceobj = NULL;
-    /* Must make sure that profiling is not ignored if 'traceobj' is freed */
-    _PyThreadState_UpdateTracingState(tstate);
-    Py_XINCREF(arg);
-    Py_XDECREF(traceobj);
-    tstate->c_traceobj = arg;
     tstate->c_tracefunc = func;
-
+    PyObject *old_traceobj = tstate->c_traceobj;
+    tstate->c_traceobj = Py_XNewRef(arg);
     /* Flag that tracing or profiling is turned on */
     _PyThreadState_UpdateTracingState(tstate);
 
-    reentrant = 0;
+    // gh-98257: Only call Py_XDECREF() once the new trace function is fully
+    // set, so it's safe to call sys.settrace() again (reentrant call).
+    Py_XDECREF(old_traceobj);
+
     return 0;
 }
 
@@ -6929,7 +6910,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
             name, pkgname_or_unknown
         );
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        PyErr_SetImportError(errmsg, pkgname, NULL);
+        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, NULL, name);
     }
     else {
         PyObject *spec = PyObject_GetAttr(v, &_Py_ID(__spec__));
@@ -6942,7 +6923,7 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
 
         errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
-        PyErr_SetImportError(errmsg, pkgname, pkgpath);
+        _PyErr_SetImportErrorWithNameFrom(errmsg, pkgname, pkgpath, name);
     }
 
     Py_XDECREF(errmsg);

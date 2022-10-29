@@ -1318,9 +1318,9 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         }
     }
 
-    m_obj->data = mmap(NULL, map_size,
-                       prot, flags,
-                       fd, offset);
+    Py_BEGIN_ALLOW_THREADS
+    m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
+    Py_END_ALLOW_THREADS
 
     if (devzero != -1) {
         close(devzero);

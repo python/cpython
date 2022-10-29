@@ -17,7 +17,8 @@ All Python objects ultimately share a small number of fields at the beginning
 of the object's representation in memory.  These are represented by the
 :c:type:`PyObject` and :c:type:`PyVarObject` types, which are defined, in turn,
 by the expansions of some macros also used, whether directly or indirectly, in
-the definition of all other Python objects.
+the definition of all other Python objects.  Additional macros can be found
+under :ref:`reference counting <countingrefs>`.
 
 
 .. c:type:: PyObject
@@ -117,26 +118,6 @@ the definition of all other Python objects.
 .. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
 
    Set the object *o* type to *type*.
-
-   .. versionadded:: 3.9
-
-
-.. c:function:: Py_ssize_t Py_REFCNT(PyObject *o)
-
-   Get the reference count of the Python object *o*.
-
-   Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
-
-   .. versionchanged:: 3.11
-      The parameter type is no longer :c:expr:`const PyObject*`.
-
-   .. versionchanged:: 3.10
-      :c:func:`Py_REFCNT()` is changed to the inline static function.
-
-
-.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
-
-   Set the object *o* reference counter to *refcnt*.
 
    .. versionadded:: 3.9
 
@@ -406,27 +387,27 @@ Accessing attributes of extension types
    Structure which describes an attribute of a type which corresponds to a C
    struct member.  Its fields are:
 
-   +------------------+---------------+-------------------------------+
-   | Field            | C Type        | Meaning                       |
-   +==================+===============+===============================+
-   | :attr:`name`     | const char \* | name of the member            |
-   +------------------+---------------+-------------------------------+
-   | :attr:`!type`    | int           | the type of the member in the |
-   |                  |               | C struct                      |
-   +------------------+---------------+-------------------------------+
-   | :attr:`offset`   | Py_ssize_t    | the offset in bytes that the  |
-   |                  |               | member is located on the      |
-   |                  |               | type's object struct          |
-   +------------------+---------------+-------------------------------+
-   | :attr:`flags`    | int           | flag bits indicating if the   |
-   |                  |               | field should be read-only or  |
-   |                  |               | writable                      |
-   +------------------+---------------+-------------------------------+
-   | :attr:`doc`      | const char \* | points to the contents of the |
-   |                  |               | docstring                     |
-   +------------------+---------------+-------------------------------+
+   .. c:member:: const char* PyMemberDef.name
 
-   :attr:`!type` can be one of many ``T_`` macros corresponding to various C
+         Name of the member
+
+   .. c:member:: int PyMemberDef.type
+
+      The type of the member in the C struct.
+
+   .. c:member:: Py_ssize_t PyMemberDef.offset
+
+      The offset in bytes that the member is located on the type’s object struct.
+
+   .. c:member:: int PyMemberDef.flags
+
+      Flag bits indicating if the field should be read-only or writable.
+
+   .. c:member:: const char* PyMemberDef.doc
+
+      Points to the contents of the docstring.
+
+   :c:member:`PyMemberDef.type` can be one of many ``T_`` macros corresponding to various C
    types.  When the member is accessed in Python, it will be converted to the
    equivalent Python type.
 
@@ -460,7 +441,7 @@ Accessing attributes of extension types
    handles use of the :keyword:`del` statement on that attribute more correctly
    than :c:macro:`T_OBJECT`.
 
-   :attr:`flags` can be ``0`` for write and read access or :c:macro:`READONLY` for
+   :c:member:`PyMemberDef.flags` can be ``0`` for write and read access or :c:macro:`READONLY` for
    read-only access.  Using :c:macro:`T_STRING` for :attr:`type` implies
    :c:macro:`READONLY`.  :c:macro:`T_STRING` data is interpreted as UTF-8.
    Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`

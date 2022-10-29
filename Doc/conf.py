@@ -239,28 +239,3 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
-
-# Sphinx 2 and Sphinx 3 compatibility
-# -----------------------------------
-
-# bpo-40204: Allow Sphinx 2 syntax in the C domain
-c_allow_pre_v3 = True
-
-# bpo-40204: Disable warnings on Sphinx 2 syntax of the C domain since the
-# documentation is built with -W (warnings treated as errors).
-c_warn_on_allowed_pre_v3 = False
-
-# Fix '!' not working with C domain when pre_v3 is enabled
-import sphinx
-
-if sphinx.version_info[:2] < (5, 3):
-    from sphinx.domains.c import CXRefRole
-
-    original_run = CXRefRole.run
-
-    def new_run(self):
-        if self.disabled:
-            return super(CXRefRole, self).run()
-        return original_run(self)
-
-    CXRefRole.run = new_run

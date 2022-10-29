@@ -1948,7 +1948,7 @@ Utility functions
 .. function:: GetLastError()
 
    Windows only: Returns the last error code set by Windows in the calling thread.
-   This function calls the Windows `GetLastError()` function directly,
+   This function calls the Windows ``GetLastError()`` function directly,
    it does not return the ctypes-private copy of the error code.
 
 .. function:: get_errno()
