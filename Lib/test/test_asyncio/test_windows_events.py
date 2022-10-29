@@ -239,6 +239,16 @@ class ProactorTests(test_utils.TestCase):
         self.close_loop(self.loop)
         self.assertFalse(self.loop.call_exception_handler.called)
 
+    def test_address_argument_type_error(self):
+        # Regression test for https://github.com/python/cpython/issues/98793
+        ip = asyncio.windows_events.IocpProactor()
+        sock = socket.socket(type=socket.SOCK_DGRAM)
+        bad_address = None
+        with self.assertRaises(TypeError):
+            ip.connect(sock, bad_address)
+        with self.assertRaises(TypeError):
+            ip.sendto(sock, b'abc', addr=bad_address)
+
 
 class WinPolicyTests(test_utils.TestCase):
 
