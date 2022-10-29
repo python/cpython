@@ -1,0 +1,1 @@
+Fixes typecheck in :func:`_overlapped.WSAConnect` and :func:`_overlapped.Overlapped.WSASendTo`.
