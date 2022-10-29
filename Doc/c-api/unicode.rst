@@ -411,7 +411,7 @@ APIs:
 
    #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.
       If specified as ``'*'`` (an asterisk), the actual precision is given in
-      the next argument, which must be of type :c:type:`int`, and the value to
+      the next argument, which must be of type :c:expr:`int`, and the value to
       convert comes after the precision.
 
    #. Length modifier (optional).
@@ -433,26 +433,26 @@ APIs:
 
    The length modifiers for following integer conversions (``d``, ``i``,
    ``o``, ``u``, ``x``, or ``X``) specify the type of the argument
-   (:c:type:`int` by default):
+   (:c:expr:`int` by default):
 
    .. tabularcolumns:: |l|L|
 
    +----------+-----------------------------------------------------+
    | Modifier | Types                                               |
    +==========+=====================================================+
-   | ``l``    | :c:type:`long` or :c:type:`unsigned long`           |
+   | ``l``    | :c:expr:`long` or :c:expr:`unsigned long`           |
    +----------+-----------------------------------------------------+
-   | ``ll``   | :c:type:`long long` or :c:type:`unsigned long long` |
+   | ``ll``   | :c:expr:`long long` or :c:expr:`unsigned long long` |
    +----------+-----------------------------------------------------+
-   | ``j``    | :c:type:`intmax_t` or :c:type:`uintmax_t`           |
+   | ``j``    | :c:expr:`intmax_t` or :c:expr:`uintmax_t`           |
    +----------+-----------------------------------------------------+
-   | ``z``    | :c:type:`size_t` or :c:type:`ssize_t`               |
+   | ``z``    | :c:expr:`size_t` or :c:expr:`ssize_t`               |
    +----------+-----------------------------------------------------+
-   | ``t``    | :c:type:`ptrdiff_t`                                 |
+   | ``t``    | :c:expr:`ptrdiff_t`                                 |
    +----------+-----------------------------------------------------+
 
    The length modifier ``l`` for following conversions ``s`` or ``V`` specify
-   that the type of the argument is :c:expr:``const wchar_t*``.
+   that the type of the argument is :c:expr:`const wchar_t*`.
 
    The conversion specifiers are:
 
@@ -489,7 +489,7 @@ APIs:
         - The heximal representation of an unsigned C integer (uppercase).
 
       * - ``c``
-        - :c:type:`int`
+        - :c:expr:`int`
         - A single character.
 
       * - ``s``
@@ -527,7 +527,7 @@ APIs:
 
    .. note::
       The width formatter unit is number of characters rather than bytes.
-      The precision formatter unit is number of bytes or :c:type:`wchar_t`
+      The precision formatter unit is number of bytes or :c:expr:`wchar_t`
       items (if the length modifier ``l`` is used) for ``"%s"`` and
       ``"%V"`` (if the ``PyObject*`` argument is ``NULL``), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
