@@ -831,8 +831,8 @@ _overlapped_WSAConnect(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     HANDLE ConnectSocket;
     PyObject *AddressObj;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"O:WSAConnect",
-        &ConnectSocket, &AddressObj)) {
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"O!:WSAConnect",
+        &ConnectSocket, &PyTuple_Type, &AddressObj)) {
         goto exit;
     }
     return_value = _overlapped_WSAConnect_impl(module, ConnectSocket, AddressObj);
@@ -864,8 +864,8 @@ _overlapped_Overlapped_WSASendTo(OverlappedObject *self, PyObject *const *args, 
     DWORD flags;
     PyObject *AddressObj;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"OkO:WSASendTo",
-        &handle, &bufobj, &flags, &AddressObj)) {
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"OkO!:WSASendTo",
+        &handle, &bufobj, &flags, &PyTuple_Type, &AddressObj)) {
         goto exit;
     }
     return_value = _overlapped_Overlapped_WSASendTo_impl(self, handle, bufobj, flags, AddressObj);
@@ -905,4 +905,4 @@ _overlapped_Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d3215a6ca589735a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e685b61b3da0524d input=a9049054013a1b77]*/
