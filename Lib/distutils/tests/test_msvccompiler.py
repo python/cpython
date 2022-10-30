@@ -75,7 +75,7 @@ class msvccompilerTestCase(support.TempdirManager,
             raise unittest.SkipTest("VS 2015 is not installed")
 
 def test_suite():
-    return unittest.makeSuite(msvccompilerTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(msvccompilerTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

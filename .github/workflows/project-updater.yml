@@ -1,0 +1,31 @@
+name: Update GH projects
+
+on:
+  issues:
+    types:
+      - opened
+      - labeled
+
+permissions:
+  contents: read
+
+jobs:
+  add-to-project:
+    name: Add issues to projects
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # if an issue has any of these labels, it will be added
+          # to the corresponding project
+          - { project:  2, label: "release-blocker, deferred-blocker" }
+          - { project:  3, label: expert-subinterpreters }
+          - { project: 29, label: expert-asyncio }
+          - { project: 32, label: sprint }
+    
+    steps:
+      - uses: actions/add-to-project@v0.1.0
+        with:
+          project-url: https://github.com/orgs/python/projects/${{ matrix.project }}
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
+          labeled: ${{ matrix.label }}
