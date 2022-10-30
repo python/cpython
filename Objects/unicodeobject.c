@@ -10444,8 +10444,8 @@ unicode_compare_eq(PyObject *str1, PyObject *str2)
 int
 _PyUnicode_Equal(PyObject *str1, PyObject *str2)
 {
-    assert(PyUnicode_CheckExact(str1));
-    assert(PyUnicode_CheckExact(str2));
+    assert(PyUnicode_Check(str1));
+    assert(PyUnicode_Check(str2));
     if (str1 == str2) {
         return 1;
     }

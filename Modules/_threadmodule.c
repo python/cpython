@@ -1128,7 +1128,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->config._isolated_interpreter) {
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "thread is not supported for isolated subinterpreters");
         return NULL;
