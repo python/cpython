@@ -1,1 +1,0 @@
-Fix a bug in dis.findlinestarts() where it would return invalid bytecode offsets. Document that a code object's co_lnotab can contain invalid bytecode offsets.

@@ -10,21 +10,21 @@ Using the Python Interpreter
 Invoking the Interpreter
 ========================
 
-The Python interpreter is usually installed as :file:`/usr/local/bin/python3.9`
+The Python interpreter is usually installed as :file:`/usr/local/bin/python3.12`
 on those machines where it is available; putting :file:`/usr/local/bin` in your
 Unix shell's search path makes it possible to start it by typing the command:
 
 .. code-block:: text
 
-   python3.9
+   python3.12
 
 to the shell. [#]_ Since the choice of the directory where the interpreter lives
 is an installation option, other places are possible; check with your local
 Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
-On Windows machines where you have installed from the :ref:`Microsoft Store
-<windows-store>`, the :file:`python3.9` command will be available. If you have
+On Windows machines where you have installed Python from the :ref:`Microsoft Store
+<windows-store>`, the :file:`python3.12` command will be available. If you have
 the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
 command. See :ref:`setting-envvars` for other ways to launch Python.
 
@@ -52,7 +52,7 @@ A second way of starting the interpreter is ``python -c command [arg] ...``,
 which executes the statement(s) in *command*, analogous to the shell's
 :option:`-c` option.  Since Python statements often contain spaces or other
 characters that are special to the shell, it is usually advised to quote
-*command* in its entirety with single quotes.
+*command* in its entirety.
 
 Some Python modules are also useful as scripts.  These can be invoked using
 ``python -m module [arg] ...``, which executes the source file for *module* as
@@ -97,9 +97,9 @@ before printing the first prompt:
 
 .. code-block:: shell-session
 
-   $ python3.9
-   Python 3.9 (default, June 4 2019, 09:25:04)
-   [GCC 4.8.2] on linux
+   $ python3.12
+   Python 3.12 (default, April 4 2022, 09:25:04)
+   [GCC 10.2.0] on linux
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
 

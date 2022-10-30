@@ -1,3 +1,0 @@
-Python ignored arguments passed to :c:func:`Py_SetPath`,
-:c:func:`Py_SetPythonHome` and :c:func:`Py_SetProgramName`: fix Python
-initialization to use specified arguments.

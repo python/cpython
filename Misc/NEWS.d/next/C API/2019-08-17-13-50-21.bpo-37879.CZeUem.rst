@@ -1,2 +1,0 @@
-Fix subtype_dealloc to suppress the type decref when the base type is a C
-heap type

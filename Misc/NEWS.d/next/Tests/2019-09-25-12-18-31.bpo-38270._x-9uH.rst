@@ -1,4 +1,0 @@
-test.support now has a helper function to check for availibility of a
-hash digest function. Several tests are refactored avoid MD5 and use
-SHA256 instead. Other tests are marked to use MD5 and skipped when MD5 is
-disabled.

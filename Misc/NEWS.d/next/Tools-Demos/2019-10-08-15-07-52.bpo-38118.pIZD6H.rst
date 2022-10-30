@@ -1,2 +1,0 @@
-Update Valgrind suppression file to ignore a false alarm in
-:c:func:`PyUnicode_Decode` when using GCC builtin strcmp().

@@ -1,3 +1,0 @@
-On FreeBSD, Python no longer calls ``fedisableexcept()`` at startup to
-control the floating point control mode. The call became useless since
-FreeBSD 6: it became the default mode.

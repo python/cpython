@@ -1,1 +1,0 @@
-Update audioop extension module to use the stable ABI (PEP-384). Patch by Tyler Kieft.

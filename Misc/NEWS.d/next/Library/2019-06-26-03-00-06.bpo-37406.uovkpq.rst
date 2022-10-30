@@ -1,3 +1,0 @@
-The sqlite3 module now raises TypeError, rather than ValueError, if
-operation argument type is not str: execute(), executemany() and calling a
-connection.

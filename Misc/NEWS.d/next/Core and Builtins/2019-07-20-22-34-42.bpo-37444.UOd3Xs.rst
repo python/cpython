@@ -1,1 +1,0 @@
-Update differing exception between :meth:`builtins.__import__` and :meth:`importlib.__import__`.

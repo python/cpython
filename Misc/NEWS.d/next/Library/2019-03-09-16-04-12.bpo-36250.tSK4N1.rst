@@ -1,2 +1,0 @@
-Ignore ``ValueError`` from ``signal`` with ``interaction`` in non-main
-thread.

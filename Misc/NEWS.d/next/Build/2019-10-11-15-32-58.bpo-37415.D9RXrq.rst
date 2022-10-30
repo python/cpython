@@ -1,2 +1,0 @@
-Fix stdatomic.h header check for ICC compiler: the ICC implementation lacks
-atomic_uintptr_t type which is needed by Python.

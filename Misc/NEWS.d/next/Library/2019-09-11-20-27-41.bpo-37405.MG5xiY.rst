@@ -1,2 +1,0 @@
-Fixed regression bug for socket.getsockname() for non-CAN_ISOTP AF_CAN
-address family sockets by returning a 1-tuple instead of string.

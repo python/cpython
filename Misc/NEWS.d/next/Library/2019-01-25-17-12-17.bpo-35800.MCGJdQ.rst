@@ -1,1 +1,0 @@
-Deprecate ``smtpd.MailmanProxy`` ready for future removal.
