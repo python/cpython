@@ -64,7 +64,7 @@ class PLexer:
         tkn = self.next()
         if tkn is not None and tkn.kind == kind:
             return tkn
-        raise self.make_syntax_error(f"Expected {kind!r} but got {tkn.text!r}", tkn)
+        raise self.make_syntax_error(f"Expected {kind!r} but got {tkn and tkn.text!r}", tkn)
 
     def extract_line(self, lineno: int) -> str:
         # Return source line `lineno` (1-based)
