@@ -96,7 +96,7 @@
     <Link>
       <AdditionalDependencies>version.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
-      <ModuleDefinitionFile>..\PC\pyshellext$(PyDebugExt).def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>..\PC\pyshellext.def</ModuleDefinitionFile>
     </Link>
     <Midl>
       <CompileInterface>true</CompileInterface>
@@ -104,11 +104,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\PC\pyshellext.cpp" />
-    <Midl Include="..\PC\pyshellext.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\PC\pyshellext.def" />
-    <None Include="..\PC\pyshellext_d.def" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\pyshellext.rc" />
