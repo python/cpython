@@ -101,4 +101,4 @@ if __name__ == "__main__":
         tok = p.next(raw=True)
         left = repr(tok)
         right = lx.to_text([tok]).rstrip()
-        print(f"{left:80.80} {right}")
+        print(f"{left:40.40} {right}")

@@ -166,6 +166,14 @@ class Token:
         assert isinstance(txt, str)
         return Token(self.kind, txt, self.begin, self.end)
 
+    def __repr__(self):
+        b0, b1 = self.begin
+        e0, e1 = self.end
+        if b0 == e0:
+            return f"{self.kind}({self.text!r}, {b0}:{b1}:{e1})"
+        else:
+            return f"{self.kind}({self.text!r}, {b0}:{b1}, {e0}:{e1})"
+
 
 def tokenize(src, line=1, filename=None):
     linestart = -1
