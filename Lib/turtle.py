@@ -596,7 +596,6 @@ class TurtleScreenBase(object):
         item = self.cv.create_text(x-1, -y, text = txt, anchor = anchor[align],
                                         fill = pencolor, font = font)
         x0, y0, x1, y1 = self.cv.bbox(item)
-        self.cv.update()
         return item, x1-1
 
 ##    def _dot(self, pos, size, color):
@@ -2863,10 +2862,10 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.stamp()
         >>> turtle.fd(50)
         """
-        warnings.warn("turtle.RawTurtle.settiltangle() is deprecated since "
-                      "Python 3.1 and scheduled for removal in Python 3.13."
-                      "Use tiltangle() instead.",
-                       DeprecationWarning)
+        warnings._deprecated("turtle.RawTurtle.settiltangle()",
+                             "{name!r} is deprecated since Python 3.1 and scheduled "
+                             "for removal in Python {remove}. Use tiltangle() instead.",
+                             remove=(3, 13))
         self.tiltangle(angle)
 
     def tiltangle(self, angle=None):
@@ -3419,6 +3418,7 @@ class RawTurtle(TPen, TNavigator):
         """
         item, end = self.screen._write(self._position, txt, align, font,
                                                           self._pencolor)
+        self._update()
         self.items.append(item)
         if self.undobuffer:
             self.undobuffer.push(("wri", item))

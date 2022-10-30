@@ -23,11 +23,10 @@ from test.support import socket_helper
 from test.support import warnings_helper
 from test.support.socket_helper import HOST, HOSTv6
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
-    import asynchat
+
+asynchat = warnings_helper.import_deprecated('asynchat')
+asyncore = warnings_helper.import_deprecated('asyncore')
+
 
 support.requires_working_socket(module=True)
 

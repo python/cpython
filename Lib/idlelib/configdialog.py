@@ -11,7 +11,7 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 import re
 
-from tkinter import (Toplevel, Listbox, Scale, Canvas,
+from tkinter import (Toplevel, Listbox, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
@@ -24,7 +24,7 @@ import tkinter.font as tkfont
 from tkinter import messagebox
 
 from idlelib.config import idleConf, ConfigChanges
-from idlelib.config_key import GetKeysDialog
+from idlelib.config_key import GetKeysWindow
 from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
@@ -121,7 +121,7 @@ class ConfigDialog(Toplevel):
         self.winpage = WinPage(note)
         self.shedpage = ShedPage(note)
 
-        note.add(self.fontpage, text='Fonts/Tabs')
+        note.add(self.fontpage, text=' Fonts ')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
         note.add(self.winpage, text=' Windows ')
@@ -1397,7 +1397,7 @@ class KeysPage(Frame):
             for event in key_set_changes:
                 current_bindings[event] = key_set_changes[event].split()
         current_key_sequences = list(current_bindings.values())
-        new_keys = GetKeysDialog(self, 'Get New Keys', bind_name,
+        new_keys = GetKeysWindow(self, 'Get New Keys', bind_name,
                 current_key_sequences).result
         if new_keys:
             if self.keyset_source.get():  # Current key set is a built-in.

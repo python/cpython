@@ -1,15 +1,16 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
+#include "pycore_object.h"      // _Py_FatalRefcountError()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
 
 /* We define bool_repr to return "False" or "True" */
 
 static PyObject *
 bool_repr(PyObject *self)
 {
-    return self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
+    PyObject *res = self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
+    return Py_NewRef(res);
 }
 
 /* Function to return a bool from a C long */

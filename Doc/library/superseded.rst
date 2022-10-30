@@ -20,13 +20,13 @@ backwards compatibility. They have been superseded by other modules.
    crypt.rst
    imghdr.rst
    imp.rst
+   mailcap.rst
    msilib.rst
-   nntplib.rst
    nis.rst
+   nntplib.rst
    optparse.rst
    ossaudiodev.rst
    pipes.rst
-   smtpd.rst
    sndhdr.rst
    spwd.rst
    sunau.rst

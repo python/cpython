@@ -3,7 +3,7 @@ from test.support import os_helper
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
-                     NEWLINE, _generate_tokens_from_c_tokenizer)
+                     NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT)
 from io import BytesIO, StringIO
 import unittest
 from textwrap import dedent
@@ -2511,6 +2511,26 @@ async def f():
 
         self.assertRaises(SyntaxError, get_tokens, "("*1000+"a"+")"*1000)
         self.assertRaises(SyntaxError, get_tokens, "]")
+
+    def test_max_indent(self):
+        MAXINDENT = 100
+
+        def generate_source(indents):
+            source = ''.join(('  ' * x) + 'if True:\n' for x in range(indents))
+            source += '  ' * indents + 'pass\n'
+            return source
+
+        valid = generate_source(MAXINDENT - 1)
+        tokens = list(_generate_tokens_from_c_tokenizer(valid))
+        self.assertEqual(tokens[-1].type, DEDENT)
+        compile(valid, "<string>", "exec")
+
+        invalid = generate_source(MAXINDENT)
+        tokens = list(_generate_tokens_from_c_tokenizer(invalid))
+        self.assertEqual(tokens[-1].type, NEWLINE)
+        self.assertRaises(
+            IndentationError, compile, invalid, "<string>", "exec"
+        )
 
     def test_continuation_lines_indentation(self):
         def get_tokens(string):

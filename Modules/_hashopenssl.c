@@ -255,11 +255,7 @@ _setException(PyObject *exc, const char* altmsg, ...)
     const char *lib, *func, *reason;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, altmsg);
-#else
-    va_start(vargs);
-#endif
     if (!errcode) {
         if (altmsg == NULL) {
             PyErr_SetString(exc, "no reason supplied");
@@ -2002,7 +1998,7 @@ _hashlib_compare_digest_impl(PyObject *module, PyObject *a, PyObject *b)
                     PyUnicode_GET_LENGTH(a),
                     PyUnicode_GET_LENGTH(b));
     }
-    /* fallback to buffer interface for bytes, bytesarray and other */
+    /* fallback to buffer interface for bytes, bytearray and other */
     else {
         Py_buffer view_a;
         Py_buffer view_b;
