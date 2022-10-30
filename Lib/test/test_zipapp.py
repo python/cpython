@@ -9,6 +9,7 @@ import unittest
 import zipapp
 import zipfile
 from test.support import requires_zlib
+from test.support import os_helper
 
 from unittest.mock import patch
 
@@ -53,6 +54,22 @@ class ZipAppTest(unittest.TestCase):
         with zipfile.ZipFile(target, 'r') as z:
             self.assertIn('foo/', z.namelist())
             self.assertIn('bar/', z.namelist())
+
+    def test_create_sorted_archive(self):
+        # Test that zipapps order their files by name
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+        target = io.BytesIO()
+        zipapp.create_archive(str(source), target)
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py", "bin/", "bin/baz", "bin/qux", "zed.py"])
 
     def test_create_archive_with_filter(self):
         # Test packing a directory and using filter to specify
@@ -101,7 +118,7 @@ class ZipAppTest(unittest.TestCase):
         expected_target = self.tmpdir / 'source.pyz'
         self.assertTrue(expected_target.is_file())
 
-    @requires_zlib
+    @requires_zlib()
     def test_create_archive_with_compression(self):
         # Test packing a directory into a compressed archive.
         source = self.tmpdir / 'source'
@@ -301,6 +318,7 @@ class ZipAppTest(unittest.TestCase):
     # (Unix only) tests that archives with shebang lines are made executable
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows does not support an executable bit')
+    @os_helper.skip_unless_working_chmod
     def test_shebang_is_executable(self):
         # Test that an archive with a shebang line is made executable.
         source = self.tmpdir / 'source'
@@ -365,7 +383,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(original), '-o', str(original)]
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
     def test_cmdline_copy_change_main(self):
@@ -375,7 +393,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(original), '-o', str(target), '-m', 'foo:bar']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
     @patch('sys.stdout', new_callable=io.StringIO)
@@ -385,7 +403,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(target), '--info']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a zero returm code.
+        # Program should exit with a zero return code.
         self.assertEqual(cm.exception.code, 0)
         self.assertEqual(mock_stdout.getvalue(), "Interpreter: <none>\n")
 
@@ -395,7 +413,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(target), '--info']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
 

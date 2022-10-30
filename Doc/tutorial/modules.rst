@@ -47,8 +47,9 @@ command::
 
    >>> import fibo
 
-This does not enter the names of the functions defined in ``fibo``  directly in
-the current symbol table; it only enters the module name ``fibo`` there. Using
+This does not add the names of the functions defined in ``fibo``  directly to
+the current :term:`namespace` (see :ref:`tut-scopes` for more details);
+it only adds the module name ``fibo`` there. Using
 the module name you can access the functions::
 
    >>> fibo.fib(1000)
@@ -75,8 +76,8 @@ These statements are intended to initialize the module. They are executed only
 the *first* time the module name is encountered in an import statement. [#]_
 (They are also run if the file is executed as a script.)
 
-Each module has its own private symbol table, which is used as the global symbol
-table by all functions defined in the module. Thus, the author of a module can
+Each module has its own private namespace, which is used as the global namespace
+by all functions defined in the module. Thus, the author of a module can
 use global variables in the module without worrying about accidental clashes
 with a user's global variables. On the other hand, if you know what you are
 doing you can touch a module's global variables with the same notation used to
@@ -84,18 +85,18 @@ refer to its functions, ``modname.itemname``.
 
 Modules can import other modules.  It is customary but not required to place all
 :keyword:`import` statements at the beginning of a module (or script, for that
-matter).  The imported module names are placed in the importing module's global
-symbol table.
+matter).  The imported module names, if placed at the top level of a module
+(outside any functions or classes), are added to the module's global namespace.
 
 There is a variant of the :keyword:`import` statement that imports names from a
-module directly into the importing module's symbol table.  For example::
+module directly into the importing module's namespace.  For example::
 
    >>> from fibo import fib, fib2
    >>> fib(500)
    0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 
 This does not introduce the module name from which the imports are taken in the
-local symbol table (so in the example, ``fibo`` is not defined).
+local namespace (so in the example, ``fibo`` is not defined).
 
 There is even a variant to import all names that a module defines::
 
@@ -111,6 +112,25 @@ you have already defined.
 Note that in general the practice of importing ``*`` from a module or package is
 frowned upon, since it often causes poorly readable code. However, it is okay to
 use it to save typing in interactive sessions.
+
+If the module name is followed by :keyword:`!as`, then the name
+following :keyword:`!as` is bound directly to the imported module.
+
+::
+
+   >>> import fibo as fib
+   >>> fib.fib(500)
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
+This is effectively importing the module in the same way that ``import fibo``
+will do, with the only difference of it being available as ``fib``.
+
+It can also be used when utilising :keyword:`from` with similar effects::
+
+   >>> from fibo import fib as fibonacci
+   >>> fibonacci(500)
+   0 1 1 2 3 5 8 13 21 34 55 89 144 233 377
+
 
 .. note::
 
@@ -164,7 +184,8 @@ The Module Search Path
 .. index:: triple: module; search; path
 
 When a module named :mod:`spam` is imported, the interpreter first searches for
-a built-in module with that name. If not found, it then searches for a file
+a built-in module with that name. These module names are listed in
+:data:`sys.builtin_module_names`. If not found, it then searches for a file
 named :file:`spam.py` in a list of directories given by the variable
 :data:`sys.path`.  :data:`sys.path` is initialized from these locations:
 
@@ -172,7 +193,10 @@ named :file:`spam.py` in a list of directories given by the variable
   file is specified).
 * :envvar:`PYTHONPATH` (a list of directory names, with the same syntax as the
   shell variable :envvar:`PATH`).
-* The installation-dependent default.
+* The installation-dependent default (by convention including a
+  ``site-packages`` directory, handled by the :mod:`site` module).
+
+More details are at :ref:`sys-path-init`.
 
 .. note::
    On file systems which support symlinks, the directory containing the input
@@ -188,6 +212,8 @@ directory. This is an error unless the replacement is intended.  See section
 
 .. %
     Do we need stuff on zip files etc. ? DUBOIS
+
+.. _tut-pycache:
 
 "Compiled" Python files
 -----------------------
@@ -230,7 +256,7 @@ Some tips for experts:
   directory.
 
 * There is more detail on this process, including a flow chart of the
-  decisions, in PEP 3147.
+  decisions, in :pep:`3147`.
 
 
 .. _tut-standardmodules:
@@ -287,23 +313,27 @@ defines.  It returns a sorted list of strings::
    >>> dir(fibo)
    ['__name__', 'fib', 'fib2']
    >>> dir(sys)  # doctest: +NORMALIZE_WHITESPACE
-   ['__displayhook__', '__doc__', '__excepthook__', '__loader__', '__name__',
-    '__package__', '__stderr__', '__stdin__', '__stdout__',
-    '_clear_type_cache', '_current_frames', '_debugmallocstats', '_getframe',
-    '_home', '_mercurial', '_xoptions', 'abiflags', 'api_version', 'argv',
-    'base_exec_prefix', 'base_prefix', 'builtin_module_names', 'byteorder',
-    'call_tracing', 'callstats', 'copyright', 'displayhook',
-    'dont_write_bytecode', 'exc_info', 'excepthook', 'exec_prefix',
-    'executable', 'exit', 'flags', 'float_info', 'float_repr_style',
-    'getcheckinterval', 'getdefaultencoding', 'getdlopenflags',
-    'getfilesystemencoding', 'getobjects', 'getprofile', 'getrecursionlimit',
-    'getrefcount', 'getsizeof', 'getswitchinterval', 'gettotalrefcount',
+   ['__breakpointhook__', '__displayhook__', '__doc__', '__excepthook__',
+    '__interactivehook__', '__loader__', '__name__', '__package__', '__spec__',
+    '__stderr__', '__stdin__', '__stdout__', '__unraisablehook__',
+    '_clear_type_cache', '_current_frames', '_debugmallocstats', '_framework',
+    '_getframe', '_git', '_home', '_xoptions', 'abiflags', 'addaudithook',
+    'api_version', 'argv', 'audit', 'base_exec_prefix', 'base_prefix',
+    'breakpointhook', 'builtin_module_names', 'byteorder', 'call_tracing',
+    'callstats', 'copyright', 'displayhook', 'dont_write_bytecode', 'exc_info',
+    'excepthook', 'exec_prefix', 'executable', 'exit', 'flags', 'float_info',
+    'float_repr_style', 'get_asyncgen_hooks', 'get_coroutine_origin_tracking_depth',
+    'getallocatedblocks', 'getdefaultencoding', 'getdlopenflags',
+    'getfilesystemencodeerrors', 'getfilesystemencoding', 'getprofile',
+    'getrecursionlimit', 'getrefcount', 'getsizeof', 'getswitchinterval',
     'gettrace', 'hash_info', 'hexversion', 'implementation', 'int_info',
-    'intern', 'maxsize', 'maxunicode', 'meta_path', 'modules', 'path',
-    'path_hooks', 'path_importer_cache', 'platform', 'prefix', 'ps1',
-    'setcheckinterval', 'setdlopenflags', 'setprofile', 'setrecursionlimit',
-    'setswitchinterval', 'settrace', 'stderr', 'stdin', 'stdout',
-    'thread_info', 'version', 'version_info', 'warnoptions']
+    'intern', 'is_finalizing', 'last_traceback', 'last_type', 'last_value',
+    'maxsize', 'maxunicode', 'meta_path', 'modules', 'path', 'path_hooks',
+    'path_importer_cache', 'platform', 'prefix', 'ps1', 'ps2', 'pycache_prefix',
+    'set_asyncgen_hooks', 'set_coroutine_origin_tracking_depth', 'setdlopenflags',
+    'setprofile', 'setrecursionlimit', 'setswitchinterval', 'settrace', 'stderr',
+    'stdin', 'stdout', 'thread_info', 'unraisablehook', 'version', 'version_info',
+    'warnoptions']
 
 Without arguments, :func:`dir` lists the names you have defined currently::
 
@@ -363,7 +393,7 @@ module names".  For example, the module name :mod:`A.B` designates a submodule
 named ``B`` in a package named ``A``.  Just like the use of modules saves the
 authors of different modules from having to worry about each other's global
 variable names, the use of dotted module names saves the authors of multi-module
-packages like NumPy or the Python Imaging Library from having to worry about
+packages like NumPy or Pillow from having to worry about
 each other's module names.
 
 Suppose you want to design a collection of modules (a "package") for the uniform
@@ -406,9 +436,9 @@ your package (expressed in terms of a hierarchical filesystem):
 When importing the package, Python searches through the directories on
 ``sys.path`` looking for the package subdirectory.
 
-The :file:`__init__.py` files are required to make Python treat the directories
-as containing packages; this is done to prevent directories with a common name,
-such as ``string``, from unintentionally hiding valid modules that occur later
+The :file:`__init__.py` files are required to make Python treat directories
+containing the file as packages.  This prevents directories with a common name,
+such as ``string``, unintentionally hiding valid modules that occur later
 on the module search path. In the simplest case, :file:`__init__.py` can just be
 an empty file, but it can also execute initialization code for the package or
 set the ``__all__`` variable, described later.
@@ -480,7 +510,7 @@ code::
    __all__ = ["echo", "surround", "reverse"]
 
 This would mean that ``from sound.effects import *`` would import the three
-named submodules of the :mod:`sound` package.
+named submodules of the :mod:`sound.effects` package.
 
 If ``__all__`` is not defined, the statement ``from sound.effects import *``
 does *not* import all submodules from the package :mod:`sound.effects` into the
@@ -504,11 +534,13 @@ Although certain modules are designed to export only names that follow certain
 patterns when you use ``import *``, it is still considered bad practice in
 production code.
 
-Remember, there is nothing wrong with using ``from Package import
+Remember, there is nothing wrong with using ``from package import
 specific_submodule``!  In fact, this is the recommended notation unless the
 importing module needs to use submodules with the same name from different
 packages.
 
+
+.. _intra-package-references:
 
 Intra-package References
 ------------------------
@@ -549,5 +581,5 @@ modules found in a package.
 .. rubric:: Footnotes
 
 .. [#] In fact function definitions are also 'statements' that are 'executed'; the
-   execution of a module-level function definition enters the function name in
-   the module's global symbol table.
+   execution of a module-level function definition adds the function name to
+   the module's global namespace.

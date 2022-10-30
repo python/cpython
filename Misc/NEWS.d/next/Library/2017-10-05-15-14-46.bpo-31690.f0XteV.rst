@@ -1,2 +1,0 @@
-Allow the flags re.ASCII, re.LOCALE, and re.UNICODE to be used as group flags
-for regular expressions.

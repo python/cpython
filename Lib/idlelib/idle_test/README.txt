@@ -15,28 +15,27 @@ python -m idlelib.idle_test.htest
 1. Test Files
 
 The idle directory, idlelib, has over 60 xyz.py files. The idle_test
-subdirectory should contain a test_xyz.py for each, where 'xyz' is
-lowercased even if xyz.py is not. Here is a possible template, with the
-blanks after '.' and 'as', and before and after '_' to be filled in.
+subdirectory contains test_xyz.py for each implementation file xyz.py.
+To add a test for abc.py, open idle_test/template.py and immediately
+Save As test_abc.py.  Insert 'abc' on the first line, and replace
+'zzdummy' with 'abc.
 
-import unittest
-from test.support import requires
-import idlelib. as
+Remove the imports of requires and tkinter if not needed.  Otherwise,
+add to the tkinter imports as needed.
 
-class _Test(unittest.TestCase):
+Add a prefix to 'Test' for the initial test class.  The template class
+contains code needed or possibly needed for gui tests.  See the next
+section if doing gui tests.  If not, and not needed for further classes,
+this code can be removed.
 
-    def test_(self):
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)
-
-Add the following at the end of xyy.py, with the appropriate name added
-after 'test_'. Some files already have something like this for htest.
-If so, insert the import and unittest.main lines before the htest lines.
+Add the following at the end of abc.py.  If an htest was added first,
+insert the import and main lines before the htest lines.
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_abc', verbosity=2, exit=False)
+
+The ', exit=False' is only needed if an htest follows.
 
 
 
@@ -55,12 +54,14 @@ from test.support import requires
 requires('gui')
 
 To guard a test class, put "requires('gui')" in its setUpClass function.
+The template.py file does this.
 
-To avoid interfering with other GUI tests, all GUI objects must be destroyed and
-deleted by the end of the test.  The Tk root created in a setUpX function should
-be destroyed in the corresponding tearDownX and the module or class attribute
-deleted.  Others widgets should descend from the single root and the attributes
-deleted BEFORE root is destroyed.  See https://bugs.python.org/issue20567.
+To avoid interfering with other GUI tests, all GUI objects must be
+destroyed and deleted by the end of the test.  The Tk root created in a
+setUpX function should be destroyed in the corresponding tearDownX and
+the module or class attribute deleted.  Others widgets should descend
+from the single root and the attributes deleted BEFORE root is
+destroyed.  See https://bugs.python.org/issue20567.
 
     @classmethod
     def setUpClass(cls):
@@ -75,11 +76,22 @@ deleted BEFORE root is destroyed.  See https://bugs.python.org/issue20567.
         cls.root.destroy()
         del cls.root
 
-The update_idletasks call is sometimes needed to prevent the following warning
-either when running a test alone or as part of the test suite (#27196).
+The update_idletasks call is sometimes needed to prevent the following
+warning either when running a test alone or as part of the test suite
+(#27196).  It should not hurt if not needed.
+
   can't invoke "event" command: application has been destroyed
   ...
   "ttk::ThemeChanged"
+
+If a test creates instance 'e' of EditorWindow, call 'e._close()' before
+or as the first part of teardown.  The effect of omitting this depends
+on the later shutdown.  Then enable the after_cancel loop in the
+template.  This prevents messages like the following.
+
+bgerror failed to handle background error.
+    Original error: invalid command name "106096696timer_event"
+    Error in bgerror: can't invoke "tk" command: application has been destroyed
 
 Requires('gui') causes the test(s) it guards to be skipped if any of
 these conditions are met:

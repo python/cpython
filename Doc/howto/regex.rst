@@ -89,15 +89,16 @@ is the same as ``[a-c]``, which uses a range to express the same set of
 characters.  If you wanted to match only lowercase letters, your RE would be
 ``[a-z]``.
 
-Metacharacters are not active inside classes.  For example, ``[akm$]`` will
+Metacharacters (except ``\``) are not active inside classes.  For example, ``[akm$]`` will
 match any of the characters ``'a'``, ``'k'``, ``'m'``, or ``'$'``; ``'$'`` is
 usually a metacharacter, but inside a character class it's stripped of its
 special nature.
 
 You can match the characters not listed within the class by :dfn:`complementing`
 the set.  This is indicated by including a ``'^'`` as the first character of the
-class; ``'^'`` outside a character class will simply match the ``'^'``
-character.  For example, ``[^5]`` will match any character except ``'5'``.
+class. For example, ``[^5]`` will match any character except ``'5'``.  If the
+caret appears elsewhere in a character class, it does not have special meaning.
+For example: ``[5^]`` will match either a ``'5'`` or a ``'^'``.
 
 Perhaps the most important metacharacter is the backslash, ``\``.   As in Python
 string literals, the backslash can be followed by various characters to signal
@@ -229,13 +230,13 @@ while ``+`` requires at least *one* occurrence.  To use a similar example,
 ``ca+t`` will match ``'cat'`` (1 ``'a'``), ``'caaat'`` (3 ``'a'``\ s), but won't
 match ``'ct'``.
 
-There are two more repeating qualifiers.  The question mark character, ``?``,
+There are two more repeating operators or quantifiers.  The question mark character, ``?``,
 matches either once or zero times; you can think of it as marking something as
 being optional.  For example, ``home-?brew`` matches either ``'homebrew'`` or
 ``'home-brew'``.
 
-The most complicated repeated qualifier is ``{m,n}``, where *m* and *n* are
-decimal integers.  This qualifier means there must be at least *m* repetitions,
+The most complicated quantifier is ``{m,n}``, where *m* and *n* are
+decimal integers.  This quantifier means there must be at least *m* repetitions,
 and at most *n*.  For example, ``a/{1,3}b`` will match ``'a/b'``, ``'a//b'``, and
 ``'a///b'``.  It won't match ``'ab'``, which has no slashes, or ``'a////b'``, which
 has four.
@@ -244,7 +245,7 @@ You can omit either *m* or *n*; in that case, a reasonable value is assumed for
 the missing value.  Omitting *m* is interpreted as a lower limit of 0, while
 omitting *n* results in an upper bound of infinity.
 
-Readers of a reductionist bent may notice that the three other qualifiers can
+Readers of a reductionist bent may notice that the three other quantifiers can
 all be expressed using this notation.  ``{0,}`` is the same as ``*``, ``{1,}``
 is equivalent to ``+``, and ``{0,1}`` is the same as ``?``.  It's better to use
 ``*``, ``+``, or ``?`` when you can, simply because they're shorter and easier
@@ -289,6 +290,8 @@ Putting REs in strings keeps the Python language simpler, but has one
 disadvantage which is the topic of the next section.
 
 
+.. _the-backslash-plague:
+
 The Backslash Plague
 --------------------
 
@@ -326,6 +329,13 @@ backslashes are not handled in any special way in a string literal prefixed with
 ``'r'``, so ``r"\n"`` is a two-character string containing ``'\'`` and ``'n'``,
 while ``"\n"`` is a one-character string containing a newline. Regular
 expressions will often be written in Python code using this raw string notation.
+
+In addition, special escape sequences that are valid in regular expressions,
+but not valid as Python string literals, now result in a
+:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`,
+which means the sequences will be invalid if raw string notation or escaping
+the backslashes isn't used.
+
 
 +-------------------+------------------+
 | Regular String    | Raw string       |
@@ -368,11 +378,7 @@ containing information about the match: where it starts and ends, the substring
 it matched, and more.
 
 You can learn about this by interactively experimenting with the :mod:`re`
-module.  If you have :mod:`tkinter` available, you may also want to look at
-:source:`Tools/demo/redemo.py`, a demonstration program included with the
-Python distribution.  It allows you to enter REs and strings, and displays
-whether the RE matches or fails. :file:`redemo.py` can be quite useful when
-trying to debug a complicated RE.
+module.
 
 This HOWTO uses the standard Python interpreter for its examples. First, run the
 Python interpreter, import the :mod:`re` module, and compile a RE::
@@ -457,9 +463,15 @@ In actual programs, the most common style is to store the
 Two pattern methods return all of the matches for a pattern.
 :meth:`~re.Pattern.findall` returns a list of matching strings::
 
-   >>> p = re.compile('\d+')
+   >>> p = re.compile(r'\d+')
    >>> p.findall('12 drummers drumming, 11 pipers piping, 10 lords a-leaping')
    ['12', '11', '10']
+
+The ``r`` prefix, making the literal a raw string literal, is needed in this
+example because escape sequences in a normal "cooked" string literal that are
+not recognized by Python, as opposed to regular expressions, now result in a
+:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`.  See
+:ref:`the-backslash-plague`.
 
 :meth:`~re.Pattern.findall` has to create the entire list before it can be returned as the
 result.  The :meth:`~re.Pattern.finditer` method returns a sequence of
@@ -771,7 +783,9 @@ Frequently you need to obtain more information than just whether the RE matched
 or not.  Regular expressions are often used to dissect strings by writing a RE
 divided into several subgroups which match different components of interest.
 For example, an RFC-822 header line is divided into a header name and a value,
-separated by a ``':'``, like this::
+separated by a ``':'``, like this:
+
+.. code-block:: none
 
    From: author@example.com
    User-Agent: Thunderbird 1.5.0.9 (X11/20061227)
@@ -785,7 +799,7 @@ which matches the header's value.
 Groups are marked by the ``'('``, ``')'`` metacharacters. ``'('`` and ``')'``
 have much the same meaning as they do in mathematical expressions; they group
 together the expressions contained inside them, and you can repeat the contents
-of a group with a repeating qualifier, such as ``*``, ``+``, ``?``, or
+of a group with a quantifier, such as ``*``, ``+``, ``?``, or
 ``{m,n}``.  For example, ``(ab)*`` will match zero or more repetitions of
 ``ab``. ::
 
@@ -844,7 +858,7 @@ backreferences in a RE.
 
 For example, the following RE detects doubled words in a string. ::
 
-   >>> p = re.compile(r'(\b\w+)\s+\1')
+   >>> p = re.compile(r'\b(\w+)\s+\1\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
@@ -924,7 +938,14 @@ given numbers, so you can retrieve information about a group in two ways::
    >>> m.group(1)
    'Lots'
 
-Named groups are handy because they let you use easily-remembered names, instead
+Additionally, you can retrieve named groups as a dictionary with
+:meth:`~re.Match.groupdict`::
+
+   >>> m = re.match(r'(?P<first>\w+) (?P<last>\w+)', 'Jane Doe')
+   >>> m.groupdict()
+   {'first': 'Jane', 'last': 'Doe'}
+
+Named groups are handy because they let you use easily remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`
 module::
 
@@ -943,9 +964,9 @@ number of the group.  There's naturally a variant that uses the group name
 instead of the number. This is another Python extension: ``(?P=name)`` indicates
 that the contents of the group called *name* should again be matched at the
 current point.  The regular expression for finding doubled words,
-``(\b\w+)\s+\1`` can also be written as ``(?P<word>\b\w+)\s+(?P=word)``::
+``\b(\w+)\s+\1\b`` can also be written as ``\b(?P<word>\w+)\s+(?P=word)\b``::
 
-   >>> p = re.compile(r'(?P<word>\b\w+)\s+(?P=word)')
+   >>> p = re.compile(r'\b(?P<word>\w+)\s+(?P=word)\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
 
@@ -1096,11 +1117,11 @@ following calls::
 The module-level function :func:`re.split` adds the RE to be used as the first
 argument, but is otherwise the same.   ::
 
-   >>> re.split('[\W]+', 'Words, words, words.')
+   >>> re.split(r'[\W]+', 'Words, words, words.')
    ['Words', 'words', 'words', '']
-   >>> re.split('([\W]+)', 'Words, words, words.')
+   >>> re.split(r'([\W]+)', 'Words, words, words.')
    ['Words', ', ', 'words', ', ', 'words', '.', '']
-   >>> re.split('[\W]+', 'Words, words, words.', 1)
+   >>> re.split(r'[\W]+', 'Words, words, words.', 1)
    ['Words', 'words, words.']
 
 
@@ -1140,12 +1161,12 @@ new string value and the number of replacements  that were performed::
    >>> p.subn('colour', 'no colours at all')
    ('no colours at all', 0)
 
-Empty matches are replaced only when they're not adjacent to a previous match.
+Empty matches are replaced only when they're not adjacent to a previous empty match.
 ::
 
    >>> p = re.compile('x*')
    >>> p.sub('-', 'abxd')
-   '-a-b-d-'
+   '-a-b--d-'
 
 If *replacement* is a string, any backslash escapes in it are processed.  That
 is, ``\n`` is converted to a single newline character, ``\r`` is converted to a
@@ -1301,7 +1322,7 @@ backtrack character by character until it finds a match for the ``>``.   The
 final match extends from the ``'<'`` in ``'<html>'`` to the ``'>'`` in
 ``'</title>'``, which isn't what you want.
 
-In this case, the solution is to use the non-greedy qualifiers ``*?``, ``+?``,
+In this case, the solution is to use the non-greedy quantifiers ``*?``, ``+?``,
 ``??``, or ``{m,n}?``, which match as *little* text as possible.  In the above
 example, the ``'>'`` is tried immediately after the first ``'<'`` matches, and
 when it fails, the engine advances a character at a time, retrying the ``'>'``

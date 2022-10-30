@@ -92,14 +92,6 @@ wchar_t *Py_DecodeLocale(const char* arg, size_t *size)
    return w;
 }
 
-/* Parser/pgenmain.c */
-grammar *getgrammar(const char *filename)
-{
-    grammar *g;
-    __coverity_tainted_data_sink__(filename);
-    return g;
-}
-
 /* Python/marshal.c */
 
 static Py_ssize_t r_string(char *s, Py_ssize_t n, RFILE *p)

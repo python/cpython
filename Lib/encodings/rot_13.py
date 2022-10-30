@@ -12,18 +12,18 @@ import codecs
 
 class Codec(codecs.Codec):
     def encode(self, input, errors='strict'):
-        return (input.translate(rot13_map), len(input))
+        return (str.translate(input, rot13_map), len(input))
 
     def decode(self, input, errors='strict'):
-        return (input.translate(rot13_map), len(input))
+        return (str.translate(input, rot13_map), len(input))
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        return input.translate(rot13_map)
+        return str.translate(input, rot13_map)
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        return input.translate(rot13_map)
+        return str.translate(input, rot13_map)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

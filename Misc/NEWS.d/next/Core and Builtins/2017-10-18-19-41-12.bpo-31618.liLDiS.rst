@@ -1,7 +1,0 @@
-The per-frame tracing logic added in 3.7a1 has been altered so that
-``frame->f_lineno`` is updated before either ``"line"`` or ``"opcode"``
-events are emitted. Previously, opcode events were emitted first, and
-therefore would occasionally see stale line numbers on the frame. The
-behavior of this feature has changed slightly as a result: when both
-``f_trace_lines`` and ``f_trace_opcodes`` are enabled, line events now occur
-first.

@@ -5,7 +5,7 @@ import sys
 import types
 import unittest
 
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 
 class CollectInit:
@@ -56,7 +56,7 @@ class LazyLoaderTests(unittest.TestCase):
 
     def test_init(self):
         with self.assertRaises(TypeError):
-            # Classes that dono't define exec_module() trigger TypeError.
+            # Classes that don't define exec_module() trigger TypeError.
             util.LazyLoader(object)
 
     def new_module(self, source_code=None):
