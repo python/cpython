@@ -651,7 +651,7 @@ Connection objects
       Close the database connection.
       If :attr:`autocommit` is ``False``,
       any pending transaction is implicitly rolled back.
-      If :attr:`autocommit` is `True` or :const:`COMPAT_TRANSACTIONAL_CONTROL`
+      If :attr:`autocommit` is ``True`` or :const:`COMPAT_TRANSACTIONAL_CONTROL`
       no implicit transaction control is executed.
       Make sure to :meth:`commit` before closing
       to avoid losing pending changes.
