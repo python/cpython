@@ -2762,7 +2762,7 @@ class CAPITest(unittest.TestCase):
         check_format("repr=   12",
                      b'repr=%5.2V', None, b'123')
 
-        # test integer formats (%i, %d, %u)
+        # test integer formats (%i, %d, %u, %o, %x, %X)
         check_format('010',
                      b'%03i', c_int(10))
         check_format('0010',
@@ -2794,6 +2794,33 @@ class CAPITest(unittest.TestCase):
         check_format('123',
                      b'%zu', c_size_t(123))
 
+        check_format('123',
+                     b'%o', c_uint(0o123))
+        check_format('123',
+                     b'%lo', c_ulong(0o123))
+        check_format('123',
+                     b'%llo', c_ulonglong(0o123))
+        check_format('123',
+                     b'%zo', c_size_t(0o123))
+
+        check_format('abc',
+                     b'%x', c_uint(0xabc))
+        check_format('abc',
+                     b'%lx', c_ulong(0xabc))
+        check_format('abc',
+                     b'%llx', c_ulonglong(0xabc))
+        check_format('abc',
+                     b'%zx', c_size_t(0xabc))
+
+        check_format('ABC',
+                     b'%X', c_uint(0xabc))
+        check_format('ABC',
+                     b'%lX', c_ulong(0xabc))
+        check_format('ABC',
+                     b'%llX', c_ulonglong(0xabc))
+        check_format('ABC',
+                     b'%zX', c_size_t(0xabc))
+
         # test long output
         min_longlong = -(2 ** (8 * sizeof(c_longlong) - 1))
         max_longlong = -min_longlong - 1
@@ -2807,32 +2834,83 @@ class CAPITest(unittest.TestCase):
         PyUnicode_FromFormat(b'%p', c_void_p(-1))
 
         # test padding (width and/or precision)
-        check_format('123'.rjust(10, '0'),
-                     b'%010i', c_int(123))
-        check_format('123'.rjust(100),
-                     b'%100i', c_int(123))
-        check_format('123'.rjust(100, '0'),
-                     b'%.100i', c_int(123))
-        check_format('123'.rjust(80, '0').rjust(100),
-                     b'%100.80i', c_int(123))
+        check_format('123',        b'%2i', c_int(123))
+        check_format('       123', b'%10i', c_int(123))
+        check_format('0000000123', b'%010i', c_int(123))
+        check_format('123       ', b'%-10i', c_int(123))
+        check_format('123       ', b'%-010i', c_int(123))
+        check_format('123',        b'%.2i', c_int(123))
+        check_format('0000123',    b'%.7i', c_int(123))
+        check_format('       123', b'%10.2i', c_int(123))
+        check_format('   0000123', b'%10.7i', c_int(123))
+        check_format('0000000123', b'%010.7i', c_int(123))
+        check_format('0000123   ', b'%-10.7i', c_int(123))
+        check_format('0000123   ', b'%-010.7i', c_int(123))
 
-        check_format('123'.rjust(10, '0'),
-                     b'%010u', c_uint(123))
-        check_format('123'.rjust(100),
-                     b'%100u', c_uint(123))
-        check_format('123'.rjust(100, '0'),
-                     b'%.100u', c_uint(123))
-        check_format('123'.rjust(80, '0').rjust(100),
-                     b'%100.80u', c_uint(123))
+        check_format('-123',       b'%2i', c_int(-123))
+        check_format('      -123', b'%10i', c_int(-123))
+        check_format('-000000123', b'%010i', c_int(-123))
+        check_format('-123      ', b'%-10i', c_int(-123))
+        check_format('-123      ', b'%-010i', c_int(-123))
+        check_format('-123',       b'%.2i', c_int(-123))
+        check_format('-0000123',   b'%.7i', c_int(-123))
+        check_format('      -123', b'%10.2i', c_int(-123))
+        check_format('  -0000123', b'%10.7i', c_int(-123))
+        check_format('-000000123', b'%010.7i', c_int(-123))
+        check_format('-0000123  ', b'%-10.7i', c_int(-123))
+        check_format('-0000123  ', b'%-010.7i', c_int(-123))
 
-        check_format('123'.rjust(10, '0'),
-                     b'%010x', c_int(0x123))
-        check_format('123'.rjust(100),
-                     b'%100x', c_int(0x123))
-        check_format('123'.rjust(100, '0'),
-                     b'%.100x', c_int(0x123))
-        check_format('123'.rjust(80, '0').rjust(100),
-                     b'%100.80x', c_int(0x123))
+        check_format('123',        b'%2u', c_uint(123))
+        check_format('       123', b'%10u', c_uint(123))
+        check_format('0000000123', b'%010u', c_uint(123))
+        check_format('123       ', b'%-10u', c_uint(123))
+        check_format('123       ', b'%-010u', c_uint(123))
+        check_format('123',        b'%.2u', c_uint(123))
+        check_format('0000123',    b'%.7u', c_uint(123))
+        check_format('       123', b'%10.2u', c_uint(123))
+        check_format('   0000123', b'%10.7u', c_uint(123))
+        check_format('0000000123', b'%010.7u', c_uint(123))
+        check_format('0000123   ', b'%-10.7u', c_uint(123))
+        check_format('0000123   ', b'%-010.7u', c_uint(123))
+
+        check_format('123',        b'%2o', c_uint(0o123))
+        check_format('       123', b'%10o', c_uint(0o123))
+        check_format('0000000123', b'%010o', c_uint(0o123))
+        check_format('123       ', b'%-10o', c_uint(0o123))
+        check_format('123       ', b'%-010o', c_uint(0o123))
+        check_format('123',        b'%.2o', c_uint(0o123))
+        check_format('0000123',    b'%.7o', c_uint(0o123))
+        check_format('       123', b'%10.2o', c_uint(0o123))
+        check_format('   0000123', b'%10.7o', c_uint(0o123))
+        check_format('0000000123', b'%010.7o', c_uint(0o123))
+        check_format('0000123   ', b'%-10.7o', c_uint(0o123))
+        check_format('0000123   ', b'%-010.7o', c_uint(0o123))
+
+        check_format('abc',        b'%2x', c_uint(0xabc))
+        check_format('       abc', b'%10x', c_uint(0xabc))
+        check_format('0000000abc', b'%010x', c_uint(0xabc))
+        check_format('abc       ', b'%-10x', c_uint(0xabc))
+        check_format('abc       ', b'%-010x', c_uint(0xabc))
+        check_format('abc',        b'%.2x', c_uint(0xabc))
+        check_format('0000abc',    b'%.7x', c_uint(0xabc))
+        check_format('       abc', b'%10.2x', c_uint(0xabc))
+        check_format('   0000abc', b'%10.7x', c_uint(0xabc))
+        check_format('0000000abc', b'%010.7x', c_uint(0xabc))
+        check_format('0000abc   ', b'%-10.7x', c_uint(0xabc))
+        check_format('0000abc   ', b'%-010.7x', c_uint(0xabc))
+
+        check_format('ABC',        b'%2X', c_uint(0xabc))
+        check_format('       ABC', b'%10X', c_uint(0xabc))
+        check_format('0000000ABC', b'%010X', c_uint(0xabc))
+        check_format('ABC       ', b'%-10X', c_uint(0xabc))
+        check_format('ABC       ', b'%-010X', c_uint(0xabc))
+        check_format('ABC',        b'%.2X', c_uint(0xabc))
+        check_format('0000ABC',    b'%.7X', c_uint(0xabc))
+        check_format('       ABC', b'%10.2X', c_uint(0xabc))
+        check_format('   0000ABC', b'%10.7X', c_uint(0xabc))
+        check_format('0000000ABC', b'%010.7X', c_uint(0xabc))
+        check_format('0000ABC   ', b'%-10.7X', c_uint(0xabc))
+        check_format('0000ABC   ', b'%-010.7X', c_uint(0xabc))
 
         # test %A
         check_format(r"%A:'abc\xe9\uabcd\U0010ffff'",
