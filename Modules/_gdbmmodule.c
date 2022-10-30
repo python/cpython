@@ -162,6 +162,35 @@ gdbm_length(gdbmobject *dp)
     return dp->di_size;
 }
 
+static int
+gdbm_bool(gdbmobject *dp)
+{
+    _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
+    if (dp->di_dbm == NULL) {
+        PyErr_SetString(state->gdbm_error, "GDBM object has already been closed");
+        return -1;
+    }
+    if (dp->di_size > 0) {
+        /* Known non-zero size. */
+        return 1;
+    }
+    if (dp->di_size == 0) {
+        /* Known zero size. */
+        return 0;
+    }
+    /* Unknown size.  Ensure DBM object has an entry. */
+    datum key = gdbm_firstkey(dp->di_dbm);
+    if (key.dptr == NULL) {
+        /* Empty. Cache this fact. */
+        dp->di_size = 0;
+        return 0;
+    }
+
+    /* Non-empty. Don't cache the length since we don't know. */
+    free(key.dptr);
+    return 1;
+}
+
 // Wrapper function for PyArg_Parse(o, "s#", &d.dptr, &d.size).
 // This function is needed to support PY_SSIZE_T_CLEAN.
 // Return 1 on success, same to PyArg_Parse().
@@ -569,6 +598,7 @@ static PyType_Slot gdbmtype_spec_slots[] = {
     {Py_mp_length, gdbm_length},
     {Py_mp_subscript, gdbm_subscript},
     {Py_mp_ass_subscript, gdbm_ass_sub},
+    {Py_nb_bool, gdbm_bool},
     {Py_tp_doc, (char*)gdbm_object__doc__},
     {0, 0}
 };
