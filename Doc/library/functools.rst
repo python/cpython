@@ -224,7 +224,7 @@ The :mod:`functools` module defines the following functions:
             except urllib.error.HTTPError:
                 return 'Not Found'
 
-        >>> for n in 8, 290, 308, 320, 8, 218, 320, 279, 289, 320, 9991:
+        >>> for n in [8, 290, 308, 320, 8, 218, 320, 279, 289, 320, 9991]:
         ...     pep = get_pep(n)
         ...     print(n, len(pep))
 
