@@ -2385,6 +2385,11 @@ See :ref:`sqlite3-transaction-control-isolation-level` for more information.
    Use :attr:`Connection.in_transaction` to query the low-level SQLite
    autocommit mode.
 
+.. note::
+
+   The :attr:`Connection.isolation_level` attribute has no effect if
+   :attr:`Connection.autocommit` is ``True`` or ``False``.
+
 .. _sqlite3-transaction-control-isolation-level:
 
 Transaction control via the ``isolation_level`` attribute
