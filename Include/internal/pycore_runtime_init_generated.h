@@ -1161,6 +1161,7 @@ extern "C" {
                 INIT_ID(x), \
                 INIT_ID(year), \
                 INIT_ID(zdict), \
+                INIT_ID(zipimporter), \
             }, \
             .ascii = { \
                 _PyASCIIObject_INIT("\x00"), \
@@ -2632,6 +2633,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(year);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(zdict);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(zipimporter);
     PyUnicode_InternInPlace(&string);
 }
 
@@ -7196,6 +7199,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(zdict)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(zdict));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(zipimporter)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(zipimporter));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_SINGLETON(strings).ascii[0]) < _PyObject_IMMORTAL_REFCNT) {

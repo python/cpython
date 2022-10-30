@@ -652,6 +652,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(x)
         STRUCT_FOR_ID(year)
         STRUCT_FOR_ID(zdict)
+        STRUCT_FOR_ID(zipimporter)
     } identifiers;
     struct {
         PyASCIIObject _ascii;
