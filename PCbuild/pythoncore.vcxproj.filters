@@ -312,9 +312,6 @@
     <ClInclude Include="..\Python\condvar.h">
       <Filter>Python</Filter>
     </ClInclude>
-    <ClInclude Include="..\Python\ceval_gil.h">
-      <Filter>Python</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -484,9 +481,6 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_abstract.h">
-      <Filter>Include\internal</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_accu.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_asdl.h">
@@ -1100,6 +1094,9 @@
     <ClCompile Include="..\Python\getversion.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\ceval_gil.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\hashtable.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -1125,6 +1122,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\perf_trampoline.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\preconfig.c">

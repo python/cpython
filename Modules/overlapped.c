@@ -32,27 +32,41 @@
 #define T_HANDLE T_POINTER
 
 /*[python input]
-class OVERLAPPED_converter(CConverter):
-    type = 'OVERLAPPED *'
+class pointer_converter(CConverter):
     format_unit = '"F_POINTER"'
 
-class HANDLE_converter(CConverter):
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
+class OVERLAPPED_converter(pointer_converter):
+    type = 'OVERLAPPED *'
+
+class HANDLE_converter(pointer_converter):
     type = 'HANDLE'
-    format_unit = '"F_HANDLE"'
 
-class ULONG_PTR_converter(CConverter):
+class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
-    format_unit = '"F_ULONG_PTR"'
 
-class DWORD_converter(CConverter):
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = (uintptr_t)PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
+class DWORD_converter(unsigned_long_converter):
     type = 'DWORD'
-    format_unit = 'k'
 
-class BOOL_converter(CConverter):
+class BOOL_converter(int_converter):
     type = 'BOOL'
-    format_unit = 'i'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=83bb8c2c2514f2a8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=8a07ea3018f4cec8]*/
 
 /*[clinic input]
 module _overlapped
@@ -1660,7 +1674,7 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 _overlapped.WSAConnect
 
     client_handle as ConnectSocket: HANDLE
-    address_as_bytes as AddressObj: object
+    address_as_bytes as AddressObj: object(subclass_of='&PyTuple_Type')
     /
 
 Bind a remote address to a connectionless (UDP) socket.
@@ -1669,7 +1683,7 @@ Bind a remote address to a connectionless (UDP) socket.
 static PyObject *
 _overlapped_WSAConnect_impl(PyObject *module, HANDLE ConnectSocket,
                             PyObject *AddressObj)
-/*[clinic end generated code: output=ea0b4391e94dad63 input=169f8075e9ae7fa4]*/
+/*[clinic end generated code: output=ea0b4391e94dad63 input=7cf65313d49c015a]*/
 {
     char AddressBuf[sizeof(struct sockaddr_in6)];
     SOCKADDR *Address = (SOCKADDR*)AddressBuf;
@@ -1703,7 +1717,7 @@ _overlapped.Overlapped.WSASendTo
     handle: HANDLE
     buf as bufobj: Py_buffer
     flags: DWORD
-    address_as_bytes as AddressObj: object
+    address_as_bytes as AddressObj: object(subclass_of='&PyTuple_Type')
     /
 
 Start overlapped sendto over a connectionless (UDP) socket.
@@ -1713,7 +1727,7 @@ static PyObject *
 _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
                                       Py_buffer *bufobj, DWORD flags,
                                       PyObject *AddressObj)
-/*[clinic end generated code: output=3cdedc4cfaeb70cd input=b7c1749a62e2e374]*/
+/*[clinic end generated code: output=3cdedc4cfaeb70cd input=31f44cd4ab92fc33]*/
 {
     char AddressBuf[sizeof(struct sockaddr_in6)];
     SOCKADDR *Address = (SOCKADDR*)AddressBuf;

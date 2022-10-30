@@ -777,7 +777,7 @@ class _FlagTests:
     def test_default_missing_with_wrong_type_value(self):
         with self.assertRaisesRegex(
             ValueError,
-            "'RED' is not a valid TestFlag.Color",
+            "'RED' is not a valid ",
             ) as ctx:
             self.MainEnum('RED')
         self.assertIs(ctx.exception.__context__, None)
@@ -786,7 +786,7 @@ class TestPlainEnum(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Enum
 
 
-class TestPlainFlag(_EnumTests, _PlainOutputTests, unittest.TestCase):
+class TestPlainFlag(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
 
 
@@ -798,7 +798,7 @@ class TestStrEnum(_EnumTests, _MinimalOutputTests, unittest.TestCase):
     enum_type = StrEnum
 
 
-class TestIntFlag(_EnumTests, _MinimalOutputTests, unittest.TestCase):
+class TestIntFlag(_EnumTests, _MinimalOutputTests, _FlagTests, unittest.TestCase):
     enum_type = IntFlag
 
 
@@ -810,7 +810,7 @@ class TestMixedStr(_EnumTests, _MixedOutputTests, unittest.TestCase):
     class enum_type(str, Enum): pass
 
 
-class TestMixedIntFlag(_EnumTests, _MixedOutputTests, unittest.TestCase):
+class TestMixedIntFlag(_EnumTests, _MixedOutputTests, _FlagTests, unittest.TestCase):
     class enum_type(int, Flag): pass
 
 
@@ -2646,7 +2646,10 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(Private._Private__corporal, 'Radar')
         self.assertEqual(Private._Private__major_, 'Hoolihan')
 
-    @unittest.skip("Accessing all values retained for performance reasons, see GH-93910")
+    @unittest.skipIf(
+            python_version <= (3, 13),
+            'member.member access currently deprecated',
+            )
     def test_exception_for_member_from_member_access(self):
         with self.assertRaisesRegex(AttributeError, "<enum .Di.> member has no attribute .NO."):
             class Di(Enum):
@@ -2654,6 +2657,17 @@ class TestSpecial(unittest.TestCase):
                 NO = 0
             nope = Di.YES.NO
 
+    @unittest.skipIf(
+            python_version > (3, 13),
+            'member.member access now raises',
+            )
+    def test_warning_for_member_from_member_access(self):
+        with self.assertWarnsRegex(DeprecationWarning, '`member.member` access .* is deprecated and will be removed in 3.14'):
+            class Di(Enum):
+                YES = 1
+                NO = 0
+            warn = Di.YES.NO
+        self.assertIs(warn, Di.NO)
 
     def test_dynamic_members_with_static_methods(self):
         #
@@ -2913,7 +2927,7 @@ class OldTestFlag(unittest.TestCase):
             self.assertEqual(bool(f.value), bool(f))
 
     def test_boundary(self):
-        self.assertIs(enum.Flag._boundary_, STRICT)
+        self.assertIs(enum.Flag._boundary_, CONFORM)
         class Iron(Flag, boundary=STRICT):
             ONE = 1
             TWO = 2

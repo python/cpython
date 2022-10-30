@@ -977,6 +977,7 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
 static PyObject *
 get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno)
 {
+    PyObject *external;
     PyObject *loader;
     PyObject *module_name;
     PyObject *get_source;
@@ -984,12 +985,18 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     PyObject *source_list;
     PyObject *source_line;
 
-    /* Check/get the requisite pieces needed for the loader. */
-    loader = _PyDict_GetItemWithError(module_globals, &_Py_ID(__loader__));
+    /* stolen from import.c */
+    external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
+    if (external == NULL) {
+        return NULL;
+    }
+
+    loader = PyObject_CallMethod(external, "_bless_my_loader", "O", module_globals, NULL);
+    Py_DECREF(external);
     if (loader == NULL) {
         return NULL;
     }
-    Py_INCREF(loader);
+
     module_name = _PyDict_GetItemWithError(module_globals, &_Py_ID(__name__));
     if (!module_name) {
         Py_DECREF(loader);
@@ -1079,8 +1086,14 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     return returned;
 }
 
+/*[clinic input]
+_filters_mutated as warnings_filters_mutated
+
+[clinic start generated code]*/
+
 static PyObject *
-warnings_filters_mutated(PyObject *self, PyObject *Py_UNUSED(args))
+warnings_filters_mutated_impl(PyObject *module)
+/*[clinic end generated code: output=8ce517abd12b88f4 input=35ecbf08ee2491b2]*/
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
@@ -1337,8 +1350,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
     WARNINGS_WARN_EXPLICIT_METHODDEF
-    {"_filters_mutated", _PyCFunction_CAST(warnings_filters_mutated), METH_NOARGS,
-        NULL},
+    WARNINGS_FILTERS_MUTATED_METHODDEF
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */

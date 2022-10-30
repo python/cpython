@@ -394,7 +394,7 @@ def _get_name_info(name_index, get_name, **extrainfo):
     else:
         return UNKNOWN, ''
 
-def parse_varint(iterator):
+def _parse_varint(iterator):
     b = next(iterator)
     val = b & 63
     while b&64:
@@ -403,16 +403,16 @@ def parse_varint(iterator):
         val |= b&63
     return val
 
-def parse_exception_table(code):
+def _parse_exception_table(code):
     iterator = iter(code.co_exceptiontable)
     entries = []
     try:
         while True:
-            start = parse_varint(iterator)*2
-            length = parse_varint(iterator)*2
+            start = _parse_varint(iterator)*2
+            length = _parse_varint(iterator)*2
             end = start + length
-            target = parse_varint(iterator)*2
-            dl = parse_varint(iterator)
+            target = _parse_varint(iterator)*2
+            dl = _parse_varint(iterator)
             depth = dl >> 1
             lasti = bool(dl&1)
             entries.append(_ExceptionTableEntry(start, end, target, depth, lasti))
@@ -527,7 +527,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
-    exception_entries = parse_exception_table(co)
+    exception_entries = _parse_exception_table(co)
     _disassemble_bytes(_get_code_array(co, adaptive),
                        lasti, co._varname_from_oparg,
                        co.co_names, co.co_consts, linestarts, file=file,
@@ -717,7 +717,7 @@ class Bytecode:
         self._linestarts = dict(findlinestarts(co))
         self._original_object = x
         self.current_offset = current_offset
-        self.exception_entries = parse_exception_table(co)
+        self.exception_entries = _parse_exception_table(co)
         self.show_caches = show_caches
         self.adaptive = adaptive
 

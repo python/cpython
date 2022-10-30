@@ -853,6 +853,7 @@ class ThreadTests(BaseTestCase):
                 callback()
         finally:
             sys.settrace(old_trace)
+            threading.settrace(old_trace)
 
     def test_gettrace(self):
         def noop_trace(frame, event, arg):
@@ -866,6 +867,35 @@ class ThreadTests(BaseTestCase):
         finally:
             threading.settrace(old_trace)
 
+    def test_gettrace_all_threads(self):
+        def fn(*args): pass
+        old_trace = threading.gettrace()
+        first_check = threading.Event()
+        second_check = threading.Event()
+
+        trace_funcs = []
+        def checker():
+            trace_funcs.append(sys.gettrace())
+            first_check.set()
+            second_check.wait()
+            trace_funcs.append(sys.gettrace())
+
+        try:
+            t = threading.Thread(target=checker)
+            t.start()
+            first_check.wait()
+            threading.settrace_all_threads(fn)
+            second_check.set()
+            t.join()
+            self.assertEqual(trace_funcs, [None, fn])
+            self.assertEqual(threading.gettrace(), fn)
+            self.assertEqual(sys.gettrace(), fn)
+        finally:
+            threading.settrace_all_threads(old_trace)
+
+        self.assertEqual(threading.gettrace(), old_trace)
+        self.assertEqual(sys.gettrace(), old_trace)
+
     def test_getprofile(self):
         def fn(*args): pass
         old_profile = threading.getprofile()
@@ -874,6 +904,35 @@ class ThreadTests(BaseTestCase):
             self.assertEqual(fn, threading.getprofile())
         finally:
             threading.setprofile(old_profile)
+
+    def test_getprofile_all_threads(self):
+        def fn(*args): pass
+        old_profile = threading.getprofile()
+        first_check = threading.Event()
+        second_check = threading.Event()
+
+        profile_funcs = []
+        def checker():
+            profile_funcs.append(sys.getprofile())
+            first_check.set()
+            second_check.wait()
+            profile_funcs.append(sys.getprofile())
+
+        try:
+            t = threading.Thread(target=checker)
+            t.start()
+            first_check.wait()
+            threading.setprofile_all_threads(fn)
+            second_check.set()
+            t.join()
+            self.assertEqual(profile_funcs, [None, fn])
+            self.assertEqual(threading.getprofile(), fn)
+            self.assertEqual(sys.getprofile(), fn)
+        finally:
+            threading.setprofile_all_threads(old_profile)
+
+        self.assertEqual(threading.getprofile(), old_profile)
+        self.assertEqual(sys.getprofile(), old_profile)
 
     @cpython_only
     def test_shutdown_locks(self):
