@@ -32,7 +32,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
         Py_DECREF(seq);
         return STRINGLIB_NEW(NULL, 0);
     }
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
     if (seqlen == 1) {
         item = PySequence_Fast_GET_ITEM(seq, 0);
         if (STRINGLIB_CHECK_EXACT(item)) {
@@ -155,7 +155,7 @@ done:
     for (i = 0; i < nbufs; i++)
         PyBuffer_Release(&buffers[i]);
     if (buffers != static_buffers)
-        PyMem_FREE(buffers);
+        PyMem_Free(buffers);
     return res;
 }
 

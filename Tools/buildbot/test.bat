@@ -36,8 +36,10 @@ if NOT "%REMOTE_PYTHON_DIR:~-1,1%"=="\" (set REMOTE_PYTHON_DIR=%REMOTE_PYTHON_DI
 set TEMP_ARGS=--temp %REMOTE_PYTHON_DIR%temp
 
 set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args% %TEMP_ARGS%
-ssh %SSH_SERVER% "set TEMP=%REMOTE_PYTHON_DIR%temp& %REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
-exit /b %ERRORLEVEL%
+ssh %SSH_SERVER% "set TEMP=%REMOTE_PYTHON_DIR%temp& cd %REMOTE_PYTHON_DIR% & %REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
+set ERR=%ERRORLEVEL%
+scp %SSH_SERVER%:"%REMOTE_PYTHON_DIR%test-results.xml" "%PYTHON_SOURCE%\test-results.xml"
+exit /b %ERR%
 
 :Arm32SshHelp
 echo SSH_SERVER environment variable must be set to administrator@[ip address]

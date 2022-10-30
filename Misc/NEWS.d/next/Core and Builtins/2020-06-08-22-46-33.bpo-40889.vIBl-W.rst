@@ -1,1 +1,0 @@
-Improved the performance of symmetric difference operations on dictionary item views.  Patch by Dennis Sweeney.

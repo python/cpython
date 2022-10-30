@@ -3,8 +3,10 @@ import math
 import string
 import sys
 from test import support
+from test.support import import_helper
+from test.support import warnings_helper
 # Skip this test if the _testcapi module isn't available.
-_testcapi = support.import_module('_testcapi')
+_testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
 
 # > How about the following counterproposal. This also changes some of
@@ -744,6 +746,33 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "'\udc80' is an invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{'\uDC80': 10})
 
+    def test_weird_str_subclass(self):
+        class BadStr(str):
+            def __eq__(self, other):
+                return True
+            def __hash__(self):
+                # Guaranteed different hash
+                return str.__hash__(self) ^ 3
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
+
+    def test_weird_str_subclass2(self):
+        class BadStr(str):
+            def __eq__(self, other):
+                return False
+            def __hash__(self):
+                return str.__hash__(self)
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
+
 
 class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
     from _testcapi import getargs_positional_only_and_keywords as getargs
@@ -872,6 +901,23 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_s_hash, None)
 
+    def test_s_hash_int(self):
+        # "s#" without PY_SSIZE_T_CLEAN defined.
+        from _testcapi import getargs_s_hash_int
+        from _testcapi import getargs_s_hash_int2
+        buf = bytearray([1, 2])
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, "abc")
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, x=42)
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, x="abc")
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, ("abc",))
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x=42)
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x="abc")
+        buf.append(3)  # still mutable -- not locked by a buffer export
+        # getargs_s_hash_int(buf) may not raise SystemError because skipitem()
+        # is not called. But it is an implementation detail.
+        # getargs_s_hash_int(buf)
+        # getargs_s_hash_int2(buf)
+
     def test_z(self):
         from _testcapi import getargs_z
         self.assertEqual(getargs_z('abc\xe9'), b'abc\xc3\xa9')
@@ -975,41 +1021,69 @@ class String_TestCase(unittest.TestCase):
         buf = bytearray()
         self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
 
+    @support.requires_legacy_unicode_capi
     def test_u(self):
         from _testcapi import getargs_u
-        self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
-        self.assertRaises(ValueError, getargs_u, 'nul:\0')
-        self.assertRaises(TypeError, getargs_u, b'bytes')
-        self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
-        self.assertRaises(TypeError, getargs_u, None)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, getargs_u, 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, None)
 
+    @support.requires_legacy_unicode_capi
     def test_u_hash(self):
         from _testcapi import getargs_u_hash
-        self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
-        self.assertEqual(getargs_u_hash('nul:\0'), 'nul:\0')
-        self.assertRaises(TypeError, getargs_u_hash, b'bytes')
-        self.assertRaises(TypeError, getargs_u_hash, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
-        self.assertRaises(TypeError, getargs_u_hash, None)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u_hash('nul:\0'), 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, None)
 
+    @support.requires_legacy_unicode_capi
     def test_Z(self):
         from _testcapi import getargs_Z
-        self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
-        self.assertRaises(ValueError, getargs_Z, 'nul:\0')
-        self.assertRaises(TypeError, getargs_Z, b'bytes')
-        self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
-        self.assertIsNone(getargs_Z(None))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, getargs_Z, 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(getargs_Z(None))
 
+    @support.requires_legacy_unicode_capi
     def test_Z_hash(self):
         from _testcapi import getargs_Z_hash
-        self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')
-        self.assertEqual(getargs_Z_hash('nul:\0'), 'nul:\0')
-        self.assertRaises(TypeError, getargs_Z_hash, b'bytes')
-        self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
-        self.assertIsNone(getargs_Z_hash(None))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z_hash('nul:\0'), 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(getargs_Z_hash(None))
 
 
 class Object_TestCase(unittest.TestCase):
@@ -1048,6 +1122,8 @@ class Test6012(unittest.TestCase):
 
 class SkipitemTest(unittest.TestCase):
 
+    # u, and Z raises DeprecationWarning
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_skipitem(self):
         """
         If this test failed, you probably added a new "format unit"
@@ -1123,7 +1199,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'u#', 'Z#', 'y#', 'y*', 'w#', 'w*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w#', 'w*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2
