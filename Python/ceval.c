@@ -3420,9 +3420,6 @@ handle_eval_breaker:
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int res = _PyUnicode_Equal(left, right);
-            if (res < 0) {
-                goto error;
-            }
             assert(oparg == Py_EQ || oparg == Py_NE);
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
