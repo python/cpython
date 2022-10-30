@@ -1,0 +1,3 @@
+Added explicit coverage of ``Py_Initialize`` (and hence ``Py_InitializeEx``)
+back to the embedding tests (all other embedding tests migrated to
+``Py_InitializeFromConfig`` in Python 3.11)

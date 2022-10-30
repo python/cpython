@@ -1126,7 +1126,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._empty_waiter = None
 
 
-class _SelectorDatagramTransport(_SelectorTransport):
+class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTransport):
 
     _buffer_factory = collections.deque
 

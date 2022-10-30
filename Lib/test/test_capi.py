@@ -404,6 +404,18 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
+    def test_mapping_has_key(self):
+        dct = {'a': 1}
+        self.assertTrue(_testcapi.mapping_has_key(dct, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct, 'b'))
+
+        class SubDict(dict):
+            pass
+
+        dct2 = SubDict({'a': 1})
+        self.assertTrue(_testcapi.mapping_has_key(dct2, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct2, 'b'))
+
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
     def test_negative_refcount(self):
@@ -930,6 +942,48 @@ class CAPITest(unittest.TestCase):
         with self.assertRaises(SystemError):
             _testcapi.function_get_module(None)  # not a function
 
+    def test_function_get_defaults(self):
+        def some(pos_only='p', zero=0, optional=None):
+            pass
+
+        defaults = _testcapi.function_get_defaults(some)
+        self.assertEqual(defaults, ('p', 0, None))
+        self.assertEqual(defaults, some.__defaults__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_module(None)  # not a function
+
+    def test_function_set_defaults(self):
+        def some(pos_only='p', zero=0, optional=None):
+            pass
+
+        old_defaults = ('p', 0, None)
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_defaults(some, 1)  # not tuple or None
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        new_defaults = ('q', 1, None)
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        class tuplesub(tuple): ...  # tuple subclasses must work
+
+        new_defaults = tuplesub(((1, 2), ['a', 'b'], None))
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        # `None` is special, it sets `defaults` to `NULL`,
+        # it needs special handling in `_testcapi`:
+        _testcapi.function_set_defaults(some, None)
+        self.assertEqual(_testcapi.function_get_defaults(some), None)
+        self.assertEqual(some.__defaults__, None)
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -1083,6 +1137,45 @@ class SubinterpreterTest(unittest.TestCase):
         # "being modified by test_capi" per test.regrtest.  So if this
         # test fails, assume that the environment in this process may
         # be altered and suspect.
+
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_configured_settings(self):
+        """
+        The config with which an interpreter is created corresponds
+        1-to-1 with the new interpreter's settings.  This test verifies
+        that they match.
+        """
+        import json
+
+        THREADS = 1<<10
+        FORK = 1<<15
+        SUBPROCESS = 1<<16
+
+        features = ['fork', 'subprocess', 'threads']
+        kwlist = [f'allow_{n}' for n in features]
+        for config, expected in {
+            (True, True, True): FORK | SUBPROCESS | THREADS,
+            (False, False, False): 0,
+            (False, True, True): SUBPROCESS | THREADS,
+        }.items():
+            kwargs = dict(zip(kwlist, config))
+            expected = {
+                'feature_flags': expected,
+            }
+            with self.subTest(config):
+                r, w = os.pipe()
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi, json, os
+                    settings = _testinternalcapi.get_interp_settings()
+                    with os.fdopen({w}, "w") as stdin:
+                        json.dump(settings, stdin)
+                    ''')
+                with os.fdopen(r) as stdout:
+                    support.run_in_subinterp_with_config(script, **kwargs)
+                    out = stdout.read()
+                settings = json.loads(out)
+
+                self.assertEqual(settings, expected)
 
     def test_mutate_exception(self):
         """

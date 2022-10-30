@@ -6,14 +6,20 @@ import linecache
 import sys
 import types
 import inspect
+import importlib
 import unittest
 import re
+import tempfile
+import random
+import string
 from test import support
+import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
                           requires_subprocess)
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.import_helper import forget
 
 import json
 import textwrap
@@ -797,6 +803,56 @@ class TracebackErrorLocationCaretTestBase:
             f"      ^^^^^^",
         ]
         self.assertEqual(actual, expected)
+
+    def test_wide_characters_unicode_with_problematic_byte_offset(self):
+        def f():
+            ｗｉｄｔｈ
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            f"    ｗｉｄｔｈ",
+        ]
+        self.assertEqual(actual, expected)
+
+
+    def test_byte_offset_with_wide_characters_middle(self):
+        def f():
+            ｗｉｄｔｈ = 1
+            raise ValueError(ｗｉｄｔｈ)
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
+            f"    raise ValueError(ｗｉｄｔｈ)",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_byte_offset_multiline(self):
+        def f():
+            ｗｗｗ = 1
+            ｔｈ = 0
+
+            print(1, ｗｗｗ(
+                    ｔｈ))
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 4}, in f",
+            f"    print(1, ｗｗｗ(",
+            f"             ^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
 
 
 @requires_debug_ranges()
@@ -2984,6 +3040,122 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(B(), 'something')
         self.assertIn("Did you mean", actual)
         self.assertIn("bluch", actual)
+
+    def make_module(self, code):
+        tmpdir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmpdir)
+
+        sys.path.append(str(tmpdir))
+        self.addCleanup(sys.path.pop)
+
+        mod_name = ''.join(random.choices(string.ascii_letters, k=16))
+        module = tmpdir / (mod_name + ".py")
+        module.write_text(code)
+
+        return mod_name
+
+    def get_import_from_suggestion(self, mod_dict, name):
+        modname = self.make_module(mod_dict)
+
+        def callable():
+            try:
+                exec(f"from {modname} import {name}")
+            except ImportError as e:
+                raise e from None
+            except Exception as e:
+                self.fail(f"Expected ImportError but got {type(e)}")
+        self.addCleanup(forget, modname)
+
+        result_lines = self.get_exception(
+            callable, slice_start=-1, slice_end=None
+        )
+        return result_lines[0]
+
+    def test_import_from_suggestions(self):
+        substitution = textwrap.dedent("""\
+            noise = more_noise = a = bc = None
+            blech = None
+        """)
+
+        elimination = textwrap.dedent("""
+            noise = more_noise = a = bc = None
+            blch = None
+        """)
+
+        addition = textwrap.dedent("""
+            noise = more_noise = a = bc = None
+            bluchin = None
+        """)
+
+        substitutionOverElimination = textwrap.dedent("""
+            blach = None
+            bluc = None
+        """)
+
+        substitutionOverAddition = textwrap.dedent("""
+            blach = None
+            bluchi = None
+        """)
+
+        eliminationOverAddition = textwrap.dedent("""
+            blucha = None
+            bluc = None
+        """)
+
+        caseChangeOverSubstitution = textwrap.dedent("""
+            Luch = None
+            fluch = None
+            BLuch = None
+        """)
+
+        for code, suggestion in [
+            (addition, "'bluchin'?"),
+            (substitution, "'blech'?"),
+            (elimination, "'blch'?"),
+            (addition, "'bluchin'?"),
+            (substitutionOverElimination, "'blach'?"),
+            (substitutionOverAddition, "'blach'?"),
+            (eliminationOverAddition, "'bluc'?"),
+            (caseChangeOverSubstitution, "'BLuch'?"),
+        ]:
+            actual = self.get_import_from_suggestion(code, 'bluch')
+            self.assertIn(suggestion, actual)
+
+    def test_import_from_suggestions_do_not_trigger_for_long_attributes(self):
+        code = "blech = None"
+
+        actual = self.get_suggestion(code, 'somethingverywrong')
+        self.assertNotIn("blech", actual)
+
+    def test_import_from_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        code = "vvv = mom = w = id = pytho = None"
+
+        for name in ("b", "v", "m", "py"):
+            with self.subTest(name=name):
+                actual = self.get_import_from_suggestion(code, name)
+                self.assertNotIn("you mean", actual)
+                self.assertNotIn("vvv", actual)
+                self.assertNotIn("mom", actual)
+                self.assertNotIn("'id'", actual)
+                self.assertNotIn("'w'", actual)
+                self.assertNotIn("'pytho'", actual)
+
+    def test_import_from_suggestions_do_not_trigger_for_big_namespaces(self):
+        # A module with lots of names will not be considered for suggestions.
+        chunks = [f"index_{index} = " for index in range(200)]
+        chunks.append(" None")
+        code = " ".join(chunks)
+        actual = self.get_import_from_suggestion(code, 'bluch')
+        self.assertNotIn("blech", actual)
+
+    def test_import_from_error_with_bad_name(self):
+        def raise_attribute_error_with_bad_name():
+            raise ImportError(name=12, obj=23, name_from=11)
+
+        result_lines = self.get_exception(
+            raise_attribute_error_with_bad_name, slice_start=-1, slice_end=None
+        )
+        self.assertNotIn("?", result_lines[-1])
 
     def test_name_error_suggestions(self):
         def Substitution():
