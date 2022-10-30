@@ -327,5 +327,9 @@ if __name__ == "__main__":
         print("=== === ===")
         print("FAIL")
     else:
+        print("=== text ===")
         print(x.text)
+        print("=== data ===")
+        print(x)
+        print("=== === ===")
         print("OK")

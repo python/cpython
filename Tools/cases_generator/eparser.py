@@ -17,7 +17,7 @@ S = TypeVar("S", bound="Node")
 def contextual(func: Callable[[T], S|None]) -> Callable[[T], S|None]:
     # Decorator to wrap grammar methods.
     # Resets position if `func` returns None.
-    def contextual_wrapper(self: T) -> Node|None:
+    def contextual_wrapper(self: T) -> S|None:
         begin = self.getpos()
         res = func(self)
         if res is None:
@@ -32,10 +32,10 @@ def contextual(func: Callable[[T], S|None]) -> Callable[[T], S|None]:
 class Context(NamedTuple):
     begin: int
     end: int
-    owner: PLexer = None
+    owner: PLexer
 
     def __repr__(self):
-        return f"Context({self.begin}, {self.end})"
+        return f"<{self.begin}-{self.end}>"
 
 
 @dataclass
@@ -62,8 +62,16 @@ class InfixOp(Node):
 
 @dataclass
 class ConditionalMiddle(Node):
-    # Syntactically, '?expr:' is a binary operator
+    # Syntactically, '?expr:' is an infix operator
     middle: Node
+
+
+@dataclass
+class ConditionalOp(Node):
+    cond: Node
+    then: Node
+    orelse: Node
+
 
 @dataclass
 class PrefixOp(Node):
@@ -97,7 +105,7 @@ class FunctionType(Node):
 
 @dataclass
 class NumericType(Node):
-    number_type: list[Token]  # int, register unsigned long, char, float, etc.
+    number_type: list[Token]  # int, unsigned long, char, float, void, etc.
 
 
 @dataclass
@@ -127,6 +135,7 @@ class Period(Node):
 class Arrow(Node):
     term: Node
     name: Token
+
 
 @dataclass
 class PostfixOp(Node):
@@ -162,59 +171,12 @@ class Name(Node):
     def name(self):
         return self.tok.text
 
-
-PREFIX_OPS = {
-    lx.PLUSPLUS,
-    lx.MINUSMINUS,
-    lx.AND,
-    lx.TIMES,
-    lx.PLUS,
-    lx.MINUS,
-    lx.NOT,
-    lx.LNOT,
-    }
-
-INFIX_OPS = {
-    lx.TIMES,
-    lx.DIVIDE,
-    lx.MOD,
-
-    lx.PLUS,
-    lx.MINUS,
-
-    lx.LSHIFT,
-    lx.RSHIFT,
-
-    lx.LT,
-    lx.LE,
-    lx.GT,
-    lx.GE,
-
-    lx.NE,
-    lx.EQ,
-
-    lx.AND,
-
-    lx.XOR,
-
-    lx.OR,
-
-    lx.LAND,
-
-    lx.LOR,
-
-    lx.EQUALS,
-    lx.TIMESEQUAL,
-    lx.DIVEQUAL,
-    lx.MODEQUAL,
-    lx.PLUSEQUAL,
-    lx.MINUSEQUAL,
-    lx.LSHIFTEQUAL,
-    lx.RSHIFTEQUAL,
-    lx.ANDEQUAL,
-    lx.XOREQUAL,
-    lx.OREQUAL,
-}
+    def __repr__(self):
+        tr = repr(self.tok)
+        if self.tok.kind == lx.IDENTIFIER:
+            trs = tr.split()
+            tr = trs[-1].rstrip(")")
+        return f"{self.name!r}({self.context}, {tr})"
 
 
 NUMERIC_TYPES = {
@@ -229,33 +191,147 @@ NUMERIC_TYPES = {
     lx.DOUBLE,
 }
 
+
+PREFIX_OPS = {
+    lx.PLUSPLUS,
+    lx.MINUSMINUS,
+    lx.AND,
+    lx.TIMES,
+    lx.PLUS,
+    lx.MINUS,
+    lx.NOT,
+    lx.LNOT,
+    }
+
+INFIX_OPS_BY_PRIO = [
+    {
+        lx.TIMES,
+        lx.DIVIDE,
+        lx.MOD,
+    },
+    {
+        lx.PLUS,
+        lx.MINUS,
+    },
+    {
+        lx.LSHIFT,
+        lx.RSHIFT,
+    },
+    {
+        lx.LT,
+        lx.LE,
+        lx.GT,
+        lx.GE,
+    },
+    {
+        lx.NE,
+        lx.EQ,
+    },
+    {
+        lx.AND,
+    },
+    {
+        lx.XOR,
+    },
+    {
+        lx.OR,
+    },
+    {
+        lx.LAND,
+    },
+    {
+        lx.LOR,
+    },
+    {
+        lx.CONDOP,
+    },
+    {
+        lx.EQUALS,
+        lx.TIMESEQUAL,
+        lx.DIVEQUAL,
+        lx.MODEQUAL,
+        lx.PLUSEQUAL,
+        lx.MINUSEQUAL,
+        lx.LSHIFTEQUAL,
+        lx.RSHIFTEQUAL,
+        lx.ANDEQUAL,
+        lx.XOREQUAL,
+        lx.OREQUAL,
+    },
+    {
+        lx.COMMA,
+    },
+]
+
+INFIX_OPS = set.union(*INFIX_OPS_BY_PRIO)
+
+PRIO = {op: 12 - prio for prio, ops in enumerate(INFIX_OPS_BY_PRIO) for op in ops}
+# Sanity checks
+assert PRIO[lx.TIMES] == 12, PRIO
+assert PRIO[lx.COMMA] == 0, PRIO
+
+
+def op_from_arg(arg: ConditionalMiddle | Token) -> str:
+    if isinstance(arg, Token):
+        return arg.kind
+    assert isinstance(arg, ConditionalMiddle)
+    return lx.CONDOP
+
+
+def must_reduce(arg1: ConditionalMiddle | Token, arg2: ConditionalMiddle | Token) -> bool:
+    # Examples:
+    # '*', '+' -> True
+    # '+', '*' -> False
+    # '+', '+' -> True
+    # '?', '?' -> False  # conditional is right-associative
+    # '=', '=' -> False  # assignment is right-associative
+    op1 = op_from_arg(arg1)
+    op2 = op_from_arg(arg2)
+    return PRIO[op1] > PRIO[op2] or (PRIO[op1] == PRIO[op2] and PRIO[op1] > PRIO[lx.CONDOP])
+
+
+def make_infix_op(left: Node, op: ConditionalMiddle | Token, right: Node) -> Node:
+    if isinstance(op, ConditionalMiddle):
+        return ConditionalOp(left, op.middle, right)
+    return InfixOp(left, op, right)
+
+
 class EParser(PLexer):
 
     @contextual
     def expr(self) -> Node | None:
-        things: list[Node|Token] = []  # TODO: list[tuple[Token|None, Node]]
+        return self._expr(True)
+
+    @contextual
+    def expr1(self) -> Node | None:
+        return self._expr(False)
+
+    def _expr(self, allow_comma: bool) -> Node | None:
+        things: list[tuple[ConditionalMiddle|Token|None, Node]] = []
         if not (term := self.full_term()):
             return None
-        things.append(term)
-        while (q := self.expect(lx.CONDOP)) or (op := self.infix_op()):
-            if q:
+        things.append((None, term))
+        while op := self.infix_op(allow_comma):
+            if op.kind == lx.CONDOP:
                 middle = self.full_term()
                 if not middle:
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.COLON)
                 op = ConditionalMiddle(middle)
-            things.append(op)
+            lastop, lastterm = things[-1]
+            if lastop is not None and must_reduce(lastop, op):
+                things.pop()
+                prevop, prevterm = things.pop()
+                things.append((prevop, make_infix_op(prevterm, lastop, lastterm)))
             if not (term := self.full_term()):
                 raise self.make_syntax_error(f"Expected term following {op}")
-            things.append(term)
-        assert len(things) % 2 == 1, things
-        # TODO: Infix operator precedence
-        while len(things) >= 3:
-            right = things.pop()
-            op = things.pop()
-            left = things.pop()
-            things.append(InfixOp(left, op, right))
-        return things[0]
+            things.append((op, term))
+        while len(things) >= 2:
+            lastop, lastterm = things.pop()
+            assert lastop is not None
+            prevop, prevterm = things.pop()
+            things.append((prevop, make_infix_op(prevterm, lastop, lastterm)))
+        return things[0][1]
 
     @contextual
     def full_term(self) -> Node | None:
@@ -266,7 +342,7 @@ class EParser(PLexer):
             if not term:
                 raise self.make_syntax_error(f"Expected term following {tok}")
             return PrefixOp(tok, term)
-        # TODO: SIZEOF
+        # TODO: SIZEOF -- it's "sizeof(type)" or "sizeof term"
         if cast := self.cast():
             return cast
         term = self.term()
@@ -275,7 +351,7 @@ class EParser(PLexer):
         while True:
             if self.expect(lx.LPAREN):
                 args: list[Node] = []
-                while arg := self.expr():
+                while arg := self.expr1():
                     args.append(arg)
                     if not self.expect(lx.COMMA):
                         break
@@ -296,7 +372,6 @@ class EParser(PLexer):
             elif (tok := self.expect(lx.PLUSPLUS)) or (tok := self.expect(lx.MINUSMINUS)):
                 term = PostfixOp(term, tok)
             else:
-                # TODO: Others
                 break
         return term
 
@@ -369,13 +444,13 @@ class EParser(PLexer):
             return expr
         return None
 
-    def infix_op(self) -> Token | None:
+    def infix_op(self, allow_comma: bool) -> Token | None:
         token = self.next()
         if token is None:
             return None
-        # TODO: All infix operators
         if token.kind in INFIX_OPS:
-            return token
+            if allow_comma or token.kind != lx.COMMA:
+                return token
         self.backup()
         return None
 
@@ -406,5 +481,9 @@ if __name__ == "__main__":
         print("=== === ===")
         print("FAIL")
     else:
+        print("=== text ===")
         print(x.text)
+        print("=== data ===")
+        print(x)
+        print("=== === ===")
         print("OK")
