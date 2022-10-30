@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_range.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
@@ -762,16 +763,8 @@ PyTypeObject PyRange_Type = {
    in the normal case, but possible for any numeric value.
 */
 
-typedef struct {
-        PyObject_HEAD
-        long    index;
-        long    start;
-        long    step;
-        long    len;
-} rangeiterobject;
-
 static PyObject *
-rangeiter_next(rangeiterobject *r)
+rangeiter_next(_PyRangeIterObject *r)
 {
     if (r->index < r->len)
         /* cast to unsigned to avoid possible signed overflow
@@ -782,7 +775,7 @@ rangeiter_next(rangeiterobject *r)
 }
 
 static PyObject *
-rangeiter_len(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
+rangeiter_len(_PyRangeIterObject *r, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(r->len - r->index);
 }
@@ -791,7 +784,7 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
+rangeiter_reduce(_PyRangeIterObject *r, PyObject *Py_UNUSED(ignored))
 {
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
@@ -821,7 +814,7 @@ err:
 }
 
 static PyObject *
-rangeiter_setstate(rangeiterobject *r, PyObject *state)
+rangeiter_setstate(_PyRangeIterObject *r, PyObject *state)
 {
     long index = PyLong_AsLong(state);
     if (index == -1 && PyErr_Occurred())
@@ -850,8 +843,8 @@ static PyMethodDef rangeiter_methods[] = {
 
 PyTypeObject PyRangeIter_Type = {
         PyVarObject_HEAD_INIT(&PyType_Type, 0)
-        "range_iterator",                        /* tp_name */
-        sizeof(rangeiterobject),                /* tp_basicsize */
+        "range_iterator",                       /* tp_name */
+        sizeof(_PyRangeIterObject),             /* tp_basicsize */
         0,                                      /* tp_itemsize */
         /* methods */
         (destructor)PyObject_Del,               /* tp_dealloc */
@@ -915,7 +908,7 @@ get_len_of_range(long lo, long hi, long step)
 static PyObject *
 fast_range_iter(long start, long stop, long step, long len)
 {
-    rangeiterobject *it = PyObject_New(rangeiterobject, &PyRangeIter_Type);
+    _PyRangeIterObject *it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
     if (it == NULL)
         return NULL;
     it->start = start;

@@ -202,6 +202,10 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
+        self.assertFalse(
+            inspect.iscoroutinefunction(unittest.mock.Mock()))
+        self.assertTrue(
+            inspect.iscoroutinefunction(unittest.mock.AsyncMock()))
         self.assertTrue(
             inspect.iscoroutinefunction(coroutine_function_example))
         self.assertTrue(
@@ -211,6 +215,10 @@ class TestPredicates(IsTestBase):
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
+            inspect.isgeneratorfunction(unittest.mock.Mock()))
+        self.assertFalse(
+            inspect.isgeneratorfunction(unittest.mock.AsyncMock()))
+        self.assertFalse(
             inspect.isgeneratorfunction(coroutine_function_example))
         self.assertFalse(
             inspect.isgeneratorfunction(
@@ -218,6 +226,12 @@ class TestPredicates(IsTestBase):
                     coroutine_function_example))))
         self.assertFalse(inspect.isgenerator(coro))
 
+        self.assertFalse(
+            inspect.isasyncgenfunction(unittest.mock.Mock()))
+        self.assertFalse(
+            inspect.isasyncgenfunction(unittest.mock.AsyncMock()))
+        self.assertFalse(
+            inspect.isasyncgenfunction(coroutine_function_example))
         self.assertTrue(
             inspect.isasyncgenfunction(async_generator_function_example))
         self.assertTrue(
@@ -1405,6 +1419,13 @@ class TestClassesAndFunctions(unittest.TestCase):
         # test that local namespace lookups work
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
         self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
+
+
+class TestFormatAnnotation(unittest.TestCase):
+    def test_typing_replacement(self):
+        from test.typinganndata.ann_module9 import ann, ann1
+        self.assertEqual(inspect.formatannotation(ann), 'Union[List[str], int]')
+        self.assertEqual(inspect.formatannotation(ann1), 'Union[List[testModule.typing.A], int]')
 
 
 class TestIsDataDescriptor(unittest.TestCase):
@@ -3877,7 +3898,8 @@ class TestSignatureBind(unittest.TestCase):
             self.call(test, 1, bar=2, spam='ham')
 
         with self.assertRaisesRegex(TypeError,
-                                     "missing a required argument: 'bar'"):
+                                     "missing a required keyword-only "
+                                     "argument: 'bar'"):
             self.call(test, 1)
 
         def test(foo, *, bar, **bin):
@@ -4344,8 +4366,11 @@ class TestMain(unittest.TestCase):
                                         'unittest', '--details')
         output = out.decode()
         # Just a quick sanity check on the output
+        self.assertIn(module.__spec__.name, output)
         self.assertIn(module.__name__, output)
+        self.assertIn(module.__spec__.origin, output)
         self.assertIn(module.__file__, output)
+        self.assertIn(module.__spec__.cached, output)
         self.assertIn(module.__cached__, output)
         self.assertEqual(err, b'')
 

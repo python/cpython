@@ -612,8 +612,10 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETPGID
-    if (pgid_to_set >= 0)
+    static_assert(_Py_IS_TYPE_SIGNED(pid_t), "pid_t is unsigned");
+    if (pgid_to_set >= 0) {
         POSIX_CALL(setpgid(0, pgid_to_set));
+    }
 #endif
 
 #ifdef HAVE_SETGROUPS
@@ -840,8 +842,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     }
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (config->_isolated_interpreter) {
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_SUBPROCESS)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "subprocess not supported for isolated subinterpreters");
         return NULL;

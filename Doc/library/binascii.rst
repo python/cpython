@@ -49,7 +49,7 @@ The :mod:`binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string, strict_mode=False)
+.. function:: a2b_base64(string, /, *, strict_mode=False)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.

@@ -117,7 +117,8 @@ class CodeTestCase(unittest.TestCase):
 
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
-        count = 5000    # more than MAX_MARSHAL_STACK_DEPTH
+        # more than MAX_MARSHAL_STACK_DEPTH
+        count = support.EXCEEDS_RECURSION_LIMIT
         codes = (ExceptionTestCase.test_exceptions.__code__,) * count
         marshal.loads(marshal.dumps(codes))
 
@@ -256,7 +257,7 @@ class BugsTestCase(unittest.TestCase):
         # The max stack depth should match the value in Python/marshal.c.
         # BUG: https://bugs.python.org/issue33720
         # Windows always limits the maximum depth on release and debug builds
-        #if os.name == 'nt' and hasattr(sys, 'gettotalrefcount'):
+        #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
         else:
