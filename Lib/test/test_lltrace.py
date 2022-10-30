@@ -1,9 +1,9 @@
 import dis
-import sys
 import textwrap
 import unittest
 
-from test.support import os_helper, verbose
+from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 def example():
@@ -14,9 +14,8 @@ def example():
     y = "an example"
     print(x, y)
 
-Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
-@unittest.skipUnless(Py_DEBUG, "lltrace requires Py_DEBUG")
+@unittest.skipUnless(support.Py_DEBUG, "lltrace requires Py_DEBUG")
 class TestLLTrace(unittest.TestCase):
 
     def run_code(self, code):
@@ -28,7 +27,7 @@ class TestLLTrace(unittest.TestCase):
         self.assertEqual(stderr, b"")
         self.assertEqual(status, 0)
         result = stdout.decode('utf-8')
-        if verbose:
+        if support.verbose:
             print("\n\n--- code ---")
             print(code)
             print("\n--- stdout ---")

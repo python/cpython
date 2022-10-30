@@ -203,7 +203,7 @@ def internalTk():
 
 # Do we use 8.6.8 when building our own copy
 # of Tcl/Tk or a modern version.
-#   We use the old version when buildin on
+#   We use the old version when building on
 #   old versions of macOS due to build issues.
 def useOldTk():
     return getBuildTuple() < (10, 15)
@@ -246,9 +246,10 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1n",
-              url="https://www.openssl.org/source/openssl-1.1.1n.tar.gz",
-              checksum='2aad5635f9bb338bc2c6b7d19cbc9676',
+              name="OpenSSL 1.1.1q",
+              url="https://www.openssl.org/source/openssl-1.1.1q.tar.gz",
+              checksum='d7939ce614029cdff0b6c20f0e2e5703158a489a72b2507b8bd51bf8c8fd10ca',
+              patches=['openssl1.1.1q-pr-18719.patch'],
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -271,10 +272,11 @@ def library_recipes():
             tk_patches = [ ]
 
 
+        base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
         result.extend([
           dict(
               name="Tcl %s"%(tcl_tk_ver,),
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl%s-src.tar.gz"%(tcl_tk_ver,),
+              url=base_url.format(what="tcl", version=tcl_tk_ver),
               checksum=tcl_checksum,
               buildDir="unix",
               configure_pre=[
@@ -291,7 +293,7 @@ def library_recipes():
               ),
           dict(
               name="Tk %s"%(tcl_tk_ver,),
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk%s-src.tar.gz"%(tcl_tk_ver,),
+              url=base_url.format(what="tk", version=tcl_tk_ver),
               checksum=tk_checksum,
               patches=tk_patches,
               buildDir="unix",
@@ -358,9 +360,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.38.4",
-              url="https://sqlite.org/2022/sqlite-autoconf-3380400.tar.gz",
-              checksum="34c0b92a0609ed4ce78582e8dc1ed45a",
+              name="SQLite 3.39.4",
+              url="https://sqlite.org/2022/sqlite-autoconf-3390400.tar.gz",
+              checksum="44b7e6691b0954086f717a6c43b622a5",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -796,10 +798,16 @@ def verifyThirdPartyFile(url, checksum, fname):
         print("Downloading %s"%(name,))
         downloadURL(url, fname)
         print("Archive for %s stored as %s"%(name, fname))
+    if len(checksum) == 32:
+        algo = 'md5'
+    elif len(checksum) == 64:
+        algo = 'sha256'
+    else:
+        raise ValueError(checksum)
     if os.system(
-            'MD5=$(openssl md5 %s) ; test "${MD5##*= }" = "%s"'
-                % (shellQuote(fname), checksum) ):
-        fatal('MD5 checksum mismatch for file %s' % fname)
+            'CHECKSUM=$(openssl %s %s) ; test "${CHECKSUM##*= }" = "%s"'
+                % (algo, shellQuote(fname), checksum) ):
+        fatal('%s checksum mismatch for file %s' % (algo, fname))
 
 def build_universal_openssl(basedir, archList):
     """

@@ -3,7 +3,6 @@
 import __future__
 import ast
 import unittest
-from test import support
 from test.support import import_helper
 from textwrap import dedent
 import os

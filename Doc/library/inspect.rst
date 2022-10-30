@@ -187,7 +187,7 @@ attributes:
 |           | co_name           | name with which this code |
 |           |                   | object was defined        |
 +-----------+-------------------+---------------------------+
-|           | co_qualname       | fully-qualified name with |
+|           | co_qualname       | fully qualified name with |
 |           |                   | which this code object    |
 |           |                   | was defined               |
 +-----------+-------------------+---------------------------+
@@ -434,8 +434,10 @@ attributes:
 
    Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
 
-   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
-   :meth:`~object().__eq__` and :meth:`~object().__repr__`
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object.__str__`,
+   :meth:`~object.__eq__` and :meth:`~object.__repr__`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: isroutine(object)
@@ -512,6 +514,7 @@ Retrieving source code
    If the documentation string for an object is not provided and the object is
    a class, a method, a property or a descriptor, retrieve the documentation
    string from the inheritance hierarchy.
+   Return ``None`` if the documentation string is invalid or missing.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
@@ -535,12 +538,14 @@ Retrieving source code
 
 .. function:: getmodule(object)
 
-   Try to guess which module an object was defined in.
+   Try to guess which module an object was defined in. Return ``None``
+   if the module cannot be determined.
 
 
 .. function:: getsourcefile(object)
 
-   Return the name of the Python source file in which an object was defined.  This
+   Return the name of the Python source file in which an object was defined
+   or ``None`` if no way can be identified to get the source.  This
    will fail with a :exc:`TypeError` if the object is a built-in module, class, or
    function.
 
@@ -1127,7 +1132,7 @@ Classes and functions
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
-   * Always, always, always returns a freshly-created dict.
+   * Always, always, always returns a freshly created dict.
 
    ``eval_str`` controls whether or not values of type ``str`` are replaced
    with the result of calling :func:`eval()` on those values:
@@ -1203,12 +1208,13 @@ is considered deprecated and may be removed in the future.
       number, start column offset, and end column offset associated with the
       instruction being executed by the frame this record corresponds to.
 
-.. versionchanged:: 3.5
-   Return a named tuple instead of a tuple.
+   .. versionchanged:: 3.5
+      Return a :term:`named tuple` instead of a :class:`tuple`.
 
-.. versionchanged:: 3.11
-   Changed the return object from a named tuple to a regular object (that is
-   backwards compatible with the previous named tuple).
+   .. versionchanged:: 3.11
+      :class:`!FrameInfo` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. class:: Traceback
 
@@ -1241,6 +1247,11 @@ is considered deprecated and may be removed in the future.
       line number, start column offset, and end column offset associated with
       the instruction being executed by the frame this traceback corresponds
       to.
+
+   .. versionchanged:: 3.11
+      :class:`!Traceback` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. note::
 

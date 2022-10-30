@@ -14,28 +14,19 @@
 #endif
 
 
-// Macro to use C++ static_cast<>, reinterpret_cast<> and const_cast<>
-// in the Python C API.
-//
-// In C++, _Py_CAST(type, expr) converts a constant expression to a
-// non constant type using const_cast<type>. For example,
-// _Py_CAST(PyObject*, op) can convert a "const PyObject*" to
-// "PyObject*".
-//
-// The type argument must not be constant. For example, in C++,
-// _Py_CAST(const PyObject*, expr) fails with a compiler error.
+// Macro to use C++ static_cast<> in the Python C API.
 #ifdef __cplusplus
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
-#  define _Py_CAST(type, expr) \
-       const_cast<type>(reinterpret_cast<const type>(expr))
 #else
 #  define _Py_STATIC_CAST(type, expr) ((type)(expr))
-#  define _Py_CAST(type, expr) ((type)(expr))
 #endif
+// Macro to use the more powerful/dangerous C-style cast even in C++.
+#define _Py_CAST(type, expr) ((type)(expr))
 
 // Static inline functions should use _Py_NULL rather than using directly NULL
-// to prevent C++ compiler warnings. In C++, _Py_NULL uses nullptr.
-#ifdef __cplusplus
+// to prevent C++ compiler warnings. On C++11 and newer, _Py_NULL is defined as
+// nullptr.
+#if defined(__cplusplus) && __cplusplus >= 201103
 #  define _Py_NULL nullptr
 #else
 #  define _Py_NULL NULL
@@ -162,32 +153,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 /* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
 
-/* Macro kept for backward compatibility: use "z" in new code.
+/* Macro kept for backward compatibility: use directly "z" in new code.
  *
- * PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
- * format to convert an argument with the width of a size_t or Py_ssize_t.
- * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
- * Since MSVC supports "z" since (at least) 2015, we can just use "z"
- * for new code.
- *
- * These "high level" Python format functions interpret "z" correctly on
- * all platforms (Python interprets the format string itself, and does whatever
- * the platform C requires to convert a size_t/Py_ssize_t argument):
- *
- *     PyBytes_FromFormat
- *     PyErr_Format
- *     PyBytes_FromFormatV
- *     PyUnicode_FromFormatV
- *
- * Lower-level uses require that you interpolate the correct format modifier
- * yourself (e.g., calling printf, fprintf, sprintf, PyOS_snprintf); for
- * example,
- *
- *     Py_ssize_t index;
- *     fprintf(stderr, "index %" PY_FORMAT_SIZE_T "d sucks\n", index);
- *
- * That will expand to %zd or to something else correct for a Py_ssize_t on
- * the platform.
+ * PY_FORMAT_SIZE_T is a modifier for use in a printf format to convert an
+ * argument with the width of a size_t or Py_ssize_t: "z" (C99).
  */
 #ifndef PY_FORMAT_SIZE_T
 #   define PY_FORMAT_SIZE_T "z"

@@ -24,7 +24,6 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
 
-#include "token.h"                // INDENT
 #include "errcode.h"              // E_EOF
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
@@ -1108,14 +1107,7 @@ print_exception_suggestions(struct exception_print_context *ctx,
     PyObject *f = ctx->file;
     PyObject *suggestions = _Py_Offer_Suggestions(value);
     if (suggestions) {
-        // Add a trailer ". Did you mean: (...)?"
-        if (PyFile_WriteString(". Did you mean: '", f) < 0) {
-            goto error;
-        }
         if (PyFile_WriteObject(suggestions, f, Py_PRINT_RAW) < 0) {
-            goto error;
-        }
-        if (PyFile_WriteString("'?", f) < 0) {
             goto error;
         }
         Py_DECREF(suggestions);
@@ -1859,7 +1851,7 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
     }
 
     if (strlen(str) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError,
+        PyErr_SetString(PyExc_SyntaxError,
             "source code string cannot contain null bytes");
         Py_CLEAR(*cmd_copy);
         return NULL;

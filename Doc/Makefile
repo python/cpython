@@ -18,12 +18,12 @@ SPHINXERRORHANDLING = -W
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
 PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) \
+ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j auto \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
-.PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
-	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
-	autobuild-dev autobuild-stable venv
+.PHONY: help build html htmlhelp latex text texinfo epub changes linkcheck \
+	coverage doctest pydoc-topics htmlview clean clean-venv venv dist check serve \
+	autobuild-dev autobuild-dev-html autobuild-stable autobuild-stable-html
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -42,7 +42,6 @@ help:
 	@echo "  doctest    to run doctests in the documentation"
 	@echo "  pydoc-topics  to regenerate the pydoc topics file"
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
-	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  check      to run a check for frequent markup errors"
 
 build:
@@ -109,18 +108,6 @@ linkcheck:
 	echo "Link check complete; look for any errors in the above output" \
 	     "or in build/$(BUILDER)/output.txt"; \
 	false; }
-
-suspicious: BUILDER = suspicious
-suspicious:
-	@$(MAKE) build BUILDER=$(BUILDER) || { \
-	echo "Suspicious check complete; look for any errors in the above output" \
-	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
-	     "positives, append that file to tools/susp-ignored.csv."; \
-	false; }
-	@echo "⚠ make suspicious is deprecated and will be removed soon."
-	@echo "⚠ Use:"
-	@echo "⚠     make check"
-	@echo "⚠ instead."
 
 coverage: BUILDER = coverage
 coverage: build
@@ -213,8 +200,10 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 check:
-	$(SPHINXLINT) -i tools -i $(VENVDIR) -i README.rst
-	$(SPHINXLINT) ../Misc/NEWS.d/next/
+	# Check the docs and NEWS files with sphinx-lint.
+	# Ignore the tools and venv dirs and check that the default role is not used.
+	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
+	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
 
 serve:
 	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"

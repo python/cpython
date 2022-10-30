@@ -14,6 +14,9 @@ extern "C" {
 #include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
+struct _getargs_runtime_state {
+   PyThread_type_lock mutex;
+};
 
 /* ceval state */
 
@@ -23,9 +26,7 @@ struct _ceval_runtime_state {
        the main thread of the main interpreter can handle signals: see
        _Py_ThreadCanHandleSignals(). */
     _Py_atomic_int signals_pending;
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     struct _gil_runtime_state gil;
-#endif
 };
 
 /* GIL state */
@@ -92,8 +93,8 @@ typedef struct pyruntimestate {
            in the operation of the runtime.  It is also often the only
            interpreter. */
         PyInterpreterState *main;
-        /* _next_interp_id is an auto-numbered sequence of small
-           integers.  It gets initialized in _PyInterpreterState_Init(),
+        /* next_id is an auto-numbered sequence of small
+           integers.  It gets initialized in _PyInterpreterState_Enable(),
            which is called in Py_Initialize(), and used in
            PyInterpreterState_New().  A negative interpreter ID
            indicates an error occurred.  The main interpreter will
@@ -116,6 +117,7 @@ typedef struct pyruntimestate {
 
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
+    struct _getargs_runtime_state getargs;
 
     PyPreConfig preconfig;
 

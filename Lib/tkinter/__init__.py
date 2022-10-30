@@ -2126,7 +2126,7 @@ class Wm:
         the bitmap if None is given.
 
         Under Windows, the DEFAULT parameter can be used to set the icon
-        for the widget and any descendents that don't have an icon set
+        for the widget and any descendants that don't have an icon set
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk
         documentation for more information."""
@@ -2372,9 +2372,9 @@ class Tk(Misc, Wm):
             _default_root = None
 
     def readprofile(self, baseName, className):
-        """Internal function. It reads BASENAME.tcl and CLASSNAME.tcl into
-        the Tcl Interpreter and calls exec on the contents of BASENAME.py and
-        CLASSNAME.py if such a file exists in the home directory."""
+        """Internal function. It reads .BASENAME.tcl and .CLASSNAME.tcl into
+        the Tcl Interpreter and calls exec on the contents of .BASENAME.py and
+        .CLASSNAME.py if such a file exists in the home directory."""
         import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
@@ -2619,7 +2619,7 @@ class BaseWidget(Misc):
         if kw:
             cnf = _cnfmerge((cnf, kw))
         self.widgetName = widgetName
-        BaseWidget._setup(self, master, cnf)
+        self._setup(master, cnf)
         if self._tclCommands is None:
             self._tclCommands = []
         classes = [(k, v) for k, v in cnf.items() if isinstance(k, type)]
@@ -3038,6 +3038,8 @@ class Canvas(Widget, XView, YView):
         return self.tk.call(self._w, 'type', tagOrId) or None
 
 
+_checkbutton_count = 0
+
 class Checkbutton(Widget):
     """Checkbutton widget which is either in on- or off-state."""
 
@@ -3052,6 +3054,14 @@ class Checkbutton(Widget):
         selectcolor, selectimage, state, takefocus, text, textvariable,
         underline, variable, width, wraplength."""
         Widget.__init__(self, master, 'checkbutton', cnf, kw)
+
+    def _setup(self, master, cnf):
+        if not cnf.get('name'):
+            global _checkbutton_count
+            name = self.__class__.__name__.lower()
+            _checkbutton_count += 1
+            cnf['name'] = f'!{name}{_checkbutton_count}'
+        super()._setup(master, cnf)
 
     def deselect(self):
         """Put the button in off-state."""
@@ -3638,7 +3648,7 @@ class Text(Widget, XView, YView):
         "lines", "xpixels" and "ypixels". There is an additional possible
         option "update", which if given then all subsequent options ensure
         that any possible out of date information is recalculated."""
-        args = ['-%s' % arg for arg in args if not arg.startswith('-')]
+        args = ['-%s' % arg for arg in args]
         args += [index1, index2]
         res = self.tk.call(self._w, 'count', *args) or None
         if res is not None and len(args) <= 3:
