@@ -476,32 +476,32 @@ class StackSummary(list):
                 frame_summary.colno is not None
                 and frame_summary.end_colno is not None
             ):
-                colno = _byte_offset_to_character_offset(
-                    frame_summary._original_line, frame_summary.colno)
-                end_colno = _byte_offset_to_character_offset(
-                    frame_summary._original_line, frame_summary.end_colno)
+                start_offset = _byte_offset_to_character_offset(
+                    frame_summary._original_line, frame_summary.colno) + 1
+                end_offset = _byte_offset_to_character_offset(
+                    frame_summary._original_line, frame_summary.end_colno) + 1
 
                 anchors = None
                 if frame_summary.lineno == frame_summary.end_lineno:
                     with suppress(Exception):
                         anchors = _extract_caret_anchors_from_line_segment(
-                            frame_summary._original_line[colno - 1:end_colno - 1]
+                            frame_summary._original_line[start_offset - 1:end_offset - 1]
                         )
                 else:
-                    end_colno = stripped_characters + len(stripped_line)
+                    end_offset = stripped_characters + len(stripped_line)
 
                 # show indicators if primary char doesn't span the frame line
-                if end_colno - colno < len(stripped_line) or (
+                if end_offset - start_offset < len(stripped_line) or (
                         anchors and anchors.right_start_offset - anchors.left_end_offset > 0):
                     row.append('    ')
-                    row.append(' ' * (colno - stripped_characters))
+                    row.append(' ' * (start_offset - stripped_characters))
 
                     if anchors:
                         row.append(anchors.primary_char * (anchors.left_end_offset))
                         row.append(anchors.secondary_char * (anchors.right_start_offset - anchors.left_end_offset))
-                        row.append(anchors.primary_char * (end_colno - colno - anchors.right_start_offset))
+                        row.append(anchors.primary_char * (end_offset - start_offset - anchors.right_start_offset))
                     else:
-                        row.append('^' * (end_colno - colno))
+                        row.append('^' * (end_offset - start_offset))
 
                     row.append('\n')
 
@@ -561,10 +561,7 @@ class StackSummary(list):
 
 def _byte_offset_to_character_offset(str, offset):
     as_utf8 = str.encode('utf-8')
-    if offset > len(as_utf8):
-        offset = len(as_utf8)
-
-    return len(as_utf8[:offset + 1].decode("utf-8"))
+    return len(as_utf8[:offset].decode("utf-8", errors="replace"))
 
 
 _Anchors = collections.namedtuple(

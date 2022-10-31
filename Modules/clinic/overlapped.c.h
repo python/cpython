@@ -1093,6 +1093,10 @@ _overlapped_WSAConnect(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (!ConnectSocket && PyErr_Occurred()) {
         goto exit;
     }
+    if (!PyTuple_Check(args[1])) {
+        _PyArg_BadArgument("WSAConnect", "argument 2", "tuple", args[1]);
+        goto exit;
+    }
     AddressObj = args[1];
     return_value = _overlapped_WSAConnect_impl(module, ConnectSocket, AddressObj);
 
@@ -1138,6 +1142,10 @@ _overlapped_Overlapped_WSASendTo(OverlappedObject *self, PyObject *const *args, 
         goto exit;
     }
     if (!_PyLong_UnsignedLong_Converter(args[2], &flags)) {
+        goto exit;
+    }
+    if (!PyTuple_Check(args[3])) {
+        _PyArg_BadArgument("WSASendTo", "argument 4", "tuple", args[3]);
         goto exit;
     }
     AddressObj = args[3];
@@ -1254,4 +1262,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e0f866222bd5873b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b2e89694b8de3d00 input=a9049054013a1b77]*/

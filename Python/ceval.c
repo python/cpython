@@ -3420,9 +3420,6 @@ handle_eval_breaker:
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int res = _PyUnicode_Equal(left, right);
-            if (res < 0) {
-                goto error;
-            }
             assert(oparg == Py_EQ || oparg == Py_NE);
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
@@ -3852,7 +3849,7 @@ handle_eval_breaker:
                 _PyErr_Clear(tstate);
             }
             /* iterator ended normally */
-            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg] == END_FOR));
+            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
             STACK_SHRINK(1);
             Py_DECREF(iter);
             /* Skip END_FOR */
