@@ -147,7 +147,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
 
    .. c:member:: const char *format
 
-      A *NUL* terminated string in :mod:`struct` module style syntax describing
+      A *NULL* terminated string in :mod:`struct` module style syntax describing
       the contents of a single item. If this is ``NULL``, ``"B"`` (unsigned bytes)
       is assumed.
 
