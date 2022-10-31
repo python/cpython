@@ -271,33 +271,26 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
         Py_END_ALLOW_THREADS
     }
     else {
-        if (Py_REFCNT(op) <= 0) {
-            Py_BEGIN_ALLOW_THREADS
-            fprintf(fp, "<refcnt %zd at %p>", Py_REFCNT(op), (void *)op);
-            Py_END_ALLOW_THREADS
+        PyObject *s;
+        if (flags & Py_PRINT_RAW)
+            s = PyObject_Str(op);
+        else
+            s = PyObject_Repr(op);
+        if (s == NULL) {
+            ret = -1;
         }
         else {
-            PyObject *s;
-            if (flags & Py_PRINT_RAW)
-                s = PyObject_Str(op);
-            else
-                s = PyObject_Repr(op);
-            if (s == NULL) {
+            assert(PyUnicode_Check(s));
+            const char *t;
+            Py_ssize_t len;
+            t = PyUnicode_AsUTF8AndSize(s, &len);
+            if (t == NULL) {
                 ret = -1;
             }
             else {
-                assert(PyUnicode_Check(s));
-                const char *t;
-                Py_ssize_t len;
-                t = PyUnicode_AsUTF8AndSize(s, &len);
-                if (t == NULL) {
-                    ret = -1;
-                }
-                else {
-                    fwrite(t, 1, len, fp);
-                }
-                Py_DECREF(s);
+                fwrite(t, 1, len, fp);
             }
+            Py_DECREF(s);
         }
     }
     if (ret == 0) {
