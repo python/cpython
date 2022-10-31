@@ -1007,20 +1007,10 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.dist(p, q), 5*scale)
             self.assertEqual(math.dist(q, p), 5*scale)
 
-    @support.cpython_only
-    @unittest.skipUnless(support.Py_DEBUG,
-                         '-X showrefcount requires a Python debug build')
     def test_math_dist_leak(self):
-        # See https://github.com/python/cpython/issues/98897
-        code = textwrap.dedent("""
-        import math
-        try:
+        # gh-98897: Check for error handling does not leak memory
+        with self.assertRaises(ValueError):
             math.dist([1, 2], [3, 4, 5])
-        except ValueError:
-            pass
-        """)
-        res = script_helper.assert_python_ok('-X', 'showrefcount', '-c', code)
-        self.assertEqual(res.err, b'[0 refs, 0 blocks]\n')
 
     def testIsqrt(self):
         # Test a variety of inputs, large and small.
