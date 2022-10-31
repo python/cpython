@@ -872,6 +872,62 @@ _findCommand(SearchInfo *search, const wchar_t *command, int commandLength)
 
 
 int
+_useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangLength)
+{
+    wchar_t buffer[MAXLEN];
+    wchar_t script[MAXLEN];
+    wchar_t command[MAXLEN];
+
+    int commandLength = 0;
+    int inQuote = 0;
+
+    if (!shebang || !shebangLength) {
+        return 0;
+    }
+
+    wchar_t *pC = command;
+    for (int i = 0; i < shebangLength; ++i) {
+        wchar_t c = shebang[i];
+        if (isspace(c) && !inQuote) {
+            commandLength = i;
+            break;
+        } else if (c == L'"') {
+            inQuote = !inQuote;
+        } else if (c == L'/' || c == L'\\') {
+            *pC++ = L'\\';
+        } else {
+            *pC++ = c;
+        }
+    }
+    *pC = L'\0';
+
+    if (!GetCurrentDirectoryW(MAXLEN, buffer) ||
+        wcsncpy_s(script, MAXLEN, search->scriptFile, search->scriptFileLength) ||
+        FAILED(PathCchCombineEx(buffer, MAXLEN, buffer, script,
+                                PATHCCH_ALLOW_LONG_PATHS)) ||
+        FAILED(PathCchRemoveFileSpec(buffer, MAXLEN)) ||
+        FAILED(PathCchCombineEx(buffer, MAXLEN, buffer, command,
+                                PATHCCH_ALLOW_LONG_PATHS))
+    ) {
+        return RC_NO_MEMORY;
+    }
+
+    int n = (int)wcsnlen(buffer, MAXLEN);
+    wchar_t *path = allocSearchInfoBuffer(search, n + 1);
+    if (!path) {
+        return RC_NO_MEMORY;
+    }
+    wcscpy_s(path, n + 1, buffer);
+    search->executablePath = path;
+    if (commandLength) {
+        search->executableArgs = &shebang[commandLength];
+        search->executableArgsLength = shebangLength - commandLength;
+    }
+    return 0;
+}
+
+
+int
 checkShebang(SearchInfo *search)
 {
     // Do not check shebang if a tag was provided or if no script file
@@ -963,13 +1019,19 @@ checkShebang(SearchInfo *search)
         L"/usr/bin/env ",
         L"/usr/bin/",
         L"/usr/local/bin/",
-        L"",
+        L"python",
         NULL
     };
 
     for (const wchar_t **tmpl = shebangTemplates; *tmpl; ++tmpl) {
         if (_shebangStartsWith(shebang, shebangLength, *tmpl, &command)) {
             commandLength = 0;
+            // Normally "python" is the start of the command, but we also need it
+            // as a shebang prefix for back-compat. We move the command marker back
+            // if we match on that one.
+            if (0 == wcscmp(*tmpl, L"python")) {
+                command -= 6;
+            }
             while (command[commandLength] && !isspace(command[commandLength])) {
                 commandLength += 1;
             }
@@ -1012,11 +1074,14 @@ checkShebang(SearchInfo *search)
                 debug(L"# Found shebang command but could not execute it: %.*s\n",
                     commandLength, command);
             }
-            break;
+            // search is done by this point
+            return 0;
         }
     }
 
-    return 0;
+    // Unrecognised commands are joined to the script's directory and treated
+    // as the executable path
+    return _useShebangAsExecutable(search, shebang, shebangLength);
 }
 
 
