@@ -132,10 +132,13 @@ typedef PyCompilerSrcLocation location;
 
 static location NO_LOCATION = {-1, -1, -1, -1};
 
-#define LOCATION_IS_GT(L1, L2) \
-    (((L1).lineno > (L2).end_lineno) || \
-     (((L1).lineno == (L2).end_lineno) && \
-      ((L1).col_offset > (L2).end_col_offset)))
+/* Return true if loc1 starts after loc2 ends. */
+static inline bool
+location_is_after(location loc1, location loc2) {
+    return (loc1.lineno > loc2.end_lineno) ||
+            ((loc1.lineno == loc2.end_lineno) &&
+             (loc1.col_offset > loc2.end_col_offset));
+}
 
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
@@ -3924,7 +3927,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         PyTuple_SET_ITEM(names, i, alias->name);
     }
 
-    if (LOCATION_IS_GT(LOC(s), c->c_future->ff_location) &&
+    if (location_is_after(LOC(s), c->c_future->ff_location) &&
         s->v.ImportFrom.module &&
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
     {
