@@ -125,7 +125,7 @@
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && (c->u->u_ste->ste_type == ModuleBlock))
 
-typedef PyCompilerSrcLocation location;
+typedef _PyCompilerSrcLocation location;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const location){(LNO), (END_LNO), (COL), (END_COL)})

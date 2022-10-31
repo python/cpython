@@ -37,10 +37,10 @@ typedef struct {
     int end_lineno;
     int col_offset;
     int end_col_offset;
-} PyCompilerSrcLocation;
+} _PyCompilerSrcLocation;
 
 #define SRC_LOCATION_FROM_AST(n) \
-    (PyCompilerSrcLocation){ \
+    (_PyCompilerSrcLocation){ \
                .lineno = (n)->lineno, \
                .end_lineno = (n)->end_lineno, \
                .col_offset = (n)->col_offset, \
@@ -49,8 +49,8 @@ typedef struct {
 /* Future feature support */
 
 typedef struct {
-    int ff_features;                   /* flags set by future statements */
-    PyCompilerSrcLocation ff_location; /* location of last future statement */
+    int ff_features;                    /* flags set by future statements */
+    _PyCompilerSrcLocation ff_location; /* location of last future statement */
 } PyFutureFeatures;
 
 #define FUTURE_NESTED_SCOPES "nested_scopes"

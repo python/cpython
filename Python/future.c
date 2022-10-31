@@ -109,7 +109,7 @@ _PyFuture_FromAST(mod_ty mod, PyObject *filename)
         return NULL;
     }
     ff->ff_features = 0;
-    ff->ff_location = (PyCompilerSrcLocation){-1, -1, -1, -1};
+    ff->ff_location = (_PyCompilerSrcLocation){-1, -1, -1, -1};
 
     if (!future_parse(ff, mod, filename)) {
         PyObject_Free(ff);
