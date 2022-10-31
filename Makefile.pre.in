@@ -1447,16 +1447,16 @@ regen-opcode-targets:
 
 .PHONY: regen-cases
 regen-cases:
-	# Regenerate Python/cases.h from Python/bytecodes.c
+	# Regenerate Python/generated_cases.c.h from Python/bytecodes.c
 	# using Tools/cases_generator/generate_cases.py
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
 		-i $(srcdir)/Python/bytecodes.c \
-		-o $(srcdir)/Python/cases.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/cases.h $(srcdir)/Python/cases.h.new
+		-o $(srcdir)/Python/generated_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h $(srcdir)/Python/cases.h
+Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h $(srcdir)/Python/generated_cases.c.h
 
 
 Python/frozen.o: $(FROZEN_FILES_OUT)

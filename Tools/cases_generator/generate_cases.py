@@ -1,6 +1,6 @@
 """Generate the main interpreter switch."""
 
-# Write the cases to cases.h, which can be #included in ceval.c.
+# Write the cases to generated_cases.c.h, which is #included in ceval.c.
 
 # TODO: Reuse C generation framework from deepfreeze.py?
 
@@ -15,7 +15,7 @@ import parser
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("-i", "--input", type=str, default="Python/bytecodes.c")
-arg_parser.add_argument("-o", "--output", type=str, default="Python/cases.h")
+arg_parser.add_argument("-o", "--output", type=str, default="Python/generated_cases.c.h")
 arg_parser.add_argument("-c", "--compare", action="store_true")
 arg_parser.add_argument("-q", "--quiet", action="store_true")
 

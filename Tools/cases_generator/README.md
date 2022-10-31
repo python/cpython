@@ -13,7 +13,7 @@ What's currently here:
   - `SParser`: parser class, derives from `EParser`
   - More AST node classes
 - `generate_cases.py`: driver script to read `Python/bytecodes.c` and
-  write `Python/cases.h`
+  write `Python/generated_cases.c.h`
 - `extract_cases.py`: _temporary_ script to extract cases from
   `Python/ceval.c` and write them to `Python/bytecodes.c`
 - `bytecodes_template.h`: template used by `extract_cases.py`

@@ -1176,7 +1176,7 @@ handle_eval_breaker:
 */
 
 #ifndef USE_ORIGINAL_CASES
-#include "cases.h"
+#include "generated_cases.c.h"
 #else
 
         TARGET(NOP) {
