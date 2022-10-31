@@ -125,7 +125,7 @@ class Parser(sparser.SParser):
         here = self.getpos()
         if tkn := self.expect(lx.IDENTIFIER):
             near = self.getpos()
-            if self.expect(lx.PLUS):
+            if self.expect(lx.COMMA):
                 if rest := self.members():
                     return [tkn.text] + rest
             self.setpos(near)
