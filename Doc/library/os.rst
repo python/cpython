@@ -590,6 +590,44 @@ process and user.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
 
+.. function:: setns(fd, nstype=0)
+
+   Reassociate the current thread with a Linux namespace.
+   See the :manpage:`setns(2)` and :manpage:`namespaces(7)` man pages for more
+   details.
+
+   If *fd* refers to a :file:`/proc/{pid}/ns/` link, ``setns()`` reassociates the
+   calling thread with the namespace associated with that link,
+   and *nstype* may be set to one of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`
+   to impose constraints on the operation
+   (``0`` means no constraints).
+
+   Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
+   :func:`~os.pidfd_open`. In this case, ``setns()`` reassociates the calling thread
+   into one or more of the same namespaces as the thread referred to by *fd*.
+   This is subject to any constraints imposed by *nstype*,
+   which is a bit mask combining one or more of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`,
+   e.g. ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
+   The caller's memberships in unspecified namespaces are left unchanged.
+
+   *fd* can be any object with a :meth:`~io.IOBase.fileno` method, or a raw file descriptor.
+
+   This example reassociates the thread with the ``init`` process's network namespace::
+
+      fd = os.open("/proc/1/ns/net", os.O_RDONLY)
+      os.setns(fd, os.CLONE_NEWNET)
+      os.close(fd)
+
+   .. availability:: Linux >= 3.0 with glibc >= 2.14.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.unshare` function.
+
 .. function:: setpgrp()
 
    Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
@@ -754,6 +792,49 @@ process and user.
 
    .. versionchanged:: 3.9
       The function is now always available and is also available on Windows.
+
+
+.. function:: unshare(flags)
+
+   Disassociate parts of the process execution context, and move them into a
+   newly created namespace.
+   See the :manpage:`unshare(2)`
+   man page for more details.
+   The *flags* argument is a bit mask, combining zero or more of the
+   :ref:`CLONE_* constants <os-unshare-clone-flags>`,
+   that specifies which parts of the execution context should be
+   unshared from their existing associations and moved to a new namespace.
+   If the *flags* argument is ``0``, no changes are made to the calling process's
+   execution context.
+
+   .. availability:: Linux >= 2.6.16.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.setns` function.
+
+.. _os-unshare-clone-flags:
+
+Flags to the :func:`unshare` function, if the implementation supports them.
+See :manpage:`unshare(2)` in the Linux manual
+for their exact effect and availability.
+
+.. data:: CLONE_FILES
+          CLONE_FS
+          CLONE_NEWCGROUP
+          CLONE_NEWIPC
+          CLONE_NEWNET
+          CLONE_NEWNS
+          CLONE_NEWPID
+          CLONE_NEWTIME
+          CLONE_NEWUSER
+          CLONE_NEWUTS
+          CLONE_SIGHAND
+          CLONE_SYSVSEM
+          CLONE_THREAD
+          CLONE_VM
 
 
 .. _os-newstreams:
