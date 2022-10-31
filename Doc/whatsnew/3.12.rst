@@ -80,7 +80,7 @@ Improved Error Messages
       File "<stdin>", line 1
         import a.y.z from b.y.z
         ^^^^^^^^^^^^^^^^^^^^^^^
-    SyntaxError: Did you meant to use 'from ... import ...' instead?
+    SyntaxError: Did you mean to use 'from ... import ...' instead?
 
 New Features
 ============
