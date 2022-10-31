@@ -40,7 +40,7 @@ typedef struct _callback_context
 } callback_context;
 
 enum autocommit_mode {
-    AUTOCOMMIT_COMPAT = COMPAT_TRANSACTIONAL_CONTROL,
+    AUTOCOMMIT_COMPAT = LEGACY_TRANSACTION_CONTROL,
     AUTOCOMMIT_ENABLED = 1,
     AUTOCOMMIT_DISABLED = 0,
 };

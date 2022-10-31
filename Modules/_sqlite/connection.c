@@ -104,7 +104,7 @@ autocommit_converter(PyObject *val, enum autocommit_mode *result)
         return 1;
     }
     if (PyLong_Check(val) &&
-        PyLong_AsLong(val) == COMPAT_TRANSACTIONAL_CONTROL)
+        PyLong_AsLong(val) == LEGACY_TRANSACTION_CONTROL)
     {
         *result = AUTOCOMMIT_COMPAT;
         return 1;
@@ -112,7 +112,7 @@ autocommit_converter(PyObject *val, enum autocommit_mode *result)
 
     PyErr_SetString(PyExc_ValueError,
         "autocommit must be True, False, or "
-        "sqlite3.COMPAT_TRANSACTIONAL_CONTROL");
+        "sqlite3.LEGACY_TRANSACTION_CONTROL");
     return 0;
 }
 
@@ -202,7 +202,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     cached_statements as cache_size: int = 128
     uri: bool = False
     *
-    autocommit: Autocommit(c_default='COMPAT_TRANSACTIONAL_CONTROL') = sqlite3.COMPAT_TRANSACTIONAL_CONTROL
+    autocommit: Autocommit(c_default='LEGACY_TRANSACTION_CONTROL') = sqlite3.LEGACY_TRANSACTION_CONTROL
 [clinic start generated code]*/
 
 static int
@@ -212,7 +212,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri,
                               enum autocommit_mode autocommit)
-/*[clinic end generated code: output=cba057313ea7712f input=dd18511af947c6a9]*/
+/*[clinic end generated code: output=cba057313ea7712f input=b21abce28ebcd304]*/
 {
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return -1;
@@ -2338,7 +2338,7 @@ get_autocommit(pysqlite_Connection *self, void *Py_UNUSED(ctx))
     if (self->autocommit == AUTOCOMMIT_DISABLED) {
         Py_RETURN_FALSE;
     }
-    return PyLong_FromLong(COMPAT_TRANSACTIONAL_CONTROL);
+    return PyLong_FromLong(LEGACY_TRANSACTION_CONTROL);
 }
 
 static int
