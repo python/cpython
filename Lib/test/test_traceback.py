@@ -7,6 +7,7 @@ import sys
 import types
 import inspect
 import importlib
+import builtins
 import unittest
 import re
 import tempfile
@@ -3206,6 +3207,14 @@ class SuggestionFormattingTestBase:
     def test_name_error_suggestions_from_builtins(self):
         def func():
             print(ZeroDivisionErrrrr)
+        actual = self.get_suggestion(func)
+        self.assertIn("'ZeroDivisionError'?", actual)
+
+    def test_name_error_suggestions_from_builtins_when_builtins_is_module(self):
+        def func():
+            custom_globals = globals().copy()
+            custom_globals["__builtins__"] = builtins
+            print(eval("ZeroDivisionErrrrr", custom_globals))
         actual = self.get_suggestion(func)
         self.assertIn("'ZeroDivisionError'?", actual)
 
