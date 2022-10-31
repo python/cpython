@@ -901,7 +901,7 @@ class Thread:
         self._kwargs = kwargs
         if daemon is not None:
             if daemon and not _daemon_threads_allowed():
-                raise RuntimeError('daemon threads are disabled in this interpreter')
+                raise RuntimeError('daemon threads are disabled in this (sub)interpreter')
             self._daemonic = daemon
         else:
             self._daemonic = current_thread().daemon
