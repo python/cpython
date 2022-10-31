@@ -5216,9 +5216,11 @@ class TestStartMethod(unittest.TestCase):
         rc, out, err = test.support.script_helper.assert_python_ok(name)
         out = out.decode()
         err = err.decode()
-        if out.rstrip() != 'ok' or err != '':
-            print(out)
-            print(err)
+        expected = "mp_preload\nmp_preload\nmp_preload_import\nf\nf\nf"
+        if out.rstrip() != expected or err != '':
+            print("expected out: " + expected)
+            print("actual out  : " + out)
+            print("err         : " + err)
             self.fail("failed spawning forkserver or grandchild")
 
 

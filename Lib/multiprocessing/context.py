@@ -177,12 +177,18 @@ class BaseContext(object):
         from .spawn import set_executable
         set_executable(executable)
 
-    def set_forkserver_preload(self, module_names):
+    def set_forkserver_preload(self, module_names, raise_exceptions=False):
         '''Set list of module names to try to load in forkserver process.
-        This is really just a hint.
+
+        If this method is not called, the default list of modules_names is
+        ['__main__']. In most scenarios, callers will want to specify '__main__'
+        as the first entry in modules_names when calling this method.
+
+        By default, any exceptions from importing the specified module names
+        are suppressed. Set raise_exceptions = True to not suppress.
         '''
         from .forkserver import set_forkserver_preload
-        set_forkserver_preload(module_names)
+        set_forkserver_preload(module_names, raise_exceptions)
 
     def get_context(self, method=None):
         if method is None:

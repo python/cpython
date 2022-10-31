@@ -1,4 +1,6 @@
+import base64
 import errno
+import json
 import os
 import selectors
 import signal
@@ -38,6 +40,7 @@ class ForkServer(object):
         self._inherited_fds = None
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
+        self._preload_modules_raise_exceptions = False
 
     def _stop(self):
         # Method used by unit tests to stop the server
@@ -59,8 +62,16 @@ class ForkServer(object):
             os.unlink(self._forkserver_address)
         self._forkserver_address = None
 
-    def set_forkserver_preload(self, modules_names):
-        '''Set list of module names to try to load in forkserver process.'''
+    def set_forkserver_preload(self, modules_names, raise_exceptions = False):
+        '''Set list of module names to try to load in forkserver process.
+
+        If this method is not called, the default list of modules_names is
+        ['__main__']. In most scenarios, callers will want to specify '__main__'
+        as the first entry in modules_names when calling this method.
+
+        By default, any exceptions from importing the specified module names
+        are suppressed. Set raise_exceptions = True to not suppress.
+        '''
         if not all(type(mod) is str for mod in self._preload_modules):
             raise TypeError('module_names must be a list of strings')
         self._preload_modules = modules_names
@@ -122,16 +133,20 @@ class ForkServer(object):
                 self._forkserver_address = None
                 self._forkserver_alive_fd = None
                 self._forkserver_pid = None
-
             cmd = ('from multiprocessing.forkserver import main; ' +
-                   'main(%d, %d, %r, **%r)')
+                   'main(%d, %d, %r, %r, %r)')
 
-            if self._preload_modules:
-                desired_keys = {'main_path', 'sys_path'}
-                data = spawn.get_preparation_data('ignore')
-                data = {x: y for x, y in data.items() if x in desired_keys}
-            else:
-                data = {}
+            spawn_data = spawn.get_preparation_data('ignore')
+
+            #The authkey cannot be serialized. so clear the value from get_preparation_data
+            spawn_data.pop('authkey',None)
+
+            #The forkserver itself uses the fork start_method, so clear the value from get_preparation_data
+            spawn_data.pop('start_method',None)
+
+            spawn_data_json = json.dumps(spawn_data)
+            prepare_data_base64_encoded = base64.b64encode(
+                    bytes(spawn_data_json,'utf-8')).decode()
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -146,7 +161,7 @@ class ForkServer(object):
                 try:
                     fds_to_pass = [listener.fileno(), alive_r]
                     cmd %= (listener.fileno(), alive_r, self._preload_modules,
-                            data)
+                            self._preload_modules_raise_exceptions, prepare_data_base64_encoded)
                     exe = spawn.get_executable()
                     args = [exe] + util._args_from_interpreter_flags()
                     args += ['-c', cmd]
@@ -164,20 +179,25 @@ class ForkServer(object):
 #
 #
 
-def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
+def main(listener_fd, alive_r, preload, raise_import_error, prepare_data_base64_encoded):
     '''Run forkserver.'''
     if preload:
-        if '__main__' in preload and main_path is not None:
+        if prepare_data_base64_encoded is not None:
+            prepare_data = json.loads(base64.b64decode(prepare_data_base64_encoded).decode('utf-8'))
+            if '__main__' not in preload:
+                prepare_data.pop('init_main_from_path',None)
+                prepare_data.pop('init_main_from_name',None)
             process.current_process()._inheriting = True
             try:
-                spawn.import_main_path(main_path)
+                spawn.prepare(prepare_data)
             finally:
                 del process.current_process()._inheriting
         for modname in preload:
             try:
                 __import__(modname)
             except ImportError:
-                pass
+                if raise_import_error:
+                    raise
 
     util._close_stdin()
 
@@ -262,6 +282,9 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                                     len(fds)))
                         child_r, child_w, *fds = fds
                         s.close()
+                        #Failure to flush these before fork can leave data in the buffers
+                        #for unsuspecting children
+                        util._flush_std_streams()
                         pid = os.fork()
                         if pid == 0:
                             # Child
