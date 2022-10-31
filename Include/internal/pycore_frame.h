@@ -48,9 +48,7 @@ enum _frameowner {
 enum _frame_cleanup {
     FRAME_CLEANUP_INVALID = 0,
     FRAME_CLEANUP_ENTRY = 1,
-    FRAME_CLEANUP_INLINED_CLASS = 2,
-    FRAME_CLEANUP_INLINED_FUNCTION = 3,
-    FRAME_CLEANUP_INLINED_GENERATOR = 4,
+    FRAME_CLEANUP_INLINED_FUNCTION = 2,
 };
 
 typedef struct _PyInterpreterFrame {
