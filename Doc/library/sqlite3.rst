@@ -328,7 +328,7 @@ Module functions
        *autocommit* currently defaults to
        :data:`~sqlite3.LEGACY_TRANSACTION_CONTROL`.
        The default will change to ``False`` in a future Python release.
-   :type autocommit: bool | LEGACY_TRANSACTION_CONTROL
+   :type autocommit: bool
 
    :rtype: Connection
 
@@ -651,7 +651,7 @@ Connection objects
       Close the database connection.
       If :attr:`autocommit` is ``False``,
       any pending transaction is implicitly rolled back.
-      If :attr:`autocommit` is ``True`` or :const:`LEGACY_TRANSACTION_CONTROL`
+      If :attr:`!autocommit` is ``True`` or :const:`LEGACY_TRANSACTION_CONTROL`,
       no implicit transaction control is executed.
       Make sure to :meth:`commit` before closing
       to avoid losing pending changes.
@@ -1253,26 +1253,24 @@ Connection objects
    .. attribute:: autocommit
 
       This attribute controls :pep:`249`-compliant transaction behaviour.
-      *autocommit* has three allowed values:
+      :attr:`!autocommit` has three allowed values:
 
-      * ``False``: select :pep:`249`-compliant transaction behaviour,
+      * ``False``: Select :pep:`249`-compliant transaction behaviour,
         implying that :mod:`!sqlite3` ensures a transaction is always open.
-        Use :meth:`~Connection.commit` and :meth:`~Connection.rollback` to
-        close transactions.
+        Use :meth:`commit` and :meth:`rollback` to close transactions.
 
-        This is the recommended value of *autocommit*.
+        This is the recommended value of :attr:`!autocommit`.
 
       * ``True``: Use SQLite's `autocommit mode`_.
-        :meth:`~Connection.commit` and :meth:`~Connection.rollback`
-        have no effect in this mode.
+        :meth:`commit` and :meth:`rollback` have no effect in this mode.
 
       * :data:`LEGACY_TRANSACTION_CONTROL`:
         Pre-Python 3.12 (non-:pep:`249`-compliant) transaction control.
-        See :attr:`isolation_level`.
+        See :attr:`isolation_level` for more details.
 
-        This is currently the default value of *autocommit*.
+        This is currently the default value of :attr:`!autocommit`.
 
-      Changing *autocommit* to ``False`` will open a new transaction,
+      Changing :attr:`!autocommit` to ``False`` will open a new transaction,
       and changing it to ``True`` will commit any pending transaction.
 
       See :ref:`sqlite3-transaction-control-autocommit` for more details.
@@ -1280,7 +1278,7 @@ Connection objects
       .. note::
 
          The :pep:`249`-compliant autocommit feature and the
-         SQLite `autocommit mode`_ are two related, but different concepts.
+         SQLite `autocommit mode`_ are two related but distinct concepts.
          Use :attr:`~Connection.in_transaction` to query the low-level SQLite
          autocommit mode.
 
@@ -2334,10 +2332,17 @@ can be found in the `SQLite URI documentation`_.
 Explanation
 -----------
 
+.. _sqlite3-transaction-control:
 .. _sqlite3-controlling-transactions:
 
 Transaction control
 ^^^^^^^^^^^^^^^^^^^
+
+:mod:`!sqlite3` offers multiple methods of controlling whether,
+when and how database transactions are opened and closed.
+:ref:`sqlite3-transaction-control-autocommit` is recommended,
+while :ref:`sqlite3-transaction-control-isolation-level`
+is consistent with pre-Python 3.12 versions of the :mod:`!sqlite3` module.
 
 .. _sqlite3-transaction-control-autocommit:
 
@@ -2350,13 +2355,13 @@ This attribute should preferrably be set using the *autocommit* parameter
 of :func:`connect`.
 
 It is recommended to set *autocommit* to ``False``,
-implying :pep:`249`-compliant transaction control.
+which implies :pep:`249`-compliant transaction control.
 This means:
 
 * :mod:`!sqlite3` ensures that a transaction is always open,
-  so :meth:`~Connection.commit` and :meth:`~Connection.rollback`
+  so :meth:`Connection.commit` and :meth:`Connection.rollback`
   will implicitly open a new transaction immediately after closing
-  the pending transaction.
+  the pending one.
   :mod:`!sqlite3` uses ``BEGIN DEFERRED`` statements when opening transactions.
 * Transactions should be committed explicitly using :meth:`!commit`.
 * Transactions should be rolled back explicitly using :meth:`!rollback`.
@@ -2364,7 +2369,7 @@ This means:
   :meth:`~Connection.close`-ed with pending changes.
 
 Set *autocommit* to ``True`` to enable SQLite's `autocommit mode`_.
-In this mode, :meth:`~Connection.commit()` and :meth:`~Connection.rollback()`
+In this mode, :meth:`Connection.commit` and :meth:`Connection.rollback`
 have no effect.
 
 Set *autocommit* to :const:`LEGACY_TRANSACTION_CONTROL`
@@ -2387,6 +2392,7 @@ See :ref:`sqlite3-transaction-control-isolation-level` for more information.
 
    The :attr:`Connection.isolation_level` attribute has no effect if
    :attr:`Connection.autocommit` is ``True`` or ``False``.
+
 
 .. _sqlite3-transaction-control-isolation-level:
 
