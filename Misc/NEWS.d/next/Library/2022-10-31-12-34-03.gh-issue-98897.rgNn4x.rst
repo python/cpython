@@ -1,0 +1,1 @@
+Fix memory leak in :func:`math.dist` when it raises exception. Patch by Kumar Aditya.
