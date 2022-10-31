@@ -417,7 +417,7 @@ handled by the symbol analysis pass.
 struct compiler {
     PyObject *c_filename;
     struct symtable *c_st;
-    PyFutureFeatures *c_future; /* pointer to module's __future__ */
+    PyFutureFeatures c_future;   /* module's __future__ */
     PyCompilerFlags *c_flags;
 
     int c_optimize;              /* optimization level */
@@ -619,14 +619,14 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     Py_INCREF(filename);
     c.c_filename = filename;
     c.c_arena = arena;
-    c.c_future = _PyFuture_FromAST(mod, filename);
-    if (c.c_future == NULL)
+    if (!_PyFuture_FromAST(mod, filename, &c.c_future)) {
         goto finally;
+    }
     if (!flags) {
         flags = &local_flags;
     }
-    merged = c.c_future->ff_features | flags->cf_flags;
-    c.c_future->ff_features = merged;
+    merged = c.c_future.ff_features | flags->cf_flags;
+    c.c_future.ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
@@ -640,7 +640,7 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         goto finally;
     }
 
-    c.c_st = _PySymtable_Build(mod, filename, c.c_future);
+    c.c_st = _PySymtable_Build(mod, filename, &c.c_future);
     if (c.c_st == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_SystemError, "no symtable");
@@ -660,8 +660,6 @@ compiler_free(struct compiler *c)
 {
     if (c->c_st)
         _PySymtable_Free(c->c_st);
-    if (c->c_future)
-        PyObject_Free(c->c_future);
     Py_XDECREF(c->c_filename);
     Py_DECREF(c->c_const_cache);
     Py_DECREF(c->c_stack);
@@ -2404,7 +2402,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     ADDOP_LOAD_CONST(c, loc, mangled);
     Py_DECREF(mangled);
 
-    if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+    if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
         VISIT(c, annexpr, annotation);
     }
     else {
@@ -3927,7 +3925,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         PyTuple_SET_ITEM(names, i, alias->name);
     }
 
-    if (location_is_after(LOC(s), c->c_future->ff_location) &&
+    if (location_is_after(LOC(s), c->c_future.ff_location) &&
         s->v.ImportFrom.module &&
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
     {
@@ -6056,7 +6054,7 @@ check_annotation(struct compiler *c, stmt_ty s)
 {
     /* Annotations of complex targets does not produce anything
        under annotations future */
-    if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+    if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
         return 1;
     }
 
@@ -6122,7 +6120,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+            if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
                 VISIT(c, annexpr, s->v.AnnAssign.annotation)
             }
             else {
