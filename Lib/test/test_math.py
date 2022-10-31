@@ -1,8 +1,7 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-import textwrap
-from test.support import verbose, requires_IEEE_754, script_helper
+from test.support import verbose, requires_IEEE_754
 from test import support
 import unittest
 import itertools
