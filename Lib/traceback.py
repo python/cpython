@@ -1035,7 +1035,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         d = (
             list(frame.f_locals)
             + list(frame.f_globals)
-            + list(frame.f_globals['__builtins__'])
+            + list(frame.f_builtins)
         )
     if len(d) > _MAX_CANDIDATE_ITEMS:
         return None
