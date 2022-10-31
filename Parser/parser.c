@@ -21609,7 +21609,7 @@ invalid_import_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_import[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'import' dotted_name 'from' dotted_name"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "Did you meant to use 'from ... import ...' instead?" );
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "Did you mean to use 'from ... import ...' instead?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
