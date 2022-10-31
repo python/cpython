@@ -1565,18 +1565,22 @@ search() vs. match()
 Python offers two different primitive operations based on regular expressions:
 :func:`re.match` checks for a match only at the beginning of the string, while
 :func:`re.search` checks for a match anywhere in the string (this is what Perl
-does by default).
+does by default).We also have :func:`re.fullmatch` which checks whether the complete
+string is a match, otherwise it returns None.
 
 For example::
 
    >>> re.match("c", "abcdef")    # No match
    >>> re.search("c", "abcdef")   # Match
    <re.Match object; span=(2, 3), match='c'>
+   >>> re.fullmatch("python", "python")  # Match
+   <re.Match object; span=(0, 6), match='python'>
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
 
    >>> re.match("c", "abcdef")    # No match
+   >>> re.fullmatch("c", "abcdef")  # No Match
    >>> re.search("^c", "abcdef")  # No match
    >>> re.search("^a", "abcdef")  # Match
    <re.Match object; span=(0, 1), match='a'>
@@ -1586,6 +1590,7 @@ beginning of the string, whereas using :func:`search` with a regular expression
 beginning with ``'^'`` will match at the beginning of each line. ::
 
    >>> re.match('X', 'A\nB\nX', re.MULTILINE)  # No match
+   >>> re.fullmatch("X", "A\nB\nX", re.MULTILINE)  # No Match
    >>> re.search('^X', 'A\nB\nX', re.MULTILINE)  # Match
    <re.Match object; span=(4, 5), match='X'>
 
