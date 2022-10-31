@@ -411,13 +411,11 @@ def _recursive_repr(user_function):
 
 def _create_fn(name, args, body, *, globals=None, locals=None,
                return_type=MISSING):
-    # Note that we mutate locals when exec() is called.  Caller
-    # beware!  The only callers are internal to this module, so no
+    # Note that we may mutate locals. Callers beware!
+    # The only callers are internal to this module, so no
     # worries about external callers.
     if locals is None:
         locals = {}
-    if 'BUILTINS' not in locals:
-        locals['BUILTINS'] = builtins
     return_annotation = ''
     if return_type is not MISSING:
         locals['_return_type'] = return_type
@@ -443,7 +441,7 @@ def _field_assign(frozen, name, value, self_name):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'BUILTINS.object.__setattr__({self_name},{name!r},{value})'
+        return f'__dataclass_builtins_object__.__setattr__({self_name},{name!r},{value})'
     return f'{self_name}.{name}={value}'
 
 
@@ -550,6 +548,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     locals.update({
         'MISSING': MISSING,
         '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY,
+        '__dataclass_builtins_object__': object,
     })
 
     body_lines = []
