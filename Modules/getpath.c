@@ -904,7 +904,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         !library_to_dict(dict, "library") ||
         !wchar_to_dict(dict, "executable_dir", NULL) ||
         !wchar_to_dict(dict, "py_setpath", _PyPathConfig_GetGlobalModuleSearchPath()) ||
-        !funcs_to_dict(dict, config->pathconfig_warnings) ||
+        !funcs_to_dict(dict, config->pathconfig_warnings && config->verbose) ||
 #ifndef MS_WINDOWS
         PyDict_SetItemString(dict, "winreg", Py_None) < 0 ||
 #endif

@@ -1,0 +1,2 @@
+Disables path configuration warnings unless verbose mode (``-v``
+or ``PyConfig.verbose``) is enabled.
