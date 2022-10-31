@@ -1,0 +1,1 @@
+Fix argument typechecks in :func:`!_overlapped.WSAConnect` and :func:`!_overlapped.Overlapped.WSASendTo` functions.

@@ -564,10 +564,10 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.relative_to(*other)
+.. method:: PurePath.relative_to(*other, walk_up=False)
 
    Compute a version of this path relative to the path represented by
-   *other*.  If it's impossible, ValueError is raised::
+   *other*.  If it's impossible, :exc:`ValueError` is raised::
 
       >>> p = PurePosixPath('/etc/passwd')
       >>> p.relative_to('/')
@@ -577,11 +577,33 @@ Pure paths provide the following methods and properties:
       >>> p.relative_to('/usr')
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "pathlib.py", line 694, in relative_to
-          .format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+        File "pathlib.py", line 941, in relative_to
+          raise ValueError(error_message.format(str(self), str(formatted)))
+      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
 
-   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
+When *walk_up* is False (the default), the path must start with *other*.
+   When the argument is True, ``..`` entries may be added to form the
+   relative path. In all other cases, such as the paths referencing
+   different drives, :exc:`ValueError` is raised.::
+
+      >>> p.relative_to('/usr', walk_up=True)
+      PurePosixPath('../etc/passwd')
+      >>> p.relative_to('foo', walk_up=True)
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "pathlib.py", line 941, in relative_to
+          raise ValueError(error_message.format(str(self), str(formatted)))
+      ValueError: '/etc/passwd' is not on the same drive as 'foo' OR one path is relative and the other is absolute.
+
+   .. warning::
+      This function is part of :class:`PurePath` and works with strings.
+      It does not check or access the underlying file structure.
+      This can impact the *walk_up* option as it assumes that no symlinks
+      are present in the path; call :meth:`~Path.resolve` first if
+      necessary to resolve symlinks.
+
+   .. versionadded:: 3.12
+      The *walk_up* argument (old behavior is the same as ``walk_up=False``).
 
 
 .. method:: PurePath.with_name(name)
@@ -1163,6 +1185,8 @@ call fails (for example because the path doesn't exist).
    The target path may be absolute or relative. Relative paths are interpreted
    relative to the current working directory, *not* the directory of the Path
    object.
+
+   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
 
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
