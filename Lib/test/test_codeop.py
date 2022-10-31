@@ -321,6 +321,26 @@ class CodeopTests(unittest.TestCase):
             warnings.simplefilter('error', SyntaxWarning)
             compile_command('1 is 1', symbol='exec')
 
+        # Check DeprecationWarning treated as an SyntaxError
+        with warnings.catch_warnings(), self.assertRaises(SyntaxError):
+            warnings.simplefilter('error', DeprecationWarning)
+            compile_command(r"'\e'", symbol='exec')
+
+    def test_incomplete_warning(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.assertIncomplete("'\\e' + (")
+        self.assertEqual(w, [])
+
+    def test_invalid_warning(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.assertInvalid("'\\e' 1")
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertRegex(str(w[0].message), 'invalid escape sequence')
+        self.assertEqual(w[0].filename, '<input>')
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -89,7 +89,7 @@ def get_makefile_var(builddir, name):
     regex = re.compile(rf'^{name} *=\s*(.*?)\s*$')
     filename = os.path.join(builddir, 'Makefile')
     try:
-        infile = open(filename)
+        infile = open(filename, encoding='utf-8')
     except FileNotFoundError:
         return None
     with infile:
@@ -125,7 +125,7 @@ def prepare(script=None, outdir=None):
     if script:
         scriptfile = os.path.join(outdir, 'app.py')
         print(f'creating the script to be frozen at {scriptfile}')
-        with open(scriptfile, 'w') as outfile:
+        with open(scriptfile, 'w', encoding='utf-8') as outfile:
             outfile.write(script)
 
     # Make a copy of the repo to avoid affecting the current build
@@ -172,7 +172,8 @@ def freeze(python, scriptfile, outdir):
 
     print(f'freezing {scriptfile}...')
     os.makedirs(outdir, exist_ok=True)
-    _run_quiet([python, FREEZE, '-o', outdir, scriptfile], outdir)
+    # Use -E to ignore PYTHONSAFEPATH
+    _run_quiet([python, '-E', FREEZE, '-o', outdir, scriptfile], outdir)
     _run_quiet([MAKE, '-C', os.path.dirname(scriptfile)])
 
     name = os.path.basename(scriptfile).rpartition('.')[0]

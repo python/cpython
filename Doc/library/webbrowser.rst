@@ -41,6 +41,8 @@ naturally, mutually exclusive.  Usage example::
 
    python -m webbrowser -t "https://www.python.org"
 
+.. include:: ../includes/wasm-notavail.rst
+
 The following exception is defined:
 
 
@@ -195,6 +197,11 @@ Browser Controller Objects
 
 Browser controllers provide these methods which parallel three of the
 module-level convenience functions:
+
+
+.. attribute:: name
+
+   System-dependent name for the browser.
 
 
 .. method:: controller.open(url, new=0, autoraise=True)

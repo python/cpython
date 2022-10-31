@@ -57,7 +57,6 @@ PRESETS = {
         "help": "nuget package",
         "options": [
             "dev",
-            "tools",
             "pip",
             "stable",
             "distutils",
@@ -76,11 +75,10 @@ PRESETS = {
             "tcltk",
             "idle",
             "tests",
-            "tools",
             "venv",
             "dev",
             "symbols",
-            "chm",
+            "html-doc",
         ],
     },
     "embed": {

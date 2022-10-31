@@ -1,2 +1,0 @@
-``make -C Doc suspicious`` will be removed soon in favor of ``make -C Doc
-check``, mark it as deprecated.

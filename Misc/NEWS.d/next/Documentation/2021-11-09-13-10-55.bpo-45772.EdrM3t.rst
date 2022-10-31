@@ -1,1 +1,0 @@
-``socket.socket`` documentation is corrected to a class from a function.

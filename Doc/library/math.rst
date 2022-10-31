@@ -32,8 +32,8 @@ Number-theoretic and representation functions
 .. function:: ceil(x)
 
    Return the ceiling of *x*, the smallest integer greater than or equal to *x*.
-   If *x* is not a float, delegates to ``x.__ceil__()``, which should return an
-   :class:`~numbers.Integral` value.
+   If *x* is not a float, delegates to :meth:`x.__ceil__ <object.__ceil__>`,
+   which should return an :class:`~numbers.Integral` value.
 
 
 .. function:: comb(n, k)
@@ -45,8 +45,8 @@ Number-theoretic and representation functions
    to zero when ``k > n``.
 
    Also called the binomial coefficient because it is equivalent
-   to the coefficient of k-th term in polynomial expansion of the
-   expression ``(1 + x) ** n``.
+   to the coefficient of k-th term in polynomial expansion of
+   ``(1 + x)ⁿ``.
 
    Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
@@ -66,9 +66,9 @@ Number-theoretic and representation functions
    Return the absolute value of *x*.
 
 
-.. function:: factorial(x)
+.. function:: factorial(n)
 
-   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
    is negative.
 
    .. deprecated:: 3.9
@@ -77,9 +77,9 @@ Number-theoretic and representation functions
 
 .. function:: floor(x)
 
-   Return the floor of *x*, the largest integer less than or equal to *x*.
-   If *x* is not a float, delegates to ``x.__floor__()``, which should return an
-   :class:`~numbers.Integral` value.
+   Return the floor of *x*, the largest integer less than or equal to *x*.  If
+   *x* is not a float, delegates to :meth:`x.__floor__ <object.__floor__>`, which
+   should return an :class:`~numbers.Integral` value.
 
 
 .. function:: fmod(x, y)
@@ -108,7 +108,7 @@ Number-theoretic and representation functions
 .. function:: fsum(iterable)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums::
+   loss of precision by tracking multiple intermediate partial sums:
 
         >>> sum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
         0.9999999999999999
@@ -298,9 +298,11 @@ Number-theoretic and representation functions
 
 .. function:: trunc(x)
 
-   Return the :class:`~numbers.Real` value *x* truncated to an
-   :class:`~numbers.Integral` (usually an integer). Delegates to
-   :meth:`x.__trunc__() <object.__trunc__>`.
+   Return *x* with the fractional part
+   removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
+   equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil`
+   for negative *x*. If *x* is not a float, delegates to :meth:`x.__trunc__
+   <object.__trunc__>`, which should return an :class:`~numbers.Integral` value.
 
 .. function:: ulp(x)
 
@@ -356,13 +358,20 @@ Power and logarithmic functions
    or ``pow(math.e, x)``.
 
 
+.. function:: exp2(x)
+
+   Return *2* raised to the power *x*.
+
+   .. versionadded:: 3.11
+
+
 .. function:: expm1(x)
 
    Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural
    logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
    can result in a `significant loss of precision
    <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
-   function provides a way to compute this quantity to full precision::
+   function provides a way to compute this quantity to full precision:
 
       >>> from math import exp, expm1
       >>> exp(1e-5) - 1  # gives result accurate to 11 places
@@ -525,7 +534,7 @@ Angular conversion
 Hyperbolic functions
 --------------------
 
-`Hyperbolic functions <https://en.wikipedia.org/wiki/Hyperbolic_function>`_
+`Hyperbolic functions <https://en.wikipedia.org/wiki/Hyperbolic_functions>`_
 are analogs of trigonometric functions that are based on hyperbolas
 instead of circles.
 
@@ -569,7 +578,7 @@ Special functions
 
    The :func:`erf` function can be used to compute traditional statistical
    functions such as the `cumulative standard normal distribution
-   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_function>`_::
+   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_functions>`_::
 
      def phi(x):
          'Cumulative distribution function for the standard normal distribution'
@@ -639,8 +648,26 @@ Constants
 
 .. data:: nan
 
-   A floating-point "not a number" (NaN) value.  Equivalent to the output of
-   ``float('nan')``.
+   A floating-point "not a number" (NaN) value. Equivalent to the output of
+   ``float('nan')``. Due to the requirements of the `IEEE-754 standard
+   <https://en.wikipedia.org/wiki/IEEE_754>`_, ``math.nan`` and ``float('nan')`` are
+   not considered to equal to any other numeric value, including themselves. To check
+   whether a number is a NaN, use the :func:`isnan` function to test
+   for NaNs instead of ``is`` or ``==``.
+   Example:
+
+      >>> import math
+      >>> math.nan == math.nan
+      False
+      >>> float('nan') == float('nan')
+      False
+      >>> math.isnan(math.nan)
+      True
+      >>> math.isnan(float('nan'))
+      True
+
+   .. versionchanged:: 3.11
+      It is now always available.
 
    .. versionadded:: 3.5
 

@@ -125,6 +125,9 @@ class _ExceptionWithTraceback:
     def __init__(self, exc, tb):
         tb = ''.join(format_exception(type(exc), exc, tb))
         self.exc = exc
+        # Traceback object needs to be garbage-collected as its frames
+        # contain references to all the objects in the exception scope
+        self.exc.__traceback__ = None
         self.tb = '\n"""\n%s"""' % tb
     def __reduce__(self):
         return _rebuild_exc, (self.exc, self.tb)
@@ -400,7 +403,7 @@ class _ExecutorManagerThread(threading.Thread):
         assert not self.thread_wakeup._closed
         wakeup_reader = self.thread_wakeup._reader
         readers = [result_reader, wakeup_reader]
-        worker_sentinels = [p.sentinel for p in self.processes.values()]
+        worker_sentinels = [p.sentinel for p in list(self.processes.values())]
         ready = mp.connection.wait(readers + worker_sentinels)
 
         cause = None
@@ -614,14 +617,16 @@ class ProcessPoolExecutor(_base.Executor):
                 execute the given calls. If None or not given then as many
                 worker processes will be created as the machine has processors.
             mp_context: A multiprocessing context to launch the workers. This
-                object should provide SimpleQueue, Queue and Process.
+                object should provide SimpleQueue, Queue and Process. Useful
+                to allow specific multiprocessing start methods.
             initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
-            max_tasks_per_child: The maximum number of tasks a worker process can
-                complete before it will exit and be replaced with a fresh
-                worker process, to enable unused resources to be freed. The
-                default value is None, which means worker process will live
-                as long as the executor will live.
+            max_tasks_per_child: The maximum number of tasks a worker process
+                can complete before it will exit and be replaced with a fresh
+                worker process. The default of None means worker process will
+                live as long as the executor. Requires a non-'fork' mp_context
+                start method. When given, we default to using 'spawn' if no
+                mp_context is supplied.
         """
         _check_system_limits()
 
@@ -641,8 +646,15 @@ class ProcessPoolExecutor(_base.Executor):
             self._max_workers = max_workers
 
         if mp_context is None:
-            mp_context = mp.get_context()
+            if max_tasks_per_child is not None:
+                mp_context = mp.get_context("spawn")
+            else:
+                mp_context = mp.get_context()
         self._mp_context = mp_context
+
+        # https://github.com/python/cpython/issues/90622
+        self._safe_to_dynamically_spawn_children = (
+                self._mp_context.get_start_method(allow_none=False) != "fork")
 
         if initializer is not None and not callable(initializer):
             raise TypeError("initializer must be a callable")
@@ -654,6 +666,11 @@ class ProcessPoolExecutor(_base.Executor):
                 raise TypeError("max_tasks_per_child must be an integer")
             elif max_tasks_per_child <= 0:
                 raise ValueError("max_tasks_per_child must be >= 1")
+            if self._mp_context.get_start_method(allow_none=False) == "fork":
+                # https://github.com/python/cpython/issues/90622
+                raise ValueError("max_tasks_per_child is incompatible with"
+                                 " the 'fork' multiprocessing start method;"
+                                 " supply a different mp_context.")
         self._max_tasks_per_child = max_tasks_per_child
 
         # Management thread
@@ -701,6 +718,8 @@ class ProcessPoolExecutor(_base.Executor):
     def _start_executor_manager_thread(self):
         if self._executor_manager_thread is None:
             # Start the processes so that their sentinels are known.
+            if not self._safe_to_dynamically_spawn_children:  # ie, using fork.
+                self._launch_processes()
             self._executor_manager_thread = _ExecutorManagerThread(self)
             self._executor_manager_thread.start()
             _threads_wakeups[self._executor_manager_thread] = \
@@ -713,15 +732,32 @@ class ProcessPoolExecutor(_base.Executor):
 
         process_count = len(self._processes)
         if process_count < self._max_workers:
-            p = self._mp_context.Process(
-                target=_process_worker,
-                args=(self._call_queue,
-                      self._result_queue,
-                      self._initializer,
-                      self._initargs,
-                      self._max_tasks_per_child))
-            p.start()
-            self._processes[p.pid] = p
+            # Assertion disabled as this codepath is also used to replace a
+            # worker that unexpectedly dies, even when using the 'fork' start
+            # method. That means there is still a potential deadlock bug. If a
+            # 'fork' mp_context worker dies, we'll be forking a new one when
+            # we know a thread is running (self._executor_manager_thread).
+            #assert self._safe_to_dynamically_spawn_children or not self._executor_manager_thread, 'https://github.com/python/cpython/issues/90622'
+            self._spawn_process()
+
+    def _launch_processes(self):
+        # https://github.com/python/cpython/issues/90622
+        assert not self._executor_manager_thread, (
+                'Processes cannot be fork()ed after the thread has started, '
+                'deadlock in the child processes could result.')
+        for _ in range(len(self._processes), self._max_workers):
+            self._spawn_process()
+
+    def _spawn_process(self):
+        p = self._mp_context.Process(
+            target=_process_worker,
+            args=(self._call_queue,
+                  self._result_queue,
+                  self._initializer,
+                  self._initargs,
+                  self._max_tasks_per_child))
+        p.start()
+        self._processes[p.pid] = p
 
     def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:
@@ -742,7 +778,8 @@ class ProcessPoolExecutor(_base.Executor):
             # Wake up queue management thread
             self._executor_manager_thread_wakeup.wakeup()
 
-            self._adjust_process_count()
+            if self._safe_to_dynamically_spawn_children:
+                self._adjust_process_count()
             self._start_executor_manager_thread()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__

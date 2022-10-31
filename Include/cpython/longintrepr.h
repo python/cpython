@@ -21,8 +21,6 @@ extern "C" {
    PyLong_SHIFT.  The majority of the code doesn't care about the precise
    value of PyLong_SHIFT, but there are some notable exceptions:
 
-   - long_pow() requires that PyLong_SHIFT be divisible by 5
-
    - PyLong_{As,From}ByteArray require that PyLong_SHIFT be at least 8
 
    - long_hash() requires that PyLong_SHIFT is *strictly* less than the number
@@ -62,10 +60,6 @@ typedef long stwodigits; /* signed variant of twodigits */
 #endif
 #define PyLong_BASE     ((digit)1 << PyLong_SHIFT)
 #define PyLong_MASK     ((digit)(PyLong_BASE - 1))
-
-#if PyLong_SHIFT % 5 != 0
-#error "longobject.c requires that PyLong_SHIFT be divisible by 5"
-#endif
 
 /* Long integer representation.
    The absolute value of a number is equal to

@@ -1,1 +1,0 @@
-Add tests for truncated/missing trailers in gzip.decompress implementation.

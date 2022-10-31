@@ -1,2 +1,0 @@
-Fix crash when :func:`os.fork` is called with an active non-default
-memory allocator.

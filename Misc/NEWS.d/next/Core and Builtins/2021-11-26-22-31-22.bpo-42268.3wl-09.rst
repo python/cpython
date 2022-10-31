@@ -1,2 +1,0 @@
-Fail the configure step if the selected compiler doesn't support memory
-sanitizer. Patch by Pablo Galindo

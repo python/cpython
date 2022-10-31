@@ -2,7 +2,7 @@
 
 # Module and documentation by Eric S. Raymond, 21 Dec 1998
 
-import os, shlex, stat
+import os, stat
 
 __all__ = ["netrc", "NetrcParseError"]
 

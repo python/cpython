@@ -12,10 +12,7 @@
 /* Some Linux systems install gdbm/ndbm.h, but not ndbm.h.  This supports
  * whichever configure was able to locate.
  */
-#if defined(USE_NDBM)
-  #include <ndbm.h>
-  static const char which_dbm[] = "GNU gdbm";  /* EMX port of GDBM */
-#elif defined(USE_GDBM_COMPAT)
+#if defined(USE_GDBM_COMPAT)
   #ifdef HAVE_GDBM_NDBM_H
     #include <gdbm/ndbm.h>
   #elif HAVE_GDBM_DASH_NDBM_H
@@ -23,6 +20,9 @@
   #else
     #error "No gdbm/ndbm.h or gdbm-ndbm.h available"
   #endif
+  static const char which_dbm[] = "GNU gdbm";
+#elif defined(USE_NDBM)
+  #include <ndbm.h>
   static const char which_dbm[] = "GNU gdbm";
 #elif defined(USE_BERKDB)
   #ifndef DB_DBM_HSEARCH
@@ -128,6 +128,37 @@ dbm_length(dbmobject *dp)
         dp->di_size = size;
     }
     return dp->di_size;
+}
+
+static int
+dbm_bool(dbmobject *dp)
+{
+    _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
+    assert(state != NULL);
+
+    if (dp->di_dbm == NULL) {
+        PyErr_SetString(state->dbm_error, "DBM object has already been closed");
+        return -1;
+    }
+
+    if (dp->di_size > 0) {
+        /* Known non-zero size. */
+        return 1;
+    }
+    if (dp->di_size == 0) {
+        /* Known zero size. */
+        return 0;
+    }
+
+    /* Unknown size.  Ensure DBM object has an entry. */
+    datum key = dbm_firstkey(dp->di_dbm);
+    if (key.dptr == NULL) {
+        /* Empty. Cache this fact. */
+        dp->di_size = 0;
+        return 0;
+    }
+    /* Non-empty. Don't cache the length since we don't know. */
+    return 1;
 }
 
 static PyObject *
@@ -395,8 +426,7 @@ dbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    return _dbm_dbm_close_impl((dbmobject *)self);
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -417,6 +447,7 @@ static PyType_Slot dbmtype_spec_slots[] = {
     {Py_mp_length, dbm_length},
     {Py_mp_subscript, dbm_subscript},
     {Py_mp_ass_subscript, dbm_ass_sub},
+    {Py_nb_bool, dbm_bool},
     {0, 0}
 };
 
