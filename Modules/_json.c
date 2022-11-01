@@ -7,7 +7,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
@@ -304,20 +303,11 @@ escape_unicode(PyObject *pystr)
 static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
-    /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
-    _Py_static_string(PyId_decoder, "json.decoder");
-    PyObject *decoder = _PyImport_GetModuleId(&PyId_decoder);
-    if (decoder == NULL) {
-        return;
-    }
-
-    _Py_IDENTIFIER(JSONDecodeError);
-    PyObject *JSONDecodeError = _PyObject_GetAttrId(decoder, &PyId_JSONDecodeError);
-    Py_DECREF(decoder);
+    PyObject *JSONDecodeError =
+        _PyImport_GetModuleAttrString("json.decoder", "JSONDecodeError");
     if (JSONDecodeError == NULL) {
         return;
     }
-
     PyObject *exc;
     exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
     Py_DECREF(JSONDecodeError);
@@ -1530,7 +1520,7 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
 
     if (*first) {
         *first = false;
-    } 
+    }
     else {
         if (_PyUnicodeWriter_WriteStr(writer, s->item_separator) < 0) {
             Py_DECREF(keystr);
