@@ -118,6 +118,12 @@ New Modules
 Improved Modules
 ================
 
+array
+-----
+
+* The :class:`array.array` class now supports subscripting, making it a
+  :term:`generic type`. (Contributed by Jelle Zijlstra in :gh:`98658`.)
+
 asyncio
 -------
 
@@ -140,7 +146,6 @@ asyncio
   :meth:`asyncio.AbstractEventLoopPolicy.get_child_watcher` are deprecated
   and will be removed in Python 3.14.
   (Contributed by Kumar Aditya in :gh:`94597`.)
-
 
 pathlib
 -------
