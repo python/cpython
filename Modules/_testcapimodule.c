@@ -2062,7 +2062,7 @@ pyobject_print_noref_object(PyObject *self, PyObject *args)
 
     test_string = PyUnicode_FromString("Spam spam spam");
 
-    Py_DECREF(test_string);
+    test_string -> ob_refcnt = 0;
 
     snprintf(correct_string, 100, "<refcnt %zd at %p>", Py_REFCNT(test_string), (void *)test_string);
 
@@ -2078,6 +2078,9 @@ pyobject_print_noref_object(PyObject *self, PyObject *args)
     }
 
     fclose(fp);
+
+    test_string -> ob_refcnt = 1;
+    Py_DECREF(test_string);
 
     return PyUnicode_FromString(correct_string);
 }
