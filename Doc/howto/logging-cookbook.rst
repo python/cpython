@@ -765,9 +765,11 @@ serialization.
 Running a logging socket listener in production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _socket-listener-gist: https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b
+
 To run a logging listener in production, you may need to use a
 process-management tool such as `Supervisor <http://supervisord.org/>`_.
-`Here is a Gist <https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`__
+`Here is a Gist <socket-listener-gist_>`__
 which provides the bare-bones files to run the above functionality using
 Supervisor. It consists of the following files:
 
@@ -802,8 +804,7 @@ without conflicting with one another --- they all go through the socket listener
 
 To test these files, do the following in a POSIX environment:
 
-#. Download `the Gist
-   <https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_,
+#. Download `the Gist <socket-listener-gist_>`__
    as a ZIP archive using the :guilabel:`Download ZIP` button.
 
 #. Unzip the above files from the archive into a scratch directory.
