@@ -51,6 +51,12 @@ def python_cmd():
     cmd = [sys.executable]
     cmd.extend(subprocess._args_from_interpreter_flags())
     cmd.extend(subprocess._optim_args_from_interpreter_flags())
+    for key, value in sys._xoptions.items():
+        cmd.append("-X")
+        if value == True:
+            cmd.append(key)
+        else:
+            cmd.append(f"{key}={value}")
     return cmd
 
 
