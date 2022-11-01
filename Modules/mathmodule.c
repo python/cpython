@@ -2658,13 +2658,13 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     if (m != n) {
         PyErr_SetString(PyExc_ValueError,
                         "both points must have the same number of dimensions");
-        return NULL;
-
+        goto error_exit;
     }
     if (n > NUM_STACK_ELEMS) {
         diffs = (double *) PyObject_Malloc(n * sizeof(double));
         if (diffs == NULL) {
-            return PyErr_NoMemory();
+            PyErr_NoMemory();
+            goto error_exit;
         }
     }
     for (i=0 ; i<n ; i++) {
