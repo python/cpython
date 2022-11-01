@@ -183,7 +183,10 @@ jobs:
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
+      run: |
+        sudo ./.github/workflows/posix-deps-apt.sh
+        sudo apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`
+        perf record /bin/ls
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
