@@ -196,9 +196,9 @@ calls).
 ``None``, integers, bytes objects and (unicode) strings are the only native
 Python objects that can directly be used as parameters in these function calls.
 ``None`` is passed as a C ``NULL`` pointer, bytes objects and strings are passed
-as pointer to the memory block that contains their data (:c:type:`char *` or
-:c:type:`wchar_t *`).  Python integers are passed as the platforms default C
-:c:type:`int` type, their value is masked to fit into the C type.
+as pointer to the memory block that contains their data (:c:expr:`char *` or
+:c:expr:`wchar_t *`).  Python integers are passed as the platforms default C
+:c:expr:`int` type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we have to learn
 more about :mod:`ctypes` data types.
@@ -214,51 +214,51 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | ctypes type          | C type                                   | Python type                |
 +======================+==========================================+============================+
-| :class:`c_bool`      | :c:type:`_Bool`                          | bool (1)                   |
+| :class:`c_bool`      | :c:expr:`_Bool`                          | bool (1)                   |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_char`      | :c:type:`char`                           | 1-character bytes object   |
+| :class:`c_char`      | :c:expr:`char`                           | 1-character bytes object   |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar`     | :c:type:`wchar_t`                        | 1-character string         |
+| :class:`c_wchar`     | :c:expr:`wchar_t`                        | 1-character string         |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_byte`      | :c:type:`char`                           | int                        |
+| :class:`c_byte`      | :c:expr:`char`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ubyte`     | :c:type:`unsigned char`                  | int                        |
+| :class:`c_ubyte`     | :c:expr:`unsigned char`                  | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_short`     | :c:type:`short`                          | int                        |
+| :class:`c_short`     | :c:expr:`short`                          | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ushort`    | :c:type:`unsigned short`                 | int                        |
+| :class:`c_ushort`    | :c:expr:`unsigned short`                 | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_int`       | :c:type:`int`                            | int                        |
+| :class:`c_int`       | :c:expr:`int`                            | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_uint`      | :c:type:`unsigned int`                   | int                        |
+| :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_long`      | :c:type:`long`                           | int                        |
+| :class:`c_long`      | :c:expr:`long`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulong`     | :c:type:`unsigned long`                  | int                        |
+| :class:`c_ulong`     | :c:expr:`unsigned long`                  | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_longlong`  | :c:type:`__int64` or :c:type:`long long` | int                        |
+| :class:`c_longlong`  | :c:expr:`__int64` or :c:expr:`long long` | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ulonglong` | :c:type:`unsigned __int64` or            | int                        |
-|                      | :c:type:`unsigned long long`             |                            |
+| :class:`c_ulonglong` | :c:expr:`unsigned __int64` or            | int                        |
+|                      | :c:expr:`unsigned long long`             |                            |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_size_t`    | :c:type:`size_t`                         | int                        |
+| :class:`c_size_t`    | :c:expr:`size_t`                         | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_ssize_t`   | :c:type:`ssize_t` or                     | int                        |
-|                      | :c:type:`Py_ssize_t`                     |                            |
+| :class:`c_ssize_t`   | :c:expr:`ssize_t` or                     | int                        |
+|                      | :c:expr:`Py_ssize_t`                     |                            |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_time_t`    | :c:type:`time_t`                         | int                        |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_float`     | :c:type:`float`                          | float                      |
+| :class:`c_float`     | :c:expr:`float`                          | float                      |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_double`    | :c:type:`double`                         | float                      |
+| :class:`c_double`    | :c:expr:`double`                         | float                      |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_longdouble`| :c:type:`long double`                    | float                      |
+| :class:`c_longdouble`| :c:expr:`long double`                    | float                      |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_char_p`    | :c:type:`char *` (NUL terminated)        | bytes object or ``None``   |
+| :class:`c_char_p`    | :c:expr:`char *` (NUL terminated)        | bytes object or ``None``   |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_wchar_p`   | :c:type:`wchar_t *` (NUL terminated)     | string or ``None``         |
+| :class:`c_wchar_p`   | :c:expr:`wchar_t *` (NUL terminated)     | string or ``None``         |
 +----------------------+------------------------------------------+----------------------------+
-| :class:`c_void_p`    | :c:type:`void *`                         | int or ``None``            |
+| :class:`c_void_p`    | :c:expr:`void *`                         | int or ``None``            |
 +----------------------+------------------------------------------+----------------------------+
 
 (1)
@@ -333,7 +333,7 @@ property::
 
 The :func:`create_string_buffer` function replaces the old :func:`c_buffer`
 function (which is still available as an alias).  To create a mutable memory
-block containing unicode characters of the C type :c:type:`wchar_t`, use the
+block containing unicode characters of the C type :c:expr:`wchar_t`, use the
 :func:`create_unicode_buffer` function.
 
 
@@ -444,7 +444,7 @@ integer, string, bytes, a :mod:`ctypes` instance, or an object with an
 Return types
 ^^^^^^^^^^^^
 
-By default functions are assumed to return the C :c:type:`int` type.  Other
+By default functions are assumed to return the C :c:expr:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
 
@@ -1088,7 +1088,7 @@ An extended example which also demonstrates the use of pointers accesses the
 
 Quoting the docs for that value:
 
-   This pointer is initialized to point to an array of :c:type:`struct _frozen`
+   This pointer is initialized to point to an array of :c:struct:`_frozen`
    records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
@@ -1107,7 +1107,7 @@ size, we show only how this table can be read with :mod:`ctypes`::
    ...
    >>>
 
-We have defined the :c:type:`struct _frozen` data type, so we can get the pointer
+We have defined the :c:struct:`_frozen` data type, so we can get the pointer
 to the table::
 
    >>> FrozenTable = POINTER(struct_frozen)
@@ -1337,7 +1337,7 @@ way is to instantiate one of the following classes:
 
    Instances of this class represent loaded shared libraries. Functions in these
    libraries use the standard C calling convention, and are assumed to return
-   :c:type:`int`.
+   :c:expr:`int`.
 
    On Windows creating a :class:`CDLL` instance may fail even if the DLL name
    exists. When a dependent DLL of the loaded DLL is not found, a
@@ -1372,7 +1372,7 @@ way is to instantiate one of the following classes:
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
-   assumed to return :c:type:`int` by default.
+   assumed to return :c:expr:`int` by default.
 
 The Python :term:`global interpreter lock` is released before calling any
 function exported by these libraries, and reacquired afterwards.
@@ -1528,7 +1528,7 @@ object is available:
 
    An instance of :class:`PyDLL` that exposes Python C API functions as
    attributes.  Note that all these functions are assumed to return C
-   :c:type:`int`, which is of course not always the truth, so you have to assign
+   :c:expr:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`restype` attribute to use these functions.
 
 .. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
@@ -1574,10 +1574,10 @@ They are instances of a private class:
    .. attribute:: restype
 
       Assign a ctypes type to specify the result type of the foreign function.
-      Use ``None`` for :c:type:`void`, a function not returning anything.
+      Use ``None`` for :c:expr:`void`, a function not returning anything.
 
       It is possible to assign a callable Python object that is not a ctypes
-      type, in this case the function is assumed to return a C :c:type:`int`, and
+      type, in this case the function is assumed to return a C :c:expr:`int`, and
       the callable will be called with this integer, allowing further
       processing or error checking.  Using this is deprecated, for more flexible
       post processing or error checking use a ctypes data type as
@@ -1948,7 +1948,7 @@ Utility functions
 .. function:: GetLastError()
 
    Windows only: Returns the last error code set by Windows in the calling thread.
-   This function calls the Windows `GetLastError()` function directly,
+   This function calls the Windows ``GetLastError()`` function directly,
    it does not return the ctypes-private copy of the error code.
 
 .. function:: get_errno()
@@ -2190,21 +2190,21 @@ These are the fundamental ctypes data types:
 
 .. class:: c_byte
 
-   Represents the C :c:type:`signed char` datatype, and interprets the value as
+   Represents the C :c:expr:`signed char` datatype, and interprets the value as
    small integer.  The constructor accepts an optional integer initializer; no
    overflow checking is done.
 
 
 .. class:: c_char
 
-   Represents the C :c:type:`char` datatype, and interprets the value as a single
+   Represents the C :c:expr:`char` datatype, and interprets the value as a single
    character.  The constructor accepts an optional string initializer, the
    length of the string must be exactly one character.
 
 
 .. class:: c_char_p
 
-   Represents the C :c:type:`char *` datatype when it points to a zero-terminated
+   Represents the C :c:expr:`char *` datatype when it points to a zero-terminated
    string.  For a general character pointer that may also point to binary data,
    ``POINTER(c_char)`` must be used.  The constructor accepts an integer
    address, or a bytes object.
@@ -2212,68 +2212,68 @@ These are the fundamental ctypes data types:
 
 .. class:: c_double
 
-   Represents the C :c:type:`double` datatype.  The constructor accepts an
+   Represents the C :c:expr:`double` datatype.  The constructor accepts an
    optional float initializer.
 
 
 .. class:: c_longdouble
 
-   Represents the C :c:type:`long double` datatype.  The constructor accepts an
+   Represents the C :c:expr:`long double` datatype.  The constructor accepts an
    optional float initializer.  On platforms where ``sizeof(long double) ==
    sizeof(double)`` it is an alias to :class:`c_double`.
 
 .. class:: c_float
 
-   Represents the C :c:type:`float` datatype.  The constructor accepts an
+   Represents the C :c:expr:`float` datatype.  The constructor accepts an
    optional float initializer.
 
 
 .. class:: c_int
 
-   Represents the C :c:type:`signed int` datatype.  The constructor accepts an
+   Represents the C :c:expr:`signed int` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.  On platforms
    where ``sizeof(int) == sizeof(long)`` it is an alias to :class:`c_long`.
 
 
 .. class:: c_int8
 
-   Represents the C 8-bit :c:type:`signed int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`signed int` datatype.  Usually an alias for
    :class:`c_byte`.
 
 
 .. class:: c_int16
 
-   Represents the C 16-bit :c:type:`signed int` datatype.  Usually an alias for
+   Represents the C 16-bit :c:expr:`signed int` datatype.  Usually an alias for
    :class:`c_short`.
 
 
 .. class:: c_int32
 
-   Represents the C 32-bit :c:type:`signed int` datatype.  Usually an alias for
+   Represents the C 32-bit :c:expr:`signed int` datatype.  Usually an alias for
    :class:`c_int`.
 
 
 .. class:: c_int64
 
-   Represents the C 64-bit :c:type:`signed int` datatype.  Usually an alias for
+   Represents the C 64-bit :c:expr:`signed int` datatype.  Usually an alias for
    :class:`c_longlong`.
 
 
 .. class:: c_long
 
-   Represents the C :c:type:`signed long` datatype.  The constructor accepts an
+   Represents the C :c:expr:`signed long` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_longlong
 
-   Represents the C :c:type:`signed long long` datatype.  The constructor accepts
+   Represents the C :c:expr:`signed long long` datatype.  The constructor accepts
    an optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_short
 
-   Represents the C :c:type:`signed short` datatype.  The constructor accepts an
+   Represents the C :c:expr:`signed short` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.
 
 
@@ -2298,83 +2298,83 @@ These are the fundamental ctypes data types:
 
 .. class:: c_ubyte
 
-   Represents the C :c:type:`unsigned char` datatype, it interprets the value as
+   Represents the C :c:expr:`unsigned char` datatype, it interprets the value as
    small integer.  The constructor accepts an optional integer initializer; no
    overflow checking is done.
 
 
 .. class:: c_uint
 
-   Represents the C :c:type:`unsigned int` datatype.  The constructor accepts an
+   Represents the C :c:expr:`unsigned int` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.  On platforms
    where ``sizeof(int) == sizeof(long)`` it is an alias for :class:`c_ulong`.
 
 
 .. class:: c_uint8
 
-   Represents the C 8-bit :c:type:`unsigned int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`unsigned int` datatype.  Usually an alias for
    :class:`c_ubyte`.
 
 
 .. class:: c_uint16
 
-   Represents the C 16-bit :c:type:`unsigned int` datatype.  Usually an alias for
+   Represents the C 16-bit :c:expr:`unsigned int` datatype.  Usually an alias for
    :class:`c_ushort`.
 
 
 .. class:: c_uint32
 
-   Represents the C 32-bit :c:type:`unsigned int` datatype.  Usually an alias for
+   Represents the C 32-bit :c:expr:`unsigned int` datatype.  Usually an alias for
    :class:`c_uint`.
 
 
 .. class:: c_uint64
 
-   Represents the C 64-bit :c:type:`unsigned int` datatype.  Usually an alias for
+   Represents the C 64-bit :c:expr:`unsigned int` datatype.  Usually an alias for
    :class:`c_ulonglong`.
 
 
 .. class:: c_ulong
 
-   Represents the C :c:type:`unsigned long` datatype.  The constructor accepts an
+   Represents the C :c:expr:`unsigned long` datatype.  The constructor accepts an
    optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_ulonglong
 
-   Represents the C :c:type:`unsigned long long` datatype.  The constructor
+   Represents the C :c:expr:`unsigned long long` datatype.  The constructor
    accepts an optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_ushort
 
-   Represents the C :c:type:`unsigned short` datatype.  The constructor accepts
+   Represents the C :c:expr:`unsigned short` datatype.  The constructor accepts
    an optional integer initializer; no overflow checking is done.
 
 
 .. class:: c_void_p
 
-   Represents the C :c:type:`void *` type.  The value is represented as integer.
+   Represents the C :c:expr:`void *` type.  The value is represented as integer.
    The constructor accepts an optional integer initializer.
 
 
 .. class:: c_wchar
 
-   Represents the C :c:type:`wchar_t` datatype, and interprets the value as a
+   Represents the C :c:expr:`wchar_t` datatype, and interprets the value as a
    single character unicode string.  The constructor accepts an optional string
    initializer, the length of the string must be exactly one character.
 
 
 .. class:: c_wchar_p
 
-   Represents the C :c:type:`wchar_t *` datatype, which must be a pointer to a
+   Represents the C :c:expr:`wchar_t *` datatype, which must be a pointer to a
    zero-terminated wide character string.  The constructor accepts an integer
    address, or a string.
 
 
 .. class:: c_bool
 
-   Represent the C :c:type:`bool` datatype (more accurately, :c:type:`_Bool` from
+   Represent the C :c:expr:`bool` datatype (more accurately, :c:expr:`_Bool` from
    C99).  Its value can be ``True`` or ``False``, and the constructor accepts any object
    that has a truth value.
 
@@ -2387,8 +2387,8 @@ These are the fundamental ctypes data types:
 
 .. class:: py_object
 
-   Represents the C :c:type:`PyObject *` datatype.  Calling this without an
-   argument creates a ``NULL`` :c:type:`PyObject *` pointer.
+   Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
+   argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
 The :mod:`ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`HWND`, :c:type:`WPARAM`, or :c:type:`DWORD`.  Some

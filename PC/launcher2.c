@@ -653,6 +653,7 @@ parseCommandLine(SearchInfo *search)
                     search->tag = argStart;
                 }
                 search->tagLength = (int)(tail - search->tag);
+                search->allowDefaults = false;
                 search->restOfCmdLine = tail;
             } else if (MATCHES(L"0") || MATCHES(L"-list")) {
                 search->list = true;
@@ -871,6 +872,62 @@ _findCommand(SearchInfo *search, const wchar_t *command, int commandLength)
 
 
 int
+_useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangLength)
+{
+    wchar_t buffer[MAXLEN];
+    wchar_t script[MAXLEN];
+    wchar_t command[MAXLEN];
+
+    int commandLength = 0;
+    int inQuote = 0;
+
+    if (!shebang || !shebangLength) {
+        return 0;
+    }
+
+    wchar_t *pC = command;
+    for (int i = 0; i < shebangLength; ++i) {
+        wchar_t c = shebang[i];
+        if (isspace(c) && !inQuote) {
+            commandLength = i;
+            break;
+        } else if (c == L'"') {
+            inQuote = !inQuote;
+        } else if (c == L'/' || c == L'\\') {
+            *pC++ = L'\\';
+        } else {
+            *pC++ = c;
+        }
+    }
+    *pC = L'\0';
+
+    if (!GetCurrentDirectoryW(MAXLEN, buffer) ||
+        wcsncpy_s(script, MAXLEN, search->scriptFile, search->scriptFileLength) ||
+        FAILED(PathCchCombineEx(buffer, MAXLEN, buffer, script,
+                                PATHCCH_ALLOW_LONG_PATHS)) ||
+        FAILED(PathCchRemoveFileSpec(buffer, MAXLEN)) ||
+        FAILED(PathCchCombineEx(buffer, MAXLEN, buffer, command,
+                                PATHCCH_ALLOW_LONG_PATHS))
+    ) {
+        return RC_NO_MEMORY;
+    }
+
+    int n = (int)wcsnlen(buffer, MAXLEN);
+    wchar_t *path = allocSearchInfoBuffer(search, n + 1);
+    if (!path) {
+        return RC_NO_MEMORY;
+    }
+    wcscpy_s(path, n + 1, buffer);
+    search->executablePath = path;
+    if (commandLength) {
+        search->executableArgs = &shebang[commandLength];
+        search->executableArgsLength = shebangLength - commandLength;
+    }
+    return 0;
+}
+
+
+int
 checkShebang(SearchInfo *search)
 {
     // Do not check shebang if a tag was provided or if no script file
@@ -962,13 +1019,19 @@ checkShebang(SearchInfo *search)
         L"/usr/bin/env ",
         L"/usr/bin/",
         L"/usr/local/bin/",
-        L"",
+        L"python",
         NULL
     };
 
     for (const wchar_t **tmpl = shebangTemplates; *tmpl; ++tmpl) {
         if (_shebangStartsWith(shebang, shebangLength, *tmpl, &command)) {
             commandLength = 0;
+            // Normally "python" is the start of the command, but we also need it
+            // as a shebang prefix for back-compat. We move the command marker back
+            // if we match on that one.
+            if (0 == wcscmp(*tmpl, L"python")) {
+                command -= 6;
+            }
             while (command[commandLength] && !isspace(command[commandLength])) {
                 commandLength += 1;
             }
@@ -1011,11 +1074,14 @@ checkShebang(SearchInfo *search)
                 debug(L"# Found shebang command but could not execute it: %.*s\n",
                     commandLength, command);
             }
-            break;
+            // search is done by this point
+            return 0;
         }
     }
 
-    return 0;
+    // Unrecognised commands are joined to the script's directory and treated
+    // as the executable path
+    return _useShebangAsExecutable(search, shebang, shebangLength);
 }
 
 
@@ -1672,6 +1738,7 @@ struct AppxSearchInfo {
 
 struct AppxSearchInfo APPX_SEARCH[] = {
     // Releases made through the Store
+    { L"PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0", L"3.12", 10 },
     { L"PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0", L"3.11", 10 },
     { L"PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0", L"3.10", 10 },
     { L"PythonSoftwareFoundation.Python.3.9_qbz5n2kfra8p0", L"3.9", 10 },
@@ -1680,6 +1747,7 @@ struct AppxSearchInfo APPX_SEARCH[] = {
     // Side-loadable releases. Note that the publisher ID changes whenever we
     // renew our code-signing certificate, so the newer ID has a higher
     // priority (lower sortKey)
+    { L"PythonSoftwareFoundation.Python.3.12_3847v3x7pw1km", L"3.12", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_3847v3x7pw1km", L"3.11", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_hd69rhyc2wevp", L"3.11", 12 },
     { L"PythonSoftwareFoundation.Python.3.10_3847v3x7pw1km", L"3.10", 11 },
@@ -1754,7 +1822,8 @@ struct StoreSearchInfo {
 
 
 struct StoreSearchInfo STORE_SEARCH[] = {
-    { L"3", /* 3.10 */ L"9PJPW5LDXLZ5" },
+    { L"3", /* 3.11 */ L"9NRWMJP3717K" },
+    { L"3.12", L"9NCVDN91XZQP" },
     { L"3.11", L"9NRWMJP3717K" },
     { L"3.10", L"9PJPW5LDXLZ5" },
     { L"3.9", L"9P7QFQMJRFP7" },

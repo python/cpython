@@ -340,6 +340,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
 
+    def test_simple_initialization_api(self):
+        # _testembed now uses Py_InitializeFromConfig by default
+        # This case specifically checks Py_Initialize(Ex) still works
+        out, err = self.run_embedded_interpreter("test_repeated_simple_init")
+        self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
+
     def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
@@ -434,6 +440,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'install_signal_handlers': 1,
         'use_hash_seed': 0,
         'hash_seed': 0,
+        'int_max_str_digits': sys.int_info.default_max_str_digits,
         'faulthandler': 0,
         'tracemalloc': 0,
         'perf_profiling': 0,
@@ -495,7 +502,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'check_hash_pycs_mode': 'default',
         'pathconfig_warnings': 1,
         '_init_main': 1,
-        '_isolated_interpreter': 0,
         'use_frozen_modules': not support.Py_DEBUG,
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
@@ -876,11 +882,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'platlibdir': 'my_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
+            'int_max_str_digits': 31337,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
-
-            '_isolated_interpreter': 1,
         }
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
@@ -912,6 +917,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
+            'int_max_str_digits': 4567,
         }
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
@@ -944,6 +950,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'platlibdir': 'env_platlibdir',
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
+            'int_max_str_digits': 4567,
         }
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
@@ -1645,6 +1652,26 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             with self.subTest(repr(raw)):
                 self.check_all_configs("test_init_use_frozen_modules", config,
                                        api=API_PYTHON, env=env)
+
+    def test_init_main_interpreter_settings(self):
+        THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
+        FORK = 1<<15
+        EXEC = 1<<16
+        expected = {
+            # All optional features should be enabled.
+            'feature_flags': FORK | EXEC | THREADS | DAEMON_THREADS,
+        }
+        out, err = self.run_embedded_interpreter(
+            'test_init_main_interpreter_settings',
+        )
+        self.assertEqual(err, '')
+        try:
+            out = json.loads(out)
+        except json.JSONDecodeError:
+            self.fail(f'fail to decode stdout: {out!r}')
+
+        self.assertEqual(out, expected)
 
 
 class SetConfigTests(unittest.TestCase):
