@@ -143,6 +143,7 @@ struct _is {
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
+    unsigned long feature_flags;
 
     PyObject *dict;  /* Stores per-interpreter state */
 

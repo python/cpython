@@ -125,17 +125,22 @@
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && (c->u->u_ste->ste_type == ModuleBlock))
 
-typedef struct location_ {
-    int lineno;
-    int end_lineno;
-    int col_offset;
-    int end_col_offset;
-} location;
+typedef _PyCompilerSrcLocation location;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
     ((const location){(LNO), (END_LNO), (COL), (END_COL)})
 
 static location NO_LOCATION = {-1, -1, -1, -1};
+
+/* Return true if loc1 starts after loc2 ends. */
+static inline bool
+location_is_after(location loc1, location loc2) {
+    return (loc1.lineno > loc2.end_lineno) ||
+            ((loc1.lineno == loc2.end_lineno) &&
+             (loc1.col_offset > loc2.end_col_offset));
+}
+
+#define LOC(x) SRC_LOCATION_FROM_AST(x)
 
 typedef struct jump_target_label_ {
     int id;
@@ -1012,11 +1017,6 @@ basicblock_next_instr(basicblock *b)
 // Artificial instructions
 #define UNSET_LOC(c)
 
-#define LOC(x) LOCATION((x)->lineno,          \
-                        (x)->end_lineno,      \
-                        (x)->col_offset,      \
-                        (x)->end_col_offset)
-
 
 /* Return the stack effect of opcode with argument oparg.
 
@@ -1042,6 +1042,8 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
         case SWAP:
             return 0;
+        case END_FOR:
+            return -2;
 
         /* Unary operators */
         case UNARY_POSITIVE:
@@ -1098,8 +1100,7 @@ stack_effect(int opcode, int oparg, int jump)
         case UNPACK_EX:
             return (oparg&0xFF) + (oparg>>8);
         case FOR_ITER:
-            /* -1 at end of iterator, 1 if continue iterating. */
-            return jump > 0 ? -1 : 1;
+            return 1;
         case SEND:
             return jump > 0 ? -1 : 0;
         case STORE_ATTR:
@@ -2873,13 +2874,14 @@ static int compiler_addcompare(struct compiler *c, location loc,
 
 
 static int
-compiler_jump_if(struct compiler *c, location *ploc,
+compiler_jump_if(struct compiler *c, location loc,
                  expr_ty e, jump_target_label next, int cond)
 {
     switch (e->kind) {
     case UnaryOp_kind:
-        if (e->v.UnaryOp.op == Not)
-            return compiler_jump_if(c, ploc, e->v.UnaryOp.operand, next, !cond);
+        if (e->v.UnaryOp.op == Not) {
+            return compiler_jump_if(c, loc, e->v.UnaryOp.operand, next, !cond);
+        }
         /* fallback to general implementation */
         break;
     case BoolOp_kind: {
@@ -2893,11 +2895,13 @@ compiler_jump_if(struct compiler *c, location *ploc,
             next2 = new_next2;
         }
         for (i = 0; i < n; ++i) {
-            if (!compiler_jump_if(c, ploc, (expr_ty)asdl_seq_GET(s, i), next2, cond2))
+            if (!compiler_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, i), next2, cond2)) {
                 return 0;
+            }
         }
-        if (!compiler_jump_if(c, ploc, (expr_ty)asdl_seq_GET(s, n), next, cond))
+        if (!compiler_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, n), next, cond)) {
             return 0;
+        }
         if (!SAME_LABEL(next2, next)) {
             USE_LABEL(c, next2);
         }
@@ -2906,45 +2910,46 @@ compiler_jump_if(struct compiler *c, location *ploc,
     case IfExp_kind: {
         NEW_JUMP_TARGET_LABEL(c, end);
         NEW_JUMP_TARGET_LABEL(c, next2);
-        if (!compiler_jump_if(c, ploc, e->v.IfExp.test, next2, 0))
+        if (!compiler_jump_if(c, loc, e->v.IfExp.test, next2, 0)) {
             return 0;
-        if (!compiler_jump_if(c, ploc, e->v.IfExp.body, next, cond))
+        }
+        if (!compiler_jump_if(c, loc, e->v.IfExp.body, next, cond)) {
             return 0;
+        }
         ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
         USE_LABEL(c, next2);
-        if (!compiler_jump_if(c, ploc, e->v.IfExp.orelse, next, cond))
+        if (!compiler_jump_if(c, loc, e->v.IfExp.orelse, next, cond)) {
             return 0;
+        }
 
         USE_LABEL(c, end);
         return 1;
     }
     case Compare_kind: {
-        SET_LOC(c, e);
-        *ploc = LOC(e);
-        Py_ssize_t i, n = asdl_seq_LEN(e->v.Compare.ops) - 1;
+        Py_ssize_t n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
             if (!check_compare(c, e)) {
                 return 0;
             }
             NEW_JUMP_TARGET_LABEL(c, cleanup);
             VISIT(c, expr, e->v.Compare.left);
-            for (i = 0; i < n; i++) {
+            for (Py_ssize_t i = 0; i < n; i++) {
                 VISIT(c, expr,
                     (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
-                ADDOP_I(c, *ploc, SWAP, 2);
-                ADDOP_I(c, *ploc, COPY, 2);
-                ADDOP_COMPARE(c, *ploc, asdl_seq_GET(e->v.Compare.ops, i));
-                ADDOP_JUMP(c, *ploc, POP_JUMP_IF_FALSE, cleanup);
+                ADDOP_I(c, LOC(e), SWAP, 2);
+                ADDOP_I(c, LOC(e), COPY, 2);
+                ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, i));
+                ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_FALSE, cleanup);
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
-            ADDOP_COMPARE(c, *ploc, asdl_seq_GET(e->v.Compare.ops, n));
-            ADDOP_JUMP(c, *ploc, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
+            ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
             NEW_JUMP_TARGET_LABEL(c, end);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
             USE_LABEL(c, cleanup);
-            ADDOP(c, *ploc, POP_TOP);
+            ADDOP(c, LOC(e), POP_TOP);
             if (!cond) {
                 ADDOP_JUMP(c, NO_LOCATION, JUMP, next);
             }
@@ -2973,8 +2978,7 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, next);
 
-    location loc = LOC(e);
-    if (!compiler_jump_if(c, &loc, e->v.IfExp.test, next, 0)) {
+    if (!compiler_jump_if(c, LOC(e), e->v.IfExp.test, next, 0)) {
         return 0;
     }
     VISIT(c, expr, e->v.IfExp.body);
@@ -3059,8 +3063,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     else {
         next = end;
     }
-    location loc = LOC(s);
-    if (!compiler_jump_if(c, &loc, s->v.If.test, next, 0)) {
+    if (!compiler_jump_if(c, LOC(s), s->v.If.test, next, 0)) {
         return 0;
     }
     VISIT_SEQ(c, stmt, s->v.If.body);
@@ -3101,6 +3104,7 @@ compiler_for(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     USE_LABEL(c, cleanup);
+    ADDOP(c, NO_LOCATION, END_FOR);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
@@ -3167,25 +3171,22 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
-    location loc = LOC(s);
     NEW_JUMP_TARGET_LABEL(c, loop);
     NEW_JUMP_TARGET_LABEL(c, body);
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, anchor);
 
     USE_LABEL(c, loop);
-    if (!compiler_push_fblock(c, loc, WHILE_LOOP, loop, end, NULL)) {
+    if (!compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL)) {
         return 0;
     }
-    if (!compiler_jump_if(c, &loc, s->v.While.test, anchor, 0)) {
+    if (!compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0)) {
         return 0;
     }
 
     USE_LABEL(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
-    SET_LOC(c, s);
-    loc = LOC(s);
-    if (!compiler_jump_if(c, &loc, s->v.While.test, body, 1)) {
+    if (!compiler_jump_if(c, LOC(s), s->v.While.test, body, 1)) {
         return 0;
     }
 
@@ -3910,59 +3911,61 @@ compiler_import(struct compiler *c, stmt_ty s)
 static int
 compiler_from_import(struct compiler *c, stmt_ty s)
 {
-    location loc = LOC(s);
-    Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
-    PyObject *names;
+    Py_ssize_t n = asdl_seq_LEN(s->v.ImportFrom.names);
 
-    ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromLong(s->v.ImportFrom.level));
+    ADDOP_LOAD_CONST_NEW(c, LOC(s), PyLong_FromLong(s->v.ImportFrom.level));
 
-    names = PyTuple_New(n);
-    if (!names)
+    PyObject *names = PyTuple_New(n);
+    if (!names) {
         return 0;
+    }
 
     /* build up the names */
-    for (i = 0; i < n; i++) {
+    for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
         Py_INCREF(alias->name);
         PyTuple_SET_ITEM(names, i, alias->name);
     }
 
-    if (s->lineno > c->c_future->ff_lineno && s->v.ImportFrom.module &&
-        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__")) {
+    if (location_is_after(LOC(s), c->c_future->ff_location) &&
+        s->v.ImportFrom.module &&
+        _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
+    {
         Py_DECREF(names);
-        return compiler_error(c, loc, "from __future__ imports must occur "
+        return compiler_error(c, LOC(s), "from __future__ imports must occur "
                               "at the beginning of the file");
     }
-    ADDOP_LOAD_CONST_NEW(c, loc, names);
+    ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
 
     if (s->v.ImportFrom.module) {
-        ADDOP_NAME(c, loc, IMPORT_NAME, s->v.ImportFrom.module, names);
+        ADDOP_NAME(c, LOC(s), IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
         _Py_DECLARE_STR(empty, "");
-        ADDOP_NAME(c, loc, IMPORT_NAME, &_Py_STR(empty), names);
+        ADDOP_NAME(c, LOC(s), IMPORT_NAME, &_Py_STR(empty), names);
     }
-    for (i = 0; i < n; i++) {
+    for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
         identifier store_name;
 
         if (i == 0 && PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             assert(n == 1);
-            ADDOP(c, loc, IMPORT_STAR);
+            ADDOP(c, LOC(s), IMPORT_STAR);
             return 1;
         }
 
-        ADDOP_NAME(c, loc, IMPORT_FROM, alias->name, names);
+        ADDOP_NAME(c, LOC(s), IMPORT_FROM, alias->name, names);
         store_name = alias->name;
-        if (alias->asname)
+        if (alias->asname) {
             store_name = alias->asname;
+        }
 
-        if (!compiler_nameop(c, loc, store_name, Store)) {
+        if (!compiler_nameop(c, LOC(s), store_name, Store)) {
             return 0;
         }
     }
     /* remove imported module */
-    ADDOP(c, loc, POP_TOP);
+    ADDOP(c, LOC(s), POP_TOP);
     return 1;
 }
 
@@ -3986,8 +3989,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         return 1;
     }
     NEW_JUMP_TARGET_LABEL(c, end);
-    location loc = LOC(s);
-    if (!compiler_jump_if(c, &loc, s->v.Assert.test, end, 1)) {
+    if (!compiler_jump_if(c, LOC(s), s->v.Assert.test, end, 1)) {
         return 0;
     }
     ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
@@ -4017,18 +4019,13 @@ compiler_stmt_expr(struct compiler *c, location loc, expr_ty value)
     }
 
     VISIT(c, expr, value);
-    /* Mark POP_TOP as artificial */
-    UNSET_LOC(c);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_TOP); /* artificial */
     return 1;
 }
 
 static int
 compiler_visit_stmt(struct compiler *c, stmt_ty s)
 {
-    Py_ssize_t i, n;
-    /* Always assign a lineno to the next instruction for a stmt. */
-    SET_LOC(c, s);
 
     switch (s->kind) {
     case FunctionDef_kind:
@@ -4042,12 +4039,11 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         break;
     case Assign_kind:
     {
-        n = asdl_seq_LEN(s->v.Assign.targets);
+        Py_ssize_t n = asdl_seq_LEN(s->v.Assign.targets);
         VISIT(c, expr, s->v.Assign.value);
-        location loc = LOC(s);
-        for (i = 0; i < n; i++) {
+        for (Py_ssize_t i = 0; i < n; i++) {
             if (i < n - 1) {
-                ADDOP_I(c, loc, COPY, 1);
+                ADDOP_I(c, LOC(s), COPY, 1);
             }
             VISIT(c, expr,
                   (expr_ty)asdl_seq_GET(s->v.Assign.targets, i));
@@ -4068,7 +4064,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         return compiler_match(c, s);
     case Raise_kind:
     {
-        n = 0;
+        Py_ssize_t n = 0;
         if (s->v.Raise.exc) {
             VISIT(c, expr, s->v.Raise.exc);
             n++;
@@ -4077,8 +4073,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
                 n++;
             }
         }
-        location loc = LOC(s);
-        ADDOP_I(c, loc, RAISE_VARARGS, (int)n);
+        ADDOP_I(c, LOC(s), RAISE_VARARGS, (int)n);
         break;
     }
     case Try_kind:
@@ -4096,24 +4091,20 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         break;
     case Expr_kind:
     {
-        location loc = LOC(s);
-        return compiler_stmt_expr(c, loc, s->v.Expr.value);
+        return compiler_stmt_expr(c, LOC(s), s->v.Expr.value);
     }
     case Pass_kind:
     {
-        location loc = LOC(s);
-        ADDOP(c, loc, NOP);
+        ADDOP(c, LOC(s), NOP);
         break;
     }
     case Break_kind:
     {
-        location loc = LOC(s);
-        return compiler_break(c, loc);
+        return compiler_break(c, LOC(s));
     }
     case Continue_kind:
     {
-        location loc = LOC(s);
-        return compiler_continue(c, loc);
+        return compiler_continue(c, LOC(s));
     }
     case With_kind:
         return compiler_with(c, s, 0);
@@ -5275,7 +5266,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, &loc, e, if_cleanup, 0)) {
+        if (!compiler_jump_if(c, loc, e, if_cleanup, 0)) {
             return 0;
         }
     }
@@ -5328,6 +5319,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
         ADDOP_JUMP(c, elt_loc, JUMP, start);
 
         USE_LABEL(c, anchor);
+        ADDOP(c, NO_LOCATION, END_FOR);
     }
 
     return 1;
@@ -5374,7 +5366,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, &loc, e, if_cleanup, 0)) {
+        if (!compiler_jump_if(c, loc, e, if_cleanup, 0)) {
             return 0;
         }
     }
@@ -7109,7 +7101,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         // NOTE: Returning macros are safe again.
         if (m->guard) {
             RETURN_IF_FALSE(ensure_fail_pop(c, pc, 0));
-            RETURN_IF_FALSE(compiler_jump_if(c, &loc, m->guard, pc->fail_pop[0], 0));
+            RETURN_IF_FALSE(compiler_jump_if(c, loc, m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
@@ -7138,7 +7130,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, loc, NOP);
         }
         if (m->guard) {
-            RETURN_IF_FALSE(compiler_jump_if(c, &loc, m->guard, end, 0));
+            RETURN_IF_FALSE(compiler_jump_if(c, loc, m->guard, end, 0));
         }
         VISIT_SEQ(c, stmt, m->body);
     }

@@ -155,7 +155,7 @@ batched_next(batchedobject *bo)
         return NULL;
     }
     iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
-    PyObject **items = PySequence_Fast_ITEMS(result);
+    PyObject **items = _PyList_ITEMS(result);
     for (i=0 ; i < n ; i++) {
         item = iternext(it);
         if (item == NULL) {
@@ -167,23 +167,22 @@ batched_next(batchedobject *bo)
 
  null_item:
     if (PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
-            PyErr_Clear();
-        } else {
-            /* input raised an exception other than StopIteration */
+        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            /* Input raised an exception other than StopIteration */
             Py_CLEAR(bo->it);
             Py_DECREF(result);
             return NULL;
         }
+        PyErr_Clear();
     }
     if (i == 0) {
         Py_CLEAR(bo->it);
         Py_DECREF(result);
         return NULL;
     }
-    PyObject *short_list = PyList_GetSlice(result, 0, i);
-    Py_DECREF(result);
-    return short_list;
+    /* Elements in result[i:] are still NULL */
+    Py_SET_SIZE(result, i);
+    return result;
 }
 
 static PyTypeObject batched_type = {

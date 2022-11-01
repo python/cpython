@@ -3474,7 +3474,7 @@ AC_MSG_RESULT([$perf_trampoline])
 
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
-  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
   dnl perf needs frame pointers for unwinding, include compiler option in debug builds
   AS_VAR_IF([Py_DEBUG], [true], [
