@@ -849,7 +849,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
                                      GETLOCAL(i) = value; \
                                      Py_XDECREF(tmp); } while (0)
 
-#define JUMP_TO_INSTRUCTION(op) goto PREDICT_ID(op)
+#define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
 
 #define DEOPT_IF(cond, instname) if (cond) { goto miss; }
@@ -1168,7 +1168,7 @@ handle_eval_breaker:
 
         TARGET(RESUME) {
             _PyCode_Warmup(frame->f_code);
-            JUMP_TO_INSTRUCTION(RESUME_QUICK);
+            GO_TO_INSTRUCTION(RESUME_QUICK);
         }
 
         TARGET(RESUME_QUICK) {
@@ -1596,7 +1596,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(BINARY_SUBSCR, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(BINARY_SUBSCR);
+                GO_TO_INSTRUCTION(BINARY_SUBSCR);
             }
         }
 
@@ -1759,7 +1759,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(STORE_SUBSCR, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(STORE_SUBSCR);
+                GO_TO_INSTRUCTION(STORE_SUBSCR);
             }
         }
 
@@ -2275,7 +2275,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(UNPACK_SEQUENCE, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(UNPACK_SEQUENCE);
+                GO_TO_INSTRUCTION(UNPACK_SEQUENCE);
             }
         }
 
@@ -2518,7 +2518,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(LOAD_GLOBAL, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
+                GO_TO_INSTRUCTION(LOAD_GLOBAL);
             }
         }
 
@@ -2976,7 +2976,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(LOAD_ATTR, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(LOAD_ATTR);
+                GO_TO_INSTRUCTION(LOAD_ATTR);
             }
         }
 
@@ -3208,7 +3208,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(STORE_ATTR, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(STORE_ATTR);
+                GO_TO_INSTRUCTION(STORE_ATTR);
             }
         }
 
@@ -3342,7 +3342,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(COMPARE_OP, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(COMPARE_OP);
+                GO_TO_INSTRUCTION(COMPARE_OP);
             }
         }
 
@@ -3577,7 +3577,7 @@ handle_eval_breaker:
 
         TARGET(JUMP_BACKWARD) {
             _PyCode_Warmup(frame->f_code);
-            JUMP_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
 
         TARGET(POP_JUMP_IF_FALSE) {
@@ -3868,7 +3868,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(FOR_ITER, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(FOR_ITER);
+                GO_TO_INSTRUCTION(FOR_ITER);
             }
         }
 
@@ -4147,7 +4147,7 @@ handle_eval_breaker:
             PEEK(oparg + 1) = self;
             PEEK(oparg + 2) = meth;
             Py_DECREF(function);
-            JUMP_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
+            GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
         TARGET(KW_NAMES) {
@@ -4250,7 +4250,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(CALL, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(CALL);
+                GO_TO_INSTRUCTION(CALL);
             }
         }
 
@@ -4979,7 +4979,7 @@ handle_eval_breaker:
             else {
                 STAT_INC(BINARY_OP, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
-                JUMP_TO_INSTRUCTION(BINARY_OP);
+                GO_TO_INSTRUCTION(BINARY_OP);
             }
         }
 
