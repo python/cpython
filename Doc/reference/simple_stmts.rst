@@ -756,7 +756,7 @@ commas) the two steps are carried out separately for each clause, just
 as though the clauses had been separated out into individual import
 statements.
 
-The details of the first step, finding and loading modules are described in
+The details of the first step, finding and loading modules, are described in
 greater detail in the section on the :ref:`import system <importsystem>`,
 which also describes the various types of packages and modules that can
 be imported, as well as all the hooks that can be used to customize
