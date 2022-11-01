@@ -766,8 +766,8 @@ Running a logging socket listener in production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To run a logging listener in production, you may need to use a
-process-management tool such as `Supervisor <http://supervisord.org/>`_. `Here
-<https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist
+process-management tool such as `Supervisor <http://supervisord.org/>`_.
+`Here is a Gist <https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`__
 which provides the bare-bones files to run the above functionality using
 Supervisor. It consists of the following files:
 
@@ -785,10 +785,10 @@ Supervisor. It consists of the following files:
 |                         | with the above configuration                       |
 +-------------------------+----------------------------------------------------+
 | :file:`log_listener.py` | The socket listener program which receives log     |
-|                         | events and logs them to a file                     |
+|                         | events and records them to a file                  |
 +-------------------------+----------------------------------------------------+
-| :file:`main.py`         | A simple web application which does logging via a  |
-|                         | socket connected to the listener                   |
+| :file:`main.py`         | A simple web application which performs logging    |
+|                         | via a socket connected to the listener             |
 +-------------------------+----------------------------------------------------+
 | :file:`webapp.json`     | A JSON configuration file for the web application  |
 +-------------------------+----------------------------------------------------+
@@ -796,40 +796,39 @@ Supervisor. It consists of the following files:
 +-------------------------+----------------------------------------------------+
 
 The web application uses `Gunicorn <https://gunicorn.org/>`_, which is a
-popular web application server which starts multiple worker processes to handle
-requests. The whole setup shows how the workers can write to the same log file
-without treading on each other's toes --- they go through the socket listener.
+popular web application server that starts multiple worker processes to handle
+requests. This example setup shows how the workers can write to the same log file
+without conflicting with one another --- they all go through the socket listener.
 
 To test these files, do the following in a POSIX environment:
 
-1. Download `the Gist
-   <https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_, using
-   the "Download ZIP" button, as a :file:`zip` archive.
+#. Download `the Gist
+   <https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_,
+   as a ZIP archive using the :guilabel:`Download ZIP` button.
 
-2. Unzip the above files from the archive into a scratch directory.
+#. Unzip the above files from the archive into a scratch directory.
 
-3. In the scratch directory, run :program:`bash prepare.sh` to get things ready.
-   This creates a :file:`run` subdirectory to contain Supervisor related and
+#. In the scratch directory, run ``bash prepare.sh`` to get things ready.
+   This creates a :file:`run` subdirectory to contain Supervisor-related and
    log files, and a :file:`venv` subdirectory to contain a virtual environment
    into which ``bottle``, ``gunicorn`` and ``supervisor`` are installed.
 
-4. Run :program:`bash ensure_app.bash` to ensure that Supervisor is running with
+#. Run ``bash ensure_app.sh`` to ensure that Supervisor is running with
    the above configuration.
 
-5. Run :program:`venv/bin/python client.py` to exercise the web application,
+#. Run ``venv/bin/python client.py`` to exercise the web application,
    which will lead to records being written to the log.
 
-6. Inspect the log files in the :file:`run` subdirectory. You should see the
-   most recent log lines in files matching :file:`app.log*`. They won't be in
+#. Inspect the log files in the :file:`run` subdirectory. You should see the
+   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
    any particular order, since they have been handled concurrently by different
-   worker processes, and that does not happend in a deterministic way.
+   worker processes in a non-deterministic way.
 
-7. You can shut down the listener and the web application by running
-   :program:`venv/bin/supervisorctl -c supervisor.conf shutdown`.
+#. You can shut down the listener and the web application by running
+   ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
 
 You may need to tweak the configuration files in the unlikely event that the
-ports configured in them cause a clash with something else in your test
-environment.
+configured ports clash with something else in your test environment.
 
 .. _context-info:
 
