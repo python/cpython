@@ -326,7 +326,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    On some systems, it is necessary to invoke :func:`setlocale` to obtain the
    user preferences, so this function is not thread-safe. If invoking setlocale
-   is not necessary or desired, *do_setlocale* should be set to :const:`False`.
+   is not necessary or desired, *do_setlocale* should be set to ``False``.
 
    On Android or if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, always
    return ``'utf-8'``, the :term:`locale encoding` and the *do_setlocale*
@@ -401,7 +401,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
-   values, the decimal point is modified if appropriate.  If *grouping* is :const:`True`,
+   values, the decimal point is modified if appropriate.  If *grouping* is ``True``,
    also takes the grouping into account.
 
    If *monetary* is true, the conversion uses monetary thousands separator and
@@ -419,8 +419,8 @@ The :mod:`locale` module defines the following exception and functions:
    Formats a number *val* according to the current :const:`LC_MONETARY` settings.
 
    The returned string includes the currency symbol if *symbol* is true, which is
-   the default. If *grouping* is :const:`True` (which is not the default), grouping is done
-   with the value. If *international* is :const:`True` (which is not the default), the
+   the default. If *grouping* is ``True`` (which is not the default), grouping is done
+   with the value. If *international* is ``True`` (which is not the default), the
    international currency symbol is used.
 
    .. note::
