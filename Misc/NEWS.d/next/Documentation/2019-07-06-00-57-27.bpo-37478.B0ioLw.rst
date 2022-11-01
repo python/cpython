@@ -1,1 +1,0 @@
-Added possible exceptions to the description of os.chdir().

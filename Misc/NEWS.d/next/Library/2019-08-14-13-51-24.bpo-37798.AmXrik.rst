@@ -1,1 +1,0 @@
-Add C fastpath for statistics.NormalDist.inv_cdf() Patch by Dong-hee Na

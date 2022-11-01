@@ -131,6 +131,7 @@ Finis.
 #
 import re
 import string
+import types
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
 
@@ -418,6 +419,8 @@ class Morsel(dict):
 
         # Return the result
         return _semispacejoin(result)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 #

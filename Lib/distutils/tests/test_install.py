@@ -5,10 +5,10 @@ import sys
 import unittest
 import site
 
-from test.support import captured_stdout, run_unittest
+from test.support import captured_stdout, run_unittest, requires_subprocess
 
 from distutils import sysconfig
-from distutils.command.install import install
+from distutils.command.install import install, HAS_USER_SITE
 from distutils.command import install as install_module
 from distutils.command.build_ext import build_ext
 from distutils.command.install import INSTALL_SCHEMES
@@ -28,6 +28,15 @@ class InstallTestCase(support.TempdirManager,
                       support.EnvironGuard,
                       support.LoggingSilencer,
                       unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self._backup_config_vars = dict(sysconfig._config_vars)
+
+    def tearDown(self):
+        super().tearDown()
+        sysconfig._config_vars.clear()
+        sysconfig._config_vars.update(self._backup_config_vars)
 
     def test_home_installation_scheme(self):
         # This ensure two things:
@@ -58,13 +67,15 @@ class InstallTestCase(support.TempdirManager,
 
         libdir = os.path.join(destination, "lib", "python")
         check_path(cmd.install_lib, libdir)
-        check_path(cmd.install_platlib, libdir)
+        platlibdir = os.path.join(destination, sys.platlibdir, "python")
+        check_path(cmd.install_platlib, platlibdir)
         check_path(cmd.install_purelib, libdir)
         check_path(cmd.install_headers,
                    os.path.join(destination, "include", "python", "foopkg"))
         check_path(cmd.install_scripts, os.path.join(destination, "bin"))
         check_path(cmd.install_data, destination)
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_user_site(self):
         # test install with --user
         # preparing the environment for the test
@@ -92,8 +103,9 @@ class InstallTestCase(support.TempdirManager,
 
         self.addCleanup(cleanup)
 
-        for key in ('nt_user', 'unix_user'):
-            self.assertIn(key, INSTALL_SCHEMES)
+        if HAS_USER_SITE:
+            for key in ('nt_user', 'unix_user'):
+                self.assertIn(key, INSTALL_SCHEMES)
 
         dist = Distribution({'name': 'xx'})
         cmd = install(dist)
@@ -196,6 +208,7 @@ class InstallTestCase(support.TempdirManager,
                     'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
         self.assertEqual(found, expected)
 
+    @requires_subprocess()
     def test_record_extensions(self):
         cmd = test_support.missing_compiler_executable()
         if cmd is not None:
@@ -242,7 +255,7 @@ class InstallTestCase(support.TempdirManager,
 
 
 def test_suite():
-    return unittest.makeSuite(InstallTestCase)
+    return unittest.TestLoader().loadTestsFromTestCase(InstallTestCase)
 
 if __name__ == "__main__":
     run_unittest(test_suite())

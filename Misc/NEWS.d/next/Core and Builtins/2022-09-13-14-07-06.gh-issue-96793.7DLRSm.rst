@@ -1,0 +1,2 @@
+The :opcode:`FOR_ITER` now leaves the iterator on the stack on termination
+of the loop. This is to assist specialization of loops for generators.

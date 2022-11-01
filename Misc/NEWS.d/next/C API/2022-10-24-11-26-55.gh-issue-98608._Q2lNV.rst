@@ -1,0 +1,4 @@
+A ``_PyInterpreterConfig`` has been added and ``_Py_NewInterpreter()`` has
+been renamed to ``_Py_NewInterpreterFromConfig()``.  The
+"isolated_subinterpreters" argument is now a granular config that captures
+the previous behavior.  Note that this is all "private" API.

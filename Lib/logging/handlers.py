@@ -1,4 +1,4 @@
-# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,12 +18,12 @@
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
 
-import logging, socket, os, pickle, struct, time, re
+import io, logging, socket, os, pickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 import threading
@@ -48,6 +48,9 @@ class BaseRotatingHandler(logging.FileHandler):
     Not meant to be instantiated directly.  Instead, use RotatingFileHandler
     or TimedRotatingFileHandler.
     """
+    namer = None
+    rotator = None
+
     def __init__(self, filename, mode, encoding=None, delay=False, errors=None):
         """
         Use the specified filename for streamed logging
@@ -58,8 +61,6 @@ class BaseRotatingHandler(logging.FileHandler):
         self.mode = mode
         self.encoding = encoding
         self.errors = errors
-        self.namer = None
-        self.rotator = None
 
     def emit(self, record):
         """
@@ -149,6 +150,8 @@ class RotatingFileHandler(BaseRotatingHandler):
         # on each run.
         if maxBytes > 0:
             mode = 'a'
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
         BaseRotatingHandler.__init__(self, filename, mode, encoding=encoding,
                                      delay=delay, errors=errors)
         self.maxBytes = maxBytes
@@ -184,14 +187,17 @@ class RotatingFileHandler(BaseRotatingHandler):
         Basically, see if the supplied record would cause the file to exceed
         the size limit we have.
         """
+        # See bpo-45401: Never rollover anything other than regular files
+        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+            return False
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
             msg = "%s\n" % self.format(record)
             self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
             if self.stream.tell() + len(msg) >= self.maxBytes:
-                return 1
-        return 0
+                return True
+        return False
 
 class TimedRotatingFileHandler(BaseRotatingHandler):
     """
@@ -204,6 +210,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     def __init__(self, filename, when='h', interval=1, backupCount=0,
                  encoding=None, delay=False, utc=False, atTime=None,
                  errors=None):
+        encoding = io.text_encoding(encoding)
         BaseRotatingHandler.__init__(self, filename, 'a', encoding=encoding,
                                      delay=delay, errors=errors)
         self.when = when.upper()
@@ -343,8 +350,15 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         """
         t = int(time.time())
         if t >= self.rolloverAt:
-            return 1
-        return 0
+            # See #89564: Never rollover anything other than regular files
+            if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+                # The file is not a regular file, so do not rollover, but do
+                # set the next rollover time to avoid repeated checks.
+                self.rolloverAt = self.computeRollover(t)
+                return False
+
+            return True
+        return False
 
     def getFilesToDelete(self):
         """
@@ -355,13 +369,32 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dirName, baseName = os.path.split(self.baseFilename)
         fileNames = os.listdir(dirName)
         result = []
-        prefix = baseName + "."
+        # See bpo-44753: Don't use the extension when computing the prefix.
+        n, e = os.path.splitext(baseName)
+        prefix = n + '.'
         plen = len(prefix)
         for fileName in fileNames:
+            if self.namer is None:
+                # Our files will always start with baseName
+                if not fileName.startswith(baseName):
+                    continue
+            else:
+                # Our files could be just about anything after custom naming, but
+                # likely candidates are of the form
+                # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
+                if (not fileName.startswith(baseName) and fileName.endswith(e) and
+                    len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
+                    continue
+
             if fileName[:plen] == prefix:
                 suffix = fileName[plen:]
-                if self.extMatch.match(suffix):
-                    result.append(os.path.join(dirName, fileName))
+                # See bpo-45628: The date/time suffix could be anywhere in the
+                # filename
+                parts = suffix.split('.')
+                for part in parts:
+                    if self.extMatch.match(part):
+                        result.append(os.path.join(dirName, fileName))
+                        break
         if len(result) < self.backupCount:
             result = []
         else:
@@ -441,6 +474,8 @@ class WatchedFileHandler(logging.FileHandler):
     """
     def __init__(self, filename, mode='a', encoding=None, delay=False,
                  errors=None):
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
         logging.FileHandler.__init__(self, filename, mode=mode,
                                      encoding=encoding, delay=delay,
                                      errors=errors)
@@ -741,6 +776,10 @@ class SysLogHandler(logging.Handler):
     LOG_CRON      = 9       #  clock daemon
     LOG_AUTHPRIV  = 10      #  security/authorization messages (private)
     LOG_FTP       = 11      #  FTP daemon
+    LOG_NTP       = 12      #  NTP subsystem
+    LOG_SECURITY  = 13      #  Log audit
+    LOG_CONSOLE   = 14      #  Log alert
+    LOG_SOLCRON   = 15      #  Scheduling daemon (Solaris)
 
     #  other codes through 15 reserved for system use
     LOG_LOCAL0    = 16      #  reserved for local use
@@ -768,27 +807,30 @@ class SysLogHandler(logging.Handler):
         }
 
     facility_names = {
-        "auth":     LOG_AUTH,
-        "authpriv": LOG_AUTHPRIV,
-        "cron":     LOG_CRON,
-        "daemon":   LOG_DAEMON,
-        "ftp":      LOG_FTP,
-        "kern":     LOG_KERN,
-        "lpr":      LOG_LPR,
-        "mail":     LOG_MAIL,
-        "news":     LOG_NEWS,
-        "security": LOG_AUTH,       #  DEPRECATED
-        "syslog":   LOG_SYSLOG,
-        "user":     LOG_USER,
-        "uucp":     LOG_UUCP,
-        "local0":   LOG_LOCAL0,
-        "local1":   LOG_LOCAL1,
-        "local2":   LOG_LOCAL2,
-        "local3":   LOG_LOCAL3,
-        "local4":   LOG_LOCAL4,
-        "local5":   LOG_LOCAL5,
-        "local6":   LOG_LOCAL6,
-        "local7":   LOG_LOCAL7,
+        "auth":         LOG_AUTH,
+        "authpriv":     LOG_AUTHPRIV,
+        "console":      LOG_CONSOLE,
+        "cron":         LOG_CRON,
+        "daemon":       LOG_DAEMON,
+        "ftp":          LOG_FTP,
+        "kern":         LOG_KERN,
+        "lpr":          LOG_LPR,
+        "mail":         LOG_MAIL,
+        "news":         LOG_NEWS,
+        "ntp":          LOG_NTP,
+        "security":     LOG_SECURITY,
+        "solaris-cron": LOG_SOLCRON,
+        "syslog":       LOG_SYSLOG,
+        "user":         LOG_USER,
+        "uucp":         LOG_UUCP,
+        "local0":       LOG_LOCAL0,
+        "local1":       LOG_LOCAL1,
+        "local2":       LOG_LOCAL2,
+        "local3":       LOG_LOCAL3,
+        "local4":       LOG_LOCAL4,
+        "local5":       LOG_LOCAL5,
+        "local6":       LOG_LOCAL6,
+        "local7":       LOG_LOCAL7,
         }
 
     #The map below appears to be trivially lowercasing the key. However,
@@ -821,12 +863,49 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         self.socktype = socktype
+        self.socket = None
+        self.createSocket()
+
+    def _connect_unixsocket(self, address):
+        use_socktype = self.socktype
+        if use_socktype is None:
+            use_socktype = socket.SOCK_DGRAM
+        self.socket = socket.socket(socket.AF_UNIX, use_socktype)
+        try:
+            self.socket.connect(address)
+            # it worked, so set self.socktype to the used type
+            self.socktype = use_socktype
+        except OSError:
+            self.socket.close()
+            if self.socktype is not None:
+                # user didn't specify falling back, so fail
+                raise
+            use_socktype = socket.SOCK_STREAM
+            self.socket = socket.socket(socket.AF_UNIX, use_socktype)
+            try:
+                self.socket.connect(address)
+                # it worked, so set self.socktype to the used type
+                self.socktype = use_socktype
+            except OSError:
+                self.socket.close()
+                raise
+
+    def createSocket(self):
+        """
+        Try to create a socket and, if it's not a datagram socket, connect it
+        to the other end. This method is called during handler initialization,
+        but it's not regarded as an error if the other end isn't listening yet
+        --- the method will be called again when emitting an event,
+        if there is no socket at that point.
+        """
+        address = self.address
+        socktype = self.socktype
 
         if isinstance(address, str):
             self.unixsocket = True
             # Syslog server may be unavailable during handler initialisation.
             # C's openlog() function also ignores connection errors.
-            # Moreover, we ignore these errors while logging, so it not worse
+            # Moreover, we ignore these errors while logging, so it's not worse
             # to ignore it also here.
             try:
                 self._connect_unixsocket(address)
@@ -857,30 +936,6 @@ class SysLogHandler(logging.Handler):
             self.socket = sock
             self.socktype = socktype
 
-    def _connect_unixsocket(self, address):
-        use_socktype = self.socktype
-        if use_socktype is None:
-            use_socktype = socket.SOCK_DGRAM
-        self.socket = socket.socket(socket.AF_UNIX, use_socktype)
-        try:
-            self.socket.connect(address)
-            # it worked, so set self.socktype to the used type
-            self.socktype = use_socktype
-        except OSError:
-            self.socket.close()
-            if self.socktype is not None:
-                # user didn't specify falling back, so fail
-                raise
-            use_socktype = socket.SOCK_STREAM
-            self.socket = socket.socket(socket.AF_UNIX, use_socktype)
-            try:
-                self.socket.connect(address)
-                # it worked, so set self.socktype to the used type
-                self.socktype = use_socktype
-            except OSError:
-                self.socket.close()
-                raise
-
     def encodePriority(self, facility, priority):
         """
         Encode the facility and priority. You can pass in strings or
@@ -900,7 +955,10 @@ class SysLogHandler(logging.Handler):
         """
         self.acquire()
         try:
-            self.socket.close()
+            sock = self.socket
+            if sock:
+                self.socket = None
+                sock.close()
             logging.Handler.close(self)
         finally:
             self.release()
@@ -940,6 +998,10 @@ class SysLogHandler(logging.Handler):
             # Message is a string. Convert to bytes as required by RFC 5424
             msg = msg.encode('utf-8')
             msg = prio + msg
+
+            if not self.socket:
+                self.createSocket()
+
             if self.unixsocket:
                 try:
                     self.socket.send(msg)
@@ -1056,7 +1118,16 @@ class NTEventLogHandler(logging.Handler):
                 dllname = os.path.join(dllname[0], r'win32service.pyd')
             self.dllname = dllname
             self.logtype = logtype
-            self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            # Administrative privileges are required to add a source to the registry.
+            # This may not be available for a user that just wants to add to an
+            # existing source - handle this specific case.
+            try:
+                self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            except Exception as e:
+                # This will probably be a pywintypes.error. Only raise if it's not
+                # an "access denied" error, else let it pass
+                if getattr(e, 'winerror', None) != 5:  # not access denied
+                    raise
             self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
             self.typemap = {
                 logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
@@ -1134,7 +1205,7 @@ class NTEventLogHandler(logging.Handler):
 
 class HTTPHandler(logging.Handler):
     """
-    A class which sends records to a Web server, using either GET or
+    A class which sends records to a web server, using either GET or
     POST semantics.
     """
     def __init__(self, host, url, method="GET", secure=False, credentials=None,
@@ -1165,19 +1236,30 @@ class HTTPHandler(logging.Handler):
         """
         return record.__dict__
 
+    def getConnection(self, host, secure):
+        """
+        get a HTTP[S]Connection.
+
+        Override when a custom connection is required, for example if
+        there is a proxy.
+        """
+        import http.client
+        if secure:
+            connection = http.client.HTTPSConnection(host, context=self.context)
+        else:
+            connection = http.client.HTTPConnection(host)
+        return connection
+
     def emit(self, record):
         """
         Emit a record.
 
-        Send the record to the Web server as a percent-encoded dictionary
+        Send the record to the web server as a percent-encoded dictionary
         """
         try:
-            import http.client, urllib.parse
+            import urllib.parse
             host = self.host
-            if self.secure:
-                h = http.client.HTTPSConnection(host, context=self.context)
-            else:
-                h = http.client.HTTPConnection(host)
+            h = self.getConnection(host, self.secure)
             url = self.url
             data = urllib.parse.urlencode(self.mapLogRecord(record))
             if self.method == "GET":
@@ -1253,7 +1335,7 @@ class BufferingHandler(logging.Handler):
         """
         self.acquire()
         try:
-            self.buffer = []
+            self.buffer.clear()
         finally:
             self.release()
 
@@ -1305,7 +1387,11 @@ class MemoryHandler(BufferingHandler):
         """
         Set the target handler for this handler.
         """
-        self.target = target
+        self.acquire()
+        try:
+            self.target = target
+        finally:
+            self.release()
 
     def flush(self):
         """
@@ -1320,7 +1406,7 @@ class MemoryHandler(BufferingHandler):
             if self.target:
                 for record in self.buffer:
                     self.target.handle(record)
-                self.buffer = []
+                self.buffer.clear()
         finally:
             self.release()
 
@@ -1358,6 +1444,7 @@ class QueueHandler(logging.Handler):
         """
         logging.Handler.__init__(self)
         self.queue = queue
+        self.listener = None  # will be set to listener if configured via dictConfig()
 
     def enqueue(self, record):
         """
@@ -1371,12 +1458,15 @@ class QueueHandler(logging.Handler):
 
     def prepare(self, record):
         """
-        Prepares a record for queuing. The object returned by this method is
+        Prepare a record for queuing. The object returned by this method is
         enqueued.
 
-        The base implementation formats the record to merge the message
-        and arguments, and removes unpickleable items from the record
-        in-place.
+        The base implementation formats the record to merge the message and
+        arguments, and removes unpickleable items from the record in-place.
+        Specifically, it overwrites the record's `msg` and
+        `message` attributes with the merged message (obtained by
+        calling the handler's `format` method), and sets the `args`,
+        `exc_info` and `exc_text` attributes to None.
 
         You might want to override this method if you want to convert
         the record to a dict or JSON string, or send a modified copy
@@ -1386,7 +1476,7 @@ class QueueHandler(logging.Handler):
         # (if there's exception data), and also returns the formatted
         # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
-        # exc_info and exc_text attributes, as they are no longer
+        # exc_info, exc_text and stack_info attributes, as they are no longer
         # needed and, if not None, will typically not be pickleable.
         msg = self.format(record)
         # bpo-35726: make copy of record to avoid affecting other handlers in the chain.
@@ -1396,6 +1486,7 @@ class QueueHandler(logging.Handler):
         record.args = None
         record.exc_info = None
         record.exc_text = None
+        record.stack_info = None
         return record
 
     def emit(self, record):
