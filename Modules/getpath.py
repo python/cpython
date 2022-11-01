@@ -579,7 +579,12 @@ else:
     # Detect exec_prefix by searching from executable for the platstdlib_dir
     if PLATSTDLIB_LANDMARK and not exec_prefix:
         if executable_dir:
-            exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
+            if os_name == 'nt':
+                # QUIRK: For compatibility and security, do not search for DLLs
+                # directory. The fallback below will cover it
+                pass
+            else:
+                exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
             exec_prefix = EXEC_PREFIX
         if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
