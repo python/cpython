@@ -823,7 +823,7 @@ class ClinicExternalTest(TestCase):
 ac_tester = import_helper.import_module('_testclinic')
 
 
-class TestClinicFunctionality(unittest.TestCase):
+class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
