@@ -5,9 +5,9 @@ import sys
 import types
 from pathlib import Path, PurePath
 
-from .. import data01
-from .. import zipdata01
-from importlib.abc import ResourceReader
+from . import data01
+from . import zipdata01
+from importlib.resources.abc import ResourceReader
 from test.support import import_helper
 
 
@@ -96,18 +96,6 @@ class CommonTests(metaclass=abc.ABCMeta):
         # Passing in a pathlib.PurePath object for the path should succeed.
         path = PurePath('utf-8.file')
         self.execute(data01, path)
-
-    def test_absolute_path(self):
-        # An absolute path is a ValueError.
-        path = Path(__file__)
-        full_path = path.parent / 'utf-8.file'
-        with self.assertRaises(ValueError):
-            self.execute(data01, full_path)
-
-    def test_relative_path(self):
-        # A reative path is a ValueError.
-        with self.assertRaises(ValueError):
-            self.execute(data01, '../data01/utf-8.file')
 
     def test_importing_module_as_side_effect(self):
         # The anchor package can already be imported.

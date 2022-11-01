@@ -35,7 +35,6 @@ except ImportError:
     from urllib2 import urlopen, HTTPError
 import re
 import shutil
-import string
 import subprocess
 import sys
 import tarfile
@@ -47,8 +46,8 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1l",
-    "3.0.0"
+    "1.1.1q",
+    "3.0.5"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -153,8 +152,10 @@ class AbstractBuilder(object):
     install_target = 'install'
     jobs = os.cpu_count()
 
-    module_files = ("Modules/_ssl.c",
-                    "Modules/_hashopenssl.c")
+    module_files = (
+        os.path.join(PYTHONROOT, "Modules/_ssl.c"),
+        os.path.join(PYTHONROOT, "Modules/_hashopenssl.c"),
+    )
     module_libs = ("_ssl", "_hashlib")
 
     def __init__(self, version, args):
@@ -357,7 +358,7 @@ class AbstractBuilder(object):
         env["LD_RUN_PATH"] = self.lib_dir
 
         log.info("Rebuilding Python modules")
-        cmd = [sys.executable, "setup.py", "build"]
+        cmd = ["make", "sharedmods", "checksharedmods"]
         self._subprocess_call(cmd, env=env)
         self.check_imports()
 
@@ -372,7 +373,11 @@ class AbstractBuilder(object):
 
     def run_python_tests(self, tests, network=True):
         if not tests:
-            cmd = [sys.executable, 'Lib/test/ssltests.py', '-j0']
+            cmd = [
+                sys.executable,
+                os.path.join(PYTHONROOT, 'Lib/test/ssltests.py'),
+                '-j0'
+            ]
         elif sys.version_info < (3, 3):
             cmd = [sys.executable, '-m', 'test.regrtest']
         else:
@@ -467,7 +472,7 @@ def main():
     start = datetime.now()
 
     if args.steps in {'modules', 'tests'}:
-        for name in ['setup.py', 'Modules/_ssl.c']:
+        for name in ['Makefile.pre.in', 'Modules/_ssl.c']:
             if not os.path.isfile(os.path.join(PYTHONROOT, name)):
                 parser.error(
                     "Must be executed from CPython build dir"

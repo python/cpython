@@ -9,22 +9,23 @@ There are two functions specifically for working with iterators.
 
 .. c:function:: int PyIter_Check(PyObject *o)
 
-   Return non-zero if the object *o* supports the iterator protocol, and ``0``
-   otherwise.  This function always succeeds.
+   Return non-zero if the object *o* can be safely passed to
+   :c:func:`PyIter_Next`, and ``0`` otherwise.  This function always succeeds.
 
 .. c:function:: int PyAIter_Check(PyObject *o)
 
-   Returns non-zero if the object 'obj' provides :class:`AsyncIterator`
-   protocols, and ``0`` otherwise.  This function always succeeds.
+   Return non-zero if the object *o* provides the :class:`AsyncIterator`
+   protocol, and ``0`` otherwise.  This function always succeeds.
 
    .. versionadded:: 3.10
 
 .. c:function:: PyObject* PyIter_Next(PyObject *o)
 
-   Return the next value from the iteration *o*.  The object must be an iterator
-   (it is up to the caller to check this).  If there are no remaining values,
-   returns ``NULL`` with no exception set.  If an error occurs while retrieving
-   the item, returns ``NULL`` and passes along the exception.
+   Return the next value from the iterator *o*.  The object must be an iterator
+   according to :c:func:`PyIter_Check` (it is up to the caller to check this).
+   If there are no remaining values, returns ``NULL`` with no exception set.
+   If an error occurs while retrieving the item, returns ``NULL`` and passes
+   along the exception.
 
 To write a loop which iterates over an iterator, the C code should look
 something like this::

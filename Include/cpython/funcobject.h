@@ -48,7 +48,8 @@ typedef struct {
      *     defaults
      *     kwdefaults (only if the object changes, not the contents of the dict)
      *     code
-     *     annotations */
+     *     annotations
+     *     vectorcall function pointer */
     uint32_t func_version;
 
     /* Invariant:
@@ -60,7 +61,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyFunction_Type;
 
-#define PyFunction_Check(op) Py_IS_TYPE(op, &PyFunction_Type)
+#define PyFunction_Check(op) Py_IS_TYPE((op), &PyFunction_Type)
 
 PyAPI_FUNC(PyObject *) PyFunction_New(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_NewWithQualName(PyObject *, PyObject *, PyObject *);
@@ -69,6 +70,7 @@ PyAPI_FUNC(PyObject *) PyFunction_GetGlobals(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetModule(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetDefaults(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetDefaults(PyObject *, PyObject *);
+PyAPI_FUNC(void) PyFunction_SetVectorcall(PyFunctionObject *, vectorcallfunc);
 PyAPI_FUNC(PyObject *) PyFunction_GetKwDefaults(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetKwDefaults(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetClosure(PyObject *);
@@ -82,27 +84,45 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     size_t nargsf,
     PyObject *kwnames);
 
-uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
+#define _PyFunction_CAST(func) \
+    (assert(PyFunction_Check(func)), _Py_CAST(PyFunctionObject*, func))
 
-/* Macros for direct access to these values. Type checks are *not*
-   done, so use with care. */
-#define PyFunction_GET_CODE(func) \
-        (((PyFunctionObject *)func) -> func_code)
-#define PyFunction_GET_GLOBALS(func) \
-        (((PyFunctionObject *)func) -> func_globals)
-#define PyFunction_GET_MODULE(func) \
-        (((PyFunctionObject *)func) -> func_module)
-#define PyFunction_GET_DEFAULTS(func) \
-        (((PyFunctionObject *)func) -> func_defaults)
-#define PyFunction_GET_KW_DEFAULTS(func) \
-        (((PyFunctionObject *)func) -> func_kwdefaults)
-#define PyFunction_GET_CLOSURE(func) \
-        (((PyFunctionObject *)func) -> func_closure)
-#define PyFunction_GET_ANNOTATIONS(func) \
-        (((PyFunctionObject *)func) -> func_annotations)
+/* Static inline functions for direct access to these values.
+   Type checks are *not* done, so use with care. */
+static inline PyObject* PyFunction_GET_CODE(PyObject *func) {
+    return _PyFunction_CAST(func)->func_code;
+}
+#define PyFunction_GET_CODE(func) PyFunction_GET_CODE(_PyObject_CAST(func))
 
-#define PyFunction_AS_FRAME_CONSTRUCTOR(func) \
-        ((PyFrameConstructor *)&((PyFunctionObject *)(func))->func_globals)
+static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
+    return _PyFunction_CAST(func)->func_globals;
+}
+#define PyFunction_GET_GLOBALS(func) PyFunction_GET_GLOBALS(_PyObject_CAST(func))
+
+static inline PyObject* PyFunction_GET_MODULE(PyObject *func) {
+    return _PyFunction_CAST(func)->func_module;
+}
+#define PyFunction_GET_MODULE(func) PyFunction_GET_MODULE(_PyObject_CAST(func))
+
+static inline PyObject* PyFunction_GET_DEFAULTS(PyObject *func) {
+    return _PyFunction_CAST(func)->func_defaults;
+}
+#define PyFunction_GET_DEFAULTS(func) PyFunction_GET_DEFAULTS(_PyObject_CAST(func))
+
+static inline PyObject* PyFunction_GET_KW_DEFAULTS(PyObject *func) {
+    return _PyFunction_CAST(func)->func_kwdefaults;
+}
+#define PyFunction_GET_KW_DEFAULTS(func) PyFunction_GET_KW_DEFAULTS(_PyObject_CAST(func))
+
+static inline PyObject* PyFunction_GET_CLOSURE(PyObject *func) {
+    return _PyFunction_CAST(func)->func_closure;
+}
+#define PyFunction_GET_CLOSURE(func) PyFunction_GET_CLOSURE(_PyObject_CAST(func))
+
+static inline PyObject* PyFunction_GET_ANNOTATIONS(PyObject *func) {
+    return _PyFunction_CAST(func)->func_annotations;
+}
+#define PyFunction_GET_ANNOTATIONS(func) PyFunction_GET_ANNOTATIONS(_PyObject_CAST(func))
 
 /* The classmethod and staticmethod types lives here, too */
 PyAPI_DATA(PyTypeObject) PyClassMethod_Type;

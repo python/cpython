@@ -35,7 +35,7 @@ debugging non-PythonWin programs.  PythonWin is available as part of
 as a part of the
 `ActivePython <https://www.activestate.com/products/python/>`_ distribution.
 
-`Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
+`Eric <https://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
 `trepan3k <https://github.com/rocky/python3-trepan/>`_ is a gdb-like debugger.
@@ -56,7 +56,7 @@ Are there tools to help find bugs or perform static analysis?
 
 Yes.
 
-`Pylint <https://www.pylint.org/>`_ and
+`Pylint <https://pylint.pycqa.org/en/latest/index.html>`_ and
 `Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
 help you catch bugs sooner.
 
@@ -78,7 +78,7 @@ set of modules required by a program and bind these modules together with a
 Python binary to produce a single executable.
 
 One is to use the freeze tool, which is included in the Python source tree as
-``Tools/freeze``. It converts Python byte code to C arrays; a C compiler you can
+``Tools/freeze``. It converts Python byte code to C arrays; with a C compiler you can
 embed all your modules into a new program, which is then linked with the
 standard Python modules.
 
@@ -95,11 +95,11 @@ The following packages can help with the creation of console and GUI
 executables:
 
 * `Nuitka <https://nuitka.net/>`_ (Cross-platform)
-* `PyInstaller <http://www.pyinstaller.org/>`_ (Cross-platform)
+* `PyInstaller <https://pyinstaller.org/>`_ (Cross-platform)
 * `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
 * `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
 * `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
-* `py2exe <http://www.py2exe.org/>`_ (Windows only)
+* `py2exe <https://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
@@ -294,7 +294,7 @@ It's good practice if you import modules in the following order:
 1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``
 2. third-party library modules (anything installed in Python's site-packages
    directory) -- e.g. mx.DateTime, ZODB, PIL.Image, etc.
-3. locally-developed modules
+3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
 problems with circular imports.  Gordon McMillan says:
@@ -409,8 +409,9 @@ What is the difference between arguments and parameters?
 
 :term:`Parameters <parameter>` are defined by the names that appear in a
 function definition, whereas :term:`arguments <argument>` are the values
-actually passed to a function when calling it.  Parameters define what types of
-arguments a function can accept.  For example, given the function definition::
+actually passed to a function when calling it.  Parameters define what
+:term:`kind of arguments <parameter>` a function can accept.  For
+example, given the function definition::
 
    def func(foo, bar=None, **kwargs):
        pass
@@ -734,7 +735,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`!lambda`.  See the following three examples, slightly adapted from Ulf Bartelt::
 
    from functools import reduce
 
@@ -747,7 +748,7 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
    f(x,f), range(10))))
 
    # Mandelbrot set
-   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,
+   print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+'\n'+y,map(lambda y,
    Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,Sy=Sy,L=lambda yc,Iu=Iu,Io=Io,Ru=Ru,Ro=Ro,i=IM,
    Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,
    i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y
@@ -770,7 +771,7 @@ What does the slash(/) in the parameter list of a function mean?
 
 A slash in the argument list of a function denotes that the parameters prior to
 it are positional-only.  Positional-only parameters are the ones without an
-externally-usable name.  Upon calling a function that accepts positional-only
+externally usable name.  Upon calling a function that accepts positional-only
 parameters, arguments are mapped to parameters based solely on their position.
 For example, :func:`divmod` is a function that accepts positional-only
 parameters. Its documentation looks like this::
@@ -1065,7 +1066,7 @@ performance levels:
   detrimental to readability).
 
 If you have reached the limit of what pure Python can allow, there are tools
-to take you further away.  For example, `Cython <http://cython.org>`_ can
+to take you further away.  For example, `Cython <https://cython.org>`_ can
 compile a slightly modified version of Python code into a C extension, and
 can be used on many different platforms.  Cython can take advantage of
 compilation (and optional type annotations) to make your code significantly
@@ -1269,7 +1270,7 @@ use a list comprehension::
    A = [[None] * w for i in range(h)]
 
 Or, you can use an extension that provides a matrix datatype; `NumPy
-<http://www.numpy.org/>`_ is the best known.
+<https://numpy.org/>`_ is the best known.
 
 
 How do I apply a method to a sequence of objects?
@@ -1819,7 +1820,7 @@ for ``None``.  This reads like plain English in code and avoids confusion with
 other objects that may have boolean values that evaluate to false.
 
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create an singleton sentinel object
+value.  In those situations, you can create a singleton sentinel object
 guaranteed to be distinct from other objects.  For example, here is how
 to implement a method that behaves like :meth:`dict.pop`::
 
@@ -1896,6 +1897,8 @@ The classes can be used like this:
     'blog-why-python-rocks'
 
 
+.. _faq-cache-method-calls:
+
 How do I cache method calls?
 ----------------------------
 
@@ -1908,7 +1911,7 @@ The *cached_property* approach only works with methods that do not take
 any arguments.  It does not create a reference to the instance.  The
 cached method result will be kept only as long as the instance is alive.
 
-The advantage is that when an instance is not longer used, the cached
+The advantage is that when an instance is no longer used, the cached
 method result will be released right away.  The disadvantage is that if
 instances accumulate, so too will the accumulated method results.  They
 can grow without bound.
@@ -1951,9 +1954,9 @@ relevant instance attributes are mutable, the *cached_property* approach
 can't be made to work because it cannot detect changes to the
 attributes.
 
-The *lru_cache* approach can be made to work, but the class needs to define the
-*__eq__* and *__hash__* methods so the cache can detect relevant attribute
-updates::
+To make the *lru_cache* approach work when the *station_id* is mutable,
+the class needs to define the *__eq__* and *__hash__* methods so that
+the cache can detect relevant attribute updates::
 
     class Weather:
         "Example with a mutable station identifier"
@@ -2092,7 +2095,7 @@ Jim Roskind suggests performing steps in the following order in each module:
 * ``import`` statements
 * active code (including globals that are initialized from imported values).
 
-van Rossum doesn't like this approach much because the imports appear in a
+Van Rossum doesn't like this approach much because the imports appear in a
 strange place, but it does work.
 
 Matthias Urlichs recommends restructuring your code so that the recursive import

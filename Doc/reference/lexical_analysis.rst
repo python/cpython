@@ -101,11 +101,10 @@ addition, if the first bytes of the file are the UTF-8 byte-order mark
 (``b'\xef\xbb\xbf'``), the declared file encoding is UTF-8 (this is supported,
 among others, by Microsoft's :program:`notepad`).
 
-If an encoding is declared, the encoding name must be recognized by Python. The
+If an encoding is declared, the encoding name must be recognized by Python
+(see :ref:`standard-encodings`). The
 encoding is used for all lexical analysis, including string literals, comments
 and identifiers.
-
-.. XXX there should be a list of supported encodings.
 
 
 .. _explicit-joining:
@@ -316,7 +315,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/14.0.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/15.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -324,8 +323,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-14.0.0 can be found at
-https://www.unicode.org/Public/14.0.0/ucd/DerivedCoreProperties.txt
+15.0.0 can be found at
+https://www.unicode.org/Public/15.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -469,10 +468,10 @@ String literals are described by the following lexical definitions:
    bytesescapeseq: "\" <any ASCII character>
 
 One syntactic restriction not indicated by these productions is that whitespace
-is not allowed between the :token:`stringprefix` or :token:`bytesprefix` and the
-rest of the literal. The source character set is defined by the encoding
-declaration; it is UTF-8 if no encoding declaration is given in the source file;
-see section :ref:`encodings`.
+is not allowed between the :token:`~python-grammar:stringprefix` or
+:token:`~python-grammar:bytesprefix` and the rest of the literal. The source
+character set is defined by the encoding declaration; it is UTF-8 if no encoding
+declaration is given in the source file; see section :ref:`encodings`.
 
 .. index:: triple-quoted string, Unicode Consortium, raw string
    single: """; string literal
@@ -481,9 +480,11 @@ see section :ref:`encodings`.
 In plain English: Both types of literals can be enclosed in matching single quotes
 (``'``) or double quotes (``"``).  They can also be enclosed in matching groups
 of three single or double quotes (these are generally referred to as
-*triple-quoted strings*).  The backslash (``\``) character is used to escape
-characters that otherwise have a special meaning, such as newline, backslash
-itself, or the quote character.
+*triple-quoted strings*). The backslash (``\``) character is used to give special
+meaning to otherwise ordinary characters like ``n``, which means 'newline' when
+escaped (``\n``). It can also be used to escape characters that otherwise have a
+special meaning, such as newline, backslash itself, or the quote character.
+See :ref:`escape sequences <escape-sequences>` below for examples.
 
 .. index::
    single: b'; bytes literal
@@ -542,6 +543,8 @@ retained), except that three unescaped quotes in a row terminate the literal.  (
    single: \u; escape sequence
    single: \U; escape sequence
 
+.. _escape-sequences:
+
 Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
 Standard C.  The recognized escape sequences are:
@@ -549,7 +552,7 @@ Standard C.  The recognized escape sequences are:
 +-----------------+---------------------------------+-------+
 | Escape Sequence | Meaning                         | Notes |
 +=================+=================================+=======+
-| ``\newline``    | Backslash and newline ignored   |       |
+| ``\``\ <newline>| Backslash and newline ignored   | \(1)  |
 +-----------------+---------------------------------+-------+
 | ``\\``          | Backslash (``\``)               |       |
 +-----------------+---------------------------------+-------+
@@ -571,10 +574,10 @@ Standard C.  The recognized escape sequences are:
 +-----------------+---------------------------------+-------+
 | ``\v``          | ASCII Vertical Tab (VT)         |       |
 +-----------------+---------------------------------+-------+
-| ``\ooo``        | Character with octal value      | (1,3) |
+| ``\ooo``        | Character with octal value      | (2,4) |
 |                 | *ooo*                           |       |
 +-----------------+---------------------------------+-------+
-| ``\xhh``        | Character with hex value *hh*   | (2,3) |
+| ``\xhh``        | Character with hex value *hh*   | (3,4) |
 +-----------------+---------------------------------+-------+
 
 Escape sequences only recognized in string literals are:
@@ -582,37 +585,53 @@ Escape sequences only recognized in string literals are:
 +-----------------+---------------------------------+-------+
 | Escape Sequence | Meaning                         | Notes |
 +=================+=================================+=======+
-| ``\N{name}``    | Character named *name* in the   | \(4)  |
+| ``\N{name}``    | Character named *name* in the   | \(5)  |
 |                 | Unicode database                |       |
 +-----------------+---------------------------------+-------+
-| ``\uxxxx``      | Character with 16-bit hex value | \(5)  |
+| ``\uxxxx``      | Character with 16-bit hex value | \(6)  |
 |                 | *xxxx*                          |       |
 +-----------------+---------------------------------+-------+
-| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(6)  |
+| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(7)  |
 |                 | *xxxxxxxx*                      |       |
 +-----------------+---------------------------------+-------+
 
 Notes:
 
 (1)
-   As in Standard C, up to three octal digits are accepted.
+   A backslash can be added at the end of a line to ignore the newline::
+
+      >>> 'This string will not include \
+      ... backslashes or newline characters.'
+      'This string will not include backslashes or newline characters.'
+
+   The same result can be achieved using :ref:`triple-quoted strings <strings>`,
+   or parentheses and :ref:`string literal concatenation <string-concatenation>`.
+
 
 (2)
-   Unlike in Standard C, exactly two hex digits are required.
+   As in Standard C, up to three octal digits are accepted.
+
+   .. versionchanged:: 3.11
+      Octal escapes with value larger than ``0o377`` produce a :exc:`DeprecationWarning`.
+      In a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 (3)
+   Unlike in Standard C, exactly two hex digits are required.
+
+(4)
    In a bytes literal, hexadecimal and octal escapes denote the byte with the
    given value. In a string literal, these escapes denote a Unicode character
    with the given value.
 
-(4)
+(5)
    .. versionchanged:: 3.3
       Support for name aliases [#]_ has been added.
 
-(5)
+(6)
    Exactly four hex digits are required.
 
-(6)
+(7)
    Any Unicode character can be encoded this way.  Exactly eight hex digits
    are required.
 
@@ -749,7 +768,7 @@ the final value of the whole string.
 
 Top-level format specifiers may include nested replacement fields. These nested
 fields may include their own conversion fields and :ref:`format specifiers
-<formatspec>`, but may not include more deeply-nested replacement fields. The
+<formatspec>`, but may not include more deeply nested replacement fields. The
 :ref:`format specifier mini-language <formatspec>` is the same as that used by
 the :meth:`str.format` method.
 
@@ -994,4 +1013,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] https://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/15.0.0/ucd/NameAliases.txt

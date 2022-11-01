@@ -746,6 +746,33 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "'\udc80' is an invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{'\uDC80': 10})
 
+    def test_weird_str_subclass(self):
+        class BadStr(str):
+            def __eq__(self, other):
+                return True
+            def __hash__(self):
+                # Guaranteed different hash
+                return str.__hash__(self) ^ 3
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
+
+    def test_weird_str_subclass2(self):
+        class BadStr(str):
+            def __eq__(self, other):
+                return False
+            def __hash__(self):
+                return str.__hash__(self)
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
+        with self.assertRaisesRegex(TypeError,
+            "invalid keyword argument for this function"):
+            getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
+
 
 class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
     from _testcapi import getargs_positional_only_and_keywords as getargs
@@ -877,9 +904,19 @@ class String_TestCase(unittest.TestCase):
     def test_s_hash_int(self):
         # "s#" without PY_SSIZE_T_CLEAN defined.
         from _testcapi import getargs_s_hash_int
-        self.assertRaises(SystemError, getargs_s_hash_int, "abc")
-        self.assertRaises(SystemError, getargs_s_hash_int, x=42)
-        # getargs_s_hash_int() don't raise SystemError because skipitem() is not called.
+        from _testcapi import getargs_s_hash_int2
+        buf = bytearray([1, 2])
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, "abc")
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, x=42)
+        self.assertRaises(SystemError, getargs_s_hash_int, buf, x="abc")
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, ("abc",))
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x=42)
+        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x="abc")
+        buf.append(3)  # still mutable -- not locked by a buffer export
+        # getargs_s_hash_int(buf) may not raise SystemError because skipitem()
+        # is not called. But it is an implementation detail.
+        # getargs_s_hash_int(buf)
+        # getargs_s_hash_int2(buf)
 
     def test_z(self):
         from _testcapi import getargs_z
@@ -1162,7 +1199,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'u#', 'Z#', 'y#', 'y*', 'w#', 'w*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w#', 'w*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2
@@ -1254,14 +1291,6 @@ class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
                     if name.startswith('test_') and name.endswith('_code'))
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_u_code(self):
-        _testcapi.test_u_code()
-
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_Z_code(self):
-        _testcapi.test_Z_code()
 
 
 if __name__ == "__main__":
