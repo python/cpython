@@ -697,7 +697,8 @@ elif not pythonpath_was_set:
             pythonpath.append(platstdlib_dir)
         if stdlib_dir:
             pythonpath.append(stdlib_dir)
-        pythonpath.append(executable_dir)
+        if executable_dir not in pythonpath:
+            pythonpath.append(executable_dir)
     else:
         if stdlib_dir:
             pythonpath.append(stdlib_dir)
