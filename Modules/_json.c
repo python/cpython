@@ -303,11 +303,13 @@ escape_unicode(PyObject *pystr)
 static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
+    /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
     PyObject *JSONDecodeError =
         _PyImport_GetModuleAttrString("json.decoder", "JSONDecodeError");
     if (JSONDecodeError == NULL) {
         return;
     }
+
     PyObject *exc;
     exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
     Py_DECREF(JSONDecodeError);
