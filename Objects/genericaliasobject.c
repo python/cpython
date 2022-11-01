@@ -209,6 +209,9 @@ _Py_make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
+        if (PyType_Check(t)) {
+            continue;
+        }
         int typevar = is_typevar(t);
         if (typevar < 0) {
             Py_DECREF(parameters);
@@ -260,6 +263,11 @@ _Py_make_parameters(PyObject *args)
 static PyObject *
 subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
 {
+    if (PyType_Check(obj)) {
+        Py_INCREF(obj);
+        return obj;
+    }
+
     _Py_IDENTIFIER(__parameters__);
     PyObject *subparams;
     if (_PyObject_LookupAttrId(obj, &PyId___parameters__, &subparams) < 0) {

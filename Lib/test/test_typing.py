@@ -2498,6 +2498,61 @@ class GenericTests(BaseTestCase):
                     class Foo(obj):
                         pass
 
+    def test_complex_subclasses(self):
+        T_co = TypeVar("T_co", covariant=True)
+
+        class Base(Generic[T_co]):
+            ...
+
+        T = TypeVar("T")
+
+        # see gh-94607: this fails in that bug
+        class Sub(Base, Generic[T]):
+            ...
+
+    def test_parameter_detection(self):
+        self.assertEqual(List[T].__parameters__, (T,))
+        self.assertEqual(List[List[T]].__parameters__, (T,))
+        class A:
+            __parameters__ = (T,)
+        # Bare classes should be skipped
+        for a in (List, list):
+            for b in (int, TypeVar, ParamSpec, types.GenericAlias, types.UnionType):
+                with self.subTest(generic=a, sub=b):
+                    with self.assertRaisesRegex(TypeError,
+                                                '.* is not a generic class|'
+                                                'no type variables left'):
+                        a[b][str]
+        # Duck-typing anything that looks like it has __parameters__.
+        # C version of GenericAlias
+        self.assertEqual(list[A()].__parameters__, (T,))
+
+    def test_non_generic_subscript(self):
+        T = TypeVar('T')
+        class G(Generic[T]):
+            pass
+
+        for s in (int, G, List, list,
+                  TypeVar, ParamSpec,
+                  types.GenericAlias, types.UnionType):
+
+            for t in Tuple, tuple:
+                with self.subTest(tuple=t, sub=s):
+                    self.assertEqual(t[s, T][int], t[s, int])
+                    self.assertEqual(t[T, s][int], t[int, s])
+                    a = t[s]
+                    with self.assertRaises(TypeError):
+                        a[int]
+
+            for c in Callable, collections.abc.Callable:
+                with self.subTest(callable=c, sub=s):
+                    self.assertEqual(c[[s], T][int], c[[s], int])
+                    self.assertEqual(c[[T], s][int], c[[int], s])
+                    a = c[[s], s]
+                    with self.assertRaises(TypeError):
+                        a[int]
+
+
 class ClassVarTests(BaseTestCase):
 
     def test_basics(self):
