@@ -186,6 +186,7 @@ jobs:
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         sudo apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`
+        sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
         perf record /bin/ls
     - name: Configure OpenSSL env vars
       run: |
