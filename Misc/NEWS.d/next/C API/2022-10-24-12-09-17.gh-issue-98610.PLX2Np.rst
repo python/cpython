@@ -1,0 +1,9 @@
+Some configurable capabilities of sub-interpreters have changed.
+They always allow subprocesses (:mod:`subprocess`) now, whereas before
+subprocesses could be optionally disaallowed for a sub-interpreter.
+Instead :func:`os.exec` can now be disallowed.
+Disallowing daemon threads is now supported.  Disallowing all threads
+is still allowed, but is never done by default.
+Note that the optional restrictions are only available through
+``_Py_NewInterpreterFromConfig()``, which isn't a public API.
+They do not affect the main interpreter, nor :c:func:`Py_NewInterpreter`.

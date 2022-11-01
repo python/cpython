@@ -451,6 +451,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
 
+    for (int i=0; i < DICT_MAX_WATCHERS; i++) {
+        interp->dict_watchers[i] = NULL;
+    }
+
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
@@ -792,8 +796,9 @@ init_threadstate(PyThreadState *tstate,
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
-    tstate->recursion_limit = interp->ceval.recursion_limit,
-    tstate->recursion_remaining = interp->ceval.recursion_limit,
+    tstate->py_recursion_limit = interp->ceval.recursion_limit,
+    tstate->py_recursion_remaining = interp->ceval.recursion_limit,
+    tstate->c_recursion_remaining = C_RECURSION_LIMIT;
 
     tstate->exc_info = &tstate->exc_state;
 
@@ -2171,6 +2176,14 @@ _Py_GetConfig(void)
     _Py_EnsureTstateNotNULL(tstate);
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
+
+
+int
+_PyInterpreterState_HasFeature(PyInterpreterState *interp, unsigned long feature)
+{
+    return ((interp->feature_flags & feature) != 0);
+}
+
 
 #define MINIMUM_OVERHEAD 1000
 

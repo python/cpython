@@ -1218,7 +1218,7 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
 
     /* Reject too low new limit if the current recursion depth is higher than
        the new low-water mark. */
-    int depth = tstate->recursion_limit - tstate->recursion_remaining;
+    int depth = tstate->py_recursion_limit - tstate->py_recursion_remaining;
     if (depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
@@ -1717,7 +1717,7 @@ sys_get_int_max_str_digits_impl(PyObject *module)
 /*[clinic end generated code: output=0042f5e8ae0e8631 input=8dab13e2023e60d5]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromSsize_t(interp->int_max_str_digits);
+    return PyLong_FromLong(interp->long_state.max_str_digits);
 }
 
 /*[clinic input]
@@ -1734,7 +1734,7 @@ sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if ((!maxdigits) || (maxdigits >= _PY_LONG_MAX_STR_DIGITS_THRESHOLD)) {
-        tstate->interp->int_max_str_digits = maxdigits;
+        tstate->interp->long_state.max_str_digits = maxdigits;
         Py_RETURN_NONE;
     } else {
         PyErr_Format(
@@ -2014,11 +2014,6 @@ sys__debugmallocstats_impl(PyObject *module)
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
-#ifdef Py_STATS
-/* Defined in ceval.c because it uses static globals in that file */
-extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
@@ -2132,12 +2127,12 @@ sys.activate_stack_trampoline
     backend: str
     /
 
-Activate the perf profiler trampoline.
+Activate stack profiler trampoline *backend*.
 [clinic start generated code]*/
 
 static PyObject *
 sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
-/*[clinic end generated code: output=5783cdeb51874b43 input=b09020e3a17c78c5]*/
+/*[clinic end generated code: output=5783cdeb51874b43 input=a12df928758a82b4]*/
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     if (strcmp(backend, "perf") == 0) {
@@ -2168,12 +2163,14 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 /*[clinic input]
 sys.deactivate_stack_trampoline
 
-Dectivate the perf profiler trampoline.
+Deactivate the current stack profiler trampoline backend.
+
+If no stack profiler is activated, this function has no effect.
 [clinic start generated code]*/
 
 static PyObject *
 sys_deactivate_stack_trampoline_impl(PyObject *module)
-/*[clinic end generated code: output=b50da25465df0ef1 input=491f4fc1ed615736]*/
+/*[clinic end generated code: output=b50da25465df0ef1 input=9f629a6be9fe7fc8]*/
 {
     if  (_PyPerfTrampoline_Init(0) < 0) {
         return NULL;
@@ -2184,12 +2181,12 @@ sys_deactivate_stack_trampoline_impl(PyObject *module)
 /*[clinic input]
 sys.is_stack_trampoline_active
 
-Returns *True* if the perf profiler trampoline is active.
+Return *True* if a stack profiler trampoline is active.
 [clinic start generated code]*/
 
 static PyObject *
 sys_is_stack_trampoline_active_impl(PyObject *module)
-/*[clinic end generated code: output=ab2746de0ad9d293 input=061fa5776ac9dd59]*/
+/*[clinic end generated code: output=ab2746de0ad9d293 input=29616b7bf6a0b703]*/
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     if (_PyIsPerfTrampolineActive()) {
@@ -2217,9 +2214,6 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
-#ifdef Py_STATS
-    {"getdxp", _Py_GetDXProfile, METH_VARARGS},
-#endif
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
     SYS__GETQUICKENEDCOUNT_METHODDEF
@@ -2810,7 +2804,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(preconfig->utf8_mode);
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
-    SetFlag(_Py_global_config_int_max_str_digits);
+    SetFlag(config->int_max_str_digits);
 #undef SetFlagObj
 #undef SetFlag
     return 0;

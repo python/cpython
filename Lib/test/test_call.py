@@ -140,9 +140,9 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                itertools.product, 0, repeat=1, foo=2)
 
     def test_varargs15_kw(self):
-        msg = r"^ImportError\(\) takes at most 2 keyword arguments \(3 given\)$"
+        msg = r"^ImportError\(\) takes at most 3 keyword arguments \(4 given\)$"
         self.assertRaisesRegex(TypeError, msg,
-                               ImportError, 0, name=1, path=2, foo=3)
+                               ImportError, 0, name=1, path=2, name_from=3, foo=3)
 
     def test_varargs16_kw(self):
         msg = r"^min\(\) takes at most 2 keyword arguments \(3 given\)$"
@@ -812,11 +812,43 @@ class TestPEP590(unittest.TestCase):
             assert_equal("overridden", get_a(x))
 
     @requires_limited_api
-    def test_vectorcall_limited(self):
+    def test_vectorcall_limited_incoming(self):
         from _testcapi import pyobject_vectorcall
         obj = _testcapi.LimitedVectorCallClass()
         self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
 
+    @requires_limited_api
+    def test_vectorcall_limited_outgoing(self):
+        from _testcapi import call_vectorcall
+
+        args_captured = []
+        kwargs_captured = []
+
+        def f(*args, **kwargs):
+            args_captured.append(args)
+            kwargs_captured.append(kwargs)
+            return "success"
+
+        self.assertEqual(call_vectorcall(f), "success")
+        self.assertEqual(args_captured, [("foo",)])
+        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
+
+    @requires_limited_api
+    def test_vectorcall_limited_outgoing_method(self):
+        from _testcapi import call_vectorcall_method
+
+        args_captured = []
+        kwargs_captured = []
+
+        class TestInstance:
+            def f(self, *args, **kwargs):
+                args_captured.append(args)
+                kwargs_captured.append(kwargs)
+                return "success"
+
+        self.assertEqual(call_vectorcall_method(TestInstance()), "success")
+        self.assertEqual(args_captured, [("foo",)])
+        self.assertEqual(kwargs_captured, [{"baz": "bar"}])
 
 class A:
     def method_two_args(self, x, y):
@@ -863,6 +895,44 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         msg = "A.method_two_args() got multiple values for argument 'x'"
         with self.check_raises_type_error(msg):
             A().method_two_args("x", "y", x="oops")
+
+@cpython_only
+class TestRecursion(unittest.TestCase):
+
+    def test_super_deep(self):
+
+        def recurse(n):
+            if n:
+                recurse(n-1)
+
+        def py_recurse(n, m):
+            if n:
+                py_recurse(n-1, m)
+            else:
+                c_py_recurse(m-1)
+
+        def c_recurse(n):
+            if n:
+                _testcapi.pyobject_fastcall(c_recurse, (n-1,))
+
+        def c_py_recurse(m):
+            if m:
+                _testcapi.pyobject_fastcall(py_recurse, (1000, m))
+
+        depth = sys.getrecursionlimit()
+        sys.setrecursionlimit(100_000)
+        try:
+            recurse(90_000)
+            with self.assertRaises(RecursionError):
+                recurse(101_000)
+            c_recurse(100)
+            with self.assertRaises(RecursionError):
+                c_recurse(90_000)
+            c_py_recurse(90)
+            with self.assertRaises(RecursionError):
+                c_py_recurse(100_000)
+        finally:
+            sys.setrecursionlimit(depth)
 
 
 if __name__ == "__main__":

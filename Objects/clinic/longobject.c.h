@@ -88,7 +88,8 @@ int___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(int___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
-"\n");
+"\n"
+"Convert to a string according to format_spec.");
 
 #define INT___FORMAT___METHODDEF    \
     {"__format__", (PyCFunction)int___format__, METH_O, int___format____doc__},
@@ -466,4 +467,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b29b4afc65e3290e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf6074ecf2f32cf4 input=a9049054013a1b77]*/
