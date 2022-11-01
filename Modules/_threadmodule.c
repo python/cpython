@@ -1103,6 +1103,24 @@ thread_run(void *boot_raw)
 }
 
 static PyObject *
+thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+PyDoc_STRVAR(daemon_threads_allowed_doc,
+"daemon_threads_allowed()\n\
+\n\
+Return True if daemon threads are allowed in the current interpreter,\n\
+and False otherwise.\n");
+
+static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
@@ -1543,6 +1561,8 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, start_new_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
+    {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
+     METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_doc},
     {"allocate",                thread_PyThread_allocate_lock,

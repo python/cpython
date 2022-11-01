@@ -149,6 +149,11 @@ pathlib
   all file or directory names within them, similar to :func:`os.walk`.
   (Contributed by Stanislav Zmiev in :gh:`90385`.)
 
+* Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
+  to allow the insertion of ``..`` entries in the result; this behavior is
+  more consistent with :func:`os.path.relpath`.
+  (Contributed by Domenico Ragusa in :issue:`40358`.)
+
 dis
 ---
 
