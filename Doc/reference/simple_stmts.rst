@@ -330,7 +330,7 @@ statement, of a variable or attribute annotation and an optional assignment stat
    annotated_assignment_stmt: `augtarget` ":" `expression`
                             : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target is allowed.
+The difference from normal :ref:`assignment` is that only a single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
