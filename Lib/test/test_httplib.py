@@ -553,6 +553,27 @@ class BasicTest(TestCase):
                 obj.phrase = phrase
                 obj.description = description
                 return obj
+
+            @property
+            def is_informational(self):
+                return 100 <= self <= 199
+
+            @property
+            def is_success(self):
+                return 200 <= self <= 299
+
+            @property
+            def is_redirection(self):
+                return 300 <= self <= 399
+
+            @property
+            def is_client_error(self):
+                return 400 <= self <= 499
+
+            @property
+            def is_server_error(self):
+                return 500 <= self <= 599
+
             # informational
             CONTINUE = 100, 'Continue', 'Request received, please continue'
             SWITCHING_PROTOCOLS = (101, 'Switching Protocols',
@@ -669,6 +690,30 @@ class BasicTest(TestCase):
                 'The client needs to authenticate to gain network access')
         enum._test_simple_enum(CheckedHTTPStatus, HTTPStatus)
 
+    def test_httpstatus_range(self):
+        """Checks that the statuses are in the 100-599 range"""
+
+        for member in HTTPStatus.__members__.values():
+            self.assertGreaterEqual(member, 100)
+            self.assertLessEqual(member, 599)
+
+    def test_httpstatus_category(self):
+        """Checks that the statuses belong to the standard categories"""
+
+        categories = (
+            ((100, 199), "is_informational"),
+            ((200, 299), "is_success"),
+            ((300, 399), "is_redirection"),
+            ((400, 499), "is_client_error"),
+            ((500, 599), "is_server_error"),
+        )
+        for member in HTTPStatus.__members__.values():
+            for (lower, upper), category in categories:
+                category_indicator = getattr(member, category)
+                if lower <= member <= upper:
+                    self.assertTrue(category_indicator)
+                else:
+                    self.assertFalse(category_indicator)
 
     def test_status_lines(self):
         # Test HTTP status lines

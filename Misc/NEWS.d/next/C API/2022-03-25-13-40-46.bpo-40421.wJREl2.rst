@@ -1,3 +1,0 @@
-Add ``PyFrame_GetBuiltins``, ``PyFrame_GetGenerator`` and
-``PyFrame_GetGlobals`` C-API functions to access frame object attributes
-safely from C code.

@@ -210,3 +210,10 @@ def clear_caches():
     else:
         for f in typing._cleanups:
             f()
+
+    try:
+        fractions = sys.modules['fractions']
+    except KeyError:
+        pass
+    else:
+        fractions._hash_algorithm.cache_clear()

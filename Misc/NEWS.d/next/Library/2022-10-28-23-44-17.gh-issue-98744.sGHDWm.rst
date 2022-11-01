@@ -1,0 +1,2 @@
+Prevent crashing in :mod:`traceback` when retrieving the byte-offset for
+some source files that contain certain unicode characters.

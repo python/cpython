@@ -10,9 +10,7 @@ import calendar
 import threading
 import socket
 
-from test.support import (verbose,
-                          run_with_tz, run_with_locale, cpython_only,
-                          requires_working_socket)
+from test.support import verbose, run_with_tz, run_with_locale, cpython_only
 from test.support import hashlib_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -939,6 +937,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
     @threading_helper.reap_threads
     @cpython_only
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
     def test_dump_ur(self):
         # See: http://bugs.python.org/issue26543
         untagged_resp_dict = {'READ-WRITE': [b'']}

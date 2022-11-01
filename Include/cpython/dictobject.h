@@ -46,7 +46,14 @@ PyAPI_FUNC(int) _PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);
 
 /* Get the number of items of a dictionary. */
-#define PyDict_GET_SIZE(mp)  (assert(PyDict_Check(mp)),((PyDictObject *)mp)->ma_used)
+static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
+    PyDictObject *mp;
+    assert(PyDict_Check(op));
+    mp = _Py_CAST(PyDictObject*, op);
+    return mp->ma_used;
+}
+#define PyDict_GET_SIZE(op) PyDict_GET_SIZE(_PyObject_CAST(op))
+
 PyAPI_FUNC(int) _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
@@ -76,3 +83,27 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
+
+/* Dictionary watchers */
+
+typedef enum {
+    PyDict_EVENT_ADDED,
+    PyDict_EVENT_MODIFIED,
+    PyDict_EVENT_DELETED,
+    PyDict_EVENT_CLONED,
+    PyDict_EVENT_CLEARED,
+    PyDict_EVENT_DEALLOCATED,
+} PyDict_WatchEvent;
+
+// Callback to be invoked when a watched dict is cleared, dealloced, or modified.
+// In clear/dealloc case, key and new_value will be NULL. Otherwise, new_value will be the
+// new value for key, NULL if key is being deleted.
+typedef int(*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject* dict, PyObject* key, PyObject* new_value);
+
+// Register/unregister a dict-watcher callback
+PyAPI_FUNC(int) PyDict_AddWatcher(PyDict_WatchCallback callback);
+PyAPI_FUNC(int) PyDict_ClearWatcher(int watcher_id);
+
+// Mark given dictionary as "watched" (callback will be called if it is modified)
+PyAPI_FUNC(int) PyDict_Watch(int watcher_id, PyObject* dict);
+PyAPI_FUNC(int) PyDict_Unwatch(int watcher_id, PyObject* dict);

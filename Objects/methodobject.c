@@ -2,7 +2,7 @@
 /* Method object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -403,7 +403,7 @@ typedef void (*funcptr)(void);
 static inline funcptr
 cfunction_enter_call(PyThreadState *tstate, PyObject *func)
 {
-    if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
+    if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
         return NULL;
     }
     return (funcptr)PyCFunction_GET_FUNCTION(func);
@@ -425,7 +425,7 @@ cfunction_vectorcall_FASTCALL(
         return NULL;
     }
     PyObject *result = meth(PyCFunction_GET_SELF(func), args, nargs);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -441,7 +441,7 @@ cfunction_vectorcall_FASTCALL_KEYWORDS(
         return NULL;
     }
     PyObject *result = meth(PyCFunction_GET_SELF(func), args, nargs, kwnames);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -457,7 +457,7 @@ cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
         return NULL;
     }
     PyObject *result = meth(PyCFunction_GET_SELF(func), cls, args, nargs, kwnames);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -485,7 +485,7 @@ cfunction_vectorcall_NOARGS(
     }
     PyObject *result = _PyCFunction_TrampolineCall(
         meth, PyCFunction_GET_SELF(func), NULL);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 
@@ -513,7 +513,7 @@ cfunction_vectorcall_O(
     }
     PyObject *result = _PyCFunction_TrampolineCall(
         meth, PyCFunction_GET_SELF(func), args[0]);
-    _Py_LeaveRecursiveCall(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return result;
 }
 

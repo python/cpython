@@ -118,7 +118,7 @@ This module defines the following constants and functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
    .. versionadded:: 3.8
 
@@ -140,7 +140,9 @@ This module defines the following constants and functions:
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
 
-   .. availability:: Windows, systems with POSIX threads.
+   .. availability:: Windows, pthreads.
+
+      Unix platforms with POSIX threads support.
 
 
 .. data:: TIMEOUT_MAX
@@ -155,21 +157,21 @@ This module defines the following constants and functions:
 Lock objects have the following methods:
 
 
-.. method:: lock.acquire(waitflag=1, timeout=-1)
+.. method:: lock.acquire(blocking=True, timeout=-1)
 
    Without any optional argument, this method acquires the lock unconditionally, if
    necessary waiting until it is released by another thread (only one thread at a
    time can acquire a lock --- that's their reason for existence).
 
-   If the integer *waitflag* argument is present, the action depends on its
-   value: if it is zero, the lock is only acquired if it can be acquired
-   immediately without waiting, while if it is nonzero, the lock is acquired
+   If the *blocking* argument is present, the action depends on its
+   value: if it is False, the lock is only acquired if it can be acquired
+   immediately without waiting, while if it is True, the lock is acquired
    unconditionally as above.
 
    If the floating-point *timeout* argument is present and positive, it
    specifies the maximum wait time in seconds before returning.  A negative
    *timeout* argument specifies an unbounded wait.  You cannot specify
-   a *timeout* if *waitflag* is zero.
+   a *timeout* if *blocking* is False.
 
    The return value is ``True`` if the lock is acquired successfully,
    ``False`` if not.

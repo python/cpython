@@ -124,9 +124,7 @@ square brackets, is recursively defined as follows.
 * If the target list is a single target with no trailing comma,
   optionally in parentheses, the object is assigned to that target.
 
-* Else: The object must be an iterable with the same number of
-  items as there are targets in the target list, and the items are assigned,
-  from left to right, to the corresponding targets.
+* Else:
 
   * If the target list contains one target prefixed with an asterisk, called a
     "starred" target: The object must be an iterable with at least as many items
@@ -803,9 +801,9 @@ The :keyword:`from` form uses a slightly more complex process:
 Examples::
 
    import foo                 # foo imported and bound locally
-   import foo.bar.baz         # foo.bar.baz imported, foo bound locally
-   import foo.bar.baz as fbb  # foo.bar.baz imported and bound as fbb
-   from foo.bar import baz    # foo.bar.baz imported and bound as baz
+   import foo.bar.baz         # foo, foo.bar, and foo.bar.baz imported, foo bound locally
+   import foo.bar.baz as fbb  # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as fbb
+   from foo.bar import baz    # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as baz
    from foo import attr       # foo imported and foo.attr bound as attr
 
 .. index:: single: * (asterisk); import statement
@@ -996,19 +994,11 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-.. XXX add when implemented
-                : ["=" (`target_list` "=")+ starred_expression]
-                : | "nonlocal" identifier augop expression_list
-
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to
 previously bound variables in the nearest enclosing scope excluding globals.
 This is important because the default behavior for binding is to search the
 local namespace first.  The statement allows encapsulated code to rebind
 variables outside of the local scope besides the global (module) scope.
-
-.. XXX not implemented
-   The :keyword:`nonlocal` statement may prepend an assignment or augmented
-   assignment, but not an expression.
 
 Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
 :keyword:`global` statement, must refer to pre-existing bindings in an

@@ -1,16 +1,19 @@
 /* Generator object implementation */
 
+#define _PY_INTERPRETER
+
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
+#include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode.h"        // _PyOpcode_Deopt
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_frame.h"         // _PyInterpreterFrame
-#include "frameobject.h"          // PyFrameObject
 #include "structmember.h"         // PyMemberDef
 #include "opcode.h"               // SEND
+#include "pystats.h"
 
 static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
@@ -216,6 +219,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     gen->gi_frame_state = FRAME_EXECUTING;
+    EVAL_CALL_STAT_INC(EVAL_CALL_GENERATOR);
     result = _PyEval_EvalFrame(tstate, frame, exc);
     if (gen->gi_frame_state == FRAME_EXECUTING) {
         gen->gi_frame_state = FRAME_COMPLETED;
@@ -352,14 +356,14 @@ _PyGen_yf(PyGenObject *gen)
     if (gen->gi_frame_state < FRAME_CLEARED) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
 
-        if (frame->f_lasti < 1) {
+        if (gen->gi_frame_state == FRAME_CREATED) {
             /* Return immediately if the frame didn't start yet. SEND
                always come after LOAD_CONST: a code object should not start
                with SEND */
             assert(_Py_OPCODE(_PyCode_CODE(gen->gi_code)[0]) != SEND);
             return NULL;
         }
-        _Py_CODEUNIT next = _PyCode_CODE(gen->gi_code)[frame->f_lasti + 1];
+        _Py_CODEUNIT next = frame->prev_instr[1];
         if (_PyOpcode_Deopt[_Py_OPCODE(next)] != RESUME || _Py_OPARG(next) < 2)
         {
             /* Not in a yield from */
@@ -414,7 +418,9 @@ PyDoc_STRVAR(throw_doc,
 throw(type[,value[,tb]])\n\
 \n\
 Raise exception in generator, return next yielded value or raise\n\
-StopIteration.");
+StopIteration.\n\
+the (type, val, tb) signature is deprecated, \n\
+and may be removed in a future version of Python.");
 
 static PyObject *
 _gen_throw(PyGenObject *gen, int close_on_genexit,
@@ -481,28 +487,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         }
         Py_DECREF(yf);
         if (!ret) {
-            PyObject *val;
-            /* Pop subiterator from stack */
-            assert(gen->gi_frame_state < FRAME_CLEARED);
-            ret = _PyFrame_StackPop((_PyInterpreterFrame *)gen->gi_iframe);
-            assert(ret == yf);
-            Py_DECREF(ret);
-            // XXX: Performing this jump ourselves is awkward and problematic.
-            // See https://github.com/python/cpython/pull/31968.
-            /* Termination repetition of SEND loop */
-            assert(frame->f_lasti >= 0);
-            _Py_CODEUNIT *code = _PyCode_CODE(gen->gi_code);
-            /* Backup to SEND */
-            frame->f_lasti--;
-            assert(_Py_OPCODE(code[frame->f_lasti]) == SEND);
-            int jump = _Py_OPARG(code[frame->f_lasti]);
-            frame->f_lasti += jump;
-            if (_PyGen_FetchStopIterationValue(&val) == 0) {
-                ret = gen_send(gen, val);
-                Py_DECREF(val);
-            } else {
-                ret = gen_send_ex(gen, Py_None, 1, 0);
-            }
+            ret = gen_send_ex(gen, Py_None, 1, 0);
         }
         return ret;
     }
@@ -575,6 +560,14 @@ gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
 
     if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
         return NULL;
+    }
+    if (nargs > 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "the (type, exc, tb) signature of throw() is deprecated, "
+                            "use the single-arg signature instead.",
+                            1) < 0) {
+            return NULL;
+        }
     }
     typ = args[0];
     if (nargs == 3) {
@@ -823,7 +816,7 @@ PyDoc_STRVAR(sizeof__doc__,
 
 static PyMethodDef gen_methods[] = {
     {"send",(PyCFunction)gen_send, METH_O, send_doc},
-    {"throw",(PyCFunction)(void(*)(void))gen_throw, METH_FASTCALL, throw_doc},
+    {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {NULL, NULL}        /* Sentinel */
@@ -1164,14 +1157,17 @@ PyDoc_STRVAR(coro_throw_doc,
 throw(type[,value[,traceback]])\n\
 \n\
 Raise exception in coroutine, return next iterated value or raise\n\
-StopIteration.");
+StopIteration.\n\
+the (type, val, tb) signature is deprecated, \n\
+and may be removed in a future version of Python.");
+
 
 PyDoc_STRVAR(coro_close_doc,
 "close() -> raise GeneratorExit inside coroutine.");
 
 static PyMethodDef coro_methods[] = {
     {"send",(PyCFunction)gen_send, METH_O, coro_send_doc},
-    {"throw",(PyCFunction)(void(*)(void))gen_throw, METH_FASTCALL, coro_throw_doc},
+    {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {NULL, NULL}        /* Sentinel */
@@ -1278,7 +1274,7 @@ coro_wrapper_traverse(PyCoroWrapper *cw, visitproc visit, void *arg)
 
 static PyMethodDef coro_wrapper_methods[] = {
     {"send",(PyCFunction)coro_wrapper_send, METH_O, coro_send_doc},
-    {"throw",(PyCFunction)(void(*)(void))coro_wrapper_throw,
+    {"throw",_PyCFunction_CAST(coro_wrapper_throw),
     METH_FASTCALL, coro_throw_doc},
     {"close",(PyCFunction)coro_wrapper_close, METH_NOARGS, coro_close_doc},
     {NULL, NULL}        /* Sentinel */
@@ -1344,9 +1340,8 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     frame = current_frame;
     for (int i = 0; i < frame_count; ++i) {
         PyCodeObject *code = frame->f_code;
-        PyObject *frameinfo = Py_BuildValue("OiO",
-                                            code->co_filename,
-                                            PyCode_Addr2Line(frame->f_code, frame->f_lasti*sizeof(_Py_CODEUNIT)),
+        int line = _PyInterpreterFrame_GetLine(frame);
+        PyObject *frameinfo = Py_BuildValue("OiO", code->co_filename, line,
                                             code->co_name);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
@@ -1518,6 +1513,14 @@ async_gen_aclose(PyAsyncGenObject *o, PyObject *arg)
 static PyObject *
 async_gen_athrow(PyAsyncGenObject *o, PyObject *args)
 {
+    if (PyTuple_GET_SIZE(args) > 1) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "the (type, exc, tb) signature of athrow() is deprecated, "
+                            "use the single-arg signature instead.",
+                            1) < 0) {
+            return NULL;
+        }
+    }
     if (async_gen_init_hooks(o)) {
         return NULL;
     }
@@ -1555,7 +1558,12 @@ PyDoc_STRVAR(async_asend_doc,
 "asend(v) -> send 'v' in generator.");
 
 PyDoc_STRVAR(async_athrow_doc,
-"athrow(typ[,val[,tb]]) -> raise exception in generator.");
+"athrow(value)\n\
+athrow(type[,value[,tb]])\n\
+\n\
+raise exception in generator.\n\
+the (type, val, tb) signature is deprecated, \n\
+and may be removed in a future version of Python.");
 
 static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
@@ -1834,7 +1842,7 @@ async_gen_asend_close(PyAsyncGenASend *o, PyObject *args)
 
 static PyMethodDef async_gen_asend_methods[] = {
     {"send", (PyCFunction)async_gen_asend_send, METH_O, send_doc},
-    {"throw", (PyCFunction)(void(*)(void))async_gen_asend_throw, METH_FASTCALL, throw_doc},
+    {"throw", _PyCFunction_CAST(async_gen_asend_throw), METH_FASTCALL, throw_doc},
     {"close", (PyCFunction)async_gen_asend_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1945,6 +1953,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
     if (state->value_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         state->value_freelist[state->value_numfree++] = o;
+        OBJECT_STAT_INC(to_freelist);
     }
     else
 #endif
@@ -2021,6 +2030,7 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
     if (state->value_numfree) {
         state->value_numfree--;
         o = state->value_freelist[state->value_numfree];
+        OBJECT_STAT_INC(from_freelist);
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         _Py_NewReference((PyObject*)o);
     }
@@ -2251,7 +2261,7 @@ async_gen_athrow_close(PyAsyncGenAThrow *o, PyObject *args)
 
 static PyMethodDef async_gen_athrow_methods[] = {
     {"send", (PyCFunction)async_gen_athrow_send, METH_O, send_doc},
-    {"throw", (PyCFunction)(void(*)(void))async_gen_athrow_throw,
+    {"throw", _PyCFunction_CAST(async_gen_athrow_throw),
     METH_FASTCALL, throw_doc},
     {"close", (PyCFunction)async_gen_athrow_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */

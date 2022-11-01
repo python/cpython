@@ -404,6 +404,19 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
 class CZoneInfoTest(ZoneInfoTest):
     module = c_zoneinfo
 
+    def test_signatures(self):
+        """Ensure that C module has valid method signatures."""
+        import inspect
+
+        must_have_signatures = (
+            self.klass.clear_cache,
+            self.klass.no_cache,
+            self.klass.from_file,
+        )
+        for method in must_have_signatures:
+            with self.subTest(method=method):
+                inspect.Signature.from_callable(method)
+
     def test_fold_mutate(self):
         """Test that fold isn't mutated when no change is necessary.
 

@@ -274,7 +274,7 @@ static PyMethodDef StateAccessType_methods[] = {
     _TESTMULTIPHASE_STATEACCESSTYPE_INCREMENT_COUNT_CLINIC_METHODDEF
     {
         "increment_count_noclinic",
-        (PyCFunction)(void(*)(void))_StateAccessType_increment_count_noclinic,
+        _PyCFunction_CAST(_StateAccessType_increment_count_noclinic),
         METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
         _StateAccessType_decrement_count__doc__
     },
@@ -796,7 +796,7 @@ static PyModuleDef def_exec_raise = TEST_MODULE_DEF(
     "_testmultiphase_exec_raise", slots_exec_raise, NULL);
 
 PyMODINIT_FUNC
-PyInit__testmultiphase_exec_raise(PyObject *mod)
+PyInit__testmultiphase_exec_raise(void)
 {
     return PyModuleDef_Init(&def_exec_raise);
 }

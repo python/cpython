@@ -17,9 +17,8 @@ extern "C" {
 #include "pycore_dict.h"          // struct _Py_dict_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
-#include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
-#include "pycore_gil.h"           // struct _gil_runtime_state
+#include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
@@ -50,10 +49,9 @@ struct _ceval_state {
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
+    /* The GC is ready to be executed */
+    _Py_atomic_int gc_scheduled;
     struct _pending_calls pending;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state gil;
-#endif
 };
 
 
@@ -71,18 +69,9 @@ struct atexit_state {
 };
 
 
-/* Frame evaluation API (PEP 523) */
-
-typedef PyObject* (*_PyFrameEvalFunction) (
-    PyThreadState *tstate,
-    struct _PyInterpreterFrame *frame,
-    int throwflag);
-
-PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
-    PyInterpreterState *interp);
-PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
-    PyInterpreterState *interp,
-    _PyFrameEvalFunction eval_frame);
+struct _Py_long_state {
+    int max_str_digits;
+};
 
 
 /* interpreter state */
@@ -90,7 +79,7 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
-   The PyInterpreterState typedef is in Include/pystate.h.
+   The PyInterpreterState typedef is in Include/pytypedefs.h.
    */
 struct _is {
 
@@ -154,6 +143,7 @@ struct _is {
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
+    unsigned long feature_flags;
 
     PyObject *dict;  /* Stores per-interpreter state */
 
@@ -161,6 +151,8 @@ struct _is {
     PyObject *import_func;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
+
+    PyDict_WatchCallback dict_watchers[DICT_MAX_WATCHERS];
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
@@ -175,9 +167,11 @@ struct _is {
     struct atexit_state atexit;
 
     PyObject *audit_hooks;
+    PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
 
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
+    struct _Py_long_state long_state;
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
@@ -190,7 +184,7 @@ struct _is {
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
-    struct type_cache type_cache;
+    struct types_state types;
     struct callable_cache callable_cache;
 
     /* The following fields are here to avoid allocation during init.

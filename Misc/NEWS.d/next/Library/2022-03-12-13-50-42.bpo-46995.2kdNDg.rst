@@ -1,2 +1,0 @@
-Deprecate missing :meth:`asyncio.Task.set_name` for third-party task
-implementations, schedule making it mandatory in Python 3.13.
