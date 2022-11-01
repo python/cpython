@@ -765,13 +765,71 @@ serialization.
 Running a logging socket listener in production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To run a logging listener in production, you may need to use a process-management tool
-such as `Supervisor <http://supervisord.org/>`_. `Here
-<https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
-provides the bare-bones files to run the above functionality using Supervisor: you
-will need to change the ``/path/to/`` parts in the Gist to reflect the actual paths you
-want to use.
+.. _socket-listener-gist: https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b
 
+To run a logging listener in production, you may need to use a
+process-management tool such as `Supervisor <http://supervisord.org/>`_.
+`Here is a Gist <socket-listener-gist_>`__
+which provides the bare-bones files to run the above functionality using
+Supervisor. It consists of the following files:
+
++-------------------------+----------------------------------------------------+
+| File                    | Purpose                                            |
++=========================+====================================================+
+| :file:`prepare.sh`      | A Bash script to prepare the environment for       |
+|                         | testing                                            |
++-------------------------+----------------------------------------------------+
+| :file:`supervisor.conf` | The Supervisor configuration file, which has       |
+|                         | entries for the listener and a multi-process web   |
+|                         | application                                        |
++-------------------------+----------------------------------------------------+
+| :file:`ensure_app.sh`   | A Bash script to ensure that Supervisor is running |
+|                         | with the above configuration                       |
++-------------------------+----------------------------------------------------+
+| :file:`log_listener.py` | The socket listener program which receives log     |
+|                         | events and records them to a file                  |
++-------------------------+----------------------------------------------------+
+| :file:`main.py`         | A simple web application which performs logging    |
+|                         | via a socket connected to the listener             |
++-------------------------+----------------------------------------------------+
+| :file:`webapp.json`     | A JSON configuration file for the web application  |
++-------------------------+----------------------------------------------------+
+| :file:`client.py`       | A Python script to exercise the web application    |
++-------------------------+----------------------------------------------------+
+
+The web application uses `Gunicorn <https://gunicorn.org/>`_, which is a
+popular web application server that starts multiple worker processes to handle
+requests. This example setup shows how the workers can write to the same log file
+without conflicting with one another --- they all go through the socket listener.
+
+To test these files, do the following in a POSIX environment:
+
+#. Download `the Gist <socket-listener-gist_>`__
+   as a ZIP archive using the :guilabel:`Download ZIP` button.
+
+#. Unzip the above files from the archive into a scratch directory.
+
+#. In the scratch directory, run ``bash prepare.sh`` to get things ready.
+   This creates a :file:`run` subdirectory to contain Supervisor-related and
+   log files, and a :file:`venv` subdirectory to contain a virtual environment
+   into which ``bottle``, ``gunicorn`` and ``supervisor`` are installed.
+
+#. Run ``bash ensure_app.sh`` to ensure that Supervisor is running with
+   the above configuration.
+
+#. Run ``venv/bin/python client.py`` to exercise the web application,
+   which will lead to records being written to the log.
+
+#. Inspect the log files in the :file:`run` subdirectory. You should see the
+   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
+   any particular order, since they have been handled concurrently by different
+   worker processes in a non-deterministic way.
+
+#. You can shut down the listener and the web application by running
+   ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
+
+You may need to tweak the configuration files in the unlikely event that the
+configured ports clash with something else in your test environment.
 
 .. _context-info:
 
