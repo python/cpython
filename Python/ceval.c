@@ -2175,6 +2175,26 @@ handle_eval_breaker:
             goto exception_unwind;
         }
 
+        TARGET(LOAD_ERROR) {
+            PyObject *value;
+            switch(oparg) {
+                case 0:
+                    value = PyExc_AssertionError;
+                    break;
+                case 1:
+                    value = PyExc_StopIteration;
+                    break;
+                case 2:
+                    value = PyExc_RuntimeError;
+                    break;
+                default:
+                    Py_UNREACHABLE();
+            }
+            Py_INCREF(value);
+            PUSH(value);
+            DISPATCH();
+        }
+
         TARGET(LOAD_ASSERTION_ERROR) {
             PyObject *value = PyExc_AssertionError;
             Py_INCREF(value);

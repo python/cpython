@@ -543,8 +543,16 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
+        >> LOAD_ERROR               1
+           CHECK_EXC_MATCH
+           POP_JUMP_IF_FALSE        8 (to 140)
+           LOAD_ERROR               2
+           LOAD_CONST               3 ('coroutine raised StopIteration')
+           CALL                     0
+           RAISE_VARARGS            2
+        >> RERAISE                  1
 ExceptionTable:
-6 rows
+12 rows
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
@@ -1256,6 +1264,7 @@ Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
 Constants:
    0: None
    1: <code object f at (.*), file "(.*)", line (.*)>
+   2: 'generator raised StopIteration'
 Variable names:
    0: a
    1: b
@@ -1362,6 +1371,7 @@ Flags:             OPTIMIZED, NEWLOCALS, COROUTINE
 Constants:
    0: None
    1: 1
+   2: 'coroutine raised StopIteration'
 Names:
    0: b
    1: c

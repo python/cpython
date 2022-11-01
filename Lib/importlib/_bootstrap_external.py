@@ -425,6 +425,9 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3509 (Conditional jumps only jump forward)
 #     Python 3.12a1 3510 (FOR_ITER leaves iterator on the stack)
 
+
+#     Python 3.12a1 3514 (Add LOAD_ERROR instruction)
+
 #     Python 3.13 will start with 3550
 
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -436,7 +439,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3510).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3514).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

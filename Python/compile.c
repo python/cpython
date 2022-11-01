@@ -1254,6 +1254,7 @@ stack_effect(int opcode, int oparg, int jump)
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
+        case LOAD_ERROR:
         case LOAD_ASSERTION_ERROR:
             return 1;
         case LIST_TO_TUPLE:
@@ -2568,6 +2569,42 @@ compiler_check_debug_args(struct compiler *c, arguments_ty args)
 }
 
 static int
+coroutine_stopiteration_handler(struct compiler *c, jump_target_label *handler)
+{
+    ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+    ADDOP(c, NO_LOCATION, RETURN_VALUE);
+    if (cfg_builder_use_label(CFG_BUILDER(c), *handler) < 0) {
+        return 0;
+    }
+    jump_target_label other = cfg_new_label(CFG_BUILDER(c));
+    if (!IS_LABEL(other)) {
+        return 0;
+    }
+    USE_LABEL(c, *handler);
+    ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 1); // StopIteration
+    ADDOP(c, NO_LOCATION, CHECK_EXC_MATCH);
+    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, other);
+    ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 2); // RuntimeError
+    const char *msg = c->u->u_ste->ste_coroutine ?
+        (c->u->u_ste->ste_generator ?
+            "async generator raised StopIteration" :
+            "coroutine raised StopIteration"
+        ) :
+        "generator raised StopIteration";
+    PyObject *message = _PyUnicode_FromASCII(msg, strlen(msg));
+    if (message == NULL) {
+        return 0;
+    }
+    ADDOP_LOAD_CONST_NEW(c, NO_LOCATION, message);
+    ADDOP_I(c, NO_LOCATION, CALL, 0);
+    ADDOP_I(c, NO_LOCATION, RAISE_VARARGS, 2);
+
+    USE_LABEL(c, other);
+    ADDOP_I(c, NO_LOCATION, RERAISE, 1);
+    return 1;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
@@ -2632,6 +2669,17 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
+    bool is_coro = (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator);
+    jump_target_label handler;
+    if (is_coro) {
+        handler = cfg_new_label(CFG_BUILDER(c));
+        if (!IS_LABEL(handler)) {
+            compiler_exit_scope(c);
+            return 0;
+        }
+        ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, handler);
+    }
+
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(body);
@@ -2646,6 +2694,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     for (i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
+    }
+    if (is_coro) {
+        if (!coroutine_stopiteration_handler(c, &handler)) {
+            compiler_exit_scope(c);
+            return 0;
+        }
     }
     co = assemble(c, 1);
     qualname = c->u->u_qualname;
