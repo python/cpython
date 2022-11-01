@@ -23,7 +23,7 @@ install (since it comes included with most
 `binary distributions <https://www.python.org/downloads/>`_ of Python) and use.
 For more info about Tk, including pointers to the source, see the
 `Tcl/Tk home page <https://www.tcl.tk>`_.  Tcl/Tk is fully portable to the
-Mac OS X, Windows, and Unix platforms.
+macOS, Windows, and Unix platforms.
 
 Depending on what platform(s) you are aiming at, there are also several
 alternatives. A `list of cross-platform
@@ -49,7 +49,7 @@ environment variables.
 To get truly stand-alone applications, the Tcl scripts that form the library
 have to be integrated into the application as well. One tool supporting that is
 SAM (stand-alone modules), which is part of the Tix distribution
-(http://tix.sourceforge.net/).
+(https://tix.sourceforge.net/).
 
 Build Tix with SAM enabled, perform the appropriate call to
 :c:func:`Tclsam_init`, etc. inside Python's

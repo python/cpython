@@ -59,11 +59,11 @@ def main() -> None:
     with args.tokens_file as tok_file:
         all_tokens, exact_tok, non_exact_tok = generate_token_definitions(tok_file)
     gen = CParserGenerator(grammar, all_tokens, exact_tok, non_exact_tok, file=None)
-    gen.collect_todo()
+    gen.collect_rules()
 
     with args.keyword_file as thefile:
-        all_keywords = sorted(list(gen.callmakervisitor.keyword_cache.keys()) + EXTRA_KEYWORDS)
-        all_soft_keywords = sorted(gen.callmakervisitor.soft_keywords)
+        all_keywords = sorted(list(gen.keywords.keys()) + EXTRA_KEYWORDS)
+        all_soft_keywords = sorted(gen.soft_keywords)
 
         keywords = "" if not all_keywords else "    " + ",\n    ".join(map(repr, all_keywords))
         soft_keywords = (

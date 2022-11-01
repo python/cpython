@@ -1,7 +1,6 @@
-
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -17,6 +16,7 @@ class itertools.groupby "groupbyobject *" "&groupby_type"
 class itertools._grouper "_grouperobject *" "&_grouper_type"
 class itertools.teedataobject "teedataobject *" "&teedataobject_type"
 class itertools._tee "teeobject *" "&tee_type"
+class itertools.batched "batchedobject *" "&batched_type"
 class itertools.cycle "cycleobject *" "&cycle_type"
 class itertools.dropwhile "dropwhileobject *" "&dropwhile_type"
 class itertools.takewhile "takewhileobject *" "&takewhile_type"
@@ -31,12 +31,13 @@ class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6498ed21fbe1bf94]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1168b274011ce21b]*/
 
 static PyTypeObject groupby_type;
 static PyTypeObject _grouper_type;
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
+static PyTypeObject batched_type;
 static PyTypeObject cycle_type;
 static PyTypeObject dropwhile_type;
 static PyTypeObject takewhile_type;
@@ -51,6 +52,183 @@ static PyTypeObject count_type;
 static PyTypeObject pairwise_type;
 
 #include "clinic/itertoolsmodule.c.h"
+
+/* batched object ************************************************************/
+
+/* Note:  The built-in zip() function includes a "strict" argument
+   that is needed because that function can silently truncate data
+   and there is no easy way for a user to detect that condition.
+   The same reasoning does not apply to batched() which never drops
+   data.  Instead, it produces a shorter list which can be handled
+   as the user sees fit.
+ */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it;
+    Py_ssize_t batch_size;
+} batchedobject;
+
+/*[clinic input]
+@classmethod
+itertools.batched.__new__ as batched_new
+    iterable: object
+    n: Py_ssize_t
+Batch data into lists of length n. The last batch may be shorter than n.
+
+Loops over the input iterable and accumulates data into lists
+up to size n.  The input is consumed lazily, just enough to
+fill a list.  The result is yielded as soon as a batch is full
+or when the input iterable is exhausted.
+
+    >>> for batch in batched('ABCDEFG', 3):
+    ...     print(batch)
+    ...
+    ['A', 'B', 'C']
+    ['D', 'E', 'F']
+    ['G']
+
+[clinic start generated code]*/
+
+static PyObject *
+batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
+/*[clinic end generated code: output=7ebc954d655371b6 input=f28fd12cb52365f0]*/
+{
+    PyObject *it;
+    batchedobject *bo;
+
+    if (n < 1) {
+        /* We could define the n==0 case to return an empty iterator
+           but that is at odds with the idea that batching should
+           never throw-away input data.
+        */
+        PyErr_SetString(PyExc_ValueError, "n must be at least one");
+        return NULL;
+    }
+    it = PyObject_GetIter(iterable);
+    if (it == NULL) {
+        return NULL;
+    }
+
+    /* create batchedobject structure */
+    bo = (batchedobject *)type->tp_alloc(type, 0);
+    if (bo == NULL) {
+        Py_DECREF(it);
+        return NULL;
+    }
+    bo->batch_size = n;
+    bo->it = it;
+    return (PyObject *)bo;
+}
+
+static void
+batched_dealloc(batchedobject *bo)
+{
+    PyObject_GC_UnTrack(bo);
+    Py_XDECREF(bo->it);
+    Py_TYPE(bo)->tp_free(bo);
+}
+
+static int
+batched_traverse(batchedobject *bo, visitproc visit, void *arg)
+{
+    if (bo->it != NULL) {
+        Py_VISIT(bo->it);
+    }
+    return 0;
+}
+
+static PyObject *
+batched_next(batchedobject *bo)
+{
+    Py_ssize_t i;
+    Py_ssize_t n = bo->batch_size;
+    PyObject *it = bo->it;
+    PyObject *item;
+    PyObject *result;
+
+    if (it == NULL) {
+        return NULL;
+    }
+    result = PyList_New(n);
+    if (result == NULL) {
+        return NULL;
+    }
+    iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
+    PyObject **items = _PyList_ITEMS(result);
+    for (i=0 ; i < n ; i++) {
+        item = iternext(it);
+        if (item == NULL) {
+            goto null_item;
+        }
+        items[i] = item;
+    }
+    return result;
+
+ null_item:
+    if (PyErr_Occurred()) {
+        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            /* Input raised an exception other than StopIteration */
+            Py_CLEAR(bo->it);
+            Py_DECREF(result);
+            return NULL;
+        }
+        PyErr_Clear();
+    }
+    if (i == 0) {
+        Py_CLEAR(bo->it);
+        Py_DECREF(result);
+        return NULL;
+    }
+    /* Elements in result[i:] are still NULL */
+    Py_SET_SIZE(result, i);
+    return result;
+}
+
+static PyTypeObject batched_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "itertools.batched",            /* tp_name */
+    sizeof(batchedobject),          /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    /* methods */
+    (destructor)batched_dealloc,    /* tp_dealloc */
+    0,                              /* tp_vectorcall_offset */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_as_async */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    PyObject_GenericGetAttr,        /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,        /* tp_flags */
+    batched_new__doc__,             /* tp_doc */
+    (traverseproc)batched_traverse, /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    PyObject_SelfIter,              /* tp_iter */
+    (iternextfunc)batched_next,     /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    0,                              /* tp_init */
+    PyType_GenericAlloc,            /* tp_alloc */
+    batched_new,                    /* tp_new */
+    PyObject_GC_Del,                /* tp_free */
+};
+
 
 /* pairwise object ***********************************************************/
 
@@ -504,9 +682,8 @@ _grouper_next(_grouperobject *igo)
 static PyObject *
 _grouper_reduce(_grouperobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     if (((groupbyobject *)lz->parent)->currgrouper != lz) {
-        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
     }
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
@@ -1016,7 +1193,6 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 {
     Py_ssize_t i;
     PyObject *it, *copyable, *copyfunc, *result;
-    _Py_IDENTIFIER(__copy__);
 
     if (n < 0) {
         PyErr_SetString(PyExc_ValueError, "n must be >= 0");
@@ -1033,7 +1209,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    if (_PyObject_LookupAttrId(it, &PyId___copy__, &copyfunc) < 0) {
+    if (_PyObject_LookupAttr(it, &_Py_ID(__copy__), &copyfunc) < 0) {
         Py_DECREF(it);
         Py_DECREF(result);
         return NULL;
@@ -1048,7 +1224,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
             Py_DECREF(result);
             return NULL;
         }
-        copyfunc = _PyObject_GetAttrId(copyable, &PyId___copy__);
+        copyfunc = PyObject_GetAttr(copyable, &_Py_ID(__copy__));
         if (copyfunc == NULL) {
             Py_DECREF(copyable);
             Py_DECREF(result);
@@ -1058,7 +1234,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 
     PyTuple_SET_ITEM(result, 0, copyable);
     for (i = 1; i < n; i++) {
-        copyable = _PyObject_CallNoArg(copyfunc);
+        copyable = _PyObject_CallNoArgs(copyfunc);
         if (copyable == NULL) {
             Py_DECREF(copyfunc);
             Py_DECREF(result);
@@ -1180,9 +1356,8 @@ cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
         if (it == NULL)
             return NULL;
         if (lz->index != 0) {
-            _Py_IDENTIFIER(__setstate__);
-            PyObject *res = _PyObject_CallMethodId(it, &PyId___setstate__,
-                                                   "n", lz->index);
+            PyObject *res = _PyObject_CallMethod(it, &_Py_ID(__setstate__),
+                                                 "n", lz->index);
             if (res == NULL) {
                 Py_DECREF(it);
                 return NULL;
@@ -1614,7 +1789,8 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t numargs;
     isliceobject *lz;
 
-    if (type == &islice_type && !_PyArg_NoKeywords("islice", kwds))
+    if ((type == &islice_type || type->tp_init == islice_type.tp_init) &&
+        !_PyArg_NoKeywords("islice", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
@@ -2021,7 +2197,8 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *source;
 
-    if (type == &chain_type && !_PyArg_NoKeywords("chain", kwds))
+    if ((type == &chain_type || type->tp_init == chain_type.tp_init) &&
+        !_PyArg_NoKeywords("chain", kwds))
         return NULL;
 
     source = PyObject_GetIter(args);
@@ -2163,7 +2340,7 @@ static PyMethodDef chain_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
      setstate_doc},
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
@@ -2926,14 +3103,14 @@ itertools.combinations_with_replacement.__new__
     r: Py_ssize_t
 Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.
 
-combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC"
+combinations_with_replacement('ABC', 2) --> ('A','A'), ('A','B'), ('A','C'), ('B','B'), ('B','C'), ('C','C')
 [clinic start generated code]*/
 
 static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              PyObject *iterable,
                                              Py_ssize_t r)
-/*[clinic end generated code: output=48b26856d4e659ca input=dc2a8c7ba785fad7]*/
+/*[clinic end generated code: output=48b26856d4e659ca input=1dc58e82a0878fdc]*/
 {
     cwrobject *co;
     Py_ssize_t n;
@@ -4544,7 +4721,6 @@ static PyTypeObject ziplongest_type;
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    _Py_IDENTIFIER(fillvalue);
     ziplongestobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
@@ -4555,7 +4731,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
         fillvalue = NULL;
         if (PyDict_GET_SIZE(kwds) == 1) {
-            fillvalue = _PyDict_GetItemIdWithError(kwds, &PyId_fillvalue);
+            fillvalue = PyDict_GetItemWithError(kwds, &_Py_ID(fillvalue));
         }
         if (fillvalue == NULL) {
             if (!PyErr_Occurred()) {
@@ -4818,6 +4994,7 @@ repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
 accumulate(p[, func]) --> p0, p0+p1, p0+p1+p2\n\
+batched(p, n) --> [p0, p1, ..., p_n-1], [p_n, p_n+1, ..., p_2n-1], ...\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ...\n\
 chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ...\n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
@@ -4844,6 +5021,7 @@ itertoolsmodule_exec(PyObject *m)
 {
     PyTypeObject *typelist[] = {
         &accumulate_type,
+        &batched_type,
         &combinations_type,
         &cwr_type,
         &cycle_type,

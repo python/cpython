@@ -15,6 +15,7 @@ with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar import GrammarVisitor, GrammarError, Grammar
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
+    from pegen.parser_generator import compute_nullables, compute_left_recursives
     from pegen.python_generator import PythonParserGenerator
 
 
@@ -502,11 +503,10 @@ class TestPegen(unittest.TestCase):
         sign: ['-' | '+']
         """
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
-        out = io.StringIO()
-        genr = PythonParserGenerator(grammar, out)
         rules = grammar.rules
-        self.assertFalse(rules["start"].nullable)  # Not None!
-        self.assertTrue(rules["sign"].nullable)
+        nullables = compute_nullables(rules)
+        self.assertNotIn(rules["start"], nullables)  # Not None!
+        self.assertIn(rules["sign"], nullables)
 
     def test_advanced_left_recursive(self) -> None:
         grammar_source = """
@@ -514,11 +514,11 @@ class TestPegen(unittest.TestCase):
         sign: ['-']
         """
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
-        out = io.StringIO()
-        genr = PythonParserGenerator(grammar, out)
         rules = grammar.rules
-        self.assertFalse(rules["start"].nullable)  # Not None!
-        self.assertTrue(rules["sign"].nullable)
+        nullables = compute_nullables(rules)
+        compute_left_recursives(rules)
+        self.assertNotIn(rules["start"], nullables)  # Not None!
+        self.assertIn(rules["sign"], nullables)
         self.assertTrue(rules["start"].left_recursive)
         self.assertFalse(rules["sign"].left_recursive)
 
@@ -797,25 +797,25 @@ class TestPegen(unittest.TestCase):
             | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { f"{l.string} = {n.string}"}
         """
         parser_class = make_parser(grammar)
-        self.assertEqual(parse_string("number 1", parser_class, verbose=True), 1)
-        self.assertEqual(parse_string("string 'b'", parser_class, verbose=True), "'b'")
+        self.assertEqual(parse_string("number 1", parser_class), 1)
+        self.assertEqual(parse_string("string 'b'", parser_class), "'b'")
         self.assertEqual(
-            parse_string("number test 1", parser_class, verbose=True), "test = 1"
+            parse_string("number test 1", parser_class), "test = 1"
         )
         assert (
-            parse_string("string test 'b'", parser_class, verbose=True) == "test = 'b'"
+            parse_string("string test 'b'", parser_class) == "test = 'b'"
         )
         with self.assertRaises(SyntaxError):
-            parse_string("test 1", parser_class, verbose=True)
+            parse_string("test 1", parser_class)
 
     def test_forced(self) -> None:
         grammar = """
         start: NAME &&':' | NAME
         """
         parser_class = make_parser(grammar)
-        self.assertTrue(parse_string("number :", parser_class, verbose=True))
+        self.assertTrue(parse_string("number :", parser_class))
         with self.assertRaises(SyntaxError) as e:
-            parse_string("a", parser_class, verbose=True)
+            parse_string("a", parser_class)
 
         self.assertIn("expected ':'", str(e.exception))
 
@@ -824,10 +824,10 @@ class TestPegen(unittest.TestCase):
         start: NAME &&(':' | ';') | NAME
         """
         parser_class = make_parser(grammar)
-        self.assertTrue(parse_string("number :", parser_class, verbose=True))
-        self.assertTrue(parse_string("number ;", parser_class, verbose=True))
+        self.assertTrue(parse_string("number :", parser_class))
+        self.assertTrue(parse_string("number ;", parser_class))
         with self.assertRaises(SyntaxError) as e:
-            parse_string("a", parser_class, verbose=True)
+            parse_string("a", parser_class)
         self.assertIn("expected (':' | ';')", e.exception.args[0])
 
     def test_unreachable_explicit(self) -> None:

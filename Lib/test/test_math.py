@@ -1,7 +1,7 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test.support import run_unittest, verbose, requires_IEEE_754
+from test.support import verbose, requires_IEEE_754
 from test import support
 import unittest
 import itertools
@@ -500,6 +500,17 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.exp(NINF), 0.)
         self.assertTrue(math.isnan(math.exp(NAN)))
         self.assertRaises(OverflowError, math.exp, 1000000)
+
+    def testExp2(self):
+        self.assertRaises(TypeError, math.exp2)
+        self.ftest('exp2(-1)', math.exp2(-1), 0.5)
+        self.ftest('exp2(0)', math.exp2(0), 1)
+        self.ftest('exp2(1)', math.exp2(1), 2)
+        self.ftest('exp2(2.3)', math.exp2(2.3), 4.924577653379665)
+        self.assertEqual(math.exp2(INF), INF)
+        self.assertEqual(math.exp2(NINF), 0.)
+        self.assertTrue(math.isnan(math.exp2(NAN)))
+        self.assertRaises(OverflowError, math.exp2, 1000000)
 
     def testFabs(self):
         self.assertRaises(TypeError, math.fabs)
@@ -1803,16 +1814,22 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, prod)
         self.assertRaises(TypeError, prod, 42)
         self.assertRaises(TypeError, prod, ['a', 'b', 'c'])
-        self.assertRaises(TypeError, prod, ['a', 'b', 'c'], '')
-        self.assertRaises(TypeError, prod, [b'a', b'c'], b'')
+        self.assertRaises(TypeError, prod, ['a', 'b', 'c'], start='')
+        self.assertRaises(TypeError, prod, [b'a', b'c'], start=b'')
         values = [bytearray(b'a'), bytearray(b'b')]
-        self.assertRaises(TypeError, prod, values, bytearray(b''))
+        self.assertRaises(TypeError, prod, values, start=bytearray(b''))
         self.assertRaises(TypeError, prod, [[1], [2], [3]])
         self.assertRaises(TypeError, prod, [{2:3}])
-        self.assertRaises(TypeError, prod, [{2:3}]*2, {2:3})
-        self.assertRaises(TypeError, prod, [[1], [2], [3]], [])
+        self.assertRaises(TypeError, prod, [{2:3}]*2, start={2:3})
+        self.assertRaises(TypeError, prod, [[1], [2], [3]], start=[])
+
+        # Some odd cases
+        self.assertEqual(prod([2, 3], start='ab'), 'abababababab')
+        self.assertEqual(prod([2, 3], start=[1, 2]), [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2])
+        self.assertEqual(prod([], start={2: 3}), {2:3})
+
         with self.assertRaises(TypeError):
-            prod([10, 20], [30, 40])     # start is a keyword-only argument
+            prod([10, 20], 1)     # start is a keyword-only argument
 
         self.assertEqual(prod([0, 1, 2, 3]), 0)
         self.assertEqual(prod([1, 0, 2, 3]), 0)
@@ -1872,8 +1889,8 @@ class MathTests(unittest.TestCase):
         perm = math.perm
         factorial = math.factorial
         # Test if factorial definition is satisfied
-        for n in range(100):
-            for k in range(n + 1):
+        for n in range(500):
+            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
                 self.assertEqual(perm(n, k),
                                  factorial(n) // factorial(n - k))
 
@@ -1936,8 +1953,8 @@ class MathTests(unittest.TestCase):
         comb = math.comb
         factorial = math.factorial
         # Test if factorial definition is satisfied
-        for n in range(100):
-            for k in range(n + 1):
+        for n in range(500):
+            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
                 self.assertEqual(comb(n, k), factorial(n)
                     // (factorial(k) * factorial(n - k)))
 
@@ -2225,13 +2242,10 @@ class IsCloseTests(unittest.TestCase):
         self.assertAllNotClose(fraction_examples, rel_tol=1e-9)
 
 
-def test_main():
+def load_tests(loader, tests, pattern):
     from doctest import DocFileSuite
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(MathTests))
-    suite.addTest(unittest.makeSuite(IsCloseTests))
-    suite.addTest(DocFileSuite("ieee754.txt"))
-    run_unittest(suite)
+    tests.addTest(DocFileSuite("ieee754.txt"))
+    return tests
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

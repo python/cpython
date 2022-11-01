@@ -521,8 +521,8 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(DistributionTestCase))
-    suite.addTest(unittest.makeSuite(MetadataTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(DistributionTestCase))
+    suite.addTest(unittest.TestLoader().loadTestsFromTestCase(MetadataTestCase))
     return suite
 
 if __name__ == "__main__":

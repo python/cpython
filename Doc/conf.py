@@ -22,6 +22,11 @@ try:
     import _tkinter
 except ImportError:
     _tkinter = None
+# Treat warnings as errors, done here to prevent warnings in Sphinx code from
+# causing spurious test failures.
+import warnings
+warnings.simplefilter('error')
+del warnings
 '''
 
 manpages_url = 'https://manpages.debian.org/{path}'
@@ -45,7 +50,7 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '1.8'
+needs_sphinx = '3.2'
 
 # Ignore any .rst files in the venv/ directory.
 exclude_patterns = ['venv/*', 'README.rst']
@@ -69,9 +74,17 @@ html_theme = 'python_docs_theme'
 html_theme_path = ['tools']
 html_theme_options = {
     'collapsiblesidebar': True,
-    'issues_url': 'https://docs.python.org/3/bugs.html',
+    'issues_url': '/bugs.html',
+    'license_url': '/license.html',
     'root_include_title': False   # We use the version switcher instead.
 }
+
+# Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
+# https://github.com/python/cpython/issues/91207
+if any('htmlhelp' in arg for arg in sys.argv):
+    html_style = 'pydoctheme.css'
+    print("\nWARNING: Windows CHM Help is no longer supported.")
+    print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
@@ -138,7 +151,7 @@ latex_elements['pointsize'] = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = r'Guido van Rossum\\and the Python development team'
+_stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex',
      'The Python/C API', _stdauthor, 'manual'),
@@ -217,9 +230,7 @@ coverage_ignore_c_items = {
 # ----------------------------
 
 # Ignore certain URLs.
-linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
-                    # Ignore PEPs for now, they all have permanent redirects.
-                    r'http://www.python.org/dev/peps/pep-\d+']
+linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
 
 
 # Options for extensions
@@ -228,15 +239,3 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
-
-# Sphinx 2 and Sphinx 3 compatibility
-# -----------------------------------
-
-# bpo-40204: Allow Sphinx 2 syntax in the C domain
-c_allow_pre_v3 = True
-
-# bpo-40204: Disable warnings on Sphinx 2 syntax of the C domain since the
-# documentation is built with -W (warnings treated as errors).
-c_warn_on_allowed_pre_v3 = False
-
-strip_signature_backslash = True

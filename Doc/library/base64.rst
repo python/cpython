@@ -78,6 +78,8 @@ The modern interface provides:
    these non-alphabet characters in the input result in a
    :exc:`binascii.Error`.
 
+   For more information about the strict base64 check, see :func:`binascii.a2b_base64`
+
 
 .. function:: standard_b64encode(s)
 
@@ -152,7 +154,7 @@ The modern interface provides:
    This version does not allow the digit 0 (zero) to the letter O (oh) and digit
    1 (one) to either the letter I (eye) or letter L (el) mappings, all these
    characters are included in the Extended Hex Alphabet and are not
-   interchangable.
+   interchangeable.
 
    .. versionadded:: 3.10
 
@@ -199,7 +201,7 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \\t\\n\\r\\v')
+.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v')
 
    Decode the Ascii85 encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.
