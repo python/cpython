@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
+#include "pycore_runtime_init.h"
 #include <stdbool.h>              // bool
 
 
@@ -1302,28 +1303,13 @@ _encoded_const(PyObject *obj)
 {
     /* Return the JSON string representation of None, True, False */
     if (obj == Py_None) {
-        _Py_static_string(PyId_null, "null");
-        PyObject *s_null = _PyUnicode_FromId(&PyId_null);
-        if (s_null == NULL) {
-            return NULL;
-        }
-        return Py_NewRef(s_null);
+        return Py_NewRef(&_Py_ID(null));
     }
     else if (obj == Py_True) {
-        _Py_static_string(PyId_true, "true");
-        PyObject *s_true = _PyUnicode_FromId(&PyId_true);
-        if (s_true == NULL) {
-            return NULL;
-        }
-        return Py_NewRef(s_true);
+        return Py_NewRef(&_Py_ID(true));
     }
     else if (obj == Py_False) {
-        _Py_static_string(PyId_false, "false");
-        PyObject *s_false = _PyUnicode_FromId(&PyId_false);
-        if (s_false == NULL) {
-            return NULL;
-        }
-        return Py_NewRef(s_false);
+        return Py_NewRef(&_Py_ID(false));
     }
     else {
         PyErr_SetString(PyExc_ValueError, "not a const");
