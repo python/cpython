@@ -1562,11 +1562,10 @@ search() vs. match()
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
-Python offers two different primitive operations based on regular expressions:
-:func:`re.match` checks for a match only at the beginning of the string, while
-:func:`re.search` checks for a match anywhere in the string (this is what Perl
-does by default).We also have :func:`re.fullmatch` which checks whether the complete
-string is a match, otherwise it returns None.
+Python offers different primitive operations based on regular expressions:
+:func:`re.match` checks for a match only at the beginning of the string,
+:func:`re.fullmatch` checks for entire string to be a match. :func:`re.search` 
+checks for a match anywhere in the string (this is what Perl does by default).
 
 For example::
 
@@ -1590,7 +1589,7 @@ beginning of the string, whereas using :func:`search` with a regular expression
 beginning with ``'^'`` will match at the beginning of each line. ::
 
    >>> re.match('X', 'A\nB\nX', re.MULTILINE)  # No match
-   >>> re.fullmatch("X", "A\nB\nX", re.MULTILINE)  # No Match
+   >>> re.fullmatch('X', "A\nB\nX", re.MULTILINE)  # No Match
    >>> re.search('^X', 'A\nB\nX', re.MULTILINE)  # Match
    <re.Match object; span=(4, 5), match='X'>
 
