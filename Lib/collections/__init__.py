@@ -1012,7 +1012,7 @@ class ChainMap(_collections_abc.MutableMapping):
     def __iter__(self):
         d = {}
         for mapping in map(dict.fromkeys, reversed(self.maps)):
-            d |= mapping
+            d |= mapping                        # reuses stored hash values if possible
         return iter(d)
 
     def __contains__(self, key):
