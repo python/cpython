@@ -70,6 +70,18 @@ Important deprecations, removals or restrictions:
 
 * :pep:`623`, Remove wstr from Unicode
 
+Improved Error Messages
+=======================
+
+* Improve the :exc:`SyntaxError` error message when the user types ``import x
+  from y`` instead of ``from y import x``. Contributed by Pablo Galindo in :gh:`98931`.
+
+    >>> import a.y.z from b.y.z
+    Traceback (most recent call last):
+      File "<stdin>", line 1
+        import a.y.z from b.y.z
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    SyntaxError: Did you mean to use 'from ... import ...' instead?
 
 New Features
 ============
