@@ -11,7 +11,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
-#include "pycore_runtime_init.h"
+#include "pycore_runtime_init.h"  // _Py_ID()
 #include <stdbool.h>              // bool
 
 
