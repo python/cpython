@@ -34,7 +34,7 @@ module marshal
  */
 #if defined(MS_WINDOWS)
 #define MAX_MARSHAL_STACK_DEPTH 1000
-#elif defined(__WASI__)
+#elif defined(__wasi__)
 #define MAX_MARSHAL_STACK_DEPTH 1500
 #else
 #define MAX_MARSHAL_STACK_DEPTH 2000
