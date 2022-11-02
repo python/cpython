@@ -3361,7 +3361,7 @@ fi
 
 
 
-for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
+for ac_prog in python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
