@@ -366,7 +366,7 @@ target, then the interpreter evaluates the target except for the last
 
 .. versionchanged:: 3.8
    Now annotated assignments allow the same expressions in the right hand side as
-   the regular assignments. Previously, some expressions (like un-parenthesized
+   regular assignments. Previously, some expressions (like un-parenthesized
    tuple expressions) caused a syntax error.
 
 
