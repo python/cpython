@@ -1710,7 +1710,7 @@ Other concrete types
    represent the types of I/O streams such as returned by
    :func:`open`.
 
-   .. deprecated-removed:: 3.8 3.12
+   .. deprecated-removed:: 3.8 3.13
       The ``typing.io`` namespace is deprecated and will be removed.
       These types should be directly imported from ``typing`` instead.
 
@@ -1724,7 +1724,7 @@ Other concrete types
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
 
-   .. deprecated-removed:: 3.8 3.12
+   .. deprecated-removed:: 3.8 3.13
       The ``typing.re`` namespace is deprecated and will be removed.
       These types should be directly imported from ``typing`` instead.
 
