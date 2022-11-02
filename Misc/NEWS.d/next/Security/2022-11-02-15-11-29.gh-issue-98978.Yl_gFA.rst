@@ -1,0 +1,3 @@
+Fixed a potential use-after-free in applications that call configuration
+functions :c:func:`Py_SetPythonHome`, :c:func:`Py_SetProgramName` or
+(private) ``_Py_SetProgramFullPath`` multiple times.

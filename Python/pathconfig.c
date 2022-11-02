@@ -261,9 +261,7 @@ Py_SetPythonHome(const wchar_t *home)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     PyMem_RawFree(_Py_path_config.home);
-    if (has_value) {
-        _Py_path_config.home = _PyMem_RawWcsdup(home);
-    }
+    _Py_path_config.home = has_value ? _PyMem_RawWcsdup(home) : NULL;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
@@ -282,9 +280,7 @@ Py_SetProgramName(const wchar_t *program_name)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     PyMem_RawFree(_Py_path_config.program_name);
-    if (has_value) {
-        _Py_path_config.program_name = _PyMem_RawWcsdup(program_name);
-    }
+    _Py_path_config.program_name = has_value ? _PyMem_RawWcsdup(program_name) : NULL;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
@@ -302,9 +298,7 @@ _Py_SetProgramFullPath(const wchar_t *program_full_path)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     PyMem_RawFree(_Py_path_config.program_full_path);
-    if (has_value) {
-        _Py_path_config.program_full_path = _PyMem_RawWcsdup(program_full_path);
-    }
+    _Py_path_config.program_full_path = has_value ? _PyMem_RawWcsdup(program_full_path) : NULL;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
