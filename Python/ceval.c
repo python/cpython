@@ -2187,6 +2187,9 @@ handle_eval_breaker:
                 case 2:
                     value = PyExc_RuntimeError;
                     break;
+                case 3:
+                    value = PyExc_StopAsyncIteration;
+                    break;
                 default:
                     Py_UNREACHABLE();
             }

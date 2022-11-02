@@ -545,10 +545,12 @@ dis_asyncwith = """\
            RERAISE                  1
         >> LOAD_ERROR               1
            CHECK_EXC_MATCH
-           POP_JUMP_IF_FALSE        8 (to 140)
+           POP_JUMP_IF_FALSE       10 (to 144)
+           PUSH_EXC_INFO
            LOAD_ERROR               2
            LOAD_CONST               3 ('coroutine raised StopIteration')
            CALL                     0
+           SWAP                     2
            RAISE_VARARGS            2
         >> RERAISE                  1
 ExceptionTable:
@@ -710,6 +712,18 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
            JUMP_BACKWARD            9 (to 8)
         >> END_FOR
            RETURN_VALUE
+        >> LOAD_ERROR               1
+           CHECK_EXC_MATCH
+           POP_JUMP_IF_FALSE       10 (to 56)
+           PUSH_EXC_INFO
+           LOAD_ERROR               2
+           LOAD_CONST               1 ('generator raised StopIteration')
+           CALL                     0
+           SWAP                     2
+           RAISE_VARARGS            2
+        >> RERAISE                  1
+ExceptionTable:
+1 row
 """ % (dis_nested_1,
        __file__,
        _h.__code__.co_firstlineno + 3,

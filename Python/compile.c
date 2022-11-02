@@ -2568,22 +2568,42 @@ compiler_check_debug_args(struct compiler *c, arguments_ty args)
     return 1;
 }
 
+static inline int
+insert_instruction(basicblock *block, int pos, struct instr *instr) {
+    if (basicblock_next_instr(block) < 0) {
+        return -1;
+    }
+    for (int i = block->b_iused - 1; i > pos; i--) {
+        block->b_instr[i] = block->b_instr[i-1];
+    }
+    block->b_instr[pos] = *instr;
+    return 0;
+}
+
 static int
-coroutine_stopiteration_handler(struct compiler *c, jump_target_label *handler)
+wrap_in_stopiteration_handler(struct compiler *c)
 {
+    NEW_JUMP_TARGET_LABEL(c, handler);
+    NEW_JUMP_TARGET_LABEL(c, next);
+
+    /* Insert SETUP_CLEANUP at start */
+    struct instr setup = {
+        .i_opcode = SETUP_CLEANUP,
+        .i_oparg = handler.id,
+        .i_loc = NO_LOCATION,
+        .i_target = NULL,
+    };
+    if (insert_instruction(c->u->u_cfg_builder.g_entryblock, 0, &setup)) {
+        return 0;
+    }
+
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     ADDOP(c, NO_LOCATION, RETURN_VALUE);
-    if (cfg_builder_use_label(CFG_BUILDER(c), *handler) < 0) {
-        return 0;
-    }
-    jump_target_label other = cfg_new_label(CFG_BUILDER(c));
-    if (!IS_LABEL(other)) {
-        return 0;
-    }
-    USE_LABEL(c, *handler);
+    USE_LABEL(c, handler);
     ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 1); // StopIteration
     ADDOP(c, NO_LOCATION, CHECK_EXC_MATCH);
-    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, other);
+    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, next);
+    ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
     ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 2); // RuntimeError
     const char *msg = c->u->u_ste->ste_coroutine ?
         (c->u->u_ste->ste_generator ?
@@ -2597,9 +2617,31 @@ coroutine_stopiteration_handler(struct compiler *c, jump_target_label *handler)
     }
     ADDOP_LOAD_CONST_NEW(c, NO_LOCATION, message);
     ADDOP_I(c, NO_LOCATION, CALL, 0);
+    ADDOP_I(c, NO_LOCATION, SWAP, 2);
     ADDOP_I(c, NO_LOCATION, RAISE_VARARGS, 2);
 
-    USE_LABEL(c, other);
+    USE_LABEL(c, next);
+    if (c->u->u_ste->ste_coroutine &&
+        c->u->u_ste->ste_generator)
+    {
+        NEW_JUMP_TARGET_LABEL(c, next);
+        ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 3); // StopAsyncIteration
+        ADDOP(c, NO_LOCATION, CHECK_EXC_MATCH);
+        ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, next);
+        ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
+        ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 2); // RuntimeError
+        const char *msg = "async generator raised StopAsyncIteration";
+        PyObject *message = _PyUnicode_FromASCII(msg, strlen(msg));
+        if (message == NULL) {
+            return 0;
+        }
+        ADDOP_LOAD_CONST_NEW(c, NO_LOCATION, message);
+        ADDOP_I(c, NO_LOCATION, CALL, 0);
+        ADDOP_I(c, NO_LOCATION, SWAP, 2);
+        ADDOP_I(c, NO_LOCATION, RAISE_VARARGS, 2);
+
+        USE_LABEL(c, next);
+    }
     ADDOP_I(c, NO_LOCATION, RERAISE, 1);
     return 1;
 }
@@ -2669,17 +2711,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    bool is_coro = (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator);
-    jump_target_label handler;
-    if (is_coro) {
-        handler = cfg_new_label(CFG_BUILDER(c));
-        if (!IS_LABEL(handler)) {
-            compiler_exit_scope(c);
-            return 0;
-        }
-        ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, handler);
-    }
-
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(body);
@@ -2695,8 +2726,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     for (i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
-    if (is_coro) {
-        if (!coroutine_stopiteration_handler(c, &handler)) {
+    if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
+        if (!wrap_in_stopiteration_handler(c)) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -5541,6 +5572,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     if (type != COMP_GENEXP) {
         ADDOP(c, LOC(e), RETURN_VALUE);
+    }
+    if (!wrap_in_stopiteration_handler(c)) {
+        goto error_in_scope;
     }
 
     co = assemble(c, 1);
@@ -8604,18 +8638,6 @@ build_cellfixedoffsets(struct compiler *c)
     }
 
     return fixed;
-}
-
-static inline int
-insert_instruction(basicblock *block, int pos, struct instr *instr) {
-    if (basicblock_next_instr(block) < 0) {
-        return -1;
-    }
-    for (int i = block->b_iused - 1; i > pos; i--) {
-        block->b_instr[i] = block->b_instr[i-1];
-    }
-    block->b_instr[pos] = *instr;
-    return 0;
 }
 
 static int
