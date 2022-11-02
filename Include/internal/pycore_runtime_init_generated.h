@@ -554,6 +554,7 @@ extern "C" {
                 INIT_STR(dot, "."), \
                 INIT_STR(dot_locals, ".<locals>"), \
                 INIT_STR(empty, ""), \
+                INIT_STR(json_decoder, "json.decoder"), \
                 INIT_STR(list_err, "list index out of range"), \
                 INIT_STR(newline, "\n"), \
                 INIT_STR(open_br, "{"), \
@@ -562,6 +563,7 @@ extern "C" {
             }, \
             .identifiers = { \
                 INIT_ID(False), \
+                INIT_ID(JSONDecodeError), \
                 INIT_ID(Py_Repr), \
                 INIT_ID(TextIOWrapper), \
                 INIT_ID(True), \
@@ -861,6 +863,7 @@ extern "C" {
                 INIT_ID(extend), \
                 INIT_ID(facility), \
                 INIT_ID(factory), \
+                INIT_ID(false), \
                 INIT_ID(family), \
                 INIT_ID(fanout), \
                 INIT_ID(fd), \
@@ -1000,6 +1003,7 @@ extern "C" {
                 INIT_ID(node_offset), \
                 INIT_ID(ns), \
                 INIT_ID(nstype), \
+                INIT_ID(null), \
                 INIT_ID(number), \
                 INIT_ID(obj), \
                 INIT_ID(object), \
@@ -1136,6 +1140,7 @@ extern "C" {
                 INIT_ID(traceback), \
                 INIT_ID(trailers), \
                 INIT_ID(translate), \
+                INIT_ID(true), \
                 INIT_ID(truncate), \
                 INIT_ID(twice), \
                 INIT_ID(txt), \
@@ -1436,6 +1441,8 @@ static inline void
 _PyUnicode_InitStaticStrings(void) {
     PyObject *string;
     string = &_Py_ID(False);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(JSONDecodeError);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(Py_Repr);
     PyUnicode_InternInPlace(&string);
@@ -2035,6 +2042,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(factory);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(false);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(family);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(fanout);
@@ -2313,6 +2322,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(nstype);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(null);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(number);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(obj);
@@ -2584,6 +2595,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(trailers);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(translate);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(true);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(truncate);
     PyUnicode_InternInPlace(&string);
@@ -4784,6 +4797,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_STR(empty));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_STR(json_decoder)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_STR(json_decoder));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_STR(list_err)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_STR(list_err));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -4806,6 +4823,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(False)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(False));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(JSONDecodeError)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(JSONDecodeError));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(Py_Repr)) < _PyObject_IMMORTAL_REFCNT) {
@@ -6004,6 +6025,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(factory));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(false)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(false));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(family)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(family));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6560,6 +6585,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(nstype));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(null)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(null));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(number)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(number));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -7102,6 +7131,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(translate)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(translate));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(true)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(true));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(truncate)) < _PyObject_IMMORTAL_REFCNT) {
