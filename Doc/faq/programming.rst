@@ -25,8 +25,9 @@ Reference Manual <pdb>`. You can also write your own debugger by using the code
 for pdb as an example.
 
 The IDLE interactive development environment, which is part of the standard
-Python distribution (normally available as Tools/scripts/idle), includes a
-graphical debugger.
+Python distribution (normally available as
+`Tools/scripts/idle3 <https://github.com/python/cpython/blob/main/Tools/scripts/idle3>`_),
+includes a graphical debugger.
 
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
 PythonWin debugger colors breakpoints and has quite a few cool features such as
@@ -78,7 +79,8 @@ set of modules required by a program and bind these modules together with a
 Python binary to produce a single executable.
 
 One is to use the freeze tool, which is included in the Python source tree as
-``Tools/freeze``. It converts Python byte code to C arrays; with a C compiler you can
+`Tools/freeze <https://github.com/python/cpython/tree/main/Tools/freeze>`_.
+It converts Python byte code to C arrays; with a C compiler you can
 embed all your modules into a new program, which is then linked with the
 standard Python modules.
 
@@ -114,7 +116,7 @@ Core Language
 Why am I getting an UnboundLocalError when the variable has a value?
 --------------------------------------------------------------------
 
-It can be a surprise to get the UnboundLocalError in previously working
+It can be a surprise to get the :exc:`UnboundLocalError` in previously working
 code when it is modified by adding an assignment statement somewhere in
 the body of a function.
 
@@ -123,6 +125,7 @@ This code:
    >>> x = 10
    >>> def bar():
    ...     print(x)
+   ...
    >>> bar()
    10
 
@@ -133,7 +136,7 @@ works, but this code:
    ...     print(x)
    ...     x += 1
 
-results in an UnboundLocalError:
+results in an :exc:`!UnboundLocalError`:
 
    >>> foo()
    Traceback (most recent call last):
@@ -155,6 +158,7 @@ global:
    ...     global x
    ...     print(x)
    ...     x += 1
+   ...
    >>> foobar()
    10
 
@@ -176,6 +180,7 @@ keyword:
    ...        x += 1
    ...    bar()
    ...    print(x)
+   ...
    >>> foo()
    10
    11
@@ -273,7 +278,7 @@ main.py::
    import mod
    print(config.x)
 
-Note that using a module is also the basis for implementing the Singleton design
+Note that using a module is also the basis for implementing the singleton design
 pattern, for the same reason.
 
 
@@ -291,9 +296,9 @@ using multiple imports per line uses less screen space.
 
 It's good practice if you import modules in the following order:
 
-1. standard library modules -- e.g. ``sys``, ``os``, ``getopt``, ``re``
+1. standard library modules -- e.g. :mod:`sys`, :mod:`os`, :mod:`argparse`, :mod:`re`
 2. third-party library modules (anything installed in Python's site-packages
-   directory) -- e.g. mx.DateTime, ZODB, PIL.Image, etc.
+   directory) -- e.g. :mod:`!dateutil`, :mod:`!requests`, :mod:`!PIL.Image`
 3. locally developed modules
 
 It is sometimes necessary to move imports to a function or class to avoid
@@ -471,7 +476,7 @@ object ``x`` refers to).  After this assignment we have two objects (the ints
 
 Some operations (for example ``y.append(10)`` and ``y.sort()``) mutate the
 object, whereas superficially similar operations (for example ``y = y + [10]``
-and ``sorted(y)``) create a new object.  In general in Python (and in all cases
+and :func:`sorted(y) <sorted>`) create a new object.  In general in Python (and in all cases
 in the standard library) a method that mutates an object will return ``None``
 to help avoid getting the two types of operations confused.  So if you
 mistakenly write ``y.sort()`` thinking it will give you a sorted copy of ``y``,
@@ -644,7 +649,7 @@ Sequences can be copied by slicing::
 How can I find the methods or attributes of an object?
 ------------------------------------------------------
 
-For an instance x of a user-defined class, ``dir(x)`` returns an alphabetized
+For an instance ``x`` of a user-defined class, :func:`dir(x) <dir>` returns an alphabetized
 list of the names containing the instance attributes and methods and attributes
 defined by its class.
 
@@ -669,9 +674,9 @@ callable. Consider the following code::
    <__main__.A object at 0x16D07CC>
 
 Arguably the class has a name: even though it is bound to two names and invoked
-through the name B the created instance is still reported as an instance of
-class A.  However, it is impossible to say whether the instance's name is a or
-b, since both names are bound to the same value.
+through the name ``B`` the created instance is still reported as an instance of
+class ``A``.  However, it is impossible to say whether the instance's name is ``a`` or
+``b``, since both names are bound to the same value.
 
 Generally speaking it should not be necessary for your code to "know the names"
 of particular values. Unless you are deliberately writing introspective
@@ -841,7 +846,7 @@ How do I get int literal attribute instead of SyntaxError?
 ----------------------------------------------------------
 
 Trying to lookup an ``int`` literal attribute in the normal manner gives
-a syntax error because the period is seen as a decimal point::
+a :exc:`SyntaxError` because the period is seen as a decimal point::
 
    >>> 1.__class__
      File "<stdin>", line 1
@@ -887,7 +892,7 @@ leading '0' in a decimal number (except '0').
 How do I convert a number to a string?
 --------------------------------------
 
-To convert, e.g., the number 144 to the string '144', use the built-in type
+To convert, e.g., the number ``144`` to the string ``'144'``, use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
 the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
 the :ref:`f-strings` and :ref:`formatstrings` sections,
@@ -1006,11 +1011,11 @@ Not as such.
 For simple input parsing, the easiest approach is usually to split the line into
 whitespace-delimited words using the :meth:`~str.split` method of string objects
 and then convert decimal strings to numeric values using :func:`int` or
-:func:`float`.  ``split()`` supports an optional "sep" parameter which is useful
+:func:`float`.  :meth:`!split()` supports an optional "sep" parameter which is useful
 if the line uses something other than whitespace as a separator.
 
 For more complicated input parsing, regular expressions are more powerful
-than C's :c:func:`sscanf` and better suited for the task.
+than C's ``sscanf`` and better suited for the task.
 
 
 What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
@@ -1206,15 +1211,16 @@ difference is that a Python list can contain objects of many different types.
 
 The ``array`` module also provides methods for creating arrays of fixed types
 with compact representations, but they are slower to index than lists.  Also
-note that NumPy and other third party packages define array-like structures with
+note that `NumPy <https://numpy.org/>`_
+and other third party packages define array-like structures with
 various characteristics as well.
 
-To get Lisp-style linked lists, you can emulate cons cells using tuples::
+To get Lisp-style linked lists, you can emulate *cons cells* using tuples::
 
    lisp_list = ("like",  ("this",  ("example", None) ) )
 
 If mutability is desired, you could use lists instead of tuples.  Here the
-analogue of lisp car is ``lisp_list[0]`` and the analogue of cdr is
+analogue of a Lisp *car* is ``lisp_list[0]`` and the analogue of *cdr* is
 ``lisp_list[1]``.  Only do this if you're sure you really need to, because it's
 usually a lot slower than using Python lists.
 
@@ -1334,11 +1340,12 @@ that even though there was an error, the append worked::
     ['foo', 'item']
 
 To see why this happens, you need to know that (a) if an object implements an
-``__iadd__`` magic method, it gets called when the ``+=`` augmented assignment
+:meth:`~object.__iadd__` magic method, it gets called when the ``+=`` augmented
+assignment
 is executed, and its return value is what gets used in the assignment statement;
-and (b) for lists, ``__iadd__`` is equivalent to calling ``extend`` on the list
+and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`~list.extend` on the list
 and returning the list.  That's why we say that for lists, ``+=`` is a
-"shorthand" for ``list.extend``::
+"shorthand" for :meth:`!list.extend`::
 
     >>> a_list = []
     >>> a_list += [1]
@@ -1363,7 +1370,7 @@ Thus, in our tuple example what is happening is equivalent to::
      ...
    TypeError: 'tuple' object does not support item assignment
 
-The ``__iadd__`` succeeds, and thus the list is extended, but even though
+The :meth:`!__iadd__` succeeds, and thus the list is extended, but even though
 ``result`` points to the same object that ``a_tuple[0]`` already points to,
 that final assignment still results in an error, because tuples are immutable.
 
@@ -1440,7 +1447,8 @@ See also :ref:`why-self`.
 How do I check if an object is an instance of a given class or of a subclass of it?
 -----------------------------------------------------------------------------------
 
-Use the built-in function ``isinstance(obj, cls)``.  You can check if an object
+Use the built-in function :func:`isinstance(obj, cls) <isinstance>`.  You can
+check if an object
 is an instance of any of a number of classes by providing a tuple instead of a
 single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
 check whether an object is one of Python's built-in types, e.g.
@@ -1537,13 +1545,13 @@ Here the ``UpperOut`` class redefines the ``write()`` method to convert the
 argument string to uppercase before calling the underlying
 ``self._outfile.write()`` method.  All other methods are delegated to the
 underlying ``self._outfile`` object.  The delegation is accomplished via the
-``__getattr__`` method; consult :ref:`the language reference <attribute-access>`
+:meth:`~object.__getattr__` method; consult :ref:`the language reference <attribute-access>`
 for more information about controlling attribute access.
 
 Note that for more general cases delegation can get trickier. When attributes
-must be set as well as retrieved, the class must define a :meth:`__setattr__`
+must be set as well as retrieved, the class must define a :meth:`~object.__setattr__`
 method too, and it must do so carefully.  The basic implementation of
-:meth:`__setattr__` is roughly equivalent to the following::
+:meth:`!__setattr__` is roughly equivalent to the following::
 
    class X:
        ...
@@ -1551,7 +1559,8 @@ method too, and it must do so carefully.  The basic implementation of
            self.__dict__[name] = value
        ...
 
-Most :meth:`__setattr__` implementations must modify ``self.__dict__`` to store
+Most :meth:`!__setattr__` implementations must modify
+:meth:`self.__dict__ <object.__dict__>` to store
 local state for self without causing an infinite recursion.
 
 
@@ -1689,17 +1698,17 @@ My class defines __del__ but it is not called when I delete the object.
 
 There are several possible reasons for this.
 
-The del statement does not necessarily call :meth:`__del__` -- it simply
+The :keyword:`del` statement does not necessarily call :meth:`~object.__del__` -- it simply
 decrements the object's reference count, and if this reaches zero
-:meth:`__del__` is called.
+:meth:`!__del__` is called.
 
 If your data structures contain circular links (e.g. a tree where each child has
 a parent reference and each parent has a list of children) the reference counts
 will never go back to zero.  Once in a while Python runs an algorithm to detect
 such cycles, but the garbage collector might run some time after the last
-reference to your data structure vanishes, so your :meth:`__del__` method may be
+reference to your data structure vanishes, so your :meth:`!__del__` method may be
 called at an inconvenient and random time. This is inconvenient if you're trying
-to reproduce a problem. Worse, the order in which object's :meth:`__del__`
+to reproduce a problem. Worse, the order in which object's :meth:`!__del__`
 methods are executed is arbitrary.  You can run :func:`gc.collect` to force a
 collection, but there *are* pathological cases where objects will never be
 collected.
@@ -1707,7 +1716,7 @@ collected.
 Despite the cycle collector, it's still a good idea to define an explicit
 ``close()`` method on objects to be called whenever you're done with them.  The
 ``close()`` method can then remove attributes that refer to subobjects.  Don't
-call :meth:`__del__` directly -- :meth:`__del__` should call ``close()`` and
+call :meth:`!__del__` directly -- :meth:`!__del__` should call ``close()`` and
 ``close()`` should make sure that it can be called more than once for the same
 object.
 
@@ -1724,7 +1733,7 @@ and sibling references (if they need them!).
    Normally, calling :func:`sys.exc_clear` will take care of this by clearing
    the last recorded exception.
 
-Finally, if your :meth:`__del__` method raises an exception, a warning message
+Finally, if your :meth:`!__del__` method raises an exception, a warning message
 is printed to :data:`sys.stderr`.
 
 
@@ -1852,8 +1861,8 @@ For example, here is the implementation of
 How can a subclass control what data is stored in an immutable instance?
 ------------------------------------------------------------------------
 
-When subclassing an immutable type, override the :meth:`__new__` method
-instead of the :meth:`__init__` method.  The latter only runs *after* an
+When subclassing an immutable type, override the :meth:`~object.__new__` method
+instead of the :meth:`~object.__init__` method.  The latter only runs *after* an
 instance is created, which is too late to alter data in an immutable
 instance.
 
@@ -1955,8 +1964,8 @@ can't be made to work because it cannot detect changes to the
 attributes.
 
 To make the *lru_cache* approach work when the *station_id* is mutable,
-the class needs to define the *__eq__* and *__hash__* methods so that
-the cache can detect relevant attribute updates::
+the class needs to define the :meth:`~object.__eq__` and :meth:`~object.__hash__`
+methods so that the cache can detect relevant attribute updates::
 
     class Weather:
         "Example with a mutable station identifier"

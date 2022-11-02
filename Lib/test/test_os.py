@@ -3797,8 +3797,6 @@ class OSErrorTests(unittest.TestCase):
         else:
             encoded = os.fsencode(os_helper.TESTFN)
         self.bytes_filenames.append(encoded)
-        self.bytes_filenames.append(bytearray(encoded))
-        self.bytes_filenames.append(memoryview(encoded))
 
         self.filenames = self.bytes_filenames + self.unicode_filenames
 
@@ -3810,21 +3808,10 @@ class OSErrorTests(unittest.TestCase):
             (self.filenames, os.rmdir,),
             (self.filenames, os.stat,),
             (self.filenames, os.unlink,),
+            (self.filenames, os.listdir,),
+            (self.filenames, os.rename, "dst"),
+            (self.filenames, os.replace, "dst"),
         ]
-        if sys.platform == "win32":
-            funcs.extend((
-                (self.bytes_filenames, os.rename, b"dst"),
-                (self.bytes_filenames, os.replace, b"dst"),
-                (self.unicode_filenames, os.rename, "dst"),
-                (self.unicode_filenames, os.replace, "dst"),
-                (self.unicode_filenames, os.listdir, ),
-            ))
-        else:
-            funcs.extend((
-                (self.filenames, os.listdir,),
-                (self.filenames, os.rename, "dst"),
-                (self.filenames, os.replace, "dst"),
-            ))
         if os_helper.can_chmod():
             funcs.append((self.filenames, os.chmod, 0o777))
         if hasattr(os, "chown"):
@@ -3840,11 +3827,7 @@ class OSErrorTests(unittest.TestCase):
         if hasattr(os, "chroot"):
             funcs.append((self.filenames, os.chroot,))
         if hasattr(os, "link"):
-            if sys.platform == "win32":
-                funcs.append((self.bytes_filenames, os.link, b"dst"))
-                funcs.append((self.unicode_filenames, os.link, "dst"))
-            else:
-                funcs.append((self.filenames, os.link, "dst"))
+            funcs.append((self.filenames, os.link, "dst"))
         if hasattr(os, "listxattr"):
             funcs.extend((
                 (self.filenames, os.listxattr,),
@@ -3857,21 +3840,16 @@ class OSErrorTests(unittest.TestCase):
         if hasattr(os, "readlink"):
             funcs.append((self.filenames, os.readlink,))
 
-
         for filenames, func, *func_args in funcs:
             for name in filenames:
-                if not isinstance(name, (str, bytes)):
-                    with self.assertRaises(TypeError):
-                        func(name, *func_args)
+                try:
+                    func(name, *func_args)
+                except OSError as err:
+                    self.assertIs(err.filename, name, str(func))
+                except UnicodeDecodeError:
+                    pass
                 else:
-                    try:
-                        func(name, *func_args)
-                    except OSError as err:
-                        self.assertIs(err.filename, name, str(func))
-                    except UnicodeDecodeError:
-                        pass
-                    else:
-                        self.fail("No exception thrown by {}".format(func))
+                    self.fail(f"No exception thrown by {func}")
 
 class CPUCountTests(unittest.TestCase):
     def test_cpu_count(self):
@@ -4351,7 +4329,7 @@ class TestScandir(unittest.TestCase):
         for cls in bytearray, memoryview:
             path_bytes = cls(os.fsencode(self.path))
             with self.assertRaises(TypeError):
-                list(os.scandir(path_bytes))
+                os.scandir(path_bytes)
 
     @unittest.skipUnless(os.listdir in os.supports_fd,
                          'fd support for listdir required for this test.')
