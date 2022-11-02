@@ -346,33 +346,41 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
-    def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):
+    def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
-        # Do these imports outside of the code string to avoid using
-        # importlib too much from within the code string, so that
-        # _handle_fromlist doesn't get quickened until we intend it to.
-        from dis import _all_opmap
-        resume = _all_opmap["RESUME"]
-        resume_quick = _all_opmap["RESUME_QUICK"]
-        from test.test_dis import QUICKENING_WARMUP_DELAY
-
-        code = textwrap.dedent(f"""\
+        code = textwrap.dedent("""\
+            import dis
             import importlib._bootstrap
+            import opcode
+            import test.test_dis
+
+            def is_specialized(f):
+                for instruction in dis.get_instructions(f, adaptive=True):
+                    opname = instruction.opname
+                    if (
+                        opname in opcode._specialized_instructions
+                        # Exclude superinstructions:
+                        and "__" not in opname
+                        # Exclude adaptive instructions:
+                        and not opname.endswith("_ADAPTIVE")
+                        # Exclude "quick" instructions:
+                        and not opname.endswith("_QUICK")
+                    ):
+                        return True
+                return False
+
             func = importlib._bootstrap._handle_fromlist
-            code = func.__code__
 
-            # Assert initially unquickened.
-            # Use sets to account for byte order.
-            if set(code._co_code_adaptive[:2]) != set([{resume}, 0]):
-                raise AssertionError()
+            # "copy" the code to un-specialize it:
+            func.__code__ = func.__code__.replace()
 
-            for i in range({QUICKENING_WARMUP_DELAY}):
+            assert not is_specialized(func), "specialized instructions found"
+
+            for i in range(test.test_dis.ADAPTIVE_WARMUP_DELAY):
                 func(importlib._bootstrap, ["x"], lambda *args: None)
 
-            # Assert quickening worked
-            if set(code._co_code_adaptive[:2]) != set([{resume_quick}, 0]):
-                raise AssertionError()
+            assert is_specialized(func), "no specialized instructions found"
 
             print("Tests passed")
         """)
