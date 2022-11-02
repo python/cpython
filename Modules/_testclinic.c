@@ -23,6 +23,7 @@ pack_arguments(int arg_num, ...) {
                 PyErr_Format(PyExc_AssertionError,
                              "argument %d at %p is freed or corrupted!",
                              i, arg);
+                va_end(vargs);
                 return NULL;
             }
         } else {
