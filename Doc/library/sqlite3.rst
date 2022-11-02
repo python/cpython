@@ -381,6 +381,7 @@ Module functions
       >>> con = sqlite3.connect(":memory:")
       >>> def evil_trace(stmt):
       ...     5/0
+      ...
       >>> con.set_trace_callback(evil_trace)
       >>> def debug(unraisable):
       ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
@@ -1259,6 +1260,7 @@ Connection objects
          >>> def dict_factory(cursor, row):
          ...     col_names = [col[0] for col in cursor.description]
          ...     return {key: value for key, value in zip(col_names, row)}
+         ...
          >>> con = sqlite3.connect(":memory:")
          >>> con.row_factory = dict_factory
          >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
