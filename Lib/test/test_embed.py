@@ -1492,17 +1492,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 paths[-1] = lib_dynload
             else:
-                # Include DLLs directory as well
-                paths.insert(1, '.\\DLLs')
-                for index, path in enumerate(paths):
-                    if index == 0:
-                        # Because we copy the DLLs into tmpdir as well, the zip file
-                        # entry in sys.path will be there. For a regular venv, it will
-                        # usually be in the home directory.
-                        paths[index] = os.path.join(tmpdir, os.path.basename(path))
-                    else:
-                        paths[index] = os.path.join(pyvenv_home, os.path.basename(path))
-                paths[-1] = pyvenv_home
+                paths = [
+                    os.path.join(tmpdir, os.path.basename(paths[0])),
+                    pyvenv_home,
+                    os.path.join(pyvenv_home, "Lib"),
+                ]
 
             executable = self.test_exe
             base_executable = os.path.join(pyvenv_home, os.path.basename(executable))
@@ -1519,12 +1513,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
-                config['use_frozen_modules'] = not support.Py_DEBUG
+                config['use_frozen_modules'] = int(not support.Py_DEBUG)
             else:
                 # cannot reliably assume stdlib_dir here because it
                 # depends too much on our build. But it ought to be found
                 config['stdlib_dir'] = self.IGNORE_CONFIG
-                config['use_frozen_modules'] = not support.Py_DEBUG
+                config['use_frozen_modules'] = int(not support.Py_DEBUG)
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
