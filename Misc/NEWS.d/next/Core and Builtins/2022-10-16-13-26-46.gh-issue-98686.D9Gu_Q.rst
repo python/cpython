@@ -1,0 +1,2 @@
+Quicken all code objects, and specialize adaptive bytecode instructions more
+aggressively.
