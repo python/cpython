@@ -544,8 +544,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *base_name* is the name of the file to create, including the path, minus
    any format-specific extension.
    
-   *format* is the archive format: one of "zip" (if the :mod:`zlib` module 
-   is available), "tar", "gztar" (if the :mod:`zlib` module is available), 
+   *format* is the archive format: one of "zip" (if the :mod:`zlib` module
+   is available), "tar", "gztar" (if the :mod:`zlib` module is available),
    "bztar" (if the :mod:`bz2` module is available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
