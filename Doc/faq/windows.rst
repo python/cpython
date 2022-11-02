@@ -218,7 +218,7 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
 5. There are two problems with Python's C API which will become apparent if you
    use a compiler other than MSVC, the compiler used to build pythonNN.dll.
 
-   Problem 1: The so-called "Very High Level" functions that take FILE *
+   Problem 1: The so-called "Very High Level" functions that take ``FILE *``
    arguments will not work in a multi-compiler environment because each
    compiler's notion of a struct FILE will be different.  From an implementation
    standpoint these are very low level functions.
