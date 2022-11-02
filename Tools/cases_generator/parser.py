@@ -7,12 +7,12 @@ import lexer as lx
 from plexer import PLexer
 
 
-T = TypeVar("T", bound="Parser")
-S = TypeVar("S", bound="Node")
-def contextual(func: Callable[[T], S|None]) -> Callable[[T], S|None]:
+P = TypeVar("P", bound="Parser")
+N = TypeVar("N", bound="Node")
+def contextual(func: Callable[[P], N|None]) -> Callable[[P], N|None]:
     # Decorator to wrap grammar methods.
     # Resets position if `func` returns None.
-    def contextual_wrapper(self: T) -> S|None:
+    def contextual_wrapper(self: P) -> N|None:
         begin = self.getpos()
         res = func(self)
         if res is None:
@@ -29,7 +29,7 @@ class Context(NamedTuple):
     end: int
     owner: PLexer
 
-    def __rep__(self):
+    def __repr__(self):
         return f"<{self.begin}-{self.end}>"
 
 
@@ -58,7 +58,7 @@ class InstDef(Node):
     name: str
     inputs: list[str] | None
     outputs: list[str] | None
-    block: Node | None
+    block: Block | None
 
 
 @dataclass

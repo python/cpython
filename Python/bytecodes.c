@@ -1,17 +1,47 @@
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_call.h"          // _PyObject_FastCallDictTstate()
+#include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
+#include "pycore_code.h"
+#include "pycore_function.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_opcode.h"        // EXTRA_CASES
+#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_range.h"         // _PyRangeIterObject
+#include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
-#include "opcode.h"
-#include "pycore_atomic.h"
+#include "pycore_dict.h"
+#include "dictobject.h"
 #include "pycore_frame.h"
+#include "opcode.h"
+#include "pydtrace.h"
+#include "setobject.h"
+#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
 void _PyFloat_ExactDealloc(PyObject *);
 void _PyUnicode_ExactDealloc(PyObject *);
 
 #define SET_TOP(v)        (stack_pointer[-1] = (v))
+#define PEEK(n)           (stack_pointer[-(n)])
+
 #define GETLOCAL(i)     (frame->localsplus[i])
 
-#define inst(name, stack_effect) case name:
+#define inst(name) case name:
 #define family(name) static int family_##name
+
+#define NAME_ERROR_MSG \
+    "name '%.200s' is not defined"
+
+typedef struct {
+    PyObject *kwnames;
+} CallShape;
 
 static void
 dummy_func(
@@ -24,10 +54,18 @@ dummy_func(
     PyObject *names,
     PyObject *consts,
     _Py_CODEUNIT *next_instr,
-    PyObject **stack_pointer
+    PyObject **stack_pointer,
+    CallShape call_shape,
+    _Py_CODEUNIT *first_instr,
+    int throwflag,
+    binaryfunc binary_ops[]
 )
 {
     switch (opcode) {
+
+        /* BEWARE!
+           It is essential that any operation that fails must goto error
+           and that all operation that succeed call DISPATCH() ! */
 
 // BEGIN BYTECODES //
         // stack effect: ( -- )
@@ -3924,56 +3962,60 @@ dummy_func(
 // END BYTECODES //
 
     }
- handle_eval_breaker:;
- unbound_local_error:;
  error:;
+ exception_unwind:;
+ handle_eval_breaker:;
+ resume_frame:;
+ resume_with_error:;
+ start_frame:;
+ unbound_local_error:;
 }
 
 // Families go below this point //
 
-family(binary_op) =
+family(binary_op) = {
     BINARY_OP, BINARY_OP_ADAPTIVE, BINARY_OP_ADD_FLOAT,
     BINARY_OP_ADD_INT, BINARY_OP_ADD_UNICODE, BINARY_OP_INPLACE_ADD_UNICODE,
-    BINARY_OP_MULTIPLY_FLOAT, BINARY_OP_MULTIPLY_INT, BINARY_OP_SUBTRACT_FLOAT;
-    BINARY_OP_SUBTRACT_INT;
-family(binary_subscr) =
+    BINARY_OP_MULTIPLY_FLOAT, BINARY_OP_MULTIPLY_INT, BINARY_OP_SUBTRACT_FLOAT,
+    BINARY_OP_SUBTRACT_INT };
+family(binary_subscr) = {
     BINARY_SUBSCR, BINARY_SUBSCR_ADAPTIVE, BINARY_SUBSCR_DICT,
-    BINARY_SUBSCR_GETITEM, BINARY_SUBSCR_LIST_INT, BINARY_SUBSCR_TUPLE_INT;
-family(call) =
+    BINARY_SUBSCR_GETITEM, BINARY_SUBSCR_LIST_INT, BINARY_SUBSCR_TUPLE_INT };
+family(call) = {
     CALL, CALL_ADAPTIVE, CALL_PY_EXACT_ARGS,
     CALL_PY_WITH_DEFAULTS, CALL_BOUND_METHOD_EXACT_ARGS, CALL_BUILTIN_CLASS,
     CALL_BUILTIN_FAST_WITH_KEYWORDS, CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, CALL_NO_KW_BUILTIN_FAST,
     CALL_NO_KW_BUILTIN_O, CALL_NO_KW_ISINSTANCE, CALL_NO_KW_LEN,
     CALL_NO_KW_LIST_APPEND, CALL_NO_KW_METHOD_DESCRIPTOR_FAST, CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
-    CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1;
-    CALL_NO_KW_TYPE_1;
-family(compare_op) =
+    CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
+    CALL_NO_KW_TYPE_1 };
+family(compare_op) = {
     COMPARE_OP, COMPARE_OP_ADAPTIVE, COMPARE_OP_FLOAT_JUMP,
-    COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP;
-family(extended_arg) = EXTENDED_ARG, EXTENDED_ARG_QUICK;
-family(for_iter) =
-    FOR_ITER, FOR_ITER_ADAPTIVE, FOR_ITER_LIST;
-    FOR_ITER_RANGE;
-family(jump_backward) = JUMP_BACKWARD, JUMP_BACKWARD_QUICK;
-family(load_attr) =
+    COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP };
+family(extended_arg) = { EXTENDED_ARG, EXTENDED_ARG_QUICK };
+family(for_iter) = {
+    FOR_ITER, FOR_ITER_ADAPTIVE, FOR_ITER_LIST,
+    FOR_ITER_RANGE };
+family(jump_backward) = { JUMP_BACKWARD, JUMP_BACKWARD_QUICK };
+family(load_attr) = {
     LOAD_ATTR, LOAD_ATTR_ADAPTIVE, LOAD_ATTR_CLASS,
     LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_MODULE,
     LOAD_ATTR_PROPERTY, LOAD_ATTR_SLOT, LOAD_ATTR_WITH_HINT,
-    LOAD_ATTR_METHOD_LAZY_DICT, LOAD_ATTR_METHOD_NO_DICT, LOAD_ATTR_METHOD_WITH_DICT;
-    LOAD_ATTR_METHOD_WITH_VALUES;
-family(load_const) = LOAD_CONST, LOAD_CONST__LOAD_FAST;
-family(load_fast) = LOAD_FAST, LOAD_FAST__LOAD_CONST, LOAD_FAST__LOAD_FAST;
-family(load_global) =
-    LOAD_GLOBAL, LOAD_GLOBAL_ADAPTIVE, LOAD_GLOBAL_BUILTIN;
-    LOAD_GLOBAL_MODULE;
-family(resume) = RESUME, RESUME_QUICK;
-family(store_attr) =
+    LOAD_ATTR_METHOD_LAZY_DICT, LOAD_ATTR_METHOD_NO_DICT, LOAD_ATTR_METHOD_WITH_DICT,
+    LOAD_ATTR_METHOD_WITH_VALUES };
+family(load_const) = { LOAD_CONST, LOAD_CONST__LOAD_FAST };
+family(load_fast) = { LOAD_FAST, LOAD_FAST__LOAD_CONST, LOAD_FAST__LOAD_FAST };
+family(load_global) = {
+    LOAD_GLOBAL, LOAD_GLOBAL_ADAPTIVE, LOAD_GLOBAL_BUILTIN,
+    LOAD_GLOBAL_MODULE };
+family(resume) = { RESUME, RESUME_QUICK };
+family(store_attr) = {
     STORE_ATTR, STORE_ATTR_ADAPTIVE, STORE_ATTR_INSTANCE_VALUE,
-    STORE_ATTR_SLOT, STORE_ATTR_WITH_HINT;
-family(store_fast) = STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST;
-family(store_subscr) =
-    STORE_SUBSCR, STORE_SUBSCR_ADAPTIVE, STORE_SUBSCR_DICT;
-    STORE_SUBSCR_LIST_INT;
-family(unpack_sequence) =
+    STORE_ATTR_SLOT, STORE_ATTR_WITH_HINT };
+family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
+family(store_subscr) = {
+    STORE_SUBSCR, STORE_SUBSCR_ADAPTIVE, STORE_SUBSCR_DICT,
+    STORE_SUBSCR_LIST_INT };
+family(unpack_sequence) = {
     UNPACK_SEQUENCE, UNPACK_SEQUENCE_ADAPTIVE, UNPACK_SEQUENCE_LIST,
-    UNPACK_SEQUENCE_TUPLE, UNPACK_SEQUENCE_TWO_TUPLE;
+    UNPACK_SEQUENCE_TUPLE, UNPACK_SEQUENCE_TWO_TUPLE };
