@@ -63,6 +63,10 @@ def join_rows(a_rows, b_rows):
     default = [""] * (ncols - 1)
     a_data = {x[0]: x[1:] for x in a_rows}
     b_data = {x[0]: x[1:] for x in b_rows}
+
+    if len(a_data) != len(a_rows) or len(b_data) != len(b_rows):
+        raise ValueError("Duplicate keys")
+
     # To preserve ordering, use A's keys as is and then add any in B that aren't
     # in A
     keys = list(a_data.keys()) + [k for k in b_data.keys() if k not in a_data]
