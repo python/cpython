@@ -96,22 +96,14 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 }
 
 
-PyFutureFeatures *
-_PyFuture_FromAST(mod_ty mod, PyObject *filename)
+int
+_PyFuture_FromAST(mod_ty mod, PyObject *filename, PyFutureFeatures *ff)
 {
-    PyFutureFeatures *ff;
-
-    ff = (PyFutureFeatures *)PyObject_Malloc(sizeof(PyFutureFeatures));
-    if (ff == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     ff->ff_features = 0;
     ff->ff_location = (_PyCompilerSrcLocation){-1, -1, -1, -1};
 
     if (!future_parse(ff, mod, filename)) {
-        PyObject_Free(ff);
-        return NULL;
+        return 0;
     }
-    return ff;
+    return 1;
 }

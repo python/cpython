@@ -301,6 +301,8 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
     return 0;
 }
 
+extern void _PyCode_Quicken(PyCodeObject *code);
+
 static void
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
@@ -353,7 +355,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_extra = NULL;
     co->_co_cached = NULL;
 
-    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     co->_co_linearray_entry_size = 0;
     co->_co_linearray = NULL;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
@@ -364,6 +365,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
+    _PyCode_Quicken(co);
 }
 
 static int
@@ -1664,9 +1666,6 @@ code_dealloc(PyCodeObject *co)
     if (co->_co_linearray) {
         PyMem_Free(co->_co_linearray);
     }
-    if (co->co_warmup == 0) {
-        _Py_QuickenedCount--;
-    }
     PyObject_Free(co);
 }
 
@@ -2224,13 +2223,9 @@ _PyCode_ConstantKey(PyObject *op)
 }
 
 void
-_PyStaticCode_Dealloc(PyCodeObject *co)
+_PyStaticCode_Fini(PyCodeObject *co)
 {
-    if (co->co_warmup == 0) {
-         _Py_QuickenedCount--;
-    }
     deopt_code(_PyCode_CODE(co), Py_SIZE(co));
-    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
     if (co->_co_cached != NULL) {
         Py_CLEAR(co->_co_cached->_co_code);
@@ -2252,7 +2247,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
 }
 
 int
-_PyStaticCode_InternStrings(PyCodeObject *co)
+_PyStaticCode_Init(PyCodeObject *co)
 {
     int res = intern_strings(co->co_names);
     if (res < 0) {
@@ -2266,5 +2261,6 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
     if (res < 0) {
         return -1;
     }
+    _PyCode_Quicken(co);
     return 0;
 }
