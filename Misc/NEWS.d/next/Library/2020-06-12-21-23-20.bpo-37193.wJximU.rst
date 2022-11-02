@@ -1,2 +1,0 @@
-Fixed memory leak in ``socketserver.ThreadingMixIn`` introduced in Python
-3.7.
