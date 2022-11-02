@@ -1898,7 +1898,7 @@ rmtestturds:
 	-rm -f gb-18030-2000.xml
 
 docclean:
-	$(MAKE) -C Doc clean
+	$(MAKE) -C $(srcdir)/Doc clean
 
 # like the 'clean' target but retain the profile guided optimization (PGO)
 # data.  The PGO data is only valid if source code remains unchanged.
