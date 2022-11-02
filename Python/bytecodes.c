@@ -74,13 +74,6 @@ dummy_func(
 
         // stack effect: ( -- )
         inst(RESUME) {
-            _PyCode_Warmup(frame->f_code);
-            GO_TO_INSTRUCTION(RESUME_QUICK);
-        }
-
-        // stack effect: ( -- )
-        inst(RESUME_QUICK) {
-            PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -621,7 +614,7 @@ dummy_func(
             PyObject *list = PEEK(oparg);
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0)
                 goto error;
-            PREDICT(JUMP_BACKWARD_QUICK);
+            PREDICT(JUMP_BACKWARD);
         }
 
         // stack effect: (__0 -- )
@@ -633,7 +626,7 @@ dummy_func(
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_BACKWARD_QUICK);
+            PREDICT(JUMP_BACKWARD);
         }
 
         // stack effect: (__0, __1, __2 -- )
@@ -1830,7 +1823,7 @@ dummy_func(
             if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
                 goto error;
             }
-            PREDICT(JUMP_BACKWARD_QUICK);
+            PREDICT(JUMP_BACKWARD);
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -2503,8 +2496,10 @@ dummy_func(
 
         // stack effect: ( -- )
         inst(JUMP_BACKWARD) {
-            _PyCode_Warmup(frame->f_code);
-            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+            PREDICTED(JUMP_BACKWARD);
+            assert(oparg < INSTR_OFFSET());
+            JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
         }
 
         // stack effect: (__0 -- )
@@ -2632,14 +2627,6 @@ dummy_func(
              * (see bpo-30039).
              */
             JUMPBY(-oparg);
-        }
-
-        // stack effect: ( -- )
-        inst(JUMP_BACKWARD_QUICK) {
-            PREDICTED(JUMP_BACKWARD_QUICK);
-            assert(oparg < INSTR_OFFSET());
-            JUMPBY(-oparg);
-            CHECK_EVAL_BREAKER();
         }
 
         // stack effect: ( -- __0)
@@ -3996,7 +3983,6 @@ family(extended_arg) = { EXTENDED_ARG, EXTENDED_ARG_QUICK };
 family(for_iter) = {
     FOR_ITER, FOR_ITER_ADAPTIVE, FOR_ITER_LIST,
     FOR_ITER_RANGE };
-family(jump_backward) = { JUMP_BACKWARD, JUMP_BACKWARD_QUICK };
 family(load_attr) = {
     LOAD_ATTR, LOAD_ATTR_ADAPTIVE, LOAD_ATTR_CLASS,
     LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_MODULE,
@@ -4008,7 +3994,6 @@ family(load_fast) = { LOAD_FAST, LOAD_FAST__LOAD_CONST, LOAD_FAST__LOAD_FAST };
 family(load_global) = {
     LOAD_GLOBAL, LOAD_GLOBAL_ADAPTIVE, LOAD_GLOBAL_BUILTIN,
     LOAD_GLOBAL_MODULE };
-family(resume) = { RESUME, RESUME_QUICK };
 family(store_attr) = {
     STORE_ATTR, STORE_ATTR_ADAPTIVE, STORE_ATTR_INSTANCE_VALUE,
     STORE_ATTR_SLOT, STORE_ATTR_WITH_HINT };

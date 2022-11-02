@@ -6,12 +6,6 @@
         }
 
         TARGET(RESUME) {
-            _PyCode_Warmup(frame->f_code);
-            GO_TO_INSTRUCTION(RESUME_QUICK);
-        }
-
-        TARGET(RESUME_QUICK) {
-            PREDICTED(RESUME_QUICK);
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -550,7 +544,7 @@
             PyObject *list = PEEK(oparg);
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0)
                 goto error;
-            PREDICT(JUMP_BACKWARD_QUICK);
+            PREDICT(JUMP_BACKWARD);
             DISPATCH();
         }
 
@@ -562,7 +556,7 @@
             Py_DECREF(v);
             if (err != 0)
                 goto error;
-            PREDICT(JUMP_BACKWARD_QUICK);
+            PREDICT(JUMP_BACKWARD);
             DISPATCH();
         }
 
@@ -1752,7 +1746,7 @@
             if (_PyDict_SetItem_Take2((PyDictObject *)map, key, value) != 0) {
                 goto error;
             }
-            PREDICT(JUMP_BACKWARD_QUICK);
+            PREDICT(JUMP_BACKWARD);
             DISPATCH();
         }
 
@@ -2423,8 +2417,11 @@
         }
 
         TARGET(JUMP_BACKWARD) {
-            _PyCode_Warmup(frame->f_code);
-            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+            PREDICTED(JUMP_BACKWARD);
+            assert(oparg < INSTR_OFFSET());
+            JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
         }
 
         TARGET(POP_JUMP_IF_FALSE) {
@@ -2551,14 +2548,6 @@
              * (see bpo-30039).
              */
             JUMPBY(-oparg);
-            DISPATCH();
-        }
-
-        TARGET(JUMP_BACKWARD_QUICK) {
-            PREDICTED(JUMP_BACKWARD_QUICK);
-            assert(oparg < INSTR_OFFSET());
-            JUMPBY(-oparg);
-            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
