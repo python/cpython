@@ -489,7 +489,7 @@ Customize Memory Allocators
           :c:func:`Py_InitializeFromConfig` to install a custom memory
           allocator. There are no restrictions over the installed allocator
           other than the ones imposed by the domain (for instance, the Raw
-          Domain allows to be called without the GIL held). See
+          Domain allows the allocator to be called without the GIL held). See
           :ref:`the section on allocator domains <allocator-domains>` for more
           information.
 
