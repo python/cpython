@@ -62,3 +62,6 @@ PyAPI_DATA(PyTypeObject) _PyMethodWrapper_Type;
 PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
                                                 struct wrapperbase *, void *);
 PyAPI_FUNC(int) PyDescr_IsData(PyObject *);
+
+PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, PyMemberDef *);
+PyAPI_FUNC(int) PyMember_SetOne(char *, PyMemberDef *, PyObject *);
