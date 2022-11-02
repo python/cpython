@@ -74,9 +74,8 @@ Functions, Constants, and Exceptions
 Socket creation
 ^^^^^^^^^^^^^^^
 
-Since Python 3.2, it is recommended to use the
-:meth:`SSLContext.wrap_socket` of an :class:`SSLContext` instance to wrap
-sockets as :class:`SSLSocket` objects. The helper function
+Instances of :class:`SSLSocket` must be created using the
+:meth:`SSLContext.wrap_socket` method. The helper function
 :func:`create_default_context` returns a new context with secure default
 settings.
 
