@@ -108,7 +108,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
     opname_including_specialized[255] = 'DO_TRACING'
     used[255] = True
 
-    with (open(outfile, 'w') as fobj, open(internaloutfile, 'w') as iobj):
+    with open(outfile, 'w') as fobj, open(internaloutfile, 'w') as iobj:
         fobj.write(header)
         iobj.write(internal_header)
 
