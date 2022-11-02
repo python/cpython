@@ -1,0 +1,1 @@
+Use ``python3.11``, if available, for regeneration and freezing.
