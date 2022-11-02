@@ -582,7 +582,7 @@ else:
             if os_name == 'nt':
                 # QUIRK: For compatibility and security, do not search for DLLs
                 # directory. The fallback below will cover it
-                pass
+                exec_prefix = executable_dir
             else:
                 exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
