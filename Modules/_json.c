@@ -7,11 +7,11 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "structmember.h"         // PyMemberDef
+#include "pycore_runtime_init.h"  // _Py_ID()
 #include <stdbool.h>              // bool
 
 
@@ -305,15 +305,9 @@ static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
-    _Py_static_string(PyId_decoder, "json.decoder");
-    PyObject *decoder = _PyImport_GetModuleId(&PyId_decoder);
-    if (decoder == NULL) {
-        return;
-    }
-
-    _Py_IDENTIFIER(JSONDecodeError);
-    PyObject *JSONDecodeError = _PyObject_GetAttrId(decoder, &PyId_JSONDecodeError);
-    Py_DECREF(decoder);
+    _Py_DECLARE_STR(json_decoder, "json.decoder");
+    PyObject *JSONDecodeError =
+         _PyImport_GetModuleAttr(&_Py_STR(json_decoder), &_Py_ID(JSONDecodeError));
     if (JSONDecodeError == NULL) {
         return;
     }
@@ -1310,28 +1304,13 @@ _encoded_const(PyObject *obj)
 {
     /* Return the JSON string representation of None, True, False */
     if (obj == Py_None) {
-        _Py_static_string(PyId_null, "null");
-        PyObject *s_null = _PyUnicode_FromId(&PyId_null);
-        if (s_null == NULL) {
-            return NULL;
-        }
-        return Py_NewRef(s_null);
+        return Py_NewRef(&_Py_ID(null));
     }
     else if (obj == Py_True) {
-        _Py_static_string(PyId_true, "true");
-        PyObject *s_true = _PyUnicode_FromId(&PyId_true);
-        if (s_true == NULL) {
-            return NULL;
-        }
-        return Py_NewRef(s_true);
+        return Py_NewRef(&_Py_ID(true));
     }
     else if (obj == Py_False) {
-        _Py_static_string(PyId_false, "false");
-        PyObject *s_false = _PyUnicode_FromId(&PyId_false);
-        if (s_false == NULL) {
-            return NULL;
-        }
-        return Py_NewRef(s_false);
+        return Py_NewRef(&_Py_ID(false));
     }
     else {
         PyErr_SetString(PyExc_ValueError, "not a const");
@@ -1530,7 +1509,7 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
 
     if (*first) {
         *first = false;
-    } 
+    }
     else {
         if (_PyUnicodeWriter_WriteStr(writer, s->item_separator) < 0) {
             Py_DECREF(keystr);
