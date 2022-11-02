@@ -370,7 +370,12 @@ def _get_command_stdout(command, *args):
         # for are actually localized, but in theory some system could do so.)
         env = dict(os.environ)
         env['LC_ALL'] = 'C'
-        proc = subprocess.Popen((executable,) + args,
+        # Empty strings will be quoted by popen so we should just ommit it
+        if args != ('',):
+            command = (executable, *args)
+        else:
+            command = (executable,)
+        proc = subprocess.Popen(command,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.DEVNULL,
                                 env=env)
@@ -510,7 +515,7 @@ def _ifconfig_getnode():
         mac = _find_mac_near_keyword('ifconfig', args, keywords, lambda i: i+1)
         if mac:
             return mac
-        return None
+    return None
 
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
