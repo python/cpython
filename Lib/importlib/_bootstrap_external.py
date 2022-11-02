@@ -424,9 +424,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3508 (Add CLEANUP_THROW)
 #     Python 3.12a1 3509 (Conditional jumps only jump forward)
 #     Python 3.12a1 3510 (FOR_ITER leaves iterator on the stack)
-
-
-#     Python 3.12a1 3514 (Add LOAD_ERROR instruction)
+#     Python 3.12a1 3511 (Add STOPITERATION_ERROR instruction)
 
 #     Python 3.13 will start with 3550
 

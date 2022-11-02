@@ -543,16 +543,8 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
-        >> LOAD_ERROR               1
-           CHECK_EXC_MATCH
-           POP_JUMP_IF_FALSE       10 (to 144)
-           PUSH_EXC_INFO
-           LOAD_ERROR               2
-           LOAD_CONST               3 ('coroutine raised StopIteration')
-           CALL                     0
-           SWAP                     2
-           RAISE_VARARGS            2
-        >> RERAISE                  1
+        >> STOPITERATION_ERROR
+           RERAISE                  1
 ExceptionTable:
 12 rows
 """ % (_asyncwith.__code__.co_firstlineno,
@@ -712,18 +704,6 @@ Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
            JUMP_BACKWARD            9 (to 8)
         >> END_FOR
            RETURN_VALUE
-        >> LOAD_ERROR               1
-           CHECK_EXC_MATCH
-           POP_JUMP_IF_FALSE       10 (to 56)
-           PUSH_EXC_INFO
-           LOAD_ERROR               2
-           LOAD_CONST               1 ('generator raised StopIteration')
-           CALL                     0
-           SWAP                     2
-           RAISE_VARARGS            2
-        >> RERAISE                  1
-ExceptionTable:
-1 row
 """ % (dis_nested_1,
        __file__,
        _h.__code__.co_firstlineno + 3,
@@ -1278,7 +1258,6 @@ Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
 Constants:
    0: None
    1: <code object f at (.*), file "(.*)", line (.*)>
-   2: 'generator raised StopIteration'
 Variable names:
    0: a
    1: b
@@ -1385,7 +1364,6 @@ Flags:             OPTIMIZED, NEWLOCALS, COROUTINE
 Constants:
    0: None
    1: 1
-   2: 'coroutine raised StopIteration'
 Names:
    0: b
    1: c

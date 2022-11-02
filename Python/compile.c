@@ -1176,6 +1176,9 @@ stack_effect(int opcode, int oparg, int jump)
              * if an exception be raised. */
             return jump ? 1 : 0;
 
+        case STOPITERATION_ERROR:
+            return 0;
+
         case PREP_RERAISE_STAR:
              return -1;
         case RERAISE:
@@ -2584,7 +2587,6 @@ static int
 wrap_in_stopiteration_handler(struct compiler *c)
 {
     NEW_JUMP_TARGET_LABEL(c, handler);
-    NEW_JUMP_TARGET_LABEL(c, next);
 
     /* Insert SETUP_CLEANUP at start */
     struct instr setup = {
@@ -2600,48 +2602,7 @@ wrap_in_stopiteration_handler(struct compiler *c)
     ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     ADDOP(c, NO_LOCATION, RETURN_VALUE);
     USE_LABEL(c, handler);
-    ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 1); // StopIteration
-    ADDOP(c, NO_LOCATION, CHECK_EXC_MATCH);
-    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, next);
-    ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
-    ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 2); // RuntimeError
-    const char *msg = c->u->u_ste->ste_coroutine ?
-        (c->u->u_ste->ste_generator ?
-            "async generator raised StopIteration" :
-            "coroutine raised StopIteration"
-        ) :
-        "generator raised StopIteration";
-    PyObject *message = _PyUnicode_FromASCII(msg, strlen(msg));
-    if (message == NULL) {
-        return 0;
-    }
-    ADDOP_LOAD_CONST_NEW(c, NO_LOCATION, message);
-    ADDOP_I(c, NO_LOCATION, CALL, 0);
-    ADDOP_I(c, NO_LOCATION, SWAP, 2);
-    ADDOP_I(c, NO_LOCATION, RAISE_VARARGS, 2);
-
-    USE_LABEL(c, next);
-    if (c->u->u_ste->ste_coroutine &&
-        c->u->u_ste->ste_generator)
-    {
-        NEW_JUMP_TARGET_LABEL(c, next);
-        ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 3); // StopAsyncIteration
-        ADDOP(c, NO_LOCATION, CHECK_EXC_MATCH);
-        ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_FALSE, next);
-        ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
-        ADDOP_I(c, NO_LOCATION, LOAD_ERROR, 2); // RuntimeError
-        const char *msg = "async generator raised StopAsyncIteration";
-        PyObject *message = _PyUnicode_FromASCII(msg, strlen(msg));
-        if (message == NULL) {
-            return 0;
-        }
-        ADDOP_LOAD_CONST_NEW(c, NO_LOCATION, message);
-        ADDOP_I(c, NO_LOCATION, CALL, 0);
-        ADDOP_I(c, NO_LOCATION, SWAP, 2);
-        ADDOP_I(c, NO_LOCATION, RAISE_VARARGS, 2);
-
-        USE_LABEL(c, next);
-    }
+    ADDOP(c, NO_LOCATION, STOPITERATION_ERROR);
     ADDOP_I(c, NO_LOCATION, RERAISE, 1);
     return 1;
 }
@@ -5573,8 +5534,10 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (type != COMP_GENEXP) {
         ADDOP(c, LOC(e), RETURN_VALUE);
     }
-    if (!wrap_in_stopiteration_handler(c)) {
-        goto error_in_scope;
+    if (type == COMP_GENEXP) {
+        if (!wrap_in_stopiteration_handler(c)) {
+            goto error_in_scope;
+        }
     }
 
     co = assemble(c, 1);
