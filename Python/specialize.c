@@ -31,7 +31,6 @@ uint8_t _PyOpcode_Adaptive[256] = {
     [FOR_ITER] = FOR_ITER_ADAPTIVE,
 };
 
-Py_ssize_t _Py_QuickenedCount = 0;
 #ifdef Py_STATS
 PyStats _py_stats_struct = { 0 };
 PyStats *_py_stats = &_py_stats_struct;
@@ -280,16 +279,14 @@ do { \
 void
 _PyCode_Quicken(PyCodeObject *code)
 {
-    _Py_QuickenedCount++;
     int previous_opcode = -1;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
-        int opcode = _Py_OPCODE(instructions[i]);
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
         uint8_t adaptive_opcode = _PyOpcode_Adaptive[opcode];
         if (adaptive_opcode) {
             _Py_SET_OPCODE(instructions[i], adaptive_opcode);
-            // Make sure the adaptive counter is zero:
-            assert(instructions[i + 1] == 0);
+            instructions[i + 1] = adaptive_counter_start();
             previous_opcode = -1;
             i += _PyOpcode_Caches[opcode];
         }
@@ -298,12 +295,6 @@ _PyCode_Quicken(PyCodeObject *code)
             switch (opcode) {
                 case EXTENDED_ARG:
                     _Py_SET_OPCODE(instructions[i], EXTENDED_ARG_QUICK);
-                    break;
-                case JUMP_BACKWARD:
-                    _Py_SET_OPCODE(instructions[i], JUMP_BACKWARD_QUICK);
-                    break;
-                case RESUME:
-                    _Py_SET_OPCODE(instructions[i], RESUME_QUICK);
                     break;
                 case LOAD_FAST:
                     switch(previous_opcode) {
