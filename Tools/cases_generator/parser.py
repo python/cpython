@@ -56,8 +56,8 @@ class Block(Node):
 @dataclass
 class InstDef(Node):
     name: str
-    inputs: list[str]
-    outputs: list[str]
+    inputs: list[str] | None
+    outputs: list[str] | None
     block: Node | None
 
 
@@ -80,7 +80,7 @@ class Parser(PLexer):
 
     @contextual
     def inst_header(self):
-        # inst(NAME, (inputs -- outputs))
+        # inst(NAME) | inst(NAME, (inputs -- outputs))
         # TODO: Error out when there is something unexpected.
         # TODO: Make INST a keyword in the lexer.
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "inst":
@@ -92,6 +92,8 @@ class Parser(PLexer):
                     if (self.expect(lx.RPAREN)
                             and self.peek().kind == lx.LBRACE):
                         return InstDef(name, inp, outp, [])
+                elif self.expect(lx.RPAREN):
+                    return InstDef(name, None, None, [])
         return None
 
     def stack_effect(self):
