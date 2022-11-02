@@ -2002,8 +2002,7 @@ class HTTPSTest(TestCase):
 
         # Same with explicit context.check_hostname=True
         context.check_hostname = True
-        h = client.HTTPSConnection('localhost', server.port,
-                                   context=context, )
+        h = client.HTTPSConnection('localhost', server.port, context=context)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
 
@@ -2049,6 +2048,11 @@ class HTTPSTest(TestCase):
         h = client.HTTPSConnection('localhost', 443, context=context)
         self.assertIs(h._context, context)
         self.assertFalse(h._context.post_handshake_auth)
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT, cert_file=CERT_localhost)
+        context.post_handshake_auth = True
+        h = client.HTTPSConnection('localhost', 443, context=context)
+        self.assertTrue(h._context.post_handshake_auth)
 
 
 class RequestBodyTest(TestCase):

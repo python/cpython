@@ -441,7 +441,7 @@ if HAVE_SSL:
                                             server_hostname=self.host)
             return sock
 
-        def stls(self, *, context=None):
+        def stls(self, context=None):
             """The method unconditionally raises an exception since the
             STLS command doesn't make any sense on an already established
             SSL/TLS session.

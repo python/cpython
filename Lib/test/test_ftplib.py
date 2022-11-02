@@ -984,6 +984,12 @@ class TestTLS_FTPClass(TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
+        self.assertRaises(TypeError, ftplib.FTP_TLS, keyfile=CERTFILE,
+                          context=ctx)
+        self.assertRaises(TypeError, ftplib.FTP_TLS, certfile=CERTFILE,
+                          context=ctx)
+        self.assertRaises(TypeError, ftplib.FTP_TLS, certfile=CERTFILE,
+                          keyfile=CERTFILE, context=ctx)
 
         self.client = ftplib.FTP_TLS(context=ctx, timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
