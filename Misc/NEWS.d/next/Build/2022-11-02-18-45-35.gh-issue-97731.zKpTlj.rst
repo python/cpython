@@ -1,0 +1,2 @@
+Specify the full path to the source location for ``make docclean`` (needed for
+cross-builds).
