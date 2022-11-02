@@ -1,8 +1,18 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
+// windows.h must be included before pycore internal headers
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
+
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include <ffi.h>
 #ifdef MS_WIN32
-#include <windows.h>
-#include <malloc.h>
+#  include <malloc.h>
 #endif
 #include "ctypes.h"
 
@@ -248,7 +258,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
             }
             continue;
         }
-        new_descr = (CFieldObject *)_PyObject_CallNoArg((PyObject *)&PyCField_Type);
+        new_descr = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
         if (new_descr == NULL) {
             Py_DECREF(fdescr);
             Py_DECREF(fieldlist);
@@ -495,7 +505,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (stgdict->format == NULL)
         return -1;
 
-#define realdict ((PyObject *)&stgdict->dict)
     for (i = 0; i < len; ++i) {
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
@@ -538,9 +547,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             case FFI_TYPE_SINT16:
             case FFI_TYPE_SINT32:
                 if (dict->getfunc != _ctypes_get_fielddesc("c")->getfunc
-#ifdef CTYPES_UNICODE
                     && dict->getfunc != _ctypes_get_fielddesc("u")->getfunc
-#endif
                     )
                     break;
                 /* else fall through */
@@ -628,7 +635,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         Py_DECREF(pair);
         Py_DECREF(prop);
     }
-#undef realdict
 
     if (isStruct && !isPacked) {
         char *ptr = stgdict->format;

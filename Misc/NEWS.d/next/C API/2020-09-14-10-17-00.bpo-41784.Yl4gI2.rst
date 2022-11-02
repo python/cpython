@@ -1,1 +1,0 @@
-Added ``PyUnicode_AsUTF8AndSize`` to the limited C API. 

@@ -370,8 +370,8 @@ _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2)
     result = PyLong_FromLong(wcscoll(ws1, ws2));
   done:
     /* Deallocate everything. */
-    if (ws1) PyMem_FREE(ws1);
-    if (ws2) PyMem_FREE(ws2);
+    if (ws1) PyMem_Free(ws1);
+    if (ws2) PyMem_Free(ws2);
     return result;
 }
 #endif
@@ -556,7 +556,6 @@ static struct langinfo_constant{
     LANGINFO(PM_STR),
 
     /* The following constants are available only with XPG4, but...
-       AIX 3.2. only has CODESET.
        OpenBSD doesn't have CODESET but has T_FMT_AMPM, and doesn't have
        a few of the others.
        Solution: ifdef-test them all. */
@@ -774,14 +773,14 @@ _locale_bind_textdomain_codeset_impl(PyObject *module, const char *domain,
 
 
 /*[clinic input]
-_locale._get_locale_encoding
+_locale.getencoding
 
 Get the current locale encoding.
 [clinic start generated code]*/
 
 static PyObject *
-_locale__get_locale_encoding_impl(PyObject *module)
-/*[clinic end generated code: output=e8e2f6f6f184591a input=513d9961d2f45c76]*/
+_locale_getencoding_impl(PyObject *module)
+/*[clinic end generated code: output=86b326b971872e46 input=6503d11e5958b360]*/
 {
     return _Py_GetLocaleEncodingObject();
 }
@@ -812,7 +811,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
     _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif
 #endif
-    _LOCALE__GET_LOCALE_ENCODING_METHODDEF
+    _LOCALE_GETENCODING_METHODDEF
   {NULL, NULL}
 };
 

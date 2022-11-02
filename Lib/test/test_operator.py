@@ -45,6 +45,18 @@ class BadIterable:
 
 
 class OperatorTestCase:
+    def test___all__(self):
+        operator = self.module
+        actual_all = set(operator.__all__)
+        computed_all = set()
+        for name in vars(operator):
+            if name.startswith('__'):
+                continue
+            value = getattr(operator, name)
+            if value.__module__ in ('operator', '_operator'):
+                computed_all.add(name)
+        self.assertSetEqual(computed_all, actual_all)
+
     def test_lt(self):
         operator = self.module
         self.assertRaises(TypeError, operator.lt)
@@ -153,6 +165,11 @@ class OperatorTestCase:
         self.assertRaises(ZeroDivisionError, operator.countOf, BadIterable(), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 3), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 5), 0)
+        # is but not ==
+        nan = float("nan")
+        self.assertEqual(operator.countOf([nan, nan, 21], nan), 2)
+        # == but not is
+        self.assertEqual(operator.countOf([{}, 1, {}, 2], {}), 2)
 
     def test_delitem(self):
         operator = self.module
@@ -188,6 +205,9 @@ class OperatorTestCase:
         self.assertRaises(ZeroDivisionError, operator.indexOf, BadIterable(), 1)
         self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
+        nan = float("nan")
+        self.assertEqual(operator.indexOf([nan, nan, 21], nan), 0)
+        self.assertEqual(operator.indexOf([{}, 1, {}, 2], {}), 0)
 
     def test_invert(self):
         operator = self.module
@@ -509,6 +529,18 @@ class OperatorTestCase:
             operator.length_hint(X(-2))
         with self.assertRaises(LookupError):
             operator.length_hint(X(LookupError))
+
+    def test_call(self):
+        operator = self.module
+
+        def func(*args, **kwargs): return args, kwargs
+
+        self.assertEqual(operator.call(func), ((), {}))
+        self.assertEqual(operator.call(func, 0, 1), ((0, 1), {}))
+        self.assertEqual(operator.call(func, a=2, obj=3),
+                         ((), {"a": 2, "obj": 3}))
+        self.assertEqual(operator.call(func, 0, 1, a=2, obj=3),
+                         ((0, 1), {"a": 2, "obj": 3}))
 
     def test_dunder_is_original(self):
         operator = self.module

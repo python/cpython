@@ -28,9 +28,16 @@ def _iterdump(connection):
             ORDER BY "name"
         """
     schema_res = cu.execute(q)
+    sqlite_sequence = []
     for table_name, type, sql in schema_res.fetchall():
         if table_name == 'sqlite_sequence':
-            yield('DELETE FROM "sqlite_sequence";')
+            rows = cu.execute('SELECT * FROM "sqlite_sequence";').fetchall()
+            sqlite_sequence = ['DELETE FROM "sqlite_sequence"']
+            sqlite_sequence += [
+                f'INSERT INTO "sqlite_sequence" VALUES(\'{row[0]}\',{row[1]})'
+                for row in rows
+            ]
+            continue
         elif table_name == 'sqlite_stat1':
             yield('ANALYZE "sqlite_master";')
         elif table_name.startswith('sqlite_'):
@@ -66,5 +73,10 @@ def _iterdump(connection):
     schema_res = cu.execute(q)
     for name, type, sql in schema_res.fetchall():
         yield('{0};'.format(sql))
+
+    # gh-79009: Yield statements concerning the sqlite_sequence table at the
+    # end of the transaction.
+    for row in sqlite_sequence:
+        yield('{0};'.format(row))
 
     yield('COMMIT;')

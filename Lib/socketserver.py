@@ -128,7 +128,6 @@ import selectors
 import os
 import sys
 import threading
-import contextlib
 from io import BufferedIOBase
 from time import monotonic as time
 
@@ -188,6 +187,7 @@ class BaseServer:
     - address_family
     - socket_type
     - allow_reuse_address
+    - allow_reuse_port
 
     Instance variables:
 
@@ -426,6 +426,7 @@ class TCPServer(BaseServer):
     - socket_type
     - request_queue_size (only for stream sockets)
     - allow_reuse_address
+    - allow_reuse_port
 
     Instance variables:
 
@@ -442,6 +443,8 @@ class TCPServer(BaseServer):
     request_queue_size = 5
 
     allow_reuse_address = False
+
+    allow_reuse_port = False
 
     def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
         """Constructor.  May be extended, do not override."""
@@ -462,8 +465,10 @@ class TCPServer(BaseServer):
         May be overridden.
 
         """
-        if self.allow_reuse_address:
+        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.socket.bind(self.server_address)
         self.server_address = self.socket.getsockname()
 
@@ -519,6 +524,8 @@ class UDPServer(TCPServer):
     """UDP server class."""
 
     allow_reuse_address = False
+
+    allow_reuse_port = False
 
     socket_type = socket.SOCK_DGRAM
 
@@ -633,35 +640,22 @@ class _Threads(list):
     """
     Joinable list of all non-daemon threads.
     """
-    def __init__(self):
-        self._lock = threading.Lock()
-
     def append(self, thread):
+        self.reap()
         if thread.daemon:
             return
-        with self._lock:
-            super().append(thread)
-
-    def remove(self, thread):
-        with self._lock:
-            # should not happen, but safe to ignore
-            with contextlib.suppress(ValueError):
-                super().remove(thread)
-
-    def remove_current(self):
-        """Remove a current non-daemon thread."""
-        thread = threading.current_thread()
-        if not thread.daemon:
-            self.remove(thread)
+        super().append(thread)
 
     def pop_all(self):
-        with self._lock:
-            self[:], result = [], self[:]
+        self[:], result = [], self[:]
         return result
 
     def join(self):
         for thread in self.pop_all():
             thread.join()
+
+    def reap(self):
+        self[:] = (thread for thread in self if thread.is_alive())
 
 
 class _NoThreads:
@@ -672,9 +666,6 @@ class _NoThreads:
         pass
 
     def join(self):
-        pass
-
-    def remove_current(self):
         pass
 
 
@@ -701,10 +692,7 @@ class ThreadingMixIn:
         except Exception:
             self.handle_error(request, client_address)
         finally:
-            try:
-                self.shutdown_request(request)
-            finally:
-                self._threads.remove_current()
+            self.shutdown_request(request)
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""

@@ -1,2 +1,0 @@
-Pickling heap types implemented in C with protocols 0 and 1 raises now an
-error instead of producing incorrect data.

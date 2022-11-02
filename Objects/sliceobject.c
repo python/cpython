@@ -97,9 +97,8 @@ PyObject _Py_EllipsisObject = {
 /* Slice object implementation */
 
 
-void _PySlice_Fini(PyThreadState *tstate)
+void _PySlice_Fini(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = tstate->interp;
     PySliceObject *obj = interp->slice_cache;
     if (obj != NULL) {
         interp->slice_cache = NULL;
@@ -110,6 +109,37 @@ void _PySlice_Fini(PyThreadState *tstate)
 /* start, stop, and step are python objects with None indicating no
    index is present.
 */
+
+static PySliceObject *
+_PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
+{
+    assert(start != NULL && stop != NULL && step != NULL);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PySliceObject *obj;
+    if (interp->slice_cache != NULL) {
+        obj = interp->slice_cache;
+        interp->slice_cache = NULL;
+        _Py_NewReference((PyObject *)obj);
+    }
+    else {
+        obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
+        if (obj == NULL) {
+            goto error;
+        }
+    }
+
+    obj->start = start;
+    obj->stop = stop;
+    obj->step = Py_NewRef(step);
+
+    _PyObject_GC_TRACK(obj);
+    return obj;
+error:
+    Py_DECREF(start);
+    Py_DECREF(stop);
+    return NULL;
+}
 
 PyObject *
 PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
@@ -123,30 +153,16 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
     if (stop == NULL) {
         stop = Py_None;
     }
-
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PySliceObject *obj;
-    if (interp->slice_cache != NULL) {
-        obj = interp->slice_cache;
-        interp->slice_cache = NULL;
-        _Py_NewReference((PyObject *)obj);
-    }
-    else {
-        obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
-        if (obj == NULL) {
-            return NULL;
-        }
-    }
-
-    Py_INCREF(step);
-    obj->step = step;
     Py_INCREF(start);
-    obj->start = start;
     Py_INCREF(stop);
-    obj->stop = stop;
+    return (PyObject *) _PyBuildSlice_Consume2(start, stop, step);
+}
 
-    _PyObject_GC_TRACK(obj);
-    return (PyObject *) obj;
+PyObject *
+_PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop)
+{
+    assert(start != NULL && stop != NULL);
+    return (PyObject *)_PyBuildSlice_Consume2(start, stop, Py_None);
 }
 
 PyObject *
@@ -207,7 +223,8 @@ PySlice_Unpack(PyObject *_r,
     PySliceObject *r = (PySliceObject*)_r;
     /* this is harder to get right than you might think */
 
-    Py_BUILD_ASSERT(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX);
+    static_assert(PY_SSIZE_T_MIN + 1 <= -PY_SSIZE_T_MAX,
+                  "-PY_SSIZE_T_MAX < PY_SSIZE_T_MIN + 1");
 
     if (r->step == Py_None) {
         *step = 1;
