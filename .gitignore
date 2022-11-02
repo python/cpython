@@ -116,6 +116,7 @@ PCbuild/win32/
 Tools/unicode/data/
 /autom4te.cache
 /build/
+/builddir/
 /config.cache
 /config.log
 /config.status
