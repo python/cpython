@@ -94,7 +94,7 @@
     added = '3.2'
     struct_abi_kind = 'full-abi'
 [struct.PyMemberDef]
-    added = '3.2'
+    added = '3.2'  # Before 3.12, PyMemberDef required #include "structmember.h"
     struct_abi_kind = 'full-abi'
 [struct.PyGetSetDef]
     added = '3.2'
@@ -2303,3 +2303,44 @@
     added = '3.12'
 [typedef.releasebufferproc]
     added = '3.12'
+
+[const.PY_T_BYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_SHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_INT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_LONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_LONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_UBYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_UINT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_USHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_ULONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_ULONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_PYSSIZET]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_FLOAT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_DOUBLE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_BOOL]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_STRING]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_STRING_INPLACE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_CHAR]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_T_OBJECT_EX]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_READONLY]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
+[const.PY_AUDIT_READ]
+    added = '3.12'  # Before 3.12, available in "structmember.h"
