@@ -44,6 +44,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(dot, ".")
         STRUCT_FOR_STR(dot_locals, ".<locals>")
         STRUCT_FOR_STR(empty, "")
+        STRUCT_FOR_STR(json_decoder, "json.decoder")
         STRUCT_FOR_STR(list_err, "list index out of range")
         STRUCT_FOR_STR(newline, "\n")
         STRUCT_FOR_STR(open_br, "{")
@@ -53,6 +54,7 @@ struct _Py_global_strings {
 
     struct {
         STRUCT_FOR_ID(False)
+        STRUCT_FOR_ID(JSONDecodeError)
         STRUCT_FOR_ID(Py_Repr)
         STRUCT_FOR_ID(TextIOWrapper)
         STRUCT_FOR_ID(True)
