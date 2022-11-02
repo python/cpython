@@ -884,33 +884,6 @@ exit:
 
 #endif /* defined(Py_REF_DEBUG) */
 
-PyDoc_STRVAR(sys__getquickenedcount__doc__,
-"_getquickenedcount($module, /)\n"
-"--\n"
-"\n");
-
-#define SYS__GETQUICKENEDCOUNT_METHODDEF    \
-    {"_getquickenedcount", (PyCFunction)sys__getquickenedcount, METH_NOARGS, sys__getquickenedcount__doc__},
-
-static Py_ssize_t
-sys__getquickenedcount_impl(PyObject *module);
-
-static PyObject *
-sys__getquickenedcount(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
-
-    _return_value = sys__getquickenedcount_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(sys_getallocatedblocks__doc__,
 "getallocatedblocks($module, /)\n"
 "--\n"
@@ -1345,4 +1318,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=2b5e1bc24a3348bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79228e569529129c input=a9049054013a1b77]*/
