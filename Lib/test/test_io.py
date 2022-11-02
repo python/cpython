@@ -1531,11 +1531,25 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 
     def test_read_on_closed(self):
         # Issue #23796
-        b = io.BufferedReader(io.BytesIO(b"12"))
+        b = self.BufferedReader(self.BytesIO(b"12"))
         b.read(1)
         b.close()
-        self.assertRaises(ValueError, b.peek)
-        self.assertRaises(ValueError, b.read1, 1)
+        with self.subTest('peek'):
+            self.assertRaises(ValueError, b.peek)
+        with self.subTest('read1'):
+            self.assertRaises(ValueError, b.read1, 1)
+        with self.subTest('read'):
+            self.assertRaises(ValueError, b.read)
+        with self.subTest('readinto'):
+            self.assertRaises(ValueError, b.readinto, bytearray())
+        with self.subTest('readinto1'):
+            self.assertRaises(ValueError, b.readinto1, bytearray())
+        with self.subTest('flush'):
+            self.assertRaises(ValueError, b.flush)
+        with self.subTest('truncate'):
+            self.assertRaises(ValueError, b.truncate)
+        with self.subTest('seek'):
+            self.assertRaises(ValueError, b.seek, 0)
 
     def test_truncate_on_read_only(self):
         rawio = self.MockFileIO(b"abc")
@@ -1593,10 +1607,10 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     def test_args_error(self):
         # Issue #17275
         with self.assertRaisesRegex(TypeError, "BufferedReader"):
-            self.tp(io.BytesIO(), 1024, 1024, 1024)
+            self.tp(self.BytesIO(), 1024, 1024, 1024)
 
     def test_bad_readinto_value(self):
-        rawio = io.BufferedReader(io.BytesIO(b"12"))
+        rawio = self.tp(self.BytesIO(b"12"))
         rawio.readinto = lambda buf: -1
         bufio = self.tp(rawio)
         with self.assertRaises(OSError) as cm:
@@ -1604,7 +1618,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         self.assertIsNone(cm.exception.__cause__)
 
     def test_bad_readinto_type(self):
-        rawio = io.BufferedReader(io.BytesIO(b"12"))
+        rawio = self.tp(self.BytesIO(b"12"))
         rawio.readinto = lambda buf: b''
         bufio = self.tp(rawio)
         with self.assertRaises(OSError) as cm:
@@ -1747,7 +1761,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
         self.assertTrue(s.startswith(b"01234567A"), s)
 
     def test_write_and_rewind(self):
-        raw = io.BytesIO()
+        raw = self.BytesIO()
         bufio = self.tp(raw, 4)
         self.assertEqual(bufio.write(b"abcdef"), 6)
         self.assertEqual(bufio.tell(), 6)
@@ -1957,7 +1971,7 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     def test_args_error(self):
         # Issue #17275
         with self.assertRaisesRegex(TypeError, "BufferedWriter"):
-            self.tp(io.BytesIO(), 1024, 1024, 1024)
+            self.tp(self.BytesIO(), 1024, 1024, 1024)
 
 
 class PyBufferedWriterTest(BufferedWriterTest):
@@ -2433,7 +2447,7 @@ class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     def test_args_error(self):
         # Issue #17275
         with self.assertRaisesRegex(TypeError, "BufferedRandom"):
-            self.tp(io.BytesIO(), 1024, 1024, 1024)
+            self.tp(self.BytesIO(), 1024, 1024, 1024)
 
 
 class PyBufferedRandomTest(BufferedRandomTest):
@@ -3465,7 +3479,7 @@ class TextIOWrapperTest(unittest.TestCase):
         # encode() is invalid shouldn't cause an assertion failure.
         rot13 = codecs.lookup("rot13")
         with support.swap_attr(rot13, '_is_text_encoding', True):
-            t = io.TextIOWrapper(io.BytesIO(b'foo'), encoding="rot13")
+            t = self.TextIOWrapper(self.BytesIO(b'foo'), encoding="rot13")
         self.assertRaises(TypeError, t.write, 'bar')
 
     def test_illegal_decoder(self):
@@ -3571,7 +3585,7 @@ class TextIOWrapperTest(unittest.TestCase):
         t = self.TextIOWrapper(F(), encoding='utf-8')
 
     def test_reconfigure_locale(self):
-        wrapper = io.TextIOWrapper(io.BytesIO(b"test"))
+        wrapper = self.TextIOWrapper(self.BytesIO(b"test"))
         wrapper.reconfigure(encoding="locale")
 
     def test_reconfigure_encoding_read(self):
@@ -3741,7 +3755,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         # all data to disk.
         # The Python version has __del__, so it ends in gc.garbage instead.
         with warnings_helper.check_warnings(('', ResourceWarning)):
-            rawio = io.FileIO(os_helper.TESTFN, "wb")
+            rawio = self.FileIO(os_helper.TESTFN, "wb")
             b = self.BufferedWriter(rawio)
             t = self.TextIOWrapper(b, encoding="ascii")
             t.write("456def")
