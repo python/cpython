@@ -1,0 +1,2 @@
+Improve the :exc:`SyntaxError` error message when the user types ``import x
+from y`` instead of ``from y import x``. Patch by Pablo Galindo
