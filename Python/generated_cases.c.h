@@ -437,6 +437,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(BINARY_SUBSCR);
             }
+            DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
@@ -600,6 +601,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(STORE_SUBSCR);
             }
+            DISPATCH();
         }
 
         TARGET(STORE_SUBSCR_LIST_INT) {
@@ -992,6 +994,7 @@
                 _PyErr_Restore(tstate, exc, val, tb);
                 goto exception_unwind;
             }
+            DISPATCH();
         }
 
         TARGET(CLEANUP_THROW) {
@@ -1116,6 +1119,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(UNPACK_SEQUENCE);
             }
+            DISPATCH();
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
@@ -1359,6 +1363,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(LOAD_GLOBAL);
             }
+            DISPATCH();
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
@@ -1817,6 +1822,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(LOAD_ATTR);
             }
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
@@ -2049,6 +2055,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(STORE_ATTR);
             }
+            DISPATCH();
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
@@ -2183,6 +2190,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(COMPARE_OP);
             }
+            DISPATCH();
         }
 
         TARGET(COMPARE_OP_FLOAT_JUMP) {
@@ -2709,6 +2717,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(FOR_ITER);
             }
+            DISPATCH();
         }
 
         TARGET(FOR_ITER_LIST) {
@@ -3090,6 +3099,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(CALL);
             }
+            DISPATCH();
         }
 
         TARGET(CALL_PY_EXACT_ARGS) {
@@ -3819,6 +3829,7 @@
                 DECREMENT_ADAPTIVE_COUNTER(cache);
                 GO_TO_INSTRUCTION(BINARY_OP);
             }
+            DISPATCH();
         }
 
         TARGET(SWAP) {

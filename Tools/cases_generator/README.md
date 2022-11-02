@@ -4,17 +4,12 @@ What's currently here:
 
 - lexer.py: lexer for C, originally written by Mark Shannon
 - plexer.py: OO interface on top of lexer.py; main class: `PLexer`
-- eparser.py: Parser for C expressions
-  - `EParser`: parser class, derives from `PLexer`
-  - `Node`: base class for AST nodes
-  - `contextual`: decorator for parsing methods
-  - Various AST node classes
-- sparser.py: Parser for C statements and declarations (within functions)
-  - `SParser`: parser class, derives from `EParser`
-  - More AST node classes
 - `generate_cases.py`: driver script to read `Python/bytecodes.c` and
   write `Python/generated_cases.c.h`
-- `extract_cases.py`: _temporary_ script to extract cases from
+
+**Temporarily also:**
+
+- `extract_cases.py`: script to extract cases from
   `Python/ceval.c` and write them to `Python/bytecodes.c`
 - `bytecodes_template.h`: template used by `extract_cases.py`
 

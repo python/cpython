@@ -9,8 +9,6 @@ from dataclasses import dataclass
 import re
 import sys
 
-import eparser
-import sparser
 import parser
 
 arg_parser = argparse.ArgumentParser()
@@ -38,7 +36,7 @@ class Instruction:
     opcode_name: str
     inputs: list[str]
     outputs: list[str]
-    block: sparser.Block
+    block: parser.Block
 
 
 def parse_cases(src: str, filename: str|None = None) -> tuple[list[Instruction], list[parser.Family]]:
@@ -56,29 +54,22 @@ def parse_cases(src: str, filename: str|None = None) -> tuple[list[Instruction],
     return instrs, families
 
 
-def always_exits(node: eparser.Node):
-    match node:
-        case sparser.Block(stmts):
-            if stmts:
-                i = len(stmts) - 1
-                while i >= 0 and isinstance(stmts[i], sparser.NullStmt):
-                    i -= 1
-                if i >= 0:
-                    return always_exits(stmts[i])
-        case sparser.IfStmt(_, body, orelse):
-            return always_exits(body) and always_exits(orelse)
-        case sparser.GotoStmt():
-            return True
-        case sparser.ReturnStmt():
-            return True
-        case eparser.Call(term):
-            if isinstance(term, eparser.Name):
-                text = term.tok.text
-                return (text.startswith("GO_TO_") or
-                        text.startswith("DISPATCH") or
-                        text == "Py_UNREACHABLE")
-
-    return False
+def always_exits(block: parser.Block) -> bool:
+    text = block.text
+    lines = text.splitlines()
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if not lines or lines[-1].strip() != "}":
+        return False
+    lines.pop()
+    if not lines:
+        return False
+    line = lines.pop().rstrip()
+    # Indent must match exactly (TODO: Do something better)
+    if line[:12] != " "*12:
+        return False
+    line = line[12:]
+    return line.startswith(("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()"))
 
 
 def write_cases(f, instrs):
@@ -108,7 +99,6 @@ def write_cases(f, instrs):
         # Write the body
         for line in blocklines:
             f.write(line)
-        # Add a DISPATCH() unless the block always exits
         if not always_exits(instr.block):
             f.write(f"{indent}    DISPATCH();\n")
         # Write trailing '}'
