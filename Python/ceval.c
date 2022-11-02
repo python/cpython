@@ -2359,7 +2359,13 @@ handle_eval_breaker:
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             int err;
-            err = PyDict_SetItem(GLOBALS(), name, v);
+            PyObject *globals = GLOBALS();
+            if (PyDict_CheckExact(globals)) {
+                err = PyDict_SetItem(globals, name, v);
+            }
+            else {
+                err = PyObject_SetItem(globals, name, v);
+            }
             Py_DECREF(v);
             if (err != 0)
                 goto error;
@@ -2369,7 +2375,13 @@ handle_eval_breaker:
         TARGET(DELETE_GLOBAL) {
             PyObject *name = GETITEM(names, oparg);
             int err;
-            err = PyDict_DelItem(GLOBALS(), name);
+            PyObject *globals = GLOBALS();
+            if (PyDict_CheckExact(globals)) {
+                err = PyDict_DelItem(globals, name);
+            }
+            else {
+                err = PyObject_DelItem(globals, name);
+            }
             if (err != 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                     format_exc_check_arg(tstate, PyExc_NameError,
@@ -2407,14 +2419,25 @@ handle_eval_breaker:
                 }
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
-                    goto error;
+                PyObject *globals = GLOBALS();
+                if (PyDict_CheckExact(globals)) {
+                    v = PyDict_GetItemWithError(globals, name);
+                    if (v != NULL) {
+                        Py_INCREF(v);
+                    }
+                    else if (_PyErr_Occurred(tstate)) {
+                        goto error;
+                    }
                 }
                 else {
+                    v = PyObject_GetItem(globals, name);
+                    if (v == NULL) {
+                        if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
+                            goto error;
+                        _PyErr_Clear(tstate);
+                    }
+                }
+                if (v == NULL) {
                     if (PyDict_CheckExact(BUILTINS())) {
                         v = PyDict_GetItemWithError(BUILTINS(), name);
                         if (v == NULL) {
