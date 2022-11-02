@@ -1257,7 +1257,6 @@ stack_effect(int opcode, int oparg, int jump)
             return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         case LOAD_METHOD:
             return 1;
-        case LOAD_ERROR:
         case LOAD_ASSERTION_ERROR:
             return 1;
         case LIST_TO_TUPLE:

@@ -2175,29 +2175,6 @@ handle_eval_breaker:
             goto exception_unwind;
         }
 
-        TARGET(LOAD_ERROR) {
-            PyObject *value;
-            switch(oparg) {
-                case 0:
-                    value = PyExc_AssertionError;
-                    break;
-                case 1:
-                    value = PyExc_StopIteration;
-                    break;
-                case 2:
-                    value = PyExc_RuntimeError;
-                    break;
-                case 3:
-                    value = PyExc_StopAsyncIteration;
-                    break;
-                default:
-                    Py_UNREACHABLE();
-            }
-            Py_INCREF(value);
-            PUSH(value);
-            DISPATCH();
-        }
-
         TARGET(STOPITERATION_ERROR) {
             assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
             PyObject *exc = TOP();
