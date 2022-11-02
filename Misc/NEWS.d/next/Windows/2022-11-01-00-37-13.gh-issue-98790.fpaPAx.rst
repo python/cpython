@@ -1,0 +1,2 @@
+Assumes that a missing ``DLLs`` directory means that standard extension
+modules are in the executable's directory.
