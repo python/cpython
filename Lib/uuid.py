@@ -373,7 +373,7 @@ def _get_command_stdout(command, *args):
         env['LC_ALL'] = 'C'
         # Empty strings will be quoted by popen so we should just ommit it
         if args != ('',):
-            command = (executable,) + args
+            command = (executable, *args)
         else:
             command = (executable,)
         proc = subprocess.Popen(command,
