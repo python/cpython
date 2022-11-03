@@ -1,0 +1,3 @@
+Add a note to the ``AttributeError`` raised when instantiating a subclass of
+:py:type:`property` that does not have a writable ``__doc__`` attribute.
+(Creating such a subclass is possible via the C API.)

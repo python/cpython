@@ -1826,8 +1826,28 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         int err = PyObject_SetAttr(
                     (PyObject *)self, &_Py_ID(__doc__), prop_doc);
         Py_XDECREF(prop_doc);
-        if (err < 0)
+        if (err < 0) {
+            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                // gh-98963: the subclass doesn't have a __dict__
+                // (probably it was subclassed using C API).
+                // Add a note to prevent surprises.
+                PyObject *type, *value, *traceback;
+                PyErr_Fetch(&type, &value, &traceback);
+                PyErr_NormalizeException(&type, &value, &traceback);
+                if (value) {
+                    PyObject_CallMethod(
+                        value, "add_note", "s",
+                        "subclasses of 'property' need to provide a writable "
+                        "__doc__ attribute (e.g. a __doc__ member or a "
+                        "__dict__) to avoid per-property docstrings being "
+                        "shadowed by the subclass docstring");
+                    // ignore errors while setting the note
+                    PyErr_Clear();
+                }
+                PyErr_Restore(type, value, traceback);
+            }
             return -1;
+        }
     }
 
     return 0;
