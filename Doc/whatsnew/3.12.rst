@@ -622,7 +622,7 @@ New Features
   ``__dict__`` and weakrefs with less bookkeeping,
   using less memory and with faster access.
 
-* API for performing calls using the
+* API for performing calls using
   :ref:`the vectorcall protocol <vectorcall>` was added to the
   :ref:`Limited API <stable>`:
 
