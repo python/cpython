@@ -157,7 +157,9 @@ static int init_json_loads(void) {
 }
 /* Fuzz json.loads(x) */
 static int fuzz_json_loads(const char* data, size_t size) {
-    /* long inputs could lead to timeouts on boring inputs */
+    /* Since python supports arbitrarily large ints in JSON,
+       long inputs can lead to timeouts on boring inputs like
+       `json.loads("9" * 100000)` */
     if (size > MAX_JSON_TEST_SIZE) {
         return 0;
     }
