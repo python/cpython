@@ -485,23 +485,25 @@ Accessing attributes of extension types
    Structure to define property-like access for a type. See also description of
    the :c:member:`PyTypeObject.tp_getset` slot.
 
-   +-------------+------------------+-----------------------------------+
-   | Field       | C Type           | Meaning                           |
-   +=============+==================+===================================+
-   | name        | const char \*    | attribute name                    |
-   +-------------+------------------+-----------------------------------+
-   | get         | getter           | C function to get the attribute   |
-   +-------------+------------------+-----------------------------------+
-   | set         | setter           | optional C function to set or     |
-   |             |                  | delete the attribute, if omitted  |
-   |             |                  | the attribute is readonly         |
-   +-------------+------------------+-----------------------------------+
-   | doc         | const char \*    | optional docstring                |
-   +-------------+------------------+-----------------------------------+
-   | closure     | void \*          | optional function pointer,        |
-   |             |                  | providing additional data for     |
-   |             |                  | getter and setter                 |
-   +-------------+------------------+-----------------------------------+
+   .. c:member:: const char* PyGetSetDef.name
+
+      attribute name
+
+   .. c:member:: getter PyGetSetDef.get
+
+      C funtion to get the attribute.
+
+   .. c:member:: setter PyGetSetDef.set
+
+      Optional C function to set or delete the attribute, if omitted the attribute is readonly.
+
+   .. c:member:: const char* PyGetSetDef.doc
+
+      optional docstring
+
+   .. c:member:: void* PyGetSetDef.closure
+
+      Optional function pointer, providing additional data for getter and setter.
 
    The ``get`` function takes one :c:expr:`PyObject*` parameter (the
    instance) and a function pointer (the associated ``closure``)::
