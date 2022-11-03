@@ -607,6 +607,15 @@ the original TOS1.
    .. versionadded:: 3.12
 
 
+.. opcode:: STOPITERATION_ERROR
+
+   Handles a StopIteration raised in a generator or coroutine.
+   If TOS is an instance of :exc:`StopIteration`, or :exc:`StopAsyncIteration`
+   replace it with a :exc:`RuntimeError`.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: BEFORE_ASYNC_WITH
 
    Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
