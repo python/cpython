@@ -1025,10 +1025,10 @@ typedef struct {
    if computed gotos aren't used. */
 
 /* TBD - what about other compilers? */
-#ifdef __GNUC__
+#if defined(__GNUC__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunused-label"
-#else /* MS_WINDOWS */
+#elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(push)
 #  pragma warning(disable:4102)
 #endif
@@ -1386,9 +1386,9 @@ resume_with_error:
     goto error;
 
 }
-#ifdef __GNUC__
+#if defined(__GNUC__)
 #  pragma GCC diagnostic pop
-#else /* MS_WINDOWS */
+#elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
 #endif
 
