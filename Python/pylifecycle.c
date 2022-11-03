@@ -632,7 +632,9 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    const PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    // The main interpreter always has its own GIL.
+    config.own_gil = 1;
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;

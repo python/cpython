@@ -1349,6 +1349,7 @@ class SubinterpThreadingTests(BaseTestCase):
                 allow_threads={allowed},
                 allow_daemon_threads={daemon_allowed},
                 check_multi_interp_extensions=False,
+                own_gil=False,
             )
             """)
         with test.support.SuppressCrashReport():

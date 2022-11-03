@@ -1401,19 +1401,29 @@ class SubinterpreterTest(unittest.TestCase):
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
+        ALL_FLAGS = (OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
+                     | EXTENSIONS);
 
-        features = ['obmalloc', 'fork', 'exec', 'threads', 'daemon_threads',
-                    'extensions']
+        features = [
+            'obmalloc',
+            'fork',
+            'exec',
+            'threads',
+            'daemon_threads',
+            'extensions',
+            'own_gil',
+        ]
         kwlist = [f'allow_{n}' for n in features]
         kwlist[0] = 'use_main_obmalloc'
-        kwlist[-1] = 'check_multi_interp_extensions'
+        kwlist[-2] = 'check_multi_interp_extensions'
+        kwlist[-1] = 'own_gil'
 
         # expected to work
         for config, expected in {
-            (True, True, True, True, True, True):
-                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
-            (True, False, False, False, False, False): OBMALLOC,
-            (False, False, False, True, False, True): THREADS | EXTENSIONS,
+            (True, True, True, True, True, True, True): ALL_FLAGS,
+            (True, False, False, False, False, False, False): OBMALLOC,
+            (False, False, False, True, False, True, False):
+                THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {
@@ -1437,7 +1447,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         # expected to fail
         for config in [
-            (False, False, False, False, False, False),
+            (False, False, False, False, False, False, False),
         ]:
             kwargs = dict(zip(kwlist, config))
             with self.subTest(config):
@@ -1473,6 +1483,7 @@ class SubinterpreterTest(unittest.TestCase):
             'allow_exec': True,
             'allow_threads': True,
             'allow_daemon_threads': True,
+            'own_gil': False,
         }
 
         def check(enabled, override):
