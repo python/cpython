@@ -149,7 +149,6 @@ class TestSSL(test_utils.TestCase):
 
     def _create_server_ssl_context(self, certfile, keyfile=None):
         sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        sslcontext.options |= ssl.OP_NO_SSLv2
         sslcontext.load_cert_chain(certfile, keyfile)
         return sslcontext
 

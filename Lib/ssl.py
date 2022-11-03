@@ -49,15 +49,8 @@ CERT_REQUIRED - certificates are required, and will be validated, and
 
 The following constants identify various SSL protocol variants:
 
-PROTOCOL_SSLv2
-PROTOCOL_SSLv3
-PROTOCOL_SSLv23
-PROTOCOL_TLS
 PROTOCOL_TLS_CLIENT
 PROTOCOL_TLS_SERVER
-PROTOCOL_TLSv1
-PROTOCOL_TLSv1_1
-PROTOCOL_TLSv1_2
 
 The following constants identify various SSL alert message descriptions as per
 http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6
@@ -95,7 +88,7 @@ import sys
 import os
 from collections import namedtuple
 from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
-from enum import _simple_enum
+from enum import _simple_enum, KEEP as _KEEP
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -122,12 +115,7 @@ from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
 _IntEnum._convert_(
     '_SSLMethod', __name__,
-    lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
-    source=_ssl)
-
-_IntFlag._convert_(
-    'Options', __name__,
-    lambda name: name.startswith('OP_'),
+    lambda name: name.startswith('PROTOCOL_'),
     source=_ssl)
 
 _IntEnum._convert_(
@@ -150,18 +138,47 @@ _IntEnum._convert_(
     lambda name: name.startswith('CERT_'),
     source=_ssl)
 
-PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
 _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
 
-_SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
+
+@_simple_enum(_IntFlag, boundary=_KEEP)
+class Options:
+    OP_NULL = 0
+
+    OP_CIPHER_SERVER_PREFERENCE = _ssl.OP_CIPHER_SERVER_PREFERENCE
+    OP_ENABLE_MIDDLEBOX_COMPAT = _ssl.OP_ENABLE_MIDDLEBOX_COMPAT
+    OP_IGNORE_UNEXPECTED_EOF = _ssl.OP_IGNORE_UNEXPECTED_EOF
+    OP_NO_COMPRESSION = _ssl.OP_NO_COMPRESSION
+    OP_NO_RENEGOTIATION = _ssl.OP_NO_RENEGOTIATION
+    OP_NO_TICKET = _ssl.OP_NO_TICKET
+    OP_SINGLE_DH_USE = _ssl.OP_SINGLE_DH_USE
+    OP_SINGLE_ECDH_USE = _ssl.OP_SINGLE_ECDH_USE
+    # OP_NO_SSL / OP_NO_TLS are not available as global vars. They are kept in
+    # in Options for human-readable representation in that SSLContext.options.
+    OP_NO_SSLv2 = _ssl.OP_NO_SSLv2
+    OP_NO_SSLv3 = _ssl.OP_NO_SSLv3
+    OP_NO_TLSv1 = _ssl.OP_NO_TLSv1
+    OP_NO_TLSv1_1 = _ssl.OP_NO_TLSv1_1
+    OP_NO_TLSv1_2 = _ssl.OP_NO_TLSv1_2
+    OP_NO_TLSv1_3 = _ssl.OP_NO_TLSv1_3
+
+    OP_ALL = _ssl.OP_ALL
+
+
+OP_ALL = Options.OP_ALL
+OP_CIPHER_SERVER_PREFERENCE = Options.OP_CIPHER_SERVER_PREFERENCE
+OP_ENABLE_MIDDLEBOX_COMPAT = Options.OP_ENABLE_MIDDLEBOX_COMPAT
+OP_IGNORE_UNEXPECTED_EOF = Options.OP_IGNORE_UNEXPECTED_EOF
+OP_NO_COMPRESSION = Options.OP_NO_COMPRESSION
+OP_NO_RENEGOTIATION = Options.OP_NO_RENEGOTIATION
+OP_NO_TICKET = Options.OP_NO_TICKET
+OP_SINGLE_DH_USE = Options.OP_SINGLE_DH_USE
+OP_SINGLE_ECDH_USE = Options.OP_SINGLE_ECDH_USE
 
 
 @_simple_enum(_IntEnum)
 class TLSVersion:
     MINIMUM_SUPPORTED = _ssl.PROTO_MINIMUM_SUPPORTED
-    SSLv3 = _ssl.PROTO_SSLv3
-    TLSv1 = _ssl.PROTO_TLSv1
-    TLSv1_1 = _ssl.PROTO_TLSv1_1
     TLSv1_2 = _ssl.PROTO_TLSv1_2
     TLSv1_3 = _ssl.PROTO_TLSv1_3
     MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
@@ -252,6 +269,39 @@ class _TLSMessageType:
     NEXT_PROTO = 67
     MESSAGE_HASH = 254
     CHANGE_CIPHER_SPEC = 0x0101
+
+
+_REMOVED_PROTOCOLS = frozenset({
+    "PROTOCOL_SSLv2", "PROTOCOL_SSLv3", "PROTOCOL_SSLv23",  "PROTOCOL_TLS",
+})
+_REMOVED_OPTIONS = frozenset({
+    "OP_NO_SSLv2", "OP_NO_SSLv3", "OP_NO_TLSv1", "OP_NO_TLSv1_1",
+    "OP_NO_TLSv1_2", "OP_NO_TLSv1_3",
+})
+
+def __getattr__(name):
+    """Warn about removed PROTOCOL and OP_NO constants"""
+    # The module __getattr__ hook does not polute the module namespaces with
+    # deprecated constants.
+    if name in _REMOVED_OPTIONS:
+        msg = (
+            "ssl.{name} is no longer supported. The constant will "
+            "be removed in {remove}. Use SSLContext's 'minimum_version' "
+            "and 'maximum_version' properties instead."
+        )
+        warnings._deprecated(name, message=msg, remove=(3, 13))
+        return getattr(Options, name)
+
+    if name in _REMOVED_PROTOCOLS:
+        msg = (
+            "ssl.{name} is no longer supported. The constant will "
+            "be removed in {remove}. Use ssl.PROTOCOL_TLS_CLIENT or "
+            "ssl.PROTOCOL_TLS_SERVER instead."
+        )
+        warnings._deprecated(name, message=msg, remove=(3, 13))
+        return NotImplemented
+
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 if sys.platform == "win32":
@@ -427,17 +477,6 @@ class SSLContext(_SSLContext):
     sslsocket_class = None  # SSLSocket is assigned later.
     sslobject_class = None  # SSLObject is assigned later.
 
-    def __new__(cls, protocol=None, *args, **kwargs):
-        if protocol is None:
-            warnings.warn(
-                "ssl.SSLContext() without protocol argument is deprecated.",
-                category=DeprecationWarning,
-                stacklevel=2
-            )
-            protocol = PROTOCOL_TLS
-        self = _SSLContext.__new__(cls, protocol)
-        return self
-
     def _encode_hostname(self, hostname):
         if hostname is None:
             return None
@@ -541,8 +580,6 @@ class SSLContext(_SSLContext):
 
         @minimum_version.setter
         def minimum_version(self, value):
-            if value == TLSVersion.SSLv3:
-                self.options &= ~Options.OP_NO_SSLv3
             super(SSLContext, SSLContext).minimum_version.__set__(self, value)
 
         @property
@@ -691,9 +728,11 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     if not isinstance(purpose, _ASN1Object):
         raise TypeError(purpose)
 
-    # SSLContext sets OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_COMPRESSION,
-    # OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE and OP_SINGLE_ECDH_USE
-    # by default.
+    # SSLContext sets OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_TLSv1, OP_NO_TLSv1_1,
+    # OP_NO_COMPRESSION, OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE,
+    # and OP_SINGLE_ECDH_USE by default.
+    # PROTOCOL_TLS_CLIENT enables cert and hostname verification by
+    # default, too.
     if purpose == Purpose.SERVER_AUTH:
         # verify certs and host name in client mode
         context = SSLContext(PROTOCOL_TLS_CLIENT)
@@ -1355,7 +1394,6 @@ class SSLSocket(socket):
 # Python does not support forward declaration of types.
 SSLContext.sslsocket_class = SSLSocket
 SSLContext.sslobject_class = SSLObject
-
 
 # some utility functions
 

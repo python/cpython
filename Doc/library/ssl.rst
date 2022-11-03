@@ -78,9 +78,7 @@ Since Python 3.2 and 2.7.9, it is recommended to use the
 :meth:`SSLContext.wrap_socket` of an :class:`SSLContext` instance to wrap
 sockets as :class:`SSLSocket` objects. The helper functions
 :func:`create_default_context` returns a new context with secure default
-settings. The old :func:`wrap_socket` function is deprecated since it is
-both inefficient and has no support for server name indication (SNI) and
-hostname matching.
+settings.
 
 Client socket example with default context and IPv4/IPv6 dual stack::
 
@@ -140,8 +138,8 @@ purposes.
    CA certificates instead.
 
    The settings are: :data:`PROTOCOL_TLS_CLIENT` or
-   :data:`PROTOCOL_TLS_SERVER`, :data:`OP_NO_SSLv2`, and :data:`OP_NO_SSLv3`
-   with high encryption cipher suites without RC4 and
+   :data:`PROTOCOL_TLS_SERVER`, SSL 2.0, SSL 3.0, TLS 1.0, and TLS 1.1
+   disabled with high encryption cipher suites without RC4 and
    without unauthenticated cipher suites. Passing :data:`~Purpose.SERVER_AUTH`
    as *purpose* sets :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED`
    and either loads CA certificates (when at least one of *cafile*, *capath* or
@@ -159,19 +157,6 @@ purposes.
 
       If your application needs specific settings, you should create a
       :class:`SSLContext` and apply the settings yourself.
-
-   .. note::
-      If you find that when certain older clients or servers attempt to connect
-      with a :class:`SSLContext` created by this function that they get an error
-      stating "Protocol or cipher suite mismatch", it may be that they only
-      support SSL3.0 which this function excludes using the
-      :data:`OP_NO_SSLv3`. SSL3.0 is widely considered to be `completely broken
-      <https://en.wikipedia.org/wiki/POODLE>`_. If you still wish to continue to
-      use this function but still allow SSL 3.0 connections you can re-enable
-      them using::
-
-         ctx = ssl.create_default_context(Purpose.CLIENT_AUTH)
-         ctx.options &= ~ssl.OP_NO_SSLv3
 
    .. versionadded:: 3.4
 
@@ -192,8 +177,11 @@ purposes.
    .. versionchanged:: 3.10
 
       The context now uses :data:`PROTOCOL_TLS_CLIENT` or
-      :data:`PROTOCOL_TLS_SERVER` protocol instead of generic
-      :data:`PROTOCOL_TLS`.
+      :data:`PROTOCOL_TLS_SERVER` protocol.
+
+   .. versionchanged:: 3.12
+
+      TLS 1.0 and 1.1 were disabled.
 
 
 Exceptions
@@ -381,8 +369,8 @@ Certificate handling
       This function is now IPv6-compatible.
 
    .. versionchanged:: 3.5
-      The default *ssl_version* is changed from :data:`PROTOCOL_SSLv3` to
-      :data:`PROTOCOL_TLS` for maximum compatibility with modern servers.
+      The default *ssl_version* is changed from ``PROTOCOL_SSLv3`` to
+      ``PROTOCOL_TLS`` for maximum compatibility with modern servers.
 
    .. versionchanged:: 3.10
       The *timeout* parameter was added.
@@ -451,33 +439,6 @@ Certificate handling
 
    .. versionadded:: 3.4
 
-.. function:: wrap_socket(sock, keyfile=None, certfile=None, \
-       server_side=False, cert_reqs=CERT_NONE, ssl_version=PROTOCOL_TLS, \
-       ca_certs=None, do_handshake_on_connect=True, \
-       suppress_ragged_eofs=True, ciphers=None)
-
-   Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance
-   of :class:`ssl.SSLSocket`, a subtype of :class:`socket.socket`, which wraps
-   the underlying socket in an SSL context.  ``sock`` must be a
-   :data:`~socket.SOCK_STREAM` socket; other socket types are unsupported.
-
-   Internally, function creates a :class:`SSLContext` with protocol
-   *ssl_version* and :attr:`SSLContext.options` set to *cert_reqs*. If
-   parameters *keyfile*, *certfile*, *ca_certs* or *ciphers* are set, then
-   the values are passed to :meth:`SSLContext.load_cert_chain`,
-   :meth:`SSLContext.load_verify_locations`, and
-   :meth:`SSLContext.set_ciphers`.
-
-   The arguments *server_side*, *do_handshake_on_connect*, and
-   *suppress_ragged_eofs* have the same meaning as
-   :meth:`SSLContext.wrap_socket`.
-
-   .. deprecated:: 3.7
-
-      Since Python 3.2 and 2.7.9, it is recommended to use the
-      :meth:`SSLContext.wrap_socket` instead of :func:`wrap_socket`. The
-      top-level function is limited and creates an insecure client socket
-      without server name indication or hostname matching.
 
 Constants
 ^^^^^^^^^
@@ -488,9 +449,8 @@ Constants
 
 .. data:: CERT_NONE
 
-   Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  Except for :const:`PROTOCOL_TLS_CLIENT`,
-   it is the default mode.  With client-side sockets, just about any
+   Possible value for :attr:`SSLContext.verify_mode`. It is the default mode
+   for :const:`PROTOCOL_TLS_SERVER`.  With client-side sockets, just about any
    cert is accepted.  Validation errors, such as untrusted or expired cert,
    are ignored and do not abort the TLS/SSL handshake.
 
@@ -501,10 +461,10 @@ Constants
 
 .. data:: CERT_OPTIONAL
 
-   Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  In client mode, :const:`CERT_OPTIONAL`
-   has the same meaning as :const:`CERT_REQUIRED`. It is recommended to
-   use :const:`CERT_REQUIRED` for client-side sockets instead.
+   Possible value for :attr:`SSLContext.verify_mode`, In client mode,
+   :const:`CERT_OPTIONAL` has the same meaning as :const:`CERT_REQUIRED`.
+   It is recommended to use :const:`CERT_REQUIRED` for client-side
+   sockets instead.
 
    In server mode, a client certificate request is sent to the client.  The
    client may either ignore the request or send a certificate in order
@@ -513,14 +473,12 @@ Constants
    the TLS handshake.
 
    Use of this setting requires a valid set of CA certificates to
-   be passed, either to :meth:`SSLContext.load_verify_locations` or as a
-   value of the ``ca_certs`` parameter to :func:`wrap_socket`.
+   be passed to :meth:`SSLContext.load_verify_locations`.
 
 .. data:: CERT_REQUIRED
 
-   Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  In this mode, certificates are
-   required from the other side of the socket connection; an :class:`SSLError`
+   Possible value for :attr:`SSLContext.verify_mode`. In this mode, certificates
+   are required from the other side of the socket connection; an :class:`SSLError`
    will be raised if no certificate is provided, or if its validation fails.
    This mode is **not** sufficient to verify a certificate in client mode as
    it does not match hostnames.  :attr:`~SSLContext.check_hostname` must be
@@ -533,8 +491,7 @@ Constants
    the client must provide a valid and trusted certificate.
 
    Use of this setting requires a valid set of CA certificates to
-   be passed, either to :meth:`SSLContext.load_verify_locations` or as a
-   value of the ``ca_certs`` parameter to :func:`wrap_socket`.
+   be passed to :meth:`SSLContext.load_verify_locations`.
 
 .. class:: VerifyMode
 
@@ -606,19 +563,6 @@ Constants
 
    .. versionadded:: 3.6
 
-.. data:: PROTOCOL_TLS
-
-   Selects the highest protocol version that both the client and server support.
-   Despite the name, this option can select both "SSL" and "TLS" protocols.
-
-   .. versionadded:: 3.6
-
-   .. deprecated:: 3.10
-
-      TLS clients and servers require different default settings for secure
-      communication. The generic TLS protocol constant is deprecated in
-      favor of :data:`PROTOCOL_TLS_CLIENT` and :data:`PROTOCOL_TLS_SERVER`.
-
 .. data:: PROTOCOL_TLS_CLIENT
 
    Auto-negotiate the highest protocol version that both the client and
@@ -635,63 +579,6 @@ Constants
 
    .. versionadded:: 3.6
 
-.. data:: PROTOCOL_SSLv23
-
-   Alias for :data:`PROTOCOL_TLS`.
-
-   .. deprecated:: 3.6
-
-      Use :data:`PROTOCOL_TLS` instead.
-
-.. data:: PROTOCOL_SSLv3
-
-   Selects SSL version 3 as the channel encryption protocol.
-
-   This protocol is not available if OpenSSL is compiled with the
-   ``no-ssl3`` option.
-
-   .. warning::
-
-      SSL version 3 is insecure.  Its use is highly discouraged.
-
-   .. deprecated:: 3.6
-
-      OpenSSL has deprecated all version specific protocols. Use the default
-      protocol :data:`PROTOCOL_TLS_SERVER` or :data:`PROTOCOL_TLS_CLIENT`
-      with :attr:`SSLContext.minimum_version` and
-      :attr:`SSLContext.maximum_version` instead.
-
-
-.. data:: PROTOCOL_TLSv1
-
-   Selects TLS version 1.0 as the channel encryption protocol.
-
-   .. deprecated:: 3.6
-
-      OpenSSL has deprecated all version specific protocols.
-
-.. data:: PROTOCOL_TLSv1_1
-
-   Selects TLS version 1.1 as the channel encryption protocol.
-   Available only with openssl version 1.0.1+.
-
-   .. versionadded:: 3.4
-
-   .. deprecated:: 3.6
-
-      OpenSSL has deprecated all version specific protocols.
-
-.. data:: PROTOCOL_TLSv1_2
-
-   Selects TLS version 1.2 as the channel encryption protocol.
-   Available only with openssl version 1.0.1+.
-
-   .. versionadded:: 3.4
-
-   .. deprecated:: 3.6
-
-      OpenSSL has deprecated all version specific protocols.
-
 .. data:: OP_ALL
 
    Enables workarounds for various bugs present in other SSL implementations.
@@ -699,79 +586,6 @@ Constants
    flags as OpenSSL's ``SSL_OP_ALL`` constant.
 
    .. versionadded:: 3.2
-
-.. data:: OP_NO_SSLv2
-
-   Prevents an SSLv2 connection.  This option is only applicable in
-   conjunction with :const:`PROTOCOL_TLS`.  It prevents the peers from
-   choosing SSLv2 as the protocol version.
-
-   .. versionadded:: 3.2
-
-   .. deprecated:: 3.6
-
-      SSLv2 is deprecated
-
-.. data:: OP_NO_SSLv3
-
-   Prevents an SSLv3 connection.  This option is only applicable in
-   conjunction with :const:`PROTOCOL_TLS`.  It prevents the peers from
-   choosing SSLv3 as the protocol version.
-
-   .. versionadded:: 3.2
-
-   .. deprecated:: 3.6
-
-      SSLv3 is deprecated
-
-.. data:: OP_NO_TLSv1
-
-   Prevents a TLSv1 connection.  This option is only applicable in
-   conjunction with :const:`PROTOCOL_TLS`.  It prevents the peers from
-   choosing TLSv1 as the protocol version.
-
-   .. versionadded:: 3.2
-
-   .. deprecated:: 3.7
-      The option is deprecated since OpenSSL 1.1.0, use the new
-      :attr:`SSLContext.minimum_version` and
-      :attr:`SSLContext.maximum_version` instead.
-
-.. data:: OP_NO_TLSv1_1
-
-   Prevents a TLSv1.1 connection. This option is only applicable in conjunction
-   with :const:`PROTOCOL_TLS`. It prevents the peers from choosing TLSv1.1 as
-   the protocol version. Available only with openssl version 1.0.1+.
-
-   .. versionadded:: 3.4
-
-   .. deprecated:: 3.7
-      The option is deprecated since OpenSSL 1.1.0.
-
-.. data:: OP_NO_TLSv1_2
-
-   Prevents a TLSv1.2 connection. This option is only applicable in conjunction
-   with :const:`PROTOCOL_TLS`. It prevents the peers from choosing TLSv1.2 as
-   the protocol version. Available only with openssl version 1.0.1+.
-
-   .. versionadded:: 3.4
-
-   .. deprecated:: 3.7
-      The option is deprecated since OpenSSL 1.1.0.
-
-.. data:: OP_NO_TLSv1_3
-
-   Prevents a TLSv1.3 connection. This option is only applicable in conjunction
-   with :const:`PROTOCOL_TLS`. It prevents the peers from choosing TLSv1.3 as
-   the protocol version. TLS 1.3 is available with OpenSSL 1.1.1 or later.
-   When Python has been compiled against an older version of OpenSSL, the
-   flag defaults to *0*.
-
-   .. versionadded:: 3.7
-
-   .. deprecated:: 3.7
-      The option is deprecated since OpenSSL 1.1.0. It was added to 2.7.15,
-      3.6.3 and 3.7.0 for backwards compatibility with OpenSSL 1.0.2.
 
 .. data:: OP_NO_RENEGOTIATION
 
@@ -1009,18 +823,14 @@ Constants
    constants. Their values don't reflect the lowest and highest available
    TLS/SSL versions.
 
-.. attribute:: TLSVersion.SSLv3
-.. attribute:: TLSVersion.TLSv1
-.. attribute:: TLSVersion.TLSv1_1
 .. attribute:: TLSVersion.TLSv1_2
 .. attribute:: TLSVersion.TLSv1_3
 
    SSL 3.0 to TLS 1.3.
 
-   .. deprecated:: 3.10
+   .. versionchanged:: 3.12
 
-      All :class:`TLSVersion` members except :attr:`TLSVersion.TLSv1_2` and
-      :attr:`TLSVersion.TLSv1_3` are deprecated.
+      ``SSLv3``, ``TLSV1``, and ``TLSV1_1`` were removed.
 
 
 SSL Sockets
@@ -1327,10 +1137,7 @@ SSL sockets also have the following additional methods and attributes:
 
 .. attribute:: SSLSocket.context
 
-   The :class:`SSLContext` object this SSL socket is tied to.  If the SSL
-   socket was created using the deprecated :func:`wrap_socket` function
-   (rather than :meth:`SSLContext.wrap_socket`), this is a custom context
-   object created for this SSL socket.
+   The :class:`SSLContext` object this SSL socket is tied to.
 
    .. versionadded:: 3.2
 
@@ -1378,53 +1185,16 @@ such as SSL configuration options, certificate(s) and private key(s).
 It also manages a cache of SSL sessions for server-side sockets, in order
 to speed up repeated connections from the same clients.
 
-.. class:: SSLContext(protocol=None)
+.. class:: SSLContext(protocol)
 
-   Create a new SSL context.  You may pass *protocol* which must be one
-   of the ``PROTOCOL_*`` constants defined in this module.  The parameter
-   specifies which version of the SSL protocol to use.  Typically, the
-   server chooses a particular protocol version, and the client must adapt
-   to the server's choice.  Most of the versions are not interoperable
-   with the other versions.  If not specified, the default is
-   :data:`PROTOCOL_TLS`; it provides the most compatibility with other
-   versions.
-
-   Here's a table showing which versions in a client (down the side) can connect
-   to which versions in a server (along the top):
-
-     .. table::
-
-       ========================  ============  ============  =============  =========  ===========  ===========
-        *client* / **server**    **SSLv2**     **SSLv3**     **TLS** [3]_   **TLSv1**  **TLSv1.1**  **TLSv1.2**
-       ------------------------  ------------  ------------  -------------  ---------  -----------  -----------
-        *SSLv2*                    yes           no            no [1]_        no         no         no
-        *SSLv3*                    no            yes           no [2]_        no         no         no
-        *TLS* (*SSLv23*) [3]_      no [1]_       no [2]_       yes            yes        yes        yes
-        *TLSv1*                    no            no            yes            yes        no         no
-        *TLSv1.1*                  no            no            yes            no         yes        no
-        *TLSv1.2*                  no            no            yes            no         no         yes
-       ========================  ============  ============  =============  =========  ===========  ===========
-
-   .. rubric:: Footnotes
-   .. [1] :class:`SSLContext` disables SSLv2 with :data:`OP_NO_SSLv2` by default.
-   .. [2] :class:`SSLContext` disables SSLv3 with :data:`OP_NO_SSLv3` by default.
-   .. [3] TLS 1.3 protocol will be available with :data:`PROTOCOL_TLS` in
-      OpenSSL >= 1.1.1. There is no dedicated PROTOCOL constant for just
-      TLS 1.3.
+   Create a new SSL context.  You must pass *protocol* which must be either
+   :data:`PROTOCOL_TLS_CLIENT` or :data:`PROTOCOL_TLS_SERVER`.  The parameter
+   specifies which side of the TLS protocol to use, and default settings for
+   :attr:`~SSLContext.verify_mode` and :attr:`~SSLContext.check_hostname`.
 
    .. seealso::
       :func:`create_default_context` lets the :mod:`ssl` module choose
       security settings for a given purpose.
-
-   .. versionchanged:: 3.6
-
-      The context is created with secure default values. The options
-      :data:`OP_NO_COMPRESSION`, :data:`OP_CIPHER_SERVER_PREFERENCE`,
-      :data:`OP_SINGLE_DH_USE`, :data:`OP_SINGLE_ECDH_USE`,
-      :data:`OP_NO_SSLv2`,
-      and :data:`OP_NO_SSLv3` (except for :data:`PROTOCOL_SSLv3`) are
-      set by default. The initial cipher suite list contains only ``HIGH``
-      ciphers, no ``NULL`` ciphers and no ``MD5`` ciphers.
 
    .. deprecated:: 3.10
 
@@ -1439,6 +1209,11 @@ to speed up repeated connections from the same clients.
       less than 2048 bits and ECC keys with less than 224 bits are prohibited.
       :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
       :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
+
+   .. versionchanged:: 3.12
+
+      :class:`SSLContext` requires a *protocol* argument, which must be
+      either :data:`PROTOCOL_TLS_CLIENT` or :data:`PROTOCOL_TLS_SERVER`.
 
 
 :class:`SSLContext` objects have the following methods and attributes:
@@ -1553,7 +1328,7 @@ to speed up repeated connections from the same clients.
 
    Example::
 
-       >>> ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+       >>> ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
        >>> ctx.set_ciphers('ECDHE+AESGCM:!ECDSA')
        >>> ctx.get_ciphers()
        [{'aead': True,
@@ -1850,7 +1625,7 @@ to speed up repeated connections from the same clients.
 
       import socket, ssl
 
-      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+      context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
       context.verify_mode = ssl.CERT_REQUIRED
       context.check_hostname = True
       context.load_default_certs()
@@ -1882,15 +1657,13 @@ to speed up repeated connections from the same clients.
 
    A :class:`TLSVersion` enum member representing the highest supported
    TLS version. The value defaults to :attr:`TLSVersion.MAXIMUM_SUPPORTED`.
-   The attribute is read-only for protocols other than :attr:`PROTOCOL_TLS`,
-   :attr:`PROTOCOL_TLS_CLIENT`, and :attr:`PROTOCOL_TLS_SERVER`.
 
    The attributes :attr:`~SSLContext.maximum_version`,
    :attr:`~SSLContext.minimum_version` and
    :attr:`SSLContext.options` all affect the supported SSL
    and TLS versions of the context. The implementation does not prevent
    invalid combination. For example a context with
-   :attr:`OP_NO_TLSv1_2` in :attr:`~SSLContext.options` and
+   ``OP_NO_TLSv1_2`` in :attr:`~SSLContext.options` and
    :attr:`~SSLContext.maximum_version` set to :attr:`TLSVersion.TLSv1_2`
    will not be able to establish a TLS 1.2 connection.
 
@@ -1914,8 +1687,8 @@ to speed up repeated connections from the same clients.
 .. attribute:: SSLContext.options
 
    An integer representing the set of SSL options enabled on this context.
-   The default value is :data:`OP_ALL`, but you can specify other options
-   such as :data:`OP_NO_SSLv2` by ORing them together.
+   The default value is :data:`OP_ALL` ORed with
+   ``OP_NO_SSLv2 | OP_NO_SSLv3 | OP_NO_TLSV1 | OP_NO_TLSv1_1``.
 
    .. versionchanged:: 3.6
       :attr:`SSLContext.options` returns :class:`Options` flags:
@@ -1928,6 +1701,12 @@ to speed up repeated connections from the same clients.
       All ``OP_NO_SSL*`` and ``OP_NO_TLS*`` options have been deprecated since
       Python 3.7. Use :attr:`SSLContext.minimum_version` and
       :attr:`SSLContext.maximum_version` instead.
+
+   .. versionchanged:: 3.12
+
+      Deprecated ``OP_NO_SSL*`` and ``OP_NO_TLS*`` flags can no longer be set
+      or cleared. All TLS/SSL versions before TLS 1.2 are disabled.
+
 
 .. attribute:: SSLContext.post_handshake_auth
 
@@ -2086,7 +1865,7 @@ Combined key and certificate
 
 Often the private key is stored in the same file as the certificate; in this
 case, only the ``certfile`` parameter to :meth:`SSLContext.load_cert_chain`
-and :func:`wrap_socket` needs to be passed.  If the private key is stored
+needs to be passed.  If the private key is stored
 with the certificate, it should come before the first certificate in
 the certificate chain::
 

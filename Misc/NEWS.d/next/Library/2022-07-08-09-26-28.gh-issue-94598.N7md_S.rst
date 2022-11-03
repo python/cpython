@@ -1,0 +1,6 @@
+Deprecated :mod:`ssl` features have been removed:
+- support for SSL 3.0, TLS 1.0, and TLS 1.1
+- all ``PROTOCOL_*`` constants except ``PROTOCOL_TLS_CLIENT`` and ``PROTOCOL_TLS_SERVER``
+- all ``OP_NO_SSL*`` and ``OP_NO_TLS*`` option flags
+- ``TLSVersion.SSLv3``, ``TLSVersion.TLSv1``, and ``TLSVersion.TLSv1_1``
+- :class:`ssl.SSLContext` now requires a *protocol* argument
