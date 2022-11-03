@@ -2299,3 +2299,7 @@
     added = '3.12'
 [macro.PY_VECTORCALL_ARGUMENTS_OFFSET]
     added = '3.12'
+[typedef.getbufferproc]
+    added = '3.12'
+[typedef.releasebufferproc]
+    added = '3.12'

@@ -2144,14 +2144,13 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
         _PyArena_Free(arena);
         return NULL;
     }
-    PyFutureFeatures *future = _PyFuture_FromAST(mod, filename);
-    if (future == NULL) {
+    PyFutureFeatures future;
+    if (!_PyFuture_FromAST(mod, filename, &future)) {
         _PyArena_Free(arena);
         return NULL;
     }
-    future->ff_features |= flags->cf_flags;
-    st = _PySymtable_Build(mod, filename, future);
-    PyObject_Free((void *)future);
+    future.ff_features |= flags->cf_flags;
+    st = _PySymtable_Build(mod, filename, &future);
     _PyArena_Free(arena);
     return st;
 }
