@@ -70,6 +70,8 @@ Important deprecations, removals or restrictions:
 
 * :pep:`623`, Remove wstr from Unicode
 
+* :pep:`632`, Remove the ``distutils`` package.
+
 Improved Error Messages
 =======================
 
@@ -120,6 +122,22 @@ Other Language Changes
   need to run for a long time without executing any Python code also have a
   chance to execute the GC periodically. (Contributed by Pablo Galindo in
   :gh:`97922`.)
+
+* A backslash-character pair that is not a valid escape sequence now generates
+  a :exc:`SyntaxWarning`, instead of :exc:`DeprecationWarning`.
+  For example, ``re.compile("\d+\.\d+")`` now emits a :exc:`SyntaxWarning`
+  (``"\d"`` is an invalid escape sequence), use raw strings for regular
+  expression: ``re.compile(r"\d+\.\d+")``.
+  In a future Python version, :exc:`SyntaxError` will eventually be raised,
+  instead of :exc:`SyntaxWarning`.
+  (Contributed by Victor Stinner in :gh:`98401`.)
+
+* Octal escapes with value larger than ``0o377`` (ex: ``"\477"``), deprecated
+  in Python 3.11, now produce a :exc:`SyntaxWarning`, instead of
+  :exc:`DeprecationWarning`.
+  In a future Python version they will be eventually a :exc:`SyntaxError`.
+  (Contributed by Victor Stinner in :gh:`98401`.)
+
 
 New Modules
 ===========
@@ -385,6 +403,12 @@ although there is currently no date scheduled for their removal.
 Removed
 =======
 
+* Remove the ``distutils`` package. It was deprecated in Python 3.10 by
+  :pep:`632` "Deprecate distutils module". For projects still using
+  ``distutils`` and cannot be updated to something else, the ``setuptools``
+  project can be installed: it still provides ``distutils``.
+  (Contributed by Victor Stinner in :gh:`92584`.)
+
 * Removed many old deprecated :mod:`unittest` features:
 
   - A number of :class:`~unittest.TestCase` method aliases:
@@ -523,6 +547,16 @@ Removed
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
   (Contributed by Julien Palard in :gh:`98179`.)
+
+* Remove the *keyfile*, *certfile* and *check_hostname* parameters, deprecated
+  since Python 3.6, in modules: :mod:`ftplib`, :mod:`http.client`,
+  :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib`. Use the *context* parameter
+  (*ssl_context* in :mod:`imaplib`) instead.
+  (Contributed by Victor Stinner in :gh:`94172`.)
+
+* :mod:`ftplib`: Remove the ``FTP_TLS.ssl_version`` class attribute: use the
+  *context* parameter instead.
+  (Contributed by Victor Stinner in :gh:`94172`.)
 
 
 Porting to Python 3.12
