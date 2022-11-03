@@ -596,7 +596,6 @@ PyEval_EvalFrame(PyFrameObject *f)
     return _PyEval_EvalFrame(tstate, f->f_frame, 0);
 }
 
-
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
@@ -1029,7 +1028,7 @@ typedef struct {
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunused-label"
-#else /* MS_WINDOWS ? */
+#else /* MS_WINDOWS */
 #  pragma warning(push)
 #  pragma warning(disable:4102)
 #endif
@@ -5250,7 +5249,7 @@ resume_with_error:
 }
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
-#else /* MS_WINDOWS ? */
+#else /* MS_WINDOWS */
 #  pragma warning(pop)
 #endif
 
