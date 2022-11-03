@@ -596,6 +596,7 @@ PyEval_EvalFrame(PyFrameObject *f)
     return _PyEval_EvalFrame(tstate, f->f_frame, 0);
 }
 
+
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
@@ -676,15 +677,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #endif
 
 #if USE_COMPUTED_GOTOS
-#define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
-#define DISPATCH_GOTO() goto *opcode_targets[opcode]
+#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#ifdef Py_DEBUG
-#define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
-#else
-#define TARGET(op) case op: INSTRUCTION_START(op);
-#endif
-#define DISPATCH_GOTO() goto dispatch_opcode
+#  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
+#  define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
@@ -1024,6 +1021,18 @@ typedef struct {
 
 #define KWNAMES_LEN() \
     (call_shape.kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(call_shape.kwnames)))
+
+/* Disable unused label warnings.  They are handy for debugging, even
+   if computed gotos aren't used. */
+
+/* TBD - what about other compilers? */
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-label"
+#else /* MS_WINDOWS ? */
+#  pragma warning(push)
+#  pragma warning(disable:4102)
+#endif
 
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
@@ -5239,6 +5248,11 @@ resume_with_error:
     goto error;
 
 }
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#else /* MS_WINDOWS ? */
+#  pragma warning(pop)
+#endif
 
 static void
 format_missing(PyThreadState *tstate, const char *kind,
