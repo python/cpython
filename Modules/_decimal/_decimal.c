@@ -5920,7 +5920,7 @@ PyInit__decimal(void)
     /* Add types to the module */
     CHECK_INT(PyModule_AddObjectRef(m, "Decimal", (PyObject *)&PyDec_Type));
     CHECK_INT(PyModule_AddObjectRef(m, "Context",
-                                 (PyObject *)&PyDecContext_Type));
+                                    (PyObject *)&PyDecContext_Type));
     CHECK_INT(PyModule_AddObjectRef(m, "DecimalTuple", (PyObject *)DecimalTuple));
 
 
@@ -6006,7 +6006,7 @@ PyInit__decimal(void)
     ASSIGN_PTR(default_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     CHECK_INT(PyModule_AddObjectRef(m, "DefaultContext",
-                                 default_context_template));
+                                    default_context_template));
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
     ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
@@ -6022,14 +6022,14 @@ PyInit__decimal(void)
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_basic_context(basic_context_template);
     CHECK_INT(PyModule_AddObjectRef(m, "BasicContext",
-                                 basic_context_template));
+                                    basic_context_template));
 
     /* Init extended context template */
     ASSIGN_PTR(extended_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_extended_context(extended_context_template);
     CHECK_INT(PyModule_AddObjectRef(m, "ExtendedContext",
-                                 extended_context_template));
+                                    extended_context_template));
 
 
     /* Init mpd_ssize_t constants */
