@@ -59,6 +59,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_runtime_init.h"  // _Py_ID()
 #include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
@@ -1849,7 +1850,7 @@ unpickle(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "OO!", &typ, &PyTuple_Type, &state))
         return NULL;
-    obj = _PyObject_CallMethodIdOneArg(typ, &PyId___new__, typ);
+    obj = PyObject_CallMethodOneArg(typ, &_Py_ID(__new__), typ);
     if (obj == NULL)
         return NULL;
 

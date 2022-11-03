@@ -379,8 +379,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         big_endian = PY_BIG_ENDIAN;
     }
 
-    if (_PyObject_LookupAttrId(type,
-                &PyId__use_broken_old_ctypes_structure_semantics_, &tmp) < 0)
+    if (_PyObject_LookupAttr(type,
+                &_Py_ID(_use_broken_old_ctypes_structure_semantics_), &tmp) < 0)
     {
         return -1;
     }
@@ -392,7 +392,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         use_broken_old_ctypes_semantics = 0;
     }
 
-    if (_PyObject_LookupAttrId(type, &PyId__pack_, &tmp) < 0) {
+    if (_PyObject_LookupAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
         return -1;
     }
     if (tmp) {
