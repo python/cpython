@@ -6036,6 +6036,7 @@ PyInit__decimal(void)
     for (ssize_cm = ssize_constants; ssize_cm->name != NULL; ssize_cm++) {
         ASSIGN_PTR(obj, PyLong_FromSsize_t(ssize_cm->val));
         CHECK_INT(PyModule_AddObject(m, ssize_cm->name, obj));
+        obj = NULL;
     }
 
     /* Init int constants */
