@@ -1,1 +1,1 @@
-Clean up refleak in :mod:`_zoneinfo` initialisation
+Clean up refleak on failed module initialisation in :mod:`_zoneinfo`
