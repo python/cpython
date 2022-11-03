@@ -50,7 +50,6 @@ OMIT_FILES = (
     "xdrlib.py",
     # other platforms
     "_aix_support.py",
-    "_bootsubprocess.py",
     "_osx_support.py",
     # webbrowser
     "antigravity.py",
