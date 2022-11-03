@@ -59,7 +59,6 @@
 #endif
 
 #include "Python.h"
-#include "pycore_runtime_init.h"  // _Py_ID()
 #include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
@@ -96,6 +95,8 @@
 */
 #define DONT_USE_SEH
 #endif
+
+#include "pycore_runtime_init.h"
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
