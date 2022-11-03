@@ -2243,9 +2243,17 @@ class TestStack(unittest.TestCase):
             return list(traceback.walk_stack(None))
         s1 = list(traceback.walk_stack(None))
         s2 = deeper()
-        self.assertIs(s2[0][0].f_code, deeper.__code__)
         self.assertEqual(len(s2) - len(s1), 1)
         self.assertEqual(s2[1:], s1)
+        
+    def test_walk_stack_frame():
+        gen = traceback.walk_stack(None)
+        def deep():
+            def deeper():
+                return list(gen)[0][0]
+            return deeper()
+            
+        self.assertIs(deep().f_code, deep.__code__)
 
     def test_walk_tb(self):
         try:
