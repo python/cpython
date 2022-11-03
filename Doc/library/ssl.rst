@@ -74,13 +74,10 @@ Functions, Constants, and Exceptions
 Socket creation
 ^^^^^^^^^^^^^^^
 
-Since Python 3.2 and 2.7.9, it is recommended to use the
-:meth:`SSLContext.wrap_socket` of an :class:`SSLContext` instance to wrap
-sockets as :class:`SSLSocket` objects. The helper functions
+Instances of :class:`SSLSocket` must be created using the
+:meth:`SSLContext.wrap_socket` method. The helper function
 :func:`create_default_context` returns a new context with secure default
-settings. The old :func:`wrap_socket` function is deprecated since it is
-both inefficient and has no support for server name indication (SNI) and
-hostname matching.
+settings.
 
 Client socket example with default context and IPv4/IPv6 dual stack::
 
@@ -369,10 +366,10 @@ Certificate handling
    Given the address ``addr`` of an SSL-protected server, as a (*hostname*,
    *port-number*) pair, fetches the server's certificate, and returns it as a
    PEM-encoded string.  If ``ssl_version`` is specified, uses that version of
-   the SSL protocol to attempt to connect to the server.  If ``ca_certs`` is
+   the SSL protocol to attempt to connect to the server.  If *ca_certs* is
    specified, it should be a file containing a list of root certificates, the
-   same format as used for the same parameter in
-   :meth:`SSLContext.wrap_socket`.  The call will attempt to validate the
+   same format as used for the *cafile* parameter in
+   :meth:`SSLContext.load_verify_locations`.  The call will attempt to validate the
    server certificate against that set of root certificates, and will fail
    if the validation attempt fails.  A timeout can be specified with the
    ``timeout`` parameter.
@@ -451,33 +448,6 @@ Certificate handling
 
    .. versionadded:: 3.4
 
-.. function:: wrap_socket(sock, keyfile=None, certfile=None, \
-       server_side=False, cert_reqs=CERT_NONE, ssl_version=PROTOCOL_TLS, \
-       ca_certs=None, do_handshake_on_connect=True, \
-       suppress_ragged_eofs=True, ciphers=None)
-
-   Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance
-   of :class:`ssl.SSLSocket`, a subtype of :class:`socket.socket`, which wraps
-   the underlying socket in an SSL context.  ``sock`` must be a
-   :data:`~socket.SOCK_STREAM` socket; other socket types are unsupported.
-
-   Internally, function creates a :class:`SSLContext` with protocol
-   *ssl_version* and :attr:`SSLContext.options` set to *cert_reqs*. If
-   parameters *keyfile*, *certfile*, *ca_certs* or *ciphers* are set, then
-   the values are passed to :meth:`SSLContext.load_cert_chain`,
-   :meth:`SSLContext.load_verify_locations`, and
-   :meth:`SSLContext.set_ciphers`.
-
-   The arguments *server_side*, *do_handshake_on_connect*, and
-   *suppress_ragged_eofs* have the same meaning as
-   :meth:`SSLContext.wrap_socket`.
-
-   .. deprecated:: 3.7
-
-      Since Python 3.2 and 2.7.9, it is recommended to use the
-      :meth:`SSLContext.wrap_socket` instead of :func:`wrap_socket`. The
-      top-level function is limited and creates an insecure client socket
-      without server name indication or hostname matching.
 
 Constants
 ^^^^^^^^^
@@ -488,8 +458,8 @@ Constants
 
 .. data:: CERT_NONE
 
-   Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  Except for :const:`PROTOCOL_TLS_CLIENT`,
+   Possible value for :attr:`SSLContext.verify_mode`.
+   Except for :const:`PROTOCOL_TLS_CLIENT`,
    it is the default mode.  With client-side sockets, just about any
    cert is accepted.  Validation errors, such as untrusted or expired cert,
    are ignored and do not abort the TLS/SSL handshake.
@@ -501,8 +471,8 @@ Constants
 
 .. data:: CERT_OPTIONAL
 
-   Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  In client mode, :const:`CERT_OPTIONAL`
+   Possible value for :attr:`SSLContext.verify_mode`.
+   In client mode, :const:`CERT_OPTIONAL`
    has the same meaning as :const:`CERT_REQUIRED`. It is recommended to
    use :const:`CERT_REQUIRED` for client-side sockets instead.
 
@@ -513,13 +483,12 @@ Constants
    the TLS handshake.
 
    Use of this setting requires a valid set of CA certificates to
-   be passed, either to :meth:`SSLContext.load_verify_locations` or as a
-   value of the ``ca_certs`` parameter to :func:`wrap_socket`.
+   be passed to :meth:`SSLContext.load_verify_locations`.
 
 .. data:: CERT_REQUIRED
 
-   Possible value for :attr:`SSLContext.verify_mode`, or the ``cert_reqs``
-   parameter to :func:`wrap_socket`.  In this mode, certificates are
+   Possible value for :attr:`SSLContext.verify_mode`.
+   In this mode, certificates are
    required from the other side of the socket connection; an :class:`SSLError`
    will be raised if no certificate is provided, or if its validation fails.
    This mode is **not** sufficient to verify a certificate in client mode as
@@ -533,8 +502,7 @@ Constants
    the client must provide a valid and trusted certificate.
 
    Use of this setting requires a valid set of CA certificates to
-   be passed, either to :meth:`SSLContext.load_verify_locations` or as a
-   value of the ``ca_certs`` parameter to :func:`wrap_socket`.
+   be passed to :meth:`SSLContext.load_verify_locations`.
 
 .. class:: VerifyMode
 
@@ -1327,10 +1295,7 @@ SSL sockets also have the following additional methods and attributes:
 
 .. attribute:: SSLSocket.context
 
-   The :class:`SSLContext` object this SSL socket is tied to.  If the SSL
-   socket was created using the deprecated :func:`wrap_socket` function
-   (rather than :meth:`SSLContext.wrap_socket`), this is a custom context
-   object created for this SSL socket.
+   The :class:`SSLContext` object this SSL socket is tied to.
 
    .. versionadded:: 3.2
 
@@ -2086,7 +2051,7 @@ Combined key and certificate
 
 Often the private key is stored in the same file as the certificate; in this
 case, only the ``certfile`` parameter to :meth:`SSLContext.load_cert_chain`
-and :func:`wrap_socket` needs to be passed.  If the private key is stored
+needs to be passed.  If the private key is stored
 with the certificate, it should come before the first certificate in
 the certificate chain::
 
