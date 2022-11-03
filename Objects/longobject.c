@@ -2362,6 +2362,7 @@ pylong_int_from_string(const char *start, const char *end, PyLongObject **res)
     }
     PyObject *s = PyUnicode_FromStringAndSize(start, end-start);
     if (s == NULL) {
+        Py_DECREF(mod);
         goto error;
     }
     PyObject *result = PyObject_CallMethod(mod, "int_from_string", "O", s);
@@ -2371,14 +2372,14 @@ pylong_int_from_string(const char *start, const char *end, PyLongObject **res)
         goto error;
     }
     if (!PyLong_Check(result)) {
-        PyErr_SetString(PyExc_TypeError, "an integer is required");
+        PyErr_SetString(PyExc_TypeError, "_pylong.int_from_string did not return an int");
         goto error;
     }
     *res = (PyLongObject *)result;
     return 0;
 error:
     *res = NULL;
-    return 0;
+    return 0;  // See the long_from_string_base() API comment.
 }
 #endif /* WITH_PYLONG_MODULE */
 
@@ -2617,7 +2618,8 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
  * Return values:
  *
  *   - Returns -1 on syntax error (exception needs to be set, *res is untouched)
- *   - Returns 0 and sets *res to NULL for MemoryError/OverflowError.
+ *   - Returns 0 and sets *res to NULL for MemoryError, OverflowError, or
+ *     _pylong.int_from_string() errors.
  *   - Returns 0 and sets *res to an unsigned, unnormalized PyLong (success!).
  *
  * Afterwards *str is set to point to the first non-digit (which may be *str!).
