@@ -669,7 +669,19 @@ Porting to Python 3.12
   :py:meth:`~class.__subclasses__` (using :c:func:`PyObject_CallMethod`,
   for example).
 
+* Add support of more formatting options (left aligning, octals, uppercase
+  hexadecimals, :c:expr:`intmax_t`, :c:expr:`ptrdiff_t`, :c:expr:`wchar_t` C
+  strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV`.
+  (Contributed by Serhiy Storchaka in :gh:`98836`.)
+
 * An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
+  :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
+  In previous versions it caused all the rest of the format string to be
+  copied as-is to the result string, and any extra arguments discarded.
+  (Contributed by Serhiy Storchaka in :gh:`95781`.)
+
+An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
   In previous versions it caused all the rest of the format string to be
   copied as-is to the result string, and any extra arguments discarded.

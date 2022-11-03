@@ -482,11 +482,11 @@ APIs:
 
       * - ``x``
         - Specified by the length modifier
-        - The heximal representation of an unsigned C integer (lowercase).
+        - The hexadecimal representation of an unsigned C integer (lowercase).
 
       * - ``X``
         - Specified by the length modifier
-        - The heximal representation of an unsigned C integer (uppercase).
+        - The hexadecimal representation of an unsigned C integer (uppercase).
 
       * - ``c``
         - :c:expr:`int`
