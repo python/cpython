@@ -1753,7 +1753,11 @@ pylong_int_to_decimal_string(PyObject *aa,
     if (s == NULL) {
         goto error;
     }
-    assert(PyUnicode_Check(s));
+    if (!PyUnicode_Check(s)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "_pylong.int_to_decimal_string did not return a str");
+        goto error;
+    }
     if (writer) {
         Py_ssize_t size = PyUnicode_GET_LENGTH(s);
         if (_PyUnicodeWriter_Prepare(writer, size, '9') == -1) {
@@ -2372,7 +2376,8 @@ pylong_int_from_string(const char *start, const char *end, PyLongObject **res)
         goto error;
     }
     if (!PyLong_Check(result)) {
-        PyErr_SetString(PyExc_TypeError, "_pylong.int_from_string did not return an int");
+        PyErr_SetString(PyExc_TypeError,
+                        "_pylong.int_from_string did not return an int");
         goto error;
     }
     *res = (PyLongObject *)result;

@@ -857,7 +857,8 @@ class PyLongModuleTests(unittest.TestCase):
             mock_int_to_str.return_value = None  # not a str
             with self.assertRaises(TypeError) as ctx:
                 str(big_value)
-            self.assertIn('non-string', str(ctx.exception))
+            self.assertIn('_pylong.int_to_decimal_string did not',
+                          str(ctx.exception))
             mock_int_to_str.side_effect = RuntimeError("testABC")
             with self.assertRaises(RuntimeError):
                 str(big_value)
@@ -872,7 +873,8 @@ class PyLongModuleTests(unittest.TestCase):
             mock_int_from_str.return_value = b'not an int'
             with self.assertRaises(TypeError) as ctx:
                 int(big_value)
-            self.assertIn('_pylong.int_from_string', str(ctx.exception))
+            self.assertIn('_pylong.int_from_string did not',
+                          str(ctx.exception))
 
             mock_int_from_str.side_effect = RuntimeError("test123")
             with self.assertRaises(RuntimeError):
