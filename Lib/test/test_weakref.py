@@ -637,35 +637,6 @@ class ReferencesTestCase(TestBase):
         del I, J, II
         gc.collect()
 
-    def test_callback_in_cycle_2(self):
-        import gc
-
-        # This is just like test_callback_in_cycle_1, except that II is an
-        # old-style class.  The symptom is different then:  an instance of an
-        # old-style class looks in its own __dict__ first.  'J' happens to
-        # get cleared from I.__dict__ before 'wr', and 'J' was never in II's
-        # __dict__, so the attribute isn't found.  The difference is that
-        # the old-style II doesn't have a NULL __mro__ (it doesn't have any
-        # __mro__), so no segfault occurs.  Instead it got:
-        #    test_callback_in_cycle_2 (__main__.ReferencesTestCase) ...
-        #    Exception exceptions.AttributeError:
-        #   "II instance has no attribute 'J'" in <bound method II.acallback
-        #       of <?.II instance at 0x00B9B4B8>> ignored
-
-        class J(object):
-            pass
-
-        class II:
-            def acallback(self, ignore):
-                self.J
-
-        I = II()
-        I.J = J
-        I.wr = weakref.ref(J, I.acallback)
-
-        del I, J, II
-        gc.collect()
-
     def test_callback_in_cycle_3(self):
         import gc
 
