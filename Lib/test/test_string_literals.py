@@ -137,7 +137,7 @@ class TestLiterals(unittest.TestCase):
                 self.assertEqual(eval(r"'\%o'" % i), chr(i))
 
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=DeprecationWarning)
+            warnings.simplefilter('always', category=SyntaxWarning)
             eval("'''\n\\407'''")
         self.assertEqual(len(w), 1)
         self.assertEqual(str(w[0].message),
@@ -213,7 +213,7 @@ class TestLiterals(unittest.TestCase):
                 self.assertEqual(eval(r"b'\%o'" % i), bytes([i & 0o377]))
 
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=DeprecationWarning)
+            warnings.simplefilter('always', category=SyntaxWarning)
             eval("b'''\n\\407'''")
         self.assertEqual(len(w), 1)
         self.assertEqual(str(w[0].message),
