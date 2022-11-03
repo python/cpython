@@ -41,7 +41,6 @@ OMIT_FILES = (
     "ensurepip/",
     "venv/",
     # build system
-    "distutils/",
     "lib2to3/",
     # deprecated
     "asyncore.py",

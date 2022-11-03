@@ -68,7 +68,6 @@ PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
         <Link>DLLs\%(Filename)%(Extension)</Link>
       </_PythonRuntimeDlls>
       <_PythonRuntimeLib Include="$(PythonHome)\Lib\**\*" Exclude="$(PythonHome)\Lib\**\*.pyc;$(PythonHome)\Lib\site-packages\**\*" />
-      <_PythonRuntimeLib Remove="$(PythonHome)\Lib\distutils\**\*" Condition="$(IncludeDistutils) != 'true'" />
       <_PythonRuntimeLib Remove="$(PythonHome)\Lib\lib2to3\**\*" Condition="$(IncludeLib2To3) != 'true'" />
       <_PythonRuntimeLib Remove="$(PythonHome)\Lib\ensurepip\**\*" Condition="$(IncludeVEnv) != 'true'" />
       <_PythonRuntimeLib Remove="$(PythonHome)\Lib\venv\**\*" Condition="$(IncludeVEnv) != 'true'" />
