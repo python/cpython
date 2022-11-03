@@ -5918,21 +5918,17 @@ PyInit__decimal(void)
 
 
     /* Add types to the module */
-    Py_INCREF(&PyDec_Type);
-    CHECK_INT(PyModule_AddObject(m, "Decimal", (PyObject *)&PyDec_Type));
-    Py_INCREF(&PyDecContext_Type);
-    CHECK_INT(PyModule_AddObject(m, "Context",
+    CHECK_INT(PyModule_AddObjectRef(m, "Decimal", (PyObject *)&PyDec_Type));
+    CHECK_INT(PyModule_AddObjectRef(m, "Context",
                                  (PyObject *)&PyDecContext_Type));
-    Py_INCREF(DecimalTuple);
-    CHECK_INT(PyModule_AddObject(m, "DecimalTuple", (PyObject *)DecimalTuple));
+    CHECK_INT(PyModule_AddObjectRef(m, "DecimalTuple", (PyObject *)DecimalTuple));
 
 
     /* Create top level exception */
     ASSIGN_PTR(DecimalException, PyErr_NewException(
                                      "decimal.DecimalException",
                                      PyExc_ArithmeticError, NULL));
-    Py_INCREF(DecimalException);
-    CHECK_INT(PyModule_AddObject(m, "DecimalException", DecimalException));
+    CHECK_INT(PyModule_AddObjectRef(m, "DecimalException", DecimalException));
 
     /* Create signal tuple */
     ASSIGN_PTR(SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
@@ -5972,8 +5968,7 @@ PyInit__decimal(void)
         Py_DECREF(base);
 
         /* add to module */
-        Py_INCREF(cm->ex);
-        CHECK_INT(PyModule_AddObject(m, cm->name, cm->ex));
+        CHECK_INT(PyModule_AddObjectRef(m, cm->name, cm->ex));
 
         /* add to signal tuple */
         Py_INCREF(cm->ex);
@@ -6003,51 +5998,48 @@ PyInit__decimal(void)
         ASSIGN_PTR(cm->ex, PyErr_NewException(cm->fqname, base, NULL));
         Py_DECREF(base);
 
-        Py_INCREF(cm->ex);
-        CHECK_INT(PyModule_AddObject(m, cm->name, cm->ex));
+        CHECK_INT(PyModule_AddObjectRef(m, cm->name, cm->ex));
     }
 
 
     /* Init default context template first */
     ASSIGN_PTR(default_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
-    Py_INCREF(default_context_template);
-    CHECK_INT(PyModule_AddObject(m, "DefaultContext",
+    CHECK_INT(PyModule_AddObjectRef(m, "DefaultContext",
                                  default_context_template));
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
     ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
-    Py_INCREF(Py_False);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_False));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_False));
 #else
     ASSIGN_PTR(current_context_var, PyContextVar_New("decimal_context", NULL));
-    Py_INCREF(Py_True);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_True));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_CONTEXTVAR", Py_True));
 #endif
-    Py_INCREF(Py_True);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_True));
+    CHECK_INT(PyModule_AddObjectRef(m, "HAVE_THREADS", Py_True));
 
     /* Init basic context template */
     ASSIGN_PTR(basic_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_basic_context(basic_context_template);
-    Py_INCREF(basic_context_template);
-    CHECK_INT(PyModule_AddObject(m, "BasicContext",
+    CHECK_INT(PyModule_AddObjectRef(m, "BasicContext",
                                  basic_context_template));
 
     /* Init extended context template */
     ASSIGN_PTR(extended_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_extended_context(extended_context_template);
-    Py_INCREF(extended_context_template);
-    CHECK_INT(PyModule_AddObject(m, "ExtendedContext",
+    CHECK_INT(PyModule_AddObjectRef(m, "ExtendedContext",
                                  extended_context_template));
 
 
     /* Init mpd_ssize_t constants */
     for (ssize_cm = ssize_constants; ssize_cm->name != NULL; ssize_cm++) {
         ASSIGN_PTR(obj, PyLong_FromSsize_t(ssize_cm->val));
-        CHECK_INT(PyModule_AddObject(m, ssize_cm->name, obj));
+        if (PyModule_AddObjectRef(m, ssize_cm->name, obj) < 0) {
+            Py_DECREF(obj);
+            goto error;
+        }
+        Py_DECREF(obj);
         obj = NULL;
     }
 
@@ -6060,8 +6052,7 @@ PyInit__decimal(void)
     /* Init string constants */
     for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
         ASSIGN_PTR(round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
-        Py_INCREF(round_map[i]);
-        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], round_map[i]));
+        CHECK_INT(PyModule_AddObjectRef(m, mpd_round_string[i], round_map[i]));
     }
 
     /* Add specification version number */
