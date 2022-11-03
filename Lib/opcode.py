@@ -111,6 +111,8 @@ def_op('CLEANUP_THROW', 55)
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
 
+def_op('STOPITERATION_ERROR', 63)
+
 def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
 def_op('PRINT_EXPR', 70)
@@ -327,9 +329,6 @@ _specializations = {
         "FOR_ITER_LIST",
         "FOR_ITER_RANGE",
     ],
-    "JUMP_BACKWARD": [
-        "JUMP_BACKWARD_QUICK",
-    ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
         # These potentially push [NULL, bound method] onto the stack.
@@ -357,9 +356,6 @@ _specializations = {
         "LOAD_GLOBAL_ADAPTIVE",
         "LOAD_GLOBAL_BUILTIN",
         "LOAD_GLOBAL_MODULE",
-    ],
-    "RESUME": [
-        "RESUME_QUICK",
     ],
     "STORE_ATTR": [
         "STORE_ATTR_ADAPTIVE",

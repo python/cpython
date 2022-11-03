@@ -203,7 +203,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
+  [python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
   [python3])
 AC_SUBST(PYTHON_FOR_REGEN)
 
@@ -1616,17 +1616,6 @@ if test -z "$ARFLAGS"
 then
         ARFLAGS="rcs"
 fi
-
-AC_CHECK_TOOLS([READELF], [readelf], [:])
-if test "$cross_compiling" = yes; then
-    case "$READELF" in
-	readelf|:)
-	AC_MSG_ERROR([readelf for the host is required for cross builds])
-	;;
-    esac
-fi
-AC_SUBST(READELF)
-
 
 case $MACHDEP in
 hp*|HP*)

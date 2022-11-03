@@ -35,7 +35,6 @@ IGNORE = {
     '_testmultiphase',
     '_xxsubinterpreters',
     '_xxtestfuzz',
-    'distutils.tests',
     'idlelib.idle_test',
     'test',
     'xxlimited',
