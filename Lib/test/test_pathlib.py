@@ -1201,6 +1201,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p.relative_to('C:/Foo/Bar/Baz', walk_up=True), P('..'))
         self.assertEqual(p.relative_to('C:/Foo/Baz', walk_up=True), P('../Bar'))
         # Unrelated paths.
+        self.assertRaises(ValueError, p.relative_to, 'c:')
         self.assertRaises(ValueError, p.relative_to, P('c:'))
         self.assertRaises(ValueError, p.relative_to, P('C:/Baz'))
         self.assertRaises(ValueError, p.relative_to, P('C:/Foo/Bar/Baz'))
@@ -1211,6 +1212,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('/'))
         self.assertRaises(ValueError, p.relative_to, P('/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('//C/Foo'))
+        self.assertRaises(ValueError, p.relative_to, 'c:', walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('c:'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('C:Foo'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('d:'), walk_up=True)
