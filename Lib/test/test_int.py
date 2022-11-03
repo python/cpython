@@ -7,7 +7,10 @@ from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 
-import _pylong
+try:
+    import _pylong
+except ImportError:
+    _pylong = None
 
 L = [
         ('0', 0),
@@ -844,6 +847,8 @@ class PyLongModuleTests(unittest.TestCase):
         with self.assertRaises(ValueError) as err:
             int('_' + s)
 
+    @support.cpython_only  # tests implementation details of CPython.
+    @unittest.skipUnless(_pylong, "_pylong module required")
     @mock.patch.object(_pylong, "int_to_decimal_string")
     def test_pylong_misbehavior_error_path_to_str(
             self, mock_int_to_str):
@@ -857,6 +862,8 @@ class PyLongModuleTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 str(big_value)
 
+    @support.cpython_only  # tests implementation details of CPython.
+    @unittest.skipUnless(_pylong, "_pylong module required")
     @mock.patch.object(_pylong, "int_from_string")
     def test_pylong_misbehavior_error_path_from_str(
             self, mock_int_from_str):
@@ -870,7 +877,6 @@ class PyLongModuleTests(unittest.TestCase):
             mock_int_from_str.side_effect = RuntimeError("test123")
             with self.assertRaises(RuntimeError):
                 int(big_value)
-
 
 
 if __name__ == "__main__":
