@@ -1,0 +1,1 @@
+We have new tooling, in ``Tools/cases_generator``, to generate the interpreter switch from a list of opcode definitions.
