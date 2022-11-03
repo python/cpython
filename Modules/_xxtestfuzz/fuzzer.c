@@ -142,7 +142,7 @@ static int fuzz_struct_unpack(const char* data, size_t size) {
 }
 
 
-#define MAX_JSON_TEST_SIZE 0x10000
+#define MAX_JSON_TEST_SIZE 0x100000
 
 PyObject* json_loads_method = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
@@ -157,9 +157,7 @@ static int init_json_loads(void) {
 }
 /* Fuzz json.loads(x) */
 static int fuzz_json_loads(const char* data, size_t size) {
-    /* Since python supports arbitrarily large ints in JSON,
-       long inputs can lead to timeouts on boring inputs like
-       `json.loads("9" * 100000)` */
+    /* long inputs could lead to timeouts on boring inputs */
     if (size > MAX_JSON_TEST_SIZE) {
         return 0;
     }
@@ -335,7 +333,7 @@ static int fuzz_sre_match(const char* data, size_t size) {
     return 0;
 }
 
-#define MAX_CSV_TEST_SIZE 0x10000
+#define MAX_CSV_TEST_SIZE 0x100000
 PyObject* csv_module = NULL;
 PyObject* csv_error = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
@@ -393,7 +391,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
     return 0;
 }
 
-#define MAX_AST_LITERAL_EVAL_TEST_SIZE 0x10000
+#define MAX_AST_LITERAL_EVAL_TEST_SIZE 0x100000
 PyObject* ast_literal_eval_method = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
 static int init_ast_literal_eval(void) {
@@ -459,6 +457,9 @@ int LLVMFuzzerInitialize(int *argc, char ***argv) {
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
     config.install_signal_handlers = 0;
+    /* Raise the limit above the default allow exercising larger things
+     * now that we fall back to the _pylong module for large values. */
+    config.int_max_str_digits = 8086;
     PyStatus status;
     status = PyConfig_SetBytesString(&config, &config.program_name, *argv[0]);
     if (PyStatus_Exception(status)) {
