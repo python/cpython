@@ -630,7 +630,7 @@ New Features
   * :c:func:`PyObject_VectorcallMethod`
   * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
 
-  Together with the previous change, this covers both the receiving and outgoing
+  Together with the previous change, this covers both the incoming and outgoing
   ends of the vector call protocol. (Contributed by Wenzel Jakob in
   :gh:`98586`.)
 
