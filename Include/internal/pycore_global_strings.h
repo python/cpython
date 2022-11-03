@@ -21,7 +21,7 @@ extern "C" {
 #define STRUCT_FOR_STR(NAME, LITERAL) \
     STRUCT_FOR_ASCII_STR(LITERAL) _ ## NAME;
 #define STRUCT_FOR_ID(NAME) \
-    STRUCT_FOR_ASCII_STR(#NAME) _ ## NAME;
+    STRUCT_FOR_ASCII_STR(#NAME) __id__ ## NAME;
 
 // XXX Order by frequency of use?
 
@@ -716,7 +716,7 @@ struct _Py_global_strings {
 
 
 #define _Py_ID(NAME) \
-     (_Py_SINGLETON(strings.identifiers._ ## NAME._ascii.ob_base))
+     (_Py_SINGLETON(strings.identifiers.__id__ ## NAME._ascii.ob_base))
 #define _Py_STR(NAME) \
      (_Py_SINGLETON(strings.literals._ ## NAME._ascii.ob_base))
 
