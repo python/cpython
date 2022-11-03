@@ -459,7 +459,7 @@ int LLVMFuzzerInitialize(int *argc, char ***argv) {
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
     config.install_signal_handlers = 0;
-    /* Raise the limit above the default allow exercising larger things
+    /* Raise the limit above the default allows exercising larger things
      * now that we fall back to the _pylong module for large values. */
     config.int_max_str_digits = 8086;
     PyStatus status;
