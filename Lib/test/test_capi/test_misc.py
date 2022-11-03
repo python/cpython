@@ -1221,14 +1221,16 @@ class SubinterpreterTest(unittest.TestCase):
         FORK = 1<<15
         EXEC = 1<<16
 
-        features = ['fork', 'exec', 'threads', 'daemon_threads', 'extensions']
+        features = ['fork', 'exec', 'threads', 'daemon_threads',
+                    'extensions', 'own_gil']
         kwlist = [f'allow_{n}' for n in features]
-        kwlist[-1] = 'check_multi_interp_extensions'
+        kwlist[-2] = 'check_multi_interp_extensions'
+        kwlist[-1] = 'own_gil'
         for config, expected in {
-            (True, True, True, True, True):
+            (True, True, True, True, True, True):
                 FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
-            (False, False, False, False, False): 0,
-            (False, False, True, False, True): THREADS | EXTENSIONS,
+            (False, False, False, False, False, False): 0,
+            (False, False, True, False, True, False): THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {
@@ -1272,6 +1274,7 @@ class SubinterpreterTest(unittest.TestCase):
             'allow_exec': True,
             'allow_threads': True,
             'allow_daemon_threads': True,
+            'own_gil': False,
         }
 
         def check(enabled, override):

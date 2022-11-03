@@ -621,7 +621,9 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    // The main interpreter always has its own GIL.
+    config.own_gil = 1;
     init_interp_settings(interp, &config);
 
     PyThreadState *tstate = _PyThreadState_New(interp);

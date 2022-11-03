@@ -250,6 +250,7 @@ typedef struct {
     int allow_threads;
     int allow_daemon_threads;
     int check_multi_interp_extensions;
+    int own_gil;
 } _PyInterpreterConfig;
 
 #define _PyInterpreterConfig_INIT \
@@ -259,6 +260,7 @@ typedef struct {
         .allow_threads = 1, \
         .allow_daemon_threads = 0, \
         .check_multi_interp_extensions = 1, \
+        .own_gil = 1, \
     }
 
 #define _PyInterpreterConfig_LEGACY_INIT \
@@ -268,6 +270,7 @@ typedef struct {
         .allow_threads = 1, \
         .allow_daemon_threads = 1, \
         .check_multi_interp_extensions = 0, \
+        .own_gil = 0, \
     }
 
 /* --- Helper functions --------------------------------------- */

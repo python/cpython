@@ -1453,6 +1453,7 @@ class SubinterpImportTests(unittest.TestCase):
         allow_exec=False,
         allow_threads=True,
         allow_daemon_threads=False,
+        own_gil=False,
     )
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
