@@ -2051,7 +2051,7 @@ Combined key and certificate
 
 Often the private key is stored in the same file as the certificate; in this
 case, only the ``certfile`` parameter to :meth:`SSLContext.load_cert_chain`
-and :meth:`SSLContext.wrap_socket` needs to be passed.  If the private key is stored
+needs to be passed.  If the private key is stored
 with the certificate, it should come before the first certificate in
 the certificate chain::
 
