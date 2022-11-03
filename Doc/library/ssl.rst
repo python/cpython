@@ -369,7 +369,7 @@ Certificate handling
    the SSL protocol to attempt to connect to the server.  If *ca_certs* is
    specified, it should be a file containing a list of root certificates, the
    same format as used for the *cafile* parameter in
-   :meth:`SSLContext.wrap_socket`.  The call will attempt to validate the
+   :meth:`SSLContext.load_verify_locations`.  The call will attempt to validate the
    server certificate against that set of root certificates, and will fail
    if the validation attempt fails.  A timeout can be specified with the
    ``timeout`` parameter.
