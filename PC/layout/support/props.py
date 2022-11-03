@@ -36,7 +36,6 @@ PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
     <PythonVersion>{PYTHON_VERSION}</PythonVersion>
 
     <IncludePythonExe Condition="$(IncludePythonExe) == ''">true</IncludePythonExe>
-    <IncludeDistutils Condition="$(IncludeDistutils) == ''">false</IncludeDistutils>
     <IncludeLib2To3 Condition="$(IncludeLib2To3) == ''">false</IncludeLib2To3>
     <IncludeVEnv Condition="$(IncludeVEnv) == ''">false</IncludeVEnv>
 
