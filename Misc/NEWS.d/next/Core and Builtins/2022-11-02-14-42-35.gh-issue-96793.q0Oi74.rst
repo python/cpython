@@ -1,0 +1,2 @@
+Handle StopIteration and StopAsyncIteration raised in generator or
+coroutines in the bytecode, rather than in wrapping C code.
