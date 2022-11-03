@@ -622,6 +622,18 @@ New Features
   ``__dict__`` and weakrefs with less bookkeeping,
   using less memory and with faster access.
 
+* API for performing calls using the
+  :ref:`the vectorcall protocol <vectorcall>` was added to the
+  :ref:`Limited API <stable>`:
+
+  * :c:func:`PyObject_Vectorcall`
+  * :c:func:`PyObject_VectorcallMethod`
+  * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+
+  Together with the previous change, this covers both receiving and outgoing
+  ends of the vector call protocol. (Contributed by Wenzel Jakob in
+  :gh:`98586`.)
+
 * Added two new public functions,
   :c:func:`PyEval_SetProfileAllThreads` and
   :c:func:`PyEval_SetTraceAllThreads`, that allow to set tracing and profiling
