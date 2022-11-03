@@ -5925,8 +5925,7 @@ sslmodule_init_constants(PyObject *m)
 #define addbool(m, key, value) \
     do { \
         PyObject *bool_obj = (value) ? Py_True : Py_False; \
-        Py_INCREF(bool_obj); \
-        PyModule_AddObject((m), (key), bool_obj); \
+        PyModule_AddObjectRef((m), (key), bool_obj); \
     } while (0)
 
     addbool(m, "HAS_SNI", 1);
@@ -6059,23 +6058,31 @@ sslmodule_init_versioninfo(PyObject *m)
     */
     libver = OpenSSL_version_num();
     r = PyLong_FromUnsignedLong(libver);
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r))
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_NUMBER", r)) {
+        Py_XDECREF(r);
         return -1;
+    }
 
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r)) {
+        Py_XDECREF(r);
         return -1;
+    }
 
     r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
-    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r)) {
+        Py_XDECREF(r);
         return -1;
+    }
 
     libver = OPENSSL_VERSION_NUMBER;
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
-    if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
+    if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r)) {
+        Py_XDECREF(r);
         return -1;
+    }
 
     return 0;
 }

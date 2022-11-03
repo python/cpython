@@ -7342,29 +7342,26 @@ PyInit__socket(void)
     if (m == NULL)
         return NULL;
 
-    Py_INCREF(PyExc_OSError);
-    PyModule_AddObject(m, "error", PyExc_OSError);
+    if (PyModule_AddObjectRef(m, "error", PyExc_OSError) != 0)
+        return NULL;
     socket_herror = PyErr_NewException("socket.herror",
                                        PyExc_OSError, NULL);
     if (socket_herror == NULL)
         return NULL;
-    Py_INCREF(socket_herror);
-    PyModule_AddObject(m, "herror", socket_herror);
+    if (PyModule_AddObjectRef(m, "herror", socket_herror) != 0)
+        return NULL;
     socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError,
-        NULL);
+                                         NULL);
     if (socket_gaierror == NULL)
         return NULL;
-    Py_INCREF(socket_gaierror);
-    PyModule_AddObject(m, "gaierror", socket_gaierror);
-    PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError);
-
-    Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "SocketType",
-                           (PyObject *)&sock_type) != 0)
+    if (PyModule_AddObjectRef(m, "gaierror", socket_gaierror) != 0)
         return NULL;
-    Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "socket",
-                           (PyObject *)&sock_type) != 0)
+    if (PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError) != 0)
+        return NULL;
+
+    if (PyModule_AddObjectRef(m, "SocketType", (PyObject *)&sock_type) != 0)
+        return NULL;
+    if (PyModule_AddObjectRef(m, "socket", (PyObject *)&sock_type) != 0)
         return NULL;
 
 #ifdef ENABLE_IPV6
@@ -7372,8 +7369,7 @@ PyInit__socket(void)
 #else
     has_ipv6 = Py_False;
 #endif
-    Py_INCREF(has_ipv6);
-    PyModule_AddObject(m, "has_ipv6", has_ipv6);
+    PyModule_AddObjectRef(m, "has_ipv6", has_ipv6);
 
     /* Export C API */
     PySocketModule_APIObject *capi = sock_get_api();
@@ -8666,7 +8662,8 @@ PyInit__socket(void)
             tmp = PyLong_FromUnsignedLong(codes[i]);
             if (tmp == NULL)
                 return NULL;
-            PyModule_AddObject(m, names[i], tmp);
+            PyModule_AddObjectRef(m, names[i], tmp);
+            Py_DECREF(tmp);
         }
     }
     PyModule_AddIntMacro(m, RCVALL_OFF);
