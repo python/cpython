@@ -85,7 +85,7 @@
     <ClCompile Include="..\Objects\codeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\perf_trampoline.c">
+    <ClCompile Include="..\Python\perf_trampoline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\compile.c">

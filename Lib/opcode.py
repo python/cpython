@@ -78,6 +78,8 @@ def_op('CACHE', 0)
 def_op('POP_TOP', 1)
 def_op('PUSH_NULL', 2)
 
+def_op('END_FOR', 4)
+
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
 def_op('UNARY_NEGATIVE', 11)
@@ -325,9 +327,6 @@ _specializations = {
         "FOR_ITER_LIST",
         "FOR_ITER_RANGE",
     ],
-    "JUMP_BACKWARD": [
-        "JUMP_BACKWARD_QUICK",
-    ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",
         # These potentially push [NULL, bound method] onto the stack.
@@ -355,9 +354,6 @@ _specializations = {
         "LOAD_GLOBAL_ADAPTIVE",
         "LOAD_GLOBAL_BUILTIN",
         "LOAD_GLOBAL_MODULE",
-    ],
-    "RESUME": [
-        "RESUME_QUICK",
     ],
     "STORE_ATTR": [
         "STORE_ATTR_ADAPTIVE",
