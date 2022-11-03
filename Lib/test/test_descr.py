@@ -2359,17 +2359,6 @@ order (MRO) for bases """
             class X(object):
                 p = property(_testcapi.test_with_docstring)
 
-    def test_subclass_with_nonwritable_doc(self):
-        # gh-98963: subclasses must have writable __doc__. A note is added to
-        # the exception in this surprising edge case.
-        class BadProperty(property):
-            __doc__ = property(lambda: None)
-        with self.assertRaises(AttributeError) as cm:
-            p = BadProperty(lambda: 123)
-        notes = cm.exception.__notes__
-        wanted = "subclasses of 'property' need to provide a writable __doc__"
-        self.assertTrue(any(note.startswith(wanted) for note in notes), notes)
-
     def test_properties_plus(self):
         class C(object):
             foo = property(doc="hello")

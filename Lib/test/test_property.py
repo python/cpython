@@ -229,16 +229,18 @@ class PropertySubSlots(property):
 class PropertySubclassTests(unittest.TestCase):
 
     def test_slots_docstring_copy_exception(self):
-        try:
+        with self.assertRaises(AttributeError) as cm:
             class Foo(object):
                 @PropertySubSlots
                 def spam(self):
                     """Trying to copy this docstring will raise an exception"""
                     return 1
-        except AttributeError:
-            pass
-        else:
-            raise Exception("AttributeError not raised")
+        # gh-98963: A note is added to the exception when we don't have
+        # a writable __doc__.
+        notes = cm.exception.__notes__
+        wanted = "subclasses of 'property' need to provide a writable __doc__"
+        self.assertTrue(any(note.startswith(wanted) for note in notes), notes)
+
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
