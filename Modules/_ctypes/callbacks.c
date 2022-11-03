@@ -9,6 +9,7 @@
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_runtime_init.h"  // _Py_ID()
 
 #include <stdbool.h>
 
