@@ -6035,12 +6035,7 @@ PyInit__decimal(void)
     /* Init mpd_ssize_t constants */
     for (ssize_cm = ssize_constants; ssize_cm->name != NULL; ssize_cm++) {
         ASSIGN_PTR(obj, PyLong_FromSsize_t(ssize_cm->val));
-        if (PyModule_AddObjectRef(m, ssize_cm->name, obj) < 0) {
-            Py_DECREF(obj);
-            goto error;
-        }
-        Py_DECREF(obj);
-        obj = NULL;
+        CHECK_INT(PyModule_AddObject(m, ssize_cm->name, obj));
     }
 
     /* Init int constants */
