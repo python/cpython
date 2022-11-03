@@ -1445,7 +1445,19 @@ regen-opcode-targets:
 		$(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h
+.PHONY: regen-cases
+regen-cases:
+	# Regenerate Python/generated_cases.c.h from Python/bytecodes.c
+	# using Tools/cases_generator/generate_cases.py
+	PYTHONPATH=$(srcdir)/Tools/cases_generator \
+	$(PYTHON_FOR_REGEN) \
+	    $(srcdir)/Tools/cases_generator/generate_cases.py \
+		-i $(srcdir)/Python/bytecodes.c \
+		-o $(srcdir)/Python/generated_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+
+Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h $(srcdir)/Python/generated_cases.c.h
+
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -2438,7 +2450,7 @@ rmtestturds:
 	-rm -f gb-18030-2000.xml
 
 docclean:
-	$(MAKE) -C Doc clean
+	$(MAKE) -C $(srcdir)/Doc clean
 
 # like the 'clean' target but retain the profile guided optimization (PGO)
 # data.  The PGO data is only valid if source code remains unchanged.

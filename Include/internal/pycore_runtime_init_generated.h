@@ -554,6 +554,7 @@ extern "C" {
                 INIT_STR(dot, "."), \
                 INIT_STR(dot_locals, ".<locals>"), \
                 INIT_STR(empty, ""), \
+                INIT_STR(json_decoder, "json.decoder"), \
                 INIT_STR(list_err, "list index out of range"), \
                 INIT_STR(newline, "\n"), \
                 INIT_STR(open_br, "{"), \
@@ -561,7 +562,11 @@ extern "C" {
                 INIT_STR(utf_8, "utf-8"), \
             }, \
             .identifiers = { \
+                INIT_ID(CANCELLED), \
+                INIT_ID(FINISHED), \
                 INIT_ID(False), \
+                INIT_ID(JSONDecodeError), \
+                INIT_ID(PENDING), \
                 INIT_ID(Py_Repr), \
                 INIT_ID(TextIOWrapper), \
                 INIT_ID(True), \
@@ -580,6 +585,7 @@ extern "C" {
                 INIT_ID(__anext__), \
                 INIT_ID(__annotations__), \
                 INIT_ID(__args__), \
+                INIT_ID(__asyncio_running_event_loop__), \
                 INIT_ID(__await__), \
                 INIT_ID(__bases__), \
                 INIT_ID(__bool__), \
@@ -721,6 +727,7 @@ extern "C" {
                 INIT_ID(__xor__), \
                 INIT_ID(_abc_impl), \
                 INIT_ID(_annotation), \
+                INIT_ID(_asyncio_future_blocking), \
                 INIT_ID(_blksize), \
                 INIT_ID(_bootstrap), \
                 INIT_ID(_dealloc_warn), \
@@ -733,6 +740,7 @@ extern "C" {
                 INIT_ID(_initializing), \
                 INIT_ID(_is_text_encoding), \
                 INIT_ID(_lock_unlock_module), \
+                INIT_ID(_loop), \
                 INIT_ID(_showwarnmsg), \
                 INIT_ID(_shutdown), \
                 INIT_ID(_slotnames), \
@@ -743,6 +751,7 @@ extern "C" {
                 INIT_ID(abs_tol), \
                 INIT_ID(access), \
                 INIT_ID(add), \
+                INIT_ID(add_done_callback), \
                 INIT_ID(after_in_child), \
                 INIT_ID(after_in_parent), \
                 INIT_ID(aggregate_class), \
@@ -776,6 +785,9 @@ extern "C" {
                 INIT_ID(cadata), \
                 INIT_ID(cafile), \
                 INIT_ID(call), \
+                INIT_ID(call_exception_handler), \
+                INIT_ID(call_soon), \
+                INIT_ID(cancel), \
                 INIT_ID(capath), \
                 INIT_ID(category), \
                 INIT_ID(cb_type), \
@@ -833,6 +845,7 @@ extern "C" {
                 INIT_ID(digest_size), \
                 INIT_ID(digestmod), \
                 INIT_ID(dir_fd), \
+                INIT_ID(discard), \
                 INIT_ID(dispatch_table), \
                 INIT_ID(displayhook), \
                 INIT_ID(dklen), \
@@ -861,6 +874,7 @@ extern "C" {
                 INIT_ID(extend), \
                 INIT_ID(facility), \
                 INIT_ID(factory), \
+                INIT_ID(false), \
                 INIT_ID(family), \
                 INIT_ID(fanout), \
                 INIT_ID(fd), \
@@ -885,9 +899,13 @@ extern "C" {
                 INIT_ID(fromlist), \
                 INIT_ID(fset), \
                 INIT_ID(func), \
+                INIT_ID(future), \
                 INIT_ID(generation), \
                 INIT_ID(genexpr), \
                 INIT_ID(get), \
+                INIT_ID(get_debug), \
+                INIT_ID(get_event_loop), \
+                INIT_ID(get_loop), \
                 INIT_ID(get_source), \
                 INIT_ID(getattr), \
                 INIT_ID(getstate), \
@@ -1000,6 +1018,7 @@ extern "C" {
                 INIT_ID(node_offset), \
                 INIT_ID(ns), \
                 INIT_ID(nstype), \
+                INIT_ID(null), \
                 INIT_ID(number), \
                 INIT_ID(obj), \
                 INIT_ID(object), \
@@ -1097,6 +1116,7 @@ extern "C" {
                 INIT_ID(sort), \
                 INIT_ID(sound), \
                 INIT_ID(source), \
+                INIT_ID(source_traceback), \
                 INIT_ID(src), \
                 INIT_ID(src_dir_fd), \
                 INIT_ID(stacklevel), \
@@ -1136,6 +1156,7 @@ extern "C" {
                 INIT_ID(traceback), \
                 INIT_ID(trailers), \
                 INIT_ID(translate), \
+                INIT_ID(true), \
                 INIT_ID(truncate), \
                 INIT_ID(twice), \
                 INIT_ID(txt), \
@@ -1435,7 +1456,15 @@ extern "C" {
 static inline void
 _PyUnicode_InitStaticStrings(void) {
     PyObject *string;
+    string = &_Py_ID(CANCELLED);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(FINISHED);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(False);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(JSONDecodeError);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(PENDING);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(Py_Repr);
     PyUnicode_InternInPlace(&string);
@@ -1472,6 +1501,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(__annotations__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__args__);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(__asyncio_running_event_loop__);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__await__);
     PyUnicode_InternInPlace(&string);
@@ -1755,6 +1786,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_annotation);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_asyncio_future_blocking);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_blksize);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_bootstrap);
@@ -1779,6 +1812,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_lock_unlock_module);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_loop);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_showwarnmsg);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_shutdown);
@@ -1798,6 +1833,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(access);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(add);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(add_done_callback);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(after_in_child);
     PyUnicode_InternInPlace(&string);
@@ -1864,6 +1901,12 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(cafile);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(call);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(call_exception_handler);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(call_soon);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(cancel);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(capath);
     PyUnicode_InternInPlace(&string);
@@ -1979,6 +2022,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(dir_fd);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(discard);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(dispatch_table);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(displayhook);
@@ -2035,6 +2080,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(factory);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(false);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(family);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(fanout);
@@ -2083,11 +2130,19 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(func);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(future);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(generation);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(genexpr);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(get);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(get_debug);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(get_event_loop);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(get_loop);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(get_source);
     PyUnicode_InternInPlace(&string);
@@ -2313,6 +2368,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(nstype);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(null);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(number);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(obj);
@@ -2507,6 +2564,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(source);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(source_traceback);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(src);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(src_dir_fd);
@@ -2584,6 +2643,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(trailers);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(translate);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(true);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(truncate);
     PyUnicode_InternInPlace(&string);
@@ -4784,6 +4845,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_STR(empty));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_STR(json_decoder)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_STR(json_decoder));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_STR(list_err)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_STR(list_err));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -4804,8 +4869,24 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_STR(utf_8));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(CANCELLED)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(CANCELLED));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(FINISHED)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(FINISHED));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(False)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(False));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(JSONDecodeError)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(JSONDecodeError));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(PENDING)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(PENDING));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(Py_Repr)) < _PyObject_IMMORTAL_REFCNT) {
@@ -4878,6 +4959,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(__args__)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(__args__));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(__asyncio_running_event_loop__)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(__asyncio_running_event_loop__));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(__await__)) < _PyObject_IMMORTAL_REFCNT) {
@@ -5444,6 +5529,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(_annotation));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_asyncio_future_blocking)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_asyncio_future_blocking));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(_blksize)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(_blksize));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -5492,6 +5581,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(_lock_unlock_module));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(_loop)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(_loop));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(_showwarnmsg)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(_showwarnmsg));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -5530,6 +5623,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(add)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(add));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(add_done_callback)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(add_done_callback));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(after_in_child)) < _PyObject_IMMORTAL_REFCNT) {
@@ -5662,6 +5759,18 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(call)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(call));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(call_exception_handler)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(call_exception_handler));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(call_soon)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(call_soon));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(cancel)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(cancel));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(capath)) < _PyObject_IMMORTAL_REFCNT) {
@@ -5892,6 +6001,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(dir_fd));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(discard)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(discard));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(dispatch_table)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(dispatch_table));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6004,6 +6117,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(factory));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(false)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(false));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(family)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(family));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6100,6 +6217,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(func));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(future)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(future));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(generation)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(generation));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6110,6 +6231,18 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(get)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(get));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(get_debug)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(get_debug));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(get_event_loop)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(get_event_loop));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(get_loop)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(get_loop));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(get_source)) < _PyObject_IMMORTAL_REFCNT) {
@@ -6560,6 +6693,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(nstype));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(null)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(null));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(number)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(number));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -6948,6 +7085,10 @@ _PyStaticObjects_CheckRefcnt(void) {
         _PyObject_Dump((PyObject *)&_Py_ID(source));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
+    if (Py_REFCNT((PyObject *)&_Py_ID(source_traceback)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(source_traceback));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
     if (Py_REFCNT((PyObject *)&_Py_ID(src)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(src));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
@@ -7102,6 +7243,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(translate)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(translate));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(true)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(true));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(truncate)) < _PyObject_IMMORTAL_REFCNT) {

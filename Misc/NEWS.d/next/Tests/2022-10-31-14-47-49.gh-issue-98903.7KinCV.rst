@@ -1,0 +1,2 @@
+The Python test suite now fails wit exit code 4 if no tests ran. It should
+help detecting typos in test names and test methods.
