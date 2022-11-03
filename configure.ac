@@ -1617,17 +1617,6 @@ then
         ARFLAGS="rcs"
 fi
 
-AC_CHECK_TOOLS([READELF], [readelf], [:])
-if test "$cross_compiling" = yes; then
-    case "$READELF" in
-	readelf|:)
-	AC_MSG_ERROR([readelf for the host is required for cross builds])
-	;;
-    esac
-fi
-AC_SUBST(READELF)
-
-
 case $MACHDEP in
 hp*|HP*)
 	# install -d does not work on HP-UX
