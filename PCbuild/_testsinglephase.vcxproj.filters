@@ -67,7 +67,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2097f1c1-597c-4167-93e3-656a7d6339b2}</ProjectGuid>
+    <ProjectGuid>{2097F1C1-597C-4167-93E3-656A7D6339B2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>_testsinglephase</RootNamespace>
     <SupportPGO>false</SupportPGO>
