@@ -2637,7 +2637,8 @@ class CAPITest(unittest.TestCase):
             c_char_p,
             pythonapi, py_object, sizeof,
             c_int, c_long, c_longlong, c_ssize_t,
-            c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p)
+            c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p,
+            sizeof, c_wchar, c_wchar_p)
         name = "PyUnicode_FromFormat"
         _PyUnicode_FromFormat = getattr(pythonapi, name)
         _PyUnicode_FromFormat.argtypes = (c_char_p,)
@@ -2917,8 +2918,38 @@ class CAPITest(unittest.TestCase):
                      b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
 
         # test %V
-        check_format('repr=abc',
-                     b'repr=%V', 'abc', b'xyz')
+        check_format('abc',
+                     b'%V', 'abc', b'xyz')
+        check_format('xyz',
+                     b'%V', None, b'xyz')
+
+        # test %ls
+        check_format('abc', b'%ls', c_wchar_p('abc'))
+        check_format('\U0001f4bb+\U0001f40d',
+                     b'%ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
+                     b'%.2ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
+
+        # test %lV
+        check_format('abc',
+                     b'%lV', 'abc', c_wchar_p('xyz'))
+        check_format('xyz',
+                     b'%lV', None, c_wchar_p('xyz'))
+        check_format('\U0001f4bb+\U0001f40d',
+                     b'%lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
+                     b'%.2lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
+
+        # test variable width and precision
+        check_format('  abc', b'%*s', c_int(5), b'abc')
+        check_format('ab', b'%.*s', c_int(2), b'abc')
+        check_format('   ab', b'%*.*s', c_int(5), c_int(2), b'abc')
+        check_format('  abc', b'%*U', c_int(5), 'abc')
+        check_format('ab', b'%.*U', c_int(2), 'abc')
+        check_format('   ab', b'%*.*U', c_int(5), c_int(2), 'abc')
+        check_format('     123', b'%*i', c_int(8), c_int(123))
+        check_format('00123', b'%.*i', c_int(5), c_int(123))
+        check_format('   00123', b'%*.*i', c_int(8), c_int(5), c_int(123))
 
         # test %p
         # We cannot test the exact result,

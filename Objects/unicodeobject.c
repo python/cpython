@@ -2507,6 +2507,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         if (sizemod || width >= 0 || precision >= 0) goto invalid_format;
         break;
     case 's':
+    case 'V':
         if (sizemod && sizemod != F_LONG) goto invalid_format;
         break;
     default:
