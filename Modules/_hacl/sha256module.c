@@ -196,7 +196,8 @@ SHA256Type_update(SHAobject *self, PyObject *obj)
 
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
-    Hacl_Streaming_SHA2_update_256(self->state, buf.buf, buf.len);
+    if (!Hacl_Streaming_SHA2_update_256(self->state, buf.buf, buf.len))
+      PyErr_SetString(PyExc_RuntimeError, "maximum hashing length exceeded");
 
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
@@ -310,7 +311,8 @@ _sha256_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        Hacl_Streaming_SHA2_update_256(new->state, buf.buf, buf.len);
+        if (!Hacl_Streaming_SHA2_update_256(new->state, buf.buf, buf.len))
+            PyErr_SetString(PyExc_RuntimeError, "maximum hashing length exceeded");
         PyBuffer_Release(&buf);
     }
 
@@ -356,7 +358,8 @@ _sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
     if (string) {
-        Hacl_Streaming_SHA2_update_256(new->state, buf.buf, buf.len);
+        if (!Hacl_Streaming_SHA2_update_256(new->state, buf.buf, buf.len))
+            PyErr_SetString(PyExc_RuntimeError, "maximum hashing length exceeded");
         PyBuffer_Release(&buf);
     }
 
