@@ -623,16 +623,16 @@ New Features
   using less memory and with faster access.
 
 * API for performing calls using
-  :ref:`the vectorcall protocol <vectorcall>` was added to the
+  :ref:`the vectorcall protocol <vectorcall>` was also added to the
   :ref:`Limited API <stable>`:
 
   * :c:func:`PyObject_Vectorcall`
   * :c:func:`PyObject_VectorcallMethod`
   * :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`
 
-  Together with the previous change, this covers both the incoming and outgoing
-  ends of the vector call protocol. (Contributed by Wenzel Jakob in
-  :gh:`98586`.)
+  This means that both the incoming and outgoing ends of the vector call
+  protocol are now available in the :ref:`Limited API <stable>`. (Contributed
+  by Wenzel Jakob in :gh:`98586`.)
 
 * Added two new public functions,
   :c:func:`PyEval_SetProfileAllThreads` and
