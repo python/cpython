@@ -143,7 +143,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
     int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
-    if (HAS_ARG(_PyOpcode_Deopt[opcode])) {
+    if (HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
     else {
