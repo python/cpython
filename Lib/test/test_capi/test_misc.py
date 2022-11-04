@@ -1420,14 +1420,18 @@ class SubinterpreterTest(unittest.TestCase):
 
         # expected to work
         for config, expected in {
-            (True, True, True, True, True, True, True): ALL_FLAGS,
-            (True, False, False, False, False, False, False): OBMALLOC,
+            (True, True, True, True, True, True, True):
+                (ALL_FLAGS, True),
+            (True, False, False, False, False, False, False):
+                (OBMALLOC, False),
             (False, False, False, True, False, True, False):
-                THREADS | EXTENSIONS,
+                (THREADS | EXTENSIONS, False),
         }.items():
             kwargs = dict(zip(kwlist, config))
+            exp_flags, exp_gil = expected
             expected = {
-                'feature_flags': expected,
+                'feature_flags': exp_flags,
+                'own_gil': exp_gil,
             }
             with self.subTest(config):
                 r, w = os.pipe()
@@ -1494,6 +1498,7 @@ class SubinterpreterTest(unittest.TestCase):
             flags = BASE_FLAGS | EXTENSIONS if enabled else BASE_FLAGS
             settings = {
                 'feature_flags': flags,
+                'own_gil': False,
             }
 
             expected = {
