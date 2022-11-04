@@ -313,13 +313,8 @@ static const char *const _PyOpcode_OpName[263] = {
     [GET_YIELD_FROM_ITER] = "GET_YIELD_FROM_ITER",
     [PRINT_EXPR] = "PRINT_EXPR",
     [LOAD_BUILD_CLASS] = "LOAD_BUILD_CLASS",
-<<<<<<< HEAD
-    [FOR_ITER_GEN] = "FOR_ITER_GEN",
-    [JUMP_BACKWARD_QUICK] = "JUMP_BACKWARD_QUICK",
-=======
     [FOR_ITER_RANGE] = "FOR_ITER_RANGE",
-    [LOAD_ATTR_ADAPTIVE] = "LOAD_ATTR_ADAPTIVE",
->>>>>>> main
+    [FOR_ITER_GEN] = "FOR_ITER_GEN",
     [LOAD_ASSERTION_ERROR] = "LOAD_ASSERTION_ERROR",
     [RETURN_GENERATOR] = "RETURN_GENERATOR",
     [LOAD_ATTR_ADAPTIVE] = "LOAD_ATTR_ADAPTIVE",
@@ -412,25 +407,14 @@ static const char *const _PyOpcode_OpName[263] = {
     [SET_UPDATE] = "SET_UPDATE",
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
-<<<<<<< HEAD
     [LOAD_GLOBAL_MODULE] = "LOAD_GLOBAL_MODULE",
-    [RESUME_QUICK] = "RESUME_QUICK",
-    [STORE_ATTR_ADAPTIVE] = "STORE_ATTR_ADAPTIVE",
-    [STORE_ATTR_INSTANCE_VALUE] = "STORE_ATTR_INSTANCE_VALUE",
-    [STORE_ATTR_SLOT] = "STORE_ATTR_SLOT",
-    [CALL] = "CALL",
-    [KW_NAMES] = "KW_NAMES",
-    [STORE_ATTR_WITH_HINT] = "STORE_ATTR_WITH_HINT",
-    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
-=======
     [STORE_ATTR_ADAPTIVE] = "STORE_ATTR_ADAPTIVE",
     [STORE_ATTR_INSTANCE_VALUE] = "STORE_ATTR_INSTANCE_VALUE",
     [STORE_ATTR_SLOT] = "STORE_ATTR_SLOT",
     [STORE_ATTR_WITH_HINT] = "STORE_ATTR_WITH_HINT",
-    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
     [CALL] = "CALL",
     [KW_NAMES] = "KW_NAMES",
->>>>>>> main
+    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
     [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
     [STORE_SUBSCR_ADAPTIVE] = "STORE_SUBSCR_ADAPTIVE",
     [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
@@ -439,11 +423,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
-<<<<<<< HEAD
-=======
-    [181] = "<181>",
     [182] = "<182>",
->>>>>>> main
     [183] = "<183>",
     [184] = "<184>",
     [185] = "<185>",
@@ -528,11 +508,7 @@ static const char *const _PyOpcode_OpName[263] = {
 #endif
 
 #define EXTRA_CASES \
-<<<<<<< HEAD
-=======
-    case 181: \
     case 182: \
->>>>>>> main
     case 183: \
     case 184: \
     case 185: \

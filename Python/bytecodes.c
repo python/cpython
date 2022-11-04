@@ -2880,6 +2880,28 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
         }
 
+        inst(FOR_ITER_GEN) {
+            assert(cframe.use_tracing == 0);
+            PyGenObject *gen = (PyGenObject *)TOP();
+            DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
+            DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
+            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            frame->yield_offset = oparg;
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            assert(_Py_OPCODE(*next_instr) == END_FOR);
+            frame->prev_instr = next_instr - 1;
+            Py_INCREF(Py_None);
+            _PyFrame_StackPush(gen_frame, Py_None);
+            gen->gi_frame_state = FRAME_EXECUTING;
+            gen_frame->previous = frame;
+            gen_frame->is_entry = false;
+            frame = cframe.current_frame = gen_frame;
+            goto start_frame;
+        }
+
+
         // stack effect: ( -- __0)
         inst(BEFORE_ASYNC_WITH) {
             PyObject *mgr = TOP();
