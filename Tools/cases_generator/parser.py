@@ -173,7 +173,6 @@ class Parser(PLexer):
                         if self.expect(lx.EQUALS):
                             if ops := self.ops():
                                 res = Super(tkn.text, ops)
-                                print("super=", res)
                                 return res
 
     def ops(self) -> list[str] | None:
