@@ -1228,13 +1228,17 @@ class SubinterpreterTest(unittest.TestCase):
         kwlist[-1] = 'own_gil'
         for config, expected in {
             (True, True, True, True, True, True):
-                FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
-            (False, False, False, False, False, False): 0,
-            (False, False, True, False, True, False): THREADS | EXTENSIONS,
+                (FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS, True),
+            (False, False, False, False, False, False):
+                (0, False),
+            (False, False, True, False, True, False):
+                (THREADS | EXTENSIONS, False),
         }.items():
             kwargs = dict(zip(kwlist, config))
+            exp_flags, exp_gil = expected
             expected = {
-                'feature_flags': expected,
+                'feature_flags': exp_flags,
+                'own_gil': exp_gil,
             }
             with self.subTest(config):
                 r, w = os.pipe()
@@ -1285,6 +1289,7 @@ class SubinterpreterTest(unittest.TestCase):
             flags = BASE_FLAGS | EXTENSIONS if enabled else BASE_FLAGS
             settings = {
                 'feature_flags': flags,
+                'own_gil': False,
             }
 
             expected = {

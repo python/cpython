@@ -574,7 +574,7 @@ init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *con
 
 
 static PyStatus
-init_interp_create_gil(PyThreadState *tstate)
+init_interp_create_gil(PyThreadState *tstate, int own_gil)
 {
     PyStatus status;
 
@@ -589,7 +589,7 @@ init_interp_create_gil(PyThreadState *tstate)
     }
 
     /* Create the GIL and take it */
-    status = _PyEval_InitGIL(tstate);
+    status = _PyEval_InitGIL(tstate, own_gil);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -633,7 +633,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyThreadState_Bind(tstate);
     (void) PyThreadState_Swap(tstate);
 
-    status = init_interp_create_gil(tstate);
+    status = init_interp_create_gil(tstate, config.own_gil);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -2045,7 +2045,7 @@ new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
 
     init_interp_settings(interp, config);
 
-    status = init_interp_create_gil(tstate);
+    status = init_interp_create_gil(tstate, config->own_gil);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }

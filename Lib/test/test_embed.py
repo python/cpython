@@ -1663,8 +1663,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         EXEC = 1<<16
         expected = {
             # All optional features should be enabled.
-            'feature_flags':
-                FORK | EXEC | THREADS | DAEMON_THREADS,
+            'feature_flags': FORK | EXEC | THREADS | DAEMON_THREADS,
+            'own_gil': True,
         }
         out, err = self.run_embedded_interpreter(
             'test_init_main_interpreter_settings',
