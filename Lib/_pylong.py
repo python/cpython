@@ -16,8 +16,6 @@ import sys
 import re
 import decimal
 
-_DEBUG = False
-
 
 def int_to_decimal(n):
     """Asymptotically fast conversion of an 'int' to Decimal."""
@@ -31,9 +29,6 @@ def int_to_decimal(n):
     # faster for large numbers.  Builds an equal decimal.Decimal in a
     # "clever" recursive way.  If we want a string representation, we
     # apply str to _that_.
-
-    if _DEBUG:
-        print('int_to_decimal', n.bit_length(), file=sys.stderr)
 
     D = decimal.Decimal
     D2 = D(2)
@@ -141,8 +136,6 @@ def _str_to_int_inner(s):
 def int_from_string(s):
     """Asymptotically fast version of PyLong_FromString(), conversion
     of a string of decimal digits into an 'int'."""
-    if _DEBUG:
-        print('int_from_string', len(s), file=sys.stderr)
     # PyLong_FromString() has already removed leading +/-, checked for invalid
     # use of underscore characters, checked that string consists of only digits
     # and underscores, and stripped leading whitespace.  The input can still
@@ -281,8 +274,6 @@ def int_divmod(a, b):
     """Asymptotically fast replacement for divmod, for 'int'.
     Its time complexity is O(n**1.58), where n = #bits(a) + #bits(b).
     """
-    if _DEBUG:
-        print('int_divmod', a.bit_length(), b.bit_length(), file=sys.stderr)
     if b == 0:
         raise ZeroDivisionError
     elif b < 0:

@@ -1947,7 +1947,6 @@ LIBSUBDIRS=	asyncio \
 		ctypes ctypes/macholib \
 		curses \
 		dbm \
-		distutils distutils/command \
 		email email/mime \
 		encodings \
 		ensurepip ensurepip/_bundled \
@@ -1974,8 +1973,7 @@ LIBSUBDIRS=	asyncio \
 		xmlrpc \
 		zoneinfo \
 		__phello__
-TESTSUBDIRS=	distutils/tests \
-		idlelib/idle_test \
+TESTSUBDIRS=	idlelib/idle_test \
 		test test/audiodata \
 		test/capath test/cjkencodings \
 		test/data test/decimaltestdata \
@@ -2122,10 +2120,6 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py \
 		$(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
-	if test -d $(DESTDIR)$(LIBDEST)/distutils/tests; then \
-		$(INSTALL_DATA) $(srcdir)/Modules/xxmodule.c \
-			$(DESTDIR)$(LIBDEST)/distutils/tests ; \
-	fi
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-j0 -d $(LIBDEST) -f \
