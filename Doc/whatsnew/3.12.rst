@@ -623,7 +623,7 @@ New Features
   using less memory and with faster access.
 
 * API for performing calls using
-  :ref:`the vectorcall protocol <vectorcall>` was also added to the
+  :ref:`the vectorcall protocol <vectorcall>` was added to the
   :ref:`Limited API <stable>`:
 
   * :c:func:`PyObject_Vectorcall`
