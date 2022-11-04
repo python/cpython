@@ -107,10 +107,9 @@ SHA_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-SHA_dealloc(PyObject *ptr)
+SHA_dealloc(SHAobject *ptr)
 {
-    // TODO: change function signature
-    Hacl_Streaming_SHA2_free_256(((SHAobject *)ptr)->state);
+    Hacl_Streaming_SHA2_free_256(ptr->state);
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -218,9 +217,9 @@ SHA256_get_block_size(PyObject *self, void *closure)
 }
 
 static PyObject *
-SHA256_get_name(PyObject *self, void *closure)
+SHA256_get_name(SHAobject *self, void *closure)
 {
-    if (((SHAobject *)self)->digestsize == 28)
+    if (self->digestsize == 28)
         return PyUnicode_FromStringAndSize("sha224", 6);
     else
         return PyUnicode_FromStringAndSize("sha256", 6);
