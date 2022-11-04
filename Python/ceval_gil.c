@@ -490,36 +490,40 @@ PyEval_ThreadsInitialized(void)
 PyStatus
 _PyEval_InitGIL(PyThreadState *tstate)
 {
+    struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
     if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
+        assert(gil_created(gil));
+        tstate->interp->ceval.gil = gil;
         return _PyStatus_OK();
     }
 
-    struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
     assert(!gil_created(gil));
 
     PyThread_init_thread();
     create_gil(gil);
-
     take_gil(tstate);
-
     assert(gil_created(gil));
+
+    tstate->interp->ceval.gil = gil;
     return _PyStatus_OK();
 }
 
 void
 _PyEval_FiniGIL(PyInterpreterState *interp)
 {
+    struct _gil_runtime_state *gil = &interp->runtime->ceval.gil;
     if (!_Py_IsMainInterpreter(interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
+        assert(interp->ceval.gil == gil);
+        interp->ceval.gil = NULL;
         return;
     }
 
-    struct _gil_runtime_state *gil = &interp->runtime->ceval.gil;
     if (!gil_created(gil)) {
         /* First Py_InitializeFromConfig() call: the GIL doesn't exist
            yet: do nothing. */
@@ -528,6 +532,7 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
 
     destroy_gil(gil);
     assert(!gil_created(gil));
+    interp->ceval.gil = NULL;
 }
 
 void
