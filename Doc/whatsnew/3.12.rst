@@ -628,7 +628,7 @@ New Features
 
   * :c:func:`PyObject_Vectorcall`
   * :c:func:`PyObject_VectorcallMethod`
-  * :const:`Py_TPFLAGS_HAVE_VECTORCALL`
+  * :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`
 
   Together with the previous change, this covers both the incoming and outgoing
   ends of the vector call protocol. (Contributed by Wenzel Jakob in
