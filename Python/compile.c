@@ -2145,15 +2145,13 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     return 1;
 }
 
-static PyCodeObject *
-compiler_mod(struct compiler *c, mod_ty mod)
+static int
+compiler_codegen(struct compiler *c, mod_ty mod)
 {
-    PyCodeObject *co;
-    int addNone = 1;
     _Py_DECLARE_STR(anon_module, "<module>");
     if (!compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
                               mod, 1)) {
-        return NULL;
+        return 0;
     }
     location loc = LOCATION(1, 1, 0, 0);
     switch (mod->kind) {
@@ -2172,7 +2170,6 @@ compiler_mod(struct compiler *c, mod_ty mod)
         break;
     case Expression_kind:
         VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
-        addNone = 0;
         break;
     default:
         PyErr_Format(PyExc_SystemError,
@@ -2180,7 +2177,17 @@ compiler_mod(struct compiler *c, mod_ty mod)
                      mod->kind);
         return 0;
     }
-    co = assemble(c, addNone);
+    return 1;
+}
+
+static PyCodeObject *
+compiler_mod(struct compiler *c, mod_ty mod)
+{
+    int addNone = mod->kind != Expression_kind;
+    if (!compiler_codegen(c, mod)) {
+        return NULL;
+    }
+    PyCodeObject *co = assemble(c, addNone);
     compiler_exit_scope(c);
     return co;
 }
