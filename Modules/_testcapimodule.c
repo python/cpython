@@ -3369,6 +3369,8 @@ slot_tp_del(PyObject *self)
 
     PyObject *tp_del = PyUnicode_InternFromString("__tp_del__");
     if (tp_del == NULL) {
+        PyErr_WriteUnraisable(NULL);
+        PyErr_Restore(error_type, error_value, error_traceback);
         return;
     }
     /* Execute __del__ method, if any. */
