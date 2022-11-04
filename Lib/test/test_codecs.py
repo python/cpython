@@ -3,7 +3,6 @@ import contextlib
 import io
 import locale
 import sys
-import time
 import unittest
 import encodings
 from unittest import mock
@@ -1554,19 +1553,9 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
 
     def test_builtin_decode_length_limit(self):
-        get_time = time.process_time
-        if get_time() <= 0:  # some platforms like WASM lack process_time()
-            get_time = time.monotonic
-        # This was slow prior to GH-98433's quadratic loop being fixed.
-        # Before: 12s on a rpi4 --with-pydebug. After: 0.12s
         with self.assertRaises(UnicodeError) as ctx:
-            start = get_time()
-            (b"xn--016c"+b"a"*1000).decode("idna")
-        seconds_to_decode_idna_length_fail = get_time() - start
-        self.assertIn("too long", str(ctx.exception))
-        self.assertLess(
-                elapsed_seconds, 4,
-                msg="idna decoding length failure took waaaay too long")
+            (b"xn--016c"+b"a"*500).decode("idna")
+        self.assertIn("label way too long", str(ctx.exception))
 
     def test_stream(self):
         r = codecs.getreader("idna")(io.BytesIO(b"abc"))
