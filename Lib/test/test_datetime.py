@@ -8,10 +8,12 @@ TESTS = 'test.datetimetester'
 
 def load_tests(loader, tests, pattern):
     try:
-        pure_tests = import_fresh_module(TESTS, fresh=['datetime', '_strptime'],
-                                        blocked=['_datetime'])
-        fast_tests = import_fresh_module(TESTS, fresh=['datetime',
-                                                    '_datetime', '_strptime'])
+        pure_tests = import_fresh_module(TESTS,
+                                         fresh=['datetime', '_pydatetime', '_strptime'],
+                                         blocked=['_datetime'])
+        fast_tests = import_fresh_module(TESTS,
+                                         fresh=['datetime', '_datetime', '_strptime'],
+                                         blocked=['_pydatetime'])
     finally:
         # XXX: import_fresh_module() is supposed to leave sys.module cache untouched,
         # XXX: but it does not, so we have to cleanup ourselves.

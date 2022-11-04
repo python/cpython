@@ -1,0 +1,3 @@
+Speedup ``import datetime`` by moving the Python implementation of the
+:mod:`datetime` module into a new ``Lib/_pydatetime.py`` file.  Patch by
+Victor Stinner.

@@ -33,6 +33,10 @@ from datetime import date, datetime
 import time as _time
 
 try:
+    import _pydatetime
+except ImportError:
+    _pydatetime = None
+try:
     import _testcapi
 except ImportError:
     _testcapi = None
@@ -92,7 +96,10 @@ class TestModule(unittest.TestCase):
         if '_Fast' in self.__class__.__name__:
             self.skipTest('Only run for Pure Python implementation')
 
-        dar = datetime_module._divide_and_round
+        if _pydatetime is not None:
+            dar = _pydatetime._divide_and_round
+        else:
+            dar = datetime_module._divide_and_round
 
         self.assertEqual(dar(-10, -3), 3)
         self.assertEqual(dar(5, -2), -2)
