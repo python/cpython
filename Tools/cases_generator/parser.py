@@ -40,7 +40,7 @@ class Node:
     @property
     def text(self) -> str:
         return self.to_text()
-    
+
     def to_text(self, dedent: int = 0) -> str:
         context = self.context
         if not context:
