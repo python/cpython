@@ -11,12 +11,15 @@
 
 #include "clinic/_testclinic.c.h"
 
-PyObject *
-pack_arguments(int arg_num, ...) {
+static PyObject *
+pack_arguments_newref(int argc, ...) {
     va_list vargs;
-    va_start(vargs, arg_num);
-    PyObject *tuple = PyTuple_New(arg_num);
-    for (int i = 0; i < arg_num; i++) {
+    va_start(vargs, argc);
+    PyObject *tuple = PyTuple_New(argc);
+    if (!tuple) {
+        return NULL;
+    }
+    for (int i = 0; i < argc; i++) {
         PyObject *arg = va_arg(vargs, PyObject *);
         if (arg) {
             if (_PyObject_IsFreed(arg)) {
@@ -24,12 +27,30 @@ pack_arguments(int arg_num, ...) {
                              "argument %d at %p is freed or corrupted!",
                              i, arg);
                 va_end(vargs);
+                Py_DECREF(tuple);
                 return NULL;
             }
         } else {
             arg = Py_None;
         }
         PyTuple_SET_ITEM(tuple, i, Py_NewRef(arg));
+    }
+    va_end(vargs);
+    return tuple;
+}
+
+static PyObject *
+pack_arguments(int argc, ...) {
+    va_list vargs;
+    va_start(vargs, argc);
+    PyObject *tuple = PyTuple_New(argc);
+    if (!tuple) {
+        return NULL;
+    }
+    for (int i = 0; i < argc; i++) {
+        PyObject *arg = va_arg(vargs, PyObject *);
+        assert(arg && !_PyObject_IsFreed(arg));
+        PyTuple_SET_ITEM(tuple, i, arg);
     }
     va_end(vargs);
     return tuple;
@@ -68,7 +89,7 @@ static PyObject *
 objects_converter_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=3f9c9415ec86c695 input=1533b1bd94187de4]*/
 {
-    return pack_arguments(2, a, b);
+    return pack_arguments_newref(2, a, b);
 }
 
 
@@ -87,7 +108,7 @@ bytes_object_converter_impl(PyObject *module, PyBytesObject *a)
     if (!PyBytes_Check(a)) {
         PyErr_SetString(PyExc_AssertionError, "argument a is not a PyBytesObject");
     }
-    return pack_arguments(1, a);
+    return pack_arguments_newref(1, a);
 }
 
 
@@ -106,7 +127,7 @@ byte_array_object_converter_impl(PyObject *module, PyByteArrayObject *a)
     if (!PyByteArray_Check(a)) {
         PyErr_SetString(PyExc_AssertionError, "argument a is not a PyByteArrayObject");
     }
-    return pack_arguments(1, a);
+    return pack_arguments_newref(1, a);
 }
 
 
@@ -125,7 +146,7 @@ unicode_converter_impl(PyObject *module, PyObject *a)
     if (!PyUnicode_Check(a)) {
         PyErr_SetString(PyExc_AssertionError, "argument a is not a unicode object");
     }
-    return pack_arguments(1, a);
+    return pack_arguments_newref(1, a);
 }
 
 
@@ -155,7 +176,7 @@ bool_converter_impl(PyObject *module, int a, int b, int c)
     PyObject *obj_a = a ? Py_True : Py_False;
     PyObject *obj_b = b ? Py_True : Py_False;
     PyObject *obj_c = c ? Py_True : Py_False;
-    return pack_arguments(3, obj_a, obj_b, obj_c);
+    return pack_arguments_newref(3, obj_a, obj_b, obj_c);
 }
 
 
@@ -550,22 +571,22 @@ py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b)
 {
     PyObject *new_a = PyBytes_FromStringAndSize(NULL, a->len);
     if (!new_a) {
-        Py_XDECREF(new_a);
         return NULL;
     }
-    if (PyBuffer_ToContiguous(((PyBytesObject *) new_a)->ob_sval, a, a->len, 'C') < 0) {
-        Py_XDECREF(new_a);
+    if (PyBuffer_ToContiguous(((PyBytesObject *)new_a)->ob_sval, a, a->len, 'C') < 0) {
+        Py_DECREF(new_a);
         return NULL;
     }
     PyBuffer_Release(a);
 
     PyObject *new_b = PyBytes_FromStringAndSize(NULL, b->len);
     if (!new_b) {
-        Py_XDECREF(new_b);
+        Py_DECREF(new_a);
         return NULL;
     }
-    if (PyBuffer_ToContiguous(((PyBytesObject *) new_b)->ob_sval, b, b->len, 'C') < 0) {
-        Py_XDECREF(new_b);
+    if (PyBuffer_ToContiguous(((PyBytesObject *)new_b)->ob_sval, b, b->len, 'C') < 0) {
+        Py_DECREF(new_a);
+        Py_DECREF(new_b);
         return NULL;
     }
     PyBuffer_Release(b);
@@ -586,7 +607,7 @@ static PyObject *
 keywords_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=850aaed53e26729e input=f44b89e718c1a93b]*/
 {
-    return pack_arguments(2, a, b);
+    return pack_arguments_newref(2, a, b);
 }
 
 
@@ -603,7 +624,7 @@ static PyObject *
 keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=a45c48241da584dc input=1f08e39c3312b015]*/
 {
-    return pack_arguments(2, a, b);
+    return pack_arguments_newref(2, a, b);
 }
 
 
@@ -620,7 +641,7 @@ static PyObject *
 keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c)
 /*[clinic end generated code: output=25e4b67d91c76a66 input=b0ba0e4f04904556]*/
 {
-    return pack_arguments(3, a, b, c);
+    return pack_arguments_newref(3, a, b, c);
 }
 
 
@@ -640,7 +661,7 @@ keywords_opt_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c, PyObject *d)
 /*[clinic end generated code: output=6aa5b655a6e9aeb0 input=f79da689d6c51076]*/
 {
-    return pack_arguments(4, a, b, c, d);
+    return pack_arguments_newref(4, a, b, c, d);
 }
 
 
@@ -659,7 +680,7 @@ keywords_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                          PyObject *c)
 /*[clinic end generated code: output=707f78eb0f55c2b1 input=e0fa1a0e46dca791]*/
 {
-    return pack_arguments(3, a, b, c);
+    return pack_arguments_newref(3, a, b, c);
 }
 
 
@@ -676,7 +697,7 @@ static PyObject *
 posonly_keywords_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=6ac88f4a5f0bfc8d input=fde0a2f79fe82b06]*/
 {
-    return pack_arguments(2, a, b);
+    return pack_arguments_newref(2, a, b);
 }
 
 
@@ -694,7 +715,7 @@ static PyObject *
 posonly_kwonly_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=483e6790d3482185 input=78b3712768da9a19]*/
 {
-    return pack_arguments(2, a, b);
+    return pack_arguments_newref(2, a, b);
 }
 
 
@@ -714,7 +735,7 @@ posonly_keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                              PyObject *c)
 /*[clinic end generated code: output=2fae573e8cc3fad8 input=a1ad5d2295eb803c]*/
 {
-    return pack_arguments(3, a, b, c);
+    return pack_arguments_newref(3, a, b, c);
 }
 
 
@@ -734,7 +755,7 @@ posonly_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                           PyObject *c, PyObject *d)
 /*[clinic end generated code: output=f5eb66241bcf68fb input=51c10de2a120e279]*/
 {
-    return pack_arguments(4, a, b, c, d);
+    return pack_arguments_newref(4, a, b, c, d);
 }
 
 
@@ -754,7 +775,7 @@ posonly_opt_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c, PyObject *d)
 /*[clinic end generated code: output=d54a30e549296ffd input=f408a1de7dfaf31f]*/
 {
-    return pack_arguments(4, a, b, c, d);
+    return pack_arguments_newref(4, a, b, c, d);
 }
 
 
@@ -775,7 +796,7 @@ posonly_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                         PyObject *c, PyObject *d)
 /*[clinic end generated code: output=a20503fe36b4fd62 input=3494253975272f52]*/
 {
-    return pack_arguments(4, a, b, c, d);
+    return pack_arguments_newref(4, a, b, c, d);
 }
 
 
@@ -796,7 +817,7 @@ posonly_opt_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                             PyObject *c, PyObject *d)
 /*[clinic end generated code: output=64f3204a3a0413b6 input=d17516581e478412]*/
 {
-    return pack_arguments(4, a, b, c, d);
+    return pack_arguments_newref(4, a, b, c, d);
 }
 
 
@@ -818,7 +839,7 @@ posonly_keywords_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                  PyObject *c, PyObject *d, PyObject *e)
 /*[clinic end generated code: output=dbd7e7ddd6257fa0 input=33529f29e97e5adb]*/
 {
-    return pack_arguments(5, a, b, c, d, e);
+    return pack_arguments_newref(5, a, b, c, d, e);
 }
 
 
@@ -841,7 +862,7 @@ posonly_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                      PyObject *e)
 /*[clinic end generated code: output=775d12ae44653045 input=4d4cc62f11441301]*/
 {
-    return pack_arguments(5, a, b, c, d, e);
+    return pack_arguments_newref(5, a, b, c, d, e);
 }
 
 
@@ -863,7 +884,7 @@ posonly_opt_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                          PyObject *d)
 /*[clinic end generated code: output=40c6dc422591eade input=3964960a68622431]*/
 {
-    return pack_arguments(4, a, b, c, d);
+    return pack_arguments_newref(4, a, b, c, d);
 }
 
 
@@ -879,7 +900,7 @@ static PyObject *
 keyword_only_parameter_impl(PyObject *module, PyObject *a)
 /*[clinic end generated code: output=c454b6ce98232787 input=8d2868b8d0b27bdb]*/
 {
-    return pack_arguments(1, a);
+    return pack_arguments_newref(1, a);
 }
 
 
@@ -896,7 +917,7 @@ static PyObject *
 vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
 /*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
 {
-    return pack_arguments(2, a, Py_NewRef(args));
+    return pack_arguments_newref(2, a, args);
 }
 
 
@@ -912,7 +933,7 @@ static PyObject *
 vararg_impl(PyObject *module, PyObject *a, PyObject *args)
 /*[clinic end generated code: output=91ab7a0efc52dd5e input=02c0f772d05f591e]*/
 {
-    return pack_arguments(2, a, Py_NewRef(args));
+    return pack_arguments_newref(2, a, args);
 }
 
 
@@ -934,7 +955,7 @@ vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
         PyErr_SetString(PyExc_AssertionError, "argument b is not a bool value");
     }
     PyObject *obj_b = b ? Py_True : Py_False;
-    return pack_arguments(3, a, Py_NewRef(args), obj_b);
+    return pack_arguments_newref(3, a, args, obj_b);
 }
 
 
@@ -950,7 +971,7 @@ static PyObject *
 vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b)
 /*[clinic end generated code: output=c06b1826d91f2f7b input=678c069bc67550e1]*/
 {
-    return pack_arguments(2, Py_NewRef(args), b);
+    return pack_arguments_newref(2, args, b);
 }
 
 
