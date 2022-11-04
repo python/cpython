@@ -265,6 +265,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(argdefs)
         STRUCT_FOR_ID(arguments)
         STRUCT_FOR_ID(argv)
+        STRUCT_FOR_ID(ast)
         STRUCT_FOR_ID(attribute)
         STRUCT_FOR_ID(authorizer_callback)
         STRUCT_FOR_ID(b)

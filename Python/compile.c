@@ -606,44 +606,55 @@ compiler_init(struct compiler *c)
     return 1;
 }
 
+static int
+compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
+               PyCompilerFlags *flags, int optimize, PyArena *arena)
+{
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
+    Py_INCREF(filename);
+    c->c_filename = filename;
+    c->c_arena = arena;
+    if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
+        return 0;
+    }
+    if (!flags) {
+        flags = &local_flags;
+    }
+    int merged = c->c_future.ff_features | flags->cf_flags;
+    c->c_future.ff_features = merged;
+    flags->cf_flags = merged;
+    c->c_flags = flags;
+    c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
+    c->c_nestlevel = 0;
+
+    _PyASTOptimizeState state;
+    state.optimize = c->c_optimize;
+    state.ff_features = merged;
+
+    if (!_PyAST_Optimize(mod, arena, &state)) {
+        return 0;
+    }
+    c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
+    if (c->c_st == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_SystemError, "no symtable");
+        }
+        return 0;
+    }
+    return 1;
+}
+
 PyCodeObject *
 _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
                int optimize, PyArena *arena)
 {
     struct compiler c;
     PyCodeObject *co = NULL;
-    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
-    int merged;
-    if (!compiler_init(&c))
+    if (!compiler_init(&c)) {
         return NULL;
-    Py_INCREF(filename);
-    c.c_filename = filename;
-    c.c_arena = arena;
-    if (!_PyFuture_FromAST(mod, filename, &c.c_future)) {
-        goto finally;
-    }
-    if (!flags) {
-        flags = &local_flags;
-    }
-    merged = c.c_future.ff_features | flags->cf_flags;
-    c.c_future.ff_features = merged;
-    flags->cf_flags = merged;
-    c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
-    c.c_nestlevel = 0;
-
-    _PyASTOptimizeState state;
-    state.optimize = c.c_optimize;
-    state.ff_features = merged;
-
-    if (!_PyAST_Optimize(mod, arena, &state)) {
-        goto finally;
     }
 
-    c.c_st = _PySymtable_Build(mod, filename, &c.c_future);
-    if (c.c_st == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_SetString(PyExc_SystemError, "no symtable");
+    if (!compiler_setup(&c, mod, filename, flags, optimize, arena)) {
         goto finally;
     }
 
@@ -9832,6 +9843,9 @@ duplicate_exits_without_lineno(cfg_builder *g)
 
 /* Access to compiler optimizations for unit tests.
  *
+ * _PyCompile_CodeGen takes and AST, applies code-gen and
+ * returns the unoptimized CFG as an instruction list.
+ *
  * _PyCompile_OptimizeCfg takes an instruction list, constructs
  * a CFG, optimizes it and converts back to an instruction list.
  *
@@ -9926,7 +9940,10 @@ cfg_to_instructions(cfg_builder *g)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             location loc = instr->i_loc;
-            int arg = HAS_TARGET(instr->i_opcode) ? instr->i_target->b_label : instr->i_oparg;
+            int arg = instr->i_oparg;
+            if (HAS_TARGET(instr->i_opcode) && instr->i_target != NULL) {
+                arg = instr->i_target->b_label;
+            }
             PyObject *inst_tuple = Py_BuildValue(
                 "(iiiiii)", instr->i_opcode, arg,
                 loc.lineno, loc.end_lineno,
@@ -9949,6 +9966,55 @@ error:
     return NULL;
 }
 
+PyObject *
+_PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *flags,
+                   int optimize)
+{
+    PyObject *res = NULL;
+
+    if (!PyAST_Check(ast)) {
+        PyErr_SetString(PyExc_TypeError, "expected an AST");
+        return NULL;
+    }
+
+    PyArena *arena = _PyArena_New();
+    if (arena == NULL) {
+        return NULL;
+    }
+
+    mod_ty mod = PyAST_obj2mod(ast, arena, 0 /* exec */);
+    if (mod == NULL || !_PyAST_Validate(mod)) {
+        _PyArena_Free(arena);
+        return NULL;
+    }
+
+    /* Create and set up the compiler */
+    struct compiler c;
+    if (!compiler_init(&c)) {
+        _PyArena_Free(arena);
+        return NULL;
+    }
+
+    if (!compiler_setup(&c, mod, filename, flags, optimize, arena)) {
+        goto finally;
+    }
+
+    if (!compiler_codegen(&c, mod)) {
+        goto finally;
+    }
+
+    cfg_builder *g = CFG_BUILDER(&c);
+
+    if (translate_jump_labels_to_targets(g->g_entryblock) < 0) {
+        goto finally;
+    }
+
+    res = cfg_to_instructions(g);
+
+finally:
+    compiler_free(&c);
+    return res;
+}
 
 PyObject *
 _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
