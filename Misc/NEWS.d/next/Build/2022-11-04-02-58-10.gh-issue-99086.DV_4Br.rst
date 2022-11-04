@@ -1,0 +1,1 @@
+Fix ``-Wimplicit-int`` warning in configure.ac when testing for PTHREAD_SCOPE_SYSTEM.
