@@ -28,10 +28,37 @@
 void _PyFloat_ExactDealloc(PyObject *);
 void _PyUnicode_ExactDealloc(PyObject *);
 
+/* Stack effect macros
+ * These will be mostly replaced by stack effect descriptions,
+ * but the tooling need to recognize them.
+ */
 #define SET_TOP(v)        (stack_pointer[-1] = (v))
+#define SET_SECOND(v)     (stack_pointer[-2] = (v))
 #define PEEK(n)           (stack_pointer[-(n)])
+#define PUSH(val)         (*(stack_pointer++) = (val))
+#define POP()             (*(--stack_pointer))
+#define TOP()             PEEK(1)
+#define SECOND()          PEEK(2)
+#define STACK_GROW(n)     (stack_pointer += (n))
+#define STACK_SHRINK(n)   (stack_pointer -= (n))
+#define EMPTY()           1
+#define STACK_LEVEL()     2
 
+/* Local variable macros */
 #define GETLOCAL(i)     (frame->localsplus[i])
+#define SETLOCAL(i, val)  \
+do { \
+    PyObject *_tmp = frame->localsplus[i]; \
+    frame->localsplus[i] = (val); \
+    Py_XDECREF(_tmp); \
+} while (0)
+
+/* Flow control macros */
+#define DEOPT_IF(cond, instname) ((void)0)
+#define JUMPBY(offset) ((void)0)
+#define GO_TO_INSTRUCTION(instname) ((void)0)
+#define DISPATCH_SAME_OPARG() ((void)0)
+#define DISPATCH() ((void)0)
 
 #define inst(name) case name:
 #define family(name) static int family_##name
@@ -43,7 +70,7 @@ typedef struct {
     PyObject *kwnames;
 } CallShape;
 
-static void
+static PyObject *
 dummy_func(
     PyThreadState *tstate,
     _PyInterpreterFrame *frame,
