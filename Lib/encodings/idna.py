@@ -39,6 +39,7 @@ def nameprep(label):
 
     # Check bidi
     RandAL = [stringprep.in_table_d1(x) for x in label]
+    any_in_table_d2 = any(stringprep.in_table_d2(x) for x in label)
     for c in RandAL:
         if c:
             # There is a RandAL char in the string. Must perform further
@@ -47,7 +48,7 @@ def nameprep(label):
             # This is table C.8, which was already checked
             # 2) If a string contains any RandALCat character, the string
             # MUST NOT contain any LCat character.
-            if any(stringprep.in_table_d2(x) for x in label):
+            if any_in_table_d2:
                 raise UnicodeError("Violation of BIDI requirement 2")
 
             # 3) If a string contains any RandALCat character, a

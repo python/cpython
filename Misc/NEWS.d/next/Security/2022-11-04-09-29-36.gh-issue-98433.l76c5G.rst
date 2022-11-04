@@ -1,0 +1,3 @@
+The IDNA codec decoder used on DNS hostnames no longer involves a quadratic
+algorithm. This prevents a potential CPU denial of service if an out-of-spec
+excessive length hostname involving bidirectional characters is decoded.
