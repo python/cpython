@@ -1,0 +1,2 @@
+:mod:`ftplib`: Remove the ``FTP_TLS.ssl_version`` class attribute: use the
+*context* parameter instead. Patch by Victor Stinner

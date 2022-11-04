@@ -62,17 +62,22 @@ static void *opcode_targets[256] = {
     &&TARGET_STORE_SUBSCR,
     &&TARGET_DELETE_SUBSCR,
     &&TARGET_COMPARE_OP_INT_JUMP,
+    &&TARGET_STOPITERATION_ERROR,
     &&TARGET_COMPARE_OP_STR_JUMP,
     &&TARGET_EXTENDED_ARG_QUICK,
     &&TARGET_FOR_ITER_ADAPTIVE,
     &&TARGET_FOR_ITER_LIST,
-    &&TARGET_FOR_ITER_RANGE,
     &&TARGET_GET_ITER,
     &&TARGET_GET_YIELD_FROM_ITER,
     &&TARGET_PRINT_EXPR,
     &&TARGET_LOAD_BUILD_CLASS,
+<<<<<<< HEAD
     &&TARGET_FOR_ITER_GEN,
     &&TARGET_JUMP_BACKWARD_QUICK,
+=======
+    &&TARGET_FOR_ITER_RANGE,
+    &&TARGET_LOAD_ATTR_ADAPTIVE,
+>>>>>>> main
     &&TARGET_LOAD_ASSERTION_ERROR,
     &&TARGET_RETURN_GENERATOR,
     &&TARGET_LOAD_ATTR_ADAPTIVE,
@@ -165,6 +170,7 @@ static void *opcode_targets[256] = {
     &&TARGET_SET_UPDATE,
     &&TARGET_DICT_MERGE,
     &&TARGET_DICT_UPDATE,
+<<<<<<< HEAD
     &&TARGET_LOAD_GLOBAL_MODULE,
     &&TARGET_RESUME_QUICK,
     &&TARGET_STORE_ATTR_ADAPTIVE,
@@ -174,6 +180,15 @@ static void *opcode_targets[256] = {
     &&TARGET_KW_NAMES,
     &&TARGET_STORE_ATTR_WITH_HINT,
     &&TARGET_STORE_FAST__LOAD_FAST,
+=======
+    &&TARGET_STORE_ATTR_ADAPTIVE,
+    &&TARGET_STORE_ATTR_INSTANCE_VALUE,
+    &&TARGET_STORE_ATTR_SLOT,
+    &&TARGET_STORE_ATTR_WITH_HINT,
+    &&TARGET_STORE_FAST__LOAD_FAST,
+    &&TARGET_CALL,
+    &&TARGET_KW_NAMES,
+>>>>>>> main
     &&TARGET_STORE_FAST__STORE_FAST,
     &&TARGET_STORE_SUBSCR_ADAPTIVE,
     &&TARGET_STORE_SUBSCR_DICT,
@@ -254,5 +269,10 @@ static void *opcode_targets[256] = {
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
+<<<<<<< HEAD
+=======
+    &&_unknown_opcode,
+    &&_unknown_opcode,
+>>>>>>> main
     &&TARGET_DO_TRACING
 };

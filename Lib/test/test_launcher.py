@@ -516,6 +516,14 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("3.100", data["SearchInfo.tag"])
         self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
 
+    def test_python_shebang(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! python -prearg") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+
     def test_py2_shebang(self):
         with self.py_ini(TEST_PY_COMMANDS):
             with self.script("#! /usr/bin/python2 -prearg") as script:
@@ -617,3 +625,42 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             self.assertIn("winget.exe", cmd)
         # Both command lines include the store ID
         self.assertIn("9PJPW5LDXLZ5", cmd)
+
+    def test_literal_shebang_absolute(self):
+        with self.script(f"#! C:/some_random_app -witharg") as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f"C:\\some_random_app -witharg {script}",
+            data["stdout"].strip(),
+        )
+
+    def test_literal_shebang_relative(self):
+        with self.script(f"#! ..\\some_random_app -witharg") as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f"{script.parent.parent}\\some_random_app -witharg {script}",
+            data["stdout"].strip(),
+        )
+
+    def test_literal_shebang_quoted(self):
+        with self.script(f'#! "some random app" -witharg') as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f'"{script.parent}\\some random app" -witharg {script}',
+            data["stdout"].strip(),
+        )
+
+        with self.script(f'#! some" random "app -witharg') as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f'"{script.parent}\\some random app" -witharg {script}',
+            data["stdout"].strip(),
+        )
+
+    def test_literal_shebang_quoted_escape(self):
+        with self.script(f'#! some\\" random "app -witharg') as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f'"{script.parent}\\some\\ random app" -witharg {script}',
+            data["stdout"].strip(),
+        )

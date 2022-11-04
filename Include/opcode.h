@@ -36,6 +36,7 @@ extern "C" {
 #define CLEANUP_THROW                           55
 #define STORE_SUBSCR                            60
 #define DELETE_SUBSCR                           61
+#define STOPITERATION_ERROR                     63
 #define GET_ITER                                68
 #define GET_YIELD_FROM_ITER                     69
 #define PRINT_EXPR                              70
@@ -162,6 +163,7 @@ extern "C" {
 #define COMPARE_OP_ADAPTIVE                     58
 #define COMPARE_OP_FLOAT_JUMP                   59
 #define COMPARE_OP_INT_JUMP                     62
+<<<<<<< HEAD
 #define COMPARE_OP_STR_JUMP                     63
 #define EXTENDED_ARG_QUICK                      64
 #define FOR_ITER_ADAPTIVE                       65
@@ -201,6 +203,44 @@ extern "C" {
 #define UNPACK_SEQUENCE_LIST                   180
 #define UNPACK_SEQUENCE_TUPLE                  181
 #define UNPACK_SEQUENCE_TWO_TUPLE              182
+=======
+#define COMPARE_OP_STR_JUMP                     64
+#define EXTENDED_ARG_QUICK                      65
+#define FOR_ITER_ADAPTIVE                       66
+#define FOR_ITER_LIST                           67
+#define FOR_ITER_RANGE                          72
+#define LOAD_ATTR_ADAPTIVE                      73
+#define LOAD_ATTR_CLASS                         76
+#define LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN       77
+#define LOAD_ATTR_INSTANCE_VALUE                78
+#define LOAD_ATTR_MODULE                        79
+#define LOAD_ATTR_PROPERTY                      80
+#define LOAD_ATTR_SLOT                          81
+#define LOAD_ATTR_WITH_HINT                     86
+#define LOAD_ATTR_METHOD_LAZY_DICT             113
+#define LOAD_ATTR_METHOD_NO_DICT               121
+#define LOAD_ATTR_METHOD_WITH_DICT             141
+#define LOAD_ATTR_METHOD_WITH_VALUES           143
+#define LOAD_CONST__LOAD_FAST                  153
+#define LOAD_FAST__LOAD_CONST                  154
+#define LOAD_FAST__LOAD_FAST                   158
+#define LOAD_GLOBAL_ADAPTIVE                   159
+#define LOAD_GLOBAL_BUILTIN                    160
+#define LOAD_GLOBAL_MODULE                     161
+#define STORE_ATTR_ADAPTIVE                    166
+#define STORE_ATTR_INSTANCE_VALUE              167
+#define STORE_ATTR_SLOT                        168
+#define STORE_ATTR_WITH_HINT                   169
+#define STORE_FAST__LOAD_FAST                  170
+#define STORE_FAST__STORE_FAST                 173
+#define STORE_SUBSCR_ADAPTIVE                  174
+#define STORE_SUBSCR_DICT                      175
+#define STORE_SUBSCR_LIST_INT                  176
+#define UNPACK_SEQUENCE_ADAPTIVE               177
+#define UNPACK_SEQUENCE_LIST                   178
+#define UNPACK_SEQUENCE_TUPLE                  179
+#define UNPACK_SEQUENCE_TWO_TUPLE              180
+>>>>>>> main
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
