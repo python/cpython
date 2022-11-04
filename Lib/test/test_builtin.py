@@ -737,6 +737,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError,
                           exec, code, {'__builtins__': 123})
 
+    def test_exec_globals_frozen(self):
         class frozendict_error(Exception):
             pass
 
@@ -768,6 +769,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(frozendict_error,
                           exec, code, namespace)
 
+    def test_exec_globals_error_on_get(self):
         # custom `globals` or `builtins` can raise errors on item access
         class setonlyerror(Exception):
             pass
@@ -775,9 +777,6 @@ class BuiltinTest(unittest.TestCase):
         class setonlydict(dict):
             def __getitem__(self, key):
                 raise setonlyerror
-
-        class customdict(dict):  # this one should not do anything fancy
-            pass
 
         # globals' `__getitem__` raises
         code = compile("globalname", "test", "exec")
@@ -789,8 +788,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(setonlyerror, exec, code,
                           {'__builtins__': setonlydict({'superglobal': 1})})
 
-        # custom builtins dict subclass is missing key
+    def test_exec_globals_dict_subclass(self):
+        class customdict(dict):  # this one should not do anything fancy
+            pass
+
         code = compile("superglobal", "test", "exec")
+        # works correctly
+        exec(code, {'__builtins__': customdict({'superglobal': 1})})
+        # custom builtins dict subclass is missing key
         self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
                                exec, code, {'__builtins__': customdict()})
 
