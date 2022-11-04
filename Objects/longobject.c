@@ -2376,6 +2376,7 @@ pylong_int_from_string(const char *start, const char *end, PyLongObject **res)
         goto error;
     }
     if (!PyLong_Check(result)) {
+        Py_DECREF(result);
         PyErr_SetString(PyExc_TypeError,
                         "_pylong.int_from_string did not return an int");
         goto error;
