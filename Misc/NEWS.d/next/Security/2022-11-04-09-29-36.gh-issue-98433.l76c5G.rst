@@ -1,3 +1,13 @@
-The IDNA codec decoder used on DNS hostnames no longer involves a quadratic
-algorithm. This prevents a potential CPU denial of service if an out-of-spec
-excessive length hostname involving bidirectional characters is decoded.
+The IDNA codec decoder used on DNS hostnames by :mod:`socket` or :mod:`asyncio`
+related name resolution functions no longer involves a quadratic algorithm.
+This prevents a potential CPU denial of service if an out-of-spec excessive
+length hostname involving bidirectional characters were decoded. Some protocols
+such as :mod:`urllib` http ``3xx`` redirects potentially allow for an attacker
+to supply such a name.
+
+Individual labels within a DNS name will also now raise an error during IDNA
+decoding if they are longer than 1000 characters given that each decoded DNS
+label must be 63 or fewer characters. Only an application presenting a hostname
+value consisting primarily of "Nothing" characters to be removed would run into
+of this limit. Applications relying on this are not expected to exist. See
+:rfc:`5894` section 6 and :rfc:`3491`.
