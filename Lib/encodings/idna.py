@@ -113,10 +113,14 @@ def ToUnicode(label):
             pure_ascii = True
         except UnicodeError:
             pure_ascii = False
-    if len(label) > 300:
-        # Per DNS, > 63. This leaves room for nameprep() to remove various
-        # characters while still preventing us from wasting CPU on decoding a
-        # big thing that'll just hit the actual <= 63 length limit in Step 6.
+    if len(label) > 1000:
+        # This leaves ample room for nameprep() to remove Nothing characters
+        # while still preventing us from wasting CPU on decoding a big thing
+        # that'll just hit the actual <= 63 length limit in Step 6.
+        # See https://github.com/python/cpython/issues/98433.
+        # https://datatracker.ietf.org/doc/html/rfc5891#section-5.2
+        # doesn't specify an label size limit prior to NAMEPREP. But having
+        # one makes practical sense given the result is <= 63 characters.
         raise UnicodeError("label way too long")
     if not pure_ascii:
         # Step 2: Perform nameprep

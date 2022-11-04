@@ -1554,7 +1554,7 @@ class IDNACodecTest(unittest.TestCase):
 
     def test_builtin_decode_length_limit(self):
         with self.assertRaises(UnicodeError) as ctx:
-            (b"xn--016c"+b"a"*500).decode("idna")
+            (b"xn--016c"+b"a"*1010).decode("idna")
         self.assertIn("label way too long", str(ctx.exception))
 
     def test_stream(self):
