@@ -2078,7 +2078,7 @@ def wait_process(pid, *, exitcode, timeout=None):
 
     Raise an AssertionError if the process exit code is not equal to exitcode.
 
-    If the process runs longer than timeout seconds (SHORT_TIMEOUT by default),
+    If the process runs longer than timeout seconds (LONG_TIMEOUT by default),
     kill the process (if signal.SIGKILL is available) and raise an
     AssertionError. The timeout feature is not available on Windows.
     """
@@ -2086,7 +2086,7 @@ def wait_process(pid, *, exitcode, timeout=None):
         import signal
 
         if timeout is None:
-            timeout = SHORT_TIMEOUT
+            timeout = LONG_TIMEOUT
         t0 = time.monotonic()
         sleep = 0.001
         max_sleep = 0.1
@@ -2097,7 +2097,7 @@ def wait_process(pid, *, exitcode, timeout=None):
             # process is still running
 
             dt = time.monotonic() - t0
-            if dt > SHORT_TIMEOUT:
+            if dt > timeout:
                 try:
                     os.kill(pid, signal.SIGKILL)
                     os.waitpid(pid, 0)
