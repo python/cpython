@@ -2440,26 +2440,11 @@ def _signature_from_callable(obj, *,
         else:
             return sig
 
-    # Was this function wrapped by a decorator?
-    if follow_wrapper_chains:
-        obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
-        if isinstance(obj, types.MethodType):
-            # If the unwrapped object is a *method*, we might want to
-            # skip its first parameter (self).
-            # See test_signature_wrapped_bound_method for details.
-            return _get_signature_of(obj)
-
-    try:
-        sig = obj.__signature__
-    except AttributeError:
-        pass
-    else:
-        if sig is not None:
-            if not isinstance(sig, Signature):
-                raise TypeError(
-                    'unexpected object {!r} in __signature__ '
-                    'attribute'.format(sig))
-            return sig
+    # See issue 44337, handle functools.partial and functools.partialmethod
+    # before follow_wrapper_chains.
+    if isinstance(obj, functools.partial):
+        wrapped_sig = _get_signature_of(obj.func)
+        return _signature_get_partial(wrapped_sig, obj)
 
     try:
         partialmethod = obj._partialmethod
@@ -2489,6 +2474,28 @@ def _signature_from_callable(obj, *,
                 new_params = (first_wrapped_param,) + sig_params
                 return sig.replace(parameters=new_params)
 
+
+    # Was this function wrapped by a decorator?
+    if follow_wrapper_chains:
+        obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
+        if isinstance(obj, types.MethodType):
+            # If the unwrapped object is a *method*, we might want to
+            # skip its first parameter (self).
+            # See test_signature_wrapped_bound_method for details.
+            return _get_signature_of(obj)
+
+    try:
+        sig = obj.__signature__
+    except AttributeError:
+        pass
+    else:
+        if sig is not None:
+            if not isinstance(sig, Signature):
+                raise TypeError(
+                    'unexpected object {!r} in __signature__ '
+                    'attribute'.format(sig))
+            return sig
+
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython functions, for instance), then:
@@ -2499,10 +2506,6 @@ def _signature_from_callable(obj, *,
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
                                        skip_bound_arg=skip_bound_arg)
-
-    if isinstance(obj, functools.partial):
-        wrapped_sig = _get_signature_of(obj.func)
-        return _signature_get_partial(wrapped_sig, obj)
 
     sig = None
     if isinstance(obj, type):

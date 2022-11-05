@@ -2959,6 +2959,30 @@ class TestSignatureObject(unittest.TestCase):
         foo._partialmethod = 'spam'
         self.assertEqual(str(inspect.signature(foo)), '(a)')
 
+    def test_signature_on_partial_unchange_in_update_wrapper(self):
+        from functools import partial, update_wrapper
+
+        def test(a, b, c, d):
+            pass
+        p = partial(test, a=1)
+        sig_partial = inspect.signature(p)
+        update_wrapper(p, test)
+        sig_updated = inspect.signature(p)
+        self.assertEqual(sig_updated, sig_partial)
+
+    def test_signature_on_partial_method_unchange_in_update_wrapper(self):
+        from functools import partialmethod, update_wrapper
+
+        class Spam:
+            def test(it, a, b, c, d) -> 'spam':
+                pass
+            ham = partialmethod(test, a=1)
+
+        sig_partial = inspect.signature(Spam.ham)
+        update_wrapper(Spam.ham, Spam.test)
+        sig_updated = inspect.signature(Spam.ham)
+        self.assertEqual(sig_updated, sig_partial)
+
     def test_signature_on_decorated(self):
         import functools
 
