@@ -5862,6 +5862,33 @@ function_set_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+function_get_kw_defaults(PyObject *self, PyObject *func)
+{
+    PyObject *defaults = PyFunction_GetKwDefaults(func);
+    if (defaults != NULL) {
+        Py_INCREF(defaults);
+        return defaults;
+    } else if (PyErr_Occurred()) {
+        return NULL;
+    } else {
+        Py_RETURN_NONE;  // This can happen when `kwdefaults` are set to `None`
+    }
+}
+
+static PyObject *
+function_set_kw_defaults(PyObject *self, PyObject *args)
+{
+    PyObject *func = NULL, *defaults = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &func, &defaults)) {
+        return NULL;
+    }
+    int result = PyFunction_SetKwDefaults(func, defaults);
+    if (result == -1)
+        return NULL;
+    Py_RETURN_NONE;
+}
+
 
 // type watchers
 
@@ -6281,6 +6308,8 @@ static PyMethodDef TestMethods[] = {
     {"function_get_module", function_get_module, METH_O, NULL},
     {"function_get_defaults", function_get_defaults, METH_O, NULL},
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
+    {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
+    {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"add_type_watcher", add_type_watcher, METH_O, NULL},
     {"clear_type_watcher", clear_type_watcher, METH_O, NULL},
     {"watch_type", watch_type, METH_VARARGS, NULL},

@@ -1038,7 +1038,14 @@ class CAPITest(unittest.TestCase):
             _testcapi.function_get_module(None)  # not a function
 
     def test_function_get_defaults(self):
-        def some(pos_only='p', zero=0, optional=None):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
             pass
 
         defaults = _testcapi.function_get_defaults(some)
@@ -1046,10 +1053,17 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(defaults, some.__defaults__)
 
         with self.assertRaises(SystemError):
-            _testcapi.function_get_module(None)  # not a function
+            _testcapi.function_get_defaults(None)  # not a function
 
     def test_function_set_defaults(self):
-        def some(pos_only='p', zero=0, optional=None):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
             pass
 
         old_defaults = ('p', 0, None)
@@ -1061,7 +1075,18 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
         self.assertEqual(some.__defaults__, old_defaults)
 
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_defaults(1, ())    # not a function
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
         new_defaults = ('q', 1, None)
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        # Empty tuple is fine:
+        new_defaults = ()
         _testcapi.function_set_defaults(some, new_defaults)
         self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
         self.assertEqual(some.__defaults__, new_defaults)
@@ -1078,6 +1103,73 @@ class CAPITest(unittest.TestCase):
         _testcapi.function_set_defaults(some, None)
         self.assertEqual(_testcapi.function_get_defaults(some), None)
         self.assertEqual(some.__defaults__, None)
+
+    def test_function_get_kw_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        defaults = _testcapi.function_get_kw_defaults(some)
+        self.assertEqual(defaults, {'kw2': True})
+        self.assertEqual(defaults, some.__kwdefaults__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_kw_defaults(None)  # not a function
+
+    def test_function_set_kw_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        old_defaults = {'kw2': True}
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_kw_defaults(some, 1)  # not dict or None
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_kw_defaults(1, {})    # not a function
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        new_defaults = {'kw2': (1, 2, 3)}
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        # Empty dict is fine:
+        new_defaults = {}
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        class dictsub(dict): ...  # dict subclasses must work
+
+        new_defaults = dictsub({'kw2': None})
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        # `None` is special, it sets `kwdefaults` to `NULL`,
+        # it needs special handling in `_testcapi`:
+        _testcapi.function_set_kw_defaults(some, None)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), None)
+        self.assertEqual(some.__kwdefaults__, None)
 
 
 class TestPendingCalls(unittest.TestCase):
