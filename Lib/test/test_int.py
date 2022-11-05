@@ -2,9 +2,15 @@ import sys
 import time
 
 import unittest
+from unittest import mock
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+
+try:
+    import _pylong
+except ImportError:
+    _pylong = None
 
 L = [
         ('0', 0),
@@ -840,6 +846,39 @@ class PyLongModuleTests(unittest.TestCase):
             int(s + '_')
         with self.assertRaises(ValueError) as err:
             int('_' + s)
+
+    @support.cpython_only  # tests implementation details of CPython.
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    @mock.patch.object(_pylong, "int_to_decimal_string")
+    def test_pylong_misbehavior_error_path_to_str(
+            self, mock_int_to_str):
+        with support.adjust_int_max_str_digits(20_000):
+            big_value = int('7'*19_999)
+            mock_int_to_str.return_value = None  # not a str
+            with self.assertRaises(TypeError) as ctx:
+                str(big_value)
+            self.assertIn('_pylong.int_to_decimal_string did not',
+                          str(ctx.exception))
+            mock_int_to_str.side_effect = RuntimeError("testABC")
+            with self.assertRaises(RuntimeError):
+                str(big_value)
+
+    @support.cpython_only  # tests implementation details of CPython.
+    @unittest.skipUnless(_pylong, "_pylong module required")
+    @mock.patch.object(_pylong, "int_from_string")
+    def test_pylong_misbehavior_error_path_from_str(
+            self, mock_int_from_str):
+        big_value = '7'*19_999
+        with support.adjust_int_max_str_digits(20_000):
+            mock_int_from_str.return_value = b'not an int'
+            with self.assertRaises(TypeError) as ctx:
+                int(big_value)
+            self.assertIn('_pylong.int_from_string did not',
+                          str(ctx.exception))
+
+            mock_int_from_str.side_effect = RuntimeError("test123")
+            with self.assertRaises(RuntimeError):
+                int(big_value)
 
 
 if __name__ == "__main__":
