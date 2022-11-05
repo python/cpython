@@ -1,0 +1,1 @@
+``enum.auto()`` is now correctly activated when combined with other assignment values.  E.g. ``ONE = auto(), 'some text'`` will now evaluate as ``(1, 'some text')``.

@@ -547,7 +547,6 @@ extern "C" {
                 INIT_STR(anon_string, "<string>"), \
                 INIT_STR(anon_unknown, "<unknown>"), \
                 INIT_STR(close_br, "}"), \
-                INIT_STR(comma_sep, ", "), \
                 INIT_STR(dbl_close_br, "}}"), \
                 INIT_STR(dbl_open_br, "{{"), \
                 INIT_STR(dbl_percent, "%%"), \
@@ -4863,10 +4862,6 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_STR(close_br)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_STR(close_br));
-        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
-    };
-    if (Py_REFCNT((PyObject *)&_Py_STR(comma_sep)) < _PyObject_IMMORTAL_REFCNT) {
-        _PyObject_Dump((PyObject *)&_Py_STR(comma_sep));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_STR(dbl_close_br)) < _PyObject_IMMORTAL_REFCNT) {
