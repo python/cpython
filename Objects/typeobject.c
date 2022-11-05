@@ -4881,10 +4881,15 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         joined = PyUnicode_Join(comma_w_quotes_sep, sorted_methods);
         method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);
-        if (joined == NULL)
+        if (joined == NULL)  {
+            Py_DECREF(comma_w_quotes_sep);
             return NULL;
-        if (method_count == -1)
+        }
+        if (method_count == -1) {
+            Py_DECREF(comma_w_quotes_sep);
+            Py_DECREF(joined);
             return NULL;
+        }
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
