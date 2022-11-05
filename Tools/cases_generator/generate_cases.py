@@ -73,6 +73,10 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
     for instr in instrs:
         assert isinstance(instr, InstDef)
         f.write(f"\n{indent}TARGET({instr.name}) {{\n")
+        for input in reversed(instr.inputs or ()):
+            f.write(f"{indent}    PyObject *{input} = POP();\n")
+        for output in instr.outputs or ():
+            f.write(f"{indent}    PyObject *{output};\n")
         if instr.name in predictions:
             f.write(f"{indent}    PREDICTED({instr.name});\n")
         # input = ", ".join(instr.inputs)
@@ -96,6 +100,8 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
         # Write the body
         for line in blocklines:
             f.write(line)
+        for output in instr.outputs or ():
+            f.write(f"{indent}    PUSH({output});\n")
         assert instr.block
         if not always_exits(instr.block):
             f.write(f"{indent}    DISPATCH();\n")

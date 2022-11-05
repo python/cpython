@@ -15,8 +15,9 @@
         }
 
         TARGET(LOAD_CLOSURE) {
+            PyObject *value;
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            PyObject *value = GETLOCAL(oparg);
+            value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
             }
@@ -26,7 +27,8 @@
         }
 
         TARGET(LOAD_FAST_CHECK) {
-            PyObject *value = GETLOCAL(oparg);
+            PyObject *value;
+            value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
             }
@@ -36,7 +38,8 @@
         }
 
         TARGET(LOAD_FAST) {
-            PyObject *value = GETLOCAL(oparg);
+            PyObject *value;
+            value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
             PUSH(value);
@@ -44,8 +47,9 @@
         }
 
         TARGET(LOAD_CONST) {
+            PyObject *value;
             PREDICTED(LOAD_CONST);
-            PyObject *value = GETITEM(consts, oparg);
+            value = GETITEM(consts, oparg);
             Py_INCREF(value);
             PUSH(value);
             DISPATCH();
@@ -132,77 +136,84 @@
         }
 
         TARGET(END_FOR) {
-            PyObject *value = POP();
-            Py_DECREF(value);
-            value = POP();
-            Py_DECREF(value);
+            PyObject *value2 = POP();
+            PyObject *value1 = POP();
+            Py_DECREF(value1);
+            Py_DECREF(value2);
             DISPATCH();
         }
 
         TARGET(UNARY_POSITIVE) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Positive(value);
+            PyObject *value = POP();
+            PyObject *res;
+            res = PyNumber_Positive(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
+            PUSH(res);
             DISPATCH();
         }
 
         TARGET(UNARY_NEGATIVE) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Negative(value);
+            PyObject *value = POP();
+            PyObject *res;
+            res = PyNumber_Negative(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
+            PUSH(res);
             DISPATCH();
         }
 
         TARGET(UNARY_NOT) {
-            PyObject *value = TOP();
+            PyObject *value = POP();
+            PyObject *res;
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err == 0) {
-                Py_INCREF(Py_True);
-                SET_TOP(Py_True);
-                DISPATCH();
+                res = Py_True;
             }
             else if (err > 0) {
-                Py_INCREF(Py_False);
-                SET_TOP(Py_False);
-                DISPATCH();
+                res = Py_False;
             }
-            STACK_SHRINK(1);
-            goto error;
+            else {
+                goto error;
+            }
+            Py_INCREF(res);
+            PUSH(res);
+            DISPATCH();
         }
 
         TARGET(UNARY_INVERT) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Invert(value);
+            PyObject *value = POP();
+            PyObject *res;
+            res = PyNumber_Invert(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
+            PUSH(res);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
+            PyObject *right = POP();
+            PyObject *left = POP();
+            PyObject *prod;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(prod);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            PUSH(prod);
             DISPATCH();
         }
 

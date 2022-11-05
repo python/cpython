@@ -69,6 +69,7 @@ do { \
 #define DISPATCH() ((void)0)
 
 #define inst(name) case name:
+#define instr(name, arg) case name:
 #define family(name) static int family_##name
 
 #define NAME_ERROR_MSG \
@@ -103,12 +104,10 @@ dummy_func(
            and that all operation that succeed call DISPATCH() ! */
 
 // BEGIN BYTECODES //
-        // stack effect: ( -- )
-        inst(NOP) {
+        instr(NOP, (--)) {
         }
 
-        // stack effect: ( -- )
-        inst(RESUME) {
+        instr(RESUME, (--)) {
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -116,45 +115,35 @@ dummy_func(
             }
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_CLOSURE) {
+        instr(LOAD_CLOSURE, (-- value)) {
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            PyObject *value = GETLOCAL(oparg);
+            value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
             }
             Py_INCREF(value);
-            PUSH(value);
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_FAST_CHECK) {
-            PyObject *value = GETLOCAL(oparg);
+        instr(LOAD_FAST_CHECK, (-- value)) {
+            value = GETLOCAL(oparg);
             if (value == NULL) {
                 goto unbound_local_error;
             }
             Py_INCREF(value);
-            PUSH(value);
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_FAST) {
-            PyObject *value = GETLOCAL(oparg);
+        instr(LOAD_FAST, (-- value)) {
+            value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
-            PUSH(value);
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_CONST) {
-            PyObject *value = GETITEM(consts, oparg);
+        instr(LOAD_CONST, (-- value)) {
+            value = GETITEM(consts, oparg);
             Py_INCREF(value);
-            PUSH(value);
         }
 
-        // stack effect: (__0 -- )
-        inst(STORE_FAST) {
-            PyObject *value = POP();
+        instr(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -220,9 +209,7 @@ dummy_func(
             PUSH(value);
         }
 
-        // stack effect: (__0 -- )
-        inst(POP_TOP) {
-            PyObject *value = POP();
+        instr(POP_TOP, (value --)) {
             Py_DECREF(value);
         }
 
@@ -232,76 +219,59 @@ dummy_func(
             BASIC_PUSH(NULL);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(END_FOR) {
-            PyObject *value = POP();
-            Py_DECREF(value);
-            value = POP();
-            Py_DECREF(value);
+        instr(END_FOR, (value1, value2 --)) {
+            Py_DECREF(value1);
+            Py_DECREF(value2);
         }
 
-        // stack effect: ( -- )
-        inst(UNARY_POSITIVE) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Positive(value);
+        instr(UNARY_POSITIVE, (value -- res)) {
+            res = PyNumber_Positive(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
         }
 
-        // stack effect: ( -- )
-        inst(UNARY_NEGATIVE) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Negative(value);
+        instr(UNARY_NEGATIVE, (value -- res)) {
+            res = PyNumber_Negative(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
         }
 
-        // stack effect: ( -- )
-        inst(UNARY_NOT) {
-            PyObject *value = TOP();
+        instr(UNARY_NOT, (value -- res)) {
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err == 0) {
-                Py_INCREF(Py_True);
-                SET_TOP(Py_True);
-                DISPATCH();
+                res = Py_True;
             }
             else if (err > 0) {
-                Py_INCREF(Py_False);
-                SET_TOP(Py_False);
-                DISPATCH();
+                res = Py_False;
             }
-            STACK_SHRINK(1);
-            goto error;
-        }
-
-        // stack effect: ( -- )
-        inst(UNARY_INVERT) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Invert(value);
-            Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
+            else {
                 goto error;
+            }
+            Py_INCREF(res);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_MULTIPLY_INT) {
+        instr(UNARY_INVERT, (value -- res)) {
+            res = PyNumber_Invert(value);
+            Py_DECREF(value);
+            if (res == NULL) {
+                goto error;
+            }
+        }
+
+        instr(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
+            // TODO: Don't pop from the stack before DEOPF_IF() calls.
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(prod);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
             }
