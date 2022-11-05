@@ -100,9 +100,20 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
         while blocklines and not blocklines[-1].strip():
             blocklines.pop()
         # Write the body
+        ninputs = len(instr.inputs or ())
         for line in blocklines:
-            f.write(line)
-        diff = len(instr.outputs or ()) - len(instr.inputs or ())
+            if m := re.match(r"(\s*)ERROR_IF\(([^,]+), (\w+)\);\s$", line):
+                space, cond, label = m.groups()
+                # ERROR_IF() must remove the inputs from the stack.
+                # The code block is responsible for DECREF()ing them.
+                if ninputs:
+                    f.write(f"{space}if ({cond}) {{ STACK_SHRINK({ninputs}); goto {label}; }}\n")
+                else:
+                    f.write(f"{space}if ({cond}) {{ goto {label}; }}\n")
+            else:
+                f.write(line)
+        noutputs = len(instr.outputs or ())
+        diff = noutputs - ninputs
         if diff != 0:
             f.write(f"{indent}    STACK_GROW({diff});\n")
         for i, output in enumerate(reversed(instr.outputs or ()), 1):
