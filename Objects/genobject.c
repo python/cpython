@@ -246,25 +246,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         }
     }
     else {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
-            const char *msg = "generator raised StopIteration";
-            if (PyCoro_CheckExact(gen)) {
-                msg = "coroutine raised StopIteration";
-            }
-            else if (PyAsyncGen_CheckExact(gen)) {
-                msg = "async generator raised StopIteration";
-            }
-            _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
-        }
-        else if (PyAsyncGen_CheckExact(gen) &&
-                PyErr_ExceptionMatches(PyExc_StopAsyncIteration))
-        {
-            /* code in `gen` raised a StopAsyncIteration error:
-               raise a RuntimeError.
-            */
-            const char *msg = "async generator raised StopAsyncIteration";
-            _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
-        }
+        assert(!PyErr_ExceptionMatches(PyExc_StopIteration));
+        assert(!PyAsyncGen_CheckExact(gen) ||
+            !PyErr_ExceptionMatches(PyExc_StopAsyncIteration));
     }
 
     /* generator can't be rerun, so release the frame */
