@@ -49,9 +49,6 @@ struct _ceval_runtime_state {
        the main thread of the main interpreter can handle signals: see
        _Py_ThreadCanHandleSignals(). */
     _Py_atomic_int signals_pending;
-
-    /* This is (only) used indirectly through PyInterpreterState.ceval.gil. */
-    struct _gil_runtime_state gil;
 };
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
