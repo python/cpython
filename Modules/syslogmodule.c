@@ -409,8 +409,11 @@ static int
 _syslog_clear(PyObject *module)
 {
     _syslog_state *state = get_syslog_state(module);
-    Py_CLEAR(state->S_ident_o);
-    state->S_log_open = 0;
+    if (state->S_log_open) {
+        closelog();
+        Py_CLEAR(state->S_ident_o);
+        state->S_log_open = 0;
+    }
     return 0;
 }
 
