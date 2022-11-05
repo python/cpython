@@ -1,0 +1,1 @@
+Port :mod:`syslog` to use module state. Patch by Dong-hee Na.

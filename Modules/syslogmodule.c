@@ -61,10 +61,18 @@ module syslog
 
 #include "clinic/syslogmodule.c.h"
 
-/*  only one instance, only one syslog, so globals should be ok  */
-static PyObject *S_ident_o = NULL;                      /*  identifier, held by openlog()  */
-static char S_log_open = 0;
+typedef struct {
+    PyObject *S_ident_o;  /*  identifier, held by openlog()  */
+    char S_log_open;
+} _syslog_state;
 
+static inline _syslog_state*
+get_syslog_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_syslog_state *)state;
+}
 
 static PyObject *
 syslog_get_argv(void)
@@ -162,8 +170,9 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
     }
 
     openlog(ident_str, logopt, facility);
-    S_log_open = 1;
-    Py_XSETREF(S_ident_o, ident);
+    _syslog_state *state = get_syslog_state(module);
+    state->S_log_open = 1;
+    Py_XSETREF(state->S_ident_o, ident);
 
     Py_RETURN_NONE;
 }
@@ -193,8 +202,9 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
         return NULL;
     }
 
+    _syslog_state *state = get_syslog_state(module);
     /*  if log is not opened, open it now  */
-    if (!S_log_open) {
+    if (!state->S_log_open) {
         PyObject *openlog_ret = syslog_openlog_impl(module, NULL, 0, LOG_USER);
         if (openlog_ret == NULL) {
             return NULL;
@@ -205,7 +215,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     /* Incref ident, because it can be decrefed if syslog.openlog() is
      * called when the GIL is released.
      */
-    PyObject *ident = S_ident_o;
+    PyObject *ident = state->S_ident_o;
     Py_XINCREF(ident);
 #ifdef __APPLE__
     // gh-98178: On macOS, libc syslog() is not thread-safe
@@ -233,10 +243,12 @@ syslog_closelog_impl(PyObject *module)
     if (PySys_Audit("syslog.closelog", NULL) < 0) {
         return NULL;
     }
-    if (S_log_open) {
+
+    _syslog_state *state = get_syslog_state(module);
+    if (state->S_log_open) {
         closelog();
-        Py_CLEAR(S_ident_o);
-        S_log_open = 0;
+        Py_CLEAR(state->S_ident_o);
+        state->S_log_open = 0;
     }
     Py_RETURN_NONE;
 }
@@ -315,6 +327,11 @@ syslog_exec(PyObject *module)
             return -1;                                                \
         }                                                             \
     } while (0)
+
+    _syslog_state *state = get_syslog_state(module);
+    state->S_ident_o = NULL;
+    state->S_log_open = 0;
+
     /* Priorities */
     ADD_INT_MACRO(module, LOG_EMERG);
     ADD_INT_MACRO(module, LOG_ALERT);
@@ -380,6 +397,29 @@ syslog_exec(PyObject *module)
     return 0;
 }
 
+static int
+_syslog_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _syslog_state *state = get_syslog_state(module);
+    Py_VISIT(state->S_ident_o);
+    return 0;
+}
+
+static int
+_syslog_clear(PyObject *module)
+{
+    _syslog_state *state = get_syslog_state(module);
+    Py_CLEAR(state->S_ident_o);
+    state->S_log_open = 0;
+    return 0;
+}
+
+static void
+_syslog_free(void *module)
+{
+    _syslog_clear((PyObject *)module);
+}
+
 static PyModuleDef_Slot syslog_slots[] = {
     {Py_mod_exec, syslog_exec},
     {0, NULL}
@@ -390,9 +430,12 @@ static PyModuleDef_Slot syslog_slots[] = {
 static struct PyModuleDef syslogmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "syslog",
-    .m_size = 0,
+    .m_size = sizeof(_syslog_state),
     .m_methods = syslog_methods,
     .m_slots = syslog_slots,
+    .m_traverse = _syslog_traverse,
+    .m_clear = _syslog_clear,
+    .m_free = _syslog_free,
 };
 
 PyMODINIT_FUNC
