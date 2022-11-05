@@ -1426,13 +1426,7 @@ FutureObj_set_cancel_message(FutureObj *fut, PyObject *msg,
 static PyObject *
 FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
 {
-<<<<<<< HEAD
-=======
-    _Py_IDENTIFIER(PENDING);
-    _Py_IDENTIFIER(CANCELLED);
-    _Py_IDENTIFIER(FINISHED);
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
->>>>>>> 1807e8688e (Prepare for module state, batch 4)
     PyObject *ret = NULL;
 
     ENSURE_FUTURE_ALIVE(state, fut)
@@ -2015,7 +2009,6 @@ static  PyMethodDef TaskWakeupDef = {
 static int
 register_task(asyncio_state *state, PyObject *task)
 {
-    asyncio_state *state = get_asyncio_state(NULL);
     PyObject *res = PyObject_CallMethodOneArg(state->all_tasks,
                                                  &_Py_ID(add), task);
     if (res == NULL) {
@@ -2029,16 +2022,8 @@ register_task(asyncio_state *state, PyObject *task)
 static int
 unregister_task(asyncio_state *state, PyObject *task)
 {
-<<<<<<< HEAD
-    asyncio_state *state = get_asyncio_state(NULL);
     PyObject *res = PyObject_CallMethodOneArg(state->all_tasks,
                                      &_Py_ID(discard), task);
-=======
-    _Py_IDENTIFIER(discard);
-
-    PyObject *res = _PyObject_CallMethodIdOneArg(state->all_tasks,
-                                                 &PyId_discard, task);
->>>>>>> 1807e8688e (Prepare for module state, batch 4)
     if (res == NULL) {
         return -1;
     }
@@ -2190,7 +2175,18 @@ TaskObj_traverse(TaskObj *task, visitproc visit, void *arg)
     Py_VISIT(task->task_coro);
     Py_VISIT(task->task_name);
     Py_VISIT(task->task_fut_waiter);
-    (void)FutureObj_traverse((FutureObj*) task, visit, arg);
+    FutureObj *fut = (FutureObj *)task;
+    Py_VISIT(fut->fut_loop);
+    Py_VISIT(fut->fut_callback0);
+    Py_VISIT(fut->fut_context0);
+    Py_VISIT(fut->fut_callbacks);
+    Py_VISIT(fut->fut_result);
+    Py_VISIT(fut->fut_exception);
+    Py_VISIT(fut->fut_exception_tb);
+    Py_VISIT(fut->fut_source_tb);
+    Py_VISIT(fut->fut_cancel_msg);
+    Py_VISIT(fut->fut_cancelled_exc);
+    Py_VISIT(fut->dict);
     return 0;
 }
 
