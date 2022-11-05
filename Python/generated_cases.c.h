@@ -3828,8 +3828,8 @@
             assert(oparg);
             opcode = _Py_OPCODE(*next_instr);
             if (cframe.use_tracing) {
-                // Deoptimize the next opcode to avoid breaking tracing 
-                // guarantees in quickened instructions:        
+                // Deoptimize the next opcode to avoid breaking tracing
+                // guarantees in quickened instructions:
                 opcode = _PyOpcode_Deopt[opcode];
             }
             oparg <<= 8;
