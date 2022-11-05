@@ -10012,7 +10012,9 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *flags,
     res = cfg_to_instructions(g);
 
 finally:
+    compiler_exit_scope(&c);
     compiler_free(&c);
+    _PyArena_Free(arena);
     return res;
 }
 
