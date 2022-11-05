@@ -146,5 +146,3 @@ class CfgOptimizationTestCase(CompilationStepTestCase):
         insts = self.complete_insts_info(insts)
         insts = optimize_cfg(insts, consts)
         return insts, consts
-
-

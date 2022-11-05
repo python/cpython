@@ -48,4 +48,3 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('END_FOR', None),
         ]
         self.codegen_test(snippet, expected)
-
