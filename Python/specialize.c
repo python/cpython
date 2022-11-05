@@ -260,56 +260,39 @@ do { \
 #define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
-// Insert adaptive instructions and superinstructions. This cannot fail.
+// Initialize warmup counters and insert superinstructions. This cannot fail.
 void
 _PyCode_Quicken(PyCodeObject *code)
 {
-    int previous_opcode = -1;
+    int previous_opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1] = adaptive_counter_warmup();
-            previous_opcode = -1;
+            previous_opcode = 0;
             i += caches;
+            continue;
         }
-        else {
-            switch (opcode) {
-                case EXTENDED_ARG:
-                    _Py_SET_OPCODE(instructions[i], EXTENDED_ARG_QUICK);
-                    break;
-                case LOAD_FAST:
-                    switch(previous_opcode) {
-                        case LOAD_FAST:
-                            _Py_SET_OPCODE(instructions[i - 1],
-                                           LOAD_FAST__LOAD_FAST);
-                            break;
-                        case STORE_FAST:
-                            _Py_SET_OPCODE(instructions[i - 1],
-                                           STORE_FAST__LOAD_FAST);
-                            break;
-                        case LOAD_CONST:
-                            _Py_SET_OPCODE(instructions[i - 1],
-                                           LOAD_CONST__LOAD_FAST);
-                            break;
-                    }
-                    break;
-                case STORE_FAST:
-                    if (previous_opcode == STORE_FAST) {
-                        _Py_SET_OPCODE(instructions[i - 1],
-                                       STORE_FAST__STORE_FAST);
-                    }
-                    break;
-                case LOAD_CONST:
-                    if (previous_opcode == LOAD_FAST) {
-                        _Py_SET_OPCODE(instructions[i - 1],
-                                       LOAD_FAST__LOAD_CONST);
-                    }
-                    break;
-            }
-            previous_opcode = opcode;
+        switch (previous_opcode << 8 | opcode) {
+            case LOAD_CONST << 8 | LOAD_FAST:
+                _Py_SET_OPCODE(instructions[i - 1], LOAD_CONST__LOAD_FAST);
+                break;
+            case LOAD_FAST << 8 | LOAD_CONST:
+                _Py_SET_OPCODE(instructions[i - 1], LOAD_FAST__LOAD_CONST);
+                break;
+            case LOAD_FAST << 8 | LOAD_FAST:
+                _Py_SET_OPCODE(instructions[i - 1], LOAD_FAST__LOAD_FAST);
+                break;
+            case STORE_FAST << 8 | LOAD_FAST:
+                _Py_SET_OPCODE(instructions[i - 1], STORE_FAST__LOAD_FAST);
+                break;
+            case STORE_FAST << 8 | STORE_FAST:
+                _Py_SET_OPCODE(instructions[i - 1], STORE_FAST__STORE_FAST);
+                break;
         }
+        previous_opcode = opcode;
     }
 }
 
