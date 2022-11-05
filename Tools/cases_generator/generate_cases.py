@@ -63,8 +63,9 @@ def always_exits(block: parser.Block) -> bool:
 
 
 def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
-    predictions = set()
+    predictions: set[str] = set()
     for inst in instrs:
+        assert inst.block is not None
         for target in re.findall(r"(?:PREDICT|GO_TO_INSTRUCTION)\((\w+)\)", inst.block.text):
             predictions.add(target)
     indent = "        "
@@ -73,8 +74,9 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
     for instr in instrs:
         assert isinstance(instr, InstDef)
         f.write(f"\n{indent}TARGET({instr.name}) {{\n")
-        for input in reversed(instr.inputs or ()):
-            f.write(f"{indent}    PyObject *{input} = POP();\n")
+        # TODO: Is it better to count forward or backward?
+        for i, input in enumerate(reversed(instr.inputs or ()), 1):
+            f.write(f"{indent}    PyObject *{input} = PEEK({i});\n")
         for output in instr.outputs or ():
             f.write(f"{indent}    PyObject *{output};\n")
         if instr.name in predictions:
@@ -82,7 +84,7 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
         # input = ", ".join(instr.inputs)
         # output = ", ".join(instr.outputs)
         # f.write(f"{indent}    // {input} -- {output}\n")
-        assert instr.block
+        assert instr.block is not None
         blocklines = instr.block.text.splitlines(True)
         # Remove blank lines from ends
         while blocklines and not blocklines[0].strip():
@@ -100,8 +102,11 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
         # Write the body
         for line in blocklines:
             f.write(line)
-        for output in instr.outputs or ():
-            f.write(f"{indent}    PUSH({output});\n")
+        diff = len(instr.outputs or ()) - len(instr.inputs or ())
+        if diff != 0:
+            f.write(f"{indent}    STACK_GROW({diff});\n")
+        for i, output in enumerate(reversed(instr.outputs or ()), 1):
+            f.write(f"{indent}    PEEK({i}) = {output};\n")
         assert instr.block
         if not always_exits(instr.block):
             f.write(f"{indent}    DISPATCH();\n")

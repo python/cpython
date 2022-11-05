@@ -264,12 +264,11 @@ dummy_func(
         }
 
         instr(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
-            // TODO: Don't pop from the stack before DEOPF_IF() calls.
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+            prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             if (prod == NULL) {
@@ -279,20 +278,16 @@ dummy_func(
         }
 
         // stack effect: (__0 -- )
-        inst(BINARY_OP_MULTIPLY_FLOAT) {
+        instr(BINARY_OP_MULTIPLY_FLOAT, (left, right -- prod)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
-            PyObject *prod = PyFloat_FromDouble(dprod);
-            SET_SECOND(prod);
+            prod = PyFloat_FromDouble(dprod);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            STACK_SHRINK(1);
             if (prod == NULL) {
                 goto error;
             }
