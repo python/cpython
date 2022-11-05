@@ -977,6 +977,9 @@ class CAPITest(unittest.TestCase):
 
         with self.assertRaises(SystemError):
             _testcapi.function_set_defaults(some, 1)  # not tuple or None
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
         with self.assertRaises(SystemError):
             _testcapi.function_set_defaults(1, ())    # not a function
         self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
@@ -1041,6 +1044,9 @@ class CAPITest(unittest.TestCase):
 
         with self.assertRaises(SystemError):
             _testcapi.function_set_kw_defaults(some, 1)  # not dict or None
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
         with self.assertRaises(SystemError):
             _testcapi.function_set_kw_defaults(1, {})    # not a function
         self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
