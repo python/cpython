@@ -1,3 +1,1 @@
 Remove modules :mod:`asyncore` and :mod:`asynchat`, which were deprecated by :pep:`594`.
-
-They are temporarily moved to :mod:`test.support` so some other tests that rely on them keep working.

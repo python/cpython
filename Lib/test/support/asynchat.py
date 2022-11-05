@@ -1,3 +1,8 @@
+# TODO: This module was deprecated and removed from CPython 3.12
+# Now it is a test-only helper. Any attempts to rewrite exising tests that
+# are using this module and remove it completely are appreciated!
+# See: https://github.com/python/cpython/issues/72719
+
 # -*- Mode: Python; tab-width: 4 -*-
 #       Id: asynchat.py,v 2.26 2000/09/07 22:29:26 rushing Exp
 #       Author: Sam Rushing <rushing@nightmare.com>
@@ -45,11 +50,6 @@ command will be accumulated (using your own 'collect_incoming_data'
 method) up to the terminator, and then control will be returned to
 you - by calling your self.found_terminator() method.
 """
-
-# TODO: This module was deprecated and removed from CPython 3.12
-# Now it is a test-only helper. Any attempts to rewrite exising tests that
-# are using this module and remove it completely are appreciated!
-# See: https://github.com/python/cpython/issues/72719
 
 from collections import deque
 

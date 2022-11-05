@@ -1,3 +1,8 @@
+# TODO: This module was deprecated and removed from CPython 3.12
+# Now it is a test-only helper. Any attempts to rewrite exising tests that
+# are using this module and remove it completely are appreciated!
+# See: https://github.com/python/cpython/issues/72719
+
 # -*- Mode: Python -*-
 #   Id: asyncore.py,v 2.51 2000/09/07 22:29:26 rushing Exp
 #   Author: Sam Rushing <rushing@nightmare.com>
@@ -45,11 +50,6 @@ control than multi-threaded programming. The module documented here solves
 many of the difficult problems for you, making the task of building
 sophisticated high-performance network servers and clients a snap.
 """
-
-# TODO: This module was deprecated and removed from CPython 3.12
-# Now it is a test-only helper. Any attempts to rewrite exising tests that
-# are using this module and remove it completely are appreciated!
-# See: https://github.com/python/cpython/issues/72719
 
 import select
 import socket
