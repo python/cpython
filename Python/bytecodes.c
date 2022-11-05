@@ -2268,7 +2268,17 @@ dummy_func(
         }
 
         inst(COMPARE_OP_GENERIC) {
-            goto compare_op;
+            assert(oparg <= Py_GE);
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            PyObject *res = PyObject_RichCompare(left, right, oparg);
+            SET_TOP(res);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res == NULL) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
         }
 
         // stack effect: (__0 -- )
@@ -2285,18 +2295,7 @@ dummy_func(
                 STAT_INC(COMPARE_OP, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
-        compare_op:
-            assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
+            GO_TO_INSTRUCTION(COMPARE_OP_GENERIC);
         }
 
         // stack effect: (__0 -- )
@@ -3886,7 +3885,19 @@ dummy_func(
         }
 
         inst(BINARY_OP_GENERIC) {
-            goto binary_op;
+            PyObject *rhs = POP();
+            PyObject *lhs = TOP();
+            assert(0 <= oparg);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg]);
+            PyObject *res = binary_ops[oparg](lhs, rhs);
+            Py_DECREF(lhs);
+            Py_DECREF(rhs);
+            SET_TOP(res);
+            if (res == NULL) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
         // stack effect: (__0 -- )
@@ -3903,21 +3914,7 @@ dummy_func(
                 STAT_INC(BINARY_OP, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
-        binary_op:
-            ;  // Why is this still a thing in 2022?
-            PyObject *rhs = POP();
-            PyObject *lhs = TOP();
-            assert(0 <= oparg);
-            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
-            assert(binary_ops[oparg]);
-            PyObject *res = binary_ops[oparg](lhs, rhs);
-            Py_DECREF(lhs);
-            Py_DECREF(rhs);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            GO_TO_INSTRUCTION(BINARY_OP_GENERIC);
         }
 
         // stack effect: ( -- )
@@ -3931,21 +3928,28 @@ dummy_func(
         // stack effect: ( -- )
         inst(EXTENDED_ARG) {
             assert(oparg);
-            opcode = _Py_OPCODE(*next_instr);
-            if (cframe.use_tracing) {
-                // Deoptimize the next opcode to avoid breaking tracing
-                // guarantees in quickened instructions:
-                opcode = _PyOpcode_Deopt[opcode];
-                PRE_DISPATCH_GOTO();
-            }
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
+            // We might be tracing. To avoid breaking tracing guarantees in
+            // quickened instructions, always deoptimize the next opcode:
+            opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
+            PRE_DISPATCH_GOTO();
             // CPython hasn't traced the following instruction historically
             // (DO_TRACING would clobber our extended oparg anyways), so just
             // skip our usual cframe.use_tracing check before dispatch. Also,
             // make sure the next instruction isn't a RESUME, since that needs
             // to trace properly (and shouldn't have an extended arg anyways):
             assert(opcode != RESUME);
+            DISPATCH_GOTO();
+        }
+
+        // stack effect: ( -- )
+        inst(EXTENDED_ARG_QUICK) {
+            assert(cframe.use_tracing == 0);
+            assert(oparg);
+            int oldoparg = oparg;
+            NEXTOPARG();
+            oparg |= oldoparg << 8;
             DISPATCH_GOTO();
         }
 
@@ -3989,6 +3993,7 @@ family(call) = {
 family(compare_op) = {
     COMPARE_OP, COMPARE_OP_FLOAT_JUMP, COMPARE_OP_GENERIC,
     COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP };
+family(extended_arg) = { EXTENDED_ARG, EXTENDED_ARG_QUICK };
 family(for_iter) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };

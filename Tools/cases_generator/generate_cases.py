@@ -22,7 +22,6 @@ arg_parser.add_argument("-c", "--compare", action="store_true")
 arg_parser.add_argument("-q", "--quiet", action="store_true")
 
 
-
 def eopen(filename: str, mode: str = "r"):
     if filename == "-":
         if "r" in mode:

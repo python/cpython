@@ -2162,7 +2162,19 @@
         }
 
         TARGET(COMPARE_OP_GENERIC) {
-            goto compare_op;
+            PREDICTED(COMPARE_OP_GENERIC);
+            assert(oparg <= Py_GE);
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            PyObject *res = PyObject_RichCompare(left, right, oparg);
+            SET_TOP(res);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res == NULL) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
+            DISPATCH();
         }
 
         TARGET(COMPARE_OP) {
@@ -2179,19 +2191,7 @@
                 STAT_INC(COMPARE_OP, deferred);
                 DECREMENT_ADAPTIVE_COUNTER(cache);
             }
-        compare_op:
-            assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            DISPATCH();
+            GO_TO_INSTRUCTION(COMPARE_OP_GENERIC);
         }
 
         TARGET(COMPARE_OP_FLOAT_JUMP) {
@@ -3782,25 +3782,7 @@
         }
 
         TARGET(BINARY_OP_GENERIC) {
-            goto binary_op;
-        }
-
-        TARGET(BINARY_OP) {
-            PREDICTED(BINARY_OP);
-            if (!cframe.use_tracing) {
-                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                    PyObject *lhs = SECOND();
-                    PyObject *rhs = TOP();
-                    next_instr--;
-                    _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                    DISPATCH_SAME_OPARG();
-                }
-                STAT_INC(BINARY_OP, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
-            }
-        binary_op:
-            ;  // Why is this still a thing in 2022?
+            PREDICTED(BINARY_OP_GENERIC);
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
             assert(0 <= oparg);
@@ -3817,6 +3799,23 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_OP) {
+            PREDICTED(BINARY_OP);
+            if (!cframe.use_tracing) {
+                _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *lhs = SECOND();
+                    PyObject *rhs = TOP();
+                    next_instr--;
+                    _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                    DISPATCH_SAME_OPARG();
+                }
+                STAT_INC(BINARY_OP, deferred);
+                DECREMENT_ADAPTIVE_COUNTER(cache);
+            }
+            GO_TO_INSTRUCTION(BINARY_OP_GENERIC);
+        }
+
         TARGET(SWAP) {
             assert(oparg != 0);
             PyObject *top = TOP();
@@ -3827,21 +3826,27 @@
 
         TARGET(EXTENDED_ARG) {
             assert(oparg);
-            opcode = _Py_OPCODE(*next_instr);
-            if (cframe.use_tracing) {
-                // Deoptimize the next opcode to avoid breaking tracing
-                // guarantees in quickened instructions:
-                opcode = _PyOpcode_Deopt[opcode];
-                PRE_DISPATCH_GOTO();
-            }
             oparg <<= 8;
             oparg |= _Py_OPARG(*next_instr);
+            // We might be tracing. To avoid breaking tracing guarantees in
+            // quickened instructions, always deoptimize the next opcode:
+            opcode = _PyOpcode_Deopt[_Py_OPCODE(*next_instr)];
+            PRE_DISPATCH_GOTO();
             // CPython hasn't traced the following instruction historically
             // (DO_TRACING would clobber our extended oparg anyways), so just
             // skip our usual cframe.use_tracing check before dispatch. Also,
             // make sure the next instruction isn't a RESUME, since that needs
             // to trace properly (and shouldn't have an extended arg anyways):
             assert(opcode != RESUME);
+            DISPATCH_GOTO();
+        }
+
+        TARGET(EXTENDED_ARG_QUICK) {
+            assert(cframe.use_tracing == 0);
+            assert(oparg);
+            int oldoparg = oparg;
+            NEXTOPARG();
+            oparg |= oldoparg << 8;
             DISPATCH_GOTO();
         }
 
