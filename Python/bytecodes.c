@@ -1,3 +1,11 @@
+// This file contains instruction definitions.
+// It is read by Tools/cases_generator/generate_cases.py
+// to generate Python/generated_cases.c.h.
+// Note that there is some dummy C code at the top and bottom of the file
+// to fool text editors like VS Code into believing this is valid C code.
+// The actual instruction definitions start at // BEGIN BYTECODES //.
+// See Tools/cases_generator/README.md for more information.
+
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
@@ -4003,13 +4011,14 @@ dummy_func(
 // END BYTECODES //
 
     }
- error:;
- exception_unwind:;
- handle_eval_breaker:;
- resume_frame:;
- resume_with_error:;
- start_frame:;
- unbound_local_error:;
+ error:
+ exception_unwind:
+ handle_eval_breaker:
+ resume_frame:
+ resume_with_error:
+ start_frame:
+ unbound_local_error:
+    ;
 }
 
 // Families go below this point //
