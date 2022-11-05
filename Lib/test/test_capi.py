@@ -437,24 +437,25 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(c.index, slice(0, 5))
         self.assertEqual(c.value, 'abc')
 
-        # Wrong cases:
-        import copy
+        # Immutable sequences must raise:
+        bad_seq1 = (1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(bad_seq1, 1, 3, (8, 9))
+        self.assertEqual(bad_seq1, (1, 2, 3, 4))
 
-        bad_calls = [
-            # Immutable sequences must raise:
-            ((1, 2, 3, 4), 1, 3, (8, 9)),
-            ('abcd', 1, 3, 'xy'),
-            # Not a sequnce:
-            (None, 1, 3, 'xy'),
-            ({1: 'a', 2: 'b', 3: 'c'}, 1, 3, 'xy'),  # is a mapping
-        ]
+        bad_seq2 = 'abcd'
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(bad_seq2, 1, 3, 'xy')
+        self.assertEqual(bad_seq2, 'abcd')
 
-        for seq, i1, i2, obj in bad_calls:
-            with self.subTest(seq=seq, i1=i1, i2=i2, obj=obj):
-                seq_copy = copy.copy(seq)
-                with self.assertRaises(TypeError):
-                    _testcapi.sequence_set_slice(seq, i1, i2, obj)
-                self.assertEqual(seq, seq_copy)  # it must not change
+        # Not a sequence:
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(None, 1, 3, 'xy')
+
+        mapping = {1: 'a', 2: 'b', 3: 'c'}
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(mapping, 1, 3, 'xy')
+        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
     def test_sequence_del_slice(self):
         # Correct case:
@@ -475,24 +476,25 @@ class CAPITest(unittest.TestCase):
         _testcapi.sequence_del_slice(c, 0, 5)
         self.assertEqual(c.index, slice(0, 5))
 
-        # Wrong cases:
-        import copy
+        # Immutable sequences must raise:
+        bad_seq1 = (1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(bad_seq1, 1, 3)
+        self.assertEqual(bad_seq1, (1, 2, 3, 4))
 
-        bad_calls = [
-            # Immutable sequences must raise:
-            ((1, 2, 3, 4), 1, 3),
-            ('abcd', 1, 3),
-            # Not a sequnce:
-            (None, 1, 3),
-            ({1: 'a', 2: 'b', 3: 'c'}, 1, 3),  # is a mapping
-        ]
+        bad_seq2 = 'abcd'
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(bad_seq2, 1, 3)
+        self.assertEqual(bad_seq2, 'abcd')
 
-        for seq, i1, i2 in bad_calls:
-            with self.subTest(seq=seq, i1=i1, i2=i2):
-                seq_copy = copy.copy(seq)
-                with self.assertRaises(TypeError):
-                    _testcapi.sequence_del_slice(seq, i1, i2)
-                self.assertEqual(seq, seq_copy)  # it must not change
+        # Not a sequence:
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(None, 1, 3)
+
+        mapping = {1: 'a', 2: 'b', 3: 'c'}
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(mapping, 1, 3)
+        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
