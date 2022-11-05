@@ -416,6 +416,86 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(_testcapi.mapping_has_key(dct2, 'a'))
         self.assertFalse(_testcapi.mapping_has_key(dct2, 'b'))
 
+    def test_sequence_set_slice(self):
+        # Correct case:
+        data = [1, 2, 3, 4, 5]
+        data_copy = data.copy()
+
+        _testcapi.sequence_set_slice(data, 1, 3, [8, 9])
+        data_copy[1:3] = [8, 9]
+        self.assertEqual(data, data_copy)
+        self.assertEqual(data, [1, 8, 9, 4, 5])
+
+        # Custom class:
+        class Custom:
+            def __setitem__(self, index, value):
+                self.index = index
+                self.value = value
+
+        c = Custom()
+        _testcapi.sequence_set_slice(c, 0, 5, 'abc')
+        self.assertEqual(c.index, slice(0, 5))
+        self.assertEqual(c.value, 'abc')
+
+        # Immutable sequences must raise:
+        bad_seq1 = (1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(bad_seq1, 1, 3, (8, 9))
+        self.assertEqual(bad_seq1, (1, 2, 3, 4))
+
+        bad_seq2 = 'abcd'
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(bad_seq2, 1, 3, 'xy')
+        self.assertEqual(bad_seq2, 'abcd')
+
+        # Not a sequence:
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(None, 1, 3, 'xy')
+
+        mapping = {1: 'a', 2: 'b', 3: 'c'}
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(mapping, 1, 3, 'xy')
+        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
+
+    def test_sequence_del_slice(self):
+        # Correct case:
+        data = [1, 2, 3, 4, 5]
+        data_copy = data.copy()
+
+        _testcapi.sequence_del_slice(data, 1, 3)
+        del data_copy[1:3]
+        self.assertEqual(data, data_copy)
+        self.assertEqual(data, [1, 4, 5])
+
+        # Custom class:
+        class Custom:
+            def __delitem__(self, index):
+                self.index = index
+
+        c = Custom()
+        _testcapi.sequence_del_slice(c, 0, 5)
+        self.assertEqual(c.index, slice(0, 5))
+
+        # Immutable sequences must raise:
+        bad_seq1 = (1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(bad_seq1, 1, 3)
+        self.assertEqual(bad_seq1, (1, 2, 3, 4))
+
+        bad_seq2 = 'abcd'
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(bad_seq2, 1, 3)
+        self.assertEqual(bad_seq2, 'abcd')
+
+        # Not a sequence:
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(None, 1, 3)
+
+        mapping = {1: 'a', 2: 'b', 3: 'c'}
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(mapping, 1, 3)
+        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
+
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
     def test_negative_refcount(self):
