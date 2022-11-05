@@ -203,17 +203,6 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     }
 
     _syslog_state *state = get_syslog_state(module);
-    PyObject *openlog_ret = syslog_openlog_impl(module, NULL, 0, LOG_USER);
-    if (openlog_ret == NULL) {
-        return NULL;
-    }
-    Py_DECREF(openlog_ret);
-
-    /* Incref ident, because it can be decrefed if syslog.openlog() is
-     * called when the GIL is released.
-     */
-    PyObject *ident = state->S_ident_o;
-    Py_XINCREF(ident);
 #ifdef __APPLE__
     // gh-98178: On macOS, libc syslog() is not thread-safe
     syslog(priority, "%s", message);
@@ -222,7 +211,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
 #endif
-    Py_XDECREF(ident);
+    state->S_log_open = 1;
     Py_RETURN_NONE;
 }
 
