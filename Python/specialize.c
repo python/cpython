@@ -270,7 +270,7 @@ _PyCode_Quicken(PyCodeObject *code)
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
-            instructions[i + 1] = adaptive_counter_start();
+            instructions[i + 1] = adaptive_counter_warmup();
             previous_opcode = -1;
             i += caches;
         }
@@ -835,7 +835,7 @@ fail:
 success:
     STAT_INC(LOAD_ATTR, success);
     assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
     return 0;
 }
 
@@ -919,7 +919,7 @@ fail:
 success:
     STAT_INC(STORE_ATTR, success);
     assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
     return 0;
 }
 
@@ -1178,7 +1178,7 @@ fail:
 success:
     STAT_INC(LOAD_GLOBAL, success);
     assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
     return 0;
 }
 
@@ -1339,7 +1339,7 @@ fail:
 success:
     STAT_INC(BINARY_SUBSCR, success);
     assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
     return 0;
 }
 
@@ -1444,7 +1444,7 @@ fail:
 success:
     STAT_INC(STORE_SUBSCR, success);
     assert(!PyErr_Occurred());
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
     return 0;
 }
 
@@ -1758,7 +1758,7 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
     else {
         STAT_INC(CALL, success);
         assert(!PyErr_Occurred());
-        cache->counter = adaptive_counter_restart();
+        cache->counter = adaptive_counter_cooldown();
     }
     return 0;
 }
@@ -1911,7 +1911,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     return;
 success:
     STAT_INC(BINARY_OP, success);
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
 }
 
 
@@ -2032,7 +2032,7 @@ failure:
     return;
 success:
     STAT_INC(COMPARE_OP, success);
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
 }
 
 #ifdef Py_STATS
@@ -2083,7 +2083,7 @@ failure:
     return;
 success:
     STAT_INC(UNPACK_SEQUENCE, success);
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
 }
 
 #ifdef Py_STATS
@@ -2182,5 +2182,5 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
     return;
 success:
     STAT_INC(FOR_ITER, success);
-    cache->counter = adaptive_counter_restart();
+    cache->counter = adaptive_counter_cooldown();
 }

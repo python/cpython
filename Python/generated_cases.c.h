@@ -361,6 +361,34 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_SUBSCR) {
+            PREDICTED(BINARY_SUBSCR);
+            if (!cframe.use_tracing) {
+                _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *sub = TOP();
+                    PyObject *container = SECOND();
+                    next_instr--;
+                    if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
+                }
+                STAT_INC(BINARY_SUBSCR, deferred);
+                DECREMENT_ADAPTIVE_COUNTER(cache);
+            }
+            PyObject *sub = POP();
+            PyObject *container = TOP();
+            PyObject *res = PyObject_GetItem(container, sub);
+            Py_DECREF(container);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            if (res == NULL)
+                goto error;
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            DISPATCH();
+        }
+
         TARGET(BINARY_SLICE) {
             PyObject *stop = POP();
             PyObject *start = POP();
@@ -398,34 +426,6 @@
             STACK_SHRINK(2);
             Py_DECREF(v);
             Py_DECREF(container);
-            DISPATCH();
-        }
-
-        TARGET(BINARY_SUBSCR) {
-            PREDICTED(BINARY_SUBSCR);
-            if (!cframe.use_tracing) {
-                _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                    PyObject *sub = TOP();
-                    PyObject *container = SECOND();
-                    next_instr--;
-                    if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
-                        goto error;
-                    }
-                    DISPATCH_SAME_OPARG();
-                }
-                STAT_INC(BINARY_SUBSCR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
-            }
-            PyObject *sub = POP();
-            PyObject *container = TOP();
-            PyObject *res = PyObject_GetItem(container, sub);
-            Py_DECREF(container);
-            Py_DECREF(sub);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             DISPATCH();
         }
 
@@ -1194,6 +1194,37 @@
             }
             STACK_GROW(totalargs);
             Py_DECREF(seq);
+            DISPATCH();
+        }
+
+        TARGET(STORE_ATTR) {
+            PREDICTED(STORE_ATTR);
+            if (!cframe.use_tracing) {
+                _PyAttrCache *cache = (_PyAttrCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *owner = TOP();
+                    PyObject *name = GETITEM(names, oparg);
+                    next_instr--;
+                    if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
+                }
+                STAT_INC(STORE_ATTR, deferred);
+                DECREMENT_ADAPTIVE_COUNTER(cache);
+            }
+            PyObject *name = GETITEM(names, oparg);
+            PyObject *owner = TOP();
+            PyObject *v = SECOND();
+            int err;
+            STACK_SHRINK(2);
+            err = PyObject_SetAttr(owner, name, v);
+            Py_DECREF(v);
+            Py_DECREF(owner);
+            if (err != 0) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
             DISPATCH();
         }
 
@@ -2027,37 +2058,6 @@
             frame = cframe.current_frame = new_frame;
             CALL_STAT_INC(inlined_py_calls);
             goto start_frame;
-        }
-
-        TARGET(STORE_ATTR) {
-            PREDICTED(STORE_ATTR);
-            if (!cframe.use_tracing) {
-                _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                    PyObject *owner = TOP();
-                    PyObject *name = GETITEM(names, oparg);
-                    next_instr--;
-                    if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
-                        goto error;
-                    }
-                    DISPATCH_SAME_OPARG();
-                }
-                STAT_INC(STORE_ATTR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
-            }
-            PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = TOP();
-            PyObject *v = SECOND();
-            int err;
-            STACK_SHRINK(2);
-            err = PyObject_SetAttr(owner, name, v);
-            Py_DECREF(v);
-            Py_DECREF(owner);
-            if (err != 0) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-            DISPATCH();
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {

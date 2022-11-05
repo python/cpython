@@ -463,6 +463,33 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
+        // stack effect: (__0 -- )
+        inst(BINARY_SUBSCR) {
+            if (!cframe.use_tracing) {
+                _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *sub = TOP();
+                    PyObject *container = SECOND();
+                    next_instr--;
+                    if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
+                }
+                STAT_INC(BINARY_SUBSCR, deferred);
+                DECREMENT_ADAPTIVE_COUNTER(cache);
+            }
+            PyObject *sub = POP();
+            PyObject *container = TOP();
+            PyObject *res = PyObject_GetItem(container, sub);
+            Py_DECREF(container);
+            Py_DECREF(sub);
+            SET_TOP(res);
+            if (res == NULL)
+                goto error;
+            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+        }
+
         // stack effect: (__0, __1 -- )
         inst(BINARY_SLICE) {
             PyObject *stop = POP();
@@ -501,33 +528,6 @@ dummy_func(
             STACK_SHRINK(2);
             Py_DECREF(v);
             Py_DECREF(container);
-        }
-
-        // stack effect: (__0 -- )
-        inst(BINARY_SUBSCR) {
-            if (!cframe.use_tracing) {
-                _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                    PyObject *sub = TOP();
-                    PyObject *container = SECOND();
-                    next_instr--;
-                    if (_Py_Specialize_BinarySubscr(container, sub, next_instr) < 0) {
-                        goto error;
-                    }
-                    DISPATCH_SAME_OPARG();
-                }
-                STAT_INC(BINARY_SUBSCR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
-            }
-            PyObject *sub = POP();
-            PyObject *container = TOP();
-            PyObject *res = PyObject_GetItem(container, sub);
-            Py_DECREF(container);
-            Py_DECREF(sub);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
         }
 
         // stack effect: (__0 -- )
@@ -1300,6 +1300,36 @@ dummy_func(
             }
             STACK_GROW(totalargs);
             Py_DECREF(seq);
+        }
+
+        // stack effect: (__0, __1 -- )
+        inst(STORE_ATTR) {
+            if (!cframe.use_tracing) {
+                _PyAttrCache *cache = (_PyAttrCache *)next_instr;
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                    PyObject *owner = TOP();
+                    PyObject *name = GETITEM(names, oparg);
+                    next_instr--;
+                    if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
+                        goto error;
+                    }
+                    DISPATCH_SAME_OPARG();
+                }
+                STAT_INC(STORE_ATTR, deferred);
+                DECREMENT_ADAPTIVE_COUNTER(cache);
+            }
+            PyObject *name = GETITEM(names, oparg);
+            PyObject *owner = TOP();
+            PyObject *v = SECOND();
+            int err;
+            STACK_SHRINK(2);
+            err = PyObject_SetAttr(owner, name, v);
+            Py_DECREF(v);
+            Py_DECREF(owner);
+            if (err != 0) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
         // stack effect: (__0 -- )
@@ -2137,36 +2167,6 @@ dummy_func(
         }
 
         // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR) {
-            if (!cframe.use_tracing) {
-                _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
-                    PyObject *owner = TOP();
-                    PyObject *name = GETITEM(names, oparg);
-                    next_instr--;
-                    if (_Py_Specialize_StoreAttr(owner, next_instr, name) < 0) {
-                        goto error;
-                    }
-                    DISPATCH_SAME_OPARG();
-                }
-                STAT_INC(STORE_ATTR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
-            }
-            PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = TOP();
-            PyObject *v = SECOND();
-            int err;
-            STACK_SHRINK(2);
-            err = PyObject_SetAttr(owner, name, v);
-            Py_DECREF(v);
-            Py_DECREF(owner);
-            if (err != 0) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
-        }
-
-        // stack effect: (__0, __1 -- )
         inst(STORE_ATTR_INSTANCE_VALUE) {
             assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
@@ -2267,6 +2267,7 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
+        // stack effect: (__0 -- )
         inst(COMPARE_OP_GENERIC) {
             assert(oparg <= Py_GE);
             PyObject *right = POP();
@@ -3884,6 +3885,7 @@ dummy_func(
             PUSH(peek);
         }
 
+        // stack effect: (__0 -- )
         inst(BINARY_OP_GENERIC) {
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
