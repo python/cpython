@@ -225,7 +225,8 @@ jobs:
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
     - name: Tests
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: ./python -m test -R 3:3 test_asyncio
+      # run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
