@@ -454,6 +454,7 @@ future_ensure_alive(FutureObj *fut)
 #define ENSURE_FUTURE_ALIVE(state, fut)                             \
     do {                                                            \
         assert(Future_Check(state, fut) || Task_Check(state, fut)); \
+        (void)state;                                                \
         if (future_ensure_alive((FutureObj*)fut)) {                 \
             return NULL;                                            \
         }                                                           \
