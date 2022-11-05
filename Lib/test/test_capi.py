@@ -907,6 +907,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.eval_get_func_name(sum), "sum")  # c function
         self.assertEqual(_testcapi.eval_get_func_name(A), "type")
 
+    def test_eval_get_func_desc(self):
+        def function_example(): ...
+
+        class A:
+            def method_example(self): ...
+
+        self.assertEqual(_testcapi.eval_get_func_desc(function_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(A.method_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(A().method_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(sum), "()")  # c function
+        self.assertEqual(_testcapi.eval_get_func_desc(A), " object")
+
     def test_function_get_code(self):
         import types
 
