@@ -1414,33 +1414,14 @@ else:
 
         default_port = HTTPS_PORT
 
-        # XXX Should key_file and cert_file be deprecated in favour of context?
-
-        def __init__(self, host, port=None, key_file=None, cert_file=None,
-                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                     source_address=None, *, context=None,
-                     check_hostname=None, blocksize=8192):
+        def __init__(self, host, port=None,
+                     *, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                     source_address=None, context=None, blocksize=8192):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
                                                   blocksize=blocksize)
-            if (key_file is not None or cert_file is not None or
-                        check_hostname is not None):
-                import warnings
-                warnings.warn("key_file, cert_file and check_hostname are "
-                              "deprecated, use a custom context instead.",
-                              DeprecationWarning, 2)
-            self.key_file = key_file
-            self.cert_file = cert_file
             if context is None:
                 context = _create_https_context(self._http_vsn)
-            if check_hostname is not None:
-                context.check_hostname = check_hostname
-            if key_file or cert_file:
-                context.load_cert_chain(cert_file, key_file)
-                # cert and key file means the user wants to authenticate.
-                # enable TLS 1.3 PHA implicitly even for custom contexts.
-                if context.post_handshake_auth is not None:
-                    context.post_handshake_auth = True
             self._context = context
 
         def connect(self):

@@ -907,6 +907,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.eval_get_func_name(sum), "sum")  # c function
         self.assertEqual(_testcapi.eval_get_func_name(A), "type")
 
+    def test_eval_get_func_desc(self):
+        def function_example(): ...
+
+        class A:
+            def method_example(self): ...
+
+        self.assertEqual(_testcapi.eval_get_func_desc(function_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(A.method_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(A().method_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(sum), "()")  # c function
+        self.assertEqual(_testcapi.eval_get_func_desc(A), " object")
+
     def test_function_get_code(self):
         import types
 
@@ -1240,15 +1255,16 @@ class SubinterpreterTest(unittest.TestCase):
         import json
 
         THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
         FORK = 1<<15
-        SUBPROCESS = 1<<16
+        EXEC = 1<<16
 
-        features = ['fork', 'subprocess', 'threads']
+        features = ['fork', 'exec', 'threads', 'daemon_threads']
         kwlist = [f'allow_{n}' for n in features]
         for config, expected in {
-            (True, True, True): FORK | SUBPROCESS | THREADS,
-            (False, False, False): 0,
-            (False, True, True): SUBPROCESS | THREADS,
+            (True, True, True, True): FORK | EXEC | THREADS | DAEMON_THREADS,
+            (False, False, False, False): 0,
+            (False, False, True, False): THREADS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {

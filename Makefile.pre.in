@@ -38,7 +38,6 @@ CC=		@CC@
 CXX=		@CXX@
 LINKCC=		@LINKCC@
 AR=		@AR@
-READELF=	@READELF@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
 LIBPYTHON=	@LIBPYTHON@
@@ -1225,7 +1224,7 @@ regen-limited-abi: all
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-opcode regen-opcode-targets regen-typeslots \
+regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
@@ -1445,7 +1444,19 @@ regen-opcode-targets:
 		$(srcdir)/Python/opcode_targets.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
-Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h
+.PHONY: regen-cases
+regen-cases:
+	# Regenerate Python/generated_cases.c.h from Python/bytecodes.c
+	# using Tools/cases_generator/generate_cases.py
+	PYTHONPATH=$(srcdir)/Tools/cases_generator \
+	$(PYTHON_FOR_REGEN) \
+	    $(srcdir)/Tools/cases_generator/generate_cases.py \
+		-i $(srcdir)/Python/bytecodes.c \
+		-o $(srcdir)/Python/generated_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+
+Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/condvar.h $(srcdir)/Python/generated_cases.c.h
+
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -1936,7 +1947,6 @@ LIBSUBDIRS=	asyncio \
 		ctypes ctypes/macholib \
 		curses \
 		dbm \
-		distutils distutils/command \
 		email email/mime \
 		encodings \
 		ensurepip ensurepip/_bundled \
@@ -1963,8 +1973,7 @@ LIBSUBDIRS=	asyncio \
 		xmlrpc \
 		zoneinfo \
 		__phello__
-TESTSUBDIRS=	distutils/tests \
-		idlelib/idle_test \
+TESTSUBDIRS=	idlelib/idle_test \
 		test test/audiodata \
 		test/capath test/cjkencodings \
 		test/data test/decimaltestdata \
@@ -2111,10 +2120,6 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py \
 		$(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
-	if test -d $(DESTDIR)$(LIBDEST)/distutils/tests; then \
-		$(INSTALL_DATA) $(srcdir)/Modules/xxmodule.c \
-			$(DESTDIR)$(LIBDEST)/distutils/tests ; \
-	fi
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-j0 -d $(LIBDEST) -f \
@@ -2438,7 +2443,7 @@ rmtestturds:
 	-rm -f gb-18030-2000.xml
 
 docclean:
-	$(MAKE) -C Doc clean
+	$(MAKE) -C $(srcdir)/Doc clean
 
 # like the 'clean' target but retain the profile guided optimization (PGO)
 # data.  The PGO data is only valid if source code remains unchanged.

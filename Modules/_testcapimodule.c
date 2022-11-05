@@ -3231,31 +3231,40 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
     int allow_fork = -1;
-    int allow_subprocess = -1;
+    int allow_exec = -1;
     int allow_threads = -1;
+    int allow_daemon_threads = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
     PyCompilerFlags cflags = {0};
 
     static char *kwlist[] = {"code",
-                             "allow_fork", "allow_subprocess", "allow_threads",
+                             "allow_fork",
+                             "allow_exec",
+                             "allow_threads",
+                             "allow_daemon_threads",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppp:run_in_subinterp_with_config", kwlist,
-                    &code, &allow_fork, &allow_subprocess, &allow_threads)) {
+                    "s$pppp:run_in_subinterp_with_config", kwlist,
+                    &code, &allow_fork, &allow_exec,
+                    &allow_threads, &allow_daemon_threads)) {
         return NULL;
     }
     if (allow_fork < 0) {
         PyErr_SetString(PyExc_ValueError, "missing allow_fork");
         return NULL;
     }
-    if (allow_subprocess < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_subprocess");
+    if (allow_exec < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
         return NULL;
     }
     if (allow_threads < 0) {
         PyErr_SetString(PyExc_ValueError, "missing allow_threads");
+        return NULL;
+    }
+    if (allow_daemon_threads < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
         return NULL;
     }
 
@@ -3265,8 +3274,9 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
     const _PyInterpreterConfig config = {
         .allow_fork = allow_fork,
-        .allow_subprocess = allow_subprocess,
+        .allow_exec = allow_exec,
         .allow_threads = allow_threads,
+        .allow_daemon_threads = allow_daemon_threads,
     };
     substate = _Py_NewInterpreterFromConfig(&config);
     if (substate == NULL) {
@@ -5570,6 +5580,12 @@ eval_get_func_name(PyObject *self, PyObject *func)
 }
 
 static PyObject *
+eval_get_func_desc(PyObject *self, PyObject *func)
+{
+    return PyUnicode_FromString(PyEval_GetFuncDesc(func));
+}
+
+static PyObject *
 get_feature_macros(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *result = PyDict_New();
@@ -6243,6 +6259,7 @@ static PyMethodDef TestMethods[] = {
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
+    {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
