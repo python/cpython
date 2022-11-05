@@ -478,9 +478,10 @@ Module constants
 
    .. note::
 
-      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
-      parameter styles, because that is what the underlying SQLite library
-      supports. However, the DB-API does not allow multiple values for
+      The :mod:`!sqlite3` module supports ``qmark``, ``numeric``,
+      and ``named`` DB-API parameter styles,
+      because that is what the underlying SQLite library supports.
+      However, the DB-API does not allow multiple values for
       the ``paramstyle`` attribute.
 
 .. data:: sqlite_version
@@ -577,7 +578,7 @@ Connection objects
       supplied, this must be a callable returning an instance of :class:`Cursor`
       or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, \*, readonly=False, name="main")
+   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -647,7 +648,7 @@ Connection objects
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
       Return the new cursor object.
 
-   .. method:: create_function(name, narg, func, \*, deterministic=False)
+   .. method:: create_function(name, narg, func, *, deterministic=False)
 
       Create or remove a user-defined SQL function.
 
@@ -1040,7 +1041,7 @@ Connection objects
          con.close()
 
 
-   .. method:: backup(target, \*, pages=-1, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       Create a backup of an SQLite database.
 
@@ -1169,7 +1170,7 @@ Connection objects
    .. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
 
-   .. method:: serialize(\*, name="main")
+   .. method:: serialize(*, name="main")
 
       Serialize a database into a :class:`bytes` object.  For an
       ordinary on-disk database file, the serialization is just a copy of the
@@ -1191,7 +1192,7 @@ Connection objects
       .. versionadded:: 3.11
 
 
-   .. method:: deserialize(data, /, \*, name="main")
+   .. method:: deserialize(data, /, *, name="main")
 
       Deserialize a :meth:`serialized <serialize>` database into a
       :class:`Connection`.
