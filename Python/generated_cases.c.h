@@ -365,7 +365,7 @@
             PREDICTED(BINARY_SUBSCR);
             if (!cframe.use_tracing) {
                 _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     PyObject *sub = TOP();
                     PyObject *container = SECOND();
                     next_instr--;
@@ -375,7 +375,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(BINARY_SUBSCR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             PyObject *sub = POP();
             PyObject *container = TOP();
@@ -559,7 +559,7 @@
             PREDICTED(STORE_SUBSCR);
             if (!cframe.use_tracing) {
                 _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     PyObject *sub = TOP();
                     PyObject *container = SECOND();
                     next_instr--;
@@ -569,7 +569,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(STORE_SUBSCR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             PyObject *sub = TOP();
             PyObject *container = SECOND();
@@ -1121,14 +1121,14 @@
             PREDICTED(UNPACK_SEQUENCE);
             if (!cframe.use_tracing) {
                 _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     PyObject *seq = TOP();
                     next_instr--;
                     _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(UNPACK_SEQUENCE, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             PyObject *seq = POP();
             PyObject **top = stack_pointer + oparg;
@@ -1201,7 +1201,7 @@
             PREDICTED(STORE_ATTR);
             if (!cframe.use_tracing) {
                 _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     PyObject *owner = TOP();
                     PyObject *name = GETITEM(names, oparg);
                     next_instr--;
@@ -1211,7 +1211,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(STORE_ATTR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
@@ -1332,7 +1332,7 @@
             PREDICTED(LOAD_GLOBAL);
             if (!cframe.use_tracing) {
                 _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     PyObject *name = GETITEM(names, oparg>>1);
                     next_instr--;
                     if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name) < 0) {
@@ -1341,7 +1341,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(LOAD_GLOBAL, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             int push_null = oparg & 1;
             PEEK(0) = NULL;
@@ -1788,7 +1788,7 @@
             PREDICTED(LOAD_ATTR);
             if (!cframe.use_tracing) {
                 _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     PyObject *owner = TOP();
                     PyObject *name = GETITEM(names, oparg>>1);
                     next_instr--;
@@ -1798,7 +1798,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(LOAD_ATTR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             PyObject *name = GETITEM(names, oparg >> 1);
             PyObject *owner = TOP();
@@ -2181,7 +2181,7 @@
             PREDICTED(COMPARE_OP);
             if (!cframe.use_tracing) {
                 _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     PyObject *right = TOP();
                     PyObject *left = SECOND();
                     next_instr--;
@@ -2189,7 +2189,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(COMPARE_OP, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             GO_TO_INSTRUCTION(COMPARE_OP_GENERIC);
         }
@@ -2676,13 +2676,13 @@
             PREDICTED(FOR_ITER);
             if (!cframe.use_tracing) {
                 _PyForIterCache *cache = (_PyForIterCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     next_instr--;
                     _Py_Specialize_ForIter(TOP(), next_instr);
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(FOR_ITER, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
@@ -2998,7 +2998,7 @@
             PREDICTED(CALL);
             if (!cframe.use_tracing) {
                 _PyCallCache *cache = (_PyCallCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     next_instr--;
                     int is_meth = is_method(stack_pointer, oparg);
                     int nargs = oparg + is_meth;
@@ -3011,7 +3011,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(CALL, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             int total_args, is_meth;
             is_meth = is_method(stack_pointer, oparg);
@@ -3803,7 +3803,7 @@
             PREDICTED(BINARY_OP);
             if (!cframe.use_tracing) {
                 _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-                if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
+                if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                     PyObject *lhs = SECOND();
                     PyObject *rhs = TOP();
                     next_instr--;
@@ -3811,7 +3811,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(BINARY_OP, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(cache);
+                DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             }
             GO_TO_INSTRUCTION(BINARY_OP_GENERIC);
         }
@@ -3828,8 +3828,8 @@
             assert(oparg);
             opcode = _Py_OPCODE(*next_instr);
             if (cframe.use_tracing) {
-                // Deoptimize the next opcode to avoid breaking tracing	
-                // guarantees in quickened instructions:	
+                // Deoptimize the next opcode to avoid breaking tracing 
+                // guarantees in quickened instructions:        
                 opcode = _PyOpcode_Deopt[opcode];
             }
             oparg <<= 8;

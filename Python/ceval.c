@@ -852,12 +852,21 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
 
-#define DEOPT_IF(COND, INSTNAME)                      \
-    if (COND) {                                       \
-        STAT_INC(opcode, miss);                       \
-        STAT_INC(INSTNAME, miss);                     \
-        assert(_PyOpcode_Deopt[opcode] == INSTNAME);  \
-        GO_TO_INSTRUCTION(INSTNAME);                  \
+#define DEOPT_IF(COND, INSTNAME)                                 \
+    if (COND) {                                                  \
+        /* This is only a single jump on release builds! */      \
+        STAT_INC(opcode, miss);                                  \
+        STAT_INC(INSTNAME, miss);                                \
+        /* The counter is always the first cache entry: */       \
+        if (ADAPTIVE_COUNTER_IS_ZERO(*next_instr)) {             \
+            STAT_INC(INSTNAME, deopt);                           \
+        }                                                        \
+        else {                                                   \
+            /* This is about to be (incorrectly) incremented: */ \
+            STAT_DEC(INSTNAME, deferred);                        \
+        }                                                        \
+        assert(_PyOpcode_Deopt[opcode] == INSTNAME);             \
+        GO_TO_INSTRUCTION(INSTNAME);                             \
     }
 
 
@@ -910,11 +919,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         dtrace_function_entry(frame); \
     }
 
-#define ADAPTIVE_COUNTER_IS_ZERO(cache) \
-    (cache)->counter < (1<<ADAPTIVE_BACKOFF_BITS)
+#define ADAPTIVE_COUNTER_IS_ZERO(COUNTER) \
+    ((COUNTER) < (1<<ADAPTIVE_BACKOFF_BITS))
 
-#define DECREMENT_ADAPTIVE_COUNTER(cache) \
-    (cache)->counter -= (1<<ADAPTIVE_BACKOFF_BITS)
+#define DECREMENT_ADAPTIVE_COUNTER(COUNTER) \
+    ((COUNTER) -= (1<<ADAPTIVE_BACKOFF_BITS))
 
 static int
 trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
