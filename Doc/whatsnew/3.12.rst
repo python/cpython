@@ -79,7 +79,7 @@ Improved Error Messages
   Now if a :exc:`NameError` is raised in a method and the instance has an
   attribute that's exactly equal to the name in the exception, the suggestion
   will include ``self.<NAME>`` instead of the closest match in the method
-  scope. Controbuted by Pablo Galindo in :gh:`99139`.
+  scope. Contributed by Pablo Galindo in :gh:`99139`.
 
     >>> class A:
     ...    def __init__(self):
