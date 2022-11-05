@@ -1,3 +1,5 @@
+#define NEEDS_PY_IDENTIFIER
+
 #include "Python.h"
 #include "pycore_frame.h"
 
@@ -226,6 +228,25 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
         return NULL;
     }
 
+    // Are we inside a method and the instance has an attribute called 'name'?
+    _Py_IDENTIFIER(self);
+    PyObject* self_str = _PyUnicode_FromId(&PyId_self); /* borrowed */
+    if (PySequence_Contains(dir, self_str) > 0) {
+        PyObject* locals = PyFrame_GetLocals(frame);
+        if (!locals) {
+            goto error;
+        }
+        PyObject* self = PyDict_GetItemString(locals, "self"); /* borrowed */
+        Py_DECREF(locals);
+        if (!self) {
+            goto error;
+        }
+        
+        if (PyObject_HasAttr(self, name)) {
+            return PyUnicode_FromFormat("self.%S", name);
+        }
+    }
+
     PyObject *suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
     if (suggestions != NULL) {
@@ -250,6 +271,10 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     Py_DECREF(dir);
 
     return suggestions;
+
+error:
+    Py_XDECREF(dir);
+    return NULL;
 }
 
 static bool
