@@ -3683,9 +3683,6 @@ static int
 module_exec(PyObject *mod)
 {
     asyncio_state *state = get_asyncio_state(mod);
-    if (module_init(state) < 0) {
-        return -1;
-    }
 
 #define CREATE_TYPE(m, tp, spec, base)                                  \
     do {                                                                \
@@ -3711,6 +3708,10 @@ module_exec(PyObject *mod)
     if (PyModule_AddType(mod, state->TaskType) < 0) {
         return -1;
     }
+    // Must be done after types are added to avoid a circular dependency
+    if (module_init(state) < 0) {
+        return -1;
+    }
 
     if (PyModule_AddObjectRef(mod, "_all_tasks", state->all_tasks) < 0) {
         return -1;
@@ -3719,6 +3720,7 @@ module_exec(PyObject *mod)
     if (PyModule_AddObjectRef(mod, "_current_tasks", state->current_tasks) < 0) {
         return -1;
     }
+
 
     return 0;
 }
