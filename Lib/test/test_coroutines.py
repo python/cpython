@@ -2415,6 +2415,7 @@ class OriginTrackingTest(unittest.TestCase):
 
 class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
     # https://bugs.python.org/issue32591#msg310726
+    @unittest.skip
     def test_unawaited_warning_during_shutdown(self):
         code = ("import asyncio\n"
                 "async def f(): pass\n"
