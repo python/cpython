@@ -64,6 +64,7 @@ do { \
 
 /* Flow control macros */
 #define DEOPT_IF(cond, instname) ((void)0)
+#define ERROR_IF(cond, labelname) ((void)0)
 #define JUMPBY(offset) ((void)0)
 #define GO_TO_INSTRUCTION(instname) ((void)0)
 #define DISPATCH_SAME_OPARG() ((void)0)
@@ -119,17 +120,13 @@ dummy_func(
         instr(LOAD_CLOSURE, (-- value)) {
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
         instr(LOAD_FAST_CHECK, (-- value)) {
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
@@ -228,30 +225,24 @@ dummy_func(
         instr(UNARY_POSITIVE, (value -- res)) {
             res = PyNumber_Positive(value);
             Py_DECREF(value);
-            if (res == NULL) {
-                goto error;
-            }
+            ERROR_IF(res == NULL, error);
         }
 
         instr(UNARY_NEGATIVE, (value -- res)) {
             res = PyNumber_Negative(value);
             Py_DECREF(value);
-            if (res == NULL) {
-                goto error;
-            }
+            ERROR_IF(res == NULL, error);
         }
 
         instr(UNARY_NOT, (value -- res)) {
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
+            ERROR_IF(err < 0, error);
             if (err == 0) {
                 res = Py_True;
             }
-            else if (err > 0) {
-                res = Py_False;
-            }
             else {
-                goto error;
+                res = Py_False;
             }
             Py_INCREF(res);
         }
@@ -259,9 +250,7 @@ dummy_func(
         instr(UNARY_INVERT, (value -- res)) {
             res = PyNumber_Invert(value);
             Py_DECREF(value);
-            if (res == NULL) {
-                goto error;
-            }
+            ERROR_IF(res == NULL, error);
         }
 
         instr(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
@@ -272,9 +261,7 @@ dummy_func(
             prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            if (prod == NULL) {
-                goto error;
-            }
+            ERROR_IF(prod == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
@@ -289,9 +276,7 @@ dummy_func(
             prod = PyFloat_FromDouble(dprod);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            if (prod == NULL) {
-                goto error;
-            }
+            ERROR_IF(prod == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 

@@ -855,6 +855,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define DEOPT_IF(cond, instname) if (cond) { goto miss; }
 
+#define ERROR_IF(cond, label) if (cond) { goto label; }
+
 
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins

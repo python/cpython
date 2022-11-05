@@ -18,9 +18,7 @@
             PyObject *value;
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
             STACK_GROW(1);
             POKE(1, value);
@@ -30,9 +28,7 @@
         TARGET(LOAD_FAST_CHECK) {
             PyObject *value;
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
             STACK_GROW(1);
             POKE(1, value);
@@ -155,9 +151,7 @@
             PyObject *res;
             res = PyNumber_Positive(value);
             Py_DECREF(value);
-            if (res == NULL) {
-                goto error;
-            }
+            ERROR_IF(res == NULL, error);
             POKE(1, res);
             DISPATCH();
         }
@@ -167,9 +161,7 @@
             PyObject *res;
             res = PyNumber_Negative(value);
             Py_DECREF(value);
-            if (res == NULL) {
-                goto error;
-            }
+            ERROR_IF(res == NULL, error);
             POKE(1, res);
             DISPATCH();
         }
@@ -179,14 +171,12 @@
             PyObject *res;
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
+            ERROR_IF(err < 0, error);
             if (err == 0) {
                 res = Py_True;
             }
-            else if (err > 0) {
-                res = Py_False;
-            }
             else {
-                goto error;
+                res = Py_False;
             }
             Py_INCREF(res);
             POKE(1, res);
@@ -198,9 +188,7 @@
             PyObject *res;
             res = PyNumber_Invert(value);
             Py_DECREF(value);
-            if (res == NULL) {
-                goto error;
-            }
+            ERROR_IF(res == NULL, error);
             POKE(1, res);
             DISPATCH();
         }
@@ -216,9 +204,7 @@
             prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            if (prod == NULL) {
-                goto error;
-            }
+            ERROR_IF(prod == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_GROW(-1);
             POKE(1, prod);
@@ -238,9 +224,7 @@
             prod = PyFloat_FromDouble(dprod);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            if (prod == NULL) {
-                goto error;
-            }
+            ERROR_IF(prod == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_GROW(-1);
             POKE(1, prod);
