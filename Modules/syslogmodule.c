@@ -203,14 +203,11 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     }
 
     _syslog_state *state = get_syslog_state(module);
-    /*  if log is not opened, open it now  */
-    if (!state->S_log_open) {
-        PyObject *openlog_ret = syslog_openlog_impl(module, NULL, 0, LOG_USER);
-        if (openlog_ret == NULL) {
-            return NULL;
-        }
-        Py_DECREF(openlog_ret);
+    PyObject *openlog_ret = syslog_openlog_impl(module, NULL, 0, LOG_USER);
+    if (openlog_ret == NULL) {
+        return NULL;
     }
+    Py_DECREF(openlog_ret);
 
     /* Incref ident, because it can be decrefed if syslog.openlog() is
      * called when the GIL is released.
