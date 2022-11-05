@@ -471,6 +471,7 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(BINARY_SUBSCR) {
+            PREDICTED(BINARY_SUBSCR);
             if (!cframe.use_tracing) {
                 _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -625,6 +626,7 @@ dummy_func(
 
         // stack effect: (__0, __1, __2 -- )
         inst(STORE_SUBSCR) {
+            PREDICTED(STORE_SUBSCR);
             if (!cframe.use_tracing) {
                 _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -1192,6 +1194,7 @@ dummy_func(
 
         // stack effect: (__0 -- __array[oparg])
         inst(UNPACK_SEQUENCE) {
+            PREDICTED(UNPACK_SEQUENCE);
             if (!cframe.use_tracing) {
                 _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -1371,6 +1374,7 @@ dummy_func(
 
         // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL) {
+            PREDICTED(LOAD_GLOBAL);
             if (!cframe.use_tracing) {
                 _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -1828,6 +1832,7 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR) {
+            PREDICTED(LOAD_ATTR);
             if (!cframe.use_tracing) {
                 _PyAttrCache *cache = (_PyAttrCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2105,6 +2110,7 @@ dummy_func(
 
         // stack effect: (__0, __1 -- )
         inst(STORE_ATTR) {
+            PREDICTED(STORE_ATTR);
             if (!cframe.use_tracing) {
                 _PyAttrCache *cache = (_PyAttrCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2240,6 +2246,7 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(COMPARE_OP) {
+            PREDICTED(COMPARE_OP);
             if (!cframe.use_tracing) {
                 _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2746,6 +2753,7 @@ dummy_func(
 
         // stack effect: ( -- __0)
         inst(FOR_ITER) {
+            PREDICTED(FOR_ITER);
             if (!cframe.use_tracing) {
                 _PyForIterCache *cache = (_PyForIterCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -3069,6 +3077,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL) {
+            PREDICTED(CALL);
             if (!cframe.use_tracing) {
                 _PyCallCache *cache = (_PyCallCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -3862,6 +3871,7 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(BINARY_OP) {
+            PREDICTED(BINARY_OP);
             if (!cframe.use_tracing) {
                 _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {

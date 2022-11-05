@@ -402,6 +402,7 @@
         }
 
         TARGET(BINARY_SUBSCR) {
+            PREDICTED(BINARY_SUBSCR);
             if (!cframe.use_tracing) {
                 _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -555,6 +556,7 @@
         }
 
         TARGET(STORE_SUBSCR) {
+            PREDICTED(STORE_SUBSCR);
             if (!cframe.use_tracing) {
                 _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -1116,6 +1118,7 @@
         }
 
         TARGET(UNPACK_SEQUENCE) {
+            PREDICTED(UNPACK_SEQUENCE);
             if (!cframe.use_tracing) {
                 _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -1295,6 +1298,7 @@
         }
 
         TARGET(LOAD_GLOBAL) {
+            PREDICTED(LOAD_GLOBAL);
             if (!cframe.use_tracing) {
                 _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -1750,6 +1754,7 @@
         }
 
         TARGET(LOAD_ATTR) {
+            PREDICTED(LOAD_ATTR);
             if (!cframe.use_tracing) {
                 _PyAttrCache *cache = (_PyAttrCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2025,6 +2030,7 @@
         }
 
         TARGET(STORE_ATTR) {
+            PREDICTED(STORE_ATTR);
             if (!cframe.use_tracing) {
                 _PyAttrCache *cache = (_PyAttrCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2160,6 +2166,7 @@
         }
 
         TARGET(COMPARE_OP) {
+            PREDICTED(COMPARE_OP);
             if (!cframe.use_tracing) {
                 _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2666,6 +2673,7 @@
         }
 
         TARGET(FOR_ITER) {
+            PREDICTED(FOR_ITER);
             if (!cframe.use_tracing) {
                 _PyForIterCache *cache = (_PyForIterCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -2987,6 +2995,7 @@
         }
 
         TARGET(CALL) {
+            PREDICTED(CALL);
             if (!cframe.use_tracing) {
                 _PyCallCache *cache = (_PyCallCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
@@ -3777,6 +3786,7 @@
         }
 
         TARGET(BINARY_OP) {
+            PREDICTED(BINARY_OP);
             if (!cframe.use_tracing) {
                 _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
                 if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {

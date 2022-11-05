@@ -852,14 +852,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
 
-#define DEOPT_IF(cond, instname)                      \
-    if (cond) {                                       \
+#define DEOPT_IF(COND, INSTNAME)                      \
+    if (COND) {                                       \
         STAT_INC(opcode, miss);                       \
-        STAT_INC(instname, miss);                     \
-        next_instr--;                                 \
-        assert(instname == _PyOpcode_Deopt[opcode]);  \
-        opcode = instname;                            \
-        DISPATCH_GOTO();                              \
+        STAT_INC(INSTNAME, miss);                     \
+        assert(_PyOpcode_Deopt[opcode] == INSTNAME);  \
+        GO_TO_INSTRUCTION(INSTNAME);                  \
     }
 
 
