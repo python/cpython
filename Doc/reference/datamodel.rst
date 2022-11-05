@@ -1174,6 +1174,8 @@ Internal types
          Traceback objects can now be explicitly instantiated from Python code,
          and the ``tb_next`` attribute of existing instances can be updated.
 
+   .. _datamodel-slice-objects:
+
    Slice objects
       .. index:: builtin: slice
 

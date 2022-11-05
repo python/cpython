@@ -1617,12 +1617,12 @@ are always available.  They are listed here in alphabetical order.
 .. class:: slice(stop, /)
            slice(start, stop, step=1, /)
 
-   Return a :term:`slice` object representing the set of indices specified by
+   Return a :ref:`slice object <datamodel-slice-objects>` representing the set
+   of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.  Slice objects have read-only data attributes :attr:`~slice.start`,
    :attr:`~slice.stop`, and :attr:`~slice.step` which merely return the argument
-   values (or their default).  They have no other explicit functionality;
-   however, they are used by NumPy and other third-party packages.
+   values (or their default).
    Slice objects are also generated when extended indexing syntax is used.  For
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
    :func:`itertools.islice` for an alternate version that returns an iterator.
