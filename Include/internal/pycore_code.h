@@ -376,11 +376,21 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 /* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
 #define ADAPTIVE_BACKOFF_BITS 4
 
-#define ADAPTIVE_BACKOFF_START_VALUE 1
-#define ADAPTIVE_BACKOFF_START_BACKOFF 1
+// A value of 1 means that we attempt to specialize the *second* time each
+// instruction is executed. Executing twice is a much better indicator of
+// "hotness" than executing once, but additional warmup delays only prevent
+// specialization. Most types stabilize by the second execution, too:
+#define ADAPTIVE_WARMUP_VALUE 1
+#define ADAPTIVE_WARMUP_BACKOFF 1
 
-#define ADAPTIVE_BACKOFF_RESTART_VALUE 52
-#define ADAPTIVE_BACKOFF_RESTART_BACKOFF 0
+// A value of 52 means that we attempt to re-specialize after 53 misses (a prime
+// number, useful for avoiding artifacts if every nth value is a different type
+// or something). Setting the backoff to 0 means that the counter is reset to
+// the same state as a warming-up instruction (value == 1, backoff == 1) after
+// deoptimization. This isn't strictly necessary, but it is bit easier to reason
+// about when thinking about the opcode transitions as a state machine:
+#define ADAPTIVE_COOLDOWN_VALUE 52
+#define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 #define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
 
@@ -392,15 +402,15 @@ adaptive_counter_bits(int value, int backoff) {
 }
 
 static inline uint16_t
-adaptive_counter_start(void) {
-    return adaptive_counter_bits(ADAPTIVE_BACKOFF_START_VALUE,
-                                 ADAPTIVE_BACKOFF_START_BACKOFF);
+adaptive_counter_warmup(void) {
+    return adaptive_counter_bits(ADAPTIVE_WARMUP_VALUE,
+                                 ADAPTIVE_WARMUP_BACKOFF);
 }
 
 static inline uint16_t
-adaptive_counter_restart(void) {
-    return adaptive_counter_bits(ADAPTIVE_BACKOFF_RESTART_VALUE,
-                                 ADAPTIVE_BACKOFF_RESTART_BACKOFF);
+adaptive_counter_cooldown(void) {
+    return adaptive_counter_bits(ADAPTIVE_COOLDOWN_VALUE,
+                                 ADAPTIVE_COOLDOWN_BACKOFF);
 }
 
 static inline uint16_t
