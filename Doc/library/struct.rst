@@ -12,9 +12,9 @@
 
 --------------
 
-This module performs conversions between Python values and C structs represented
-as Python :class:`bytes` objects.  This can be used in handling binary data
-stored in files or from network connections, among other sources.  It uses
+This module converts between Python values and C structs represented
+as Python :class:`bytes` objects.  This can be used to handle binary data
+in files or on network connections, among other sources.  It uses
 :ref:`struct-format-strings` as compact descriptions of the layout of the C
 structs and the intended conversion to/from Python values.
 
@@ -345,17 +345,19 @@ Examples
 ^^^^^^^^
 
 .. note::
-   All examples assume a native byte order, size, and alignment with a
+   Unless otherwise specified,
+   all examples assume a native byte order, size, and alignment with a
    big-endian machine.
 
-A basic example of packing/unpacking three integers::
+A basic example of packing/unpacking three integers, forcing big
+endian ordering::
 
    >>> from struct import *
-   >>> pack('hhl', 1, 2, 3)
+   >>> pack('>hhl', 1, 2, 3)
    b'\x00\x01\x00\x02\x00\x00\x00\x03'
-   >>> unpack('hhl', b'\x00\x01\x00\x02\x00\x00\x00\x03')
+   >>> unpack('>hhl', b'\x00\x01\x00\x02\x00\x00\x00\x03')
    (1, 2, 3)
-   >>> calcsize('hhl')
+   >>> calcsize('>hhl')
    8
 
 Unpacked fields can be named by assigning them to variables or by wrapping
@@ -370,15 +372,16 @@ the result in a named tuple::
     Student(name=b'raymond   ', serialnum=4658, school=264, gradelevel=8)
 
 The ordering of format characters may have an impact on size since the padding
-needed to satisfy alignment requirements is different::
+needed to satisfy alignment requirements is different. In this
+example, the output was produced on a little endian machine::
 
-    >>> pack('ci', b'*', 0x12131415)
-    b'*\x00\x00\x00\x12\x13\x14\x15'
-    >>> pack('ic', 0x12131415, b'*')
-    b'\x12\x13\x14\x15*'
-    >>> calcsize('ci')
+    >>> pack('@ci', b'*', 0x12131415)
+    b'*\x00\x00\x00\x15\x14\x13\x12'
+    >>> pack('@ic', 0x12131415, b'*')
+    b'\x15\x14\x13\x12*'
+    >>> calcsize('@ci')
     8
-    >>> calcsize('ic')
+    >>> calcsize('@ic')
     5
 
 The following format ``'llh0l'`` specifies two pad bytes at the end, assuming
