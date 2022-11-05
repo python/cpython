@@ -23,7 +23,7 @@
             }
             Py_INCREF(value);
             STACK_GROW(1);
-            PEEK(1) = value;
+            POKE(1, value);
             DISPATCH();
         }
 
@@ -35,7 +35,7 @@
             }
             Py_INCREF(value);
             STACK_GROW(1);
-            PEEK(1) = value;
+            POKE(1, value);
             DISPATCH();
         }
 
@@ -45,7 +45,7 @@
             assert(value != NULL);
             Py_INCREF(value);
             STACK_GROW(1);
-            PEEK(1) = value;
+            POKE(1, value);
             DISPATCH();
         }
 
@@ -55,7 +55,7 @@
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
             STACK_GROW(1);
-            PEEK(1) = value;
+            POKE(1, value);
             DISPATCH();
         }
 
@@ -158,7 +158,7 @@
             if (res == NULL) {
                 goto error;
             }
-            PEEK(1) = res;
+            POKE(1, res);
             DISPATCH();
         }
 
@@ -170,7 +170,7 @@
             if (res == NULL) {
                 goto error;
             }
-            PEEK(1) = res;
+            POKE(1, res);
             DISPATCH();
         }
 
@@ -189,7 +189,7 @@
                 goto error;
             }
             Py_INCREF(res);
-            PEEK(1) = res;
+            POKE(1, res);
             DISPATCH();
         }
 
@@ -201,7 +201,7 @@
             if (res == NULL) {
                 goto error;
             }
-            PEEK(1) = res;
+            POKE(1, res);
             DISPATCH();
         }
 
@@ -221,7 +221,7 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_GROW(-1);
-            PEEK(1) = prod;
+            POKE(1, prod);
             DISPATCH();
         }
 
@@ -243,7 +243,7 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_GROW(-1);
-            PEEK(1) = prod;
+            POKE(1, prod);
             DISPATCH();
         }
 

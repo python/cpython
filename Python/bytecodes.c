@@ -43,6 +43,7 @@ void _PyUnicode_ExactDealloc(PyObject *);
 #define SET_TOP(v)        (stack_pointer[-1] = (v))
 #define SET_SECOND(v)     (stack_pointer[-2] = (v))
 #define PEEK(n)           (stack_pointer[-(n)])
+#define POKE(n, v)        (stack_pointer[-(n)] = (v))
 #define PUSH(val)         (*(stack_pointer++) = (val))
 #define POP()             (*(--stack_pointer))
 #define TOP()             PEEK(1)

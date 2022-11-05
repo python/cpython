@@ -106,7 +106,7 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
         if diff != 0:
             f.write(f"{indent}    STACK_GROW({diff});\n")
         for i, output in enumerate(reversed(instr.outputs or ()), 1):
-            f.write(f"{indent}    PEEK({i}) = {output};\n")
+            f.write(f"{indent}    POKE({i}, {output});\n")
         assert instr.block
         if not always_exits(instr.block):
             f.write(f"{indent}    DISPATCH();\n")
