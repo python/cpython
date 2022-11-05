@@ -1607,17 +1607,11 @@ static PyType_Spec Future_spec = {
 static void
 FutureObj_dealloc(PyObject *self)
 {
-    asyncio_state *state = get_asyncio_state_by_def(self);
     FutureObj *fut = (FutureObj *)self;
 
-    if (Future_CheckExact(state, fut)) {
-        /* When fut is subclass of Future, finalizer is called from
-         * subtype_dealloc.
-         */
-        if (PyObject_CallFinalizerFromDealloc(self) < 0) {
-            // resurrected.
-            return;
-        }
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+        // resurrected.
+        return;
     }
 
     PyTypeObject *tp = Py_TYPE(fut);
@@ -2686,15 +2680,9 @@ TaskObj_dealloc(PyObject *self)
 {
     TaskObj *task = (TaskObj *)self;
 
-    asyncio_state *state = get_asyncio_state_by_def(self);
-    if (Task_CheckExact(state, self)) {
-        /* When fut is subclass of Task, finalizer is called from
-         * subtype_dealloc.
-         */
-        if (PyObject_CallFinalizerFromDealloc(self) < 0) {
-            // resurrected.
-            return;
-        }
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+        // resurrected.
+        return;
     }
 
     PyTypeObject *tp = Py_TYPE(task);
