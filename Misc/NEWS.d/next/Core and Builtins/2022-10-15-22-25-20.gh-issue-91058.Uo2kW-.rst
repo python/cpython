@@ -1,0 +1,3 @@
+:exc:`ImportError` raised from failed ``from <module> import <name>`` now
+include suggestions for the value of ``<name>`` based on the available names
+in ``<module>``. Patch by Pablo Galindo

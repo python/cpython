@@ -579,14 +579,27 @@ else:
     # Detect exec_prefix by searching from executable for the platstdlib_dir
     if PLATSTDLIB_LANDMARK and not exec_prefix:
         if executable_dir:
-            exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
-        if not exec_prefix:
-            if EXEC_PREFIX:
-                exec_prefix = EXEC_PREFIX
-                if not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
-                    warn('Could not find platform dependent libraries <exec_prefix>')
+            if os_name == 'nt':
+                # QUIRK: For compatibility and security, do not search for DLLs
+                # directory. The fallback below will cover it
+                exec_prefix = executable_dir
+            else:
+                exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
+        if not exec_prefix and EXEC_PREFIX:
+            exec_prefix = EXEC_PREFIX
+        if not exec_prefix or not isdir(joinpath(exec_prefix, PLATSTDLIB_LANDMARK)):
+            if os_name == 'nt':
+                # QUIRK: If DLLs is missing on Windows, don't warn, just assume
+                # that it's all the same as prefix.
+                # gh-98790: We set platstdlib_dir here to avoid adding "DLLs" into
+                # sys.path when it doesn't exist, which would give site-packages
+                # precedence over executable_dir, which is *probably* where our PYDs
+                # live. Ideally, whoever changes our layout will tell us what the
+                # layout is, but in the past this worked, so it should keep working.
+                platstdlib_dir = exec_prefix = prefix
             else:
                 warn('Could not find platform dependent libraries <exec_prefix>')
+
 
     # Fallback: assume exec_prefix == prefix
     if not exec_prefix:
@@ -689,7 +702,8 @@ elif not pythonpath_was_set:
             pythonpath.append(platstdlib_dir)
         if stdlib_dir:
             pythonpath.append(stdlib_dir)
-        pythonpath.append(executable_dir)
+        if executable_dir not in pythonpath:
+            pythonpath.append(executable_dir)
     else:
         if stdlib_dir:
             pythonpath.append(stdlib_dir)

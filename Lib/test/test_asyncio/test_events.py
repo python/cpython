@@ -2058,11 +2058,13 @@ else:
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', DeprecationWarning)
                 watcher = asyncio.SafeChildWatcher()
-            watcher.attach_loop(self.loop)
-            asyncio.set_child_watcher(watcher)
+                watcher.attach_loop(self.loop)
+                asyncio.set_child_watcher(watcher)
 
         def tearDown(self):
-            asyncio.set_child_watcher(None)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                asyncio.set_child_watcher(None)
             super().tearDown()
 
 
@@ -2657,13 +2659,15 @@ class GetEventLoopTestsMixin:
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', DeprecationWarning)
                 watcher = asyncio.SafeChildWatcher()
-            watcher.attach_loop(self.loop)
-            asyncio.set_child_watcher(watcher)
+                watcher.attach_loop(self.loop)
+                asyncio.set_child_watcher(watcher)
 
     def tearDown(self):
         try:
             if sys.platform != 'win32':
-                asyncio.set_child_watcher(None)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    asyncio.set_child_watcher(None)
 
             super().tearDown()
         finally:

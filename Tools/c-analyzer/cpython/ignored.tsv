@@ -77,8 +77,8 @@ Objects/object.c	-	_Py_GenericAliasIterType	-
 Objects/object.c	-	_PyMemoryIter_Type	-
 Objects/object.c	-	_PyLineIterator	-
 Objects/object.c	-	_PyPositionsIterator	-
-Objects/perf_trampoline.c	-	_Py_trampoline_func_start	-
-Objects/perf_trampoline.c	-	_Py_trampoline_func_end	-
+Python/perf_trampoline.c	-	_Py_trampoline_func_start	-
+Python/perf_trampoline.c	-	_Py_trampoline_func_end	-
 Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 
 Modules/expat/xmlrole.c	-	prolog0	-
@@ -465,7 +465,7 @@ Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	usedpools	-
-Objects/perf_trampoline.c	-	_Py_perfmap_callbacks	-
+Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Objects/typeobject.c	-	name_op	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-

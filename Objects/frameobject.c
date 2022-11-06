@@ -367,8 +367,8 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 case FOR_ITER:
                 {
-                    int64_t target_stack = pop_value(next_stack);
-                    stacks[i+1] = push_value(next_stack, Object);
+                    int64_t target_stack = push_value(next_stack, Object);
+                    stacks[i+1] = target_stack;
                     j = get_arg(code, i) + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
@@ -603,7 +603,7 @@ _PyFrame_GetState(PyFrameObject *frame)
             if (_PyInterpreterFrame_LASTI(frame->f_frame) < 0) {
                 return FRAME_CREATED;
             }
-            switch (_PyOpcode_Deopt[_Py_OPCODE(*frame->f_frame->prev_instr)])
+            switch (_Py_OPCODE(*frame->f_frame->prev_instr))
             {
                 case COPY_FREE_VARS:
                 case MAKE_CELL:
@@ -645,9 +645,14 @@ add_load_fast_null_checks(PyCodeObject *co)
         }
         i += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
     }
-    if (changed) {
+    if (changed && co->_co_cached != NULL) {
         // invalidate cached co_code object
-        Py_CLEAR(co->_co_code);
+        Py_CLEAR(co->_co_cached->_co_code);
+        Py_CLEAR(co->_co_cached->_co_cellvars);
+        Py_CLEAR(co->_co_cached->_co_freevars);
+        Py_CLEAR(co->_co_cached->_co_varnames);
+        PyMem_Free(co->_co_cached);
+        co->_co_cached = NULL;
     }
 }
 
