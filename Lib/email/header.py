@@ -431,7 +431,7 @@ class _ValueFormatter:
         if end_of_line != (' ', ''):
             self._current_line.push(*end_of_line)
         if len(self._current_line) > 0:
-            if self._current_line.is_onlyws():
+            if self._current_line.is_onlyws() and self._lines:
                 self._lines[-1] += str(self._current_line)
             else:
                 self._lines.append(str(self._current_line))
