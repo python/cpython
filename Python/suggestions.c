@@ -1,7 +1,6 @@
-#define NEEDS_PY_IDENTIFIER
-
 #include "Python.h"
 #include "pycore_frame.h"
+#include "pycore_runtime_init.h"  // _Py_ID()
 
 #include "pycore_pyerrors.h"
 #include "pycore_code.h"        // _PyCode_GetVarnames()

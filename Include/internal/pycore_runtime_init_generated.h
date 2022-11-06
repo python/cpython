@@ -1109,6 +1109,7 @@ extern "C" {
                 INIT_ID(seek), \
                 INIT_ID(seekable), \
                 INIT_ID(selectors), \
+                INIT_ID(self), \
                 INIT_ID(send), \
                 INIT_ID(sep), \
                 INIT_ID(sequence), \
@@ -2566,6 +2567,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(seekable);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(selectors);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(self);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(send);
     PyUnicode_InternInPlace(&string);
@@ -7102,6 +7105,10 @@ _PyStaticObjects_CheckRefcnt(void) {
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(selectors)) < _PyObject_IMMORTAL_REFCNT) {
         _PyObject_Dump((PyObject *)&_Py_ID(selectors));
+        Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
+    };
+    if (Py_REFCNT((PyObject *)&_Py_ID(self)) < _PyObject_IMMORTAL_REFCNT) {
+        _PyObject_Dump((PyObject *)&_Py_ID(self));
         Py_FatalError("immortal object has less refcnt than expected _PyObject_IMMORTAL_REFCNT");
     };
     if (Py_REFCNT((PyObject *)&_Py_ID(send)) < _PyObject_IMMORTAL_REFCNT) {
