@@ -136,7 +136,6 @@ static const char* _Py_stdlib_module_names[] = {
 "decimal",
 "difflib",
 "dis",
-"distutils",
 "doctest",
 "email",
 "encodings",

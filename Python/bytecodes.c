@@ -1,3 +1,11 @@
+// This file contains instruction definitions.
+// It is read by Tools/cases_generator/generate_cases.py
+// to generate Python/generated_cases.c.h.
+// Note that there is some dummy C code at the top and bottom of the file
+// to fool text editors like VS Code into believing this is valid C code.
+// The actual instruction definitions start at // BEGIN BYTECODES //.
+// See Tools/cases_generator/README.md for more information.
+
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
@@ -28,10 +36,37 @@
 void _PyFloat_ExactDealloc(PyObject *);
 void _PyUnicode_ExactDealloc(PyObject *);
 
+/* Stack effect macros
+ * These will be mostly replaced by stack effect descriptions,
+ * but the tooling need to recognize them.
+ */
 #define SET_TOP(v)        (stack_pointer[-1] = (v))
+#define SET_SECOND(v)     (stack_pointer[-2] = (v))
 #define PEEK(n)           (stack_pointer[-(n)])
+#define PUSH(val)         (*(stack_pointer++) = (val))
+#define POP()             (*(--stack_pointer))
+#define TOP()             PEEK(1)
+#define SECOND()          PEEK(2)
+#define STACK_GROW(n)     (stack_pointer += (n))
+#define STACK_SHRINK(n)   (stack_pointer -= (n))
+#define EMPTY()           1
+#define STACK_LEVEL()     2
 
+/* Local variable macros */
 #define GETLOCAL(i)     (frame->localsplus[i])
+#define SETLOCAL(i, val)  \
+do { \
+    PyObject *_tmp = frame->localsplus[i]; \
+    frame->localsplus[i] = (val); \
+    Py_XDECREF(_tmp); \
+} while (0)
+
+/* Flow control macros */
+#define DEOPT_IF(cond, instname) ((void)0)
+#define JUMPBY(offset) ((void)0)
+#define GO_TO_INSTRUCTION(instname) ((void)0)
+#define DISPATCH_SAME_OPARG() ((void)0)
+#define DISPATCH() ((void)0)
 
 #define inst(name) case name:
 #define family(name) static int family_##name
@@ -43,7 +78,7 @@ typedef struct {
     PyObject *kwnames;
 } CallShape;
 
-static void
+static PyObject *
 dummy_func(
     PyThreadState *tstate,
     _PyInterpreterFrame *frame,
@@ -112,7 +147,6 @@ dummy_func(
 
         // stack effect: ( -- __0)
         inst(LOAD_CONST) {
-            PREDICTED(LOAD_CONST);
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
             PUSH(value);
@@ -431,7 +465,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(BINARY_SUBSCR) {
-            PREDICTED(BINARY_SUBSCR);
             PyObject *sub = POP();
             PyObject *container = TOP();
             PyObject *res = PyObject_GetItem(container, sub);
@@ -631,7 +664,6 @@ dummy_func(
 
         // stack effect: (__0, __1, __2 -- )
         inst(STORE_SUBSCR) {
-            PREDICTED(STORE_SUBSCR);
             PyObject *sub = TOP();
             PyObject *container = SECOND();
             PyObject *v = THIRD();
@@ -884,7 +916,6 @@ dummy_func(
 
         // stack effect: ( -- )
         inst(GET_AWAITABLE) {
-            PREDICTED(GET_AWAITABLE);
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
 
@@ -1204,7 +1235,6 @@ dummy_func(
 
         // stack effect: (__0 -- __array[oparg])
         inst(UNPACK_SEQUENCE) {
-            PREDICTED(UNPACK_SEQUENCE);
             PyObject *seq = POP();
             PyObject **top = stack_pointer + oparg;
             if (!unpack_iterable(tstate, seq, oparg, -1, top)) {
@@ -1290,7 +1320,6 @@ dummy_func(
 
         // stack effect: (__0, __1 -- )
         inst(STORE_ATTR) {
-            PREDICTED(STORE_ATTR);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *v = SECOND();
@@ -1407,7 +1436,6 @@ dummy_func(
 
         // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL) {
-            PREDICTED(LOAD_GLOBAL);
             int push_null = oparg & 1;
             PEEK(0) = NULL;
             PyObject *name = GETITEM(names, oparg>>1);
@@ -1871,7 +1899,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR) {
-            PREDICTED(LOAD_ATTR);
             PyObject *name = GETITEM(names, oparg >> 1);
             PyObject *owner = TOP();
             if (oparg & 1) {
@@ -2276,7 +2303,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(COMPARE_OP) {
-            PREDICTED(COMPARE_OP);
             assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -2539,7 +2565,6 @@ dummy_func(
 
         // stack effect: ( -- )
         inst(JUMP_BACKWARD) {
-            PREDICTED(JUMP_BACKWARD);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
@@ -2547,7 +2572,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(POP_JUMP_IF_FALSE) {
-            PREDICTED(POP_JUMP_IF_FALSE);
             PyObject *cond = POP();
             if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
@@ -2788,7 +2812,6 @@ dummy_func(
 
         // stack effect: ( -- __0)
         inst(FOR_ITER) {
-            PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
@@ -3118,7 +3141,6 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL) {
-            PREDICTED(CALL);
             int total_args, is_meth;
             is_meth = is_method(stack_pointer, oparg);
             PyObject *function = PEEK(oparg + 1);
@@ -3216,7 +3238,6 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_PY_EXACT_ARGS) {
-            PREDICTED(CALL_PY_EXACT_ARGS);
             assert(call_shape.kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
@@ -3721,7 +3742,6 @@ dummy_func(
 
         // error: CALL_FUNCTION_EX has irregular stack effect
         inst(CALL_FUNCTION_EX) {
-            PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
@@ -3913,7 +3933,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(BINARY_OP) {
-            PREDICTED(BINARY_OP);
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
             assert(0 <= oparg);
@@ -3992,13 +4011,14 @@ dummy_func(
 // END BYTECODES //
 
     }
- error:;
- exception_unwind:;
- handle_eval_breaker:;
- resume_frame:;
- resume_with_error:;
- start_frame:;
- unbound_local_error:;
+ error:
+ exception_unwind:
+ handle_eval_breaker:
+ resume_frame:
+ resume_with_error:
+ start_frame:
+ unbound_local_error:
+    ;
 }
 
 // Families go below this point //
