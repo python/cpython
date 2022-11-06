@@ -70,6 +70,41 @@ Important deprecations, removals or restrictions:
 
 * :pep:`623`, Remove wstr from Unicode
 
+* :pep:`632`, Remove the ``distutils`` package.
+
+Improved Error Messages
+=======================
+
+* Improve the error suggestion for :exc:`NameError` exceptions for instances.
+  Now if a :exc:`NameError` is raised in a method and the instance has an
+  attribute that's exactly equal to the name in the exception, the suggestion
+  will include ``self.<NAME>`` instead of the closest match in the method
+  scope. Contributed by Pablo Galindo in :gh:`99139`.
+
+    >>> class A:
+    ...    def __init__(self):
+    ...        self.blech = 1
+    ...
+    ...    def foo(self):
+    ...        somethin = blech
+
+    >>> A().foo()
+    Traceback (most recent call last):
+      File "<stdin>", line 1
+        somethin = blech
+                   ^^^^^
+    NameError: name 'blech' is not defined. Did you mean: 'self.blech'?
+
+
+* Improve the :exc:`SyntaxError` error message when the user types ``import x
+  from y`` instead of ``from y import x``. Contributed by Pablo Galindo in :gh:`98931`.
+
+    >>> import a.y.z from b.y.z
+    Traceback (most recent call last):
+      File "<stdin>", line 1
+        import a.y.z from b.y.z
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    SyntaxError: Did you mean to use 'from ... import ...' instead?
 
 New Features
 ============
@@ -109,6 +144,22 @@ Other Language Changes
   chance to execute the GC periodically. (Contributed by Pablo Galindo in
   :gh:`97922`.)
 
+* A backslash-character pair that is not a valid escape sequence now generates
+  a :exc:`SyntaxWarning`, instead of :exc:`DeprecationWarning`.
+  For example, ``re.compile("\d+\.\d+")`` now emits a :exc:`SyntaxWarning`
+  (``"\d"`` is an invalid escape sequence), use raw strings for regular
+  expression: ``re.compile(r"\d+\.\d+")``.
+  In a future Python version, :exc:`SyntaxError` will eventually be raised,
+  instead of :exc:`SyntaxWarning`.
+  (Contributed by Victor Stinner in :gh:`98401`.)
+
+* Octal escapes with value larger than ``0o377`` (ex: ``"\477"``), deprecated
+  in Python 3.11, now produce a :exc:`SyntaxWarning`, instead of
+  :exc:`DeprecationWarning`.
+  In a future Python version they will be eventually a :exc:`SyntaxError`.
+  (Contributed by Victor Stinner in :gh:`98401`.)
+
+
 New Modules
 ===========
 
@@ -117,6 +168,12 @@ New Modules
 
 Improved Modules
 ================
+
+array
+-----
+
+* The :class:`array.array` class now supports subscripting, making it a
+  :term:`generic type`. (Contributed by Jelle Zijlstra in :gh:`98658`.)
 
 asyncio
 -------
@@ -141,13 +198,17 @@ asyncio
   and will be removed in Python 3.14.
   (Contributed by Kumar Aditya in :gh:`94597`.)
 
-
 pathlib
 -------
 
 * Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
   all file or directory names within them, similar to :func:`os.walk`.
   (Contributed by Stanislav Zmiev in :gh:`90385`.)
+
+* Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
+  to allow the insertion of ``..`` entries in the result; this behavior is
+  more consistent with :func:`os.path.relpath`.
+  (Contributed by Domenico Ragusa in :issue:`40358`.)
 
 dis
 ---
@@ -370,6 +431,12 @@ although there is currently no date scheduled for their removal.
 Removed
 =======
 
+* Remove the ``distutils`` package. It was deprecated in Python 3.10 by
+  :pep:`632` "Deprecate distutils module". For projects still using
+  ``distutils`` and cannot be updated to something else, the ``setuptools``
+  project can be installed: it still provides ``distutils``.
+  (Contributed by Victor Stinner in :gh:`92584`.)
+
 * Removed many old deprecated :mod:`unittest` features:
 
   - A number of :class:`~unittest.TestCase` method aliases:
@@ -508,6 +575,16 @@ Removed
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
   (Contributed by Julien Palard in :gh:`98179`.)
+
+* Remove the *keyfile*, *certfile* and *check_hostname* parameters, deprecated
+  since Python 3.6, in modules: :mod:`ftplib`, :mod:`http.client`,
+  :mod:`imaplib`, :mod:`poplib` and :mod:`smtplib`. Use the *context* parameter
+  (*ssl_context* in :mod:`imaplib`) instead.
+  (Contributed by Victor Stinner in :gh:`94172`.)
+
+* :mod:`ftplib`: Remove the ``FTP_TLS.ssl_version`` class attribute: use the
+  *context* parameter instead.
+  (Contributed by Victor Stinner in :gh:`94172`.)
 
 
 Porting to Python 3.12

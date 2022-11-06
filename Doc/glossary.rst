@@ -882,7 +882,7 @@ Glossary
 
    package
       A Python :term:`module` which can contain submodules or recursively,
-      subpackages.  Technically, a package is a Python module with an
+      subpackages.  Technically, a package is a Python module with a
       ``__path__`` attribute.
 
       See also :term:`regular package` and :term:`namespace package`.

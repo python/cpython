@@ -194,7 +194,7 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | Format | C Type                   | Python type        | Standard size  | Notes      |
 +========+==========================+====================+================+============+
-| ``x``  | pad byte                 | no value           |                |            |
+| ``x``  | pad byte                 | no value           |                | \(7)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``c``  | :c:expr:`char`           | bytes of length 1  | 1              |            |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -290,6 +290,9 @@ Notes:
    typical machine, an unsigned short can be used for storage, but not for math
    operations. See the Wikipedia page on the `half-precision floating-point
    format <half precision format_>`_ for more information.
+
+(7)
+   For padding, ``x`` inserts null bytes.
 
 
 A format character may be preceded by an integral repeat count.  For example,

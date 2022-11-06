@@ -4955,9 +4955,10 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *abstract_methods;
         PyObject *sorted_methods;
         PyObject *joined;
+        PyObject* comma_w_quotes_sep;
         Py_ssize_t method_count;
 
-        /* Compute ", ".join(sorted(type.__abstractmethods__))
+        /* Compute "', '".join(sorted(type.__abstractmethods__))
            into joined. */
         abstract_methods = type_abstractmethods(type, NULL);
         if (abstract_methods == NULL)
@@ -4970,22 +4971,28 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(sorted_methods);
             return NULL;
         }
-        _Py_DECLARE_STR(comma_sep, ", ");
-        joined = PyUnicode_Join(&_Py_STR(comma_sep), sorted_methods);
+        comma_w_quotes_sep = PyUnicode_FromString("', '");
+        joined = PyUnicode_Join(comma_w_quotes_sep, sorted_methods);
         method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);
-        if (joined == NULL)
+        if (joined == NULL)  {
+            Py_DECREF(comma_w_quotes_sep);
             return NULL;
-        if (method_count == -1)
+        }
+        if (method_count == -1) {
+            Py_DECREF(comma_w_quotes_sep);
+            Py_DECREF(joined);
             return NULL;
+        }
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
-                     "without an implementation for abstract method%s %U",
+                     "without an implementation for abstract method%s '%U'",
                      type->tp_name,
                      method_count > 1 ? "s" : "",
                      joined);
         Py_DECREF(joined);
+        Py_DECREF(comma_w_quotes_sep);
         return NULL;
     }
     PyObject *obj = type->tp_alloc(type, 0);

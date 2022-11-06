@@ -543,8 +543,10 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
+        >> STOPITERATION_ERROR
+           RERAISE                  1
 ExceptionTable:
-6 rows
+12 rows
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
@@ -713,7 +715,7 @@ def load_test(x, y=0):
     return a, b
 
 dis_load_test_quickened_code = """\
-%3d           0 RESUME_QUICK             0
+%3d           0 RESUME                   0
 
 %3d           2 LOAD_FAST__LOAD_FAST     0 (x)
               4 LOAD_FAST                1 (y)
@@ -733,7 +735,7 @@ def loop_test():
         load_test(i)
 
 dis_loop_test_quickened_code = """\
-%3d        RESUME_QUICK             0
+%3d        RESUME                   0
 
 %3d        BUILD_LIST               0
            LOAD_CONST               1 ((1, 2, 3))
@@ -748,7 +750,7 @@ dis_loop_test_quickened_code = """\
            LOAD_FAST                0 (i)
            CALL_PY_WITH_DEFAULTS     1
            POP_TOP
-           JUMP_BACKWARD_QUICK     17 (to 16)
+           JUMP_BACKWARD           17 (to 16)
 
 %3d     >> END_FOR
            LOAD_CONST               0 (None)
@@ -774,7 +776,7 @@ dis_extended_arg_quick_code = """\
 """% (extended_arg_quick.__code__.co_firstlineno,
       extended_arg_quick.__code__.co_firstlineno + 1,)
 
-QUICKENING_WARMUP_DELAY = 8
+ADAPTIVE_WARMUP_DELAY = 2
 
 class DisTestBase(unittest.TestCase):
     "Common utilities for DisTests and TestDisTraceback"
@@ -1079,7 +1081,7 @@ class DisTests(DisTestBase):
         check(dis_nested_2)
 
     @staticmethod
-    def code_quicken(f, times=QUICKENING_WARMUP_DELAY):
+    def code_quicken(f, times=ADAPTIVE_WARMUP_DELAY):
         for _ in range(times):
             f()
 
@@ -1092,7 +1094,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_binary_specialize(self):
         binary_op_quicken = """\
-  0           0 RESUME_QUICK             0
+  0           0 RESUME                   0
 
   1           2 LOAD_NAME                0 (a)
               4 LOAD_NAME                1 (b)
@@ -1110,7 +1112,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE     0 (+)", True)
 
         binary_subscr_quicken = """\
-  0           0 RESUME_QUICK             0
+  0           0 RESUME                   0
 
   1           2 LOAD_NAME                0 (a)
               4 LOAD_CONST               0 (0)
@@ -1130,7 +1132,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_load_attr_specialize(self):
         load_attr_quicken = """\
-  0           0 RESUME_QUICK             0
+  0           0 RESUME                   0
 
   1           2 LOAD_CONST               0 ('a')
               4 LOAD_ATTR_SLOT           0 (__class__)
@@ -1144,7 +1146,7 @@ class DisTests(DisTestBase):
     @cpython_only
     def test_call_specialize(self):
         call_quicken = """\
-  0        RESUME_QUICK             0
+  0        RESUME                   0
 
   1        PUSH_NULL
            LOAD_NAME                0 (str)
@@ -1190,7 +1192,7 @@ class DisTests(DisTestBase):
         for quickened in (False, True):
             for adaptive in (False, True):
                 with self.subTest(f"{quickened=}, {adaptive=}"):
-                    if quickened and adaptive:
+                    if adaptive:
                         pattern = r"^(\w+: \d+)?$"
                     else:
                         pattern = r"^(\w+: 0)?$"
@@ -1198,10 +1200,9 @@ class DisTests(DisTestBase):
                     for cache in caches:
                         self.assertRegex(cache, pattern)
                     total_caches = 23
-                    empty_caches = 8 if adaptive and quickened else total_caches
+                    empty_caches = 8 if adaptive else total_caches
                     self.assertEqual(caches.count(""), empty_caches)
                     self.assertEqual(len(caches), total_caches)
-
 
 class DisWithFileTests(DisTests):
 

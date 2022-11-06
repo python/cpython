@@ -157,7 +157,7 @@ functions.
 
 - Threading is disabled by default. The ``configure`` option
   ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
-  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``. 
+  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``.
 - pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
   The Node.JS runtime keeps a pool of web workers around. Each web worker
   uses several file descriptors (eventfd, epoll, pipe).
@@ -203,7 +203,7 @@ functions.
 - The interactive shell does not handle copy 'n paste and unicode support
   well.
 - The bundled stdlib is limited. Network-related modules,
-  distutils, multiprocessing, dbm, tests and similar modules
+  multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
 - In-memory file system (MEMFS) is not persistent and limited.
