@@ -640,7 +640,7 @@ class ReferencesTestCase(TestBase):
     def test_callback_reachable_one_way(self):
         import gc
 
-        # In this case,
+        # This one broke the first patch that fixed the previous test. In this case,
         # the objects reachable from the callback aren't also reachable
         # from the object (c1) *triggering* the callback:  you can get to
         # c1 from c2, but not vice-versa.  The result was that c2's __dict__
