@@ -102,7 +102,7 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
         # Write the body
         ninputs = len(instr.inputs or ())
         for line in blocklines:
-            if m := re.match(r"(\s*)ERROR_IF\(([^,]+), (\w+)\);\s$", line):
+            if m := re.match(r"(\s*)ERROR_IF\(([^,]+), (\w+)\);\s*$", line):
                 space, cond, label = m.groups()
                 # ERROR_IF() must remove the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
