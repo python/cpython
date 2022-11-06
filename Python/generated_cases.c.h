@@ -3842,72 +3842,99 @@
 
         TARGET(LOAD_FAST__LOAD_FAST) {
             {
+                PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             NEXTOPARG();
             next_instr++;
             {
+                PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             DISPATCH();
         }
 
         TARGET(LOAD_FAST__LOAD_CONST) {
             {
+                PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             NEXTOPARG();
             next_instr++;
             {
+                PyObject *value;
                 value = GETITEM(consts, oparg);
                 Py_INCREF(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             DISPATCH();
         }
 
         TARGET(STORE_FAST__LOAD_FAST) {
             {
+                PyObject *value = PEEK(1);
                 SETLOCAL(oparg, value);
+                STACK_SHRINK(1);
             }
             NEXTOPARG();
             next_instr++;
             {
+                PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             DISPATCH();
         }
 
         TARGET(STORE_FAST__STORE_FAST) {
             {
+                PyObject *value = PEEK(1);
                 SETLOCAL(oparg, value);
+                STACK_SHRINK(1);
             }
             NEXTOPARG();
             next_instr++;
             {
+                PyObject *value = PEEK(1);
                 SETLOCAL(oparg, value);
+                STACK_SHRINK(1);
             }
             DISPATCH();
         }
 
         TARGET(LOAD_CONST__LOAD_FAST) {
             {
+                PyObject *value;
                 value = GETITEM(consts, oparg);
                 Py_INCREF(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             NEXTOPARG();
             next_instr++;
             {
+                PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             DISPATCH();
         }
