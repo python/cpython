@@ -236,9 +236,7 @@ syslog_closelog_impl(PyObject *module)
         state->S_log_open = 0;
     }
 
-    if (state->S_ident_o != NULL) {
-        Py_CLEAR(state->S_ident_o);
-    }
+    Py_CLEAR(state->S_ident_o);
     Py_RETURN_NONE;
 }
 
@@ -403,9 +401,7 @@ _syslog_clear(PyObject *module)
         state->S_log_open = 0;
     }
 
-    if (state->S_ident_o != NULL) {
-        Py_CLEAR(state->S_ident_o);
-    }
+    Py_CLEAR(state->S_ident_o);
     return 0;
 }
 
