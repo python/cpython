@@ -6,6 +6,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -70,7 +71,7 @@ typedef struct {
 static inline asyncio_state *
 get_asyncio_state(PyObject *mod)
 {
-    asyncio_state *state = PyModule_GetState(mod);
+    asyncio_state *state = _PyModule_GetState(mod);
     assert(state != NULL);
     return state;
 }
