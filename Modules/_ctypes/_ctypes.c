@@ -125,7 +125,6 @@ bytes(cdata)
 #include "ctypes.h"
 
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_abstract.h"      // _PY_BUFFER_MUTABLE_BUFFER_GETSET
 
 PyObject *PyExc_ArgError = NULL;
 
@@ -2793,11 +2792,6 @@ static PyBufferProcs PyCData_as_buffer = {
     NULL,
 };
 
-static PyGetSetDef PyCData_getset[] = {
-    _PY_BUFFER_MUTABLE_BUFFER_GETSET
-    {NULL}
-};
-
 /*
  * CData objects are mutable, so they cannot be hashable!
  */
@@ -2907,7 +2901,7 @@ PyTypeObject PyCData_Type = {
     0,                                          /* tp_iternext */
     PyCData_methods,                                    /* tp_methods */
     PyCData_members,                                    /* tp_members */
-    PyCData_getset,                             /* tp_getset */
+    0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
@@ -3330,7 +3324,6 @@ static PyGetSetDef PyCFuncPtr_getsets[] = {
     { "argtypes", (getter)PyCFuncPtr_get_argtypes,
       (setter)PyCFuncPtr_set_argtypes,
       "specify the argument types", NULL },
-    _PY_BUFFER_MUTABLE_BUFFER_GETSET
     { NULL, NULL }
 };
 
@@ -4455,7 +4448,7 @@ static PyTypeObject Struct_Type = {
     0,                                          /* tp_iternext */
     0,                                          /* tp_methods */
     0,                                          /* tp_members */
-    PyCData_getset,                             /* tp_getset */
+    0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
@@ -4497,7 +4490,7 @@ static PyTypeObject Union_Type = {
     0,                                          /* tp_iternext */
     0,                                          /* tp_methods */
     0,                                          /* tp_members */
-    PyCData_getset,                             /* tp_getset */
+    0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
@@ -4817,7 +4810,7 @@ PyTypeObject PyCArray_Type = {
     0,                                          /* tp_iternext */
     Array_methods,                              /* tp_methods */
     0,                                          /* tp_members */
-    PyCData_getset,                             /* tp_getset */
+    0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
@@ -4948,7 +4941,6 @@ Simple_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 static PyGetSetDef Simple_getsets[] = {
     { "value", (getter)Simple_get_value, (setter)Simple_set_value,
       "current value", NULL },
-    _PY_BUFFER_MUTABLE_BUFFER_GETSET
     { NULL, NULL }
 };
 
@@ -5192,7 +5184,6 @@ static PyGetSetDef Pointer_getsets[] = {
     { "contents", (getter)Pointer_get_contents,
       (setter)Pointer_set_contents,
       "the object this pointer points to (read-write)", NULL },
-    _PY_BUFFER_MUTABLE_BUFFER_GETSET
     { NULL, NULL }
 };
 

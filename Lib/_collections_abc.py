@@ -49,7 +49,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
-           "ByteString", "Buffer", "MutableBuffer",
+           "ByteString", "Buffer",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -451,18 +451,6 @@ class Buffer(metaclass=ABCMeta):
     def __subclasshook__(cls, C):
         if cls is Buffer:
             return _check_methods(C, "__buffer__")
-        return NotImplemented
-
-
-class MutableBuffer(Buffer):
-
-    __slots__ = ()
-    __mutable_buffer__ = True
-
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is MutableBuffer:
-            return _check_methods(C, "__buffer__", "__mutable_buffer__")
         return NotImplemented
 
 

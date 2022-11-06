@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "pycore_abstract.h"      // _PY_BUFFER_MUTABLE_BUFFER_GETSET
 #include "pycore_object.h"
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
@@ -1125,11 +1124,6 @@ static PyBufferProcs bytesiobuf_as_buffer = {
     (releasebufferproc) bytesiobuf_releasebuffer,
 };
 
-static PyGetSetDef bytesiobuf_getset[] = {
-    _PY_BUFFER_MUTABLE_BUFFER_GETSET
-    {NULL}
-};
-
 Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_io._BytesIOBuffer",                      /*tp_name*/
@@ -1160,7 +1154,7 @@ Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type = {
     0,                                         /*tp_iternext*/
     0,                                         /*tp_methods*/
     0,                                         /*tp_members*/
-    bytesiobuf_getset,                         /*tp_getset*/
+    0,                                         /*tp_getset*/
     0,                                         /*tp_base*/
     0,                                         /*tp_dict*/
     0,                                         /*tp_descr_get*/

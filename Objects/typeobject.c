@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "pycore_call.h"
-#include "pycore_abstract.h"      // _PyBuffer_MutableBufferGetter
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -6196,24 +6195,15 @@ type_add_getset(PyTypeObject *type)
 
     PyObject *dict = type->tp_dict;
     for (; gsp->name != NULL; gsp++) {
-        if (gsp->get == _PyBuffer_MutableBufferGetter) {
-            PyObject *name = PyUnicode_FromString(gsp->name);
-            if (PyDict_SetDefault(dict, name, Py_True) == NULL) {
-                Py_DECREF(name);
-                return -1;
-            }
-            Py_DECREF(name);
-        } else {
-            PyObject *descr = PyDescr_NewGetSet(type, gsp);
-            if (descr == NULL) {
-                return -1;
-            }
-            if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
-                Py_DECREF(descr);
-                return -1;
-            }
-            Py_DECREF(descr);
+        PyObject *descr = PyDescr_NewGetSet(type, gsp);
+        if (descr == NULL) {
+            return -1;
         }
+        if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
+            Py_DECREF(descr);
+            return -1;
+        }
+        Py_DECREF(descr);
     }
     return 0;
 }
@@ -8565,7 +8555,7 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
 
     assert(PyMemoryView_Check(bw->mv));
     Py_TYPE(bw->mv)->tp_as_buffer->bf_releasebuffer(bw->mv, view);
-    if (Py_TYPE(bw->obj)->tp_as_buffer != NULL 
+    if (Py_TYPE(bw->obj)->tp_as_buffer != NULL
         && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer != NULL) {
         Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer(bw->obj, view);
     }
@@ -8589,7 +8579,7 @@ PyTypeObject _PyBufferWrapper_Type = {
     .tp_as_buffer = &bufferwrapper_as_buffer,
 };
 
-static int 
+static int
 slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
 {
     PyObject *flags_obj = PyLong_FromLong(flags);
@@ -8837,7 +8827,7 @@ static slotdef slotdefs[] = {
             "Return a buffer object that exposes the underlying memory of the object."),
     BUFSLOT(__release_buffer__, bf_releasebuffer, slot_bf_releasebuffer, wrap_releasebuffer,
             "__release_buffer__($self, /)\n--\n\n"
-            "Release the buffer object that exposes the underlying memory of the object."), 
+            "Release the buffer object that exposes the underlying memory of the object."),
 
     AMSLOT(__await__, am_await, slot_am_await, wrap_unaryfunc,
            "__await__($self, /)\n--\n\nReturn an iterator to be used in await expression."),
