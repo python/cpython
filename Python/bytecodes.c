@@ -377,16 +377,11 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_SUBSCR) {
-            PyObject *sub = POP();
-            PyObject *container = TOP();
-            PyObject *res = PyObject_GetItem(container, sub);
+        inst(BINARY_SUBSCR, (container, sub -- res)) {
+            res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            ERROR_IF(res == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
         }
 

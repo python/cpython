@@ -46,8 +46,8 @@
         }
 
         TARGET(LOAD_CONST) {
-            PyObject *value;
             PREDICTED(LOAD_CONST);
+            PyObject *value;
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
             STACK_GROW(1);
@@ -360,15 +360,16 @@
 
         TARGET(BINARY_SUBSCR) {
             PREDICTED(BINARY_SUBSCR);
-            PyObject *sub = POP();
-            PyObject *container = TOP();
-            PyObject *res = PyObject_GetItem(container, sub);
+            PyObject *sub = PEEK(1);
+            PyObject *container = PEEK(2);
+            PyObject *res;
+            res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            if (res == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            STACK_SHRINK(1);
+            POKE(1, res);
             DISPATCH();
         }
 
