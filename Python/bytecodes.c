@@ -69,6 +69,7 @@ do { \
 #define DISPATCH() ((void)0)
 
 #define inst(name) case name:
+#define super(name) static int SUPER_##name
 #define family(name) static int family_##name
 
 #define NAME_ERROR_MSG \
@@ -158,67 +159,11 @@ dummy_func(
             SETLOCAL(oparg, value);
         }
 
-        // stack effect: ( -- __0, __1)
-        inst(LOAD_FAST__LOAD_FAST) {
-            PyObject *value = GETLOCAL(oparg);
-            assert(value != NULL);
-            NEXTOPARG();
-            next_instr++;
-            Py_INCREF(value);
-            PUSH(value);
-            value = GETLOCAL(oparg);
-            assert(value != NULL);
-            Py_INCREF(value);
-            PUSH(value);
-        }
-
-        // stack effect: ( -- __0, __1)
-        inst(LOAD_FAST__LOAD_CONST) {
-            PyObject *value = GETLOCAL(oparg);
-            assert(value != NULL);
-            NEXTOPARG();
-            next_instr++;
-            Py_INCREF(value);
-            PUSH(value);
-            value = GETITEM(consts, oparg);
-            Py_INCREF(value);
-            PUSH(value);
-        }
-
-        // stack effect: ( -- )
-        inst(STORE_FAST__LOAD_FAST) {
-            PyObject *value = POP();
-            SETLOCAL(oparg, value);
-            NEXTOPARG();
-            next_instr++;
-            value = GETLOCAL(oparg);
-            assert(value != NULL);
-            Py_INCREF(value);
-            PUSH(value);
-        }
-
-        // stack effect: (__0, __1 -- )
-        inst(STORE_FAST__STORE_FAST) {
-            PyObject *value = POP();
-            SETLOCAL(oparg, value);
-            NEXTOPARG();
-            next_instr++;
-            value = POP();
-            SETLOCAL(oparg, value);
-        }
-
-        // stack effect: ( -- __0, __1)
-        inst(LOAD_CONST__LOAD_FAST) {
-            PyObject *value = GETITEM(consts, oparg);
-            NEXTOPARG();
-            next_instr++;
-            Py_INCREF(value);
-            PUSH(value);
-            value = GETLOCAL(oparg);
-            assert(value != NULL);
-            Py_INCREF(value);
-            PUSH(value);
-        }
+        super(LOAD_FAST__LOAD_FAST) = LOAD_FAST + LOAD_FAST;
+        super(LOAD_FAST__LOAD_CONST) = LOAD_FAST + LOAD_CONST;
+        super(STORE_FAST__LOAD_FAST)  = STORE_FAST + LOAD_FAST;
+        super(STORE_FAST__STORE_FAST) = STORE_FAST + STORE_FAST;
+        super (LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
 
         // stack effect: (__0 -- )
         inst(POP_TOP) {
