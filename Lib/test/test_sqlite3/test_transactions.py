@@ -26,6 +26,7 @@ from contextlib import contextmanager
 
 from test.support import LOOPBACK_TIMEOUT
 from test.support.os_helper import TESTFN, unlink
+from test.support.script_helper import assert_python_ok
 
 from test.test_sqlite3.test_dbapi import memory_database
 
@@ -517,6 +518,16 @@ class AutocommitAttribute(unittest.TestCase):
                 cx.execute("BEGIN")
                 cx.executescript("SELECT 1")
                 self.assertFalse(cx.in_transaction)
+
+    def test_autocommit_disabled_implicit_shutdown(self):
+        # The implicit ROLLBACK should not call back into Python during
+        # interpreter tear-down.
+        code = """if 1:
+            import sqlite3
+            cx = sqlite3.connect(":memory:", autocommit=False)
+            cx.set_trace_callback(print)
+        """
+        assert_python_ok("-c", code, PYTHONIOENCODING="utf-8")
 
 
 if __name__ == "__main__":

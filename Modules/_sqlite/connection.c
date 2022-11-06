@@ -379,12 +379,29 @@ free_callback_contexts(pysqlite_Connection *self)
 }
 
 static void
+remove_callbacks(sqlite3 *db)
+{
+#ifdef HAVE_TRACE_V2
+    sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
+#else
+    sqlite3_trace(db, 0, (void*)0);
+#endif
+    sqlite3_progress_handler(db, 0, 0, (void *)0);
+    (void)sqlite3_set_authorizer(db, NULL, NULL);
+}
+
+static void
 connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
         if (self->autocommit == AUTOCOMMIT_DISABLED &&
             !sqlite3_get_autocommit(self->db))
         {
+            /* If close is implicitly called as a result of interpreter
+             * tear-down, we must not call back into Python. */
+            if (_Py_IsFinalizing()) {
+                remove_callbacks(self->db);
+            }
             (void)connection_exec_stmt(self, "ROLLBACK");
         }
 
