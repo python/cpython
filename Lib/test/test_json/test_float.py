@@ -26,8 +26,9 @@ class TestFloat:
                 res = self.loads(out)
                 self.assertEqual(len(res), 1)
                 self.assertNotEqual(res[0], res[0])
-            self.assertRaises(ValueError, self.dumps, [val], allow_nan=False)
-
+            self.assertRaisesRegex(
+                ValueError, str(val), self.dumps, [val], allow_nan=False
+            )
 
 class TestPyFloat(TestFloat, PyTest): pass
 class TestCFloat(TestFloat, CTest): pass

@@ -1324,21 +1324,25 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
     /* Return the JSON representation of a PyFloat. */
     double i = PyFloat_AS_DOUBLE(obj);
     if (!Py_IS_FINITE(i)) {
-        if (!s->allow_nan) {
-            PyErr_SetString(
-                    PyExc_ValueError,
-                    "Out of range float values are not JSON compliant"
-                    );
-            return NULL;
-        }
+        char* value;
+        char *py_value;
         if (i > 0) {
-            return PyUnicode_FromString("Infinity");
+          value = "Infinity";
+          py_value = "inf";
+        } else if (i < 0) {
+          value = "-Infinity";
+          py_value = "-inf";
+        } else {
+          value = "NaN";
+          py_value = "nan";
         }
-        else if (i < 0) {
-            return PyUnicode_FromString("-Infinity");
-        }
-        else {
-            return PyUnicode_FromString("NaN");
+
+        if (!s->allow_nan) {
+            char message[55] = "Out of range float values are not JSON compliant: ";
+            PyErr_SetString(PyExc_ValueError, strcat(message, py_value));
+            return NULL;
+        } else {
+          return PyUnicode_FromString(value);
         }
     }
     return PyFloat_Type.tp_repr(obj);
