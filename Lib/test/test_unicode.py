@@ -2632,6 +2632,10 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_FromFormat()
     def test_from_format(self):
+        # Length modifiers "j" and "t" are not tested here because ctypes does
+        # not expose types for intmax_t and ptrdiff_t.
+        # _testcapi.test_string_from_format() has a wider coverage of all
+        # formats.
         import_helper.import_module('ctypes')
         from ctypes import (
             c_char_p,
@@ -2768,59 +2772,31 @@ class CAPITest(unittest.TestCase):
                      b'%03i', c_int(10))
         check_format('0010',
                      b'%0.4i', c_int(10))
-        check_format('-123',
-                     b'%i', c_int(-123))
-        check_format('-123',
-                     b'%li', c_long(-123))
-        check_format('-123',
-                     b'%lli', c_longlong(-123))
-        check_format('-123',
-                     b'%zi', c_ssize_t(-123))
-
-        check_format('-123',
-                     b'%d', c_int(-123))
-        check_format('-123',
-                     b'%ld', c_long(-123))
-        check_format('-123',
-                     b'%lld', c_longlong(-123))
-        check_format('-123',
-                     b'%zd', c_ssize_t(-123))
-
-        check_format('123',
-                     b'%u', c_uint(123))
-        check_format('123',
-                     b'%lu', c_ulong(123))
-        check_format('123',
-                     b'%llu', c_ulonglong(123))
-        check_format('123',
-                     b'%zu', c_size_t(123))
-
-        check_format('123',
-                     b'%o', c_uint(0o123))
-        check_format('123',
-                     b'%lo', c_ulong(0o123))
-        check_format('123',
-                     b'%llo', c_ulonglong(0o123))
-        check_format('123',
-                     b'%zo', c_size_t(0o123))
-
-        check_format('abc',
-                     b'%x', c_uint(0xabc))
-        check_format('abc',
-                     b'%lx', c_ulong(0xabc))
-        check_format('abc',
-                     b'%llx', c_ulonglong(0xabc))
-        check_format('abc',
-                     b'%zx', c_size_t(0xabc))
-
-        check_format('ABC',
-                     b'%X', c_uint(0xabc))
-        check_format('ABC',
-                     b'%lX', c_ulong(0xabc))
-        check_format('ABC',
-                     b'%llX', c_ulonglong(0xabc))
-        check_format('ABC',
-                     b'%zX', c_size_t(0xabc))
+        for conv in [b'i', b'd']:
+            for mod, ctype in [
+                (b'', c_int),
+                (b'l', c_long),
+                (b'll', c_longlong),
+                (b'z', c_ssize_t),
+            ]:
+                with self.subTest(format=b'%' + mod + conv):
+                    check_format(expected,
+                                 b'%' + mod + conv, ctype(value))
+        for conv, value, expected in [
+            (b'u', 123, '123'),
+            (b'o', 0o123, '123'),
+            (b'x', 0xabc, 'abc'),
+            (b'X', 0xabc, 'ABC'),
+        ]:
+            for mod, ctype in [
+                (b'', c_uint),
+                (b'l', c_ulong),
+                (b'll', c_ulonglong),
+                (b'z', c_size_t),
+            ]:
+                with self.subTest(format=b'%' + mod + conv):
+                    check_format(expected,
+                                 b'%' + mod + conv, ctype(value))
 
         # test long output
         min_longlong = -(2 ** (8 * sizeof(c_longlong) - 1))
@@ -2986,14 +2962,14 @@ class CAPITest(unittest.TestCase):
         check_format('',
                      b'%s', b'')
 
-        # check for crashes
+        # test invalid format strings. these tests are just here
+-       # to check for crashes and should not be considered as specifications
         for fmt in (b'%', b'%0', b'%01', b'%.', b'%.1',
                     b'%0%s', b'%1%s', b'%.%s', b'%.1%s', b'%1abc',
                     b'%l', b'%ll', b'%z', b'%lls', b'%zs'):
             with self.subTest(fmt=fmt):
                 self.assertRaisesRegex(SystemError, 'invalid format string',
                     PyUnicode_FromFormat, fmt, b'abc')
-
         self.assertRaisesRegex(SystemError, 'invalid format string',
             PyUnicode_FromFormat, b'%+i', c_int(10))
 

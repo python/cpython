@@ -406,8 +406,8 @@ APIs:
 
    #. Minimum field width (optional).
       If specified as an ``'*'`` (asterisk), the actual width is given in the
-      next argument, which must be of type int, and the object to convert comes
-      after the minimum field width and optional precision.
+      next argument, which must be of type :c:expr:`int`, and the object to
+      convert comes after the minimum field width and optional precision.
 
    #. Precision (optional), given as a ``'.'`` (dot) followed by the precision.
       If specified as ``'*'`` (an asterisk), the actual precision is given in
