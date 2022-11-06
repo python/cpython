@@ -736,12 +736,6 @@ Porting to Python 3.12
   copied as-is to the result string, and any extra arguments discarded.
   (Contributed by Serhiy Storchaka in :gh:`95781`.)
 
-An unrecognized format character in :c:func:`PyUnicode_FromFormat` and
-  :c:func:`PyUnicode_FromFormatV` now sets a :exc:`SystemError`.
-  In previous versions it caused all the rest of the format string to be
-  copied as-is to the result string, and any extra arguments discarded.
-  (Contributed by Serhiy Storchaka in :gh:`95781`.)
-
 * Fixed wrong sign placement in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Philip Georgi in :gh:`95504`.)
