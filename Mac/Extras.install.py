@@ -3,7 +3,7 @@ directories (CVS, backup files, pyc files, etc)"""
 
 import sys
 import os
-import shutil
+from shutil import copy2
 
 verbose = 1
 debug = 0
@@ -34,7 +34,7 @@ def copycleandir(src, dst):
                 if verbose:
                     print("copy", os.path.join(cursrc, fn), os.path.join(curdst, fn))
                 if not debug:
-                    shutil.copy2(os.path.join(cursrc, fn), os.path.join(curdst, fn))
+                    copy2(os.path.join(cursrc, fn), os.path.join(curdst, fn))
             else:
                 if verbose:
                     print("skipfile", os.path.join(cursrc, fn))
