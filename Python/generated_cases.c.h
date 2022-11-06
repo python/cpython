@@ -58,7 +58,7 @@
         TARGET(STORE_FAST) {
             PyObject *value = PEEK(1);
             SETLOCAL(oparg, value);
-            STACK_GROW(-1);
+            STACK_SHRINK(1);
             DISPATCH();
         }
 
@@ -127,7 +127,7 @@
         TARGET(POP_TOP) {
             PyObject *value = PEEK(1);
             Py_DECREF(value);
-            STACK_GROW(-1);
+            STACK_SHRINK(1);
             DISPATCH();
         }
 
@@ -142,7 +142,7 @@
             PyObject *value1 = PEEK(2);
             Py_DECREF(value1);
             Py_DECREF(value2);
-            STACK_GROW(-2);
+            STACK_SHRINK(2);
             DISPATCH();
         }
 
@@ -206,7 +206,7 @@
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             if (prod == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            STACK_GROW(-1);
+            STACK_SHRINK(1);
             POKE(1, prod);
             DISPATCH();
         }
@@ -226,7 +226,7 @@
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             if (prod == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            STACK_GROW(-1);
+            STACK_SHRINK(1);
             POKE(1, prod);
             DISPATCH();
         }
@@ -244,7 +244,7 @@
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             if (sub == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            STACK_GROW(-1);
+            STACK_SHRINK(1);
             POKE(1, sub);
             DISPATCH();
         }
@@ -263,7 +263,7 @@
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             if (sub == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            STACK_GROW(-1);
+            STACK_SHRINK(1);
             POKE(1, sub);
             DISPATCH();
         }
@@ -281,7 +281,7 @@
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (TOP() == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-            STACK_GROW(-1);
+            STACK_SHRINK(1);
             POKE(1, res);
             DISPATCH();
         }
@@ -316,7 +316,7 @@
             if (*target_local == NULL) { STACK_SHRINK(2); goto error; }
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
-            STACK_GROW(-2);
+            STACK_SHRINK(2);
             DISPATCH();
         }
 

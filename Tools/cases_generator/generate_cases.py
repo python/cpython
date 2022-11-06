@@ -114,8 +114,10 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
                 f.write(line)
         noutputs = len(instr.outputs or ())
         diff = noutputs - ninputs
-        if diff != 0:
+        if diff > 0:
             f.write(f"{indent}    STACK_GROW({diff});\n")
+        elif diff < 0:
+            f.write(f"{indent}    STACK_SHRINK({-diff});\n")
         for i, output in enumerate(reversed(instr.outputs or ()), 1):
             f.write(f"{indent}    POKE({i}, {output});\n")
         assert instr.block
