@@ -359,7 +359,7 @@ faulthandler_fatal_error(int signum)
         PUTS(fd, "\n\n");
     }
     else {
-        char unknown_signum[255] = {0,};
+        char unknown_signum[23] = {0,};
         sprintf(unknown_signum, "%d", signum);
         PUTS(fd, "Fatal Python error from unexpected signum: ");
         PUTS(fd, unknown_signum);
