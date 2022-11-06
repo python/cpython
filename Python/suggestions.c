@@ -229,14 +229,12 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     }
 
     // Are we inside a method and the instance has an attribute called 'name'?
-    _Py_IDENTIFIER(self);
-    PyObject* self_str = _PyUnicode_FromId(&PyId_self); /* borrowed */
-    if (PySequence_Contains(dir, self_str) > 0) {
+    if (PySequence_Contains(dir, &_Py_ID(self)) > 0) {
         PyObject* locals = PyFrame_GetLocals(frame);
         if (!locals) {
             goto error;
         }
-        PyObject* self = PyDict_GetItem(locals, self_str); /* borrowed */
+        PyObject* self = PyDict_GetItem(locals, &_Py_ID(self)); /* borrowed */
         Py_DECREF(locals);
         if (!self) {
             goto error;
