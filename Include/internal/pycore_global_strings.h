@@ -600,6 +600,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(seek)
         STRUCT_FOR_ID(seekable)
         STRUCT_FOR_ID(selectors)
+        STRUCT_FOR_ID(self)
         STRUCT_FOR_ID(send)
         STRUCT_FOR_ID(sep)
         STRUCT_FOR_ID(sequence)
