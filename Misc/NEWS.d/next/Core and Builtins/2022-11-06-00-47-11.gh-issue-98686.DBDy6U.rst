@@ -1,0 +1,5 @@
+Merge the adaptive opcode logic into each instruction's unquickened variant,
+and merge the logic in ``EXTENDED_ARG_QUICK`` into :opcode:`EXTENDED_ARG`.
+With these changes, the quickening that happens at code object creation is
+now only responsible for initializing warmup counters and inserting
+superinstructions.
