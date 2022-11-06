@@ -203,7 +203,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
+  [python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python],
   [python3])
 AC_SUBST(PYTHON_FOR_REGEN)
 
@@ -1616,17 +1616,6 @@ if test -z "$ARFLAGS"
 then
         ARFLAGS="rcs"
 fi
-
-AC_CHECK_TOOLS([READELF], [readelf], [:])
-if test "$cross_compiling" = yes; then
-    case "$READELF" in
-	readelf|:)
-	AC_MSG_ERROR([readelf for the host is required for cross builds])
-	;;
-    esac
-fi
-AC_SUBST(READELF)
-
 
 case $MACHDEP in
 hp*|HP*)
@@ -3474,7 +3463,7 @@ AC_MSG_RESULT([$perf_trampoline])
 
 AS_VAR_IF([perf_trampoline], [yes], [
   AC_DEFINE([PY_HAVE_PERF_TRAMPOLINE], [1], [Define to 1 if you have the perf trampoline.])
-  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
   dnl perf needs frame pointers for unwinding, include compiler option in debug builds
   AS_VAR_IF([Py_DEBUG], [true], [
@@ -4372,7 +4361,7 @@ if test "$posix_threads" = "yes"; then
       void *foo(void *parm) {
         return NULL;
       }
-      main() {
+      int main() {
         pthread_attr_t attr;
         pthread_t id;
         if (pthread_attr_init(&attr)) return (-1);

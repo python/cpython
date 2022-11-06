@@ -1,0 +1,7 @@
+A backslash-character pair that is not a valid escape sequence now generates a
+:exc:`SyntaxWarning`, instead of :exc:`DeprecationWarning`.  For example,
+``re.compile("\d+\.\d+")`` now emits a :exc:`SyntaxWarning` (``"\d"`` is an
+invalid escape sequence), use raw strings for regular expression:
+``re.compile(r"\d+\.\d+")``. In a future Python version, :exc:`SyntaxError`
+will eventually be raised, instead of :exc:`SyntaxWarning`. Patch by Victor
+Stinner.

@@ -32,6 +32,9 @@ typedef struct {
     void *internal;
 } Py_buffer;
 
+typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
+typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
+
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
 PyAPI_FUNC(int) PyObject_CheckBuffer(PyObject *obj);
 

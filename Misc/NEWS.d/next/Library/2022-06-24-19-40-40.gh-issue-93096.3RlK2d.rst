@@ -1,2 +1,0 @@
-Removed undocumented ``python -m codecs``. Use ``python -m unittest
-test.test_codecs.EncodedFileTest`` instead.
