@@ -1,2 +1,0 @@
-The Python filesystem encoding is now read earlier during the Python
-initialization.

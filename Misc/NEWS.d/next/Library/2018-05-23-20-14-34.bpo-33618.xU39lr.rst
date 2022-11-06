@@ -1,2 +1,0 @@
-Finalize and document preliminary and experimental TLS 1.3 support with
-OpenSSL 1.1.1

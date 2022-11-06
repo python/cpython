@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(gc_enable__doc__,
 "enable($module, /)\n"
 "--\n"
@@ -79,7 +85,7 @@ PyDoc_STRVAR(gc_collect__doc__,
 "The number of unreachable objects is returned.");
 
 #define GC_COLLECT_METHODDEF    \
-    {"collect", (PyCFunction)gc_collect, METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
+    {"collect", _PyCFunction_CAST(gc_collect), METH_FASTCALL|METH_KEYWORDS, gc_collect__doc__},
 
 static Py_ssize_t
 gc_collect_impl(PyObject *module, int generation);
@@ -88,15 +94,48 @@ static PyObject *
 gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(generation), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"generation", NULL};
-    static _PyArg_Parser _parser = {"|i:collect", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "collect",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int generation = NUM_GENERATIONS - 1;
     Py_ssize_t _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &generation)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    generation = _PyLong_AsInt(args[0]);
+    if (generation == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     _return_value = gc_collect_impl(module, generation);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -136,7 +175,8 @@ gc_set_debug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flags;
 
-    if (!PyArg_Parse(arg, "i:set_debug", &flags)) {
+    flags = _PyLong_AsInt(arg);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = gc_set_debug_impl(module, flags);
@@ -210,21 +250,71 @@ gc_get_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(gc_get_objects__doc__,
-"get_objects($module, /)\n"
+"get_objects($module, /, generation=None)\n"
 "--\n"
 "\n"
-"Return a list of objects tracked by the collector (excluding the list returned).");
+"Return a list of objects tracked by the collector (excluding the list returned).\n"
+"\n"
+"  generation\n"
+"    Generation to extract the objects from.\n"
+"\n"
+"If generation is not None, return only the objects tracked by the collector\n"
+"that are in that generation.");
 
 #define GC_GET_OBJECTS_METHODDEF    \
-    {"get_objects", (PyCFunction)gc_get_objects, METH_NOARGS, gc_get_objects__doc__},
+    {"get_objects", _PyCFunction_CAST(gc_get_objects), METH_FASTCALL|METH_KEYWORDS, gc_get_objects__doc__},
 
 static PyObject *
-gc_get_objects_impl(PyObject *module);
+gc_get_objects_impl(PyObject *module, Py_ssize_t generation);
 
 static PyObject *
-gc_get_objects(PyObject *module, PyObject *Py_UNUSED(ignored))
+gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return gc_get_objects_impl(module);
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(generation), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"generation", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_objects",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    Py_ssize_t generation = -1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[0], &generation)) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = gc_get_objects_impl(module, generation);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(gc_get_stats__doc__,
@@ -255,6 +345,15 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 
 #define GC_IS_TRACKED_METHODDEF    \
     {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
+
+PyDoc_STRVAR(gc_is_finalized__doc__,
+"is_finalized($module, obj, /)\n"
+"--\n"
+"\n"
+"Returns true if the object has been already finalized by the GC.");
+
+#define GC_IS_FINALIZED_METHODDEF    \
+    {"is_finalized", (PyCFunction)gc_is_finalized, METH_O, gc_is_finalized__doc__},
 
 PyDoc_STRVAR(gc_freeze__doc__,
 "freeze($module, /)\n"
@@ -325,4 +424,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=21dc9270b10b7891 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=66432ac0e17fd04f input=a9049054013a1b77]*/

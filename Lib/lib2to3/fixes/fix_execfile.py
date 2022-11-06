@@ -31,7 +31,8 @@ class FixExecfile(fixer_base.BaseFix):
         # call.
         execfile_paren = node.children[-1].children[-1].clone()
         # Construct open().read().
-        open_args = ArgList([filename.clone()], rparen=execfile_paren)
+        open_args = ArgList([filename.clone(), Comma(), String('"rb"', ' ')],
+                            rparen=execfile_paren)
         open_call = Node(syms.power, [Name("open"), open_args])
         read = [Node(syms.trailer, [Dot(), Name('read')]),
                 Node(syms.trailer, [LParen(), RParen()])]

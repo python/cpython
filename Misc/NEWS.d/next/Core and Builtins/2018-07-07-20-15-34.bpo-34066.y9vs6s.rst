@@ -1,2 +1,0 @@
-Disabled interruption by Ctrl-C between calling ``open()`` and entering a
-**with** block in ``with open()``.

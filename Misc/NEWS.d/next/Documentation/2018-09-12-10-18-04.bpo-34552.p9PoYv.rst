@@ -1,2 +1,0 @@
-Make clear that ``==`` operator sometimes is equivalent to `is`. The ``<``,
-``<=``, ``>`` and ``>=`` operators are only defined where they make sense.

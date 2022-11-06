@@ -35,7 +35,7 @@ def fnmatch(name, pat):
     pat = os.path.normcase(pat)
     return fnmatchcase(name, pat)
 
-@functools.lru_cache(maxsize=256, typed=True)
+@functools.lru_cache(maxsize=32768, typed=True)
 def _compile_pattern(pat):
     if isinstance(pat, bytes):
         pat_str = str(pat, 'ISO-8859-1')
@@ -46,7 +46,7 @@ def _compile_pattern(pat):
     return re.compile(res).match
 
 def filter(names, pat):
-    """Return the subset of the list NAMES that match PAT."""
+    """Construct a list from those elements of the iterable NAMES that match PAT."""
     result = []
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)
@@ -77,15 +77,19 @@ def translate(pat):
     There is no way to quote meta-characters.
     """
 
+    STAR = object()
+    res = []
+    add = res.append
     i, n = 0, len(pat)
-    res = ''
     while i < n:
         c = pat[i]
         i = i+1
         if c == '*':
-            res = res + '.*'
+            # compress consecutive `*` into one
+            if (not res) or res[-1] is not STAR:
+                add(STAR)
         elif c == '?':
-            res = res + '.'
+            add('.')
         elif c == '[':
             j = i
             if j < n and pat[j] == '!':
@@ -95,10 +99,10 @@ def translate(pat):
             while j < n and pat[j] != ']':
                 j = j+1
             if j >= n:
-                res = res + '\\['
+                add('\\[')
             else:
                 stuff = pat[i:j]
-                if '--' not in stuff:
+                if '-' not in stuff:
                     stuff = stuff.replace('\\', r'\\')
                 else:
                     chunks = []
@@ -110,7 +114,16 @@ def translate(pat):
                         chunks.append(pat[i:k])
                         i = k+1
                         k = k+3
-                    chunks.append(pat[i:j])
+                    chunk = pat[i:j]
+                    if chunk:
+                        chunks.append(chunk)
+                    else:
+                        chunks[-1] += '-'
+                    # Remove empty ranges -- invalid in RE.
+                    for k in range(len(chunks)-1, 0, -1):
+                        if chunks[k-1][-1] > chunks[k][0]:
+                            chunks[k-1] = chunks[k-1][:-1] + chunks[k][1:]
+                            del chunks[k]
                     # Escape backslashes and hyphens for set difference (--).
                     # Hyphens that create ranges shouldn't be escaped.
                     stuff = '-'.join(s.replace('\\', r'\\').replace('-', r'\-')
@@ -118,11 +131,55 @@ def translate(pat):
                 # Escape set operations (&&, ~~ and ||).
                 stuff = re.sub(r'([&~|])', r'\\\1', stuff)
                 i = j+1
-                if stuff[0] == '!':
-                    stuff = '^' + stuff[1:]
-                elif stuff[0] in ('^', '['):
-                    stuff = '\\' + stuff
-                res = '%s[%s]' % (res, stuff)
+                if not stuff:
+                    # Empty range: never match.
+                    add('(?!)')
+                elif stuff == '!':
+                    # Negated empty range: match any character.
+                    add('.')
+                else:
+                    if stuff[0] == '!':
+                        stuff = '^' + stuff[1:]
+                    elif stuff[0] in ('^', '['):
+                        stuff = '\\' + stuff
+                    add(f'[{stuff}]')
         else:
-            res = res + re.escape(c)
-    return r'(?s:%s)\Z' % res
+            add(re.escape(c))
+    assert i == n
+
+    # Deal with STARs.
+    inp = res
+    res = []
+    add = res.append
+    i, n = 0, len(inp)
+    # Fixed pieces at the start?
+    while i < n and inp[i] is not STAR:
+        add(inp[i])
+        i += 1
+    # Now deal with STAR fixed STAR fixed ...
+    # For an interior `STAR fixed` pairing, we want to do a minimal
+    # .*? match followed by `fixed`, with no possibility of backtracking.
+    # Atomic groups ("(?>...)") allow us to spell that directly.
+    # Note: people rely on the undocumented ability to join multiple
+    # translate() results together via "|" to build large regexps matching
+    # "one of many" shell patterns.
+    while i < n:
+        assert inp[i] is STAR
+        i += 1
+        if i == n:
+            add(".*")
+            break
+        assert inp[i] is not STAR
+        fixed = []
+        while i < n and inp[i] is not STAR:
+            fixed.append(inp[i])
+            i += 1
+        fixed = "".join(fixed)
+        if i == n:
+            add(".*")
+            add(fixed)
+        else:
+            add(f"(?>.*?{fixed})")
+    assert i == n
+    res = "".join(res)
+    return fr'(?s:{res})\Z'

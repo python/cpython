@@ -1,1 +1,0 @@
-Fix usage of hardcoded ``errno`` values in the tests.

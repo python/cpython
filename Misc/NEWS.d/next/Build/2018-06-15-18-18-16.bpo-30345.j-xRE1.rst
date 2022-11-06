@@ -1,1 +1,0 @@
-Add -g to LDFLAGS when compiling with LTO to get debug symbols.

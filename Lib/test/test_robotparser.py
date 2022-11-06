@@ -4,6 +4,8 @@ import threading
 import unittest
 import urllib.robotparser
 from test import support
+from test.support import socket_helper
+from test.support import threading_helper
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
@@ -97,28 +99,36 @@ Disallow: /
 
 
 class BaseRequestRateTest(BaseRobotTest):
+    request_rate = None
+    crawl_delay = None
 
     def test_request_rate(self):
+        parser = self.parser
         for url in self.good + self.bad:
             agent, url = self.get_agent_and_url(url)
             with self.subTest(url=url, agent=agent):
-                if self.crawl_delay:
-                    self.assertEqual(
-                        self.parser.crawl_delay(agent), self.crawl_delay
-                    )
-                if self.request_rate:
+                self.assertEqual(parser.crawl_delay(agent), self.crawl_delay)
+
+                parsed_request_rate = parser.request_rate(agent)
+                self.assertEqual(parsed_request_rate, self.request_rate)
+                if self.request_rate is not None:
                     self.assertIsInstance(
-                        self.parser.request_rate(agent),
+                        parsed_request_rate,
                         urllib.robotparser.RequestRate
                     )
                     self.assertEqual(
-                        self.parser.request_rate(agent).requests,
+                        parsed_request_rate.requests,
                         self.request_rate.requests
                     )
                     self.assertEqual(
-                        self.parser.request_rate(agent).seconds,
+                        parsed_request_rate.seconds,
                         self.request_rate.seconds
                     )
+
+
+class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = ''
+    good = ['/foo']
 
 
 class CrawlDelayAndRequestRateTest(BaseRequestRateTest, unittest.TestCase):
@@ -141,10 +151,6 @@ Disallow: /%7ejoe/index.html
 
 class DifferentAgentTest(CrawlDelayAndRequestRateTest):
     agent = 'FigTree Robot libwww-perl/5.04'
-    # these are not actually tested, but we still need to parse it
-    # in order to accommodate the input parameters
-    request_rate = None
-    crawl_delay = None
 
 
 class InvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
@@ -302,10 +308,17 @@ class RobotHandler(BaseHTTPRequestHandler):
         pass
 
 
+@unittest.skipUnless(
+    support.has_socket_support,
+    "Socket server requires working socket."
+)
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.server = HTTPServer((support.HOST, 0), RobotHandler)
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
+        self.server = HTTPServer((socket_helper.HOST, 0), RobotHandler)
 
         self.t = threading.Thread(
             name='HTTPServer serving',
@@ -322,10 +335,10 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.t.join()
         self.server.server_close()
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def testPasswordProtectedSite(self):
         addr = self.server.server_address
-        url = 'http://' + support.HOST + ':' + str(addr[1])
+        url = 'http://' + socket_helper.HOST + ':' + str(addr[1])
         robots_url = url + "/robots.txt"
         parser = urllib.robotparser.RobotFileParser()
         parser.set_url(url)
@@ -333,6 +346,7 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.assertFalse(parser.can_fetch("*", robots_url))
 
 
+@support.requires_working_socket()
 class NetworkTestCase(unittest.TestCase):
 
     base_url = 'http://www.pythontest.net/'
@@ -341,7 +355,7 @@ class NetworkTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires('network')
-        with support.transient_internet(cls.base_url):
+        with socket_helper.transient_internet(cls.base_url):
             cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt)
             cls.parser.read()
 

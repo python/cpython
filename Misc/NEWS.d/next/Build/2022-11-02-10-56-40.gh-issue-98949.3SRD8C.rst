@@ -1,0 +1,1 @@
+Drop unused build dependency on ``readelf``.
