@@ -70,8 +70,7 @@ do { \
 #define DISPATCH_SAME_OPARG() ((void)0)
 #define DISPATCH() ((void)0)
 
-#define inst(name) case name:
-#define instr(name, arg) case name:
+#define inst(name, ...) case name:
 #define family(name) static int family_##name
 
 #define NAME_ERROR_MSG \
@@ -106,10 +105,10 @@ dummy_func(
            and that all operation that succeed call DISPATCH() ! */
 
 // BEGIN BYTECODES //
-        instr(NOP, (--)) {
+        inst(NOP, (--)) {
         }
 
-        instr(RESUME, (--)) {
+        inst(RESUME, (--)) {
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -117,31 +116,31 @@ dummy_func(
             }
         }
 
-        instr(LOAD_CLOSURE, (-- value)) {
+        inst(LOAD_CLOSURE, (-- value)) {
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
             value = GETLOCAL(oparg);
             ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
-        instr(LOAD_FAST_CHECK, (-- value)) {
+        inst(LOAD_FAST_CHECK, (-- value)) {
             value = GETLOCAL(oparg);
             ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
-        instr(LOAD_FAST, (-- value)) {
+        inst(LOAD_FAST, (-- value)) {
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
         }
 
-        instr(LOAD_CONST, (-- value)) {
+        inst(LOAD_CONST, (-- value)) {
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
         }
 
-        instr(STORE_FAST, (value --)) {
+        inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -207,7 +206,7 @@ dummy_func(
             PUSH(value);
         }
 
-        instr(POP_TOP, (value --)) {
+        inst(POP_TOP, (value --)) {
             Py_DECREF(value);
         }
 
@@ -217,24 +216,24 @@ dummy_func(
             BASIC_PUSH(NULL);
         }
 
-        instr(END_FOR, (value1, value2 --)) {
+        inst(END_FOR, (value1, value2 --)) {
             Py_DECREF(value1);
             Py_DECREF(value2);
         }
 
-        instr(UNARY_POSITIVE, (value -- res)) {
+        inst(UNARY_POSITIVE, (value -- res)) {
             res = PyNumber_Positive(value);
             Py_DECREF(value);
             ERROR_IF(res == NULL, error);
         }
 
-        instr(UNARY_NEGATIVE, (value -- res)) {
+        inst(UNARY_NEGATIVE, (value -- res)) {
             res = PyNumber_Negative(value);
             Py_DECREF(value);
             ERROR_IF(res == NULL, error);
         }
 
-        instr(UNARY_NOT, (value -- res)) {
+        inst(UNARY_NOT, (value -- res)) {
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             ERROR_IF(err < 0, error);
@@ -247,13 +246,13 @@ dummy_func(
             Py_INCREF(res);
         }
 
-        instr(UNARY_INVERT, (value -- res)) {
+        inst(UNARY_INVERT, (value -- res)) {
             res = PyNumber_Invert(value);
             Py_DECREF(value);
             ERROR_IF(res == NULL, error);
         }
 
-        instr(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
+        inst(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -266,7 +265,7 @@ dummy_func(
         }
 
         // stack effect: (__0 -- )
-        instr(BINARY_OP_MULTIPLY_FLOAT, (left, right -- prod)) {
+        inst(BINARY_OP_MULTIPLY_FLOAT, (left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);

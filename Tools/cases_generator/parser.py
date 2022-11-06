@@ -83,7 +83,7 @@ class Parser(PLexer):
         # inst(NAME) | inst(NAME, (inputs -- outputs))
         # TODO: Error out when there is something unexpected.
         # TODO: Make INST a keyword in the lexer.
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text in ("inst", "instr"):
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "inst":
             if (self.expect(lx.LPAREN)
                     and (tkn := self.expect(lx.IDENTIFIER))):
                 name = tkn.text
