@@ -74,13 +74,13 @@ def write_cases(f: io.TextIOBase, instrs: list[InstDef]):
     for instr in instrs:
         assert isinstance(instr, InstDef)
         f.write(f"\n{indent}TARGET({instr.name}) {{\n")
+        if instr.name in predictions:
+            f.write(f"{indent}    PREDICTED({instr.name});\n")
         # TODO: Is it better to count forward or backward?
         for i, input in enumerate(reversed(instr.inputs or ()), 1):
             f.write(f"{indent}    PyObject *{input} = PEEK({i});\n")
         for output in instr.outputs or ():
             f.write(f"{indent}    PyObject *{output};\n")
-        if instr.name in predictions:
-            f.write(f"{indent}    PREDICTED({instr.name});\n")
         # input = ", ".join(instr.inputs)
         # output = ", ".join(instr.outputs)
         # f.write(f"{indent}    // {input} -- {output}\n")
