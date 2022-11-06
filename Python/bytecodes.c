@@ -315,11 +315,14 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_INPLACE_ADD_UNICODE) {
+        // This is a weird one. It's a super-instruction for
+        // BINARY_OP_ADD_UNICODE followed by STORE_FAST
+        // where the store goes into the left argument.
+        // So the inputs are the same as for all BINARY_OP
+        // specializations, but there is no output.
+        // At the end we just skip over the STORE_FAST.
+        inst(BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
@@ -341,12 +344,9 @@ dummy_func(
              */
             assert(Py_REFCNT(left) >= 2);
             _Py_DECREF_NO_DEALLOC(left);
-            STACK_SHRINK(2);
             PyUnicode_Append(target_local, right);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (*target_local == NULL) {
-                goto error;
-            }
+            ERROR_IF(*target_local == NULL, error);
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }

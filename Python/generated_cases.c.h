@@ -287,9 +287,9 @@
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
@@ -311,14 +311,12 @@
              */
             assert(Py_REFCNT(left) >= 2);
             _Py_DECREF_NO_DEALLOC(left);
-            STACK_SHRINK(2);
             PyUnicode_Append(target_local, right);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (*target_local == NULL) {
-                goto error;
-            }
+            if (*target_local == NULL) { STACK_SHRINK(2); goto error; }
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
+            STACK_GROW(-2);
             DISPATCH();
         }
 
