@@ -345,25 +345,19 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__0, __1, __2, __3 -- )
-        inst(STORE_SLICE) {
-            PyObject *stop = POP();
-            PyObject *start = POP();
-            PyObject *container = TOP();
-            PyObject *v = SECOND();
-
+        inst(STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            int err;
             if (slice == NULL) {
-                goto error;
+                err = 1;
             }
-            int err = PyObject_SetItem(container, slice, v);
-            Py_DECREF(slice);
-            if (err) {
-                goto error;
+            else {
+                err = PyObject_SetItem(container, slice, v);
+                Py_DECREF(slice);
             }
-            STACK_SHRINK(2);
             Py_DECREF(v);
             Py_DECREF(container);
+            ERROR_IF(err, error);
         }
 
         // stack effect: (__0 -- )

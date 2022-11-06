@@ -334,23 +334,23 @@
         }
 
         TARGET(STORE_SLICE) {
-            PyObject *stop = POP();
-            PyObject *start = POP();
-            PyObject *container = TOP();
-            PyObject *v = SECOND();
-
+            PyObject *stop = PEEK(1);
+            PyObject *start = PEEK(2);
+            PyObject *container = PEEK(3);
+            PyObject *v = PEEK(4);
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            int err;
             if (slice == NULL) {
-                goto error;
+                err = 1;
             }
-            int err = PyObject_SetItem(container, slice, v);
-            Py_DECREF(slice);
-            if (err) {
-                goto error;
+            else {
+                err = PyObject_SetItem(container, slice, v);
+                Py_DECREF(slice);
             }
-            STACK_SHRINK(2);
             Py_DECREF(v);
             Py_DECREF(container);
+            if (err) { STACK_SHRINK(4); goto error; }
+            STACK_SHRINK(4);
             DISPATCH();
         }
 
