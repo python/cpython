@@ -2963,7 +2963,7 @@ class CAPITest(unittest.TestCase):
                      b'%s', b'')
 
         # test invalid format strings. these tests are just here
--       # to check for crashes and should not be considered as specifications
+        # to check for crashes and should not be considered as specifications
         for fmt in (b'%', b'%0', b'%01', b'%.', b'%.1',
                     b'%0%s', b'%1%s', b'%.%s', b'%.1%s', b'%1abc',
                     b'%l', b'%ll', b'%z', b'%lls', b'%zs'):
