@@ -62,68 +62,6 @@
             DISPATCH();
         }
 
-        TARGET(LOAD_FAST__LOAD_FAST) {
-            PyObject *value = GETLOCAL(oparg);
-            assert(value != NULL);
-            NEXTOPARG();
-            next_instr++;
-            Py_INCREF(value);
-            PUSH(value);
-            value = GETLOCAL(oparg);
-            assert(value != NULL);
-            Py_INCREF(value);
-            PUSH(value);
-            DISPATCH();
-        }
-
-        TARGET(LOAD_FAST__LOAD_CONST) {
-            PyObject *value = GETLOCAL(oparg);
-            assert(value != NULL);
-            NEXTOPARG();
-            next_instr++;
-            Py_INCREF(value);
-            PUSH(value);
-            value = GETITEM(consts, oparg);
-            Py_INCREF(value);
-            PUSH(value);
-            DISPATCH();
-        }
-
-        TARGET(STORE_FAST__LOAD_FAST) {
-            PyObject *value = POP();
-            SETLOCAL(oparg, value);
-            NEXTOPARG();
-            next_instr++;
-            value = GETLOCAL(oparg);
-            assert(value != NULL);
-            Py_INCREF(value);
-            PUSH(value);
-            DISPATCH();
-        }
-
-        TARGET(STORE_FAST__STORE_FAST) {
-            PyObject *value = POP();
-            SETLOCAL(oparg, value);
-            NEXTOPARG();
-            next_instr++;
-            value = POP();
-            SETLOCAL(oparg, value);
-            DISPATCH();
-        }
-
-        TARGET(LOAD_CONST__LOAD_FAST) {
-            PyObject *value = GETITEM(consts, oparg);
-            NEXTOPARG();
-            next_instr++;
-            Py_INCREF(value);
-            PUSH(value);
-            value = GETLOCAL(oparg);
-            assert(value != NULL);
-            Py_INCREF(value);
-            PUSH(value);
-            DISPATCH();
-        }
-
         TARGET(POP_TOP) {
             PyObject *value = PEEK(1);
             Py_DECREF(value);
@@ -3900,4 +3838,76 @@
 
         TARGET(CACHE) {
             Py_UNREACHABLE();
+        }
+
+        TARGET(LOAD_FAST__LOAD_FAST) {
+            {
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+            }
+            NEXTOPARG();
+            next_instr++;
+            {
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+            }
+            DISPATCH();
+        }
+
+        TARGET(LOAD_FAST__LOAD_CONST) {
+            {
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+            }
+            NEXTOPARG();
+            next_instr++;
+            {
+                value = GETITEM(consts, oparg);
+                Py_INCREF(value);
+            }
+            DISPATCH();
+        }
+
+        TARGET(STORE_FAST__LOAD_FAST) {
+            {
+                SETLOCAL(oparg, value);
+            }
+            NEXTOPARG();
+            next_instr++;
+            {
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+            }
+            DISPATCH();
+        }
+
+        TARGET(STORE_FAST__STORE_FAST) {
+            {
+                SETLOCAL(oparg, value);
+            }
+            NEXTOPARG();
+            next_instr++;
+            {
+                SETLOCAL(oparg, value);
+            }
+            DISPATCH();
+        }
+
+        TARGET(LOAD_CONST__LOAD_FAST) {
+            {
+                value = GETITEM(consts, oparg);
+                Py_INCREF(value);
+            }
+            NEXTOPARG();
+            next_instr++;
+            {
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+            }
+            DISPATCH();
         }

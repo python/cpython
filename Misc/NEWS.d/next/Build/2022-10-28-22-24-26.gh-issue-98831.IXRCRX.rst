@@ -1,1 +1,9 @@
-We have new tooling, in ``Tools/cases_generator``, to generate the interpreter switch from a list of opcode definitions.
+Add new tooling, in ``Tools/cases_generator``,
+to generate the interpreter switch statement from a list of opcode definitions.
+This only affects adding, modifying or removing instruction definitions.
+The instruction definitions now live in ``Python/bytecodes.c``,
+in the form of a `custom DSL (under development)
+<https://github.com/faster-cpython/ideas/blob/main/3.12/interpreter_definition.md>`__.
+The tooling reads this file and writes ``Python/generated_cases.c.h``,
+which is then included by ``Python/ceval.c`` to provide most of the cases
+of the main interpreter switch.
