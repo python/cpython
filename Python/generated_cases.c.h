@@ -374,21 +374,24 @@
         }
 
         TARGET(BINARY_SLICE) {
-            PyObject *stop = POP();
-            PyObject *start = POP();
-            PyObject *container = TOP();
-
+            PyObject *stop = PEEK(1);
+            PyObject *start = PEEK(2);
+            PyObject *container = PEEK(3);
+            PyObject *res;
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            // Can't use ERROR_IF() here, because we haven't
+            // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
-                goto error;
+                res = NULL;
             }
-            PyObject *res = PyObject_GetItem(container, slice);
-            Py_DECREF(slice);
-            if (res == NULL) {
-                goto error;
+            else {
+                res = PyObject_GetItem(container, slice);
+                Py_DECREF(slice);
             }
-            SET_TOP(res);
             Py_DECREF(container);
+            if (res == NULL) { STACK_SHRINK(3); goto error; }
+            STACK_SHRINK(2);
+            POKE(1, res);
             DISPATCH();
         }
 

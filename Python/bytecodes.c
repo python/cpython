@@ -385,23 +385,19 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(BINARY_SLICE) {
-            PyObject *stop = POP();
-            PyObject *start = POP();
-            PyObject *container = TOP();
-
+        inst(BINARY_SLICE, (container, start, stop -- res)) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            // Can't use ERROR_IF() here, because we haven't
+            // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
-                goto error;
+                res = NULL;
             }
-            PyObject *res = PyObject_GetItem(container, slice);
-            Py_DECREF(slice);
-            if (res == NULL) {
-                goto error;
+            else {
+                res = PyObject_GetItem(container, slice);
+                Py_DECREF(slice);
             }
-            SET_TOP(res);
             Py_DECREF(container);
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: (__0, __1, __2, __3 -- )
