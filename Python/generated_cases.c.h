@@ -279,7 +279,7 @@
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (TOP() == NULL) { STACK_SHRINK(2); goto error; }
+            if (res == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, res);

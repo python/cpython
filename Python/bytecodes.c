@@ -311,7 +311,7 @@ dummy_func(
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            ERROR_IF(TOP() == NULL, error);
+            ERROR_IF(res == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
