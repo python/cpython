@@ -21974,13 +21974,13 @@ invalid_try_stmt_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> invalid_try_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*"));
-        Token * _keyword;
         Token * _literal;
         asdl_seq * _loop0_203_var;
         asdl_seq * _loop0_205_var;
         void *_tmp_204_var;
+        Token * a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 620))  // token='try'
+            (a = _PyPegen_expect_token(p, 620))  // token='try'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -21992,7 +21992,7 @@ invalid_try_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_try_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block*"));
-            _res = RAISE_SYNTAX_ERROR ( "cannot have both 'except' and 'except*' on the same 'try'" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot have both 'except' and 'except*' on the same 'try'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -38401,15 +38401,15 @@ _tmp_241_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _tmp_241[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_block+ except_star_block"));
         asdl_seq * _loop1_248_var;
-        excepthandler_ty except_star_block_var;
+        excepthandler_ty a;
         if (
             (_loop1_248_var = _loop1_248_rule(p))  // except_block+
             &&
-            (except_star_block_var = except_star_block_rule(p))  // except_star_block
+            (a = except_star_block_rule(p))  // except_star_block
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_241[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "except_block+ except_star_block"));
-            _res = _PyPegen_dummy_name(p, _loop1_248_var, except_star_block_var);
+            _res = _PyPegen_dummy_name(p, _loop1_248_var, a);
             goto done;
         }
         p->mark = _mark;
@@ -38443,15 +38443,15 @@ _tmp_242_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _tmp_242[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_star_block+ except_block"));
         asdl_seq * _loop1_249_var;
-        excepthandler_ty except_block_var;
+        excepthandler_ty a;
         if (
             (_loop1_249_var = _loop1_249_rule(p))  // except_star_block+
             &&
-            (except_block_var = except_block_rule(p))  // except_block
+            (a = except_block_rule(p))  // except_block
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_242[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "except_star_block+ except_block"));
-            _res = _PyPegen_dummy_name(p, _loop1_249_var, except_block_var);
+            _res = _PyPegen_dummy_name(p, _loop1_249_var, a);
             goto done;
         }
         p->mark = _mark;
