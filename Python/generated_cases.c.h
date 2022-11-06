@@ -232,60 +232,57 @@
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *sub;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sub);
+            sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
-            if (sub == NULL) {
-                goto error;
-            }
+            if (sub == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_GROW(-1);
+            POKE(1, sub);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *sub;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            PyObject *sub = PyFloat_FromDouble(dsub);
-            SET_SECOND(sub);
+            sub = PyFloat_FromDouble(dsub);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            STACK_SHRINK(1);
-            if (sub == NULL) {
-                goto error;
-            }
+            if (sub == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_GROW(-1);
+            POKE(1, sub);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *res;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *res = PyUnicode_Concat(left, right);
-            STACK_SHRINK(1);
-            SET_TOP(res);
+            res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (TOP() == NULL) {
-                goto error;
-            }
+            if (TOP() == NULL) { STACK_SHRINK(2); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_GROW(-1);
+            POKE(1, res);
             DISPATCH();
         }
 
