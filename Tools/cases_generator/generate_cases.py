@@ -72,13 +72,11 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
     if dedent < 0:
         indent += " " * -dedent
     # TODO: Is it better to count forward or backward?
-    for i, input in enumerate(reversed(instr.inputs or ()), 1):
+    for i, input in enumerate(reversed(instr.inputs), 1):
         f.write(f"{indent}    PyObject *{input} = PEEK({i});\n")
-    for output in instr.outputs or ():
-        f.write(f"{indent}    PyObject *{output};\n")
-    # input = ", ".join(instr.inputs)
-    # output = ", ".join(instr.outputs)
-    # f.write(f"{indent}    // {input} -- {output}\n")
+    for output in instr.outputs:
+        if output not in instr.inputs:
+            f.write(f"{indent}    PyObject *{output};\n")
     assert instr.block is not None
     blocklines = instr.block.to_text(dedent=dedent).splitlines(True)
     # Remove blank lines from ends
@@ -97,7 +95,7 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
     # Write the body
     ninputs = len(instr.inputs or ())
     for line in blocklines:
-        if m := re.match(r"(\s*)ERROR_IF\(([^,]+), (\w+)\);\s*$", line):
+        if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*$", line):
             space, cond, label = m.groups()
             # ERROR_IF() must remove the inputs from the stack.
             # The code block is responsible for DECREF()ing them.
@@ -114,7 +112,8 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
     elif diff < 0:
         f.write(f"{indent}    STACK_SHRINK({-diff});\n")
     for i, output in enumerate(reversed(instr.outputs or ()), 1):
-        f.write(f"{indent}    POKE({i}, {output});\n")
+        if output not in (instr.inputs or ()):
+            f.write(f"{indent}    POKE({i}, {output});\n")
     assert instr.block
 
 def write_cases(f: TextIO, instrs: list[InstDef], supers: list[parser.Super]):
