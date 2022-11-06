@@ -4376,10 +4376,16 @@ class TestStdLib(unittest.TestCase):
             CYAN = 1
             MAGENTA = 2
             YELLOW = 3
+            @bltns.property
+            def zeroth(self):
+                return 'zeroed %s' % self.name
         class CheckedColor(Enum):
             CYAN = 1
             MAGENTA = 2
             YELLOW = 3
+            @bltns.property
+            def zeroth(self):
+                return 'zeroed %s' % self.name
         self.assertTrue(_test_simple_enum(CheckedColor, SimpleColor) is None)
         SimpleColor.MAGENTA._value_ = 9
         self.assertRaisesRegex(
