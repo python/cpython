@@ -597,7 +597,7 @@ class ReferencesTestCase(TestBase):
         # deallocation of c2.
         del c2
 
-    def test_callback_in_cycle_1(self):
+    def test_callback_in_cycle(self):
         import gc
 
         class J(object):
@@ -637,11 +637,11 @@ class ReferencesTestCase(TestBase):
         del I, J, II
         gc.collect()
 
-    def test_callback_in_cycle_3(self):
+    def test_callback_reachable_one_way(self):
         import gc
 
-        # This one broke the first patch that fixed the last two.  In this
-        # case, the objects reachable from the callback aren't also reachable
+        # In this case,
+        # the objects reachable from the callback aren't also reachable
         # from the object (c1) *triggering* the callback:  you can get to
         # c1 from c2, but not vice-versa.  The result was that c2's __dict__
         # got tp_clear'ed by the time the c2.cb callback got invoked.
@@ -661,10 +661,10 @@ class ReferencesTestCase(TestBase):
         del c1, c2
         gc.collect()
 
-    def test_callback_in_cycle_4(self):
+    def test_callback_different_classes(self):
         import gc
 
-        # Like test_callback_in_cycle_3, except c2 and c1 have different
+        # Like test_callback_reachable_one_way, except c2 and c1 have different
         # classes.  c2's class (C) isn't reachable from c1 then, so protecting
         # objects reachable from the dying object (c1) isn't enough to stop
         # c2's class (C) from getting tp_clear'ed before c2.cb is invoked.
