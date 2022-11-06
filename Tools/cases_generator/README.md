@@ -8,12 +8,6 @@ What's currently here:
 - `generate_cases.py`: driver script to read `Python/bytecodes.c` and
   write `Python/generated_cases.c.h`
 
-**Temporarily also:**
-
-- `extract_cases.py`: script to extract cases from
-  `Python/ceval.c` and write them to `Python/bytecodes.c`
-- `bytecodes_template.h`: template used by `extract_cases.py`
-
 The DSL for the instruction definitions in `Python/bytecodes.c` is described
 [here](https://github.com/faster-cpython/ideas/blob/main/3.12/interpreter_definition.md).
 Note that there is some dummy C code at the top and bottom of the file

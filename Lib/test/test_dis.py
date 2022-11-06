@@ -543,8 +543,10 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
+        >> STOPITERATION_ERROR
+           RERAISE                  1
 ExceptionTable:
-6 rows
+12 rows
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
