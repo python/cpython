@@ -243,6 +243,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
         }
         
         if (PyObject_HasAttr(self, name)) {
+            Py_DECREF(dir);
             return PyUnicode_FromFormat("self.%S", name);
         }
     }
