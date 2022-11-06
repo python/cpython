@@ -38401,15 +38401,15 @@ _tmp_241_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _tmp_241[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_block+ except_star_block"));
         asdl_seq * _loop1_248_var;
-        excepthandler_ty a;
+        excepthandler_ty except_star_block_var;
         if (
             (_loop1_248_var = _loop1_248_rule(p))  // except_block+
             &&
-            (a = except_star_block_rule(p))  // except_star_block
+            (except_star_block_var = except_star_block_rule(p))  // except_star_block
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_241[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "except_block+ except_star_block"));
-            _res = _PyPegen_dummy_name(p, _loop1_248_var, a);
+            _res = _PyPegen_dummy_name(p, _loop1_248_var, except_star_block_var);
             goto done;
         }
         p->mark = _mark;
@@ -38443,15 +38443,15 @@ _tmp_242_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _tmp_242[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "except_star_block+ except_block"));
         asdl_seq * _loop1_249_var;
-        excepthandler_ty a;
+        excepthandler_ty except_block_var;
         if (
             (_loop1_249_var = _loop1_249_rule(p))  // except_star_block+
             &&
-            (a = except_block_rule(p))  // except_block
+            (except_block_var = except_block_rule(p))  // except_block
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_242[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "except_star_block+ except_block"));
-            _res = _PyPegen_dummy_name(p, _loop1_249_var, a);
+            _res = _PyPegen_dummy_name(p, _loop1_249_var, except_block_var);
             goto done;
         }
         p->mark = _mark;
