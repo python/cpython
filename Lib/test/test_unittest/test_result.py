@@ -2,7 +2,7 @@ import io
 import sys
 import textwrap
 
-from test.support import warnings_helper, captured_stdout, captured_stderr
+from test.support import warnings_helper, captured_stdout
 
 import traceback
 import unittest
@@ -449,8 +449,8 @@ class Test_TextTestResult(unittest.TestCase):
                     '(' + __name__ + '.Test_TextTestResult.testGetSubTestDescriptionWithoutDocstringAndParams) '
                     '(<subtest>)')
 
-    def testGetSubTestDescriptionForFalsyValues(self):
-        expected = 'testGetSubTestDescriptionForFalsyValues (%s.Test_TextTestResult.testGetSubTestDescriptionForFalsyValues) [%s]'
+    def testGetSubTestDescriptionForFalseValues(self):
+        expected = 'testGetSubTestDescriptionForFalseValues (%s.Test_TextTestResult.testGetSubTestDescriptionForFalseValues) [%s]'
         result = unittest.TextTestResult(None, True, 1)
         for arg in [0, None, []]:
             with self.subTest(arg):

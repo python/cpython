@@ -955,7 +955,7 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
     def test_falsy_exception_group_subclass(self):
         class FalsyEG(ExceptionGroup):
             def __bool__(self):
-               return False
+                return False
 
             def derive(self, excs):
                 return FalsyEG(self.message, excs)

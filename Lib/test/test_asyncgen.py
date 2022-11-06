@@ -2,6 +2,7 @@ import inspect
 import types
 import unittest
 import contextlib
+import warnings
 
 from test.support.import_helper import import_module
 from test.support import gc_collect, requires_working_socket
@@ -377,6 +378,13 @@ class AsyncGenTest(unittest.TestCase):
 
         self.compare_generators(sync_gen_wrapper(), async_gen_wrapper())
 
+    def test_async_gen_3_arg_deprecation_warning(self):
+        async def gen():
+            yield 123
+
+        with self.assertWarns(DeprecationWarning):
+            gen().athrow(GeneratorExit, GeneratorExit(), None)
+
     def test_async_gen_api_01(self):
         async def gen():
             yield 123
@@ -650,7 +658,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             agen = agenfn()
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 self.assertEqual(g.send(None), 1)
-                self.assertEqual(g.throw(MyError, MyError(), None), 2)
+                self.assertEqual(g.throw(MyError()), 2)
                 try:
                     g.send(None)
                 except StopIteration as e:
@@ -663,9 +671,9 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             agen = agenfn()
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 self.assertEqual(g.send(None), 1)
-                self.assertEqual(g.throw(MyError, MyError(), None), 2)
+                self.assertEqual(g.throw(MyError()), 2)
                 with self.assertRaises(MyError):
-                    g.throw(MyError, MyError(), None)
+                    g.throw(MyError())
 
         def test3(anext):
             agen = agenfn()
@@ -692,9 +700,9 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             agen = agenfn()
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 self.assertEqual(g.send(None), 10)
-                self.assertEqual(g.throw(MyError, MyError(), None), 20)
+                self.assertEqual(g.throw(MyError()), 20)
                 with self.assertRaisesRegex(MyError, 'val'):
-                    g.throw(MyError, MyError('val'), None)
+                    g.throw(MyError('val'))
 
         def test5(anext):
             @types.coroutine
@@ -713,7 +721,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 self.assertEqual(g.send(None), 10)
                 with self.assertRaisesRegex(StopIteration, 'default'):
-                    g.throw(MyError, MyError(), None)
+                    g.throw(MyError())
 
         def test6(anext):
             @types.coroutine
@@ -728,7 +736,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             agen = agenfn()
             with contextlib.closing(anext(agen, "default").__await__()) as g:
                 with self.assertRaises(MyError):
-                    g.throw(MyError, MyError(), None)
+                    g.throw(MyError())
 
         def run_test(test):
             with self.subTest('pure-Python anext()'):

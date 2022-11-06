@@ -994,19 +994,11 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-.. XXX add when implemented
-                : ["=" (`target_list` "=")+ starred_expression]
-                : | "nonlocal" identifier augop expression_list
-
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to
 previously bound variables in the nearest enclosing scope excluding globals.
 This is important because the default behavior for binding is to search the
 local namespace first.  The statement allows encapsulated code to rebind
 variables outside of the local scope besides the global (module) scope.
-
-.. XXX not implemented
-   The :keyword:`nonlocal` statement may prepend an assignment or augmented
-   assignment, but not an expression.
 
 Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
 :keyword:`global` statement, must refer to pre-existing bindings in an

@@ -19,6 +19,7 @@ to send mail to any internet machine with an SMTP or ESMTP listener daemon.  For
 details of SMTP and ESMTP operation, consult :rfc:`821` (Simple Mail Transfer
 Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
+.. include:: ../includes/wasm-notavail.rst
 
 .. class:: SMTP(host='', port=0, local_hostname=None[, timeout], source_address=None)
 

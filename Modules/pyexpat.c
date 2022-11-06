@@ -775,7 +775,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     Py_ssize_t len;
     const char *ptr;
 
-    str = PyObject_CallFunction(meth, "n", buf_size);
+    str = PyObject_CallFunction(meth, "i", buf_size);
     if (str == NULL)
         goto error;
 
@@ -1725,7 +1725,7 @@ add_error(PyObject *errors_module, PyObject *codes_dict,
     const int error_code = (int)error_index;
 
     /* NOTE: This keeps the source of truth regarding error
-     *       messages with libexpat and (by definiton) in bulletproof sync
+     *       messages with libexpat and (by definition) in bulletproof sync
      *       with the other uses of the XML_ErrorString function
      *       elsewhere within this file.  pyexpat's copy of the messages
      *       only acts as a fallback in case of outdated runtime libexpat,

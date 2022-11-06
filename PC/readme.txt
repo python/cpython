@@ -51,12 +51,6 @@ config.c    The list of C modules to include in the Python PC
             version.  Manually edit this file to add or
             remove Python modules.
 
-testpy.py   A Python test program.  Run this to test your
-            Python port.  It should produce copious output,
-	    ending in a report on how many tests were OK, how many
-	    failed, and how many were skipped.  Don't worry about
-	    skipped tests (these test unavailable optional features).
-
 
 Additional files and subdirectories for 32-bit Windows
 ======================================================

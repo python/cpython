@@ -1,3 +1,4 @@
+import sys
 import functools
 import unittest
 from test import support
@@ -65,10 +66,12 @@ class Callbacks(unittest.TestCase):
     def test_ulong(self):
         self.check_type(c_ulong, 42)
 
+    @need_symbol('c_longlong')
     def test_longlong(self):
         self.check_type(c_longlong, 42)
         self.check_type(c_longlong, -42)
 
+    @need_symbol('c_ulonglong')
     def test_ulonglong(self):
         self.check_type(c_ulonglong, 42)
 
@@ -82,6 +85,7 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_double, 3.14)
         self.check_type(c_double, -3.14)
 
+    @need_symbol('c_longdouble')
     def test_longdouble(self):
         self.check_type(c_longdouble, 3.14)
         self.check_type(c_longdouble, -3.14)
@@ -146,6 +150,18 @@ class Callbacks(unittest.TestCase):
             def __del__(self):
                 gc.collect()
         CFUNCTYPE(None)(lambda x=Nasty(): None)
+
+    @need_symbol('WINFUNCTYPE')
+    def test_i38748_stackCorruption(self):
+        callback_funcType = WINFUNCTYPE(c_long, c_long, c_longlong)
+        @callback_funcType
+        def callback(a, b):
+            c = a + b
+            print(f"a={a}, b={b}, c={c}")
+            return c
+        dll = cdll[_ctypes_test.__file__]
+        # With no fix for i38748, the next line will raise OSError and cause the test to fail.
+        self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
 
 
 @need_symbol('WINFUNCTYPE')
