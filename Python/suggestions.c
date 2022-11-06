@@ -236,7 +236,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
         if (!locals) {
             goto error;
         }
-        PyObject* self = PyDict_GetItemString(locals, "self"); /* borrowed */
+        PyObject* self = PyDict_GetItem(locals, self_str); /* borrowed */
         Py_DECREF(locals);
         if (!self) {
             goto error;
