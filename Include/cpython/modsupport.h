@@ -51,6 +51,7 @@ PyAPI_FUNC(PyObject **) _Py_VaBuildStack(
     Py_ssize_t *p_nargs);
 
 typedef struct _PyArg_Parser {
+    int initialized;
     const char *format;
     const char * const *keywords;
     const char *fname;

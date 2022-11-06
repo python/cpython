@@ -549,10 +549,10 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
-            self.assertEqual(len(text), 6)
+            self.assertEqual(len(text), 5)
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
-            self.assertTrue(text[4].startswith('NameError'))
+            self.assertTrue(text[3].startswith('NameError'))
 
     def test_non_ascii(self):
         # Mac OS X denies the creation of a file with an invalid UTF-8 name.
@@ -654,6 +654,18 @@ class CmdLineTest(unittest.TestCase):
                 [   b'    foo = """\\q"""',
                     b'          ^^^^^^^^',
                     b'SyntaxError: invalid escape sequence \'\\q\''
+                ],
+            )
+
+    def test_syntaxerror_null_bytes(self):
+        script = "x = '\0' nothing to see here\n';import os;os.system('echo pwnd')\n"
+        with os_helper.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            self.assertEqual(
+                stderr.splitlines()[-2:],
+                [   b"    x = '",
+                    b'SyntaxError: source code cannot contain null bytes'
                 ],
             )
 

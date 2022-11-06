@@ -96,7 +96,7 @@ def parse(srclines):
 #    # end matched parens
 #    ''')
 
-'''
+r'''
         # for loop
         (?:
             \s* \b for

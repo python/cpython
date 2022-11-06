@@ -1,0 +1,3 @@
+Fix internal error in the :mod:`re` module which in very rare circumstances
+prevented compilation of a regular expression containing a :ref:`conditional
+expression <re-conditional-expression>` without the "else" branch.

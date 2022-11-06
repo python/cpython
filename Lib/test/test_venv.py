@@ -15,11 +15,12 @@ import shutil
 import struct
 import subprocess
 import sys
+import sysconfig
 import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_emscripten, is_wasi,
-                          requires_venv_with_pip)
+                          requires_venv_with_pip, TEST_HOME_DIR)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -215,7 +216,7 @@ class BasicTest(BaseTest):
             if sys.platform == 'win32':
                 expect_exe = os.path.normcase(os.path.realpath(expect_exe))
 
-            def pip_cmd_checker(cmd):
+            def pip_cmd_checker(cmd, **kwargs):
                 cmd[0] = os.path.normcase(cmd[0])
                 self.assertEqual(
                     cmd,
@@ -231,7 +232,7 @@ class BasicTest(BaseTest):
                 )
 
             fake_context = builder.ensure_directories(fake_env_dir)
-            with patch('venv.subprocess.check_call', pip_cmd_checker):
+            with patch('venv.subprocess.check_output', pip_cmd_checker):
                 builder.upgrade_dependencies(fake_context)
 
     @requireVenvCreate
@@ -254,18 +255,49 @@ class BasicTest(BaseTest):
             self.assertEqual(out.strip(), expected.encode(), prefix)
 
     @requireVenvCreate
-    def test_sysconfig_preferred_and_default_scheme(self):
+    def test_sysconfig(self):
         """
-        Test that the sysconfig preferred(prefix) and default scheme is venv.
+        Test that the sysconfig functions work in a virtual environment.
         """
         rmtree(self.env_dir)
-        self.run_with_capture(venv.create, self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir, symlinks=False)
         envpy = os.path.join(self.env_dir, self.bindir, self.exe)
         cmd = [envpy, '-c', None]
-        for call in ('get_preferred_scheme("prefix")', 'get_default_scheme()'):
-            cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
-            out, err = check_output(cmd)
-            self.assertEqual(out.strip(), b'venv', err)
+        for call, expected in (
+            # installation scheme
+            ('get_preferred_scheme("prefix")', 'venv'),
+            ('get_default_scheme()', 'venv'),
+            # build environment
+            ('is_python_build()', str(sysconfig.is_python_build())),
+            ('get_makefile_filename()', sysconfig.get_makefile_filename()),
+            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            with self.subTest(call):
+                cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
+                out, err = check_output(cmd)
+                self.assertEqual(out.strip(), expected.encode(), err)
+
+    @requireVenvCreate
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    def test_sysconfig_symlinks(self):
+        """
+        Test that the sysconfig functions work in a virtual environment.
+        """
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir, symlinks=True)
+        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
+        cmd = [envpy, '-c', None]
+        for call, expected in (
+            # installation scheme
+            ('get_preferred_scheme("prefix")', 'venv'),
+            ('get_default_scheme()', 'venv'),
+            # build environment
+            ('is_python_build()', str(sysconfig.is_python_build())),
+            ('get_makefile_filename()', sysconfig.get_makefile_filename()),
+            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            with self.subTest(call):
+                cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
+                out, err = check_output(cmd)
+                self.assertEqual(out.strip(), expected.encode(), err)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (
@@ -450,6 +482,20 @@ class BasicTest(BaseTest):
             'pool.terminate()'])
         self.assertEqual(out.strip(), "python".encode())
 
+    @requireVenvCreate
+    def test_multiprocessing_recursion(self):
+        """
+        Test that the multiprocessing is able to spawn itself
+        """
+        skip_if_broken_multiprocessing_synchronize()
+
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        script = os.path.join(TEST_HOME_DIR, '_test_venv_multiprocessing.py')
+        subprocess.check_call([envpy, script])
+
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     def test_deactivate_with_strict_bash_opts(self):
         bash = shutil.which("bash")
@@ -627,8 +673,8 @@ class EnsurePipTest(BaseTest):
         try:
             yield
         except subprocess.CalledProcessError as exc:
-            out = exc.output.decode(errors="replace")
-            err = exc.stderr.decode(errors="replace")
+            out = (exc.output or b'').decode(errors="replace")
+            err = (exc.stderr or b'').decode(errors="replace")
             self.fail(
                 f"{exc}\n\n"
                 f"**Subprocess Output**\n{out}\n\n"
