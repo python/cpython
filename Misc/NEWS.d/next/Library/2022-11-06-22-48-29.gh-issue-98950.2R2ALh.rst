@@ -1,0 +1,1 @@
+Pass through nonstandard -X options too when running test.bisect_cmd.
