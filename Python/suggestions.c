@@ -274,7 +274,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     return suggestions;
 
 error:
-    Py_XDECREF(dir);
+    Py_DECREF(dir);
     return NULL;
 }
 
