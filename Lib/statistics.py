@@ -1448,9 +1448,7 @@ class NormalDist:
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
 
     def __getstate__(self):
-        "Pickle support."
         return (self._mu, self._sigma)
 
     def __setstate__(self, state):
-        "Unpickle support."
         self._mu, self._sigma = state
