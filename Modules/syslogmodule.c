@@ -408,7 +408,7 @@ _syslog_clear(PyObject *module)
 static void
 _syslog_free(void *module)
 {
-    _syslog_clear((PyObject *)module);
+    (void)_syslog_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot syslog_slots[] = {
