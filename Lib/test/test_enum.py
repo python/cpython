@@ -4116,6 +4116,50 @@ class TestInternals(unittest.TestCase):
             third = auto()
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
+    def test_multiple_auto_on_line(self):
+        class Huh(Enum):
+            ONE = auto()
+            TWO = auto(), auto()
+            THREE = auto(), auto(), auto()
+        self.assertEqual(Huh.ONE.value, 1)
+        self.assertEqual(Huh.TWO.value, (2, 3))
+        self.assertEqual(Huh.THREE.value, (4, 5, 6))
+        #
+        class Hah(Enum):
+            def __new__(cls, value, abbr=None):
+                member = object.__new__(cls)
+                member._value_ = value
+                member.abbr = abbr or value[:3].lower()
+                return member
+            def _generate_next_value_(name, start, count, last):
+                return name
+            #
+            MONDAY = auto()
+            TUESDAY = auto()
+            WEDNESDAY = auto(), 'WED'
+            THURSDAY = auto(), 'Thu'
+            FRIDAY = auto()
+        self.assertEqual(Hah.MONDAY.value, 'MONDAY')
+        self.assertEqual(Hah.MONDAY.abbr, 'mon')
+        self.assertEqual(Hah.TUESDAY.value, 'TUESDAY')
+        self.assertEqual(Hah.TUESDAY.abbr, 'tue')
+        self.assertEqual(Hah.WEDNESDAY.value, 'WEDNESDAY')
+        self.assertEqual(Hah.WEDNESDAY.abbr, 'WED')
+        self.assertEqual(Hah.THURSDAY.value, 'THURSDAY')
+        self.assertEqual(Hah.THURSDAY.abbr, 'Thu')
+        self.assertEqual(Hah.FRIDAY.value, 'FRIDAY')
+        self.assertEqual(Hah.FRIDAY.abbr, 'fri')
+        #
+        class Huh(Enum):
+            def _generate_next_value_(name, start, count, last):
+                return count+1
+            ONE = auto()
+            TWO = auto(), auto()
+            THREE = auto(), auto(), auto()
+        self.assertEqual(Huh.ONE.value, 1)
+        self.assertEqual(Huh.TWO.value, (2, 2))
+        self.assertEqual(Huh.THREE.value, (3, 3, 3))
+
 class TestEnumTypeSubclassing(unittest.TestCase):
     pass
 
