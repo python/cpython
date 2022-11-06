@@ -296,7 +296,7 @@ Module functions
        Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
        or ``None`` to disable opening transactions implicitly.
        Has no effect unless :attr:`Connection.autocommit` is set to
-       :data:`~sqlite3.LEGACY_TRANSACTION_CONTROL`.
+       :data:`~sqlite3.LEGACY_TRANSACTION_CONTROL` (the default).
    :type isolation_level: str | None
 
    :param bool check_same_thread:
@@ -1308,16 +1308,18 @@ Connection objects
       If set to ``None``, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
       corresponding to the underlying `SQLite transaction behaviour`_,
-      implicit :ref:`transaction management
+      :ref:`implicit transaction management
       <sqlite3-transaction-control-isolation-level>` is performed.
 
       If not overridden by the *isolation_level* parameter of :func:`connect`,
       the default is ``""``, which is an alias for ``"DEFERRED"``.
 
-      Using :attr:`autocommit` to control transaction handling is recommended
-      over using :attr:`!isolation_level`.
-      :attr:`!isolation_level` has no effect unless :attr:`autocommit` is set
-      to :data:`LEGACY_TRANSACTION_CONTROL`.
+      .. note::
+
+         Using :attr:`autocommit` to control transaction handling is
+         recommended over using :attr:`!isolation_level`.
+         :attr:`!isolation_level` has no effect unless :attr:`autocommit` is
+         set to :data:`LEGACY_TRANSACTION_CONTROL` (the default).
 
    .. attribute:: row_factory
 
@@ -2389,22 +2391,6 @@ to leave transaction control behaviour to the
 :attr:`Connection.isolation_level` attribute.
 See :ref:`sqlite3-transaction-control-isolation-level` for more information.
 
-.. note::
-
-   :attr:`~Connection.autocommit` and SQLite's `autocommit mode`_
-   are not linked.
-   For example, explicitly issuing a ``BEGIN`` statement when
-   :attr:`!autocommit` is ``True`` will not change the value of
-   the *autocommit* attribute.
-
-   Use :attr:`Connection.in_transaction` to query the low-level SQLite
-   autocommit mode.
-
-.. note::
-
-   The :attr:`Connection.isolation_level` attribute has no effect unless
-   :attr:`Connection.autocommit` is :data:`LEGACY_TRANSACTION_CONTROL`.
-
 
 .. _sqlite3-transaction-control-isolation-level:
 
@@ -2420,8 +2406,8 @@ Transaction control via the ``isolation_level`` attribute
 If :attr:`Connection.autocommit` is set to
 :data:`LEGACY_TRANSACTION_CONTROL`,
 transaction behaviour is controlled using
-the :attr:`Connection.isolation_level` attribute,
-else it has no effect.
+the :attr:`Connection.isolation_level` attribute.
+Otherwise, :attr:`!isolation_level` has no effect.
 
 If the connection attribute :attr:`~Connection.isolation_level`
 is not ``None``,

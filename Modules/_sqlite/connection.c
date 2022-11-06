@@ -106,7 +106,7 @@ autocommit_converter(PyObject *val, enum autocommit_mode *result)
     if (PyLong_Check(val) &&
         PyLong_AsLong(val) == LEGACY_TRANSACTION_CONTROL)
     {
-        *result = AUTOCOMMIT_COMPAT;
+        *result = AUTOCOMMIT_LEGACY;
         return 1;
     }
 
@@ -601,7 +601,7 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
         return NULL;
     }
 
-    if (self->autocommit == AUTOCOMMIT_COMPAT) {
+    if (self->autocommit == AUTOCOMMIT_LEGACY) {
         if (!sqlite3_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "COMMIT") < 0) {
                 return NULL;
@@ -635,7 +635,7 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
         return NULL;
     }
 
-    if (self->autocommit == AUTOCOMMIT_COMPAT) {
+    if (self->autocommit == AUTOCOMMIT_LEGACY) {
         if (!sqlite3_get_autocommit(self->db)) {
             if (connection_exec_stmt(self, "ROLLBACK") < 0) {
                 return NULL;

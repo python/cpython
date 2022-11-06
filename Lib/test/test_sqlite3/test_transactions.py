@@ -369,7 +369,7 @@ class IsolationLevelPostInit(unittest.TestCase):
 
 class AutocommitAttribute(unittest.TestCase):
     """Test PEP 249-compliant autocommit behaviour."""
-    compat = sqlite.LEGACY_TRANSACTION_CONTROL
+    legacy = sqlite.LEGACY_TRANSACTION_CONTROL
 
     @contextmanager
     def check_stmt_trace(self, cx, expected, reset=True):
@@ -483,7 +483,7 @@ class AutocommitAttribute(unittest.TestCase):
 
     def test_autocommit_compat_ctx_mgr(self):
         expected = ["BEGIN ", "INSERT INTO T VALUES(1)", "COMMIT"]
-        with memory_database(autocommit=self.compat) as cx:
+        with memory_database(autocommit=self.legacy) as cx:
             cx.execute("create table t(t)")
             with self.check_stmt_trace(cx, expected):
                 with cx:
@@ -511,7 +511,7 @@ class AutocommitAttribute(unittest.TestCase):
 
     def test_autocommit_compat_executescript(self):
         expected = ["BEGIN", "COMMIT", "SELECT 1"]
-        with memory_database(autocommit=self.compat) as cx:
+        with memory_database(autocommit=self.legacy) as cx:
             with self.check_stmt_trace(cx, expected):
                 self.assertFalse(cx.in_transaction)
                 cx.execute("BEGIN")
