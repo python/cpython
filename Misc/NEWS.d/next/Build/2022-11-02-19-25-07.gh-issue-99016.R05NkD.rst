@@ -1,0 +1,1 @@
+Fix build with ``PYTHON_FOR_REGEN=python3.8``.

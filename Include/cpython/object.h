@@ -51,10 +51,6 @@ typedef struct _Py_Identifier {
 
 #endif  /* NEEDS_PY_IDENTIFIER */
 
-typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
-typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
-
-
 typedef struct {
     /* Number implementations must check *both*
        arguments for proper type and implement the necessary conversions

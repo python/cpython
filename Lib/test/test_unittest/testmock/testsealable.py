@@ -200,6 +200,9 @@ class TestSealable(unittest.TestCase):
                 self.assertIsInstance(foo.Baz.baz, mock.NonCallableMagicMock)
                 self.assertIsInstance(foo.Baz.ban, mock.MagicMock)
 
+                # see gh-91803
+                self.assertIsInstance(foo.bar2(), mock.MagicMock)
+
                 self.assertEqual(foo.bar1(), 'a')
                 foo.bar1.return_value = 'new_a'
                 self.assertEqual(foo.bar1(), 'new_a')
@@ -212,7 +215,7 @@ class TestSealable(unittest.TestCase):
                 with self.assertRaises(AttributeError):
                     foo.bar = 1
                 with self.assertRaises(AttributeError):
-                    foo.bar2()
+                    foo.bar2().x
 
                 foo.bar2.return_value = 'bar2'
                 self.assertEqual(foo.bar2(), 'bar2')
