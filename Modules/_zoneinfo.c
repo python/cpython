@@ -100,9 +100,6 @@ typedef struct {
     _ttinfo NO_TTINFO;
 } zoneinfo_state;
 
-// Globals
-static zoneinfo_state global_state;
-
 // Constants
 static const int EPOCHORDINAL = 719163;
 static int DAYS_IN_MONTH[] = {
@@ -194,19 +191,29 @@ static PyObject *
 zone_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
                        PyObject *const key);
 
-zoneinfo_state *zoneinfo_get_state(PyObject *mod)
+static inline zoneinfo_state *
+zoneinfo_get_state(PyObject *mod)
 {
-    return &global_state;
+    zoneinfo_state *state = (zoneinfo_state *)PyModule_GetState(mod);
+    assert(state != NULL);
+    return state;
 }
 
-zoneinfo_state *zoneinfo_get_state_by_cls(PyTypeObject *cls)
+static inline zoneinfo_state *
+zoneinfo_get_state_by_cls(PyTypeObject *cls)
 {
-    return &global_state;
+    zoneinfo_state *state = (zoneinfo_state *)PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return state;
 }
 
-zoneinfo_state *zoneinfo_get_state_by_self(PyTypeObject *self)
+static struct PyModuleDef zoneinfomodule;
+static inline zoneinfo_state *
+zoneinfo_get_state_by_self(PyTypeObject *self)
 {
-    return &global_state;
+    PyObject *mod = PyType_GetModuleByDef(self, &zoneinfomodule);
+    assert(mod != NULL);
+    return zoneinfo_get_state(mod);
 }
 
 static PyObject *
@@ -2732,36 +2739,57 @@ static PyType_Spec zoneinfo_spec = {
 /////
 // Specify the _zoneinfo module
 static PyMethodDef module_methods[] = {{NULL, NULL}};
-static void
-module_free(void *m)
-{
-    zoneinfo_state *state = zoneinfo_get_state(m);
 
+static int
+module_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    zoneinfo_state *state = zoneinfo_get_state(mod);
+
+    Py_VISIT(state->ZoneInfoType);
+    Py_VISIT(state->io_open);
+    Py_VISIT(state->_tzpath_find_tzfile);
+    Py_VISIT(state->_common_mod);
+    Py_VISIT(state->TIMEDELTA_CACHE);
+    Py_VISIT(state->ZONEINFO_WEAK_CACHE);
+
+    StrongCacheNode *node = state->ZONEINFO_STRONG_CACHE;
+    while (node != NULL) {
+        StrongCacheNode *next = node->next;
+        Py_VISIT(node->key);
+        Py_VISIT(node->zone);
+        node = next;
+    }
+
+    Py_VISIT(state->NO_TTINFO.utcoff);
+    Py_VISIT(state->NO_TTINFO.dstoff);
+    Py_VISIT(state->NO_TTINFO.tzname);
+
+    return 0;
+}
+
+static int
+module_clear(PyObject *mod)
+{
+    zoneinfo_state *state = zoneinfo_get_state(mod);
+
+    Py_CLEAR(state->ZoneInfoType);
     Py_CLEAR(state->io_open);
     Py_CLEAR(state->_tzpath_find_tzfile);
     Py_CLEAR(state->_common_mod);
-
-    xdecref_ttinfo(&(state->NO_TTINFO));
-
-    if (state->TIMEDELTA_CACHE != NULL &&
-        Py_REFCNT(state->TIMEDELTA_CACHE) > 1)
-    {
-        Py_DECREF(state->TIMEDELTA_CACHE);
-    }
-    else {
-        Py_CLEAR(state->TIMEDELTA_CACHE);
-    }
-
-    if (state->ZONEINFO_WEAK_CACHE != NULL &&
-        Py_REFCNT(state->ZONEINFO_WEAK_CACHE) > 1)
-    {
-        Py_DECREF(state->ZONEINFO_WEAK_CACHE);
-    }
-    else {
-        Py_CLEAR(state->ZONEINFO_WEAK_CACHE);
-    }
-
+    Py_CLEAR(state->TIMEDELTA_CACHE);
+    Py_CLEAR(state->ZONEINFO_WEAK_CACHE);
     clear_strong_cache(state, state->ZoneInfoType);
+    Py_CLEAR(state->NO_TTINFO.utcoff);
+    Py_CLEAR(state->NO_TTINFO.dstoff);
+    Py_CLEAR(state->NO_TTINFO.tzname);
+
+    return 0;
+}
+
+static void
+module_free(void *mod)
+{
+    (void)module_clear((PyObject *)mod);
 }
 
 static int
@@ -2823,13 +2851,16 @@ static PyModuleDef_Slot zoneinfomodule_slots[] = {
     {Py_mod_exec, zoneinfomodule_exec}, {0, NULL}};
 
 static struct PyModuleDef zoneinfomodule = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_zoneinfo",
     .m_doc = "C implementation of the zoneinfo module",
-    .m_size = 0,
+    .m_size = sizeof(zoneinfo_state),
     .m_methods = module_methods,
     .m_slots = zoneinfomodule_slots,
-    .m_free = (freefunc)module_free};
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = module_free,
+};
 
 PyMODINIT_FUNC
 PyInit__zoneinfo(void)
