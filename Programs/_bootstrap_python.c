@@ -14,6 +14,8 @@
 #include "Python/frozen_modules/importlib._bootstrap_external.h"
 /* End includes */
 
+uint32_t _Py_next_func_version = 1;
+
 /* Empty initializer for deepfrozen modules */
 int _Py_Deepfreeze_Init(void)
 {

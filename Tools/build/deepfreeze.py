@@ -472,6 +472,7 @@ def generate(args: list[str], output: TextIO) -> None:
             with printer.block(f"if ({p} < 0)"):
                 printer.write("return -1;")
         printer.write("return 0;")
+    printer.write(f"\nuint32_t _Py_next_func_version = {next_code_version};\n")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 

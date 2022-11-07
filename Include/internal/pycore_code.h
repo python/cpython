@@ -455,6 +455,8 @@ _PyCode_LineNumberFromArray(PyCodeObject *co, int index)
     }
 }
 
+extern uint32_t _Py_next_func_version;
+
 
 #ifdef __cplusplus
 }

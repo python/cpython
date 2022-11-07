@@ -11,8 +11,6 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
-extern uint32_t _Py_next_func_version;
-
 /******************
  * generic helpers
  ******************/
