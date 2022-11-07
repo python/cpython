@@ -372,6 +372,83 @@ _PyTypes_Fini(PyInterpreterState *interp)
 
 static PyObject * lookup_subclasses(PyTypeObject *);
 
+int
+PyType_AddWatcher(PyType_WatchCallback callback)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    for (int i = 0; i < TYPE_MAX_WATCHERS; i++) {
+        if (!interp->type_watchers[i]) {
+            interp->type_watchers[i] = callback;
+            return i;
+        }
+    }
+
+    PyErr_SetString(PyExc_RuntimeError, "no more type watcher IDs available");
+    return -1;
+}
+
+static inline int
+validate_watcher_id(PyInterpreterState *interp, int watcher_id)
+{
+    if (watcher_id < 0 || watcher_id >= TYPE_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid type watcher ID %d", watcher_id);
+        return -1;
+    }
+    if (!interp->type_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No type watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    return 0;
+}
+
+int
+PyType_ClearWatcher(int watcher_id)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id) < 0) {
+        return -1;
+    }
+    interp->type_watchers[watcher_id] = NULL;
+    return 0;
+}
+
+static int assign_version_tag(PyTypeObject *type);
+
+int
+PyType_Watch(int watcher_id, PyObject* obj)
+{
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_ValueError, "Cannot watch non-type");
+        return -1;
+    }
+    PyTypeObject *type = (PyTypeObject *)obj;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id) < 0) {
+        return -1;
+    }
+    // ensure we will get a callback on the next modification
+    assign_version_tag(type);
+    type->tp_watched |= (1 << watcher_id);
+    return 0;
+}
+
+int
+PyType_Unwatch(int watcher_id, PyObject* obj)
+{
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_ValueError, "Cannot watch non-type");
+        return -1;
+    }
+    PyTypeObject *type = (PyTypeObject *)obj;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (validate_watcher_id(interp, watcher_id)) {
+        return -1;
+    }
+    type->tp_watched &= ~(1 << watcher_id);
+    return 0;
+}
+
 void
 PyType_Modified(PyTypeObject *type)
 {
@@ -408,6 +485,23 @@ PyType_Modified(PyTypeObject *type)
             PyType_Modified(subclass);
         }
     }
+
+    if (type->tp_watched) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        int bits = type->tp_watched;
+        int i = 0;
+        while(bits && i < TYPE_MAX_WATCHERS) {
+            if (bits & 1) {
+                PyType_WatchCallback cb = interp->type_watchers[i];
+                if (cb && (cb(type) < 0)) {
+                    PyErr_WriteUnraisable((PyObject *)type);
+                }
+            }
+            i += 1;
+            bits >>= 1;
+        }
+    }
+
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
@@ -467,7 +561,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 }
 
 static int
-assign_version_tag(struct type_cache *cache, PyTypeObject *type)
+assign_version_tag(PyTypeObject *type)
 {
     /* Ensure that the tp_version_tag is valid and set
        Py_TPFLAGS_VALID_VERSION_TAG.  To respect the invariant, this
@@ -492,7 +586,7 @@ assign_version_tag(struct type_cache *cache, PyTypeObject *type)
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
-        if (!assign_version_tag(cache, _PyType_CAST(b)))
+        if (!assign_version_tag(_PyType_CAST(b)))
             return 0;
     }
     type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
@@ -4111,7 +4205,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         return NULL;
     }
 
-    if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(cache, type)) {
+    if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(type)) {
         h = MCACHE_HASH_METHOD(type, name);
         struct type_cache_entry *entry = &cache->hashtable[h];
         entry->version = type->tp_version_tag;
@@ -4861,9 +4955,10 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *abstract_methods;
         PyObject *sorted_methods;
         PyObject *joined;
+        PyObject* comma_w_quotes_sep;
         Py_ssize_t method_count;
 
-        /* Compute ", ".join(sorted(type.__abstractmethods__))
+        /* Compute "', '".join(sorted(type.__abstractmethods__))
            into joined. */
         abstract_methods = type_abstractmethods(type, NULL);
         if (abstract_methods == NULL)
@@ -4876,22 +4971,28 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(sorted_methods);
             return NULL;
         }
-        _Py_DECLARE_STR(comma_sep, ", ");
-        joined = PyUnicode_Join(&_Py_STR(comma_sep), sorted_methods);
+        comma_w_quotes_sep = PyUnicode_FromString("', '");
+        joined = PyUnicode_Join(comma_w_quotes_sep, sorted_methods);
         method_count = PyObject_Length(sorted_methods);
         Py_DECREF(sorted_methods);
-        if (joined == NULL)
+        if (joined == NULL)  {
+            Py_DECREF(comma_w_quotes_sep);
             return NULL;
-        if (method_count == -1)
+        }
+        if (method_count == -1) {
+            Py_DECREF(comma_w_quotes_sep);
+            Py_DECREF(joined);
             return NULL;
+        }
 
         PyErr_Format(PyExc_TypeError,
                      "Can't instantiate abstract class %s "
-                     "without an implementation for abstract method%s %U",
+                     "without an implementation for abstract method%s '%U'",
                      type->tp_name,
                      method_count > 1 ? "s" : "",
                      joined);
         Py_DECREF(joined);
+        Py_DECREF(comma_w_quotes_sep);
         return NULL;
     }
     PyObject *obj = type->tp_alloc(type, 0);

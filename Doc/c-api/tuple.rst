@@ -69,7 +69,7 @@ Tuple Objects
 
    Return the slice of the tuple pointed to by *p* between *low* and *high*,
    or ``NULL`` on failure.  This is the equivalent of the Python expression
-   ``p[low:high]``.  Indexing from the end of the list is not supported.
+   ``p[low:high]``.  Indexing from the end of the tuple is not supported.
 
 
 .. c:function:: int PyTuple_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)

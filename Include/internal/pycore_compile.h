@@ -18,10 +18,11 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     PyCompilerFlags *flags,
     int optimize,
     struct _arena *arena);
-extern PyFutureFeatures* _PyFuture_FromAST(
+
+int _PyFuture_FromAST(
     struct _mod * mod,
-    PyObject *filename
-    );
+    PyObject *filename,
+    PyFutureFeatures* futures);
 
 extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 

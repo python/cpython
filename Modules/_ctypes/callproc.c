@@ -57,7 +57,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
@@ -96,6 +95,8 @@
 */
 #define DONT_USE_SEH
 #endif
+
+#include "pycore_runtime_init.h"
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
@@ -719,9 +720,8 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
     }
 
     {
-        _Py_IDENTIFIER(_as_parameter_);
         PyObject *arg;
-        if (_PyObject_LookupAttrId(obj, &PyId__as_parameter_, &arg) < 0) {
+        if (_PyObject_LookupAttr(obj, &_Py_ID(_as_parameter_), &arg) < 0) {
             return -1;
         }
         /* Which types should we exactly allow here?
@@ -1848,16 +1848,14 @@ static PyObject *
 unpickle(PyObject *self, PyObject *args)
 {
     PyObject *typ, *state, *meth, *obj, *result;
-    _Py_IDENTIFIER(__new__);
-    _Py_IDENTIFIER(__setstate__);
 
     if (!PyArg_ParseTuple(args, "OO!", &typ, &PyTuple_Type, &state))
         return NULL;
-    obj = _PyObject_CallMethodIdOneArg(typ, &PyId___new__, typ);
+    obj = PyObject_CallMethodOneArg(typ, &_Py_ID(__new__), typ);
     if (obj == NULL)
         return NULL;
 
-    meth = _PyObject_GetAttrId(obj, &PyId___setstate__);
+    meth = PyObject_GetAttr(obj, &_Py_ID(__setstate__));
     if (meth == NULL) {
         goto error;
     }
