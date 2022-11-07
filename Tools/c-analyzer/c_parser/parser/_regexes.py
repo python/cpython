@@ -137,7 +137,8 @@ COMPOUND_TYPE_KIND = r'(?: \b (?: struct | union | enum ) \b )'
 #######################################
 # variable declarations
 
-STORAGE_CLASS = r'(?: \b (?: auto | register | static | extern ) \b )'
+_STORAGE = 'auto register static extern'.split()
+STORAGE_CLASS = rf'(?: \b (?: {" | ".join(_STORAGE)} ) \b )'
 TYPE_QUALIFIER = r'(?: \b (?: const | volatile ) \b )'
 PTR_QUALIFIER = rf'(?: [*] (?: \s* {TYPE_QUALIFIER} )? )'
 
@@ -175,6 +176,7 @@ DECLARATOR = textwrap.dedent(rf'''
                 (?:  # <IDENTIFIER>
                     {STRICT_IDENTIFIER}
                 )
+                # Inside the brackets is actually a "constant expression".
                 (?: \s* \[ (?: \s* [^\]]+ \s* )? [\]] )*  # arrays
              )
             |
@@ -183,6 +185,7 @@ DECLARATOR = textwrap.dedent(rf'''
                 (?:  # <WRAPPED_IDENTIFIER>
                     {STRICT_IDENTIFIER}
                 )
+                # Inside the brackets is actually a "constant expression".
                 (?: \s* \[ (?: \s* [^\]]+ \s* )? [\]] )*  # arrays
                 \s* [)]
              )
@@ -193,6 +196,7 @@ DECLARATOR = textwrap.dedent(rf'''
                 (?:  # <FUNC_IDENTIFIER>
                     {STRICT_IDENTIFIER}
                 )
+                # Inside the brackets is actually a "constant expression".
                 (?: \s* \[ (?: \s* [^\]]+ \s* )? [\]] )*  # arrays
                 \s* [)]
                 # We allow for a single level of paren nesting in parameters.
@@ -321,7 +325,10 @@ STRUCT_MEMBER_DECL = textwrap.dedent(rf'''
             (?:
                 \s* [:] \s*
                 (?:  # <SIZE>
+                    # This is actually a "constant expression".
                     \d+
+                    |
+                    [^'",}}]+
                  )
              )?
             \s*
@@ -356,6 +363,7 @@ ENUM_MEMBER_DECL = textwrap.dedent(rf'''
             (?:
                 \s* = \s*
                 (?:  # <INIT>
+                    # This is actually a "constant expression".
                     {_ind(STRING_LITERAL, 4)}
                     |
                     [^'",}}]+

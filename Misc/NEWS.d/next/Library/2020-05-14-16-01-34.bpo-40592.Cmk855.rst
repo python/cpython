@@ -1,1 +1,0 @@
-:func:`shutil.which` now ignores empty entries in :envvar:`PATHEXT` instead of treating them as a match.

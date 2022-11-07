@@ -4,9 +4,11 @@ from c_parser import (
 from c_parser.info import (
     KIND,
     TypeDeclaration,
-    filter_by_kind,
-    collate_by_kind_group,
     resolve_parsed,
+)
+from c_parser.match import (
+    filter_by_kind,
+    group_by_kinds,
 )
 from . import (
     analyze as _analyze,
@@ -55,7 +57,7 @@ def analyze_decls(decls, known, *,
     )
 
     decls = list(decls)
-    collated = collate_by_kind_group(decls)
+    collated = group_by_kinds(decls)
 
     types = {decl: None for decl in collated['type']}
     typespecs = _analyze.get_typespecs(types)

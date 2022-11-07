@@ -1,1 +1,0 @@
-Added *newline* parameter to ``pathlib.Path.write_text()``.

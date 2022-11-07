@@ -13,6 +13,8 @@ detected.
 It can be enabled using the :option:`-X dev <-X>` command line option or by
 setting the :envvar:`PYTHONDEVMODE` environment variable to ``1``.
 
+See also :ref:`Python debug build <debug-build>`.
+
 Effects of the Python Development Mode
 ======================================
 
@@ -92,6 +94,9 @@ the traceback where the memory block was allocated.
 The Python Development Mode does not prevent the :option:`-O` command line
 option from removing :keyword:`assert` statements nor from setting
 :const:`__debug__` to ``False``.
+
+The Python Development Mode can only be enabled at the Python startup. Its
+value can be read from :data:`sys.flags.dev_mode <sys.flags>`.
 
 .. versionchanged:: 3.8
    The :class:`io.IOBase` destructor now logs ``close()`` exceptions.

@@ -26,6 +26,8 @@ implement a large subset of the IMAP4rev1 client protocol as defined in
 :rfc:`2060`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
 note that the ``STATUS`` command is not supported in IMAP4.
 
+.. include:: ../includes/wasm-notavail.rst
+
 Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
 base class:
 
@@ -174,9 +176,9 @@ example of usage.
 
 .. seealso::
 
-   Documents describing the protocol, and sources and binaries  for servers
-   implementing it, can all be found at the University of Washington's *IMAP
-   Information Center* (https://www.washington.edu/imap/).
+   Documents describing the protocol, sources for servers
+   implementing it, by the University of Washington's IMAP Information Center
+   can all be found at (**Source Code**) https://github.com/uw-imap/imap (**Not Maintained**).
 
 
 .. _imap4-objects:

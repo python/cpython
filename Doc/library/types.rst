@@ -34,7 +34,7 @@ Dynamic Type Creation
    freshly created class namespace. It should accept the class namespace
    as its sole argument and update the namespace directly with the class
    contents. If no callback is provided, it has the same effect as passing
-   in ``lambda ns: ns``.
+   in ``lambda ns: None``.
 
    .. versionadded:: 3.3
 
@@ -223,7 +223,7 @@ Standard names are defined for the following types:
 
 .. class:: ModuleType(name, doc=None)
 
-   The type of :term:`modules <module>`. Constructor takes the name of the
+   The type of :term:`modules <module>`. The constructor takes the name of the
    module to be created and optionally its :term:`docstring`.
 
    .. note::
@@ -238,12 +238,23 @@ Standard names are defined for the following types:
 
       The :term:`loader` which loaded the module. Defaults to ``None``.
 
+      This attribute is to match :attr:`importlib.machinery.ModuleSpec.loader`
+      as stored in the :attr:`__spec__` object.
+
+      .. note::
+         A future version of Python may stop setting this attribute by default.
+         To guard against this potential change, preferably read from the
+         :attr:`__spec__` attribute instead or use
+         ``getattr(module, "__loader__", None)`` if you explicitly need to use
+         this attribute.
+
       .. versionchanged:: 3.4
          Defaults to ``None``. Previously the attribute was optional.
 
    .. attribute:: __name__
 
-      The name of the module.
+      The name of the module. Expected to match
+      :attr:`importlib.machinery.ModuleSpec.name`.
 
    .. attribute:: __package__
 
@@ -252,8 +263,25 @@ Standard names are defined for the following types:
       to ``''``, else it should be set to the name of the package (which can be
       :attr:`__name__` if the module is a package itself). Defaults to ``None``.
 
+      This attribute is to match :attr:`importlib.machinery.ModuleSpec.parent`
+      as stored in the :attr:`__spec__` object.
+
+      .. note::
+         A future version of Python may stop setting this attribute by default.
+         To guard against this potential change, preferably read from the
+         :attr:`__spec__` attribute instead or use
+         ``getattr(module, "__package__", None)`` if you explicitly need to use
+         this attribute.
+
       .. versionchanged:: 3.4
          Defaults to ``None``. Previously the attribute was optional.
+
+   .. attribute:: __spec__
+
+      A record of the module's import-system-related state. Expected to be an
+      instance of :class:`importlib.machinery.ModuleSpec`.
+
+      .. versionadded:: 3.4
 
 
 .. data:: EllipsisType
@@ -262,7 +290,29 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
-.. data:: Union
+.. class:: GenericAlias(t_origin, t_args)
+
+   The type of :ref:`parameterized generics <types-genericalias>` such as
+   ``list[int]``.
+
+   ``t_origin`` should be a non-parameterized generic class, such as ``list``,
+   ``tuple`` or ``dict``.  ``t_args`` should be a :class:`tuple` (possibly of
+   length 1) of types which parameterize ``t_origin``::
+
+      >>> from types import GenericAlias
+
+      >>> list[int] == GenericAlias(list, (int,))
+      True
+      >>> dict[str, int] == GenericAlias(dict, (str, int))
+      True
+
+   .. versionadded:: 3.9
+
+   .. versionchanged:: 3.9.2
+      This type can now be subclassed.
+
+
+.. class:: UnionType
 
    The type of :ref:`union type expressions<types-union>`.
 
@@ -367,6 +417,12 @@ Standard names are defined for the following types:
 
       .. versionadded:: 3.9
 
+   .. describe:: hash(proxy)
+
+      Return a hash of the underlying mapping.
+
+      .. versionadded:: 3.12
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
@@ -391,7 +447,9 @@ Additional Utility Classes and Functions
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
-               return self.__dict__ == other.__dict__
+               if isinstance(self, SimpleNamespace) and isinstance(other, SimpleNamespace):
+                  return self.__dict__ == other.__dict__
+               return NotImplemented
 
    ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
    However, for a structured record type use :func:`~collections.namedtuple`
