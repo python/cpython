@@ -2772,27 +2772,19 @@ class CAPITest(unittest.TestCase):
                      b'%03i', c_int(10))
         check_format('0010',
                      b'%0.4i', c_int(10))
-        for conv in [b'i', b'd']:
-            for mod, ctype in [
-                (b'', c_int),
-                (b'l', c_long),
-                (b'll', c_longlong),
-                (b'z', c_ssize_t),
-            ]:
-                with self.subTest(format=b'%' + mod + conv):
-                    check_format(expected,
-                                 b'%' + mod + conv, ctype(value))
-        for conv, value, expected in [
-            (b'u', 123, '123'),
-            (b'o', 0o123, '123'),
-            (b'x', 0xabc, 'abc'),
-            (b'X', 0xabc, 'ABC'),
+        for conv, signed, value, expected in [
+            (b'i', True, -123, '-123'),
+            (b'd', True, -123, '-123'),
+            (b'u', False, 123, '123'),
+            (b'o', False, 0o123, '123'),
+            (b'x', False, 0xabc, 'abc'),
+            (b'X', False, 0xabc, 'ABC'),
         ]:
             for mod, ctype in [
-                (b'', c_uint),
-                (b'l', c_ulong),
-                (b'll', c_ulonglong),
-                (b'z', c_size_t),
+                (b'', c_int if signed else c_uint),
+                (b'l', c_long if signed else c_ulong),
+                (b'll', c_longlong if signed else c_ulonglong),
+                (b'z', c_ssize_t if signed else c_size_t),
             ]:
                 with self.subTest(format=b'%' + mod + conv):
                     check_format(expected,
