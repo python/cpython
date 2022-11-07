@@ -1015,10 +1015,15 @@ class TestExceptStar_WeirdLeafExceptions(ExceptStarTest):
         def __eq__(self, other):
             return False
 
+    class BrokenEqualExc(ValueError):
+        def __eq__(self, other):
+            raise RuntimeError()
+
     def setUp(self):
         self.bad_types = [self.UnhashableExc,
                           self.AlwaysEqualExc,
-                          self.NeverEqualExc]
+                          self.NeverEqualExc,
+                          self.BrokenEqualExc]
 
     def except_type(self, eg, type):
         match, rest = None, None
@@ -1111,11 +1116,18 @@ class TestExceptStar_WeirdExceptionGroupSubclass(ExceptStarTest):
         def derive(self, excs):
             return type(self)(self.message, excs)
 
+    class BrokenEqualEG(ExceptionGroup):
+        def __eq__(self, other):
+            raise RuntimeError()
+
+        def derive(self, excs):
+            return type(self)(self.message, excs)
 
     def setUp(self):
         self.bad_types = [self.UnhashableEG,
                           self.AlwaysEqualEG,
-                          self.NeverEqualEG]
+                          self.NeverEqualEG,
+                          self.BrokenEqualEG]
 
     def except_type(self, eg, type):
         match, rest = None, None
