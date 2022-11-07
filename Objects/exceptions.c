@@ -962,7 +962,7 @@ typedef enum {
     EXCEPTION_GROUP_MATCH_BY_TYPE = 0,
     /* A PyFunction returning True for matching exceptions */
     EXCEPTION_GROUP_MATCH_BY_PREDICATE = 1,
-    /* A set of the IDs of leaf exception to include in the result.
+    /* A set of the IDs of leaf exceptions to include in the result.
      * This matcher type is used internally by the interpreter
      * to construct reraised exceptions.
      */
