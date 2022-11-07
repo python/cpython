@@ -1834,8 +1834,13 @@ The deprecated default adapters and converters consist of:
 Command-line interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :mod:`!sqlite3` module can be invoked as a script
+The :mod:`!sqlite3` module can be invoked as a script,
+using the interpreter's :option:`-m` switch,
 in order to provide a simple SQLite shell.
+The argument signature is as follows::
+
+   python -m sqlite3 [-h] [-v] [filename] [sql]
+
 Type ``.quit`` or CTRL-D to exit the shell.
 
 .. program:: python -m sqlite3 [-h] [-v] [filename] [sql]
