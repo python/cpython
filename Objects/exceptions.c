@@ -1027,12 +1027,12 @@ exceptiongroup_split_check_match(PyObject *exc,
     case EXCEPTION_GROUP_MATCH_INSTANCE_IDS: {
         assert(PySet_Check(matcher_value));
         if (!_PyBaseExceptionGroup_Check(exc)) {
-            PyObject *exc_key = PyLong_FromVoidPtr(exc);
-            if (exc_key == NULL) {
+            PyObject *exc_id = PyLong_FromVoidPtr(exc);
+            if (exc_id == NULL) {
                 return -1;
             }
-            int res = PySet_Contains(matcher_value, exc_key);
-            Py_DECREF(exc_key);
+            int res = PySet_Contains(matcher_value, exc_id);
+            Py_DECREF(exc_id);
             return res;
         }
         return 0;
@@ -1230,12 +1230,12 @@ collect_exception_group_leaf_ids(PyObject *exc, PyObject *leaf_ids)
     /* Add IDs of all leaf exceptions in exc to the leaf_ids set */
 
     if (!_PyBaseExceptionGroup_Check(exc)) {
-        PyObject *exc_key = PyLong_FromVoidPtr(exc);
-        if (exc_key == NULL) {
+        PyObject *exc_id = PyLong_FromVoidPtr(exc);
+        if (exc_id == NULL) {
             return -1;
         }
-        int res = PySet_Add(leaf_ids, exc_key);
-        Py_DECREF(exc_key);
+        int res = PySet_Add(leaf_ids, exc_id);
+        Py_DECREF(exc_id);
         return res;
     }
     PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
