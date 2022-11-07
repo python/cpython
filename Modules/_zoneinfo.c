@@ -96,10 +96,10 @@ typedef struct {
 
     PyObject *TIMEDELTA_CACHE;
     PyObject *ZONEINFO_WEAK_CACHE;
+    StrongCacheNode *ZONEINFO_STRONG_CACHE;
 } zoneinfo_state;
 
 // Globals
-static StrongCacheNode *ZONEINFO_STRONG_CACHE = NULL;
 static size_t ZONEINFO_STRONG_CACHE_MAX_SIZE = 8;
 
 static zoneinfo_state global_state;
@@ -184,14 +184,16 @@ static size_t
 _bisect(const int64_t value, const int64_t *arr, size_t size);
 
 static int
-eject_from_strong_cache(const PyTypeObject *const type, PyObject *key);
+eject_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
+                        PyObject *key);
 static void
 clear_strong_cache(const PyTypeObject *const type);
 static void
-update_strong_cache(const PyTypeObject *const type, PyObject *key,
-                    PyObject *zone);
+update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
+                    PyObject *key, PyObject *zone);
 static PyObject *
-zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key);
+zone_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
+                       PyObject *const key);
 
 zoneinfo_state *zoneinfo_get_state()
 {
@@ -302,12 +304,12 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    PyObject *instance = zone_from_strong_cache(type, key);
+    zoneinfo_state *state = zoneinfo_get_state_by_self(type);
+    PyObject *instance = zone_from_strong_cache(state, type, key);
     if (instance != NULL || PyErr_Occurred()) {
         return instance;
     }
 
-    zoneinfo_state *state = zoneinfo_get_state_by_self(type);
     PyObject *weak_cache = get_weak_cache(state, type);
     instance = PyObject_CallMethod(weak_cache, "get", "O", key, Py_None);
     if (instance == NULL) {
@@ -330,7 +332,7 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
     }
 
-    update_strong_cache(type, key, instance);
+    update_strong_cache(state, type, key, instance);
     return instance;
 }
 
@@ -505,7 +507,7 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
 
         while ((item = PyIter_Next(iter))) {
             // Remove from strong cache
-            if (eject_from_strong_cache(type, item) < 0) {
+            if (eject_from_strong_cache(state, type, item) < 0) {
                 Py_DECREF(item);
                 break;
             }
@@ -2399,10 +2401,10 @@ strong_cache_free(StrongCacheNode *root)
  * the front of the cache.
  */
 static void
-remove_from_strong_cache(StrongCacheNode *node)
+remove_from_strong_cache(zoneinfo_state *state, StrongCacheNode *node)
 {
-    if (ZONEINFO_STRONG_CACHE == node) {
-        ZONEINFO_STRONG_CACHE = node->next;
+    if (state->ZONEINFO_STRONG_CACHE == node) {
+        state->ZONEINFO_STRONG_CACHE = node->next;
     }
 
     if (node->prev != NULL) {
@@ -2448,15 +2450,17 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
  * This function is used to enable the per-key functionality in clear_cache.
  */
 static int
-eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
+eject_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
+                        PyObject *key)
 {
-    if (type != zoneinfo_get_state()->ZoneInfoType) {
+    if (type != state->ZoneInfoType) {
         return 0;
     }
 
-    StrongCacheNode *node = find_in_strong_cache(ZONEINFO_STRONG_CACHE, key);
+    StrongCacheNode *cache = state->ZONEINFO_STRONG_CACHE;
+    StrongCacheNode *node = find_in_strong_cache(cache, key);
     if (node != NULL) {
-        remove_from_strong_cache(node);
+        remove_from_strong_cache(state, node);
 
         strong_cache_node_free(node);
     }
@@ -2472,14 +2476,15 @@ eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
  * it is not at the front of the cache, it needs to be moved there.
  */
 static void
-move_strong_cache_node_to_front(StrongCacheNode **root, StrongCacheNode *node)
+move_strong_cache_node_to_front(zoneinfo_state *state, StrongCacheNode **root,
+                                StrongCacheNode *node)
 {
     StrongCacheNode *root_p = *root;
     if (root_p == node) {
         return;
     }
 
-    remove_from_strong_cache(node);
+    remove_from_strong_cache(state, node);
 
     node->prev = NULL;
     node->next = root_p;
@@ -2501,16 +2506,19 @@ move_strong_cache_node_to_front(StrongCacheNode **root, StrongCacheNode *node)
  * always returns a cache miss for subclasses.
  */
 static PyObject *
-zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key)
+zone_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
+                       PyObject *const key)
 {
-    if (type != zoneinfo_get_state()->ZoneInfoType) {
+    if (type != state->ZoneInfoType) {
         return NULL;  // Strong cache currently only implemented for base class
     }
 
-    StrongCacheNode *node = find_in_strong_cache(ZONEINFO_STRONG_CACHE, key);
+    StrongCacheNode *cache = state->ZONEINFO_STRONG_CACHE;
+    StrongCacheNode *node = find_in_strong_cache(cache, key);
 
     if (node != NULL) {
-        move_strong_cache_node_to_front(&ZONEINFO_STRONG_CACHE, node);
+        move_strong_cache_node_to_front(state, &(state->ZONEINFO_STRONG_CACHE),
+                                        node);
         Py_INCREF(node->zone);
         return node->zone;
     }
@@ -2525,16 +2533,17 @@ zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key)
  * the cache to at most ZONEINFO_STRONG_CACHE_MAX_SIZE).
  */
 static void
-update_strong_cache(const PyTypeObject *const type, PyObject *key,
-                    PyObject *zone)
+update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
+                    PyObject *key, PyObject *zone)
 {
-    if (type != zoneinfo_get_state()->ZoneInfoType) {
+    if (type != state->ZoneInfoType) {
         return;
     }
 
     StrongCacheNode *new_node = strong_cache_node_new(key, zone);
 
-    move_strong_cache_node_to_front(&ZONEINFO_STRONG_CACHE, new_node);
+    move_strong_cache_node_to_front(state, &(state->ZONEINFO_STRONG_CACHE),
+                                    new_node);
 
     StrongCacheNode *node = new_node->next;
     for (size_t i = 1; i < ZONEINFO_STRONG_CACHE_MAX_SIZE; ++i) {
@@ -2561,12 +2570,13 @@ update_strong_cache(const PyTypeObject *const type, PyObject *key,
 void
 clear_strong_cache(const PyTypeObject *const type)
 {
-    if (type != zoneinfo_get_state()->ZoneInfoType) {
+    zoneinfo_state *state = zoneinfo_get_state();
+    if (type != state->ZoneInfoType) {
         return;
     }
 
-    strong_cache_free(ZONEINFO_STRONG_CACHE);
-    ZONEINFO_STRONG_CACHE = NULL;
+    strong_cache_free(state->ZONEINFO_STRONG_CACHE);
+    state->ZONEINFO_STRONG_CACHE = NULL;
 }
 
 static PyObject *
