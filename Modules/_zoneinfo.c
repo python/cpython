@@ -186,7 +186,7 @@ static int
 eject_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
                         PyObject *key);
 static void
-clear_strong_cache(const PyTypeObject *const type);
+clear_strong_cache(zoneinfo_state *state, const PyTypeObject *const type);
 static void
 update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
                     PyObject *key, PyObject *zone);
@@ -194,7 +194,7 @@ static PyObject *
 zone_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
                        PyObject *const key);
 
-zoneinfo_state *zoneinfo_get_state()
+zoneinfo_state *zoneinfo_get_state(PyObject *mod)
 {
     return &global_state;
 }
@@ -280,7 +280,7 @@ cleanup:
 static PyObject *
 get_weak_cache(zoneinfo_state *state, PyTypeObject *type)
 {
-    if (type == zoneinfo_get_state()->ZoneInfoType) {
+    if (type == state->ZoneInfoType) {
         return state->ZONEINFO_WEAK_CACHE;
     }
     else {
@@ -489,7 +489,7 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
             Py_DECREF(rv);
         }
 
-        clear_strong_cache(type);
+        clear_strong_cache(state, type);
     }
     else {
         PyObject *item = NULL;
@@ -2605,9 +2605,8 @@ update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
  * for everything except the base class.
  */
 void
-clear_strong_cache(const PyTypeObject *const type)
+clear_strong_cache(zoneinfo_state *state, const PyTypeObject *const type)
 {
-    zoneinfo_state *state = zoneinfo_get_state();
     if (type != state->ZoneInfoType) {
         return;
     }
@@ -2736,7 +2735,7 @@ static PyMethodDef module_methods[] = {{NULL, NULL}};
 static void
 module_free(void *m)
 {
-    zoneinfo_state *state = zoneinfo_get_state();
+    zoneinfo_state *state = zoneinfo_get_state(m);
 
     Py_CLEAR(state->io_open);
     Py_CLEAR(state->_tzpath_find_tzfile);
@@ -2762,7 +2761,7 @@ module_free(void *m)
         Py_CLEAR(state->ZONEINFO_WEAK_CACHE);
     }
 
-    clear_strong_cache(zoneinfo_get_state()->ZoneInfoType);
+    clear_strong_cache(state, state->ZoneInfoType);
 }
 
 static int
@@ -2773,7 +2772,7 @@ zoneinfomodule_exec(PyObject *m)
         goto error;
     }
 
-    zoneinfo_state *state = zoneinfo_get_state();
+    zoneinfo_state *state = zoneinfo_get_state(m);
     PyObject *base = (PyObject *)PyDateTimeAPI->TZInfoType;
     state->ZoneInfoType = (PyTypeObject *)PyType_FromModuleAndSpec(m,
                                                         &zoneinfo_spec, base);
