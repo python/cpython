@@ -20,7 +20,6 @@ class zoneinfo.ZoneInfo "PyObject *" "PyTypeObject *"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d12c73c0eef36df8]*/
 
 // Imports
-static PyObject *_tzpath_find_tzfile = NULL;
 static PyObject *_common_mod = NULL;
 
 typedef struct TransitionRuleType TransitionRuleType;
@@ -94,6 +93,7 @@ typedef struct {
 
     // Imports
     PyObject *io_open;
+    PyObject *_tzpath_find_tzfile;
 } zoneinfo_state;
 
 // Globals
@@ -212,7 +212,8 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
     PyObject *file_obj = NULL;
     PyObject *file_path = NULL;
 
-    file_path = PyObject_CallFunctionObjArgs(_tzpath_find_tzfile, key, NULL);
+    file_path = PyObject_CallFunctionObjArgs(state->_tzpath_find_tzfile,
+                                             key, NULL);
     if (file_path == NULL) {
         return NULL;
     }
@@ -2682,8 +2683,7 @@ module_free(void *m)
 {
     zoneinfo_state *state = zoneinfo_get_state();
 
-    Py_XDECREF(_tzpath_find_tzfile);
-    _tzpath_find_tzfile = NULL;
+    Py_CLEAR(state->_tzpath_find_tzfile);
 
     Py_XDECREF(_common_mod);
     _common_mod = NULL;
@@ -2730,9 +2730,9 @@ zoneinfomodule_exec(PyObject *m)
     }
 
     /* Populate imports */
-    _tzpath_find_tzfile =
+    state->_tzpath_find_tzfile =
         _PyImport_GetModuleAttrString("zoneinfo._tzpath", "find_tzfile");
-    if (_tzpath_find_tzfile == NULL) {
+    if (state->_tzpath_find_tzfile == NULL) {
         goto error;
     }
 
