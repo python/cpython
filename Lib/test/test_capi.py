@@ -496,6 +496,172 @@ class CAPITest(unittest.TestCase):
             _testcapi.sequence_del_slice(mapping, 1, 3)
         self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
+    def test_sequence_repeat(self):
+        # Basic test:
+        sequence = [1, 2, 3]
+        repeated_sequence = _testcapi.sequence_repeat(sequence, 2)
+        self.assertEqual(repeated_sequence, [1, 2, 3, 1, 2, 3])
+        self.assertEqual(repeated_sequence, sequence * 2)
+        self.assertEqual(sequence, [1, 2, 3])  # it must not change
+
+        # Corner values:
+        sequence = [1, 2, 3]
+        for value, res in [
+            (0, []),
+            (1, [1, 2, 3]),
+            (-1, []),
+        ]:
+            repeated_sequence = _testcapi.sequence_repeat(sequence, value)
+            self.assertEqual(repeated_sequence, res)
+            self.assertEqual(repeated_sequence, sequence * value)
+        self.assertEqual(sequence, [1, 2, 3])  # it must not change
+
+    def test_sequence_repeat_subtypes(self):
+        # List subtype:
+        class CustomList(list): ...
+
+        sequence = CustomList(['a', 'b'])
+        repeated_sequence = _testcapi.sequence_repeat(sequence, 3)
+        self.assertEqual(repeated_sequence,
+                         CustomList(['a', 'b', 'a', 'b', 'a', 'b']))
+        self.assertEqual(repeated_sequence, sequence * 3)
+        self.assertEqual(sequence, CustomList(['a', 'b']))
+
+        # Tuple subtype:
+        class CustomTuple(tuple): ...
+
+        sequence = CustomTuple(('a', 'b'))
+        repeated_sequence = _testcapi.sequence_repeat(sequence, 3)
+        self.assertEqual(repeated_sequence,
+                         CustomTuple(('a', 'b', 'a', 'b', 'a', 'b')))
+        self.assertEqual(repeated_sequence, sequence * 3)
+        self.assertEqual(sequence, CustomTuple(('a', 'b')))
+
+        # String subtype:
+        class CustomStr(str): ...
+
+        sequence = CustomStr('abc')
+        repeated_sequence = _testcapi.sequence_repeat(sequence, 2)
+        self.assertEqual(repeated_sequence,
+                         CustomStr('abcabc'))
+        self.assertEqual(repeated_sequence, sequence * 2)
+        self.assertEqual(sequence, CustomStr('abc'))
+
+    def test_sequence_repeat_errors(self):
+        # Corner case, custom subtype returns `NotImplemented`:
+        class CustomListWithNI(list):
+            def __mul__(self, other):
+                return NotImplemented
+
+        sequence = CustomListWithNI(['a', 'b'])
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_repeat(sequence, 3)
+        self.assertEqual(sequence, CustomListWithNI(['a', 'b']))  # not changed
+
+        # Non-sequences do not work (even with `__mul__`):
+        class CustomTypeWithMul:
+            def __mul__(self, other):
+                return 5  # won't be called
+
+        not_sequence = CustomTypeWithMul()
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_repeat(not_sequence, 1)
+
+    def test_sequence_inplace_repeat(self):
+        # Basic list test:
+        sequence = [1, 2, 3]
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 2)
+        self.assertEqual(repeated_sequence, [1, 2, 3, 1, 2, 3])
+        self.assertEqual(repeated_sequence, sequence)
+        self.assertEqual(sequence, [1, 2, 3, 1, 2, 3])  # changed
+        sequence_copy = [1, 2, 3]
+        sequence_copy *= 2  # It is the same thing
+        self.assertEqual(repeated_sequence, sequence_copy)
+
+        # Basic tuple test:
+        sequence = (1, 2, 3)
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 2)
+        self.assertEqual(repeated_sequence, (1, 2, 3, 1, 2, 3))
+        self.assertNotEqual(repeated_sequence, sequence)
+        self.assertEqual(sequence, (1, 2, 3))  # not changed
+        sequence *= 2
+        self.assertEqual(repeated_sequence, sequence)
+
+        # Basic string test:
+        sequence = 'abc'
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 2)
+        self.assertEqual(repeated_sequence, 'abcabc')
+        self.assertNotEqual(repeated_sequence, sequence)
+        self.assertEqual(sequence, 'abc')  # not changed
+        sequence *= 2
+        self.assertEqual(repeated_sequence, sequence)
+
+        # Corner values:
+        sequence = (1, 2, 3)
+        for value, res in [
+            (0, ()),
+            (1, (1, 2, 3)),
+            (-1, ()),
+        ]:
+            repeated_sequence = _testcapi.sequence_inplace_repeat(sequence,
+                                                                  value)
+            self.assertEqual(repeated_sequence, res)
+            self.assertEqual(repeated_sequence, sequence * value)
+        self.assertEqual(sequence, (1, 2, 3))  # tuple must not change
+
+    def test_sequence_inplace_repeat_subtypes(self):
+        # List subtype:
+        class CustomList(list): ...
+
+        sequence = CustomList(['a', 'b'])
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 3)
+        self.assertEqual(repeated_sequence,
+                         CustomList(['a', 'b', 'a', 'b', 'a', 'b']))
+        self.assertEqual(repeated_sequence, sequence)
+
+        # Tuple subtype:
+        class CustomTuple(tuple): ...
+
+        sequence = CustomTuple(('a', 'b'))
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 3)
+        self.assertEqual(repeated_sequence,
+                         CustomTuple(('a', 'b', 'a', 'b', 'a', 'b')))
+        self.assertEqual(repeated_sequence, sequence * 3)
+        self.assertEqual(sequence, CustomTuple(('a', 'b')))
+
+        # String subtype:
+        class CustomStr(str): ...
+
+        sequence = CustomStr('abc')
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 2)
+        self.assertEqual(repeated_sequence, CustomStr('abcabc'))
+        self.assertEqual(repeated_sequence, sequence * 2)
+        self.assertEqual(sequence, CustomStr('abc'))
+
+    def test_sequence_inplace_repeat_errors(self):
+        # Corner case, custom subtype returns `NotImplemented`:
+        class CustomListWithNI(list):
+            def __mul__(self, other):
+                return NotImplemented
+            def __imul__(self, other):
+                return NotImplemented
+
+        sequence = CustomListWithNI(['a', 'b'])
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_inplace_repeat(sequence, 3)
+        self.assertEqual(sequence, CustomListWithNI(['a', 'b']))  # not changed
+
+        # Non-sequences do not work (even with `__mul__` and `__imul__`):
+        class CustomTypeWithMul:
+            def __mul__(self, other):
+                return 0
+            def __imul__(self, other):
+                return 1  # won't be called
+
+        not_sequence = CustomTypeWithMul()
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_inplace_repeat(not_sequence, 1)
+
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
     def test_negative_refcount(self):
