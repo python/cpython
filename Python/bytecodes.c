@@ -506,21 +506,14 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        // stack effect: (__0, __1, __2 -- )
-        inst(STORE_SUBSCR) {
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            PyObject *v = THIRD();
+        inst(STORE_SUBSCR, (v, container, sub -- )) {
             int err;
-            STACK_SHRINK(3);
             /* container[sub] = v */
             err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0) {
-                goto error;
-            }
+            ERROR_IF(err != 0, error);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
         }
 

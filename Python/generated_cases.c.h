@@ -501,20 +501,18 @@
 
         TARGET(STORE_SUBSCR) {
             PREDICTED(STORE_SUBSCR);
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            PyObject *v = THIRD();
+            PyObject *sub = PEEK(1);
+            PyObject *container = PEEK(2);
+            PyObject *v = PEEK(3);
             int err;
-            STACK_SHRINK(3);
             /* container[sub] = v */
             err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0) {
-                goto error;
-            }
+            if (err != 0) { STACK_SHRINK(3); goto error; }
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
+            STACK_SHRINK(3);
             DISPATCH();
         }
 
