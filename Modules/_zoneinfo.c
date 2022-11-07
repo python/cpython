@@ -2628,7 +2628,6 @@ static PyMemberDef zoneinfo_members[] = {
 };
 
 static PyType_Slot zoneinfo_slots[] = {
-    {Py_tp_base, NULL},  // placeholder
     {Py_tp_repr, zoneinfo_repr},
     {Py_tp_str, zoneinfo_str},
     {Py_tp_getattro, PyObject_GenericGetAttr},
