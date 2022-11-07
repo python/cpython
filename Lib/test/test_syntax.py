@@ -1202,7 +1202,7 @@ Custom error message for try block mixing except and except*
    ... except* ValueError:
    ...    pass
    Traceback (most recent call last):
-   SyntaxError: cannot have 'except*' in a 'try' statement with 'except'
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
 
    >>> try:
    ...    pass
@@ -1211,7 +1211,7 @@ Custom error message for try block mixing except and except*
    ... except ValueError:
    ...    pass
    Traceback (most recent call last):
-   SyntaxError: cannot have 'except' in a 'try' statement with 'except*'
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
 
    >>> try:
    ...    pass
@@ -1222,7 +1222,7 @@ Custom error message for try block mixing except and except*
    ... except* ValueError:
    ...    pass
    Traceback (most recent call last):
-   SyntaxError: cannot have 'except*' in a 'try' statement with 'except'
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
 
    >>> try:
    ...    pass
@@ -1233,7 +1233,7 @@ Custom error message for try block mixing except and except*
    ... except ValueError:
    ...    pass
    Traceback (most recent call last):
-   SyntaxError: cannot have 'except' in a 'try' statement with 'except*'
+   SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
 
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
@@ -2016,12 +2016,12 @@ class SyntaxTestCase(unittest.TestCase):
 
     def test_except_then_except_star(self):
         self._check_error("try: pass\nexcept ValueError: pass\nexcept* TypeError: pass",
-                          r"cannot have 'except\*' in a 'try' statement with 'except'",
+                          r"cannot have both 'except' and 'except\*' on the same 'try'",
                           lineno=3, end_lineno=3, offset=1, end_offset=8)
 
     def test_except_star_then_except(self):
         self._check_error("try: pass\nexcept* ValueError: pass\nexcept TypeError: pass",
-                          r"cannot have 'except' in a 'try' statement with 'except\*'",
+                          r"cannot have both 'except' and 'except\*' on the same 'try'",
                           lineno=3, end_lineno=3, offset=1, end_offset=7)
 
     def test_empty_line_after_linecont(self):
