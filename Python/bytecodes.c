@@ -260,7 +260,7 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // This is a weird one. It's a super-instruction for
+        // This is a subtle one. It's a super-instruction for
         // BINARY_OP_ADD_UNICODE followed by STORE_FAST
         // where the store goes into the left argument.
         // So the inputs are the same as for all BINARY_OP

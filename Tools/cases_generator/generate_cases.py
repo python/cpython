@@ -100,9 +100,9 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
             # ERROR_IF() must remove the inputs from the stack.
             # The code block is responsible for DECREF()ing them.
             if ninputs:
-                f.write(f"{space}if ({cond}) {{ STACK_SHRINK({ninputs}); goto {label}; }}\n")
+                f.write(f"{space}if ({cond}) goto pop_{ninputs}_{label};\n")
             else:
-                f.write(f"{space}if ({cond}) {{ goto {label}; }}\n")
+                f.write(f"{space}if ({cond}) goto {label};\n")
         else:
             f.write(line)
     noutputs = len(instr.outputs or ())

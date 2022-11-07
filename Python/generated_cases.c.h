@@ -18,7 +18,7 @@
             PyObject *value;
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
             value = GETLOCAL(oparg);
-            if (value == NULL) { goto unbound_local_error; }
+            if (value == NULL) goto unbound_local_error;
             Py_INCREF(value);
             STACK_GROW(1);
             POKE(1, value);
@@ -28,7 +28,7 @@
         TARGET(LOAD_FAST_CHECK) {
             PyObject *value;
             value = GETLOCAL(oparg);
-            if (value == NULL) { goto unbound_local_error; }
+            if (value == NULL) goto unbound_local_error;
             Py_INCREF(value);
             STACK_GROW(1);
             POKE(1, value);
@@ -89,7 +89,7 @@
             PyObject *res;
             res = PyNumber_Positive(value);
             Py_DECREF(value);
-            if (res == NULL) { STACK_SHRINK(1); goto error; }
+            if (res == NULL) goto pop_1_error;
             POKE(1, res);
             DISPATCH();
         }
@@ -99,7 +99,7 @@
             PyObject *res;
             res = PyNumber_Negative(value);
             Py_DECREF(value);
-            if (res == NULL) { STACK_SHRINK(1); goto error; }
+            if (res == NULL) goto pop_1_error;
             POKE(1, res);
             DISPATCH();
         }
@@ -109,7 +109,7 @@
             PyObject *res;
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
-            if (err < 0) { STACK_SHRINK(1); goto error; }
+            if (err < 0) goto pop_1_error;
             if (err == 0) {
                 res = Py_True;
             }
@@ -126,7 +126,7 @@
             PyObject *res;
             res = PyNumber_Invert(value);
             Py_DECREF(value);
-            if (res == NULL) { STACK_SHRINK(1); goto error; }
+            if (res == NULL) goto pop_1_error;
             POKE(1, res);
             DISPATCH();
         }
@@ -142,7 +142,7 @@
             prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            if (prod == NULL) { STACK_SHRINK(2); goto error; }
+            if (prod == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, prod);
@@ -162,7 +162,7 @@
             prod = PyFloat_FromDouble(dprod);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            if (prod == NULL) { STACK_SHRINK(2); goto error; }
+            if (prod == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, prod);
@@ -180,7 +180,7 @@
             sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            if (sub == NULL) { STACK_SHRINK(2); goto error; }
+            if (sub == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, sub);
@@ -199,7 +199,7 @@
             sub = PyFloat_FromDouble(dsub);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            if (sub == NULL) { STACK_SHRINK(2); goto error; }
+            if (sub == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, sub);
@@ -217,7 +217,7 @@
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (res == NULL) { STACK_SHRINK(2); goto error; }
+            if (res == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, res);
@@ -251,7 +251,7 @@
             _Py_DECREF_NO_DEALLOC(left);
             PyUnicode_Append(target_local, right);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (*target_local == NULL) { STACK_SHRINK(2); goto error; }
+            if (*target_local == NULL) goto pop_2_error;
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
             STACK_SHRINK(2);
@@ -271,7 +271,7 @@
             sum = PyFloat_FromDouble(dsum);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            if (sum == NULL) { STACK_SHRINK(2); goto error; }
+            if (sum == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, sum);
@@ -289,7 +289,7 @@
             sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            if (sum == NULL) { STACK_SHRINK(2); goto error; }
+            if (sum == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, sum);
@@ -304,7 +304,7 @@
             res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (res == NULL) { STACK_SHRINK(2); goto error; }
+            if (res == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             STACK_SHRINK(1);
             POKE(1, res);
@@ -327,7 +327,7 @@
                 Py_DECREF(slice);
             }
             Py_DECREF(container);
-            if (res == NULL) { STACK_SHRINK(3); goto error; }
+            if (res == NULL) goto pop_3_error;
             STACK_SHRINK(2);
             POKE(1, res);
             DISPATCH();
@@ -349,7 +349,7 @@
             }
             Py_DECREF(v);
             Py_DECREF(container);
-            if (err) { STACK_SHRINK(4); goto error; }
+            if (err) goto pop_4_error;
             STACK_SHRINK(4);
             DISPATCH();
         }
@@ -510,7 +510,7 @@
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0) { STACK_SHRINK(3); goto error; }
+            if (err != 0) goto pop_3_error;
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
             STACK_SHRINK(3);
             DISPATCH();

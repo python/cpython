@@ -1275,6 +1275,14 @@ unbound_local_error:
             goto error;
         }
 
+pop_4_error:
+    STACK_SHRINK(1);
+pop_3_error:
+    STACK_SHRINK(1);
+pop_2_error:
+    STACK_SHRINK(1);
+pop_1_error:
+    STACK_SHRINK(1);
 error:
         call_shape.kwnames = NULL;
         /* Double-check exception status. */
