@@ -5,15 +5,15 @@
 // defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
 // the static_assert() macro.
 // https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
-
+//
 // macOS <= 10.10 doesn't define static_assert in assert.h at all despite
 // having C11 compiler support.
-
+//
 // static_assert is defined in glibc from version 2.16. Compiler support for
 // the C11 _Static_assert keyword is in gcc >= 4.6.
-
+//
 // MSVC makes static_assert a keyword, contrary to the C standard.
-
+//
 // In C++ 11 static_assert is a keyword, redefining is undefined behaviour.
 #if !defined(static_assert) && !defined(_MSC_VER) \
      && !(defined(__cplusplus) && __cplusplus >= 201103L)
