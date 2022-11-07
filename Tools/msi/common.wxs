@@ -121,12 +121,6 @@
         </DirectoryRef>
     </Fragment>
 
-    <Fragment>
-        <DirectoryRef Id="InstallDirectory">
-            <Directory Id="Tools" Name="Tools" />
-        </DirectoryRef>
-    </Fragment>
-    
     <!-- Start Menu folder -->
     <Fragment>
         <DirectoryRef Id="TARGETDIR">

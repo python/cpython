@@ -103,7 +103,6 @@ static const char PyCursesVersion[] = "2.2";
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 
@@ -2177,12 +2176,11 @@ _curses_window_putwin(PyCursesWindowObject *self, PyObject *file)
     while (1) {
         char buf[BUFSIZ];
         Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
-        _Py_IDENTIFIER(write);
 
         if (n <= 0)
             break;
         Py_DECREF(res);
-        res = _PyObject_CallMethodId(file, &PyId_write, "y#", buf, n);
+        res = PyObject_CallMethod(file, "write", "y#", buf, n);
         if (res == NULL)
             break;
     }
@@ -3051,7 +3049,6 @@ _curses_getwin(PyObject *module, PyObject *file)
     PyObject *data;
     size_t datalen;
     WINDOW *win;
-    _Py_IDENTIFIER(read);
     PyObject *res = NULL;
 
     PyCursesInitialised;
@@ -3063,7 +3060,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto error;
 
-    data = _PyObject_CallMethodIdNoArgs(file, &PyId_read);
+    data = PyObject_CallMethod(file, "read", NULL);
     if (data == NULL)
         goto error;
     if (!PyBytes_Check(data)) {
@@ -3962,8 +3959,6 @@ update_lines_cols(void)
 {
     PyObject *o;
     PyObject *m = PyImport_ImportModule("curses");
-    _Py_IDENTIFIER(LINES);
-    _Py_IDENTIFIER(COLS);
 
     if (!m)
         return 0;
@@ -3973,13 +3968,12 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_LINES, o)) {
+    if (PyObject_SetAttrString(m, "LINES", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    /* PyId_LINES.object will be initialized here. */
-    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_LINES), o)) {
+    if (PyDict_SetItemString(ModDict, "LINES", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -3990,12 +3984,12 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_COLS, o)) {
+    if (PyObject_SetAttrString(m, "COLS", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_COLS), o)) {
+    if (PyDict_SetItemString(ModDict, "COLS", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;

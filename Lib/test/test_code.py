@@ -17,7 +17,6 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-lnotab: [4, 1, 10, 2]
 consts: ('None', '<code object g>')
 
 >>> dump(f(4).__code__)
@@ -31,7 +30,6 @@ cellvars: ()
 freevars: ('x',)
 nlocals: 1
 flags: 19
-lnotab: [4, 1]
 consts: ('None',)
 
 >>> def h(x, y):
@@ -52,7 +50,6 @@ cellvars: ()
 freevars: ()
 nlocals: 5
 flags: 3
-lnotab: [2, 1, 10, 1, 10, 1, 10, 1]
 consts: ('None',)
 
 >>> def attrs(obj):
@@ -71,7 +68,6 @@ cellvars: ()
 freevars: ()
 nlocals: 1
 flags: 3
-lnotab: [2, 1, 46, 1, 46, 1]
 consts: ('None',)
 
 >>> def optimize_away():
@@ -91,7 +87,6 @@ cellvars: ()
 freevars: ()
 nlocals: 0
 flags: 3
-lnotab: [2, 2, 2, 1, 2, 1]
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -109,7 +104,6 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 3
-lnotab: [2, 1]
 consts: ('None',)
 
 >>> def posonly_args(a,b,/,c):
@@ -127,7 +121,6 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 3
-lnotab: [2, 1]
 consts: ('None',)
 
 """
@@ -139,6 +132,7 @@ import doctest
 import unittest
 import textwrap
 import weakref
+import dis
 
 try:
     import ctypes
@@ -168,7 +162,6 @@ def dump(co):
                  "kwonlyargcount", "names", "varnames",
                  "cellvars", "freevars", "nlocals", "flags"]:
         print("%s: %s" % (attr, getattr(co, "co_" + attr)))
-    print("lnotab:", list(co.co_lnotab))
     print("consts:", tuple(consts(co.co_consts)))
 
 # Needed for test_closure_injection below
@@ -345,6 +338,17 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
+    def test_invalid_bytecode(self):
+        def foo(): pass
+        foo.__code__ = co = foo.__code__.replace(co_code=b'\xee\x00d\x00S\x00')
+
+        with self.assertRaises(SystemError) as se:
+            foo()
+        self.assertEqual(
+            f"{co.co_filename}:{co.co_firstlineno}: unknown opcode 238",
+            str(se.exception))
+
+
     @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
         import dis
@@ -436,20 +440,26 @@ class CodeTest(unittest.TestCase):
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
 
-    def test_large_lnotab(self):
-        d = {}
-        lines = (
-            ["def f():"] +
-            [""] * (1 << 17) +
-            ["    pass"] * (1 << 17)
-        )
-        source = "\n".join(lines)
-        exec(source, d)
-        code = d["f"].__code__
-
-        expected = 1032 * [0, 127] + [0, 9] + ((1 << 17) - 1) * [2, 1]
-        expected[0] = 2
-        self.assertEqual(list(code.co_lnotab), expected)
+    def test_code_equality(self):
+        def f():
+            try:
+                a()
+            except:
+                b()
+            else:
+                c()
+            finally:
+                d()
+        code_a = f.__code__
+        code_b = code_a.replace(co_linetable=b"")
+        code_c = code_a.replace(co_exceptiontable=b"")
+        code_d = code_b.replace(co_exceptiontable=b"")
+        self.assertNotEqual(code_a, code_b)
+        self.assertNotEqual(code_a, code_c)
+        self.assertNotEqual(code_a, code_d)
+        self.assertNotEqual(code_b, code_c)
+        self.assertNotEqual(code_b, code_d)
+        self.assertNotEqual(code_c, code_d)
 
 
 def isinterned(s):
@@ -672,6 +682,38 @@ class CodeLocationTest(unittest.TestCase):
         self.check_lines(parse_location_table)
         self.check_lines(misshappen)
         self.check_lines(bug93662)
+
+    @cpython_only
+    def test_code_new_empty(self):
+        # If this test fails, it means that the construction of PyCode_NewEmpty
+        # needs to be modified! Please update this test *and* PyCode_NewEmpty,
+        # so that they both stay in sync.
+        def f():
+            pass
+        PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
+        f.__code__ = f.__code__.replace(
+            co_firstlineno=42,
+            co_code=bytes(
+                [
+                    dis.opmap["RESUME"], 0,
+                    dis.opmap["LOAD_ASSERTION_ERROR"], 0,
+                    dis.opmap["RAISE_VARARGS"], 1,
+                ]
+            ),
+            co_linetable=bytes(
+                [
+                    (1 << 7)
+                    | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
+                    | (3 - 1),
+                    0,
+                ]
+            ),
+        )
+        self.assertRaises(AssertionError, f)
+        self.assertEqual(
+            list(f.__code__.co_positions()),
+            3 * [(42, 42, None, None)],
+        )
 
 
 if check_impl_detail(cpython=True) and ctypes is not None:

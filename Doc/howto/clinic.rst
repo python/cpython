@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _howto-clinic:
+
 **********************
 Argument Clinic How-To
 **********************
@@ -539,7 +541,15 @@ Let's dive in!
         };
 
 
-16. Compile, then run the relevant portions of the regression-test suite.
+16. Argument Clinic may generate new instances of ``_Py_ID``. For example::
+
+        &_Py_ID(new_unique_py_id)
+
+    If it does, you'll have to run ``Tools/scripts/generate_global_objects.py``
+    to regenerate the list of precompiled identifiers at this point.
+
+
+17. Compile, then run the relevant portions of the regression-test suite.
     This change should not introduce any new compile-time warnings or errors,
     and there should be no externally visible change to Python's behavior.
 
@@ -1069,11 +1079,6 @@ Currently Argument Clinic supports only a few return converters:
 None of these take parameters.  For the first three, return -1 to indicate
 error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
 pointer to indicate an error.
-
-(There's also an experimental ``NoneType`` converter, which lets you
-return ``Py_None`` on success or ``NULL`` on failure, without having
-to increment the reference count on ``Py_None``.  I'm not sure it adds
-enough clarity to be worth using.)
 
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),

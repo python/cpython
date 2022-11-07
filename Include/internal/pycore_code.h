@@ -91,33 +91,14 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
-#define QUICKENING_WARMUP_DELAY 8
-
-/* We want to compare to zero for efficiency, so we offset values accordingly */
-#define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
-
-void _PyCode_Quicken(PyCodeObject *code);
-
-static inline void
-_PyCode_Warmup(PyCodeObject *code)
-{
-    if (code->co_warmup != 0) {
-        code->co_warmup++;
-        if (code->co_warmup == 0) {
-            _PyCode_Quicken(code);
-        }
-    }
-}
-
 extern uint8_t _PyOpcode_Adaptive[256];
-
-extern Py_ssize_t _Py_QuickenedCount;
 
 // Borrowed references to common callables:
 struct callable_cache {
     PyObject *isinstance;
     PyObject *len;
     PyObject *list_append;
+    PyObject *object__getattribute__;
 };
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
@@ -251,10 +232,10 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr);
 
-/* Deallocator function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Dealloc(PyCodeObject *co);
-/* Function to intern strings of codeobjects */
-extern int _PyStaticCode_InternStrings(PyCodeObject *co);
+/* Finalizer function for static codeobjects used in deepfreeze.py */
+extern void _PyStaticCode_Fini(PyCodeObject *co);
+/* Function to intern strings of codeobjects and quicken the bytecode */
+extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 
@@ -284,110 +265,68 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #endif  // !Py_STATS
 
-// Cache values are only valid in memory, so use native endianness.
-#ifdef WORDS_BIGENDIAN
+// Utility functions for reading/writing 32/64-bit values in the inline caches.
+// Great care should be taken to ensure that these functions remain correct and
+// performant! They should compile to just "move" instructions on all supported
+// compilers and platforms.
+
+// We use memcpy to let the C compiler handle unaligned accesses and endianness
+// issues for us. It also seems to produce better code than manual copying for
+// most compilers (see https://blog.regehr.org/archives/959 for more info).
 
 static inline void
 write_u32(uint16_t *p, uint32_t val)
 {
-    p[0] = (uint16_t)(val >> 16);
-    p[1] = (uint16_t)(val >>  0);
+    memcpy(p, &val, sizeof(val));
 }
 
 static inline void
 write_u64(uint16_t *p, uint64_t val)
 {
-    p[0] = (uint16_t)(val >> 48);
-    p[1] = (uint16_t)(val >> 32);
-    p[2] = (uint16_t)(val >> 16);
-    p[3] = (uint16_t)(val >>  0);
+    memcpy(p, &val, sizeof(val));
+}
+
+static inline void
+write_obj(uint16_t *p, PyObject *val)
+{
+    memcpy(p, &val, sizeof(val));
 }
 
 static inline uint32_t
 read_u32(uint16_t *p)
 {
-    uint32_t val = 0;
-    val |= (uint32_t)p[0] << 16;
-    val |= (uint32_t)p[1] <<  0;
+    uint32_t val;
+    memcpy(&val, p, sizeof(val));
     return val;
 }
 
 static inline uint64_t
 read_u64(uint16_t *p)
 {
-    uint64_t val = 0;
-    val |= (uint64_t)p[0] << 48;
-    val |= (uint64_t)p[1] << 32;
-    val |= (uint64_t)p[2] << 16;
-    val |= (uint64_t)p[3] <<  0;
+    uint64_t val;
+    memcpy(&val, p, sizeof(val));
     return val;
-}
-
-#else
-
-static inline void
-write_u32(uint16_t *p, uint32_t val)
-{
-    p[0] = (uint16_t)(val >>  0);
-    p[1] = (uint16_t)(val >> 16);
-}
-
-static inline void
-write_u64(uint16_t *p, uint64_t val)
-{
-    p[0] = (uint16_t)(val >>  0);
-    p[1] = (uint16_t)(val >> 16);
-    p[2] = (uint16_t)(val >> 32);
-    p[3] = (uint16_t)(val >> 48);
-}
-
-static inline uint32_t
-read_u32(uint16_t *p)
-{
-    uint32_t val = 0;
-    val |= (uint32_t)p[0] <<  0;
-    val |= (uint32_t)p[1] << 16;
-    return val;
-}
-
-static inline uint64_t
-read_u64(uint16_t *p)
-{
-    uint64_t val = 0;
-    val |= (uint64_t)p[0] <<  0;
-    val |= (uint64_t)p[1] << 16;
-    val |= (uint64_t)p[2] << 32;
-    val |= (uint64_t)p[3] << 48;
-    return val;
-}
-
-#endif
-
-static inline void
-write_obj(uint16_t *p, PyObject *obj)
-{
-    uintptr_t val = (uintptr_t)obj;
-#if SIZEOF_VOID_P == 8
-    write_u64(p, val);
-#elif SIZEOF_VOID_P == 4
-    write_u32(p, val);
-#else
-    #error "SIZEOF_VOID_P must be 4 or 8"
-#endif
 }
 
 static inline PyObject *
 read_obj(uint16_t *p)
 {
-    uintptr_t val;
-#if SIZEOF_VOID_P == 8
-    val = read_u64(p);
-#elif SIZEOF_VOID_P == 4
-    val = read_u32(p);
-#else
-    #error "SIZEOF_VOID_P must be 4 or 8"
-#endif
-    return (PyObject *)val;
+    PyObject *val;
+    memcpy(&val, p, sizeof(val));
+    return val;
+}
+
+/* See Objects/exception_handling_notes.txt for details.
+ */
+static inline unsigned char *
+parse_varint(unsigned char *p, int *result) {
+    int val = p[0] & 63;
+    while (p[0] & 64) {
+        p++;
+        val = (val << 6) | (p[0] & 63);
+    }
+    *result = val;
+    return p+1;
 }
 
 static inline int
@@ -438,8 +377,8 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 /* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
 #define ADAPTIVE_BACKOFF_BITS 4
-/* The initial counter value is 31 == 2**ADAPTIVE_BACKOFF_START - 1 */
-#define ADAPTIVE_BACKOFF_START 5
+/* The initial counter value is 1 == 2**ADAPTIVE_BACKOFF_START - 1 */
+#define ADAPTIVE_BACKOFF_START 1
 
 #define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
 

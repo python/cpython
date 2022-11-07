@@ -124,15 +124,6 @@ def clear_caches():
         if stream is not None:
             stream.flush()
 
-    # Clear assorted module caches.
-    # Don't worry about resetting the cache if the module is not loaded
-    try:
-        distutils_dir_util = sys.modules['distutils.dir_util']
-    except KeyError:
-        pass
-    else:
-        distutils_dir_util._path_created.clear()
-
     try:
         re = sys.modules['re']
     except KeyError:
@@ -210,3 +201,10 @@ def clear_caches():
     else:
         for f in typing._cleanups:
             f()
+
+    try:
+        fractions = sys.modules['fractions']
+    except KeyError:
+        pass
+    else:
+        fractions._hash_algorithm.cache_clear()

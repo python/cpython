@@ -794,9 +794,12 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         if (! _PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
             continue;
 
-        /* It supports weakrefs.  Does it have any? */
-        wrlist = (PyWeakReference **)
-                                _PyObject_GET_WEAKREFS_LISTPTR(op);
+        /* It supports weakrefs.  Does it have any?
+         *
+         * This is never triggered for static types so we can avoid the
+         * (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
+         */
+        wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
 
         /* `op` may have some weakrefs.  March over the list, clear
          * all the weakrefs, and move the weakrefs with callbacks
@@ -2250,6 +2253,20 @@ PyObject_IS_GC(PyObject *obj)
 }
 
 void
+_Py_ScheduleGC(PyInterpreterState *interp)
+{
+    GCState *gcstate = &interp->gc;
+    if (gcstate->collecting == 1) {
+        return;
+    }
+    struct _ceval_state *ceval = &interp->ceval;
+    if (!_Py_atomic_load_relaxed(&ceval->gc_scheduled)) {
+        _Py_atomic_store_relaxed(&ceval->gc_scheduled, 1);
+        _Py_atomic_store_relaxed(&ceval->eval_breaker, 1);
+    }
+}
+
+void
 _PyObject_GC_Link(PyObject *op)
 {
     PyGC_Head *g = AS_GC(op);
@@ -2266,10 +2283,17 @@ _PyObject_GC_Link(PyObject *op)
         !gcstate->collecting &&
         !_PyErr_Occurred(tstate))
     {
-        gcstate->collecting = 1;
-        gc_collect_generations(tstate);
-        gcstate->collecting = 0;
+        _Py_ScheduleGC(tstate->interp);
     }
+}
+
+void
+_Py_RunGC(PyThreadState *tstate)
+{
+    GCState *gcstate = &tstate->interp->gc;
+    gcstate->collecting = 1;
+    gc_collect_generations(tstate);
+    gcstate->collecting = 0;
 }
 
 static PyObject *
@@ -2347,6 +2371,13 @@ PyObject_GC_Del(void *op)
     size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
+#ifdef Py_DEBUG
+        if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
+                                     "gc", NULL, "Object of type %s is not untracked before destruction",
+                                     ((PyObject*)op)->ob_type->tp_name)) {
+            PyErr_WriteUnraisable(NULL);
+        }
+#endif
         gc_list_remove(g);
     }
     GCState *gcstate = get_gc_state();

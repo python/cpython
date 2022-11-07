@@ -1,0 +1,1 @@
+Fix detection of MAC addresses for :mod:`uuid` on certain OSs. Patch by Chaim Sanders

@@ -57,6 +57,15 @@ This bears repeating:
    A class supporting vectorcall **must** also implement
    :c:member:`~PyTypeObject.tp_call` with the same semantics.
 
+.. versionchanged:: 3.12
+
+   The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
+   when the class's :py:meth:`~object.__call__` method is reassigned.
+   (This internally sets :c:member:`~PyTypeObject.tp_call` only, and thus
+   may make it behave differently than the vectorcall function.)
+   In earlier Python versions, vectorcall should only be used with
+   :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` or static types.
+
 A class should not implement vectorcall if that would be slower
 than *tp_call*. For example, if the callee needs to convert
 the arguments to an args tuple and kwargs dict anyway, then there is no point
@@ -84,7 +93,7 @@ This is a pointer to a function with the following signature:
    and they must be unique.
    If there are no keyword arguments, then *kwnames* can instead be *NULL*.
 
-.. c:macro:: PY_VECTORCALL_ARGUMENTS_OFFSET
+.. data:: PY_VECTORCALL_ARGUMENTS_OFFSET
 
    If this flag is set in a vectorcall *nargsf* argument, the callee is allowed
    to temporarily change ``args[-1]``. In other words, *args* points to
@@ -275,7 +284,7 @@ please see individual documentation for details.
 
    This is the equivalent of the Python expression: ``callable(*args)``.
 
-   Note that if you only pass :c:type:`PyObject *` args,
+   Note that if you only pass :c:expr:`PyObject *` args,
    :c:func:`PyObject_CallFunctionObjArgs` is a faster alternative.
 
    .. versionchanged:: 3.4
@@ -296,7 +305,7 @@ please see individual documentation for details.
    This is the equivalent of the Python expression:
    ``obj.name(arg1, arg2, ...)``.
 
-   Note that if you only pass :c:type:`PyObject *` args,
+   Note that if you only pass :c:expr:`PyObject *` args,
    :c:func:`PyObject_CallMethodObjArgs` is a faster alternative.
 
    .. versionchanged:: 3.4
@@ -306,7 +315,7 @@ please see individual documentation for details.
 .. c:function:: PyObject* PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
    Call a callable Python object *callable*, with a variable number of
-   :c:type:`PyObject *` arguments.  The arguments are provided as a variable number
+   :c:expr:`PyObject *` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
    Return the result of the call on success, or raise an exception and return
@@ -320,7 +329,7 @@ please see individual documentation for details.
 
    Call a method of the Python object *obj*, where the name of the method is given as a
    Python string object in *name*.  It is called with a variable number of
-   :c:type:`PyObject *` arguments.  The arguments are provided as a variable number
+   :c:expr:`PyObject *` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*.
 
    Return the result of the call on success, or raise an exception and return
