@@ -331,15 +331,6 @@ def generate_runtime_init(identifiers, strings):
                     printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
                     immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(tuple_empty)')
         printer.write('')
-        printer.write("static inline void")
-        with printer.block("_PyUnicode_InitStaticStrings(void)"):
-            printer.write(f'PyObject *string;')
-            for i in sorted(identifiers):
-                # This use of _Py_ID() is ignored by iter_global_strings()
-                # since iter_files() ignores .h files.
-                printer.write(f'string = &_Py_ID({i});')
-                printer.write(f'PyUnicode_InternInPlace(&string);')
-        printer.write('')
         printer.write('#ifdef Py_DEBUG')
         printer.write("static inline void")
         with printer.block("_PyStaticObjects_CheckRefcnt(void)"):
@@ -349,6 +340,37 @@ def generate_runtime_init(identifiers, strings):
                     printer.write(f'Py_FatalError("immortal object has less refcnt than '
                                     'expected _PyObject_IMMORTAL_REFCNT");')
         printer.write('#endif')
+        printer.write(END)
+        printer.write(after)
+
+
+def generate_static_strings_initializer(identifiers, strings):
+    # Target the runtime initializer.
+    filename = os.path.join(INTERNAL, 'pycore_unicodeobject_generated.h')
+
+    # Read the non-generated part of the file.
+    with open(filename) as infile:
+        orig = infile.read()
+    lines = iter(orig.rstrip().splitlines())
+    before = '\n'.join(iter_to_marker(lines, START))
+    for _ in iter_to_marker(lines, END):
+        pass
+    after = '\n'.join(lines)
+
+    # Generate the file.
+    with open_for_changes(filename, orig) as outfile:
+        printer = Printer(outfile)
+        printer.write(before)
+        printer.write(START)
+        printer.write("static inline void")
+        with printer.block("_PyUnicode_InitStaticStrings(void)"):
+            printer.write(f'PyObject *string;')
+            for i in sorted(identifiers):
+                # This use of _Py_ID() is ignored by iter_global_strings()
+                # since iter_files() ignores .h files.
+                printer.write(f'string = &_Py_ID({i});')
+                printer.write(f'PyUnicode_InternInPlace(&string);')
+            # XXX What about "strings"?
         printer.write(END)
         printer.write(after)
 
@@ -376,6 +398,7 @@ def main() -> None:
 
     generate_global_strings(identifiers, strings)
     generate_runtime_init(identifiers, strings)
+    generate_static_strings_initializer(identifiers, strings)
 
 
 if __name__ == '__main__':
