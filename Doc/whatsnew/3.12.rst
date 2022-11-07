@@ -106,7 +106,7 @@ Improved Error Messages
         ^^^^^^^^^^^^^^^^^^^^^^^
     SyntaxError: Did you mean to use 'from ... import ...' instead?
 
-* :exc:`ImportError` exceptiond raised from failed ``from <module> import
+* :exc:`ImportError` exceptions raised from failed ``from <module> import
   <name>`` now include suggestions for the value of ``<name>`` based on the
   available names in ``<module>``. Contributed by Pablo Galindo in :gh:`91058`.
 
