@@ -2184,7 +2184,7 @@ int
 #endif
 
 void
-_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
+_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
 {
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
@@ -2197,6 +2197,11 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
     }
     else if (tp == &PyRangeIter_Type && next_op == STORE_FAST) {
         _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
+        goto success;
+    }
+    else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
+        assert(_Py_OPCODE(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1]) == END_FOR);
+        _Py_SET_OPCODE(*instr, FOR_ITER_GEN);
         goto success;
     }
     SPECIALIZATION_FAIL(FOR_ITER,
