@@ -106,6 +106,16 @@ Improved Error Messages
         ^^^^^^^^^^^^^^^^^^^^^^^
     SyntaxError: Did you mean to use 'from ... import ...' instead?
 
+* :exc:`ImportError` exceptions raised from failed ``from <module> import
+  <name>`` statements now include suggestions for the value of ``<name>`` based on the
+  available names in ``<module>``. Contributed by Pablo Galindo in :gh:`91058`.
+
+    >>> from collections import chainmap
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    ImportError: cannot import name 'chainmap' from 'collections'. Did you mean: 'ChainMap'?
+
+
 New Features
 ============
 
