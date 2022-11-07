@@ -20,7 +20,6 @@ class zoneinfo.ZoneInfo "PyObject *" "PyTypeObject *"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d12c73c0eef36df8]*/
 
 // Imports
-static PyObject *io_open = NULL;
 static PyObject *_tzpath_find_tzfile = NULL;
 static PyObject *_common_mod = NULL;
 
@@ -92,6 +91,9 @@ struct StrongCacheNode {
 
 typedef struct {
     PyTypeObject *ZoneInfoType;
+
+    // Imports
+    PyObject *io_open;
 } zoneinfo_state;
 
 // Globals
@@ -194,8 +196,18 @@ zoneinfo_state *zoneinfo_get_state()
     return &global_state;
 }
 
+zoneinfo_state *zoneinfo_get_state_by_cls(PyTypeObject *cls)
+{
+    return &global_state;
+}
+
+zoneinfo_state *zoneinfo_get_state_by_self(PyTypeObject *self)
+{
+    return &global_state;
+}
+
 static PyObject *
-zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
+zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
 {
     PyObject *file_obj = NULL;
     PyObject *file_path = NULL;
@@ -218,7 +230,8 @@ zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
     }
 
     if (file_obj == NULL) {
-        file_obj = PyObject_CallFunction(io_open, "Os", file_path, "rb");
+        PyObject *func = state->io_open;
+        file_obj = PyObject_CallFunction(func, "Os", file_path, "rb");
         if (file_obj == NULL) {
             goto error;
         }
@@ -298,7 +311,8 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     if (instance == Py_None) {
         Py_DECREF(instance);
-        PyObject *tmp = zoneinfo_new_instance(type, key);
+        zoneinfo_state *state = zoneinfo_get_state_by_self(type);
+        PyObject *tmp = zoneinfo_new_instance(state, type, key);
         if (tmp == NULL) {
             return NULL;
         }
@@ -421,16 +435,20 @@ error:
 @classmethod
 zoneinfo.ZoneInfo.no_cache
 
+    cls: defining_class
+    /
     key: object
 
 Get a new instance of ZoneInfo, bypassing the cache.
 [clinic start generated code]*/
 
 static PyObject *
-zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyObject *key)
-/*[clinic end generated code: output=751c6894ad66f91b input=bb24afd84a80ba46]*/
+zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyTypeObject *cls,
+                                PyObject *key)
+/*[clinic end generated code: output=b0b09b3344c171b7 input=0238f3d56b1ea3f1]*/
 {
-    PyObject *out = zoneinfo_new_instance(type, key);
+    zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
+    PyObject *out = zoneinfo_new_instance(state, type, key);
     if (out != NULL) {
         ((PyZoneInfo_ZoneInfo *)out)->source = SOURCE_NOCACHE;
     }
@@ -727,28 +745,37 @@ zoneinfo_reduce(PyObject *obj_self, PyObject *unused)
     return rv;
 }
 
-static PyObject *
-zoneinfo__unpickle(PyTypeObject *cls, PyObject *args)
-{
-    PyObject *key;
-    unsigned char from_cache;
-    if (!PyArg_ParseTuple(args, "OB", &key, &from_cache)) {
-        return NULL;
-    }
+/*[clinic input]
+@classmethod
+zoneinfo.ZoneInfo._unpickle
 
+    cls: defining_class
+    key: object
+    from_cache: unsigned_char(bitwise=True)
+    /
+
+Private method used in unpickling.
+[clinic start generated code]*/
+
+static PyObject *
+zoneinfo_ZoneInfo__unpickle_impl(PyTypeObject *type, PyTypeObject *cls,
+                                 PyObject *key, unsigned char from_cache)
+/*[clinic end generated code: output=556712fc709deecb input=6ac8c73eed3de316]*/
+{
     if (from_cache) {
         PyObject *val_args = Py_BuildValue("(O)", key);
         if (val_args == NULL) {
             return NULL;
         }
 
-        PyObject *rv = zoneinfo_new(cls, val_args, NULL);
+        PyObject *rv = zoneinfo_new(type, val_args, NULL);
 
         Py_DECREF(val_args);
         return rv;
     }
     else {
-        return zoneinfo_new_instance(cls, key);
+        zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
+        return zoneinfo_new_instance(state, type, key);
     }
 }
 
@@ -2606,8 +2633,7 @@ static PyMethodDef zoneinfo_methods[] = {
                "datetime in local time.")},
     {"__reduce__", (PyCFunction)zoneinfo_reduce, METH_NOARGS,
      PyDoc_STR("Function for serialization with the pickle protocol.")},
-    {"_unpickle", (PyCFunction)zoneinfo__unpickle, METH_VARARGS | METH_CLASS,
-     PyDoc_STR("Private method used in unpickling.")},
+    ZONEINFO_ZONEINFO__UNPICKLE_METHODDEF
     {"__init_subclass__", (PyCFunction)(void (*)(void))zoneinfo_init_subclass,
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("Function to initialize subclasses.")},
@@ -2654,14 +2680,15 @@ static PyMethodDef module_methods[] = {{NULL, NULL}};
 static void
 module_free(void *m)
 {
+    zoneinfo_state *state = zoneinfo_get_state();
+
     Py_XDECREF(_tzpath_find_tzfile);
     _tzpath_find_tzfile = NULL;
 
     Py_XDECREF(_common_mod);
     _common_mod = NULL;
 
-    Py_XDECREF(io_open);
-    io_open = NULL;
+    Py_CLEAR(state->io_open);
 
     xdecref_ttinfo(&NO_TTINFO);
 
@@ -2709,8 +2736,8 @@ zoneinfomodule_exec(PyObject *m)
         goto error;
     }
 
-    io_open = _PyImport_GetModuleAttrString("io", "open");
-    if (io_open == NULL) {
+    state->io_open = _PyImport_GetModuleAttrString("io", "open");
+    if (state->io_open == NULL) {
         goto error;
     }
 

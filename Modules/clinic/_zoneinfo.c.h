@@ -78,13 +78,14 @@ PyDoc_STRVAR(zoneinfo_ZoneInfo_no_cache__doc__,
 "Get a new instance of ZoneInfo, bypassing the cache.");
 
 #define ZONEINFO_ZONEINFO_NO_CACHE_METHODDEF    \
-    {"no_cache", _PyCFunction_CAST(zoneinfo_ZoneInfo_no_cache), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo_no_cache__doc__},
+    {"no_cache", _PyCFunction_CAST(zoneinfo_ZoneInfo_no_cache), METH_METHOD|METH_FASTCALL|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo_no_cache__doc__},
 
 static PyObject *
-zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyObject *key);
+zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyTypeObject *cls,
+                                PyObject *key);
 
 static PyObject *
-zoneinfo_ZoneInfo_no_cache(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zoneinfo_ZoneInfo_no_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -120,7 +121,7 @@ zoneinfo_ZoneInfo_no_cache(PyTypeObject *type, PyObject *const *args, Py_ssize_t
         goto exit;
     }
     key = args[0];
-    return_value = zoneinfo_ZoneInfo_no_cache_impl(type, key);
+    return_value = zoneinfo_ZoneInfo_no_cache_impl(type, cls, key);
 
 exit:
     return return_value;
@@ -185,4 +186,58 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d2da73ef66146b83 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(zoneinfo_ZoneInfo__unpickle__doc__,
+"_unpickle($type, key, from_cache, /)\n"
+"--\n"
+"\n"
+"Private method used in unpickling.");
+
+#define ZONEINFO_ZONEINFO__UNPICKLE_METHODDEF    \
+    {"_unpickle", _PyCFunction_CAST(zoneinfo_ZoneInfo__unpickle), METH_METHOD|METH_FASTCALL|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo__unpickle__doc__},
+
+static PyObject *
+zoneinfo_ZoneInfo__unpickle_impl(PyTypeObject *type, PyTypeObject *cls,
+                                 PyObject *key, unsigned char from_cache);
+
+static PyObject *
+zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_unpickle",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject *key;
+    unsigned char from_cache;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    key = args[0];
+    {
+        unsigned long ival = PyLong_AsUnsignedLongMask(args[1]);
+        if (ival == (unsigned long)-1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else {
+            from_cache = (unsigned char) ival;
+        }
+    }
+    return_value = zoneinfo_ZoneInfo__unpickle_impl(type, cls, key, from_cache);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=1dc492947ca3882a input=a9049054013a1b77]*/
