@@ -31,7 +31,7 @@ __all__ = [
 #
 
 # Reference for Windows paths can be found at
-# https://docs.microsoft.com/en-gb/windows/win32/fileio/naming-a-file
+# https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
 _WIN_RESERVED_NAMES = frozenset(
     {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
     {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
@@ -597,14 +597,17 @@ class PurePath(object):
         if root2:
             if not drv2 and drv1:
                 return self._from_parsed_parts(drv1, root2, [drv1 + root2] + parts2[1:])
+            else:
+                return self._from_parsed_parts(drv2, root2, parts2)
         elif drv2:
             if drv2 == drv1 or self._flavour.normcase(drv2) == self._flavour.normcase(drv1):
-                # Same drive => second path is relative to the first
+                # Same drive => second path is relative to the first.
                 return self._from_parsed_parts(drv1, root1, parts1 + parts2[1:])
+            else:
+                return self._from_parsed_parts(drv2, root2, parts2)
         else:
-            # Second path is non-anchored (common case)
+            # Second path is non-anchored (common case).
             return self._from_parsed_parts(drv1, root1, parts1 + parts2)
-        return self._from_parsed_parts(drv2, root2, parts2)
 
     def __truediv__(self, key):
         try:
@@ -636,7 +639,7 @@ class PurePath(object):
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        # ntpath.isabs() is defective - see GH-44626
+        # ntpath.isabs() is defective - see GH-44626 .
         if self._flavour is ntpath:
             return bool(self._drv and self._root)
         return self._flavour.isabs(self)
@@ -652,7 +655,7 @@ class PurePath(object):
         # exist). We err on the side of caution and return True for paths
         # which are not considered reserved by Windows.
         if self._parts[0].startswith('\\\\'):
-            # UNC paths are never reserved
+            # UNC paths are never reserved.
             return False
         name = self._parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
