@@ -2561,8 +2561,8 @@ zone_from_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
     StrongCacheNode *node = find_in_strong_cache(cache, key);
 
     if (node != NULL) {
-        move_strong_cache_node_to_front(state, &(state->ZONEINFO_STRONG_CACHE),
-                                        node);
+        StrongCacheNode **root = &(state->ZONEINFO_STRONG_CACHE);
+        move_strong_cache_node_to_front(state, root, node);
         Py_INCREF(node->zone);
         return node->zone;
     }
@@ -2585,9 +2585,8 @@ update_strong_cache(zoneinfo_state *state, const PyTypeObject *const type,
     }
 
     StrongCacheNode *new_node = strong_cache_node_new(key, zone);
-
-    move_strong_cache_node_to_front(state, &(state->ZONEINFO_STRONG_CACHE),
-                                    new_node);
+    StrongCacheNode **root = &(state->ZONEINFO_STRONG_CACHE);
+    move_strong_cache_node_to_front(state, root, new_node);
 
     StrongCacheNode *node = new_node->next;
     for (size_t i = 1; i < ZONEINFO_STRONG_CACHE_MAX_SIZE; ++i) {
