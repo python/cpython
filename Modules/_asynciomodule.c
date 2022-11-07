@@ -59,8 +59,6 @@ typedef struct {
     /* Imports from traceback. */
     PyObject *traceback_extract_stack;
 
-    int module_initialized;
-
     PyObject *cached_running_holder;  // Borrowed ref.
     volatile uint64_t cached_running_holder_tsid;
 
@@ -1805,7 +1803,7 @@ FutureIter_clear(futureiterobject *it)
 static PyObject *
 FutureIter_close(futureiterobject *self, PyObject *arg)
 {
-    FutureIter_clear(self);
+    (void)FutureIter_clear(self);
     Py_RETURN_NONE;
 }
 
@@ -3428,7 +3426,7 @@ PyRunningLoopHolder_clear(PyRunningLoopHolder *rl)
 
 static int
 PyRunningLoopHolder_traverse(PyRunningLoopHolder *rl, visitproc visit,
-                              void *arg)
+                             void *arg)
 {
     Py_VISIT(Py_TYPE(rl));
     Py_VISIT(rl->rl_loop);
@@ -3559,7 +3557,6 @@ module_clear(PyObject *mod)
 
     module_free_freelists();
 
-    state->module_initialized = 0;
     return 0;
 }
 
@@ -3573,9 +3570,6 @@ static int
 module_init(asyncio_state *state)
 {
     PyObject *module = NULL;
-    if (state->module_initialized) {
-        return 0;
-    }
 
     state->asyncio_mod = PyImport_ImportModule("asyncio");
     if (state->asyncio_mod == NULL) {
@@ -3641,13 +3635,11 @@ module_init(asyncio_state *state)
         goto fail;
     }
 
-    state->module_initialized = 1;
     Py_DECREF(module);
     return 0;
 
 fail:
     Py_CLEAR(module);
-    module_free(NULL);
     return -1;
 
 #undef WITH_MOD
