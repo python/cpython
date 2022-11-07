@@ -115,7 +115,9 @@ Byte Order, Size, and Alignment
 
 By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
-rules used by the C compiler).
+rules used by the C compiler). Relying on default byte ordering and
+padding is fragile. For most applications, you should use explicit
+byte ordering and padding.
 
 .. index::
    single: @ (at); in struct format strings
@@ -144,12 +146,12 @@ following table:
 
 If the first character is not one of these, ``'@'`` is assumed.
 
-Native byte order is big-endian or little-endian, depending on the host
-system. For example, Intel x86 and AMD64 (x86-64) are little-endian;
-IBM z and most legacy architectures are big-endian;
-and ARM, RISC-V and IBM Power feature switchable endianness
-(bi-endian, though the former two are nearly always little-endian in practice).
-Use ``sys.byteorder`` to check the endianness of your system.
+Native byte order is big-endian or little-endian, depending on the
+host system. For example, Intel x86, AMD64 (x86-64), and Apple M1 are
+little-endian; IBM z and most legacy architectures are big-endian; and
+ARM, RISC-V and IBM Power feature switchable endianness (bi-endian,
+though the former two are nearly always little-endian in practice).
+Use :func:`sys.byteorder` to check the endianness of your system.
 
 Native size and alignment are determined using the C compiler's
 ``sizeof`` expression.  This is always combined with native byte order.
@@ -212,9 +214,9 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``I``  | :c:expr:`unsigned int`   | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``l``  | :c:expr:`long`           | integer            | 4              | \(2)       |
+| ``l``  | :c:expr:`long`           | integer            | varies         | \(2), \(10)|
 +--------+--------------------------+--------------------+----------------+------------+
-| ``L``  | :c:expr:`unsigned long`  | integer            | 4              | \(2)       |
+| ``L``  | :c:expr:`unsigned long`  | integer            | varies         | \(2), \(10)|
 +--------+--------------------------+--------------------+----------------+------------+
 | ``q``  | :c:expr:`long long`      | integer            | 8              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -231,9 +233,9 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``d``  | :c:expr:`double`         | float              | 8              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``s``  | :c:expr:`char[]`         | bytes              |                |            |
+| ``s``  | :c:expr:`char[]`         | bytes              |                | \(9)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``p``  | :c:expr:`char[]`         | bytes              |                |            |
+| ``p``  | :c:expr:`char[]`         | bytes              |                | \(8)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -294,21 +296,40 @@ Notes:
 (7)
    For padding, ``x`` inserts null bytes.
 
+(8)
+   The ``'p'`` format character encodes a "Pascal string", meaning a short
+   variable-length string stored in a *fixed number of bytes*, given by the count.
+   The first byte stored is the length of the string, or 255, whichever is
+   smaller.  The bytes of the string follow.  If the string passed in to
+   :func:`pack` is too long (longer than the count minus 1), only the leading
+   ``count-1`` bytes of the string are stored.  If the string is shorter than
+   ``count-1``, it is padded with null bytes so that exactly count bytes in all
+   are used.  Note that for :func:`unpack`, the ``'p'`` format character consumes
+   ``count`` bytes, but that the string returned can never contain more than 255
+   bytes.
+
+(9)
+   For the ``'s'`` format character, the count is interpreted as the length of the
+   bytes, not a repeat count like for the other format characters; for example,
+   ``'10s'`` means a single 10-byte string, while ``'10c'`` means 10 characters.
+   If a count is not given, it defaults to 1.  For packing, the string is
+   truncated or padded with null bytes as appropriate to make it fit. For
+   unpacking, the resulting bytes object always has exactly the specified number
+   of bytes.  As a special case, ``'0s'`` means a single, empty string (while
+   ``'0c'`` means 0 characters).
+
+(10)
+   Note that the size of the ``l`` and ``L`` format characters is
+   dependent on the machine word size. On 32-bit machines, they are
+   typically four bytes, while on 64-bit machines they are eight
+   bytes. When encoding or decoding different sized integer values it
+   is safer to use ``i``, ``I``, ``q``, or ``Q``.
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
 
 Whitespace characters between formats are ignored; a count and its format must
 not contain whitespace though.
-
-For the ``'s'`` format character, the count is interpreted as the length of the
-bytes, not a repeat count like for the other format characters; for example,
-``'10s'`` means a single 10-byte string, while ``'10c'`` means 10 characters.
-If a count is not given, it defaults to 1.  For packing, the string is
-truncated or padded with null bytes as appropriate to make it fit. For
-unpacking, the resulting bytes object always has exactly the specified number
-of bytes.  As a special case, ``'0s'`` means a single, empty string (while
-``'0c'`` means 0 characters).
 
 When packing a value ``x`` using one of the integer formats (``'b'``,
 ``'B'``, ``'h'``, ``'H'``, ``'i'``, ``'I'``, ``'l'``, ``'L'``,
@@ -318,17 +339,6 @@ then :exc:`struct.error` is raised.
 .. versionchanged:: 3.1
    Previously, some of the integer formats wrapped out-of-range values and
    raised :exc:`DeprecationWarning` instead of :exc:`struct.error`.
-
-The ``'p'`` format character encodes a "Pascal string", meaning a short
-variable-length string stored in a *fixed number of bytes*, given by the count.
-The first byte stored is the length of the string, or 255, whichever is
-smaller.  The bytes of the string follow.  If the string passed in to
-:func:`pack` is too long (longer than the count minus 1), only the leading
-``count-1`` bytes of the string are stored.  If the string is shorter than
-``count-1``, it is padded with null bytes so that exactly count bytes in all
-are used.  Note that for :func:`unpack`, the ``'p'`` format character consumes
-``count`` bytes, but that the string returned can never contain more than 255
-bytes.
 
 .. index:: single: ? (question mark); in struct format strings
 
@@ -390,6 +400,13 @@ longs are aligned on 4-byte boundaries::
     >>> pack('llh0l', 1, 2, 3)
     b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x03\x00\x00'
 
+On 64-bit architectures, the ``l`` format is eight bytes, so alignment
+is likely to be on 8-byte boundaries::
+
+    >>> pack('llh0l', 1, 2, 3)
+    b'\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00'
+
+To force one alignment or the other,
 This only works when native size and alignment are in effect; standard size and
 alignment does not enforce any alignment.
 
