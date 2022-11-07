@@ -1,0 +1,5 @@
+Remove the ``distutils`` package. It was deprecated in Python 3.10 by
+:pep:`632` "Deprecate distutils module". For projects still using
+``distutils`` and cannot be updated to something else, the ``setuptools``
+project can be installed: it still provides ``distutils``. Patch by Victor
+Stinner.
