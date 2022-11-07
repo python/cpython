@@ -134,13 +134,14 @@ PyDoc_STRVAR(zoneinfo_ZoneInfo_clear_cache__doc__,
 "Clear the ZoneInfo cache.");
 
 #define ZONEINFO_ZONEINFO_CLEAR_CACHE_METHODDEF    \
-    {"clear_cache", _PyCFunction_CAST(zoneinfo_ZoneInfo_clear_cache), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo_clear_cache__doc__},
+    {"clear_cache", _PyCFunction_CAST(zoneinfo_ZoneInfo_clear_cache), METH_METHOD|METH_FASTCALL|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo_clear_cache__doc__},
 
 static PyObject *
-zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyObject *only_keys);
+zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
+                                   PyObject *only_keys);
 
 static PyObject *
-zoneinfo_ZoneInfo_clear_cache(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zoneinfo_ZoneInfo_clear_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -181,7 +182,7 @@ zoneinfo_ZoneInfo_clear_cache(PyTypeObject *type, PyObject *const *args, Py_ssiz
     }
     only_keys = args[0];
 skip_optional_kwonly:
-    return_value = zoneinfo_ZoneInfo_clear_cache_impl(type, only_keys);
+    return_value = zoneinfo_ZoneInfo_clear_cache_impl(type, cls, only_keys);
 
 exit:
     return return_value;
@@ -240,4 +241,4 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=00cf22c487eae021 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a5dd58d1473141ec input=a9049054013a1b77]*/

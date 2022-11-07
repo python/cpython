@@ -95,10 +95,10 @@ typedef struct {
     PyObject *_common_mod;
 
     PyObject *TIMEDELTA_CACHE;
+    PyObject *ZONEINFO_WEAK_CACHE;
 } zoneinfo_state;
 
 // Globals
-static PyObject *ZONEINFO_WEAK_CACHE = NULL;
 static StrongCacheNode *ZONEINFO_STRONG_CACHE = NULL;
 static size_t ZONEINFO_STRONG_CACHE_MAX_SIZE = 8;
 
@@ -277,10 +277,10 @@ cleanup:
 }
 
 static PyObject *
-get_weak_cache(PyTypeObject *type)
+get_weak_cache(zoneinfo_state *state, PyTypeObject *type)
 {
     if (type == zoneinfo_get_state()->ZoneInfoType) {
-        return ZONEINFO_WEAK_CACHE;
+        return state->ZONEINFO_WEAK_CACHE;
     }
     else {
         PyObject *cache =
@@ -307,7 +307,8 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return instance;
     }
 
-    PyObject *weak_cache = get_weak_cache(type);
+    zoneinfo_state *state = zoneinfo_get_state_by_self(type);
+    PyObject *weak_cache = get_weak_cache(state, type);
     instance = PyObject_CallMethod(weak_cache, "get", "O", key, Py_None);
     if (instance == NULL) {
         return NULL;
@@ -315,7 +316,6 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     if (instance == Py_None) {
         Py_DECREF(instance);
-        zoneinfo_state *state = zoneinfo_get_state_by_self(type);
         PyObject *tmp = zoneinfo_new_instance(state, type, key);
         if (tmp == NULL) {
             return NULL;
@@ -466,6 +466,8 @@ zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyTypeObject *cls,
 @classmethod
 zoneinfo.ZoneInfo.clear_cache
 
+    cls: defining_class
+    /
     *
     only_keys: object = None
 
@@ -473,10 +475,12 @@ Clear the ZoneInfo cache.
 [clinic start generated code]*/
 
 static PyObject *
-zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyObject *only_keys)
-/*[clinic end generated code: output=eec0a3276f07bd90 input=8cff0182a95f295b]*/
+zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
+                                   PyObject *only_keys)
+/*[clinic end generated code: output=114d9b7c8a22e660 input=e32ca3bb396788ba]*/
 {
-    PyObject *weak_cache = get_weak_cache(type);
+    zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
+    PyObject *weak_cache = get_weak_cache(state, type);
 
     if (only_keys == NULL || only_keys == Py_None) {
         PyObject *rv = PyObject_CallMethod(weak_cache, "clear", NULL);
@@ -2593,14 +2597,14 @@ initialize_caches(zoneinfo_state *state)
         return -1;
     }
 
-    if (ZONEINFO_WEAK_CACHE == NULL) {
-        ZONEINFO_WEAK_CACHE = new_weak_cache();
+    if (state->ZONEINFO_WEAK_CACHE == NULL) {
+        state->ZONEINFO_WEAK_CACHE = new_weak_cache();
     }
     else {
-        Py_INCREF(ZONEINFO_WEAK_CACHE);
+        Py_INCREF(state->ZONEINFO_WEAK_CACHE);
     }
 
-    if (ZONEINFO_WEAK_CACHE == NULL) {
+    if (state->ZONEINFO_WEAK_CACHE == NULL) {
         return -1;
     }
 
@@ -2708,10 +2712,13 @@ module_free(void *m)
         Py_CLEAR(state->TIMEDELTA_CACHE);
     }
 
-    if (ZONEINFO_WEAK_CACHE != NULL && Py_REFCNT(ZONEINFO_WEAK_CACHE) > 1) {
-        Py_DECREF(ZONEINFO_WEAK_CACHE);
-    } else {
-        Py_CLEAR(ZONEINFO_WEAK_CACHE);
+    if (state->ZONEINFO_WEAK_CACHE != NULL &&
+        Py_REFCNT(state->ZONEINFO_WEAK_CACHE) > 1)
+    {
+        Py_DECREF(state->ZONEINFO_WEAK_CACHE);
+    }
+    else {
+        Py_CLEAR(state->ZONEINFO_WEAK_CACHE);
     }
 
     clear_strong_cache(zoneinfo_get_state()->ZoneInfoType);
