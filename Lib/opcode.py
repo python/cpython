@@ -328,6 +328,7 @@ _specializations = {
         "FOR_ITER_ADAPTIVE",
         "FOR_ITER_LIST",
         "FOR_ITER_RANGE",
+        "FOR_ITER_GEN",
     ],
     "LOAD_ATTR": [
         "LOAD_ATTR_ADAPTIVE",

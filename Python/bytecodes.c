@@ -756,6 +756,11 @@ dummy_func(
                 goto resume_frame;
             }
             _Py_LeaveRecursiveCallTstate(tstate);
+            if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
+                PyGenObject *gen = _PyFrame_GetGenerator(frame);
+                tstate->exc_info = gen->gi_exc_state.previous_item;
+                gen->gi_exc_state.previous_item = NULL;
+            }
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
@@ -895,7 +900,6 @@ dummy_func(
 
         // error: SEND stack effect depends on jump flag
         inst(SEND) {
-            assert(frame->is_entry);
             assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
             PyObject *receiver = TOP();
@@ -960,13 +964,21 @@ dummy_func(
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(oparg == STACK_LEVEL());
-            assert(frame->is_entry);
             PyObject *retval = POP();
-            _PyFrame_GetGenerator(frame)->gi_frame_state = FRAME_SUSPENDED;
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            gen->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
+            tstate->exc_info = gen->gi_exc_state.previous_item;
+            gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
+            if (!frame->is_entry) {
+                frame = cframe.current_frame = frame->previous;
+                frame->prev_instr -= frame->yield_offset;
+                _PyFrame_StackPush(frame, retval);
+                goto resume_frame;
+            }
             _Py_LeaveRecursiveCallTstate(tstate);
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
@@ -2788,7 +2800,7 @@ dummy_func(
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache)) {
                 next_instr--;
-                _Py_Specialize_ForIter(TOP(), next_instr);
+                _Py_Specialize_ForIter(TOP(), next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             else {
@@ -2843,6 +2855,30 @@ dummy_func(
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
         }
+
+        inst(FOR_ITER_GEN) {
+            assert(cframe.use_tracing == 0);
+            PyGenObject *gen = (PyGenObject *)TOP();
+            DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
+            DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
+            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            frame->yield_offset = oparg;
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            assert(_Py_OPCODE(*next_instr) == END_FOR);
+            frame->prev_instr = next_instr - 1;
+            Py_INCREF(Py_None);
+            _PyFrame_StackPush(gen_frame, Py_None);
+            gen->gi_frame_state = FRAME_EXECUTING;
+            gen->gi_exc_state.previous_item = tstate->exc_info;
+            tstate->exc_info = &gen->gi_exc_state;
+            gen_frame->previous = frame;
+            gen_frame->is_entry = false;
+            frame = cframe.current_frame = gen_frame;
+            goto start_frame;
+        }
+
 
         // stack effect: ( -- __0)
         inst(BEFORE_ASYNC_WITH) {
