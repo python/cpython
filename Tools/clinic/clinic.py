@@ -956,12 +956,14 @@ class CLanguage(Language):
                         parser_code.append(normalize_snippet("""
                             %s = PyTuple_New(%s);
                             for (Py_ssize_t i = 0; i < %s; ++i) {{
+                                Py_INCREF(args[%d + i]);
                                 PyTuple_SET_ITEM(%s, i, args[%d + i]);
                             }}
                             """ % (
                                 p.converter.parser_name,
                                 left_args,
                                 left_args,
+                                max_pos,
                                 p.converter.parser_name,
                                 max_pos
                             ), indent=4))
