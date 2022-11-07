@@ -3093,7 +3093,7 @@ class SpawnTests(unittest.TestCase):
     def quote_args(args):
         # On Windows, os.spawn* simply joins arguments with spaces:
         # arguments need to be quoted
-        if not os.name == 'nt':
+        if os.name != 'nt':
             return args
         return [f'"{arg}"' if " " in arg.strip() else arg for arg in args]
 
