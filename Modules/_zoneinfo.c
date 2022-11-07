@@ -94,9 +94,11 @@ typedef struct {
     PyObject *_tzpath_find_tzfile;
     PyObject *_common_mod;
 
+    // Caches
     PyObject *TIMEDELTA_CACHE;
     PyObject *ZONEINFO_WEAK_CACHE;
     StrongCacheNode *ZONEINFO_STRONG_CACHE;
+
     _ttinfo NO_TTINFO;
 } zoneinfo_state;
 
