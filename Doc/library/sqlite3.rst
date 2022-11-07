@@ -2356,7 +2356,7 @@ Transaction control
 when and how database transactions are opened and closed.
 :ref:`sqlite3-transaction-control-autocommit` is recommended,
 while :ref:`sqlite3-transaction-control-isolation-level`
-is consistent with pre-Python 3.12 versions of the :mod:`!sqlite3` module.
+retains the pre-Python 3.12 behaviour.
 
 .. _sqlite3-transaction-control-autocommit:
 
