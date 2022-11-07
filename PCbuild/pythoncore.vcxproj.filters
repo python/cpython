@@ -561,6 +561,9 @@
     <ClInclude Include="..\Include\internal\pycore_global_objects.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_global_objects_fini_generated.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_hamt.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
