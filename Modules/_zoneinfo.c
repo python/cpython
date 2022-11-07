@@ -93,10 +93,11 @@ typedef struct {
     PyObject *io_open;
     PyObject *_tzpath_find_tzfile;
     PyObject *_common_mod;
+
+    PyObject *TIMEDELTA_CACHE;
 } zoneinfo_state;
 
 // Globals
-static PyObject *TIMEDELTA_CACHE = NULL;
 static PyObject *ZONEINFO_WEAK_CACHE = NULL;
 static StrongCacheNode *ZONEINFO_STRONG_CACHE = NULL;
 static size_t ZONEINFO_STRONG_CACHE_MAX_SIZE = 8;
@@ -133,7 +134,7 @@ ts_to_local(size_t *trans_idx, int64_t *trans_utc, long *utcoff,
             size_t num_transitions);
 
 static int
-parse_tz_str(PyObject *tz_str_obj, _tzrule *out);
+parse_tz_str(zoneinfo_state *state, PyObject *tz_str_obj, _tzrule *out);
 
 static Py_ssize_t
 parse_abbr(const char *const p, PyObject **abbr);
@@ -152,21 +153,22 @@ find_tzrule_ttinfo_fromutc(_tzrule *rule, int64_t ts, int year,
                            unsigned char *fold);
 
 static int
-build_ttinfo(long utcoffset, long dstoffset, PyObject *tzname, _ttinfo *out);
+build_ttinfo(zoneinfo_state *state, long utcoffset, long dstoffset,
+             PyObject *tzname, _ttinfo *out);
 static void
 xdecref_ttinfo(_ttinfo *ttinfo);
 static int
 ttinfo_eq(const _ttinfo *const tti0, const _ttinfo *const tti1);
 
 static int
-build_tzrule(PyObject *std_abbr, PyObject *dst_abbr, long std_offset,
-             long dst_offset, TransitionRuleType *start,
+build_tzrule(zoneinfo_state *state, PyObject *std_abbr, PyObject *dst_abbr,
+             long std_offset, long dst_offset, TransitionRuleType *start,
              TransitionRuleType *end, _tzrule *out);
 static void
 free_tzrule(_tzrule *tzrule);
 
 static PyObject *
-load_timedelta(long seconds);
+load_timedelta(zoneinfo_state *state, long seconds);
 
 static int
 get_local_timestamp(PyObject *dt, int64_t *local_ts);
@@ -797,14 +799,14 @@ zoneinfo_ZoneInfo__unpickle_impl(PyTypeObject *type, PyTypeObject *cls,
  * This returns a new reference to the timedelta.
  */
 static PyObject *
-load_timedelta(long seconds)
+load_timedelta(zoneinfo_state *state, long seconds)
 {
     PyObject *rv;
     PyObject *pyoffset = PyLong_FromLong(seconds);
     if (pyoffset == NULL) {
         return NULL;
     }
-    rv = PyDict_GetItemWithError(TIMEDELTA_CACHE, pyoffset);
+    rv = PyDict_GetItemWithError(state->TIMEDELTA_CACHE, pyoffset);
     if (rv == NULL) {
         if (PyErr_Occurred()) {
             goto error;
@@ -816,7 +818,7 @@ load_timedelta(long seconds)
             goto error;
         }
 
-        rv = PyDict_SetDefault(TIMEDELTA_CACHE, pyoffset, tmp);
+        rv = PyDict_SetDefault(state->TIMEDELTA_CACHE, pyoffset, tmp);
         Py_DECREF(tmp);
     }
 
@@ -833,19 +835,20 @@ error:
  * initialized _ttinfo objects.
  */
 static int
-build_ttinfo(long utcoffset, long dstoffset, PyObject *tzname, _ttinfo *out)
+build_ttinfo(zoneinfo_state *state, long utcoffset, long dstoffset,
+             PyObject *tzname, _ttinfo *out)
 {
     out->utcoff = NULL;
     out->dstoff = NULL;
     out->tzname = NULL;
 
     out->utcoff_seconds = utcoffset;
-    out->utcoff = load_timedelta(utcoffset);
+    out->utcoff = load_timedelta(state, utcoffset);
     if (out->utcoff == NULL) {
         return -1;
     }
 
-    out->dstoff = load_timedelta(dstoffset);
+    out->dstoff = load_timedelta(state, dstoffset);
     if (out->dstoff == NULL) {
         return -1;
     }
@@ -1079,7 +1082,9 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         }
 
         ttinfos_allocated++;
-        if (build_ttinfo(utcoff[i], dstoff[i], tzname, &(self->_ttinfos[i]))) {
+        int rc = build_ttinfo(state, utcoff[i], dstoff[i], tzname,
+                              &(self->_ttinfos[i]));
+        if (rc) {
             goto error;
         }
     }
@@ -1111,7 +1116,7 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     }
 
     if (tz_str != Py_None && PyObject_IsTrue(tz_str)) {
-        if (parse_tz_str(tz_str, &(self->tzrule_after))) {
+        if (parse_tz_str(state, tz_str, &(self->tzrule_after))) {
             goto error;
         }
     }
@@ -1130,8 +1135,8 @@ load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         }
 
         _ttinfo *tti = &(self->_ttinfos[idx]);
-        build_tzrule(tti->tzname, NULL, tti->utcoff_seconds, 0, NULL, NULL,
-                     &(self->tzrule_after));
+        build_tzrule(state, tti->tzname, NULL, tti->utcoff_seconds, 0, NULL,
+                     NULL, &(self->tzrule_after));
 
         // We've abused the build_tzrule constructor to construct an STD-only
         // rule mimicking whatever ttinfo we've picked up, but it's possible
@@ -1532,7 +1537,7 @@ find_tzrule_ttinfo_fromutc(_tzrule *rule, int64_t ts, int year,
  * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html
  */
 static int
-parse_tz_str(PyObject *tz_str_obj, _tzrule *out)
+parse_tz_str(zoneinfo_state *state, PyObject *tz_str_obj, _tzrule *out)
 {
     PyObject *std_abbr = NULL;
     PyObject *dst_abbr = NULL;
@@ -1624,7 +1629,8 @@ parse_tz_str(PyObject *tz_str_obj, _tzrule *out)
     }
 
 complete:
-    build_tzrule(std_abbr, dst_abbr, std_offset, dst_offset, start, end, out);
+    build_tzrule(state, std_abbr, dst_abbr, std_offset, dst_offset,
+                 start, end, out);
     Py_DECREF(std_abbr);
     Py_XDECREF(dst_abbr);
 
@@ -1982,8 +1988,8 @@ parse_transition_time(const char *const p, int8_t *hour, int8_t *minute,
  * Returns 0 on success.
  */
 static int
-build_tzrule(PyObject *std_abbr, PyObject *dst_abbr, long std_offset,
-             long dst_offset, TransitionRuleType *start,
+build_tzrule(zoneinfo_state *state, PyObject *std_abbr, PyObject *dst_abbr,
+             long std_offset, long dst_offset, TransitionRuleType *start,
              TransitionRuleType *end, _tzrule *out)
 {
     _tzrule rv = {{0}};
@@ -1991,13 +1997,13 @@ build_tzrule(PyObject *std_abbr, PyObject *dst_abbr, long std_offset,
     rv.start = start;
     rv.end = end;
 
-    if (build_ttinfo(std_offset, 0, std_abbr, &rv.std)) {
+    if (build_ttinfo(state, std_offset, 0, std_abbr, &rv.std)) {
         goto error;
     }
 
     if (dst_abbr != NULL) {
         rv.dst_diff = dst_offset - std_offset;
-        if (build_ttinfo(dst_offset, rv.dst_diff, dst_abbr, &rv.dst)) {
+        if (build_ttinfo(state, dst_offset, rv.dst_diff, dst_abbr, &rv.dst)) {
             goto error;
         }
     }
@@ -2573,17 +2579,17 @@ new_weak_cache(void)
 }
 
 static int
-initialize_caches(void)
+initialize_caches(zoneinfo_state *state)
 {
     // TODO: Move to a PyModule_GetState / PEP 573 based caching system.
-    if (TIMEDELTA_CACHE == NULL) {
-        TIMEDELTA_CACHE = PyDict_New();
+    if (state->TIMEDELTA_CACHE == NULL) {
+        state->TIMEDELTA_CACHE = PyDict_New();
     }
     else {
-        Py_INCREF(TIMEDELTA_CACHE);
+        Py_INCREF(state->TIMEDELTA_CACHE);
     }
 
-    if (TIMEDELTA_CACHE == NULL) {
+    if (state->TIMEDELTA_CACHE == NULL) {
         return -1;
     }
 
@@ -2693,10 +2699,13 @@ module_free(void *m)
 
     xdecref_ttinfo(&NO_TTINFO);
 
-    if (TIMEDELTA_CACHE != NULL && Py_REFCNT(TIMEDELTA_CACHE) > 1) {
-        Py_DECREF(TIMEDELTA_CACHE);
-    } else {
-        Py_CLEAR(TIMEDELTA_CACHE);
+    if (state->TIMEDELTA_CACHE != NULL &&
+        Py_REFCNT(state->TIMEDELTA_CACHE) > 1)
+    {
+        Py_DECREF(state->TIMEDELTA_CACHE);
+    }
+    else {
+        Py_CLEAR(state->TIMEDELTA_CACHE);
     }
 
     if (ZONEINFO_WEAK_CACHE != NULL && Py_REFCNT(ZONEINFO_WEAK_CACHE) > 1) {
@@ -2757,7 +2766,7 @@ zoneinfomodule_exec(PyObject *m)
         }
     }
 
-    if (initialize_caches()) {
+    if (initialize_caches(state)) {
         goto error;
     }
 
