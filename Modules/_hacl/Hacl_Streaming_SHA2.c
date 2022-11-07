@@ -62,6 +62,132 @@ Hacl_Impl_SHA2_Generic_k224_256[64U] =
     (uint32_t)0x90befffaU, (uint32_t)0xa4506cebU, (uint32_t)0xbef9a3f7U, (uint32_t)0xc67178f2U
   };
 
+static void update_nblocks_256(uint32_t len, uint8_t *b, uint32_t *st)
+{
+  uint32_t blocks = len / (uint32_t)64U;
+  for (uint32_t i0 = (uint32_t)0U; i0 < blocks; i0++)
+  {
+    uint8_t *b00 = b;
+    uint8_t *mb = b00 + i0 * (uint32_t)64U;
+    uint32_t hash_old[8U] = { 0U };
+    uint32_t ws[16U] = { 0U };
+    memcpy(hash_old, st, (uint32_t)8U * sizeof (uint32_t));
+    uint8_t *b10 = mb;
+    uint32_t u = load32_be(b10);
+    ws[0U] = u;
+    uint32_t u0 = load32_be(b10 + (uint32_t)4U);
+    ws[1U] = u0;
+    uint32_t u1 = load32_be(b10 + (uint32_t)8U);
+    ws[2U] = u1;
+    uint32_t u2 = load32_be(b10 + (uint32_t)12U);
+    ws[3U] = u2;
+    uint32_t u3 = load32_be(b10 + (uint32_t)16U);
+    ws[4U] = u3;
+    uint32_t u4 = load32_be(b10 + (uint32_t)20U);
+    ws[5U] = u4;
+    uint32_t u5 = load32_be(b10 + (uint32_t)24U);
+    ws[6U] = u5;
+    uint32_t u6 = load32_be(b10 + (uint32_t)28U);
+    ws[7U] = u6;
+    uint32_t u7 = load32_be(b10 + (uint32_t)32U);
+    ws[8U] = u7;
+    uint32_t u8 = load32_be(b10 + (uint32_t)36U);
+    ws[9U] = u8;
+    uint32_t u9 = load32_be(b10 + (uint32_t)40U);
+    ws[10U] = u9;
+    uint32_t u10 = load32_be(b10 + (uint32_t)44U);
+    ws[11U] = u10;
+    uint32_t u11 = load32_be(b10 + (uint32_t)48U);
+    ws[12U] = u11;
+    uint32_t u12 = load32_be(b10 + (uint32_t)52U);
+    ws[13U] = u12;
+    uint32_t u13 = load32_be(b10 + (uint32_t)56U);
+    ws[14U] = u13;
+    uint32_t u14 = load32_be(b10 + (uint32_t)60U);
+    ws[15U] = u14;
+    KRML_MAYBE_FOR4(i1,
+      (uint32_t)0U,
+      (uint32_t)4U,
+      (uint32_t)1U,
+      KRML_MAYBE_FOR16(i,
+        (uint32_t)0U,
+        (uint32_t)16U,
+        (uint32_t)1U,
+        uint32_t k_t = Hacl_Impl_SHA2_Generic_k224_256[(uint32_t)16U * i1 + i];
+        uint32_t ws_t = ws[i];
+        uint32_t a0 = st[0U];
+        uint32_t b0 = st[1U];
+        uint32_t c0 = st[2U];
+        uint32_t d0 = st[3U];
+        uint32_t e0 = st[4U];
+        uint32_t f0 = st[5U];
+        uint32_t g0 = st[6U];
+        uint32_t h03 = st[7U];
+        uint32_t k_e_t = k_t;
+        uint32_t
+        t1 =
+          h03
+          +
+            ((e0 << (uint32_t)26U | e0 >> (uint32_t)6U)
+            ^
+              ((e0 << (uint32_t)21U | e0 >> (uint32_t)11U)
+              ^ (e0 << (uint32_t)7U | e0 >> (uint32_t)25U)))
+          + ((e0 & f0) ^ (~e0 & g0))
+          + k_e_t
+          + ws_t;
+        uint32_t
+        t2 =
+          ((a0 << (uint32_t)30U | a0 >> (uint32_t)2U)
+          ^
+            ((a0 << (uint32_t)19U | a0 >> (uint32_t)13U)
+            ^ (a0 << (uint32_t)10U | a0 >> (uint32_t)22U)))
+          + ((a0 & b0) ^ ((a0 & c0) ^ (b0 & c0)));
+        uint32_t a1 = t1 + t2;
+        uint32_t b1 = a0;
+        uint32_t c1 = b0;
+        uint32_t d1 = c0;
+        uint32_t e1 = d0 + t1;
+        uint32_t f1 = e0;
+        uint32_t g1 = f0;
+        uint32_t h12 = g0;
+        st[0U] = a1;
+        st[1U] = b1;
+        st[2U] = c1;
+        st[3U] = d1;
+        st[4U] = e1;
+        st[5U] = f1;
+        st[6U] = g1;
+        st[7U] = h12;);
+      if (i1 < (uint32_t)3U)
+      {
+        KRML_MAYBE_FOR16(i,
+          (uint32_t)0U,
+          (uint32_t)16U,
+          (uint32_t)1U,
+          uint32_t t16 = ws[i];
+          uint32_t t15 = ws[(i + (uint32_t)1U) % (uint32_t)16U];
+          uint32_t t7 = ws[(i + (uint32_t)9U) % (uint32_t)16U];
+          uint32_t t2 = ws[(i + (uint32_t)14U) % (uint32_t)16U];
+          uint32_t
+          s1 =
+            (t2 << (uint32_t)15U | t2 >> (uint32_t)17U)
+            ^ ((t2 << (uint32_t)13U | t2 >> (uint32_t)19U) ^ t2 >> (uint32_t)10U);
+          uint32_t
+          s0 =
+            (t15 << (uint32_t)25U | t15 >> (uint32_t)7U)
+            ^ ((t15 << (uint32_t)14U | t15 >> (uint32_t)18U) ^ t15 >> (uint32_t)3U);
+          ws[i] = s1 + t7 + s0 + t16;);
+      });
+    KRML_MAYBE_FOR8(i,
+      (uint32_t)0U,
+      (uint32_t)8U,
+      (uint32_t)1U,
+      uint32_t *os = st;
+      uint32_t x = st[i] + hash_old[i];
+      os[i] = x;);
+  }
+}
+
 Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224()
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC((uint32_t)64U, sizeof (uint8_t));
@@ -652,128 +778,7 @@ Hacl_Streaming_SHA2_update_256(
     }
     if (!(sz1 == (uint32_t)0U))
     {
-      uint32_t blocks = (uint32_t)1U;
-      for (uint32_t i0 = (uint32_t)0U; i0 < blocks; i0++)
-      {
-        uint8_t *b00 = buf;
-        uint8_t *mb = b00 + i0 * (uint32_t)64U;
-        uint32_t hash_old[8U] = { 0U };
-        uint32_t ws[16U] = { 0U };
-        memcpy(hash_old, block_state1, (uint32_t)8U * sizeof (uint32_t));
-        uint8_t *b = mb;
-        uint32_t u = load32_be(b);
-        ws[0U] = u;
-        uint32_t u0 = load32_be(b + (uint32_t)4U);
-        ws[1U] = u0;
-        uint32_t u1 = load32_be(b + (uint32_t)8U);
-        ws[2U] = u1;
-        uint32_t u2 = load32_be(b + (uint32_t)12U);
-        ws[3U] = u2;
-        uint32_t u3 = load32_be(b + (uint32_t)16U);
-        ws[4U] = u3;
-        uint32_t u4 = load32_be(b + (uint32_t)20U);
-        ws[5U] = u4;
-        uint32_t u5 = load32_be(b + (uint32_t)24U);
-        ws[6U] = u5;
-        uint32_t u6 = load32_be(b + (uint32_t)28U);
-        ws[7U] = u6;
-        uint32_t u7 = load32_be(b + (uint32_t)32U);
-        ws[8U] = u7;
-        uint32_t u8 = load32_be(b + (uint32_t)36U);
-        ws[9U] = u8;
-        uint32_t u9 = load32_be(b + (uint32_t)40U);
-        ws[10U] = u9;
-        uint32_t u10 = load32_be(b + (uint32_t)44U);
-        ws[11U] = u10;
-        uint32_t u11 = load32_be(b + (uint32_t)48U);
-        ws[12U] = u11;
-        uint32_t u12 = load32_be(b + (uint32_t)52U);
-        ws[13U] = u12;
-        uint32_t u13 = load32_be(b + (uint32_t)56U);
-        ws[14U] = u13;
-        uint32_t u14 = load32_be(b + (uint32_t)60U);
-        ws[15U] = u14;
-        KRML_MAYBE_FOR4(i1,
-          (uint32_t)0U,
-          (uint32_t)4U,
-          (uint32_t)1U,
-          KRML_MAYBE_FOR16(i,
-            (uint32_t)0U,
-            (uint32_t)16U,
-            (uint32_t)1U,
-            uint32_t k_t = Hacl_Impl_SHA2_Generic_k224_256[(uint32_t)16U * i1 + i];
-            uint32_t ws_t = ws[i];
-            uint32_t a0 = block_state1[0U];
-            uint32_t b0 = block_state1[1U];
-            uint32_t c0 = block_state1[2U];
-            uint32_t d0 = block_state1[3U];
-            uint32_t e0 = block_state1[4U];
-            uint32_t f0 = block_state1[5U];
-            uint32_t g0 = block_state1[6U];
-            uint32_t h05 = block_state1[7U];
-            uint32_t k_e_t = k_t;
-            uint32_t
-            t1 =
-              h05
-              +
-                ((e0 << (uint32_t)26U | e0 >> (uint32_t)6U)
-                ^
-                  ((e0 << (uint32_t)21U | e0 >> (uint32_t)11U)
-                  ^ (e0 << (uint32_t)7U | e0 >> (uint32_t)25U)))
-              + ((e0 & f0) ^ (~e0 & g0))
-              + k_e_t
-              + ws_t;
-            uint32_t
-            t2 =
-              ((a0 << (uint32_t)30U | a0 >> (uint32_t)2U)
-              ^
-                ((a0 << (uint32_t)19U | a0 >> (uint32_t)13U)
-                ^ (a0 << (uint32_t)10U | a0 >> (uint32_t)22U)))
-              + ((a0 & b0) ^ ((a0 & c0) ^ (b0 & c0)));
-            uint32_t a1 = t1 + t2;
-            uint32_t b1 = a0;
-            uint32_t c1 = b0;
-            uint32_t d1 = c0;
-            uint32_t e1 = d0 + t1;
-            uint32_t f1 = e0;
-            uint32_t g1 = f0;
-            uint32_t h12 = g0;
-            block_state1[0U] = a1;
-            block_state1[1U] = b1;
-            block_state1[2U] = c1;
-            block_state1[3U] = d1;
-            block_state1[4U] = e1;
-            block_state1[5U] = f1;
-            block_state1[6U] = g1;
-            block_state1[7U] = h12;);
-          if (i1 < (uint32_t)3U)
-          {
-            KRML_MAYBE_FOR16(i,
-              (uint32_t)0U,
-              (uint32_t)16U,
-              (uint32_t)1U,
-              uint32_t t16 = ws[i];
-              uint32_t t15 = ws[(i + (uint32_t)1U) % (uint32_t)16U];
-              uint32_t t7 = ws[(i + (uint32_t)9U) % (uint32_t)16U];
-              uint32_t t2 = ws[(i + (uint32_t)14U) % (uint32_t)16U];
-              uint32_t
-              s11 =
-                (t2 << (uint32_t)15U | t2 >> (uint32_t)17U)
-                ^ ((t2 << (uint32_t)13U | t2 >> (uint32_t)19U) ^ t2 >> (uint32_t)10U);
-              uint32_t
-              s0 =
-                (t15 << (uint32_t)25U | t15 >> (uint32_t)7U)
-                ^ ((t15 << (uint32_t)14U | t15 >> (uint32_t)18U) ^ t15 >> (uint32_t)3U);
-              ws[i] = s11 + t7 + s0 + t16;);
-          });
-        KRML_MAYBE_FOR8(i,
-          (uint32_t)0U,
-          (uint32_t)8U,
-          (uint32_t)1U,
-          uint32_t *os = block_state1;
-          uint32_t x = block_state1[i] + hash_old[i];
-          os[i] = x;);
-      }
+      update_nblocks_256((uint32_t)64U, buf, block_state1);
     }
     uint32_t ite;
     if ((uint64_t)len % (uint64_t)(uint32_t)64U == (uint64_t)0U && (uint64_t)len > (uint64_t)0U)
@@ -789,128 +794,7 @@ Hacl_Streaming_SHA2_update_256(
     uint32_t data2_len = len - data1_len;
     uint8_t *data1 = data;
     uint8_t *data2 = data + data1_len;
-    uint32_t blocks = data1_len / (uint32_t)64U;
-    for (uint32_t i0 = (uint32_t)0U; i0 < blocks; i0++)
-    {
-      uint8_t *b00 = data1;
-      uint8_t *mb = b00 + i0 * (uint32_t)64U;
-      uint32_t hash_old[8U] = { 0U };
-      uint32_t ws[16U] = { 0U };
-      memcpy(hash_old, block_state1, (uint32_t)8U * sizeof (uint32_t));
-      uint8_t *b = mb;
-      uint32_t u = load32_be(b);
-      ws[0U] = u;
-      uint32_t u0 = load32_be(b + (uint32_t)4U);
-      ws[1U] = u0;
-      uint32_t u1 = load32_be(b + (uint32_t)8U);
-      ws[2U] = u1;
-      uint32_t u2 = load32_be(b + (uint32_t)12U);
-      ws[3U] = u2;
-      uint32_t u3 = load32_be(b + (uint32_t)16U);
-      ws[4U] = u3;
-      uint32_t u4 = load32_be(b + (uint32_t)20U);
-      ws[5U] = u4;
-      uint32_t u5 = load32_be(b + (uint32_t)24U);
-      ws[6U] = u5;
-      uint32_t u6 = load32_be(b + (uint32_t)28U);
-      ws[7U] = u6;
-      uint32_t u7 = load32_be(b + (uint32_t)32U);
-      ws[8U] = u7;
-      uint32_t u8 = load32_be(b + (uint32_t)36U);
-      ws[9U] = u8;
-      uint32_t u9 = load32_be(b + (uint32_t)40U);
-      ws[10U] = u9;
-      uint32_t u10 = load32_be(b + (uint32_t)44U);
-      ws[11U] = u10;
-      uint32_t u11 = load32_be(b + (uint32_t)48U);
-      ws[12U] = u11;
-      uint32_t u12 = load32_be(b + (uint32_t)52U);
-      ws[13U] = u12;
-      uint32_t u13 = load32_be(b + (uint32_t)56U);
-      ws[14U] = u13;
-      uint32_t u14 = load32_be(b + (uint32_t)60U);
-      ws[15U] = u14;
-      KRML_MAYBE_FOR4(i1,
-        (uint32_t)0U,
-        (uint32_t)4U,
-        (uint32_t)1U,
-        KRML_MAYBE_FOR16(i,
-          (uint32_t)0U,
-          (uint32_t)16U,
-          (uint32_t)1U,
-          uint32_t k_t = Hacl_Impl_SHA2_Generic_k224_256[(uint32_t)16U * i1 + i];
-          uint32_t ws_t = ws[i];
-          uint32_t a0 = block_state1[0U];
-          uint32_t b0 = block_state1[1U];
-          uint32_t c0 = block_state1[2U];
-          uint32_t d0 = block_state1[3U];
-          uint32_t e0 = block_state1[4U];
-          uint32_t f0 = block_state1[5U];
-          uint32_t g0 = block_state1[6U];
-          uint32_t h05 = block_state1[7U];
-          uint32_t k_e_t = k_t;
-          uint32_t
-          t1 =
-            h05
-            +
-              ((e0 << (uint32_t)26U | e0 >> (uint32_t)6U)
-              ^
-                ((e0 << (uint32_t)21U | e0 >> (uint32_t)11U)
-                ^ (e0 << (uint32_t)7U | e0 >> (uint32_t)25U)))
-            + ((e0 & f0) ^ (~e0 & g0))
-            + k_e_t
-            + ws_t;
-          uint32_t
-          t2 =
-            ((a0 << (uint32_t)30U | a0 >> (uint32_t)2U)
-            ^
-              ((a0 << (uint32_t)19U | a0 >> (uint32_t)13U)
-              ^ (a0 << (uint32_t)10U | a0 >> (uint32_t)22U)))
-            + ((a0 & b0) ^ ((a0 & c0) ^ (b0 & c0)));
-          uint32_t a1 = t1 + t2;
-          uint32_t b1 = a0;
-          uint32_t c1 = b0;
-          uint32_t d1 = c0;
-          uint32_t e1 = d0 + t1;
-          uint32_t f1 = e0;
-          uint32_t g1 = f0;
-          uint32_t h13 = g0;
-          block_state1[0U] = a1;
-          block_state1[1U] = b1;
-          block_state1[2U] = c1;
-          block_state1[3U] = d1;
-          block_state1[4U] = e1;
-          block_state1[5U] = f1;
-          block_state1[6U] = g1;
-          block_state1[7U] = h13;);
-        if (i1 < (uint32_t)3U)
-        {
-          KRML_MAYBE_FOR16(i,
-            (uint32_t)0U,
-            (uint32_t)16U,
-            (uint32_t)1U,
-            uint32_t t16 = ws[i];
-            uint32_t t15 = ws[(i + (uint32_t)1U) % (uint32_t)16U];
-            uint32_t t7 = ws[(i + (uint32_t)9U) % (uint32_t)16U];
-            uint32_t t2 = ws[(i + (uint32_t)14U) % (uint32_t)16U];
-            uint32_t
-            s11 =
-              (t2 << (uint32_t)15U | t2 >> (uint32_t)17U)
-              ^ ((t2 << (uint32_t)13U | t2 >> (uint32_t)19U) ^ t2 >> (uint32_t)10U);
-            uint32_t
-            s0 =
-              (t15 << (uint32_t)25U | t15 >> (uint32_t)7U)
-              ^ ((t15 << (uint32_t)14U | t15 >> (uint32_t)18U) ^ t15 >> (uint32_t)3U);
-            ws[i] = s11 + t7 + s0 + t16;);
-        });
-      KRML_MAYBE_FOR8(i,
-        (uint32_t)0U,
-        (uint32_t)8U,
-        (uint32_t)1U,
-        uint32_t *os = block_state1;
-        uint32_t x = block_state1[i] + hash_old[i];
-        os[i] = x;);
-    }
+    update_nblocks_256(data1_len, data1, block_state1);
     uint8_t *dst = buf;
     memcpy(dst, data2, data2_len * sizeof (uint8_t));
     *p
@@ -968,128 +852,7 @@ Hacl_Streaming_SHA2_update_256(
     }
     if (!(sz1 == (uint32_t)0U))
     {
-      uint32_t blocks = (uint32_t)1U;
-      for (uint32_t i0 = (uint32_t)0U; i0 < blocks; i0++)
-      {
-        uint8_t *b00 = buf;
-        uint8_t *mb = b00 + i0 * (uint32_t)64U;
-        uint32_t hash_old[8U] = { 0U };
-        uint32_t ws[16U] = { 0U };
-        memcpy(hash_old, block_state1, (uint32_t)8U * sizeof (uint32_t));
-        uint8_t *b = mb;
-        uint32_t u = load32_be(b);
-        ws[0U] = u;
-        uint32_t u0 = load32_be(b + (uint32_t)4U);
-        ws[1U] = u0;
-        uint32_t u1 = load32_be(b + (uint32_t)8U);
-        ws[2U] = u1;
-        uint32_t u2 = load32_be(b + (uint32_t)12U);
-        ws[3U] = u2;
-        uint32_t u3 = load32_be(b + (uint32_t)16U);
-        ws[4U] = u3;
-        uint32_t u4 = load32_be(b + (uint32_t)20U);
-        ws[5U] = u4;
-        uint32_t u5 = load32_be(b + (uint32_t)24U);
-        ws[6U] = u5;
-        uint32_t u6 = load32_be(b + (uint32_t)28U);
-        ws[7U] = u6;
-        uint32_t u7 = load32_be(b + (uint32_t)32U);
-        ws[8U] = u7;
-        uint32_t u8 = load32_be(b + (uint32_t)36U);
-        ws[9U] = u8;
-        uint32_t u9 = load32_be(b + (uint32_t)40U);
-        ws[10U] = u9;
-        uint32_t u10 = load32_be(b + (uint32_t)44U);
-        ws[11U] = u10;
-        uint32_t u11 = load32_be(b + (uint32_t)48U);
-        ws[12U] = u11;
-        uint32_t u12 = load32_be(b + (uint32_t)52U);
-        ws[13U] = u12;
-        uint32_t u13 = load32_be(b + (uint32_t)56U);
-        ws[14U] = u13;
-        uint32_t u14 = load32_be(b + (uint32_t)60U);
-        ws[15U] = u14;
-        KRML_MAYBE_FOR4(i1,
-          (uint32_t)0U,
-          (uint32_t)4U,
-          (uint32_t)1U,
-          KRML_MAYBE_FOR16(i,
-            (uint32_t)0U,
-            (uint32_t)16U,
-            (uint32_t)1U,
-            uint32_t k_t = Hacl_Impl_SHA2_Generic_k224_256[(uint32_t)16U * i1 + i];
-            uint32_t ws_t = ws[i];
-            uint32_t a0 = block_state1[0U];
-            uint32_t b0 = block_state1[1U];
-            uint32_t c0 = block_state1[2U];
-            uint32_t d0 = block_state1[3U];
-            uint32_t e0 = block_state1[4U];
-            uint32_t f0 = block_state1[5U];
-            uint32_t g0 = block_state1[6U];
-            uint32_t h06 = block_state1[7U];
-            uint32_t k_e_t = k_t;
-            uint32_t
-            t1 =
-              h06
-              +
-                ((e0 << (uint32_t)26U | e0 >> (uint32_t)6U)
-                ^
-                  ((e0 << (uint32_t)21U | e0 >> (uint32_t)11U)
-                  ^ (e0 << (uint32_t)7U | e0 >> (uint32_t)25U)))
-              + ((e0 & f0) ^ (~e0 & g0))
-              + k_e_t
-              + ws_t;
-            uint32_t
-            t2 =
-              ((a0 << (uint32_t)30U | a0 >> (uint32_t)2U)
-              ^
-                ((a0 << (uint32_t)19U | a0 >> (uint32_t)13U)
-                ^ (a0 << (uint32_t)10U | a0 >> (uint32_t)22U)))
-              + ((a0 & b0) ^ ((a0 & c0) ^ (b0 & c0)));
-            uint32_t a1 = t1 + t2;
-            uint32_t b1 = a0;
-            uint32_t c1 = b0;
-            uint32_t d1 = c0;
-            uint32_t e1 = d0 + t1;
-            uint32_t f1 = e0;
-            uint32_t g1 = f0;
-            uint32_t h13 = g0;
-            block_state1[0U] = a1;
-            block_state1[1U] = b1;
-            block_state1[2U] = c1;
-            block_state1[3U] = d1;
-            block_state1[4U] = e1;
-            block_state1[5U] = f1;
-            block_state1[6U] = g1;
-            block_state1[7U] = h13;);
-          if (i1 < (uint32_t)3U)
-          {
-            KRML_MAYBE_FOR16(i,
-              (uint32_t)0U,
-              (uint32_t)16U,
-              (uint32_t)1U,
-              uint32_t t16 = ws[i];
-              uint32_t t15 = ws[(i + (uint32_t)1U) % (uint32_t)16U];
-              uint32_t t7 = ws[(i + (uint32_t)9U) % (uint32_t)16U];
-              uint32_t t2 = ws[(i + (uint32_t)14U) % (uint32_t)16U];
-              uint32_t
-              s11 =
-                (t2 << (uint32_t)15U | t2 >> (uint32_t)17U)
-                ^ ((t2 << (uint32_t)13U | t2 >> (uint32_t)19U) ^ t2 >> (uint32_t)10U);
-              uint32_t
-              s0 =
-                (t15 << (uint32_t)25U | t15 >> (uint32_t)7U)
-                ^ ((t15 << (uint32_t)14U | t15 >> (uint32_t)18U) ^ t15 >> (uint32_t)3U);
-              ws[i] = s11 + t7 + s0 + t16;);
-          });
-        KRML_MAYBE_FOR8(i,
-          (uint32_t)0U,
-          (uint32_t)8U,
-          (uint32_t)1U,
-          uint32_t *os = block_state1;
-          uint32_t x = block_state1[i] + hash_old[i];
-          os[i] = x;);
-      }
+      update_nblocks_256((uint32_t)64U, buf, block_state1);
     }
     uint32_t ite;
     if
@@ -1111,128 +874,7 @@ Hacl_Streaming_SHA2_update_256(
     uint32_t data2_len = len - diff - data1_len;
     uint8_t *data11 = data2;
     uint8_t *data21 = data2 + data1_len;
-    uint32_t blocks = data1_len / (uint32_t)64U;
-    for (uint32_t i0 = (uint32_t)0U; i0 < blocks; i0++)
-    {
-      uint8_t *b00 = data11;
-      uint8_t *mb = b00 + i0 * (uint32_t)64U;
-      uint32_t hash_old[8U] = { 0U };
-      uint32_t ws[16U] = { 0U };
-      memcpy(hash_old, block_state1, (uint32_t)8U * sizeof (uint32_t));
-      uint8_t *b = mb;
-      uint32_t u = load32_be(b);
-      ws[0U] = u;
-      uint32_t u0 = load32_be(b + (uint32_t)4U);
-      ws[1U] = u0;
-      uint32_t u1 = load32_be(b + (uint32_t)8U);
-      ws[2U] = u1;
-      uint32_t u2 = load32_be(b + (uint32_t)12U);
-      ws[3U] = u2;
-      uint32_t u3 = load32_be(b + (uint32_t)16U);
-      ws[4U] = u3;
-      uint32_t u4 = load32_be(b + (uint32_t)20U);
-      ws[5U] = u4;
-      uint32_t u5 = load32_be(b + (uint32_t)24U);
-      ws[6U] = u5;
-      uint32_t u6 = load32_be(b + (uint32_t)28U);
-      ws[7U] = u6;
-      uint32_t u7 = load32_be(b + (uint32_t)32U);
-      ws[8U] = u7;
-      uint32_t u8 = load32_be(b + (uint32_t)36U);
-      ws[9U] = u8;
-      uint32_t u9 = load32_be(b + (uint32_t)40U);
-      ws[10U] = u9;
-      uint32_t u10 = load32_be(b + (uint32_t)44U);
-      ws[11U] = u10;
-      uint32_t u11 = load32_be(b + (uint32_t)48U);
-      ws[12U] = u11;
-      uint32_t u12 = load32_be(b + (uint32_t)52U);
-      ws[13U] = u12;
-      uint32_t u13 = load32_be(b + (uint32_t)56U);
-      ws[14U] = u13;
-      uint32_t u14 = load32_be(b + (uint32_t)60U);
-      ws[15U] = u14;
-      KRML_MAYBE_FOR4(i1,
-        (uint32_t)0U,
-        (uint32_t)4U,
-        (uint32_t)1U,
-        KRML_MAYBE_FOR16(i,
-          (uint32_t)0U,
-          (uint32_t)16U,
-          (uint32_t)1U,
-          uint32_t k_t = Hacl_Impl_SHA2_Generic_k224_256[(uint32_t)16U * i1 + i];
-          uint32_t ws_t = ws[i];
-          uint32_t a0 = block_state1[0U];
-          uint32_t b0 = block_state1[1U];
-          uint32_t c0 = block_state1[2U];
-          uint32_t d0 = block_state1[3U];
-          uint32_t e0 = block_state1[4U];
-          uint32_t f0 = block_state1[5U];
-          uint32_t g0 = block_state1[6U];
-          uint32_t h06 = block_state1[7U];
-          uint32_t k_e_t = k_t;
-          uint32_t
-          t1 =
-            h06
-            +
-              ((e0 << (uint32_t)26U | e0 >> (uint32_t)6U)
-              ^
-                ((e0 << (uint32_t)21U | e0 >> (uint32_t)11U)
-                ^ (e0 << (uint32_t)7U | e0 >> (uint32_t)25U)))
-            + ((e0 & f0) ^ (~e0 & g0))
-            + k_e_t
-            + ws_t;
-          uint32_t
-          t2 =
-            ((a0 << (uint32_t)30U | a0 >> (uint32_t)2U)
-            ^
-              ((a0 << (uint32_t)19U | a0 >> (uint32_t)13U)
-              ^ (a0 << (uint32_t)10U | a0 >> (uint32_t)22U)))
-            + ((a0 & b0) ^ ((a0 & c0) ^ (b0 & c0)));
-          uint32_t a1 = t1 + t2;
-          uint32_t b1 = a0;
-          uint32_t c1 = b0;
-          uint32_t d1 = c0;
-          uint32_t e1 = d0 + t1;
-          uint32_t f1 = e0;
-          uint32_t g1 = f0;
-          uint32_t h14 = g0;
-          block_state1[0U] = a1;
-          block_state1[1U] = b1;
-          block_state1[2U] = c1;
-          block_state1[3U] = d1;
-          block_state1[4U] = e1;
-          block_state1[5U] = f1;
-          block_state1[6U] = g1;
-          block_state1[7U] = h14;);
-        if (i1 < (uint32_t)3U)
-        {
-          KRML_MAYBE_FOR16(i,
-            (uint32_t)0U,
-            (uint32_t)16U,
-            (uint32_t)1U,
-            uint32_t t16 = ws[i];
-            uint32_t t15 = ws[(i + (uint32_t)1U) % (uint32_t)16U];
-            uint32_t t7 = ws[(i + (uint32_t)9U) % (uint32_t)16U];
-            uint32_t t2 = ws[(i + (uint32_t)14U) % (uint32_t)16U];
-            uint32_t
-            s11 =
-              (t2 << (uint32_t)15U | t2 >> (uint32_t)17U)
-              ^ ((t2 << (uint32_t)13U | t2 >> (uint32_t)19U) ^ t2 >> (uint32_t)10U);
-            uint32_t
-            s0 =
-              (t15 << (uint32_t)25U | t15 >> (uint32_t)7U)
-              ^ ((t15 << (uint32_t)14U | t15 >> (uint32_t)18U) ^ t15 >> (uint32_t)3U);
-            ws[i] = s11 + t7 + s0 + t16;);
-        });
-      KRML_MAYBE_FOR8(i,
-        (uint32_t)0U,
-        (uint32_t)8U,
-        (uint32_t)1U,
-        uint32_t *os = block_state1;
-        uint32_t x = block_state1[i] + hash_old[i];
-        os[i] = x;);
-    }
+    update_nblocks_256(data1_len, data11, block_state1);
     uint8_t *dst = buf;
     memcpy(dst, data21, data2_len * sizeof (uint8_t));
     *p
