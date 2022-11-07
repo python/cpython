@@ -97,12 +97,11 @@ typedef struct {
     PyObject *TIMEDELTA_CACHE;
     PyObject *ZONEINFO_WEAK_CACHE;
     StrongCacheNode *ZONEINFO_STRONG_CACHE;
+    _ttinfo NO_TTINFO;
 } zoneinfo_state;
 
 // Globals
 static zoneinfo_state global_state;
-
-static _ttinfo NO_TTINFO = {NULL, NULL, NULL, 0};
 
 // Constants
 static const int EPOCHORDINAL = 719163;
@@ -173,7 +172,7 @@ load_timedelta(zoneinfo_state *state, long seconds);
 static int
 get_local_timestamp(PyObject *dt, int64_t *local_ts);
 static _ttinfo *
-find_ttinfo(PyZoneInfo_ZoneInfo *self, PyObject *dt);
+find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt);
 
 static int
 ymd_to_ord(int y, int m, int d);
@@ -533,10 +532,23 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+zoneinfo.ZoneInfo.utcoffset
+
+    cls: defining_class
+    dt: object
+    /
+
+Retrieve a timedelta representing the UTC offset in a zone at the given datetime.
+[clinic start generated code]*/
+
 static PyObject *
-zoneinfo_utcoffset(PyObject *self, PyObject *dt)
+zoneinfo_ZoneInfo_utcoffset_impl(PyObject *self, PyTypeObject *cls,
+                                 PyObject *dt)
+/*[clinic end generated code: output=b71016c319ba1f91 input=2bb6c5364938f19c]*/
 {
-    _ttinfo *tti = find_ttinfo((PyZoneInfo_ZoneInfo *)self, dt);
+    zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
+    _ttinfo *tti = find_ttinfo(state, (PyZoneInfo_ZoneInfo *)self, dt);
     if (tti == NULL) {
         return NULL;
     }
@@ -544,10 +556,22 @@ zoneinfo_utcoffset(PyObject *self, PyObject *dt)
     return tti->utcoff;
 }
 
+/*[clinic input]
+zoneinfo.ZoneInfo.dst
+
+    cls: defining_class
+    dt: object
+    /
+
+Retrieve a timedelta representing the amount of DST applied in a zone at the given datetime.
+[clinic start generated code]*/
+
 static PyObject *
-zoneinfo_dst(PyObject *self, PyObject *dt)
+zoneinfo_ZoneInfo_dst_impl(PyObject *self, PyTypeObject *cls, PyObject *dt)
+/*[clinic end generated code: output=cb6168d7723a6ae6 input=2167fb80cf8645c6]*/
 {
-    _ttinfo *tti = find_ttinfo((PyZoneInfo_ZoneInfo *)self, dt);
+    zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
+    _ttinfo *tti = find_ttinfo(state, (PyZoneInfo_ZoneInfo *)self, dt);
     if (tti == NULL) {
         return NULL;
     }
@@ -555,10 +579,23 @@ zoneinfo_dst(PyObject *self, PyObject *dt)
     return tti->dstoff;
 }
 
+/*[clinic input]
+zoneinfo.ZoneInfo.tzname
+
+    cls: defining_class
+    dt: object
+    /
+
+Retrieve a string containing the abbreviation for the time zone that applies in a zone at a given datetime.
+[clinic start generated code]*/
+
 static PyObject *
-zoneinfo_tzname(PyObject *self, PyObject *dt)
+zoneinfo_ZoneInfo_tzname_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *dt)
+/*[clinic end generated code: output=3b6ae6c3053ea75a input=15a59a4f92ed1f1f]*/
 {
-    _ttinfo *tti = find_ttinfo((PyZoneInfo_ZoneInfo *)self, dt);
+    zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
+    _ttinfo *tti = find_ttinfo(state, (PyZoneInfo_ZoneInfo *)self, dt);
     if (tti == NULL) {
         return NULL;
     }
@@ -2213,7 +2250,7 @@ _bisect(const int64_t value, const int64_t *arr, size_t size)
 
 /* Find the ttinfo rules that apply at a given local datetime. */
 static _ttinfo *
-find_ttinfo(PyZoneInfo_ZoneInfo *self, PyObject *dt)
+find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
 {
     // datetime.time has a .tzinfo attribute that passes None as the dt
     // argument; it only really has meaning for fixed-offset zones.
@@ -2222,7 +2259,7 @@ find_ttinfo(PyZoneInfo_ZoneInfo *self, PyObject *dt)
             return &(self->tzrule_after.std);
         }
         else {
-            return &NO_TTINFO;
+            return &(state->NO_TTINFO);
         }
     }
 
@@ -2644,15 +2681,9 @@ static PyMethodDef zoneinfo_methods[] = {
     ZONEINFO_ZONEINFO_CLEAR_CACHE_METHODDEF
     ZONEINFO_ZONEINFO_NO_CACHE_METHODDEF
     ZONEINFO_ZONEINFO_FROM_FILE_METHODDEF
-    {"utcoffset", (PyCFunction)zoneinfo_utcoffset, METH_O,
-     PyDoc_STR("Retrieve a timedelta representing the UTC offset in a zone at "
-               "the given datetime.")},
-    {"dst", (PyCFunction)zoneinfo_dst, METH_O,
-     PyDoc_STR("Retrieve a timedelta representing the amount of DST applied "
-               "in a zone at the given datetime.")},
-    {"tzname", (PyCFunction)zoneinfo_tzname, METH_O,
-     PyDoc_STR("Retrieve a string containing the abbreviation for the time "
-               "zone that applies in a zone at a given datetime.")},
+    ZONEINFO_ZONEINFO_UTCOFFSET_METHODDEF
+    ZONEINFO_ZONEINFO_DST_METHODDEF
+    ZONEINFO_ZONEINFO_TZNAME_METHODDEF
     {"fromutc", (PyCFunction)zoneinfo_fromutc, METH_O,
      PyDoc_STR("Given a datetime with local time in UTC, retrieve an adjusted "
                "datetime in local time.")},
@@ -2711,7 +2742,7 @@ module_free(void *m)
     Py_CLEAR(state->_tzpath_find_tzfile);
     Py_CLEAR(state->_common_mod);
 
-    xdecref_ttinfo(&NO_TTINFO);
+    xdecref_ttinfo(&(state->NO_TTINFO));
 
     if (state->TIMEDELTA_CACHE != NULL &&
         Py_REFCNT(state->TIMEDELTA_CACHE) > 1)
@@ -2773,14 +2804,10 @@ zoneinfomodule_exec(PyObject *m)
         goto error;
     }
 
-    if (NO_TTINFO.utcoff == NULL) {
-        NO_TTINFO.utcoff = Py_None;
-        NO_TTINFO.dstoff = Py_None;
-        NO_TTINFO.tzname = Py_None;
-
-        for (size_t i = 0; i < 3; ++i) {
-            Py_INCREF(Py_None);
-        }
+    if (state->NO_TTINFO.utcoff == NULL) {
+        state->NO_TTINFO.utcoff = Py_NewRef(Py_None);
+        state->NO_TTINFO.dstoff = Py_NewRef(Py_None);
+        state->NO_TTINFO.tzname = Py_NewRef(Py_None);
     }
 
     if (initialize_caches(state)) {
