@@ -100,8 +100,6 @@ typedef struct {
 } zoneinfo_state;
 
 // Globals
-static size_t ZONEINFO_STRONG_CACHE_MAX_SIZE = 8;
-
 static zoneinfo_state global_state;
 
 static _ttinfo NO_TTINFO = {NULL, NULL, NULL, 0};
@@ -119,6 +117,8 @@ static int DAYS_BEFORE_MONTH[] = {
 static const int SOURCE_NOCACHE = 0;
 static const int SOURCE_CACHE = 1;
 static const int SOURCE_FILE = 2;
+
+static const size_t ZONEINFO_STRONG_CACHE_MAX_SIZE = 8;
 
 // Forward declarations
 static int
