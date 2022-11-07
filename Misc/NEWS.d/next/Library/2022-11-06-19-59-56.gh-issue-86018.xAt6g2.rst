@@ -1,1 +1,1 @@
-+ Fix issue where the error messages for :func:`json.dump` and :func:`json.dumps` were inconsistent when serializing non-finite values with ``allow_nan=False``
++ Fix issue where the error messages for :meth:`json.dump` and :meth:`json.dumps` were inconsistent when serializing non-finite values with ``allow_nan=False``
