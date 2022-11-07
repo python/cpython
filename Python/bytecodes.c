@@ -81,6 +81,10 @@ typedef struct {
     PyObject *kwnames;
 } CallShape;
 
+// Dummy variables for stack effects.
+static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
+static PyObject *container, *start, *stop, *v;
+
 static PyObject *
 dummy_func(
     PyThreadState *tstate,
