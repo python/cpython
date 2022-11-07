@@ -77,7 +77,7 @@ Improved Error Messages
 
 * Modules from the standard library are now potentially suggested as part of
   the error messages displayed by the interpreter when a :exc:`NameError` is
-  raised to the top level. Contrubuted by Pablo Galindo in :gh:`98254`.
+  raised to the top level. Contributed by Pablo Galindo in :gh:`98254`.
 
     >>> sys.version_info
     Traceback (most recent call last):
