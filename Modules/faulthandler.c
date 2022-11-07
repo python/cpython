@@ -349,14 +349,17 @@ faulthandler_fatal_error(int signum)
     size_t i;
     fault_handler_t *handler = NULL;
     int save_errno = errno;
+    int found = 0;
 
     if (!fatal_error.enabled)
         return;
 
     for (i=0; i < faulthandler_nsignals; i++) {
         handler = &faulthandler_handlers[i];
-        if (handler->signum == signum)
+        if (handler->signum == signum) {
+            found = 1;
             break;
+        }
     }
     if (handler == NULL) {
         /* faulthandler_nsignals == 0 (unlikely) */
@@ -366,9 +369,18 @@ faulthandler_fatal_error(int signum)
     /* restore the previous handler */
     faulthandler_disable_fatal_handler(handler);
 
-    PUTS(fd, "Fatal Python error: ");
-    PUTS(fd, handler->name);
-    PUTS(fd, "\n\n");
+    if (found) {
+        PUTS(fd, "Fatal Python error: ");
+        PUTS(fd, handler->name);
+        PUTS(fd, "\n\n");
+    }
+    else {
+        char unknown_signum[23] = {0,};
+        snprintf(unknown_signum, 23, "%d", signum);
+        PUTS(fd, "Fatal Python error from unexpected signum: ");
+        PUTS(fd, unknown_signum);
+        PUTS(fd, "\n\n");
+    }
 
     faulthandler_dump_traceback(fd, fatal_error.all_threads,
                                 fatal_error.interp);
