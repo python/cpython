@@ -1,3 +1,0 @@
-The distutils ``bdist_wininst`` command deprecated in Python 3.8 has been
-removed. The distutils ``bidst_wheel`` command is now recommended to
-distribute binary packages on Windows.
