@@ -69,7 +69,7 @@ the "elif" keyword and not to its condition, making it consistent with the
 .. nonce: 8OyT5P
 .. section: Core and Builtins
 
-In Python 3.9.0a1, sys.argv[0] was made an asolute path if a filename was
+In Python 3.9.0a1, sys.argv[0] was made an absolute path if a filename was
 specified on the command line. Revert this change, since most users expect
 sys.argv to be unmodified.
 
@@ -229,14 +229,14 @@ coroutine of an asynchronous generator.
 
 ..
 
-.. bpo: 32949
+.. bpo: 33387
 .. date: 2018-03-13-14-46-03
 .. nonce: v821M7
 .. section: Core and Builtins
 
 Removed WITH_CLEANUP_START, WITH_CLEANUP_FINISH, BEGIN_FINALLY, END_FINALLY,
 CALL_FINALLY and POP_FINALLY bytecodes. Replaced with RERAISE and
-WITH_EXCEPT_FINISH bytecodes. The compiler now generates different code for
+WITH_EXCEPT_START bytecodes. The compiler now generates different code for
 exceptional and non-exceptional branches for 'with' and 'try-except'
 statements. For 'try-finally' statements the 'finally' block is replicated
 for each exit from the 'try' body.
@@ -453,7 +453,7 @@ determined index was bogus. Patch by Claudiu Popa
 
 ..
 
-.. bpo: 38668
+.. bpo: 38688
 .. date: 2019-11-22-10-45-03
 .. nonce: iKx23z
 .. section: Library
@@ -516,7 +516,7 @@ from a coroutine.
 .. section: Library
 
 AsyncMock fix for return values that are awaitable types.  This also covers
-side_effect iterable values that happend to be awaitable, and wraps
+side_effect iterable values that happened to be awaitable, and wraps
 callables that return an awaitable type. Before these awaitables were being
 awaited instead of being returned as is.
 
@@ -893,7 +893,7 @@ previous `import posix`. Patch by Benoît Hudson.
 .. nonce: _3xjKG
 .. section: IDLE
 
-Excape key now closes IDLE completion windows.  Patch by Johnny Najera.
+Escape key now closes IDLE completion windows.  Patch by Johnny Najera.
 
 ..
 

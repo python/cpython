@@ -5,17 +5,8 @@ import importlib._bootstrap_external
 import importlib.machinery
 import marshal
 import os
+import io
 import sys
-import types
-import warnings
-
-
-LOAD_CONST = dis.opmap['LOAD_CONST']
-IMPORT_NAME = dis.opmap['IMPORT_NAME']
-STORE_NAME = dis.opmap['STORE_NAME']
-STORE_GLOBAL = dis.opmap['STORE_GLOBAL']
-STORE_OPS = STORE_NAME, STORE_GLOBAL
-EXTENDED_ARG = dis.EXTENDED_ARG
 
 # Old imp constants:
 
@@ -80,23 +71,20 @@ def _find_module(name, path=None):
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
         kind = _PY_SOURCE
-        mode = "r"
 
     elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
         kind = _C_EXTENSION
-        mode = "rb"
 
     elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
         kind = _PY_COMPILED
-        mode = "rb"
 
     else:  # Should never happen.
         return None, None, ("", "", _SEARCH_ERROR)
 
-    file = open(file_path, mode)
+    file = io.open_code(file_path)
     suffix = os.path.splitext(file_path)[-1]
 
-    return file, file_path, (suffix, mode, kind)
+    return file, file_path, (suffix, "rb", kind)
 
 
 class Module:
@@ -160,15 +148,15 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        with open(pathname) as fp:
-            stuff = ("", "r", _PY_SOURCE)
+        with io.open_code(pathname) as fp:
+            stuff = ("", "rb", _PY_SOURCE)
             self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        with open(pathname) as fp:
-            stuff = (ext, "r", _PY_SOURCE)
+        with io.open_code(pathname) as fp:
+            stuff = (ext, "rb", _PY_SOURCE)
             self.load_module(name, fp, pathname, stuff)
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
@@ -322,6 +310,7 @@ class ModuleFinder:
         except ImportError:
             self.msgout(3, "import_module ->", None)
             return None
+
         try:
             m = self.load_module(fqname, fp, pathname, stuff)
         finally:
@@ -340,7 +329,7 @@ class ModuleFinder:
             self.msgout(2, "load_module ->", m)
             return m
         if type == _PY_SOURCE:
-            co = compile(fp.read()+'\n', pathname, 'exec')
+            co = compile(fp.read(), pathname, 'exec')
         elif type == _PY_COMPILED:
             try:
                 data = fp.read()
@@ -397,24 +386,13 @@ class ModuleFinder:
 
     def scan_opcodes(self, co):
         # Scan the code, and yield 'interesting' opcode combinations
-        code = co.co_code
-        names = co.co_names
-        consts = co.co_consts
-        opargs = [(op, arg) for _, op, arg in dis._unpack_opargs(code)
-                  if op != EXTENDED_ARG]
-        for i, (op, oparg) in enumerate(opargs):
-            if op in STORE_OPS:
-                yield "store", (names[oparg],)
-                continue
-            if (op == IMPORT_NAME and i >= 2
-                    and opargs[i-1][0] == opargs[i-2][0] == LOAD_CONST):
-                level = consts[opargs[i-2][1]]
-                fromlist = consts[opargs[i-1][1]]
-                if level == 0: # absolute import
-                    yield "absolute_import", (fromlist, names[oparg])
-                else: # relative import
-                    yield "relative_import", (level, fromlist, names[oparg])
-                continue
+        for name in dis._find_store_names(co):
+            yield "store", (name,)
+        for name, level, fromlist in dis._find_imports(co):
+            if level == 0:  # absolute import
+                yield "absolute_import", (fromlist, name)
+            else:  # relative import
+                yield "relative_import", (level, fromlist, name)
 
     def scan_code(self, co, m):
         code = co.co_code

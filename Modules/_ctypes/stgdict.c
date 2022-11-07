@@ -1,8 +1,17 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+// windows.h must be included before pycore internal headers
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
+
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include <ffi.h>
 #ifdef MS_WIN32
-#include <windows.h>
-#include <malloc.h>
+#  include <malloc.h>
 #endif
 #include "ctypes.h"
 
@@ -190,7 +199,7 @@ PyType_stgdict(PyObject *obj)
 StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
-    PyTypeObject *type = self->ob_type;
+    PyTypeObject *type = Py_TYPE(self);
     if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
         return NULL;
     return (StgDictObject *)type->tp_dict;
@@ -231,7 +240,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
             Py_DECREF(fieldlist);
             return -1;
         }
-        if (Py_TYPE(fdescr) != &PyCField_Type) {
+        if (!Py_IS_TYPE(fdescr, &PyCField_Type)) {
             PyErr_SetString(PyExc_TypeError, "unexpected type");
             Py_DECREF(fdescr);
             Py_DECREF(fieldlist);
@@ -248,13 +257,13 @@ MakeFields(PyObject *type, CFieldObject *descr,
             }
             continue;
         }
-        new_descr = (CFieldObject *)_PyObject_CallNoArg((PyObject *)&PyCField_Type);
+        new_descr = (CFieldObject *)_PyObject_CallNoArgs((PyObject *)&PyCField_Type);
         if (new_descr == NULL) {
             Py_DECREF(fdescr);
             Py_DECREF(fieldlist);
             return -1;
         }
-        assert(Py_TYPE(new_descr) == &PyCField_Type);
+        assert(Py_IS_TYPE(new_descr, &PyCField_Type));
         new_descr->size = fdescr->size;
         new_descr->offset = fdescr->offset + offset;
         new_descr->index = fdescr->index + index;
@@ -281,12 +290,11 @@ MakeFields(PyObject *type, CFieldObject *descr,
 static int
 MakeAnonFields(PyObject *type)
 {
-    _Py_IDENTIFIER(_anonymous_);
     PyObject *anon;
     PyObject *anon_names;
     Py_ssize_t i;
 
-    if (_PyObject_LookupAttrId(type, &PyId__anonymous_, &anon) < 0) {
+    if (_PyObject_LookupAttr(type, &_Py_ID(_anonymous_), &anon) < 0) {
         return -1;
     }
     if (anon == NULL) {
@@ -304,7 +312,7 @@ MakeAnonFields(PyObject *type)
             Py_DECREF(anon_names);
             return -1;
         }
-        if (Py_TYPE(descr) != &PyCField_Type) {
+        if (!Py_IS_TYPE(descr, &PyCField_Type)) {
             PyErr_Format(PyExc_AttributeError,
                          "'%U' is specified in _anonymous_ but not in "
                          "_fields_",
@@ -337,9 +345,6 @@ MakeAnonFields(PyObject *type)
 int
 PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 {
-    _Py_IDENTIFIER(_swappedbytes_);
-    _Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
-    _Py_IDENTIFIER(_pack_);
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
@@ -363,7 +368,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (fields == NULL)
         return 0;
 
-    if (_PyObject_LookupAttrId(type, &PyId__swappedbytes_, &tmp) < 0) {
+    if (_PyObject_LookupAttr(type, &_Py_ID(_swappedbytes_), &tmp) < 0) {
         return -1;
     }
     if (tmp) {
@@ -374,8 +379,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         big_endian = PY_BIG_ENDIAN;
     }
 
-    if (_PyObject_LookupAttrId(type,
-                &PyId__use_broken_old_ctypes_structure_semantics_, &tmp) < 0)
+    if (_PyObject_LookupAttr(type,
+                &_Py_ID(_use_broken_old_ctypes_structure_semantics_), &tmp) < 0)
     {
         return -1;
     }
@@ -387,7 +392,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         use_broken_old_ctypes_semantics = 0;
     }
 
-    if (_PyObject_LookupAttrId(type, &PyId__pack_, &tmp) < 0) {
+    if (_PyObject_LookupAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
         return -1;
     }
     if (tmp) {
@@ -495,7 +500,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (stgdict->format == NULL)
         return -1;
 
-#define realdict ((PyObject *)&stgdict->dict)
     for (i = 0; i < len; ++i) {
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
@@ -538,9 +542,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             case FFI_TYPE_SINT16:
             case FFI_TYPE_SINT32:
                 if (dict->getfunc != _ctypes_get_fielddesc("c")->getfunc
-#ifdef CTYPES_UNICODE
                     && dict->getfunc != _ctypes_get_fielddesc("u")->getfunc
-#endif
                     )
                     break;
                 /* else fall through */
@@ -628,7 +630,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         Py_DECREF(pair);
         Py_DECREF(prop);
     }
-#undef realdict
 
     if (isStruct && !isPacked) {
         char *ptr = stgdict->format;
