@@ -9,24 +9,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-/* Types which are either abstract, meaning that have to be implemented in C, or
- * which are models, meaning that they are swapped out at compile-time for
- * hand-written C types (in which case they're marked as noextract). */
-
-typedef uint64_t FStar_UInt64_t, FStar_UInt64_t_;
-typedef int64_t FStar_Int64_t, FStar_Int64_t_;
-typedef uint32_t FStar_UInt32_t, FStar_UInt32_t_;
-typedef int32_t FStar_Int32_t, FStar_Int32_t_;
-typedef uint16_t FStar_UInt16_t, FStar_UInt16_t_;
-typedef int16_t FStar_Int16_t, FStar_Int16_t_;
-typedef uint8_t FStar_UInt8_t, FStar_UInt8_t_;
-typedef int8_t FStar_Int8_t, FStar_Int8_t_;
-
-/* Only useful when building krmllib, because it's in the dependency graph of
- * FStar.Int.Cast. */
-typedef uint64_t FStar_UInt63_t, FStar_UInt63_t_;
-typedef int64_t FStar_Int63_t, FStar_Int63_t_;
-
 #if (defined(_MSC_VER) && defined(_M_X64) && !defined(__clang__))
 #define IS_MSVC64 1
 #endif
@@ -79,7 +61,6 @@ typedef FStar_UInt128_uint128 FStar_UInt128_t, uint128_t;
 #include "fstar_uint128_gcc64.h"
 #else
 #include "FStar_UInt128_Verified.h"
-#include "fstar_uint128_struct_endianness.h"
 #endif
 
 #endif

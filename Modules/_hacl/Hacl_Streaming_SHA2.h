@@ -35,9 +35,6 @@ extern "C" {
 #include "krml/internal/target.h"
 
 
-#include "Hacl_SHA2_Generic.h"
-#include "Hacl_Krmllib.h"
-
 typedef struct Hacl_Streaming_SHA2_state_sha2_224_s
 {
   uint32_t *block_state;

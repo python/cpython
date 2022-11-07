@@ -24,7 +24,43 @@
 
 #include "Hacl_Streaming_SHA2.h"
 
-#include "internal/Hacl_SHA2_Types.h"
+static const
+uint32_t
+Hacl_Impl_SHA2_Generic_h224[8U] =
+  {
+    (uint32_t)0xc1059ed8U, (uint32_t)0x367cd507U, (uint32_t)0x3070dd17U, (uint32_t)0xf70e5939U,
+    (uint32_t)0xffc00b31U, (uint32_t)0x68581511U, (uint32_t)0x64f98fa7U, (uint32_t)0xbefa4fa4U
+  };
+
+static const
+uint32_t
+Hacl_Impl_SHA2_Generic_h256[8U] =
+  {
+    (uint32_t)0x6a09e667U, (uint32_t)0xbb67ae85U, (uint32_t)0x3c6ef372U, (uint32_t)0xa54ff53aU,
+    (uint32_t)0x510e527fU, (uint32_t)0x9b05688cU, (uint32_t)0x1f83d9abU, (uint32_t)0x5be0cd19U
+  };
+
+static const
+uint32_t
+Hacl_Impl_SHA2_Generic_k224_256[64U] =
+  {
+    (uint32_t)0x428a2f98U, (uint32_t)0x71374491U, (uint32_t)0xb5c0fbcfU, (uint32_t)0xe9b5dba5U,
+    (uint32_t)0x3956c25bU, (uint32_t)0x59f111f1U, (uint32_t)0x923f82a4U, (uint32_t)0xab1c5ed5U,
+    (uint32_t)0xd807aa98U, (uint32_t)0x12835b01U, (uint32_t)0x243185beU, (uint32_t)0x550c7dc3U,
+    (uint32_t)0x72be5d74U, (uint32_t)0x80deb1feU, (uint32_t)0x9bdc06a7U, (uint32_t)0xc19bf174U,
+    (uint32_t)0xe49b69c1U, (uint32_t)0xefbe4786U, (uint32_t)0x0fc19dc6U, (uint32_t)0x240ca1ccU,
+    (uint32_t)0x2de92c6fU, (uint32_t)0x4a7484aaU, (uint32_t)0x5cb0a9dcU, (uint32_t)0x76f988daU,
+    (uint32_t)0x983e5152U, (uint32_t)0xa831c66dU, (uint32_t)0xb00327c8U, (uint32_t)0xbf597fc7U,
+    (uint32_t)0xc6e00bf3U, (uint32_t)0xd5a79147U, (uint32_t)0x06ca6351U, (uint32_t)0x14292967U,
+    (uint32_t)0x27b70a85U, (uint32_t)0x2e1b2138U, (uint32_t)0x4d2c6dfcU, (uint32_t)0x53380d13U,
+    (uint32_t)0x650a7354U, (uint32_t)0x766a0abbU, (uint32_t)0x81c2c92eU, (uint32_t)0x92722c85U,
+    (uint32_t)0xa2bfe8a1U, (uint32_t)0xa81a664bU, (uint32_t)0xc24b8b70U, (uint32_t)0xc76c51a3U,
+    (uint32_t)0xd192e819U, (uint32_t)0xd6990624U, (uint32_t)0xf40e3585U, (uint32_t)0x106aa070U,
+    (uint32_t)0x19a4c116U, (uint32_t)0x1e376c08U, (uint32_t)0x2748774cU, (uint32_t)0x34b0bcb5U,
+    (uint32_t)0x391c0cb3U, (uint32_t)0x4ed8aa4aU, (uint32_t)0x5b9cca4fU, (uint32_t)0x682e6ff3U,
+    (uint32_t)0x748f82eeU, (uint32_t)0x78a5636fU, (uint32_t)0x84c87814U, (uint32_t)0x8cc70208U,
+    (uint32_t)0x90befffaU, (uint32_t)0xa4506cebU, (uint32_t)0xbef9a3f7U, (uint32_t)0xc67178f2U
+  };
 
 Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224()
 {
@@ -32,7 +68,6 @@ Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_224()
   uint32_t *block_state = (uint32_t *)KRML_HOST_CALLOC((uint32_t)8U, sizeof (uint32_t));
   Hacl_Streaming_SHA2_state_sha2_224
   s = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)0U };
-  KRML_CHECK_SIZE(sizeof (Hacl_Streaming_SHA2_state_sha2_224), (uint32_t)1U);
   Hacl_Streaming_SHA2_state_sha2_224
   *p =
     (Hacl_Streaming_SHA2_state_sha2_224 *)KRML_HOST_MALLOC(sizeof (
@@ -243,14 +278,12 @@ void Hacl_Streaming_SHA2_finish_224(Hacl_Streaming_SHA2_state_sha2_224 *p, uint8
   memcpy(last + fin - (uint32_t)8U, totlen_buf, (uint32_t)8U * sizeof (uint8_t));
   uint8_t *last00 = last;
   uint8_t *last10 = last + (uint32_t)64U;
-  Hacl_Impl_SHA2_Types_uint8_2p scrut0 = { .fst = last00, .snd = last10 };
-  uint8_t *l0 = scrut0.fst;
-  uint8_t *l1 = scrut0.snd;
+  uint8_t *l0 = last00;
+  uint8_t *l1 = last10;
   uint8_t *lb0 = l0;
   uint8_t *lb1 = l1;
-  Hacl_Impl_SHA2_Types_uint8_2p scrut1 = { .fst = lb0, .snd = lb1 };
-  uint8_t *last0 = scrut1.fst;
-  uint8_t *last1 = scrut1.snd;
+  uint8_t *last0 = lb0;
+  uint8_t *last1 = lb1;
   uint32_t hash_old[8U] = { 0U };
   uint32_t ws0[16U] = { 0U };
   memcpy(hash_old, tmp_block_state, (uint32_t)8U * sizeof (uint32_t));
@@ -511,7 +544,6 @@ Hacl_Streaming_SHA2_state_sha2_224 *Hacl_Streaming_SHA2_create_in_256()
   uint32_t *block_state = (uint32_t *)KRML_HOST_CALLOC((uint32_t)8U, sizeof (uint32_t));
   Hacl_Streaming_SHA2_state_sha2_224
   s = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)0U };
-  KRML_CHECK_SIZE(sizeof (Hacl_Streaming_SHA2_state_sha2_224), (uint32_t)1U);
   Hacl_Streaming_SHA2_state_sha2_224
   *p =
     (Hacl_Streaming_SHA2_state_sha2_224 *)KRML_HOST_MALLOC(sizeof (
@@ -1388,14 +1420,12 @@ void Hacl_Streaming_SHA2_finish_256(Hacl_Streaming_SHA2_state_sha2_224 *p, uint8
   memcpy(last + fin - (uint32_t)8U, totlen_buf, (uint32_t)8U * sizeof (uint8_t));
   uint8_t *last00 = last;
   uint8_t *last10 = last + (uint32_t)64U;
-  Hacl_Impl_SHA2_Types_uint8_2p scrut0 = { .fst = last00, .snd = last10 };
-  uint8_t *l0 = scrut0.fst;
-  uint8_t *l1 = scrut0.snd;
+  uint8_t *l0 = last00;
+  uint8_t *l1 = last10;
   uint8_t *lb0 = l0;
   uint8_t *lb1 = l1;
-  Hacl_Impl_SHA2_Types_uint8_2p scrut1 = { .fst = lb0, .snd = lb1 };
-  uint8_t *last0 = scrut1.fst;
-  uint8_t *last1 = scrut1.snd;
+  uint8_t *last0 = lb0;
+  uint8_t *last1 = lb1;
   uint32_t hash_old[8U] = { 0U };
   uint32_t ws0[16U] = { 0U };
   memcpy(hash_old, tmp_block_state, (uint32_t)8U * sizeof (uint32_t));

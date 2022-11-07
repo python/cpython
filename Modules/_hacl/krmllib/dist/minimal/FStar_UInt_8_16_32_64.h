@@ -7,9 +7,6 @@
 #ifndef __FStar_UInt_8_16_32_64_H
 #define __FStar_UInt_8_16_32_64_H
 
-
-
-
 #include <inttypes.h>
 #include <stdbool.h>
 #include "krml/lowstar_endianness.h"
