@@ -19,8 +19,6 @@ class zoneinfo.ZoneInfo "PyObject *" "PyTypeObject *"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=d12c73c0eef36df8]*/
 
-// Imports
-static PyObject *_common_mod = NULL;
 
 typedef struct TransitionRuleType TransitionRuleType;
 typedef struct StrongCacheNode StrongCacheNode;
@@ -94,6 +92,7 @@ typedef struct {
     // Imports
     PyObject *io_open;
     PyObject *_tzpath_find_tzfile;
+    PyObject *_common_mod;
 } zoneinfo_state;
 
 // Globals
@@ -122,7 +121,8 @@ static const int SOURCE_FILE = 2;
 
 // Forward declarations
 static int
-load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj);
+load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self,
+          PyObject *file_obj);
 static void
 utcoff_to_dstoff(size_t *trans_idx, long *utcoffs, long *dstoffs,
                  unsigned char *isdsts, size_t num_transitions,
@@ -218,7 +218,8 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
         return NULL;
     }
     else if (file_path == Py_None) {
-        file_obj = PyObject_CallMethod(_common_mod, "load_tzdata", "O", key);
+        PyObject *meth = state->_common_mod;
+        file_obj = PyObject_CallMethod(meth, "load_tzdata", "O", key);
         if (file_obj == NULL) {
             Py_DECREF(file_path);
             return NULL;
@@ -238,7 +239,7 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
         }
     }
 
-    if (load_data((PyZoneInfo_ZoneInfo *)self, file_obj)) {
+    if (load_data(state, (PyZoneInfo_ZoneInfo *)self, file_obj)) {
         goto error;
     }
 
@@ -390,6 +391,7 @@ zoneinfo_dealloc(PyObject *obj_self)
 @classmethod
 zoneinfo.ZoneInfo.from_file
 
+    cls: defining_class
     file_obj: object
     /
     key: object = None
@@ -398,9 +400,9 @@ Create a ZoneInfo file from a file object.
 [clinic start generated code]*/
 
 static PyObject *
-zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyObject *file_obj,
-                                 PyObject *key)
-/*[clinic end generated code: output=68ed2022404ae5be input=ccfe73708133d2e4]*/
+zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
+                                 PyObject *file_obj, PyObject *key)
+/*[clinic end generated code: output=77887d1d56a48324 input=d26111f29eed6863]*/
 {
     PyObject *file_repr = NULL;
     PyZoneInfo_ZoneInfo *self = NULL;
@@ -416,7 +418,8 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyObject *file_obj,
         goto error;
     }
 
-    if (load_data(self, file_obj)) {
+    zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
+    if (load_data(state, self, file_obj)) {
         goto error;
     }
 
@@ -899,7 +902,7 @@ end:
  * the object only needs to be freed / deallocated if this succeeds.
  */
 static int
-load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
+load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 {
     PyObject *data_tuple = NULL;
 
@@ -917,7 +920,8 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     size_t ttinfos_allocated = 0;
 
-    data_tuple = PyObject_CallMethod(_common_mod, "load_data", "O", file_obj);
+    data_tuple = PyObject_CallMethod(state->_common_mod, "load_data", "O",
+                                     file_obj);
 
     if (data_tuple == NULL) {
         goto error;
@@ -2683,12 +2687,9 @@ module_free(void *m)
 {
     zoneinfo_state *state = zoneinfo_get_state();
 
-    Py_CLEAR(state->_tzpath_find_tzfile);
-
-    Py_XDECREF(_common_mod);
-    _common_mod = NULL;
-
     Py_CLEAR(state->io_open);
+    Py_CLEAR(state->_tzpath_find_tzfile);
+    Py_CLEAR(state->_common_mod);
 
     xdecref_ttinfo(&NO_TTINFO);
 
@@ -2741,8 +2742,8 @@ zoneinfomodule_exec(PyObject *m)
         goto error;
     }
 
-    _common_mod = PyImport_ImportModule("zoneinfo._common");
-    if (_common_mod == NULL) {
+    state->_common_mod = PyImport_ImportModule("zoneinfo._common");
+    if (state->_common_mod == NULL) {
         goto error;
     }
 

@@ -15,14 +15,14 @@ PyDoc_STRVAR(zoneinfo_ZoneInfo_from_file__doc__,
 "Create a ZoneInfo file from a file object.");
 
 #define ZONEINFO_ZONEINFO_FROM_FILE_METHODDEF    \
-    {"from_file", _PyCFunction_CAST(zoneinfo_ZoneInfo_from_file), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo_from_file__doc__},
+    {"from_file", _PyCFunction_CAST(zoneinfo_ZoneInfo_from_file), METH_METHOD|METH_FASTCALL|METH_KEYWORDS|METH_CLASS, zoneinfo_ZoneInfo_from_file__doc__},
 
 static PyObject *
-zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyObject *file_obj,
-                                 PyObject *key);
+zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
+                                 PyObject *file_obj, PyObject *key);
 
 static PyObject *
-zoneinfo_ZoneInfo_from_file(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zoneinfo_ZoneInfo_from_file(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -65,7 +65,7 @@ zoneinfo_ZoneInfo_from_file(PyTypeObject *type, PyObject *const *args, Py_ssize_
     }
     key = args[1];
 skip_optional_pos:
-    return_value = zoneinfo_ZoneInfo_from_file_impl(type, file_obj, key);
+    return_value = zoneinfo_ZoneInfo_from_file_impl(type, cls, file_obj, key);
 
 exit:
     return return_value;
@@ -240,4 +240,4 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1dc492947ca3882a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00cf22c487eae021 input=a9049054013a1b77]*/
