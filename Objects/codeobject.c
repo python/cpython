@@ -2269,6 +2269,8 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
     return 0;
 }
 
+#define MAX_CODE_UNITS_PER_LOC_ENTRY 8
+
 PyCodeObject *
 _Py_MakeShimCode(const _PyShimCodeDef *codedef)
 {
@@ -2287,27 +2289,30 @@ _Py_MakeShimCode(const _PyShimCodeDef *codedef)
     if (co_code == NULL) {
         goto cleanup;
     }
-    int code_units = codedef->codelen/2;
-    int loc_entries = (code_units + 7)/8;
+    int code_units = codedef->codelen / sizeof(_Py_CODEUNIT);
+    int loc_entries = (code_units + MAX_CODE_UNITS_PER_LOC_ENTRY - 1) /
+                      MAX_CODE_UNITS_PER_LOC_ENTRY;
     loc_table = PyMem_Malloc(loc_entries);
     if (loc_table == NULL) {
         PyErr_NoMemory();
-        return NULL;
+        goto cleanup;
     }
     for (int i = 0; i < loc_entries-1; i++) {
          loc_table[i] = 0x80 | (PY_CODE_LOCATION_INFO_NONE << 3) | 7;
-         code_units -= 8;
+         code_units -= MAX_CODE_UNITS_PER_LOC_ENTRY;
     }
     assert(loc_entries > 0);
-    assert(code_units > 0 && code_units <= 8);
+    assert(code_units > 0 && code_units <= MAX_CODE_UNITS_PER_LOC_ENTRY);
     loc_table[loc_entries-1] = 0x80 |
         (PY_CODE_LOCATION_INFO_NONE << 3) | (code_units-1);
     lines = PyBytes_FromStringAndSize((const char *)loc_table, loc_entries);
+    PyMem_Free(loc_table);
     if (lines == NULL) {
         goto cleanup;
     }
+    _Py_DECLARE_STR(shim_name, "<shim>");
     struct _PyCodeConstructor con = {
-        .filename = &_Py_STR(empty),
+        .filename = &_Py_STR(shim_name),
         .name = name,
         .qualname = name,
         .flags = CO_NEWLOCALS | CO_OPTIMIZED,
@@ -2333,9 +2338,6 @@ _Py_MakeShimCode(const _PyShimCodeDef *codedef)
 
     codeobj = _PyCode_New(&con);
 cleanup:
-    if (loc_table) {
-        PyMem_Free(loc_table);
-    }
     Py_XDECREF(name);
     Py_XDECREF(co_code);
     Py_XDECREF(lines);

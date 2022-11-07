@@ -48,6 +48,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(newline, "\n")
         STRUCT_FOR_STR(open_br, "{")
         STRUCT_FOR_STR(percent, "%")
+        STRUCT_FOR_STR(shim_name, "<shim>")
         STRUCT_FOR_STR(utf_8, "utf-8")
     } literals;
 
@@ -324,6 +325,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(digest_size)
         STRUCT_FOR_ID(digestmod)
         STRUCT_FOR_ID(dir_fd)
+        STRUCT_FOR_ID(discard)
         STRUCT_FOR_ID(dispatch_table)
         STRUCT_FOR_ID(displayhook)
         STRUCT_FOR_ID(dklen)
@@ -564,6 +566,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(seek)
         STRUCT_FOR_ID(seekable)
         STRUCT_FOR_ID(selectors)
+        STRUCT_FOR_ID(self)
         STRUCT_FOR_ID(send)
         STRUCT_FOR_ID(sep)
         STRUCT_FOR_ID(sequence)
@@ -625,6 +628,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(traceback)
         STRUCT_FOR_ID(trailers)
         STRUCT_FOR_ID(translate)
+        STRUCT_FOR_ID(true)
         STRUCT_FOR_ID(truncate)
         STRUCT_FOR_ID(twice)
         STRUCT_FOR_ID(txt)
