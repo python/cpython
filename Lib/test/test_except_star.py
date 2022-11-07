@@ -1005,7 +1005,7 @@ class TestExceptStar_WeirdLeafExceptions(ExceptStarTest):
     # unhashable or have a bad custom __eq__
 
     class UnhashableExc(ValueError):
-        hash = None
+        __hash__ = None
 
     class AlwaysEqualExc(ValueError):
         def __eq__(self, other):
@@ -1092,7 +1092,7 @@ class TestExceptStar_WeirdExceptionGroupSubclass(ExceptStarTest):
     # unhashable or have a bad custom __eq__
 
     class UnhashableEG(ExceptionGroup):
-        hash = None
+        __hash__ = None
 
         def derive(self, excs):
             return type(self)(self.message, excs)
