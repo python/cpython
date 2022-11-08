@@ -155,6 +155,9 @@ typedef enum {
  * callback will be invoked with the respective event and new_value will
  * contain a borrowed reference to the new value that is about to be stored in
  * the function. Otherwise the third argument is NULL.
+ *
+ * If the callback returns with an exception set, it must return -1. Otherwise
+ * it should return 0.
  */
 typedef int (*PyFunction_WatchCallback)(
   PyFunction_WatchEvent event,

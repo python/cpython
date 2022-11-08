@@ -1,5 +1,8 @@
 #include "parts.h"
 
+#define Py_BUILD_CORE
+#include "pycore_function.h"  // FUNC_MAX_WATCHERS
+
 #define NUM_WATCHERS 2
 static PyObject *pyfunc_watchers[NUM_WATCHERS];
 static int watcher_ids[NUM_WATCHERS] = {-1, -1};
@@ -149,9 +152,48 @@ clear_watcher(PyObject *self, PyObject *watcher_id_obj)
     Py_RETURN_NONE;
 }
 
+static int
+noop_handler(PyFunction_WatchEvent event, PyFunctionObject *func,
+             PyObject *new_value)
+{
+    return 0;
+}
+
+static PyObject *
+allocate_too_many_watchers(PyObject *self, PyObject *args)
+{
+    int watcher_ids[FUNC_MAX_WATCHERS + 1];
+    int num_watchers = 0;
+    for (unsigned long i = 0; i < sizeof(watcher_ids) / sizeof(int); i++) {
+        int watcher_id = PyFunction_AddWatcher(noop_handler);
+        if (watcher_id == -1) {
+            break;
+        }
+        watcher_ids[i] = watcher_id;
+        num_watchers++;
+    }
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    for (int i = 0; i < num_watchers; i++) {
+        if (PyFunction_ClearWatcher(watcher_ids[i]) < 0) {
+            PyErr_WriteUnraisable(Py_None);
+            break;
+        }
+    }
+    if (type) {
+        PyErr_Restore(type, value, traceback);
+        return NULL;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"_add_func_watcher", add_watcher, METH_O},
     {"_clear_func_watcher", clear_watcher, METH_O},
+    {"_allocate_too_many_func_watchers", allocate_too_many_watchers, METH_NOARGS},
     {NULL},
 };
 

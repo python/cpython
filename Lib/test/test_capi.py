@@ -44,6 +44,7 @@ from _testcapi import (
     PYFUNC_EVENT_MODIFY_DEFAULTS,
     PYFUNC_EVENT_MODIFY_KWDEFAULTS,
     _add_func_watcher,
+    _allocate_too_many_func_watchers,
     _clear_func_watcher,
 )
 
@@ -1645,6 +1646,10 @@ class FuncEventsTest(unittest.TestCase):
     def test_clear_unassigned_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"no func watcher set for ID 1"):
             _clear_func_watcher(1)
+
+    def test_allocate_too_many_watchers(self):
+        with self.assertRaisesRegex(RuntimeError, r"no more func watcher IDs"):
+            _allocate_too_many_func_watchers()
 
 
 if __name__ == "__main__":
