@@ -615,19 +615,6 @@ class TestCase(object):
         function(*args, **kwargs)
 
     def run(self, result=None, debug=False):
-        testMethod = getattr(self, self._testMethodName)
-
-        if isinstance(debug, tuple) and debug[0] == "trace":
-            deb = _load_debugger(debug[1])
-            if isinstance(deb, type):
-                deb = deb()
-            debug = False
-            testMethod_org = testMethod
-            @functools.wraps(testMethod_org)
-            def trace_wrapper(*args, **kwargs):
-                deb.runcall(testMethod_org, *args, **kwargs)
-            testMethod = trace_wrapper
-
         if result is None:
             result = self.defaultTestResult()
             startTestRun = getattr(result, 'startTestRun', None)
@@ -636,6 +623,30 @@ class TestCase(object):
                 startTestRun()
         else:
             stopTestRun = None
+
+        testMethod = getattr(self, self._testMethodName)
+        outcome = _Outcome(result)
+        if debug:
+            if isinstance(debug, tuple) and debug[0] == "trace":
+                deb = _load_debugger(debug[1])
+                if isinstance(deb, type):
+                    deb = deb()
+                testMethod_org = testMethod
+                @functools.wraps(testMethod_org)
+                def trace_wrapper(*args, **kwargs):
+                    deb.runcall(testMethod_org, *args, **kwargs)
+                testMethod = trace_wrapper
+                debug = False
+            else:
+                outcome.debug = debug
+                # delayed post-mortem (--debug) cleanup when frame is finally recycled
+                def pm_cleanup1(self=self):
+                    self.doCleanups()
+                def pm_cleanup2(self=self):
+                    self._callTearDown()
+                    self.doCleanups()
+                outcome.pm_cleanup = pm_cleanup1
+                outcome.pm_frame_holds = frame_holds = []  # noqa
 
         result.startTest(self)
         try:
@@ -651,17 +662,6 @@ class TestCase(object):
                 getattr(self, "__unittest_expecting_failure__", False) or
                 getattr(testMethod, "__unittest_expecting_failure__", False)
             )
-            outcome = _Outcome(result)
-            if debug:
-                outcome.debug = debug
-                # delayed post-mortem (--debug) cleanup when frame is finally recycled
-                def pm_cleanup1(self=self):
-                    self.doCleanups()
-                def pm_cleanup2(self=self):
-                    self._callTearDown()
-                    self.doCleanups()
-                outcome.pm_cleanup = pm_cleanup1
-                outcome.pm_frame_holds = frame_holds = []  # noqa
 
             try:
                 self._outcome = outcome
@@ -680,6 +680,8 @@ class TestCase(object):
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
 
+                if debug:
+                    outcome.pm_cleanup = lambda: None
                 self.doCleanups()
 
                 if outcome.success:
