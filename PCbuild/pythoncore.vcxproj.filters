@@ -600,6 +600,9 @@
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_obmalloc_allocators.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h">
       <Filter>Include\internal</Filter>
     </ClInclude>

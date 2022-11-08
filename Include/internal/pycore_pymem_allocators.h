@@ -92,13 +92,6 @@ void _PyMem_DebugFree(void *ctx, void *p);
     {&_PyRuntime.allocators.debug.obj, _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree}
 
 
-/***************************************/
-/* the object allocator implementation */
-
-// It is only used to initialize the runtime,
-// so it lives in pycore_pymem_init.h.
-
-
 #ifdef __cplusplus
 }
 #endif
