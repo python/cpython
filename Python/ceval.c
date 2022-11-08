@@ -806,6 +806,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define THIRD()           (stack_pointer[-3])
 #define FOURTH()          (stack_pointer[-4])
 #define PEEK(n)           (stack_pointer[-(n)])
+#define POKE(n, v)        (stack_pointer[-(n)] = (v))
 #define SET_TOP(v)        (stack_pointer[-1] = (v))
 #define SET_SECOND(v)     (stack_pointer[-2] = (v))
 #define BASIC_STACKADJ(n) (stack_pointer += n)
@@ -1274,6 +1275,14 @@ unbound_local_error:
             goto error;
         }
 
+pop_4_error:
+    STACK_SHRINK(1);
+pop_3_error:
+    STACK_SHRINK(1);
+pop_2_error:
+    STACK_SHRINK(1);
+pop_1_error:
+    STACK_SHRINK(1);
 error:
         call_shape.kwnames = NULL;
         /* Double-check exception status. */

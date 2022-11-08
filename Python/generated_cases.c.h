@@ -15,51 +15,57 @@
         }
 
         TARGET(LOAD_CLOSURE) {
+            PyObject *value;
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            PyObject *value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            value = GETLOCAL(oparg);
+            if (value == NULL) goto unbound_local_error;
             Py_INCREF(value);
-            PUSH(value);
+            STACK_GROW(1);
+            POKE(1, value);
             DISPATCH();
         }
 
         TARGET(LOAD_FAST_CHECK) {
-            PyObject *value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            PyObject *value;
+            value = GETLOCAL(oparg);
+            if (value == NULL) goto unbound_local_error;
             Py_INCREF(value);
-            PUSH(value);
+            STACK_GROW(1);
+            POKE(1, value);
             DISPATCH();
         }
 
         TARGET(LOAD_FAST) {
-            PyObject *value = GETLOCAL(oparg);
+            PyObject *value;
+            value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
-            PUSH(value);
+            STACK_GROW(1);
+            POKE(1, value);
             DISPATCH();
         }
 
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
-            PyObject *value = GETITEM(consts, oparg);
+            PyObject *value;
+            value = GETITEM(consts, oparg);
             Py_INCREF(value);
-            PUSH(value);
+            STACK_GROW(1);
+            POKE(1, value);
             DISPATCH();
         }
 
         TARGET(STORE_FAST) {
-            PyObject *value = POP();
+            PyObject *value = PEEK(1);
             SETLOCAL(oparg, value);
+            STACK_SHRINK(1);
             DISPATCH();
         }
 
         TARGET(POP_TOP) {
-            PyObject *value = POP();
+            PyObject *value = PEEK(1);
             Py_DECREF(value);
+            STACK_SHRINK(1);
             DISPATCH();
         }
 
@@ -70,163 +76,158 @@
         }
 
         TARGET(END_FOR) {
-            PyObject *value = POP();
-            Py_DECREF(value);
-            value = POP();
-            Py_DECREF(value);
+            PyObject *value2 = PEEK(1);
+            PyObject *value1 = PEEK(2);
+            Py_DECREF(value1);
+            Py_DECREF(value2);
+            STACK_SHRINK(2);
             DISPATCH();
         }
 
         TARGET(UNARY_POSITIVE) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Positive(value);
+            PyObject *value = PEEK(1);
+            PyObject *res;
+            res = PyNumber_Positive(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            if (res == NULL) goto pop_1_error;
+            POKE(1, res);
             DISPATCH();
         }
 
         TARGET(UNARY_NEGATIVE) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Negative(value);
+            PyObject *value = PEEK(1);
+            PyObject *res;
+            res = PyNumber_Negative(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            if (res == NULL) goto pop_1_error;
+            POKE(1, res);
             DISPATCH();
         }
 
         TARGET(UNARY_NOT) {
-            PyObject *value = TOP();
+            PyObject *value = PEEK(1);
+            PyObject *res;
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
+            if (err < 0) goto pop_1_error;
             if (err == 0) {
-                Py_INCREF(Py_True);
-                SET_TOP(Py_True);
-                DISPATCH();
+                res = Py_True;
             }
-            else if (err > 0) {
-                Py_INCREF(Py_False);
-                SET_TOP(Py_False);
-                DISPATCH();
+            else {
+                res = Py_False;
             }
-            STACK_SHRINK(1);
-            goto error;
+            Py_INCREF(res);
+            POKE(1, res);
+            DISPATCH();
         }
 
         TARGET(UNARY_INVERT) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Invert(value);
+            PyObject *value = PEEK(1);
+            PyObject *res;
+            res = PyNumber_Invert(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            if (res == NULL) goto pop_1_error;
+            POKE(1, res);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *prod;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(prod);
+            prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
-            if (prod == NULL) {
-                goto error;
-            }
+            if (prod == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_SHRINK(1);
+            POKE(1, prod);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *prod;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
-            PyObject *prod = PyFloat_FromDouble(dprod);
-            SET_SECOND(prod);
+            prod = PyFloat_FromDouble(dprod);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            STACK_SHRINK(1);
-            if (prod == NULL) {
-                goto error;
-            }
+            if (prod == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_SHRINK(1);
+            POKE(1, prod);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *sub;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sub);
+            sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
-            if (sub == NULL) {
-                goto error;
-            }
+            if (sub == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_SHRINK(1);
+            POKE(1, sub);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *sub;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            PyObject *sub = PyFloat_FromDouble(dsub);
-            SET_SECOND(sub);
+            sub = PyFloat_FromDouble(dsub);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            STACK_SHRINK(1);
-            if (sub == NULL) {
-                goto error;
-            }
+            if (sub == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_SHRINK(1);
+            POKE(1, sub);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *res;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *res = PyUnicode_Concat(left, right);
-            STACK_SHRINK(1);
-            SET_TOP(res);
+            res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (TOP() == NULL) {
-                goto error;
-            }
+            if (res == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_SHRINK(1);
+            POKE(1, res);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
@@ -248,108 +249,108 @@
              */
             assert(Py_REFCNT(left) >= 2);
             _Py_DECREF_NO_DEALLOC(left);
-            STACK_SHRINK(2);
             PyUnicode_Append(target_local, right);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (*target_local == NULL) {
-                goto error;
-            }
+            if (*target_local == NULL) goto pop_2_error;
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
+            STACK_SHRINK(2);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *sum;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
-            PyObject *sum = PyFloat_FromDouble(dsum);
-            SET_SECOND(sum);
+            sum = PyFloat_FromDouble(dsum);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            STACK_SHRINK(1);
-            if (sum == NULL) {
-                goto error;
-            }
+            if (sum == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_SHRINK(1);
+            POKE(1, sum);
             DISPATCH();
         }
 
         TARGET(BINARY_OP_ADD_INT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *sum;
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sum);
+            sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
-            if (sum == NULL) {
-                goto error;
-            }
+            if (sum == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            STACK_SHRINK(1);
+            POKE(1, sum);
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR) {
             PREDICTED(BINARY_SUBSCR);
-            PyObject *sub = POP();
-            PyObject *container = TOP();
-            PyObject *res = PyObject_GetItem(container, sub);
+            PyObject *sub = PEEK(1);
+            PyObject *container = PEEK(2);
+            PyObject *res;
+            res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            if (res == NULL) goto pop_2_error;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            STACK_SHRINK(1);
+            POKE(1, res);
             DISPATCH();
         }
 
         TARGET(BINARY_SLICE) {
-            PyObject *stop = POP();
-            PyObject *start = POP();
-            PyObject *container = TOP();
-
+            PyObject *stop = PEEK(1);
+            PyObject *start = PEEK(2);
+            PyObject *container = PEEK(3);
+            PyObject *res;
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            // Can't use ERROR_IF() here, because we haven't
+            // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
-                goto error;
+                res = NULL;
             }
-            PyObject *res = PyObject_GetItem(container, slice);
-            Py_DECREF(slice);
-            if (res == NULL) {
-                goto error;
+            else {
+                res = PyObject_GetItem(container, slice);
+                Py_DECREF(slice);
             }
-            SET_TOP(res);
             Py_DECREF(container);
+            if (res == NULL) goto pop_3_error;
+            STACK_SHRINK(2);
+            POKE(1, res);
             DISPATCH();
         }
 
         TARGET(STORE_SLICE) {
-            PyObject *stop = POP();
-            PyObject *start = POP();
-            PyObject *container = TOP();
-            PyObject *v = SECOND();
-
+            PyObject *stop = PEEK(1);
+            PyObject *start = PEEK(2);
+            PyObject *container = PEEK(3);
+            PyObject *v = PEEK(4);
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            int err;
             if (slice == NULL) {
-                goto error;
+                err = 1;
             }
-            int err = PyObject_SetItem(container, slice, v);
-            Py_DECREF(slice);
-            if (err) {
-                goto error;
+            else {
+                err = PyObject_SetItem(container, slice, v);
+                Py_DECREF(slice);
             }
-            STACK_SHRINK(2);
             Py_DECREF(v);
             Py_DECREF(container);
+            if (err) goto pop_4_error;
+            STACK_SHRINK(4);
             DISPATCH();
         }
 
@@ -500,20 +501,18 @@
 
         TARGET(STORE_SUBSCR) {
             PREDICTED(STORE_SUBSCR);
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            PyObject *v = THIRD();
+            PyObject *sub = PEEK(1);
+            PyObject *container = PEEK(2);
+            PyObject *v = PEEK(3);
             int err;
-            STACK_SHRINK(3);
             /* container[sub] = v */
             err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0) {
-                goto error;
-            }
+            if (err != 0) goto pop_3_error;
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
+            STACK_SHRINK(3);
             DISPATCH();
         }
 
@@ -3876,82 +3875,99 @@
 
         TARGET(LOAD_FAST__LOAD_FAST) {
             {
-                PyObject *value = GETLOCAL(oparg);
+                PyObject *value;
+                value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                PUSH(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *value = GETLOCAL(oparg);
+                PyObject *value;
+                value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                PUSH(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             DISPATCH();
         }
 
         TARGET(LOAD_FAST__LOAD_CONST) {
             {
-                PyObject *value = GETLOCAL(oparg);
+                PyObject *value;
+                value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                PUSH(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *value = GETITEM(consts, oparg);
+                PyObject *value;
+                value = GETITEM(consts, oparg);
                 Py_INCREF(value);
-                PUSH(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             DISPATCH();
         }
 
         TARGET(STORE_FAST__LOAD_FAST) {
             {
-                PyObject *value = POP();
+                PyObject *value = PEEK(1);
                 SETLOCAL(oparg, value);
+                STACK_SHRINK(1);
             }
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *value = GETLOCAL(oparg);
+                PyObject *value;
+                value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                PUSH(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             DISPATCH();
         }
 
         TARGET(STORE_FAST__STORE_FAST) {
             {
-                PyObject *value = POP();
+                PyObject *value = PEEK(1);
                 SETLOCAL(oparg, value);
+                STACK_SHRINK(1);
             }
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *value = POP();
+                PyObject *value = PEEK(1);
                 SETLOCAL(oparg, value);
+                STACK_SHRINK(1);
             }
             DISPATCH();
         }
 
         TARGET(LOAD_CONST__LOAD_FAST) {
             {
-                PyObject *value = GETITEM(consts, oparg);
+                PyObject *value;
+                value = GETITEM(consts, oparg);
                 Py_INCREF(value);
-                PUSH(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *value = GETLOCAL(oparg);
+                PyObject *value;
+                value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                PUSH(value);
+                STACK_GROW(1);
+                POKE(1, value);
             }
             DISPATCH();
         }
