@@ -255,6 +255,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
+    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, NULL);
     ((PyFunctionObject *)op)->func_version = 0;
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
@@ -295,6 +296,7 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
+    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, NULL);
     ((PyFunctionObject *)op)->func_version = 0;
     Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
     return 0;
