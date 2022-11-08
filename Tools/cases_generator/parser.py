@@ -39,13 +39,16 @@ class Node:
 
     @property
     def text(self) -> str:
+        return self.to_text()
+
+    def to_text(self, dedent: int = 0) -> str:
         context = self.context
         if not context:
             return ""
         tokens = context.owner.tokens
         begin = context.begin
         end = context.end
-        return lx.to_text(tokens[begin:end])
+        return lx.to_text(tokens[begin:end], dedent)
 
 
 @dataclass
@@ -59,6 +62,12 @@ class InstDef(Node):
     inputs: list[str] | None
     outputs: list[str] | None
     block: Block | None
+
+
+@dataclass
+class Super(Node):
+    name: str
+    ops: list[str]
 
 
 @dataclass
@@ -156,17 +165,36 @@ class Parser(PLexer):
         return self.input()  # TODO: They're not quite the same.
 
     @contextual
-    def family_def(self) -> Family | None:
+    def super_def(self) -> Super | None:
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "super":
+            if self.expect(lx.LPAREN):
+                if (tkn := self.expect(lx.IDENTIFIER)):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if ops := self.ops():
+                                res = Super(tkn.text, ops)
+                                return res
+
+    def ops(self) -> list[str] | None:
         here = self.getpos()
+        if tkn := self.expect(lx.IDENTIFIER):
+            ops = [tkn.text]
+            while self.expect(lx.PLUS):
+                if tkn := self.require(lx.IDENTIFIER):
+                    ops.append(tkn.text)
+            self.require(lx.SEMI)
+            return ops
+
+    @contextual
+    def family_def(self) -> Family | None:
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "family":
             if self.expect(lx.LPAREN):
                 if (tkn := self.expect(lx.IDENTIFIER)):
-                    name = tkn.text
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if members := self.members():
                                 if self.expect(lx.SEMI):
-                                    return Family(name, members)
+                                    return Family(tkn.text, members)
         return None
 
     def members(self):
