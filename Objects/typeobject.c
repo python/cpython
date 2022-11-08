@@ -6199,6 +6199,7 @@ type_add_getset(PyTypeObject *type)
         if (descr == NULL) {
             return -1;
         }
+
         if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
             Py_DECREF(descr);
             return -1;
