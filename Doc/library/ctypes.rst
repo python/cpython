@@ -487,7 +487,7 @@ single character Python bytes object into a C char::
    >>> strchr(b"abcdef", b"def")
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: TypeError: one character string expected
+   ArgumentError: argument 2: TypeError: wrong type
    >>> print(strchr(b"abcdef", b"x"))
    None
    >>> strchr(b"abcdef", b"d")
