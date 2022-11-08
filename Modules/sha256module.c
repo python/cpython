@@ -23,7 +23,7 @@
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "structmember.h"         // PyMemberDef
-#include "../hashlib.h"
+#include "hashlib.h"
 
 /*[clinic input]
 module _sha256
@@ -40,7 +40,7 @@ class SHA256Type "SHAobject *" "&PyType_Type"
 /* The SHA2-224 and SHA2-256 implementations defer to the HACL* verified
  * library. */
 
-#include "Hacl_Streaming_SHA2.h"
+#include "_hacl/Hacl_Streaming_SHA2.h"
 
 typedef struct {
   PyObject_HEAD
