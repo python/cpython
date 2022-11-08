@@ -667,6 +667,12 @@ void _PyObject_VirtualFree(void *, size_t size);
 PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
 
 
+#ifdef WITH_PYMALLOC
+// Export the symbol for the 3rd party guppy3 project
+PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

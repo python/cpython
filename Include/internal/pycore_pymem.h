@@ -115,12 +115,6 @@ struct _PyTraceMalloc_Config {
 
 PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
 
-/* Macros */
-#ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
-PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
