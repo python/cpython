@@ -442,9 +442,7 @@ STACK[-1] in this language.
 
    Swap the top of the stack with the i-th element.::
 
-      target = STACK[-i]
-      STACK[-i] = STACK[-1]
-      STACK[-1] = target
+      STACK[-i], STACK[-1] = stack[-1], STACK[-i]
 
    .. versionadded:: 3.11
 
