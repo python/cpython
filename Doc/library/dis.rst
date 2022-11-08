@@ -1281,7 +1281,7 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: KW_NAMES (i)
+.. opcode:: KW_NAMES (consti)
 
    Prefixes :opcode:`CALL`.
    Stores a reference to ``co_consts[consti]`` into an internal variable
