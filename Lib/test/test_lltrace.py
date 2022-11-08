@@ -8,7 +8,7 @@ from test.support.script_helper import assert_python_ok
 
 def example():
     x = []
-    for i in range(1):
+    for i in range(0):
         x.append(i)
     x = "this is"
     y = "an example"
@@ -75,7 +75,7 @@ class TestLLTrace(unittest.TestCase):
         self.assertIn('this is an example', stdout)
 
         # check that offsets match the output of dis.dis()
-        instr_map = {i.offset: i for i in dis.get_instructions(example)}
+        instr_map = {i.offset: i for i in dis.get_instructions(example, adaptive=True)}
         for line in stdout.splitlines():
             offset, colon, opname_oparg = line.partition(":")
             if not colon:

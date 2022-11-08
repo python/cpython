@@ -1135,6 +1135,7 @@ get_native_fmtchar(char *result, const char *fmt)
     case 'n': case 'N': size = sizeof(Py_ssize_t); break;
     case 'f': size = sizeof(float); break;
     case 'd': size = sizeof(double); break;
+    case 'e': size = sizeof(float) / 2; break;
     case '?': size = sizeof(_Bool); break;
     case 'P': size = sizeof(void *); break;
     }
@@ -1178,6 +1179,7 @@ get_native_fmtstr(const char *fmt)
     case 'N': RETURN("N");
     case 'f': RETURN("f");
     case 'd': RETURN("d");
+    case 'e': RETURN("e");
     case '?': RETURN("?");
     case 'P': RETURN("P");
     }
@@ -1697,6 +1699,12 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
 
     CHECK_RELEASED_AGAIN(self);
 
+#if PY_LITTLE_ENDIAN
+    int endian = 1;
+#else
+    int endian = 0;
+#endif
+
     switch (fmt[0]) {
 
     /* signed integers and fast path for 'B' */
@@ -1725,6 +1733,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     /* floats */
     case 'f': UNPACK_SINGLE(d, ptr, float); goto convert_double;
     case 'd': UNPACK_SINGLE(d, ptr, double); goto convert_double;
+    case 'e': d = PyFloat_Unpack2(ptr, endian); goto convert_double;
 
     /* bytes object */
     case 'c': goto convert_bytes;
@@ -1786,6 +1795,11 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
     double d;
     void *p;
 
+#if PY_LITTLE_ENDIAN
+    int endian = 1;
+#else
+    int endian = 0;
+#endif
     switch (fmt[0]) {
     /* signed integers */
     case 'b': case 'h': case 'i': case 'l':
@@ -1862,7 +1876,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         break;
 
     /* floats */
-    case 'f': case 'd':
+    case 'f': case 'd': case 'e':
         d = PyFloat_AsDouble(item);
         if (d == -1.0 && PyErr_Occurred())
             goto err_occurred;
@@ -1870,8 +1884,13 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
         if (fmt[0] == 'f') {
             PACK_SINGLE(ptr, d, float);
         }
-        else {
+        else if (fmt[0] == 'd') {
             PACK_SINGLE(ptr, d, double);
+        }
+        else {
+            if (PyFloat_Pack2(d, ptr, endian) < 0) {
+                goto err_occurred;
+            }
         }
         break;
 
@@ -1882,7 +1901,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
             return -1; /* preserve original error */
         CHECK_RELEASED_INT_AGAIN(self);
         PACK_SINGLE(ptr, ld, _Bool);
-         break;
+        break;
 
     /* bytes object */
     case 'c':
@@ -2748,6 +2767,17 @@ unpack_cmp(const char *p, const char *q, char fmt,
     /* XXX DBL_EPSILON? */
     case 'f': CMP_SINGLE(p, q, float); return equal;
     case 'd': CMP_SINGLE(p, q, double); return equal;
+    case 'e': {
+#if PY_LITTLE_ENDIAN
+        int endian = 1;
+#else
+        int endian = 0;
+#endif
+        /* Note: PyFloat_Unpack2 should never fail */
+        double u = PyFloat_Unpack2(p, endian);
+        double v = PyFloat_Unpack2(q, endian);
+        return (u == v);
+    }
 
     /* bytes object */
     case 'c': return *p == *q;

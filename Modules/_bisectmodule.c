@@ -120,6 +120,7 @@ internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t 
             }
             else {
                 res = PyObject_IsTrue(res_obj);
+                Py_DECREF(res_obj);
             }
         }
         else {
@@ -299,6 +300,7 @@ internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t h
             }
             else {
                 res = PyObject_IsTrue(res_obj);
+                Py_DECREF(res_obj);
             }
         }
         else {

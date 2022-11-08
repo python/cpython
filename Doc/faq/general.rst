@@ -125,11 +125,15 @@ find packages of interest to you.
 How does the Python version numbering scheme work?
 --------------------------------------------------
 
-Python versions are numbered A.B.C or A.B.  A is the major version number -- it
-is only incremented for really major changes in the language.  B is the minor
-version number, incremented for less earth-shattering changes.  C is the
-micro-level -- it is incremented for each bugfix release.  See :pep:`6` for more
-information about bugfix releases.
+Python versions are numbered "A.B.C" or "A.B":
+
+* *A* is the major version number -- it is only incremented for really major
+  changes in the language.
+* *B* is the minor version number -- it is incremented for less earth-shattering
+  changes.
+* *C* is the micro version number -- it is incremented for each bugfix release.
+
+See :pep:`6` for more information about bugfix releases.
 
 Not all releases are bugfix releases.  In the run-up to a new major release, a
 series of development releases are made, denoted as alpha, beta, or release
@@ -139,12 +143,14 @@ Betas are more stable, preserving existing interfaces but possibly adding new
 modules, and release candidates are frozen, making no changes except as needed
 to fix critical bugs.
 
-Alpha, beta and release candidate versions have an additional suffix.  The
-suffix for an alpha version is "aN" for some small number N, the suffix for a
-beta version is "bN" for some small number N, and the suffix for a release
-candidate version is "rcN" for some small number N.  In other words, all versions
-labeled 2.0aN precede the versions labeled 2.0bN, which precede versions labeled
-2.0rcN, and *those* precede 2.0.
+Alpha, beta and release candidate versions have an additional suffix:
+
+* The suffix for an alpha version is "aN" for some small number *N*.
+* The suffix for a beta version is "bN" for some small number *N*.
+* The suffix for a release candidate version is "rcN" for some small number *N*.
+
+In other words, all versions labeled *2.0aN* precede the versions labeled
+*2.0bN*, which precede versions labeled *2.0rcN*, and *those* precede 2.0.
 
 You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
 unreleased versions, built directly from the CPython development repository.  In
@@ -182,7 +188,7 @@ at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions 
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
-documentation tool <http://sphinx-doc.org/>`__.  The reStructuredText source for
+documentation tool <https://www.sphinx-doc.org/>`__.  The reStructuredText source for
 the documentation is part of the Python source distribution.
 
 
@@ -264,7 +270,7 @@ Where in the world is www.python.org located?
 ---------------------------------------------
 
 The Python project's infrastructure is located all over the world and is managed
-by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
+by the Python Infrastructure Team. Details `here <https://infra.psf.io>`__.
 
 
 Why is it called Python?
@@ -329,7 +335,7 @@ Consulting the proceedings for `past Python conferences
 different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
-<http://www.list.org>`_ and `the Zope application server
+<https://www.list.org>`_ and `the Zope application server
 <https://www.zope.dev>`_.  Several Linux distributions, most notably `Red Hat
 <https://www.redhat.com>`_, have written part or all of their installer and
 system administration software in Python.  Companies that use Python internally
@@ -429,7 +435,7 @@ With the interpreter, documentation is never far from the student as they are
 programming.
 
 There are also good IDEs for Python.  IDLE is a cross-platform IDE for Python
-that is written in Python using Tkinter.  PythonWin is a Windows-specific IDE.
+that is written in Python using Tkinter.
 Emacs users will be happy to know that there is a very good Python mode for
 Emacs.  All of these programming environments provide syntax highlighting,
 auto-indenting, and access to the interactive interpreter while coding.  Consult

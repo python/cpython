@@ -1380,7 +1380,6 @@ PyObject* PyAST_mod2obj(mod_ty t)
         return NULL;
     }
 
-    int recursion_limit = Py_GetRecursionLimit();
     int starting_recursion_depth;
     /* Be careful here to prevent overflow. */
     int COMPILER_STACK_FRAME_SCALE = 3;
@@ -1388,11 +1387,9 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (!tstate) {
         return 0;
     }
-    state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
+    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state->recursion_depth = starting_recursion_depth;
 
     PyObject *result = ast2obj_mod(state, t);

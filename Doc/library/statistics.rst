@@ -839,7 +839,7 @@ of applications in statistics.
        The relative likelihood is computed as the probability of a sample
        occurring in a narrow range divided by the width of the range (hence
        the word "density").  Since the likelihood is relative to other points,
-       its value can be greater than `1.0`.
+       its value can be greater than ``1.0``.
 
     .. method:: NormalDist.cdf(x)
 

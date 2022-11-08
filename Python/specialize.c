@@ -31,7 +31,6 @@ uint8_t _PyOpcode_Adaptive[256] = {
     [FOR_ITER] = FOR_ITER_ADAPTIVE,
 };
 
-Py_ssize_t _Py_QuickenedCount = 0;
 #ifdef Py_STATS
 PyStats _py_stats_struct = { 0 };
 PyStats *_py_stats = &_py_stats_struct;
@@ -121,6 +120,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
     err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
+    err += add_stat_dict(stats, FOR_ITER, "for_iter");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -279,16 +279,14 @@ do { \
 void
 _PyCode_Quicken(PyCodeObject *code)
 {
-    _Py_QuickenedCount++;
     int previous_opcode = -1;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
-        int opcode = _Py_OPCODE(instructions[i]);
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
         uint8_t adaptive_opcode = _PyOpcode_Adaptive[opcode];
         if (adaptive_opcode) {
             _Py_SET_OPCODE(instructions[i], adaptive_opcode);
-            // Make sure the adaptive counter is zero:
-            assert(instructions[i + 1] == 0);
+            instructions[i + 1] = adaptive_counter_start();
             previous_opcode = -1;
             i += _PyOpcode_Caches[opcode];
         }
@@ -297,12 +295,6 @@ _PyCode_Quicken(PyCodeObject *code)
             switch (opcode) {
                 case EXTENDED_ARG:
                     _Py_SET_OPCODE(instructions[i], EXTENDED_ARG_QUICK);
-                    break;
-                case JUMP_BACKWARD:
-                    _Py_SET_OPCODE(instructions[i], JUMP_BACKWARD_QUICK);
-                    break;
-                case RESUME:
-                    _Py_SET_OPCODE(instructions[i], RESUME_QUICK);
                     break;
                 case LOAD_FAST:
                     switch(previous_opcode) {
@@ -775,8 +767,10 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION);
                 goto fail;
             }
-            uint32_t version = function_check_args(fget, 1, LOAD_ATTR) &&
-                function_get_version(fget, LOAD_ATTR);
+            if (!function_check_args(fget, 1, LOAD_ATTR)) {
+                goto fail;
+            }
+            uint32_t version = function_get_version(fget, LOAD_ATTR);
             if (version == 0) {
                 goto fail;
             }
@@ -831,11 +825,14 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             assert(type->tp_getattro == _Py_slot_tp_getattro);
             assert(Py_IS_TYPE(descr, &PyFunction_Type));
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
-            uint32_t func_version = function_check_args(descr, 2, LOAD_ATTR) &&
-                function_get_version(descr, LOAD_ATTR);
-            if (func_version == 0) {
+            if (!function_check_args(descr, 2, LOAD_ATTR)) {
                 goto fail;
             }
+            uint32_t version = function_get_version(descr, LOAD_ATTR);
+            if (version == 0) {
+                goto fail;
+            }
+            write_u32(lm_cache->keys_version, version);
             /* borrowed */
             write_obj(lm_cache->descr, descr);
             write_u32(lm_cache->type_version, type->tp_version_tag);
@@ -975,6 +972,7 @@ load_attr_fail_kind(DescriptorClassification kind)
         case MUTABLE:
             return SPEC_FAIL_ATTR_MUTABLE_CLASS;
         case GETSET_OVERRIDDEN:
+        case GETATTRIBUTE_IS_PYTHON_FUNCTION:
             return SPEC_FAIL_OVERRIDDEN;
         case BUILTIN_CLASSMETHOD:
             return SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD;
@@ -2186,7 +2184,7 @@ int
 #endif
 
 void
-_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
+_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
 {
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
@@ -2201,12 +2199,13 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr)
         _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
         goto success;
     }
-    else {
-        SPECIALIZATION_FAIL(FOR_ITER,
-                            _PySpecialization_ClassifyIterator(iter));
-        goto failure;
+    else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
+        assert(_Py_OPCODE(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1]) == END_FOR);
+        _Py_SET_OPCODE(*instr, FOR_ITER_GEN);
+        goto success;
     }
-failure:
+    SPECIALIZATION_FAIL(FOR_ITER,
+                        _PySpecialization_ClassifyIterator(iter));
     STAT_INC(FOR_ITER, failure);
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;

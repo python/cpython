@@ -771,6 +771,15 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_exception_groups_feature_version(self):
+        code = dedent('''
+        try: ...
+        except* Exception: ...
+        ''')
+        ast.parse(code)
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 10))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))
@@ -816,9 +825,9 @@ class AST_Tests(unittest.TestCase):
 
     @support.cpython_only
     def test_ast_recursion_limit(self):
-        fail_depth = sys.getrecursionlimit() * 3
-        crash_depth = sys.getrecursionlimit() * 300
-        success_depth = int(fail_depth * 0.75)
+        fail_depth = support.EXCEEDS_RECURSION_LIMIT
+        crash_depth = 100_000
+        success_depth = 1200
 
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
@@ -835,6 +844,10 @@ class AST_Tests(unittest.TestCase):
         check_limit("a", "[0]")
         check_limit("a", "*a")
 
+    def test_null_bytes(self):
+        with self.assertRaises(SyntaxError,
+            msg="source code string cannot contain null bytes"):
+            ast.parse("a\0b")
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None

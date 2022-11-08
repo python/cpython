@@ -62,6 +62,14 @@ The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed
 through the :attr:`itemsize` attribute.
 
+The module defines the following item:
+
+
+.. data:: typecodes
+
+   A string with all available type codes.
+
+
 The module defines the following type:
 
 
@@ -79,9 +87,6 @@ The module defines the following type:
 
    .. audit-event:: array.__new__ typecode,initializer array.array
 
-.. data:: typecodes
-
-   A string with all available type codes.
 
 Array objects support the ordinary sequence operations of indexing, slicing,
 concatenation, and multiplication.  When using slice assignment, the assigned

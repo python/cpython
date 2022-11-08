@@ -61,6 +61,7 @@ typedef struct _PyInterpreterFrame {
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
     int stacktop;     /* Offset of TOS from localsplus  */
+    uint16_t yield_offset;
     bool is_entry;  // Whether this is the "root" frame for the current _PyCFrame.
     char owner;
     /* Locals and stack */
@@ -110,6 +111,7 @@ _PyFrame_InitializeSpecials(
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->is_entry = false;
+    frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 }
 
@@ -190,11 +192,16 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);
 void
 _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear);
 
-
 static inline bool
 _PyThreadState_HasStackSpace(PyThreadState *tstate, int size)
 {
-    return tstate->datastack_top + size < tstate->datastack_limit;
+    assert(
+        (tstate->datastack_top == NULL && tstate->datastack_limit == NULL)
+        ||
+        (tstate->datastack_top != NULL && tstate->datastack_limit != NULL)
+    );
+    return tstate->datastack_top != NULL &&
+        size < tstate->datastack_limit - tstate->datastack_top;
 }
 
 extern _PyInterpreterFrame *

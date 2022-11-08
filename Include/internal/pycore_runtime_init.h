@@ -68,7 +68,7 @@ extern "C" {
 #define _PyThreadState_INIT \
     { \
         ._static = 1, \
-        .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+        .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
 
@@ -110,9 +110,9 @@ extern "C" {
         ._data = (LITERAL) \
     }
 #define INIT_STR(NAME, LITERAL) \
-    ._ ## NAME = _PyASCIIObject_INIT(LITERAL)
+    ._py_ ## NAME = _PyASCIIObject_INIT(LITERAL)
 #define INIT_ID(NAME) \
-    ._ ## NAME = _PyASCIIObject_INIT(#NAME)
+    ._py_ ## NAME = _PyASCIIObject_INIT(#NAME)
 #define _PyUnicode_LATIN1_INIT(LITERAL, UTF8) \
     { \
         ._latin1 = { \

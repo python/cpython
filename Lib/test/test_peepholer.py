@@ -344,8 +344,6 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(len(returns), 1)
         self.check_lnotab(f)
 
-    @unittest.skip("Following gh-92228 the return has two predecessors "
-                   "and that prevents jump elimination.")
     def test_elim_jump_to_return(self):
         # JUMP_FORWARD to RETURN -->  RETURN
         def f(cond, true_value, false_value):
@@ -777,6 +775,45 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             a = b = c = d = e = f = g = 1
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
         self.assertNotInBytecode(f, 'LOAD_FAST')
+
+    def test_load_fast_too_many_locals(self):
+        # When there get to be too many locals to analyze completely,
+        # later locals are all converted to LOAD_FAST_CHECK, except
+        # when a store or prior load occurred in the same basicblock.
+        def f():
+            a00 = a01 = a02 = a03 = a04 = a05 = a06 = a07 = a08 = a09 = 1
+            a10 = a11 = a12 = a13 = a14 = a15 = a16 = a17 = a18 = a19 = 1
+            a20 = a21 = a22 = a23 = a24 = a25 = a26 = a27 = a28 = a29 = 1
+            a30 = a31 = a32 = a33 = a34 = a35 = a36 = a37 = a38 = a39 = 1
+            a40 = a41 = a42 = a43 = a44 = a45 = a46 = a47 = a48 = a49 = 1
+            a50 = a51 = a52 = a53 = a54 = a55 = a56 = a57 = a58 = a59 = 1
+            a60 = a61 = a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = 1
+            a70 = a71 = a72 = a73 = a74 = a75 = a76 = a77 = a78 = a79 = 1
+            del a72, a73
+            print(a73)
+            print(a70, a71, a72, a73)
+            while True:
+                print(a00, a01, a62, a63)
+                print(a64, a65, a78, a79)
+
+        for i in 0, 1, 62, 63:
+            # First 64 locals: analyze completely
+            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+        for i in 64, 65, 78, 79:
+            # Locals >=64 not in the same basicblock
+            self.assertInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+        for i in 70, 71:
+            # Locals >=64 in the same basicblock
+            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
+        # del statements should invalidate within basicblocks.
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a72")
+        self.assertNotInBytecode(f, 'LOAD_FAST', "a72")
+        # previous checked loads within a basicblock enable unchecked loads
+        self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a73")
+        self.assertInBytecode(f, 'LOAD_FAST', "a73")
 
     def test_setting_lineno_adds_check(self):
         code = textwrap.dedent("""\
