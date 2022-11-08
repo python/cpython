@@ -87,11 +87,11 @@ class FuncEventsTest(unittest.TestCase):
                 self.assertIsInstance(cm.unraisable.exc_value, MyError)
 
     def test_clear_out_of_range_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"Invalid func watcher ID -1"):
+        with self.assertRaisesRegex(ValueError, r"invalid func watcher ID -1"):
             _clear_func_watcher(-1)
-        with self.assertRaisesRegex(ValueError, r"Invalid func watcher ID 8"):
+        with self.assertRaisesRegex(ValueError, r"invalid func watcher ID 8"):
             _clear_func_watcher(8)  # FUNC_MAX_WATCHERS = 8
 
     def test_clear_unassigned_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"No func watcher set for ID 1"):
+        with self.assertRaisesRegex(ValueError, r"no func watcher set for ID 1"):
             _clear_func_watcher(1)

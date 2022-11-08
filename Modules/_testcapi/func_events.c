@@ -4,8 +4,10 @@
 static PyObject *pyfunc_watchers[NUM_WATCHERS];
 static int watcher_ids[NUM_WATCHERS] = {-1, -1};
 
-static PyObject *get_id(PyObject *obj) {
-    PyObject *builtins = PyEval_GetBuiltins();
+static
+PyObject *get_id(PyObject *obj)
+{
+    PyObject *builtins = PyEval_GetBuiltins();  // borrowed ref.
     if (builtins == NULL) {
         return NULL;
     }
@@ -25,7 +27,8 @@ static PyObject *get_id(PyObject *obj) {
 }
 
 static int
-call_pyfunc_watcher(PyObject *watcher, PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
+call_pyfunc_watcher(PyObject *watcher, PyFunction_WatchEvent event,
+                    PyFunctionObject *func, PyObject *new_value)
 {
     PyObject *event_obj = PyLong_FromLong(event);
     if (event_obj == NULL) {
@@ -44,7 +47,8 @@ call_pyfunc_watcher(PyObject *watcher, PyFunction_WatchEvent event, PyFunctionOb
             Py_DECREF(new_value);
             return -1;
         }
-    } else {
+    }
+    else {
         Py_INCREF(func);
         func_or_id = (PyObject *) func;
     }
@@ -59,20 +63,22 @@ call_pyfunc_watcher(PyObject *watcher, PyFunction_WatchEvent event, PyFunctionOb
 }
 
 static int
-first_watcher_callback(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
+first_watcher_callback(PyFunction_WatchEvent event, PyFunctionObject *func,
+                       PyObject *new_value)
 {
     return call_pyfunc_watcher(pyfunc_watchers[0], event, func, new_value);
 }
 
 static int
-second_watcher_callback(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
+second_watcher_callback(PyFunction_WatchEvent event, PyFunctionObject *func,
+                        PyObject *new_value)
 {
     return call_pyfunc_watcher(pyfunc_watchers[1], event, func, new_value);
 }
 
 static PyFunction_WatchCallback watcher_callbacks[NUM_WATCHERS] = {
-  first_watcher_callback,
-  second_watcher_callback
+    first_watcher_callback,
+    second_watcher_callback
 };
 
 static int
@@ -114,8 +120,7 @@ add_watcher(PyObject *self, PyObject *func)
         Py_DECREF(result);
         return NULL;
     }
-    pyfunc_watchers[idx] = func;
-    Py_INCREF(func);
+    pyfunc_watchers[idx] = Py_NewRef(func);
     return result;
 }
 
@@ -124,7 +129,7 @@ clear_watcher(PyObject *self, PyObject *watcher_id_obj)
 {
     long watcher_id = PyLong_AsLong(watcher_id_obj);
     if ((watcher_id < INT_MIN) || (watcher_id > INT_MAX)) {
-        PyErr_SetString(PyExc_ValueError, "invalid watcher id");
+        PyErr_SetString(PyExc_ValueError, "invalid watcher ID");
         return NULL;
     }
     int wid = (int) watcher_id;
@@ -133,10 +138,10 @@ clear_watcher(PyObject *self, PyObject *watcher_id_obj)
     }
     int idx = -1;
     for (int i = 0; i < NUM_WATCHERS; i++) {
-      if (watcher_ids[i] == wid) {
-          idx = i;
-          break;
-      }
+        if (watcher_ids[i] == wid) {
+            idx = i;
+            break;
+        }
     }
     assert(idx != -1);
     Py_CLEAR(pyfunc_watchers[idx]);
@@ -151,7 +156,8 @@ static PyMethodDef TestMethods[] = {
 };
 
 int
-_PyTestCapi_Init_FuncEvents(PyObject *m) {
+_PyTestCapi_Init_FuncEvents(PyObject *m)
+{
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
     }

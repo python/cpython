@@ -35,7 +35,6 @@ PyFunction_AddWatcher(PyFunction_WatchCallback callback)
     }
     PyErr_SetString(PyExc_RuntimeError, "no more func watcher IDs available");
     return -1;
-
 }
 
 int
@@ -43,11 +42,13 @@ PyFunction_ClearWatcher(int watcher_id)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (watcher_id < 0 || watcher_id >= FUNC_MAX_WATCHERS) {
-        PyErr_Format(PyExc_ValueError, "Invalid func watcher ID %d", watcher_id);
+        PyErr_Format(PyExc_ValueError, "invalid func watcher ID %d",
+                     watcher_id);
         return -1;
     }
     if (!interp->func_watchers[watcher_id]) {
-        PyErr_Format(PyExc_ValueError, "No func watcher set for ID %d", watcher_id);
+        PyErr_Format(PyExc_ValueError, "no func watcher set for ID %d",
+                     watcher_id);
         return -1;
     }
     interp->func_watchers[watcher_id] = NULL;
