@@ -58,14 +58,11 @@ class BaseTestSuite(object):
         for test in tests:
             self.addTest(test)
 
-    def run(self, result, debug=False):
+    def run(self, result):
         for index, test in enumerate(self):
             if result.shouldStop:
                 break
-            if debug:
-                test(result, debug=debug)
-            else:
-                test(result)
+            test(result)
             if self._cleanup:
                 self._removeTestAtIndex(index)
         return result
@@ -104,6 +101,8 @@ class TestSuite(BaseTestSuite):
     """
 
     def run(self, result, debug=False):
+        if debug:
+            result._debug = debug
         topLevel = False
         if getattr(result, '_testRunEntered', False) is False:
             result._testRunEntered = topLevel = True
@@ -123,11 +122,7 @@ class TestSuite(BaseTestSuite):
                     continue
 
             try:
-                if debug:
-                    result._debug = debug
-                    test(result, debug=debug)
-                else:
-                    test(result)
+                test(result)
             except:
                 def pm_teardown(self=self, result=result, topLevel=topLevel):
                     # delayed post-mortem (--debug) teardown when frame is finally recycled

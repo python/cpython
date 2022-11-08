@@ -192,6 +192,8 @@ class TextTestRunner(object):
     def run(self, test, debug=False):
         "Run the given test case or test suite."
         result = self._makeResult()
+        if debug:
+            result._debug = debug
         registerResult(result)
         result.failfast = self.failfast
         result.buffer = self.buffer
@@ -205,10 +207,7 @@ class TextTestRunner(object):
             if startTestRun is not None:
                 startTestRun()
             try:
-                if debug:
-                    test(result, debug=debug)
-                else:
-                    test(result)
+                test(result)
             finally:
                 stopTestRun = getattr(result, 'stopTestRun', None)
                 if stopTestRun is not None:

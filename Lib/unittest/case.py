@@ -621,7 +621,7 @@ class TestCase(object):
     def _callCleanup(self, function, /, *args, **kwargs):
         function(*args, **kwargs)
 
-    def run(self, result=None, debug=False):
+    def run(self, result=None):
         if result is None:
             result = self.defaultTestResult()
             startTestRun = getattr(result, 'startTestRun', None)
@@ -633,6 +633,7 @@ class TestCase(object):
 
         testMethod = getattr(self, self._testMethodName)
         outcome = _Outcome(result)
+        debug = getattr(result, '_debug', False)
         if debug:
             if isinstance(debug, tuple) and debug[0] == "trace":
                 deb = _load_debugger(debug[1])
