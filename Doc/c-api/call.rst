@@ -93,7 +93,7 @@ This is a pointer to a function with the following signature:
    and they must be unique.
    If there are no keyword arguments, then *kwnames* can instead be *NULL*.
 
-.. c:macro:: PY_VECTORCALL_ARGUMENTS_OFFSET
+.. data:: PY_VECTORCALL_ARGUMENTS_OFFSET
 
    If this flag is set in a vectorcall *nargsf* argument, the callee is allowed
    to temporarily change ``args[-1]``. In other words, *args* points to

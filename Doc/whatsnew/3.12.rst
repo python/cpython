@@ -75,6 +75,36 @@ Important deprecations, removals or restrictions:
 Improved Error Messages
 =======================
 
+* Modules from the standard library are now potentially suggested as part of
+  the error messages displayed by the interpreter when a :exc:`NameError` is
+  raised to the top level. Contributed by Pablo Galindo in :gh:`98254`.
+
+    >>> sys.version_info
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    NameError: name 'sys' is not defined. Did you forget to import 'sys'?
+
+* Improve the error suggestion for :exc:`NameError` exceptions for instances.
+  Now if a :exc:`NameError` is raised in a method and the instance has an
+  attribute that's exactly equal to the name in the exception, the suggestion
+  will include ``self.<NAME>`` instead of the closest match in the method
+  scope. Contributed by Pablo Galindo in :gh:`99139`.
+
+    >>> class A:
+    ...    def __init__(self):
+    ...        self.blech = 1
+    ...
+    ...    def foo(self):
+    ...        somethin = blech
+
+    >>> A().foo()
+    Traceback (most recent call last):
+      File "<stdin>", line 1
+        somethin = blech
+                   ^^^^^
+    NameError: name 'blech' is not defined. Did you mean: 'self.blech'?
+
+
 * Improve the :exc:`SyntaxError` error message when the user types ``import x
   from y`` instead of ``from y import x``. Contributed by Pablo Galindo in :gh:`98931`.
 
@@ -84,6 +114,16 @@ Improved Error Messages
         import a.y.z from b.y.z
         ^^^^^^^^^^^^^^^^^^^^^^^
     SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+* :exc:`ImportError` exceptions raised from failed ``from <module> import
+  <name>`` statements now include suggestions for the value of ``<name>`` based on the
+  available names in ``<module>``. Contributed by Pablo Galindo in :gh:`91058`.
+
+    >>> from collections import chainmap
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    ImportError: cannot import name 'chainmap' from 'collections'. Did you mean: 'ChainMap'?
+
 
 New Features
 ============
@@ -655,6 +695,18 @@ New Features
   flags have been added. This allows extensions classes to support object
   ``__dict__`` and weakrefs with less bookkeeping,
   using less memory and with faster access.
+
+* API for performing calls using
+  :ref:`the vectorcall protocol <vectorcall>` was added to the
+  :ref:`Limited API <stable>`:
+
+  * :c:func:`PyObject_Vectorcall`
+  * :c:func:`PyObject_VectorcallMethod`
+  * :const:`PY_VECTORCALL_ARGUMENTS_OFFSET`
+
+  This means that both the incoming and outgoing ends of the vector call
+  protocol are now available in the :ref:`Limited API <stable>`. (Contributed
+  by Wenzel Jakob in :gh:`98586`.)
 
 * Added two new public functions,
   :c:func:`PyEval_SetProfileAllThreads` and

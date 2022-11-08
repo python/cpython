@@ -1360,6 +1360,11 @@ exit_unwind:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
     if (frame->is_entry) {
+        if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            tstate->exc_info = gen->gi_exc_state.previous_item;
+            gen->gi_exc_state.previous_item = NULL;
+        }
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
         tstate->cframe->use_tracing = cframe.use_tracing;
@@ -1930,19 +1935,47 @@ fail:
 }
 
 static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
+    assert(frame->owner == FRAME_OWNED_BY_THREAD);
     // Make sure that this is, indeed, the top frame. We can't check this in
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
     assert((PyObject **)frame + frame->f_code->co_framesize ==
-           tstate->datastack_top);
+        tstate->datastack_top);
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
-    assert(frame->owner == FRAME_OWNED_BY_THREAD);
     _PyFrame_Clear(frame);
     tstate->c_recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
+
+static void
+clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    PyGenObject *gen = _PyFrame_GetGenerator(frame);
+    gen->gi_frame_state = FRAME_CLEARED;
+    assert(tstate->exc_info == &gen->gi_exc_state);
+    tstate->exc_info = gen->gi_exc_state.previous_item;
+    gen->gi_exc_state.previous_item = NULL;
+    tstate->c_recursion_remaining--;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    _PyFrame_Clear(frame);
+    tstate->c_recursion_remaining++;
+    frame->previous = NULL;
+}
+
+static void
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    if (frame->owner == FRAME_OWNED_BY_THREAD) {
+        clear_thread_frame(tstate, frame);
+    }
+    else {
+        clear_gen_frame(tstate, frame);
+    }
+}
+
 
 PyObject *
 _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
