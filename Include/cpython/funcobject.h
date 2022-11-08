@@ -132,7 +132,7 @@ PyAPI_FUNC(PyObject *) PyClassMethod_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
 
 #define FOREACH_FUNC_EVENT(V) \
-    V(CREATED)                \
+    V(CREATE)                 \
     V(DESTROY)                \
     V(MODIFY_CODE)            \
     V(MODIFY_DEFAULTS)        \

@@ -85,7 +85,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
-    handle_func_event(PyFunction_EVENT_CREATED, op, NULL);
+    handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return op;
 }
 
@@ -162,7 +162,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
-    handle_func_event(PyFunction_EVENT_CREATED, op, NULL);
+    handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return (PyObject *)op;
 
 error:

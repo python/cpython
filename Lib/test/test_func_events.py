@@ -6,7 +6,7 @@ from test.support import catch_unraisable_exception, import_helper
 _testcapi = import_helper.import_module("_testcapi")
 
 from _testcapi import (
-    PYFUNC_EVENT_CREATED,
+    PYFUNC_EVENT_CREATE,
     PYFUNC_EVENT_DESTROY,
     PYFUNC_EVENT_MODIFY_CODE,
     PYFUNC_EVENT_MODIFY_DEFAULTS,
@@ -33,7 +33,7 @@ class FuncEventsTest(unittest.TestCase):
         with self.add_watcher(watcher):
             def myfunc():
                 pass
-            self.assertIn((PYFUNC_EVENT_CREATED, myfunc, None), events)
+            self.assertIn((PYFUNC_EVENT_CREATE, myfunc, None), events)
             myfunc_id = id(myfunc)
 
             new_code = self.test_func_events_dispatched.__code__
@@ -67,7 +67,7 @@ class FuncEventsTest(unittest.TestCase):
                 def myfunc():
                     pass
 
-                event = (PYFUNC_EVENT_CREATED, myfunc, None)
+                event = (PYFUNC_EVENT_CREATE, myfunc, None)
                 self.assertIn(event, events0)
                 self.assertIn(event, events1)
 
