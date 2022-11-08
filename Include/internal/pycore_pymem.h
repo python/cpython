@@ -115,9 +115,6 @@ struct _PyTraceMalloc_Config {
 
 PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
 
-/* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
-
 /* Macros */
 #ifdef WITH_PYMALLOC
 // Export the symbol for the 3rd party guppy3 project

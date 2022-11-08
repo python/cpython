@@ -662,6 +662,11 @@ struct _obmalloc_state {
 void *_PyObject_VirtualAlloc(size_t size);
 void _PyObject_VirtualFree(void *, size_t size);
 
+
+/* This function returns the number of allocated memory blocks, regardless of size */
+PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
+
+
 #ifdef __cplusplus
 }
 #endif
