@@ -415,9 +415,9 @@ Accessing attributes of extension types
 
    By default (when :c:member:`flags` is ``0``), members allow
    both read and write access.
-   Use the :c:macro:`PY_READONLY` flag for read-only access.
-   Certain types, like :c:macro:`PY_T_STRING`, imply :c:macro:`PY_READONLY`.
-   Only :c:macro:`PY_T_OBJECT_EX` and :c:macro:`T_OBJECT` members can
+   Use the :c:macro:`Py_READONLY` flag for read-only access.
+   Certain types, like :c:macro:`Py_T_STRING`, imply :c:macro:`Py_READONLY`.
+   Only :c:macro:`Py_T_OBJECT_EX` (and legacy :c:macro:`T_OBJECT`) members can
    be deleted.
 
    .. _pymemberdef-offsets:
@@ -426,11 +426,11 @@ Accessing attributes of extension types
    ``PyMemberDef`` may contain a definition for the special member
    ``"__vectorcalloffset__"``, corresponding to
    :c:member:`~PyTypeObject.tp_vectorcall_offset` in type objects.
-   These must be defined with ``Py_T_PYSSIZET`` and ``PY_READONLY``, for example::
+   These must be defined with ``Py_T_PYSSIZET`` and ``Py_READONLY``, for example::
 
       static PyMemberDef spam_type_members[] = {
-          {"__vectorcalloffset__", PY_T_PYSSIZET,
-           offsetof(Spam_object, vectorcall), PY_READONLY},
+          {"__vectorcalloffset__", Py_T_PYSSIZET,
+           offsetof(Spam_object, vectorcall), Py_READONLY},
           {NULL}  /* Sentinel */
       };
 
@@ -474,11 +474,11 @@ Member flags
 
 The following flags can be used with :c:member:`PyMemberDef.flags`:
 
-.. c:macro:: PY_READONLY
+.. c:macro:: Py_READONLY
 
    Not writable.
 
-.. c:macro:: PY_AUDIT_READ
+.. c:macro:: Py_AUDIT_READ
 
    Emit an ``object.__getattr__`` :ref:`audit event <audit-events>`
    before reading.
@@ -494,17 +494,18 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    :const:`!WRITE_RESTRICTED` macros available with
    ``#include "structmember.h"`` are deprecated.
    :const:`!READ_RESTRICTED` and :const:`!RESTRICTED` are equivalent to
-   :const:`PY_AUDIT_READ`; :const:`!WRITE_RESTRICTED` does nothing.
+   :const:`Py_AUDIT_READ`; :const:`!WRITE_RESTRICTED` does nothing.
 
 .. index::
    single: READONLY
 
 .. versionchanged:: 3.12
 
-   The :const:`!READONLY` macro was renamed to :const:`PY_READONLY`.
-   It and :const:`PY_AUDIT_READ` are now always available.
+   The :const:`!READONLY` macro was renamed to :const:`Py_READONLY`.
+   The :const:`!PY_AUDIT_READ` macro was renamed with the ``Py_`` prefix.
+   The new names are now always available.
    Previously, these required ``#include "structmember.h"``.
-   The header is still available and it provides the old name ``READONLY``.
+   The header is still available and it provides the old names.
 
 .. _PyMemberDef-types:
 
@@ -525,35 +526,35 @@ using e.g. :keyword:`del` or :py:func:`delattr`.
 ================================ ============================= ======================
 Macro name                       C type                        Python type
 ================================ ============================= ======================
-.. c:macro:: PY_T_BYTE           :c:expr:`char`                :py:class:`int`
-.. c:macro:: PY_T_SHORT          :c:expr:`short`               :py:class:`int`
-.. c:macro:: PY_T_INT            :c:expr:`int`                 :py:class:`int`
-.. c:macro:: PY_T_LONG           :c:expr:`long`                :py:class:`int`
-.. c:macro:: PY_T_LONGLONG       :c:expr:`long long`           :py:class:`int`
-.. c:macro:: PY_T_UBYTE          :c:expr:`unsigned char`       :py:class:`int`
-.. c:macro:: PY_T_UINT           :c:expr:`unsigned int`        :py:class:`int`
-.. c:macro:: PY_T_USHORT         :c:expr:`unsigned short`      :py:class:`int`
-.. c:macro:: PY_T_ULONG          :c:expr:`unsigned long`       :py:class:`int`
-.. c:macro:: PY_T_ULONGLONG      :c:expr:`unsigned long long`  :py:class:`int`
-.. c:macro:: PY_T_PYSSIZET       :c:expr:`Py_ssize_t`          :py:class:`int`
-.. c:macro:: PY_T_FLOAT          :c:expr:`float`               :py:class:`float`
-.. c:macro:: PY_T_DOUBLE         :c:expr:`double`              :py:class:`float`
-.. c:macro:: PY_T_BOOL           :c:expr:`char`                :py:class:`bool`
+.. c:macro:: Py_T_BYTE           :c:expr:`char`                :py:class:`int`
+.. c:macro:: Py_T_SHORT          :c:expr:`short`               :py:class:`int`
+.. c:macro:: Py_T_INT            :c:expr:`int`                 :py:class:`int`
+.. c:macro:: Py_T_LONG           :c:expr:`long`                :py:class:`int`
+.. c:macro:: Py_T_LONGLONG       :c:expr:`long long`           :py:class:`int`
+.. c:macro:: Py_T_UBYTE          :c:expr:`unsigned char`       :py:class:`int`
+.. c:macro:: Py_T_UINT           :c:expr:`unsigned int`        :py:class:`int`
+.. c:macro:: Py_T_USHORT         :c:expr:`unsigned short`      :py:class:`int`
+.. c:macro:: Py_T_ULONG          :c:expr:`unsigned long`       :py:class:`int`
+.. c:macro:: Py_T_ULONGLONG      :c:expr:`unsigned long long`  :py:class:`int`
+.. c:macro:: Py_T_PYSSIZET       :c:expr:`Py_ssize_t`          :py:class:`int`
+.. c:macro:: Py_T_FLOAT          :c:expr:`float`               :py:class:`float`
+.. c:macro:: Py_T_DOUBLE         :c:expr:`double`              :py:class:`float`
+.. c:macro:: Py_T_BOOL           :c:expr:`char`                :py:class:`bool`
                                  (written as 0 or 1)
-.. c:macro:: PY_T_STRING         :c:expr:`const char *` (*)    :py:class:`str` (RO)
-.. c:macro:: PY_T_STRING_INPLACE :c:expr:`const char[]` (*)    :py:class:`str` (RO)
-.. c:macro:: PY_T_CHAR           :c:expr:`char` (0-127)        :py:class:`str` (**)
-.. c:macro:: PY_T_OBJECT_EX      :c:expr:`PyObject *`          :py:class:`object` (D)
+.. c:macro:: Py_T_STRING         :c:expr:`const char *` (*)    :py:class:`str` (RO)
+.. c:macro:: Py_T_STRING_INPLACE :c:expr:`const char[]` (*)    :py:class:`str` (RO)
+.. c:macro:: Py_T_CHAR           :c:expr:`char` (0-127)        :py:class:`str` (**)
+.. c:macro:: Py_T_OBJECT_EX      :c:expr:`PyObject *`          :py:class:`object` (D)
 ================================ ============================= ======================
 
    (*): String of length 1. Only ASCII is accepted.
 
    (**): Zero-terminated, UTF8-encoded C string.
-   With :c:macro:`!PY_T_STRING` the C representation is a pointer;
-   with :c:macro:`!PY_T_STRING_INLINE` the string is stored directly
+   With :c:macro:`!Py_T_STRING` the C representation is a pointer;
+   with :c:macro:`!Py_T_STRING_INLINE` the string is stored directly
    in the structure.
 
-   (RO): Implies :c:macro:`PY_READONLY`.
+   (RO): Implies :c:macro:`Py_READONLY`.
 
    (D): Can be deleted, in which case the pointer is set to ``NULL``.
    Reading a ``NULL`` pointer raises :py:exc:`AttributeError`.
@@ -582,20 +583,20 @@ Macro name                       C type                        Python type
 .. versionadded:: 3.12
 
    In previous versions, the macros were only available with
-   ``#include "structmember.h"`` and were named without the ``PY_`` prefix
+   ``#include "structmember.h"`` and were named without the ``Py_`` prefix
    (e.g. as ``T_INT``).
    The header is still available and contains the old names, along with
    the following deprecated types:
 
    .. c:macro:: T_OBJECT
 
-      Like ``PY_T_OBJECT_EX``, but ``NULL`` is converted to ``None``.
+      Like ``Py_T_OBJECT_EX``, but ``NULL`` is converted to ``None``.
       This results in surprising behavior in Python: deleting the attribute
       effectively sets it to ``None``.
 
    .. c:macro:: T_NONE
 
-      Always ``None``. Must be used with :c:macro:`PY_READONLY`.
+      Always ``None``. Must be used with :c:macro:`Py_READONLY`.
 
 Defining Getters and Setters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

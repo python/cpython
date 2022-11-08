@@ -734,22 +734,22 @@ Deprecated
   available and there are no plans to remove it.
 
   Its contents are now available just by including ``Python.h``,
-  with a ``PY_`` prefix added if it was missing:
+  with a ``Py`` prefix added if it was missing:
 
   - :c:struct:`PyMemberDef`, :c:func:`PyMember_GetOne` and
     :c:func:`PyMember_SetOne`
-  - Type macros like :c:macro:`PY_T_INT`, :c:macro:`PY_T_DOUBLE`, etc.
+  - Type macros like :c:macro:`Py_T_INT`, :c:macro:`Py_T_DOUBLE`, etc.
     (previously ``T_INT``, ``T_DOUBLE``, etc.)
-  - The flags :c:macro:`PY_READONLY` (previously ``READONLY``) and
-    :c:macro:`PY_AUDIT_READ` (name unchanged)
+  - The flags :c:macro:`Py_READONLY` (previously ``READONLY``) and
+    :c:macro:`Py_AUDIT_READ` (previously all uppercase)
 
   Several items are not exposed from ``Python.h``:
 
-  - :c:macro:`T_OBJECT` (use :c:macro:`PY_T_OBJECT_EX`)
+  - :c:macro:`T_OBJECT` (use :c:macro:`Py_T_OBJECT_EX`)
   - :c:macro:`T_NONE` (previously undocumented, and pretty quirky)
   - The macro ``WRITE_RESTRICTED`` which does nothing.
   - The macros ``RESTRICTED`` and ``READ_RESTRICTED``, equivalents of
-    :c:macro:`PY_AUDIT_READ`.
+    :c:macro:`Py_AUDIT_READ`.
   - In some configurations, ``<stddef.h>`` is not included from ``Python.h``.
     It should be included manually when using ``offsetof()``.
 

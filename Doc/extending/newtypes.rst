@@ -286,11 +286,11 @@ be read-only or read-write.  The structures in the table are defined as::
 
 For each entry in the table, a :term:`descriptor` will be constructed and added to the
 type which will be able to extract a value from the instance structure.  The
-:attr:`type` field should contain a type code like :c:macro:`PY_T_INT` or
-:c:macro:`PY_T_DOUBLE`; the value will be used to determine how to
+:attr:`type` field should contain a type code like :c:macro:`Py_T_INT` or
+:c:macro:`Py_T_DOUBLE`; the value will be used to determine how to
 convert Python values to and from C values.  The :attr:`flags` field is used to
 store flags which control how the attribute can be accessed: you can set it to
-:c:macro:`PY_READONLY` to prevent Python code from setting it.
+:c:macro:`Py_READONLY` to prevent Python code from setting it.
 
 An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table to build
 descriptors that are used at runtime is that any attribute defined this way can

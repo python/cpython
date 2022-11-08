@@ -429,11 +429,11 @@ We want to expose our instance variables as attributes. There are a
 number of ways to do that. The simplest way is to define member definitions::
 
    static PyMemberDef Custom_members[] = {
-       {"first", PY_T_OBJECT_EX, offsetof(CustomObject, first), 0,
+       {"first", Py_T_OBJECT_EX, offsetof(CustomObject, first), 0,
         "first name"},
-       {"last", PY_T_OBJECT_EX, offsetof(CustomObject, last), 0,
+       {"last", Py_T_OBJECT_EX, offsetof(CustomObject, last), 0,
         "last name"},
-       {"number", PY_T_INT, offsetof(CustomObject, number), 0,
+       {"number", Py_T_INT, offsetof(CustomObject, number), 0,
         "custom number"},
        {NULL}  /* Sentinel */
    };
@@ -602,7 +602,7 @@ above.  In this case, we aren't using a closure, so we just pass ``NULL``.
 We also remove the member definitions for these attributes::
 
    static PyMemberDef Custom_members[] = {
-       {"number", PY_T_INT, offsetof(CustomObject, number), 0,
+       {"number", Py_T_INT, offsetof(CustomObject, number), 0,
         "custom number"},
        {NULL}  /* Sentinel */
    };
