@@ -101,16 +101,6 @@ def ToASCII(label):
     raise UnicodeError("label empty or too long")
 
 def ToUnicode(label):
-    if len(label) > 1024:
-        # Protection from https://github.com/python/cpython/issues/98433.
-        # https://datatracker.ietf.org/doc/html/rfc5894#section-6
-        # doesn't specify a label size limit prior to NAMEPREP. But having
-        # one makes practical sense.
-        # This leaves ample room for nameprep() to remove Nothing characters
-        # per https://www.rfc-editor.org/rfc/rfc3454#section-3.1 while still
-        # preventing us from wasting time decoding a big thing that'll just
-        # hit the actual <= 63 length limit in Step 6.
-        raise UnicodeError("label way too long")
     # Step 1: Check for ASCII
     if isinstance(label, bytes):
         pure_ascii = True
