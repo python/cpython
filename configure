@@ -27091,7 +27091,7 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__SHA256_STATE=$py_cv_module__sha256$as_nl"
   if test "x$py_cv_module__sha256" = xyes; then :
 
-    as_fn_append MODULE_BLOCK "MODULE__SHA256_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA256_CFLAGS=-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE$as_nl"
 
 
 fi
