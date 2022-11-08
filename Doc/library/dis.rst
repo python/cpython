@@ -832,14 +832,21 @@ iterations of the loop.
 
 .. opcode:: UNPACK_EX (counts)
 
-   Implements assignment with a starred target: Unpacks an iterable in TOS(1) into
-   individual values, where the total number of values can be smaller than the
+   Implements assignment with a starred target: Unpacks an iterable in ``STACK[-1]``
+   into individual values, where the total number of values can be smaller than the
    number of items in the iterable: one of the new values will be a list of all
    leftover items.
 
-   The low byte of *counts* is the number of values before the list value, the
-   high byte of *counts* the number of values after it.  The resulting values
-   are put onto the stack right-to-left.
+   The number of values before and after the list value is limited to 255.
+
+   The number of values before the list value is encoded in the argument of the
+   opcode. The number of values after the list if any is encoded using an
+   ``EXTENDED_ARG``. As a consequence, the argument can be seen as a two bytes values
+   where the low byte of *counts* is the number of values before the list value, the
+   high byte of *counts* the number of values after it.
+
+   The extracted values are put onto the stack right-to-left, i.e. ``a, *b, c = d``
+   will be stored after execution as ``STACK.extend((a, b, c))``.
 
 
 .. opcode:: STORE_ATTR (namei)
