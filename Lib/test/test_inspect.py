@@ -202,6 +202,25 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
+        # Use subtest initially to see both failures.
+        with self.subTest("Wrapper not recognised."):
+            # First case: sync function returning an awaitable.
+            async def _fn3():
+                pass
+
+            def fn3():
+                return _fn3()
+            self.assertTrue(inspect.iscoroutinefunction(fn3))
+
+        with self.subTest("Awaitable instance not recongnised."):
+            # Second case: a class with an async def __call__.
+            # - instance is awaitable.
+            class Cl:
+                async def __call__(self):
+                    pass
+            cl = Cl()
+            self.assertTrue(inspect.iscoroutinefunction(cl))
+
         self.assertFalse(
             inspect.iscoroutinefunction(unittest.mock.Mock()))
         self.assertTrue(

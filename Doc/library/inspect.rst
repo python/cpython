@@ -358,6 +358,20 @@ attributes:
       wrapped function is a :term:`coroutine function`.
 
 
+.. function:: markcoroutinefunction(object)
+
+   Decorator to mark a callable as a :term:`coroutine function` if it would not
+   otherwise be detected by :func:`iscoroutinefunction`.
+
+   This may be of use for sync functions that return an awaitable or objects
+   implementing an :keyword:`async def` ``__call__``.
+
+   Prefer :keyword:`async def` functions or calling the function and testing
+   the return with :func:`isawaitable` where feasible.
+
+   .. versionadded:: 3.12
+
+
 .. function:: iscoroutine(object)
 
    Return ``True`` if the object is a :term:`coroutine` created by an
