@@ -1882,8 +1882,6 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(not os.path.exists('/proc/self/status'),
                      "need /proc/self/status")
-    @skip_if_sanitizer(memory=True, address=True,
-                       reason= "Spurious error when assigning to stack variable.")
     def test_restore_signals(self):
         # Blindly assume that cat exists on systems with /proc/self/status...
         default_proc_status = subprocess.check_output(
