@@ -3,7 +3,7 @@
 #include "pycore_code.h"          // stats
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 #include "pycore_pymem.h"
-#include "pycore_pymem_init.h"
+#include "pycore_allocators.h"
 
 #include <stdbool.h>
 
