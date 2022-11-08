@@ -1067,6 +1067,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         _PyCode_CODE(tstate->interp->interpreter_trampoline);
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.yield_offset = 0;
     /* Push frame */
     entry_frame.previous = prev_cframe->current_frame;
     frame->previous = &entry_frame;
@@ -1372,11 +1373,6 @@ exit_unwind:
     _Py_LeaveRecursiveCallPy(tstate);
     assert(frame != &entry_frame);
     frame = cframe.current_frame = pop_frame(tstate, frame);
-    if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
-        PyGenObject *gen = _PyFrame_GetGenerator(frame);
-        tstate->exc_info = gen->gi_exc_state.previous_item;
-        gen->gi_exc_state.previous_item = NULL;
-    }
     if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;

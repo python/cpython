@@ -764,11 +764,6 @@ dummy_func(
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
-            if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
-                PyGenObject *gen = _PyFrame_GetGenerator(frame);
-                tstate->exc_info = gen->gi_exc_state.previous_item;
-                gen->gi_exc_state.previous_item = NULL;
-            }
             assert(frame != &entry_frame);
             frame = cframe.current_frame = pop_frame(tstate, frame);
             _PyFrame_StackPush(frame, retval);
@@ -981,7 +976,9 @@ dummy_func(
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
+            _PyInterpreterFrame *gen_frame = frame;
             frame = cframe.current_frame = frame->previous;
+            gen_frame->previous = NULL;
             frame->prev_instr -= frame->yield_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;

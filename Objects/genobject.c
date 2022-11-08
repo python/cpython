@@ -221,12 +221,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     result = _PyEval_EvalFrame(tstate, frame, exc);
     assert(tstate->exc_info == prev_exc_info);
     assert(gen->gi_exc_state.previous_item == NULL);
-    if (gen->gi_frame_state == FRAME_EXECUTING) {
-        gen->gi_frame_state = FRAME_COMPLETED;
-    }
-    /* Don't keep the reference to previous any longer than necessary.  It
-     * may keep a chain of frames alive or it could create a reference
-     * cycle. */
+    assert(gen->gi_frame_state != FRAME_EXECUTING);
     assert(frame->previous == NULL);
 
     /* If the generator just returned (as opposed to yielding), signal
