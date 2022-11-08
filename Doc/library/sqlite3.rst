@@ -1297,7 +1297,7 @@ Connection objects
    .. attribute:: isolation_level
 
       Controls the :ref:`legacy transaction handling mode
-      <sqlite3-transaction-control-isolation-level>` performed by :mod:`!sqlite3`.
+      <sqlite3-transaction-control-isolation-level>` of :mod:`!sqlite3`.
       If set to ``None``, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
       corresponding to the underlying `SQLite transaction behaviour`_,
