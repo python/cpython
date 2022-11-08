@@ -115,11 +115,6 @@ struct _PyTraceMalloc_Config {
 
 PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
 
-/* Allocate memory directly from the O/S virtual memory system,
- * where supported. Otherwise fallback on malloc */
-void *_PyObject_VirtualAlloc(size_t size);
-void _PyObject_VirtualFree(void *, size_t size);
-
 /* This function returns the number of allocated memory blocks, regardless of size */
 PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
 

@@ -407,8 +407,10 @@ on that C doesn't insert any padding anywhere in a pool_header at or before
 the prevpool member.
 **************************************************************************** */
 
+#define OBMALLOC_USED_POOLS_SIZE (2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8)
+
 struct _obmalloc_pools {
-    poolp used[2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8];
+    poolp used[OBMALLOC_USED_POOLS_SIZE];
 };
 
 
@@ -653,6 +655,12 @@ struct _obmalloc_state {
     struct _obmalloc_mgmt mgmt;
     struct _obmalloc_usage usage;
 };
+
+
+/* Allocate memory directly from the O/S virtual memory system,
+ * where supported. Otherwise fallback on malloc */
+void *_PyObject_VirtualAlloc(size_t size);
+void _PyObject_VirtualFree(void *, size_t size);
 
 #ifdef __cplusplus
 }
