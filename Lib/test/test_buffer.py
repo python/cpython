@@ -4508,6 +4508,22 @@ class TestPythonBufferProtocol(unittest.TestCase):
         self.assertEqual(mv.tobytes(), b"hello")
         ba.__release_buffer__(mv)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer(self):
+        buf = _testcapi.testBuf()
+        self.assertEqual(buf.references, 0)
+        mv = buf.__buffer__(0)
+        self.assertIsInstance(mv, memoryview)
+        self.assertEqual(mv.tobytes(), b"test")
+        self.assertEqual(buf.references, 1)
+        buf.__release_buffer__(mv)
+        self.assertEqual(buf.references, 0)
+        with self.assertRaises(ValueError):
+            mv.tobytes()
+        # Calling it again doesn't cause issues
+        buf.__release_buffer__(mv)
+        self.assertEqual(buf.references, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
