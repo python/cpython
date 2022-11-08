@@ -348,6 +348,12 @@ class CRenderData:
         # "goto exit" if there are any.
         self.return_conversion = []
 
+        # The C statements required to do some operations
+        # after the end of parsing but before cleaning up.
+        # These operations may be, for example, memory deallocations which
+        # can only be done without any error happening during argument parsing.
+        self.post_operations = []
+
         # The C statements required to clean up after the impl call.
         self.cleanup = []
 
@@ -820,6 +826,7 @@ class CLanguage(Language):
                     {modifications}
                     {return_value} = {c_basename}_impl({impl_arguments});
                     {return_conversion}
+                    {post_operations}
 
                 {exit_label}
                     {cleanup}
@@ -1460,6 +1467,7 @@ class CLanguage(Language):
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
         template_dict['return_conversion'] = format_escape("".join(data.return_conversion).rstrip())
+        template_dict['post_operations'] = format_escape("".join(data.post_operations).rstrip())
         template_dict['cleanup'] = format_escape("".join(data.cleanup))
         template_dict['return_value'] = data.return_value
 
@@ -1484,6 +1492,7 @@ class CLanguage(Language):
                 return_conversion=template_dict['return_conversion'],
                 initializers=template_dict['initializers'],
                 modifications=template_dict['modifications'],
+                post_operations=template_dict['post_operations'],
                 cleanup=template_dict['cleanup'],
                 )
 
@@ -2725,6 +2734,11 @@ class CConverter(metaclass=CConverterAutoRegister):
         # parse_arguments
         self.parse_argument(data.parse_arguments)
 
+        # post_operations
+        post_operations = self.post_operations()
+        if post_operations:
+            data.post_operations.append('/* Post operation for ' + name + ' */\n' + post_operations.rstrip() + "\n")
+
         # cleanup
         cleanup = self.cleanup()
         if cleanup:
@@ -2817,6 +2831,14 @@ class CConverter(metaclass=CConverterAutoRegister):
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
         If no initialization is necessary, returns an empty string.
+        """
+        return ""
+
+    def post_operations(self):
+        """
+        The C statements required to do some operations after the end of parsing but before cleaning up.
+        Returns a string containing this code indented at column 0.
+        If no operation is necessary, returns an empty string.
         """
         return ""
 
@@ -3416,7 +3438,7 @@ class str_converter(CConverter):
         if NoneType in accept and self.c_default == "Py_None":
             self.c_default = "NULL"
 
-    def cleanup(self):
+    def post_operations(self):
         if self.encoding:
             name = self.name
             return "".join(["if (", name, ") {\n   PyMem_FREE(", name, ");\n}\n"])
