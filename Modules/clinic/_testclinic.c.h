@@ -2743,4 +2743,51 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=ad9e0740f86bd28b input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gh_99240_double_free__doc__,
+"gh_99240_double_free($module, a, b, /)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-99240 double-free bug.\n"
+"\n"
+"If parsing `a` successes, `a` will be assigned an address points to an allocated memory.\n"
+"After that, if parsing `b` fails, the memory which `a` points to is freed by function `_PyArg_ParseStack`,\n"
+"and `_PyArg_ParseStack` returns 0, then control flow goes to label \"exit\".\n"
+"At this time, `a` is not NULL, so the memory it points to is freed again,\n"
+"which cause a double-free problem and a runtime crash.\n"
+"\n"
+"Calling this function by gh_99240_double_free(\'a\', \'\\0b\')\n"
+"to trigger this bug (crash).");
+
+#define GH_99240_DOUBLE_FREE_METHODDEF    \
+    {"gh_99240_double_free", _PyCFunction_CAST(gh_99240_double_free), METH_FASTCALL, gh_99240_double_free__doc__},
+
+static PyObject *
+gh_99240_double_free_impl(PyObject *module, char *a, char *b);
+
+static PyObject *
+gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+
+    if (!_PyArg_ParseStack(args, nargs, "eses:gh_99240_double_free",
+        "idna", &a, "idna", &b)) {
+        goto exit;
+    }
+    return_value = gh_99240_double_free_impl(module, a, b);
+
+exit:
+    /* Cleanup for a */
+    if (a) {
+       PyMem_FREE(a);
+    }
+    /* Cleanup for b */
+    if (b) {
+       PyMem_FREE(b);
+    }
+
+    return return_value;
+}
+/*[clinic end generated code: output=8f0d1bbae0d775e3 input=a9049054013a1b77]*/
