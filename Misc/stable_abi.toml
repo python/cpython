@@ -1777,11 +1777,9 @@
     added = '3.2'
     abi_only = true
 [function.PyMember_GetOne]
-    added = '3.2'
-    abi_only = true
+    added = '3.2'  # Before 3.12, available in "structmember.h"
 [function.PyMember_SetOne]
-    added = '3.2'
-    abi_only = true
+    added = '3.2'  # Before 3.12, available in "structmember.h"
 
 # TLS api is deprecated; superseded by TSS API
 

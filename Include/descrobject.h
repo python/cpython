@@ -84,6 +84,9 @@ struct PyMemberDef {
 #define Py_AUDIT_READ          2 // Added in 3.10, harmless no-op before that
 #define _Py_WRITE_RESTRICTED   4 // Deprecated, no-op. Do not reuse the value.
 
+PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, PyMemberDef *);
+PyAPI_FUNC(int) PyMember_SetOne(char *, PyMemberDef *, PyObject *);
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_DESCROBJECT_H
 #  include "cpython/descrobject.h"
