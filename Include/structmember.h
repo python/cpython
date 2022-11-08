@@ -44,6 +44,7 @@ extern "C" {
 
 /* Flags */
 #define READONLY            Py_READONLY
+#define PY_AUDIT_READ        Py_AUDIT_READ
 #define READ_RESTRICTED     Py_AUDIT_READ
 #define PY_WRITE_RESTRICTED _Py_WRITE_RESTRICTED
 #define RESTRICTED          (READ_RESTRICTED | PY_WRITE_RESTRICTED)
