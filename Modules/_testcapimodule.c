@@ -5608,6 +5608,38 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+test_frame_getvar(PyObject *self, PyObject *args)
+{
+    PyObject *frame, *name;
+    if (!PyArg_ParseTuple(args, "OO", &frame, &name)) {
+        return NULL;
+    }
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+
+    return PyFrame_GetVar((PyFrameObject *)frame, name);
+}
+
+static PyObject *
+test_frame_getvarstring(PyObject *self, PyObject *args)
+{
+    PyObject *frame;
+    const char *name;
+    if (!PyArg_ParseTuple(args, "Oy", &frame, &name)) {
+        return NULL;
+    }
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+
+    return PyFrame_GetVarString((PyFrameObject *)frame, name);
+}
+
+
+static PyObject *
 eval_get_func_name(PyObject *self, PyObject *func)
 {
     return PyUnicode_FromString(PyEval_GetFuncName(func));
@@ -6294,6 +6326,8 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
+    {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
     {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
