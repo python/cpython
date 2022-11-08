@@ -9749,18 +9749,11 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     if (index_map == NULL) {
         goto end;
     }
-    reverse_index_map = PyMem_Malloc(nconsts * sizeof(int));
-    if (reverse_index_map == NULL) {
-        goto end;
-    }
-
     for (int i = 1; i < nconsts; i++) {
         index_map[i] = -1;
-        reverse_index_map[i] = -1;
     }
     // The first constant may be docstring; keep it always.
     index_map[0] = 0;
-    reverse_index_map[0] = 0;
 
     /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -9780,7 +9773,6 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (int i = 0; i < nconsts; i++) {
         if (index_map[i] != -1) {
             assert(index_map[i] == i);
-            reverse_index_map[i] = n_used_consts;
             if (n_used_consts != i) {
                 index_map[i] = -1;
                 index_map[n_used_consts] = i;
@@ -9812,6 +9804,20 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     }
 
     /* adjust const indices in the bytecode */
+    reverse_index_map = PyMem_Malloc(nconsts * sizeof(int));
+    if (reverse_index_map == NULL) {
+        goto end;
+    }
+    for (int i = 0; i < nconsts; i++) {
+        reverse_index_map[i] = -1;
+    }
+    for (int i = 0; i < nconsts; i++) {
+        if (index_map[i] != -1) {
+            assert(reverse_index_map[index_map[i]] == -1);
+            reverse_index_map[index_map[i]] = i;
+        }
+    }
+
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_opcode == LOAD_CONST ||
