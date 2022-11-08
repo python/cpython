@@ -9996,6 +9996,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *flags,
         return NULL;
     }
 
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
+    if (!flags) {
+        flags = &local_flags;
+    }
     if (!compiler_setup(&c, mod, filename, flags, optimize, arena)) {
         goto finally;
     }
