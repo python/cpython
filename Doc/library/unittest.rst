@@ -228,7 +228,7 @@ Command-line options
 
 .. cmdoption:: --pdb
 
-   Runs ``pdb.post_mortem()`` upon each error. Short for ``--pm=pdb``
+   Runs :func:`pdb.post_mortem` upon each error. Short for ``--pm=pdb``
 
 .. cmdoption:: --pm
 
