@@ -670,7 +670,7 @@ if 1:
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
 
     @support.cpython_only
-    def test_strip_unused_consts(self):
+    def test_remove_unused_consts(self):
         def f():
             "docstring"
             if True:
@@ -679,7 +679,20 @@ if 1:
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         ("docstring", True, "used"))
+                         ("docstring", "used"))
+
+    @support.cpython_only
+    def test_remove_unused_consts_no_docstring(self):
+        # the first item (None for no docstring in this case) is
+        # always retained.
+        def f():
+            if True:
+                return "used"
+            else:
+                return "unused"
+
+        self.assertEqual(f.__code__.co_consts,
+                         (None, "used"))
 
     # Stripping unused constants is not a strict requirement for the
     # Python semantics, it's a more an implementation detail.

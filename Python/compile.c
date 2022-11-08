@@ -8495,7 +8495,7 @@ static int
 optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache);
 
 static int
-trim_unused_consts(basicblock *entryblock, PyObject *consts);
+remove_unused_consts(basicblock *entryblock, PyObject *consts);
 
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
@@ -8868,7 +8868,7 @@ assemble(struct compiler *c, int addNone)
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
 
-    if (trim_unused_consts(g->g_entryblock, consts)) {
+    if (remove_unused_consts(g->g_entryblock, consts)) {
         goto error;
     }
 
@@ -9731,32 +9731,107 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     return 0;
 }
 
-// Remove trailing unused constants.
+
 static int
-trim_unused_consts(basicblock *entryblock, PyObject *consts)
+remove_unused_consts(basicblock *entryblock, PyObject *consts)
 {
     assert(PyList_CheckExact(consts));
+    Py_ssize_t nconsts = PyList_Size(consts);
+    if (nconsts == 0) {
+        return 0;  /* nothing to do */
+    }
 
+    int *index_map = NULL;
+    int *reverse_index_map = NULL;
+    int err = 1;
+
+    index_map = PyMem_Malloc(nconsts * sizeof(int));
+    if (index_map == NULL) {
+        goto end;
+    }
+    reverse_index_map = PyMem_Malloc(nconsts * sizeof(int));
+    if (reverse_index_map == NULL) {
+        goto end;
+    }
+
+    for (int i = 1; i < nconsts; i++) {
+        index_map[i] = -1;
+        reverse_index_map[i] = -1;
+    }
     // The first constant may be docstring; keep it always.
-    int max_const_index = 0;
+    index_map[0] = 0;
+    reverse_index_map[0] = 0;
+
+    /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if ((b->b_instr[i].i_opcode == LOAD_CONST ||
-                b->b_instr[i].i_opcode == KW_NAMES) &&
-                    b->b_instr[i].i_oparg > max_const_index) {
-                max_const_index = b->b_instr[i].i_oparg;
+            if (b->b_instr[i].i_opcode == LOAD_CONST ||
+                b->b_instr[i].i_opcode == KW_NAMES) {
+
+                int index = b->b_instr[i].i_oparg;
+                index_map[index] = index;
             }
         }
     }
-    if (max_const_index+1 < PyList_GET_SIZE(consts)) {
-        //fprintf(stderr, "removing trailing consts: max=%d, size=%d\n",
-        //        max_const_index, (int)PyList_GET_SIZE(consts));
-        if (PyList_SetSlice(consts, max_const_index+1,
-                            PyList_GET_SIZE(consts), NULL) < 0) {
-            return 1;
+    /* now index_map[i] == i if consts[i] is used, -1 otherwise */
+
+    /* condense consts */
+    int n_used_consts = 0;
+    for (int i = 0; i < nconsts; i++) {
+        if (index_map[i] != -1) {
+            assert(index_map[i] == i);
+            reverse_index_map[i] = n_used_consts;
+            if (n_used_consts != i) {
+                index_map[i] = -1;
+                index_map[n_used_consts] = i;
+            }
+            n_used_consts++;
         }
     }
-    return 0;
+    if (n_used_consts == nconsts) {
+        /* nothing to do */
+        err = 0;
+        goto end;
+    }
+
+    /* move all used consts to the beginning of the consts list */
+    for (Py_ssize_t i = 0; i < n_used_consts; i++) {
+        int old_index = index_map[i];
+        assert(i <= old_index);
+        if (i != old_index) {
+            PyObject *value = PyList_GetItem(consts, index_map[i]);
+            assert(value != NULL);
+            int res = PyList_SetItem(consts, i, Py_NewRef(value));
+            assert(res == 0);
+        }
+    }
+
+    /* truncate the consts list at its new size */
+    if (PyList_SetSlice(consts, n_used_consts, nconsts, NULL) < 0) {
+        goto end;
+    }
+
+    /* adjust const indices in the bytecode */
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            if (b->b_instr[i].i_opcode == LOAD_CONST ||
+                b->b_instr[i].i_opcode == KW_NAMES) {
+
+                int index = b->b_instr[i].i_oparg;
+                b->b_instr[i].i_oparg = reverse_index_map[index];
+            }
+        }
+    }
+
+    err = 0;
+end:
+    if (index_map != NULL) {
+        PyMem_Free(index_map);
+    }
+    if (reverse_index_map != NULL) {
+        PyMem_Free(reverse_index_map);
+    }
+    return err;
 }
 
 static inline int
