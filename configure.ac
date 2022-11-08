@@ -6613,6 +6613,7 @@ SRCDIRS="\
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
+  Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sha3 \
