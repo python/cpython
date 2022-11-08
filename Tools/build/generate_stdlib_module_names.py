@@ -33,6 +33,7 @@ IGNORE = {
     '_testimportmultiple',
     '_testinternalcapi',
     '_testmultiphase',
+    '_testsinglephase',
     '_xxsubinterpreters',
     '_xxtestfuzz',
     'idlelib.idle_test',
