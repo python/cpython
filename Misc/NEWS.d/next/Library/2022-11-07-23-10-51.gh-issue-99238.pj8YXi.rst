@@ -1,0 +1,3 @@
+When parsing environment variables passed by caller to subprocess.Popen,
+check the actual value of the variable is not set to None. Lack of this
+checking causes crashes in python programs.

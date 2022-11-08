@@ -1815,6 +1815,8 @@ class Popen:
                     if env is not None:
                         env_list = []
                         for k, v in env.items():
+                            if v is None:
+                                continue
                             k = os.fsencode(k)
                             if b'=' in k:
                                 raise ValueError("illegal environment variable name")
