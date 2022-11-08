@@ -1,0 +1,2 @@
+Replace builtin hashlib implementation of SHA2-224 and SHA2-256 with
+formally verified, side-channel resistant code from the HACL* project.
