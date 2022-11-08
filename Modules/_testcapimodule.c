@@ -3382,6 +3382,7 @@ slot_tp_del(PyObject *self)
         else
             Py_DECREF(res);
     }
+    Py_DECREF(tp_del);
 
     /* Restore the saved exception. */
     PyErr_Restore(error_type, error_value, error_traceback);
