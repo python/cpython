@@ -1256,6 +1256,12 @@ class ClinicFunctionalTest(unittest.TestCase):
     def test_gh_32092_kw_pass(self):
         ac_tester.gh_32092_kw_pass(1, 2, 3)
 
+    def test_gh_99233_refcount(self):
+        arg = '*A unique string is not referenced by anywhere else.*'
+        arg_refcount_origin = sys.getrefcount(arg)
+        ac_tester.gh_99233_refcount(arg)
+        arg_refcount_after = sys.getrefcount(arg)
+        self.assertEqual(arg_refcount_origin, arg_refcount_after)
 
 if __name__ == "__main__":
     unittest.main()

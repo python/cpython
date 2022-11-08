@@ -1029,6 +1029,29 @@ gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
 }
 
 
+/*[clinic input]
+gh_99233_refcount
+
+    *args: object
+    /
+
+Proof-of-concept of GH-99233 refcount error bug.
+
+While AC-generated code is packing varargs to a tuple, the arguments' refcounts are not increased.
+So all the packed arguments‘ refcounts are decreased 1 improperly when the tuple is released later.
+
+Call this function with whatever arguments and check if the arguments' refcount is correct.
+
+[clinic start generated code]*/
+
+static PyObject *
+gh_99233_refcount_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=585855abfbca9a7f input=574e697575fafec5]*/
+{
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -1077,6 +1100,7 @@ static PyMethodDef tester_methods[] = {
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
+    GH_99233_REFCOUNT_METHODDEF
     {NULL, NULL}
 };
 

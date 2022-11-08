@@ -2706,4 +2706,41 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=e3773f2b7cac0719 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gh_99233_refcount__doc__,
+"gh_99233_refcount($module, /, *args)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-99233 refcount error bug.\n"
+"\n"
+"While AC-generated code is packing varargs to a tuple, the arguments\' refcounts are not increased.\n"
+"So all the packed arguments‘ refcounts are decreased 1 improperly when the tuple is released later.\n"
+"\n"
+"Call this function with whatever arguments and check if the arguments\' refcount is correct.");
+
+#define GH_99233_REFCOUNT_METHODDEF    \
+    {"gh_99233_refcount", _PyCFunction_CAST(gh_99233_refcount), METH_FASTCALL, gh_99233_refcount__doc__},
+
+static PyObject *
+gh_99233_refcount_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("gh_99233_refcount", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, args[0 + i]);
+    }
+    return_value = gh_99233_refcount_impl(module, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+/*[clinic end generated code: output=ad9e0740f86bd28b input=a9049054013a1b77]*/
