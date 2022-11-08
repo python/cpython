@@ -8,6 +8,13 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+
+typedef unsigned int pymem_uint;  /* assuming >= 16 bits */
+
+#undef  uint
+#define uint pymem_uint
+
+
 /* An object allocator for Python.
 
    Here is an introduction to the layers of the Python memory architecture,
@@ -130,7 +137,7 @@ extern "C" {
 #endif
 
 /* Return the number of bytes in size class I, as a uint. */
-#define INDEX2SIZE(I) (((uint)(I) + 1) << ALIGNMENT_SHIFT)
+#define INDEX2SIZE(I) (((pymem_uint)(I) + 1) << ALIGNMENT_SHIFT)
 
 /*
  * Max size threshold below which malloc requests are considered to be
@@ -307,7 +314,7 @@ struct arena_object {
 #define POOL_ADDR(P) ((poolp)_Py_ALIGN_DOWN((P), POOL_SIZE))
 
 /* Return total number of blocks in pool of size index I, as a uint. */
-#define NUMBLOCKS(I) ((uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))
+#define NUMBLOCKS(I) ((pymem_uint)(POOL_SIZE - POOL_OVERHEAD) / INDEX2SIZE(I))
 
 /*==========================================================================*/
 
@@ -655,6 +662,9 @@ struct _obmalloc_state {
     struct _obmalloc_mgmt mgmt;
     struct _obmalloc_usage usage;
 };
+
+
+#undef  uint
 
 
 /* Allocate memory directly from the O/S virtual memory system,

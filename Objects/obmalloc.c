@@ -1,11 +1,16 @@
 #include "Python.h"
-#include "pycore_pymem.h"         // _PyTraceMalloc_Config
 #include "pycore_code.h"          // stats
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
+
+#include "pycore_obmalloc.h"
 #include "pycore_pymem.h"
 #include "pycore_pymem_allocators.h"
 
 #include <stdbool.h>
+
+
+#undef  uint
+#define uint pymem_uint
 
 
 /* Defined in tracemalloc.c */
@@ -13,9 +18,6 @@ extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
 
 /* Python's malloc wrappers (see pymem.h) */
-
-#undef  uint
-#define uint    unsigned int    /* assuming >= 16 bits */
 
 static void _PyObject_DebugDumpAddress(const void *p);
 static void _PyMem_DebugCheckAddress(const char *func, char api_id, const void *p);
