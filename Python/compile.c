@@ -610,15 +610,11 @@ static int
 compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
                PyCompilerFlags *flags, int optimize, PyArena *arena)
 {
-    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     Py_INCREF(filename);
     c->c_filename = filename;
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return 0;
-    }
-    if (!flags) {
-        flags = &local_flags;
     }
     int merged = c->c_future.ff_features | flags->cf_flags;
     c->c_future.ff_features = merged;
@@ -649,11 +645,16 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
                int optimize, PyArena *arena)
 {
     struct compiler c;
-    PyCodeObject *co = NULL;
     if (!compiler_init(&c)) {
         return NULL;
     }
 
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
+    if (!flags) {
+        flags = &local_flags;
+    }
+
+    PyCodeObject *co = NULL;
     if (!compiler_setup(&c, mod, filename, flags, optimize, arena)) {
         goto finally;
     }
