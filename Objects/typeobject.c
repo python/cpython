@@ -7685,7 +7685,16 @@ wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
                         "memoryview's buffer is not this object");
         return NULL;
     }
-    (*func)(self, &mview->view);
+    PyObject *release = PyUnicode_FromString("release");
+    if (release == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyObject_CallMethodNoArgs((PyObject *)mview, release);
+    Py_DECREF(release);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
     Py_RETURN_NONE;
 }
 
