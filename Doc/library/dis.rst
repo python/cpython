@@ -758,7 +758,7 @@ iterations of the loop.
    to construct a class.
 
 
-.. opcode:: BEFORE_WITH (delta)
+.. opcode:: BEFORE_WITH
 
    This opcode performs several operations before a with block starts.  First,
    it loads :meth:`~object.__exit__` from the context manager and pushes it onto
