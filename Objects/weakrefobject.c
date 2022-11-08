@@ -170,10 +170,7 @@ weakref_repr(PyWeakReference *self)
     }
 
     Py_INCREF(obj);
-    if (_PyObject_LookupAttr(obj, &_Py_ID(__name__), &name) < 0) {
-        Py_DECREF(obj);
-        return NULL;
-    }
+    name = _PyObject_LookupSpecial(obj, &_Py_ID(__name__));
     if (name == NULL || !PyUnicode_Check(name)) {
         repr = PyUnicode_FromFormat(
             "<weakref at %p; to '%s' at %p>",
