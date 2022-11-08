@@ -110,9 +110,9 @@ extern "C" {
         ._data = (LITERAL) \
     }
 #define INIT_STR(NAME, LITERAL) \
-    ._ ## NAME = _PyASCIIObject_INIT(LITERAL)
+    ._py_ ## NAME = _PyASCIIObject_INIT(LITERAL)
 #define INIT_ID(NAME) \
-    ._ ## NAME = _PyASCIIObject_INIT(#NAME)
+    ._py_ ## NAME = _PyASCIIObject_INIT(#NAME)
 #define _PyUnicode_LATIN1_INIT(LITERAL, UTF8) \
     { \
         ._latin1 = { \
