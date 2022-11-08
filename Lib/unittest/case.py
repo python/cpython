@@ -73,21 +73,11 @@ class _Outcome(object):
                 else:
                     _addError(self.result, test_case, sys.exc_info())
                 if self.debug:
-                    if isinstance(self.debug, str):
-                        # --pm=pdb : Run pdb or custom pm debugger inline and continue
-                        deb = _load_debugger(self.debug)
-                        traceback.print_exc()
-                        if isinstance(deb, type):
-                            deb = deb()
-                            deb.reset()
-                            deb.interaction(None, sys.exc_info()[2])
-                        else:
-                            deb.post_mortem(sys.exc_info()[2])
-                    else:
-                        # --debug : Terminate the test run with original exception
-                        if not subTest:
-                            self.pm_frame_holds.append(_AutoDelRunner(self.pm_cleanup))
-                        raise
+                    _handle_debug_exception(
+                        self.debug,
+                        sys.exc_info(),
+                        on_crash=not subTest and
+                        (lambda: self.pm_frame_holds.append(_AutoDelRunner(self.pm_cleanup))))
         else:
             if subTest and self.success:
                 self.result.addSubTest(test_case.test_case, test_case, None)
@@ -108,6 +98,23 @@ def _load_debugger(name):
     if fr:
         deb = getattr(deb, fr)
     return deb
+
+def _handle_debug_exception(debug, exc_info, on_crash=None):
+    if isinstance(debug, str):
+        # --pm=pdb : Run pdb or custom pm debugger inline and continue
+        deb = _load_debugger(debug)
+        traceback.print_exc()
+        if isinstance(deb, type):
+            deb = deb()
+            deb.reset()
+            deb.interaction(None, sys.exc_info()[2])
+        else:
+            deb.post_mortem(sys.exc_info()[2])
+    elif debug == True:
+        # --debug : Terminate the test run with original exception
+        if on_crash:
+            on_crash()
+        raise
 
 
 def _addSkip(result, test_case, reason):
