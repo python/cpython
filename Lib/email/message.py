@@ -320,8 +320,7 @@ class Message:
             return value
         elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
             warnings._deprecated(
-                'Support for decoding legacy uuencoded payloads in messages '
-                'is deprecated and scheduled for removal in Python {remove}',
+                'Decoding legacy uuencoded payloads in messages',
                 remove=(3, 14))
             try:
                 # We already issue our own warning here
