@@ -96,7 +96,8 @@
 #define DONT_USE_SEH
 #endif
 
-#include "pycore_runtime_init.h"
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_global_objects.h"  // _Py_ID()
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
