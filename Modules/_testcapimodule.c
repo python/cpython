@@ -3375,6 +3375,7 @@ slot_tp_del(PyObject *self)
     }
     /* Execute __del__ method, if any. */
     del = _PyType_Lookup(Py_TYPE(self), tp_del);
+    Py_DECREF(tp_del);
     if (del != NULL) {
         res = PyObject_CallOneArg(del, self);
         if (res == NULL)
@@ -3382,7 +3383,6 @@ slot_tp_del(PyObject *self)
         else
             Py_DECREF(res);
     }
-    Py_DECREF(tp_del);
 
     /* Restore the saved exception. */
     PyErr_Restore(error_type, error_value, error_traceback);
