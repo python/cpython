@@ -1368,7 +1368,8 @@ iterations of the loop.
 
     The ``where`` operand marks where the ``RESUME`` occurs:
 
-    * ``0`` The start of a function
+    * ``0`` The start of a function, which is neither a generator, coroutine
+      nor an async generator
     * ``1`` After a ``yield`` expression
     * ``2`` After a ``yield from`` expression
     * ``3`` After an ``await`` expression
@@ -1379,6 +1380,7 @@ iterations of the loop.
 .. opcode:: RETURN_GENERATOR
 
     Create a generator, coroutine, or async generator from the current frame.
+    Used as first opcode of in code object for the above mentioned callables.
     Clear the current frame and return the newly created generator.
 
     .. versionadded:: 3.11
