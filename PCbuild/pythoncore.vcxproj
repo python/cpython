@@ -193,7 +193,6 @@
     <ClInclude Include="..\Include\frameobject.h" />
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\pycore_abstract.h" />
-    <ClInclude Include="..\Include\internal\pycore_allocators.h" />
     <ClInclude Include="..\Include\internal\pycore_asdl.h" />
     <ClInclude Include="..\Include\internal\pycore_ast.h" />
     <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
@@ -240,6 +239,7 @@
     <ClInclude Include="..\Include\internal\pycore_pyhash.h" />
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
+    <ClInclude Include="..\Include\internal\pycore_pymem_allocators.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem_init.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
     <ClInclude Include="..\Include\internal\pycore_range.h" />

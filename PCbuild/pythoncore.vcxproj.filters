@@ -486,9 +486,6 @@
     <ClInclude Include="..\Include\internal\pycore_abstract.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_allocators.h">
-      <Filter>Include\internal</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_asdl.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -622,6 +619,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pymem.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pymem_allocators.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pymem_init.h">

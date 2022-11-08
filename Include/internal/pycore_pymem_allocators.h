@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_ALLOCATORS_H
-#define Py_INTERNAL_ALLOCATORS_H
+#ifndef Py_INTERNAL_PYMEM_ALLOCATORS_H
+#define Py_INTERNAL_PYMEM_ALLOCATORS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -102,4 +102,4 @@ void _PyMem_DebugFree(void *ctx, void *p);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_ALLOCATORS_H */
+#endif /* !Py_INTERNAL_PYMEM_ALLOCATORS_H */
