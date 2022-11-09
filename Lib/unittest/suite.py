@@ -124,11 +124,13 @@ class TestSuite(BaseTestSuite):
             try:
                 test(result)
             except:
-                def pm_teardown(self=self, result=result, topLevel=topLevel):
+                def pm_teardown():
                     # delayed post-mortem (--debug) teardown when frame is finally recycled
                     if topLevel:
-                        self._tearDownPreviousClass(None, result)
-                        self._handleModuleTearDown(result)
+                        try:
+                            self._tearDownPreviousClass(None, result)
+                        finally:
+                            self._handleModuleTearDown(result)
                         result._testRunEntered = False
                 frame_holds = case._AutoDelRunner(pm_teardown)  # noqa
                 raise
@@ -251,8 +253,8 @@ class TestSuite(BaseTestSuite):
             addSkip(error, str(exc_info[1]))
         else:
             result.addError(error, exc_info)
-        if getattr(result, '_debug', False):
-            case._handle_debug_exception(result._debug, exc_info)
+            if getattr(result, '_debug', False):
+                case._handle_debug_exception(result._debug, exc_info)
 
     def _handleModuleTearDown(self, result):
         previousModule = self._get_previous_module(result)

@@ -75,7 +75,6 @@ class _Outcome(object):
                 if self.debug:
                     _handle_debug_exception(
                         self.debug,
-                        sys.exc_info(),
                         on_crash=not subTest and
                         (lambda: self.pm_frame_holds.append(_AutoDelRunner(self.pm_cleanup))))
         else:
@@ -99,22 +98,30 @@ def _load_debugger(name):
         deb = getattr(deb, fr)
     return deb
 
-def _handle_debug_exception(debug, exc_info, on_crash=None):
+def _handle_debug_exception(debug, exc_info=None, on_crash=None):
     if isinstance(debug, str):
         # --pm=pdb : Run pdb or custom pm debugger inline and continue
         deb = _load_debugger(debug)
-        traceback.print_exc()
+        if exc_info is None:
+            exc_info = sys.exc_info()
+        traceback.print_exception(*exc_info)
         if isinstance(deb, type):
             deb = deb()
             deb.reset()
-            deb.interaction(None, sys.exc_info()[2])
+            deb.interaction(None, exc_info[2])
         else:
-            deb.post_mortem(sys.exc_info()[2])
+            deb.post_mortem(exc_info[2])
     elif debug == True:
         # --debug : Terminate the test run with original exception
         if on_crash:
             on_crash()
-        raise
+        if exc_info is None:
+            raise
+        else:
+            try:
+                raise exc_info[1]
+            finally:
+                del exc_info
 
 
 def _addSkip(result, test_case, reason):
@@ -648,9 +655,9 @@ class TestCase(object):
             else:
                 outcome.debug = debug
                 # delayed post-mortem (--debug) cleanup when frame is finally recycled
-                def pm_cleanup1(self=self):
+                def pm_cleanup1():
                     self.doCleanups()
-                def pm_cleanup2(self=self):
+                def pm_cleanup2():
                     self._callTearDown()
                     self.doCleanups()
                 outcome.pm_cleanup = pm_cleanup1
@@ -688,8 +695,8 @@ class TestCase(object):
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
 
-                if debug:
-                    outcome.pm_cleanup = lambda: None
+                # Not dropping pm_cleanup1 here - doCleanups() pops from
+                # a LIFO and its desirable to continue delayed upon pm crash
                 self.doCleanups()
 
                 if outcome.success:
