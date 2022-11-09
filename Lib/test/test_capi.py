@@ -46,6 +46,8 @@ from _testcapi import (
     _add_func_watcher,
     _allocate_too_many_func_watchers,
     _clear_func_watcher,
+    _set_func_defaults_via_capi,
+    _set_func_kwdefaults_via_capi,
 )
 
 import _testinternalcapi
@@ -1595,8 +1597,16 @@ class FuncEventsTest(unittest.TestCase):
             myfunc.__defaults__ = new_defaults
             self.assertIn((PYFUNC_EVENT_MODIFY_DEFAULTS, myfunc, new_defaults), events)
 
+            new_defaults = (456,)
+            _set_func_defaults_via_capi(myfunc, new_defaults)
+            self.assertIn((PYFUNC_EVENT_MODIFY_DEFAULTS, myfunc, new_defaults), events)
+
             new_kwdefaults = {"self": 123}
             myfunc.__kwdefaults__ = new_kwdefaults
+            self.assertIn((PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults), events)
+
+            new_kwdefaults = {"self": 456}
+            _set_func_kwdefaults_via_capi(myfunc, new_kwdefaults)
             self.assertIn((PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults), events)
 
             # Clear events reference to func

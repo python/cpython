@@ -190,10 +190,40 @@ allocate_too_many_watchers(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+set_defaults(PyObject *self, PyObject *args)
+{
+    PyObject *func = NULL;
+    PyObject *defaults = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &func, &defaults)) {
+        return NULL;
+    }
+    if (PyFunction_SetDefaults(func, defaults) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+set_kwdefaults(PyObject *self, PyObject *args)
+{
+    PyObject *func = NULL;
+    PyObject *kwdefaults = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &func, &kwdefaults)) {
+        return NULL;
+    }
+    if (PyFunction_SetKwDefaults(func, kwdefaults) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"_add_func_watcher", add_watcher, METH_O},
     {"_clear_func_watcher", clear_watcher, METH_O},
     {"_allocate_too_many_func_watchers", allocate_too_many_watchers, METH_NOARGS},
+    {"_set_func_defaults_via_capi", set_defaults, METH_VARARGS},
+    {"_set_func_kwdefaults_via_capi", set_kwdefaults, METH_VARARGS},
     {NULL},
 };
 
