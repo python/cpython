@@ -852,6 +852,7 @@ class Path(PurePath):
 
     def iterdir(self):
         """Yield path objects of the directory contents.
+
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
