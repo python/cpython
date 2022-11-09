@@ -522,6 +522,12 @@ Removed
 
 .. _aiosmtpd: https://pypi.org/project/aiosmtpd/
 
+* ``asynchat`` and ``asyncore`` have been removed
+  according to the schedule in :pep:`594`,
+  having been deprecated in Python 3.6.
+  Use :mod:`asyncio` instead.
+  (Contributed by Nikita Sobolev in :gh:`96580`.)
+
 * Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
   3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
   function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
@@ -729,6 +735,10 @@ New Features
   (Contributed by Carl Meyer in :gh:`91051`.)
 
 
+* Add :c:func:`PyFrame_GetVar` and :c:func:`PyFrame_GetVarString` functions to
+  get a frame variable by its name.
+  (Contributed by Victor Stinner in :gh:`91248`.)
+
 Porting to Python 3.12
 ----------------------
 
@@ -781,6 +791,11 @@ Porting to Python 3.12
   paths, like :class:`bytearray` and :class:`memoryview` types: only the exact
   :class:`bytes` type is accepted for bytes strings.
   (Contributed by Victor Stinner in :gh:`98393`.)
+
+* The :c:macro:`Py_CLEAR`, :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF`
+  macros now only evaluate their argument once. If the argument has side
+  effects, these side effects are no longer duplicated.
+  (Contributed by Victor Stinner in :gh:`98724`.)
 
 Deprecated
 ----------
