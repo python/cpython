@@ -1872,9 +1872,9 @@ are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
 <https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
 
    # Never do this -- insecure!
-   # An attacker can select all stocks by entering "' OR 1 = 1; --", or load any
-   # extension by entering "' OR load_extension('./any.so'); --" when extension
-   # loading is enabled.
+   # An attacker can select all stocks by entering "' OR 1 = 1; --",
+   # or load any extension by entering "' OR load_extension('./any.so'); --"
+   # if extension loading is enabled.
    symbol = input()
    cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
 
