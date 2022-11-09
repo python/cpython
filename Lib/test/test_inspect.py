@@ -4258,7 +4258,6 @@ class TestSignatureDefinitions(unittest.TestCase):
         with self.assertRaises(ValueError):
             inspect.signature(func)
 
-
     def test_base_class_have_text_signature(self):
         # see issue 43118
         from test.ann_module7 import BufferedReader
