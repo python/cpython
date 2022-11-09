@@ -40,7 +40,7 @@ TclError = _tkinter.TclError
 from tkinter.constants import *
 import re
 
-wantobjects = 1
+wantobjects = 2
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
@@ -1648,7 +1648,10 @@ class Misc:
         try:
             e.type = EventType(T)
         except ValueError:
-            e.type = T
+            try:
+                e.type = EventType(str(T))
+            except ValueError:
+                e.type = T
         try:
             e.widget = self._nametowidget(W)
         except KeyError:

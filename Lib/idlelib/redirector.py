@@ -107,7 +107,7 @@ class WidgetRedirector:
         to *args to accomplish that.  For an example, see colorizer.py.
 
         '''
-        m = self._operations.get(operation)
+        m = self._operations.get(str(operation))
         try:
             if m:
                 return m(*args)

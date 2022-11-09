@@ -2190,7 +2190,7 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
 
 /* Client data struct */
 typedef struct {
-    PyObject *self;
+    TkappObject *self;
     PyObject *func;
 } PythonCmd_ClientData;
 
@@ -2214,6 +2214,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     PyObject *args, *res;
     int i;
     Tcl_Obj *obj_res;
+    int objargs = data->self->wantobjects >= 2;
 
     ENTER_PYTHON
 
@@ -2222,7 +2223,8 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
         return PythonCmd_Error(interp);
 
     for (i = 0; i < (objc - 1); i++) {
-        PyObject *s = unicodeFromTclObj(objv[i + 1]);
+        PyObject *s = objargs ? FromObj(data->self, objv[i + 1])
+                              : unicodeFromTclObj(objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
             return PythonCmd_Error(interp);
@@ -2324,7 +2326,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
         return PyErr_NoMemory();
     Py_INCREF(self);
     Py_INCREF(func);
-    data->self = (PyObject *) self;
+    data->self = self;
     data->func = func;
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         Tcl_Condition cond = NULL;
@@ -2851,7 +2853,7 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects))
         return NULL;
     if (wantobjects == -1)
-        return PyBool_FromLong(((TkappObject*)self)->wantobjects);
+        return PyLong_FromLong(((TkappObject*)self)->wantobjects);
     ((TkappObject*)self)->wantobjects = wantobjects;
 
     Py_RETURN_NONE;
