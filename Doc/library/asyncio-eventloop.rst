@@ -877,9 +877,14 @@ TLS Upgrade
 
    Upgrade an existing transport-based connection to TLS.
 
-   Return a new transport instance, that the *protocol* must start using
-   immediately after the *await*.  The *transport* instance passed to
-   the *start_tls* method should never be used again.
+   Create a TLS coder/decoder instance and insert it between the *transport*
+   and the *protocol*. The coder/decoder implements both *transport*-facing
+   protocol and *protocol*-facing transport.
+
+   Return the created two-interface instance. After *await*, the *protocol*
+   must stop using the original *transport* and communicate with the returned
+   object only because the coder caches *protocol*-side data and sporadically
+   exchanges extra TLS session packets with *transport*.
 
    Parameters:
 
@@ -1253,7 +1258,13 @@ Executing code in thread or process pools
                   pool, cpu_bound)
               print('custom process pool', result)
 
-      asyncio.run(main())
+      if __name__ == '__main__':
+          asyncio.run(main())
+
+   Note that the entry point guard (``if __name__ == '__main__'``)
+   is required for option 3 due to the peculiarities of :mod:`multiprocessing`,
+   which is used by :class:`~concurrent.futures.ProcessPoolExecutor`.
+   See :ref:`Safe importing of main module <multiprocessing-safe-main-import>`.
 
    This method returns a :class:`asyncio.Future` object.
 

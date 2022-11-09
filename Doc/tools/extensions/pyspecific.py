@@ -37,10 +37,6 @@ except ImportError:
     from sphinx.domains.python import PyClassmember as PyMethod
     from sphinx.domains.python import PyModulelevel as PyFunction
 
-# Support for checking for suspicious markup
-
-import suspicious
-
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
@@ -686,7 +682,6 @@ def setup(app):
     app.add_directive('audit-event-table', AuditEventListDirective)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
-    app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')

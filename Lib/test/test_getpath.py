@@ -238,6 +238,29 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_no_dlls_win32(self):
+        "Test a layout on Windows with no DLLs directory."
+        ns = MockNTNamespace(
+            argv0=r"C:\Python\python.exe",
+            real_executable=r"C:\Python\python.exe",
+        )
+        ns.add_known_xfile(r"C:\Python\python.exe")
+        ns.add_known_file(r"C:\Python\Lib\os.py")
+        expected = dict(
+            executable=r"C:\Python\python.exe",
+            base_executable=r"C:\Python\python.exe",
+            prefix=r"C:\Python",
+            exec_prefix=r"C:\Python",
+            module_search_paths_set=1,
+            module_search_paths=[
+                r"C:\Python\python98.zip",
+                r"C:\Python\Lib",
+                r"C:\Python",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_normal_posix(self):
         "Test a 'standard' install layout on *nix"
         ns = MockPosixNamespace(

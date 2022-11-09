@@ -477,6 +477,9 @@
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_warnings.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -556,6 +559,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_global_objects.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_global_objects_fini_generated.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_hamt.h">
@@ -923,9 +929,6 @@
     <ClCompile Include="..\Objects\codeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\perf_trampoline.c">
-      <Filter>Objects</Filter>
-    </ClCompile>
     <ClCompile Include="..\Objects\complexobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
@@ -1125,6 +1128,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\perf_trampoline.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\preconfig.c">

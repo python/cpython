@@ -150,7 +150,22 @@ validate_and_copy_tuple(PyObject *tup)
     return newtuple;
 }
 
+static int
+init_co_cached(PyCodeObject *self) {
+    if (self->_co_cached == NULL) {
+        self->_co_cached = PyMem_New(_PyCoCached, 1);
+        if (self->_co_cached == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        self->_co_cached->_co_code = NULL;
+        self->_co_cached->_co_cellvars = NULL;
+        self->_co_cached->_co_freevars = NULL;
+        self->_co_cached->_co_varnames = NULL;
+    }
+    return 0;
 
+}
 /******************
  * _PyCode_New()
  ******************/
@@ -286,6 +301,8 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
     return 0;
 }
 
+extern void _PyCode_Quicken(PyCodeObject *code);
+
 static void
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
@@ -336,9 +353,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
-    co->_co_code = NULL;
+    co->_co_cached = NULL;
 
-    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     co->_co_linearray_entry_size = 0;
     co->_co_linearray = NULL;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
@@ -349,6 +365,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
+    _PyCode_Quicken(co);
 }
 
 static int
@@ -1384,10 +1401,31 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
  * other PyCodeObject accessor functions
  ******************/
 
+static PyObject *
+get_cached_locals(PyCodeObject *co, PyObject **cached_field,
+    _PyLocals_Kind kind, int num)
+{
+    assert(cached_field != NULL);
+    assert(co->_co_cached != NULL);
+    if (*cached_field != NULL) {
+        return Py_NewRef(*cached_field);
+    }
+    assert(*cached_field == NULL);
+    PyObject *varnames = get_localsplus_names(co, kind, num);
+    if (varnames == NULL) {
+        return NULL;
+    }
+    *cached_field = Py_NewRef(varnames);
+    return varnames;
+}
+
 PyObject *
 _PyCode_GetVarnames(PyCodeObject *co)
 {
-    return get_localsplus_names(co, CO_FAST_LOCAL, co->co_nlocals);
+    if (init_co_cached(co)) {
+        return NULL;
+    }
+    return get_cached_locals(co, &co->_co_cached->_co_varnames, CO_FAST_LOCAL, co->co_nlocals);
 }
 
 PyObject *
@@ -1399,7 +1437,10 @@ PyCode_GetVarnames(PyCodeObject *code)
 PyObject *
 _PyCode_GetCellvars(PyCodeObject *co)
 {
-    return get_localsplus_names(co, CO_FAST_CELL, co->co_ncellvars);
+    if (init_co_cached(co)) {
+        return NULL;
+    }
+    return get_cached_locals(co, &co->_co_cached->_co_cellvars, CO_FAST_CELL, co->co_ncellvars);
 }
 
 PyObject *
@@ -1411,7 +1452,10 @@ PyCode_GetCellvars(PyCodeObject *code)
 PyObject *
 _PyCode_GetFreevars(PyCodeObject *co)
 {
-    return get_localsplus_names(co, CO_FAST_FREE, co->co_nfreevars);
+    if (init_co_cached(co)) {
+        return NULL;
+    }
+    return get_cached_locals(co, &co->_co_cached->_co_freevars, CO_FAST_FREE, co->co_nfreevars);
 }
 
 PyObject *
@@ -1437,8 +1481,11 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 PyObject *
 _PyCode_GetCode(PyCodeObject *co)
 {
-    if (co->_co_code != NULL) {
-        return Py_NewRef(co->_co_code);
+    if (init_co_cached(co)) {
+        return NULL;
+    }
+    if (co->_co_cached->_co_code != NULL) {
+        return Py_NewRef(co->_co_cached->_co_code);
     }
     PyObject *code = PyBytes_FromStringAndSize((const char *)_PyCode_CODE(co),
                                                _PyCode_NBYTES(co));
@@ -1446,8 +1493,8 @@ _PyCode_GetCode(PyCodeObject *co)
         return NULL;
     }
     deopt_code((_Py_CODEUNIT *)PyBytes_AS_STRING(code), Py_SIZE(co));
-    assert(co->_co_code == NULL);
-    co->_co_code = Py_NewRef(code);
+    assert(co->_co_cached->_co_code == NULL);
+    co->_co_cached->_co_code = Py_NewRef(code);
     return code;
 }
 
@@ -1606,15 +1653,18 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_qualname);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
-    Py_XDECREF(co->_co_code);
+    if (co->_co_cached != NULL) {
+        Py_XDECREF(co->_co_cached->_co_code);
+        Py_XDECREF(co->_co_cached->_co_cellvars);
+        Py_XDECREF(co->_co_cached->_co_freevars);
+        Py_XDECREF(co->_co_cached->_co_varnames);
+        PyMem_Free(co->_co_cached);
+    }
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
     if (co->_co_linearray) {
         PyMem_Free(co->_co_linearray);
-    }
-    if (co->co_warmup == 0) {
-        _Py_QuickenedCount--;
     }
     PyObject_Free(co);
 }
@@ -2173,15 +2223,18 @@ _PyCode_ConstantKey(PyObject *op)
 }
 
 void
-_PyStaticCode_Dealloc(PyCodeObject *co)
+_PyStaticCode_Fini(PyCodeObject *co)
 {
-    if (co->co_warmup == 0) {
-         _Py_QuickenedCount--;
-    }
     deopt_code(_PyCode_CODE(co), Py_SIZE(co));
-    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     PyMem_Free(co->co_extra);
-    Py_CLEAR(co->_co_code);
+    if (co->_co_cached != NULL) {
+        Py_CLEAR(co->_co_cached->_co_code);
+        Py_CLEAR(co->_co_cached->_co_cellvars);
+        Py_CLEAR(co->_co_cached->_co_freevars);
+        Py_CLEAR(co->_co_cached->_co_varnames);
+        PyMem_Free(co->_co_cached);
+        co->_co_cached = NULL;
+    }
     co->co_extra = NULL;
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)co);
@@ -2194,7 +2247,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
 }
 
 int
-_PyStaticCode_InternStrings(PyCodeObject *co)
+_PyStaticCode_Init(PyCodeObject *co)
 {
     int res = intern_strings(co->co_names);
     if (res < 0) {
@@ -2208,5 +2261,6 @@ _PyStaticCode_InternStrings(PyCodeObject *co)
     if (res < 0) {
         return -1;
     }
+    _PyCode_Quicken(co);
     return 0;
 }

@@ -241,6 +241,10 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequal(0, 'a' * 10, 'count', 'a\u0102')
         self.checkequal(0, 'a' * 10, 'count', 'a\U00100304')
         self.checkequal(0, '\u0102' * 10, 'count', '\u0102\U00100304')
+        # test subclass
+        class MyStr(str):
+            pass
+        self.checkequal(3, MyStr('aaa'), 'count', 'a')
 
     def test_find(self):
         string_tests.CommonTest.test_find(self)
@@ -256,6 +260,20 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(0,  'abcdefghiabc', 'find', 'abc')
         self.checkequalnofix(9,  'abcdefghiabc', 'find', 'abc', 1)
         self.checkequalnofix(-1, 'abcdefghiabc', 'find', 'def', 4)
+
+        # test utf-8 non-ascii char
+        self.checkequal(0, 'тест', 'find', 'т')
+        self.checkequal(3, 'тест', 'find', 'т', 1)
+        self.checkequal(-1, 'тест', 'find', 'т', 1, 3)
+        self.checkequal(-1, 'тест', 'find', 'e')  # english `e`
+        # test utf-8 non-ascii slice
+        self.checkequal(1, 'тест тест', 'find', 'ес')
+        self.checkequal(1, 'тест тест', 'find', 'ес', 1)
+        self.checkequal(1, 'тест тест', 'find', 'ес', 1, 3)
+        self.checkequal(6, 'тест тест', 'find', 'ес', 2)
+        self.checkequal(-1, 'тест тест', 'find', 'ес', 6, 7)
+        self.checkequal(-1, 'тест тест', 'find', 'ес', 7)
+        self.checkequal(-1, 'тест тест', 'find', 'ec')  # english `ec`
 
         self.assertRaises(TypeError, 'hello'.find)
         self.assertRaises(TypeError, 'hello'.find, 42)
@@ -287,6 +305,19 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(9,   'abcdefghiabc', 'rfind', 'abc')
         self.checkequalnofix(12,  'abcdefghiabc', 'rfind', '')
         self.checkequalnofix(12, 'abcdefghiabc', 'rfind',  '')
+        # test utf-8 non-ascii char
+        self.checkequal(1, 'тест', 'rfind', 'е')
+        self.checkequal(1, 'тест', 'rfind', 'е', 1)
+        self.checkequal(-1, 'тест', 'rfind', 'е', 2)
+        self.checkequal(-1, 'тест', 'rfind', 'e')  # english `e`
+        # test utf-8 non-ascii slice
+        self.checkequal(6, 'тест тест', 'rfind', 'ес')
+        self.checkequal(6, 'тест тест', 'rfind', 'ес', 1)
+        self.checkequal(1, 'тест тест', 'rfind', 'ес', 1, 3)
+        self.checkequal(6, 'тест тест', 'rfind', 'ес', 2)
+        self.checkequal(-1, 'тест тест', 'rfind', 'ес', 6, 7)
+        self.checkequal(-1, 'тест тест', 'rfind', 'ес', 7)
+        self.checkequal(-1, 'тест тест', 'rfind', 'ec')  # english `ec`
         # test mixed kinds
         self.checkequal(0, 'a' + '\u0102' * 100, 'rfind', 'a')
         self.checkequal(0, 'a' + '\U00100304' * 100, 'rfind', 'a')
@@ -441,10 +472,10 @@ class UnicodeTest(string_tests.CommonTest,
     def test_rsplit(self):
         string_tests.CommonTest.test_rsplit(self)
         # test mixed kinds
-        for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
+        for left, right in ('ba', 'юё', '\u0101\u0100', '\U00010301\U00010300'):
             left *= 9
             right *= 9
-            for delim in ('c', '\u0102', '\U00010302'):
+            for delim in ('c', 'ы', '\u0102', '\U00010302'):
                 self.checkequal([left + right],
                                 left + right, 'rsplit', delim)
                 self.checkequal([left, right],
@@ -453,6 +484,10 @@ class UnicodeTest(string_tests.CommonTest,
                                 left + right, 'rsplit', delim * 2)
                 self.checkequal([left, right],
                                 left + delim * 2 + right, 'rsplit', delim *2)
+
+            # Check `None` as well:
+            self.checkequal([left + right],
+                             left + right, 'rsplit', None)
 
     def test_partition(self):
         string_tests.MixinStrUnicodeUserStringTest.test_partition(self)
@@ -3001,6 +3036,12 @@ class CAPITest(unittest.TestCase):
             for ch in uni:
                 self.assertEqual(unicode_count(uni, ch, 0, len(uni)), 1)
                 self.assertEqual(unicode_count(st, ch, 0, len(st)), 0)
+
+        # subclasses should still work
+        class MyStr(str):
+            pass
+
+        self.assertEqual(unicode_count(MyStr('aab'), 'a', 0, 3), 2)
 
     # Test PyUnicode_FindChar()
     @support.cpython_only

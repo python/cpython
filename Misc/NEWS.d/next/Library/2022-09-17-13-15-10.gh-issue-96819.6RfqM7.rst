@@ -1,1 +1,0 @@
-Fixed check in :mod:`multiprocessing.resource_tracker` that guarantees that the length of a write to a pipe is not greater than ``PIPE_BUF``.

@@ -1,1 +1,0 @@
-Fix race condition in :mod:`asyncio` where :meth:`~asyncio.SubprocessProtocol.process_exited` called before the :meth:`~asyncio.SubprocessProtocol.pipe_data_received` leading to inconsistent output. Patch by Kumar Aditya.
