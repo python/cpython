@@ -489,11 +489,11 @@ _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
         if (size < 0)
             size = 0;
     }
+    Py_ssize_t prev_pos = self->pos;
+    PyObject* result = read_bytes(self, size);
+    self->pos = prev_pos;
 
-    assert(self->buf != NULL);
-    assert(size <= self->string_size);
-    output = PyBytes_AS_STRING(self->buf) + self->pos;
-    return PyBytes_FromStringAndSize(output, size);
+    return result;
 }
 
 
