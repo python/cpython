@@ -1245,6 +1245,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       **Inheritance:**
 
       This flag is not inherited.
+      However, subclasses will not be instantiable unless they provide a
+      non-NULL :c:member:`~PyTypeObject.tp_new` (which is only possible
+      via the C API).
+
+      .. note::
+
+         To disallow instantiating a class directly but allow instantiating
+         its subclasses (e.g. for an :term:`abstract base class`),
+         do not use this flag.
+         Instead, make :c:member:`~PyTypeObject.tp_new` only succeed for
+         subclasses.
 
       .. versionadded:: 3.10
 

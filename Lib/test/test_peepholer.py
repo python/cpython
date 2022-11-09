@@ -815,12 +815,44 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a73")
         self.assertInBytecode(f, 'LOAD_FAST', "a73")
 
-    def test_setting_lineno_adds_check(self):
-        code = textwrap.dedent("""\
+    def test_setting_lineno_no_undefined(self):
+        code = textwrap.dedent(f"""\
             def f():
-                x = 2
-                L = 3
-                L = 4
+                x = y = 2
+                if not x:
+                    return 4
+                for i in range(55):
+                    x + 6
+                L = 7
+                L = 8
+                L = 9
+                L = 10
+        """)
+        ns = {}
+        exec(code, ns)
+        f = ns['f']
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 9:
+                frame.f_lineno = 3
+                sys.settrace(None)
+                return None
+            return trace
+        sys.settrace(trace)
+        result = f()
+        self.assertIsNone(result)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
+
+    def test_setting_lineno_one_undefined(self):
+        code = textwrap.dedent(f"""\
+            def f():
+                x = y = 2
+                if not x:
+                    return 4
                 for i in range(55):
                     x + 6
                 del x
@@ -832,15 +864,56 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         exec(code, ns)
         f = ns['f']
         self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
         def trace(frame, event, arg):
             if event == 'line' and frame.f_lineno == 9:
-                frame.f_lineno = 2
+                frame.f_lineno = 3
                 sys.settrace(None)
                 return None
             return trace
-        sys.settrace(trace)
-        f()
-        self.assertNotInBytecode(f, "LOAD_FAST")
+        e = r"assigning None to 1 unbound local"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            result = f()
+        self.assertEqual(result, 4)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
+
+    def test_setting_lineno_two_undefined(self):
+        code = textwrap.dedent(f"""\
+            def f():
+                x = y = 2
+                if not x:
+                    return 4
+                for i in range(55):
+                    x + 6
+                del x, y
+                L = 8
+                L = 9
+                L = 10
+        """)
+        ns = {}
+        exec(code, ns)
+        f = ns['f']
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        co_code = f.__code__.co_code
+        def trace(frame, event, arg):
+            if event == 'line' and frame.f_lineno == 9:
+                frame.f_lineno = 3
+                sys.settrace(None)
+                return None
+            return trace
+        e = r"assigning None to 2 unbound locals"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            result = f()
+        self.assertEqual(result, 4)
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
 
     def make_function_with_no_checks(self):
         code = textwrap.dedent("""\
@@ -860,18 +933,22 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         return f
 
-    def test_deleting_local_adds_check(self):
+    def test_deleting_local_warns_and_assigns_none(self):
         f = self.make_function_with_no_checks()
+        co_code = f.__code__.co_code
         def trace(frame, event, arg):
             if event == 'line' and frame.f_lineno == 4:
                 del frame.f_locals["x"]
                 sys.settrace(None)
                 return None
             return trace
-        sys.settrace(trace)
-        f()
-        self.assertNotInBytecode(f, "LOAD_FAST")
-        self.assertInBytecode(f, "LOAD_FAST_CHECK")
+        e = r"assigning None to unbound local 'x'"
+        with self.assertWarnsRegex(RuntimeWarning, e):
+            sys.settrace(trace)
+            f()
+        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
+        self.assertEqual(f.__code__.co_code, co_code)
 
     def test_modifying_local_does_not_add_check(self):
         f = self.make_function_with_no_checks()
