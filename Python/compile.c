@@ -9736,7 +9736,7 @@ static int
 remove_unused_consts(basicblock *entryblock, PyObject *consts)
 {
     assert(PyList_CheckExact(consts));
-    Py_ssize_t nconsts = PyList_Size(consts);
+    Py_ssize_t nconsts = PyList_GET_SIZE(consts);
     if (nconsts == 0) {
         return 0;  /* nothing to do */
     }
