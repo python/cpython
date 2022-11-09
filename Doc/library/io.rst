@@ -728,6 +728,12 @@ than raw I/O does.
 
       Return :class:`bytes` containing the entire contents of the buffer.
 
+   .. method:: peek(size=0, /)
+
+      .. versionadded:: 3.12
+
+      Return bytes from the current position onwards but without advancing the
+      position. The number of bytes returned may be less or more than requested.
 
    .. method:: read1(size=-1, /)
 
