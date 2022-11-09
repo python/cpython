@@ -7,8 +7,8 @@
 static PyObject *pyfunc_watchers[NUM_WATCHERS];
 static int watcher_ids[NUM_WATCHERS] = {-1, -1};
 
-static
-PyObject *get_id(PyObject *obj)
+static PyObject *
+get_id(PyObject *obj)
 {
     PyObject *builtins = PyEval_GetBuiltins();  // borrowed ref.
     if (builtins == NULL) {
