@@ -1891,6 +1891,9 @@ static int test_unicode_id_init(void)
     // bpo-42882: Test that _PyUnicode_FromId() works
     // when Python is initialized multiples times.
 
+    // This is equivalent to `_Py_IDENTIFIER(test_unicode_id_init)`
+    // but since `_Py_IDENTIFIER` is disabled when `Py_BUILD_CORE`
+    // is defined, it is manually expanded here.
     static _Py_Identifier PyId_test_unicode_id_init = {
         .string = "test_unicode_id_init",
         .index = -1,
