@@ -1,1 +1,1 @@
-Changed the str.count() documentation for making it understandable
+Changed the str.count() documentation for making it understandable and added a example.
