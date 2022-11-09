@@ -25,7 +25,6 @@ import textwrap
 import json
 import pathlib
 from test.support.os_helper import FakePath
-from test.support import skip_if_sanitizer
 
 try:
     import _testcapi
