@@ -1,0 +1,1 @@
+Fix an issue where extension modules could inadvertently trigger an assertion error in typeobject.c by clearing the Py_TPFLAGS_VALID_VERSION_TAG tp_flag without clearing the tp_version_tag field. (Extension modules should use PyType_Modified() instead, however.)
