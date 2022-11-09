@@ -783,6 +783,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         except json.JSONDecodeError:
             self.fail(f"fail to decode stdout: {out!r}")
 
+        # build_prefix depends on if Python was installed, ignore it here
+        configs['config'].pop('build_prefix', None)
+
         self.check_pre_config(configs, expected_preconfig)
         self.check_config(configs, expected_config)
         self.check_global_config(configs)
