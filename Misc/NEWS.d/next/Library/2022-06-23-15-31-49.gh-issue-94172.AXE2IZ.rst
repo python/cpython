@@ -1,0 +1,5 @@
+Remove the *keyfile*, *certfile* and *check_hostname* parameters, deprecated
+since Python 3.6, in modules: :mod:`ftplib`, :mod:`http.client`,
+:mod:`imaplib`, :mod:`poplib` and :mod:`smtplib`. Use the *context*
+parameter (*ssl_context* in :mod:`imaplib`) instead. Patch by Victor
+Stinner.

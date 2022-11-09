@@ -825,8 +825,8 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             &preexec_fn, &allow_vfork))
         return NULL;
 
-    if ((preexec_fn != Py_None) &&
-            (PyInterpreterState_Get() != PyInterpreterState_Main())) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if ((preexec_fn != Py_None) && (interp != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");
         return NULL;
@@ -838,13 +838,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     }
     if (_sanity_check_python_fd_sequence(py_fds_to_keep)) {
         PyErr_SetString(PyExc_ValueError, "bad value(s) in fds_to_keep");
-        return NULL;
-    }
-
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_SUBPROCESS)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "subprocess not supported for isolated subinterpreters");
         return NULL;
     }
 

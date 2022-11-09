@@ -1,7 +1,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 // windows.h must be included before pycore internal headers
@@ -9,7 +8,9 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_call.h"            // _PyObject_CallNoArgs()
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_global_objects.h"  // _Py_ID()
 
 #include <stdbool.h>
 
@@ -125,9 +126,7 @@ static void
 TryAddRef(StgDictObject *dict, CDataObject *obj)
 {
     IUnknown *punk;
-    _Py_IDENTIFIER(_needs_com_addref_);
-
-    int r = _PyDict_ContainsId((PyObject *)dict, &PyId__needs_com_addref_);
+    int r = PyDict_Contains((PyObject *)dict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
         if (r < 0) {
             PrintError("getting _needs_com_addref_");

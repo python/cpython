@@ -1,0 +1,2 @@
+Now :mod:`_pyio` is consistent with :mod:`_io` in raising ``ValueError``
+when executing methods over closed buffers.

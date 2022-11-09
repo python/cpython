@@ -478,9 +478,10 @@ Module constants
 
    .. note::
 
-      The :mod:`!sqlite3` module supports both ``qmark`` and ``numeric`` DB-API
-      parameter styles, because that is what the underlying SQLite library
-      supports. However, the DB-API does not allow multiple values for
+      The :mod:`!sqlite3` module supports ``qmark``, ``numeric``,
+      and ``named`` DB-API parameter styles,
+      because that is what the underlying SQLite library supports.
+      However, the DB-API does not allow multiple values for
       the ``paramstyle`` attribute.
 
 .. data:: sqlite_version
@@ -1833,8 +1834,13 @@ The deprecated default adapters and converters consist of:
 Command-line interface
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :mod:`!sqlite3` module can be invoked as a script
+The :mod:`!sqlite3` module can be invoked as a script,
+using the interpreter's :option:`-m` switch,
 in order to provide a simple SQLite shell.
+The argument signature is as follows::
+
+   python -m sqlite3 [-h] [-v] [filename] [sql]
+
 Type ``.quit`` or CTRL-D to exit the shell.
 
 .. program:: python -m sqlite3 [-h] [-v] [filename] [sql]

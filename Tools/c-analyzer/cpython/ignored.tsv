@@ -501,6 +501,5 @@ Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compare_masks	-
-Python/specialize.c	-	_PyOpcode_Adaptive	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	whatstrings	-

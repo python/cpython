@@ -10,6 +10,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
+#include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_list.h"          // _PyList_Fini()
@@ -615,14 +616,20 @@ static void
 init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
+
     if (config->allow_fork) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
     }
-    if (config->allow_subprocess) {
-        interp->feature_flags |= Py_RTFLAGS_SUBPROCESS;
+    if (config->allow_exec) {
+        interp->feature_flags |= Py_RTFLAGS_EXEC;
     }
+    // Note that fork+exec is always allowed.
+
     if (config->allow_threads) {
         interp->feature_flags |= Py_RTFLAGS_THREADS;
+    }
+    if (config->allow_daemon_threads) {
+        interp->feature_flags |= Py_RTFLAGS_DAEMON_THREADS;
     }
 }
 
@@ -1313,6 +1320,7 @@ Py_InitializeEx(int install_sigs)
     config.install_signal_handlers = install_sigs;
 
     status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }

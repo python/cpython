@@ -8,7 +8,6 @@
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_opcode.h"        // _PyOpcode_Deopt
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
@@ -210,7 +209,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     frame->previous = tstate->cframe->current_frame;
 
-    gen->gi_exc_state.previous_item = tstate->exc_info;
+    _PyErr_StackItem *prev_exc_info = tstate->exc_info;
+    gen->gi_exc_state.previous_item = prev_exc_info;
     tstate->exc_info = &gen->gi_exc_state;
 
     if (exc) {
@@ -221,12 +221,11 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     gen->gi_frame_state = FRAME_EXECUTING;
     EVAL_CALL_STAT_INC(EVAL_CALL_GENERATOR);
     result = _PyEval_EvalFrame(tstate, frame, exc);
+    assert(tstate->exc_info == prev_exc_info);
+    assert(gen->gi_exc_state.previous_item == NULL);
     if (gen->gi_frame_state == FRAME_EXECUTING) {
         gen->gi_frame_state = FRAME_COMPLETED;
     }
-    tstate->exc_info = gen->gi_exc_state.previous_item;
-    gen->gi_exc_state.previous_item = NULL;
-
     assert(tstate->cframe->current_frame == frame->previous);
     /* Don't keep the reference to previous any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
@@ -247,25 +246,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         }
     }
     else {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
-            const char *msg = "generator raised StopIteration";
-            if (PyCoro_CheckExact(gen)) {
-                msg = "coroutine raised StopIteration";
-            }
-            else if (PyAsyncGen_CheckExact(gen)) {
-                msg = "async generator raised StopIteration";
-            }
-            _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
-        }
-        else if (PyAsyncGen_CheckExact(gen) &&
-                PyErr_ExceptionMatches(PyExc_StopAsyncIteration))
-        {
-            /* code in `gen` raised a StopAsyncIteration error:
-               raise a RuntimeError.
-            */
-            const char *msg = "async generator raised StopAsyncIteration";
-            _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
-        }
+        assert(!PyErr_ExceptionMatches(PyExc_StopIteration));
+        assert(!PyAsyncGen_CheckExact(gen) ||
+            !PyErr_ExceptionMatches(PyExc_StopAsyncIteration));
     }
 
     /* generator can't be rerun, so release the frame */
@@ -364,7 +347,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
         _Py_CODEUNIT next = frame->prev_instr[1];
-        if (_PyOpcode_Deopt[_Py_OPCODE(next)] != RESUME || _Py_OPARG(next) < 2)
+        if (_Py_OPCODE(next) != RESUME || _Py_OPARG(next) < 2)
         {
             /* Not in a yield from */
             return NULL;
