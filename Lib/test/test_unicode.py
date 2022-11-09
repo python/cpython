@@ -261,6 +261,20 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(9,  'abcdefghiabc', 'find', 'abc', 1)
         self.checkequalnofix(-1, 'abcdefghiabc', 'find', 'def', 4)
 
+        # test utf-8 non-ascii char
+        self.checkequal(0, 'тест', 'find', 'т')
+        self.checkequal(3, 'тест', 'find', 'т', 1)
+        self.checkequal(-1, 'тест', 'find', 'т', 1, 3)
+        self.checkequal(-1, 'тест', 'find', 'e')  # english `e`
+        # test utf-8 non-ascii slice
+        self.checkequal(1, 'тест тест', 'find', 'ес')
+        self.checkequal(1, 'тест тест', 'find', 'ес', 1)
+        self.checkequal(1, 'тест тест', 'find', 'ес', 1, 3)
+        self.checkequal(6, 'тест тест', 'find', 'ес', 2)
+        self.checkequal(-1, 'тест тест', 'find', 'ес', 6, 7)
+        self.checkequal(-1, 'тест тест', 'find', 'ес', 7)
+        self.checkequal(-1, 'тест тест', 'find', 'ec')  # english `ec`
+
         self.assertRaises(TypeError, 'hello'.find)
         self.assertRaises(TypeError, 'hello'.find, 42)
         # test mixed kinds
@@ -291,6 +305,19 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(9,   'abcdefghiabc', 'rfind', 'abc')
         self.checkequalnofix(12,  'abcdefghiabc', 'rfind', '')
         self.checkequalnofix(12, 'abcdefghiabc', 'rfind',  '')
+        # test utf-8 non-ascii char
+        self.checkequal(1, 'тест', 'rfind', 'е')
+        self.checkequal(1, 'тест', 'rfind', 'е', 1)
+        self.checkequal(-1, 'тест', 'rfind', 'е', 2)
+        self.checkequal(-1, 'тест', 'rfind', 'e')  # english `e`
+        # test utf-8 non-ascii slice
+        self.checkequal(6, 'тест тест', 'rfind', 'ес')
+        self.checkequal(6, 'тест тест', 'rfind', 'ес', 1)
+        self.checkequal(1, 'тест тест', 'rfind', 'ес', 1, 3)
+        self.checkequal(6, 'тест тест', 'rfind', 'ес', 2)
+        self.checkequal(-1, 'тест тест', 'rfind', 'ес', 6, 7)
+        self.checkequal(-1, 'тест тест', 'rfind', 'ес', 7)
+        self.checkequal(-1, 'тест тест', 'rfind', 'ec')  # english `ec`
         # test mixed kinds
         self.checkequal(0, 'a' + '\u0102' * 100, 'rfind', 'a')
         self.checkequal(0, 'a' + '\U00100304' * 100, 'rfind', 'a')

@@ -5773,6 +5773,13 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
     EXECV_CHAR **argvlist;
     Py_ssize_t argc;
 
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_EXEC)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "exec not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     /* execv has two arguments: (path, argv), where
        argv is a list or tuple of strings. */
 
@@ -5838,6 +5845,13 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     EXECV_CHAR **argvlist = NULL;
     EXECV_CHAR **envlist;
     Py_ssize_t argc, envc;
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_EXEC)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "exec not supported for isolated subinterpreters");
+        return NULL;
+    }
 
     /* execve has three arguments: (path, argv, env), where
        argv is a list or tuple of strings and env is a dictionary
@@ -6760,7 +6774,7 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->config._isolated_interpreter) {
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_FORK)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "fork not supported for isolated subinterpreters");
         return NULL;
@@ -8577,6 +8591,64 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
         return posix_error();
     }
     return PyLong_FromLong(fd);
+}
+#endif
+
+
+#ifdef HAVE_SETNS
+/*[clinic input]
+os.setns
+  fd: fildes
+    A file descriptor to a namespace.
+  nstype: int = 0
+    Type of namespace.
+
+Move the calling thread into different namespaces.
+[clinic start generated code]*/
+
+static PyObject *
+os_setns_impl(PyObject *module, int fd, int nstype)
+/*[clinic end generated code: output=5dbd055bfb66ecd0 input=42787871226bf3ee]*/
+{
+    int res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = setns(fd, nstype);
+    Py_END_ALLOW_THREADS
+
+    if (res != 0) {
+        return posix_error();
+    }
+
+    Py_RETURN_NONE;
+}
+#endif
+
+
+#ifdef HAVE_UNSHARE
+/*[clinic input]
+os.unshare
+  flags: int
+    Namespaces to be unshared.
+
+Disassociate parts of a process (or thread) execution context.
+[clinic start generated code]*/
+
+static PyObject *
+os_unshare_impl(PyObject *module, int flags)
+/*[clinic end generated code: output=1b3177906dd237ee input=9e065db3232b8b1b]*/
+{
+    int res;
+
+    Py_BEGIN_ALLOW_THREADS
+    res = unshare(flags);
+    Py_END_ALLOW_THREADS
+
+    if (res != 0) {
+        return posix_error();
+    }
+    
+    Py_RETURN_NONE;
 }
 #endif
 
@@ -14945,6 +15017,8 @@ static PyMethodDef posix_methods[] = {
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
     OS_WAITSTATUS_TO_EXITCODE_METHODDEF
+    OS_SETNS_METHODDEF
+    OS_UNSHARE_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -15390,6 +15464,53 @@ all_ins(PyObject *m)
 #ifdef SCHED_FX
     if (PyModule_AddIntConstant(m, "SCHED_FX", SCHED_FSS)) return -1;
 #endif
+
+/* constants for namespaces */
+#if defined(HAVE_SETNS) || defined(HAVE_UNSHARE)
+#ifdef CLONE_FS
+    if (PyModule_AddIntMacro(m, CLONE_FS)) return -1;
+#endif
+#ifdef CLONE_FILES
+    if (PyModule_AddIntMacro(m, CLONE_FILES)) return -1;
+#endif
+#ifdef CLONE_NEWNS
+    if (PyModule_AddIntMacro(m, CLONE_NEWNS)) return -1;
+#endif
+#ifdef CLONE_NEWCGROUP
+    if (PyModule_AddIntMacro(m, CLONE_NEWCGROUP)) return -1;
+#endif
+#ifdef CLONE_NEWUTS
+    if (PyModule_AddIntMacro(m, CLONE_NEWUTS)) return -1;
+#endif
+#ifdef CLONE_NEWIPC
+    if (PyModule_AddIntMacro(m, CLONE_NEWIPC)) return -1;
+#endif
+#ifdef CLONE_NEWUSER
+    if (PyModule_AddIntMacro(m, CLONE_NEWUSER)) return -1;
+#endif
+#ifdef CLONE_NEWPID
+    if (PyModule_AddIntMacro(m, CLONE_NEWPID)) return -1;
+#endif
+#ifdef CLONE_NEWNET
+    if (PyModule_AddIntMacro(m, CLONE_NEWNET)) return -1;
+#endif
+#ifdef CLONE_NEWTIME
+    if (PyModule_AddIntMacro(m, CLONE_NEWTIME)) return -1;
+#endif
+#ifdef CLONE_SYSVSEM
+    if (PyModule_AddIntMacro(m, CLONE_SYSVSEM)) return -1;
+#endif
+#ifdef CLONE_THREAD
+    if (PyModule_AddIntMacro(m, CLONE_THREAD)) return -1;
+#endif
+#ifdef CLONE_SIGHAND
+    if (PyModule_AddIntMacro(m, CLONE_SIGHAND)) return -1;
+#endif
+#ifdef CLONE_VM
+    if (PyModule_AddIntMacro(m, CLONE_VM)) return -1;
+#endif
+#endif
+
 #endif
 
 #ifdef USE_XATTRS

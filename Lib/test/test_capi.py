@@ -2,7 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 import _thread
 import importlib.machinery
 import importlib.util
@@ -403,6 +403,98 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_keys, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
+
+    def test_mapping_has_key(self):
+        dct = {'a': 1}
+        self.assertTrue(_testcapi.mapping_has_key(dct, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct, 'b'))
+
+        class SubDict(dict):
+            pass
+
+        dct2 = SubDict({'a': 1})
+        self.assertTrue(_testcapi.mapping_has_key(dct2, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct2, 'b'))
+
+    def test_sequence_set_slice(self):
+        # Correct case:
+        data = [1, 2, 3, 4, 5]
+        data_copy = data.copy()
+
+        _testcapi.sequence_set_slice(data, 1, 3, [8, 9])
+        data_copy[1:3] = [8, 9]
+        self.assertEqual(data, data_copy)
+        self.assertEqual(data, [1, 8, 9, 4, 5])
+
+        # Custom class:
+        class Custom:
+            def __setitem__(self, index, value):
+                self.index = index
+                self.value = value
+
+        c = Custom()
+        _testcapi.sequence_set_slice(c, 0, 5, 'abc')
+        self.assertEqual(c.index, slice(0, 5))
+        self.assertEqual(c.value, 'abc')
+
+        # Immutable sequences must raise:
+        bad_seq1 = (1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(bad_seq1, 1, 3, (8, 9))
+        self.assertEqual(bad_seq1, (1, 2, 3, 4))
+
+        bad_seq2 = 'abcd'
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(bad_seq2, 1, 3, 'xy')
+        self.assertEqual(bad_seq2, 'abcd')
+
+        # Not a sequence:
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(None, 1, 3, 'xy')
+
+        mapping = {1: 'a', 2: 'b', 3: 'c'}
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(mapping, 1, 3, 'xy')
+        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
+
+    def test_sequence_del_slice(self):
+        # Correct case:
+        data = [1, 2, 3, 4, 5]
+        data_copy = data.copy()
+
+        _testcapi.sequence_del_slice(data, 1, 3)
+        del data_copy[1:3]
+        self.assertEqual(data, data_copy)
+        self.assertEqual(data, [1, 4, 5])
+
+        # Custom class:
+        class Custom:
+            def __delitem__(self, index):
+                self.index = index
+
+        c = Custom()
+        _testcapi.sequence_del_slice(c, 0, 5)
+        self.assertEqual(c.index, slice(0, 5))
+
+        # Immutable sequences must raise:
+        bad_seq1 = (1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(bad_seq1, 1, 3)
+        self.assertEqual(bad_seq1, (1, 2, 3, 4))
+
+        bad_seq2 = 'abcd'
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(bad_seq2, 1, 3)
+        self.assertEqual(bad_seq2, 'abcd')
+
+        # Not a sequence:
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(None, 1, 3)
+
+        mapping = {1: 'a', 2: 'b', 3: 'c'}
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(mapping, 1, 3)
+        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
@@ -895,6 +987,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.eval_get_func_name(sum), "sum")  # c function
         self.assertEqual(_testcapi.eval_get_func_name(A), "type")
 
+    def test_eval_get_func_desc(self):
+        def function_example(): ...
+
+        class A:
+            def method_example(self): ...
+
+        self.assertEqual(_testcapi.eval_get_func_desc(function_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(A.method_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(A().method_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(sum), "()")  # c function
+        self.assertEqual(_testcapi.eval_get_func_desc(A), " object")
+
     def test_function_get_code(self):
         import types
 
@@ -929,6 +1036,140 @@ class CAPITest(unittest.TestCase):
 
         with self.assertRaises(SystemError):
             _testcapi.function_get_module(None)  # not a function
+
+    def test_function_get_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        defaults = _testcapi.function_get_defaults(some)
+        self.assertEqual(defaults, ('p', 0, None))
+        self.assertEqual(defaults, some.__defaults__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_defaults(None)  # not a function
+
+    def test_function_set_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        old_defaults = ('p', 0, None)
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_defaults(some, 1)  # not tuple or None
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_defaults(1, ())    # not a function
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        new_defaults = ('q', 1, None)
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        # Empty tuple is fine:
+        new_defaults = ()
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        class tuplesub(tuple): ...  # tuple subclasses must work
+
+        new_defaults = tuplesub(((1, 2), ['a', 'b'], None))
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        # `None` is special, it sets `defaults` to `NULL`,
+        # it needs special handling in `_testcapi`:
+        _testcapi.function_set_defaults(some, None)
+        self.assertEqual(_testcapi.function_get_defaults(some), None)
+        self.assertEqual(some.__defaults__, None)
+
+    def test_function_get_kw_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        defaults = _testcapi.function_get_kw_defaults(some)
+        self.assertEqual(defaults, {'kw2': True})
+        self.assertEqual(defaults, some.__kwdefaults__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_kw_defaults(None)  # not a function
+
+    def test_function_set_kw_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        old_defaults = {'kw2': True}
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_kw_defaults(some, 1)  # not dict or None
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_kw_defaults(1, {})    # not a function
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        new_defaults = {'kw2': (1, 2, 3)}
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        # Empty dict is fine:
+        new_defaults = {}
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        class dictsub(dict): ...  # dict subclasses must work
+
+        new_defaults = dictsub({'kw2': None})
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        # `None` is special, it sets `kwdefaults` to `NULL`,
+        # it needs special handling in `_testcapi`:
+        _testcapi.function_set_kw_defaults(some, None)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), None)
+        self.assertEqual(some.__kwdefaults__, None)
 
 
 class TestPendingCalls(unittest.TestCase):
@@ -1083,6 +1324,46 @@ class SubinterpreterTest(unittest.TestCase):
         # "being modified by test_capi" per test.regrtest.  So if this
         # test fails, assume that the environment in this process may
         # be altered and suspect.
+
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_configured_settings(self):
+        """
+        The config with which an interpreter is created corresponds
+        1-to-1 with the new interpreter's settings.  This test verifies
+        that they match.
+        """
+        import json
+
+        THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
+        FORK = 1<<15
+        EXEC = 1<<16
+
+        features = ['fork', 'exec', 'threads', 'daemon_threads']
+        kwlist = [f'allow_{n}' for n in features]
+        for config, expected in {
+            (True, True, True, True): FORK | EXEC | THREADS | DAEMON_THREADS,
+            (False, False, False, False): 0,
+            (False, False, True, False): THREADS,
+        }.items():
+            kwargs = dict(zip(kwlist, config))
+            expected = {
+                'feature_flags': expected,
+            }
+            with self.subTest(config):
+                r, w = os.pipe()
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi, json, os
+                    settings = _testinternalcapi.get_interp_settings()
+                    with os.fdopen({w}, "w") as stdin:
+                        json.dump(settings, stdin)
+                    ''')
+                with os.fdopen(r) as stdout:
+                    support.run_in_subinterp_with_config(script, **kwargs)
+                    out = stdout.read()
+                settings = json.loads(out)
+
+                self.assertEqual(settings, expected)
 
     def test_mutate_exception(self):
         """
@@ -1396,27 +1677,6 @@ class Test_ModuleStateAccess(unittest.TestCase):
         self.assertIs(Subclass().get_defining_module(), self.module)
 
 
-class Test_FrameAPI(unittest.TestCase):
-
-    def getframe(self):
-        return sys._getframe()
-
-    def getgenframe(self):
-        yield sys._getframe()
-
-    def test_frame_getters(self):
-        frame = self.getframe()
-        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
-        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
-        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
-        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
-
-    def test_frame_get_generator(self):
-        gen = self.getgenframe()
-        frame = next(gen)
-        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
-
-
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
 class Test_Pep523API(unittest.TestCase):
@@ -1604,6 +1864,173 @@ class TestDictWatchers(unittest.TestCase):
     def test_clear_unassigned_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
             self.clear_watcher(1)
+
+
+class TestTypeWatchers(unittest.TestCase):
+    # types of watchers testcapimodule can add:
+    TYPES = 0    # appends modified types to global event list
+    ERROR = 1    # unconditionally sets and signals a RuntimeException
+    WRAP = 2     # appends modified type wrapped in list to global event list
+
+    # duplicating the C constant
+    TYPE_MAX_WATCHERS = 8
+
+    def add_watcher(self, kind=TYPES):
+        return _testcapi.add_type_watcher(kind)
+
+    def clear_watcher(self, watcher_id):
+        _testcapi.clear_type_watcher(watcher_id)
+
+    @contextmanager
+    def watcher(self, kind=TYPES):
+        wid = self.add_watcher(kind)
+        try:
+            yield wid
+        finally:
+            self.clear_watcher(wid)
+
+    def assert_events(self, expected):
+        actual = _testcapi.get_type_modified_events()
+        self.assertEqual(actual, expected)
+
+    def watch(self, wid, t):
+        _testcapi.watch_type(wid, t)
+
+    def unwatch(self, wid, t):
+        _testcapi.unwatch_type(wid, t)
+
+    def test_watch_type(self):
+        class C: pass
+        with self.watcher() as wid:
+            self.watch(wid, C)
+            C.foo = "bar"
+            self.assert_events([C])
+
+    def test_event_aggregation(self):
+        class C: pass
+        with self.watcher() as wid:
+            self.watch(wid, C)
+            C.foo = "bar"
+            C.bar = "baz"
+            # only one event registered for both modifications
+            self.assert_events([C])
+
+    def test_lookup_resets_aggregation(self):
+        class C: pass
+        with self.watcher() as wid:
+            self.watch(wid, C)
+            C.foo = "bar"
+            # lookup resets type version tag
+            self.assertEqual(C.foo, "bar")
+            C.bar = "baz"
+            # both events registered
+            self.assert_events([C, C])
+
+    def test_unwatch_type(self):
+        class C: pass
+        with self.watcher() as wid:
+            self.watch(wid, C)
+            C.foo = "bar"
+            self.assertEqual(C.foo, "bar")
+            self.assert_events([C])
+            self.unwatch(wid, C)
+            C.bar = "baz"
+            self.assert_events([C])
+
+    def test_clear_watcher(self):
+        class C: pass
+        # outer watcher is unused, it's just to keep events list alive
+        with self.watcher() as _:
+            with self.watcher() as wid:
+                self.watch(wid, C)
+                C.foo = "bar"
+                self.assertEqual(C.foo, "bar")
+                self.assert_events([C])
+            C.bar = "baz"
+            # Watcher on C has been cleared, no new event
+            self.assert_events([C])
+
+    def test_watch_type_subclass(self):
+        class C: pass
+        class D(C): pass
+        with self.watcher() as wid:
+            self.watch(wid, D)
+            C.foo = "bar"
+            self.assert_events([D])
+
+    def test_error(self):
+        class C: pass
+        with self.watcher(kind=self.ERROR) as wid:
+            self.watch(wid, C)
+            with catch_unraisable_exception() as cm:
+                C.foo = "bar"
+                self.assertIs(cm.unraisable.object, C)
+                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
+            self.assert_events([])
+
+    def test_two_watchers(self):
+        class C1: pass
+        class C2: pass
+        with self.watcher() as wid1:
+            with self.watcher(kind=self.WRAP) as wid2:
+                self.assertNotEqual(wid1, wid2)
+                self.watch(wid1, C1)
+                self.watch(wid2, C2)
+                C1.foo = "bar"
+                C2.hmm = "baz"
+                self.assert_events([C1, [C2]])
+
+    def test_watch_non_type(self):
+        with self.watcher() as wid:
+            with self.assertRaisesRegex(ValueError, r"Cannot watch non-type"):
+                self.watch(wid, 1)
+
+    def test_watch_out_of_range_watcher_id(self):
+        class C: pass
+        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
+            self.watch(-1, C)
+        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
+            self.watch(self.TYPE_MAX_WATCHERS, C)
+
+    def test_watch_unassigned_watcher_id(self):
+        class C: pass
+        with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
+            self.watch(1, C)
+
+    def test_unwatch_non_type(self):
+        with self.watcher() as wid:
+            with self.assertRaisesRegex(ValueError, r"Cannot watch non-type"):
+                self.unwatch(wid, 1)
+
+    def test_unwatch_out_of_range_watcher_id(self):
+        class C: pass
+        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
+            self.unwatch(-1, C)
+        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
+            self.unwatch(self.TYPE_MAX_WATCHERS, C)
+
+    def test_unwatch_unassigned_watcher_id(self):
+        class C: pass
+        with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
+            self.unwatch(1, C)
+
+    def test_clear_out_of_range_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
+            self.clear_watcher(-1)
+        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
+            self.clear_watcher(self.TYPE_MAX_WATCHERS)
+
+    def test_clear_unassigned_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
+            self.clear_watcher(1)
+
+    def test_no_more_ids_available(self):
+        contexts = [self.watcher() for i in range(self.TYPE_MAX_WATCHERS)]
+        with ExitStack() as stack:
+            for ctx in contexts:
+                stack.enter_context(ctx)
+            with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
+                self.add_watcher()
 
 
 if __name__ == "__main__":
