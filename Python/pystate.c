@@ -369,7 +369,8 @@ PyInterpreterState_New(void)
             goto error;
         }
         // Set to _PyInterpreterState_INIT.
-        memcpy(interp, &initial._main_interpreter, sizeof(*interp));
+        memcpy(interp, &initial._main_interpreter,
+               sizeof(*interp));
         interp->_static = false;
 
         if (id < 0) {
