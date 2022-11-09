@@ -252,8 +252,9 @@ Deprecated
   (Contributed by Brett Cannon in :gh:`65961`.)
 
 * :func:`pkgutil.find_module` and :func:`pkgutil.get_module`
-  now raise :exc:`DeprecationWarning`,
+  now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
+  (Contributed by Nikita Sobolev in :gh:`97850`.)
 
 
 Pending Removal in Python 3.13
