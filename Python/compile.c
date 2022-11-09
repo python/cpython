@@ -122,7 +122,7 @@
          (opcode) == STORE_FAST__STORE_FAST)
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
-        (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
+        (c->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && (c->u->u_ste->ste_type == ModuleBlock))
 
 typedef _PyCompilerSrcLocation location;
@@ -418,7 +418,7 @@ struct compiler {
     PyObject *c_filename;
     struct symtable *c_st;
     PyFutureFeatures c_future;   /* module's __future__ */
-    PyCompilerFlags *c_flags;
+    PyCompilerFlags c_flags;
 
     int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
@@ -608,7 +608,7 @@ compiler_init(struct compiler *c)
 
 static int
 compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
-               PyCompilerFlags *flags, int optimize, PyArena *arena)
+               PyCompilerFlags flags, int optimize, PyArena *arena)
 {
     Py_INCREF(filename);
     c->c_filename = filename;
@@ -616,9 +616,9 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return 0;
     }
-    int merged = c->c_future.ff_features | flags->cf_flags;
+    int merged = c->c_future.ff_features | flags.cf_flags;
     c->c_future.ff_features = merged;
-    flags->cf_flags = merged;
+    flags.cf_flags = merged;
     c->c_flags = flags;
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_nestlevel = 0;
@@ -641,7 +641,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
 }
 
 PyCodeObject *
-_PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
+_PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
                int optimize, PyArena *arena)
 {
     struct compiler c;
@@ -649,10 +649,7 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         return NULL;
     }
 
-    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
-    if (!flags) {
-        flags = &local_flags;
-    }
+    PyCompilerFlags flags = pflags ? *pflags : _PyCompilerFlags_INIT;
 
     PyCodeObject *co = NULL;
     if (!compiler_setup(&c, mod, filename, flags, optimize, arena)) {
@@ -8284,7 +8281,7 @@ compute_code_flags(struct compiler *c)
     }
 
     /* (Only) inherit compilerflags in PyCF_MASK */
-    flags |= (c->c_flags->cf_flags & PyCF_MASK);
+    flags |= (c->c_flags.cf_flags & PyCF_MASK);
 
     if ((IS_TOP_LEVEL_AWAIT(c)) &&
          ste->ste_coroutine &&
@@ -9968,7 +9965,7 @@ error:
 }
 
 PyObject *
-_PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *flags,
+_PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
                    int optimize)
 {
     PyObject *res = NULL;
@@ -9996,10 +9993,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *flags,
         return NULL;
     }
 
-    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
-    if (!flags) {
-        flags = &local_flags;
-    }
+    PyCompilerFlags flags = pflags ? *pflags : _PyCompilerFlags_INIT;
     if (!compiler_setup(&c, mod, filename, flags, optimize, arena)) {
         goto finally;
     }
