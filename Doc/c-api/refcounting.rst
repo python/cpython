@@ -164,6 +164,8 @@ of Python objects.
    *dst* old value, so that any code triggered as a side-effect of `dst`
    getting torn down no longer believes `dst` points to a valid object.
 
+   .. versionadded:: 3.6
+
    .. versionchanged:: 3.12
       The macro arguments are now only evaluated once. If an argument has side
       effects, there are no longer duplicated.
@@ -173,6 +175,8 @@ of Python objects.
 
    Variant of :c:macro:`Py_SETREF` macro that uses :c:func:`Py_XDECREF` instead
    of :c:func:`Py_DECREF`.
+
+   .. versionadded:: 3.6
 
    .. versionchanged:: 3.12
       The macro arguments are now only evaluated once. If an argument has side
