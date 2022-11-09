@@ -43,6 +43,7 @@ void _PyUnicode_ExactDealloc(PyObject *);
 #define SET_TOP(v)        (stack_pointer[-1] = (v))
 #define SET_SECOND(v)     (stack_pointer[-2] = (v))
 #define PEEK(n)           (stack_pointer[-(n)])
+#define POKE(n, v)        (stack_pointer[-(n)] = (v))
 #define PUSH(val)         (*(stack_pointer++) = (val))
 #define POP()             (*(--stack_pointer))
 #define TOP()             PEEK(1)
@@ -63,12 +64,13 @@ do { \
 
 /* Flow control macros */
 #define DEOPT_IF(cond, instname) ((void)0)
+#define ERROR_IF(cond, labelname) ((void)0)
 #define JUMPBY(offset) ((void)0)
 #define GO_TO_INSTRUCTION(instname) ((void)0)
 #define DISPATCH_SAME_OPARG() ((void)0)
 #define DISPATCH() ((void)0)
 
-#define inst(name) case name:
+#define inst(name, ...) case name:
 #define super(name) static int SUPER_##name
 #define family(name) static int family_##name
 
@@ -78,6 +80,10 @@ do { \
 typedef struct {
     PyObject *kwnames;
 } CallShape;
+
+// Dummy variables for stack effects.
+static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
+static PyObject *container, *start, *stop, *v;
 
 static PyObject *
 dummy_func(
@@ -104,12 +110,10 @@ dummy_func(
            and that all operation that succeed call DISPATCH() ! */
 
 // BEGIN BYTECODES //
-        // stack effect: ( -- )
-        inst(NOP) {
+        inst(NOP, (--)) {
         }
 
-        // stack effect: ( -- )
-        inst(RESUME) {
+        inst(RESUME, (--)) {
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -117,45 +121,31 @@ dummy_func(
             }
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_CLOSURE) {
+        inst(LOAD_CLOSURE, (-- value)) {
             /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
-            PyObject *value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+            value = GETLOCAL(oparg);
+            ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
-            PUSH(value);
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_FAST_CHECK) {
-            PyObject *value = GETLOCAL(oparg);
-            if (value == NULL) {
-                goto unbound_local_error;
-            }
+        inst(LOAD_FAST_CHECK, (-- value)) {
+            value = GETLOCAL(oparg);
+            ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
-            PUSH(value);
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_FAST) {
-            PyObject *value = GETLOCAL(oparg);
+        inst(LOAD_FAST, (-- value)) {
+            value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
-            PUSH(value);
         }
 
-        // stack effect: ( -- __0)
-        inst(LOAD_CONST) {
-            PyObject *value = GETITEM(consts, oparg);
+        inst(LOAD_CONST, (-- value)) {
+            value = GETITEM(consts, oparg);
             Py_INCREF(value);
-            PUSH(value);
         }
 
-        // stack effect: (__0 -- )
-        inst(STORE_FAST) {
-            PyObject *value = POP();
+        inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -165,9 +155,7 @@ dummy_func(
         super(STORE_FAST__STORE_FAST) = STORE_FAST + STORE_FAST;
         super (LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
 
-        // stack effect: (__0 -- )
-        inst(POP_TOP) {
-            PyObject *value = POP();
+        inst(POP_TOP, (value --)) {
             Py_DECREF(value);
         }
 
@@ -177,166 +165,113 @@ dummy_func(
             BASIC_PUSH(NULL);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(END_FOR) {
-            PyObject *value = POP();
-            Py_DECREF(value);
-            value = POP();
-            Py_DECREF(value);
+        inst(END_FOR, (value1, value2 --)) {
+            Py_DECREF(value1);
+            Py_DECREF(value2);
         }
 
-        // stack effect: ( -- )
-        inst(UNARY_POSITIVE) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Positive(value);
+        inst(UNARY_POSITIVE, (value -- res)) {
+            res = PyNumber_Positive(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(UNARY_NEGATIVE) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Negative(value);
+        inst(UNARY_NEGATIVE, (value -- res)) {
+            res = PyNumber_Negative(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: ( -- )
-        inst(UNARY_NOT) {
-            PyObject *value = TOP();
+        inst(UNARY_NOT, (value -- res)) {
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
+            ERROR_IF(err < 0, error);
             if (err == 0) {
-                Py_INCREF(Py_True);
-                SET_TOP(Py_True);
-                DISPATCH();
+                res = Py_True;
             }
-            else if (err > 0) {
-                Py_INCREF(Py_False);
-                SET_TOP(Py_False);
-                DISPATCH();
+            else {
+                res = Py_False;
             }
-            STACK_SHRINK(1);
-            goto error;
+            Py_INCREF(res);
         }
 
-        // stack effect: ( -- )
-        inst(UNARY_INVERT) {
-            PyObject *value = TOP();
-            PyObject *res = PyNumber_Invert(value);
+        inst(UNARY_INVERT, (value -- res)) {
+            res = PyNumber_Invert(value);
             Py_DECREF(value);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_MULTIPLY_INT) {
+        inst(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(prod);
+            prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
-            if (prod == NULL) {
-                goto error;
-            }
+            ERROR_IF(prod == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_MULTIPLY_FLOAT) {
+        inst(BINARY_OP_MULTIPLY_FLOAT, (left, right -- prod)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
-            PyObject *prod = PyFloat_FromDouble(dprod);
-            SET_SECOND(prod);
+            prod = PyFloat_FromDouble(dprod);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            STACK_SHRINK(1);
-            if (prod == NULL) {
-                goto error;
-            }
+            ERROR_IF(prod == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_SUBTRACT_INT) {
+        inst(BINARY_OP_SUBTRACT_INT, (left, right -- sub)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sub);
+            sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
-            if (sub == NULL) {
-                goto error;
-            }
+            ERROR_IF(sub == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_SUBTRACT_FLOAT) {
+        inst(BINARY_OP_SUBTRACT_FLOAT, (left, right -- sub)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            PyObject *sub = PyFloat_FromDouble(dsub);
-            SET_SECOND(sub);
+            sub = PyFloat_FromDouble(dsub);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            STACK_SHRINK(1);
-            if (sub == NULL) {
-                goto error;
-            }
+            ERROR_IF(sub == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_ADD_UNICODE) {
+        inst(BINARY_OP_ADD_UNICODE, (left, right -- res)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *res = PyUnicode_Concat(left, right);
-            STACK_SHRINK(1);
-            SET_TOP(res);
+            res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (TOP() == NULL) {
-                goto error;
-            }
+            ERROR_IF(res == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_INPLACE_ADD_UNICODE) {
+        // This is a subtle one. It's a super-instruction for
+        // BINARY_OP_ADD_UNICODE followed by STORE_FAST
+        // where the store goes into the left argument.
+        // So the inputs are the same as for all BINARY_OP
+        // specializations, but there is no output.
+        // At the end we just skip over the STORE_FAST.
+        inst(BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
@@ -358,107 +293,75 @@ dummy_func(
              */
             assert(Py_REFCNT(left) >= 2);
             _Py_DECREF_NO_DEALLOC(left);
-            STACK_SHRINK(2);
             PyUnicode_Append(target_local, right);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (*target_local == NULL) {
-                goto error;
-            }
+            ERROR_IF(*target_local == NULL, error);
             // The STORE_FAST is already done.
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_ADD_FLOAT) {
+        inst(BINARY_OP_ADD_FLOAT, (left, right -- sum)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
-            PyObject *sum = PyFloat_FromDouble(dsum);
-            SET_SECOND(sum);
+            sum = PyFloat_FromDouble(dsum);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            STACK_SHRINK(1);
-            if (sum == NULL) {
-                goto error;
-            }
+            ERROR_IF(sum == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_ADD_INT) {
+        inst(BINARY_OP_ADD_INT, (left, right -- sum)) {
             assert(cframe.use_tracing == 0);
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
-            PyObject *sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sum);
+            sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            STACK_SHRINK(1);
-            if (sum == NULL) {
-                goto error;
-            }
+            ERROR_IF(sum == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_SUBSCR) {
-            PyObject *sub = POP();
-            PyObject *container = TOP();
-            PyObject *res = PyObject_GetItem(container, sub);
+        inst(BINARY_SUBSCR, (container, sub -- res)) {
+            res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            ERROR_IF(res == NULL, error);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(BINARY_SLICE) {
-            PyObject *stop = POP();
-            PyObject *start = POP();
-            PyObject *container = TOP();
-
+        inst(BINARY_SLICE, (container, start, stop -- res)) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            // Can't use ERROR_IF() here, because we haven't
+            // DECREF'ed container yet, and we still own slice.
             if (slice == NULL) {
-                goto error;
+                res = NULL;
             }
-            PyObject *res = PyObject_GetItem(container, slice);
-            Py_DECREF(slice);
-            if (res == NULL) {
-                goto error;
+            else {
+                res = PyObject_GetItem(container, slice);
+                Py_DECREF(slice);
             }
-            SET_TOP(res);
             Py_DECREF(container);
+            ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__0, __1, __2, __3 -- )
-        inst(STORE_SLICE) {
-            PyObject *stop = POP();
-            PyObject *start = POP();
-            PyObject *container = TOP();
-            PyObject *v = SECOND();
-
+        inst(STORE_SLICE, (v, container, start, stop -- )) {
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            int err;
             if (slice == NULL) {
-                goto error;
+                err = 1;
             }
-            int err = PyObject_SetItem(container, slice, v);
-            Py_DECREF(slice);
-            if (err) {
-                goto error;
+            else {
+                err = PyObject_SetItem(container, slice, v);
+                Py_DECREF(slice);
             }
-            STACK_SHRINK(2);
             Py_DECREF(v);
             Py_DECREF(container);
+            ERROR_IF(err, error);
         }
 
         // stack effect: (__0 -- )
@@ -607,21 +510,14 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        // stack effect: (__0, __1, __2 -- )
-        inst(STORE_SUBSCR) {
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            PyObject *v = THIRD();
+        inst(STORE_SUBSCR, (v, container, sub -- )) {
             int err;
-            STACK_SHRINK(3);
             /* container[sub] = v */
             err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0) {
-                goto error;
-            }
+            ERROR_IF(err != 0, error);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
         }
 
