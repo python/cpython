@@ -131,7 +131,7 @@ of Python objects.
 
    .. versionchanged:: 3.12
       The macro argument is now only evaluated once. If the argument has side
-      effects, there are no longer duplicated.
+      effects, these are no longer duplicated.
 
 
 .. c:function:: void Py_IncRef(PyObject *o)
@@ -168,7 +168,7 @@ of Python objects.
 
    .. versionchanged:: 3.12
       The macro arguments are now only evaluated once. If an argument has side
-      effects, there are no longer duplicated.
+      effects, these are no longer duplicated.
 
 
 .. c:macro:: Py_XSETREF(dst, src)
@@ -180,4 +180,4 @@ of Python objects.
 
    .. versionchanged:: 3.12
       The macro arguments are now only evaluated once. If an argument has side
-      effects, there are no longer duplicated.
+      effects, these are no longer duplicated.
