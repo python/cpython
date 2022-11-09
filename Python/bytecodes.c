@@ -110,6 +110,12 @@ dummy_func(
         inst(RESUME, (--)) {
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
+            /* Possibly combine this with eval breaker */
+            if (frame->f_code->_co_instrument_version != tstate->interp->instrument_version) {
+                if (_Py_Instrument(frame->f_code, tstate->interp)) {
+                    goto error;
+                }
+            }
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }

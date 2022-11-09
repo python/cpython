@@ -19,6 +19,7 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_instruments.h"   // PY_INSTRUMENT_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
@@ -84,6 +85,8 @@ struct _Py_long_state {
 struct _is {
 
     PyInterpreterState *next;
+
+    uint64_t instrument_version;
 
     struct pythreads {
         uint64_t next_unique_id;
@@ -187,6 +190,10 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
+
+    uint8_t instrumented[PY_INSTRUMENT_EVENTS];
+    PyObject *instrument_callables[PY_INSTRUMENT_EVENTS];
+    bool f_opcode_trace_set;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.

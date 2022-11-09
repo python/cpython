@@ -466,6 +466,8 @@ typedef struct _PyShimCodeDef {
 extern PyCodeObject *
 _Py_MakeShimCode(const _PyShimCodeDef *code);
 
+extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
+
 
 #ifdef __cplusplus
 }

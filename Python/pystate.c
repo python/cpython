@@ -309,7 +309,11 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
-
+    for(int i = 0; i < PY_INSTRUMENT_EVENTS; i++) {
+        interp->instrumented[i] = 0;
+        interp->instrument_callables[i] = Py_NewRef(Py_None);
+    }
+    interp->f_opcode_trace_set = false;
     interp->_initialized = 1;
 }
 

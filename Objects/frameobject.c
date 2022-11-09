@@ -17,7 +17,6 @@
 
 static PyMemberDef frame_memberlist[] = {
     {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
-    {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
 };
 
@@ -102,6 +101,31 @@ frame_getback(PyFrameObject *f, void *closure)
         Py_RETURN_NONE;
     }
     return res;
+}
+
+static PyObject *
+frame_gettrace_opcodes(PyFrameObject *f, void *closure)
+{
+    PyObject *result = f->f_trace_opcodes ? Py_True : Py_False;
+    return Py_NewRef(result);
+}
+
+static int
+frame_settrace_opcodes(PyFrameObject *f, PyObject* value, void *Py_UNUSED(ignored))
+{
+    if (!PyBool_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "attribute value type must be bool");
+        return -1;
+    }
+    if (value == Py_True) {
+        f->f_trace_opcodes = 1;
+        _PyInterpreterState_GET()->f_opcode_trace_set = true;
+    }
+    else {
+        f->f_trace_opcodes = 0;
+    }
+    return 0;
 }
 
 // Given the index of the effective opcode, scan back to construct the oparg
@@ -846,6 +870,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_globals",       (getter)frame_getglobals, NULL, NULL},
     {"f_builtins",      (getter)frame_getbuiltins, NULL, NULL},
     {"f_code",          (getter)frame_getcode, NULL, NULL},
+    {"f_trace_opcodes", (getter)frame_gettrace_opcodes, (setter)frame_settrace_opcodes, NULL},
     {0}
 };
 
