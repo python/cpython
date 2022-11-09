@@ -1143,6 +1143,8 @@
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
                 if (_Py_Specialize_StoreAttr(owner, next_instr, name)) {
+                    // "undo" the rewind so end up in the correct handler:
+                    next_instr++;
                     goto error;
                 }
                 DISPATCH_SAME_OPARG();
@@ -1726,6 +1728,8 @@
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
                 if (_Py_Specialize_LoadAttr(owner, next_instr, name)) {
+                    // "undo" the rewind so end up in the correct handler:
+                    next_instr++;
                     goto error;
                 }
                 DISPATCH_SAME_OPARG();
@@ -3134,7 +3138,6 @@
             PyObject *callable = PEEK(2);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyObject *arg = TOP();
             PyObject *res = PyObject_Str(arg);
             Py_DECREF(arg);
@@ -3144,6 +3147,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3155,7 +3159,6 @@
             PyObject *callable = PEEK(2);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyObject *arg = TOP();
             PyObject *res = PySequence_Tuple(arg);
             Py_DECREF(arg);
@@ -3165,6 +3168,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3178,7 +3182,6 @@
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             STACK_SHRINK(total_args);
             PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
                                               total_args-kwnames_len, call_shape.kwnames);
@@ -3193,6 +3196,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3208,7 +3212,6 @@
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -3227,6 +3230,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3242,7 +3246,6 @@
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs) */
@@ -3267,6 +3270,7 @@
                 */
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3281,7 +3285,6 @@
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
                 (METH_FASTCALL | METH_KEYWORDS), CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs, kwnames) */
             _PyCFunctionFastWithKeywords cfunc =
@@ -3306,6 +3309,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3321,7 +3325,6 @@
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyObject *arg = TOP();
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
@@ -3337,6 +3340,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             DISPATCH();
         }
 
@@ -3351,7 +3355,6 @@
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyObject *cls = POP();
             PyObject *inst = TOP();
             int retval = PyObject_IsInstance(inst, cls);
@@ -3370,6 +3373,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             DISPATCH();
         }
 
@@ -3383,9 +3387,6 @@
             PyObject *list = SECOND();
             DEOPT_IF(!PyList_Check(list), CALL);
             STAT_INC(CALL, hit);
-            // CALL + POP_TOP
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
-            assert(_Py_OPCODE(next_instr[-1]) == POP_TOP);
             PyObject *arg = POP();
             if (_PyList_AppendTakeRef((PyListObject *)list, arg) < 0) {
                 goto error;
@@ -3393,6 +3394,9 @@
             STACK_SHRINK(2);
             Py_DECREF(list);
             Py_DECREF(callable);
+            // CALL + POP_TOP
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
+            assert(_Py_OPCODE(next_instr[-1]) == POP_TOP);
             DISPATCH();
         }
 
@@ -3410,7 +3414,6 @@
             PyObject *self = SECOND();
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -3428,6 +3431,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3444,7 +3448,6 @@
             PyObject *self = PEEK(total_args);
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             int nargs = total_args-1;
             STACK_SHRINK(nargs);
             _PyCFunctionFastWithKeywords cfunc =
@@ -3465,6 +3468,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3482,7 +3486,6 @@
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             DEOPT_IF(meth->ml_flags != METH_NOARGS, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -3499,6 +3502,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
@@ -3516,7 +3520,6 @@
             PyObject *self = PEEK(total_args);
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             _PyCFunctionFast cfunc =
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args-1;
@@ -3534,6 +3537,7 @@
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
