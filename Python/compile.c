@@ -9791,7 +9791,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
         int old_index = index_map[i];
         assert(i <= old_index);
         if (i != old_index) {
-            PyObject *value = PyList_GetItem(consts, index_map[i]);
+            PyObject *value = PyList_GET_ITEM(consts, index_map[i]);
             assert(value != NULL);
             int res = PyList_SetItem(consts, i, Py_NewRef(value));
             assert(res == 0);
