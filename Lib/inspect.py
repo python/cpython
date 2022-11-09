@@ -2222,7 +2222,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 a.append(n.attr)
                 n = n.value
             if not isinstance(n, ast.Name):
-                raise RuntimeError()
+                raise ValueError
             a.append(n.id)
             value = ".".join(reversed(a))
             return wrap_value(value)
