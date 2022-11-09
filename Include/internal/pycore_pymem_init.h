@@ -8,21 +8,59 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pymem_allocators.h"
+#include "pycore_pymem.h"
 
 
 /********************************/
 /* the allocators' initializers */
 
+extern void * _PyMem_RawMalloc(void *, size_t);
+extern void * _PyMem_RawCalloc(void *, size_t, size_t);
+extern void * _PyMem_RawRealloc(void *, void *, size_t);
+extern void _PyMem_RawFree(void *, void *);
+#define PYRAW_ALLOC {NULL, _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree}
+
+#ifdef WITH_PYMALLOC
+extern void* _PyObject_Malloc(void *, size_t);
+extern void* _PyObject_Calloc(void *, size_t, size_t);
+extern void _PyObject_Free(void *, void *);
+extern void* _PyObject_Realloc(void *, void *, size_t);
+#  define PYOBJ_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
+#else
+# define PYOBJ_ALLOC PYRAW_ALLOC
+#endif  // WITH_PYMALLOC
+
+#define PYMEM_ALLOC PYOBJ_ALLOC
+
+extern void* _PyMem_DebugRawMalloc(void *, size_t);
+extern void* _PyMem_DebugRawCalloc(void *, size_t, size_t);
+extern void* _PyMem_DebugRawRealloc(void *, void *, size_t);
+extern void _PyMem_DebugRawFree(void *, void *);
+
+extern void* _PyMem_DebugMalloc(void *, size_t);
+extern void* _PyMem_DebugCalloc(void *, size_t, size_t);
+extern void* _PyMem_DebugRealloc(void *, void *, size_t);
+extern void _PyMem_DebugFree(void *, void *);
+
+#define PYDBGRAW_ALLOC(runtime) \
+    {&(runtime).allocators.debug.raw, _PyMem_DebugRawMalloc, _PyMem_DebugRawCalloc, _PyMem_DebugRawRealloc, _PyMem_DebugRawFree}
+#define PYDBGMEM_ALLOC(runtime) \
+    {&(runtime).allocators.debug.mem, _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree}
+#define PYDBGOBJ_ALLOC(runtime) \
+    {&(runtime).allocators.debug.obj, _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree}
+
+extern void * _PyMem_ArenaAlloc(void *, size_t);
+extern void _PyMem_ArenaFree(void *, void *, size_t);
+
 #ifdef Py_DEBUG
-#define _pymem_allocators_standard_INIT \
+# define _pymem_allocators_standard_INIT(runtime) \
     { \
-        PYDBGRAW_ALLOC, \
-        PYDBGMEM_ALLOC, \
-        PYDBGOBJ_ALLOC, \
+        PYDBGRAW_ALLOC(runtime), \
+        PYDBGMEM_ALLOC(runtime), \
+        PYDBGOBJ_ALLOC(runtime), \
     }
 #else
-#define _pymem_allocators_standard_INIT \
+# define _pymem_allocators_standard_INIT(runtime) \
     { \
         PYRAW_ALLOC, \
         PYMEM_ALLOC, \
@@ -36,6 +74,9 @@ extern "C" {
        {'m', PYMEM_ALLOC}, \
        {'o', PYOBJ_ALLOC}, \
    }
+
+#  define _pymem_allocators_obj_arena_INIT \
+    { NULL, _PyMem_ArenaAlloc, _PyMem_ArenaFree }
 
 
 #ifdef __cplusplus

@@ -4,8 +4,8 @@
 
 #include "pycore_obmalloc.h"
 #include "pycore_pymem.h"
-#include "pycore_pymem_allocators.h"
 
+#include <stdlib.h>               // malloc()
 #include <stdbool.h>
 
 
@@ -23,6 +23,149 @@ static void _PyObject_DebugDumpAddress(const void *p);
 static void _PyMem_DebugCheckAddress(const char *func, char api_id, const void *p);
 
 static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
+
+
+/***************************************/
+/* low-level allocator implementations */
+/***************************************/
+
+/* the default raw allocator (wraps malloc) */
+
+void *
+_PyMem_RawMalloc(void *Py_UNUSED(ctx), size_t size)
+{
+    /* PyMem_RawMalloc(0) means malloc(1). Some systems would return NULL
+       for malloc(0), which would be treated as an error. Some platforms would
+       return a pointer with no memory behind it, which would break pymalloc.
+       To solve these problems, allocate an extra byte. */
+    if (size == 0)
+        size = 1;
+    return malloc(size);
+}
+
+void *
+_PyMem_RawCalloc(void *Py_UNUSED(ctx), size_t nelem, size_t elsize)
+{
+    /* PyMem_RawCalloc(0, 0) means calloc(1, 1). Some systems would return NULL
+       for calloc(0, 0), which would be treated as an error. Some platforms
+       would return a pointer with no memory behind it, which would break
+       pymalloc.  To solve these problems, allocate an extra byte. */
+    if (nelem == 0 || elsize == 0) {
+        nelem = 1;
+        elsize = 1;
+    }
+    return calloc(nelem, elsize);
+}
+
+void *
+_PyMem_RawRealloc(void *Py_UNUSED(ctx), void *ptr, size_t size)
+{
+    if (size == 0)
+        size = 1;
+    return realloc(ptr, size);
+}
+
+void
+_PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
+{
+    free(ptr);
+}
+
+#define MALLOC_ALLOC {NULL, _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree}
+#define PYRAW_ALLOC MALLOC_ALLOC
+
+/* the default object allocator */
+
+// The actual implementation is further down.
+
+#ifdef WITH_PYMALLOC
+void* _PyObject_Malloc(void *ctx, size_t size);
+void* _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize);
+void _PyObject_Free(void *ctx, void *p);
+void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
+#  define PYMALLOC_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
+#  define PYOBJ_ALLOC PYMALLOC_ALLOC
+#else
+#  define PYOBJ_ALLOC MALLOC_ALLOC
+#endif  // WITH_PYMALLOC
+
+#define PYMEM_ALLOC PYOBJ_ALLOC
+
+/* the default debug allocators */
+
+// The actual implementation is further down.
+
+void* _PyMem_DebugRawMalloc(void *ctx, size_t size);
+void* _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize);
+void* _PyMem_DebugRawRealloc(void *ctx, void *ptr, size_t size);
+void _PyMem_DebugRawFree(void *ctx, void *ptr);
+
+void* _PyMem_DebugMalloc(void *ctx, size_t size);
+void* _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize);
+void* _PyMem_DebugRealloc(void *ctx, void *ptr, size_t size);
+void _PyMem_DebugFree(void *ctx, void *p);
+
+#define PYDBGRAW_ALLOC \
+    {&_PyRuntime.allocators.debug.raw, _PyMem_DebugRawMalloc, _PyMem_DebugRawCalloc, _PyMem_DebugRawRealloc, _PyMem_DebugRawFree}
+#define PYDBGMEM_ALLOC \
+    {&_PyRuntime.allocators.debug.mem, _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree}
+#define PYDBGOBJ_ALLOC \
+    {&_PyRuntime.allocators.debug.obj, _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree}
+
+/* the low-level virtual memory allocator */
+
+#ifdef WITH_PYMALLOC
+#  ifdef MS_WINDOWS
+#    include <windows.h>
+#  elif defined(HAVE_MMAP)
+#    include <sys/mman.h>
+#    ifdef MAP_ANONYMOUS
+#      define ARENAS_USE_MMAP
+#    endif
+#  endif
+#endif
+
+void *
+_PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
+{
+#ifdef MS_WINDOWS
+    return VirtualAlloc(NULL, size,
+                        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#elif defined(ARENAS_USE_MMAP)
+    void *ptr;
+    ptr = mmap(NULL, size, PROT_READ|PROT_WRITE,
+               MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+    if (ptr == MAP_FAILED)
+        return NULL;
+    assert(ptr != NULL);
+    return ptr;
+#else
+    return malloc(size);
+#endif
+}
+
+void
+_PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
+#if defined(ARENAS_USE_MMAP)
+    size_t size
+#else
+    size_t Py_UNUSED(size)
+#endif
+)
+{
+#ifdef MS_WINDOWS
+    VirtualFree(ptr, 0, MEM_RELEASE);
+#elif defined(ARENAS_USE_MMAP)
+    munmap(ptr, size);
+#else
+    free(ptr);
+#endif
+}
+
+/*******************************************/
+/* end low-level allocator implementations */
+/*******************************************/
+
 
 #if defined(__has_feature)  /* Clang */
 #  if __has_feature(address_sanitizer) /* is ASAN enabled? */

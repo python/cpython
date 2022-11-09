@@ -26,7 +26,7 @@ extern "C" {
             .autoTSSkey = Py_tss_NEEDS_INIT, \
         }, \
         .allocators = { \
-            _pymem_allocators_standard_INIT, \
+            _pymem_allocators_standard_INIT(runtime), \
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
