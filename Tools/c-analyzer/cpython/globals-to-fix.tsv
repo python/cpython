@@ -511,6 +511,7 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
 Modules/itertoolsmodule.c	-	_grouper_type	-
 Modules/itertoolsmodule.c	-	accumulate_type	-
+Modules/itertoolsmodule.c	-	batched_type	-
 Modules/itertoolsmodule.c	-	chain_type	-
 Modules/itertoolsmodule.c	-	combinations_type	-
 Modules/itertoolsmodule.c	-	compress_type	-
