@@ -758,7 +758,6 @@ Modules/_ctypes/callproc.c	unpickle	PyId___setstate__	-
 Modules/_ctypes/stgdict.c	MakeAnonFields	PyId__anonymous_	-
 Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__pack_	-
 Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__swappedbytes_	-
-Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__use_broken_old_ctypes_structure_semantics_	-
 Modules/_cursesmodule.c	_curses_getwin	PyId_read	-
 Modules/_cursesmodule.c	_curses_window_putwin	PyId_write	-
 Modules/_cursesmodule.c	update_lines_cols	PyId_COLS	-

@@ -408,8 +408,6 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_uninitialized_submodules);
     PyUnicode_InternInPlace(&string);
-    string = &_Py_ID(_use_broken_old_ctypes_structure_semantics_);
-    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_warn_unawaited_coroutine);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_xoptions);
