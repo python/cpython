@@ -951,8 +951,7 @@ r_ref_insert(PyObject *o, Py_ssize_t idx, int flag, RFILE *p)
 {
     if (o != NULL && flag) { /* currently only FLAG_REF is defined */
         PyObject *tmp = PyList_GET_ITEM(p->refs, idx);
-        Py_INCREF(o);
-        PyList_SET_ITEM(p->refs, idx, o);
+        PyList_SET_ITEM(p->refs, idx, Py_NewRef(o));
         Py_DECREF(tmp);
     }
     return o;
@@ -1015,28 +1014,23 @@ r_object(RFILE *p)
         break;
 
     case TYPE_NONE:
-        Py_INCREF(Py_None);
-        retval = Py_None;
+        retval = Py_NewRef(Py_None);
         break;
 
     case TYPE_STOPITER:
-        Py_INCREF(PyExc_StopIteration);
-        retval = PyExc_StopIteration;
+        retval = Py_NewRef(PyExc_StopIteration);
         break;
 
     case TYPE_ELLIPSIS:
-        Py_INCREF(Py_Ellipsis);
-        retval = Py_Ellipsis;
+        retval = Py_NewRef(Py_Ellipsis);
         break;
 
     case TYPE_FALSE:
-        Py_INCREF(Py_False);
-        retval = Py_False;
+        retval = Py_NewRef(Py_False);
         break;
 
     case TYPE_TRUE:
-        Py_INCREF(Py_True);
-        retval = Py_True;
+        retval = Py_NewRef(Py_True);
         break;
 
     case TYPE_INT:
@@ -1486,8 +1480,7 @@ r_object(RFILE *p)
             PyErr_SetString(PyExc_ValueError, "bad marshal data (invalid reference)");
             break;
         }
-        Py_INCREF(v);
-        retval = v;
+        retval = Py_NewRef(v);
         break;
 
     default:
