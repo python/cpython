@@ -230,7 +230,7 @@ Command-line options
 
    Runs :func:`pdb.post_mortem` upon each error. Short for ``--pm=pdb``
 
-.. cmdoption:: --pm
+.. cmdoption:: --pm=<debugger>
 
    Run custom post-mortem debugger (module or class) upon each error.
    Examples: ``--pm=pywin.debugger``, ``--pm=IPython.terminal.debugger.Pdb``
@@ -2302,7 +2302,7 @@ Loading and running tests
    Calling ``main`` actually returns an instance of the ``TestProgram`` class.
    This stores the result of the tests run as the ``result`` attribute.
 
-   When *debug* is ``True`` (corresponding to ``--debug``) execution terminates
+   When *debug* is ``True`` (corresponding to :option:`!--debug`) execution terminates
    with original exception upon the first error. When *debug* is the name of a
    debugger module or class - for example ":mod:`pdb`" - then post-mortem debugging is
    run upon each error.
