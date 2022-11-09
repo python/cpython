@@ -20,8 +20,8 @@ import queue
 import threading
 import time
 import traceback
+import types
 import warnings
-from queue import Empty
 
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.
@@ -203,6 +203,9 @@ class Pool(object):
             processes = os.cpu_count() or 1
         if processes < 1:
             raise ValueError("Number of processes must be at least 1")
+        if maxtasksperchild is not None:
+            if not isinstance(maxtasksperchild, int) or maxtasksperchild <= 0:
+                raise ValueError("maxtasksperchild must be a positive int or None")
 
         if initializer is not None and not callable(initializer):
             raise TypeError('initializer must be a callable')
@@ -779,6 +782,8 @@ class ApplyResult(object):
         self._event.set()
         del self._cache[self._job]
         self._pool = None
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 AsyncResult = ApplyResult       # create alias -- see #17805
 

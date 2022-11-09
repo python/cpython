@@ -160,7 +160,7 @@ document pystackv
   Print the entire Python call stack - verbose mode
 end
 
-def pu
+define pu
   set $uni = $arg0
   set $i = 0
   while (*$uni && $i++<100)

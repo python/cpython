@@ -5,11 +5,11 @@
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
-import atexit
 from concurrent.futures import _base
 import itertools
 import queue
 import threading
+import types
 import weakref
 import os
 
@@ -36,6 +36,12 @@ def _python_exit():
 # See bpo-39812 for context.
 threading._register_atexit(_python_exit)
 
+# At fork, reinitialize the `_global_shutdown_lock` lock in the child process
+if hasattr(os, 'register_at_fork'):
+    os.register_at_fork(before=_global_shutdown_lock.acquire,
+                        after_in_child=_global_shutdown_lock._at_fork_reinit,
+                        after_in_parent=_global_shutdown_lock.release)
+
 
 class _WorkItem(object):
     def __init__(self, future, fn, args, kwargs):
@@ -56,6 +62,8 @@ class _WorkItem(object):
             self = None
         else:
             self.future.set_result(result)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 def _worker(executor_reference, work_queue, initializer, initargs):
