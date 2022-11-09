@@ -932,10 +932,9 @@
                 PUSH(value);
                 DISPATCH();
             }
-            Py_INCREF(exc_value);
             PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
             PyObject *exc_traceback = PyException_GetTraceback(exc_value);
-            _PyErr_Restore(tstate, exc_type, exc_value, exc_traceback);
+            _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
             goto exception_unwind;
         }
 
@@ -973,8 +972,8 @@
                 }
                 assert(PyExceptionInstance_Check(error));
                 SET_TOP(error);
-                PyException_SetCause(error, exc);
-                Py_INCREF(exc);
+                PyException_SetCause(error, Py_NewRef(exc));
+                // Steal exc reference, rather than Py_NewRef+Py_DECREF
                 PyException_SetContext(error, exc);
                 Py_DECREF(message);
             }
@@ -983,8 +982,7 @@
 
         TARGET(LOAD_ASSERTION_ERROR) {
             PyObject *value = PyExc_AssertionError;
-            Py_INCREF(value);
-            PUSH(value);
+            PUSH(Py_NewRef(value));
             DISPATCH();
         }
 
@@ -1343,8 +1341,7 @@
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
             STACK_GROW(push_null+1);
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             DISPATCH();
         }
 
@@ -1368,8 +1365,7 @@
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
             STACK_GROW(push_null+1);
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             DISPATCH();
         }
 
@@ -1449,8 +1445,7 @@
                 format_exc_unbound(tstate, frame->f_code, oparg);
                 goto error;
             }
-            Py_INCREF(value);
-            PUSH(value);
+            PUSH(Py_NewRef(value));
             DISPATCH();
         }
 
@@ -1472,8 +1467,7 @@
             assert(oparg == co->co_nfreevars);
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
-                Py_INCREF(o);
-                frame->localsplus[offset + i] = o;
+                frame->localsplus[offset + i] = Py_NewRef(o);
             }
             DISPATCH();
         }
@@ -1977,9 +1971,8 @@
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
-            Py_INCREF(name);
             new_frame->localsplus[0] = owner;
-            new_frame->localsplus[1] = name;
+            new_frame->localsplus[1] = Py_NewRef(name);
             for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
@@ -2223,8 +2216,7 @@
             PyObject *left = TOP();
             int res = Py_Is(left, right) ^ oparg;
             PyObject *b = res ? Py_True : Py_False;
-            Py_INCREF(b);
-            SET_TOP(b);
+            SET_TOP(Py_NewRef(b));
             Py_DECREF(left);
             Py_DECREF(right);
             DISPATCH();
@@ -2240,8 +2232,7 @@
                 goto error;
             }
             PyObject *b = (res^oparg) ? Py_True : Py_False;
-            Py_INCREF(b);
-            PUSH(b);
+            PUSH(Py_NewRef(b));
             DISPATCH();
         }
 
@@ -2524,8 +2515,7 @@
             }
             else {
                 // Failure!
-                Py_INCREF(Py_None);
-                SET_TOP(Py_None);
+                SET_TOP(Py_NewRef(Py_None));
             }
             Py_DECREF(subject);
             DISPATCH();
@@ -2535,8 +2525,7 @@
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             PyObject *res = match ? Py_True : Py_False;
-            Py_INCREF(res);
-            PUSH(res);
+            PUSH(Py_NewRef(res));
             PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
@@ -2545,8 +2534,7 @@
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             PyObject *res = match ? Py_True : Py_False;
-            Py_INCREF(res);
-            PUSH(res);
+            PUSH(Py_NewRef(res));
             PREDICT(POP_JUMP_IF_FALSE);
             DISPATCH();
         }
@@ -2649,8 +2637,7 @@
             if (seq) {
                 if (it->it_index < PyList_GET_SIZE(seq)) {
                     PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
-                    Py_INCREF(next);
-                    PUSH(next);
+                    PUSH(Py_NewRef(next));
                     JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                     DISPATCH();
                 }
@@ -2698,8 +2685,7 @@
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             assert(_Py_OPCODE(*next_instr) == END_FOR);
             frame->prev_instr = next_instr - 1;
-            Py_INCREF(Py_None);
-            _PyFrame_StackPush(gen_frame, Py_None);
+            _PyFrame_StackPush(gen_frame, Py_NewRef(Py_None));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -2818,12 +2804,10 @@
                 SET_TOP(exc_info->exc_value);
             }
             else {
-                Py_INCREF(Py_None);
-                SET_TOP(Py_None);
+                SET_TOP(Py_NewRef(Py_None));
             }
 
-            Py_INCREF(value);
-            PUSH(value);
+            PUSH(Py_NewRef(value));
             assert(PyExceptionInstance_Check(value));
             exc_info->exc_value = value;
             DISPATCH();
@@ -2848,8 +2832,7 @@
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH();
@@ -2876,8 +2859,7 @@
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH();
@@ -2895,8 +2877,7 @@
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH();
@@ -2918,8 +2899,7 @@
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH();
@@ -2930,12 +2910,10 @@
             PyObject *function = PEEK(oparg + 1);
             DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *meth = ((PyMethodObject *)function)->im_func;
             PyObject *self = ((PyMethodObject *)function)->im_self;
-            Py_INCREF(meth);
-            Py_INCREF(self);
-            PEEK(oparg + 1) = self;
-            PEEK(oparg + 2) = meth;
+            PEEK(oparg + 1) = Py_NewRef(self);
+            PyObject *meth = ((PyMethodObject *)function)->im_func;
+            PEEK(oparg + 2) = Py_NewRef(meth);
             Py_DECREF(function);
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
@@ -2965,12 +2943,10 @@
             is_meth = is_method(stack_pointer, oparg);
             PyObject *function = PEEK(oparg + 1);
             if (!is_meth && Py_TYPE(function) == &PyMethod_Type) {
-                PyObject *meth = ((PyMethodObject *)function)->im_func;
                 PyObject *self = ((PyMethodObject *)function)->im_self;
-                Py_INCREF(meth);
-                Py_INCREF(self);
-                PEEK(oparg+1) = self;
-                PEEK(oparg+2) = meth;
+                PEEK(oparg+1) = Py_NewRef(self);
+                PyObject *meth = ((PyMethodObject *)function)->im_func;
+                PEEK(oparg+2) = Py_NewRef(meth);
                 Py_DECREF(function);
                 is_meth = 1;
             }
@@ -3093,8 +3069,7 @@
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults,
                                                  i - minargs);
-                Py_INCREF(def);
-                new_frame->localsplus[i] = def;
+                new_frame->localsplus[i] = Py_NewRef(def);
             }
             for (int i = code->co_argcount; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
@@ -3724,8 +3699,7 @@
         TARGET(COPY) {
             assert(oparg != 0);
             PyObject *peek = PEEK(oparg);
-            Py_INCREF(peek);
-            PUSH(peek);
+            PUSH(Py_NewRef(peek));
             DISPATCH();
         }
 
