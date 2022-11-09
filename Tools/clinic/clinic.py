@@ -2735,8 +2735,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.parse_argument(data.parse_arguments)
 
         # post_operations
-        post_operations = self.post_operations()
-        if post_operations:
+        if post_operations := self.post_operations():
             data.post_operations.append('/* Post operation for ' + name + ' */\n' + post_operations.rstrip() + "\n")
 
         # cleanup
