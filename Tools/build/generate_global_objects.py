@@ -388,11 +388,8 @@ def generate_global_object_finalizers(immortal_objects):
         printer.write("static inline void")
         with printer.block("_PyStaticObjects_CheckRefcnt(void)"):
             for i in immortal_objects:
-                with printer.block(f'if (Py_REFCNT({i}) < _PyObject_IMMORTAL_REFCNT)', ';'):
-                    printer.write(f'_PyObject_Dump({i});')
-                    printer.write(f'Py_FatalError("immortal object has less refcnt than '
-                                    'expected _PyObject_IMMORTAL_REFCNT");')
-        printer.write('#endif')
+                printer.write(f'_PyStaticObject_CheckRefcnt({i});')
+        printer.write('#endif  // Py_DEBUG')
         printer.write(END)
         printer.write(after)
 
