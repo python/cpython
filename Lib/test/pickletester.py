@@ -3707,9 +3707,7 @@ class AbstractPicklerUnpicklerObjectTests:
     def test_multiple_unpicklings_minimal(self):
         # File-like object that doesn't support peek() and readinto()
         # (bpo-39681)
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with self.assertWarns(DeprecationWarning):
             self._check_multiple_unpicklings(MinimalIO, seekable=False)
 
     def test_unpickling_buffering_readline(self):
