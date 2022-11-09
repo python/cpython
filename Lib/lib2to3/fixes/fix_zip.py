@@ -9,13 +9,16 @@ iter(<>), list(<>), tuple(<>), sorted(<>), ...join(<>), or for V in <>:.
 
 # Local imports
 from .. import fixer_base
-from ..fixer_util import Name, Call, in_special_context
+from ..pytree import Node
+from ..pygram import python_symbols as syms
+from ..fixer_util import Name, ArgList, in_special_context
+
 
 class FixZip(fixer_base.ConditionalFix):
 
     BM_compatible = True
     PATTERN = """
-    power< 'zip' args=trailer< '(' [any] ')' >
+    power< 'zip' args=trailer< '(' [any] ')' > [trailers=trailer*]
     >
     """
 
@@ -28,8 +31,16 @@ class FixZip(fixer_base.ConditionalFix):
         if in_special_context(node):
             return None
 
-        new = node.clone()
-        new.prefix = ""
-        new = Call(Name("list"), [new])
+        args = results['args'].clone()
+        args.prefix = ""
+
+        trailers = []
+        if 'trailers' in results:
+            trailers = [n.clone() for n in results['trailers']]
+            for n in trailers:
+                n.prefix = ""
+
+        new = Node(syms.power, [Name("zip"), args], prefix="")
+        new = Node(syms.power, [Name("list"), ArgList([new])] + trailers)
         new.prefix = node.prefix
         return new

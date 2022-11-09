@@ -22,10 +22,7 @@ __version__ = "6"
 
 import os
 import sys
-import getopt
 import tokenize
-if not hasattr(tokenize, 'NL'):
-    raise ValueError("tokenize.NL doesn't exist -- tokenize module too old")
 
 __all__ = ["check", "NannyNag", "process_tokens"]
 
@@ -40,6 +37,8 @@ def errprint(*args):
     sys.stderr.write("\n")
 
 def main():
+    import getopt
+
     global verbose, filename_only
     try:
         opts, args = getopt.getopt(sys.argv[1:], "qv")
@@ -59,7 +58,7 @@ def main():
 
 class NannyNag(Exception):
     """
-    Raised by tokeneater() if detecting an ambiguous indent.
+    Raised by process_tokens() if detecting an ambiguous indent.
     Captured and handled in check().
     """
     def __init__(self, lineno, msg, line):

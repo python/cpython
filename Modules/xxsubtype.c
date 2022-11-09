@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 PyDoc_STRVAR(xxsubtype__doc__,
 "xxsubtype is an example module showing how to subtype builtin types from C.\n"
@@ -70,10 +70,10 @@ static PyMethodDef spamlist_methods[] = {
         PyDoc_STR("setstate(state)")},
     /* These entries differ only in the flags; they are used by the tests
        in test.test_descr. */
-    {"classmeth", (PyCFunction)spamlist_specialmeth,
+    {"classmeth", _PyCFunction_CAST(spamlist_specialmeth),
         METH_VARARGS | METH_KEYWORDS | METH_CLASS,
         PyDoc_STR("classmeth(*args, **kw)")},
-    {"staticmeth", (PyCFunction)spamlist_specialmeth,
+    {"staticmeth", _PyCFunction_CAST(spamlist_specialmeth),
         METH_VARARGS | METH_KEYWORDS | METH_STATIC,
         PyDoc_STR("staticmeth(*args, **kw)")},
     {NULL,      NULL},
@@ -89,7 +89,7 @@ spamlist_init(spamlistobject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-spamlist_state_get(spamlistobject *self)
+spamlist_state_get(spamlistobject *self, void *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(self->state);
 }
@@ -106,10 +106,10 @@ static PyTypeObject spamlist_type = {
     sizeof(spamlistobject),
     0,
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -197,10 +197,10 @@ static PyTypeObject spamdict_type = {
     sizeof(spamdictobject),
     0,
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -237,10 +237,11 @@ spam_bench(PyObject *self, PyObject *args)
 {
     PyObject *obj, *name, *res;
     int n = 1000;
-    time_t t0, t1;
+    time_t t0 = 0, t1 = 0;
 
-    if (!PyArg_ParseTuple(args, "OS|i", &obj, &name, &n))
+    if (!PyArg_ParseTuple(args, "OU|i", &obj, &name, &n))
         return NULL;
+#ifdef HAVE_CLOCK
     t0 = clock();
     while (--n >= 0) {
         res = PyObject_GetAttr(obj, name);
@@ -249,6 +250,7 @@ spam_bench(PyObject *self, PyObject *args)
         Py_DECREF(res);
     }
     t1 = clock();
+#endif
     return PyFloat_FromDouble((double)(t1-t0) / CLOCKS_PER_SEC);
 }
 

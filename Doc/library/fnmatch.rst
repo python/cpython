@@ -16,6 +16,13 @@ This module provides support for Unix shell-style wildcards, which are *not* the
 same as regular expressions (which are documented in the :mod:`re` module).  The
 special characters used in shell-style wildcards are:
 
+.. index::
+   single: * (asterisk); in glob-style wildcards
+   single: ? (question mark); in glob-style wildcards
+   single: [] (square brackets); in glob-style wildcards
+   single: ! (exclamation); in glob-style wildcards
+   single: - (minus); in glob-style wildcards
+
 +------------+------------------------------------+
 | Pattern    | Meaning                            |
 +============+====================================+
@@ -35,17 +42,19 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
 Note that the filename separator (``'/'`` on Unix) is *not* special to this
 module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
-:func:`fnmatch` to match pathname segments).  Similarly, filenames starting with
+:func:`.filter` to match pathname segments).  Similarly, filenames starting with
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 
+Also note that :func:`functools.lru_cache` with the *maxsize* of 32768 is used to
+cache the compiled regex patterns in the following functions: :func:`fnmatch`,
+:func:`fnmatchcase`, :func:`filter`.
 
 .. function:: fnmatch(filename, pattern)
 
    Test whether the *filename* string matches the *pattern* string, returning
-   :const:`True` or :const:`False`.  If the operating system is case-insensitive,
-   then both parameters will be normalized to all lower- or upper-case before
-   the comparison is performed.  :func:`fnmatchcase` can be used to perform a
+   :const:`True` or :const:`False`.  Both parameters are case-normalized
+   using :func:`os.path.normcase`. :func:`fnmatchcase` can be used to perform a
    case-sensitive comparison, regardless of whether that's standard for the
    operating system.
 
@@ -63,12 +72,13 @@ patterns.
 .. function:: fnmatchcase(filename, pattern)
 
    Test whether *filename* matches *pattern*, returning :const:`True` or
-   :const:`False`; the comparison is case-sensitive.
+   :const:`False`; the comparison is case-sensitive and does not apply
+   :func:`os.path.normcase`.
 
 
 .. function:: filter(names, pattern)
 
-   Return the subset of the list of *names* that match *pattern*. It is the same as
+   Construct a list from those elements of the iterable *names* that match *pattern*. It is the same as
    ``[n for n in names if fnmatch(n, pattern)]``, but implemented more efficiently.
 
 
@@ -86,7 +96,7 @@ patterns.
       '(?s:.*\\.txt)\\Z'
       >>> reobj = re.compile(regex)
       >>> reobj.match('foobar.txt')
-      <_sre.SRE_Match object; span=(0, 10), match='foobar.txt'>
+      <re.Match object; span=(0, 10), match='foobar.txt'>
 
 
 .. seealso::

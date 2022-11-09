@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(type___instancecheck____doc__,
 "__instancecheck__($self, instance, /)\n"
 "--\n"
@@ -130,62 +136,62 @@ type___sizeof__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
     return type___sizeof___impl(self);
 }
 
+PyDoc_STRVAR(object___getstate____doc__,
+"__getstate__($self, /)\n"
+"--\n"
+"\n"
+"Helper for pickle.");
+
+#define OBJECT___GETSTATE___METHODDEF    \
+    {"__getstate__", (PyCFunction)object___getstate__, METH_NOARGS, object___getstate____doc__},
+
+static PyObject *
+object___getstate___impl(PyObject *self);
+
+static PyObject *
+object___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return object___getstate___impl(self);
+}
+
 PyDoc_STRVAR(object___reduce____doc__,
-"__reduce__($self, protocol=0, /)\n"
+"__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Helper for pickle.");
 
 #define OBJECT___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)object___reduce__, METH_FASTCALL, object___reduce____doc__},
+    {"__reduce__", (PyCFunction)object___reduce__, METH_NOARGS, object___reduce____doc__},
 
 static PyObject *
-object___reduce___impl(PyObject *self, int protocol);
+object___reduce___impl(PyObject *self);
 
 static PyObject *
-object___reduce__(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+object___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    int protocol = 0;
-
-    if (!_PyArg_ParseStack(args, nargs, "|i:__reduce__",
-        &protocol)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("__reduce__", kwnames)) {
-        goto exit;
-    }
-    return_value = object___reduce___impl(self, protocol);
-
-exit:
-    return return_value;
+    return object___reduce___impl(self);
 }
 
 PyDoc_STRVAR(object___reduce_ex____doc__,
-"__reduce_ex__($self, protocol=0, /)\n"
+"__reduce_ex__($self, protocol, /)\n"
 "--\n"
 "\n"
 "Helper for pickle.");
 
 #define OBJECT___REDUCE_EX___METHODDEF    \
-    {"__reduce_ex__", (PyCFunction)object___reduce_ex__, METH_FASTCALL, object___reduce_ex____doc__},
+    {"__reduce_ex__", (PyCFunction)object___reduce_ex__, METH_O, object___reduce_ex____doc__},
 
 static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol);
 
 static PyObject *
-object___reduce_ex__(PyObject *self, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+object___reduce_ex__(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    int protocol = 0;
+    int protocol;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:__reduce_ex__",
-        &protocol)) {
-        goto exit;
-    }
-
-    if (!_PyArg_NoStackKeywords("__reduce_ex__", kwnames)) {
+    protocol = _PyLong_AsInt(arg);
+    if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = object___reduce_ex___impl(self, protocol);
@@ -198,7 +204,9 @@ PyDoc_STRVAR(object___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
 "\n"
-"Default object formatter.");
+"Default object formatter.\n"
+"\n"
+"Return str(self) if format_spec is empty. Raise TypeError otherwise.");
 
 #define OBJECT___FORMAT___METHODDEF    \
     {"__format__", (PyCFunction)object___format__, METH_O, object___format____doc__},
@@ -212,9 +220,14 @@ object___format__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *format_spec;
 
-    if (!PyArg_Parse(arg, "U:__format__", &format_spec)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    format_spec = arg;
     return_value = object___format___impl(self, format_spec);
 
 exit:
@@ -256,4 +269,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=ce354e436e2360a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d2fc52440a89f2fa input=a9049054013a1b77]*/

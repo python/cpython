@@ -53,7 +53,7 @@ cfstring_to_pystring(CFStringRef ref)
 
 
 static PyObject*
-get_proxy_settings(PyObject* mod __attribute__((__unused__)))
+get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
 {
     CFDictionaryRef proxyDict = NULL;
     CFNumberRef aNum = NULL;
@@ -62,7 +62,10 @@ get_proxy_settings(PyObject* mod __attribute__((__unused__)))
     PyObject* v;
     int r;
 
+    Py_BEGIN_ALLOW_THREADS
     proxyDict = SCDynamicStoreCopyProxies(NULL);
+    Py_END_ALLOW_THREADS
+
     if (!proxyDict) {
         Py_RETURN_NONE;
     }
@@ -166,13 +169,16 @@ set_proxy(PyObject* proxies, const char* proto, CFDictionaryRef proxyDict,
 
 
 static PyObject*
-get_proxies(PyObject* mod __attribute__((__unused__)))
+get_proxies(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
 {
     PyObject* result = NULL;
     int r;
     CFDictionaryRef proxyDict = NULL;
 
+    Py_BEGIN_ALLOW_THREADS
     proxyDict = SCDynamicStoreCopyProxies(NULL);
+    Py_END_ALLOW_THREADS
+
     if (proxyDict == NULL) {
         return PyDict_New();
     }
@@ -212,33 +218,30 @@ error:
 static PyMethodDef mod_methods[] = {
     {
         "_get_proxy_settings",
-        (PyCFunction)get_proxy_settings,
+        get_proxy_settings,
         METH_NOARGS,
         NULL,
     },
     {
         "_get_proxies",
-        (PyCFunction)get_proxies,
+        get_proxies,
         METH_NOARGS,
         NULL,
     },
     { 0, 0, 0, 0 }
 };
 
-
-
-static struct PyModuleDef mod_module = {
-    PyModuleDef_HEAD_INIT,
-    "_scproxy",
-    NULL,
-    -1,
-    mod_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+static PyModuleDef_Slot _scproxy_slots[] = {
+    {0, NULL}
 };
 
+static struct PyModuleDef _scproxy_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_scproxy",
+    .m_size = 0,
+    .m_methods = mod_methods,
+    .m_slots = _scproxy_slots,
+};
 
 #ifdef __cplusplus
 extern "C" {
@@ -247,10 +250,9 @@ extern "C" {
 PyMODINIT_FUNC
 PyInit__scproxy(void)
 {
-    return PyModule_Create(&mod_module);
+    return PyModuleDef_Init(&_scproxy_module);
 }
 
 #ifdef __cplusplus
 }
 #endif
-

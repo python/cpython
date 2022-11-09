@@ -3,10 +3,10 @@ Tests common to list and UserList.UserList
 """
 
 import sys
-import os
 from functools import cmp_to_key
 
-from test import support, seq_tests
+from test import seq_tests
+from test.support import ALWAYS_EQ, NEVER_EQ
 
 
 class CommonTest(seq_tests.CommonTest):
@@ -31,9 +31,15 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(a, b)
 
     def test_getitem_error(self):
+        a = []
         msg = "list indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            a = []
+            a['a']
+
+    def test_setitem_error(self):
+        a = []
+        msg = "list indices must be integers or slices"
+        with self.assertRaisesRegex(TypeError, msg):
             a['a'] = "python"
 
     def test_repr(self):
@@ -53,24 +59,11 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(str(a2), "[0, 1, 2, [...], 3]")
         self.assertEqual(repr(a2), "[0, 1, 2, [...], 3]")
 
-        l0 = []
+    def test_repr_deep(self):
+        a = self.type2test([])
         for i in range(sys.getrecursionlimit() + 100):
-            l0 = [l0]
-        self.assertRaises(RecursionError, repr, l0)
-
-    def test_print(self):
-        d = self.type2test(range(200))
-        d.append(d)
-        d.extend(range(200,400))
-        d.append(d)
-        d.append(400)
-        try:
-            with open(support.TESTFN, "w") as fo:
-                fo.write(str(d))
-            with open(support.TESTFN, "r") as fo:
-                self.assertEqual(fo.read(), repr(d))
-        finally:
-            os.remove(support.TESTFN)
+            a = self.type2test([a])
+        self.assertRaises(RecursionError, repr, a)
 
     def test_set_subscript(self):
         a = self.type2test(range(20))
@@ -322,6 +315,20 @@ class CommonTest(seq_tests.CommonTest):
 
         self.assertRaises(TypeError, a.remove)
 
+        a = self.type2test([1, 2])
+        self.assertRaises(ValueError, a.remove, NEVER_EQ)
+        self.assertEqual(a, [1, 2])
+        a.remove(ALWAYS_EQ)
+        self.assertEqual(a, [2])
+        a = self.type2test([ALWAYS_EQ])
+        a.remove(1)
+        self.assertEqual(a, [])
+        a = self.type2test([ALWAYS_EQ])
+        a.remove(NEVER_EQ)
+        self.assertEqual(a, [])
+        a = self.type2test([NEVER_EQ])
+        self.assertRaises(ValueError, a.remove, ALWAYS_EQ)
+
         class BadExc(Exception):
             pass
 
@@ -354,66 +361,9 @@ class CommonTest(seq_tests.CommonTest):
             # verify that original order and values are retained.
             self.assertIs(x, y)
 
-    def test_count(self):
-        a = self.type2test([0, 1, 2])*3
-        self.assertEqual(a.count(0), 3)
-        self.assertEqual(a.count(1), 3)
-        self.assertEqual(a.count(3), 0)
-
-        self.assertRaises(TypeError, a.count)
-
-        class BadExc(Exception):
-            pass
-
-        class BadCmp:
-            def __eq__(self, other):
-                if other == 2:
-                    raise BadExc()
-                return False
-
-        self.assertRaises(BadExc, a.count, BadCmp())
-
     def test_index(self):
-        u = self.type2test([0, 1])
-        self.assertEqual(u.index(0), 0)
-        self.assertEqual(u.index(1), 1)
-        self.assertRaises(ValueError, u.index, 2)
-
-        u = self.type2test([-2, -1, 0, 0, 1, 2])
-        self.assertEqual(u.count(0), 2)
-        self.assertEqual(u.index(0), 2)
-        self.assertEqual(u.index(0, 2), 2)
-        self.assertEqual(u.index(-2, -10), 0)
-        self.assertEqual(u.index(0, 3), 3)
-        self.assertEqual(u.index(0, 3, 4), 3)
-        self.assertRaises(ValueError, u.index, 2, 0, -10)
-
-        self.assertRaises(TypeError, u.index)
-
-        class BadExc(Exception):
-            pass
-
-        class BadCmp:
-            def __eq__(self, other):
-                if other == 2:
-                    raise BadExc()
-                return False
-
-        a = self.type2test([0, 1, 2, 3])
-        self.assertRaises(BadExc, a.index, BadCmp())
-
+        super().test_index()
         a = self.type2test([-2, -1, 0, 0, 1, 2])
-        self.assertEqual(a.index(0), 2)
-        self.assertEqual(a.index(0, 2), 2)
-        self.assertEqual(a.index(0, -4), 2)
-        self.assertEqual(a.index(-2, -10), 0)
-        self.assertEqual(a.index(0, 3), 3)
-        self.assertEqual(a.index(0, -3), 3)
-        self.assertEqual(a.index(0, 3, 4), 3)
-        self.assertEqual(a.index(0, -3, -2), 3)
-        self.assertEqual(a.index(0, -4*sys.maxsize, 4*sys.maxsize), 2)
-        self.assertRaises(ValueError, a.index, 0, 4*sys.maxsize,-4*sys.maxsize)
-        self.assertRaises(ValueError, a.index, 2, 0, -10)
         a.remove(0)
         self.assertRaises(ValueError, a.index, 2, 0, 4)
         self.assertEqual(a, self.type2test([-2, -1, 0, 1, 2]))
@@ -548,11 +498,7 @@ class CommonTest(seq_tests.CommonTest):
         self.assertRaises(TypeError, u.__iadd__, None)
 
     def test_imul(self):
-        u = self.type2test([0, 1])
-        u *= 3
-        self.assertEqual(u, self.type2test([0, 1, 0, 1, 0, 1]))
-        u *= 0
-        self.assertEqual(u, self.type2test([]))
+        super().test_imul()
         s = self.type2test([])
         oldid = id(s)
         s *= 10
