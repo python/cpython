@@ -743,12 +743,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
-/* Get opcode and oparg from original instructions, not quickened form. */
-#define TRACING_NEXTOPARG() do { \
-        NEXTOPARG(); \
-        opcode = _PyOpcode_Deopt[opcode]; \
-    } while (0)
-
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
     predict the second code when the first is run.  For example,
@@ -852,8 +846,31 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
+#ifdef Py_STATS
+#define UPDATE_MISS_STATS(INSTNAME)                              \
+    do {                                                         \
+        STAT_INC(opcode, miss);                                  \
+        STAT_INC((INSTNAME), miss);                              \
+        /* The counter is always the first cache entry: */       \
+        if (ADAPTIVE_COUNTER_IS_ZERO(*next_instr)) {             \
+            STAT_INC((INSTNAME), deopt);                         \
+        }                                                        \
+        else {                                                   \
+            /* This is about to be (incorrectly) incremented: */ \
+            STAT_DEC((INSTNAME), deferred);                      \
+        }                                                        \
+    } while (0)
+#else
+#define UPDATE_MISS_STATS(INSTNAME) ((void)0)
+#endif
 
-#define DEOPT_IF(cond, instname) if (cond) { goto miss; }
+#define DEOPT_IF(COND, INSTNAME)                            \
+    if ((COND)) {                                           \
+        /* This is only a single jump on release builds! */ \
+        UPDATE_MISS_STATS((INSTNAME));                      \
+        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+        GO_TO_INSTRUCTION(INSTNAME);                        \
+    }
 
 
 #define GLOBALS() frame->f_globals
@@ -905,11 +922,23 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         dtrace_function_entry(frame); \
     }
 
-#define ADAPTIVE_COUNTER_IS_ZERO(cache) \
-    (cache)->counter < (1<<ADAPTIVE_BACKOFF_BITS)
+#define ADAPTIVE_COUNTER_IS_ZERO(COUNTER) \
+    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == 0)
 
-#define DECREMENT_ADAPTIVE_COUNTER(cache) \
-    (cache)->counter -= (1<<ADAPTIVE_BACKOFF_BITS)
+#define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
+    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
+
+#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
+    do {                                              \
+        assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
+        (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
+    } while (0);
+
+#define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
+    do {                                             \
+        assert(!ADAPTIVE_COUNTER_IS_MAX((COUNTER))); \
+        (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
+    } while (0);
 
 static int
 trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
@@ -1172,7 +1201,8 @@ handle_eval_breaker:
         if (INSTR_OFFSET() >= frame->f_code->_co_firsttraceable) {
             int instr_prev = _PyInterpreterFrame_LASTI(frame);
             frame->prev_instr = next_instr;
-            TRACING_NEXTOPARG();
+            NEXTOPARG();
+            // No _PyOpcode_Deopt here, since RESUME has no optimized forms:
             if (opcode == RESUME) {
                 if (oparg < 2) {
                     CHECK_EVAL_BREAKER();
@@ -1219,8 +1249,29 @@ handle_eval_breaker:
                 }
             }
         }
-        TRACING_NEXTOPARG();
+        NEXTOPARG();
         PRE_DISPATCH_GOTO();
+        // No _PyOpcode_Deopt here, since EXTENDED_ARG has no optimized forms:
+        while (opcode == EXTENDED_ARG) {
+            // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
+            // Inline the EXTENDED_ARG here, so we can avoid branching there:
+            INSTRUCTION_START(EXTENDED_ARG);
+            opcode = _Py_OPCODE(*next_instr);
+            oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            // Make sure the next instruction isn't a RESUME, since that needs
+            // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
+            assert(opcode != RESUME);
+            PRE_DISPATCH_GOTO();
+        }
+        opcode = _PyOpcode_Deopt[opcode];
+        if (_PyOpcode_Caches[opcode]) {
+            _Py_CODEUNIT *counter = &next_instr[1];
+            // The instruction is going to decrement the counter, so we need to
+            // increment it here to make sure it doesn't try to specialize:
+            if (!ADAPTIVE_COUNTER_IS_MAX(*counter)) {
+                INCREMENT_ADAPTIVE_COUNTER(*counter);
+            }
+        }
         DISPATCH_GOTO();
     }
 
@@ -1244,27 +1295,6 @@ handle_eval_breaker:
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
-
-/* Specialization misses */
-
-miss:
-        {
-            STAT_INC(opcode, miss);
-            opcode = _PyOpcode_Deopt[opcode];
-            STAT_INC(opcode, miss);
-            /* The counter is always the first cache entry: */
-            _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
-            *counter -= 1;
-            if (*counter == 0) {
-                int adaptive_opcode = _PyOpcode_Adaptive[opcode];
-                assert(adaptive_opcode);
-                _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
-                STAT_INC(opcode, deopt);
-                *counter = adaptive_counter_start();
-            }
-            next_instr--;
-            DISPATCH_GOTO();
-        }
 
 unbound_local_error:
         {
