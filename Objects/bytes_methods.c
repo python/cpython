@@ -652,7 +652,7 @@ PyDoc_STRVAR_shared(_Py_count__doc__,
 Return the number of non-overlapping occurrences of subsection sub in\n\
 bytes B[start:end].  Optional arguments start and end are interpreted\n\
 as in slice notation. It returns the number of locations zero-length strings,\n\
-whenever a empty string is given.\n\
+whenever a empty string is given as argument in count.\n\
 For ex:- p y t h o n\n\
         ^ ^ ^ ^ ^ ^ ^\n\
 So instead of counting the number of characters we count the number of anti-character\n\
