@@ -1299,7 +1299,7 @@ enumerations)::
 DuplicateFreeEnum
 ^^^^^^^^^^^^^^^^^
 
-Raises an error if a duplicate member name is found instead of creating an
+Raises an error if a duplicate member value is found instead of creating an
 alias::
 
     >>> class DuplicateFreeEnum(Enum):
