@@ -2233,6 +2233,8 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             return wrap_value(node.id)
 
         def visit_BinOp(self, node):
+            # Support constant folding of a couple simple binary operations
+            # commonly used to define default values in text signatures
             left = self.visit(node.left)
             right = self.visit(node.right)
             if not isinstance(left, ast.Constant) or not isinstance(right, ast.Constant):
