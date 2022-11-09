@@ -4240,9 +4240,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         sig = inspect.signature(func)
         self.assertEqual(str(sig), '(self, a, b=1, /, *args, c, d=2, **kwargs)')
 
-        func.__text_signature__ = '(self, a=1+2, b=4-3, c=1 | 4 | 16)'
+        func.__text_signature__ = '(self, a=1+2, b=4-3, c=1 | 3 | 16)'
         sig = inspect.signature(func)
-        self.assertEqual(str(sig), '(self, a=3, b=1, c=21)')
+        self.assertEqual(str(sig), '(self, a=3, b=1, c=19)')
 
         func.__text_signature__ = '(self, a=1,\nb=2,\n\n\n   c=3)'
         sig = inspect.signature(func)
