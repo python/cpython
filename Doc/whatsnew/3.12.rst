@@ -668,6 +668,12 @@ Build Changes
   if the Clang compiler accepts the flag.
   (Contributed by Dong-hee Na in :gh:`89536`.)
 
+* Add ``COMPILEALL_OPTS`` variable in Makefile to override :mod:`compileall`
+  options (default: ``-j0``) in ``make install``. Merge also the 3
+  ``compileall`` commands into a single command building PYC files for the 3
+  optimization levels (0, 1, 2).
+  (Contributed by Victor Stinner in :gh:`99289`.)
+
 
 C API Changes
 =============
