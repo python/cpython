@@ -1,0 +1,1 @@
+:func:`inspect.signature` gets correct arguments for decorated methods
