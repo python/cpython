@@ -1,0 +1,2 @@
+Fix an issue that prevented :c:type:`PyThreadState` and
+:c:type:`PyInterpreterState` memory from being freed properly.
