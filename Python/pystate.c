@@ -356,6 +356,7 @@ PyInterpreterState_New(void)
         interp = &runtime->_main_interpreter;
         assert(interp->id == 0);
         assert(interp->next == NULL);
+        assert(interp->_static);
 
         interpreters->main = interp;
     }
@@ -368,8 +369,8 @@ PyInterpreterState_New(void)
             goto error;
         }
         // Set to _PyInterpreterState_INIT.
-        memcpy(interp, &initial._main_interpreter,
-               sizeof(*interp));
+        memcpy(interp, &initial._main_interpreter, sizeof(*interp));
+        interp->_static = false;
 
         if (id < 0) {
             /* overflow or Py_Initialize() not called yet! */
@@ -837,6 +838,7 @@ new_threadstate(PyInterpreterState *interp)
         assert(id == 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
+        assert(tstate->_static);
     }
     else {
         // Every valid interpreter must have at least one thread.
@@ -848,6 +850,7 @@ new_threadstate(PyInterpreterState *interp)
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
+        tstate->_static = false;
     }
     interp->threads.head = tstate;
 
