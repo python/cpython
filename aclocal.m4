@@ -227,7 +227,7 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
     if ! $found; then
         OPENSSL_INCLUDES=
         for ssldir in $ssldirs; do
-            AC_MSG_CHECKING([for openssl/ssl.h in $ssldir])
+            AC_MSG_CHECKING([for include/openssl/ssl.h in $ssldir])
             if test -f "$ssldir/include/openssl/ssl.h"; then
                 OPENSSL_INCLUDES="-I$ssldir/include"
                 OPENSSL_LDFLAGS="-L$ssldir/lib"
