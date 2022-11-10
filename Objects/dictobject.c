@@ -1200,7 +1200,6 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
         if (keys->dk_usable <= 0) {
             return DKIX_EMPTY;
         }
-        Py_INCREF(name);
         /* Insert into new slot. */
         keys->dk_version = 0;
         Py_ssize_t hashpos = find_empty_slot(keys, hash);
@@ -1208,7 +1207,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
         PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(keys)[ix];
         dictkeys_set_index(keys, hashpos, ix);
         assert(ep->me_key == NULL);
-        ep->me_key = name;
+        ep->me_key = Py_NewRef(name);
         keys->dk_usable--;
         keys->dk_nentries++;
     }
@@ -1453,8 +1452,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
                 int index = get_index_from_order(mp, i);
                 PyDictUnicodeEntry *ep = &oldentries[index];
                 assert(oldvalues->values[index] != NULL);
-                Py_INCREF(ep->me_key);
-                newentries[i].me_key = ep->me_key;
+                newentries[i].me_key = Py_NewRef(ep->me_key);
                 newentries[i].me_hash = unicode_get_hash(ep->me_key);
                 newentries[i].me_value = oldvalues->values[index];
             }
@@ -1467,8 +1465,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
                 int index = get_index_from_order(mp, i);
                 PyDictUnicodeEntry *ep = &oldentries[index];
                 assert(oldvalues->values[index] != NULL);
-                Py_INCREF(ep->me_key);
-                newentries[i].me_key = ep->me_key;
+                newentries[i].me_key = Py_NewRef(ep->me_key);
                 newentries[i].me_value = oldvalues->values[index];
             }
             build_indices_unicode(mp->ma_keys, newentries, numentries);
@@ -1867,9 +1864,8 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
     }
     assert(key);
     assert(value);
-    Py_INCREF(key);
-    Py_INCREF(value);
-    return _PyDict_SetItem_Take2((PyDictObject *)op, key, value);
+    return _PyDict_SetItem_Take2((PyDictObject *)op,
+                                 Py_NewRef(key), Py_NewRef(value));
 }
 
 int
@@ -2185,8 +2181,7 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
 
     if (mp->ma_used == 0) {
         if (deflt) {
-            Py_INCREF(deflt);
-            return deflt;
+            return Py_NewRef(deflt);
         }
         _PyErr_SetKeyError(key);
         return NULL;
@@ -2196,8 +2191,7 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
         return NULL;
     if (ix == DKIX_EMPTY || old_value == NULL) {
         if (deflt) {
-            Py_INCREF(deflt);
-            return deflt;
+            return Py_NewRef(deflt);
         }
         _PyErr_SetKeyError(key);
         return NULL;
@@ -2218,8 +2212,7 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt)
 
     if (((PyDictObject *)dict)->ma_used == 0) {
         if (deflt) {
-            Py_INCREF(deflt);
-            return deflt;
+            return Py_NewRef(deflt);
         }
         _PyErr_SetKeyError(key);
         return NULL;
@@ -2260,9 +2253,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             }
 
             while (_PyDict_Next(iterable, &pos, &key, &oldvalue, &hash)) {
-                Py_INCREF(key);
-                Py_INCREF(value);
-                if (insertdict(mp, key, hash, value)) {
+                if (insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value))) {
                     Py_DECREF(d);
                     return NULL;
                 }
@@ -2281,9 +2272,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             }
 
             while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
-                Py_INCREF(key);
-                Py_INCREF(value);
-                if (insertdict(mp, key, hash, value)) {
+                if (insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value))) {
                     Py_DECREF(d);
                     return NULL;
                 }
@@ -2489,8 +2478,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
         _PyErr_SetKeyError(key);
         return NULL;
     }
-    Py_INCREF(value);
-    return value;
+    return Py_NewRef(value);
 }
 
 static int
@@ -2532,8 +2520,7 @@ dict_keys(PyDictObject *mp)
     PyObject *key;
     while (_PyDict_Next((PyObject*)mp, &pos, &key, NULL, NULL)) {
         assert(j < n);
-        Py_INCREF(key);
-        PyList_SET_ITEM(v, j, key);
+        PyList_SET_ITEM(v, j, Py_NewRef(key));
         j++;
     }
     assert(j == n);
@@ -2564,8 +2551,7 @@ dict_values(PyDictObject *mp)
     PyObject *value;
     while (_PyDict_Next((PyObject*)mp, &pos, NULL, &value, NULL)) {
         assert(j < n);
-        Py_INCREF(value);
-        PyList_SET_ITEM(v, j, value);
+        PyList_SET_ITEM(v, j, Py_NewRef(value));
         j++;
     }
     assert(j == n);
@@ -2610,10 +2596,8 @@ dict_items(PyDictObject *mp)
     while (_PyDict_Next((PyObject*)mp, &pos, &key, &value, NULL)) {
         assert(j < n);
         PyObject *item = PyList_GET_ITEM(v, j);
-        Py_INCREF(key);
-        PyTuple_SET_ITEM(item, 0, key);
-        Py_INCREF(value);
-        PyTuple_SET_ITEM(item, 1, value);
+        PyTuple_SET_ITEM(item, 0, Py_NewRef(key));
+        PyTuple_SET_ITEM(item, 1, Py_NewRef(value));
         j++;
     }
     assert(j == n);
@@ -2865,16 +2849,12 @@ dict_merge(PyObject *a, PyObject *b, int override)
             Py_INCREF(key);
             Py_INCREF(value);
             if (override == 1) {
-                Py_INCREF(key);
-                Py_INCREF(value);
-                err = insertdict(mp, key, hash, value);
+                err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
             }
             else {
                 err = _PyDict_Contains_KnownHash(a, key, hash);
                 if (err == 0) {
-                    Py_INCREF(key);
-                    Py_INCREF(value);
-                    err = insertdict(mp, key, hash, value);
+                    err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
                 }
                 else if (err > 0) {
                     if (override != 0) {
@@ -3021,8 +3001,7 @@ PyDict_Copy(PyObject *o)
         dictkeys_incref(mp->ma_keys);
         for (i = 0, n = size; i < n; i++) {
             PyObject *value = mp->ma_values->values[i];
-            Py_XINCREF(value);
-            split_copy->ma_values->values[i] = value;
+            split_copy->ma_values->values[i] = Py_XNewRef(value);
         }
         if (_PyObject_GC_IS_TRACKED(mp))
             _PyObject_GC_TRACK(split_copy);
@@ -3197,8 +3176,7 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
     }
     else
         res = Py_NotImplemented;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 /*[clinic input]
@@ -3263,8 +3241,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     if (ix == DKIX_EMPTY || val == NULL) {
         val = default_value;
     }
-    Py_INCREF(val);
-    return val;
+    return Py_NewRef(val);
 }
 
 PyObject *
@@ -3286,9 +3263,8 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
     }
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
-        Py_INCREF(key);
-        Py_INCREF(defaultobj);
-        if (insert_to_emptydict(mp, key, hash, defaultobj) < 0) {
+        if (insert_to_emptydict(mp, Py_NewRef(key), hash,
+                                Py_NewRef(defaultobj)) < 0) {
             return NULL;
         }
         return defaultobj;
@@ -3318,26 +3294,24 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         if (DK_IS_UNICODE(mp->ma_keys)) {
             assert(PyUnicode_CheckExact(key));
             PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
-            ep->me_key = key;
+            ep->me_key = Py_NewRef(key);
             if (_PyDict_HasSplitTable(mp)) {
                 Py_ssize_t index = (int)mp->ma_keys->dk_nentries;
                 assert(index < SHARED_KEYS_MAX_SIZE);
                 assert(mp->ma_values->values[index] == NULL);
-                mp->ma_values->values[index] = value;
+                mp->ma_values->values[index] = Py_NewRef(value);
                 _PyDictValues_AddToInsertionOrder(mp->ma_values, index);
             }
             else {
-                ep->me_value = value;
+                ep->me_value = Py_NewRef(value);
             }
         }
         else {
             PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
-            ep->me_key = key;
+            ep->me_key = Py_NewRef(key);
             ep->me_hash = hash;
-            ep->me_value = value;
+            ep->me_value = Py_NewRef(value);
         }
-        Py_INCREF(key);
-        Py_INCREF(value);
         MAINTAIN_TRACKING(mp, key, value);
         mp->ma_used++;
         mp->ma_version_tag = new_version;
@@ -3350,9 +3324,8 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         value = defaultobj;
         assert(_PyDict_HasSplitTable(mp));
         assert(mp->ma_values->values[ix] == NULL);
-        Py_INCREF(value);
         MAINTAIN_TRACKING(mp, key, value);
-        mp->ma_values->values[ix] = value;
+        mp->ma_values->values[ix] = Py_NewRef(value);
         _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
         mp->ma_used++;
         mp->ma_version_tag = new_version;
@@ -3382,8 +3355,7 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
     PyObject *val;
 
     val = PyDict_SetDefault((PyObject *)self, key, default_value);
-    Py_XINCREF(val);
-    return val;
+    return Py_XNewRef(val);
 }
 
 static PyObject *
@@ -3603,8 +3575,7 @@ dict_ior(PyObject *self, PyObject *other)
     if (dict_update_arg(self, other)) {
         return NULL;
     }
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 PyDoc_STRVAR(getitem__doc__,
@@ -3942,8 +3913,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     if (di == NULL) {
         return NULL;
     }
-    Py_INCREF(dict);
-    di->di_dict = dict;
+    di->di_dict = (PyDictObject*)Py_NewRef(dict);
     di->di_used = dict->ma_used;
     di->len = dict->ma_used;
     if (itertype == &PyDictRevIterKey_Type ||
@@ -4077,8 +4047,7 @@ dictiter_iternextkey(dictiterobject *di)
     }
     di->di_pos = i+1;
     di->len--;
-    Py_INCREF(key);
-    return key;
+    return Py_NewRef(key);
 
 fail:
     di->di_dict = NULL;
@@ -4177,8 +4146,7 @@ dictiter_iternextvalue(dictiterobject *di)
     }
     di->di_pos = i+1;
     di->len--;
-    Py_INCREF(value);
-    return value;
+    return Py_NewRef(value);
 
 fail:
     di->di_dict = NULL;
@@ -4280,14 +4248,12 @@ dictiter_iternextitem(dictiterobject *di)
     }
     di->di_pos = i+1;
     di->len--;
-    Py_INCREF(key);
-    Py_INCREF(value);
     result = di->di_result;
     if (Py_REFCNT(result) == 1) {
         PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
         PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
-        PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
-        PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
+        PyTuple_SET_ITEM(result, 1, Py_NewRef(value));
         Py_INCREF(result);
         Py_DECREF(oldkey);
         Py_DECREF(oldvalue);
@@ -4301,8 +4267,8 @@ dictiter_iternextitem(dictiterobject *di)
         result = PyTuple_New(2);
         if (result == NULL)
             return NULL;
-        PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
-        PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
+        PyTuple_SET_ITEM(result, 1, Py_NewRef(value));
     }
     return result;
 
@@ -4406,22 +4372,18 @@ dictreviter_iternext(dictiterobject *di)
     di->len--;
 
     if (Py_IS_TYPE(di, &PyDictRevIterKey_Type)) {
-        Py_INCREF(key);
-        return key;
+        return Py_NewRef(key);
     }
     else if (Py_IS_TYPE(di, &PyDictRevIterValue_Type)) {
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     }
     else if (Py_IS_TYPE(di, &PyDictRevIterItem_Type)) {
-        Py_INCREF(key);
-        Py_INCREF(value);
         result = di->di_result;
         if (Py_REFCNT(result) == 1) {
             PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
             PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
-            PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
-            PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+            PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
+            PyTuple_SET_ITEM(result, 1, Py_NewRef(value));
             Py_INCREF(result);
             Py_DECREF(oldkey);
             Py_DECREF(oldvalue);
@@ -4436,8 +4398,8 @@ dictreviter_iternext(dictiterobject *di)
             if (result == NULL) {
                 return NULL;
             }
-            PyTuple_SET_ITEM(result, 0, key); /* steals reference */
-            PyTuple_SET_ITEM(result, 1, value); /* steals reference */
+            PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
+            PyTuple_SET_ITEM(result, 1, Py_NewRef(value));
         }
         return result;
     }
@@ -4484,7 +4446,6 @@ dictiter_reduce(dictiterobject *di, PyObject *Py_UNUSED(ignored))
     /* copy the iterator state */
     dictiterobject tmp = *di;
     Py_XINCREF(tmp.di_dict);
-
     PyObject *list = PySequence_List((PyObject*)&tmp);
     Py_XDECREF(tmp.di_dict);
     if (list == NULL) {
@@ -4566,8 +4527,7 @@ _PyDictView_New(PyObject *dict, PyTypeObject *type)
     dv = PyObject_GC_New(_PyDictViewObject, type);
     if (dv == NULL)
         return NULL;
-    Py_INCREF(dict);
-    dv->dv_dict = (PyDictObject *)dict;
+    dv->dv_dict = (PyDictObject *)Py_NewRef(dict);
     _PyObject_GC_TRACK(dv);
     return (PyObject *)dv;
 }
@@ -4678,8 +4638,7 @@ dictview_richcompare(PyObject *self, PyObject *other, int op)
     if (ok < 0)
         return NULL;
     result = ok ? Py_True : Py_False;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 static PyObject *
@@ -5445,8 +5404,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
         }
     }
     PyObject *old_value = values->values[ix];
-    Py_XINCREF(value);
-    values->values[ix] = value;
+    values->values[ix] = Py_XNewRef(value);
     if (old_value == NULL) {
         if (value == NULL) {
             PyErr_Format(PyExc_AttributeError,
@@ -5508,8 +5466,7 @@ _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
         return NULL;
     }
     PyObject *value = values->values[ix];
-    Py_XINCREF(value);
-    return value;
+    return Py_XNewRef(value);
 }
 
 int
@@ -5652,8 +5609,7 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
             }
         }
     }
-    Py_XINCREF(dict);
-    return dict;
+    return Py_XNewRef(dict);
 }
 
 int
