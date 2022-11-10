@@ -200,8 +200,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     }
     for (i = 0; i < len; ++i) {
         PyObject *v = PySequence_Fast_GET_ITEM(arg, i);
-        Py_INCREF(v);
-        res->ob_item[i] = v;
+        res->ob_item[i] = Py_NewRef(v);
     }
     Py_DECREF(arg);
     for (; i < max_len; ++i) {
@@ -219,8 +218,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
                 ob = Py_None;
             }
         }
-        Py_INCREF(ob);
-        res->ob_item[i] = ob;
+        res->ob_item[i] = Py_NewRef(ob);
     }
 
     _PyObject_GC_TRACK(res);
