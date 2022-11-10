@@ -1,1 +1,1 @@
-Compile removes all unused consts from code objects (except the first one, which may be a dicstring).
+The compiler now removes all unused constants from code objects (except the first one, which may be a docstring).
