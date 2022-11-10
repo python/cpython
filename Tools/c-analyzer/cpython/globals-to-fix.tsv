@@ -317,7 +317,6 @@ Python/hamt.c	-	_empty_hamt	-
 
 # state
 Objects/typeobject.c	resolve_slotdups	pname	-
-Python/import.c	-	extensions	-
 
 
 ##################################
