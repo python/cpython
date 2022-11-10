@@ -394,8 +394,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             Py_DECREF(value);
             Py_DECREF(values);
             // Return None:
-            Py_INCREF(Py_None);
-            values = Py_None;
+            values = Py_NewRef(Py_None);
             goto done;
         }
         PyTuple_SET_ITEM(values, i, value);
@@ -746,12 +745,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
-/* Get opcode and oparg from original instructions, not quickened form. */
-#define TRACING_NEXTOPARG() do { \
-        NEXTOPARG(); \
-        opcode = _PyOpcode_Deopt[opcode]; \
-    } while (0)
-
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
     predict the second code when the first is run.  For example,
@@ -855,8 +848,31 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
+#ifdef Py_STATS
+#define UPDATE_MISS_STATS(INSTNAME)                              \
+    do {                                                         \
+        STAT_INC(opcode, miss);                                  \
+        STAT_INC((INSTNAME), miss);                              \
+        /* The counter is always the first cache entry: */       \
+        if (ADAPTIVE_COUNTER_IS_ZERO(*next_instr)) {             \
+            STAT_INC((INSTNAME), deopt);                         \
+        }                                                        \
+        else {                                                   \
+            /* This is about to be (incorrectly) incremented: */ \
+            STAT_DEC((INSTNAME), deferred);                      \
+        }                                                        \
+    } while (0)
+#else
+#define UPDATE_MISS_STATS(INSTNAME) ((void)0)
+#endif
 
-#define DEOPT_IF(cond, instname) if (cond) { goto miss; }
+#define DEOPT_IF(COND, INSTNAME)                            \
+    if ((COND)) {                                           \
+        /* This is only a single jump on release builds! */ \
+        UPDATE_MISS_STATS((INSTNAME));                      \
+        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+        GO_TO_INSTRUCTION(INSTNAME);                        \
+    }
 
 
 #define GLOBALS() frame->f_globals
@@ -908,11 +924,23 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         dtrace_function_entry(frame); \
     }
 
-#define ADAPTIVE_COUNTER_IS_ZERO(cache) \
-    (cache)->counter < (1<<ADAPTIVE_BACKOFF_BITS)
+#define ADAPTIVE_COUNTER_IS_ZERO(COUNTER) \
+    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == 0)
 
-#define DECREMENT_ADAPTIVE_COUNTER(cache) \
-    (cache)->counter -= (1<<ADAPTIVE_BACKOFF_BITS)
+#define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
+    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
+
+#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
+    do {                                              \
+        assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
+        (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
+    } while (0);
+
+#define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
+    do {                                             \
+        assert(!ADAPTIVE_COUNTER_IS_MAX((COUNTER))); \
+        (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
+    } while (0);
 
 static int
 trace_function_entry(PyThreadState *tstate, _PyInterpreterFrame *frame)
@@ -1183,7 +1211,8 @@ handle_eval_breaker:
         if (INSTR_OFFSET() >= frame->f_code->_co_firsttraceable) {
             int instr_prev = _PyInterpreterFrame_LASTI(frame);
             frame->prev_instr = next_instr;
-            TRACING_NEXTOPARG();
+            NEXTOPARG();
+            // No _PyOpcode_Deopt here, since RESUME has no optimized forms:
             if (opcode == RESUME) {
                 if (oparg < 2) {
                     CHECK_EVAL_BREAKER();
@@ -1230,8 +1259,29 @@ handle_eval_breaker:
                 }
             }
         }
-        TRACING_NEXTOPARG();
+        NEXTOPARG();
         PRE_DISPATCH_GOTO();
+        // No _PyOpcode_Deopt here, since EXTENDED_ARG has no optimized forms:
+        while (opcode == EXTENDED_ARG) {
+            // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
+            // Inline the EXTENDED_ARG here, so we can avoid branching there:
+            INSTRUCTION_START(EXTENDED_ARG);
+            opcode = _Py_OPCODE(*next_instr);
+            oparg = oparg << 8 | _Py_OPARG(*next_instr);
+            // Make sure the next instruction isn't a RESUME, since that needs
+            // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
+            assert(opcode != RESUME);
+            PRE_DISPATCH_GOTO();
+        }
+        opcode = _PyOpcode_Deopt[opcode];
+        if (_PyOpcode_Caches[opcode]) {
+            _Py_CODEUNIT *counter = &next_instr[1];
+            // The instruction is going to decrement the counter, so we need to
+            // increment it here to make sure it doesn't try to specialize:
+            if (!ADAPTIVE_COUNTER_IS_MAX(*counter)) {
+                INCREMENT_ADAPTIVE_COUNTER(*counter);
+            }
+        }
         DISPATCH_GOTO();
     }
 
@@ -1255,27 +1305,6 @@ handle_eval_breaker:
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
-
-/* Specialization misses */
-
-miss:
-        {
-            STAT_INC(opcode, miss);
-            opcode = _PyOpcode_Deopt[opcode];
-            STAT_INC(opcode, miss);
-            /* The counter is always the first cache entry: */
-            _Py_CODEUNIT *counter = (_Py_CODEUNIT *)next_instr;
-            *counter -= 1;
-            if (*counter == 0) {
-                int adaptive_opcode = _PyOpcode_Adaptive[opcode];
-                assert(adaptive_opcode);
-                _Py_SET_OPCODE(next_instr[-1], adaptive_opcode);
-                STAT_INC(opcode, deopt);
-                *counter = adaptive_counter_start();
-            }
-            next_instr--;
-            DISPATCH_GOTO();
-        }
 
 unbound_local_error:
         {
@@ -1861,8 +1890,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             for (; i < defcount; i++) {
                 if (localsplus[m+i] == NULL) {
                     PyObject *def = defs[i];
-                    Py_INCREF(def);
-                    localsplus[m+i] = def;
+                    localsplus[m+i] = Py_NewRef(def);
                 }
             }
         }
@@ -1878,8 +1906,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             if (func->func_kwdefaults != NULL) {
                 PyObject *def = PyDict_GetItemWithError(func->func_kwdefaults, varname);
                 if (def) {
-                    Py_INCREF(def);
-                    localsplus[i] = def;
+                    localsplus[i] = Py_NewRef(def);
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
@@ -2064,15 +2091,13 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
             newargs[i] = args[i];
         }
         for (int i = 0; i < kwcount; i++) {
-            Py_INCREF(kws[2*i]);
-            PyTuple_SET_ITEM(kwnames, i, kws[2*i]);
+            PyTuple_SET_ITEM(kwnames, i, Py_NewRef(kws[2*i]));
             newargs[argcount+i] = kws[2*i+1];
         }
         allargs = newargs;
     }
     for (int i = 0; i < kwcount; i++) {
-        Py_INCREF(kws[2*i]);
-        PyTuple_SET_ITEM(kwnames, i, kws[2*i]);
+        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(kws[2*i]));
     }
     PyFrameConstructor constr = {
         .fc_globals = globals,
@@ -2367,8 +2392,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
     int err;
     _PyErr_Fetch(tstate, &type, &value, &orig_traceback);
     if (value == NULL) {
-        value = Py_None;
-        Py_INCREF(value);
+        value = Py_NewRef(Py_None);
     }
     _PyErr_NormalizeException(tstate, &type, &value, &orig_traceback);
     traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;
@@ -2671,8 +2695,7 @@ _PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
         return -1;
     }
 
-    Py_XINCREF(firstiter);
-    Py_XSETREF(tstate->async_gen_firstiter, firstiter);
+    Py_XSETREF(tstate->async_gen_firstiter, Py_XNewRef(firstiter));
     return 0;
 }
 
@@ -2692,8 +2715,7 @@ _PyEval_SetAsyncGenFinalizer(PyObject *finalizer)
         return -1;
     }
 
-    Py_XINCREF(finalizer);
-    Py_XSETREF(tstate->async_gen_finalizer, finalizer);
+    Py_XSETREF(tstate->async_gen_finalizer, Py_XNewRef(finalizer));
     return 0;
 }
 
