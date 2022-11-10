@@ -87,6 +87,7 @@ def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
+def_op('EXIT_INIT_CHECK', 16)
 
 def_op('BINARY_SUBSCR', 25)
 def_op('BINARY_SLICE', 26)
@@ -306,6 +307,7 @@ _specializations = {
         "CALL_NO_KW_BUILTIN_O",
         "CALL_NO_KW_ISINSTANCE",
         "CALL_NO_KW_LEN",
+        "CALL_NO_KW_ALLOC_AND_ENTER_INIT",
         "CALL_NO_KW_LIST_APPEND",
         "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
         "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",

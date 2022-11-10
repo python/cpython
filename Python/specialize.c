@@ -1436,11 +1436,45 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+static PyFunctionObject *
+get_init_for_simple_managed_python_class(PyTypeObject *tp)
+{
+    if (tp->tp_new != PyBaseObject_Type.tp_new) {
+        return NULL;
+    }
+    if (tp->tp_alloc != PyType_GenericAlloc) {
+        return NULL;
+    }
+    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        return NULL;
+    }
+    if (!(tp->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        return NULL;
+    }
+    PyObject *init = _PyType_Lookup(tp, &_Py_ID(__init__));
+    if (init == NULL || !PyFunction_Check(init)) {
+        return NULL;
+    }
+    int kind = function_kind((PyCodeObject *)PyFunction_GET_CODE(init));
+    if (kind != SIMPLE_FUNCTION) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_INIT_NOT_SIMPLE);
+        return NULL;
+    }
+    Py_CLEAR(((PyHeapTypeObject *)tp)->_spec_cache.init);
+    ((PyHeapTypeObject *)tp)->_spec_cache.init = init;
+    return (PyFunctionObject *)init;
+}
+static int setup_init_cleanup_code(void);
+
 static int
 specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                       PyObject *kwnames)
 {
+    assert(PyType_Check(callable));
     PyTypeObject *tp = _PyType_CAST(callable);
+    if (setup_init_cleanup_code()) {
+        return -1;
+    }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PYTHON_CLASS);
         return -1;
@@ -1468,6 +1502,23 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         SPECIALIZATION_FAIL(CALL, tp == &PyUnicode_Type ?
             SPEC_FAIL_CALL_STR : SPEC_FAIL_CALL_CLASS_NO_VECTORCALL);
         return -1;
+    }
+    else {
+        PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
+        if (init != NULL) {
+            if (((PyCodeObject *)init->func_code)->co_argcount != nargs+1) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                return -1;
+            }
+            if (kwnames) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
+                return -1;
+            }
+            _PyCallCache *cache = (_PyCallCache *)(instr + 1);
+            write_u32(cache->func_version, tp->tp_version_tag);
+            _Py_SET_OPCODE(*instr, CALL_NO_KW_ALLOC_AND_ENTER_INIT);
+            return 0;
+        }
     }
     SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_CLASS_MUTABLE);
     return -1;
@@ -2175,4 +2226,43 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
 success:
     STAT_INC(FOR_ITER, success);
     cache->counter = adaptive_counter_cooldown();
+}
+
+/* Code init cleanup.
+ * CALL_NO_KW_ALLOC_AND_ENTER_INIT will set up
+ * the frame to execute the EXIT_INIT_CHECK
+ * instruction.
+ * Starts with an assertion error, in case it is called
+ * directly.
+ * Ends with a RESUME so that it is not traced.
+ * This is used as a plain code object, not a function,
+ * so must not access globals or builtins.
+ */
+static const uint8_t INIT_CLEANUP_CODE[10] = {
+    LOAD_ASSERTION_ERROR, 0,
+    RAISE_VARARGS, 1,
+    EXIT_INIT_CHECK, 0,
+    RETURN_VALUE, 0,
+    RESUME, 0
+};
+
+static const _PyShimCodeDef INIT_CLEANUP_DEF = {
+    INIT_CLEANUP_CODE,
+    sizeof(INIT_CLEANUP_CODE),
+    2,
+    "type.__call__"
+};
+
+static int
+setup_init_cleanup_code(void) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->callable_cache.init_cleanup != NULL) {
+        return 0;
+    }
+    PyCodeObject *init = _Py_MakeShimCode(&INIT_CLEANUP_DEF);
+    if (init == NULL) {
+        return -1;
+    }
+    interp->callable_cache.init_cleanup = init;
+    return 0;
 }

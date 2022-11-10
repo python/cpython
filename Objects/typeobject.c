@@ -502,7 +502,6 @@ PyType_Modified(PyTypeObject *type)
         }
     }
 
-
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
@@ -1305,6 +1304,26 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
         else {
             assert(!_PyErr_Occurred(tstate));
         }
+    }
+    return obj;
+}
+
+PyObject *
+_PyType_NewManagedObject(PyTypeObject *type)
+{
+    assert(type->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(_PyType_IS_GC(type));
+    assert(type->tp_new == PyBaseObject_Type.tp_new);
+    assert(type->tp_alloc == PyType_GenericAlloc);
+    assert(type->tp_itemsize == 0);
+    PyObject *obj = PyType_GenericAlloc(type, 0);
+    if (obj == NULL) {
+        return PyErr_NoMemory();
+    }
+    _PyObject_DictOrValuesPointer(obj)->dict = NULL;
+    if (_PyObject_InitInlineValues(obj, type)) {
+        Py_DECREF(obj);
+        return NULL;
     }
     return obj;
 }

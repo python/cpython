@@ -230,6 +230,7 @@ struct _typeobject {
  * by code other than the specializer and interpreter. */
 struct _specialization_cache {
     PyObject *getitem;
+    PyObject *init;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
