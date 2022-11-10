@@ -123,6 +123,25 @@ struct _is {
 
     // sys.modules dictionary
     PyObject *modules;
+    /* This is the list of module objects for all legacy (single-phase init)
+       extension modules ever loaded in this process (i.e. imported
+       in this interpreter or in any other).  Py_None stands in for
+       modules that haven't actually been imported in this interpreter.
+
+       A module's index (PyModuleDef.m_base.m_index) is used to look up
+       the corresponding module object for this interpreter, if any.
+       (See PyState_FindModule().)  When any extension module
+       is initialized during import, its moduledef gets initialized by
+       PyModuleDef_Init(), and the first time that happens for each
+       PyModuleDef, its index gets set to the current value of
+       a global counter (see _PyRuntimeState.imports.last_module_index).
+       The entry for that index in this interpreter remains unset until
+       the module is actually imported here.  (Py_None is used as
+       a placeholder.)  Note that multi-phase init modules always get
+       an index for which there will never be a module set.
+
+       This is initialized lazily in _PyState_AddModule(), which is also
+       where modules get added. */
     PyObject *modules_by_index;
     // Dictionary of the sys module
     PyObject *sysdict;
