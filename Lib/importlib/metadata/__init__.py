@@ -17,7 +17,7 @@ import collections
 from . import _adapters, _meta
 from ._meta import PackageMetadata
 from ._collections import FreezableDefaultDict, Pair
-from ._functools import method_cache
+from ._functools import method_cache, pass_none
 from ._itertools import unique_everseen
 from ._meta import PackageMetadata, SimplePath
 
@@ -938,13 +938,25 @@ class PathDistribution(Distribution):
         normalized name from the file system path.
         """
         stem = os.path.basename(str(self._path))
-        return self._name_from_stem(stem) or super()._normalized_name
+        return (
+            pass_none(Prepared.normalize)(self._name_from_stem(stem))
+            or super()._normalized_name
+        )
 
-    def _name_from_stem(self, stem):
-        name, ext = os.path.splitext(stem)
+    @staticmethod
+    def _name_from_stem(stem):
+        """
+        >>> PathDistribution._name_from_stem('foo-3.0.egg-info')
+        'foo'
+        >>> PathDistribution._name_from_stem('CherryPy-3.0.dist-info')
+        'CherryPy'
+        >>> PathDistribution._name_from_stem('face.egg-info')
+        'face'
+        """
+        filename, ext = os.path.splitext(stem)
         if ext not in ('.dist-info', '.egg-info'):
             return
-        name, sep, rest = stem.partition('-')
+        name, sep, rest = filename.partition('-')
         return name
 
 
