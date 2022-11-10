@@ -577,7 +577,7 @@ class OperatorTestCase:
         operator = self.module
 
         # Simple cases:
-        data1 = [1, 2,, 3]
+        data1 = [1, 2, 3]
         data2 = ['a', 'b']
         res = operator.iconcat(data1, data2)
         self.assertEqual(res, [1, 2, 'a', 'b'])
