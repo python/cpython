@@ -375,6 +375,25 @@ if not home and not py_setpath:
                     pass
                 if not base_executable:
                     base_executable = joinpath(executable_dir, basename(executable))
+                    # It's possible "python" is executed from within a posix venv but that
+                    # "python" is not available in the "home" directory as the standard
+                    # `make install` does not create it and distros often do not provide it.
+                    #
+                    # In this case, try to fall back to known alternatives
+                    if os_name != 'nt' and not isfile(base_executable):
+                        base_exe = basename(executable)
+                        for candidate in (DEFAULT_PROGRAM_NAME, f'python{VERSION_MAJOR}.{VERSION_MINOR}'):
+                            candidate += EXE_SUFFIX if EXE_SUFFIX else ''
+                            if base_exe == candidate:
+                                continue
+                            candidate = joinpath(executable_dir, candidate)
+                            # Only set base_executable if the candidate exists.
+                            # If no candidate succeeds, subsequent errors related to
+                            # base_executable (like FileNotFoundError) remain in the
+                            # context of the original executable name
+                            if isfile(candidate):
+                                base_executable = candidate
+                                break
             break
     else:
         venv_prefix = None
