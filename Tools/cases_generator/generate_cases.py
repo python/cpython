@@ -39,7 +39,6 @@ def parse_cases(
     families: list[parser.Family] = []
     while not psr.eof():
         if inst := psr.inst_def():
-            assert inst.block
             instrs.append(inst)
         elif sup := psr.super_def():
             supers.append(sup)
@@ -69,7 +68,6 @@ def always_exits(block: parser.Block) -> bool:
 
 
 def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, dedent: int = 0):
-    assert instr.block
     if dedent < 0:
         indent += " " * -dedent
     # Separate stack inputs from cache inputs
@@ -92,12 +90,11 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
         cache_offset += ceffect.size
     # TODO: Is it better to count forward or backward?
     for i, effect in enumerate(reversed(stack), 1):
-        if effect.name is not "unused":
+        if effect.name != "unused":
             f.write(f"{indent}    PyObject *{effect.name} = PEEK({i});\n")
     for output in instr.outputs:
         if output.name not in input_names and output.name != "unused":
             f.write(f"{indent}    PyObject *{output.name};\n")
-    assert instr.block is not None
     blocklines = instr.block.to_text(dedent=dedent).splitlines(True)
     # Remove blank lines from ends
     while blocklines and not blocklines[0].strip():
@@ -146,8 +143,6 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
 def write_cases(f: TextIO, instrs: list[InstDef], supers: list[parser.Super]):
     predictions: set[str] = set()
     for instr in instrs:
-        assert isinstance(instr, InstDef)
-        assert instr.block is not None
         for target in re.findall(RE_PREDICTED, instr.block.text):
             predictions.add(target)
     indent = "        "
@@ -160,18 +155,15 @@ def write_cases(f: TextIO, instrs: list[InstDef], supers: list[parser.Super]):
         if instr.name in predictions:
             f.write(f"{indent}    PREDICTED({instr.name});\n")
         write_instr(instr, predictions, indent, f)
-        assert instr.block
         if not always_exits(instr.block):
             f.write(f"{indent}    DISPATCH();\n")
         # Write trailing '}'
         f.write(f"{indent}}}\n")
 
     for sup in supers:
-        assert isinstance(sup, parser.Super)
         components = [instr_index[name] for name in sup.ops]
         f.write(f"\n{indent}TARGET({sup.name}) {{\n")
         for i, instr in enumerate(components):
-            assert instr.block
             if i > 0:
                 f.write(f"{indent}    NEXTOPARG();\n")
                 f.write(f"{indent}    next_instr++;\n")
