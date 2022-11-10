@@ -9747,11 +9747,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (int i = 0; i < nconsts; i++) {
         if (index_map[i] != -1) {
             assert(index_map[i] == i);
-            if (n_used_consts != i) {
-                index_map[i] = -1;
-                index_map[n_used_consts] = i;
-            }
-            n_used_consts++;
+            index_map[n_used_consts++] = index_map[i];
         }
     }
     if (n_used_consts == nconsts) {
@@ -9785,11 +9781,10 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     for (Py_ssize_t i = 0; i < nconsts; i++) {
         reverse_index_map[i] = -1;
     }
-    for (Py_ssize_t i = 0; i < nconsts; i++) {
-        if (index_map[i] != -1) {
-            assert(reverse_index_map[index_map[i]] == -1);
-            reverse_index_map[index_map[i]] = i;
-        }
+    for (Py_ssize_t i = 0; i < n_used_consts; i++) {
+        assert(index_map[i] != -1);
+        assert(reverse_index_map[index_map[i]] == -1);
+        reverse_index_map[index_map[i]] = i;
     }
 
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
