@@ -698,17 +698,21 @@ if 1:
     def test_remove_unused_consts_extended_args(self):
         N = 1000
         code = ["def f():\n"]
+        code.append("\ts = ''\n")
         for i in range(N):
-            code.append(f"\tif True: f{i} = 't{i}'\n")
-            code.append(f"\tif False: f{i} = 'f{i}'\n")
+            code.append(f"\tif True: s += 't{i}'\n")
+            code.append(f"\tif False: s += 'f{i}'\n")
+        code.append("\treturn s\n")
 
         code = "".join(code)
         g = {}
         eval(compile(code, "file.py", "exec"), g)
         exec(code, g)
         f = g['f']
-        expected = tuple([None] + [f't{i}' for i in range(N)])
+        expected = tuple([None, ''] + [f't{i}' for i in range(N)])
         self.assertEqual(f.__code__.co_consts, expected)
+        expected = "".join(expected[2:])
+        self.assertEqual(expected, f())
 
     # Stripping unused constants is not a strict requirement for the
     # Python semantics, it's a more an implementation detail.
