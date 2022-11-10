@@ -1,0 +1,6 @@
+The IDNA codec decoder used on DNS hostnames by :mod:`socket` or :mod:`asyncio`
+related name resolution functions no longer involves a quadratic algorithm.
+This prevents a potential CPU denial of service if an out-of-spec excessive
+length hostname involving bidirectional characters were decoded. Some protocols
+such as :mod:`urllib` http ``3xx`` redirects potentially allow for an attacker
+to supply such a name.
