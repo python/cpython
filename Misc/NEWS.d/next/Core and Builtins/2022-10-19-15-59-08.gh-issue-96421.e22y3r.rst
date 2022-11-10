@@ -1,0 +1,13 @@
+When calling into Python code from C code, through :c:func:`PyEval_EvalFrameEx` or
+a related C-API function, a shim frame in inserted into the call stack.
+This occurs in the ``_PyEval_EvalFrameDefault()`` function.
+The extra frame should be invisible to all Python and most C extensions,
+but out-of-process profilers and debuggers need to be aware of it.
+These shim frames can be detected by checking
+``frame->owner == FRAME_OWNED_BY_CSTACK``.
+
+Extensions implementing their own interpreters using PEP 523 need to be
+aware of this shim frame and the changes to the semantics of
+:opcode:`RETURN_VALUE`, :opcode:`YIELD_VALUE`, and :opcode:`RETURN_GENERATOR`,
+which now clear the frame.
+

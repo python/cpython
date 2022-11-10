@@ -993,10 +993,11 @@ static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq, PyObject* 
 
 static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), void *o)
 {
-    if (!o)
-        o = Py_None;
-    Py_INCREF((PyObject*)o);
-    return (PyObject*)o;
+    PyObject *op = (PyObject*)o;
+    if (!op) {
+        op = Py_None;
+    }
+    return Py_NewRef(op);
 }
 #define ast2obj_constant ast2obj_object
 #define ast2obj_identifier ast2obj_object
@@ -1030,8 +1031,7 @@ static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, P
         *out = NULL;
         return -1;
     }
-    Py_INCREF(obj);
-    *out = obj;
+    *out = Py_NewRef(obj);
     return 0;
 }
 
@@ -4732,14 +4732,11 @@ PyObject* ast2obj_expr_context(struct ast_state *state, expr_context_ty o)
 {
     switch(o) {
         case Load:
-            Py_INCREF(state->Load_singleton);
-            return state->Load_singleton;
+            return Py_NewRef(state->Load_singleton);
         case Store:
-            Py_INCREF(state->Store_singleton);
-            return state->Store_singleton;
+            return Py_NewRef(state->Store_singleton);
         case Del:
-            Py_INCREF(state->Del_singleton);
-            return state->Del_singleton;
+            return Py_NewRef(state->Del_singleton);
     }
     Py_UNREACHABLE();
 }
@@ -4747,11 +4744,9 @@ PyObject* ast2obj_boolop(struct ast_state *state, boolop_ty o)
 {
     switch(o) {
         case And:
-            Py_INCREF(state->And_singleton);
-            return state->And_singleton;
+            return Py_NewRef(state->And_singleton);
         case Or:
-            Py_INCREF(state->Or_singleton);
-            return state->Or_singleton;
+            return Py_NewRef(state->Or_singleton);
     }
     Py_UNREACHABLE();
 }
@@ -4759,44 +4754,31 @@ PyObject* ast2obj_operator(struct ast_state *state, operator_ty o)
 {
     switch(o) {
         case Add:
-            Py_INCREF(state->Add_singleton);
-            return state->Add_singleton;
+            return Py_NewRef(state->Add_singleton);
         case Sub:
-            Py_INCREF(state->Sub_singleton);
-            return state->Sub_singleton;
+            return Py_NewRef(state->Sub_singleton);
         case Mult:
-            Py_INCREF(state->Mult_singleton);
-            return state->Mult_singleton;
+            return Py_NewRef(state->Mult_singleton);
         case MatMult:
-            Py_INCREF(state->MatMult_singleton);
-            return state->MatMult_singleton;
+            return Py_NewRef(state->MatMult_singleton);
         case Div:
-            Py_INCREF(state->Div_singleton);
-            return state->Div_singleton;
+            return Py_NewRef(state->Div_singleton);
         case Mod:
-            Py_INCREF(state->Mod_singleton);
-            return state->Mod_singleton;
+            return Py_NewRef(state->Mod_singleton);
         case Pow:
-            Py_INCREF(state->Pow_singleton);
-            return state->Pow_singleton;
+            return Py_NewRef(state->Pow_singleton);
         case LShift:
-            Py_INCREF(state->LShift_singleton);
-            return state->LShift_singleton;
+            return Py_NewRef(state->LShift_singleton);
         case RShift:
-            Py_INCREF(state->RShift_singleton);
-            return state->RShift_singleton;
+            return Py_NewRef(state->RShift_singleton);
         case BitOr:
-            Py_INCREF(state->BitOr_singleton);
-            return state->BitOr_singleton;
+            return Py_NewRef(state->BitOr_singleton);
         case BitXor:
-            Py_INCREF(state->BitXor_singleton);
-            return state->BitXor_singleton;
+            return Py_NewRef(state->BitXor_singleton);
         case BitAnd:
-            Py_INCREF(state->BitAnd_singleton);
-            return state->BitAnd_singleton;
+            return Py_NewRef(state->BitAnd_singleton);
         case FloorDiv:
-            Py_INCREF(state->FloorDiv_singleton);
-            return state->FloorDiv_singleton;
+            return Py_NewRef(state->FloorDiv_singleton);
     }
     Py_UNREACHABLE();
 }
@@ -4804,17 +4786,13 @@ PyObject* ast2obj_unaryop(struct ast_state *state, unaryop_ty o)
 {
     switch(o) {
         case Invert:
-            Py_INCREF(state->Invert_singleton);
-            return state->Invert_singleton;
+            return Py_NewRef(state->Invert_singleton);
         case Not:
-            Py_INCREF(state->Not_singleton);
-            return state->Not_singleton;
+            return Py_NewRef(state->Not_singleton);
         case UAdd:
-            Py_INCREF(state->UAdd_singleton);
-            return state->UAdd_singleton;
+            return Py_NewRef(state->UAdd_singleton);
         case USub:
-            Py_INCREF(state->USub_singleton);
-            return state->USub_singleton;
+            return Py_NewRef(state->USub_singleton);
     }
     Py_UNREACHABLE();
 }
@@ -4822,35 +4800,25 @@ PyObject* ast2obj_cmpop(struct ast_state *state, cmpop_ty o)
 {
     switch(o) {
         case Eq:
-            Py_INCREF(state->Eq_singleton);
-            return state->Eq_singleton;
+            return Py_NewRef(state->Eq_singleton);
         case NotEq:
-            Py_INCREF(state->NotEq_singleton);
-            return state->NotEq_singleton;
+            return Py_NewRef(state->NotEq_singleton);
         case Lt:
-            Py_INCREF(state->Lt_singleton);
-            return state->Lt_singleton;
+            return Py_NewRef(state->Lt_singleton);
         case LtE:
-            Py_INCREF(state->LtE_singleton);
-            return state->LtE_singleton;
+            return Py_NewRef(state->LtE_singleton);
         case Gt:
-            Py_INCREF(state->Gt_singleton);
-            return state->Gt_singleton;
+            return Py_NewRef(state->Gt_singleton);
         case GtE:
-            Py_INCREF(state->GtE_singleton);
-            return state->GtE_singleton;
+            return Py_NewRef(state->GtE_singleton);
         case Is:
-            Py_INCREF(state->Is_singleton);
-            return state->Is_singleton;
+            return Py_NewRef(state->Is_singleton);
         case IsNot:
-            Py_INCREF(state->IsNot_singleton);
-            return state->IsNot_singleton;
+            return Py_NewRef(state->IsNot_singleton);
         case In:
-            Py_INCREF(state->In_singleton);
-            return state->In_singleton;
+            return Py_NewRef(state->In_singleton);
         case NotIn:
-            Py_INCREF(state->NotIn_singleton);
-            return state->NotIn_singleton;
+            return Py_NewRef(state->NotIn_singleton);
     }
     Py_UNREACHABLE();
 }
