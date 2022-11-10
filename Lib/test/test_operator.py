@@ -580,8 +580,8 @@ class OperatorTestCase:
         data1 = [1, 2, 3]
         data2 = ['a', 'b']
         res = operator.iconcat(data1, data2)
-        self.assertEqual(res, [1, 2, 'a', 'b'])
-        self.assertEqual(data1, [1, 2, 'a', 'b'])  # must change
+        self.assertEqual(res, [1, 2, 3, 'a', 'b'])
+        self.assertEqual(data1, [1, 2, 3, 'a', 'b'])  # must change
         self.assertEqual(data2, ['a', 'b'])  # must not change
 
         data1 = (1, 2)
