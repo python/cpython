@@ -60,31 +60,14 @@ get_package_family()
 static std::wstring
 get_user_base()
 {
-    const auto family = get_package_family();
-    std::wstring path;
-
-    if (!family.empty()) {
-        PWSTR localAppData;
-        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0,
-                                           NULL, &localAppData))) {
-            path = std::wstring(localAppData)
-                   + L"\\Packages\\"
-                   + family
-                   + L"\\LocalCache\\local-packages";
-
-            CoTaskMemFree(localAppData);
-            return path;
-        }
-    }
-
     try {
         const auto appData = winrt::Windows::Storage::ApplicationData::Current();
         if (appData) {
             const auto localCache = appData.LocalCacheFolder();
             if (localCache) {
-                path = localCache.Path();
+                std::wstring path { localCache.Path().c_str() };
                 if (!path.empty()) {
-                    return std::wstring(path) + L"\\local-packages";
+                    return path + L"\\local-packages";
                 }
             }
         }
