@@ -207,8 +207,6 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     Py_INCREF(result);
     _PyFrame_StackPush(frame, result);
 
-    frame->previous = tstate->cframe->current_frame;
-
     _PyErr_StackItem *prev_exc_info = tstate->exc_info;
     gen->gi_exc_state.previous_item = prev_exc_info;
     tstate->exc_info = &gen->gi_exc_state;
@@ -223,14 +221,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     result = _PyEval_EvalFrame(tstate, frame, exc);
     assert(tstate->exc_info == prev_exc_info);
     assert(gen->gi_exc_state.previous_item == NULL);
-    if (gen->gi_frame_state == FRAME_EXECUTING) {
-        gen->gi_frame_state = FRAME_COMPLETED;
-    }
-    assert(tstate->cframe->current_frame == frame->previous);
-    /* Don't keep the reference to previous any longer than necessary.  It
-     * may keep a chain of frames alive or it could create a reference
-     * cycle. */
-    frame->previous = NULL;
+    assert(gen->gi_frame_state != FRAME_EXECUTING);
+    assert(frame->previous == NULL);
 
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
@@ -255,8 +247,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* first clean reference cycle through stored exception traceback */
     _PyErr_ClearExcState(&gen->gi_exc_state);
 
-    gen->gi_frame_state = FRAME_CLEARED;
-    _PyFrame_Clear(frame);
+    assert(gen->gi_frame_state == FRAME_CLEARED);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
