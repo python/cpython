@@ -530,8 +530,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
         PyUnicode_READ_CHAR(ident, 0) != '_' ||
         PyUnicode_READ_CHAR(ident, 1) != '_') {
-        Py_INCREF(ident);
-        return ident;
+        return Py_NewRef(ident);
     }
     nlen = PyUnicode_GET_LENGTH(ident);
     plen = PyUnicode_GET_LENGTH(privateobj);
@@ -547,16 +546,14 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     if ((PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
          PyUnicode_READ_CHAR(ident, nlen-2) == '_') ||
         PyUnicode_FindChar(ident, '.', 0, nlen, 1) != -1) {
-        Py_INCREF(ident);
-        return ident; /* Don't mangle __whatever__ */
+        return Py_NewRef(ident); /* Don't mangle __whatever__ */
     }
     /* Strip leading underscores from class name */
     ipriv = 0;
     while (PyUnicode_READ_CHAR(privateobj, ipriv) == '_')
         ipriv++;
     if (ipriv == plen) {
-        Py_INCREF(ident);
-        return ident; /* Don't mangle if class is just underscores */
+        return Py_NewRef(ident); /* Don't mangle if class is just underscores */
     }
     plen -= ipriv;
 
@@ -616,8 +613,7 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     int merged;
     if (!compiler_init(&c))
         return NULL;
-    Py_INCREF(filename);
-    c.c_filename = filename;
+    c.c_filename = Py_NewRef(filename);
     c.c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c.c_future)) {
         goto finally;
@@ -859,8 +855,7 @@ compiler_set_qualname(struct compiler *c)
                     return 0;
             }
             else {
-                Py_INCREF(parent->u_qualname);
-                base = parent->u_qualname;
+                base = Py_NewRef(parent->u_qualname);
             }
         }
     }
@@ -876,8 +871,7 @@ compiler_set_qualname(struct compiler *c)
             return 0;
     }
     else {
-        Py_INCREF(u->u_name);
-        name = u->u_name;
+        name = Py_NewRef(u->u_name);
     }
     u->u_qualname = name;
 
@@ -1262,6 +1256,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case BINARY_OP:
             return -1;
+        case INTERPRETER_EXIT:
+            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1381,8 +1377,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
     // None and Ellipsis are singleton, and key is the singleton.
     // No need to merge object and key.
     if (o == Py_None || o == Py_Ellipsis) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
 
     PyObject *key = _PyCode_ConstantKey(o);
@@ -1421,8 +1416,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
                 v = u;
             }
             if (v != item) {
-                Py_INCREF(v);
-                PyTuple_SET_ITEM(o, i, v);
+                PyTuple_SET_ITEM(o, i, Py_NewRef(v));
                 Py_DECREF(item);
             }
 
@@ -1708,8 +1702,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         compiler_unit_free(u);
         return 0;
     }
-    Py_INCREF(name);
-    u->u_name = name;
+    u->u_name = Py_NewRef(name);
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
     if (!u->u_varnames || !u->u_cellvars) {
@@ -1760,8 +1753,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
             return 0;
         }
         Py_DECREF(capsule);
-        u->u_private = c->u->u_private;
-        Py_XINCREF(u->u_private);
+        u->u_private = Py_XNewRef(c->u->u_private);
     }
     c->u = u;
 
@@ -2671,8 +2663,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
     co = assemble(c, 1);
-    qualname = c->u->u_qualname;
-    Py_INCREF(qualname);
+    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
         Py_XDECREF(qualname);
@@ -3053,8 +3044,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = assemble(c, 1);
     }
-    qualname = c->u->u_qualname;
-    Py_INCREF(qualname);
+    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
         Py_DECREF(qualname);
@@ -3925,8 +3915,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
     /* build up the names */
     for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
-        Py_INCREF(alias->name);
-        PyTuple_SET_ITEM(names, i, alias->name);
+        PyTuple_SET_ITEM(names, i, Py_NewRef(alias->name));
     }
 
     if (location_is_after(LOC(s), c->c_future.ff_location) &&
@@ -4348,8 +4337,7 @@ starunpack_helper(struct compiler *c, location loc,
         PyObject *val;
         for (Py_ssize_t i = 0; i < n; i++) {
             val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
-            Py_INCREF(val);
-            PyTuple_SET_ITEM(folded, i, val);
+            PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
         }
         if (tuple && !pushed) {
             ADDOP_LOAD_CONST_NEW(c, loc, folded);
@@ -4530,8 +4518,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
         }
         for (i = begin; i < end; i++) {
             key = ((expr_ty)asdl_seq_GET(e->v.Dict.keys, i))->v.Constant.value;
-            Py_INCREF(key);
-            PyTuple_SET_ITEM(keys, i - begin, key);
+            PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
         }
         ADDOP_LOAD_CONST_NEW(c, loc, keys);
         ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
@@ -5014,8 +5001,7 @@ compiler_subkwargs(struct compiler *c, location loc,
         }
         for (i = begin; i < end; i++) {
             key = ((keyword_ty) asdl_seq_GET(keywords, i))->arg;
-            Py_INCREF(key);
-            PyTuple_SET_ITEM(keys, i - begin, key);
+            PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
         }
         ADDOP_LOAD_CONST_NEW(c, loc, keys);
         ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
@@ -5053,8 +5039,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
     }
     for (int i = 0; i < nkwelts; i++) {
         keyword_ty kw = asdl_seq_GET(keywords, i);
-        Py_INCREF(kw->arg);
-        PyTuple_SET_ITEM(names, i, kw->arg);
+        PyTuple_SET_ITEM(names, i, Py_NewRef(kw->arg));
     }
     Py_ssize_t arg = compiler_add_const(c, names);
     if (arg < 0) {
@@ -5490,8 +5475,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     co = assemble(c, 1);
-    qualname = c->u->u_qualname;
-    Py_INCREF(qualname);
+    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
         c->u->u_ste->ste_coroutine = 1;
@@ -6170,8 +6154,7 @@ compiler_error(struct compiler *c, location loc,
     }
     PyObject *loc_obj = PyErr_ProgramTextObject(c->c_filename, loc.lineno);
     if (loc_obj == NULL) {
-        Py_INCREF(Py_None);
-        loc_obj = Py_None;
+        loc_obj = Py_NewRef(Py_None);
     }
     PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
                                    loc.lineno, loc.col_offset + 1, loc_obj,
@@ -6605,8 +6588,7 @@ compiler_pattern_class(struct compiler *c, location *ploc,
     Py_ssize_t i;
     for (i = 0; i < nattrs; i++) {
         PyObject *name = asdl_seq_GET(kwd_attrs, i);
-        Py_INCREF(name);
-        PyTuple_SET_ITEM(attr_names, i, name);
+        PyTuple_SET_ITEM(attr_names, i, Py_NewRef(name));
     }
     ADDOP_LOAD_CONST_NEW(c, *ploc, attr_names);
     ADDOP_I(c, *ploc, MATCH_CLASS, nargs);
@@ -6815,8 +6797,7 @@ compiler_pattern_or(struct compiler *c, location *ploc,
             // for the others (they can't bind a different set of names, and
             // might need to be reordered):
             assert(control == NULL);
-            control = pc->stores;
-            Py_INCREF(control);
+            control = Py_NewRef(pc->stores);
         }
         else if (nstores != PyList_GET_SIZE(control)) {
             goto diff;
@@ -8208,10 +8189,9 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         i = PyLong_AS_LONG(v);
-        Py_INCREF(k);
         assert((i - offset) < size);
         assert((i - offset) >= 0);
-        PyTuple_SET_ITEM(tuple, i - offset, k);
+        PyTuple_SET_ITEM(tuple, i - offset, Py_NewRef(k));
     }
     return tuple;
 }
@@ -8233,10 +8213,9 @@ consts_dict_keys_inorder(PyObject *dict)
         if (PyTuple_CheckExact(k)) {
             k = PyTuple_GET_ITEM(k, 1);
         }
-        Py_INCREF(k);
         assert(i < size);
         assert(i >= 0);
-        PyList_SET_ITEM(consts, i, k);
+        PyList_SET_ITEM(consts, i, Py_NewRef(k));
     }
     return consts;
 }
@@ -8936,8 +8915,7 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
                         "Internal error: failed to get value of a constant");
         return NULL;
     }
-    Py_INCREF(constant);
-    return constant;
+    return Py_NewRef(constant);
 }
 
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
@@ -9978,6 +9956,5 @@ PyObject *
 PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
                 PyObject *Py_UNUSED(names), PyObject *Py_UNUSED(lnotab_obj))
 {
-    Py_INCREF(code);
-    return code;
+    return Py_NewRef(code);
 }

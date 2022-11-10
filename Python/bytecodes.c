@@ -97,8 +97,7 @@ dummy_func(
     PyObject *consts,
     _Py_CODEUNIT *next_instr,
     PyObject **stack_pointer,
-    CallShape call_shape,
-    _Py_CODEUNIT *first_instr,
+    PyObject *kwnames,
     int throwflag,
     binaryfunc binary_ops[]
 )
@@ -611,6 +610,21 @@ dummy_func(
         }
 
         // stack effect: (__0 -- )
+        inst(INTERPRETER_EXIT) {
+            assert(frame == &entry_frame);
+            assert(_PyFrame_IsIncomplete(frame));
+            PyObject *retval = POP();
+            assert(EMPTY());
+            /* Restore previous cframe and return. */
+            tstate->cframe = cframe.previous;
+            tstate->cframe->use_tracing = cframe.use_tracing;
+            assert(tstate->cframe->current_frame == frame->previous);
+            assert(!_PyErr_Occurred(tstate));
+            _Py_LeaveRecursiveCallTstate(tstate);
+            return retval;
+        }
+
+        // stack effect: (__0 -- )
         inst(RETURN_VALUE) {
             PyObject *retval = POP();
             assert(EMPTY());
@@ -618,23 +632,10 @@ dummy_func(
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
-            if (!frame->is_entry) {
-                frame = cframe.current_frame = pop_frame(tstate, frame);
-                _PyFrame_StackPush(frame, retval);
-                goto resume_frame;
-            }
-            _Py_LeaveRecursiveCallTstate(tstate);
-            if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
-                PyGenObject *gen = _PyFrame_GetGenerator(frame);
-                tstate->exc_info = gen->gi_exc_state.previous_item;
-                gen->gi_exc_state.previous_item = NULL;
-            }
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
-            assert(!_PyErr_Occurred(tstate));
-            return retval;
+            assert(frame != &entry_frame);
+            frame = cframe.current_frame = pop_frame(tstate, frame);
+            _PyFrame_StackPush(frame, retval);
+            goto resume_frame;
         }
 
         // stack effect: ( -- )
@@ -768,6 +769,7 @@ dummy_func(
 
         // error: SEND stack effect depends on jump flag
         inst(SEND) {
+            assert(frame != &entry_frame);
             assert(STACK_LEVEL() >= 2);
             PyObject *v = POP();
             PyObject *receiver = TOP();
@@ -832,6 +834,7 @@ dummy_func(
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(oparg == STACK_LEVEL());
+            assert(frame != &entry_frame);
             PyObject *retval = POP();
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
@@ -841,19 +844,12 @@ dummy_func(
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
-            if (!frame->is_entry) {
-                frame = cframe.current_frame = frame->previous;
-                frame->prev_instr -= frame->yield_offset;
-                _PyFrame_StackPush(frame, retval);
-                goto resume_frame;
-            }
-            _Py_LeaveRecursiveCallTstate(tstate);
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
-            assert(!_PyErr_Occurred(tstate));
-            return retval;
+            _PyInterpreterFrame *gen_frame = frame;
+            frame = cframe.current_frame = frame->previous;
+            gen_frame->previous = NULL;
+            frame->prev_instr -= frame->yield_offset;
+            _PyFrame_StackPush(frame, retval);
+            goto resume_frame;
         }
 
         // stack effect: (__0 -- )
@@ -869,7 +865,7 @@ dummy_func(
             if (oparg) {
                 PyObject *lasti = PEEK(oparg + 1);
                 if (PyLong_Check(lasti)) {
-                    frame->prev_instr = first_instr + PyLong_AsLong(lasti);
+                    frame->prev_instr = _PyCode_CODE(frame->f_code) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -934,10 +930,9 @@ dummy_func(
                 PUSH(value);
                 DISPATCH();
             }
-            Py_INCREF(exc_value);
             PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
             PyObject *exc_traceback = PyException_GetTraceback(exc_value);
-            _PyErr_Restore(tstate, exc_type, exc_value, exc_traceback);
+            _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
             goto exception_unwind;
         }
 
@@ -975,8 +970,8 @@ dummy_func(
                 }
                 assert(PyExceptionInstance_Check(error));
                 SET_TOP(error);
-                PyException_SetCause(error, exc);
-                Py_INCREF(exc);
+                PyException_SetCause(error, Py_NewRef(exc));
+                // Steal exc reference, rather than Py_NewRef+Py_DECREF
                 PyException_SetContext(error, exc);
                 Py_DECREF(message);
             }
@@ -987,8 +982,7 @@ dummy_func(
         // stack effect: ( -- __0)
         inst(LOAD_ASSERTION_ERROR) {
             PyObject *value = PyExc_AssertionError;
-            Py_INCREF(value);
-            PUSH(value);
+            PUSH(Py_NewRef(value));
         }
 
         // stack effect: ( -- __0)
@@ -1344,8 +1338,7 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
             STACK_GROW(push_null+1);
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
         }
 
         // error: LOAD_GLOBAL has irregular stack effect
@@ -1369,8 +1362,7 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
             STAT_INC(LOAD_GLOBAL, hit);
             STACK_GROW(push_null+1);
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
         }
 
         // stack effect: ( -- )
@@ -1452,8 +1444,7 @@ dummy_func(
                 format_exc_unbound(tstate, frame->f_code, oparg);
                 goto error;
             }
-            Py_INCREF(value);
-            PUSH(value);
+            PUSH(Py_NewRef(value));
         }
 
         // stack effect: (__0 -- )
@@ -1475,8 +1466,7 @@ dummy_func(
             assert(oparg == co->co_nfreevars);
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
-                Py_INCREF(o);
-                frame->localsplus[offset + i] = o;
+                frame->localsplus[offset + i] = Py_NewRef(o);
             }
         }
 
@@ -1980,9 +1970,8 @@ dummy_func(
             SET_TOP(NULL);
             int shrink_stack = !(oparg & 1);
             STACK_SHRINK(shrink_stack);
-            Py_INCREF(name);
             new_frame->localsplus[0] = owner;
-            new_frame->localsplus[1] = name;
+            new_frame->localsplus[1] = Py_NewRef(name);
             for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
@@ -2226,8 +2215,7 @@ dummy_func(
             PyObject *left = TOP();
             int res = Py_Is(left, right) ^ oparg;
             PyObject *b = res ? Py_True : Py_False;
-            Py_INCREF(b);
-            SET_TOP(b);
+            SET_TOP(Py_NewRef(b));
             Py_DECREF(left);
             Py_DECREF(right);
         }
@@ -2243,8 +2231,7 @@ dummy_func(
                 goto error;
             }
             PyObject *b = (res^oparg) ? Py_True : Py_False;
-            Py_INCREF(b);
-            PUSH(b);
+            PUSH(Py_NewRef(b));
         }
 
         // stack effect: ( -- )
@@ -2525,8 +2512,7 @@ dummy_func(
             }
             else {
                 // Failure!
-                Py_INCREF(Py_None);
-                SET_TOP(Py_None);
+                SET_TOP(Py_NewRef(Py_None));
             }
             Py_DECREF(subject);
         }
@@ -2536,8 +2522,7 @@ dummy_func(
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             PyObject *res = match ? Py_True : Py_False;
-            Py_INCREF(res);
-            PUSH(res);
+            PUSH(Py_NewRef(res));
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
@@ -2546,8 +2531,7 @@ dummy_func(
             PyObject *subject = TOP();
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             PyObject *res = match ? Py_True : Py_False;
-            Py_INCREF(res);
-            PUSH(res);
+            PUSH(Py_NewRef(res));
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
@@ -2649,8 +2633,7 @@ dummy_func(
             if (seq) {
                 if (it->it_index < PyList_GET_SIZE(seq)) {
                     PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
-                    Py_INCREF(next);
-                    PUSH(next);
+                    PUSH(Py_NewRef(next));
                     JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                     DISPATCH();
                 }
@@ -2697,17 +2680,14 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             assert(_Py_OPCODE(*next_instr) == END_FOR);
             frame->prev_instr = next_instr - 1;
-            Py_INCREF(Py_None);
-            _PyFrame_StackPush(gen_frame, Py_None);
+            _PyFrame_StackPush(gen_frame, Py_NewRef(Py_None));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             gen_frame->previous = frame;
-            gen_frame->is_entry = false;
             frame = cframe.current_frame = gen_frame;
             goto start_frame;
         }
-
 
         // stack effect: ( -- __0)
         inst(BEFORE_ASYNC_WITH) {
@@ -2819,12 +2799,10 @@ dummy_func(
                 SET_TOP(exc_info->exc_value);
             }
             else {
-                Py_INCREF(Py_None);
-                SET_TOP(Py_None);
+                SET_TOP(Py_NewRef(Py_None));
             }
 
-            Py_INCREF(value);
-            PUSH(value);
+            PUSH(Py_NewRef(value));
             assert(PyExceptionInstance_Check(value));
             exc_info->exc_value = value;
 
@@ -2850,8 +2828,7 @@ dummy_func(
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
         }
@@ -2878,8 +2855,7 @@ dummy_func(
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
         }
@@ -2897,8 +2873,7 @@ dummy_func(
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
         }
@@ -2920,8 +2895,7 @@ dummy_func(
             PyObject *res = read_obj(cache->descr);
             assert(res != NULL);
             assert(_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            Py_INCREF(res);
-            SET_TOP(res);
+            SET_TOP(Py_NewRef(res));
             PUSH(self);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
         }
@@ -2932,21 +2906,19 @@ dummy_func(
             PyObject *function = PEEK(oparg + 1);
             DEOPT_IF(Py_TYPE(function) != &PyMethod_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *meth = ((PyMethodObject *)function)->im_func;
             PyObject *self = ((PyMethodObject *)function)->im_self;
-            Py_INCREF(meth);
-            Py_INCREF(self);
-            PEEK(oparg + 1) = self;
-            PEEK(oparg + 2) = meth;
+            PEEK(oparg + 1) = Py_NewRef(self);
+            PyObject *meth = ((PyMethodObject *)function)->im_func;
+            PEEK(oparg + 2) = Py_NewRef(meth);
             Py_DECREF(function);
             GO_TO_INSTRUCTION(CALL_PY_EXACT_ARGS);
         }
 
         // stack effect: ( -- )
         inst(KW_NAMES) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             assert(oparg < PyTuple_GET_SIZE(consts));
-            call_shape.kwnames = GETITEM(consts, oparg);
+            kwnames = GETITEM(consts, oparg);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -2958,7 +2930,7 @@ dummy_func(
                 int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
                 next_instr--;
-                _Py_Specialize_Call(callable, next_instr, nargs, call_shape.kwnames);
+                _Py_Specialize_Call(callable, next_instr, nargs, kwnames);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(CALL, deferred);
@@ -2967,12 +2939,10 @@ dummy_func(
             is_meth = is_method(stack_pointer, oparg);
             PyObject *function = PEEK(oparg + 1);
             if (!is_meth && Py_TYPE(function) == &PyMethod_Type) {
-                PyObject *meth = ((PyMethodObject *)function)->im_func;
                 PyObject *self = ((PyMethodObject *)function)->im_self;
-                Py_INCREF(meth);
-                Py_INCREF(self);
-                PEEK(oparg+1) = self;
-                PEEK(oparg+2) = meth;
+                PEEK(oparg+1) = Py_NewRef(self);
+                PyObject *meth = ((PyMethodObject *)function)->im_func;
+                PEEK(oparg+2) = Py_NewRef(meth);
                 Py_DECREF(function);
                 is_meth = 1;
             }
@@ -2989,9 +2959,9 @@ dummy_func(
                 STACK_SHRINK(total_args);
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
                     tstate, (PyFunctionObject *)function, locals,
-                    stack_pointer, positional_args, call_shape.kwnames
+                    stack_pointer, positional_args, kwnames
                 );
-                call_shape.kwnames = NULL;
+                kwnames = NULL;
                 STACK_SHRINK(2-is_meth);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
@@ -3011,15 +2981,15 @@ dummy_func(
             if (cframe.use_tracing) {
                 res = trace_call_function(
                     tstate, function, stack_pointer-total_args,
-                    positional_args, call_shape.kwnames);
+                    positional_args, kwnames);
             }
             else {
                 res = PyObject_Vectorcall(
                     function, stack_pointer-total_args,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                    call_shape.kwnames);
+                    kwnames);
             }
-            call_shape.kwnames = NULL;
+            kwnames = NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(function);
             /* Clear the stack */
@@ -3038,7 +3008,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_PY_EXACT_ARGS) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             int is_meth = is_method(stack_pointer, oparg);
@@ -3071,7 +3041,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_PY_WITH_DEFAULTS) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             DEOPT_IF(tstate->interp->eval_frame, CALL);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             int is_meth = is_method(stack_pointer, oparg);
@@ -3095,8 +3065,7 @@ dummy_func(
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults,
                                                  i - minargs);
-                Py_INCREF(def);
-                new_frame->localsplus[i] = def;
+                new_frame->localsplus[i] = Py_NewRef(def);
             }
             for (int i = code->co_argcount; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
@@ -3112,7 +3081,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_TYPE_1) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), CALL);
@@ -3130,7 +3099,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_STR_1) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             assert(cframe.use_tracing == 0);
             assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), CALL);
@@ -3152,7 +3121,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_TUPLE_1) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), CALL);
             PyObject *callable = PEEK(2);
@@ -3184,8 +3153,8 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             STACK_SHRINK(total_args);
             PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
-                                              total_args-kwnames_len, call_shape.kwnames);
-            call_shape.kwnames = NULL;
+                                              total_args-kwnames_len, kwnames);
+            kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(stack_pointer[i]);
@@ -3203,7 +3172,7 @@ dummy_func(
         inst(CALL_NO_KW_BUILTIN_O) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             DEOPT_IF(total_args != 1, CALL);
@@ -3237,7 +3206,7 @@ dummy_func(
         inst(CALL_NO_KW_BUILTIN_FAST) {
             assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             PyObject *callable = PEEK(total_args + 1);
@@ -3294,10 +3263,10 @@ dummy_func(
                 PyCFunction_GET_SELF(callable),
                 stack_pointer,
                 total_args - KWNAMES_LEN(),
-                call_shape.kwnames
+                kwnames
             );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            call_shape.kwnames = NULL;
+            kwnames = NULL;
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3315,7 +3284,7 @@ dummy_func(
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_LEN) {
             assert(cframe.use_tracing == 0);
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             /* len(o) */
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3345,7 +3314,7 @@ dummy_func(
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_ISINSTANCE) {
             assert(cframe.use_tracing == 0);
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             /* isinstance(o, o2) */
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3378,7 +3347,7 @@ dummy_func(
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_LIST_APPEND) {
             assert(cframe.use_tracing == 0);
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             assert(oparg == 1);
             PyObject *callable = PEEK(3);
             PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -3400,7 +3369,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             PyMethodDescrObject *callable =
@@ -3453,9 +3422,9 @@ dummy_func(
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
             PyObject *res = cfunc(self, stack_pointer, nargs - KWNAMES_LEN(),
-                                  call_shape.kwnames);
+                                  kwnames);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            call_shape.kwnames = NULL;
+            kwnames = NULL;
 
             /* Free the arguments. */
             for (int i = 0; i < nargs; i++) {
@@ -3473,7 +3442,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             assert(oparg == 0 || oparg == 1);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3507,7 +3476,7 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
-            assert(call_shape.kwnames == NULL);
+            assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
             PyMethodDescrObject *callable =
@@ -3624,25 +3593,12 @@ dummy_func(
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
-            if (!frame->is_entry) {
-                _PyInterpreterFrame *prev = frame->previous;
-                _PyThreadState_PopFrame(tstate, frame);
-                frame = cframe.current_frame = prev;
-                _PyFrame_StackPush(frame, (PyObject *)gen);
-                goto resume_frame;
-            }
-            _Py_LeaveRecursiveCallTstate(tstate);
-            /* Make sure that frame is in a valid state */
-            frame->stacktop = 0;
-            frame->f_locals = NULL;
-            Py_INCREF(frame->f_funcobj);
-            Py_INCREF(frame->f_code);
-            /* Restore previous cframe and return. */
-            tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
-            assert(!_PyErr_Occurred(tstate));
-            return (PyObject *)gen;
+            assert(frame != &entry_frame);
+            _PyInterpreterFrame *prev = frame->previous;
+            _PyThreadState_PopFrame(tstate, frame);
+            frame = cframe.current_frame = prev;
+            _PyFrame_StackPush(frame, (PyObject *)gen);
+            goto resume_frame;
         }
 
         // error: BUILD_SLICE has irregular stack effect
@@ -3727,8 +3683,7 @@ dummy_func(
         inst(COPY) {
             assert(oparg != 0);
             PyObject *peek = PEEK(oparg);
-            Py_INCREF(peek);
-            PUSH(peek);
+            PUSH(Py_NewRef(peek));
         }
 
         // stack effect: (__0 -- )

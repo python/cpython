@@ -885,8 +885,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
         tok->fp_interactive = 1;
     }
     // This transfers the ownership to the tokenizer
-    tok->filename = filename_ob;
-    Py_INCREF(filename_ob);
+    tok->filename = Py_NewRef(filename_ob);
 
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
@@ -925,8 +924,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
         return NULL;
     }
     // This transfers the ownership to the tokenizer
-    tok->filename = filename_ob;
-    Py_INCREF(filename_ob);
+    tok->filename = Py_NewRef(filename_ob);
 
     // We need to clear up from here on
     mod_ty result = NULL;

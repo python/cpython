@@ -52,10 +52,8 @@ tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
     }
     tb = PyObject_GC_New(PyTracebackObject, &PyTraceBack_Type);
     if (tb != NULL) {
-        Py_XINCREF(next);
-        tb->tb_next = next;
-        Py_XINCREF(frame);
-        tb->tb_frame = frame;
+        tb->tb_next = (PyTracebackObject*)Py_XNewRef(next);
+        tb->tb_frame = (PyFrameObject*)Py_XNewRef(frame);
         tb->tb_lasti = lasti;
         tb->tb_lineno = lineno;
         PyObject_GC_Track(tb);
@@ -106,8 +104,7 @@ tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
     if (!ret) {
         ret = Py_None;
     }
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static int
@@ -140,8 +137,7 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
     }
 
     PyObject *old_next = (PyObject*)self->tb_next;
-    Py_XINCREF(new_next);
-    self->tb_next = (PyTracebackObject *)new_next;
+    self->tb_next = (PyTracebackObject *)Py_XNewRef(new_next);
     Py_XDECREF(old_next);
 
     return 0;
@@ -522,8 +518,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     }
 
     if (line) {
-        Py_INCREF(lineobj);
-        *line = lineobj;
+        *line = Py_NewRef(lineobj);
     }
 
     /* remove the indentation of the line */
@@ -1229,6 +1224,15 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         if (frame == NULL) {
             break;
         }
+        if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+            /* Trampoline frame */
+            frame = frame->previous;
+        }
+        if (frame == NULL) {
+            break;
+        }
+        /* Can't have more than one shim frame in a row */
+        assert(frame->owner != FRAME_OWNED_BY_CSTACK);
         depth++;
     }
 }
