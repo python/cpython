@@ -261,6 +261,10 @@ Modules/_testcapimodule.c	test_capsule	buffer	-
 Modules/_testcapimodule.c	test_empty_argparse	kwlist	-
 Modules/_testcapimodule.c	test_structmembers_new	keywords	-
 Modules/_testcapimodule.c	getargs_s_hash_int	keywords	-
+Modules/_testcapimodule.c	-	g_dict_watch_events	-
+Modules/_testcapimodule.c	-	g_dict_watchers_installed	-
+Modules/_testcapimodule.c	-	g_type_modified_events	-
+Modules/_testcapimodule.c	-	g_type_watchers_installed	-
 Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-
@@ -467,6 +471,7 @@ Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	usedpools	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Objects/typeobject.c	-	name_op	-
+Objects/typeobject.c	-	slotdefs	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
 Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-
