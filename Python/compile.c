@@ -9741,15 +9741,15 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
         return 0;  /* nothing to do */
     }
 
-    int *index_map = NULL;
-    int *reverse_index_map = NULL;
+    Py_ssize_t *index_map = NULL;
+    Py_ssize_t *reverse_index_map = NULL;
     int err = 1;
 
-    index_map = PyMem_Malloc(nconsts * sizeof(int));
+    index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
     if (index_map == NULL) {
         goto end;
     }
-    for (int i = 1; i < nconsts; i++) {
+    for (Py_ssize_t i = 1; i < nconsts; i++) {
         index_map[i] = -1;
     }
     // The first constant may be docstring; keep it always.
@@ -9769,7 +9769,7 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     /* now index_map[i] == i if consts[i] is used, -1 otherwise */
 
     /* condense consts */
-    int n_used_consts = 0;
+    Py_ssize_t n_used_consts = 0;
     for (int i = 0; i < nconsts; i++) {
         if (index_map[i] != -1) {
             assert(index_map[i] == i);
@@ -9787,14 +9787,14 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     }
 
     /* move all used consts to the beginning of the consts list */
+    assert(n_used_consts < nconsts);
     for (Py_ssize_t i = 0; i < n_used_consts; i++) {
-        int old_index = index_map[i];
-        assert(i <= old_index);
+        Py_ssize_t old_index = index_map[i];
+        assert(i <= old_index && old_index < nconsts);
         if (i != old_index) {
             PyObject *value = PyList_GET_ITEM(consts, index_map[i]);
             assert(value != NULL);
-            int res = PyList_SetItem(consts, i, Py_NewRef(value));
-            assert(res == 0);
+            PyList_SetItem(consts, i, Py_NewRef(value));
         }
     }
 
@@ -9804,14 +9804,14 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     }
 
     /* adjust const indices in the bytecode */
-    reverse_index_map = PyMem_Malloc(nconsts * sizeof(int));
+    reverse_index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
     if (reverse_index_map == NULL) {
         goto end;
     }
-    for (int i = 0; i < nconsts; i++) {
+    for (Py_ssize_t i = 0; i < nconsts; i++) {
         reverse_index_map[i] = -1;
     }
-    for (int i = 0; i < nconsts; i++) {
+    for (Py_ssize_t i = 0; i < nconsts; i++) {
         if (index_map[i] != -1) {
             assert(reverse_index_map[index_map[i]] == -1);
             reverse_index_map[index_map[i]] = i;
@@ -9824,7 +9824,9 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
                 b->b_instr[i].i_opcode == KW_NAMES) {
 
                 int index = b->b_instr[i].i_oparg;
-                b->b_instr[i].i_oparg = reverse_index_map[index];
+                assert(reverse_index_map[index] >= 0);
+                assert(reverse_index_map[index] < n_used_consts);
+                b->b_instr[i].i_oparg = (int)reverse_index_map[index];
             }
         }
     }
