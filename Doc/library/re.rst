@@ -494,6 +494,7 @@ The special characters are:
 
    .. deprecated:: 3.11
       Group *id* containing anything except ASCII digits.
+      Group names containing non-ASCII characters in bytes replacement strings.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
