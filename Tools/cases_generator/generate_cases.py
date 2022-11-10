@@ -86,15 +86,16 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
     outputs = instr.outputs
     cache_offset = 0
     for ceffect in cache:
-        if ceffect.name not in ("unused", "u", "_"):
+        if ceffect.name != "unused":
             bits = ceffect.size * 16
             f.write(f"{indent}    PyObject *{ceffect.name} = read{bits}(next_instr + {cache_offset});\n")
         cache_offset += ceffect.size
     # TODO: Is it better to count forward or backward?
     for i, effect in enumerate(reversed(stack), 1):
-        f.write(f"{indent}    PyObject *{effect.name} = PEEK({i});\n")
+        if effect.name is not "unused":
+            f.write(f"{indent}    PyObject *{effect.name} = PEEK({i});\n")
     for output in instr.outputs:
-        if output.name not in input_names:
+        if output.name not in input_names and output.name != "unused":
             f.write(f"{indent}    PyObject *{output.name};\n")
     assert instr.block is not None
     blocklines = instr.block.to_text(dedent=dedent).splitlines(True)
@@ -135,7 +136,7 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
     elif diff < 0:
         f.write(f"{indent}    STACK_SHRINK({-diff});\n")
     for i, output in enumerate(reversed(outputs), 1):
-        if output.name not in (input_names):
+        if output.name not in input_names and output.name != "unused":
             f.write(f"{indent}    POKE({i}, {output.name});\n")
     # Cache effect
     if cache_offset:
