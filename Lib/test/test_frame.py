@@ -5,6 +5,10 @@ import textwrap
 import types
 import unittest
 import weakref
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 from test import support
 from test.support.script_helper import assert_python_ok
@@ -324,6 +328,37 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             sys.settrace(old_trace)
             if old_enabled:
                 gc.enable()
+
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    def getframe(self):
+        return sys._getframe()
+
+    def test_frame_getters(self):
+        frame = self.getframe()
+        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
+        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
+        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
+        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
+
+    def test_getvar(self):
+        current_frame = sys._getframe()
+        x = 1
+        self.assertEqual(_testcapi.frame_getvar(current_frame, "x"), 1)
+        self.assertEqual(_testcapi.frame_getvarstring(current_frame, b"x"), 1)
+        with self.assertRaises(NameError):
+            _testcapi.frame_getvar(current_frame, "y")
+        with self.assertRaises(NameError):
+            _testcapi.frame_getvarstring(current_frame, b"y")
+
+    def getgenframe(self):
+        yield sys._getframe()
+
+    def test_frame_get_generator(self):
+        gen = self.getgenframe()
+        frame = next(gen)
+        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
 
 
 if __name__ == "__main__":

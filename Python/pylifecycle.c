@@ -10,6 +10,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
+#include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_list.h"          // _PyList_Fini()
@@ -797,8 +798,7 @@ pycore_init_builtins(PyThreadState *tstate)
     if (builtins_dict == NULL) {
         goto error;
     }
-    Py_INCREF(builtins_dict);
-    interp->builtins = builtins_dict;
+    interp->builtins = Py_NewRef(builtins_dict);
 
     PyObject *isinstance = PyDict_GetItem(builtins_dict, &_Py_ID(isinstance));
     assert(isinstance);
@@ -2288,8 +2288,7 @@ create_stdio(const PyConfig *config, PyObject* io,
             goto error;
     }
     else {
-        raw = buf;
-        Py_INCREF(raw);
+        raw = Py_NewRef(buf);
     }
 
 #ifdef MS_WINDOWS
@@ -2551,8 +2550,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
 
     _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
-        tb = Py_None;
-        Py_INCREF(tb);
+        tb = Py_NewRef(Py_None);
     }
     PyException_SetTraceback(v, tb);
     if (exception == NULL) {
