@@ -24,6 +24,7 @@ __all__ = ['ensure_running', 'get_inherited_fds', 'connect_to_new_process',
 
 MAXFDS_TO_SEND = 256
 SIGNED_STRUCT = struct.Struct('q')     # large enough for pid_t
+_authkey_len = 32  # <= PIPEBUF so it fits a single write to an empty pipe.
 
 #
 # Forkserver class
@@ -32,6 +33,7 @@ SIGNED_STRUCT = struct.Struct('q')     # large enough for pid_t
 class ForkServer(object):
 
     def __init__(self):
+        self._forkserver_authkey = None
         self._forkserver_address = None
         self._forkserver_alive_fd = None
         self._forkserver_pid = None
@@ -58,6 +60,7 @@ class ForkServer(object):
         if not util.is_abstract_socket_namespace(self._forkserver_address):
             os.unlink(self._forkserver_address)
         self._forkserver_address = None
+        self._forkserver_authkey = None
 
     def set_forkserver_preload(self, modules_names):
         '''Set list of module names to try to load in forkserver process.'''
@@ -92,6 +95,16 @@ class ForkServer(object):
                       resource_tracker.getfd()]
             allfds += fds
             try:
+                if self._forkserver_authkey:
+                    client.setblocking(True)
+                    wrapped_client = connection.Connection(client.fileno())
+                    try:
+                        connection.answer_challenge(
+                                wrapped_client, self._forkserver_authkey)
+                        connection.deliver_challenge(
+                                wrapped_client, self._forkserver_authkey)
+                    finally:
+                        wrapped_client._detach()
                 reduction.sendfds(client, allfds)
                 return parent_r, parent_w
             except:
@@ -119,6 +132,7 @@ class ForkServer(object):
                     return
                 # dead, launch it again
                 os.close(self._forkserver_alive_fd)
+                self._forkserver_authkey = None
                 self._forkserver_address = None
                 self._forkserver_alive_fd = None
                 self._forkserver_pid = None
@@ -129,9 +143,9 @@ class ForkServer(object):
             if self._preload_modules:
                 desired_keys = {'main_path', 'sys_path'}
                 data = spawn.get_preparation_data('ignore')
-                data = {x: y for x, y in data.items() if x in desired_keys}
+                main_kws = {x: y for x, y in data.items() if x in desired_keys}
             else:
-                data = {}
+                main_kws = {}
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -143,19 +157,31 @@ class ForkServer(object):
                 # all client processes own the write end of the "alive" pipe;
                 # when they all terminate the read end becomes ready.
                 alive_r, alive_w = os.pipe()
+                # A short lived pipe to initialize the forkserver authkey.
+                authkey_r, authkey_w = os.pipe()
                 try:
-                    fds_to_pass = [listener.fileno(), alive_r]
+                    fds_to_pass = [listener.fileno(), alive_r, authkey_r]
+                    main_kws['authkey_r'] = authkey_r
                     cmd %= (listener.fileno(), alive_r, self._preload_modules,
-                            data)
+                            main_kws)
                     exe = spawn.get_executable()
                     args = [exe] + util._args_from_interpreter_flags()
                     args += ['-c', cmd]
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 except:
                     os.close(alive_w)
+                    os.close(authkey_w)
                     raise
                 finally:
                     os.close(alive_r)
+                    os.close(authkey_r)
+                # Prevent access from processes not in our process tree that
+                # have the same shared key for this forkserver.
+                try:
+                    self._forkserver_authkey = os.urandom(_authkey_len)
+                    os.write(authkey_w, self._forkserver_authkey)
+                finally:
+                    os.close(authkey_w)
                 self._forkserver_address = address
                 self._forkserver_alive_fd = alive_w
                 self._forkserver_pid = pid
@@ -164,8 +190,18 @@ class ForkServer(object):
 #
 #
 
-def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
-    '''Run forkserver.'''
+def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
+         *, authkey_r=None):
+    """Run forkserver."""
+    if authkey_r is not None:
+        # If there is no authkey, the parent closes the pipe without writing
+        # anything resulting in an empty authkey of b'' here.
+        authkey = os.read(authkey_r, _authkey_len)
+        assert len(authkey) == _authkey_len or not authkey
+        os.close(authkey_r)
+    else:
+        authkey = b''
+
     if preload:
         if '__main__' in preload and main_path is not None:
             process.current_process()._inheriting = True
@@ -254,6 +290,13 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                 if listener in rfds:
                     # Incoming fork request
                     with listener.accept()[0] as s:
+                        if authkey:
+                            wrapped_s = connection.Connection(s.fileno())
+                            try:
+                                connection.deliver_challenge(wrapped_s, authkey)
+                                connection.answer_challenge(wrapped_s, authkey)
+                            finally:
+                                wrapped_s._detach()
                         # Receive fds from client
                         fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
                         if len(fds) > MAXFDS_TO_SEND:
