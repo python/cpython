@@ -53,8 +53,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->suppress_context = 0;
 
     if (args) {
-        self->args = args;
-        Py_INCREF(args);
+        self->args = Py_NewRef(args);
         return (PyObject *)self;
     }
 
@@ -73,9 +72,7 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
         return -1;
 
-    Py_INCREF(args);
-    Py_XSETREF(self->args, args);
-
+    Py_XSETREF(self->args, Py_NewRef(args));
     return 0;
 }
 
@@ -185,8 +182,7 @@ BaseException_with_traceback(PyObject *self, PyObject *tb) {
     if (PyException_SetTraceback(self, tb))
         return NULL;
 
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 PyDoc_STRVAR(with_traceback_doc,
@@ -258,8 +254,7 @@ BaseException_get_args(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
     if (self->args == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(self->args);
-    return self->args;
+    return Py_NewRef(self->args);
 }
 
 static int
@@ -283,8 +278,7 @@ BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
     if (self->traceback == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(self->traceback);
-    return self->traceback;
+    return Py_NewRef(self->traceback);
 }
 
 static int
@@ -300,8 +294,7 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(
         return -1;
     }
 
-    Py_INCREF(tb);
-    Py_XSETREF(self->traceback, tb);
+    Py_XSETREF(self->traceback, Py_NewRef(tb));
     return 0;
 }
 
@@ -380,8 +373,7 @@ PyObject *
 PyException_GetTraceback(PyObject *self)
 {
     PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
-    Py_XINCREF(base_self->traceback);
-    return base_self->traceback;
+    return Py_XNewRef(base_self->traceback);
 }
 
 
@@ -395,8 +387,7 @@ PyObject *
 PyException_GetCause(PyObject *self)
 {
     PyObject *cause = _PyBaseExceptionObject_cast(self)->cause;
-    Py_XINCREF(cause);
-    return cause;
+    return Py_XNewRef(cause);
 }
 
 /* Steals a reference to cause */
@@ -412,8 +403,7 @@ PyObject *
 PyException_GetContext(PyObject *self)
 {
     PyObject *context = _PyBaseExceptionObject_cast(self)->context;
-    Py_XINCREF(context);
-    return context;
+    return Py_XNewRef(context);
 }
 
 /* Steals a reference to context */
@@ -579,8 +569,7 @@ StopIteration_init(PyStopIterationObject *self, PyObject *args, PyObject *kwds)
         value = PyTuple_GET_ITEM(args, 0);
     else
         value = Py_None;
-    Py_INCREF(value);
-    self->value = value;
+    self->value = Py_NewRef(value);
     return 0;
 }
 
@@ -633,12 +622,10 @@ SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
     if (size == 0)
         return 0;
     if (size == 1) {
-        Py_INCREF(PyTuple_GET_ITEM(args, 0));
-        Py_XSETREF(self->code, PyTuple_GET_ITEM(args, 0));
+        Py_XSETREF(self->code, Py_NewRef(PyTuple_GET_ITEM(args, 0)));
     }
     else { /* size > 1 */
-        Py_INCREF(args);
-        Py_XSETREF(self->code, args);
+        Py_XSETREF(self->code, Py_NewRef(args));
     }
     return 0;
 }
@@ -1493,18 +1480,12 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     }
     Py_DECREF(empty_tuple);
 
-    Py_XINCREF(name);
-    Py_XSETREF(self->name, name);
-
-    Py_XINCREF(path);
-    Py_XSETREF(self->path, path);
-
-    Py_XINCREF(name_from);
-    Py_XSETREF(self->name_from, name_from);
+    Py_XSETREF(self->name, Py_XNewRef(name));
+    Py_XSETREF(self->path, Py_XNewRef(path));
+    Py_XSETREF(self->name_from, Py_XNewRef(name_from));
 
     if (PyTuple_GET_SIZE(args) == 1) {
-        msg = PyTuple_GET_ITEM(args, 0);
-        Py_INCREF(msg);
+        msg = Py_NewRef(PyTuple_GET_ITEM(args, 0));
     }
     Py_XSETREF(self->msg, msg);
 
@@ -1543,8 +1524,7 @@ static PyObject *
 ImportError_str(PyImportErrorObject *self)
 {
     if (self->msg && PyUnicode_CheckExact(self->msg)) {
-        Py_INCREF(self->msg);
-        return self->msg;
+        return Py_NewRef(self->msg);
     }
     else {
         return BaseException_str((PyBaseExceptionObject *)self);
@@ -1574,8 +1554,7 @@ ImportError_getstate(PyImportErrorObject *self)
         return dict;
     }
     else if (dict) {
-        Py_INCREF(dict);
-        return dict;
+        return Py_NewRef(dict);
     }
     else {
         Py_RETURN_NONE;
@@ -1702,8 +1681,7 @@ oserror_parse_args(PyObject **p_args,
             PyTuple_SET_ITEM(newargs, 0, *myerrno);
             for (i = 1; i < nargs; i++) {
                 PyObject *val = PyTuple_GET_ITEM(args, i);
-                Py_INCREF(val);
-                PyTuple_SET_ITEM(newargs, i, val);
+                PyTuple_SET_ITEM(newargs, i, Py_NewRef(val));
             }
             Py_DECREF(args);
             args = *p_args = newargs;
@@ -1738,12 +1716,10 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
                 return -1;
         }
         else {
-            Py_INCREF(filename);
-            self->filename = filename;
+            self->filename = Py_NewRef(filename);
 
             if (filename2 && filename2 != Py_None) {
-                Py_INCREF(filename2);
-                self->filename2 = filename2;
+                self->filename2 = Py_NewRef(filename2);
             }
 
             if (nargs >= 2 && nargs <= 5) {
@@ -1758,15 +1734,10 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
             }
         }
     }
-    Py_XINCREF(myerrno);
-    self->myerrno = myerrno;
-
-    Py_XINCREF(strerror);
-    self->strerror = strerror;
-
+    self->myerrno = Py_XNewRef(myerrno);
+    self->strerror = Py_XNewRef(strerror);
 #ifdef MS_WINDOWS
-    Py_XINCREF(winerror);
-    self->winerror = winerror;
+    self->winerror = Py_XNewRef(winerror);
 #endif
 
     /* Steals the reference to args */
@@ -1992,7 +1963,7 @@ static PyObject *
 OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args = self->args;
-    PyObject *res = NULL, *tmp;
+    PyObject *res = NULL;
 
     /* self->args is only the first two real arguments if there was a
      * file name given to OSError. */
@@ -2002,16 +1973,9 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
         if (!args)
             return NULL;
 
-        tmp = PyTuple_GET_ITEM(self->args, 0);
-        Py_INCREF(tmp);
-        PyTuple_SET_ITEM(args, 0, tmp);
-
-        tmp = PyTuple_GET_ITEM(self->args, 1);
-        Py_INCREF(tmp);
-        PyTuple_SET_ITEM(args, 1, tmp);
-
-        Py_INCREF(self->filename);
-        PyTuple_SET_ITEM(args, 2, self->filename);
+        PyTuple_SET_ITEM(args, 0, Py_NewRef(PyTuple_GET_ITEM(self->args, 0)));
+        PyTuple_SET_ITEM(args, 1, Py_NewRef(PyTuple_GET_ITEM(self->args, 1)));
+        PyTuple_SET_ITEM(args, 2, Py_NewRef(self->filename));
 
         if (self->filename2) {
             /*
@@ -2019,12 +1983,10 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
              * So, to recreate filename2, we need to pass in
              * winerror as well.
              */
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(args, 3, Py_None);
+            PyTuple_SET_ITEM(args, 3, Py_NewRef(Py_None));
 
             /* filename2 */
-            Py_INCREF(self->filename2);
-            PyTuple_SET_ITEM(args, 4, self->filename2);
+            PyTuple_SET_ITEM(args, 4, Py_NewRef(self->filename2));
         }
     } else
         Py_INCREF(args);
@@ -2185,8 +2147,7 @@ NameError_init(PyNameErrorObject *self, PyObject *args, PyObject *kwds)
     }
     Py_DECREF(empty_tuple);
 
-    Py_XINCREF(name);
-    Py_XSETREF(self->name, name);
+    Py_XSETREF(self->name, Py_XNewRef(name));
 
     return 0;
 }
@@ -2260,11 +2221,8 @@ AttributeError_init(PyAttributeErrorObject *self, PyObject *args, PyObject *kwds
     }
     Py_DECREF(empty_tuple);
 
-    Py_XINCREF(name);
-    Py_XSETREF(self->name, name);
-
-    Py_XINCREF(obj);
-    Py_XSETREF(self->obj, obj);
+    Py_XSETREF(self->name, Py_XNewRef(name));
+    Py_XSETREF(self->obj, Py_XNewRef(obj));
 
     return 0;
 }
@@ -2322,8 +2280,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (lenargs >= 1) {
-        Py_INCREF(PyTuple_GET_ITEM(args, 0));
-        Py_XSETREF(self->msg, PyTuple_GET_ITEM(args, 0));
+        Py_XSETREF(self->msg, Py_NewRef(PyTuple_GET_ITEM(args, 0)));
     }
     if (lenargs == 2) {
         info = PyTuple_GET_ITEM(args, 1);
@@ -2419,8 +2376,7 @@ my_basename(PyObject *name)
         return PyUnicode_Substring(name, offset, size);
     }
     else {
-        Py_INCREF(name);
-        return name;
+        return Py_NewRef(name);
     }
 }
 
@@ -2572,8 +2528,7 @@ get_string(PyObject *attr, const char *name)
         PyErr_Format(PyExc_TypeError, "%.200s attribute must be bytes", name);
         return NULL;
     }
-    Py_INCREF(attr);
-    return attr;
+    return Py_NewRef(attr);
 }
 
 static PyObject *
@@ -2589,8 +2544,7 @@ get_unicode(PyObject *attr, const char *name)
                      "%.200s attribute must be unicode", name);
         return NULL;
     }
-    Py_INCREF(attr);
-    return attr;
+    return Py_NewRef(attr);
 }
 
 static int
