@@ -312,7 +312,6 @@ Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
 
 # initialized once
 Python/context.c	-	_token_missing	-
-Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/hamt.c	-	_empty_bitmap_node	-
 Python/hamt.c	-	_empty_hamt	-
 
@@ -379,6 +378,7 @@ Python/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 Python/dtoa.c	-	p5s	-
+Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	-	force_ascii	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 Python/import.c	-	import_lock	-
