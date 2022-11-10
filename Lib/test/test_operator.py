@@ -505,6 +505,151 @@ class OperatorTestCase:
         self.assertEqual(operator.ixor     (c, 5), "ixor")
         self.assertEqual(operator.iconcat  (c, c), "iadd")
 
+    def test_concat(self):
+        operator = self.module
+
+        # Simple cases:
+        data1 = [1, 2]
+        data2 = ['a', 'b']
+        self.assertEqual(operator.concat(data1, data2), [1, 2, 'a', 'b'])
+        self.assertEqual(operator.concat(data1, data2), data1 + data2)
+        self.assertEqual(data1, [1, 2])  # must not change
+        self.assertEqual(data2, ['a', 'b'])  # must not change
+
+        data1 = (1, 2)
+        data2 = ('a', 'b')
+        self.assertEqual(operator.concat(data1, data2), (1, 2, 'a', 'b'))
+        self.assertEqual(operator.concat(data1, data2), data1 + data2)
+        self.assertEqual(data1, (1, 2))  # must not change
+        self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        data1 = '12'
+        data2 = 'ab'
+        self.assertEqual(operator.concat(data1, data2), '12ab')
+        self.assertEqual(operator.concat(data1, data2), data1 + data2)
+        self.assertEqual(data1, '12')  # must not change
+        self.assertEqual(data2, 'ab')  # must not change
+
+        # Subclasses:
+        class ListSubclass(list): ...
+
+        data1 = ListSubclass([1, 2])
+        data2 = ListSubclass(['a', 'b'])
+        self.assertEqual(operator.concat(data1, data2),
+                         ListSubclass([1, 2, 'a', 'b']))
+        self.assertEqual(operator.concat(data1, data2), data1 + data2)
+        self.assertEqual(data1, ListSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
+
+        # Custom type with `__add__`:
+        class TupleSubclass(tuple):
+            def __add__(self, other):
+                return other + self
+
+        data1 = TupleSubclass([1, 2])
+        data2 = ('a', 'b')
+        self.assertEqual(operator.concat(data1, data2),
+                         TupleSubclass(['a', 'b', 1, 2]))
+        self.assertEqual(operator.concat(data1, data2), data1 + data2)
+        self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        # Corner cases:
+        self.assertEqual(operator.concat([1, 2], []), [1, 2])
+        self.assertEqual(operator.concat([], [1, 2]), [1, 2])
+        self.assertEqual(operator.concat([], []), [])
+
+        # Type errors:
+        self.assertRaises(TypeError, operator.concat, [], 1)
+        self.assertRaises(TypeError, operator.concat, 1, [])
+        self.assertRaises(TypeError, operator.concat, 1, 1)
+        self.assertRaises(TypeError, operator.concat, (), [])
+        self.assertRaises(TypeError, operator.concat, [], ())
+
+        # Returns `NotImplemented`:
+        class BrokenSeq(tuple):
+            def __add__(self, other):
+                return NotImplemented
+
+        self.assertRaises(TypeError, operator.concat, BrokenSeq(), BrokenSeq())
+
+    def test_iconcat(self):
+        operator = self.module
+
+        # Simple cases:
+        data1 = [1, 2,, 3]
+        data2 = ['a', 'b']
+        res = operator.iconcat(data1, data2)
+        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertEqual(data1, [1, 2, 'a', 'b'])  # must change
+        self.assertEqual(data2, ['a', 'b'])  # must not change
+
+        data1 = (1, 2)
+        data2 = ('a', 'b')
+        self.assertEqual(operator.iconcat(data1, data2), (1, 2, 'a', 'b'))
+        self.assertEqual(operator.iconcat(data1, data2), data1 + data2)
+        self.assertEqual(data1, (1, 2))  # must not change
+        self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        data1 = '12'
+        data2 = 'ab'
+        self.assertEqual(operator.iconcat(data1, data2), '12ab')
+        self.assertEqual(operator.iconcat(data1, data2), data1 + data2)
+        self.assertEqual(data1, '12')  # must not change
+        self.assertEqual(data2, 'ab')  # must not change
+
+        # Subclasses:
+        class ListSubclass(list): ...
+
+        data1 = ListSubclass([1, 2])
+        data2 = ListSubclass(['a', 'b'])
+        res = operator.iconcat(data1, data2)
+        self.assertEqual(res, ListSubclass([1, 2, 'a', 'b']))
+        self.assertEqual(data1, ListSubclass([1, 2, 'a', 'b']))  # must change
+        self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
+
+        # Custom type with `__add__`:
+        class TupleSubclass(tuple):
+            def __add__(self, other):
+                return other + self
+
+        data1 = TupleSubclass([1, 2])
+        data2 = ('a', 'b')
+        self.assertEqual(operator.iconcat(data1, data2),
+                         TupleSubclass(['a', 'b', 1, 2]))
+        self.assertEqual(operator.iconcat(data1, data2), data1 + data2)
+        self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        # Corner cases:
+        self.assertEqual(operator.iconcat([1, 2], []), [1, 2])
+        self.assertEqual(operator.iconcat([], [1, 2]), [1, 2])
+        self.assertEqual(operator.iconcat([], []), [])
+        self.assertEqual(operator.iconcat([], ()), [])
+
+        # Type errors:
+        self.assertRaises(TypeError, operator.iconcat, [], 1)
+        self.assertRaises(TypeError, operator.iconcat, 1, [])
+        self.assertRaises(TypeError, operator.iconcat, 1, 1)
+        self.assertRaises(TypeError, operator.iconcat, (), [])
+
+        # Returns `NotImplemented`:
+        class BrokenSeq1(list):
+            def __add__(self, other):
+                return NotImplemented
+            def __iadd__(self, other):
+                return NotImplemented
+
+        self.assertRaises(TypeError,
+                          operator.iconcat, BrokenSeq1(), BrokenSeq1())
+
+        class BrokenSeq2(tuple):
+            def __add__(self, other):
+                return NotImplemented
+
+        self.assertRaises(TypeError,
+                          operator.iconcat, BrokenSeq2(), BrokenSeq2())
+
     def test_length_hint(self):
         operator = self.module
         class X(object):
