@@ -9833,12 +9833,8 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
 
     err = 0;
 end:
-    if (index_map != NULL) {
-        PyMem_Free(index_map);
-    }
-    if (reverse_index_map != NULL) {
-        PyMem_Free(reverse_index_map);
-    }
+    PyMem_Free(index_map);
+    PyMem_Free(reverse_index_map);
     return err;
 }
 
