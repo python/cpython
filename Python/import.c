@@ -218,12 +218,12 @@ _imp_release_lock_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
-static inline void _clear_extensions_cache(void);
+static inline void _extensions_cache_clear(void);
 
 void
 _PyImport_Fini(void)
 {
-    _clear_extensions_cache();
+    _extensions_cache_clear();
     if (import_lock != NULL) {
         PyThread_free_lock(import_lock);
         import_lock = NULL;
@@ -397,26 +397,47 @@ PyImport_GetMagicTag(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
-static inline PyObject *
-_get_extensions_cache(void)
+static PyModuleDef *
+_extensions_cache_get(PyObject *filename, PyObject *name)
 {
-    return _PyRuntime.imports.extensions;
-}
-
-static inline PyObject *
-_ensure_extensions_cache(void)
-{
-    if (_PyRuntime.imports.extensions == NULL) {
-        _PyRuntime.imports.extensions = PyDict_New();
-        if (_PyRuntime.imports.extensions == NULL) {
-            return NULL;
-        }
+    PyObject *extensions = _PyRuntime.imports.extensions;
+    if (extensions == NULL) {
+        return NULL;
     }
-    return _PyRuntime.imports.extensions;
+    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (key == NULL) {
+        return NULL;
+    }
+    PyModuleDef *def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
+    Py_DECREF(key);
+    return def;
 }
 
-static inline void
-_clear_extensions_cache(void)
+static int
+_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
+{
+    PyObject *extensions = _PyRuntime.imports.extensions;
+    if (extensions == NULL) {
+        extensions = PyDict_New();
+        if (extensions == NULL) {
+            return -1;
+        }
+        _PyRuntime.imports.extensions = extensions;
+    }
+    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (key == NULL) {
+        return -1;
+    }
+    int res = PyDict_SetItem(extensions, key, (PyObject *)def);
+    Py_DECREF(key);
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static void
+_extensions_cache_clear(void)
 {
     Py_CLEAR(_PyRuntime.imports.extensions);
 }
@@ -465,18 +486,7 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
             }
         }
 
-        PyObject *extensions = _ensure_extensions_cache();
-        if (extensions == NULL) {
-            return -1;
-        }
-
-        PyObject *key = PyTuple_Pack(2, filename, name);
-        if (key == NULL) {
-            return -1;
-        }
-        int res = PyDict_SetItem(extensions, key, (PyObject *)def);
-        Py_DECREF(key);
-        if (res < 0) {
+        if (_extensions_cache_set(filename, name, def) < 0) {
             return -1;
         }
     }
@@ -501,17 +511,7 @@ static PyObject *
 import_find_extension(PyThreadState *tstate, PyObject *name,
                       PyObject *filename)
 {
-    PyObject *extensions = _get_extensions_cache();
-    if (extensions == NULL) {
-        return NULL;
-    }
-
-    PyObject *key = PyTuple_Pack(2, filename, name);
-    if (key == NULL) {
-        return NULL;
-    }
-    PyModuleDef* def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
-    Py_DECREF(key);
+    PyModuleDef *def = _extensions_cache_get(filename, name);
     if (def == NULL) {
         return NULL;
     }
