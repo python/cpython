@@ -404,6 +404,98 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.get_mapping_values, bad_mapping)
         self.assertRaises(TypeError, _testcapi.get_mapping_items, bad_mapping)
 
+    def test_mapping_has_key(self):
+        dct = {'a': 1}
+        self.assertTrue(_testcapi.mapping_has_key(dct, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct, 'b'))
+
+        class SubDict(dict):
+            pass
+
+        dct2 = SubDict({'a': 1})
+        self.assertTrue(_testcapi.mapping_has_key(dct2, 'a'))
+        self.assertFalse(_testcapi.mapping_has_key(dct2, 'b'))
+
+    def test_sequence_set_slice(self):
+        # Correct case:
+        data = [1, 2, 3, 4, 5]
+        data_copy = data.copy()
+
+        _testcapi.sequence_set_slice(data, 1, 3, [8, 9])
+        data_copy[1:3] = [8, 9]
+        self.assertEqual(data, data_copy)
+        self.assertEqual(data, [1, 8, 9, 4, 5])
+
+        # Custom class:
+        class Custom:
+            def __setitem__(self, index, value):
+                self.index = index
+                self.value = value
+
+        c = Custom()
+        _testcapi.sequence_set_slice(c, 0, 5, 'abc')
+        self.assertEqual(c.index, slice(0, 5))
+        self.assertEqual(c.value, 'abc')
+
+        # Immutable sequences must raise:
+        bad_seq1 = (1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(bad_seq1, 1, 3, (8, 9))
+        self.assertEqual(bad_seq1, (1, 2, 3, 4))
+
+        bad_seq2 = 'abcd'
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(bad_seq2, 1, 3, 'xy')
+        self.assertEqual(bad_seq2, 'abcd')
+
+        # Not a sequence:
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(None, 1, 3, 'xy')
+
+        mapping = {1: 'a', 2: 'b', 3: 'c'}
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_set_slice(mapping, 1, 3, 'xy')
+        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
+
+    def test_sequence_del_slice(self):
+        # Correct case:
+        data = [1, 2, 3, 4, 5]
+        data_copy = data.copy()
+
+        _testcapi.sequence_del_slice(data, 1, 3)
+        del data_copy[1:3]
+        self.assertEqual(data, data_copy)
+        self.assertEqual(data, [1, 4, 5])
+
+        # Custom class:
+        class Custom:
+            def __delitem__(self, index):
+                self.index = index
+
+        c = Custom()
+        _testcapi.sequence_del_slice(c, 0, 5)
+        self.assertEqual(c.index, slice(0, 5))
+
+        # Immutable sequences must raise:
+        bad_seq1 = (1, 2, 3, 4)
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(bad_seq1, 1, 3)
+        self.assertEqual(bad_seq1, (1, 2, 3, 4))
+
+        bad_seq2 = 'abcd'
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(bad_seq2, 1, 3)
+        self.assertEqual(bad_seq2, 'abcd')
+
+        # Not a sequence:
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(None, 1, 3)
+
+        mapping = {1: 'a', 2: 'b', 3: 'c'}
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_del_slice(mapping, 1, 3)
+        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
+
     @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
                          'need _testcapi.negative_refcount')
     def test_negative_refcount(self):
@@ -895,6 +987,21 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.eval_get_func_name(sum), "sum")  # c function
         self.assertEqual(_testcapi.eval_get_func_name(A), "type")
 
+    def test_eval_get_func_desc(self):
+        def function_example(): ...
+
+        class A:
+            def method_example(self): ...
+
+        self.assertEqual(_testcapi.eval_get_func_desc(function_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(A.method_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(A().method_example),
+                         "()")
+        self.assertEqual(_testcapi.eval_get_func_desc(sum), "()")  # c function
+        self.assertEqual(_testcapi.eval_get_func_desc(A), " object")
+
     def test_function_get_code(self):
         import types
 
@@ -929,6 +1036,140 @@ class CAPITest(unittest.TestCase):
 
         with self.assertRaises(SystemError):
             _testcapi.function_get_module(None)  # not a function
+
+    def test_function_get_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        defaults = _testcapi.function_get_defaults(some)
+        self.assertEqual(defaults, ('p', 0, None))
+        self.assertEqual(defaults, some.__defaults__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_defaults(None)  # not a function
+
+    def test_function_set_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        old_defaults = ('p', 0, None)
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_defaults(some, 1)  # not tuple or None
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_defaults(1, ())    # not a function
+        self.assertEqual(_testcapi.function_get_defaults(some), old_defaults)
+        self.assertEqual(some.__defaults__, old_defaults)
+
+        new_defaults = ('q', 1, None)
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        # Empty tuple is fine:
+        new_defaults = ()
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        class tuplesub(tuple): ...  # tuple subclasses must work
+
+        new_defaults = tuplesub(((1, 2), ['a', 'b'], None))
+        _testcapi.function_set_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_defaults(some), new_defaults)
+        self.assertEqual(some.__defaults__, new_defaults)
+
+        # `None` is special, it sets `defaults` to `NULL`,
+        # it needs special handling in `_testcapi`:
+        _testcapi.function_set_defaults(some, None)
+        self.assertEqual(_testcapi.function_get_defaults(some), None)
+        self.assertEqual(some.__defaults__, None)
+
+    def test_function_get_kw_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        defaults = _testcapi.function_get_kw_defaults(some)
+        self.assertEqual(defaults, {'kw2': True})
+        self.assertEqual(defaults, some.__kwdefaults__)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_kw_defaults(None)  # not a function
+
+    def test_function_set_kw_defaults(self):
+        def some(
+            pos_only1, pos_only2='p',
+            /,
+            zero=0, optional=None,
+            *,
+            kw1,
+            kw2=True,
+        ):
+            pass
+
+        old_defaults = {'kw2': True}
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_kw_defaults(some, 1)  # not dict or None
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_kw_defaults(1, {})    # not a function
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), old_defaults)
+        self.assertEqual(some.__kwdefaults__, old_defaults)
+
+        new_defaults = {'kw2': (1, 2, 3)}
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        # Empty dict is fine:
+        new_defaults = {}
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        class dictsub(dict): ...  # dict subclasses must work
+
+        new_defaults = dictsub({'kw2': None})
+        _testcapi.function_set_kw_defaults(some, new_defaults)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), new_defaults)
+        self.assertEqual(some.__kwdefaults__, new_defaults)
+
+        # `None` is special, it sets `kwdefaults` to `NULL`,
+        # it needs special handling in `_testcapi`:
+        _testcapi.function_set_kw_defaults(some, None)
+        self.assertEqual(_testcapi.function_get_kw_defaults(some), None)
+        self.assertEqual(some.__kwdefaults__, None)
 
 
 class TestPendingCalls(unittest.TestCase):
@@ -1083,6 +1324,46 @@ class SubinterpreterTest(unittest.TestCase):
         # "being modified by test_capi" per test.regrtest.  So if this
         # test fails, assume that the environment in this process may
         # be altered and suspect.
+
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_configured_settings(self):
+        """
+        The config with which an interpreter is created corresponds
+        1-to-1 with the new interpreter's settings.  This test verifies
+        that they match.
+        """
+        import json
+
+        THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
+        FORK = 1<<15
+        EXEC = 1<<16
+
+        features = ['fork', 'exec', 'threads', 'daemon_threads']
+        kwlist = [f'allow_{n}' for n in features]
+        for config, expected in {
+            (True, True, True, True): FORK | EXEC | THREADS | DAEMON_THREADS,
+            (False, False, False, False): 0,
+            (False, False, True, False): THREADS,
+        }.items():
+            kwargs = dict(zip(kwlist, config))
+            expected = {
+                'feature_flags': expected,
+            }
+            with self.subTest(config):
+                r, w = os.pipe()
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi, json, os
+                    settings = _testinternalcapi.get_interp_settings()
+                    with os.fdopen({w}, "w") as stdin:
+                        json.dump(settings, stdin)
+                    ''')
+                with os.fdopen(r) as stdout:
+                    support.run_in_subinterp_with_config(script, **kwargs)
+                    out = stdout.read()
+                settings = json.loads(out)
+
+                self.assertEqual(settings, expected)
 
     def test_mutate_exception(self):
         """
@@ -1394,27 +1675,6 @@ class Test_ModuleStateAccess(unittest.TestCase):
         class Subclass(BaseException, self.module.StateAccessType):
             pass
         self.assertIs(Subclass().get_defining_module(), self.module)
-
-
-class Test_FrameAPI(unittest.TestCase):
-
-    def getframe(self):
-        return sys._getframe()
-
-    def getgenframe(self):
-        yield sys._getframe()
-
-    def test_frame_getters(self):
-        frame = self.getframe()
-        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
-        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
-        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
-        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
-
-    def test_frame_get_generator(self):
-        gen = self.getgenframe()
-        frame = next(gen)
-        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
 
 
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100

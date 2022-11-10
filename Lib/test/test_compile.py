@@ -1645,6 +1645,13 @@ class TestExpressionStackSize(unittest.TestCase):
         # This raised on 3.10.0 to 3.10.5
         compile(code, "<foo>", "single")
 
+    def test_stack_3050_2(self):
+        M = 3050
+        args = ", ".join(f"arg{i}:type{i}" for i in range(M))
+        code = f"def f({args}):\n  pass"
+        # This raised on 3.10.0 to 3.10.5
+        compile(code, "<foo>", "single")
+
 
 class TestStackSizeStability(unittest.TestCase):
     # Check that repeating certain snippets doesn't increase the stack size

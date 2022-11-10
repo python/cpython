@@ -242,8 +242,8 @@ Data Types
 
          Member values can be anything: :class:`int`, :class:`str`, etc..  If
          the exact value is unimportant you may use :class:`auto` instances and an
-         appropriate value will be chosen for you.  Care must be taken if you mix
-         :class:`auto` with other values.
+         appropriate value will be chosen for you.  See :class:`auto` for the
+         details.
 
    .. attribute:: Enum._ignore_
 
@@ -778,7 +778,16 @@ Utilities and Decorators
    For *Enum* and *IntEnum* that appropriate value will be the last value plus
    one; for *Flag* and *IntFlag* it will be the first power-of-two greater
    than the last value; for *StrEnum* it will be the lower-cased version of the
-   member's name.
+   member's name.  Care must be taken if mixing *auto()* with manually specified
+   values.
+
+   *auto* instances are only resolved when at the top level of an assignment:
+
+      * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
+      * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
+         used to create the ``SECOND`` enum member;
+      * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
+        create the ``THREE`` enum member)
 
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.

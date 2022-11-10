@@ -413,6 +413,15 @@ The Python compiler currently generates the following bytecode instructions.
    Removes the top-of-stack (TOS) item.
 
 
+.. opcode:: END_FOR
+
+   Removes the top two values from the stack.
+   Equivalent to POP_TOP; POP_TOP.
+   Used to clean up at the end of loops, hence the name.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: COPY (i)
 
    Push the *i*-th item to the top of the stack. The item is not removed from its
@@ -594,6 +603,15 @@ the original TOS1.
    :meth:`~generator.close` call through the current frame.  If TOS is an
    instance of :exc:`StopIteration`, pop three values from the stack and push
    its ``value`` member.  Otherwise, re-raise TOS.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: STOPITERATION_ERROR
+
+   Handles a StopIteration raised in a generator or coroutine.
+   If TOS is an instance of :exc:`StopIteration`, or :exc:`StopAsyncIteration`
+   replace it with a :exc:`RuntimeError`.
 
    .. versionadded:: 3.12
 
@@ -1088,9 +1106,11 @@ iterations of the loop.
 
    TOS is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.  If
    this yields a new value, push it on the stack (leaving the iterator below
-   it).  If the iterator indicates it is exhausted, TOS is popped, and the byte
+   it).  If the iterator indicates it is exhausted then the byte
    code counter is incremented by *delta*.
 
+   .. versionchanged:: 3.12
+      Up until 3.11 the iterator was popped when it was exhausted.
 
 .. opcode:: LOAD_GLOBAL (namei)
 

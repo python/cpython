@@ -2,6 +2,7 @@
 
 import os
 import sys
+import threading
 from os.path import pardir, realpath
 
 __all__ = [
@@ -172,7 +173,11 @@ _PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
+# Mutex guarding initialization of _CONFIG_VARS.
+_CONFIG_VARS_LOCK = threading.RLock()
 _CONFIG_VARS = None
+# True iff _CONFIG_VARS has been fully initialized.
+_CONFIG_VARS_INITIALIZED = False
 _USER_BASE = None
 
 # Regexes needed for parsing Makefile (and similar syntaxes,
@@ -626,6 +631,71 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
     return get_paths(scheme, vars, expand)[name]
 
 
+def _init_config_vars():
+    global _CONFIG_VARS
+    _CONFIG_VARS = {}
+    # Normalized versions of prefix and exec_prefix are handy to have;
+    # in fact, these are the standard versions used most places in the
+    # Distutils.
+    _CONFIG_VARS['prefix'] = _PREFIX
+    _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
+    _CONFIG_VARS['py_version'] = _PY_VERSION
+    _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
+    _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
+    _CONFIG_VARS['installed_base'] = _BASE_PREFIX
+    _CONFIG_VARS['base'] = _PREFIX
+    _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
+    _CONFIG_VARS['platbase'] = _EXEC_PREFIX
+    _CONFIG_VARS['projectbase'] = _PROJECT_BASE
+    _CONFIG_VARS['platlibdir'] = sys.platlibdir
+    try:
+        _CONFIG_VARS['abiflags'] = sys.abiflags
+    except AttributeError:
+        # sys.abiflags may not be defined on all platforms.
+        _CONFIG_VARS['abiflags'] = ''
+    try:
+        _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
+    except AttributeError:
+        _CONFIG_VARS['py_version_nodot_plat'] = ''
+
+    if os.name == 'nt':
+        _init_non_posix(_CONFIG_VARS)
+        _CONFIG_VARS['VPATH'] = sys._vpath
+    if os.name == 'posix':
+        _init_posix(_CONFIG_VARS)
+    if _HAS_USER_BASE:
+        # Setting 'userbase' is done below the call to the
+        # init function to enable using 'get_config_var' in
+        # the init-function.
+        _CONFIG_VARS['userbase'] = _getuserbase()
+
+    # Always convert srcdir to an absolute path
+    srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
+    if os.name == 'posix':
+        if _PYTHON_BUILD:
+            # If srcdir is a relative path (typically '.' or '..')
+            # then it should be interpreted relative to the directory
+            # containing Makefile.
+            base = os.path.dirname(get_makefile_filename())
+            srcdir = os.path.join(base, srcdir)
+        else:
+            # srcdir is not meaningful since the installation is
+            # spread about the filesystem.  We choose the
+            # directory containing the Makefile since we know it
+            # exists.
+            srcdir = os.path.dirname(get_makefile_filename())
+    _CONFIG_VARS['srcdir'] = _safe_realpath(srcdir)
+
+    # OS X platforms require special customization to handle
+    # multi-architecture, multi-os-version installers
+    if sys.platform == 'darwin':
+        import _osx_support
+        _osx_support.customize_config_vars(_CONFIG_VARS)
+
+    global _CONFIG_VARS_INITIALIZED
+    _CONFIG_VARS_INITIALIZED = True
+
+
 def get_config_vars(*args):
     """With no arguments, return a dictionary of all configuration
     variables relevant for the current platform.
@@ -636,66 +706,16 @@ def get_config_vars(*args):
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
     """
-    global _CONFIG_VARS
-    if _CONFIG_VARS is None:
-        _CONFIG_VARS = {}
-        # Normalized versions of prefix and exec_prefix are handy to have;
-        # in fact, these are the standard versions used most places in the
-        # Distutils.
-        _CONFIG_VARS['prefix'] = _PREFIX
-        _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
-        _CONFIG_VARS['py_version'] = _PY_VERSION
-        _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
-        _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
-        _CONFIG_VARS['installed_base'] = _BASE_PREFIX
-        _CONFIG_VARS['base'] = _PREFIX
-        _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
-        _CONFIG_VARS['platbase'] = _EXEC_PREFIX
-        _CONFIG_VARS['projectbase'] = _PROJECT_BASE
-        _CONFIG_VARS['platlibdir'] = sys.platlibdir
-        try:
-            _CONFIG_VARS['abiflags'] = sys.abiflags
-        except AttributeError:
-            # sys.abiflags may not be defined on all platforms.
-            _CONFIG_VARS['abiflags'] = ''
-        try:
-            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
-        except AttributeError:
-            _CONFIG_VARS['py_version_nodot_plat'] = ''
 
-        if os.name == 'nt':
-            _init_non_posix(_CONFIG_VARS)
-            _CONFIG_VARS['VPATH'] = sys._vpath
-        if os.name == 'posix':
-            _init_posix(_CONFIG_VARS)
-        if _HAS_USER_BASE:
-            # Setting 'userbase' is done below the call to the
-            # init function to enable using 'get_config_var' in
-            # the init-function.
-            _CONFIG_VARS['userbase'] = _getuserbase()
-
-        # Always convert srcdir to an absolute path
-        srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
-        if os.name == 'posix':
-            if _PYTHON_BUILD:
-                # If srcdir is a relative path (typically '.' or '..')
-                # then it should be interpreted relative to the directory
-                # containing Makefile.
-                base = os.path.dirname(get_makefile_filename())
-                srcdir = os.path.join(base, srcdir)
-            else:
-                # srcdir is not meaningful since the installation is
-                # spread about the filesystem.  We choose the
-                # directory containing the Makefile since we know it
-                # exists.
-                srcdir = os.path.dirname(get_makefile_filename())
-        _CONFIG_VARS['srcdir'] = _safe_realpath(srcdir)
-
-        # OS X platforms require special customization to handle
-        # multi-architecture, multi-os-version installers
-        if sys.platform == 'darwin':
-            import _osx_support
-            _osx_support.customize_config_vars(_CONFIG_VARS)
+    # Avoid claiming the lock once initialization is complete.
+    if not _CONFIG_VARS_INITIALIZED:
+        with _CONFIG_VARS_LOCK:
+            # Test again with the lock held to avoid races. Note that
+            # we test _CONFIG_VARS here, not _CONFIG_VARS_INITIALIZED,
+            # to ensure that recursive calls to get_config_vars()
+            # don't re-enter init_config_vars().
+            if _CONFIG_VARS is None:
+                _init_config_vars()
 
     if args:
         vals = []
