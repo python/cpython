@@ -124,8 +124,7 @@ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
     ctx->ctx_entered = 1;
 
-    Py_INCREF(ctx);
-    ts->context = (PyObject *)ctx;
+    ts->context = Py_NewRef(ctx);
     ts->context_ver++;
 
     return 0;
@@ -400,8 +399,7 @@ context_new_from_vars(PyHamtObject *vars)
         return NULL;
     }
 
-    Py_INCREF(vars);
-    ctx->ctx_vars = vars;
+    ctx->ctx_vars = (PyHamtObject*)Py_NewRef(vars);
 
     _PyObject_GC_TRACK(ctx);
     return ctx;
@@ -546,8 +544,7 @@ context_tp_subscript(PyContext *self, PyObject *key)
         PyErr_SetObject(PyExc_KeyError, key);
         return NULL;
     }
-    Py_INCREF(val);
-    return val;
+    return Py_NewRef(val);
 }
 
 static int
@@ -588,11 +585,9 @@ _contextvars_Context_get_impl(PyContext *self, PyObject *key,
         return NULL;
     }
     if (found == 0) {
-        Py_INCREF(default_value);
-        return default_value;
+        return Py_NewRef(default_value);
     }
-    Py_INCREF(val);
-    return val;
+    return Py_NewRef(val);
 }
 
 
@@ -831,11 +826,9 @@ contextvar_new(PyObject *name, PyObject *def)
         return NULL;
     }
 
-    Py_INCREF(name);
-    var->var_name = name;
+    var->var_name = Py_NewRef(name);
 
-    Py_XINCREF(def);
-    var->var_default = def;
+    var->var_default = Py_XNewRef(def);
 
     var->var_cached = NULL;
     var->var_cached_tsid = 0;
@@ -1176,8 +1169,7 @@ error:
 static PyObject *
 token_get_var(PyContextToken *self, void *Py_UNUSED(ignored))
 {
-    Py_INCREF(self->tok_var);
-    return (PyObject *)self->tok_var;
+    return Py_NewRef(self->tok_var);;
 }
 
 static PyObject *
@@ -1187,8 +1179,7 @@ token_get_old_value(PyContextToken *self, void *Py_UNUSED(ignored))
         return get_token_missing();
     }
 
-    Py_INCREF(self->tok_oldval);
-    return self->tok_oldval;
+    return Py_NewRef(self->tok_oldval);
 }
 
 static PyGetSetDef PyContextTokenType_getsetlist[] = {
@@ -1228,14 +1219,11 @@ token_new(PyContext *ctx, PyContextVar *var, PyObject *val)
         return NULL;
     }
 
-    Py_INCREF(ctx);
-    tok->tok_ctx = ctx;
+    tok->tok_ctx = (PyContext*)Py_NewRef(ctx);
 
-    Py_INCREF(var);
-    tok->tok_var = var;
+    tok->tok_var = (PyContextVar*)Py_NewRef(var);
 
-    Py_XINCREF(val);
-    tok->tok_oldval = val;
+    tok->tok_oldval = Py_XNewRef(val);
 
     tok->tok_used = 0;
 
@@ -1276,8 +1264,7 @@ static PyObject *
 get_token_missing(void)
 {
     if (_token_missing != NULL) {
-        Py_INCREF(_token_missing);
-        return _token_missing;
+        return Py_NewRef(_token_missing);
     }
 
     _token_missing = (PyObject *)PyObject_New(
@@ -1286,8 +1273,7 @@ get_token_missing(void)
         return NULL;
     }
 
-    Py_INCREF(_token_missing);
-    return _token_missing;
+    return Py_NewRef(_token_missing);
 }
 
 
