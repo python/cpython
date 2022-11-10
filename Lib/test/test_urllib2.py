@@ -483,8 +483,17 @@ def build_test_opener(*handler_instances):
         opener.add_handler(h)
     return opener
 
+class MockHTTPHandler(urllib.request.HTTPHandler):
+    # Very simple mock HTTP handler with no special behavior other than using a mock HTTP connection
 
-class MockHTTPHandler(urllib.request.BaseHandler):
+    def __init__(self, debuglevel=None):
+        super(MockHTTPHandler, self).__init__(debuglevel=debuglevel)
+        self.httpconn = MockHTTPClass()
+
+    def http_open(self, req):
+        return self.do_open(self.httpconn, req)
+
+class MockHTTPHandlerRedirect(urllib.request.BaseHandler):
     # useful for testing redirections and auth
     # sends supplied headers and code as first response
     # sends 200 OK as second response
@@ -512,12 +521,12 @@ class MockHTTPHandler(urllib.request.BaseHandler):
             return MockResponse(200, "OK", msg, "", req.get_full_url())
 
 
-class MockHTTPSHandler(urllib.request.AbstractHTTPHandler):
+class MockHTTPSHandler(urllib.request.HTTPSHandler):
     # Useful for testing the Proxy-Authorization request by verifying the
     # properties of httpcon
 
-    def __init__(self, debuglevel=0):
-        urllib.request.AbstractHTTPHandler.__init__(self, debuglevel=debuglevel)
+    def __init__(self, debuglevel=None, context=None, check_hostname=None):
+        super(MockHTTPSHandler, self).__init__(debuglevel, context, check_hostname)
         self.httpconn = MockHTTPClass()
 
     def https_open(self, req):
@@ -1048,7 +1057,30 @@ class HandlerTests(unittest.TestCase):
             newreq = h.do_request_(req)
             self.assertEqual(int(newreq.get_header('Content-length')),16)
 
-    def test_http_handler_debuglevel(self):
+    def test_http_handler_global_debuglevel(self):
+        http.client.HTTPConnection.debuglevel = 1
+        o = OpenerDirector()
+        h = MockHTTPHandler()
+        o.add_handler(h)
+        o.open("http://www.example.com")
+        self.assertEqual(h._debuglevel, 1)
+
+    def test_http_handler_local_debuglevel(self):
+        o = OpenerDirector()
+        h = MockHTTPHandler(debuglevel=1)
+        o.add_handler(h)
+        o.open("http://www.example.com")
+        self.assertEqual(h._debuglevel, 1)
+
+    def test_https_handler_global_debuglevel(self):
+        http.client.HTTPSConnection.debuglevel = 1
+        o = OpenerDirector()
+        h = MockHTTPSHandler()
+        o.add_handler(h)
+        o.open("https://www.example.com")
+        self.assertEqual(h._debuglevel, 1)
+
+    def test_https_handler_local_debuglevel(self):
         o = OpenerDirector()
         h = MockHTTPSHandler(debuglevel=1)
         o.add_handler(h)
@@ -1289,7 +1321,7 @@ class HandlerTests(unittest.TestCase):
 
         cj = CookieJar()
         interact_netscape(cj, "http://www.example.com/", "spam=eggs")
-        hh = MockHTTPHandler(302, "Location: http://www.cracker.com/\r\n\r\n")
+        hh = MockHTTPHandlerRedirect(302, "Location: http://www.cracker.com/\r\n\r\n")
         hdeh = urllib.request.HTTPDefaultErrorHandler()
         hrh = urllib.request.HTTPRedirectHandler()
         cp = urllib.request.HTTPCookieProcessor(cj)
@@ -1299,7 +1331,7 @@ class HandlerTests(unittest.TestCase):
 
     def test_redirect_fragment(self):
         redirected_url = 'http://www.example.com/index.html#OK\r\n\r\n'
-        hh = MockHTTPHandler(302, 'Location: ' + redirected_url)
+        hh = MockHTTPHandlerRedirect(302, 'Location: ' + redirected_url)
         hdeh = urllib.request.HTTPDefaultErrorHandler()
         hrh = urllib.request.HTTPRedirectHandler()
         o = build_test_opener(hh, hdeh, hrh)
@@ -1484,7 +1516,7 @@ class HandlerTests(unittest.TestCase):
             password_manager = MockPasswordManager()
             auth_handler = urllib.request.HTTPBasicAuthHandler(password_manager)
             body = '\r\n'.join(headers) + '\r\n\r\n'
-            http_handler = MockHTTPHandler(401, body)
+            http_handler = MockHTTPHandlerRedirect(401, body)
             opener.add_handler(auth_handler)
             opener.add_handler(http_handler)
             self._test_basic_auth(opener, auth_handler, "Authorization",
@@ -1544,7 +1576,7 @@ class HandlerTests(unittest.TestCase):
         password_manager = MockPasswordManager()
         auth_handler = urllib.request.ProxyBasicAuthHandler(password_manager)
         realm = "ACME Networks"
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
@@ -1588,7 +1620,7 @@ class HandlerTests(unittest.TestCase):
         digest_handler = TestDigestAuthHandler(password_manager)
         basic_handler = TestBasicAuthHandler(password_manager)
         realm = "ACME Networks"
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
         opener.add_handler(basic_handler)
         opener.add_handler(digest_handler)
@@ -1608,7 +1640,7 @@ class HandlerTests(unittest.TestCase):
         opener = OpenerDirector()
         # While using DigestAuthHandler
         digest_auth_handler = urllib.request.HTTPDigestAuthHandler(None)
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             401, 'WWW-Authenticate: Kerberos\r\n\r\n')
         opener.add_handler(digest_auth_handler)
         opener.add_handler(http_handler)
@@ -1618,7 +1650,7 @@ class HandlerTests(unittest.TestCase):
         # While using BasicAuthHandler
         opener = OpenerDirector()
         basic_auth_handler = urllib.request.HTTPBasicAuthHandler(None)
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             401, 'WWW-Authenticate: NTLM\r\n\r\n')
         opener.add_handler(basic_auth_handler)
         opener.add_handler(http_handler)
@@ -1705,7 +1737,7 @@ class HandlerTests(unittest.TestCase):
         opener = OpenerDirector()
         opener.add_handler(auth_prior_handler)
 
-        http_handler = MockHTTPHandler(
+        http_handler = MockHTTPHandlerRedirect(
             401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % None)
         opener.add_handler(http_handler)
 
