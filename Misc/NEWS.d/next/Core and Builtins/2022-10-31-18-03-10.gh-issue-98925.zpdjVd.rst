@@ -1,0 +1,2 @@
+Lower the recursion depth for marshal on WASI to support (in-development)
+wasmtime 2.0.

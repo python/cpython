@@ -1035,8 +1035,18 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         d = (
             list(frame.f_locals)
             + list(frame.f_globals)
-            + list(frame.f_globals['__builtins__'])
+            + list(frame.f_builtins)
         )
+
+        # Check first if we are in a method and the instance
+        # has the wrong name as attribute
+        if 'self' in frame.f_locals:
+            self = frame.f_locals['self']
+            if hasattr(self, wrong_name):
+                return f"self.{wrong_name}"
+    
+    # Compute closest match
+
     if len(d) > _MAX_CANDIDATE_ITEMS:
         return None
     wrong_name_len = len(wrong_name)

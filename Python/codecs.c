@@ -235,8 +235,7 @@ PyObject *args_tuple(PyObject *object,
     args = PyTuple_New(1 + (errors != NULL));
     if (args == NULL)
         return NULL;
-    Py_INCREF(object);
-    PyTuple_SET_ITEM(args,0,object);
+    PyTuple_SET_ITEM(args, 0, Py_NewRef(object));
     if (errors) {
         PyObject *v;
 
@@ -263,8 +262,7 @@ PyObject *codec_getitem(const char *encoding, int index)
         return NULL;
     v = PyTuple_GET_ITEM(codecs, index);
     Py_DECREF(codecs);
-    Py_INCREF(v);
-    return v;
+    return Py_NewRef(v);
 }
 
 /* Helper functions to create an incremental codec. */
