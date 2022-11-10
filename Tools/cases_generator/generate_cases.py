@@ -18,7 +18,6 @@ RE_PREDICTED = r"(?s)(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("-i", "--input", type=str, default="Python/bytecodes.c")
 arg_parser.add_argument("-o", "--output", type=str, default="Python/generated_cases.c.h")
-arg_parser.add_argument("-c", "--compare", action="store_true")
 arg_parser.add_argument("-q", "--quiet", action="store_true")
 
 
@@ -73,12 +72,30 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
     assert instr.block
     if dedent < 0:
         indent += " " * -dedent
+    # Separate stack inputs from cache inputs
+    input_names: set[str] = set()
+    stack: list[parser.StackEffect] = []
+    cache: list[parser.CacheEffect] = []
+    for input in instr.inputs:
+        if isinstance(input, parser.StackEffect):
+            stack.append(input)
+            input_names.add(input.name)
+        else:
+            assert isinstance(input, parser.CacheEffect), input
+            cache.append(input)
+    outputs = instr.outputs
+    cache_offset = 0
+    for ceffect in cache:
+        if ceffect.name not in ("unused", "u", "_"):
+            bits = ceffect.size * 16
+            f.write(f"{indent}    PyObject *{ceffect.name} = read{bits}(next_instr + {cache_offset});\n")
+        cache_offset += ceffect.size
     # TODO: Is it better to count forward or backward?
-    for i, input in enumerate(reversed(instr.inputs), 1):
-        f.write(f"{indent}    PyObject *{input} = PEEK({i});\n")
+    for i, effect in enumerate(reversed(stack), 1):
+        f.write(f"{indent}    PyObject *{effect.name} = PEEK({i});\n")
     for output in instr.outputs:
-        if output not in instr.inputs:
-            f.write(f"{indent}    PyObject *{output};\n")
+        if output.name not in input_names:
+            f.write(f"{indent}    PyObject *{output.name};\n")
     assert instr.block is not None
     blocklines = instr.block.to_text(dedent=dedent).splitlines(True)
     # Remove blank lines from ends
@@ -95,7 +112,7 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
     while blocklines and not blocklines[-1].strip():
         blocklines.pop()
     # Write the body
-    ninputs = len(instr.inputs or ())
+    ninputs = len(stack)
     for line in blocklines:
         if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*$", line):
             space, cond, label = m.groups()
@@ -107,16 +124,19 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
                 f.write(f"{space}if ({cond}) goto {label};\n")
         else:
             f.write(line)
-    noutputs = len(instr.outputs or ())
+    noutputs = len(outputs)
     diff = noutputs - ninputs
     if diff > 0:
         f.write(f"{indent}    STACK_GROW({diff});\n")
     elif diff < 0:
         f.write(f"{indent}    STACK_SHRINK({-diff});\n")
-    for i, output in enumerate(reversed(instr.outputs or ()), 1):
-        if output not in (instr.inputs or ()):
-            f.write(f"{indent}    POKE({i}, {output});\n")
-    assert instr.block
+    for i, output in enumerate(reversed(outputs), 1):
+        if output.name not in (input_names):
+            f.write(f"{indent}    POKE({i}, {output.name});\n")
+    # Cache effect
+    if cache_offset:
+        f.write(f"{indent}    next_instr += {cache_offset};\n")
+
 
 def write_cases(f: TextIO, instrs: list[InstDef], supers: list[parser.Super]):
     predictions: set[str] = set()

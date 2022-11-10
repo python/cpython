@@ -201,7 +201,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
+        inst(BINARY_OP_MULTIPLY_INT, (left, right, unused/1 -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -210,10 +210,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(prod == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_MULTIPLY_FLOAT, (left, right -- prod)) {
+        inst(BINARY_OP_MULTIPLY_FLOAT, (left, right, unused/1 -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -224,10 +223,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(prod == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_SUBTRACT_INT, (left, right -- sub)) {
+        inst(BINARY_OP_SUBTRACT_INT, (left, right, unused/1 -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -236,10 +234,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(sub == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_SUBTRACT_FLOAT, (left, right -- sub)) {
+        inst(BINARY_OP_SUBTRACT_FLOAT, (left, right, unused/1 -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -249,7 +246,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(sub == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
         inst(BINARY_OP_ADD_UNICODE, (left, right -- res)) {

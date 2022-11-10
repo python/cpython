@@ -57,10 +57,27 @@ class Block(Node):
 
 
 @dataclass
+class Effect(Node):
+    pass
+
+
+@dataclass
+class StackEffect(Effect):
+    name: str
+    # TODO: type, condition
+
+
+@dataclass
+class CacheEffect(Effect):
+    name: str
+    size: int
+
+
+@dataclass
 class InstHeader(Node):
     name: str
-    inputs: list[str]
-    outputs: list[str]
+    inputs: list[Effect]
+    outputs: list[Effect]
 
 
 @dataclass
@@ -69,16 +86,17 @@ class InstDef(Node):
     block: Block
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.header.name
 
     @property
-    def inputs(self):
+    def inputs(self) -> list[Effect]:
         return self.header.inputs
 
     @property
-    def outputs(self):
-        return self.header.outputs
+    def outputs(self) -> list[StackEffect]:
+        # This is always true
+        return [x for x in self.header.outputs if isinstance(x, StackEffect)]
 
 
 @dataclass
@@ -123,18 +141,16 @@ class Parser(PLexer):
                     return InstHeader(name, [], [])
         return None
 
-    def check_overlaps(self, inp: list[str], outp: list[str]):
+    def check_overlaps(self, inp: list[Effect], outp: list[Effect]):
         for i, name in enumerate(inp):
-            try:
-                j = outp.index(name)
-            except ValueError:
-                continue
-            else:
-                if i != j:
-                    raise self.make_syntax_error(
-                        f"Input {name!r} at pos {i} repeated in output at different pos {j}")
+            for j, name2 in enumerate(outp):
+                if name == name2:
+                    if i != j:
+                        raise self.make_syntax_error(
+                            f"Input {name!r} at pos {i} repeated in output at different pos {j}")
+                    break
 
-    def stack_effect(self) -> tuple[list[str], list[str]]:
+    def stack_effect(self) -> tuple[list[Effect], list[Effect]]:
         # '(' [inputs] '--' [outputs] ')'
         if self.expect(lx.LPAREN):
             inp = self.inputs() or []
@@ -144,8 +160,8 @@ class Parser(PLexer):
                     return inp, outp
         raise self.make_syntax_error("Expected stack effect")
 
-    def inputs(self) -> list[str] | None:
-        # input (, input)*
+    def inputs(self) -> list[Effect] | None:
+        # input (',' input)*
         here = self.getpos()
         if inp := self.input():
             near = self.getpos()
@@ -157,27 +173,25 @@ class Parser(PLexer):
         self.setpos(here)
         return None
 
-    def input(self) -> str | None:
-        # IDENTIFIER
+    @contextual
+    def input(self) -> Effect | None:
+        # IDENTIFIER '/' INTEGER (CacheEffect)
+        # IDENTIFIER (StackEffect)
         if (tkn := self.expect(lx.IDENTIFIER)):
-            if self.expect(lx.LBRACKET):
-                if arg := self.expect(lx.IDENTIFIER):
-                    if self.expect(lx.RBRACKET):
-                        return f"{tkn.text}[{arg.text}]"
-                    if self.expect(lx.TIMES):
-                        if num := self.expect(lx.NUMBER):
-                            if self.expect(lx.RBRACKET):
-                                return f"{tkn.text}[{arg.text}*{num.text}]"
-                raise self.make_syntax_error("Expected argument in brackets", tkn)
+            if self.expect(lx.DIVIDE):
+                if num := self.expect(lx.NUMBER):
+                    try:
+                        size = int(num.text)
+                    except ValueError:
+                        raise self.make_syntax_error(
+                            f"Expected integer, got {num.text!r}")
+                    else:
+                        return CacheEffect(tkn.text, size)
+                raise self.make_syntax_error("Expected integer")
+            else:
+                return StackEffect(tkn.text)
 
-            return tkn.text
-        if self.expect(lx.CONDOP):
-            while self.expect(lx.CONDOP):
-                pass
-            return "??"
-        return None
-
-    def outputs(self) -> list[str] | None:
+    def outputs(self) -> list[Effect] | None:
         # output (, output)*
         here = self.getpos()
         if outp := self.output():
@@ -190,8 +204,10 @@ class Parser(PLexer):
         self.setpos(here)
         return None
 
-    def output(self) -> str | None:
-        return self.input()  # TODO: They're not quite the same.
+    @contextual
+    def output(self) -> Effect | None:
+        if (tkn := self.expect(lx.IDENTIFIER)):
+            return StackEffect(tkn.text)
 
     @contextual
     def super_def(self) -> Super | None:
