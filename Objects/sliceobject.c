@@ -26,8 +26,7 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "EllipsisType takes no arguments");
         return NULL;
     }
-    Py_INCREF(Py_Ellipsis);
-    return Py_Ellipsis;
+    return Py_NewRef(Py_Ellipsis);
 }
 
 static PyObject *
@@ -153,9 +152,8 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
     if (stop == NULL) {
         stop = Py_None;
     }
-    Py_INCREF(start);
-    Py_INCREF(stop);
-    return (PyObject *) _PyBuildSlice_Consume2(start, stop, step);
+    return (PyObject *)_PyBuildSlice_Consume2(Py_NewRef(start),
+                                              Py_NewRef(stop), step);
 }
 
 PyObject *
@@ -406,8 +404,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = _PyLong_GetOne();
-        Py_INCREF(step);
+        step = Py_NewRef(_PyLong_GetOne());
         step_is_negative = 0;
     }
     else {
@@ -435,16 +432,13 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = _PyLong_GetZero();
-        Py_INCREF(lower);
-        upper = length;
-        Py_INCREF(upper);
+        lower = Py_NewRef(_PyLong_GetZero());
+        upper = Py_NewRef(length);
     }
 
     /* Compute start. */
     if (self->start == Py_None) {
-        start = step_is_negative ? upper : lower;
-        Py_INCREF(start);
+        start = Py_NewRef(step_is_negative ? upper : lower);
     }
     else {
         start = evaluate_slice_index(self->start);
@@ -482,8 +476,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Compute stop. */
     if (self->stop == Py_None) {
-        stop = step_is_negative ? lower : upper;
-        Py_INCREF(stop);
+        stop = Py_NewRef(step_is_negative ? lower : upper);
     }
     else {
         stop = evaluate_slice_index(self->stop);
@@ -609,8 +602,7 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
             res = Py_False;
             break;
         }
-        Py_INCREF(res);
-        return res;
+        return Py_NewRef(res);
     }
 
 
