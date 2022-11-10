@@ -64,7 +64,7 @@ class BaseTestBufferedProtocol(func_tests.FunctionalTestCaseMixin):
 
         addr = srv.sockets[0].getsockname()
         self.loop.run_until_complete(
-            asyncio.wait_for(client(addr), 5, loop=self.loop))
+            asyncio.wait_for(client(addr), 5))
 
         srv.close()
         self.loop.run_until_complete(srv.wait_closed())
