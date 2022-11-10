@@ -317,8 +317,7 @@ static PyObject* do_deepcopy(PyObject *module, PyObject* x, PyObject* memo)
     y = _PyDict_GetItem_KnownHash(memo, id_x, hash_id_x);
     if (y != NULL) {
         Py_DECREF(id_x);
-        Py_INCREF(y);
-        return y;
+        return Py_NewRef(y);
     }
     /*
      * Hold on to id_x and its hash a little longer - the dispatch handlers
