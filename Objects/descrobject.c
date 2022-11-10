@@ -622,8 +622,7 @@ descr_get_qualname(PyDescrObject *descr, void *Py_UNUSED(ignored))
 {
     if (descr->d_qualname == NULL)
         descr->d_qualname = calculate_qualname(descr);
-    Py_XINCREF(descr->d_qualname);
-    return descr->d_qualname;
+    return Py_XNewRef(descr->d_qualname);
 }
 
 static PyObject *
@@ -904,8 +903,7 @@ descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
 
     descr = (PyDescrObject *)PyType_GenericAlloc(descrtype, 0);
     if (descr != NULL) {
-        Py_XINCREF(type);
-        descr->d_type = type;
+        descr->d_type = (PyTypeObject*)Py_XNewRef(type);
         descr->d_name = PyUnicode_InternFromString(name);
         if (descr->d_name == NULL) {
             Py_DECREF(descr);
@@ -1244,8 +1242,7 @@ mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
     mappingproxy = PyObject_GC_New(mappingproxyobject, &PyDictProxy_Type);
     if (mappingproxy == NULL)
         return NULL;
-    Py_INCREF(mapping);
-    mappingproxy->mapping = mapping;
+    mappingproxy->mapping = Py_NewRef(mapping);
     _PyObject_GC_TRACK(mappingproxy);
     return (PyObject *)mappingproxy;
 }
@@ -1260,8 +1257,7 @@ PyDictProxy_New(PyObject *mapping)
 
     pp = PyObject_GC_New(mappingproxyobject, &PyDictProxy_Type);
     if (pp != NULL) {
-        Py_INCREF(mapping);
-        pp->mapping = mapping;
+        pp->mapping = Py_NewRef(mapping);
         _PyObject_GC_TRACK(pp);
     }
     return (PyObject *)pp;
@@ -1361,8 +1357,7 @@ wrapper_objclass(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
     PyObject *c = (PyObject *)PyDescr_TYPE(wp->descr);
 
-    Py_INCREF(c);
-    return c;
+    return Py_NewRef(c);
 }
 
 static PyObject *
@@ -1466,10 +1461,8 @@ PyWrapper_New(PyObject *d, PyObject *self)
 
     wp = PyObject_GC_New(wrapperobject, &_PyMethodWrapper_Type);
     if (wp != NULL) {
-        Py_INCREF(descr);
-        wp->descr = descr;
-        Py_INCREF(self);
-        wp->self = self;
+        wp->descr = (PyWrapperDescrObject*)Py_NewRef(descr);
+        wp->self = Py_NewRef(self);
         _PyObject_GC_TRACK(wp);
     }
     return (PyObject *)wp;
@@ -1566,8 +1559,7 @@ property_set_name(PyObject *self, PyObject *args) {
     propertyobject *prop = (propertyobject *)self;
     PyObject *name = PyTuple_GET_ITEM(args, 1);
 
-    Py_XINCREF(name);
-    Py_XSETREF(prop->prop_name, name);
+    Py_XSETREF(prop->prop_name, Py_XNewRef(name));
 
     Py_RETURN_NONE;
 }
@@ -1599,8 +1591,7 @@ static PyObject *
 property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     if (obj == NULL || obj == Py_None) {
-        Py_INCREF(self);
-        return self;
+        return Py_NewRef(self);
     }
 
     propertyobject *gs = (propertyobject *)self;
@@ -1722,8 +1713,7 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
     if (new == NULL)
         return NULL;
 
-    Py_XINCREF(pold->prop_name);
-    Py_XSETREF(((propertyobject *) new)->prop_name, pold->prop_name);
+    Py_XSETREF(((propertyobject *) new)->prop_name, Py_XNewRef(pold->prop_name));
     return new;
 }
 
@@ -1776,13 +1766,9 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     if (fdel == Py_None)
         fdel = NULL;
 
-    Py_XINCREF(fget);
-    Py_XINCREF(fset);
-    Py_XINCREF(fdel);
-
-    Py_XSETREF(self->prop_get, fget);
-    Py_XSETREF(self->prop_set, fset);
-    Py_XSETREF(self->prop_del, fdel);
+    Py_XSETREF(self->prop_get, Py_XNewRef(fget));
+    Py_XSETREF(self->prop_set, Py_XNewRef(fset));
+    Py_XSETREF(self->prop_del, Py_XNewRef(fdel));
     Py_XSETREF(self->prop_doc, NULL);
     Py_XSETREF(self->prop_name, NULL);
 
@@ -1790,8 +1776,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     PyObject *prop_doc = NULL;
 
     if (doc != NULL && doc != Py_None) {
-        prop_doc = doc;
-        Py_XINCREF(prop_doc);
+        prop_doc = Py_XNewRef(doc);
     }
     /* if no docstring given and the getter has one, use that one */
     else if (fget != NULL) {
@@ -1820,8 +1805,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
            class's dict. */
 
         if (prop_doc == NULL) {
-            prop_doc = Py_None;
-            Py_INCREF(prop_doc);
+            prop_doc = Py_NewRef(Py_None);
         }
         int err = PyObject_SetAttr(
                     (PyObject *)self, &_Py_ID(__doc__), prop_doc);
