@@ -2092,22 +2092,6 @@
             DISPATCH();
         }
 
-        TARGET(COMPARE_OP_GENERIC) {
-            PREDICTED(COMPARE_OP_GENERIC);
-            assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            DISPATCH();
-        }
-
         TARGET(COMPARE_OP) {
             PREDICTED(COMPARE_OP);
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
@@ -2121,7 +2105,18 @@
             }
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(COMPARE_OP_GENERIC);
+            assert(oparg <= Py_GE);
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            PyObject *res = PyObject_RichCompare(left, right, oparg);
+            SET_TOP(res);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res == NULL) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
+            DISPATCH();
         }
 
         TARGET(COMPARE_OP_FLOAT_JUMP) {
@@ -3701,8 +3696,19 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_OP_GENERIC) {
-            PREDICTED(BINARY_OP_GENERIC);
+        TARGET(BINARY_OP) {
+            PREDICTED(BINARY_OP);
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                PyObject *lhs = SECOND();
+                PyObject *rhs = TOP();
+                next_instr--;
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(BINARY_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
             assert(0 <= oparg);
@@ -3717,22 +3723,6 @@
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             DISPATCH();
-        }
-
-        TARGET(BINARY_OP) {
-            PREDICTED(BINARY_OP);
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
-                PyObject *lhs = SECOND();
-                PyObject *rhs = TOP();
-                next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(BINARY_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(BINARY_OP_GENERIC);
         }
 
         TARGET(SWAP) {

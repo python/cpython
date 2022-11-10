@@ -2085,21 +2085,6 @@ dummy_func(
         }
 
         // stack effect: (__0 -- )
-        inst(COMPARE_OP_GENERIC) {
-            assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-        }
-
-        // stack effect: (__0 -- )
         inst(COMPARE_OP) {
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -2112,7 +2097,17 @@ dummy_func(
             }
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(COMPARE_OP_GENERIC);
+            assert(oparg <= Py_GE);
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            PyObject *res = PyObject_RichCompare(left, right, oparg);
+            SET_TOP(res);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res == NULL) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
         }
 
         // stack effect: (__0 -- )
@@ -3692,7 +3687,18 @@ dummy_func(
         }
 
         // stack effect: (__0 -- )
-        inst(BINARY_OP_GENERIC) {
+        inst(BINARY_OP) {
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                PyObject *lhs = SECOND();
+                PyObject *rhs = TOP();
+                next_instr--;
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(BINARY_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             PyObject *rhs = POP();
             PyObject *lhs = TOP();
             assert(0 <= oparg);
@@ -3706,22 +3712,6 @@ dummy_func(
                 goto error;
             }
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-        }
-
-        // stack effect: (__0 -- )
-        inst(BINARY_OP) {
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
-                PyObject *lhs = SECOND();
-                PyObject *rhs = TOP();
-                next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(BINARY_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(BINARY_OP_GENERIC);
         }
 
         // stack effect: ( -- )
@@ -3765,7 +3755,7 @@ dummy_func(
 
 family(binary_op) = {
     BINARY_OP, BINARY_OP_ADD_FLOAT,
-    BINARY_OP_ADD_INT, BINARY_OP_ADD_UNICODE, BINARY_OP_GENERIC, BINARY_OP_INPLACE_ADD_UNICODE,
+    BINARY_OP_ADD_INT, BINARY_OP_ADD_UNICODE, BINARY_OP_INPLACE_ADD_UNICODE,
     BINARY_OP_MULTIPLY_FLOAT, BINARY_OP_MULTIPLY_INT, BINARY_OP_SUBTRACT_FLOAT,
     BINARY_OP_SUBTRACT_INT };
 family(binary_subscr) = {
@@ -3780,7 +3770,7 @@ family(call) = {
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
 family(compare_op) = {
-    COMPARE_OP, COMPARE_OP_FLOAT_JUMP, COMPARE_OP_GENERIC,
+    COMPARE_OP, COMPARE_OP_FLOAT_JUMP,
     COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP };
 family(for_iter) = {
     FOR_ITER, FOR_ITER_LIST,

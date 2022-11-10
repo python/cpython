@@ -1880,16 +1880,6 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             break;
-#ifndef Py_STATS
-        default:
-            // These operators don't have any available specializations. Rather
-            // than repeatedly attempting to specialize them, just convert them
-            // back to BINARY_OP (unless we're collecting stats, where it's more
-            // important to get accurate hit counts for the unadaptive version
-            // and each of the different failure types):
-            _Py_SET_OPCODE(*instr, BINARY_OP_GENERIC);
-            return;
-#endif
     }
     SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     STAT_INC(BINARY_OP, failure);
@@ -1957,23 +1947,13 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
     int next_opcode = _Py_OPCODE(instr[INLINE_CACHE_ENTRIES_COMPARE_OP + 1]);
-    if (next_opcode != POP_JUMP_IF_FALSE &&
-        next_opcode != POP_JUMP_IF_TRUE) {
-        // Can't ever combine, so don't don't bother being adaptive (unless
-        // we're collecting stats, where it's more important to get accurate hit
-        // counts for the unadaptive version and each of the different failure
-        // types):
-#ifndef Py_STATS
-        _Py_SET_OPCODE(*instr, COMPARE_OP_GENERIC);
-        return;
-#else
+    if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
         if (next_opcode == EXTENDED_ARG) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_EXTENDED_ARG);
             goto failure;
         }
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
-#endif
     }
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];
