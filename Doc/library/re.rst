@@ -496,6 +496,8 @@ The special characters are:
 
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
+      In bytes replacement strings group names must contain only characters
+      in the ASCII range.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
