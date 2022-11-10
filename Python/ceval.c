@@ -155,7 +155,10 @@ static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
     PyObject *fobj = frame->f_funcobj;
-    if (fobj == NULL || !PyFunction_Check(fobj)) {
+    if (frame->owner == FRAME_OWNED_BY_CSTACK ||
+        fobj == NULL ||
+        !PyFunction_Check(fobj)
+    ) {
         printf("\nResuming frame.");
         return;
     }
@@ -733,13 +736,13 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - first_instr))
+#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
         oparg = _Py_OPARG(word); \
     } while (0)
-#define JUMPTO(x)       (next_instr = first_instr + (x))
+#define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
 /* OpCode prediction macros
@@ -1037,18 +1040,11 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 }
 
 
-/* It is only between the KW_NAMES instruction and the following CALL,
- * that this has any meaning.
- */
-typedef struct {
-    PyObject *kwnames;
-} CallShape;
-
 // GH-89279: Must be a macro to be sure it's inlined by MSVC.
 #define is_method(stack_pointer, args) (PEEK((args)+2) != NULL)
 
 #define KWNAMES_LEN() \
-    (call_shape.kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(call_shape.kwnames)))
+    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
 
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
@@ -1074,8 +1070,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
 
     _PyCFrame cframe;
-    CallShape call_shape;
-    call_shape.kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
+    _PyInterpreterFrame  entry_frame;
+    PyObject *kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
 
     /* WARNING: Because the _PyCFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
@@ -1086,9 +1082,24 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
 
-    frame->is_entry = true;
+    assert(tstate->interp->interpreter_trampoline != NULL);
+#ifdef Py_DEBUG
+    /* Set these to invalid but identifiable values for debugging. */
+    entry_frame.f_funcobj = (PyObject*)0xaaa0;
+    entry_frame.f_locals = (PyObject*)0xaaa1;
+    entry_frame.frame_obj = (PyFrameObject*)0xaaa2;
+    entry_frame.f_globals = (PyObject*)0xaaa3;
+    entry_frame.f_builtins = (PyObject*)0xaaa4;
+#endif
+    entry_frame.f_code = tstate->interp->interpreter_trampoline;
+    entry_frame.prev_instr =
+        _PyCode_CODE(tstate->interp->interpreter_trampoline);
+    entry_frame.stacktop = 0;
+    entry_frame.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.yield_offset = 0;
     /* Push frame */
-    frame->previous = prev_cframe->current_frame;
+    entry_frame.previous = prev_cframe->current_frame;
+    frame->previous = &entry_frame;
     cframe.current_frame = frame;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
@@ -1112,7 +1123,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     PyObject *names;
     PyObject *consts;
-    _Py_CODEUNIT *first_instr;
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
 
@@ -1122,7 +1132,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         PyCodeObject *co = frame->f_code; \
         names = co->co_names; \
         consts = co->co_consts; \
-        first_instr = _PyCode_CODE(co); \
     } \
     assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
@@ -1147,14 +1156,16 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
-        if (r < 0) {
-            goto exit_unwind;
+        if (frame != &entry_frame) {
+            int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
+            if (r < 0) {
+                goto exit_unwind;
+            }
+            lltrace = r;
         }
-        lltrace = r;
-    }
-    if (lltrace) {
-        lltrace_resume_frame(frame);
+        if (lltrace) {
+            lltrace_resume_frame(frame);
+        }
     }
 #endif
 
@@ -1313,7 +1324,7 @@ pop_2_error:
 pop_1_error:
     STACK_SHRINK(1);
 error:
-        call_shape.kwnames = NULL;
+        kwnames = NULL;
         /* Double-check exception status. */
 #ifdef NDEBUG
         if (!_PyErr_Occurred(tstate)) {
@@ -1325,6 +1336,7 @@ error:
 #endif
 
         /* Log traceback info. */
+        assert(frame != &entry_frame);
         if (!_PyFrame_IsIncomplete(frame)) {
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
             if (f != NULL) {
@@ -1397,12 +1409,9 @@ exception_unwind:
 exit_unwind:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
-    if (frame->is_entry) {
-        if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            tstate->exc_info = gen->gi_exc_state.previous_item;
-            gen->gi_exc_state.previous_item = NULL;
-        }
+    assert(frame != &entry_frame);
+    frame = cframe.current_frame = pop_frame(tstate, frame);
+    if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
         tstate->cframe->use_tracing = cframe.use_tracing;
@@ -1410,7 +1419,6 @@ exit_unwind:
         _Py_LeaveRecursiveCallTstate(tstate);
         return NULL;
     }
-    frame = cframe.current_frame = pop_frame(tstate, frame);
 
 resume_with_error:
     SET_LOCALS_FROM_FRAME();
@@ -2038,13 +2046,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
         return NULL;
     }
     EVAL_CALL_STAT_INC(EVAL_CALL_VECTOR);
-    PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
-    assert(
-        _PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame) ||
-        _PyFrame_GetStackPointer(frame) == frame->localsplus
-    );
-    _PyEvalFrameClearAndPop(tstate, frame);
-    return retval;
+    return _PyEval_EvalFrame(tstate, frame, 0);
 }
 
 /* Legacy API */
