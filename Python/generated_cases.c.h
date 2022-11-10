@@ -70,8 +70,10 @@
         }
 
         TARGET(PUSH_NULL) {
-            /* Use BASIC_PUSH as NULL is not a valid object pointer */
-            BASIC_PUSH(NULL);
+            PyObject *res;
+            res = NULL;
+            STACK_GROW(1);
+            POKE(1, res);
             DISPATCH();
         }
 
@@ -809,11 +811,12 @@
                 Py_DECREF(receiver);
                 SET_TOP(retval);
                 JUMPBY(oparg);
-                DISPATCH();
             }
-            assert(gen_status == PYGEN_NEXT);
-            assert(retval != NULL);
-            PUSH(retval);
+            else {
+                assert(gen_status == PYGEN_NEXT);
+                assert(retval != NULL);
+                PUSH(retval);
+            }
             DISPATCH();
         }
 
@@ -904,7 +907,6 @@
             if (PyErr_GivenExceptionMatches(val, PyExc_StopAsyncIteration)) {
                 Py_DECREF(val);
                 Py_DECREF(POP());
-                DISPATCH();
             }
             else {
                 PyObject *exc = Py_NewRef(PyExceptionInstance_Class(val));
@@ -926,12 +928,14 @@
                 Py_DECREF(POP());  // The last sent value.
                 Py_DECREF(POP());  // The delegated sub-iterator.
                 PUSH(value);
-                DISPATCH();
             }
-            PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
-            PyObject *exc_traceback = PyException_GetTraceback(exc_value);
-            _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
-            goto exception_unwind;
+            else {
+                PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
+                PyObject *exc_traceback = PyException_GetTraceback(exc_value);
+                _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
+                goto exception_unwind;
+            }
+            DISPATCH();
         }
 
         TARGET(STOPITERATION_ERROR) {
@@ -1040,6 +1044,7 @@
                 goto error;
             }
             err = PyObject_DelItem(ns, name);
+            // Can't use ERROR_IF here.
             if (err != 0) {
                 format_exc_check_arg(tstate, PyExc_NameError,
                                      NAME_ERROR_MSG,
@@ -1186,6 +1191,7 @@
             PyObject *name = GETITEM(names, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
+            // Can't use ERROR_IF here.
             if (err != 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                     format_exc_check_arg(tstate, PyExc_NameError,
@@ -1369,11 +1375,9 @@
 
         TARGET(DELETE_FAST) {
             PyObject *v = GETLOCAL(oparg);
-            if (v != NULL) {
-                SETLOCAL(oparg, NULL);
-                DISPATCH();
-            }
-            goto unbound_local_error;
+            if (v == NULL) goto unbound_local_error;
+            SETLOCAL(oparg, NULL);
+            DISPATCH();
         }
 
         TARGET(MAKE_CELL) {
@@ -1391,13 +1395,15 @@
         TARGET(DELETE_DEREF) {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
-            if (oldobj != NULL) {
-                PyCell_SET(cell, NULL);
-                Py_DECREF(oldobj);
-                DISPATCH();
+            // Can't use ERROR_IF here.
+            // Fortunately we don't need its superpower.
+            if (oldobj == NULL) {
+                format_exc_unbound(tstate, frame->f_code, oparg);
+                goto error;
             }
-            format_exc_unbound(tstate, frame->f_code, oparg);
-            goto error;
+            PyCell_SET(cell, NULL);
+            Py_DECREF(oldobj);
+            DISPATCH();
         }
 
         TARGET(LOAD_CLASSDEREF) {
@@ -1760,15 +1766,15 @@
                     Py_DECREF(owner);
                     PUSH(meth);
                 }
-                JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-                DISPATCH();
             }
-            PyObject *res = PyObject_GetAttr(owner, name);
-            if (res == NULL) {
-                goto error;
+            else {
+                PyObject *res = PyObject_GetAttr(owner, name);
+                if (res == NULL) {
+                    goto error;
+                }
+                Py_DECREF(owner);
+                SET_TOP(res);
             }
-            Py_DECREF(owner);
-            SET_TOP(res);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             DISPATCH();
         }
@@ -2427,21 +2433,23 @@
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
                 _Py_DECREF_NO_DEALLOC(cond);
-                DISPATCH();
             }
-            if (Py_IsFalse(cond)) {
+            else if (Py_IsFalse(cond)) {
                 JUMPBY(oparg);
-                DISPATCH();
             }
-            err = PyObject_IsTrue(cond);
-            if (err > 0) {
-                STACK_SHRINK(1);
-                Py_DECREF(cond);
+            else {
+                err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    STACK_SHRINK(1);
+                    Py_DECREF(cond);
+                }
+                else if (err == 0) {
+                    JUMPBY(oparg);
+                }
+                else {
+                    goto error;
+                }
             }
-            else if (err == 0)
-                JUMPBY(oparg);
-            else
-                goto error;
             DISPATCH();
         }
 
@@ -2451,22 +2459,23 @@
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
                 _Py_DECREF_NO_DEALLOC(cond);
-                DISPATCH();
             }
-            if (Py_IsTrue(cond)) {
-                JUMPBY(oparg);
-                DISPATCH();
-            }
-            err = PyObject_IsTrue(cond);
-            if (err > 0) {
+            else if (Py_IsTrue(cond)) {
                 JUMPBY(oparg);
             }
-            else if (err == 0) {
-                STACK_SHRINK(1);
-                Py_DECREF(cond);
+            else {
+                err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    JUMPBY(oparg);
+                }
+                else if (err == 0) {
+                    STACK_SHRINK(1);
+                    Py_DECREF(cond);
+                }
+                else {
+                    goto error;
+                }
             }
-            else
-                goto error;
             DISPATCH();
         }
 
@@ -2608,23 +2617,24 @@
             if (next != NULL) {
                 PUSH(next);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-                DISPATCH();
             }
-            if (_PyErr_Occurred(tstate)) {
-                if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                    goto error;
+            else {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        goto error;
+                    }
+                    else if (tstate->c_tracefunc != NULL) {
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                    }
+                    _PyErr_Clear(tstate);
                 }
-                else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
-                }
-                _PyErr_Clear(tstate);
+                /* iterator ended normally */
+                assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
+                STACK_SHRINK(1);
+                Py_DECREF(iter);
+                /* Skip END_FOR */
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
-            /* iterator ended normally */
-            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
-            STACK_SHRINK(1);
-            Py_DECREF(iter);
-            /* Skip END_FOR */
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             DISPATCH();
         }
 
@@ -2639,7 +2649,7 @@
                     PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
                     PUSH(Py_NewRef(next));
                     JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-                    DISPATCH();
+                    goto end_for_iter_list;  // End of this instruction
                 }
                 it->it_seq = NULL;
                 Py_DECREF(seq);
@@ -2647,6 +2657,7 @@
             STACK_SHRINK(1);
             Py_DECREF(it);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+        end_for_iter_list:
             DISPATCH();
         }
 
@@ -2661,15 +2672,16 @@
                 STACK_SHRINK(1);
                 Py_DECREF(r);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
-                DISPATCH();
             }
-            long value = (long)(r->start +
-                                (unsigned long)(r->index++) * r->step);
-            if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
-                goto error;
+            else {
+                long value = (long)(r->start +
+                                    (unsigned long)(r->index++) * r->step);
+                if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
+                    goto error;
+                }
+                // The STORE_FAST is already done.
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
             }
-            // The STORE_FAST is already done.
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
             DISPATCH();
         }
 
