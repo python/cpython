@@ -3703,29 +3703,30 @@
 
         TARGET(BINARY_OP_GENERIC) {
             PREDICTED(BINARY_OP_GENERIC);
-            PyObject *rhs = POP();
-            PyObject *lhs = TOP();
+            PyObject *rhs = PEEK(1);
+            PyObject *lhs = PEEK(2);
+            PyObject *res;
             assert(0 <= oparg);
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
-            PyObject *res = binary_ops[oparg](lhs, rhs);
+            res = binary_ops[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            POKE(1, res);
+            next_instr += 1;
             DISPATCH();
         }
 
         TARGET(BINARY_OP) {
             PREDICTED(BINARY_OP);
+            PyObject *rhs = PEEK(1);
+            PyObject *lhs = PEEK(2);
+            PyObject *res;
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *lhs = SECOND();
-                PyObject *rhs = TOP();
                 next_instr--;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
                 DISPATCH_SAME_OPARG();

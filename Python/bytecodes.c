@@ -78,7 +78,7 @@ do { \
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
-static PyObject *container, *start, *stop, *v;
+static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 
 static PyObject *
 dummy_func(
@@ -3682,30 +3682,21 @@ dummy_func(
             PUSH(Py_NewRef(peek));
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_GENERIC) {
-            PyObject *rhs = POP();
-            PyObject *lhs = TOP();
+        inst(BINARY_OP_GENERIC, (lhs, rhs, unused/1 -- res)) {
             assert(0 <= oparg);
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
-            PyObject *res = binary_ops[oparg](lhs, rhs);
+            res = binary_ops[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP) {
+        // This always dispatches, so 'res' is unused.
+        inst(BINARY_OP, (lhs, rhs, unused/1 -- res)) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *lhs = SECOND();
-                PyObject *rhs = TOP();
                 next_instr--;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
                 DISPATCH_SAME_OPARG();

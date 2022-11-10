@@ -124,6 +124,10 @@ def write_instr(instr: InstDef, predictions: set[str], indent: str, f: TextIO, d
                 f.write(f"{space}if ({cond}) goto {label};\n")
         else:
             f.write(line)
+    if always_exits(instr.block):
+        # None of the rest matters
+        return
+    # Stack effect
     noutputs = len(outputs)
     diff = noutputs - ninputs
     if diff > 0:
