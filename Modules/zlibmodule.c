@@ -1718,7 +1718,7 @@ ZlibDecompressor__new__(PyTypeObject *cls,
                         PyObject *kwargs)
 {
     static char *keywords[] = {"wbits", "zdict", NULL};
-    static char *format = "|iO:_ZlibDecompressor";
+    static const char * const format = "|iO:_ZlibDecompressor";
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
     zlibstate *state = PyType_GetModuleState(cls);
