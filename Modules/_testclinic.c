@@ -535,28 +535,6 @@ str_converter_impl(PyObject *module, const char *a, const char *b,
 
 
 /*[clinic input]
-str_converter_encoding
-
-    a: str(encoding="idna")
-    b: str(encoding="idna", accept={bytes, bytearray, str})
-    c: str(encoding="idna", accept={bytes, bytearray, str}, zeroes=True)
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
-                            Py_ssize_t c_length)
-/*[clinic end generated code: output=af68766049248a1c input=0c5cf5159d0e870d]*/
-{
-    return pack_arguments(3,
-                          PyUnicode_FromString(a),
-                          PyUnicode_FromString(b),
-                          PyUnicode_FromStringAndSize(c, c_length));
-}
-
-
-/*[clinic input]
 py_buffer_converter
 
     a: Py_buffer(accept={str, buffer, NoneType})
@@ -904,182 +882,6 @@ keyword_only_parameter_impl(PyObject *module, PyObject *a)
 }
 
 
-/*[clinic input]
-vararg_and_posonly
-
-    a: object
-    *args: object
-    /
-
-[clinic start generated code]*/
-
-static PyObject *
-vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
-{
-    return pack_arguments_newref(2, a, args);
-}
-
-
-/*[clinic input]
-vararg
-
-    a: object
-    *args: object
-
-[clinic start generated code]*/
-
-static PyObject *
-vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=91ab7a0efc52dd5e input=02c0f772d05f591e]*/
-{
-    return pack_arguments_newref(2, a, args);
-}
-
-
-/*[clinic input]
-vararg_with_default
-
-    a: object
-    *args: object
-    b: bool = False
-
-[clinic start generated code]*/
-
-static PyObject *
-vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
-                         int b)
-/*[clinic end generated code: output=182c01035958ce92 input=68cafa6a79f89e36]*/
-{
-    if (!(b == 0 || b == 1)) {
-        PyErr_SetString(PyExc_AssertionError, "argument b is not a bool value");
-    }
-    PyObject *obj_b = b ? Py_True : Py_False;
-    return pack_arguments_newref(3, a, args, obj_b);
-}
-
-
-/*[clinic input]
-vararg_with_only_defaults
-
-    *args: object
-    b: object = None
-
-[clinic start generated code]*/
-
-static PyObject *
-vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b)
-/*[clinic end generated code: output=c06b1826d91f2f7b input=678c069bc67550e1]*/
-{
-    return pack_arguments_newref(2, args, b);
-}
-
-
-/*[clinic input]
-gh_32092_oob
-
-    pos1: object
-    pos2: object
-    *varargs: object
-    kw1: object = None
-    kw2: object = None
-
-Proof-of-concept of GH-32092 OOB bug.
-
-Array index out-of-bound bug in function
-`_PyArg_UnpackKeywordsWithVararg` .
-
-Calling this function by gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
-to trigger this bug (crash).
-
-[clinic start generated code]*/
-
-static PyObject *
-gh_32092_oob_impl(PyObject *module, PyObject *pos1, PyObject *pos2,
-                  PyObject *varargs, PyObject *kw1, PyObject *kw2)
-/*[clinic end generated code: output=ee259c130054653f input=568c6276e3fdef62]*/
-{
-    Py_RETURN_NONE;
-}
-
-
-/*[clinic input]
-gh_32092_kw_pass
-
-    pos: object
-    *args: object
-    kw: object = None
-
-Proof-of-concept of GH-32092 keyword args passing bug.
-
-The calculation of `noptargs` in AC-generated function
-`builtin_kw_pass_poc` is incorrect.
-
-Calling this function by gh_32092_kw_pass(1, 2, 3)
-to trigger this bug (crash).
-
-[clinic start generated code]*/
-
-static PyObject *
-gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
-                      PyObject *kw)
-/*[clinic end generated code: output=4a2bbe4f7c8604e9 input=5bfe6191e1e7a2fb]*/
-{
-    Py_RETURN_NONE;
-}
-
-
-/*[clinic input]
-gh_99233_refcount
-
-    *args: object
-    /
-
-Proof-of-concept of GH-99233 refcount error bug.
-
-While AC-generated code is packing varargs to a tuple, the arguments' refcounts are not increased.
-So all the packed arguments‘ refcounts are decreased 1 improperly when the tuple is released later.
-
-Call this function with whatever arguments and check if the arguments' refcount is correct.
-
-[clinic start generated code]*/
-
-static PyObject *
-gh_99233_refcount_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=585855abfbca9a7f input=574e697575fafec5]*/
-{
-    Py_RETURN_NONE;
-}
-
-
-/*[clinic input]
-gh_99240_double_free
-
-    a: str(encoding="idna")
-    b: str(encoding="idna")
-    /
-
-Proof-of-concept of GH-99240 double-free bug.
-
-If parsing `a` successes, `a` will be assigned an address points to an allocated memory.
-After that, if parsing `b` fails, the memory which `a` points to is freed by function `_PyArg_ParseStack`,
-and `_PyArg_ParseStack` returns 0, then control flow goes to label "exit".
-At this time, `a` is not NULL, so the memory it points to is freed again,
-which cause a double-free problem and a runtime crash.
-
-Calling this function by gh_99240_double_free('a', '\0b')
-to trigger this bug (crash).
-
-[clinic start generated code]*/
-
-static PyObject *
-gh_99240_double_free_impl(PyObject *module, char *a, char *b)
-/*[clinic end generated code: output=586dc714992fe2ed input=419d3a3790de435e]*/
-{
-    Py_RETURN_NONE;
-}
-
-
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -1104,7 +906,6 @@ static PyMethodDef tester_methods[] = {
     DOUBLE_CONVERTER_METHODDEF
     PY_COMPLEX_CONVERTER_METHODDEF
     STR_CONVERTER_METHODDEF
-    STR_CONVERTER_ENCODING_METHODDEF
     PY_BUFFER_CONVERTER_METHODDEF
     KEYWORDS_METHODDEF
     KEYWORDS_KWONLY_METHODDEF
@@ -1122,14 +923,6 @@ static PyMethodDef tester_methods[] = {
     POSONLY_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     POSONLY_OPT_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     KEYWORD_ONLY_PARAMETER_METHODDEF
-    VARARG_AND_POSONLY_METHODDEF
-    VARARG_METHODDEF
-    VARARG_WITH_DEFAULT_METHODDEF
-    VARARG_WITH_ONLY_DEFAULTS_METHODDEF
-    GH_32092_OOB_METHODDEF
-    GH_32092_KW_PASS_METHODDEF
-    GH_99233_REFCOUNT_METHODDEF
-    GH_99240_DOUBLE_FREE_METHODDEF
     {NULL, NULL}
 };
 
