@@ -326,8 +326,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
        set to NULL.
     */
     if (!value) {
-        value = Py_None;
-        Py_INCREF(value);
+        value = Py_NewRef(Py_None);
     }
 
     /* Normalize the exception so that if the type is a class, the
@@ -1287,8 +1286,7 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
             if (exc_type == NULL) { \
                 exc_type = Py_None; \
             } \
-            Py_INCREF(exc_type); \
-            PyStructSequence_SET_ITEM(args, pos++, exc_type); \
+            PyStructSequence_SET_ITEM(args, pos++, Py_NewRef(exc_type)); \
         } while (0)
 
 

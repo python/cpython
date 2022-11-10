@@ -9,10 +9,11 @@
 #endif
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "structmember.h"         // PyMemberDef
-#include "pycore_runtime_init.h"  // _Py_ID()
-#include <stdbool.h>              // bool
+#include "pycore_ceval.h"           // _Py_EnterRecursiveCall()
+#include "pycore_runtime.h"         // _PyRuntime
+#include "structmember.h"           // PyMemberDef
+#include "pycore_global_objects.h"  // _Py_ID()
+#include <stdbool.h>                // bool
 
 
 typedef struct _PyScannerObject {
