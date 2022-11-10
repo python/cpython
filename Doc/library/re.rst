@@ -418,7 +418,8 @@ The special characters are:
    +---------------------------------------+----------------------------------+
 
    .. deprecated:: 3.11
-      Group names containing non-ASCII characters in bytes patterns.
+      Group *name* containing characters outside the ASCII range
+      (``b'\x00'``-``b'\x7f'``) in :class:`bytes` patterns.
 
 .. index:: single: (?P=; in regular expressions
 
@@ -494,6 +495,8 @@ The special characters are:
 
    .. deprecated:: 3.11
       Group *id* containing anything except ASCII digits.
+      Group *name* containing characters outside the ASCII range
+      (``b'\x00'``-``b'\x7f'``) in :class:`bytes` replacement strings.
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -1015,7 +1018,8 @@ Functions
 
    .. deprecated:: 3.11
       Group *id* containing anything except ASCII digits.
-      Group names containing non-ASCII characters in bytes replacement strings.
+      Group *name* containing characters outside the ASCII range
+      (``b'\x00'``-``b'\x7f'``) in :class:`bytes` replacement strings.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
