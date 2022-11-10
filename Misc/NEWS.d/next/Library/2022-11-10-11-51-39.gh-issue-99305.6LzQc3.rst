@@ -1,1 +1,1 @@
-speeded up a bit the function ``token_hex()`` of the ``secrets`` stdlib.
+Improve performance of :func:`secrets.token_hex`.
