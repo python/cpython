@@ -248,7 +248,7 @@ dummy_func(
             ERROR_IF(sub == NULL, error);
         }
 
-        inst(BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+        inst(BINARY_OP_ADD_UNICODE, (left, right, unused/1 -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -257,7 +257,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             ERROR_IF(res == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
         // This is a subtle one. It's a super-instruction for
@@ -296,7 +295,7 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }
 
-        inst(BINARY_OP_ADD_FLOAT, (left, right -- sum)) {
+        inst(BINARY_OP_ADD_FLOAT, (left, right, unused/1 -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -307,10 +306,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(sum == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_ADD_INT, (left, right -- sum)) {
+        inst(BINARY_OP_ADD_INT, (left, right, unused/1 -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -319,7 +317,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(sum == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
         inst(BINARY_SUBSCR, (container, sub -- res)) {

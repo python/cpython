@@ -218,9 +218,9 @@
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (res == NULL) goto pop_2_error;
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, res);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -272,9 +272,9 @@
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             if (sum == NULL) goto pop_2_error;
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, sum);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -290,9 +290,9 @@
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             if (sum == NULL) goto pop_2_error;
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
             STACK_SHRINK(1);
             POKE(1, sum);
+            next_instr += 1;
             DISPATCH();
         }
 
