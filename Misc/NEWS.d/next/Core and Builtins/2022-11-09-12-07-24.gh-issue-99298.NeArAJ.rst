@@ -1,0 +1,2 @@
+Fix an issue that could potentially cause incorrect error handling for some
+bytecode instructions.
