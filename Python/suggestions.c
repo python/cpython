@@ -173,8 +173,7 @@ calculate_suggestions(PyObject *dir,
             suggestion_distance = current_distance;
         }
     }
-    Py_XINCREF(suggestion);
-    return suggestion;
+    return Py_XNewRef(suggestion);
 }
 
 static PyObject *

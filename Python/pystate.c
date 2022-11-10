@@ -356,6 +356,7 @@ PyInterpreterState_New(void)
         interp = &runtime->_main_interpreter;
         assert(interp->id == 0);
         assert(interp->next == NULL);
+        assert(interp->_static);
 
         interpreters->main = interp;
     }
@@ -370,6 +371,9 @@ PyInterpreterState_New(void)
         // Set to _PyInterpreterState_INIT.
         memcpy(interp, &initial._main_interpreter,
                sizeof(*interp));
+        // We need to adjust any fields that are different from the initial
+        // interpreter (as defined in _PyInterpreterState_INIT):
+        interp->_static = false;
 
         if (id < 0) {
             /* overflow or Py_Initialize() not called yet! */
@@ -837,6 +841,7 @@ new_threadstate(PyInterpreterState *interp)
         assert(id == 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
+        assert(tstate->_static);
     }
     else {
         // Every valid interpreter must have at least one thread.
@@ -848,6 +853,9 @@ new_threadstate(PyInterpreterState *interp)
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
+        // We need to adjust any fields that are different from the initial
+        // thread (as defined in _PyThreadState_INIT):
+        tstate->_static = false;
     }
     interp->threads.head = tstate;
 
@@ -936,9 +944,8 @@ _PyState_AddModule(PyThreadState *tstate, PyObject* module, PyModuleDef* def)
         }
     }
 
-    Py_INCREF(module);
     return PyList_SetItem(interp->modules_by_index,
-                          def->m_base.m_index, module);
+                          def->m_base.m_index, Py_NewRef(module));
 }
 
 int
@@ -986,8 +993,7 @@ PyState_RemoveModule(PyModuleDef* def)
         Py_FatalError("Module index out of bounds.");
     }
 
-    Py_INCREF(Py_None);
-    return PyList_SetItem(interp->modules_by_index, index, Py_None);
+    return PyList_SetItem(interp->modules_by_index, index, Py_NewRef(Py_None));
 }
 
 // Used by finalize_modules()
@@ -1291,8 +1297,7 @@ PyThreadState_GetFrame(PyThreadState *tstate)
     if (frame == NULL) {
         PyErr_Clear();
     }
-    Py_XINCREF(frame);
-    return frame;
+    return (PyFrameObject*)Py_XNewRef(frame);
 }
 
 
@@ -1338,8 +1343,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
          * the decref.
          */
         PyObject *old_exc = tstate->async_exc;
-        Py_XINCREF(exc);
-        tstate->async_exc = exc;
+        tstate->async_exc = Py_XNewRef(exc);
         HEAD_UNLOCK(runtime);
 
         Py_XDECREF(old_exc);
@@ -2019,8 +2023,7 @@ _bytes_shared(PyObject *obj, _PyCrossInterpreterData *data)
         return -1;
     }
     data->data = (void *)shared;
-    Py_INCREF(obj);
-    data->obj = obj;  // Will be "released" (decref'ed) when data released.
+    data->obj = Py_NewRef(obj);  // Will be "released" (decref'ed) when data released.
     data->new_object = _new_bytes_object;
     data->free = PyMem_Free;
     return 0;
@@ -2047,8 +2050,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
     shared->buffer = PyUnicode_DATA(obj);
     shared->len = PyUnicode_GET_LENGTH(obj);
     data->data = (void *)shared;
-    Py_INCREF(obj);
-    data->obj = obj;  // Will be "released" (decref'ed) when data released.
+    data->obj = Py_NewRef(obj);  // Will be "released" (decref'ed) when data released.
     data->new_object = _new_str_object;
     data->free = PyMem_Free;
     return 0;
@@ -2085,8 +2087,7 @@ static PyObject *
 _new_none_object(_PyCrossInterpreterData *data)
 {
     // XXX Singleton refcounts are problematic across interpreters...
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 static int

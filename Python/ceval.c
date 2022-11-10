@@ -391,8 +391,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             Py_DECREF(value);
             Py_DECREF(values);
             // Return None:
-            Py_INCREF(Py_None);
-            values = Py_None;
+            values = Py_NewRef(Py_None);
             goto done;
         }
         PyTuple_SET_ITEM(values, i, value);
@@ -1883,8 +1882,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             for (; i < defcount; i++) {
                 if (localsplus[m+i] == NULL) {
                     PyObject *def = defs[i];
-                    Py_INCREF(def);
-                    localsplus[m+i] = def;
+                    localsplus[m+i] = Py_NewRef(def);
                 }
             }
         }
@@ -1900,8 +1898,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             if (func->func_kwdefaults != NULL) {
                 PyObject *def = PyDict_GetItemWithError(func->func_kwdefaults, varname);
                 if (def) {
-                    Py_INCREF(def);
-                    localsplus[i] = def;
+                    localsplus[i] = Py_NewRef(def);
                     continue;
                 }
                 else if (_PyErr_Occurred(tstate)) {
@@ -2092,15 +2089,13 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
             newargs[i] = args[i];
         }
         for (int i = 0; i < kwcount; i++) {
-            Py_INCREF(kws[2*i]);
-            PyTuple_SET_ITEM(kwnames, i, kws[2*i]);
+            PyTuple_SET_ITEM(kwnames, i, Py_NewRef(kws[2*i]));
             newargs[argcount+i] = kws[2*i+1];
         }
         allargs = newargs;
     }
     for (int i = 0; i < kwcount; i++) {
-        Py_INCREF(kws[2*i]);
-        PyTuple_SET_ITEM(kwnames, i, kws[2*i]);
+        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(kws[2*i]));
     }
     PyFrameConstructor constr = {
         .fc_globals = globals,
@@ -2395,8 +2390,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
     int err;
     _PyErr_Fetch(tstate, &type, &value, &orig_traceback);
     if (value == NULL) {
-        value = Py_None;
-        Py_INCREF(value);
+        value = Py_NewRef(Py_None);
     }
     _PyErr_NormalizeException(tstate, &type, &value, &orig_traceback);
     traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;
@@ -2699,8 +2693,7 @@ _PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
         return -1;
     }
 
-    Py_XINCREF(firstiter);
-    Py_XSETREF(tstate->async_gen_firstiter, firstiter);
+    Py_XSETREF(tstate->async_gen_firstiter, Py_XNewRef(firstiter));
     return 0;
 }
 
@@ -2720,8 +2713,7 @@ _PyEval_SetAsyncGenFinalizer(PyObject *finalizer)
         return -1;
     }
 
-    Py_XINCREF(finalizer);
-    Py_XSETREF(tstate->async_gen_finalizer, finalizer);
+    Py_XSETREF(tstate->async_gen_finalizer, Py_XNewRef(finalizer));
     return 0;
 }
 
