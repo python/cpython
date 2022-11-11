@@ -1279,12 +1279,24 @@ Or, you can use an extension that provides a matrix datatype; `NumPy
 <https://numpy.org/>`_ is the best known.
 
 
-How do I apply a method to a sequence of objects?
--------------------------------------------------
+How do I apply a method or function to a sequence of objects?
+-------------------------------------------------------------
 
-Use a list comprehension::
+To call a method or function and accumulate the return values is a list,
+a :term:`list comprehension` is an elegant solution::
 
    result = [obj.method() for obj in mylist]
+
+   result = [function(obj) for obj in mylist]
+
+To just run the method or function without saving the return values,
+a plain :keyword:`for` loop will suffice::
+
+   for obj in mylist:
+       obj.method()
+
+   for obj in mylist:
+       function(obj)
 
 .. _faq-augmented-assignment-tuple-error:
 
