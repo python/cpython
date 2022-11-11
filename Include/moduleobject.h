@@ -52,6 +52,7 @@ typedef struct PyModuleDef_Base {
   PyObject* (*m_init)(void);
   /* The module's index into its interpreter's modules_by_index cache.
      This is set for all extension modules but only used for legacy ones.
+     (See PyInterpreterState.modules_by_index for more info.)
      It is set by PyModuleDef_Init(). */
   Py_ssize_t m_index;
   /* A copy of the module's __dict__ after the first time it was loaded.
