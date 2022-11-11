@@ -538,11 +538,6 @@ Data Types
          >>> ~Color.RED
          <Color.GREEN|BLUE: 6>
 
-      .. versionchanged:: 3.11
-      
-      Inversion of a flag now returns a positive value that is the
-      union of all flags not in the given flag, rather than a negative value.
-
    .. method:: _numeric_repr_
 
       Function used to format any remaining unnamed numeric values.  Default is
@@ -595,9 +590,15 @@ Data Types
       Using :class:`auto` with :class:`IntFlag` results in integers that are powers
       of two, starting with ``1``.
 
-   .. versionchanged:: 3.11 :meth:`__str__` is now :func:`int.__str__` to
-      better support the *replacement of existing constants* use-case.
-      :meth:`__format__` was already :func:`int.__format__` for that same reason.
+   .. versionchanged:: 3.11
+
+      :meth:`__str__` is now :func:`int.__str__` to better support the
+      *replacement of existing constants* use-case.  :meth:`__format__` was
+      already :func:`int.__format__` for that same reason.
+
+      Inversion of a *IntFlag* now returns a positive value that is the
+      union of all flags not in the given flag, rather than a negative value.
+      This matches the existing *Flag* behavior.
 
 .. class:: ReprEnum
 
