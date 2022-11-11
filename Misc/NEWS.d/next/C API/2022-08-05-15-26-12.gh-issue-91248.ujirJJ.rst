@@ -1,0 +1,2 @@
+Add :c:func:`PyFrame_GetVar` and :c:func:`PyFrame_GetVarString` functions to
+get a frame variable by its name. Patch by Victor Stinner.

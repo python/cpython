@@ -1760,7 +1760,7 @@ Loading and running tests
 
       A list of the non-fatal errors encountered while loading tests. Not reset
       by the loader at any point. Fatal errors are signalled by the relevant
-      a method raising an exception to the caller. Non-fatal errors are also
+      method raising an exception to the caller. Non-fatal errors are also
       indicated by a synthetic test that will raise the original error when
       run.
 

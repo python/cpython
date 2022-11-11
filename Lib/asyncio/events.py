@@ -61,6 +61,9 @@ class Handle:
         info = self._repr_info()
         return '<{}>'.format(' '.join(info))
 
+    def get_context(self):
+        return self._context
+
     def cancel(self):
         if not self._cancelled:
             self._cancelled = True

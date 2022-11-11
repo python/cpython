@@ -28,6 +28,11 @@ from test.support import threading_helper
 # Must be smaller than buildbot "1200 seconds without output" limit.
 EXIT_TIMEOUT = 120.0
 
+EXITCODE_BAD_TEST = 2
+EXITCODE_INTERRUPTED = 130
+EXITCODE_ENV_CHANGED = 3
+EXITCODE_NO_TESTS_RAN = 4
+
 
 class Regrtest:
     """Execute a test suite.
@@ -493,15 +498,18 @@ class Regrtest:
         print("== encodings: locale=%s, FS=%s"
               % (locale.getencoding(), sys.getfilesystemencoding()))
 
+    def no_tests_run(self):
+        return not any((self.good, self.bad, self.skipped, self.interrupted,
+                        self.environment_changed))
+
     def get_tests_result(self):
         result = []
         if self.bad:
             result.append("FAILURE")
         elif self.ns.fail_env_changed and self.environment_changed:
             result.append("ENV CHANGED")
-        elif not any((self.good, self.bad, self.skipped, self.interrupted,
-            self.environment_changed)):
-            result.append("NO TEST RUN")
+        elif self.no_tests_run():
+            result.append("NO TESTS RAN")
 
         if self.interrupted:
             result.append("INTERRUPTED")
@@ -750,11 +758,13 @@ class Regrtest:
         self.save_xml_result()
 
         if self.bad:
-            sys.exit(2)
+            sys.exit(EXITCODE_BAD_TEST)
         if self.interrupted:
-            sys.exit(130)
+            sys.exit(EXITCODE_INTERRUPTED)
         if self.ns.fail_env_changed and self.environment_changed:
-            sys.exit(3)
+            sys.exit(EXITCODE_ENV_CHANGED)
+        if self.no_tests_run():
+            sys.exit(EXITCODE_NO_TESTS_RAN)
         sys.exit(0)
 
 

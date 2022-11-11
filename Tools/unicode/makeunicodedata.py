@@ -417,7 +417,7 @@ def makeunicodetype(unicode, trace):
     # extract unicode types
     dummy = (0, 0, 0, 0, 0, 0)
     table = [dummy]
-    cache = {0: dummy}
+    cache = {dummy: 0}
     index = [0] * len(unicode.chars)
     numeric = {}
     spaces = []

@@ -810,8 +810,7 @@ update_code_filenames(PyCodeObject *co, PyObject *oldname, PyObject *newname)
     if (PyUnicode_Compare(co->co_filename, oldname))
         return;
 
-    Py_INCREF(newname);
-    Py_XSETREF(co->co_filename, newname);
+    Py_XSETREF(co->co_filename, Py_NewRef(newname));
 
     constants = co->co_consts;
     n = PyTuple_GET_SIZE(constants);
@@ -905,8 +904,7 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
 
     importer = PyDict_GetItemWithError(path_importer_cache, p);
     if (importer != NULL || _PyErr_Occurred(tstate)) {
-        Py_XINCREF(importer);
-        return importer;
+        return Py_XNewRef(importer);
     }
 
     /* set path_importer_cache[p] to None to avoid recursion */
@@ -1018,6 +1016,14 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 
     PyObject *name = PyObject_GetAttrString(spec, "name");
     if (name == NULL) {
+        return NULL;
+    }
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "name must be string, not %.200s",
+                     Py_TYPE(name)->tp_name);
+        Py_DECREF(name);
         return NULL;
     }
 
@@ -1395,8 +1401,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         }
     }
     else {
-        Py_INCREF(Py_None);
-        origname = Py_None;
+        origname = Py_NewRef(Py_None);
     }
     err = PyDict_SetItemString(d, "__origname__", origname);
     Py_DECREF(origname);
@@ -1508,8 +1513,7 @@ remove_importlib_frames(PyThreadState *tstate)
         if (in_importlib &&
             (always_trim ||
              _PyUnicode_EqualToASCIIString(code->co_name, remove_frames))) {
-            Py_XINCREF(next);
-            Py_XSETREF(*outer_link, next);
+            Py_XSETREF(*outer_link, Py_XNewRef(next));
             prev_link = outer_link;
         }
         else {
@@ -1573,7 +1577,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                 goto error;
             }
             else if (equal == 0) {
-                if (PyErr_WarnEx(PyExc_ImportWarning,
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
                         "__package__ != __spec__.parent", 1) < 0) {
                     goto error;
                 }
@@ -1805,8 +1809,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
             _PyErr_SetString(tstate, PyExc_ValueError, "Empty module name");
             goto error;
         }
-        abs_name = name;
-        Py_INCREF(abs_name);
+        abs_name = Py_NewRef(name);
     }
 
     mod = import_get_module(tstate, abs_name);
@@ -1845,8 +1848,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 
             if (dot == -1) {
                 /* No dot in module name, simple exit */
-                final_mod = mod;
-                Py_INCREF(mod);
+                final_mod = Py_NewRef(mod);
                 goto error;
             }
 
@@ -1881,8 +1883,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
             }
         }
         else {
-            final_mod = mod;
-            Py_INCREF(mod);
+            final_mod = Py_NewRef(mod);
         }
     }
     else {
@@ -1897,8 +1898,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                         mod, fromlist, interp->import_func, NULL);
         }
         else {
-            final_mod = mod;
-            Py_INCREF(mod);
+            final_mod = Py_NewRef(mod);
         }
     }
 
