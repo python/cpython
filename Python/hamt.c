@@ -514,7 +514,7 @@ hamt_node_bitmap_new(Py_ssize_t size)
         /* Since bitmap nodes are immutable, we can cache the instance
            for size=0 and reuse it whenever we need an empty bitmap node.
         */
-        return (PyHamtNode *)&_Py_SINGLETON(hamt_bitmap_node_empty);
+        return (PyHamtNode *)Py_NewRef(&_Py_SINGLETON(hamt_bitmap_node_empty));
     }
 
     assert(size >= 0);
@@ -2434,7 +2434,7 @@ _PyHamt_New(void)
 {
     /* HAMT is an immutable object so we can easily cache an
        empty instance. */
-    return (PyHamtObject*)_empty_hamt;
+    return (PyHamtObject*)Py_NewRef(_empty_hamt);
 }
 
 #ifdef Py_DEBUG
