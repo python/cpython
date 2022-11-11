@@ -21,23 +21,21 @@ arg_parser.add_argument("-o", "--output", type=str, default="Python/generated_ca
 arg_parser.add_argument("-q", "--quiet", action="store_true")
 
 
-def eopen(filename: str, mode: str = "r") -> TextIO:
-    if filename == "-":
-        if "r" in mode:
-            return sys.stdin
-        else:
-            return sys.stdout
-    return cast(TextIO, open(filename, mode))
-
-
 def parse_cases(
     src: str, filename: str|None = None
 ) -> tuple[list[InstDef], list[parser.Super], list[parser.Family]]:
     psr = parser.Parser(src, filename=filename)
+    # Skip until BEGIN marker
+    while tkn := psr.next(raw=True):
+        if tkn.text == "// BEGIN BYTECODES //":
+            break
+    else:
+        raise psr.make_syntax_error(f"Couldn't find {text!r} in {psr.filename}")
     instrs: list[InstDef] = []
     supers: list[parser.Super] = []
     families: list[parser.Family] = []
-    while not psr.eof():
+    # Parse until END marker
+    while not psr.eof() and psr.peek(raw=True).text != "// END BYTECODES //":
         if inst := psr.inst_def():
             instrs.append(inst)
         elif sup := psr.super_def():
@@ -197,11 +195,8 @@ def write_cases(
 
 def main():
     args = arg_parser.parse_args()
-    with eopen(args.input) as f:
-        srclines = f.read().splitlines()
-    begin = srclines.index("// BEGIN BYTECODES //")
-    end = srclines.index("// END BYTECODES //")
-    src = "\n".join(srclines[begin+1 : end])
+    with open(args.input) as f:
+        src = f.read()
     instrs, supers, families = parse_cases(src, filename=args.input)
     ninstrs = nsupers = nfamilies = 0
     if not args.quiet:
@@ -213,7 +208,7 @@ def main():
             f"and {nfamilies} families from {args.input}",
             file=sys.stderr,
         )
-    with eopen(args.output, "w") as f:
+    with open(args.output, "w") as f:
         effects_table = write_cases(f, instrs, supers, families)
     if not args.quiet:
         print(
