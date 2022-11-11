@@ -331,8 +331,8 @@ the enumeration members.  For example, finding all the aliases::
 
 .. note::
 
-   Aliases for flags includes values with multiple flags set, such as 3, and no flags
-   set, i.e. 0.
+   Aliases for flags include values with multiple flags set, such as ``3``,
+   and no flags set, i.e. ``0``.
 
 
 Comparisons
