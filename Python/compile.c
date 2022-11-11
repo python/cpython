@@ -467,7 +467,9 @@ static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, loc
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, location loc, const char *, ...);
 static int compiler_warn(struct compiler *, location loc, const char *, ...);
-static int compiler_nameop(struct compiler *, location, identifier, expr_context_ty);
+
+#define DelNoErr 4 // An extra kind of expr_context_ty
+static int compiler_nameop(struct compiler *, location, identifier, int);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
 static int compiler_visit_stmt(struct compiler *, stmt_ty);
@@ -4186,8 +4188,7 @@ addop_yield(struct compiler *c, location loc) {
 }
 
 static int
-compiler_nameop(struct compiler *c, location loc,
-                identifier name, expr_context_ty ctx)
+compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
 {
     int op, scope;
     Py_ssize_t arg;
