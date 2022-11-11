@@ -1151,9 +1151,11 @@ canonical members will be returned.  For example::
 
 (Note that ``BLACK``, ``PURPLE``, and ``WHITE`` do not show up.)
 
-Inverting a flag member does not return a negative value, but the
-corresponding positive value -- for example,
-``~Color.RED == <Color.GREEN|BLUE: 6>``.
+Inverting a flag member returns the corresponding positive value,
+rather than a negative value --- for example::
+
+    >>> ~Color.RED
+    <Color.GREEN|BLUE: 6>
 
 Flag members have a length corresponding to the number of power-of-two values
 they contain.  For example, ``len(Color.PURPLE) == 2``.
