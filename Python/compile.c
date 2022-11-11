@@ -8768,6 +8768,7 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
                 case LOAD_DEREF:
                 case STORE_DEREF:
                 case DELETE_DEREF:
+                case DELETE_DEREF_NOERROR:
                 case LOAD_CLASSDEREF:
                     assert(oldoffset >= 0);
                     assert(oldoffset < noffsets);
