@@ -2112,15 +2112,15 @@ This section shows recipes for common adapters and converters.
 
    def convert_date(val):
        """Convert ISO 8601 date to datetime.date object."""
-       return datetime.date.fromisoformat(val)
+       return datetime.date.fromisoformat(val.decode())
 
    def convert_datetime(val):
        """Convert ISO 8601 datetime to datetime.datetime object."""
-       return datetime.datetime.fromisoformat(val)
+       return datetime.datetime.fromisoformat(val.decode())
 
    def convert_timestamp(val):
        """Convert Unix epoch timestamp to datetime.datetime object."""
-       return datetime.datetime.fromtimestamp(val)
+       return datetime.datetime.fromtimestamp(int(val))
 
    sqlite3.register_converter("date", convert_date)
    sqlite3.register_converter("datetime", convert_datetime)
