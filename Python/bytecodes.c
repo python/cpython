@@ -191,6 +191,20 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
+        family(binary_op) = {
+            BINARY_OP,
+            BINARY_OP_ADD_FLOAT,
+            BINARY_OP_ADD_INT,
+            BINARY_OP_ADD_UNICODE,
+            BINARY_OP_GENERIC,
+            // BINARY_OP_INPLACE_ADD_UNICODE,  // This is an odd duck.
+            BINARY_OP_MULTIPLY_FLOAT,
+            BINARY_OP_MULTIPLY_INT,
+            BINARY_OP_SUBTRACT_FLOAT,
+            BINARY_OP_SUBTRACT_INT,
+        };
+
+
         inst(BINARY_OP_MULTIPLY_INT, (left, right, unused/1 -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
@@ -3743,13 +3757,8 @@ dummy_func(
     ;
 }
 
-// Families go below this point //
+// Future families go below this point //
 
-family(binary_op) = {
-    BINARY_OP, BINARY_OP_ADD_FLOAT,
-    BINARY_OP_ADD_INT, BINARY_OP_ADD_UNICODE, BINARY_OP_GENERIC, BINARY_OP_INPLACE_ADD_UNICODE,
-    BINARY_OP_MULTIPLY_FLOAT, BINARY_OP_MULTIPLY_INT, BINARY_OP_SUBTRACT_FLOAT,
-    BINARY_OP_SUBTRACT_INT };
 family(binary_subscr) = {
     BINARY_SUBSCR, BINARY_SUBSCR_DICT,
     BINARY_SUBSCR_GETITEM, BINARY_SUBSCR_LIST_INT, BINARY_SUBSCR_TUPLE_INT };
