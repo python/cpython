@@ -27,7 +27,8 @@
 An enumeration:
 
 * is a set of symbolic names (members) bound to unique values
-* can be iterated over to return its members in definition order
+* can be iterated over to return its canonical (i.e. non-alias) members in
+  definition order
 * uses *call* syntax to return members by value
 * uses *index* syntax to return members by name
 
@@ -425,17 +426,21 @@ Data Types
    in most of the same places that a string can be used.  The result of any string
    operation performed on or with a *StrEnum* member is not part of the enumeration.
 
-   .. note:: There are places in the stdlib that check for an exact :class:`str`
-             instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
-             instead of ``isinstance(unknown, str)``), and in those locations you
-             will need to use ``str(StrEnum.member)``.
+   .. note::
+
+      There are places in the stdlib that check for an exact :class:`str`
+      instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
+      instead of ``isinstance(unknown, str)``), and in those locations you
+      will need to use ``str(StrEnum.member)``.
 
    .. note::
 
       Using :class:`auto` with :class:`StrEnum` results in the lower-cased member
       name as the value.
 
-   .. note:: :meth:`__str__` is :func:`str.__str__` to better support the
+   .. note::
+
+      :meth:`__str__` is :func:`str.__str__` to better support the
       *replacement of existing constants* use-case.  :meth:`__format__` is likewise
       :func:`str.__format__` for that same reason.
 
@@ -469,7 +474,7 @@ Data Types
 
    .. method:: __iter__(self):
 
-      Returns all contained members::
+      Returns all contained non-alias members::
 
          >>> list(Color.RED)
          [<Color.RED: 1>]
@@ -532,6 +537,9 @@ Data Types
          <Color.GREEN: 2>
          >>> ~Color.RED
          <Color.GREEN|BLUE: 6>
+
+      ..versionchanged:: 3.11 inversion no longer returns a flag with a negative
+      value
 
    .. method:: _numeric_repr_
 
