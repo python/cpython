@@ -22,9 +22,10 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
 
     if (!PyArg_ParseTuple(args, "OOsO:parse_tuple_and_keywords",
-        &sub_args, &sub_kwargs,
-        &sub_format, &sub_keywords))
+                          &sub_args, &sub_kwargs, &sub_format, &sub_keywords))
+    {
         return NULL;
+    }
 
     if (!(PyList_CheckExact(sub_keywords) ||
         PyTuple_CheckExact(sub_keywords)))
@@ -63,8 +64,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
         buffers + 4, buffers + 5, buffers + 6, buffers + 7);
 
     if (result) {
-        return_value = Py_None;
-        Py_INCREF(Py_None);
+        return_value = Py_NewRef(Py_None);
     }
 
 exit:
@@ -81,8 +81,7 @@ get_args(PyObject *self, PyObject *args)
     if (args == NULL) {
         args = Py_None;
     }
-    Py_INCREF(args);
-    return args;
+    return Py_NewRef(args);
 }
 
 static PyObject *
@@ -91,8 +90,7 @@ get_kwargs(PyObject *self, PyObject *args, PyObject *kwargs)
     if (kwargs == NULL) {
         kwargs = Py_None;
     }
-    Py_INCREF(kwargs);
-    return kwargs;
+    return Py_NewRef(kwargs);
 }
 
 static PyObject *
@@ -161,7 +159,7 @@ getargs_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *keywords[] = {"arg1","arg2","arg3","arg4","arg5", NULL};
     static const char fmt[] = "(ii)i|(i(ii))(iii)i";
-    int int_args[10]={-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+    int int_args[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
         &int_args[0], &int_args[1], &int_args[2], &int_args[3], &int_args[4],
@@ -438,8 +436,7 @@ getargs_S(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "S", &obj)) {
         return NULL;
     }
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject *
@@ -449,8 +446,7 @@ getargs_Y(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Y", &obj)) {
         return NULL;
     }
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject *
@@ -460,8 +456,7 @@ getargs_U(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U", &obj)) {
         return NULL;
     }
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject *
@@ -543,8 +538,7 @@ getargs_z_star(PyObject *self, PyObject *args)
         bytes = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
     }
     else {
-        Py_INCREF(Py_None);
-        bytes = Py_None;
+        bytes = Py_NewRef(Py_None);
     }
     PyBuffer_Release(&buffer);
     return bytes;
@@ -578,11 +572,10 @@ static PyObject *
 getargs_y_star(PyObject *self, PyObject *args)
 {
     Py_buffer buffer;
-    PyObject *bytes;
     if (!PyArg_ParseTuple(args, "y*", &buffer)) {
         return NULL;
     }
-    bytes = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    PyObject *bytes = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
     PyBuffer_Release(&buffer);
     return bytes;
 }
@@ -649,7 +642,7 @@ getargs_Z_hash(PyObject *self, PyObject *args)
 static PyObject *
 getargs_es(PyObject *self, PyObject *args)
 {
-    PyObject *arg, *result;
+    PyObject *arg;
     const char *encoding = NULL;
     char *str;
 
@@ -659,7 +652,7 @@ getargs_es(PyObject *self, PyObject *args)
     if (!PyArg_Parse(arg, "es", encoding, &str)) {
         return NULL;
     }
-    result = PyBytes_FromString(str);
+    PyObject *result = PyBytes_FromString(str);
     PyMem_Free(str);
     return result;
 }
@@ -667,7 +660,7 @@ getargs_es(PyObject *self, PyObject *args)
 static PyObject *
 getargs_et(PyObject *self, PyObject *args)
 {
-    PyObject *arg, *result;
+    PyObject *arg;
     const char *encoding = NULL;
     char *str;
 
@@ -677,7 +670,7 @@ getargs_et(PyObject *self, PyObject *args)
     if (!PyArg_Parse(arg, "et", encoding, &str)) {
         return NULL;
     }
-    result = PyBytes_FromString(str);
+    PyObject *result = PyBytes_FromString(str);
     PyMem_Free(str);
     return result;
 }
@@ -685,7 +678,7 @@ getargs_et(PyObject *self, PyObject *args)
 static PyObject *
 getargs_es_hash(PyObject *self, PyObject *args)
 {
-    PyObject *arg, *result;
+    PyObject *arg;
     const char *encoding = NULL;
     PyByteArrayObject *buffer = NULL;
     char *str = NULL;
@@ -701,7 +694,7 @@ getargs_es_hash(PyObject *self, PyObject *args)
     if (!PyArg_Parse(arg, "es#", encoding, &str, &size)) {
         return NULL;
     }
-    result = PyBytes_FromStringAndSize(str, size);
+    PyObject *result = PyBytes_FromStringAndSize(str, size);
     if (buffer == NULL) {
         PyMem_Free(str);
     }
@@ -711,7 +704,7 @@ getargs_es_hash(PyObject *self, PyObject *args)
 static PyObject *
 getargs_et_hash(PyObject *self, PyObject *args)
 {
-    PyObject *arg, *result;
+    PyObject *arg;
     const char *encoding = NULL;
     PyByteArrayObject *buffer = NULL;
     char *str = NULL;
@@ -727,7 +720,7 @@ getargs_et_hash(PyObject *self, PyObject *args)
     if (!PyArg_Parse(arg, "et#", encoding, &str, &size)) {
         return NULL;
     }
-    result = PyBytes_FromStringAndSize(str, size);
+    PyObject *result = PyBytes_FromStringAndSize(str, size);
     if (buffer == NULL) {
         PyMem_Free(str);
     }
@@ -794,16 +787,13 @@ static PyObject *
 test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     /* Unicode strings should be accepted */
-    PyObject *tuple, *obj;
-    char *value;
-
-    tuple = PyTuple_New(1);
+    PyObject *tuple = PyTuple_New(1);
     if (tuple == NULL) {
         return NULL;
     }
 
-    obj = PyUnicode_Decode("t\xeate", strlen("t\xeate"),
-                           "latin-1", NULL);
+    PyObject *obj = PyUnicode_Decode("t\xeate", strlen("t\xeate"),
+                                     "latin-1", NULL);
     if (obj == NULL) {
         return NULL;
     }
@@ -813,6 +803,7 @@ test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     /* These two blocks used to raise a TypeError:
      * "argument must be string without null bytes, not str"
      */
+    char *value;
     if (!PyArg_ParseTuple(tuple, "s:test_s_code1", &value)) {
         return NULL;
     }
