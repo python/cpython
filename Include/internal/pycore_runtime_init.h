@@ -28,7 +28,22 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
-        .global_objects = _Py_global_objects_INIT, \
+        .global_objects = { \
+            .singletons = { \
+                .small_ints = _Py_small_ints_INIT, \
+                .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \
+                .bytes_characters = _Py_bytes_characters_INIT, \
+                .strings = { \
+                    .literals = _Py_str_literals_INIT, \
+                    .identifiers = _Py_str_identifiers_INIT, \
+                    .ascii = _Py_str_ascii_INIT, \
+                    .latin1 = _Py_str_latin1_INIT, \
+                }, \
+                .tuple_empty = { \
+                    .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+                }, \
+            }, \
+        }, \
         ._main_interpreter = _PyInterpreterState_INIT, \
     }
 
