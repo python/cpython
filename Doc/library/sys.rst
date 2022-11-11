@@ -35,6 +35,15 @@ always available.
    can then log the event, raise an exception to abort the operation,
    or terminate the process entirely.
 
+   Note that audit hooks are primarily for collecting information about internal
+   or otherwise unobservable actions, whether by Python or libraries written in
+   Python. They are not suitable for implementing a "sandbox". In particular,
+   malicious code can trivially disable or bypass hooks added using this
+   function. At a minimum, any security-sensitive hooks must be added using the
+   C API :c:func:`PySys_AddAuditHook` before initialising the runtime, and any
+   modules allowing arbitrary memory modification (such as :mod:`ctypes`) should
+   be completely removed or closely monitored.
+
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
       Calling :func:`sys.addaudithook` will itself raise an auditing event
