@@ -1475,6 +1475,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(tuple_empty));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(hamt_bitmap_node_empty));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_INTERP_SINGLETON(interp, hamt_empty));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(context_token_missing));
 }
 #endif  // Py_DEBUG
 /* End auto-generated code */

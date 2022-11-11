@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_gc.h"              // PyGC_Head
 #include "pycore_global_strings.h"  // struct _Py_global_strings
 #include "pycore_hamt.h"            // PyHamtNode_Bitmap
+#include "pycore_context.h"         // _PyContextTokenMissing
 
 
 // These would be in pycore_long.h if it weren't for an include cycle.
@@ -48,6 +49,7 @@ struct _Py_global_objects {
 
         _PyGC_Head_UNUSED _hamt_bitmap_node_empty_gc_not_used;
         PyHamtNode_Bitmap hamt_bitmap_node_empty;
+        _PyContextTokenMissing context_token_missing;
     } singletons;
 
     PyObject *interned;

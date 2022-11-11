@@ -310,9 +310,6 @@ Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
 #-----------------------
 # other
 
-# initialized once
-Python/context.c	-	_token_missing	-
-
 # state
 Objects/typeobject.c	resolve_slotdups	pname	-
 

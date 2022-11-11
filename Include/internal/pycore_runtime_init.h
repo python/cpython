@@ -45,6 +45,9 @@ extern "C" {
                 .hamt_bitmap_node_empty = { \
                     .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
                 }, \
+                .context_token_missing = { \
+                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
+                }, \
             }, \
         }, \
         ._main_interpreter = _PyInterpreterState_INIT, \
