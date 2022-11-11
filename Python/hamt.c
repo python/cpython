@@ -326,9 +326,6 @@ typedef struct {
 } PyHamtNode_Collision;
 
 
-static PyHamtObject *_empty_hamt;
-
-
 static PyHamtObject *
 hamt_alloc(void);
 
@@ -2429,33 +2426,15 @@ hamt_alloc(void)
     return o;
 }
 
+#define _empty_hamt \
+    (&_Py_INTERP_SINGLETON(_PyInterpreterState_Get(), hamt_empty))
+
 PyHamtObject *
 _PyHamt_New(void)
 {
-    if (_empty_hamt != NULL) {
-        /* HAMT is an immutable object so we can easily cache an
-           empty instance. */
-        return (PyHamtObject*)Py_NewRef(_empty_hamt);
-    }
-
-    PyHamtObject *o = hamt_alloc();
-    if (o == NULL) {
-        return NULL;
-    }
-
-    o->h_root = hamt_node_bitmap_new(0);
-    if (o->h_root == NULL) {
-        Py_DECREF(o);
-        return NULL;
-    }
-
-    o->h_count = 0;
-
-    if (_empty_hamt == NULL) {
-        _empty_hamt = (PyHamtObject*)Py_NewRef(o);
-    }
-
-    return o;
+    /* HAMT is an immutable object so we can easily cache an
+       empty instance. */
+    return (PyHamtObject*)_empty_hamt;
 }
 
 #ifdef Py_DEBUG
@@ -2671,6 +2650,15 @@ hamt_tp_traverse(PyHamtObject *self, visitproc visit, void *arg)
 static void
 hamt_tp_dealloc(PyHamtObject *self)
 {
+    if (self == _empty_hamt) {
+        /* The empty one is statically allocated. */
+#ifdef Py_DEBUG
+        _Py_FatalRefcountError("deallocating the empty hamt singleton");
+#else
+        return;
+#endif
+    }
+
     PyObject_GC_UnTrack(self);
     if (self->h_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
@@ -2906,10 +2894,3 @@ PyTypeObject _PyHamt_CollisionNode_Type = {
     .tp_free = PyObject_GC_Del,
     .tp_hash = PyObject_HashNotImplemented,
 };
-
-
-void
-_PyHamt_Fini(PyInterpreterState *interp)
-{
-    Py_CLEAR(_empty_hamt);
-}

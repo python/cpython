@@ -1306,7 +1306,6 @@ _PyContext_Fini(PyInterpreterState *interp)
     struct _Py_context_state *state = &interp->context;
     state->numfree = -1;
 #endif
-    _PyHamt_Fini(interp);
 }
 
 

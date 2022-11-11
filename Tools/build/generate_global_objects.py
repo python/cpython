@@ -128,6 +128,7 @@ NON_GENERATED_IMMORTAL_OBJECTS = [
     '(PyObject *)&_Py_SINGLETON(bytes_empty)',
     '(PyObject *)&_Py_SINGLETON(tuple_empty)',
     '(PyObject *)&_Py_SINGLETON(hamt_bitmap_node_empty)',
+    '(PyObject *)&_Py_INTERP_SINGLETON(interp, hamt_empty)',
 ]
 
 

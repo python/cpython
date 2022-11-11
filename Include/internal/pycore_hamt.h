@@ -28,10 +28,6 @@ extern PyTypeObject _PyHamtKeys_Type;
 extern PyTypeObject _PyHamtValues_Type;
 extern PyTypeObject _PyHamtItems_Type;
 
-/* runtime lifecycle */
-
-void _PyHamt_Fini(PyInterpreterState *);
-
 
 /* other API */
 
