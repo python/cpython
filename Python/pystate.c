@@ -853,8 +853,6 @@ new_threadstate(PyInterpreterState *interp)
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
-        // We need to adjust any fields that are different from the initial
-        // thread (as defined in _PyThreadState_INIT):
     }
     interp->threads.head = tstate;
 
