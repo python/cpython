@@ -509,9 +509,6 @@ Modules/_io/_iomodule.c	-	_PyIO_empty_bytes	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/unicode.c	-	_testcapimodule	-
 Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
-Modules/signalmodule.c	-	DefaultHandler	-
-Modules/signalmodule.c	-	IgnoreHandler	-
-Modules/signalmodule.c	-	IntHandler	-
 
 # state
 Modules/faulthandler.c	-	fatal_error	-
