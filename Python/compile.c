@@ -3548,7 +3548,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_EXCEPT);
-
             compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
@@ -8115,8 +8114,6 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
                 continue;
             }
             assert(arg >= 0);
-
-
             switch (instr->i_opcode) {
                 case DELETE_FAST_NOERROR:
                     if (states[arg - 64] != blocknum) {
@@ -8921,6 +8918,10 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Optimization **/
+    int none_oparg = (int)compiler_add_const(c, Py_None);
+    if (none_oparg < 0) {
+        goto error;
+    }
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {
         goto error;
@@ -8931,14 +8932,8 @@ assemble(struct compiler *c, int addNone)
     if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
         goto error;
     }
-    {
-        int none_oparg = (int)compiler_add_const(c, Py_None);
-        if (none_oparg < 0) {
-            goto error;
-        }
-        if (expand_del_noerror(g->g_entryblock, none_oparg)) {
-            goto error;
-        }
+    if (expand_del_noerror(g->g_entryblock, none_oparg)) {
+        goto error;
     }
 
     /** line numbers (TODO: move this before optimization stage) */
