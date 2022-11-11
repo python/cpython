@@ -8261,8 +8261,8 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                     break;
                 case DELETE_NAME_NOERROR:
                     op1 = LOAD_CONST; arg1 = none_oparg;
-                    op2 = STORE_GLOBAL; arg2 = src_oparg;
-                    op3 = DELETE_GLOBAL; arg3 = src_oparg;
+                    op2 = STORE_NAME; arg2 = src_oparg;
+                    op3 = DELETE_NAME; arg3 = src_oparg;
                     break;
                 default:
                     b->b_instr[dest--] = b->b_instr[src];
