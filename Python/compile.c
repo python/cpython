@@ -9913,10 +9913,9 @@ cfg_to_instructions(cfg_builder *g)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             location loc = instr->i_loc;
-            int arg = instr->i_oparg;
-            if (HAS_TARGET(instr->i_opcode) && instr->i_target != NULL) {
-                arg = instr->i_target->b_label;
-            }
+            int arg = HAS_TARGET(instr->i_opcode) ?
+                      instr->i_target->b_label : instr->i_oparg;
+
             PyObject *inst_tuple = Py_BuildValue(
                 "(iiiiii)", instr->i_opcode, arg,
                 loc.lineno, loc.end_lineno,
