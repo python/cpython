@@ -1143,7 +1143,7 @@ ever instantiated by returning only the existing member instances.
 Flag Members
 ^^^^^^^^^^^^
 
-Flag members can be iterated over just like the Flag class, and only the
+Flag members can be iterated over just like the :class:`Flag` class, and only the
 canonical members will be returned.  For example,
 ``list(Color) ==  [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]``.
 (Note that ``BLACK``, ``PURPLE``, and ``WHITE`` do not show up.)
