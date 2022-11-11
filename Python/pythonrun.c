@@ -786,8 +786,7 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
 
     _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
-        tb = Py_None;
-        Py_INCREF(tb);
+        tb = Py_NewRef(Py_None);
     }
     PyException_SetTraceback(v, tb);
     if (exception == NULL) {
@@ -833,12 +832,10 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
                to be NULL. However PyErr_Display() can't
                tolerate NULLs, so just be safe. */
             if (exception2 == NULL) {
-                exception2 = Py_None;
-                Py_INCREF(exception2);
+                exception2 = Py_NewRef(Py_None);
             }
             if (v2 == NULL) {
-                v2 = Py_None;
-                Py_INCREF(v2);
+                v2 = Py_NewRef(Py_None);
             }
             fflush(stdout);
             PySys_WriteStderr("Error in sys.excepthook:\n");
