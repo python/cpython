@@ -115,9 +115,6 @@ struct _is {
     int _initialized;
     int finalizing;
 
-    /* Was this interpreter statically allocated? */
-    bool _static;
-
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
