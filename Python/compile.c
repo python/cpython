@@ -8213,14 +8213,12 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                     break;
                 case DELETE_FAST_CHECK:
                     // LOAD_FAST_CHECK; POP_TOP; DELETE_FAST;
-                    printf("op '%s' needs 2 more.\n", _PyOpcode_OpName[instr->i_opcode]);
                     room_needed += 2;
                     break;
                 case DELETE_FAST_NOERROR_CHECK:
                 case DELETE_DEREF_NOERROR:
                 case DELETE_GLOBAL_NOERROR:
                 case DELETE_NAME_NOERROR:
-                    printf("op '%s' needs 2 more.\n", _PyOpcode_OpName[instr->i_opcode]);
                     // LOAD_CONST None; STORE_(...); DELETE_(...);
                     room_needed += 2;
                     break;
@@ -8229,14 +8227,11 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
         if (!room_needed) {
             continue;
         }
-        printf("Needed %d more room.\n", room_needed);
-        printf("Size before is %d\n", b->b_iused);
         for (int r = 0; r < room_needed; r++) {
             if (!basicblock_addop(b, NOP, 0, NO_LOCATION)) {
                 return -1;
             }
         }
-        printf("Size after is %d\n", b->b_iused);
         int dest = b->b_iused - 1;
         int src = b->b_iused - 1 - room_needed;
         for (; src >= 0; src--) {
@@ -8270,11 +8265,9 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                     op3 = DELETE_GLOBAL; arg3 = src_oparg;
                     break;
                 default:
-                    printf("moving %d --> %d\n", src, dest);
                     b->b_instr[dest--] = b->b_instr[src];
                     continue;
             }
-            printf("adding ... --> %d\n", dest);
             b->b_instr[dest--] = (struct instr) {
                 .i_except = b->b_instr[src].i_except,
                 .i_loc = b->b_instr[src].i_loc,
@@ -8282,7 +8275,6 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                 .i_oparg = arg3,
                 .i_target = NULL,
             };
-            printf("adding ... --> %d\n", dest);
             b->b_instr[dest--] = (struct instr) {
                 .i_except = b->b_instr[src].i_except,
                 .i_loc = b->b_instr[src].i_loc,
@@ -8290,7 +8282,6 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                 .i_oparg = arg2,
                 .i_target = NULL,
             };
-            printf("adding ... --> %d\n", dest);
             b->b_instr[dest--] = (struct instr) {
                 .i_except = b->b_instr[src].i_except,
                 .i_loc = b->b_instr[src].i_loc,
