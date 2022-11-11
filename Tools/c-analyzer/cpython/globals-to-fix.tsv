@@ -506,8 +506,6 @@ Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 # initialized once
 Modules/_functoolsmodule.c	-	kwd_mark	-
 Modules/_io/_iomodule.c	-	_PyIO_empty_bytes	-
-Modules/_testcapi/heaptype.c	-	_testcapimodule	-
-Modules/_testcapi/unicode.c	-	_testcapimodule	-
 
 # state
 Modules/faulthandler.c	-	fatal_error	-
