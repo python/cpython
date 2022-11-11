@@ -1,1 +1,1 @@
-Fix source locations of :keyword:`match` sub-expressions.
+Fix source locations of :keyword:`match` sub-patterns.
