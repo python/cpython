@@ -538,8 +538,10 @@ Data Types
          >>> ~Color.RED
          <Color.GREEN|BLUE: 6>
 
-      ..versionchanged:: 3.11 inversion no longer returns a flag with a negative
-      value
+      .. versionchanged:: 3.11
+      
+      Inversion of a flag now returns a positive value that is the
+      union of all flags not in the given flag, rather than a negative value.
 
    .. method:: _numeric_repr_
 
