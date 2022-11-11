@@ -1144,8 +1144,11 @@ Flag Members
 ^^^^^^^^^^^^
 
 Flag members can be iterated over just like the :class:`Flag` class, and only the
-canonical members will be returned.  For example,
-``list(Color) ==  [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]``.
+canonical members will be returned.  For example::
+
+    >>> list(Color)
+    [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]
+
 (Note that ``BLACK``, ``PURPLE``, and ``WHITE`` do not show up.)
 
 Inverting a flag member does not return a negative value, but the
