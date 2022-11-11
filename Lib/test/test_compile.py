@@ -1130,8 +1130,7 @@ class TestSourcePositions(unittest.TestCase):
         class SourceOffsetVisitor(ast.NodeVisitor):
             def generic_visit(self, node):
                 super().generic_visit(node)
-                skip = [ast.expr, ast.stmt, ast.pattern]
-                if all(not isinstance(node, s) for s in skip):
+                if not isinstance(node, (ast.expr, ast.stmt, ast.pattern)):
                     return
                 lines.add(node.lineno)
                 end_lines.add(node.end_lineno)
