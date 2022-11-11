@@ -699,9 +699,10 @@ if 1:
         N = 1000
         code = ["def f():\n"]
         code.append("\ts = ''\n")
+        code.append("\tfor i in range(1):\n")
         for i in range(N):
-            code.append(f"\tif True: s += 't{i}'\n")
-            code.append(f"\tif False: s += 'f{i}'\n")
+            code.append(f"\t\tif True: s += 't{i}'\n")
+            code.append(f"\t\tif False: s += 'f{i}'\n")
         code.append("\treturn s\n")
 
         code = "".join(code)
@@ -709,9 +710,9 @@ if 1:
         eval(compile(code, "file.py", "exec"), g)
         exec(code, g)
         f = g['f']
-        expected = tuple([None, ''] + [f't{i}' for i in range(N)])
+        expected = tuple([None, '', 1] + [f't{i}' for i in range(N)])
         self.assertEqual(f.__code__.co_consts, expected)
-        expected = "".join(expected[2:])
+        expected = "".join(expected[3:])
         self.assertEqual(expected, f())
 
     # Stripping unused constants is not a strict requirement for the
