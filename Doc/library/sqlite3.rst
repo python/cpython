@@ -2393,12 +2393,6 @@ to leave transaction control behaviour to the
 :attr:`Connection.isolation_level` attribute.
 See :ref:`sqlite3-transaction-control-isolation-level` for more information.
 
-.. note::
-   The :pep:`249`-compliant :attr:`!autocommit` attribute and the
-   SQLite `autocommit mode`_ are two related but distinct concepts.
-   Use :attr:`in_transaction` to query the low-level SQLite
-   autocommit mode.
-
 
 .. _sqlite3-transaction-control-isolation-level:
 
