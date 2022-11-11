@@ -505,7 +505,6 @@ Modules/faulthandler.c	-	thread	-
 Modules/faulthandler.c	-	user_signals	-
 Modules/faulthandler.c	-	stack	-
 Modules/faulthandler.c	-	old_stack	-
-Modules/signalmodule.c	-	Handlers	-
 
 
 ##################################
@@ -540,6 +539,7 @@ Modules/posixmodule.c	-	environ	-
 Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
 Modules/signalmodule.c	-	wakeup	-
+Modules/signalmodule.c	-	Handlers	-
 
 
 ##################################
