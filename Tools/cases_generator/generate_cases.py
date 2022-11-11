@@ -67,8 +67,14 @@ def always_exits(block: parser.Block) -> bool:
     return line.startswith(("goto ", "return ", "DISPATCH", "GO_TO_", "Py_UNREACHABLE()"))
 
 
+def find_cache_size(instr: InstDef, families: list[parser.Family]) -> str | None:
+    for family in families:
+        if instr.name == family.members[0]:
+            return family.size
+
+
 def write_instr(
-    instr: InstDef, predictions: set[str], indent: str, f: TextIO, dedent: int = 0
+    instr: InstDef, predictions: set[str], indent: str, f: TextIO, dedent: int = 0, cache_size: str | None = None
 ) -> int:
     # Returns cache offset
     if dedent < 0:
@@ -91,6 +97,8 @@ def write_instr(
             bits = ceffect.size * 16
             f.write(f"{indent}    PyObject *{ceffect.name} = read{bits}(next_instr + {cache_offset});\n")
         cache_offset += ceffect.size
+    if cache_size:
+        f.write(f"{indent}    assert({cache_size} == {cache_offset});\n")
     # TODO: Is it better to count forward or backward?
     for i, effect in enumerate(reversed(stack), 1):
         if effect.name != "unused":
@@ -145,7 +153,7 @@ def write_instr(
 
 
 def write_cases(
-    f: TextIO, instrs: list[InstDef], supers: list[parser.Super]
+    f: TextIO, instrs: list[InstDef], supers: list[parser.Super], families: list[parser.Family]
 ) -> dict[str, tuple[int, int, int]]:
     predictions: set[str] = set()
     for instr in instrs:
@@ -161,7 +169,10 @@ def write_cases(
         f.write(f"\n{indent}TARGET({instr.name}) {{\n")
         if instr.name in predictions:
             f.write(f"{indent}    PREDICTED({instr.name});\n")
-        cache_offset = write_instr(instr, predictions, indent, f)
+        cache_offset = write_instr(
+            instr, predictions, indent, f,
+            cache_size=find_cache_size(instr, families)
+        )
         effects_table[instr.name] = len(instr.inputs), len(instr.outputs), cache_offset
         if not always_exits(instr.block):
             f.write(f"{indent}    DISPATCH();\n")
@@ -203,7 +214,7 @@ def main():
             file=sys.stderr,
         )
     with eopen(args.output, "w") as f:
-        effects_table = write_cases(f, instrs, supers)
+        effects_table = write_cases(f, instrs, supers, families)
     if not args.quiet:
         print(
             f"Wrote {ninstrs + nsupers} instructions to {args.output}",

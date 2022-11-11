@@ -191,7 +191,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        family(binary_op) = {
+        family(binary_op, INLINE_CACHE_ENTRIES_BINARY_OP) = {
             BINARY_OP,
             BINARY_OP_ADD_FLOAT,
             BINARY_OP_ADD_INT,

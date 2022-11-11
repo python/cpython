@@ -3721,6 +3721,7 @@
 
         TARGET(BINARY_OP) {
             PREDICTED(BINARY_OP);
+            assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1);
             PyObject *rhs = PEEK(1);
             PyObject *lhs = PEEK(2);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
