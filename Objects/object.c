@@ -455,8 +455,7 @@ PyObject_Str(PyObject *v)
         if (PyUnicode_READY(v) < 0)
             return NULL;
 #endif
-        Py_INCREF(v);
-        return v;
+        return Py_NewRef(v);
     }
     if (Py_TYPE(v)->tp_str == NULL)
         return PyObject_Repr(v);
@@ -532,8 +531,7 @@ PyObject_Bytes(PyObject *v)
         return PyBytes_FromString("<NULL>");
 
     if (PyBytes_CheckExact(v)) {
-        Py_INCREF(v);
-        return v;
+        return Py_NewRef(v);
     }
 
     func = _PyObject_LookupSpecial(v, &_Py_ID(__bytes__));
@@ -689,8 +687,7 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
                       Py_TYPE(w)->tp_name);
         return NULL;
     }
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 /* Perform a rich comparison with object result.  This wraps do_richcompare()
@@ -1096,8 +1093,7 @@ _PyObject_GetDictPtr(PyObject *obj)
 PyObject *
 PyObject_SelfIter(PyObject *obj)
 {
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 /* Helper used when the __next__ method is removed from a type:
@@ -1481,8 +1477,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
-    Py_INCREF(value);
-    Py_XSETREF(*dictptr, value);
+    Py_XSETREF(*dictptr, Py_NewRef(value));
     return 0;
 }
 

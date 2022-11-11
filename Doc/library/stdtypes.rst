@@ -1617,6 +1617,9 @@ expression support in the :mod:`re` module).
    range [*start*, *end*].  Optional arguments *start* and *end* are
    interpreted as in slice notation.
 
+   If *sub* is empty, returns the number of empty strings between characters
+   which is the length of the string plus one.
+
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
@@ -2697,6 +2700,9 @@ arbitrary binary data.
 
    The subsequence to search for may be any :term:`bytes-like object` or an
    integer in the range 0 to 255.
+
+   If *sub* is empty, returns the number of empty slices between characters
+   which is the length of the bytes object plus one.
 
    .. versionchanged:: 3.3
       Also accept an integer in the range 0 to 255 as the subsequence.

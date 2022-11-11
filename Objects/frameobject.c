@@ -28,8 +28,7 @@ frame_getlocals(PyFrameObject *f, void *closure)
     if (PyFrame_FastToLocalsWithError(f) < 0)
         return NULL;
     PyObject *locals = f->f_frame->f_locals;
-    Py_INCREF(locals);
-    return locals;
+    return Py_NewRef(locals);
 }
 
 int
@@ -73,8 +72,7 @@ frame_getglobals(PyFrameObject *f, void *closure)
     if (globals == NULL) {
         globals = Py_None;
     }
-    Py_INCREF(globals);
-    return globals;
+    return Py_NewRef(globals);
 }
 
 static PyObject *
@@ -84,8 +82,7 @@ frame_getbuiltins(PyFrameObject *f, void *closure)
     if (builtins == NULL) {
         builtins = Py_None;
     }
-    Py_INCREF(builtins);
-    return builtins;
+    return Py_NewRef(builtins);
 }
 
 static PyObject *
@@ -823,13 +820,9 @@ static PyObject *
 frame_gettrace(PyFrameObject *f, void *closure)
 {
     PyObject* trace = f->f_trace;
-
     if (trace == NULL)
         trace = Py_None;
-
-    Py_INCREF(trace);
-
-    return trace;
+    return Py_NewRef(trace);
 }
 
 static int
@@ -838,9 +831,7 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     if (v == Py_None) {
         v = NULL;
     }
-    Py_XINCREF(v);
-    Py_XSETREF(f->f_trace, v);
-
+    Py_XSETREF(f->f_trace, Py_XNewRef(v));
     return 0;
 }
 
@@ -1028,11 +1019,9 @@ PyTypeObject PyFrame_Type = {
 static void
 init_frame(_PyInterpreterFrame *frame, PyFunctionObject *func, PyObject *locals)
 {
-    /* _PyFrame_InitializeSpecials consumes reference to func */
-    Py_INCREF(func);
-    Py_XINCREF(locals);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
-    _PyFrame_InitializeSpecials(frame, func, locals, code);
+    _PyFrame_InitializeSpecials(frame, (PyFunctionObject*)Py_NewRef(func),
+                                Py_XNewRef(locals), code);
     for (Py_ssize_t i = 0; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
@@ -1146,8 +1135,7 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
         int offset = co->co_nlocals + co->co_nplaincellvars;
         for (int i = 0; i < co->co_nfreevars; ++i) {
             PyObject *o = PyTuple_GET_ITEM(closure, i);
-            Py_INCREF(o);
-            frame->localsplus[offset + i] = o;
+            frame->localsplus[offset + i] = Py_NewRef(o);
         }
         // COPY_FREE_VARS doesn't have inline CACHEs, either:
         frame->prev_instr = _PyCode_CODE(frame->f_code);
@@ -1295,8 +1283,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
         if (cell != NULL) {
             oldvalue = PyCell_GET(cell);
             if (value != oldvalue) {
-                Py_XINCREF(value);
-                PyCell_SET(cell, value);
+                PyCell_SET(cell, Py_XNewRef(value));
                 Py_XDECREF(oldvalue);
             }
         }
@@ -1311,8 +1298,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 }
                 value = Py_NewRef(Py_None);
             }
-            Py_INCREF(value);
-            Py_XSETREF(fast[i], value);
+            Py_XSETREF(fast[i], Py_NewRef(value));
         }
         Py_XDECREF(value);
     }
@@ -1345,8 +1331,7 @@ PyFrame_GetCode(PyFrameObject *frame)
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     PyCodeObject *code = frame->f_frame->f_code;
     assert(code != NULL);
-    Py_INCREF(code);
-    return code;
+    return (PyCodeObject*)Py_NewRef(code);
 }
 
 
@@ -1365,8 +1350,7 @@ PyFrame_GetBack(PyFrameObject *frame)
             back = _PyFrame_GetFrameObject(prev);
         }
     }
-    Py_XINCREF(back);
-    return back;
+    return (PyFrameObject*)Py_XNewRef(back);
 }
 
 PyObject*
