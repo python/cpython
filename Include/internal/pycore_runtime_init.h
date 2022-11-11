@@ -9,13 +9,15 @@ extern "C" {
 #endif
 
 #include "pycore_object.h"
+#include "pycore_pymem_init.h"
+#include "pycore_obmalloc_init.h"
 
 
 /* The static initializers defined here should only be used
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
 
-#define _PyRuntimeState_INIT \
+#define _PyRuntimeState_INIT(runtime) \
     { \
         .gilstate = { \
             .check_enabled = 1, \
@@ -23,6 +25,12 @@ extern "C" {
                in accordance with the specification. */ \
             .autoTSSkey = Py_tss_NEEDS_INIT, \
         }, \
+        .allocators = { \
+            _pymem_allocators_standard_INIT(runtime), \
+            _pymem_allocators_debug_INIT, \
+            _pymem_allocators_obj_arena_INIT, \
+        }, \
+        .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
