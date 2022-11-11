@@ -183,8 +183,7 @@ static int
 tuple_add(PyObject *self, Py_ssize_t len, PyObject *item)
 {
     if (tuple_index(self, len, item) < 0) {
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(self, len, item);
+        PyTuple_SET_ITEM(self, len, Py_NewRef(item));
         return 1;
     }
     return 0;
@@ -201,8 +200,7 @@ tuple_extend(PyObject **dst, Py_ssize_t dstindex,
     assert(dstindex + count <= PyTuple_GET_SIZE(*dst));
     for (Py_ssize_t i = 0; i < count; ++i) {
         PyObject *item = src[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(*dst, dstindex + i, item);
+        PyTuple_SET_ITEM(*dst, dstindex + i, Py_NewRef(item));
     }
     return dstindex + count;
 }
@@ -304,8 +302,7 @@ subs_tvars(PyObject *obj, PyObject *params,
                     continue;
                 }
             }
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(subargs, j, arg);
+            PyTuple_SET_ITEM(subargs, j, Py_NewRef(arg));
             j++;
         }
         assert(j == PyTuple_GET_SIZE(subargs));
@@ -347,8 +344,7 @@ _unpacked_tuple_args(PyObject *arg)
             ((gaobject *)arg)->origin == (PyObject *)&PyTuple_Type)
     {
         result = ((gaobject *)arg)->args;
-        Py_INCREF(result);
-        return result;
+        return Py_NewRef(result);
     }
 
     if (_PyObject_LookupAttr(arg, &_Py_ID(__typing_unpacked_tuple_args__), &result) > 0) {
@@ -459,8 +455,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     for (Py_ssize_t iarg = 0, jarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
         if (PyType_Check(arg)) {
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(newargs, jarg, arg);
+            PyTuple_SET_ITEM(newargs, jarg, Py_NewRef(arg));
             jarg++;
             continue;
         }
@@ -767,8 +762,7 @@ ga_parameters(PyObject *self, void *unused)
             return NULL;
         }
     }
-    Py_INCREF(alias->parameters);
-    return alias->parameters;
+    return Py_NewRef(alias->parameters);
 }
 
 static PyObject *
@@ -776,8 +770,7 @@ ga_unpacked_tuple_args(PyObject *self, void *unused)
 {
     gaobject *alias = (gaobject *)self;
     if (alias->starred && alias->origin == (PyObject *)&PyTuple_Type) {
-        Py_INCREF(alias->args);
-        return alias->args;
+        return Py_NewRef(alias->args);
     }
     Py_RETURN_NONE;
 }
@@ -803,8 +796,7 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
         Py_INCREF(args);
     }
 
-    Py_INCREF(origin);
-    alias->origin = origin;
+    alias->origin = Py_NewRef(origin);
     alias->args = args;
     alias->parameters = NULL;
     alias->weakreflist = NULL;
