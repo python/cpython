@@ -21,6 +21,13 @@ extern "C" {
 // Only immutable objects should be considered runtime-global.
 // All others must be per-interpreter.
 
+#define _Py_CACHED_OBJECT(NAME) \
+    _PyRuntime.cached_objects.NAME
+
+struct _Py_cached_objects {
+    PyObject *str_replace_inf;
+};
+
 #define _Py_GLOBAL_OBJECT(NAME) \
     _PyRuntime.global_objects.NAME
 #define _Py_SINGLETON(NAME) \

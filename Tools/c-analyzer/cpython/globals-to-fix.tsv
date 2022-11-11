@@ -299,12 +299,6 @@ Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
 #-----------------------
-# cached - initialized once
-
-# manually cached PyUnicodeObject
-Python/ast_unparse.c	-	_str_replace_inf	-
-
-#-----------------------
 # other
 
 # initialized once

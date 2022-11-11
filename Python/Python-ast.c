@@ -263,6 +263,10 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->vararg);
     Py_CLEAR(state->withitem_type);
 
+    if (_PyInterpreterState_Get() == _PyInterpreterState_Main()) {
+        Py_CLEAR(_Py_CACHED_OBJECT(str_replace_inf));
+    }
+
 #if !defined(NDEBUG)
     state->initialized = -1;
 #else
