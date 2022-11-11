@@ -236,20 +236,26 @@ class Parser(PLexer):
                 if (tkn := self.expect(lx.IDENTIFIER)):
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
+                            if not self.expect(lx.LBRACE):
+                                raise self.make_syntax_error("Expected {")
                             if members := self.members():
-                                if self.expect(lx.SEMI):
+                                if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
                                     return Family(tkn.text, members)
         return None
 
     def members(self) -> list[str] | None:
         here = self.getpos()
         if tkn := self.expect(lx.IDENTIFIER):
-            near = self.getpos()
-            if self.expect(lx.COMMA):
-                if rest := self.members():
-                    return [tkn.text] + rest
-            self.setpos(near)
-            return [tkn.text]
+            members = [tkn.text]
+            while self.expect(lx.COMMA):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    members.append(tkn.text)
+                else:
+                    break
+            peek = self.peek()
+            if not peek or peek.kind != lx.RBRACE:
+                raise self.make_syntax_error("Expected comma or right paren")
+            return members
         self.setpos(here)
         return None
 
@@ -290,5 +296,5 @@ if __name__ == "__main__":
         filename = None
         src = "if (x) { x.foo; // comment\n}"
     parser = Parser(src, filename)
-    x = parser.inst_def()
+    x = parser.inst_def() or parser.super_def() or parser.family_def()
     print(x)
