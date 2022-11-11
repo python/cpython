@@ -628,7 +628,7 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     return 1;
 }
 
-struct compiler*
+static struct compiler*
 new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
              int optimize, PyArena *arena)
 {
