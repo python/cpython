@@ -1158,7 +1158,10 @@ rather than a negative value --- for example::
     <Color.GREEN|BLUE: 6>
 
 Flag members have a length corresponding to the number of power-of-two values
-they contain.  For example, ``len(Color.PURPLE) == 2``.
+they contain.  For example::
+
+    >>> len(Color.PURPLE)
+    2
 
 
 .. _enum-cookbook:
