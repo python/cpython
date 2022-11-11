@@ -49,6 +49,17 @@ struct _Py_global_objects {
     PyObject *interned;
 };
 
+#define _Py_INTERP_OBJECT(interp, NAME) \
+    (interp)->static_objects.NAME
+#define _Py_INTERP_SINGLETON(interp, NAME) \
+    _Py_INTERP_OBJECT(interp, singletons.NAME)
+
+struct _Py_interp_static_objects {
+    struct {
+        int _not_used;
+    } singletons;
+};
+
 
 #ifdef __cplusplus
 }
