@@ -1166,6 +1166,9 @@ they contain.  For example::
 
 .. _enum-cookbook:
 
+Enum Cookbook
+-------------
+
 
 While :class:`Enum`, :class:`IntEnum`, :class:`StrEnum`, :class:`Flag`, and
 :class:`IntFlag` are expected to cover the majority of use-cases, they cannot
