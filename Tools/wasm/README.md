@@ -283,7 +283,7 @@ popd
 
 ## WASI limitations and issues (WASI SDK 15.0)
 
-A lot of Emscripten limitations also apply to WASI. Noticable restrictions
+A lot of Emscripten limitations also apply to WASI. Noticeable restrictions
 are:
 
 - Call stack size is limited. Default recursion limit and parser stack size
