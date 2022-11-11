@@ -8,6 +8,7 @@ import sys
 import threading
 import warnings
 
+from . import AuthenticationError
 from . import connection
 from . import process
 from .context import reduction
@@ -290,15 +291,22 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                 if listener in rfds:
                     # Incoming fork request
                     with listener.accept()[0] as s:
-                        if authkey:
-                            wrapped_s = connection.Connection(s.fileno())
-                            try:
-                                connection.deliver_challenge(wrapped_s, authkey)
-                                connection.answer_challenge(wrapped_s, authkey)
-                            finally:
-                                wrapped_s._detach()
-                        # Receive fds from client
-                        fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
+                        try:
+                            if authkey:
+                                wrapped_s = connection.Connection(s.fileno())
+                                try:
+                                    connection.deliver_challenge(
+                                            wrapped_s, authkey)
+                                    connection.answer_challenge(
+                                            wrapped_s, authkey)
+                                finally:
+                                    wrapped_s._detach()
+                            # Receive fds from client
+                            fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
+                        except (EOFError, OSError, AuthenticationError):
+                            # broken pipe or failed authentication
+                            s.close()
+                            continue
                         if len(fds) > MAXFDS_TO_SEND:
                             raise RuntimeError(
                                 "Too many ({0:n}) fds to send".format(
