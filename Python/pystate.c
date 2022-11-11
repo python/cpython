@@ -821,7 +821,8 @@ new_threadstate(PyInterpreterState *interp)
     PyThreadState *tstate;
     _PyRuntimeState *runtime = interp->runtime;
 
-    if (PySys_Audit("cpython.PyThreadState_New", NULL) < 0) {
+    PyThreadState *ts = _PyThreadState_GET();
+    if (ts && _PySys_Audit(ts, "cpython.PyThreadState_New", NULL) < 0) {
         return NULL;
     }
 
