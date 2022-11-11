@@ -67,7 +67,8 @@ typedef struct {
 } _syslog_state;
 
 
-static inline int is_main_interpreter()
+static inline int
+is_main_interpreter()
 {
     PyInterpreterState *main_interp = PyInterpreterState_Main();
     PyThreadState *tstate = PyThreadState_GET();
