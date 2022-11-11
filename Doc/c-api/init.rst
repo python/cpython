@@ -1239,11 +1239,23 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    The global interpreter lock need not be held, but may be held if it is
    necessary to serialize calls to this function.
 
+   .. audit-event:: cpython.PyThreadState_New "" c.PyThreadState_New
+
+      Raise an auditing event ``cpython.PyThreadState_New`` with no arguments.
+      The event will be raised from the creating thread, not the new thread.
+
 
 .. c:function:: void PyThreadState_Clear(PyThreadState *tstate)
 
    Reset all information in a thread state object.  The global interpreter lock
    must be held.
+
+   .. audit-event:: cpython.PyThreadState_Clear "" c.PyThreadState_Clear
+
+      Raise an auditing event ``cpython.PyThreadState_Clear`` with no arguments.
+      The event may be raised from a different thread than the one being
+      cleared. Exceptions raised from a hook will be treated as unraisable and
+      will not abort the operation.
 
    .. versionchanged:: 3.9
       This function now calls the :c:member:`PyThreadState.on_delete` callback.
