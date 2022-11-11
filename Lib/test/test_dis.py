@@ -367,22 +367,18 @@ dis_traceback = """\
 
 %3d        LOAD_GLOBAL              0 (Exception)
            CHECK_EXC_MATCH
-           POP_JUMP_IF_FALSE       23 (to 82)
+           POP_JUMP_IF_FALSE       19 (to 74)
            STORE_FAST               0 (e)
 
 %3d        LOAD_FAST                0 (e)
            LOAD_ATTR                2 (__traceback__)
            STORE_FAST               1 (tb)
            POP_EXCEPT
-           LOAD_CONST               0 (None)
-           STORE_FAST               0 (e)
            DELETE_FAST              0 (e)
 
 %3d        LOAD_FAST                1 (tb)
            RETURN_VALUE
-        >> LOAD_CONST               0 (None)
-           STORE_FAST               0 (e)
-           DELETE_FAST              0 (e)
+        >> DELETE_FAST              0 (e)
            RERAISE                  1
 
 %3d     >> RERAISE                  0
