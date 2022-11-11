@@ -1,1 +1,1 @@
-Added ``--debug``, ``--pdb``, ``--pm``, ``--trace`` command line options to :mod:`unittest`.
+Added ``--debug``, ``--pdb``, ``--pm`` and ``--trace`` command line options to :mod:`unittest`.
