@@ -441,8 +441,8 @@ Data Types
    .. note::
 
       :meth:`~object.__str__` is :meth:`!str.__str__` to better support the
-      *replacement of existing constants* use-case.  :meth:`__format__` is likewise
-      :func:`str.__format__` for that same reason.
+      *replacement of existing constants* use-case.  :meth:`~object.__format__` is likewise
+      :meth:`!str.__format__` for that same reason.
 
    .. versionadded:: 3.11
 
