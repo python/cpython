@@ -77,6 +77,11 @@ extern "C" {
                 { .threshold = 10, }, \
             }, \
         }, \
+        .static_objects = { \
+            .singletons = { \
+                ._not_used = 1, \
+            }, \
+        }, \
         ._initial_thread = _PyThreadState_INIT, \
     }
 
