@@ -10,7 +10,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         import ast
         a = ast.parse(snippet, "my_file.py", "exec");
         insts = self.generate_code(a)
-        self.compareInstructions(insts, expected_insts)
+        self.assertInstructionsMatch(insts, expected_insts)
 
     def test_if_expression(self):
         snippet = "42 if True else 24"

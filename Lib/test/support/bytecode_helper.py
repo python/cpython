@@ -57,7 +57,7 @@ class CompilationStepTestCase(unittest.TestCase):
         self.last_label += 1
         return self.last_label
 
-    def compareInstructions(self, actual_, expected_):
+    def assertInstructionsMatch(self, actual_, expected_):
         # get two lists where each entry is a label or
         # an instruction tuple. Compare them, while mapping
         # each actual label to a corresponding expected label
