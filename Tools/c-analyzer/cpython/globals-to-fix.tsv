@@ -393,7 +393,6 @@ Python/frozen.c	-	_PyImport_FrozenBootstrap	-
 Python/frozen.c	-	_PyImport_FrozenStdlib	-
 Python/frozen.c	-	_PyImport_FrozenTest	-
 Python/import.c	-	inittab_copy	-
-Python/import.c	-	PyImport_Inittab	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-

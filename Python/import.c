@@ -30,6 +30,8 @@ static PyObject *import_add_module(PyThreadState *tstate, PyObject *name);
 /* This table is defined in config.c: */
 extern struct _inittab _PyImport_Inittab[];
 
+// This is not used after Py_Initialize() is called.
+// (See _PyRuntimeState.imports.inittab.)
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 static struct _inittab *inittab_copy = NULL;
 
@@ -224,8 +226,30 @@ _PyImport_Init(void)
     if (_PyRuntime.imports.inittab != NULL) {
         return _PyStatus_ERR("global import state already initialized");
     }
-    _PyRuntime.imports.inittab = PyImport_Inittab;
-    return _PyStatus_OK();
+    PyStatus status = _PyStatus_OK();
+
+    size_t size;
+    for (size = 0; PyImport_Inittab[size].name != NULL; size++)
+        ;
+    size++;
+
+    /* Force default raw memory allocator to get a known allocator to be able
+       to release the memory in _PyImport_Fini() */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Make the copy. */
+    struct _inittab *copied = PyMem_RawMalloc(size * sizeof(struct _inittab));
+    if (copied == NULL) {
+        status = PyStatus_NoMemory();
+        goto done;
+    }
+    memcpy(copied, PyImport_Inittab, size * sizeof(struct _inittab));
+    _PyRuntime.imports.inittab = copied;
+
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return status;
 }
 
 static inline void _extensions_cache_clear(void);
@@ -238,7 +262,17 @@ _PyImport_Fini(void)
         PyThread_free_lock(import_lock);
         import_lock = NULL;
     }
+
+    /* Use the same memory allocator as _PyImport_Init(). */
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* Free memory allocated by _PyImport_Init() */
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
     _PyRuntime.imports.inittab = NULL;
+    PyMem_RawFree(inittab);
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 void
@@ -2604,6 +2638,10 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     size_t i, n;
     int res = 0;
 
+    if (_PyRuntime.imports.inittab != NULL) {
+        Py_FatalError("PyImport_ExtendInittab() may be be called after Py_Initialize()");
+    }
+
     /* Count the number of entries in both tables */
     for (n = 0; newtab[n].name != NULL; n++)
         ;
@@ -2647,6 +2685,10 @@ int
 PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
 {
     struct _inittab newtab[2];
+
+    if (_PyRuntime.imports.inittab != NULL) {
+        Py_FatalError("PyImport_AppendInittab() may be be called after Py_Initialize()");
+    }
 
     memset(newtab, '\0', sizeof newtab);
 
