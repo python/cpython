@@ -1,2 +1,0 @@
-Fixes :file:`escape4chm.py` script used when building the CHM documentation
-file

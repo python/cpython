@@ -1,2 +1,0 @@
-Fix an issue with :meth:`tarfile.TarFile.getmember` getting a directory name
-with a trailing slash.

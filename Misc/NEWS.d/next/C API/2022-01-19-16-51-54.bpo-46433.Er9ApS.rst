@@ -1,2 +1,0 @@
-The internal function _PyType_GetModuleByDef now correctly handles
-inheritance patterns involving static types.

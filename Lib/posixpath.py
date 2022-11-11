@@ -241,7 +241,11 @@ def expanduser(path):
         i = len(path)
     if i == 1:
         if 'HOME' not in os.environ:
-            import pwd
+            try:
+                import pwd
+            except ImportError:
+                # pwd module unavailable, return path unchanged
+                return path
             try:
                 userhome = pwd.getpwuid(os.getuid()).pw_dir
             except KeyError:
@@ -251,7 +255,11 @@ def expanduser(path):
         else:
             userhome = os.environ['HOME']
     else:
-        import pwd
+        try:
+            import pwd
+        except ImportError:
+            # pwd module unavailable, return path unchanged
+            return path
         name = path[1:i]
         if isinstance(name, bytes):
             name = str(name, 'ASCII')
@@ -356,7 +364,7 @@ except ImportError:
         initial_slashes = path.startswith(sep)
         # POSIX allows one or two initial slashes, but treats three or more
         # as single slash.
-        # (see http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13)
+        # (see https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13)
         if (initial_slashes and
             path.startswith(sep*2) and not path.startswith(sep*3)):
             initial_slashes = 2
