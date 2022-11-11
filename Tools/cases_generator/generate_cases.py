@@ -18,7 +18,6 @@ RE_PREDICTED = r"(?s)(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("-i", "--input", type=str, default="Python/bytecodes.c")
 arg_parser.add_argument("-o", "--output", type=str, default="Python/generated_cases.c.h")
-arg_parser.add_argument("-q", "--quiet", action="store_true")
 
 
 def parse_cases(
@@ -198,23 +197,20 @@ def main():
     with open(args.input) as f:
         src = f.read()
     instrs, supers, families = parse_cases(src, filename=args.input)
-    ninstrs = nsupers = nfamilies = 0
-    if not args.quiet:
-        ninstrs = len(instrs)
-        nsupers = len(supers)
-        nfamilies = len(families)
-        print(
-            f"Read {ninstrs} instructions, {nsupers} supers, "
-            f"and {nfamilies} families from {args.input}",
-            file=sys.stderr,
-        )
+    ninstrs = len(instrs)
+    nsupers = len(supers)
+    nfamilies = len(families)
+    print(
+        f"Read {ninstrs} instructions, {nsupers} supers, "
+        f"and {nfamilies} families from {args.input}",
+        file=sys.stderr,
+    )
     with open(args.output, "w") as f:
         effects_table = write_cases(f, instrs, supers, families)
-    if not args.quiet:
-        print(
-            f"Wrote {ninstrs + nsupers} instructions to {args.output}",
-            file=sys.stderr,
-        )
+    print(
+        f"Wrote {ninstrs + nsupers} instructions to {args.output}",
+        file=sys.stderr,
+    )
     # Check that families have consistent effects
     errors = 0
     for family in families:
