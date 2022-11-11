@@ -248,7 +248,7 @@ syslog_closelog_impl(PyObject *module)
 /*[clinic end generated code: output=97890a80a24b1b84 input=fb77a54d447acf07]*/
 {
     if (is_main_interpreter() < 0) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to use syslog.openlog at non-main interpreter.");
+        PyErr_SetString(PyExc_RuntimeError, "unable to use syslog.closelog at non-main interpreter.");
         return NULL;
     }
 

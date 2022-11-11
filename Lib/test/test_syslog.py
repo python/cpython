@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import unittest
+from textwrap import dedent
 
 # XXX(nnorwitz): This test sucks.  I don't know of a platform independent way
 # to verify that the messages were really logged.
@@ -77,6 +78,52 @@ class Test(unittest.TestCase):
                 stop = True
         finally:
             sys.setswitchinterval(orig_si)
+
+    def test_subinterpreter_syslog(self):
+        code = dedent('''
+            import syslog
+            catch_error = False
+            try:
+                syslog.syslog('foo')
+            except RuntimeError:
+                catch_error = True
+
+            assert(catch_error == True)
+        ''')
+        res = support.run_in_subinterp(code)
+        self.assertEqual(res, 0)
+
+    def test_subinterpreter_openlog(self):
+        code = dedent('''
+            import syslog
+            catch_error = False
+            try:
+                syslog.openlog()
+            except RuntimeError:
+                catch_error = True
+
+            assert(catch_error == True)
+        ''')
+        res = support.run_in_subinterp(code)
+        self.assertEqual(res, 0)
+
+    def test_subinterpreter_closelog(self):
+        syslog.openlog('python')
+        code = dedent('''
+            import syslog
+            catch_error = False
+            try:
+                syslog.closelog()
+            except RuntimeError:
+                catch_error = True
+
+            assert(catch_error == True)
+        ''')
+        res = support.run_in_subinterp(code)
+        self.assertEqual(res, 0)
+        syslog.closelog()
+
+
 
 
 if __name__ == "__main__":
