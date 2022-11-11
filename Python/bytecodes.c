@@ -71,7 +71,7 @@ do { \
 
 #define inst(name, ...) case name:
 #define super(name) static int SUPER_##name
-#define family(name) static int family_##name
+#define family(name, ...) static int family_##name
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
