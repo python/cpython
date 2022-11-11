@@ -1375,8 +1375,9 @@
 
         TARGET(DELETE_FAST) {
             PyObject *v = GETLOCAL(oparg);
+            GETLOCAL(oparg) = NULL;
             assert(v != NULL);
-            SETLOCAL(oparg, NULL);
+            Py_DECREF(v);
             DISPATCH();
         }
 
