@@ -8526,8 +8526,6 @@ __ne__ etc. all map to tp_richcompare) and one name may map to multiple slots
 an all-zero entry.
 */
 
-typedef struct wrapperbase slotdef;
-
 #undef TPSLOT
 #undef FLSLOT
 #undef AMSLOT
@@ -8576,7 +8574,7 @@ typedef struct wrapperbase slotdef;
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
            #NAME "($self, value, /)\n--\n\n" DOC)
 
-static slotdef slotdefs[] = {
+static pytype_slotdef slotdefs[] = {
     TPSLOT(__getattribute__, tp_getattr, NULL, NULL, ""),
     TPSLOT(__getattr__, tp_getattr, NULL, NULL, ""),
     TPSLOT(__setattr__, tp_setattr, NULL, NULL, ""),
@@ -8801,12 +8799,6 @@ slotptr(PyTypeObject *type, int ioffset)
     return (void **)ptr;
 }
 
-/* Length of array of slotdef pointers used to store slots with the
-   same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
-   the same __name__, for any __name__. Since that's a static property, it is
-   appropriate to declare fixed-size arrays for this. */
-#define MAX_EQUIV 10
-
 /* Return a slot pointer for a given name, but ONLY if the attribute has
    exactly one slot function.  The name must be an interned string. */
 static void **
@@ -8815,9 +8807,10 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
     /* XXX Maybe this could be optimized more -- but is it worth it? */
 
     /* pname and ptrs act as a little cache */
-    static PyObject *pname;
-    static slotdef *ptrs[MAX_EQUIV];
-    slotdef *p, **pp;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+#define pname _Py_INTERP_CACHED_OBJECT(interp, type_slots_pname)
+#define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
+    pytype_slotdef *p, **pp;
     void **res, **ptr;
 
     if (pname != name) {
@@ -8844,6 +8837,8 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
         res = ptr;
     }
     return res;
+#undef pname
+#undef ptrs
 }
 
 
@@ -8901,8 +8896,8 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
  * When done, return a pointer to the next slotdef with a different offset,
  * because that's convenient for fixup_slot_dispatchers(). This function never
  * sets an exception: if an internal error happens (unlikely), it's ignored. */
-static slotdef *
-update_one_slot(PyTypeObject *type, slotdef *p)
+static pytype_slotdef *
+update_one_slot(PyTypeObject *type, pytype_slotdef *p)
 {
     PyObject *descr;
     PyWrapperDescrObject *d;
@@ -9017,7 +9012,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 static int
 update_slots_callback(PyTypeObject *type, void *data)
 {
-    slotdef **pp = (slotdef **)data;
+    pytype_slotdef **pp = (pytype_slotdef **)data;
     for (; *pp; pp++) {
         update_one_slot(type, *pp);
     }
@@ -9028,9 +9023,9 @@ update_slots_callback(PyTypeObject *type, void *data)
 static int
 update_slot(PyTypeObject *type, PyObject *name)
 {
-    slotdef *ptrs[MAX_EQUIV];
-    slotdef *p;
-    slotdef **pp;
+    pytype_slotdef *ptrs[MAX_EQUIV];
+    pytype_slotdef *p;
+    pytype_slotdef **pp;
     int offset;
 
     assert(PyUnicode_CheckExact(name));
@@ -9067,7 +9062,7 @@ static void
 fixup_slot_dispatchers(PyTypeObject *type)
 {
     assert(!PyErr_Occurred());
-    for (slotdef *p = slotdefs; p->name; ) {
+    for (pytype_slotdef *p = slotdefs; p->name; ) {
         p = update_one_slot(type, p);
     }
 }
@@ -9075,7 +9070,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
 static void
 update_all_slots(PyTypeObject* type)
 {
-    slotdef *p;
+    pytype_slotdef *p;
 
     /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
     PyType_Modified(type);
@@ -9246,7 +9241,7 @@ static int
 add_operators(PyTypeObject *type)
 {
     PyObject *dict = type->tp_dict;
-    slotdef *p;
+    pytype_slotdef *p;
     PyObject *descr;
     void **ptr;
 
