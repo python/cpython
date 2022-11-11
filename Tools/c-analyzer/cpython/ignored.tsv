@@ -381,6 +381,7 @@ Modules/_decimal/_decimal.c	-	ssize_constants	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_io/_iomodule.c	-	static_types	-
 Modules/_io/textio.c	-	encodefuncs	-
+Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 Modules/_localemodule.c	-	langinfo_constants	-
 Modules/_pickle.c	-	READ_WHOLE_LINE	-
 Modules/_sqlite/module.c	-	error_codes	-

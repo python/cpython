@@ -499,10 +499,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 #-----------------------
 # other
 
-# statically initializd pointer to static type
-# XXX should be const?
-Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
-
 # state
 Modules/faulthandler.c	-	fatal_error	-
 Modules/faulthandler.c	-	thread	-
