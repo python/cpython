@@ -1214,6 +1214,15 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_DEREF:
             return 0;
 
+        /* pseudoinstructions for `del x` */
+        case DELETE_FAST_CHECK:
+        case DELETE_FAST_NOERROR:
+        case DELETE_FAST_NOERROR_CHECK:
+        case DELETE_DEREF_NOERROR:
+        case DELETE_GLOBAL_NOERROR:
+        case DELETE_NAME_NOERROR:
+            return 0;
+
         /* Iterators and generators */
         case GET_AWAITABLE:
             return 0;
