@@ -503,9 +503,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 # XXX should be const?
 Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 
-# initialized once
-Modules/_functoolsmodule.c	-	kwd_mark	-
-
 # state
 Modules/faulthandler.c	-	fatal_error	-
 Modules/faulthandler.c	-	thread	-
