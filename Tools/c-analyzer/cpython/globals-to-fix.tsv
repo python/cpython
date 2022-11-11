@@ -317,7 +317,6 @@ Python/hamt.c	-	_empty_hamt	-
 
 # state
 Objects/typeobject.c	resolve_slotdups	pname	-
-Python/import.c	-	extensions	-
 
 
 ##################################
@@ -449,7 +448,6 @@ Python/getargs.c	-	static_arg_parsers	-
 Objects/dictobject.c	-	_pydict_global_version	-
 Objects/dictobject.c	-	next_dict_keys_version	-
 Objects/funcobject.c	-	next_func_version	-
-Objects/moduleobject.c	-	max_module_number	-
 Objects/object.c	-	_Py_RefTotal	-
 Python/perf_trampoline.c	-	perf_status	-
 Python/perf_trampoline.c	-	extra_code_index	-
