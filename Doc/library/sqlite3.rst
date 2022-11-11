@@ -2378,6 +2378,10 @@ This means:
 Set *autocommit* to ``True`` to enable SQLite's `autocommit mode`_.
 In this mode, :meth:`Connection.commit` and :meth:`Connection.rollback`
 have no effect.
+Note that SQLite's autocommit mode is distinct from
+the :pep:`249`-compliant :attr:`Connection.autocommit` attribute;
+use :attr:`Connection.in_transaction` to query
+the low-level SQLite autocommit mode.
 
 Set *autocommit* to :data:`LEGACY_TRANSACTION_CONTROL`
 to leave transaction control behaviour to the
