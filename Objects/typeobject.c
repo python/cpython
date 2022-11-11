@@ -43,9 +43,7 @@ class object "PyObject *" "&PyBaseObject_Type"
         PyUnicode_IS_READY(name) &&                             \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
-// bpo-42745: next_version_tag remains shared by all interpreters because of static types
-// Used to set PyTypeObject.tp_version_tag
-static unsigned int next_version_tag = 1;
+#define next_version_tag (_PyRuntime.types.next_version_tag)
 
 typedef struct PySlot_Offset {
     short subslot_offset;
