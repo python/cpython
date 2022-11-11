@@ -1129,7 +1129,7 @@ Flag Classes
 
 Flags have an expanded view of aliasing: to be canonical, the value of a flag
 needs to be a power-of-two value, and not a duplicate name.  So, in addition to the
-enum definition of alias, a flag with no value (a.k.a. ``0``) or with more than one
+:class:`Enum` definition of alias, a flag with no value (a.k.a. ``0``) or with more than one
 power-of-two value (e.g. ``3``) is considered an alias.
 
 Enum Members (aka instances)
