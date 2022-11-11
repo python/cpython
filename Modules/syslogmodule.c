@@ -62,9 +62,21 @@ module syslog
 #include "clinic/syslogmodule.c.h"
 
 typedef struct {
-    PyObject *S_ident_o;  /*  identifier, held by openlog()  */
-    char S_log_open;
+    PyObject *ident_o;  /* identifier, held by openlog()  */
+    char log_open;      /* flag for checking whether the openlog() is already called. */
 } _syslog_state;
+
+
+static inline int is_main_interpreter()
+{
+    PyInterpreterState *main_interp = PyInterpreterState_Main();
+    PyThreadState *tstate = PyThreadState_GET();
+    PyInterpreterState *current_interp = PyThreadState_GetInterpreter(tstate);
+    if (current_interp == main_interp) {
+        return 0;
+    }
+    return -1;
+}
 
 static inline _syslog_state*
 get_syslog_state(PyObject *module)
@@ -143,6 +155,11 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
                     long facility)
 /*[clinic end generated code: output=5476c12829b6eb75 input=8a987a96a586eee7]*/
 {
+    if (is_main_interpreter() < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to use syslog.openlog at non-main interpreter.");
+        return NULL;
+    }
+
     const char *ident_str = NULL;
 
     if (ident) {
@@ -171,8 +188,8 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
 
     openlog(ident_str, logopt, facility);
     _syslog_state *state = get_syslog_state(module);
-    state->S_log_open = 1;
-    Py_XSETREF(state->S_ident_o, ident);
+    state->log_open = 1;
+    Py_XSETREF(state->ident_o, ident);
 
     Py_RETURN_NONE;
 }
@@ -203,6 +220,10 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     }
 
     _syslog_state *state = get_syslog_state(module);
+    if (state->log_open != 1 && is_main_interpreter() < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to use syslog.syslog at non-main interpreter.");
+        return NULL;
+    }
 #ifdef __APPLE__
     // gh-98178: On macOS, libc syslog() is not thread-safe
     syslog(priority, "%s", message);
@@ -211,7 +232,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     syslog(priority, "%s", message);
     Py_END_ALLOW_THREADS;
 #endif
-    state->S_log_open = 1;
+    state->log_open = 1;
     Py_RETURN_NONE;
 }
 
@@ -226,17 +247,22 @@ static PyObject *
 syslog_closelog_impl(PyObject *module)
 /*[clinic end generated code: output=97890a80a24b1b84 input=fb77a54d447acf07]*/
 {
+    if (is_main_interpreter() < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to use syslog.openlog at non-main interpreter.");
+        return NULL;
+    }
+
     if (PySys_Audit("syslog.closelog", NULL) < 0) {
         return NULL;
     }
 
     _syslog_state *state = get_syslog_state(module);
-    if (state->S_log_open) {
+    if (state->log_open) {
         closelog();
-        state->S_log_open = 0;
+        state->log_open = 0;
     }
 
-    Py_CLEAR(state->S_ident_o);
+    Py_CLEAR(state->ident_o);
     Py_RETURN_NONE;
 }
 
@@ -316,8 +342,8 @@ syslog_exec(PyObject *module)
     } while (0)
 
     _syslog_state *state = get_syslog_state(module);
-    state->S_ident_o = NULL;
-    state->S_log_open = 0;
+    state->ident_o = NULL;
+    state->log_open = 0;
 
     /* Priorities */
     ADD_INT_MACRO(module, LOG_EMERG);
@@ -388,7 +414,7 @@ static int
 _syslog_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _syslog_state *state = get_syslog_state(module);
-    Py_VISIT(state->S_ident_o);
+    Py_VISIT(state->ident_o);
     return 0;
 }
 
@@ -396,12 +422,12 @@ static int
 _syslog_clear(PyObject *module)
 {
     _syslog_state *state = get_syslog_state(module);
-    if (state->S_log_open) {
+    if (state->log_open) {
         closelog();
-        state->S_log_open = 0;
+        state->log_open = 0;
     }
 
-    Py_CLEAR(state->S_ident_o);
+    Py_CLEAR(state->ident_o);
     return 0;
 }
 
