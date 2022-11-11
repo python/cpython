@@ -1276,16 +1276,15 @@ Or, you can use an extension that provides a matrix datatype; `NumPy
 How do I apply a method or function to a sequence of objects?
 -------------------------------------------------------------
 
-If you want a list of the return values of the method or function, use a list
-comprehension::
+To call a method or function and accumulate the return values is a list,
+a :term:`list comprehension` is an elegant solution::
 
    result = [obj.method() for obj in mylist]
 
    result = [function(obj) for obj in mylist]
 
-If you don't care about the return values and just want to run the method or
-function on each object (for example, if the method or function updates the
-objects in place), use a for loop::
+To just run the method or function without saving the return values,
+a plain :keyword:`for` loop will suffice::
 
    for obj in mylist:
        obj.method()
