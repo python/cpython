@@ -1375,7 +1375,7 @@
 
         TARGET(DELETE_FAST) {
             PyObject *v = GETLOCAL(oparg);
-            if (v == NULL) goto unbound_local_error;
+            assert(v != NULL);
             SETLOCAL(oparg, NULL);
             DISPATCH();
         }

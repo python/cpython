@@ -1369,7 +1369,7 @@ dummy_func(
 
         inst(DELETE_FAST, (--)) {
             PyObject *v = GETLOCAL(oparg);
-            ERROR_IF(v == NULL, unbound_local_error);
+            assert(v != NULL);
             SETLOCAL(oparg, NULL);
         }
 
