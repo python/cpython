@@ -128,7 +128,13 @@ extern "C" {
 #define JUMP                                   260
 #define JUMP_NO_INTERRUPT                      261
 #define LOAD_METHOD                            262
-#define MAX_PSEUDO_OPCODE                      262
+#define DELETE_FAST_CHECK                      263
+#define DELETE_FAST_NOERROR                    264
+#define DELETE_FAST_NOERROR_CHECK              265
+#define DELETE_DEREF_NOERROR                   266
+#define DELETE_GLOBAL_NOERROR                  267
+#define DELETE_NAME_NOERROR                    268
+#define MAX_PSEUDO_OPCODE                      268
 #define BINARY_OP_ADD_FLOAT                      5
 #define BINARY_OP_ADD_INT                        6
 #define BINARY_OP_ADD_UNICODE                    7
@@ -198,6 +204,12 @@ extern "C" {
     || ((op) == JUMP) \
     || ((op) == JUMP_NO_INTERRUPT) \
     || ((op) == LOAD_METHOD) \
+    || ((op) == DELETE_FAST_CHECK) \
+    || ((op) == DELETE_FAST_NOERROR) \
+    || ((op) == DELETE_FAST_NOERROR_CHECK) \
+    || ((op) == DELETE_DEREF_NOERROR) \
+    || ((op) == DELETE_GLOBAL_NOERROR) \
+    || ((op) == DELETE_NAME_NOERROR) \
     )
 
 #define HAS_CONST(op) (false\

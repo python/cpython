@@ -2049,9 +2049,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             ADDOP(c, *ploc, POP_BLOCK);
             ADDOP(c, *ploc, POP_EXCEPT);
             if (info->fb_datum) {
-                ADDOP_LOAD_CONST(c, *ploc, Py_None);
-                compiler_nameop(c, *ploc, info->fb_datum, Store);
-                compiler_nameop(c, *ploc, info->fb_datum, Del);
+                compiler_nameop(c, *ploc, info->fb_datum, DelNoErr);
             }
             return 1;
         }
@@ -3539,18 +3537,15 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_EXCEPT);
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+
+            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
             /* except: */
             USE_LABEL(c, cleanup_end);
 
             /* name = None; del name; # artificial */
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
 
             ADDOP_I(c, NO_LOCATION, RERAISE, 1);
         }
@@ -3733,9 +3728,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* name = None; del name; # artificial */
         ADDOP(c, NO_LOCATION, POP_BLOCK);
         if (handler->v.ExceptHandler.name) {
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
         }
         ADDOP_JUMP(c, NO_LOCATION, JUMP, except);
 
@@ -3744,9 +3737,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
         /* name = None; del name; # artificial */
         if (handler->v.ExceptHandler.name) {
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
         }
 
         /* add exception raised to the res list */
@@ -4255,6 +4246,7 @@ compiler_nameop(struct compiler *c, location loc,
             break;
         case Store: op = STORE_DEREF; break;
         case Del: op = DELETE_DEREF; break;
+        case DelNoErr: op = DELETE_DEREF_NOERROR; break;
         }
         break;
     case OP_FAST:
@@ -4262,6 +4254,7 @@ compiler_nameop(struct compiler *c, location loc,
         case Load: op = LOAD_FAST; break;
         case Store: op = STORE_FAST; break;
         case Del: op = DELETE_FAST; break;
+        case DelNoErr: op = DELETE_FAST_NOERROR; break;
         }
         ADDOP_N(c, loc, op, mangled, varnames);
         return 1;
@@ -4270,6 +4263,7 @@ compiler_nameop(struct compiler *c, location loc,
         case Load: op = LOAD_GLOBAL; break;
         case Store: op = STORE_GLOBAL; break;
         case Del: op = DELETE_GLOBAL; break;
+        case DelNoErr: op = DELETE_GLOBAL_NOERROR; break;
         }
         break;
     case OP_NAME:
@@ -4277,6 +4271,7 @@ compiler_nameop(struct compiler *c, location loc,
         case Load: op = LOAD_NAME; break;
         case Store: op = STORE_NAME; break;
         case Del: op = DELETE_NAME; break;
+        case DelNoErr: op = DELETE_NAME_NOERROR; break;
         }
         break;
     }
@@ -8053,20 +8048,25 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
         assert(instr->i_oparg >= 0);
         uint64_t bit = (uint64_t)1 << instr->i_oparg;
         switch (instr->i_opcode) {
+            case DELETE_FAST_NOERROR:
+                if (unsafe_mask & bit) {
+                    instr->i_opcode = DELETE_FAST_NOERROR_CHECK;
+                }
+                /* fallthrough */
+            case DELETE_FAST_NOERROR_CHECK:
             case DELETE_FAST:
+                // The local is unsafe after these.
                 unsafe_mask |= bit;
                 break;
-            case STORE_FAST:
-                unsafe_mask &= ~bit;
-                break;
-            case LOAD_FAST_CHECK:
-                // If this doesn't raise, then the local is defined.
-                unsafe_mask &= ~bit;
-                break;
+
             case LOAD_FAST:
                 if (unsafe_mask & bit) {
                     instr->i_opcode = LOAD_FAST_CHECK;
                 }
+                /* fallthrough */
+            case LOAD_FAST_CHECK:
+            case STORE_FAST:
+                // The local is certainly defined after these.
                 unsafe_mask &= ~bit;
                 break;
         }
@@ -8105,19 +8105,30 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
                 continue;
             }
             assert(arg >= 0);
+
+
             switch (instr->i_opcode) {
+                case DELETE_FAST_NOERROR:
+                    if (states[arg - 64] != blocknum) {
+                        instr->i_opcode = DELETE_FAST_NOERROR_CHECK;
+                    }
+                    /* fallthrough */
                 case DELETE_FAST:
+                    // The local is unsafe after these.
                     states[arg - 64] = blocknum - 1;
                     break;
-                case STORE_FAST:
-                    states[arg - 64] = blocknum;
-                    break;
+
                 case LOAD_FAST:
                     if (states[arg - 64] != blocknum) {
                         instr->i_opcode = LOAD_FAST_CHECK;
                     }
+                    /* fallthrough */
+                case STORE_FAST:
+                    // The local is certainly defined after these.
                     states[arg - 64] = blocknum;
                     break;
+
+                case DELETE_FAST_NOERROR_CHECK:
                 case LOAD_FAST_CHECK:
                     Py_UNREACHABLE();
             }
@@ -8175,6 +8186,111 @@ add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
         scan_block_for_locals(b, &sp);
     }
     PyMem_Free(stack);
+    return 0;
+}
+
+static int
+expand_del_noerror(basicblock *entryblock, int none_oparg)
+{
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        int room_needed = 0;
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            switch (instr->i_opcode) {
+                case DELETE_FAST_NOERROR:
+                    // Already proved this can't raise UnboundLocalError.
+                    instr->i_opcode = DELETE_FAST;
+                    break;
+                case DELETE_FAST_CHECK:
+                    // LOAD_FAST_CHECK; POP_TOP; DELETE_FAST;
+                    printf("op '%s' needs 2 more.\n", _PyOpcode_OpName[instr->i_opcode]);
+                    room_needed += 2;
+                    break;
+                case DELETE_FAST_NOERROR_CHECK:
+                case DELETE_DEREF_NOERROR:
+                case DELETE_GLOBAL_NOERROR:
+                case DELETE_NAME_NOERROR:
+                    printf("op '%s' needs 2 more.\n", _PyOpcode_OpName[instr->i_opcode]);
+                    // LOAD_CONST None; STORE_(...); DELETE_(...);
+                    room_needed += 2;
+                    break;
+            }
+        }
+        if (!room_needed) {
+            continue;
+        }
+        printf("Needed %d more room.\n", room_needed);
+        printf("Size before is %d\n", b->b_iused);
+        for (int r = 0; r < room_needed; r++) {
+            if (!basicblock_addop(b, NOP, 0, NO_LOCATION)) {
+                return -1;
+            }
+        }
+        printf("Size after is %d\n", b->b_iused);
+        int dest = b->b_iused - 1;
+        int src = b->b_iused - 1 - room_needed;
+        for (; src >= 0; src--) {
+            assert(src <= dest);
+            int op1, arg1, op2, arg2, op3, arg3;
+            int src_oparg = b->b_instr[src].i_oparg;
+            switch (b->b_instr[src].i_opcode) {
+                case DELETE_FAST_CHECK:
+                    op1 = LOAD_FAST_CHECK; arg1 = src_oparg;
+                    op2 = POP_TOP; arg2 = 0;
+                    op3 = DELETE_FAST; arg3 = src_oparg;
+                    break;
+                case DELETE_FAST_NOERROR_CHECK:
+                    op1 = LOAD_CONST; arg1 = none_oparg;
+                    op2 = STORE_FAST; arg2 = src_oparg;
+                    op3 = DELETE_FAST; arg3 = src_oparg;
+                    break;
+                case DELETE_DEREF_NOERROR:
+                    op1 = LOAD_CONST; arg1 = none_oparg;
+                    op2 = STORE_DEREF; arg2 = src_oparg;
+                    op3 = DELETE_DEREF; arg3 = src_oparg;
+                    break;
+                case DELETE_GLOBAL_NOERROR:
+                    op1 = LOAD_CONST; arg1 = none_oparg;
+                    op2 = STORE_GLOBAL; arg2 = src_oparg;
+                    op3 = DELETE_GLOBAL; arg3 = src_oparg;
+                    break;
+                case DELETE_NAME_NOERROR:
+                    op1 = LOAD_CONST; arg1 = none_oparg;
+                    op2 = STORE_GLOBAL; arg2 = src_oparg;
+                    op3 = DELETE_GLOBAL; arg3 = src_oparg;
+                    break;
+                default:
+                    printf("moving %d --> %d\n", src, dest);
+                    b->b_instr[dest--] = b->b_instr[src];
+                    continue;
+            }
+            printf("adding ... --> %d\n", dest);
+            b->b_instr[dest--] = (struct instr) {
+                .i_except = b->b_instr[src].i_except,
+                .i_loc = b->b_instr[src].i_loc,
+                .i_opcode = op3,
+                .i_oparg = arg3,
+                .i_target = NULL,
+            };
+            printf("adding ... --> %d\n", dest);
+            b->b_instr[dest--] = (struct instr) {
+                .i_except = b->b_instr[src].i_except,
+                .i_loc = b->b_instr[src].i_loc,
+                .i_opcode = op2,
+                .i_oparg = arg2,
+                .i_target = NULL,
+            };
+            printf("adding ... --> %d\n", dest);
+            b->b_instr[dest--] = (struct instr) {
+                .i_except = b->b_instr[src].i_except,
+                .i_loc = b->b_instr[src].i_loc,
+                .i_opcode = op1,
+                .i_oparg = arg1,
+                .i_target = NULL,
+            };
+        }
+        assert(dest == -1);
+    }
     return 0;
 }
 
@@ -8812,6 +8928,15 @@ assemble(struct compiler *c, int addNone)
     }
     if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
         goto error;
+    }
+    {
+        int none_oparg = (int)compiler_add_const(c, Py_None);
+        if (none_oparg < 0) {
+            goto error;
+        }
+        if (expand_del_noerror(g->g_entryblock, none_oparg)) {
+            goto error;
+        }
     }
 
     /** line numbers (TODO: move this before optimization stage) */
