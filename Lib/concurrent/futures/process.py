@@ -300,8 +300,6 @@ class _ExecutorManagerThread(threading.Thread):
         def weakref_cb(_,
                        thread_wakeup=self.thread_wakeup,
                        shutdown_lock=self.shutdown_lock):
-            mp.util.debug('Executor collected: triggering callback for'
-                          ' QueueManager wakeup')
             with shutdown_lock:
                 thread_wakeup.wakeup()
 
