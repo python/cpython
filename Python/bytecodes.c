@@ -3692,8 +3692,8 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // This always dispatches, so 'res' is unused.
-        inst(BINARY_OP, (lhs, rhs, unused/1 -- res)) {
+        // This always dispatches, so the result is unused.
+        inst(BINARY_OP, (lhs, rhs, unused/1 -- unused)) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);

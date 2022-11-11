@@ -3723,7 +3723,6 @@
             PREDICTED(BINARY_OP);
             PyObject *rhs = PEEK(1);
             PyObject *lhs = PEEK(2);
-            PyObject *res;
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
