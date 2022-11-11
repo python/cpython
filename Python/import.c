@@ -218,6 +218,16 @@ _imp_release_lock_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+PyStatus
+_PyImport_Init(void)
+{
+    if (_PyRuntime.imports.inittab != NULL) {
+        return _PyStatus_ERR("global import state already initialized");
+    }
+    _PyRuntime.imports.inittab = PyImport_Inittab;
+    return _PyStatus_OK();
+}
+
 static inline void _extensions_cache_clear(void);
 
 void
@@ -228,6 +238,7 @@ _PyImport_Fini(void)
         PyThread_free_lock(import_lock);
         import_lock = NULL;
     }
+    _PyRuntime.imports.inittab = NULL;
 }
 
 void
@@ -889,9 +900,10 @@ static int
 is_builtin(PyObject *name)
 {
     int i;
-    for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
-        if (_PyUnicode_EqualToASCIIString(name, PyImport_Inittab[i].name)) {
-            if (PyImport_Inittab[i].initfunc == NULL)
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    for (i = 0; inittab[i].name != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(name, inittab[i].name)) {
+            if (inittab[i].initfunc == NULL)
                 return -1;
             else
                 return 1;
@@ -984,7 +996,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     }
 
     PyObject *modules = tstate->interp->modules;
-    for (struct _inittab *p = PyImport_Inittab; p->name != NULL; p++) {
+    for (struct _inittab *p = _PyRuntime.imports.inittab; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             if (p->initfunc == NULL) {
                 /* Cannot re-init internal module ("sys" or "builtins") */
