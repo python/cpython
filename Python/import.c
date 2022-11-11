@@ -94,9 +94,9 @@ _PyImportZip_Init(PyThreadState *tstate)
    in different threads to return with a partially loaded module.
    These calls are serialized by the global interpreter lock. */
 
-static PyThread_type_lock import_lock = NULL;
-static unsigned long import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
-static int import_lock_level = 0;
+#define import_lock _PyRuntime.imports.lock.mutex
+#define import_lock_thread _PyRuntime.imports.lock.thread
+#define import_lock_level _PyRuntime.imports.lock.level
 
 void
 _PyImport_AcquireLock(void)

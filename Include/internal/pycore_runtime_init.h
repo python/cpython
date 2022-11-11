@@ -39,6 +39,13 @@ extern "C" {
         .types = { \
             .next_version_tag = 1, \
         }, \
+        .imports = { \
+            .lock = { \
+                .mutex = NULL, \
+                .thread = PYTHREAD_INVALID_THREAD_ID, \
+                .level = 0, \
+            }, \
+        }, \
         .global_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
