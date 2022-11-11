@@ -26,7 +26,7 @@ try:
     from sphinx.errors import NoUri
 except ImportError:
     from sphinx.environment import NoUri
-from sphinx.locale import translators
+from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
@@ -104,7 +104,7 @@ class ImplementationDetail(Directive):
     def run(self):
         self.assert_has_content()
         pnode = nodes.compound(classes=['impl-detail'])
-        label = translators['sphinx'].gettext(self.label_text)
+        label = sphinx_gettext(self.label_text)
         content = self.content
         add_text = nodes.strong(label, label)
         self.state.nested_parse(content, self.content_offset, pnode)
@@ -252,7 +252,7 @@ class AuditEvent(Directive):
         else:
             args = []
 
-        label = translators['sphinx'].gettext(self._label[min(2, len(args))])
+        label = sphinx_gettext(self._label[min(2, len(args))])
         text = label.format(name="``{}``".format(name),
                             args=", ".join("``{}``".format(a) for a in args if a))
 
@@ -431,7 +431,7 @@ class DeprecatedRemoved(Directive):
         else:
             label = self._removed_label
 
-        label = translators['sphinx'].gettext(label)
+        label = sphinx_gettext(label)
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
