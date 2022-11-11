@@ -25,6 +25,7 @@ _PyStaticObject_CheckRefcnt(PyObject *obj) {
 #ifdef Py_DEBUG
 static inline void
 _PyStaticObjects_CheckRefcnt(void) {
+    /* generated (see pycore_runtime_init_generated.h) */
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -5]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -4]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + -3]);
@@ -287,7 +288,6 @@ _PyStaticObjects_CheckRefcnt(void) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 254]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 255]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + 256]);
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_empty));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_characters)[0]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_characters)[1]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_characters)[2]);
@@ -1469,6 +1469,8 @@ _PyStaticObjects_CheckRefcnt(void) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(strings).latin1[253 - 128]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(strings).latin1[254 - 128]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(strings).latin1[255 - 128]);
+    /* non-generated */
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_empty));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(tuple_empty));
 }
 #endif  // Py_DEBUG
