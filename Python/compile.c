@@ -584,11 +584,11 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     return result;
 }
 
-static int
-compiler_init(struct compiler *c)
-{
-    memset(c, 0, sizeof(struct compiler));
 
+static int
+compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
+               PyCompilerFlags flags, int optimize, PyArena *arena)
+{
     c->c_const_cache = PyDict_New();
     if (!c->c_const_cache) {
         return 0;
@@ -596,17 +596,9 @@ compiler_init(struct compiler *c)
 
     c->c_stack = PyList_New(0);
     if (!c->c_stack) {
-        Py_CLEAR(c->c_const_cache);
         return 0;
     }
 
-    return 1;
-}
-
-static int
-compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
-               PyCompilerFlags flags, int optimize, PyArena *arena)
-{
     c->c_filename = Py_NewRef(filename);
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
@@ -636,26 +628,33 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     return 1;
 }
 
+struct compiler*
+new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
+             int optimize, PyArena *arena)
+{
+    PyCompilerFlags flags = pflags ? *pflags : _PyCompilerFlags_INIT;
+    struct compiler *c = PyMem_Calloc(1, sizeof(struct compiler));
+    if (c == NULL) {
+        return NULL;
+    }
+    if (!compiler_setup(c, mod, filename, flags, optimize, arena)) {
+        compiler_free(c);
+        return NULL;
+    }
+    return c;
+}
+
 PyCodeObject *
 _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
                int optimize, PyArena *arena)
 {
-    struct compiler c;
-    if (!compiler_init(&c)) {
+    struct compiler *c = new_compiler(mod, filename, pflags, optimize, arena);
+    if (c == NULL) {
         return NULL;
     }
 
-    PyCompilerFlags flags = pflags ? *pflags : _PyCompilerFlags_INIT;
-
-    PyCodeObject *co = NULL;
-    if (!compiler_setup(&c, mod, filename, flags, optimize, arena)) {
-        goto finally;
-    }
-
-    co = compiler_mod(&c, mod);
-
- finally:
-    compiler_free(&c);
+    PyCodeObject *co = compiler_mod(c, mod);
+    compiler_free(c);
     assert(co || PyErr_Occurred());
     return co;
 }
@@ -666,8 +665,9 @@ compiler_free(struct compiler *c)
     if (c->c_st)
         _PySymtable_Free(c->c_st);
     Py_XDECREF(c->c_filename);
-    Py_DECREF(c->c_const_cache);
-    Py_DECREF(c->c_stack);
+    Py_XDECREF(c->c_const_cache);
+    Py_XDECREF(c->c_stack);
+    PyMem_Free(c);
 }
 
 static PyObject *
@@ -9961,23 +9961,17 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         return NULL;
     }
 
-    /* Create and set up the compiler */
-    struct compiler c;
-    if (!compiler_init(&c)) {
+    struct compiler *c = new_compiler(mod, filename, pflags, optimize, arena);
+    if (c == NULL) {
         _PyArena_Free(arena);
         return NULL;
     }
 
-    PyCompilerFlags flags = pflags ? *pflags : _PyCompilerFlags_INIT;
-    if (!compiler_setup(&c, mod, filename, flags, optimize, arena)) {
+    if (!compiler_codegen(c, mod)) {
         goto finally;
     }
 
-    if (!compiler_codegen(&c, mod)) {
-        goto finally;
-    }
-
-    cfg_builder *g = CFG_BUILDER(&c);
+    cfg_builder *g = CFG_BUILDER(c);
 
     if (translate_jump_labels_to_targets(g->g_entryblock) < 0) {
         goto finally;
@@ -9986,8 +9980,8 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     res = cfg_to_instructions(g);
 
 finally:
-    compiler_exit_scope(&c);
-    compiler_free(&c);
+    compiler_exit_scope(c);
+    compiler_free(c);
     _PyArena_Free(arena);
     return res;
 }
