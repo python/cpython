@@ -27,6 +27,11 @@ struct _import_runtime_state {
         unsigned long thread;
         int level;
     } lock;
+    struct {
+        int import_level;
+        _PyTime_t accumulated;
+        int header;
+    } find_and_load;
 };
 
 

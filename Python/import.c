@@ -1759,8 +1759,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     PyObject *mod = NULL;
     PyInterpreterState *interp = tstate->interp;
     int import_time = _PyInterpreterState_GetConfig(interp)->import_time;
-    static int import_level;
-    static _PyTime_t accumulated;
+#define import_level _PyRuntime.imports.find_and_load.import_level
+#define accumulated _PyRuntime.imports.find_and_load.accumulated
 
     _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
@@ -1781,12 +1781,13 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-        static int header = 1;
+#define header _PyRuntime.imports.find_and_load.header
         if (header) {
             fputs("import time: self [us] | cumulative | imported package\n",
                   stderr);
             header = 0;
         }
+#undef header
 
         import_level++;
         t1 = _PyTime_GetPerfCounter();
@@ -1816,6 +1817,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     }
 
     return mod;
+#undef import_level
+#undef accumulated
 }
 
 PyObject *

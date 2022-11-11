@@ -45,6 +45,9 @@ extern "C" {
                 .thread = PYTHREAD_INVALID_THREAD_ID, \
                 .level = 0, \
             }, \
+            .find_and_load = { \
+                .header = 1, \
+            }, \
         }, \
         .global_objects = { \
             .singletons = { \
