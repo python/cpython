@@ -54,6 +54,8 @@ struct _Py_global_objects {
 
 struct _Py_interp_cached_objects {
     int _not_set;
+    /* object.__reduce__ */
+    PyObject *objreduce;
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \

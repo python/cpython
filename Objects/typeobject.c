@@ -5828,7 +5828,8 @@ static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
-    static PyObject *objreduce;
+#define objreduce \
+    (_Py_INTERP_CACHED_OBJECT(_PyInterpreterState_Get(), objreduce))
     PyObject *reduce, *res;
 
     if (objreduce == NULL) {
@@ -5864,6 +5865,7 @@ object___reduce_ex___impl(PyObject *self, int protocol)
     }
 
     return _common_reduce(self, protocol);
+#undef objreduce
 }
 
 static PyObject *

@@ -304,9 +304,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # manually cached PyUnicodeObject
 Python/ast_unparse.c	-	_str_replace_inf	-
 
-# other
-Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
-
 #-----------------------
 # other
 
