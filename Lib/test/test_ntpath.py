@@ -1,5 +1,6 @@
 import ntpath
 import os
+import subprocess
 import sys
 import unittest
 import warnings
@@ -855,6 +856,20 @@ class TestNtpath(NtpathTestCase):
             b_final_path = nt._getfinalpathname(path.encode())
             self.assertIsInstance(b_final_path, bytes)
             self.assertGreater(len(b_final_path), 0)
+
+    def test_isjunction(self):
+        with os_helper.temp_dir() as d:
+            with os_helper.change_cwd(d):
+                os.mkdir('tmpdir')
+
+                # create a junction via subprocess, since we don't currently
+                # support making them via python directly
+                subprocess.check_call('mklink /J testjunc tmpdir', shell=True)
+
+                self.assertTrue(ntpath.isjunction('testjunc'))
+                self.assertFalse(ntpath.isjunction('tmpdir'))
+                self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
+
 
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath
