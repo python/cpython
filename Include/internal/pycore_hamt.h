@@ -53,6 +53,13 @@ typedef struct {
 } PyHamtObject;
 
 
+typedef struct {
+    PyObject_VAR_HEAD
+    uint32_t b_bitmap;
+    PyObject *b_array[1];
+} PyHamtNode_Bitmap;
+
+
 /* A struct to hold the state of depth-first traverse of the tree.
 
    HAMT is an immutable collection.  Iterators will hold a strong reference

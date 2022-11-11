@@ -1473,6 +1473,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     /* non-generated */
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_empty));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(tuple_empty));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(hamt_bitmap_node_empty));
 }
 #endif  // Py_DEBUG
 /* End auto-generated code */

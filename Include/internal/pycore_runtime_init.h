@@ -42,6 +42,9 @@ extern "C" {
                 .tuple_empty = { \
                     .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
                 }, \
+                .hamt_bitmap_node_empty = { \
+                    .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                }, \
             }, \
         }, \
         ._main_interpreter = _PyInterpreterState_INIT, \

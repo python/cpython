@@ -127,6 +127,7 @@ NON_GENERATED_IMMORTAL_OBJECTS = [
     # The generated ones come from generate_runtime_init().
     '(PyObject *)&_Py_SINGLETON(bytes_empty)',
     '(PyObject *)&_Py_SINGLETON(tuple_empty)',
+    '(PyObject *)&_Py_SINGLETON(hamt_bitmap_node_empty)',
 ]
 
 

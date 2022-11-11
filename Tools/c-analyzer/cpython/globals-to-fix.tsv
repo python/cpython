@@ -312,7 +312,6 @@ Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
 
 # initialized once
 Python/context.c	-	_token_missing	-
-Python/hamt.c	-	_empty_bitmap_node	-
 Python/hamt.c	-	_empty_hamt	-
 
 # state
