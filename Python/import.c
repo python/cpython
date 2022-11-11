@@ -27,9 +27,6 @@ extern "C" {
 /* Forward references */
 static PyObject *import_add_module(PyThreadState *tstate, PyObject *name);
 
-/* See _PyImport_FixupExtensionObject() below */
-static PyObject *extensions = NULL;
-
 /* This table is defined in config.c: */
 extern struct _inittab _PyImport_Inittab[];
 
@@ -221,10 +218,12 @@ _imp_release_lock_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+static inline void _extensions_cache_clear(void);
+
 void
 _PyImport_Fini(void)
 {
-    Py_CLEAR(extensions);
+    _extensions_cache_clear();
     if (import_lock != NULL) {
         PyThread_free_lock(import_lock);
         import_lock = NULL;
@@ -398,6 +397,51 @@ PyImport_GetMagicTag(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
+static PyModuleDef *
+_extensions_cache_get(PyObject *filename, PyObject *name)
+{
+    PyObject *extensions = _PyRuntime.imports.extensions;
+    if (extensions == NULL) {
+        return NULL;
+    }
+    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (key == NULL) {
+        return NULL;
+    }
+    PyModuleDef *def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
+    Py_DECREF(key);
+    return def;
+}
+
+static int
+_extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
+{
+    PyObject *extensions = _PyRuntime.imports.extensions;
+    if (extensions == NULL) {
+        extensions = PyDict_New();
+        if (extensions == NULL) {
+            return -1;
+        }
+        _PyRuntime.imports.extensions = extensions;
+    }
+    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (key == NULL) {
+        return -1;
+    }
+    int res = PyDict_SetItem(extensions, key, (PyObject *)def);
+    Py_DECREF(key);
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static void
+_extensions_cache_clear(void)
+{
+    Py_CLEAR(_PyRuntime.imports.extensions);
+}
+
 int
 _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
                                PyObject *filename, PyObject *modules)
@@ -442,20 +486,7 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
             }
         }
 
-        if (extensions == NULL) {
-            extensions = PyDict_New();
-            if (extensions == NULL) {
-                return -1;
-            }
-        }
-
-        PyObject *key = PyTuple_Pack(2, filename, name);
-        if (key == NULL) {
-            return -1;
-        }
-        int res = PyDict_SetItem(extensions, key, (PyObject *)def);
-        Py_DECREF(key);
-        if (res < 0) {
+        if (_extensions_cache_set(filename, name, def) < 0) {
             return -1;
         }
     }
@@ -480,16 +511,7 @@ static PyObject *
 import_find_extension(PyThreadState *tstate, PyObject *name,
                       PyObject *filename)
 {
-    if (extensions == NULL) {
-        return NULL;
-    }
-
-    PyObject *key = PyTuple_Pack(2, filename, name);
-    if (key == NULL) {
-        return NULL;
-    }
-    PyModuleDef* def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
-    Py_DECREF(key);
+    PyModuleDef *def = _extensions_cache_get(filename, name);
     if (def == NULL) {
         return NULL;
     }
