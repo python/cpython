@@ -508,7 +508,6 @@ Modules/_functoolsmodule.c	-	kwd_mark	-
 Modules/_io/_iomodule.c	-	_PyIO_empty_bytes	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/unicode.c	-	_testcapimodule	-
-Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
 
 # state
 Modules/faulthandler.c	-	fatal_error	-
@@ -537,6 +536,7 @@ Modules/timemodule.c	_PyTime_GetProcessTimeWithInfo	ticks_per_second	-
 
 Modules/_tracemalloc.c	-	allocators	-
 Modules/_tracemalloc.c	-	tables_lock	-
+Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
 Modules/_tracemalloc.c	-	tracemalloc_traced_memory	-
 Modules/_tracemalloc.c	-	tracemalloc_peak_traced_memory	-
 Modules/_tracemalloc.c	-	tracemalloc_filenames	-
