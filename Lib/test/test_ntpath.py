@@ -857,6 +857,7 @@ class TestNtpath(NtpathTestCase):
             self.assertIsInstance(b_final_path, bytes)
             self.assertGreater(len(b_final_path), 0)
 
+    @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
     def test_isjunction(self):
         with os_helper.temp_dir() as d:
             with os_helper.change_cwd(d):
