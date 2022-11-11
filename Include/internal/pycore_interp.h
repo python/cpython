@@ -20,6 +20,7 @@ extern "C" {
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_global_objects.h"  // struct _Py_interp_static_objects
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -206,6 +207,9 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
+
+    struct _Py_interp_cached_objects cached_objects;
+    struct _Py_interp_static_objects static_objects;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.

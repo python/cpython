@@ -383,8 +383,10 @@ def generate_global_object_finalizers(generated_immortal_objects):
         printer.write(START)
         printer.write('#ifdef Py_DEBUG')
         printer.write("static inline void")
-        with printer.block("_PyStaticObjects_CheckRefcnt(void)"):
-            printer.write('/* generated (see pycore_runtime_init_generated.h) */')
+        with printer.block(
+                "_PyStaticObjects_CheckRefcnt(PyInterpreterState *interp)"):
+            printer.write('/* generated runtime-global */')
+            printer.write('// (see pycore_runtime_init_generated.h)')
             for ref in generated_immortal_objects:
                 printer.write(f'_PyStaticObject_CheckRefcnt({ref});')
             printer.write('/* non-generated */')
