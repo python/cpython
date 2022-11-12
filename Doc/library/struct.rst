@@ -18,6 +18,11 @@ in files or on network connections, among other sources.  It uses
 :ref:`struct-format-strings` as compact descriptions of the layout of the C
 structs and the intended conversion to/from Python values.
 
+This module can be used for two largely distinct applications, data
+exchange with external sources, or data transfer between the Python
+application and the C layer.  :ref:`applications` of different format
+characters are covered below.
+
 .. note::
 
    By default, the result of packing a given C struct includes pad bytes in
@@ -115,9 +120,8 @@ Byte Order, Size, and Alignment
 
 By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
-rules used by the C compiler). Relying on default byte ordering and
-padding is fragile. For most applications, you should use explicit
-byte ordering and padding.
+rules used by the C compiler). Whether you use default byte ordering
+and padding or more explicit formats depends on your application.
 
 .. index::
    single: @ (at); in struct format strings
@@ -418,6 +422,98 @@ alignment does not enforce any alignment.
 
    Module :mod:`xdrlib`
       Packing and unpacking of XDR data.
+
+
+.. _applications:
+
+Applications
+------------
+
+Two main applications for the ``struct`` module exist, data
+interchange between Python and C within the application or with
+another application compiled using the same compiler (native formats),
+and data interchange between applications using agreed upon data
+layout (machine-independent formats).  Generally speaking, the format
+strings constructed for these two domains are distinct.
+
+
+Native Formats
+^^^^^^^^^^^^^^
+
+When constructing format strings which mimic native layouts, the
+compiler and machine architecture determine byte ordering and padding.
+In such cases, the ``@`` format character should be used to specify
+native byte ordering and data sizes.  Generally speaking, the ``l``
+format character should be used to specify the compiler's preferred
+long integer size.  This will vary across architectures.  For example,
+on a typical 64-bit architecture ``l`` specifies an 8-byte long
+integer.  On 32-bit architectures it most often specifies a 4-byte
+long integer.  Similarly, internal pad bytes are normally inserted
+automatically.  It's possible that a zero-repeat format code will be
+necessary at the end of a format string to round up to the correct
+byte boundary for proper alignment of consective chunks of data.
+
+Consider these two simple examples (on a 64-bit, little-endian
+machine)::
+
+    >>> len(struct.pack('@lhl', 1, 2, 3))
+    24
+    >>> len(struct.pack('@llh', 1, 2, 3))
+    18
+
+Data is not padded to an 8-byte boundary without the use of extra
+padding.  A zero-repeat format code solves that problem::
+
+    >>> len(struct.pack('@llh0l', 1, 2, 3))
+    24
+
+The ``x`` format code can be used to specify the repeat, but for
+native formats it's best to use a zero-repeat format like ``0l``.
+
+By default, native byte ordering and alignment is used, but it's best
+to be explicit and use the ``@`` format character.
+
+
+Machine-Independent Formats
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When exchanging data with other applications, byte ordering and
+alignment are specified precisely, and there is a good chance they
+won't correspond exactly to that of the local machine architecture.
+For example, network byte order is big-endian, while most commodity
+CPUs are little-endian.  In those situations, the user must define
+this explicitly.  The first character should typically be ``<`` or
+``>`` (or sometimes ``!`` to be explicit that the format will use
+network byte order).  Padding is the responsibility of the programmer.
+The zero-repeat format character won't work.  Instead, the user must
+explicitly add ``x`` pad bytes where needed.  In addition, since the
+size of long integers is architecture dependent, use of ``l`` and
+``L`` must be avoided in preference to ``i`` and ``I`` (four bytes) or
+``q`` and ``Q`` (eight bytes).  Repeating the examples from the
+previous section, we have::
+
+    >>> len(struct.pack('<qh6xq', 1, 2, 3))
+    24
+    >>> struct.pack('<qh6xq', 1, 2, 3) == struct.pack('@lhl', 1, 2, 3)
+    True
+    >>> len(struct.pack('@llh', 1, 2, 3))
+    18
+    >>> struct.pack('@llh', 1, 2, 3) == struct.pack('<qqh', 1, 2, 3)
+    True
+    >>> len(struct.pack('<qqh6x', 1, 2, 3))
+    24
+    >>> struct.pack('@llh0l', 1, 2, 3) == struct.pack('<qqh6x', 1, 2, 3)
+    True
+
+That the various examples are true on a particular machine doesn't
+mean they will be true everywhere.  For example, the last example is
+different on a 32-bit machine because the ``l`` format character
+specifies different integer sizes::
+
+    >>> len(struct.pack('<qqh6x', 1, 2, 3))
+    24
+    >>> struct.pack('@llh0l', 1, 2, 3) == struct.pack('<qqh6x', 1, 2, 3)
+    False
 
 
 .. _struct-objects:
