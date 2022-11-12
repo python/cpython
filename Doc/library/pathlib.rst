@@ -1217,6 +1217,8 @@ call fails (for example because the path doesn't exist).
       >>> p.absolute()
       PosixPath('/home/antoine/pathlib/tests')
 
+   .. versionadded:: 3.11
+      
 
 .. method:: Path.resolve(strict=False)
 
