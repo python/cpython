@@ -559,6 +559,23 @@ class TracebackErrorLocationCaretTestBase:
         result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def test_caret_for_binary_operators_with_unicode(self):
+        def f_with_binary_operator():
+            áóí = 20
+            return 10 + áóí / 0 + 30
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
+            '    return 10 + áóí / 0 + 30\n'
+            '                ~~~~^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
     def test_caret_for_binary_operators_two_char(self):
         def f_with_binary_operator():
             divisor = 20
@@ -589,6 +606,23 @@ class TracebackErrorLocationCaretTestBase:
             f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
             "    return some_dict['x']['y']['z']\n"
             '           ~~~~~~~~~~~~~~~~~~~^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_subscript)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_subscript_unicode(self):
+        def f_with_subscript():
+            some_dict = {'ó': {'á': {'í': {'theta': 1}}}}
+            return some_dict['ó']['á']['í']['beta']
+
+        lineno_f = f_with_subscript.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
+            "    return some_dict['ó']['á']['í']['beta']\n"
+            '           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^\n'
         )
         result_lines = self.get_exception(f_with_subscript)
         self.assertEqual(result_lines, expected_error.splitlines())
@@ -3356,7 +3390,7 @@ class SuggestionFormattingTestBase:
 
         actual = self.get_suggestion(func)
         self.assertNotIn("blech", actual)
-    
+
     def test_name_error_with_instance(self):
         class A:
             def __init__(self):
