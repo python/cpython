@@ -212,6 +212,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
         return NULL;
     }
 
+    /*  if log is not opened, open it now  */
     if (!S_log_open) {
         if (!is_main_interpreter()) {
             PyErr_SetString(PyExc_RuntimeError, "unable to use syslog.syslog at non-main interpreter for the first time.");
@@ -262,13 +263,11 @@ syslog_closelog_impl(PyObject *module)
     if (PySys_Audit("syslog.closelog", NULL) < 0) {
         return NULL;
     }
-
     if (S_log_open) {
         closelog();
-        S_log_open = 0;
         Py_CLEAR(S_ident_o);
+        S_log_open = 0;
     }
-
     Py_RETURN_NONE;
 }
 
