@@ -58,18 +58,17 @@ class Block(Node):
 
 @dataclass
 class Effect(Node):
-    pass
+    name: str
 
 
 @dataclass
 class StackEffect(Effect):
-    name: str
+    pass
     # TODO: type, condition
 
 
 @dataclass
 class CacheEffect(Effect):
-    name: str
     size: int
 
 
