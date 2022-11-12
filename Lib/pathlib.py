@@ -640,10 +640,14 @@ class PurePath(object):
         other = path_cls(*other)
         if path_cls(self.anchor) != path_cls(other.anchor):
             raise ValueError("{!r} and {!r} have different anchors".format(str(self), str(other)))
-        result = path_cls(self._flavour.pathmod.relpath(self, other))
-        if result.parts[:1] == ('..',) and not walk_up:
+        if not self.is_relative_to(other) and not walk_up:
             raise ValueError("{!r} is not in the subpath of {!r}".format(str(self), str(other)))
-        return result
+        walk_up_steps = 0
+        while not self.is_relative_to(other):
+            other = other.parent
+            walk_up_steps += 1
+        parts = ('..',) * walk_up_steps + self.parts[len(other.parts):]
+        return path_cls(*parts)
 
     def is_relative_to(self, *other):
         """Return True if the path is relative to another path or False.
