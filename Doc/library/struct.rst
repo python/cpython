@@ -120,7 +120,8 @@ Byte Order, Size, and Alignment
 
 By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
-rules used by the C compiler). Whether you use default byte ordering
+rules used by the C compiler).
+Whether you use default byte ordering
 and padding or more explicit formats depends on your application.
 
 .. index::
@@ -366,13 +367,13 @@ Examples
 A basic example of packing/unpacking three integers, forcing big
 endian ordering::
 
-   >>> from struct import *
-   >>> pack('>hhl', 1, 2, 3)
-   b'\x00\x01\x00\x02\x00\x00\x00\x03'
-   >>> unpack('>hhl', b'\x00\x01\x00\x02\x00\x00\x00\x03')
-   (1, 2, 3)
-   >>> calcsize('>hhl')
-   8
+    >>> from struct import *
+    >>> pack('>hhl', 1, 2, 3)
+    b'\x00\x01\x00\x02\x00\x00\x00\x03'
+    >>> unpack('>hhl', b'\x00\x01\x00\x02\x00\x00\x00\x03')
+    (1, 2, 3)
+    >>> calcsize('>hhl')
+    8
 
 Unpacked fields can be named by assigning them to variables or by wrapping
 the result in a named tuple::
@@ -401,13 +402,13 @@ example, the output was produced on a little endian machine::
 The following format ``'llh0l'`` specifies two pad bytes at the end, assuming
 longs are aligned on 4-byte boundaries::
 
-    >>> pack('llh0l', 1, 2, 3)
+    >>> pack('@llh0l', 1, 2, 3)
     b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x03\x00\x00'
 
 On 64-bit architectures, the ``l`` format is eight bytes, so alignment
 is likely to be on 8-byte boundaries::
 
-    >>> pack('llh0l', 1, 2, 3)
+    >>> pack('@llh0l', 1, 2, 3)
     b'\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00'
 
 To force one alignment or the other,
