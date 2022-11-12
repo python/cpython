@@ -3390,7 +3390,7 @@ class SuggestionFormattingTestBase:
 
         actual = self.get_suggestion(func)
         self.assertNotIn("blech", actual)
-    
+
     def test_name_error_with_instance(self):
         class A:
             def __init__(self):

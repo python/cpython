@@ -592,7 +592,9 @@ def _extract_caret_anchors_from_line_segment(segment):
         case ast.Expr(expr):
             match expr:
                 case ast.BinOp():
-                    operator_str = segment[normalize(expr.left.end_col_offset):normalize(expr.right.col_offset)]
+                    operator_start = normalize(expr.left.end_col_offset)
+                    operator_end = normalize(expr.right.col_offset)
+                    operator_str = segment[operator_start:operator_end]
                     operator_offset = len(operator_str) - len(operator_str.lstrip())
 
                     left_anchor = expr.left.end_col_offset + operator_offset
@@ -604,7 +606,9 @@ def _extract_caret_anchors_from_line_segment(segment):
                         right_anchor += 1
                     return _Anchors(normalize(left_anchor), normalize(right_anchor))
                 case ast.Subscript():
-                    return _Anchors(normalize(expr.value.end_col_offset), normalize(expr.slice.end_col_offset + 1))
+                    subscript_start = normalize(expr.value.end_col_offset)
+                    subscript_end = normalize(expr.slice.end_col_offset + 1)
+                    return _Anchors(subscript_start, subscript_end)
 
     return None
 
@@ -1045,7 +1049,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             self = frame.f_locals['self']
             if hasattr(self, wrong_name):
                 return f"self.{wrong_name}"
-    
+
     # Compute closest match
 
     if len(d) > _MAX_CANDIDATE_ITEMS:
