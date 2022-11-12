@@ -104,7 +104,7 @@ _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
-= _PyRuntimeState_INIT;
+= _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
 static int runtime_initialized = 0;
@@ -601,6 +601,11 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
     status = _Py_HashRandomization_Init(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyImport_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
