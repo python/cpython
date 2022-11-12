@@ -43,7 +43,7 @@ levenshtein_distance(const char *a, size_t a_size,
                      const char *b, size_t b_size,
                      size_t max_cost)
 {
-    static size_t buffer[MAX_STRING_SIZE];
+    size_t buffer[MAX_STRING_SIZE] = {0};
 
     // Both strings are the same (by identity)
     if (a == b) {
@@ -238,7 +238,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
         if (!self) {
             goto error;
         }
-        
+
         if (PyObject_HasAttr(self, name)) {
             Py_DECREF(dir);
             return PyUnicode_FromFormat("self.%S", name);
