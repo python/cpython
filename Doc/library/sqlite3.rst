@@ -2126,6 +2126,25 @@ This section shows recipes for common adapters and converters.
    sqlite3.register_converter("datetime", convert_datetime)
    sqlite3.register_converter("timestamp", convert_timestamp)
 
+.. testcode::
+   :hide:
+
+   dt = datetime.datetime(2019, 5, 18, 15, 17, 8, 123456)
+
+   assert adapt_date_iso(dt.date()) == "2019-05-18"
+   assert convert_date(b"2019-05-18") == dt.date()
+
+   assert adapt_datetime_iso(dt) == "2019-05-18T15:17:08.123456"
+   assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
+
+   # Using current time as fromtimestamp() returns local date/time.
+   # Droping microseconds as adapt_datetime_epoch truncates fractional second part.
+   now = datetime.datetime.now().replace(microsecond=0)
+   current_timestamp = int(now.timestamp())
+
+   assert adapt_datetime_epoch(now) == current_timestamp
+   assert convert_timestamp(str(current_timestamp).encode()) == now
+
 
 .. _sqlite3-connection-shortcuts:
 
