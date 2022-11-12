@@ -481,7 +481,9 @@ Data Types
          >>> list(purple)
          [<Color.RED: 1>, <Color.BLUE: 4>]
 
-      ..versionchanged:: 3.11  Aliases are no longer returned during iteration.
+      .. versionchanged:: 3.11
+      
+         Aliases are no longer returned during iteration.
 
    .. method:: __len__(self):
 
@@ -594,13 +596,13 @@ Data Types
 
    .. versionchanged:: 3.11
 
-      :meth:`__str__` is now :func:`int.__str__` to better support the
-      *replacement of existing constants* use-case.  :meth:`__format__` was
-      already :func:`int.__format__` for that same reason.
+      :meth:`~object.__str__` is now :meth:`!int.__str__` to better support the
+      *replacement of existing constants* use-case.  :meth:`~object.__format__` was
+      already :meth:`!int.__format__` for that same reason.
 
-      Inversion of a *IntFlag* now returns a positive value that is the
+      Inversion of a :class:`!IntFlag` now returns a positive value that is the
       union of all flags not in the given flag, rather than a negative value.
-      This matches the existing *Flag* behavior.
+      This matches the existing :class:`Flag` behavior.
 
 .. class:: ReprEnum
 
