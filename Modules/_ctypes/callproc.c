@@ -1015,7 +1015,7 @@ void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
     PyErr_Fetch(&tp, &v, &tb);
     PyErr_NormalizeException(&tp, &v, &tb);
     if (PyType_Check(tp))
-        cls_str = PyType_GetName((PyTypeObject *)tp);
+        cls_str = ((PyTypeObject *)tp)->tp_name;
     else
         cls_str = PyObject_Str(tp);
     if (cls_str) {
