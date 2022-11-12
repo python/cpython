@@ -80,29 +80,41 @@ class Test(unittest.TestCase):
             sys.setswitchinterval(orig_si)
 
     def test_subinterpreter_syslog(self):
-        code = dedent('''
-            import syslog
-            catch_error = False
-            try:
-                syslog.syslog('foo')
-            except RuntimeError:
-                catch_error = True
+        # syslog.syslog() is not allowed in subinterpreters, but only if
+        # syslog.openlog() hasn't been called in the main interpreter yet.
+        with self.subTest('before openlog()'):
+            code = dedent('''
+                import syslog
+                caught_error = False
+                try:
+                    syslog.syslog('foo')
+                except RuntimeError:
+                    caught_error = True
+                assert(caught_error)
+            ''')
+            res = support.run_in_subinterp(code)
+            self.assertEqual(res, 0)
 
-            assert(catch_error == True)
-        ''')
-        res = support.run_in_subinterp(code)
-        self.assertEqual(res, 0)
+        syslog.openlog()
+        with self.subTest('after openlog()'):
+            code = dedent('''
+                import syslog
+                syslog.syslog('foo')
+            ''')
+            res = support.run_in_subinterp(code)
+            self.assertEqual(res, 0)
+        syslog.closelog()
 
     def test_subinterpreter_openlog(self):
         code = dedent('''
             import syslog
-            catch_error = False
+            caught_error = False
             try:
                 syslog.openlog()
             except RuntimeError:
-                catch_error = True
+                caught_error = True
 
-            assert(catch_error == True)
+            assert(caught_error)
         ''')
         res = support.run_in_subinterp(code)
         self.assertEqual(res, 0)
@@ -111,19 +123,17 @@ class Test(unittest.TestCase):
         syslog.openlog('python')
         code = dedent('''
             import syslog
-            catch_error = False
+            caught_error = False
             try:
                 syslog.closelog()
             except RuntimeError:
-                catch_error = True
+                caught_error = True
 
-            assert(catch_error == True)
+            assert(caught_error)
         ''')
         res = support.run_in_subinterp(code)
         self.assertEqual(res, 0)
         syslog.closelog()
-
-
 
 
 if __name__ == "__main__":

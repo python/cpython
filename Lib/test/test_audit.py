@@ -216,6 +216,7 @@ class AuditTest(unittest.TestCase):
             ('syslog.setlogmask', ' ', f'{syslog.LOG_DEBUG}'),
             ('syslog.closelog', '', ''),
             ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test2'),
+            ('syslog.openlog', ' ', f'audit-tests.py 0 {syslog.LOG_USER}'),
             ('syslog.openlog', ' ', f'audit-tests.py {syslog.LOG_NDELAY} {syslog.LOG_LOCAL0}'),
             ('syslog.openlog', ' ', f'None 0 {syslog.LOG_USER}'),
             ('syslog.closelog', '', '')]
