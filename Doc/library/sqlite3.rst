@@ -2112,19 +2112,38 @@ This section shows recipes for common adapters and converters.
 
    def convert_date(val):
        """Convert ISO 8601 date to datetime.date object."""
-       return datetime.date.fromisoformat(val)
+       return datetime.date.fromisoformat(val.decode())
 
    def convert_datetime(val):
        """Convert ISO 8601 datetime to datetime.datetime object."""
-       return datetime.datetime.fromisoformat(val)
+       return datetime.datetime.fromisoformat(val.decode())
 
    def convert_timestamp(val):
        """Convert Unix epoch timestamp to datetime.datetime object."""
-       return datetime.datetime.fromtimestamp(val)
+       return datetime.datetime.fromtimestamp(int(val))
 
    sqlite3.register_converter("date", convert_date)
    sqlite3.register_converter("datetime", convert_datetime)
    sqlite3.register_converter("timestamp", convert_timestamp)
+
+.. testcode::
+   :hide:
+
+   dt = datetime.datetime(2019, 5, 18, 15, 17, 8, 123456)
+
+   assert adapt_date_iso(dt.date()) == "2019-05-18"
+   assert convert_date(b"2019-05-18") == dt.date()
+
+   assert adapt_datetime_iso(dt) == "2019-05-18T15:17:08.123456"
+   assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
+
+   # Using current time as fromtimestamp() returns local date/time.
+   # Droping microseconds as adapt_datetime_epoch truncates fractional second part.
+   now = datetime.datetime.now().replace(microsecond=0)
+   current_timestamp = int(now.timestamp())
+
+   assert adapt_datetime_epoch(now) == current_timestamp
+   assert convert_timestamp(str(current_timestamp).encode()) == now
 
 
 .. _sqlite3-connection-shortcuts:
