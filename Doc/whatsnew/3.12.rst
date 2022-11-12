@@ -203,8 +203,8 @@ asyncio
   (Contributed by Kumar Aditya in :gh:`98024`.)
 
 * The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`,
-  :class:`~asyncio.FastChildWatcher` and
-  :class:`~asyncio.SafeChildWatcher` are deprecated and
+  :class:`~asyncio.FastChildWatcher`, :class:`~asyncio.AbstractChildWatcher`
+  and :class:`~asyncio.SafeChildWatcher` are deprecated and
   will be removed in Python 3.14. It is recommended to not manually
   configure a child watcher as the event loop now uses the best available
   child watcher for each platform (:class:`~asyncio.PidfdChildWatcher`
