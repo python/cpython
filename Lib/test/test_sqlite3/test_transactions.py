@@ -432,13 +432,23 @@ class AutocommitAttribute(unittest.TestCase):
                 cx.close()
 
     def test_autocommit_enabled(self):
-        expected = ["SELECT 1"]
+        expected = ["CREATE TABLE t(t)", "INSERT INTO t VALUES(1)"]
         with memory_database(autocommit=True) as cx:
             self.assertFalse(cx.in_transaction)
             with self.check_stmt_trace(cx, expected):
-                cx.execute("SELECT 1")
-                cx.commit()  # expect this to pass silently
+                cx.execute("CREATE TABLE t(t)")
+                cx.execute("INSERT INTO t VALUES(1)")
                 self.assertFalse(cx.in_transaction)
+
+    def test_autocommit_enabled_txn_ctl(self):
+        for op in "commit", "rollback":
+            with self.subTest(op=op):
+                with memory_database(autocommit=True) as cx:
+                    meth = getattr(cx, op)
+                    self.assertFalse(cx.in_transaction)
+                    with self.check_stmt_trace(cx, []):
+                        meth()  # expect this to pass silently
+                        self.assertFalse(cx.in_transaction)
 
     def test_autocommit_disabled_then_enabled(self):
         expected = ["COMMIT"]
