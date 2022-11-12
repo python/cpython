@@ -2781,7 +2781,7 @@ AS_VAR_IF([ac_cv_clock_t_time_h], [no], [
 ])
 
 AC_CACHE_CHECK([for makedev], [ac_cv_func_makedev], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
@@ -2789,8 +2789,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #else
 #include <sys/types.h>
 #endif
-]], [[
-  makedev(0, 0) ]])
+makedev(0, 0) ]])
 ],[ac_cv_func_makedev=yes],[ac_cv_func_makedev=no])
 ])
 
@@ -2800,14 +2799,13 @@ AS_VAR_IF([ac_cv_func_makedev], [yes], [
 
 # byte swapping
 AC_CACHE_CHECK([for le64toh], [ac_cv_func_le64toh], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
 #elif defined(HAVE_SYS_ENDIAN_H)
 #include <sys/endian.h>
 #endif
-]], [[
-   le64toh(1) ]])
+le64toh(1) ]])
 ],[ac_cv_func_le64toh=yes],[ac_cv_func_le64toh=no])
 ])
 
@@ -2926,8 +2924,9 @@ fi
 
 AC_CACHE_CHECK([for pthread_t], [ac_cv_have_pthread_t], [
 AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_t x; x = *(pthread_t*)0;]])
-], [ac_cv_have_pthread_t=yes], [ac_cv_have_pthread_t=no])
+  AC_LANG_SOURCE([[#include <pthread.h>
+                    pthread_t x; x = *(pthread_t*)0;
+  ]])], [ac_cv_have_pthread_t=yes], [ac_cv_have_pthread_t=no])
 ])
 AS_VAR_IF([ac_cv_have_pthread_t], [yes], [
   AC_CHECK_SIZEOF(pthread_t, [], [
@@ -2943,7 +2942,9 @@ AC_CHECK_SIZEOF(pthread_key_t, [], [[#include <pthread.h>]])
 AC_CACHE_CHECK([whether pthread_key_t is compatible with int], [ac_cv_pthread_key_t_is_arithmetic_type], [
 if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
   AC_COMPILE_IFELSE(
-    [AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_key_t k; k * 1;]])],
+    [AC_LANG_SOURCE([[#include <pthread.h>
+                       pthread_key_t k; k * 1;
+    ]])],
     [ac_cv_pthread_key_t_is_arithmetic_type=yes],
     [ac_cv_pthread_key_t_is_arithmetic_type=no]
   )
@@ -3552,8 +3553,8 @@ AC_CHECK_LIB(intl, textdomain,
 case "$ac_sys_system" in
 	AIX*)	AC_MSG_CHECKING(for genuine AIX C++ extensions support)
 		AC_LINK_IFELSE([
-		  AC_LANG_PROGRAM([[#include <load.h>]],
-				  [[loadAndInit("", 0, "")]])
+		  AC_LANG_SOURCE([[#include <load.h>
+				    loadAndInit("", 0, "")]])
 		],[
 		  AC_DEFINE(AIX_GENUINE_CPLUSPLUS, 1,
                       [Define for AIX if your compiler is a genuine IBM xlC/xlC_r
@@ -3950,7 +3951,7 @@ dnl hence CPPFLAGS instead of CFLAGS.
     have_sqlite3=yes
 
     AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([
+      AC_LANG_SOURCE([
         #include <sqlite3.h>
         #if SQLITE_VERSION_NUMBER < 3007015
         #  error "SQLite 3.7.15 or higher required"
@@ -4051,7 +4052,7 @@ WITH_SAVE_ENV([
   LIBS="$TCLTK_LIBS $LDFLAGS"
 
   AC_LINK_IFELSE([
-    AC_LANG_PROGRAM([
+    AC_LANG_SOURCE([
       #include <tcl.h>
       #include <tk.h>
       #if defined(TK_HEX_VERSION)
@@ -4069,7 +4070,6 @@ WITH_SAVE_ENV([
           ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 5) && (TK_RELEASE_SERIAL < 12))
       #  error "Tk older than 8.5.12 not supported"
       #endif
-    ], [
       void *x1 = Tcl_Init;
       void *x2 = Tk_Init;
     ])
@@ -4158,13 +4158,13 @@ AC_CHECK_HEADERS([db.h], [
   AC_CACHE_CHECK([for libdb], [ac_cv_have_libdb], [
     WITH_SAVE_ENV([
       LIBS="$LIBS -ldb"
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([
+      AC_LINK_IFELSE([AC_LANG_SOURCE([
         #define DB_DBM_HSEARCH 1
         #include <db.h>
         #if DB_VERSION_MAJOR < 5
           #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
         #endif
-        ], [DBM *dbm = dbm_open(NULL, 0, 0)])
+        DBM *dbm = dbm_open(NULL, 0, 0)])
       ], [ac_cv_have_libdb=yes], [ac_cv_have_libdb=no])
     ])
   ])
@@ -4290,12 +4290,12 @@ yes
     _libs=$LIBS
     LIBS="$LIBS -lpthread"
     AC_MSG_CHECKING([for pthread_create in -lpthread])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 
-void * start_routine (void *arg) { exit (0); }]], [[
+void * start_routine (void *arg) { exit (0); }
 pthread_create (NULL, NULL, start_routine, NULL)]])],[
     AC_MSG_RESULT(yes)
     posix_threads=yes
@@ -4410,10 +4410,11 @@ AC_ARG_ENABLE(ipv6,
 
 [
 dnl the check does not work on cross compilation case...
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* AF_INET6 available check */
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[ /* AF_INET6 available check */
 #include <sys/types.h>
-#include <sys/socket.h>]],
-[[int domain = AF_INET6;]])],[
+#include <sys/socket.h>
+int domain = AF_INET6;
+]])],[
   ipv6=yes
 ],[
   ipv6=no
@@ -4428,10 +4429,11 @@ AC_MSG_RESULT([$ipv6])
 if test "$ipv6" = "yes"; then
 	AC_MSG_CHECKING(if RFC2553 API is available)
 	AC_COMPILE_IFELSE([
-	  AC_LANG_PROGRAM([[#include <sys/types.h>
-#include <netinet/in.h>]],
-			  [[struct sockaddr_in6 x;
-			    x.sin6_scope_id;]])
+	  AC_LANG_SOURCE([[#include <sys/types.h>
+#include <netinet/in.h>
+struct sockaddr_in6 x;
+x.sin6_scope_id;
+	]])
 	],[
 	  AC_MSG_RESULT(yes)
 	  ipv6=yes
@@ -5152,7 +5154,7 @@ AC_CHECK_FUNCS(nanosleep, [], [
 ])
 
 AC_CACHE_CHECK([for major, minor, and makedev], [ac_cv_device_macros], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
@@ -5160,8 +5162,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #else
 #include <sys/types.h>
 #endif
-]], [[
-  makedev(major(0),minor(0));
+makedev(major(0),minor(0));
 ]])],[ac_cv_device_macros=yes], [ac_cv_device_macros=no])
 ])
 AS_VAR_IF([ac_cv_device_macros], [yes], [
@@ -5177,12 +5178,12 @@ AC_DEFINE(SYS_SELECT_WITH_SYS_TIME, 1,
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h.
 AC_CACHE_CHECK([for getaddrinfo], [ac_cv_func_getaddrinfo], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <stdio.h>
-]], [[getaddrinfo(NULL, NULL, NULL, NULL);]])],
+getaddrinfo(NULL, NULL, NULL, NULL);]])],
 [ac_cv_func_getaddrinfo=yes],
 [ac_cv_func_getaddrinfo=no])
 ])
@@ -5413,9 +5414,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
   AC_MSG_CHECKING([gethostbyname_r with 6 args])
   OLD_CFLAGS=$CFLAGS
   CFLAGS="$CFLAGS $MY_CPPFLAGS $MY_THREAD_CPPFLAGS $MY_CFLAGS"
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#   include <netdb.h>
-  ]], [[
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+    #include <netdb.h>
     char *name;
     struct hostent *he, *res;
     char buffer[2048];
@@ -5431,9 +5431,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
   ],[
     AC_MSG_RESULT(no)
     AC_MSG_CHECKING([gethostbyname_r with 5 args])
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#       include <netdb.h>
-      ]], [[
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	#include <netdb.h>
         char *name;
         struct hostent *he;
         char buffer[2048];
@@ -5450,9 +5449,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
       ], [
         AC_MSG_RESULT(no)
         AC_MSG_CHECKING([gethostbyname_r with 3 args])
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#           include <netdb.h>
-          ]], [[
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+            #include <netdb.h>
             char *name;
             struct hostent *he;
             struct hostent_data data;
@@ -5937,7 +5935,7 @@ fi
 
 # check for getc_unlocked and related locking functions
 AC_CACHE_CHECK([for getc_unlocked() and friends], [ac_cv_have_getc_unlocked], [
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[
+AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 	FILE *f = fopen("/dev/null", "r");
 	flockfile(f);
 	getc_unlocked(f);

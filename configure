@@ -9848,15 +9848,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #else
 #include <sys/types.h>
 #endif
-
-int
-main ()
-{
-
-  makedev(0, 0)
-  ;
-  return 0;
-}
+makedev(0, 0)
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
@@ -9894,15 +9886,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #elif defined(HAVE_SYS_ENDIAN_H)
 #include <sys/endian.h>
 #endif
-
-int
-main ()
-{
-
-   le64toh(1)
-  ;
-  return 0;
-}
+le64toh(1)
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
@@ -10729,13 +10713,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
   #include <pthread.h>
-int
-main ()
-{
-pthread_t x; x = *(pthread_t*)0;
-  ;
-  return 0;
-}
+                    pthread_t x; x = *(pthread_t*)0;
 
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
@@ -10837,13 +10815,8 @@ if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <pthread.h>
-int
-main ()
-{
-pthread_key_t k; k * 1;
-  ;
-  return 0;
-}
+                       pthread_key_t k; k * 1;
+
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv_pthread_key_t_is_arithmetic_type=yes
@@ -12179,13 +12152,7 @@ $as_echo_n "checking for genuine AIX C++ extensions support... " >&6; }
 /* end confdefs.h.  */
 
 		  #include <load.h>
-int
-main ()
-{
-loadAndInit("", 0, "")
-  ;
-  return 0;
-}
+				    loadAndInit("", 0, "")
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
@@ -13527,13 +13494,6 @@ if test "x$ac_cv_header_sqlite3_h" = xyes; then :
         #  error "SQLite 3.7.15 or higher required"
         #endif
 
-int
-main ()
-{
-
-  ;
-  return 0;
-}
 
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
@@ -14480,17 +14440,9 @@ save_LIBS=$LIBS
           ((TK_MAJOR_VERSION == 8) && (TK_MINOR_VERSION == 5) && (TK_RELEASE_SERIAL < 12))
       #  error "Tk older than 8.5.12 not supported"
       #endif
-
-int
-main ()
-{
-
       void *x1 = Tcl_Init;
       void *x2 = Tk_Init;
 
-  ;
-  return 0;
-}
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
@@ -14850,14 +14802,7 @@ save_LIBS=$LIBS
         #if DB_VERSION_MAJOR < 5
           #error "dh.h: DB_VERSION_MAJOR < 5 is not supported."
         #endif
-
-int
-main ()
-{
-DBM *dbm = dbm_open(NULL, 0, 0)
-  ;
-  return 0;
-}
+        DBM *dbm = dbm_open(NULL, 0, 0)
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
@@ -15046,14 +14991,7 @@ $as_echo_n "checking for pthread_create in -lpthread... " >&6; }
 #include <pthread.h>
 
 void * start_routine (void *arg) { exit (0); }
-int
-main ()
-{
-
 pthread_create (NULL, NULL, start_routine, NULL)
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
@@ -15444,13 +15382,8 @@ else
  /* AF_INET6 available check */
 #include <sys/types.h>
 #include <sys/socket.h>
-int
-main ()
-{
 int domain = AF_INET6;
-  ;
-  return 0;
-}
+
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
@@ -15482,14 +15415,9 @@ $as_echo_n "checking if RFC2553 API is available... " >&6; }
 
 	  #include <sys/types.h>
 #include <netinet/in.h>
-int
-main ()
-{
 struct sockaddr_in6 x;
-			    x.sin6_scope_id;
-  ;
-  return 0;
-}
+x.sin6_scope_id;
+
 
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
@@ -19617,16 +19545,8 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #else
 #include <sys/types.h>
 #endif
+makedev(major(0),minor(0));
 
-int
-main ()
-{
-
-  makedev(major(0),minor(0));
-
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_device_macros=yes
@@ -19666,14 +19586,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #include <sys/socket.h>
 #include <netdb.h>
 #include <stdio.h>
-
-int
-main ()
-{
 getaddrinfo(NULL, NULL, NULL, NULL);
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_func_getaddrinfo=yes
@@ -20427,12 +20340,7 @@ $as_echo_n "checking gethostbyname_r with 6 args... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#   include <netdb.h>
-
-int
-main ()
-{
-
+    #include <netdb.h>
     char *name;
     struct hostent *he, *res;
     char buffer[2048];
@@ -20441,9 +20349,6 @@ main ()
 
     (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop)
 
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
@@ -20464,12 +20369,7 @@ $as_echo_n "checking gethostbyname_r with 5 args... " >&6; }
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#       include <netdb.h>
-
-int
-main ()
-{
-
+	#include <netdb.h>
         char *name;
         struct hostent *he;
         char buffer[2048];
@@ -20478,9 +20378,6 @@ main ()
 
         (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop)
 
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
@@ -20501,21 +20398,13 @@ $as_echo_n "checking gethostbyname_r with 3 args... " >&6; }
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#           include <netdb.h>
-
-int
-main ()
-{
-
+            #include <netdb.h>
             char *name;
             struct hostent *he;
             struct hostent_data data;
 
             (void) gethostbyname_r(name, he, &data);
 
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
@@ -21723,18 +21612,11 @@ else
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <stdio.h>
-int
-main ()
-{
-
 	FILE *f = fopen("/dev/null", "r");
 	flockfile(f);
 	getc_unlocked(f);
 	funlockfile(f);
 
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_have_getc_unlocked=yes
