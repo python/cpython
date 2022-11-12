@@ -4,6 +4,8 @@ filename	funcname	name	reason
 ##################################
 # mutable but known to be safe
 
+Python/import.c	-	inittab_copy	-
+Python/import.c	-	PyImport_Inittab	-
 Python/pylifecycle.c	-	_PyRuntime	-
 
 # All uses of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.

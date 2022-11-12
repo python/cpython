@@ -317,7 +317,6 @@ Python/hamt.c	-	_empty_hamt	-
 
 # state
 Objects/typeobject.c	resolve_slotdups	pname	-
-Python/import.c	-	extensions	-
 
 
 ##################################
@@ -393,8 +392,6 @@ Python/frozen.c	-	_PyImport_FrozenAliases	-
 Python/frozen.c	-	_PyImport_FrozenBootstrap	-
 Python/frozen.c	-	_PyImport_FrozenStdlib	-
 Python/frozen.c	-	_PyImport_FrozenTest	-
-Python/import.c	-	inittab_copy	-
-Python/import.c	-	PyImport_Inittab	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
@@ -416,21 +413,8 @@ Python/pathconfig.c	-	_Py_path_config	-
 #-----------------------
 # state
 
-# allocator
-Objects/obmalloc.c	-	_PyObject_Arena	-
+# object allocator
 Objects/obmalloc.c	-	_Py_tracemalloc_config	-
-Objects/obmalloc.c	-	arena_map_bot_count	-
-Objects/obmalloc.c	-	arena_map_mid_count	-
-Objects/obmalloc.c	-	arena_map_root	-
-Objects/obmalloc.c	-	arenas	-
-Objects/obmalloc.c	-	maxarenas	-
-Objects/obmalloc.c	-	narenas_currently_allocated	-
-Objects/obmalloc.c	-	narenas_highwater	-
-Objects/obmalloc.c	-	nfp2lasta	-
-Objects/obmalloc.c	-	ntimes_arena_allocated	-
-Objects/obmalloc.c	-	raw_allocated_blocks	-
-Objects/obmalloc.c	-	unused_arena_objects	-
-Objects/obmalloc.c	-	usable_arenas	-
 Objects/obmalloc.c	new_arena	debug_stats	-
 
 # pre-allocated memory
@@ -449,7 +433,6 @@ Python/getargs.c	-	static_arg_parsers	-
 Objects/dictobject.c	-	_pydict_global_version	-
 Objects/dictobject.c	-	next_dict_keys_version	-
 Objects/funcobject.c	-	next_func_version	-
-Objects/moduleobject.c	-	max_module_number	-
 Objects/object.c	-	_Py_RefTotal	-
 Python/perf_trampoline.c	-	perf_status	-
 Python/perf_trampoline.c	-	extra_code_index	-
