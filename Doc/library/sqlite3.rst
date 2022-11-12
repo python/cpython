@@ -2254,11 +2254,11 @@ the transaction is committed.
 If this commit fails,
 or if the body of the ``with`` statement raises an uncaught exception,
 the transaction is rolled back.
-If :attr:`~Connection.autocommit` is ``True``,
+If :attr:`~Connection.autocommit` is ``False``,
 a new transaction is implicitly opened after committing or rolling back.
 
 If there is no open transaction upon leaving the body of the ``with`` statement,
-or if :attr:`~Connection.autocommit` is ``False``,
+or if :attr:`~Connection.autocommit` is ``True``,
 the context manager does nothing.
 
 .. note::
