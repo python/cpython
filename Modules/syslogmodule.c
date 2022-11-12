@@ -340,7 +340,6 @@ syslog_exec(PyObject *module)
             return -1;                                                \
         }                                                             \
     } while (0)
-
     /* Priorities */
     ADD_INT_MACRO(module, LOG_EMERG);
     ADD_INT_MACRO(module, LOG_ALERT);
