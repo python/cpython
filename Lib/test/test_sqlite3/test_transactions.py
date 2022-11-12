@@ -407,8 +407,7 @@ class AutocommitAttribute(unittest.TestCase):
         for mode in "a", 12, (), None:
             with self.subTest(mode=mode):
                 with self.assertRaisesRegex(ValueError, msg):
-                    with memory_database(autocommit=mode) as cx:
-                        self.assertEqual(cx.autocommit, mode)
+                    sqlite.connect(":memory:", autocommit=mode)
 
     def test_autocommit_disabled(self):
         expected = [
