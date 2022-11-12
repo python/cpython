@@ -153,9 +153,7 @@ If the first character is not one of these, ``'@'`` is assumed.
 
 Native byte order is big-endian or little-endian, depending on the
 host system. For example, Intel x86, AMD64 (x86-64), and Apple M1 are
-little-endian; IBM z and most legacy architectures are big-endian; and
-ARM, RISC-V and IBM Power feature switchable endianness (bi-endian,
-though the former two are nearly always little-endian in practice).
+little-endian; IBM z and most legacy architectures are big-endian.
 Use :func:`sys.byteorder` to check the endianness of your system.
 
 Native size and alignment are determined using the C compiler's
@@ -219,9 +217,9 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``I``  | :c:expr:`unsigned int`   | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``l``  | :c:expr:`long`           | integer            | varies         | \(2), \(10)|
+| ``l``  | :c:expr:`long`           | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``L``  | :c:expr:`unsigned long`  | integer            | varies         | \(2), \(10)|
+| ``L``  | :c:expr:`unsigned long`  | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``q``  | :c:expr:`long long`      | integer            | 8              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -323,13 +321,6 @@ Notes:
    of bytes.  As a special case, ``'0s'`` means a single, empty string (while
    ``'0c'`` means 0 characters).
 
-(10)
-   Note that the size of the ``l`` and ``L`` format characters is
-   dependent on the machine word size. On 32-bit machines, they are
-   typically four bytes, while on 64-bit machines they are eight
-   bytes. When encoding or decoding different sized integer values it
-   is safer to use ``i``, ``I``, ``q``, or ``Q``.
-
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
 
@@ -405,16 +396,6 @@ longs are aligned on 4-byte boundaries::
     >>> pack('@llh0l', 1, 2, 3)
     b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x03\x00\x00'
 
-On 64-bit architectures, the ``l`` format is eight bytes, so alignment
-is likely to be on 8-byte boundaries::
-
-    >>> pack('@llh0l', 1, 2, 3)
-    b'\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00'
-
-To force one alignment or the other,
-This only works when native size and alignment are in effect; standard size and
-alignment does not enforce any alignment.
-
 
 .. seealso::
 
@@ -478,10 +459,10 @@ to be explicit and use the ``@`` format character.
 Machine-Independent Formats
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When exchanging data with other applications, byte ordering and
-alignment are specified precisely, and there is a good chance they
-won't correspond exactly to that of the local machine architecture.
-For example, network byte order is big-endian, while most commodity
+When exchanging data beyond your process such as storage or networks,
+byte ordering, size, and alignment should be precisely specified, as
+they may not correspond exactly to that of the local machine architecture.
+For example, network byte order is big-endian, while many popular
 CPUs are little-endian.  In those situations, the user must define
 this explicitly.  The first character should typically be ``<`` or
 ``>`` (or sometimes ``!`` to be explicit that the format will use
