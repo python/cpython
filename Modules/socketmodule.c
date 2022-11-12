@@ -247,6 +247,10 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #include <net/if.h>
 #endif
 
+#ifdef HAVE_NET_ETHERNET_H
+#include <net/ethernet.h>
+#endif
+
 /* Generic socket object definitions and includes */
 #define PySocket_BUILDING_SOCKET
 #include "socketmodule.h"
@@ -7709,6 +7713,25 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, ALG_OP_ENCRYPT);
     PyModule_AddIntMacro(m, ALG_OP_SIGN);
     PyModule_AddIntMacro(m, ALG_OP_VERIFY);
+#endif
+
+/* IEEE 802.3 protocol numbers required for a standard TCP/IP network stack */
+#ifdef ETHERTYPE_ARP
+    PyModule_AddIntMacro(m, ETHERTYPE_ARP);
+#endif
+#ifdef ETHERTYPE_IP
+    PyModule_AddIntMacro(m, ETHERTYPE_IP);
+#endif
+#ifdef ETHERTYPE_IPV6
+    PyModule_AddIntMacro(m, ETHERTYPE_IPV6);
+#endif
+#ifdef ETHERTYPE_VLAN
+    PyModule_AddIntMacro(m, ETHERTYPE_VLAN);
+#endif
+
+/* Linux pseudo-protocol for sniffing every packet */
+#ifdef ETH_P_ALL
+    PyModule_AddIntMacro(m, ETH_P_ALL);
 #endif
 
     /* Socket types */

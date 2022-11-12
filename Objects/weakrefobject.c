@@ -311,8 +311,7 @@ weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         if (callback == NULL && type == &_PyWeakref_RefType) {
             if (ref != NULL) {
                 /* We can re-use an existing reference. */
-                Py_INCREF(ref);
-                return (PyObject *)ref;
+                return Py_NewRef(ref);
             }
         }
         /* We have to create a new reference. */
@@ -826,8 +825,7 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
                        to avoid violating the invariants of the list
                        of weakrefs for ob. */
                     Py_DECREF(result);
-                    Py_INCREF(ref);
-                    result = ref;
+                    result = (PyWeakReference*)Py_NewRef(ref);
                 }
             }
             else {
@@ -891,8 +889,7 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
                        to avoid violating the invariants of the list
                        of weakrefs for ob. */
                     Py_DECREF(result);
-                    result = proxy;
-                    Py_INCREF(result);
+                    result = (PyWeakReference*)Py_NewRef(proxy);
                     goto skip_insert;
                 }
                 prev = ref;
@@ -993,8 +990,7 @@ PyObject_ClearWeakRefs(PyObject *object)
                 PyWeakReference *next = current->wr_next;
 
                 if (Py_REFCNT((PyObject *)current) > 0) {
-                    Py_INCREF(current);
-                    PyTuple_SET_ITEM(tuple, i * 2, (PyObject *) current);
+                    PyTuple_SET_ITEM(tuple, i * 2, Py_NewRef(current));
                     PyTuple_SET_ITEM(tuple, i * 2 + 1, current->wr_callback);
                 }
                 else {
