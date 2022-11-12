@@ -7,6 +7,8 @@ extern "C" {
 
 
 struct _import_runtime_state {
+    /* The builtin modules (defined in config.c). */
+    struct _inittab *inittab;
     /* The most recent value assigned to a PyModuleDef.m_base.m_index.
        This is incremented each time PyModuleDef_Init() is called,
        which is just about every time an extension module is imported.
