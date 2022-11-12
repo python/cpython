@@ -2252,8 +2252,9 @@ list_builtin_module_names(void)
     if (list == NULL) {
         return NULL;
     }
-    for (Py_ssize_t i = 0; PyImport_Inittab[i].name != NULL; i++) {
-        PyObject *name = PyUnicode_FromString(PyImport_Inittab[i].name);
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
+        PyObject *name = PyUnicode_FromString(inittab[i].name);
         if (name == NULL) {
             goto error;
         }
