@@ -4,6 +4,8 @@ filename	funcname	name	reason
 ##################################
 # mutable but known to be safe
 
+Python/import.c	-	inittab_copy	-
+Python/import.c	-	PyImport_Inittab	-
 Python/pylifecycle.c	-	_PyRuntime	-
 
 # All uses of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.
@@ -261,6 +263,10 @@ Modules/_testcapimodule.c	test_capsule	buffer	-
 Modules/_testcapimodule.c	test_empty_argparse	kwlist	-
 Modules/_testcapimodule.c	test_structmembers_new	keywords	-
 Modules/_testcapimodule.c	getargs_s_hash_int	keywords	-
+Modules/_testcapimodule.c	-	g_dict_watch_events	-
+Modules/_testcapimodule.c	-	g_dict_watchers_installed	-
+Modules/_testcapimodule.c	-	g_type_modified_events	-
+Modules/_testcapimodule.c	-	g_type_watchers_installed	-
 Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-
@@ -467,6 +473,7 @@ Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	usedpools	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Objects/typeobject.c	-	name_op	-
+Objects/typeobject.c	-	slotdefs	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
 Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-
@@ -501,6 +508,5 @@ Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compare_masks	-
-Python/specialize.c	-	_PyOpcode_Adaptive	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	whatstrings	-

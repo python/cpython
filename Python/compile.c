@@ -530,8 +530,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
         PyUnicode_READ_CHAR(ident, 0) != '_' ||
         PyUnicode_READ_CHAR(ident, 1) != '_') {
-        Py_INCREF(ident);
-        return ident;
+        return Py_NewRef(ident);
     }
     nlen = PyUnicode_GET_LENGTH(ident);
     plen = PyUnicode_GET_LENGTH(privateobj);
@@ -547,16 +546,14 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     if ((PyUnicode_READ_CHAR(ident, nlen-1) == '_' &&
          PyUnicode_READ_CHAR(ident, nlen-2) == '_') ||
         PyUnicode_FindChar(ident, '.', 0, nlen, 1) != -1) {
-        Py_INCREF(ident);
-        return ident; /* Don't mangle __whatever__ */
+        return Py_NewRef(ident); /* Don't mangle __whatever__ */
     }
     /* Strip leading underscores from class name */
     ipriv = 0;
     while (PyUnicode_READ_CHAR(privateobj, ipriv) == '_')
         ipriv++;
     if (ipriv == plen) {
-        Py_INCREF(ident);
-        return ident; /* Don't mangle if class is just underscores */
+        return Py_NewRef(ident); /* Don't mangle if class is just underscores */
     }
     plen -= ipriv;
 
@@ -616,8 +613,7 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     int merged;
     if (!compiler_init(&c))
         return NULL;
-    Py_INCREF(filename);
-    c.c_filename = filename;
+    c.c_filename = Py_NewRef(filename);
     c.c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c.c_future)) {
         goto finally;
@@ -859,8 +855,7 @@ compiler_set_qualname(struct compiler *c)
                     return 0;
             }
             else {
-                Py_INCREF(parent->u_qualname);
-                base = parent->u_qualname;
+                base = Py_NewRef(parent->u_qualname);
             }
         }
     }
@@ -876,8 +871,7 @@ compiler_set_qualname(struct compiler *c)
             return 0;
     }
     else {
-        Py_INCREF(u->u_name);
-        name = u->u_name;
+        name = Py_NewRef(u->u_name);
     }
     u->u_qualname = name;
 
@@ -1262,6 +1256,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case BINARY_OP:
             return -1;
+        case INTERPRETER_EXIT:
+            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1381,8 +1377,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
     // None and Ellipsis are singleton, and key is the singleton.
     // No need to merge object and key.
     if (o == Py_None || o == Py_Ellipsis) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
 
     PyObject *key = _PyCode_ConstantKey(o);
@@ -1421,8 +1416,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
                 v = u;
             }
             if (v != item) {
-                Py_INCREF(v);
-                PyTuple_SET_ITEM(o, i, v);
+                PyTuple_SET_ITEM(o, i, Py_NewRef(v));
                 Py_DECREF(item);
             }
 
@@ -1708,8 +1702,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         compiler_unit_free(u);
         return 0;
     }
-    Py_INCREF(name);
-    u->u_name = name;
+    u->u_name = Py_NewRef(name);
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
     if (!u->u_varnames || !u->u_cellvars) {
@@ -1760,8 +1753,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
             return 0;
         }
         Py_DECREF(capsule);
-        u->u_private = c->u->u_private;
-        Py_XINCREF(u->u_private);
+        u->u_private = Py_XNewRef(c->u->u_private);
     }
     c->u = u;
 
@@ -2671,8 +2663,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
     co = assemble(c, 1);
-    qualname = c->u->u_qualname;
-    Py_INCREF(qualname);
+    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
         Py_XDECREF(qualname);
@@ -3053,8 +3044,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = assemble(c, 1);
     }
-    qualname = c->u->u_qualname;
-    Py_INCREF(qualname);
+    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
         Py_DECREF(qualname);
@@ -3925,8 +3915,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
     /* build up the names */
     for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
-        Py_INCREF(alias->name);
-        PyTuple_SET_ITEM(names, i, alias->name);
+        PyTuple_SET_ITEM(names, i, Py_NewRef(alias->name));
     }
 
     if (location_is_after(LOC(s), c->c_future.ff_location) &&
@@ -4348,8 +4337,7 @@ starunpack_helper(struct compiler *c, location loc,
         PyObject *val;
         for (Py_ssize_t i = 0; i < n; i++) {
             val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
-            Py_INCREF(val);
-            PyTuple_SET_ITEM(folded, i, val);
+            PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
         }
         if (tuple && !pushed) {
             ADDOP_LOAD_CONST_NEW(c, loc, folded);
@@ -4530,8 +4518,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
         }
         for (i = begin; i < end; i++) {
             key = ((expr_ty)asdl_seq_GET(e->v.Dict.keys, i))->v.Constant.value;
-            Py_INCREF(key);
-            PyTuple_SET_ITEM(keys, i - begin, key);
+            PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
         }
         ADDOP_LOAD_CONST_NEW(c, loc, keys);
         ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
@@ -5014,8 +5001,7 @@ compiler_subkwargs(struct compiler *c, location loc,
         }
         for (i = begin; i < end; i++) {
             key = ((keyword_ty) asdl_seq_GET(keywords, i))->arg;
-            Py_INCREF(key);
-            PyTuple_SET_ITEM(keys, i - begin, key);
+            PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
         }
         ADDOP_LOAD_CONST_NEW(c, loc, keys);
         ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
@@ -5053,8 +5039,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
     }
     for (int i = 0; i < nkwelts; i++) {
         keyword_ty kw = asdl_seq_GET(keywords, i);
-        Py_INCREF(kw->arg);
-        PyTuple_SET_ITEM(names, i, kw->arg);
+        PyTuple_SET_ITEM(names, i, Py_NewRef(kw->arg));
     }
     Py_ssize_t arg = compiler_add_const(c, names);
     if (arg < 0) {
@@ -5490,8 +5475,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     co = assemble(c, 1);
-    qualname = c->u->u_qualname;
-    Py_INCREF(qualname);
+    qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
         c->u->u_ste->ste_coroutine = 1;
@@ -6170,8 +6154,7 @@ compiler_error(struct compiler *c, location loc,
     }
     PyObject *loc_obj = PyErr_ProgramTextObject(c->c_filename, loc.lineno);
     if (loc_obj == NULL) {
-        Py_INCREF(Py_None);
-        loc_obj = Py_None;
+        loc_obj = Py_NewRef(Py_None);
     }
     PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
                                    loc.lineno, loc.col_offset + 1, loc_obj,
@@ -6605,8 +6588,7 @@ compiler_pattern_class(struct compiler *c, location *ploc,
     Py_ssize_t i;
     for (i = 0; i < nattrs; i++) {
         PyObject *name = asdl_seq_GET(kwd_attrs, i);
-        Py_INCREF(name);
-        PyTuple_SET_ITEM(attr_names, i, name);
+        PyTuple_SET_ITEM(attr_names, i, Py_NewRef(name));
     }
     ADDOP_LOAD_CONST_NEW(c, *ploc, attr_names);
     ADDOP_I(c, *ploc, MATCH_CLASS, nargs);
@@ -6815,8 +6797,7 @@ compiler_pattern_or(struct compiler *c, location *ploc,
             // for the others (they can't bind a different set of names, and
             // might need to be reordered):
             assert(control == NULL);
-            control = pc->stores;
-            Py_INCREF(control);
+            control = Py_NewRef(pc->stores);
         }
         else if (nstores != PyList_GET_SIZE(control)) {
             goto diff;
@@ -8062,7 +8043,6 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
         assert(instr->i_opcode != EXTENDED_ARG);
-        assert(instr->i_opcode != EXTENDED_ARG_QUICK);
         assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
         if (instr->i_except != NULL) {
             maybe_push(instr->i_except, unsafe_mask, sp);
@@ -8119,7 +8099,6 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             assert(instr->i_opcode != EXTENDED_ARG);
-            assert(instr->i_opcode != EXTENDED_ARG_QUICK);
             assert(!IS_SUPERINSTRUCTION_OPCODE(instr->i_opcode));
             int arg = instr->i_oparg;
             if (arg < 64) {
@@ -8210,10 +8189,9 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         i = PyLong_AS_LONG(v);
-        Py_INCREF(k);
         assert((i - offset) < size);
         assert((i - offset) >= 0);
-        PyTuple_SET_ITEM(tuple, i - offset, k);
+        PyTuple_SET_ITEM(tuple, i - offset, Py_NewRef(k));
     }
     return tuple;
 }
@@ -8235,10 +8213,9 @@ consts_dict_keys_inorder(PyObject *dict)
         if (PyTuple_CheckExact(k)) {
             k = PyTuple_GET_ITEM(k, 1);
         }
-        Py_INCREF(k);
         assert(i < size);
         assert(i >= 0);
-        PyList_SET_ITEM(consts, i, k);
+        PyList_SET_ITEM(consts, i, Py_NewRef(k));
     }
     return consts;
 }
@@ -8495,7 +8472,7 @@ static int
 optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache);
 
 static int
-trim_unused_consts(basicblock *entryblock, PyObject *consts);
+remove_unused_consts(basicblock *entryblock, PyObject *consts);
 
 /* Duplicates exit BBs, so that line numbers can be propagated to them */
 static int
@@ -8667,7 +8644,6 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
             struct instr *inst = &b->b_instr[i];
             // This is called before extended args are generated.
             assert(inst->i_opcode != EXTENDED_ARG);
-            assert(inst->i_opcode != EXTENDED_ARG_QUICK);
             int oldoffset = inst->i_oparg;
             switch(inst->i_opcode) {
                 case MAKE_CELL:
@@ -8837,6 +8813,9 @@ assemble(struct compiler *c, int addNone)
     if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
         goto error;
     }
+    if (remove_unused_consts(g->g_entryblock, consts)) {
+        goto error;
+    }
 
     /** line numbers (TODO: move this before optimization stage) */
     if (duplicate_exits_without_lineno(g) < 0) {
@@ -8867,10 +8846,6 @@ assemble(struct compiler *c, int addNone)
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
-
-    if (trim_unused_consts(g->g_entryblock, consts)) {
-        goto error;
-    }
 
     /* Create assembler */
     if (!assemble_init(&a, c->u->u_firstlineno))
@@ -8939,8 +8914,7 @@ get_const_value(int opcode, int oparg, PyObject *co_consts)
                         "Internal error: failed to get value of a constant");
         return NULL;
     }
-    Py_INCREF(constant);
-    return constant;
+    return Py_NewRef(constant);
 }
 
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
@@ -9731,32 +9705,106 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     return 0;
 }
 
-// Remove trailing unused constants.
+
 static int
-trim_unused_consts(basicblock *entryblock, PyObject *consts)
+remove_unused_consts(basicblock *entryblock, PyObject *consts)
 {
     assert(PyList_CheckExact(consts));
+    Py_ssize_t nconsts = PyList_GET_SIZE(consts);
+    if (nconsts == 0) {
+        return 0;  /* nothing to do */
+    }
 
+    Py_ssize_t *index_map = NULL;
+    Py_ssize_t *reverse_index_map = NULL;
+    int err = 1;
+
+    index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
+    if (index_map == NULL) {
+        goto end;
+    }
+    for (Py_ssize_t i = 1; i < nconsts; i++) {
+        index_map[i] = -1;
+    }
     // The first constant may be docstring; keep it always.
-    int max_const_index = 0;
+    index_map[0] = 0;
+
+    /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            if ((b->b_instr[i].i_opcode == LOAD_CONST ||
-                b->b_instr[i].i_opcode == KW_NAMES) &&
-                    b->b_instr[i].i_oparg > max_const_index) {
-                max_const_index = b->b_instr[i].i_oparg;
+            if (b->b_instr[i].i_opcode == LOAD_CONST ||
+                b->b_instr[i].i_opcode == KW_NAMES) {
+
+                int index = b->b_instr[i].i_oparg;
+                index_map[index] = index;
             }
         }
     }
-    if (max_const_index+1 < PyList_GET_SIZE(consts)) {
-        //fprintf(stderr, "removing trailing consts: max=%d, size=%d\n",
-        //        max_const_index, (int)PyList_GET_SIZE(consts));
-        if (PyList_SetSlice(consts, max_const_index+1,
-                            PyList_GET_SIZE(consts), NULL) < 0) {
-            return 1;
+    /* now index_map[i] == i if consts[i] is used, -1 otherwise */
+
+    /* condense consts */
+    Py_ssize_t n_used_consts = 0;
+    for (int i = 0; i < nconsts; i++) {
+        if (index_map[i] != -1) {
+            assert(index_map[i] == i);
+            index_map[n_used_consts++] = index_map[i];
         }
     }
-    return 0;
+    if (n_used_consts == nconsts) {
+        /* nothing to do */
+        err = 0;
+        goto end;
+    }
+
+    /* move all used consts to the beginning of the consts list */
+    assert(n_used_consts < nconsts);
+    for (Py_ssize_t i = 0; i < n_used_consts; i++) {
+        Py_ssize_t old_index = index_map[i];
+        assert(i <= old_index && old_index < nconsts);
+        if (i != old_index) {
+            PyObject *value = PyList_GET_ITEM(consts, index_map[i]);
+            assert(value != NULL);
+            PyList_SetItem(consts, i, Py_NewRef(value));
+        }
+    }
+
+    /* truncate the consts list at its new size */
+    if (PyList_SetSlice(consts, n_used_consts, nconsts, NULL) < 0) {
+        goto end;
+    }
+
+    /* adjust const indices in the bytecode */
+    reverse_index_map = PyMem_Malloc(nconsts * sizeof(Py_ssize_t));
+    if (reverse_index_map == NULL) {
+        goto end;
+    }
+    for (Py_ssize_t i = 0; i < nconsts; i++) {
+        reverse_index_map[i] = -1;
+    }
+    for (Py_ssize_t i = 0; i < n_used_consts; i++) {
+        assert(index_map[i] != -1);
+        assert(reverse_index_map[index_map[i]] == -1);
+        reverse_index_map[index_map[i]] = i;
+    }
+
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            if (b->b_instr[i].i_opcode == LOAD_CONST ||
+                b->b_instr[i].i_opcode == KW_NAMES) {
+
+                int index = b->b_instr[i].i_oparg;
+                assert(reverse_index_map[index] >= 0);
+                assert(reverse_index_map[index] < n_used_consts);
+                b->b_instr[i].i_oparg = (int)reverse_index_map[index];
+            }
+        }
+    }
+
+    err = 0;
+end:
+    PyMem_Free(index_map);
+    PyMem_Free(reverse_index_map);
+    return err;
 }
 
 static inline int
@@ -9981,6 +10029,5 @@ PyObject *
 PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
                 PyObject *Py_UNUSED(names), PyObject *Py_UNUSED(lnotab_obj))
 {
-    Py_INCREF(code);
-    return code;
+    return Py_NewRef(code);
 }

@@ -670,7 +670,7 @@ if 1:
         self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
 
     @support.cpython_only
-    def test_strip_unused_consts(self):
+    def test_remove_unused_consts(self):
         def f():
             "docstring"
             if True:
@@ -679,7 +679,41 @@ if 1:
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         ("docstring", True, "used"))
+                         ("docstring", "used"))
+
+    @support.cpython_only
+    def test_remove_unused_consts_no_docstring(self):
+        # the first item (None for no docstring in this case) is
+        # always retained.
+        def f():
+            if True:
+                return "used"
+            else:
+                return "unused"
+
+        self.assertEqual(f.__code__.co_consts,
+                         (None, "used"))
+
+    @support.cpython_only
+    def test_remove_unused_consts_extended_args(self):
+        N = 1000
+        code = ["def f():\n"]
+        code.append("\ts = ''\n")
+        code.append("\tfor i in range(1):\n")
+        for i in range(N):
+            code.append(f"\t\tif True: s += 't{i}'\n")
+            code.append(f"\t\tif False: s += 'f{i}'\n")
+        code.append("\treturn s\n")
+
+        code = "".join(code)
+        g = {}
+        eval(compile(code, "file.py", "exec"), g)
+        exec(code, g)
+        f = g['f']
+        expected = tuple([None, '', 1] + [f't{i}' for i in range(N)])
+        self.assertEqual(f.__code__.co_consts, expected)
+        expected = "".join(expected[3:])
+        self.assertEqual(expected, f())
 
     # Stripping unused constants is not a strict requirement for the
     # Python semantics, it's a more an implementation detail.
@@ -1642,6 +1676,13 @@ class TestExpressionStackSize(unittest.TestCase):
     def test_stack_3050(self):
         M = 3050
         code = "x," * M + "=t"
+        # This raised on 3.10.0 to 3.10.5
+        compile(code, "<foo>", "single")
+
+    def test_stack_3050_2(self):
+        M = 3050
+        args = ", ".join(f"arg{i}:type{i}" for i in range(M))
+        code = f"def f({args}):\n  pass"
         # This raised on 3.10.0 to 3.10.5
         compile(code, "<foo>", "single")
 

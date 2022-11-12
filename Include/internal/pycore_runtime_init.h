@@ -9,13 +9,15 @@ extern "C" {
 #endif
 
 #include "pycore_object.h"
+#include "pycore_pymem_init.h"
+#include "pycore_obmalloc_init.h"
 
 
 /* The static initializers defined here should only be used
    in the runtime init code (in pystate.c and pylifecycle.c). */
 
 
-#define _PyRuntimeState_INIT \
+#define _PyRuntimeState_INIT(runtime) \
     { \
         .gilstate = { \
             .check_enabled = 1, \
@@ -23,12 +25,33 @@ extern "C" {
                in accordance with the specification. */ \
             .autoTSSkey = Py_tss_NEEDS_INIT, \
         }, \
+        .allocators = { \
+            _pymem_allocators_standard_INIT(runtime), \
+            _pymem_allocators_debug_INIT, \
+            _pymem_allocators_obj_arena_INIT, \
+        }, \
+        .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
-        .global_objects = _Py_global_objects_INIT, \
+        .global_objects = { \
+            .singletons = { \
+                .small_ints = _Py_small_ints_INIT, \
+                .bytes_empty = _PyBytes_SIMPLE_INIT(0, 0), \
+                .bytes_characters = _Py_bytes_characters_INIT, \
+                .strings = { \
+                    .literals = _Py_str_literals_INIT, \
+                    .identifiers = _Py_str_identifiers_INIT, \
+                    .ascii = _Py_str_ascii_INIT, \
+                    .latin1 = _Py_str_latin1_INIT, \
+                }, \
+                .tuple_empty = { \
+                    .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+                }, \
+            }, \
+        }, \
         ._main_interpreter = _PyInterpreterState_INIT, \
     }
 
@@ -60,6 +83,11 @@ extern "C" {
                 { .threshold = 700, }, \
                 { .threshold = 10, }, \
                 { .threshold = 10, }, \
+            }, \
+        }, \
+        .static_objects = { \
+            .singletons = { \
+                ._not_used = 1, \
             }, \
         }, \
         ._initial_thread = _PyThreadState_INIT, \
@@ -110,9 +138,9 @@ extern "C" {
         ._data = (LITERAL) \
     }
 #define INIT_STR(NAME, LITERAL) \
-    ._ ## NAME = _PyASCIIObject_INIT(LITERAL)
+    ._py_ ## NAME = _PyASCIIObject_INIT(LITERAL)
 #define INIT_ID(NAME) \
-    ._ ## NAME = _PyASCIIObject_INIT(#NAME)
+    ._py_ ## NAME = _PyASCIIObject_INIT(#NAME)
 #define _PyUnicode_LATIN1_INIT(LITERAL, UTF8) \
     { \
         ._latin1 = { \

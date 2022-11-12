@@ -1,5 +1,7 @@
 #include "Python.h"
 #include "pycore_frame.h"
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_global_objects.h"  // _Py_ID()
 
 #include "pycore_pyerrors.h"
 #include "pycore_code.h"        // _PyCode_GetVarnames()
@@ -171,8 +173,7 @@ calculate_suggestions(PyObject *dir,
             suggestion_distance = current_distance;
         }
     }
-    Py_XINCREF(suggestion);
-    return suggestion;
+    return Py_XNewRef(suggestion);
 }
 
 static PyObject *
@@ -226,6 +227,24 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
         return NULL;
     }
 
+    // Are we inside a method and the instance has an attribute called 'name'?
+    if (PySequence_Contains(dir, &_Py_ID(self)) > 0) {
+        PyObject* locals = PyFrame_GetLocals(frame);
+        if (!locals) {
+            goto error;
+        }
+        PyObject* self = PyDict_GetItem(locals, &_Py_ID(self)); /* borrowed */
+        Py_DECREF(locals);
+        if (!self) {
+            goto error;
+        }
+        
+        if (PyObject_HasAttr(self, name)) {
+            Py_DECREF(dir);
+            return PyUnicode_FromFormat("self.%S", name);
+        }
+    }
+
     PyObject *suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
     if (suggestions != NULL) {
@@ -250,6 +269,10 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
     Py_DECREF(dir);
 
     return suggestions;
+
+error:
+    Py_DECREF(dir);
+    return NULL;
 }
 
 static bool

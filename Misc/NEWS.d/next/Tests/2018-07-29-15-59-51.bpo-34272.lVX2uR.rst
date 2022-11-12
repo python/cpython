@@ -1,0 +1,1 @@
+Some C API tests were moved into the new Lib/test/test_capi/ directory.

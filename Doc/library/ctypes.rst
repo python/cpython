@@ -359,7 +359,7 @@ from within *IDLE* or *PythonWin*::
    >>> printf(b"%f bottles of beer\n", 42.5)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: Don't know how to convert parameter 2
+   ArgumentError: argument 2: TypeError: Don't know how to convert parameter 2
    >>>
 
 As has been mentioned before, all Python types except integers, strings, and
@@ -422,7 +422,7 @@ prototype for a C function), and tries to convert the arguments to valid types::
    >>> printf(b"%d %d %d", 1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: wrong type
+   ArgumentError: argument 2: TypeError: wrong type
    >>> printf(b"%s %d %f\n", b"X", 2, 3)
    X 2 3.000000
    13
@@ -487,7 +487,7 @@ single character Python bytes object into a C char::
    >>> strchr(b"abcdef", b"def")
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: exceptions.TypeError: one character string expected
+   ArgumentError: argument 2: TypeError: one character string expected
    >>> print(strchr(b"abcdef", b"x"))
    None
    >>> strchr(b"abcdef", b"d")
