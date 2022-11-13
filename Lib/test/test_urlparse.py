@@ -1108,6 +1108,17 @@ class UrlParseTestCase(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             urllib.parse.urlsplit(url)
 
+    def test_urlsplit_invalid_scheme(self):
+        base_url = "git+ssh://git@github.com/user/project.git"
+        illegal_prefixes = "1234567890+-"
+        illegal_chars = "Å_/"
+
+        self.assertEqual(urllib.parse.urlsplit(base_url).scheme, "git+ssh")
+
+        for prefix in illegal_prefixes + illegal_chars:
+            split_url = urllib.parse.urlsplit(prefix+base_url)
+            self.assertEqual(split_url.scheme, "")
+
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
     # In Python 2 this test class was in test_urllib.

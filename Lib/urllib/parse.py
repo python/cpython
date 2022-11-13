@@ -74,10 +74,11 @@ uses_fragment = ['', 'ftp', 'hdl', 'http', 'gopher', 'news',
                  'file', 'prospero']
 
 # Characters valid in scheme names
-scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
-                'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                '0123456789'
-                '+-.')
+scheme_alpha_chars = frozenset('abcdefghijklmnopqrstuvwxyz'
+                               'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+scheme_chars = scheme_alpha_chars.union('0123456789'
+                                        '+-.')
 
 # Unsafe bytes to be removed per WHATWG spec
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
@@ -460,8 +461,8 @@ def urlsplit(url, scheme='', allow_fragments=True):
     allow_fragments = bool(allow_fragments)
     netloc = query = fragment = ''
     i = url.find(':')
-    if i > 0:
-        for c in url[:i]:
+    if i > 0 and url[0] in scheme_alpha_chars:
+        for c in url[1:i]:
             if c not in scheme_chars:
                 break
         else:
