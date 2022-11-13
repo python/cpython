@@ -460,7 +460,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
     allow_fragments = bool(allow_fragments)
     netloc = query = fragment = ''
     i = url.find(':')
-    if i > 0:
+    if i > 0 and url[0].isascii() and url[0].isalpha():
         for c in url[:i]:
             if c not in scheme_chars:
                 break
