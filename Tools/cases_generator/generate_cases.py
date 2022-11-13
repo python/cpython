@@ -232,7 +232,7 @@ class Analyzer:
                     )
                     self.errors += 1
 
-    def check_families(self) -> int:
+    def check_families(self) -> None:
         """Check each family:
 
         - Must have at least 2 members
