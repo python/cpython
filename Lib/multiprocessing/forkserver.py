@@ -106,6 +106,7 @@ class ForkServer(object):
                                 wrapped_client, self._forkserver_authkey)
                     finally:
                         wrapped_client._detach()
+                        del wrapped_client
                 reduction.sendfds(client, allfds)
                 return parent_r, parent_w
             except:
