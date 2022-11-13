@@ -637,24 +637,24 @@ Connection objects
       Commit any pending transaction to the database.
       If :attr:`autocommit` is ``True``, or there is no open transaction,
       this method does nothing.
-      If :attr:`!autocommit` is ``False``, a new transaction is implicitly
-      opened if a pending transaction was committed by this method.
+      If :attr:`!autocommit` is ``False``, this method implicitly opens
+      a new transaction after committing.
 
    .. method:: rollback()
 
       Roll back to the start of any pending transaction.
       If :attr:`autocommit` is ``True``, or there is no open transaction,
       this method does nothing.
-      If :attr:`!autocommit` is ``False``, a new transaction is implicitly
-      opened if a pending transaction was rolled back by this method.
+      If :attr:`!autocommit` is ``False``, this method implicitly opens
+      a new transaction after rolling back.
 
    .. method:: close()
 
       Close the database connection.
-      If :attr:`autocommit` is ``False``,
-      any pending transaction is implicitly rolled back.
+      If :attr:`autocommit` is ``False``, this method implicitly rolls back
+      any open transaction before closing.
       If :attr:`!autocommit` is ``True`` or :data:`LEGACY_TRANSACTION_CONTROL`,
-      no implicit transaction control is executed.
+      this method does not execute any implicit transaction control.
       Make sure to :meth:`commit` before closing
       to avoid losing pending changes.
 
