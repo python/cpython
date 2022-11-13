@@ -1109,81 +1109,106 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     return 0;
 }
 
-int
-_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
-    /* Merge fast locals into f->f_locals */
-    PyObject *locals;
-    PyObject **fast;
-    PyCodeObject *co;
-    locals = frame->f_locals;
-    if (locals == NULL) {
-        locals = frame->f_locals = PyDict_New();
-        if (locals == NULL)
-            return -1;
-    }
-    co = frame->f_code;
-    fast = _PyFrame_GetLocalsArray(frame);
+
+// Initialize frame free variables if needed
+static void
+frame_init_get_vars(_PyInterpreterFrame *frame)
+{
     // COPY_FREE_VARS has no quickened forms, so no need to use _PyOpcode_Deopt
     // here:
+    PyCodeObject *co = frame->f_code;
     int lasti = _PyInterpreterFrame_LASTI(frame);
-    if (lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS
-        && PyFunction_Check(frame->f_funcobj))
+    if (!(lasti < 0 && _Py_OPCODE(_PyCode_CODE(co)[0]) == COPY_FREE_VARS
+          && PyFunction_Check(frame->f_funcobj)))
     {
-        /* Free vars have not been initialized -- Do that */
-        PyCodeObject *co = frame->f_code;
-        PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
-        int offset = co->co_nlocals + co->co_nplaincellvars;
-        for (int i = 0; i < co->co_nfreevars; ++i) {
-            PyObject *o = PyTuple_GET_ITEM(closure, i);
-            frame->localsplus[offset + i] = Py_NewRef(o);
-        }
-        // COPY_FREE_VARS doesn't have inline CACHEs, either:
-        frame->prev_instr = _PyCode_CODE(frame->f_code);
+        /* Free vars are initialized */
+        return;
     }
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
-        /* If the namespace is unoptimized, then one of the
-           following cases applies:
-           1. It does not contain free variables, because it
-              uses import * or is a top-level namespace.
-           2. It is a class namespace.
-           We don't want to accidentally copy free variables
-           into the locals dict used by the class.
-        */
-        if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
+    /* Free vars have not been initialized -- Do that */
+    PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
+    int offset = co->co_nlocals + co->co_nplaincellvars;
+    for (int i = 0; i < co->co_nfreevars; ++i) {
+        PyObject *o = PyTuple_GET_ITEM(closure, i);
+        frame->localsplus[offset + i] = Py_NewRef(o);
+    }
+    // COPY_FREE_VARS doesn't have inline CACHEs, either:
+    frame->prev_instr = _PyCode_CODE(frame->f_code);
+}
+
+
+static int
+frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
+              PyObject **pvalue)
+{
+    _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
+
+    /* If the namespace is unoptimized, then one of the
+       following cases applies:
+       1. It does not contain free variables, because it
+          uses import * or is a top-level namespace.
+       2. It is a class namespace.
+       We don't want to accidentally copy free variables
+       into the locals dict used by the class.
+    */
+    if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
+        return 0;
+    }
+
+    PyObject *value = frame->localsplus[i];
+    if (frame->stacktop) {
+        if (kind & CO_FAST_FREE) {
+            // The cell was set by COPY_FREE_VARS.
+            assert(value != NULL && PyCell_Check(value));
+            value = PyCell_GET(value);
+        }
+        else if (kind & CO_FAST_CELL) {
+            // Note that no *_DEREF ops can happen before MAKE_CELL
+            // executes.  So there's no need to duplicate the work
+            // that MAKE_CELL would otherwise do later, if it hasn't
+            // run yet.
+            if (value != NULL) {
+                if (PyCell_Check(value) &&
+                        _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
+                    // (likely) MAKE_CELL must have executed already.
+                    value = PyCell_GET(value);
+                }
+                // (likely) Otherwise it it is an arg (kind & CO_FAST_LOCAL),
+                // with the initial value set when the frame was created...
+                // (unlikely) ...or it was set to some initial value by
+                // an earlier call to PyFrame_LocalsToFast().
+            }
+        }
+    }
+    else {
+        assert(value == NULL);
+    }
+    *pvalue = value;
+    return 1;
+}
+
+int
+_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame)
+{
+    /* Merge fast locals into f->f_locals */
+    PyObject *locals = frame->f_locals;
+    if (locals == NULL) {
+        locals = frame->f_locals = PyDict_New();
+        if (locals == NULL) {
+            return -1;
+        }
+    }
+
+    frame_init_get_vars(frame);
+
+    PyCodeObject *co = frame->f_code;
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *value;  // borrowed reference
+        if (!frame_get_var(frame, co, i, &value)) {
             continue;
         }
 
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject *value = fast[i];
-        if (frame->stacktop) {
-            if (kind & CO_FAST_FREE) {
-                // The cell was set by COPY_FREE_VARS.
-                assert(value != NULL && PyCell_Check(value));
-                value = PyCell_GET(value);
-            }
-            else if (kind & CO_FAST_CELL) {
-                // Note that no *_DEREF ops can happen before MAKE_CELL
-                // executes.  So there's no need to duplicate the work
-                // that MAKE_CELL would otherwise do later, if it hasn't
-                // run yet.
-                if (value != NULL) {
-                    if (PyCell_Check(value) &&
-                            _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
-                        // (likely) MAKE_CELL must have executed already.
-                        value = PyCell_GET(value);
-                    }
-                    // (likely) Otherwise it it is an arg (kind & CO_FAST_LOCAL),
-                    // with the initial value set when the frame was created...
-                    // (unlikely) ...or it was set to some initial value by
-                    // an earlier call to PyFrame_LocalsToFast().
-                }
-            }
-        }
-        else {
-            assert(value == NULL);
-        }
         if (value == NULL) {
             if (PyObject_DelItem(locals, name) != 0) {
                 if (PyErr_ExceptionMatches(PyExc_KeyError)) {
@@ -1202,6 +1227,54 @@ _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     }
     return 0;
 }
+
+
+PyObject *
+PyFrame_GetVar(PyFrameObject *frame_obj, PyObject *name)
+{
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError, "name must be str, not %s",
+                     Py_TYPE(name)->tp_name);
+        return NULL;
+    }
+
+    _PyInterpreterFrame *frame = frame_obj->f_frame;
+    frame_init_get_vars(frame);
+
+    PyCodeObject *co = frame->f_code;
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *var_name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        if (!_PyUnicode_Equal(var_name, name)) {
+            continue;
+        }
+
+        PyObject *value;  // borrowed reference
+        if (!frame_get_var(frame, co, i, &value)) {
+            break;
+        }
+        if (value == NULL) {
+            break;
+        }
+        return Py_NewRef(value);
+    }
+
+    PyErr_Format(PyExc_NameError, "variable %R does not exist", name);
+    return NULL;
+}
+
+
+PyObject *
+PyFrame_GetVarString(PyFrameObject *frame, const char *name)
+{
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        return NULL;
+    }
+    PyObject *value = PyFrame_GetVar(frame, name_obj);
+    Py_DECREF(name_obj);
+    return value;
+}
+
 
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
@@ -1412,36 +1485,4 @@ _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
     }
 
     return _PyEval_GetBuiltins(tstate);
-}
-
-PyObject *
-PyFrame_GetVar(PyFrameObject *frame, PyObject *name)
-{
-    PyObject *locals = PyFrame_GetLocals(frame);
-    if (locals == NULL) {
-        return NULL;
-    }
-    PyObject *value = PyDict_GetItemWithError(locals, name);
-    Py_DECREF(locals);
-
-    if (value == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        PyErr_Format(PyExc_NameError, "variable %R does not exist", name);
-        return NULL;
-    }
-    return Py_NewRef(value);
-}
-
-PyObject *
-PyFrame_GetVarString(PyFrameObject *frame, const char *name)
-{
-    PyObject *name_obj = PyUnicode_FromString(name);
-    if (name_obj == NULL) {
-        return NULL;
-    }
-    PyObject *value = PyFrame_GetVar(frame, name_obj);
-    Py_DECREF(name_obj);
-    return value;
 }
