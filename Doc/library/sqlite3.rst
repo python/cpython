@@ -1299,7 +1299,7 @@ Connection objects
       <sqlite3-transaction-control-isolation-level>` of :mod:`!sqlite3`.
       If set to ``None``, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
-      corresponding to the underlying `SQLite transaction behaviour`_,
+      corresponding to the `SQLite transaction behaviour`_,
       :ref:`implicit transaction management
       <sqlite3-transaction-control-isolation-level>` is performed.
 
@@ -2440,7 +2440,7 @@ If :attr:`~Connection.isolation_level` is not ``None``:
   transaction before executing an
   ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statement;
   for other statements, no implicit transaction control is performed.
-  The type of ``BEGIN`` statement that those methods use for the underlying
+  The type of ``BEGIN`` statement that those methods use for the
   `SQLite transaction behaviour`_ can be chosen via the
   :attr:`~Connection.isolation_level` attribute.
 * Transactions should be explicitly committed using :meth:`!commit`.
