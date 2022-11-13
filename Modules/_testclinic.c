@@ -11,14 +11,18 @@
 
 #include "clinic/_testclinic.c.h"
 
+/* Pack arguments to a tuple, implicitly increase all the arguments' refcount.
+ * NULL arguments will be replaced to Py_None. */
 static PyObject *
 pack_arguments_newref(int argc, ...) {
-    va_list vargs;
-    va_start(vargs, argc);
+    assert(!PyErr_Occurred());
     PyObject *tuple = PyTuple_New(argc);
     if (!tuple) {
         return NULL;
     }
+
+    va_list vargs;
+    va_start(vargs, argc);
     for (int i = 0; i < argc; i++) {
         PyObject *arg = va_arg(vargs, PyObject *);
         if (arg) {
@@ -39,17 +43,26 @@ pack_arguments_newref(int argc, ...) {
     return tuple;
 }
 
+/* Pack arguments to a tuple, all the arguments' refcounts should be increased before passing in.
+ * Do not accept NULL arguments unless error occurs. */
 static PyObject *
 pack_arguments(int argc, ...) {
-    va_list vargs;
-    va_start(vargs, argc);
+    assert(!PyErr_Occurred());
     PyObject *tuple = PyTuple_New(argc);
     if (!tuple) {
         return NULL;
     }
+
+    va_list vargs;
+    va_start(vargs, argc);
     for (int i = 0; i < argc; i++) {
         PyObject *arg = va_arg(vargs, PyObject *);
-        assert(arg && !_PyObject_IsFreed(arg));
+        assert(arg || PyErr_Occurred());
+        if (!arg) {
+            va_end(vargs);
+            Py_DECREF(tuple);
+            return NULL;
+        }
         PyTuple_SET_ITEM(tuple, i, arg);
     }
     va_end(vargs);
