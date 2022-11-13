@@ -1295,7 +1295,7 @@ Connection objects
 
    .. attribute:: isolation_level
 
-      Controls the :ref:`legacy transaction handling mode
+      Sets the :ref:`legacy transaction control mode
       <sqlite3-transaction-control-isolation-level>` of :mod:`!sqlite3`.
       If set to ``None``, transactions are never implicitly opened.
       If set to one of ``"DEFERRED"``, ``"IMMEDIATE"``, or ``"EXCLUSIVE"``,
@@ -1308,7 +1308,7 @@ Connection objects
 
       .. note::
 
-         Using :attr:`autocommit` to control transaction handling is
+         Using :attr:`autocommit` to set transaction control is
          recommended over using :attr:`!isolation_level`.
          :attr:`!isolation_level` has no effect unless :attr:`autocommit` is
          set to :data:`LEGACY_TRANSACTION_CONTROL` (the default).
@@ -1455,7 +1455,7 @@ Cursor objects
       against all parameter sequences or mappings found in the sequence
       *parameters*.  It is also possible to use an
       :term:`iterator` yielding parameters instead of a sequence.
-      Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
+      Uses the same implicit transaction control as :meth:`~Cursor.execute`.
 
       Example:
 
