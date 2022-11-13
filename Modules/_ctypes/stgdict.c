@@ -420,8 +420,11 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     }
 
     stgdict = PyType_stgdict(type);
-    if (!stgdict)
+    if (!stgdict) {
+        PyErr_SetString(PyExc_TypeError,
+                        "ctypes state is not initialized");
         return -1;
+    }
     /* If this structure/union is already marked final we cannot assign
        _fields_ anymore. */
 
