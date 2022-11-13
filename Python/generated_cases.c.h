@@ -301,6 +301,7 @@
 
         TARGET(BINARY_SUBSCR) {
             PREDICTED(BINARY_SUBSCR);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 4, "incorrect cache size");
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
             PyObject *res;
@@ -317,9 +318,9 @@
             Py_DECREF(container);
             Py_DECREF(sub);
             if (res == NULL) goto pop_2_error;
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             STACK_SHRINK(1);
             POKE(1, res);
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -367,9 +368,10 @@
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
+            PyObject *sub = PEEK(1);
+            PyObject *list = PEEK(2);
+            PyObject *res;
             assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *list = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
 
@@ -380,21 +382,22 @@
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *res = PyList_GET_ITEM(list, index);
+            res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
             Py_INCREF(res);
-            STACK_SHRINK(1);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
-            SET_TOP(res);
             Py_DECREF(list);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            STACK_SHRINK(1);
+            POKE(1, res);
+            next_instr += 4;
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
+            PyObject *sub = PEEK(1);
+            PyObject *tuple = PEEK(2);
+            PyObject *res;
             assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *tuple = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
 
@@ -405,51 +408,55 @@
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *res = PyTuple_GET_ITEM(tuple, index);
+            res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
             Py_INCREF(res);
-            STACK_SHRINK(1);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
-            SET_TOP(res);
             Py_DECREF(tuple);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            STACK_SHRINK(1);
+            POKE(1, res);
+            next_instr += 4;
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
+            PyObject *sub = PEEK(1);
+            PyObject *dict = PEEK(2);
+            PyObject *res;
             assert(cframe.use_tracing == 0);
-            PyObject *dict = SECOND();
-            DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
+            DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *sub = TOP();
-            PyObject *res = PyDict_GetItemWithError(dict, sub);
+            res = PyDict_GetItemWithError(dict, sub);
+            Py_DECREF(dict);
             if (res == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_SetKeyError(sub);
                 }
-                goto error;
+                else {
+                    Py_DECREF(sub);
+                }
+                if (1) goto pop_2_error;
             }
+            Py_DECREF(sub);
             Py_INCREF(res);
             STACK_SHRINK(1);
-            Py_DECREF(sub);
-            SET_TOP(res);
-            Py_DECREF(dict);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            POKE(1, res);
+            next_instr += 4;
             DISPATCH();
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->type_version);
+            uint32_t type_version = read_u32(next_instr + 1);
+            uint16_t func_version = *(next_instr + 3);
+            PyObject *sub = PEEK(1);
+            PyObject *container = PEEK(2);
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(tp->tp_version_tag != type_version, BINARY_SUBSCR);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
             PyObject *cached = ((PyHeapTypeObject *)tp)->_spec_cache.getitem;
             assert(PyFunction_Check(cached));
             PyFunctionObject *getitem = (PyFunctionObject *)cached;
-            DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);
+            DEOPT_IF(getitem->func_version != func_version, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
