@@ -1,0 +1,6 @@
+The docs clearly say that ``PyImport_Inittab``,
+:c:func:`PyImport_AppendInittab`, and :c:func:`PyImport_ExtendInittab`
+should not be used after :c:func:`Py_Initialize` has been called.
+We now enforce this for the two functions.  Additionally, the runtime
+now uses an internal copy of ``PyImport_Inittab``,
+to guard against modification.

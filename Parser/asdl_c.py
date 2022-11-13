@@ -995,10 +995,11 @@ static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq, PyObject* 
 
 static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), void *o)
 {
-    if (!o)
-        o = Py_None;
-    Py_INCREF((PyObject*)o);
-    return (PyObject*)o;
+    PyObject *op = (PyObject*)o;
+    if (!op) {
+        op = Py_None;
+    }
+    return Py_NewRef(op);
 }
 #define ast2obj_constant ast2obj_object
 #define ast2obj_identifier ast2obj_object
@@ -1032,8 +1033,7 @@ static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, P
         *out = NULL;
         return -1;
     }
-    Py_INCREF(obj);
-    *out = obj;
+    *out = Py_NewRef(obj);
     return 0;
 }
 
@@ -1301,8 +1301,7 @@ class ObjVisitor(PickleVisitor):
         self.emit("switch(o) {", 1)
         for t in sum.types:
             self.emit("case %s:" % t.name, 2)
-            self.emit("Py_INCREF(state->%s_singleton);" % t.name, 3)
-            self.emit("return state->%s_singleton;" % t.name, 3)
+            self.emit("return Py_NewRef(state->%s_singleton);" % t.name, 3)
         self.emit("}", 1)
         self.emit("Py_UNREACHABLE();", 1);
         self.emit("}", 0)

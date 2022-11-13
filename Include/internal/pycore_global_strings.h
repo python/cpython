@@ -48,6 +48,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(newline, "\n")
         STRUCT_FOR_STR(open_br, "{")
         STRUCT_FOR_STR(percent, "%")
+        STRUCT_FOR_STR(shim_name, "<shim>")
         STRUCT_FOR_STR(utf_8, "utf-8")
     } literals;
 
@@ -268,6 +269,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(as_integer_ratio)
         STRUCT_FOR_ID(attribute)
         STRUCT_FOR_ID(authorizer_callback)
+        STRUCT_FOR_ID(autocommit)
         STRUCT_FOR_ID(b)
         STRUCT_FOR_ID(backtick)
         STRUCT_FOR_ID(base)
