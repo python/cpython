@@ -871,14 +871,6 @@ class _TestProcess(BaseTestCase):
         authkey_len = len(forkserver._forkserver_authkey)
         with unittest.mock.patch.object(
                 forkserver, '_forkserver_authkey', None):
-            # With no auth handshake, the connection this makes to the
-            # forkserver will fail to do the file descriptor transfer
-            # over the pipe as the forkserver is expecting auth.
-            proc = self.Process(target=self._exit_process)
-            with self.assertRaisesRegex(RuntimeError, 'not receive ack'):
-                proc.start()
-            del proc
-
             # With an incorrect authkey we should get an auth rejection
             # rather than the above protocol error.
             forkserver._forkserver_authkey = b'T'*authkey_len
