@@ -263,6 +263,13 @@ sqlite3
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
 
+* Add the :attr:`~sqlite3.Connection.autocommit` attribute
+  to :class:`~sqlite3.Connection`
+  and the *autocommit* parameter to :func:`~sqlite3.connect`
+  to control :pep:`249`-compliant
+  :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
+  (Contributed by Erlend E. Aasland in :gh:`83638`.)
+
 threading
 ---------
 
