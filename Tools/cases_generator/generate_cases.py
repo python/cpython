@@ -80,13 +80,18 @@ class Instruction(parser.InstDef):
                     )
 
         # Write cache effect variable declarations
+        cache_offset = 0
         for ceffect in self.cache_effects:
             if ceffect.name != "unused":
+                # TODO: if name is 'descr' use PyObject *descr = read_obj(...)
                 bits = ceffect.size * 16
-                f.write(
-                    f"{indent}    PyObject *{ceffect.name} = "
-                    f"read{bits}(next_instr + {self.cache_offset});\n"
-                )
+                f.write(f"{indent}    uint{bits}_t {ceffect.name} = ")
+                if ceffect.size == 1:
+                    f.write(f"*(next_instr + {cache_offset});\n")
+                else:
+                    f.write(f"read_u{bits}(next_instr + {cache_offset});\n")
+            cache_offset += ceffect.size
+        assert cache_offset == self.cache_offset
 
         # Write input stack effect variable declarations and initializations
         for i, seffect in enumerate(reversed(self.input_effects), 1):
