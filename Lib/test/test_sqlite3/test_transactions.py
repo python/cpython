@@ -325,7 +325,7 @@ class IsolationLevelPostInit(unittest.TestCase):
         self.cx = sqlite.connect(":memory:")
         self.cx.execute("create table t(t)")
         self.traced = []
-        self.cx.set_trace_callback(lambda stmt: self.traced.append(stmt))
+        self.cx.set_trace_callback(self.traced.append)
 
     def tearDown(self):
         self.cx.close()
