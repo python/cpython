@@ -626,10 +626,9 @@ signal.strsignal
 
 Return the system description of the given signal.
 
-The return values can be such as "Interrupt", "Segmentation fault", etc.
-Return the system description of the signal *signalnum*, such as
-"Interrupt" for :const:`SIGINT`. Returns :const:`None` if *signalnum* has
-no description. Raises :exc:`ValueError` if *signalnum* is invalid.
+Returns the description of signal *signalnum*, such as "Interrupt"
+for :const:`SIGINT`. Returns :const:`None` if *signalnum* has no
+description. Raises :exc:`ValueError` if *signalnum* is invalid.
 [clinic start generated code]*/
 
 static PyObject *
