@@ -1,1 +1,0 @@
-Changed the doc of signalmodule for making it understandable to users when it raises ValueError, when it returns None etc.
