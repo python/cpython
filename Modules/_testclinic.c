@@ -11,6 +11,7 @@
 
 #include "clinic/_testclinic.c.h"
 
+
 /* Pack arguments to a tuple, implicitly increase all the arguments' refcount.
  * NULL arguments will be replaced to Py_None. */
 static PyObject *
@@ -34,7 +35,8 @@ pack_arguments_newref(int argc, ...) {
                 Py_DECREF(tuple);
                 return NULL;
             }
-        } else {
+        }
+        else {
             arg = Py_None;
         }
         PyTuple_SET_ITEM(tuple, i, Py_NewRef(arg));
@@ -119,7 +121,8 @@ bytes_object_converter_impl(PyObject *module, PyBytesObject *a)
 /*[clinic end generated code: output=7732da869d74b784 input=94211751e7996236]*/
 {
     if (!PyBytes_Check(a)) {
-        PyErr_SetString(PyExc_AssertionError, "argument a is not a PyBytesObject");
+        PyErr_SetString(PyExc_AssertionError,
+                        "argument a is not a PyBytesObject");
     }
     return pack_arguments_newref(1, a);
 }
@@ -138,7 +141,8 @@ byte_array_object_converter_impl(PyObject *module, PyByteArrayObject *a)
 /*[clinic end generated code: output=51f15c76f302b1f7 input=b04d253db51c6f56]*/
 {
     if (!PyByteArray_Check(a)) {
-        PyErr_SetString(PyExc_AssertionError, "argument a is not a PyByteArrayObject");
+        PyErr_SetString(PyExc_AssertionError,
+                        "argument a is not a PyByteArrayObject");
     }
     return pack_arguments_newref(1, a);
 }
@@ -157,7 +161,8 @@ unicode_converter_impl(PyObject *module, PyObject *a)
 /*[clinic end generated code: output=1b4a4adbb6ac6e34 input=de7b5adbf07435ba]*/
 {
     if (!PyUnicode_Check(a)) {
-        PyErr_SetString(PyExc_AssertionError, "argument a is not a unicode object");
+        PyErr_SetString(PyExc_AssertionError,
+                        "argument a is not a unicode object");
     }
     return pack_arguments_newref(1, a);
 }
@@ -221,20 +226,20 @@ char_converter_impl(PyObject *module, char a, char b, char c, char d, char e,
 /*[clinic end generated code: output=f929dbd2e55a9871 input=b601bc5bc7fe85e3]*/
 {
     return pack_arguments(14,
-                          PyLong_FromUnsignedLong((unsigned char) a),
-                          PyLong_FromUnsignedLong((unsigned char) b),
-                          PyLong_FromUnsignedLong((unsigned char) c),
-                          PyLong_FromUnsignedLong((unsigned char) d),
-                          PyLong_FromUnsignedLong((unsigned char) e),
-                          PyLong_FromUnsignedLong((unsigned char) f),
-                          PyLong_FromUnsignedLong((unsigned char) g),
-                          PyLong_FromUnsignedLong((unsigned char) h),
-                          PyLong_FromUnsignedLong((unsigned char) i),
-                          PyLong_FromUnsignedLong((unsigned char) j),
-                          PyLong_FromUnsignedLong((unsigned char) k),
-                          PyLong_FromUnsignedLong((unsigned char) l),
-                          PyLong_FromUnsignedLong((unsigned char) m),
-                          PyLong_FromUnsignedLong((unsigned char) n));
+                          PyLong_FromUnsignedLong((unsigned char)a),
+                          PyLong_FromUnsignedLong((unsigned char)b),
+                          PyLong_FromUnsignedLong((unsigned char)c),
+                          PyLong_FromUnsignedLong((unsigned char)d),
+                          PyLong_FromUnsignedLong((unsigned char)e),
+                          PyLong_FromUnsignedLong((unsigned char)f),
+                          PyLong_FromUnsignedLong((unsigned char)g),
+                          PyLong_FromUnsignedLong((unsigned char)h),
+                          PyLong_FromUnsignedLong((unsigned char)i),
+                          PyLong_FromUnsignedLong((unsigned char)j),
+                          PyLong_FromUnsignedLong((unsigned char)k),
+                          PyLong_FromUnsignedLong((unsigned char)l),
+                          PyLong_FromUnsignedLong((unsigned char)m),
+                          PyLong_FromUnsignedLong((unsigned char)n));
 }
 
 
@@ -489,7 +494,7 @@ static PyObject *
 float_converter_impl(PyObject *module, float a)
 /*[clinic end generated code: output=1c98f64f2cf1d55c input=a625b59ad68047d8]*/
 {
-    return pack_arguments(1, PyFloat_FromDouble((double) a));
+    return pack_arguments(1, PyFloat_FromDouble((double)a));
 }
 
 
@@ -564,7 +569,8 @@ py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b)
     if (!new_a) {
         return NULL;
     }
-    if (PyBuffer_ToContiguous(((PyBytesObject *)new_a)->ob_sval, a, a->len, 'C') < 0) {
+    if (PyBuffer_ToContiguous(((PyBytesObject *)new_a)->ob_sval, a, a->len,
+                              'C') < 0) {
         Py_DECREF(new_a);
         return NULL;
     }
@@ -575,7 +581,8 @@ py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b)
         Py_DECREF(new_a);
         return NULL;
     }
-    if (PyBuffer_ToContiguous(((PyBytesObject *)new_b)->ob_sval, b, b->len, 'C') < 0) {
+    if (PyBuffer_ToContiguous(((PyBytesObject *)new_b)->ob_sval, b, b->len,
+                              'C') < 0) {
         Py_DECREF(new_a);
         Py_DECREF(new_b);
         return NULL;

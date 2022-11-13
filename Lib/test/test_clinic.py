@@ -837,25 +837,25 @@ class ClinicFunctionalTest(unittest.TestCase):
     def test_bytes_object_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.bytes_object_converter(1)
-        self.assertEqual(ac_tester.bytes_object_converter(b'BytesObject'), (b'BytesObject', ))
+        self.assertEqual(ac_tester.bytes_object_converter(b'BytesObject'), (b'BytesObject',))
 
     def test_byte_array_object_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.byte_array_object_converter(1)
         byte_arr = bytearray(b'ByteArrayObject')
-        self.assertEqual(ac_tester.byte_array_object_converter(byte_arr), (byte_arr, ))
+        self.assertEqual(ac_tester.byte_array_object_converter(byte_arr), (byte_arr,))
 
     def test_unicode_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.unicode_converter(1)
-        self.assertEqual(ac_tester.unicode_converter('unicode'), ('unicode', ))
+        self.assertEqual(ac_tester.unicode_converter('unicode'), ('unicode',))
 
     def test_bool_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.bool_converter(False, False, 'not a int')
         self.assertEqual(ac_tester.bool_converter(), (True, True, True))
         self.assertEqual(ac_tester.bool_converter('', [], 5), (False, False, True))
-        self.assertEqual(ac_tester.bool_converter(('not empty', ), {1: 2}, 0), (True, True, False))
+        self.assertEqual(ac_tester.bool_converter(('not empty',), {1: 2}, 0), (True, True, False))
 
     def test_char_converter(self):
         with self.assertRaises(TypeError):
@@ -863,10 +863,10 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.char_converter(b'ab')
         chars = [b'A', b'\a', b'\b', b'\t', b'\n', b'\v', b'\f', b'\r', b'"', b"'", b'?', b'\\', b'\000', b'\377']
-        expected = tuple([ord(c) for c in chars])
+        expected = tuple(ord(c) for c in chars)
         self.assertEqual(ac_tester.char_converter(), expected)
         chars = [b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'0', b'a', b'b', b'c', b'd']
-        expected = tuple([ord(c) for c in chars])
+        expected = tuple(ord(c) for c in chars)
         self.assertEqual(ac_tester.char_converter(*chars), expected)
 
     def test_unsigned_char_converter(self):
@@ -891,8 +891,8 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.short_converter(SHRT_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.short_converter([])
-        self.assertEqual(ac_tester.short_converter(-1234), (-1234, ))
-        self.assertEqual(ac_tester.short_converter(4321), (4321, ))
+        self.assertEqual(ac_tester.short_converter(-1234), (-1234,))
+        self.assertEqual(ac_tester.short_converter(4321), (4321,))
 
     def test_unsigned_short_converter(self):
         from _testcapi import USHRT_MAX
@@ -943,8 +943,8 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.long_converter(LONG_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.long_converter([])
-        self.assertEqual(ac_tester.long_converter(), (12, ))
-        self.assertEqual(ac_tester.long_converter(-1234), (-1234, ))
+        self.assertEqual(ac_tester.long_converter(), (12,))
+        self.assertEqual(ac_tester.long_converter(-1234), (-1234,))
 
     def test_unsigned_long_converter(self):
         from _testcapi import ULONG_MAX
@@ -968,8 +968,8 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.long_long_converter(LLONG_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.long_long_converter([])
-        self.assertEqual(ac_tester.long_long_converter(), (12, ))
-        self.assertEqual(ac_tester.long_long_converter(-1234), (-1234, ))
+        self.assertEqual(ac_tester.long_long_converter(), (12,))
+        self.assertEqual(ac_tester.long_long_converter(-1234), (-1234,))
 
     def test_unsigned_long_long_converter(self):
         from _testcapi import ULLONG_MAX
@@ -1012,27 +1012,27 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.size_t_converter(-1)
         with self.assertRaises(TypeError):
             ac_tester.size_t_converter([])
-        self.assertEqual(ac_tester.size_t_converter(), (12, ))
+        self.assertEqual(ac_tester.size_t_converter(), (12,))
 
     def test_float_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.float_converter([])
-        self.assertEqual(ac_tester.float_converter(), (12.5, ))
-        self.assertEqual(ac_tester.float_converter(-0.5), (-0.5, ))
+        self.assertEqual(ac_tester.float_converter(), (12.5,))
+        self.assertEqual(ac_tester.float_converter(-0.5), (-0.5,))
 
     def test_double_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.double_converter([])
-        self.assertEqual(ac_tester.double_converter(), (12.5, ))
-        self.assertEqual(ac_tester.double_converter(-0.5), (-0.5, ))
+        self.assertEqual(ac_tester.double_converter(), (12.5,))
+        self.assertEqual(ac_tester.double_converter(-0.5), (-0.5,))
 
     def test_py_complex_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.py_complex_converter([])
-        self.assertEqual(ac_tester.py_complex_converter(complex(1, 2)), (complex(1, 2), ))
-        self.assertEqual(ac_tester.py_complex_converter(complex('-1-2j')), (complex('-1-2j'), ))
-        self.assertEqual(ac_tester.py_complex_converter(-0.5), (-0.5, ))
-        self.assertEqual(ac_tester.py_complex_converter(10), (10, ))
+        self.assertEqual(ac_tester.py_complex_converter(complex(1, 2)), (complex(1, 2),))
+        self.assertEqual(ac_tester.py_complex_converter(complex('-1-2j')), (complex('-1-2j'),))
+        self.assertEqual(ac_tester.py_complex_converter(-0.5), (-0.5,))
+        self.assertEqual(ac_tester.py_complex_converter(10), (10,))
 
     def test_str_converter(self):
         with self.assertRaises(TypeError):
@@ -1209,7 +1209,7 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter()
         with self.assertRaises(TypeError):
             ac_tester.keyword_only_parameter(1)
-        self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1, ))
+        self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
 
 if __name__ == "__main__":
