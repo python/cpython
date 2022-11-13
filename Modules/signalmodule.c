@@ -633,7 +633,7 @@ description. Raises :exc:`ValueError` if *signalnum* is invalid.
 
 static PyObject *
 signal_strsignal_impl(PyObject *module, int signalnum)
-/*[clinic end generated code: output=44e12e1e3b666261 input=b77914b03f856c74]*/
+/*[clinic end generated code: output=44e12e1e3b666261 input=238b335847778bc0]*/
 {
     const char *res;
 
