@@ -179,7 +179,7 @@ Property             Indicates that           Details
       >>> HTTPMethod.GET.value
       'GET'
       >>> HTTPMethod.GET.description
-      'Transfer a current representation of the target resource.'
+      'Retrieve the target.'
       >>> list(HTTPMethod)
       [<HTTPMethod.CONNECT>,
        <HTTPMethod.DELETE>,
