@@ -634,7 +634,7 @@ Connection objects
 
    .. method:: commit()
 
-      Commit any pending transaction to the database.
+      Commit any open transaction to the database.
       If :attr:`autocommit` is ``True``, or there is no open transaction,
       this method does nothing.
       If :attr:`!autocommit` is ``False``, this method implicitly opens
@@ -642,7 +642,7 @@ Connection objects
 
    .. method:: rollback()
 
-      Roll back to the start of any pending transaction.
+      Roll back to the start of any open transaction.
       If :attr:`autocommit` is ``True``, or there is no open transaction,
       this method does nothing.
       If :attr:`!autocommit` is ``False``, this method implicitly opens
@@ -1272,7 +1272,7 @@ Connection objects
         This is currently the default value of :attr:`!autocommit`.
 
       Changing :attr:`!autocommit` to ``False`` will open a new transaction,
-      and changing it to ``True`` will commit any pending transaction.
+      and changing it to ``True`` will commit any open transaction.
 
       See :ref:`sqlite3-transaction-control-autocommit` for more details.
 
@@ -1473,7 +1473,7 @@ Cursor objects
       Execute the SQL statements in *sql_script*.
       If the :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`
-      and there is a pending transaction,
+      and there is an open transaction,
       an implicit ``COMMIT`` statement is executed first.
       No other implicit transaction control is performed;
       any transaction control must be added to *sql_script*.
