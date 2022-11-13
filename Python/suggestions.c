@@ -154,6 +154,7 @@ calculate_suggestions(PyObject *dir,
         Py_ssize_t item_size;
         const char *item_str = PyUnicode_AsUTF8AndSize(item, &item_size);
         if (item_str == NULL) {
+            PyMem_Free(buffer);
             return NULL;
         }
         if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
