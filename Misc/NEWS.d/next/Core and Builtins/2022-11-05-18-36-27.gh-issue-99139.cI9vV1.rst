@@ -1,0 +1,5 @@
+Improve the error suggestion for :exc:`NameError` exceptions for instances.
+Now if a :exc:`NameError` is raised in a method and the instance has an
+attribute that's exactly equal to the name in the exception, the suggestion
+will include ``self.<NAME>`` instead of the closest match in the method
+scope. Patch by Pablo Galindo

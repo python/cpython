@@ -1024,10 +1024,7 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
             out++;
         }
     }
-    if ((rv = PyBytes_FromStringAndSize((char *)odata, out)) == NULL) {
-        PyMem_Free(odata);
-        return NULL;
-    }
+    rv = PyBytes_FromStringAndSize((char *)odata, out);
     PyMem_Free(odata);
     return rv;
 }
@@ -1232,10 +1229,7 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
             }
         }
     }
-    if ((rv = PyBytes_FromStringAndSize((char *)odata, out)) == NULL) {
-        PyMem_Free(odata);
-        return NULL;
-    }
+    rv = PyBytes_FromStringAndSize((char *)odata, out);
     PyMem_Free(odata);
     return rv;
 }

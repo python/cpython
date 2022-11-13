@@ -139,7 +139,7 @@ ZipFile Objects
 
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
-                   compresslevel=None, *, strict_timestamps=True,
+                   compresslevel=None, *, strict_timestamps=True, \
                    metadata_encoding=None)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
@@ -311,7 +311,7 @@ ZipFile Objects
       compressed text files in :term:`universal newlines` mode.
 
    .. versionchanged:: 3.6
-      :meth:`open` can now be used to write files into the archive with the
+      :meth:`ZipFile.open` can now be used to write files into the archive with the
       ``mode='w'`` option.
 
    .. versionchanged:: 3.6

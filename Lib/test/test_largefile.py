@@ -156,6 +156,8 @@ class TestFileMethods(LargeFileTest):
 def skip_no_disk_space(path, required):
     def decorator(fun):
         def wrapper(*args, **kwargs):
+            if not hasattr(shutil, "disk_usage"):
+                raise unittest.SkipTest("requires shutil.disk_usage")
             if shutil.disk_usage(os.path.realpath(path)).free < required:
                 hsize = int(required / 1024 / 1024)
                 raise unittest.SkipTest(

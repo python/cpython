@@ -326,6 +326,16 @@ class FileInputTests(BaseTests, unittest.TestCase):
         with open(temp_file, 'rb') as f:
             self.assertEqual(f.read(), b'New line.')
 
+    def test_inplace_encoding_errors(self):
+        temp_file = self.writeTmp(b'Initial text \x88', mode='wb')
+        with FileInput(temp_file, inplace=True,
+                       encoding="ascii", errors="replace") as fobj:
+            line = fobj.readline()
+            self.assertEqual(line, 'Initial text \ufffd')
+            print("New line \x88")
+        with open(temp_file, 'rb') as f:
+            self.assertEqual(f.read().rstrip(b'\r\n'), b'New line ?')
+
     def test_file_hook_backward_compatibility(self):
         def old_hook(filename, mode):
             return io.StringIO("I used to receive only filename and mode")

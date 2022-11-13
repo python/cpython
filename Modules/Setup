@@ -275,7 +275,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #xx xxmodule.c
 #xxlimited xxlimited.c
 #xxlimited_35 xxlimited_35.c
-xxsubtype xxsubtype.c  # Required for the test suite to pass!
+#xxsubtype xxsubtype.c
 
 # Testing
 
@@ -291,6 +291,7 @@ xxsubtype xxsubtype.c  # Required for the test suite to pass!
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
+#_testsinglephase _testsinglephase.c
 
 # ---
 # Uncommenting the following line tells makesetup that all following modules

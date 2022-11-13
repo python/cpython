@@ -22,14 +22,13 @@ import errno
 import unittest
 from unittest import mock
 import weakref
-
+import warnings
 if sys.platform not in ('win32', 'vxworks'):
     import tty
 
 import asyncio
 from asyncio import coroutines
 from asyncio import events
-from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
@@ -2056,12 +2055,16 @@ else:
     class UnixEventLoopTestsMixin(EventLoopTestsMixin):
         def setUp(self):
             super().setUp()
-            watcher = asyncio.SafeChildWatcher()
-            watcher.attach_loop(self.loop)
-            asyncio.set_child_watcher(watcher)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                watcher = asyncio.SafeChildWatcher()
+                watcher.attach_loop(self.loop)
+                asyncio.set_child_watcher(watcher)
 
         def tearDown(self):
-            asyncio.set_child_watcher(None)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                asyncio.set_child_watcher(None)
             super().tearDown()
 
 
@@ -2653,14 +2656,18 @@ class GetEventLoopTestsMixin:
         asyncio.set_event_loop(self.loop)
 
         if sys.platform != 'win32':
-            watcher = asyncio.SafeChildWatcher()
-            watcher.attach_loop(self.loop)
-            asyncio.set_child_watcher(watcher)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                watcher = asyncio.SafeChildWatcher()
+                watcher.attach_loop(self.loop)
+                asyncio.set_child_watcher(watcher)
 
     def tearDown(self):
         try:
             if sys.platform != 'win32':
-                asyncio.set_child_watcher(None)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    asyncio.set_child_watcher(None)
 
             super().tearDown()
         finally:
@@ -2712,12 +2719,12 @@ class GetEventLoopTestsMixin:
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaises(TestError):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
             asyncio.set_event_loop(None)
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaises(TestError):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
@@ -2734,13 +2741,13 @@ class GetEventLoopTestsMixin:
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaises(TestError):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
             asyncio.set_event_loop(None)
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaises(TestError):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
         finally:
             asyncio.set_event_loop_policy(old_policy)
@@ -2762,12 +2769,12 @@ class GetEventLoopTestsMixin:
             with self.assertWarns(DeprecationWarning) as cm:
                 loop2 = asyncio.get_event_loop()
             self.addCleanup(loop2.close)
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
             asyncio.set_event_loop(None)
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaisesRegex(RuntimeError, 'no current'):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
             with self.assertRaisesRegex(RuntimeError, 'no running'):
                 asyncio.get_running_loop()
@@ -2783,13 +2790,13 @@ class GetEventLoopTestsMixin:
             asyncio.set_event_loop(loop)
             with self.assertWarns(DeprecationWarning) as cm:
                 self.assertIs(asyncio.get_event_loop(), loop)
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
             asyncio.set_event_loop(None)
             with self.assertWarns(DeprecationWarning) as cm:
                 with self.assertRaisesRegex(RuntimeError, 'no current'):
                     asyncio.get_event_loop()
-            self.assertEqual(cm.warnings[0].filename, __file__)
+            self.assertEqual(cm.filename, __file__)
 
         finally:
             asyncio.set_event_loop_policy(old_policy)

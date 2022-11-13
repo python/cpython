@@ -2,7 +2,6 @@
 #include <ctype.h>
 
 #include "structmember.h"         // PyMemberDef
-#include "frameobject.h"
 #include "expat.h"
 
 #include "pyexpat.h"
@@ -745,6 +744,8 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
         slen = view.len;
     }
 
+    static_assert(MAX_CHUNK_SIZE <= INT_MAX,
+                  "MAX_CHUNK_SIZE is larger than INT_MAX");
     while (slen > MAX_CHUNK_SIZE) {
         rc = XML_Parse(self->itself, s, MAX_CHUNK_SIZE, 0);
         if (!rc)
@@ -752,7 +753,7 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
         s += MAX_CHUNK_SIZE;
         slen -= MAX_CHUNK_SIZE;
     }
-    Py_BUILD_ASSERT(MAX_CHUNK_SIZE <= INT_MAX);
+
     assert(slen <= INT_MAX);
     rc = XML_Parse(self->itself, s, (int)slen, isfinal);
 
@@ -774,7 +775,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     Py_ssize_t len;
     const char *ptr;
 
-    str = PyObject_CallFunction(meth, "n", buf_size);
+    str = PyObject_CallFunction(meth, "i", buf_size);
     if (str == NULL)
         goto error;
 
@@ -1086,7 +1087,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     PyObject* u;
     int i;
     const void *data;
-    unsigned int kind;
+    int kind;
 
     if (PyErr_Occurred())
         return XML_STATUS_ERROR;
@@ -1724,7 +1725,7 @@ add_error(PyObject *errors_module, PyObject *codes_dict,
     const int error_code = (int)error_index;
 
     /* NOTE: This keeps the source of truth regarding error
-     *       messages with libexpat and (by definiton) in bulletproof sync
+     *       messages with libexpat and (by definition) in bulletproof sync
      *       with the other uses of the XML_ErrorString function
      *       elsewhere within this file.  pyexpat's copy of the messages
      *       only acts as a fallback in case of outdated runtime libexpat,

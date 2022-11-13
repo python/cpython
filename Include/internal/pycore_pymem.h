@@ -11,6 +11,27 @@ extern "C" {
 #include "pymem.h"      // PyMemAllocatorName
 
 
+typedef struct {
+    /* We tag each block with an API ID in order to tag API violations */
+    char api_id;
+    PyMemAllocatorEx alloc;
+} debug_alloc_api_t;
+
+struct _pymem_allocators {
+    struct {
+        PyMemAllocatorEx raw;
+        PyMemAllocatorEx mem;
+        PyMemAllocatorEx obj;
+    } standard;
+    struct {
+        debug_alloc_api_t raw;
+        debug_alloc_api_t mem;
+        debug_alloc_api_t obj;
+    } debug;
+    PyObjectArenaAllocator obj_arena;
+};
+
+
 /* Set the memory allocator of the specified domain to the default.
    Save the old allocator into *old_alloc if it's non-NULL.
    Return on success, or return -1 if the domain is unknown. */
@@ -93,20 +114,6 @@ struct _PyTraceMalloc_Config {
      .max_nframe = 1}
 
 PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
-
-/* Allocate memory directly from the O/S virtual memory system,
- * where supported. Otherwise fallback on malloc */
-void *_PyObject_VirtualAlloc(size_t size);
-void _PyObject_VirtualFree(void *, size_t size);
-
-/* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
-
-/* Macros */
-#ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
-PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
-#endif
 
 #ifdef __cplusplus
 }
