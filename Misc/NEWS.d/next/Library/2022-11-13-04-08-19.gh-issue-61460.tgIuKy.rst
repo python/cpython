@@ -1,0 +1,2 @@
+The socket authentication shared secret confirmation handshake used
+internally by multiprocessing has been changed from hmac-md5 to hmac-sha256.
