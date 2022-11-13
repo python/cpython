@@ -134,22 +134,10 @@ class Parser(PLexer):
                     if self.expect(lx.RPAREN):
                         if ((tkn := self.peek())
                                 and tkn.kind == lx.LBRACE):
-                            self.check_overlaps(inp, outp)
                             return InstHeader(name, inp, outp)
                 elif self.expect(lx.RPAREN):
                     return InstHeader(name, [], [])
         return None
-
-    def check_overlaps(self, inputs: list[InputEffect], outputs: list[OutputEffect]):
-        # TODO: This belongs in generate_cases.py::Analyzer::analyze()
-        inputs = [inp for inp in inputs if isinstance(inp, StackEffect)]  # Select only stack effects
-        for i, inp in enumerate(inputs):
-            for j, outp in enumerate(outputs):
-                if inp.name == outp.name and inp.name != "unused":
-                    if i != j:
-                        raise self.make_syntax_error(
-                            f"Input {inp.name!r} at pos {i} repeated in output at different pos {j}")
-                    break
 
     def stack_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
         # '(' [inputs] '--' [outputs] ')'

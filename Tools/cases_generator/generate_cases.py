@@ -40,6 +40,7 @@ class Instruction(parser.InstDef):
 
     def __init__(self, inst: parser.InstDef):
         super().__init__(inst.header, inst.block)
+        self.context = inst.context
         self.always_exits = always_exits(self.block)
         self.cache_effects = [
             effect for effect in self.inputs if isinstance(effect, parser.CacheEffect)
@@ -49,6 +50,18 @@ class Instruction(parser.InstDef):
             effect for effect in self.inputs if isinstance(effect, parser.StackEffect)
         ]
         self.output_effects = self.outputs  # For consistency/completeness
+
+    def check_overlaps(self, psr: parser.Parser) -> None:
+        for i, inp in enumerate(self.input_effects):
+            for j, outp in enumerate(self.output_effects):
+                if inp.name == outp.name and inp.name != "unused":
+                    if i != j:
+                        tkn = psr.tokens[ctx.begin] if (ctx := self.context) else None
+                        raise psr.make_syntax_error(
+                            f"Input {inp.name!r} at pos {i} repeated in output at different pos {j}",
+                            tkn,
+                        )
+                    break
 
     def write(
         self, f: typing.TextIO, indent: str, dedent: int = 0
@@ -182,7 +195,8 @@ class Analyzer:
         self.families = {}
         while (tkn := psr.peek(raw=True)) and tkn.text != END_MARKER:
             if inst := psr.inst_def():
-                self.instrs[inst.name] = Instruction(inst)
+                self.instrs[inst.name] = instr = Instruction(inst)
+                instr.check_overlaps(psr)
             elif super := psr.super_def():
                 self.supers[super.name] = super
             elif family := psr.family_def():
