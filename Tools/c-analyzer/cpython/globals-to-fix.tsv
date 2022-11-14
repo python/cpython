@@ -321,20 +321,6 @@ Python/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 
 #-----------------------
-# unlikely to change after init (or main thread)
-
-# through C-API
-Python/frozen.c	-	PyImport_FrozenModules	-
-Python/frozen.c	-	_PyImport_FrozenAliases	-
-Python/frozen.c	-	_PyImport_FrozenBootstrap	-
-Python/frozen.c	-	_PyImport_FrozenStdlib	-
-Python/frozen.c	-	_PyImport_FrozenTest	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
-Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
-
-#-----------------------
 # state
 
 # object allocator

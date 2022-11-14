@@ -33,6 +33,7 @@ Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
 #-----------------------
 # effectively const, initialized before init
 
+Python/frozen.c	-	PyImport_FrozenModules	-
 Python/import.c	-	inittab_copy	-
 Python/import.c	-	PyImport_Inittab	-
 
@@ -49,6 +50,10 @@ Python/fileutils.c	-	force_ascii	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 Python/import.c	import_find_and_load	header	-
 Python/initconfig.c	-	orig_argv	-
+Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
+Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
 Python/pyhash.c	-	_Py_HashSecret	-
 Python/pylifecycle.c	-	runtime_initialized	-
 Python/sysmodule.c	-	_preinit_warnoptions	-
@@ -554,7 +559,6 @@ Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	usedpools	-
-Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
 Objects/unicodeobject.c	-	stripfuncnames	-
@@ -579,10 +583,15 @@ Python/frozen.c	-	aliases	-
 Python/frozen.c	-	bootstrap_modules	-
 Python/frozen.c	-	stdlib_modules	-
 Python/frozen.c	-	test_modules	-
+Python/frozen.c	-	_PyImport_FrozenAliases	-
+Python/frozen.c	-	_PyImport_FrozenBootstrap	-
+Python/frozen.c	-	_PyImport_FrozenStdlib	-
+Python/frozen.c	-	_PyImport_FrozenTest	-
 Python/getopt.c	-	longopts	-
 Python/import.c	-	_PyImport_Inittab	-
 Python/import.c	-	_PySys_ImplCacheTag	-
 Python/opcode_targets.h	-	opcode_targets	-
+Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Python/pyhash.c	-	PyHash_Func	-
 Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
 Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
