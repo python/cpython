@@ -328,7 +328,6 @@ Objects/unicodeobject.c	-	ucnhash_capi	-
 Python/suggestions.c	levenshtein_distance	buffer	-
 
 # other
-Objects/dictobject.c	-	_pydict_global_version	-
 Objects/funcobject.c	-	next_func_version	-
 Objects/object.c	-	_Py_RefTotal	-
 Python/perf_trampoline.c	-	perf_status	-

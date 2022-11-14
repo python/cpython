@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"          /* _Py_atomic_address */
-#include "pycore_dict.h"            // struct _Py_dict_runtime_state
+#include "pycore_dict_state.h"      // struct _Py_dict_runtime_state
 #include "pycore_dtoa.h"            // struct _dtoa_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_gil.h"             // struct _gil_runtime_state

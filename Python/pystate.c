@@ -458,7 +458,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->interpreter_trampoline);
 
     for (int i=0; i < DICT_MAX_WATCHERS; i++) {
-        interp->dict_watchers[i] = NULL;
+        interp->dict_state.watchers[i] = NULL;
     }
 
     // XXX Once we have one allocator per interpreter (i.e.
