@@ -13,25 +13,23 @@
 --------------
 
 This module converts between Python values and C structs represented
-as Python :class:`bytes` objects.  This can be used to handle binary data
-in files or on network connections, among other sources.  It uses
-:ref:`struct-format-strings` as compact descriptions of the layout of the C
-structs and the intended conversion to/from Python values.
-
-This module can be used for two largely distinct applications, data
-exchange with external sources, or data transfer between the Python
-application and the C layer.  :ref:`applications` of different format
-characters are covered below.
+as Python :class:`bytes` objects.  Compact :ref:`format strings <struct-format-strings>`
+describe the intended conversions to/from Python values.
+The module's functions and objects can be used for two largely
+distinct applications, data exchange with external sources (files or
+network connections), or data transfer between the Python application
+and the C layer.
 
 .. note::
 
-   By default, the result of packing a given C struct includes pad bytes in
-   order to maintain proper alignment for the C types involved; similarly,
-   alignment is taken into account when unpacking.  This behavior is chosen so
-   that the bytes of a packed struct correspond exactly to the layout in memory
-   of the corresponding C struct.  To handle platform-independent data formats
-   or omit implicit pad bytes, use ``standard`` size and alignment instead of
-   ``native`` size and alignment: see :ref:`struct-alignment` for details.
+   Native mode is the default, packing or unpacking data based on the
+   platform and compiler on which the Python interpreter was built.
+   The result of packing a given C struct includes pad bytes which
+   maintain proper alignment for the C types involved; similarly,
+   alignment is taken into account when unpacking.  In contrast, when
+   communicating data between external sources, the programmer is
+   responsible for defining byte ordering and padding between elements.
+   See :ref:`struct-alignment` for details.
 
 Several :mod:`struct` functions (and methods of :class:`Struct`) take a *buffer*
 argument.  This refers to objects that implement the :ref:`bufferobjects` and
@@ -107,10 +105,13 @@ The module defines the following exception and functions:
 Format Strings
 --------------
 
-Format strings are the mechanism used to specify the expected layout when
-packing and unpacking data.  They are built up from :ref:`format-characters`,
-which specify the type of data being packed/unpacked.  In addition, there are
-special characters for controlling the :ref:`struct-alignment`.
+Format strings describe the data layout when
+packing and unpacking data.  They are built up from :ref:`format characters<format-characters>`,
+which specify the type of data being packed/unpacked.  In addition,
+special characters control the :ref:`byte order, size and alignment<struct-alignment>`.
+Each format string consists of an optional prefix character which
+describes the overall properties of the data and one or more format
+characters which describe the actual data values and padding.
 
 
 .. _struct-alignment:
@@ -121,8 +122,11 @@ Byte Order, Size, and Alignment
 By default, C types are represented in the machine's native format and byte
 order, and properly aligned by skipping pad bytes if necessary (according to the
 rules used by the C compiler).
-Whether you use default byte ordering
-and padding or more explicit formats depends on your application.
+This behavior is chosen so
+that the bytes of a packed struct correspond exactly to the memory layout
+of the corresponding C struct.
+Whether you use native byte ordering
+and padding or standard formats depends on your application.
 
 .. index::
    single: @ (at); in struct format strings
@@ -154,7 +158,7 @@ If the first character is not one of these, ``'@'`` is assumed.
 Native byte order is big-endian or little-endian, depending on the
 host system. For example, Intel x86, AMD64 (x86-64), and Apple M1 are
 little-endian; IBM z and most legacy architectures are big-endian.
-Use :func:`sys.byteorder` to check the endianness of your system.
+Use :data:`sys.byteorder` to check the endianness of your system.
 
 Native size and alignment are determined using the C compiler's
 ``sizeof`` expression.  This is always combined with native byte order.
@@ -297,7 +301,7 @@ Notes:
    format <half precision format_>`_ for more information.
 
 (7)
-   For padding, ``x`` inserts null bytes.
+   For padding, ``'x'`` inserts null bytes.
 
 (8)
    The ``'p'`` format character encodes a "Pascal string", meaning a short
@@ -314,7 +318,11 @@ Notes:
 (9)
    For the ``'s'`` format character, the count is interpreted as the length of the
    bytes, not a repeat count like for the other format characters; for example,
-   ``'10s'`` means a single 10-byte string, while ``'10c'`` means 10 characters.
+   ``'10s'`` means a single 10-byte string mapping to or from a single
+   Python byte string, while ``'10c'`` means 10
+   separate one byte character elements (e.g., ``cccccccccc``) mapping
+   to or from ten different Python byte objects. (See :ref:`struct-examples`
+   for a concrete demonstration of the difference.)
    If a count is not given, it defaults to 1.  For packing, the string is
    truncated or padded with null bytes as appropriate to make it fit. For
    unpacking, the resulting bytes object always has exactly the specified number
@@ -351,20 +359,36 @@ Examples
 ^^^^^^^^
 
 .. note::
-   Unless otherwise specified,
-   all examples assume a native byte order, size, and alignment with a
-   big-endian machine.
+   Native byte order examples (designated by the ``'@'`` format prefix or
+   lack of any prefix character) may not match what the reader's
+   machine produces as
+   that depends on the platform and compiler.
 
-A basic example of packing/unpacking three integers, forcing big
-endian ordering::
+Pack and unpack integers of three different sizes, using big endian
+ordering::
 
     >>> from struct import *
-    >>> pack('>hhl', 1, 2, 3)
-    b'\x00\x01\x00\x02\x00\x00\x00\x03'
-    >>> unpack('>hhl', b'\x00\x01\x00\x02\x00\x00\x00\x03')
+    >>> pack(">bhl", 1, 2, 3)
+    b'\x01\x00\x02\x00\x00\x00\x03'
+    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03'
     (1, 2, 3)
-    >>> calcsize('>hhl')
-    8
+    >>> calcsize('>bhl')
+    7
+
+Attempt to pack an integer which is too large for the defined field::
+
+    >>> pack(">h", 99999)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    struct.error: 'h' format requires -32768 <= number <= 32767
+
+Demonstrate the difference between ``'s'`` and ``'c'`` format
+characters::
+
+    >>> pack("@ccc", b'1', b'2', b'3')
+    b'123'
+    >>> pack("@3s", b'123')
+    b'123'
 
 Unpacked fields can be named by assigning them to variables or by wrapping
 the result in a named tuple::
@@ -377,21 +401,23 @@ the result in a named tuple::
     >>> Student._make(unpack('<10sHHb', record))
     Student(name=b'raymond   ', serialnum=4658, school=264, gradelevel=8)
 
-The ordering of format characters may have an impact on size since the padding
-needed to satisfy alignment requirements is different. In this
-example, the output was produced on a little endian machine::
+The ordering of format characters may have an impact on size since the
+padding needed to satisfy alignment requirements is different. Note in
+the first ``pack`` call below that three NUL bytes were added after the
+packed ``'#'`` to align the following integer on a four-byte boundary.
+In this example, the output was produced on a little endian machine::
 
-    >>> pack('@ci', b'*', 0x12131415)
-    b'*\x00\x00\x00\x15\x14\x13\x12'
-    >>> pack('@ic', 0x12131415, b'*')
-    b'\x15\x14\x13\x12*'
+    >>> pack('@ci', b'#', 0x12131415)
+    b'#\x00\x00\x00\x15\x14\x13\x12'
+    >>> pack('@ic', 0x12131415, b'#')
+    b'\x15\x14\x13\x12#'
     >>> calcsize('@ci')
     8
     >>> calcsize('@ic')
     5
 
-The following format ``'llh0l'`` specifies two pad bytes at the end, assuming
-longs are aligned on 4-byte boundaries::
+The following format ``'llh0l'`` results in two pad bytes being added
+at the end, assuming longs are aligned on 4-byte boundaries::
 
     >>> pack('@llh0l', 1, 2, 3)
     b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x03\x00\x00'
@@ -402,8 +428,11 @@ longs are aligned on 4-byte boundaries::
    Module :mod:`array`
       Packed binary storage of homogeneous data.
 
-   Module :mod:`xdrlib`
-      Packing and unpacking of XDR data.
+   Module :mod:`json`
+      JSON encoder and decoder.
+
+   Module :mod:`pickle`
+      Python object serialization.
 
 
 .. _applications:
@@ -411,13 +440,15 @@ longs are aligned on 4-byte boundaries::
 Applications
 ------------
 
-Two main applications for the ``struct`` module exist, data
-interchange between Python and C within the application or with
-another application compiled using the same compiler (native formats),
-and data interchange between applications using agreed upon data
-layout (machine-independent formats).  Generally speaking, the format
-strings constructed for these two domains are distinct.
+Two main applications for the :mod:`struct` module exist, data
+interchange between Python and C code within an application or another
+application compiled using the same compiler (:ref:`native formats<struct-native-formats>`), and
+data interchange between applications using agreed upon data layout
+(:ref:`standard formats<struct-standard-formats>`).  Generally speaking, the format strings
+constructed for these two domains are distinct.
 
+
+.. _struct-native-formats:
 
 Native Formats
 ^^^^^^^^^^^^^^
@@ -425,76 +456,74 @@ Native Formats
 When constructing format strings which mimic native layouts, the
 compiler and machine architecture determine byte ordering and padding.
 In such cases, the ``@`` format character should be used to specify
-native byte ordering and data sizes.  Generally speaking, the ``l``
-format character should be used to specify the compiler's preferred
-long integer size.  This will vary across architectures.  For example,
-on a typical 64-bit architecture ``l`` specifies an 8-byte long
-integer.  On 32-bit architectures it most often specifies a 4-byte
-long integer.  Similarly, internal pad bytes are normally inserted
-automatically.  It's possible that a zero-repeat format code will be
-necessary at the end of a format string to round up to the correct
+native byte ordering and data sizes.  Internal pad bytes are normally inserted
+automatically.  It is possible that a zero-repeat format code will be
+needed at the end of a format string to round up to the correct
 byte boundary for proper alignment of consective chunks of data.
 
 Consider these two simple examples (on a 64-bit, little-endian
 machine)::
 
-    >>> len(struct.pack('@lhl', 1, 2, 3))
+    >>> calcsize('@lhl')
     24
-    >>> len(struct.pack('@llh', 1, 2, 3))
+    >>> calcsize('@llh')
     18
 
-Data is not padded to an 8-byte boundary without the use of extra
-padding.  A zero-repeat format code solves that problem::
+Data is not padded to an 8-byte boundary at the end of the second
+format string without the use of extra padding.  A zero-repeat format
+code solves that problem::
 
-    >>> len(struct.pack('@llh0l', 1, 2, 3))
+    >>> calcsize('@llh0l')
     24
 
-The ``x`` format code can be used to specify the repeat, but for
-native formats it's best to use a zero-repeat format like ``0l``.
+The ``'x'`` format code can be used to specify the repeat, but for
+native formats it is better to use a zero-repeat format like ``'0l'``.
 
-By default, native byte ordering and alignment is used, but it's best
-to be explicit and use the ``@`` format character.
+By default, native byte ordering and alignment is used, but it is
+better to be explicit and use the ``'@'`` prefix character.
 
 
-Machine-Independent Formats
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _struct-standard-formats:
+
+Standard Formats
+^^^^^^^^^^^^^^^^
 
 When exchanging data beyond your process such as storage or networks,
 byte ordering, size, and alignment should be precisely specified, as
-they may not correspond exactly to that of the local machine architecture.
-For example, network byte order is big-endian, while many popular
-CPUs are little-endian.  In those situations, the user must define
-this explicitly.  The first character should typically be ``<`` or
-``>`` (or sometimes ``!`` to be explicit that the format will use
-network byte order).  Padding is the responsibility of the programmer.
-The zero-repeat format character won't work.  Instead, the user must
-explicitly add ``x`` pad bytes where needed.  In addition, since the
-size of long integers is architecture dependent, use of ``l`` and
-``L`` must be avoided in preference to ``i`` and ``I`` (four bytes) or
-``q`` and ``Q`` (eight bytes).  Repeating the examples from the
-previous section, we have::
+they may not correspond exactly to that of the local machine
+architecture.  For example, network byte order is big-endian, while
+many popular CPUs are little-endian.  In those situations, the user
+must define this explicitly.  The first character should typically be
+``<`` or ``>`` (or sometimes ``!`` to be explicit that the format will
+use network byte order).  Padding is the responsibility of the
+programmer.  The zero-repeat format character won't work.  Instead,
+the user must explicitly add ``'x'`` pad bytes where needed.
+Revisiting the examples from the previous section, we have::
 
-    >>> len(struct.pack('<qh6xq', 1, 2, 3))
+    >>> calcsize('<qh6xq')
     24
-    >>> struct.pack('<qh6xq', 1, 2, 3) == struct.pack('@lhl', 1, 2, 3)
+    >>> pack('<qh6xq', 1, 2, 3) == pack('@lhl', 1, 2, 3)
     True
-    >>> len(struct.pack('@llh', 1, 2, 3))
+    >>> calcsize('@llh')
     18
-    >>> struct.pack('@llh', 1, 2, 3) == struct.pack('<qqh', 1, 2, 3)
+    >>> pack('@llh', 1, 2, 3) == pack('<qqh', 1, 2, 3)
     True
-    >>> len(struct.pack('<qqh6x', 1, 2, 3))
+    >>> calcsize('<qqh6x')
     24
-    >>> struct.pack('@llh0l', 1, 2, 3) == struct.pack('<qqh6x', 1, 2, 3)
+    >>> calcsize('@llh0l')
+    24
+    >>> pack('@llh0l', 1, 2, 3) == pack('<qqh6x', 1, 2, 3)
     True
 
-That the various examples are true on a particular machine doesn't
-mean they will be true everywhere.  For example, the last example is
-different on a 32-bit machine because the ``l`` format character
-specifies different integer sizes::
+The last expression isn't guaranteed to be ``True`` on different
+machines.  On an example 32-bit machine the ``'l'`` and ``'q'`` format
+characters happen not to be the same size::
 
-    >>> len(struct.pack('<qqh6x', 1, 2, 3))
+    >>> calcsize('<qqh6x')
     24
-    >>> struct.pack('@llh0l', 1, 2, 3) == struct.pack('<qqh6x', 1, 2, 3)
+    >>> calcsize('@llh0l')
+    12
+    >>> pack('@llh0l', 1, 2, 3) == pack('<qqh6x', 1, 2, 3)
     False
 
 
@@ -509,9 +538,9 @@ The :mod:`struct` module also defines the following type:
 .. class:: Struct(format)
 
    Return a new Struct object which writes and reads binary data according to
-   the format string *format*.  Creating a Struct object once and calling its
-   methods is more efficient than calling the :mod:`struct` functions with the
-   same format since the format string only needs to be compiled once.
+   the format string *format*.  Creating a ``Struct`` object once and calling its
+   methods is more efficient than calling module-level functions with the
+   same format since the format string is only compiled once.
 
    .. note::
 
