@@ -172,12 +172,6 @@ typedef uint64_t ULLong;
 #define Bug(x) {fprintf(stderr, "%s\n", x); exit(1);}
 #endif
 
-#ifndef PRIVATE_MEM
-#define PRIVATE_MEM 2304
-#endif
-#define PRIVATE_mem ((PRIVATE_MEM+sizeof(double)-1)/sizeof(double))
-static double private_mem[PRIVATE_mem], *pmem_next = private_mem;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -346,6 +340,8 @@ typedef struct Bigint Bigint;
    performance on impact. */
 
 #define freelist _PyRuntime.dtoa.freelist
+#define private_mem _PyRuntime.dtoa.preallocated
+#define pmem_next _PyRuntime.dtoa.preallocated_next
 
 /* Allocate space for a Bigint with up to 1<<k digits */
 
@@ -363,7 +359,7 @@ Balloc(int k)
         len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
             /sizeof(double);
         if (k <= Bigint_Kmax &&
-            pmem_next - private_mem + len <= (Py_ssize_t)PRIVATE_mem
+            pmem_next - private_mem + len <= (Py_ssize_t)Bigint_PREALLOC_SIZE
         ) {
             rv = (Bigint*)pmem_next;
             pmem_next += len;
@@ -395,6 +391,8 @@ Bfree(Bigint *v)
     }
 }
 
+#undef pmem_next
+#undef private_mem
 #undef freelist
 
 #else

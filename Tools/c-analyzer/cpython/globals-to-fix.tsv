@@ -324,14 +324,10 @@ Objects/unicodeobject.c	-	ucnhash_capi	-
 #-----------------------
 # state
 
-# pre-allocated memory
-Python/dtoa.c	-	private_mem	-
-
 # local buffer
 Python/suggestions.c	levenshtein_distance	buffer	-
 
 # linked list
-Python/dtoa.c	-	pmem_next	-
 Python/getargs.c	-	static_arg_parsers	-
 
 # other

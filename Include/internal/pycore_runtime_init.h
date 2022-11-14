@@ -39,6 +39,7 @@ extern "C" {
         .tracemalloc = { \
             .config = _PyTraceMalloc_Config_INIT, \
         }, \
+        .dtoa = _dtoa_runtime_state_INIT(runtime), \
         .types = { \
             .next_version_tag = 1, \
         }, \
