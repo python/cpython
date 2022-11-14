@@ -700,8 +700,13 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
 
 done:
     if (res > 0) {
-        *left_anchor += start_offset;
-        *right_anchor += start_offset;
+        // Normalize the AST offsets to byte offsets and adjust them with the
+        // start of the actual line (instead of the source code segment).
+        assert(segment != NULL);
+        assert(*left_anchor >= 0);
+        assert(*right_anchor >= 0);
+        *left_anchor = _PyPegen_byte_offset_to_character_offset(segment, *left_anchor) + start_offset;
+        *right_anchor = _PyPegen_byte_offset_to_character_offset(segment, *right_anchor) + start_offset;
     }
     Py_XDECREF(segment);
     if (arena) {

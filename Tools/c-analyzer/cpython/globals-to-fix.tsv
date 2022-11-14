@@ -304,26 +304,19 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 # manually cached PyUnicodeObject
 Python/ast_unparse.c	-	_str_replace_inf	-
 
-# holds statically-initialized strings
-Objects/typeobject.c	-	slotdefs	-
-
 # other
 Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
-Objects/unicodeobject.c	-	_string_module	-
-Objects/unicodeobject.c	-	interned	-
 
 #-----------------------
 # other
 
 # initialized once
 Python/context.c	-	_token_missing	-
-Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/hamt.c	-	_empty_bitmap_node	-
 Python/hamt.c	-	_empty_hamt	-
 
 # state
 Objects/typeobject.c	resolve_slotdups	pname	-
-Python/import.c	-	extensions	-
 
 
 ##################################
@@ -384,6 +377,7 @@ Python/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 Python/dtoa.c	-	p5s	-
+Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	-	force_ascii	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 Python/import.c	-	import_lock	-
@@ -398,8 +392,6 @@ Python/frozen.c	-	_PyImport_FrozenAliases	-
 Python/frozen.c	-	_PyImport_FrozenBootstrap	-
 Python/frozen.c	-	_PyImport_FrozenStdlib	-
 Python/frozen.c	-	_PyImport_FrozenTest	-
-Python/import.c	-	inittab_copy	-
-Python/import.c	-	PyImport_Inittab	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
@@ -421,21 +413,8 @@ Python/pathconfig.c	-	_Py_path_config	-
 #-----------------------
 # state
 
-# allocator
-Objects/obmalloc.c	-	_PyObject_Arena	-
+# object allocator
 Objects/obmalloc.c	-	_Py_tracemalloc_config	-
-Objects/obmalloc.c	-	arena_map_bot_count	-
-Objects/obmalloc.c	-	arena_map_mid_count	-
-Objects/obmalloc.c	-	arena_map_root	-
-Objects/obmalloc.c	-	arenas	-
-Objects/obmalloc.c	-	maxarenas	-
-Objects/obmalloc.c	-	narenas_currently_allocated	-
-Objects/obmalloc.c	-	narenas_highwater	-
-Objects/obmalloc.c	-	nfp2lasta	-
-Objects/obmalloc.c	-	ntimes_arena_allocated	-
-Objects/obmalloc.c	-	raw_allocated_blocks	-
-Objects/obmalloc.c	-	unused_arena_objects	-
-Objects/obmalloc.c	-	usable_arenas	-
 Objects/obmalloc.c	new_arena	debug_stats	-
 
 # pre-allocated memory
@@ -454,7 +433,6 @@ Python/getargs.c	-	static_arg_parsers	-
 Objects/dictobject.c	-	_pydict_global_version	-
 Objects/dictobject.c	-	next_dict_keys_version	-
 Objects/funcobject.c	-	next_func_version	-
-Objects/moduleobject.c	-	max_module_number	-
 Objects/object.c	-	_Py_RefTotal	-
 Python/perf_trampoline.c	-	perf_status	-
 Python/perf_trampoline.c	-	extra_code_index	-
@@ -511,6 +489,7 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
 Modules/itertoolsmodule.c	-	_grouper_type	-
 Modules/itertoolsmodule.c	-	accumulate_type	-
+Modules/itertoolsmodule.c	-	batched_type	-
 Modules/itertoolsmodule.c	-	chain_type	-
 Modules/itertoolsmodule.c	-	combinations_type	-
 Modules/itertoolsmodule.c	-	compress_type	-
@@ -700,89 +679,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 
 #-----------------------
 # cached - initialized once
-
-# _Py_IDENTIFIER (global)
-Modules/_asynciomodule.c	-	PyId___asyncio_running_event_loop__	-
-Modules/_asynciomodule.c	-	PyId__asyncio_future_blocking	-
-Modules/_asynciomodule.c	-	PyId_add_done_callback	-
-Modules/_asynciomodule.c	-	PyId_call_soon	-
-Modules/_asynciomodule.c	-	PyId_cancel	-
-Modules/_asynciomodule.c	-	PyId_get_event_loop	-
-Modules/_asynciomodule.c	-	PyId_throw	-
-Modules/_datetimemodule.c	-	PyId_as_integer_ratio	-
-Modules/_datetimemodule.c	-	PyId_fromutc	-
-Modules/_datetimemodule.c	-	PyId_isoformat	-
-Modules/_datetimemodule.c	-	PyId_strftime	-
-
-# _Py_IDENTIFIER (local)
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_call_exception_handler	-
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_exception	-
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_future	-
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_message	-
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_source_traceback	-
-Modules/_asynciomodule.c	FutureObj_get_state	PyId_CANCELLED	-
-Modules/_asynciomodule.c	FutureObj_get_state	PyId_FINISHED	-
-Modules/_asynciomodule.c	FutureObj_get_state	PyId_PENDING	-
-Modules/_asynciomodule.c	TaskObj_finalize	PyId_call_exception_handler	-
-Modules/_asynciomodule.c	TaskObj_finalize	PyId_message	-
-Modules/_asynciomodule.c	TaskObj_finalize	PyId_source_traceback	-
-Modules/_asynciomodule.c	TaskObj_finalize	PyId_task	-
-Modules/_asynciomodule.c	future_init	PyId_get_debug	-
-Modules/_asynciomodule.c	get_future_loop	PyId__loop	-
-Modules/_asynciomodule.c	get_future_loop	PyId_get_loop	-
-Modules/_asynciomodule.c	register_task	PyId_add	-
-Modules/_asynciomodule.c	unregister_task	PyId_discard	-
-Modules/_ctypes/_ctypes.c	CDataType_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	PyCArrayType_new	PyId__length_	-
-Modules/_ctypes/_ctypes.c	PyCArrayType_new	PyId__type_	-
-Modules/_ctypes/_ctypes.c	PyCFuncPtr_set_restype	PyId__check_retval_	-
-Modules/_ctypes/_ctypes.c	PyCPointerType_new	PyId__type_	-
-Modules/_ctypes/_ctypes.c	PyCPointerType_set_type	PyId__type_	-
-Modules/_ctypes/_ctypes.c	PyCSimpleType_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	PyCSimpleType_new	PyId__type_	-
-Modules/_ctypes/_ctypes.c	StructUnionType_new	PyId__abstract_	-
-Modules/_ctypes/_ctypes.c	StructUnionType_new	PyId__fields_	-
-Modules/_ctypes/_ctypes.c	_build_result	PyId___ctypes_from_outparam__	-
-Modules/_ctypes/_ctypes.c	_init_pos_args	PyId__fields_	-
-Modules/_ctypes/_ctypes.c	c_char_p_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	c_void_p_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	c_wchar_p_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	converters_from_argtypes	PyId_from_param	-
-Modules/_ctypes/_ctypes.c	make_funcptrtype_dict	PyId__argtypes_	-
-Modules/_ctypes/_ctypes.c	make_funcptrtype_dict	PyId__check_retval_	-
-Modules/_ctypes/_ctypes.c	make_funcptrtype_dict	PyId__flags_	-
-Modules/_ctypes/_ctypes.c	make_funcptrtype_dict	PyId__restype_	-
-Modules/_ctypes/callproc.c	ConvParam	PyId__as_parameter_	-
-Modules/_ctypes/callproc.c	unpickle	PyId___new__	-
-Modules/_ctypes/callproc.c	unpickle	PyId___setstate__	-
-Modules/_ctypes/stgdict.c	MakeAnonFields	PyId__anonymous_	-
-Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__pack_	-
-Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__swappedbytes_	-
-Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__use_broken_old_ctypes_structure_semantics_	-
-Modules/_cursesmodule.c	_curses_getwin	PyId_read	-
-Modules/_cursesmodule.c	_curses_window_putwin	PyId_write	-
-Modules/_cursesmodule.c	update_lines_cols	PyId_COLS	-
-Modules/_cursesmodule.c	update_lines_cols	PyId_LINES	-
-Modules/_datetimemodule.c	call_tzname	PyId_tzname	-
-Modules/_datetimemodule.c	date_strftime	PyId_timetuple	-
-Modules/_datetimemodule.c	date_today	PyId_fromtimestamp	-
-Modules/_datetimemodule.c	datetime_strptime	PyId__strptime_datetime	-
-Modules/_datetimemodule.c	make_Zreplacement	PyId_replace	-
-Modules/_datetimemodule.c	tzinfo_reduce	PyId___getinitargs__	-
-Modules/_elementtree.c	_elementtree_Element_find_impl	PyId_find	-
-Modules/_elementtree.c	_elementtree_Element_findall_impl	PyId_findall	-
-Modules/_elementtree.c	_elementtree_Element_findtext_impl	PyId_findtext	-
-Modules/_elementtree.c	_elementtree_Element_iterfind_impl	PyId_iterfind	-
-Modules/_elementtree.c	expat_start_doctype_handler	PyId_doctype	-
-Modules/_elementtree.c	treebuilder_add_subelement	PyId_append	-
-Modules/_elementtree.c	treebuilder_flush_data	PyId_tail	-
-Modules/_elementtree.c	treebuilder_flush_data	PyId_text	-
-Modules/_json.c	_encoded_const	PyId_false	-
-Modules/_json.c	_encoded_const	PyId_null	-
-Modules/_json.c	_encoded_const	PyId_true	-
-Modules/_json.c	raise_errmsg	PyId_JSONDecodeError	-
-Modules/_json.c	raise_errmsg	PyId_decoder	-
-Modules/ossaudiodev.c	oss_exit	PyId_close	-
 
 # manually cached PyUnicodeOjbect
 Modules/_asynciomodule.c	-	context_kwname	-

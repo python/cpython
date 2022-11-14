@@ -524,8 +524,7 @@ set_eval_frame_record(PyObject *self, PyObject *list)
         return NULL;
     }
     Py_CLEAR(record_list);
-    Py_INCREF(list);
-    record_list = list;
+    record_list = Py_NewRef(list);
     _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), record_eval);
     Py_RETURN_NONE;
 }

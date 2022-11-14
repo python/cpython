@@ -200,8 +200,7 @@ get_future_loop(PyObject *fut)
 
     if (Future_CheckExact(fut) || Task_CheckExact(fut)) {
         PyObject *loop = ((FutureObj *)fut)->fut_loop;
-        Py_INCREF(loop);
-        return loop;
+        return Py_NewRef(loop);
     }
 
     if (_PyObject_LookupAttr(fut, &_Py_ID(get_loop), &getloop) < 0) {
@@ -265,8 +264,7 @@ get_running_loop(PyObject **loop)
     }
 #endif
 
-    Py_INCREF(running_loop);
-    *loop = running_loop;
+    *loop = Py_NewRef(running_loop);
     return 0;
 
 not_found:
@@ -541,8 +539,7 @@ future_set_result(FutureObj *fut, PyObject *res)
     }
 
     assert(!fut->fut_result);
-    Py_INCREF(res);
-    fut->fut_result = res;
+    fut->fut_result = Py_NewRef(res);
     fut->fut_state = STATE_FINISHED;
 
     if (future_schedule_callbacks(fut) == -1) {
@@ -573,8 +570,7 @@ future_set_exception(FutureObj *fut, PyObject *exc)
         }
     }
     else {
-        exc_val = exc;
-        Py_INCREF(exc_val);
+        exc_val = Py_NewRef(exc);
     }
     if (!PyExceptionInstance_Check(exc_val)) {
         Py_DECREF(exc_val);
@@ -655,14 +651,12 @@ future_get_result(FutureObj *fut, PyObject **result)
         if (PyException_SetTraceback(fut->fut_exception, tb) < 0) {
             return -1;
         }
-        Py_INCREF(fut->fut_exception);
-        *result = fut->fut_exception;
+        *result = Py_NewRef(fut->fut_exception);
         Py_CLEAR(fut->fut_exception_tb);
         return 1;
     }
 
-    Py_INCREF(fut->fut_result);
-    *result = fut->fut_result;
+    *result = Py_NewRef(fut->fut_result);
     return 0;
 }
 
@@ -704,10 +698,8 @@ future_add_done_callback(FutureObj *fut, PyObject *arg, PyObject *ctx)
         */
 
         if (fut->fut_callbacks == NULL && fut->fut_callback0 == NULL) {
-            Py_INCREF(arg);
-            fut->fut_callback0 = arg;
-            Py_INCREF(ctx);
-            fut->fut_context0 = ctx;
+            fut->fut_callback0 = Py_NewRef(arg);
+            fut->fut_context0 = Py_NewRef(ctx);
         }
         else {
             PyObject *tup = PyTuple_New(2);
@@ -896,8 +888,7 @@ _asyncio_Future_exception_impl(FutureObj *self)
 
     if (self->fut_exception != NULL) {
         self->fut_log_tb = 0;
-        Py_INCREF(self->fut_exception);
-        return self->fut_exception;
+        return Py_NewRef(self->fut_exception);
     }
 
     Py_RETURN_NONE;
@@ -1158,8 +1149,7 @@ _asyncio_Future_get_loop_impl(FutureObj *self)
 /*[clinic end generated code: output=119b6ea0c9816c3f input=cba48c2136c79d1f]*/
 {
     ENSURE_FUTURE_ALIVE(self)
-    Py_INCREF(self->fut_loop);
-    return self->fut_loop;
+    return Py_NewRef(self->fut_loop);
 }
 
 static PyObject *
@@ -1230,8 +1220,7 @@ FutureObj_get_loop(FutureObj *fut, void *Py_UNUSED(ignored))
     if (!future_is_alive(fut)) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(fut->fut_loop);
-    return fut->fut_loop;
+    return Py_NewRef(fut->fut_loop);
 }
 
 static PyObject *
@@ -1246,8 +1235,7 @@ FutureObj_get_callbacks(FutureObj *fut, void *Py_UNUSED(ignored))
             Py_RETURN_NONE;
         }
 
-        Py_INCREF(fut->fut_callbacks);
-        return fut->fut_callbacks;
+        return Py_NewRef(fut->fut_callbacks);
     }
 
     Py_ssize_t len = 1;
@@ -1293,8 +1281,7 @@ FutureObj_get_result(FutureObj *fut, void *Py_UNUSED(ignored))
     if (fut->fut_result == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(fut->fut_result);
-    return fut->fut_result;
+    return Py_NewRef(fut->fut_result);
 }
 
 static PyObject *
@@ -1304,8 +1291,7 @@ FutureObj_get_exception(FutureObj *fut, void *Py_UNUSED(ignored))
     if (fut->fut_exception == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(fut->fut_exception);
-    return fut->fut_exception;
+    return Py_NewRef(fut->fut_exception);
 }
 
 static PyObject *
@@ -1314,8 +1300,7 @@ FutureObj_get_source_traceback(FutureObj *fut, void *Py_UNUSED(ignored))
     if (!future_is_alive(fut) || fut->fut_source_tb == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(fut->fut_source_tb);
-    return fut->fut_source_tb;
+    return Py_NewRef(fut->fut_source_tb);
 }
 
 static PyObject *
@@ -1324,8 +1309,7 @@ FutureObj_get_cancel_message(FutureObj *fut, void *Py_UNUSED(ignored))
     if (fut->fut_cancel_msg == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(fut->fut_cancel_msg);
-    return fut->fut_cancel_msg;
+    return Py_NewRef(fut->fut_cancel_msg);
 }
 
 static int
@@ -1361,8 +1345,7 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
     default:
         assert (0);
     }
-    Py_XINCREF(ret);
-    return ret;
+    return Py_XNewRef(ret);
 }
 
 static PyObject *
@@ -1587,8 +1570,7 @@ FutureIter_am_send(futureiterobject *it,
     if (fut->fut_state == STATE_PENDING) {
         if (!fut->fut_blocking) {
             fut->fut_blocking = 1;
-            Py_INCREF(fut);
-            *result = (PyObject *)fut;
+            *result = Py_NewRef(fut);
             return PYGEN_NEXT;
         }
         PyErr_SetString(PyExc_RuntimeError,
@@ -1873,11 +1855,8 @@ TaskStepMethWrapper_new(TaskObj *task, PyObject *arg)
         return NULL;
     }
 
-    Py_INCREF(task);
-    o->sw_task = task;
-
-    Py_XINCREF(arg);
-    o->sw_arg = arg;
+    o->sw_task = (TaskObj*)Py_NewRef(task);
+    o->sw_arg = Py_XNewRef(arg);
 
     PyObject_GC_Track(o);
     return (PyObject*) o;
@@ -2105,8 +2084,7 @@ static PyObject *
 TaskObj_get_coro(TaskObj *task, void *Py_UNUSED(ignored))
 {
     if (task->task_coro) {
-        Py_INCREF(task->task_coro);
-        return task->task_coro;
+        return Py_NewRef(task->task_coro);
     }
 
     Py_RETURN_NONE;
@@ -2116,8 +2094,7 @@ static PyObject *
 TaskObj_get_fut_waiter(TaskObj *task, void *Py_UNUSED(ignored))
 {
     if (task->task_fut_waiter) {
-        Py_INCREF(task->task_fut_waiter);
-        return task->task_fut_waiter;
+        return Py_NewRef(task->task_fut_waiter);
     }
 
     Py_RETURN_NONE;
@@ -2360,8 +2337,7 @@ static PyObject *
 _asyncio_Task_get_coro_impl(TaskObj *self)
 /*[clinic end generated code: output=bcac27c8cc6c8073 input=d2e8606c42a7b403]*/
 {
-    Py_INCREF(self->task_coro);
-    return self->task_coro;
+    return Py_NewRef(self->task_coro);
 }
 
 /*[clinic input]
@@ -2372,8 +2348,7 @@ static PyObject *
 _asyncio_Task_get_context_impl(TaskObj *self)
 /*[clinic end generated code: output=6996f53d3dc01aef input=87c0b209b8fceeeb]*/
 {
-    Py_INCREF(self->task_context);
-    return self->task_context;
+    return Py_NewRef(self->task_context);
 }
 
 /*[clinic input]
@@ -2385,8 +2360,7 @@ _asyncio_Task_get_name_impl(TaskObj *self)
 /*[clinic end generated code: output=0ecf1570c3b37a8f input=a4a6595d12f4f0f8]*/
 {
     if (self->task_name) {
-        Py_INCREF(self->task_name);
-        return self->task_name;
+        return Py_NewRef(self->task_name);
     }
 
     Py_RETURN_NONE;
@@ -3258,9 +3232,7 @@ new_running_loop_holder(PyObject *loop)
 #if defined(HAVE_GETPID) && !defined(MS_WINDOWS)
     rl->rl_pid = getpid();
 #endif
-
-    Py_INCREF(loop);
-    rl->rl_loop = loop;
+    rl->rl_loop = Py_NewRef(loop);
 
     return rl;
 }
