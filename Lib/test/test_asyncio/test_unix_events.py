@@ -1108,6 +1108,11 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
 
 class AbstractChildWatcherTests(unittest.TestCase):
 
+    def test_warns_on_subclassing(self):
+        with self.assertWarns(DeprecationWarning):
+            class MyWatcher(asyncio.AbstractChildWatcher):
+                pass
+
     def test_not_implemented(self):
         f = mock.Mock()
         watcher = asyncio.AbstractChildWatcher()
@@ -1747,7 +1752,9 @@ class PolicyTests(unittest.TestCase):
 
             self.assertIsInstance(policy.get_event_loop(),
                                   asyncio.AbstractEventLoop)
-            watcher = policy.get_child_watcher()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                watcher = policy.get_child_watcher()
 
             self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
             self.assertIsNone(watcher._loop)

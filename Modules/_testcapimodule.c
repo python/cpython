@@ -342,8 +342,7 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    Py_XINCREF(result);
-    return result;
+    return Py_XNewRef(result);
 }
 
 /* Issue #4701: Check that PyObject_Hash implicitly calls
@@ -1447,11 +1446,9 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
         return NULL;
     }
     if (macro) {
-        Py_INCREF(PyDateTime_TimeZone_UTC);
-        return PyDateTime_TimeZone_UTC;
+        return Py_NewRef(PyDateTime_TimeZone_UTC);
     } else {
-        Py_INCREF(PyDateTimeAPI->TimeZone_UTC);
-        return PyDateTimeAPI->TimeZone_UTC;
+        return Py_NewRef(PyDateTimeAPI->TimeZone_UTC);
     }
 }
 
@@ -2238,8 +2235,7 @@ failing_converter(PyObject *obj, void *arg)
 {
     /* Clone str1, then let the conversion fail. */
     assert(str1);
-    str2 = str1;
-    Py_INCREF(str2);
+    str2 = Py_NewRef(str1);
     return 0;
 }
 static PyObject*
@@ -2682,8 +2678,7 @@ with_tp_del(PyObject *self, PyObject *args)
         return NULL;
     }
     tp->tp_del = slot_tp_del;
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject *
@@ -2701,8 +2696,7 @@ without_gc(PyObject *Py_UNUSED(self), PyObject *obj)
         tp->tp_clear = NULL;
     }
     assert(!PyType_IS_GC(tp));
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyMethodDef ml;
@@ -2723,8 +2717,7 @@ static PyMethodDef ml = {
 static PyObject *
 _test_incref(PyObject *ob)
 {
-    Py_INCREF(ob);
-    return ob;
+    return Py_NewRef(ob);
 }
 
 static PyObject *
@@ -3071,8 +3064,7 @@ test_setallocators(PyMemAllocatorDomain domain)
         goto fail;
     }
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_NewRef(Py_None);
     goto finally;
 
 fail:
@@ -3332,8 +3324,7 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
         goto exit;
     }
 
-    Py_INCREF(callback);
-    test_c_thread.callback = callback;
+    test_c_thread.callback = Py_NewRef(callback);
 
     PyThread_acquire_lock(test_c_thread.start_event, 1);
     PyThread_acquire_lock(test_c_thread.exit_event, 1);
@@ -3354,8 +3345,7 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
         PyThread_release_lock(test_c_thread.exit_event);
     Py_END_ALLOW_THREADS
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_NewRef(Py_None);
 
 exit:
     Py_CLEAR(test_c_thread.callback);
@@ -4291,8 +4281,7 @@ _null_to_none(PyObject* obj)
     if (obj == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject*
@@ -4808,8 +4797,7 @@ get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(args))
         PyErr_SetString(PyExc_RuntimeError, "no watchers active");
         return NULL;
     }
-    Py_INCREF(g_dict_watch_events);
-    return g_dict_watch_events;
+    return Py_NewRef(g_dict_watch_events);
 }
 
 
@@ -5178,8 +5166,7 @@ function_get_code(PyObject *self, PyObject *func)
 {
     PyObject *code = PyFunction_GetCode(func);
     if (code != NULL) {
-        Py_INCREF(code);
-        return code;
+        return Py_NewRef(code);
     } else {
         return NULL;
     }
@@ -5190,8 +5177,7 @@ function_get_globals(PyObject *self, PyObject *func)
 {
     PyObject *globals = PyFunction_GetGlobals(func);
     if (globals != NULL) {
-        Py_INCREF(globals);
-        return globals;
+        return Py_NewRef(globals);
     } else {
         return NULL;
     }
@@ -5202,8 +5188,7 @@ function_get_module(PyObject *self, PyObject *func)
 {
     PyObject *module = PyFunction_GetModule(func);
     if (module != NULL) {
-        Py_INCREF(module);
-        return module;
+        return Py_NewRef(module);
     } else {
         return NULL;
     }
@@ -5214,8 +5199,7 @@ function_get_defaults(PyObject *self, PyObject *func)
 {
     PyObject *defaults = PyFunction_GetDefaults(func);
     if (defaults != NULL) {
-        Py_INCREF(defaults);
-        return defaults;
+        return Py_NewRef(defaults);
     } else if (PyErr_Occurred()) {
         return NULL;
     } else {
@@ -5241,8 +5225,7 @@ function_get_kw_defaults(PyObject *self, PyObject *func)
 {
     PyObject *defaults = PyFunction_GetKwDefaults(func);
     if (defaults != NULL) {
-        Py_INCREF(defaults);
-        return defaults;
+        return Py_NewRef(defaults);
     } else if (PyErr_Occurred()) {
         return NULL;
     } else {
@@ -5353,8 +5336,7 @@ get_type_modified_events(PyObject *self, PyObject *Py_UNUSED(args))
         PyErr_SetString(PyExc_RuntimeError, "no watchers active");
         return NULL;
     }
-    Py_INCREF(g_type_modified_events);
-    return g_type_modified_events;
+    return Py_NewRef(g_type_modified_events);
 }
 
 static PyObject *
@@ -5923,8 +5905,7 @@ awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    Py_INCREF(v);
-    ao->ao_iterator = v;
+    ao->ao_iterator = Py_NewRef(v);
 
     return (PyObject *)ao;
 }
@@ -5941,8 +5922,7 @@ awaitObject_dealloc(awaitObject *ao)
 static PyObject *
 awaitObject_await(awaitObject *ao)
 {
-    Py_INCREF(ao->ao_iterator);
-    return ao->ao_iterator;
+    return Py_NewRef(ao->ao_iterator);
 }
 
 static PyAsyncMethods awaitType_as_async = {
@@ -6163,8 +6143,7 @@ generic_alias_new(PyObject *item)
     if (o == NULL) {
         return NULL;
     }
-    Py_INCREF(item);
-    o->item = item;
+    o->item = Py_NewRef(item);
     return (PyObject*) o;
 }
 

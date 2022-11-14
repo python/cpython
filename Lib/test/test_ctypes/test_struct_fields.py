@@ -54,6 +54,15 @@ class StructFieldsTestCase(unittest.TestCase):
         x.char = b'a\0b\0'
         self.assertEqual(bytes(x), b'a\x00###')
 
+    def test_gh99275(self):
+        class BrokenStructure(Structure):
+            def __init_subclass__(cls, **kwargs):
+                cls._fields_ = []  # This line will fail, `stgdict` is not ready
+
+        with self.assertRaisesRegex(TypeError,
+                                    'ctypes state is not initialized'):
+            class Subclass(BrokenStructure): ...
+
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.
     def test___set__(self):

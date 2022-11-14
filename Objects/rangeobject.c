@@ -105,10 +105,8 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
             if (!stop) {
                 return NULL;
             }
-            start = _PyLong_GetZero();
-            Py_INCREF(start);
-            step = _PyLong_GetOne();
-            Py_INCREF(step);
+            start = Py_NewRef(_PyLong_GetZero());
+            step = Py_NewRef(_PyLong_GetOne());
             break;
         case 0:
             PyErr_SetString(PyExc_TypeError,
@@ -216,8 +214,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
         if (cmp_result < 0)
             return NULL;
         result = zero;
-        Py_INCREF(result);
-        return result;
+        return Py_NewRef(result);
     }
 
     if ((tmp1 = PyNumber_Subtract(hi, lo)) == NULL)
@@ -297,8 +294,7 @@ compute_range_item(rangeobject *r, PyObject *arg)
           return NULL;
         }
     } else {
-        i = arg;
-        Py_INCREF(i);
+        i = Py_NewRef(arg);
     }
 
     /* PyLong equivalent to:
@@ -522,30 +518,24 @@ range_hash(rangeobject *r)
     t = PyTuple_New(3);
     if (!t)
         return -1;
-    Py_INCREF(r->length);
-    PyTuple_SET_ITEM(t, 0, r->length);
+    PyTuple_SET_ITEM(t, 0, Py_NewRef(r->length));
     cmp_result = PyObject_Not(r->length);
     if (cmp_result == -1)
         goto end;
     if (cmp_result == 1) {
-        Py_INCREF(Py_None);
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(t, 1, Py_None);
-        PyTuple_SET_ITEM(t, 2, Py_None);
+        PyTuple_SET_ITEM(t, 1, Py_NewRef(Py_None));
+        PyTuple_SET_ITEM(t, 2, Py_NewRef(Py_None));
     }
     else {
-        Py_INCREF(r->start);
-        PyTuple_SET_ITEM(t, 1, r->start);
+        PyTuple_SET_ITEM(t, 1, Py_NewRef(r->start));
         cmp_result = PyObject_RichCompareBool(r->length, _PyLong_GetOne(), Py_EQ);
         if (cmp_result == -1)
             goto end;
         if (cmp_result == 1) {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(t, 2, Py_None);
+            PyTuple_SET_ITEM(t, 2, Py_NewRef(Py_None));
         }
         else {
-            Py_INCREF(r->step);
-            PyTuple_SET_ITEM(t, 2, r->step);
+            PyTuple_SET_ITEM(t, 2, Py_NewRef(r->step));
         }
     }
     result = PyObject_Hash(t);
@@ -982,8 +972,7 @@ longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
         if (cmp > 0)
             state = r->len;
     }
-    Py_INCREF(state);
-    Py_XSETREF(r->index, state);
+    Py_XSETREF(r->index, Py_NewRef(state));
     Py_RETURN_NONE;
 }
 
@@ -1118,14 +1107,10 @@ range_iter(PyObject *seq)
     if (it == NULL)
         return NULL;
 
-    it->start = r->start;
-    it->step = r->step;
-    it->len = r->length;
-    it->index = _PyLong_GetZero();
-    Py_INCREF(it->start);
-    Py_INCREF(it->step);
-    Py_INCREF(it->len);
-    Py_INCREF(it->index);
+    it->start = Py_NewRef(r->start);
+    it->step = Py_NewRef(r->step);
+    it->len = Py_NewRef(r->length);
+    it->index = Py_NewRef(_PyLong_GetZero());
     return (PyObject *)it;
 }
 
@@ -1206,8 +1191,7 @@ long_range:
     it->index = it->start = it->step = NULL;
 
     /* start + (len - 1) * step */
-    it->len = range->length;
-    Py_INCREF(it->len);
+    it->len = Py_NewRef(range->length);
 
     diff = PyNumber_Subtract(it->len, _PyLong_GetOne());
     if (!diff)
@@ -1228,8 +1212,7 @@ long_range:
     if (!it->step)
         goto create_failure;
 
-    it->index = _PyLong_GetZero();
-    Py_INCREF(it->index);
+    it->index = Py_NewRef(_PyLong_GetZero());
     return (PyObject *)it;
 
 create_failure:

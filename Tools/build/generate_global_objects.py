@@ -123,6 +123,12 @@ IDENTIFIERS = [
     '__rdivmod__',
 ]
 
+NON_GENERATED_IMMORTAL_OBJECTS = [
+    # The generated ones come from generate_runtime_init().
+    '(PyObject *)&_Py_SINGLETON(bytes_empty)',
+    '(PyObject *)&_Py_SINGLETON(tuple_empty)',
+]
+
 
 #######################################
 # helpers
@@ -287,49 +293,40 @@ def generate_runtime_init(identifiers, strings):
         printer = Printer(outfile)
         printer.write(before)
         printer.write(START)
-        with printer.block('#define _Py_global_objects_INIT', continuation=True):
-            with printer.block('.singletons =', ','):
-                # Global int objects.
-                with printer.block('.small_ints =', ','):
-                    for i in range(-nsmallnegints, nsmallposints):
-                        printer.write(f'_PyLong_DIGIT_INIT({i}),')
-                        immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + {i}]')
-                printer.write('')
-                # Global bytes objects.
-                printer.write('.bytes_empty = _PyBytes_SIMPLE_INIT(0, 0),')
-                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(bytes_empty)')
-                with printer.block('.bytes_characters =', ','):
-                    for i in range(256):
-                        printer.write(f'_PyBytes_CHAR_INIT({i}),')
-                        immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(bytes_characters)[{i}]')
-                printer.write('')
-                # Global strings.
-                with printer.block('.strings =', ','):
-                    with printer.block('.literals =', ','):
-                        for literal, name in sorted(strings.items(), key=lambda x: x[1]):
-                            printer.write(f'INIT_STR({name}, "{literal}"),')
-                            immortal_objects.append(f'(PyObject *)&_Py_STR({name})')
-                    with printer.block('.identifiers =', ','):
-                        for name in sorted(identifiers):
-                            assert name.isidentifier(), name
-                            printer.write(f'INIT_ID({name}),')
-                            immortal_objects.append(f'(PyObject *)&_Py_ID({name})')
-                    with printer.block('.ascii =', ','):
-                        for i in range(128):
-                            printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
-                            immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]')
-                    with printer.block('.latin1 =', ','):
-                        for i in range(128, 256):
-                            utf8 = ['"']
-                            for c in chr(i).encode('utf-8'):
-                                utf8.append(f"\\x{c:02x}")
-                            utf8.append('"')
-                            printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}", {"".join(utf8)}),')
-                            immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).latin1[{i} - 128]')
-                printer.write('')
-                with printer.block('.tuple_empty =', ','):
-                    printer.write('.ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0)')
-                    immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(tuple_empty)')
+        with printer.block('#define _Py_small_ints_INIT', continuation=True):
+            for i in range(-nsmallnegints, nsmallposints):
+                printer.write(f'_PyLong_DIGIT_INIT({i}),')
+                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(small_ints)[_PY_NSMALLNEGINTS + {i}]')
+        printer.write('')
+        with printer.block('#define _Py_bytes_characters_INIT', continuation=True):
+            for i in range(256):
+                printer.write(f'_PyBytes_CHAR_INIT({i}),')
+                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(bytes_characters)[{i}]')
+        printer.write('')
+        with printer.block('#define _Py_str_literals_INIT', continuation=True):
+            for literal, name in sorted(strings.items(), key=lambda x: x[1]):
+                printer.write(f'INIT_STR({name}, "{literal}"),')
+                immortal_objects.append(f'(PyObject *)&_Py_STR({name})')
+        printer.write('')
+        with printer.block('#define _Py_str_identifiers_INIT', continuation=True):
+            for name in sorted(identifiers):
+                assert name.isidentifier(), name
+                printer.write(f'INIT_ID({name}),')
+                immortal_objects.append(f'(PyObject *)&_Py_ID({name})')
+        printer.write('')
+        with printer.block('#define _Py_str_ascii_INIT', continuation=True):
+            for i in range(128):
+                printer.write(f'_PyASCIIObject_INIT("\\x{i:02x}"),')
+                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).ascii[{i}]')
+        printer.write('')
+        with printer.block('#define _Py_str_latin1_INIT', continuation=True):
+            for i in range(128, 256):
+                utf8 = ['"']
+                for c in chr(i).encode('utf-8'):
+                    utf8.append(f"\\x{c:02x}")
+                utf8.append('"')
+                printer.write(f'_PyUnicode_LATIN1_INIT("\\x{i:02x}", {"".join(utf8)}),')
+                immortal_objects.append(f'(PyObject *)&_Py_SINGLETON(strings).latin1[{i} - 128]')
         printer.write(END)
         printer.write(after)
         return immortal_objects
@@ -366,7 +363,7 @@ def generate_static_strings_initializer(identifiers, strings):
         printer.write(after)
 
 
-def generate_global_object_finalizers(immortal_objects):
+def generate_global_object_finalizers(generated_immortal_objects):
     # Target the runtime initializer.
     filename = os.path.join(INTERNAL, 'pycore_global_objects_fini_generated.h')
 
@@ -386,9 +383,15 @@ def generate_global_object_finalizers(immortal_objects):
         printer.write(START)
         printer.write('#ifdef Py_DEBUG')
         printer.write("static inline void")
-        with printer.block("_PyStaticObjects_CheckRefcnt(void)"):
-            for i in immortal_objects:
-                printer.write(f'_PyStaticObject_CheckRefcnt({i});')
+        with printer.block(
+                "_PyStaticObjects_CheckRefcnt(PyInterpreterState *interp)"):
+            printer.write('/* generated runtime-global */')
+            printer.write('// (see pycore_runtime_init_generated.h)')
+            for ref in generated_immortal_objects:
+                printer.write(f'_PyStaticObject_CheckRefcnt({ref});')
+            printer.write('/* non-generated */')
+            for ref in NON_GENERATED_IMMORTAL_OBJECTS:
+                printer.write(f'_PyStaticObject_CheckRefcnt({ref});')
         printer.write('#endif  // Py_DEBUG')
         printer.write(END)
         printer.write(after)
@@ -416,9 +419,9 @@ def main() -> None:
     identifiers, strings = get_identifiers_and_strings()
 
     generate_global_strings(identifiers, strings)
-    immortal_objects = generate_runtime_init(identifiers, strings)
+    generated_immortal_objects = generate_runtime_init(identifiers, strings)
     generate_static_strings_initializer(identifiers, strings)
-    generate_global_object_finalizers(immortal_objects)
+    generate_global_object_finalizers(generated_immortal_objects)
 
 
 if __name__ == '__main__':

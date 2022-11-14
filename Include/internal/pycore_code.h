@@ -456,6 +456,16 @@ _PyCode_LineNumberFromArray(PyCodeObject *co, int index)
     }
 }
 
+typedef struct _PyShimCodeDef {
+    const uint8_t *code;
+    int codelen;
+    int stacksize;
+    const char *cname;
+} _PyShimCodeDef;
+
+extern PyCodeObject *
+_Py_MakeShimCode(const _PyShimCodeDef *code);
+
 
 #ifdef __cplusplus
 }

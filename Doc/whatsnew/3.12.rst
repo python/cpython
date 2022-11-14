@@ -203,8 +203,8 @@ asyncio
   (Contributed by Kumar Aditya in :gh:`98024`.)
 
 * The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`,
-  :class:`~asyncio.FastChildWatcher` and
-  :class:`~asyncio.SafeChildWatcher` are deprecated and
+  :class:`~asyncio.FastChildWatcher`, :class:`~asyncio.AbstractChildWatcher`
+  and :class:`~asyncio.SafeChildWatcher` are deprecated and
   will be removed in Python 3.14. It is recommended to not manually
   configure a child watcher as the event loop now uses the best available
   child watcher for each platform (:class:`~asyncio.PidfdChildWatcher`
@@ -262,6 +262,13 @@ sqlite3
 
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+* Add the :attr:`~sqlite3.Connection.autocommit` attribute
+  to :class:`~sqlite3.Connection`
+  and the *autocommit* parameter to :func:`~sqlite3.connect`
+  to control :pep:`249`-compliant
+  :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
+  (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
 threading
 ---------
@@ -667,6 +674,12 @@ Build Changes
 * CPython now uses the ThinLTO option as the default link time optimization policy
   if the Clang compiler accepts the flag.
   (Contributed by Dong-hee Na in :gh:`89536`.)
+
+* Add ``COMPILEALL_OPTS`` variable in Makefile to override :mod:`compileall`
+  options (default: ``-j0``) in ``make install``. Also merged the 3
+  ``compileall`` commands into a single command to build .pyc files for all
+  optimization levels (0, 1, 2) at once.
+  (Contributed by Victor Stinner in :gh:`99289`.)
 
 
 C API Changes

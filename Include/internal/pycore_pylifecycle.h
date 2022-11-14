@@ -33,6 +33,7 @@ PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 /* Various one-time initializers */
 
+extern PyStatus _PyImport_Init(void);
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyInterpreterState *interp);
