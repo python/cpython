@@ -308,7 +308,7 @@ static PyHKEYObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self)
 /*[clinic end generated code: output=52c34986dab28990 input=c40fab1f0690a8e2]*/
 {
-    return Py_XNewRef(self);
+    return (PyHKEYObject*)Py_XNewRef(self);
 }
 
 
