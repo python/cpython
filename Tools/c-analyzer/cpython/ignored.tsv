@@ -38,10 +38,16 @@ Python/import.c	-	inittab_copy	-
 Python/import.c	-	PyImport_Inittab	-
 
 #-----------------------
-# effectively const, initialized during init
+# effectively const, initialized before/during init
 
 Modules/getbuildinfo.c	-	buildinfo	-
 Modules/getbuildinfo.c	-	initialized	-
+Python/getversion.c	-	initialized	-
+Python/getversion.c	-	version	-
+
+#-----------------------
+# effectively const, initialized during init
+
 Objects/floatobject.c	-	double_format	-
 Objects/floatobject.c	-	float_format	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
@@ -50,8 +56,6 @@ Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	-	force_ascii	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
-Python/getversion.c	-	initialized	-
-Python/getversion.c	-	version	-
 Python/import.c	import_find_and_load	header	-
 Python/initconfig.c	-	orig_argv	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
@@ -72,6 +76,7 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 
 #-----------------------
 # effectively const but initialized lazily
+# XXX Move them to _PyRuntimeState?
 
 # idempotent
 Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
@@ -83,7 +88,6 @@ Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 # used only in the main thread
 
 # REPL
-
 Parser/myreadline.c	-	_PyOS_ReadlineLock	-
 Parser/myreadline.c	-	_PyOS_ReadlineTState	-
 Parser/myreadline.c	-	PyOS_InputHook	-
@@ -96,17 +100,15 @@ Python/getopt.c	-	_PyOS_optind	-
 Python/getopt.c	-	opt_ptr	-
 Python/pathconfig.c	-	_Py_path_config	-
 
-#-----------------------
-# others
 
-# XXX The analyzer should have ignored these.
+##################################
+# The analyzer should have ignored these.
+# XXX Fix the analyzer.
+
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
 
-
-##################################
 # forward/extern references
-# XXX The analyzer should have ignored these.
 
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
