@@ -327,9 +327,6 @@ Objects/unicodeobject.c	-	ucnhash_capi	-
 # local buffer
 Python/suggestions.c	levenshtein_distance	buffer	-
 
-# linked list
-Python/getargs.c	-	static_arg_parsers	-
-
 # other
 Objects/dictobject.c	-	_pydict_global_version	-
 Objects/dictobject.c	-	next_dict_keys_version	-

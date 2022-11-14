@@ -19,7 +19,8 @@ extern "C" {
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 struct _getargs_runtime_state {
-   PyThread_type_lock mutex;
+    PyThread_type_lock mutex;
+    struct _PyArg_Parser *static_parsers;
 };
 
 /* ceval state */
