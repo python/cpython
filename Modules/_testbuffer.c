@@ -1524,8 +1524,7 @@ ndarray_getbuf(NDArrayObject *self, Py_buffer *view, int flags)
             return -1;
     }
 
-    view->obj = (PyObject *)self;
-    Py_INCREF(view->obj);
+    view->obj = Py_NewRef(self);
     self->head->exports++;
 
     return 0;
@@ -2021,8 +2020,7 @@ ndarray_get_obj(NDArrayObject *self, void *closure)
     if (base->obj == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(base->obj);
-    return base->obj;
+    return Py_NewRef(base->obj);
 }
 
 static PyObject *
@@ -2559,8 +2557,7 @@ result:
     PyBuffer_Release(&v2);
 
     ret = equal ? Py_True : Py_False;
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static PyObject *
@@ -2597,8 +2594,7 @@ is_contiguous(PyObject *self, PyObject *args)
         PyBuffer_Release(&view);
     }
 
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static Py_hash_t
@@ -2748,8 +2744,7 @@ staticarray_getbuf(StaticArrayObject *self, Py_buffer *view, int flags)
         view->obj = NULL; /* Don't use this in new code. */
     }
     else {
-        view->obj = (PyObject *)self;
-        Py_INCREF(view->obj);
+        view->obj = Py_NewRef(self);
     }
 
     return 0;

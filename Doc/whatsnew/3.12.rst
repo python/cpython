@@ -203,8 +203,8 @@ asyncio
   (Contributed by Kumar Aditya in :gh:`98024`.)
 
 * The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`,
-  :class:`~asyncio.FastChildWatcher` and
-  :class:`~asyncio.SafeChildWatcher` are deprecated and
+  :class:`~asyncio.FastChildWatcher`, :class:`~asyncio.AbstractChildWatcher`
+  and :class:`~asyncio.SafeChildWatcher` are deprecated and
   will be removed in Python 3.14. It is recommended to not manually
   configure a child watcher as the event loop now uses the best available
   child watcher for each platform (:class:`~asyncio.PidfdChildWatcher`
@@ -267,6 +267,13 @@ sqlite3
 
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+* Add the :attr:`~sqlite3.Connection.autocommit` attribute
+  to :class:`~sqlite3.Connection`
+  and the *autocommit* parameter to :func:`~sqlite3.connect`
+  to control :pep:`249`-compliant
+  :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
+  (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
 threading
 ---------
