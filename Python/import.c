@@ -94,9 +94,9 @@ _PyImportZip_Init(PyThreadState *tstate)
    in different threads to return with a partially loaded module.
    These calls are serialized by the global interpreter lock. */
 
-static PyThread_type_lock import_lock = NULL;
-static unsigned long import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
-static int import_lock_level = 0;
+#define import_lock _PyRuntime.imports.lock.mutex
+#define import_lock_thread _PyRuntime.imports.lock.thread
+#define import_lock_level _PyRuntime.imports.lock.level
 
 void
 _PyImport_AcquireLock(void)
@@ -1759,8 +1759,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     PyObject *mod = NULL;
     PyInterpreterState *interp = tstate->interp;
     int import_time = _PyInterpreterState_GetConfig(interp)->import_time;
-    static int import_level;
-    static _PyTime_t accumulated;
+#define import_level _PyRuntime.imports.find_and_load.import_level
+#define accumulated _PyRuntime.imports.find_and_load.accumulated
 
     _PyTime_t t1 = 0, accumulated_copy = accumulated;
 
@@ -1781,12 +1781,13 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-        static int header = 1;
+#define header _PyRuntime.imports.find_and_load.header
         if (header) {
             fputs("import time: self [us] | cumulative | imported package\n",
                   stderr);
             header = 0;
         }
+#undef header
 
         import_level++;
         t1 = _PyTime_GetPerfCounter();
@@ -1816,6 +1817,8 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     }
 
     return mod;
+#undef import_level
+#undef accumulated
 }
 
 PyObject *
