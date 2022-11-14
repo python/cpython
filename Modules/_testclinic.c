@@ -48,7 +48,7 @@ pack_arguments_newref(int argc, ...)
 
 /* Pack arguments to a tuple, all the arguments' refcounts should be increased before passing in.
  * Do not accept NULL arguments unless error occurs. */
-#define PACK_ARGUMENTS(argc, ...) do { \
+#define RETURN_PACKED_ARGS(argc, ...) do { \
         assert(!PyErr_Occurred()); \
         PyObject *out[argc] = {NULL,}; \
         for (int _i = 0; _i < argc; _i++) { \
@@ -222,21 +222,21 @@ char_converter_impl(PyObject *module, char a, char b, char c, char d, char e,
                     char m, char n)
 /*[clinic end generated code: output=f929dbd2e55a9871 input=b601bc5bc7fe85e3]*/
 {
-    PACK_ARGUMENTS(14,
-                   PyLong_FromUnsignedLong((unsigned char)a),
-                   PyLong_FromUnsignedLong((unsigned char)b),
-                   PyLong_FromUnsignedLong((unsigned char)c),
-                   PyLong_FromUnsignedLong((unsigned char)d),
-                   PyLong_FromUnsignedLong((unsigned char)e),
-                   PyLong_FromUnsignedLong((unsigned char)f),
-                   PyLong_FromUnsignedLong((unsigned char)g),
-                   PyLong_FromUnsignedLong((unsigned char)h),
-                   PyLong_FromUnsignedLong((unsigned char)i),
-                   PyLong_FromUnsignedLong((unsigned char)j),
-                   PyLong_FromUnsignedLong((unsigned char)k),
-                   PyLong_FromUnsignedLong((unsigned char)l),
-                   PyLong_FromUnsignedLong((unsigned char)m),
-                   PyLong_FromUnsignedLong((unsigned char)n));
+    RETURN_PACKED_ARGS(14,
+                       PyLong_FromUnsignedLong((unsigned char)a),
+                       PyLong_FromUnsignedLong((unsigned char)b),
+                       PyLong_FromUnsignedLong((unsigned char)c),
+                       PyLong_FromUnsignedLong((unsigned char)d),
+                       PyLong_FromUnsignedLong((unsigned char)e),
+                       PyLong_FromUnsignedLong((unsigned char)f),
+                       PyLong_FromUnsignedLong((unsigned char)g),
+                       PyLong_FromUnsignedLong((unsigned char)h),
+                       PyLong_FromUnsignedLong((unsigned char)i),
+                       PyLong_FromUnsignedLong((unsigned char)j),
+                       PyLong_FromUnsignedLong((unsigned char)k),
+                       PyLong_FromUnsignedLong((unsigned char)l),
+                       PyLong_FromUnsignedLong((unsigned char)m),
+                       PyLong_FromUnsignedLong((unsigned char)n));
 }
 
 
@@ -255,10 +255,10 @@ unsigned_char_converter_impl(PyObject *module, unsigned char a,
                              unsigned char b, unsigned char c)
 /*[clinic end generated code: output=490af3b39ce0b199 input=e859502fbe0b3185]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyLong_FromUnsignedLong(a),
-                   PyLong_FromUnsignedLong(b),
-                   PyLong_FromUnsignedLong(c));
+    RETURN_PACKED_ARGS(3,
+                       PyLong_FromUnsignedLong(a),
+                       PyLong_FromUnsignedLong(b),
+                       PyLong_FromUnsignedLong(c));
 }
 
 
@@ -274,7 +274,7 @@ static PyObject *
 short_converter_impl(PyObject *module, short a)
 /*[clinic end generated code: output=1ebb7ddb64248988 input=b4e2309a66f650ae]*/
 {
-    PACK_ARGUMENTS(1, PyLong_FromLong(a));
+    RETURN_PACKED_ARGS(1, PyLong_FromLong(a));
 }
 
 
@@ -293,10 +293,10 @@ unsigned_short_converter_impl(PyObject *module, unsigned short a,
                               unsigned short b, unsigned short c)
 /*[clinic end generated code: output=5f92cc72fc8707a7 input=9d15cd11e741d0c6]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyLong_FromUnsignedLong(a),
-                   PyLong_FromUnsignedLong(b),
-                   PyLong_FromUnsignedLong(c));
+    RETURN_PACKED_ARGS(3,
+                       PyLong_FromUnsignedLong(a),
+                       PyLong_FromUnsignedLong(b),
+                       PyLong_FromUnsignedLong(c));
 }
 
 
@@ -314,10 +314,10 @@ static PyObject *
 int_converter_impl(PyObject *module, int a, int b, int c)
 /*[clinic end generated code: output=8e56b59be7d0c306 input=a1dbc6344853db7a]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyLong_FromLong(a),
-                   PyLong_FromLong(b),
-                   PyLong_FromLong(c));
+    RETURN_PACKED_ARGS(3,
+                       PyLong_FromLong(a),
+                       PyLong_FromLong(b),
+                       PyLong_FromLong(c));
 }
 
 
@@ -336,10 +336,10 @@ unsigned_int_converter_impl(PyObject *module, unsigned int a, unsigned int b,
                             unsigned int c)
 /*[clinic end generated code: output=399a57a05c494cc7 input=8427ed9a3f96272d]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyLong_FromUnsignedLong(a),
-                   PyLong_FromUnsignedLong(b),
-                   PyLong_FromUnsignedLong(c));
+    RETURN_PACKED_ARGS(3,
+                       PyLong_FromUnsignedLong(a),
+                       PyLong_FromUnsignedLong(b),
+                       PyLong_FromUnsignedLong(c));
 }
 
 
@@ -355,7 +355,7 @@ static PyObject *
 long_converter_impl(PyObject *module, long a)
 /*[clinic end generated code: output=9663d936a652707a input=84ad0ef28f24bd85]*/
 {
-    PACK_ARGUMENTS(1, PyLong_FromLong(a));
+    RETURN_PACKED_ARGS(1, PyLong_FromLong(a));
 }
 
 
@@ -374,10 +374,10 @@ unsigned_long_converter_impl(PyObject *module, unsigned long a,
                              unsigned long b, unsigned long c)
 /*[clinic end generated code: output=120b82ea9ebd93a8 input=440dd6f1817f5d91]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyLong_FromUnsignedLong(a),
-                   PyLong_FromUnsignedLong(b),
-                   PyLong_FromUnsignedLong(c));
+    RETURN_PACKED_ARGS(3,
+                       PyLong_FromUnsignedLong(a),
+                       PyLong_FromUnsignedLong(b),
+                       PyLong_FromUnsignedLong(c));
 }
 
 
@@ -393,7 +393,7 @@ static PyObject *
 long_long_converter_impl(PyObject *module, long long a)
 /*[clinic end generated code: output=5fb5f2220770c3e1 input=730fcb3eecf4d993]*/
 {
-    PACK_ARGUMENTS(1, PyLong_FromLongLong(a));
+    RETURN_PACKED_ARGS(1, PyLong_FromLongLong(a));
 }
 
 
@@ -412,10 +412,10 @@ unsigned_long_long_converter_impl(PyObject *module, unsigned long long a,
                                   unsigned long long b, unsigned long long c)
 /*[clinic end generated code: output=65b7273e63501762 input=300737b0bdb230e9]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyLong_FromUnsignedLongLong(a),
-                   PyLong_FromUnsignedLongLong(b),
-                   PyLong_FromUnsignedLongLong(c));
+    RETURN_PACKED_ARGS(3,
+                       PyLong_FromUnsignedLongLong(a),
+                       PyLong_FromUnsignedLongLong(b),
+                       PyLong_FromUnsignedLongLong(c));
 }
 
 
@@ -434,10 +434,10 @@ py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                           Py_ssize_t c)
 /*[clinic end generated code: output=ce252143e0ed0372 input=76d0f342e9317a1f]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyLong_FromSsize_t(a),
-                   PyLong_FromSsize_t(b),
-                   PyLong_FromSsize_t(c));
+    RETURN_PACKED_ARGS(3,
+                       PyLong_FromSsize_t(a),
+                       PyLong_FromSsize_t(b),
+                       PyLong_FromSsize_t(c));
 }
 
 
@@ -456,10 +456,10 @@ slice_index_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                            Py_ssize_t c)
 /*[clinic end generated code: output=923c6cac77666a6b input=64f99f3f83265e47]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyLong_FromSsize_t(a),
-                   PyLong_FromSsize_t(b),
-                   PyLong_FromSsize_t(c));
+    RETURN_PACKED_ARGS(3,
+                       PyLong_FromSsize_t(a),
+                       PyLong_FromSsize_t(b),
+                       PyLong_FromSsize_t(c));
 }
 
 
@@ -475,7 +475,7 @@ static PyObject *
 size_t_converter_impl(PyObject *module, size_t a)
 /*[clinic end generated code: output=412b5b7334ab444d input=83ae7d9171fbf208]*/
 {
-    PACK_ARGUMENTS(1, PyLong_FromSize_t(a));
+    RETURN_PACKED_ARGS(1, PyLong_FromSize_t(a));
 }
 
 
@@ -491,7 +491,7 @@ static PyObject *
 float_converter_impl(PyObject *module, float a)
 /*[clinic end generated code: output=1c98f64f2cf1d55c input=a625b59ad68047d8]*/
 {
-    PACK_ARGUMENTS(1, PyFloat_FromDouble((double)a));
+    RETURN_PACKED_ARGS(1, PyFloat_FromDouble((double)a));
 }
 
 
@@ -507,7 +507,7 @@ static PyObject *
 double_converter_impl(PyObject *module, double a)
 /*[clinic end generated code: output=a4e8532d284d035d input=098df188f24e7c62]*/
 {
-    PACK_ARGUMENTS(1, PyFloat_FromDouble(a));
+    RETURN_PACKED_ARGS(1, PyFloat_FromDouble(a));
 }
 
 
@@ -523,7 +523,7 @@ static PyObject *
 py_complex_converter_impl(PyObject *module, Py_complex a)
 /*[clinic end generated code: output=9e6ca2eb53b14846 input=e9148a8ca1dbf195]*/
 {
-    PACK_ARGUMENTS(1, PyComplex_FromCComplex(a));
+    RETURN_PACKED_ARGS(1, PyComplex_FromCComplex(a));
 }
 
 
@@ -542,10 +542,10 @@ str_converter_impl(PyObject *module, const char *a, const char *b,
                    const char *c, Py_ssize_t c_length)
 /*[clinic end generated code: output=475bea40548c8cd6 input=bff2656c92ee25de]*/
 {
-    PACK_ARGUMENTS(3,
-                   PyUnicode_FromString(a),
-                   PyUnicode_FromString(b),
-                   PyUnicode_FromStringAndSize(c, c_length));
+    RETURN_PACKED_ARGS(3,
+                       PyUnicode_FromString(a),
+                       PyUnicode_FromString(b),
+                       PyUnicode_FromStringAndSize(c, c_length));
 }
 
 
@@ -586,7 +586,7 @@ py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b)
     }
     PyBuffer_Release(b);
 
-    PACK_ARGUMENTS(2, new_a, new_b);
+    RETURN_PACKED_ARGS(2, new_a, new_b);
 }
 
 
@@ -956,4 +956,4 @@ PyInit__testclinic(void)
     return PyModule_Create(&_testclinic_module);
 }
 
-#undef PACK_ARGUMENTS
+#undef RETURN_PACKED_ARGS
