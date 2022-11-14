@@ -17,6 +17,10 @@ extern void _PyDict_Fini(PyInterpreterState *interp);
 
 /* other API */
 
+struct _Py_dict_runtime_state {
+    uint32_t next_keys_version;
+};
+
 #ifndef WITH_FREELISTS
 // without freelists
 #  define PyDict_MAXFREELIST 0

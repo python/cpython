@@ -5661,17 +5661,15 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys)
     dictkeys_decref(keys);
 }
 
-static uint32_t next_dict_keys_version = 2;
-
 uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys)
 {
     if (dictkeys->dk_version != 0) {
         return dictkeys->dk_version;
     }
-    if (next_dict_keys_version == 0) {
+    if (_PyRuntime.dict_state.next_keys_version == 0) {
         return 0;
     }
-    uint32_t v = next_dict_keys_version++;
+    uint32_t v = _PyRuntime.dict_state.next_keys_version++;
     dictkeys->dk_version = v;
     return v;
 }
