@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"          /* _Py_atomic_address */
+#include "pycore_dtoa.h"            // struct Bigint
 #include "pycore_gil.h"             // struct _gil_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
@@ -128,6 +129,11 @@ typedef struct pyruntimestate {
     struct {
         struct _PyTraceMalloc_Config config;
     } tracemalloc;
+    struct {
+#ifndef Py_USING_MEMORY_DEBUGGER
+        struct Bigint *freelist[Bigint_Kmax+1];
+#endif
+    } dtoa;
 
     PyPreConfig preconfig;
 

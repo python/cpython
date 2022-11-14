@@ -325,7 +325,6 @@ Objects/unicodeobject.c	-	ucnhash_capi	-
 # state
 
 # pre-allocated memory
-Python/dtoa.c	-	freelist	-
 Python/dtoa.c	-	private_mem	-
 
 # local buffer

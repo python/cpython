@@ -1,3 +1,5 @@
+#ifndef Py_INTERNAL_DTOA_H
+#define Py_INTERNAL_DTOA_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,6 +12,21 @@ extern "C" {
 
 
 #if _PY_SHORT_FLOAT_REPR == 1
+
+typedef uint32_t ULong;
+
+struct
+Bigint {
+    struct Bigint *next;
+    int k, maxwds, sign, wds;
+    ULong x[1];
+};
+
+#ifndef Py_USING_MEMORY_DEBUGGER
+/* The size of the Bigint freelist */
+# define Bigint_Kmax 7
+#endif
+
 
 /* These functions are used by modules compiled as C extension like math:
    they must be exported. */
@@ -26,3 +43,4 @@ PyAPI_FUNC(double) _Py_dg_infinity(int sign);
 #ifdef __cplusplus
 }
 #endif
+#endif /* !Py_INTERNAL_DTOA_H */
