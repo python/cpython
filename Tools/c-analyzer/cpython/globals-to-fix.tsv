@@ -313,9 +313,6 @@ Python/hamt.c	-	_empty_hamt	-
 #-----------------------
 # initialized/set once
 
-# pre-allocated buffer
-Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
-
 # during init
 Objects/unicodeobject.c	-	bloom_linebreak	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-

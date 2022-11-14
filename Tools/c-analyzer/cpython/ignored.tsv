@@ -38,6 +38,9 @@ Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
 # XXX The analyzer should have ignored these.
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
+# a pre-allocated buffer with a very unlikely race
+Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
+
 
 ##################################
 # forward/extern references
