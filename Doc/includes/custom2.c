@@ -51,14 +51,12 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 
     if (first) {
         tmp = self->first;
-        Py_INCREF(first);
-        self->first = first;
+        self->first = Py_NewRef(first);
         Py_XDECREF(tmp);
     }
     if (last) {
         tmp = self->last;
-        Py_INCREF(last);
-        self->last = last;
+        self->last = Py_NewRef(last);
         Py_XDECREF(tmp);
     }
     return 0;
