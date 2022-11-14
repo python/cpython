@@ -709,8 +709,7 @@ array_richcompare(PyObject *v, PyObject *w, int op)
             res = Py_False;
         else
             res = Py_True;
-        Py_INCREF(res);
-        return res;
+        return Py_NewRef(res);
     }
 
     if (va->ob_descr == wa->ob_descr && va->ob_descr->compareitems != NULL) {
@@ -733,8 +732,7 @@ array_richcompare(PyObject *v, PyObject *w, int op)
         default: return NULL; /* cannot happen */
         }
         PyObject *res = cmp ? Py_True : Py_False;
-        Py_INCREF(res);
-        return res;
+        return Py_NewRef(res);
     }
 
 
@@ -778,18 +776,15 @@ array_richcompare(PyObject *v, PyObject *w, int op)
             res = Py_True;
         else
             res = Py_False;
-        Py_INCREF(res);
-        return res;
+        return Py_NewRef(res);
     }
 
     /* We have an item that differs.  First, shortcuts for EQ/NE */
     if (op == Py_EQ) {
-        Py_INCREF(Py_False);
-        res = Py_False;
+        res = Py_NewRef(Py_False);
     }
     else if (op == Py_NE) {
-        Py_INCREF(Py_True);
-        res = Py_True;
+        res = Py_NewRef(Py_True);
     }
     else {
         /* Compare the final item again using the proper operator */
@@ -1060,8 +1055,7 @@ array_inplace_concat(arrayobject *self, PyObject *bb)
     }
     if (array_do_extend(state, self, bb) == -1)
         return NULL;
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -1085,8 +1079,7 @@ array_inplace_repeat(arrayobject *self, Py_ssize_t n)
 
         _PyBytes_Repeat(self->ob_item, n*size, self->ob_item, size);
     }
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 
@@ -1947,9 +1940,8 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
         Py_DECREF(typecode_obj);
         return NULL;
     }
-    Py_INCREF(items);
     PyTuple_SET_ITEM(new_args, 0, typecode_obj);
-    PyTuple_SET_ITEM(new_args, 1, items);
+    PyTuple_SET_ITEM(new_args, 1, Py_NewRef(items));
 
     array_obj = array_new(arraytype, new_args, NULL);
     Py_DECREF(new_args);
@@ -2219,8 +2211,7 @@ array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
         return NULL;
     }
     if (dict == NULL) {
-        dict = Py_None;
-        Py_INCREF(dict);
+        dict = Py_NewRef(Py_None);
     }
 
     mformat_code = typecode_to_mformat_code(typecode);
@@ -2572,8 +2563,7 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
     }
 
     view->buf = (void *)self->ob_item;
-    view->obj = (PyObject*)self;
-    Py_INCREF(self);
+    view->obj = Py_NewRef(self);
     if (view->buf == NULL)
         view->buf = (void *)emptybuf;
     view->len = Py_SIZE(self) * self->ob_descr->itemsize;
@@ -2885,8 +2875,7 @@ array_iter(arrayobject *ao)
     if (it == NULL)
         return NULL;
 
-    Py_INCREF(ao);
-    it->ao = ao;
+    it->ao = (arrayobject*)Py_NewRef(ao);
     it->index = 0;
     it->getitem = ao->ob_descr->getitem;
     PyObject_GC_Track(it);
@@ -3083,8 +3072,8 @@ array_modexec(PyObject *m)
     CREATE_TYPE(m, state->ArrayIterType, &arrayiter_spec);
     Py_SET_TYPE(state->ArrayIterType, &PyType_Type);
 
-    Py_INCREF((PyObject *)state->ArrayType);
-    if (PyModule_AddObject(m, "ArrayType", (PyObject *)state->ArrayType) < 0) {
+    if (PyModule_AddObject(m, "ArrayType",
+                           Py_NewRef((PyObject *)state->ArrayType)) < 0) {
         Py_DECREF((PyObject *)state->ArrayType);
         return -1;
     }
