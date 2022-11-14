@@ -46,13 +46,15 @@ pack_arguments_newref(int argc, ...)
     return tuple;
 }
 
-/* Pack arguments to a tuple, all the arguments' refcounts should be increased before passing in.
- * Do not accept NULL arguments unless error occurs. */
-#define RETURN_PACKED_ARGS(argc, ...) do { \
+/* Pack arguments to a tuple.
+ * `wrapper` is function which converts primitive type to PyObject.
+ * `arg_type` is type that arguments should be converted to before wrapped. */
+#define RETURN_PACKED_ARGS(argc, wrapper, arg_type, ...) do { \
         assert(!PyErr_Occurred()); \
+        arg_type in[argc] = {__VA_ARGS__}; \
         PyObject *out[argc] = {NULL,}; \
         for (int _i = 0; _i < argc; _i++) { \
-            out[_i] = ((PyObject *[]){__VA_ARGS__})[_i]; \
+            out[_i] = wrapper((arg_type)in[_i]); \
             assert(out[_i] || PyErr_Occurred()); \
             if (!out[_i]) { \
                 for (int _j = 0; _j < _i; _j++) { \
@@ -222,21 +224,8 @@ char_converter_impl(PyObject *module, char a, char b, char c, char d, char e,
                     char m, char n)
 /*[clinic end generated code: output=f929dbd2e55a9871 input=b601bc5bc7fe85e3]*/
 {
-    RETURN_PACKED_ARGS(14,
-                       PyLong_FromUnsignedLong((unsigned char)a),
-                       PyLong_FromUnsignedLong((unsigned char)b),
-                       PyLong_FromUnsignedLong((unsigned char)c),
-                       PyLong_FromUnsignedLong((unsigned char)d),
-                       PyLong_FromUnsignedLong((unsigned char)e),
-                       PyLong_FromUnsignedLong((unsigned char)f),
-                       PyLong_FromUnsignedLong((unsigned char)g),
-                       PyLong_FromUnsignedLong((unsigned char)h),
-                       PyLong_FromUnsignedLong((unsigned char)i),
-                       PyLong_FromUnsignedLong((unsigned char)j),
-                       PyLong_FromUnsignedLong((unsigned char)k),
-                       PyLong_FromUnsignedLong((unsigned char)l),
-                       PyLong_FromUnsignedLong((unsigned char)m),
-                       PyLong_FromUnsignedLong((unsigned char)n));
+    RETURN_PACKED_ARGS(14, PyLong_FromUnsignedLong, unsigned char,
+                       a, b, c, d, e, f, g, h, i, j, k, l, m, n);
 }
 
 
@@ -255,10 +244,7 @@ unsigned_char_converter_impl(PyObject *module, unsigned char a,
                              unsigned char b, unsigned char c)
 /*[clinic end generated code: output=490af3b39ce0b199 input=e859502fbe0b3185]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyLong_FromUnsignedLong(a),
-                       PyLong_FromUnsignedLong(b),
-                       PyLong_FromUnsignedLong(c));
+    RETURN_PACKED_ARGS(3, PyLong_FromUnsignedLong, unsigned char, a, b, c);
 }
 
 
@@ -274,7 +260,7 @@ static PyObject *
 short_converter_impl(PyObject *module, short a)
 /*[clinic end generated code: output=1ebb7ddb64248988 input=b4e2309a66f650ae]*/
 {
-    RETURN_PACKED_ARGS(1, PyLong_FromLong(a));
+    RETURN_PACKED_ARGS(1, PyLong_FromLong, long, a);
 }
 
 
@@ -293,10 +279,7 @@ unsigned_short_converter_impl(PyObject *module, unsigned short a,
                               unsigned short b, unsigned short c)
 /*[clinic end generated code: output=5f92cc72fc8707a7 input=9d15cd11e741d0c6]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyLong_FromUnsignedLong(a),
-                       PyLong_FromUnsignedLong(b),
-                       PyLong_FromUnsignedLong(c));
+    RETURN_PACKED_ARGS(3, PyLong_FromUnsignedLong, unsigned long, a, b, c);
 }
 
 
@@ -314,10 +297,7 @@ static PyObject *
 int_converter_impl(PyObject *module, int a, int b, int c)
 /*[clinic end generated code: output=8e56b59be7d0c306 input=a1dbc6344853db7a]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyLong_FromLong(a),
-                       PyLong_FromLong(b),
-                       PyLong_FromLong(c));
+    RETURN_PACKED_ARGS(3, PyLong_FromLong, long, a, b, c);
 }
 
 
@@ -336,10 +316,7 @@ unsigned_int_converter_impl(PyObject *module, unsigned int a, unsigned int b,
                             unsigned int c)
 /*[clinic end generated code: output=399a57a05c494cc7 input=8427ed9a3f96272d]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyLong_FromUnsignedLong(a),
-                       PyLong_FromUnsignedLong(b),
-                       PyLong_FromUnsignedLong(c));
+    RETURN_PACKED_ARGS(3, PyLong_FromUnsignedLong, unsigned long, a, b, c);
 }
 
 
@@ -355,7 +332,7 @@ static PyObject *
 long_converter_impl(PyObject *module, long a)
 /*[clinic end generated code: output=9663d936a652707a input=84ad0ef28f24bd85]*/
 {
-    RETURN_PACKED_ARGS(1, PyLong_FromLong(a));
+    RETURN_PACKED_ARGS(1, PyLong_FromLong, long, a);
 }
 
 
@@ -374,10 +351,7 @@ unsigned_long_converter_impl(PyObject *module, unsigned long a,
                              unsigned long b, unsigned long c)
 /*[clinic end generated code: output=120b82ea9ebd93a8 input=440dd6f1817f5d91]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyLong_FromUnsignedLong(a),
-                       PyLong_FromUnsignedLong(b),
-                       PyLong_FromUnsignedLong(c));
+    RETURN_PACKED_ARGS(3, PyLong_FromUnsignedLong, unsigned long, a, b, c);
 }
 
 
@@ -393,7 +367,7 @@ static PyObject *
 long_long_converter_impl(PyObject *module, long long a)
 /*[clinic end generated code: output=5fb5f2220770c3e1 input=730fcb3eecf4d993]*/
 {
-    RETURN_PACKED_ARGS(1, PyLong_FromLongLong(a));
+    RETURN_PACKED_ARGS(1, PyLong_FromLongLong, long long, a);
 }
 
 
@@ -412,10 +386,8 @@ unsigned_long_long_converter_impl(PyObject *module, unsigned long long a,
                                   unsigned long long b, unsigned long long c)
 /*[clinic end generated code: output=65b7273e63501762 input=300737b0bdb230e9]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyLong_FromUnsignedLongLong(a),
-                       PyLong_FromUnsignedLongLong(b),
-                       PyLong_FromUnsignedLongLong(c));
+    RETURN_PACKED_ARGS(3, PyLong_FromUnsignedLongLong, unsigned long long,
+                       a, b, c);
 }
 
 
@@ -434,10 +406,7 @@ py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                           Py_ssize_t c)
 /*[clinic end generated code: output=ce252143e0ed0372 input=76d0f342e9317a1f]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyLong_FromSsize_t(a),
-                       PyLong_FromSsize_t(b),
-                       PyLong_FromSsize_t(c));
+    RETURN_PACKED_ARGS(3, PyLong_FromSsize_t, Py_ssize_t, a, b, c);
 }
 
 
@@ -456,10 +425,7 @@ slice_index_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                            Py_ssize_t c)
 /*[clinic end generated code: output=923c6cac77666a6b input=64f99f3f83265e47]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyLong_FromSsize_t(a),
-                       PyLong_FromSsize_t(b),
-                       PyLong_FromSsize_t(c));
+    RETURN_PACKED_ARGS(3, PyLong_FromSsize_t, Py_ssize_t, a, b, c);
 }
 
 
@@ -475,7 +441,7 @@ static PyObject *
 size_t_converter_impl(PyObject *module, size_t a)
 /*[clinic end generated code: output=412b5b7334ab444d input=83ae7d9171fbf208]*/
 {
-    RETURN_PACKED_ARGS(1, PyLong_FromSize_t(a));
+    RETURN_PACKED_ARGS(1, PyLong_FromSize_t, size_t, a);
 }
 
 
@@ -491,7 +457,7 @@ static PyObject *
 float_converter_impl(PyObject *module, float a)
 /*[clinic end generated code: output=1c98f64f2cf1d55c input=a625b59ad68047d8]*/
 {
-    RETURN_PACKED_ARGS(1, PyFloat_FromDouble((double)a));
+    RETURN_PACKED_ARGS(1, PyFloat_FromDouble, double, a);
 }
 
 
@@ -507,7 +473,7 @@ static PyObject *
 double_converter_impl(PyObject *module, double a)
 /*[clinic end generated code: output=a4e8532d284d035d input=098df188f24e7c62]*/
 {
-    RETURN_PACKED_ARGS(1, PyFloat_FromDouble(a));
+    RETURN_PACKED_ARGS(1, PyFloat_FromDouble, double, a);
 }
 
 
@@ -523,7 +489,7 @@ static PyObject *
 py_complex_converter_impl(PyObject *module, Py_complex a)
 /*[clinic end generated code: output=9e6ca2eb53b14846 input=e9148a8ca1dbf195]*/
 {
-    RETURN_PACKED_ARGS(1, PyComplex_FromCComplex(a));
+    RETURN_PACKED_ARGS(1, PyComplex_FromCComplex, Py_complex, a);
 }
 
 
@@ -542,12 +508,64 @@ str_converter_impl(PyObject *module, const char *a, const char *b,
                    const char *c, Py_ssize_t c_length)
 /*[clinic end generated code: output=475bea40548c8cd6 input=bff2656c92ee25de]*/
 {
-    RETURN_PACKED_ARGS(3,
-                       PyUnicode_FromString(a),
-                       PyUnicode_FromString(b),
-                       PyUnicode_FromStringAndSize(c, c_length));
+    assert(!PyErr_Occurred());
+    PyObject *out[3] = {NULL,};
+    int i = 0;
+    PyObject *arg;
+
+    arg = PyUnicode_FromString(a);
+    assert(arg || PyErr_Occurred());
+    if (!arg) {
+        goto error;
+    }
+    out[i++] = arg;
+
+    arg = PyUnicode_FromString(b);
+    assert(arg || PyErr_Occurred());
+    if (!arg) {
+        goto error;
+    }
+    out[i++] = arg;
+
+    arg = PyUnicode_FromStringAndSize(c, c_length);
+    assert(arg || PyErr_Occurred());
+    if (!arg) {
+        goto error;
+    }
+    out[i++] = arg;
+
+    PyObject *tuple = PyTuple_New(3);
+    if (!tuple) {
+        goto error;
+    }
+    for (int j = 0; j < 3; j++) {
+        PyTuple_SET_ITEM(tuple, j, out[j]);
+    }
+    return tuple;
+
+error:
+    for (int j = 0; j < i; j++) {
+        Py_DECREF(out[j]);
+    }
+    return NULL;
 }
 
+
+static PyObject *
+bytes_from_buffer(Py_buffer *buf)
+{
+    PyObject *bytes_obj = PyBytes_FromStringAndSize(NULL, buf->len);
+    if (!bytes_obj) {
+        return NULL;
+    }
+    void *bytes_obj_buf = ((PyBytesObject *)bytes_obj)->ob_sval;
+    if (PyBuffer_ToContiguous(bytes_obj_buf, buf, buf->len, 'C') < 0) {
+        Py_DECREF(bytes_obj);
+        return NULL;
+    }
+    PyBuffer_Release(buf);
+    return bytes_obj;
+}
 
 /*[clinic input]
 py_buffer_converter
@@ -562,31 +580,7 @@ static PyObject *
 py_buffer_converter_impl(PyObject *module, Py_buffer *a, Py_buffer *b)
 /*[clinic end generated code: output=52fb13311e3d6d03 input=775de727de5c7421]*/
 {
-    PyObject *new_a = PyBytes_FromStringAndSize(NULL, a->len);
-    if (!new_a) {
-        return NULL;
-    }
-    void *new_a_buf = ((PyBytesObject *)new_a)->ob_sval;
-    if (PyBuffer_ToContiguous(new_a_buf, a, a->len, 'C') < 0) {
-        Py_DECREF(new_a);
-        return NULL;
-    }
-    PyBuffer_Release(a);
-
-    PyObject *new_b = PyBytes_FromStringAndSize(NULL, b->len);
-    if (!new_b) {
-        Py_DECREF(new_a);
-        return NULL;
-    }
-    void *new_b_buf = ((PyBytesObject *)new_b)->ob_sval;
-    if (PyBuffer_ToContiguous(new_b_buf, b, b->len, 'C') < 0) {
-        Py_DECREF(new_a);
-        Py_DECREF(new_b);
-        return NULL;
-    }
-    PyBuffer_Release(b);
-
-    RETURN_PACKED_ARGS(2, new_a, new_b);
+    RETURN_PACKED_ARGS(2, bytes_from_buffer, Py_buffer *, a, b);
 }
 
 
