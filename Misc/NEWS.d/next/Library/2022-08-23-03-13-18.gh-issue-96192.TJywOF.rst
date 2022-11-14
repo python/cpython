@@ -1,0 +1,1 @@
+Fix handling of ``bytes`` :term:`path-like objects <path-like object>` in :func:`os.ismount()`.
