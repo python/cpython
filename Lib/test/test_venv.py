@@ -590,7 +590,17 @@ class BasicTest(BaseTest):
             # venv module correctly.
             pythonpath = os.pathsep.join(
                 additional_pythonpath_for_non_installed)
-            subprocess.check_call(cmd, env={"PYTHONPATH": pythonpath})
+            # For python built with shared enabled. We need to set
+            # LD_LIBRARY_PATH so the non-installed python can find and link
+            # libpython.so
+            ld_library_path = os.path.abspath(os.path.dirname(sys.executable))
+            if sys.platform == 'darwin':
+                ld_library_path_env = "DYLD_LIBRARY_PATH"
+            else:
+                ld_library_path_env = "LD_LIBRARY_PATH"
+            subprocess.check_call(cmd,
+                                  env={"PYTHONPATH": pythonpath,
+                                       ld_library_path_env: ld_library_path})
             envpy = os.path.join(self.env_dir, self.bindir, self.exe)
             # Now check the venv created from the non-installed python has
             # correct zip path in pythonpath.
