@@ -217,6 +217,11 @@ asyncio
   and will be removed in Python 3.14.
   (Contributed by Kumar Aditya in :gh:`94597`.)
 
+* Add *loop_factory* parameter to :func:`asyncio.run` to allow specifying
+  a custom event loop factory.
+  (Contributed by Kumar Aditya in :gh:`99388`.)
+
+
 pathlib
 -------
 
