@@ -1000,8 +1000,7 @@ _PyStack_UnpackDict(PyThreadState *tstate,
 
     /* Copy positional arguments */
     for (Py_ssize_t i = 0; i < nargs; i++) {
-        Py_INCREF(args[i]);
-        stack[i] = args[i];
+        stack[i] = Py_NewRef(args[i]);
     }
 
     PyObject **kwstack = stack + nargs;
@@ -1013,10 +1012,8 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     unsigned long keys_are_strings = Py_TPFLAGS_UNICODE_SUBCLASS;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
         keys_are_strings &= Py_TYPE(key)->tp_flags;
-        Py_INCREF(key);
-        Py_INCREF(value);
-        PyTuple_SET_ITEM(kwnames, i, key);
-        kwstack[i] = value;
+        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(key));
+        kwstack[i] = Py_NewRef(value);
         i++;
     }
 

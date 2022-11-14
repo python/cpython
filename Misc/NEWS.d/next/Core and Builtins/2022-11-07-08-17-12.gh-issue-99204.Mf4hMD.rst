@@ -1,0 +1,4 @@
+Fix calculation of :data:`sys._base_executable` when inside a POSIX virtual
+environment using copies of the python binary when the base installation does
+not provide the executable name used by the venv. Calculation will fall back to
+alternative names ("python<MAJOR>", "python<MAJOR>.<MINOR>").

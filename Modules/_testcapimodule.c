@@ -13,7 +13,6 @@
 
 #undef Py_BUILD_CORE_MODULE
 #undef Py_BUILD_CORE_BUILTIN
-#define NEEDS_PY_IDENTIFIER
 
 /* Always enable assertions */
 #undef NDEBUG
@@ -343,8 +342,7 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    Py_XINCREF(result);
-    return result;
+    return Py_XNewRef(result);
 }
 
 /* Issue #4701: Check that PyObject_Hash implicitly calls
@@ -1243,8 +1241,7 @@ get_args(PyObject *self, PyObject *args)
     if (args == NULL) {
         args = Py_None;
     }
-    Py_INCREF(args);
-    return args;
+    return Py_NewRef(args);
 }
 
 static PyObject *
@@ -1253,8 +1250,7 @@ get_kwargs(PyObject *self, PyObject *args, PyObject *kwargs)
     if (kwargs == NULL) {
         kwargs = Py_None;
     }
-    Py_INCREF(kwargs);
-    return kwargs;
+    return Py_NewRef(kwargs);
 }
 
 /* Test tuple argument processing */
@@ -1515,8 +1511,7 @@ getargs_S(PyObject *self, PyObject *args)
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "S", &obj))
         return NULL;
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject *
@@ -1525,8 +1520,7 @@ getargs_Y(PyObject *self, PyObject *args)
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "Y", &obj))
         return NULL;
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject *
@@ -1535,8 +1529,7 @@ getargs_U(PyObject *self, PyObject *args)
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "U", &obj))
         return NULL;
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject *
@@ -1610,8 +1603,7 @@ getargs_z_star(PyObject *self, PyObject *args)
     if (buffer.buf != NULL)
         bytes = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
     else {
-        Py_INCREF(Py_None);
-        bytes = Py_None;
+        bytes = Py_NewRef(Py_None);
     }
     PyBuffer_Release(&buffer);
     return bytes;
@@ -1874,8 +1866,7 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
         buffers + 4, buffers + 5, buffers + 6, buffers + 7);
 
     if (result) {
-        return_value = Py_None;
-        Py_INCREF(Py_None);
+        return_value = Py_NewRef(Py_None);
     }
 
 exit:
@@ -2194,11 +2185,9 @@ get_timezone_utc_capi(PyObject* self, PyObject *args) {
         return NULL;
     }
     if (macro) {
-        Py_INCREF(PyDateTime_TimeZone_UTC);
-        return PyDateTime_TimeZone_UTC;
+        return Py_NewRef(PyDateTime_TimeZone_UTC);
     } else {
-        Py_INCREF(PyDateTimeAPI->TimeZone_UTC);
-        return PyDateTimeAPI->TimeZone_UTC;
+        return Py_NewRef(PyDateTimeAPI->TimeZone_UTC);
     }
 }
 
@@ -2985,8 +2974,7 @@ failing_converter(PyObject *obj, void *arg)
 {
     /* Clone str1, then let the conversion fail. */
     assert(str1);
-    str2 = str1;
-    Py_INCREF(str2);
+    str2 = Py_NewRef(str1);
     return 0;
 }
 static PyObject*
@@ -3231,31 +3219,40 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
     int allow_fork = -1;
-    int allow_subprocess = -1;
+    int allow_exec = -1;
     int allow_threads = -1;
+    int allow_daemon_threads = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
     PyCompilerFlags cflags = {0};
 
     static char *kwlist[] = {"code",
-                             "allow_fork", "allow_subprocess", "allow_threads",
+                             "allow_fork",
+                             "allow_exec",
+                             "allow_threads",
+                             "allow_daemon_threads",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppp:run_in_subinterp_with_config", kwlist,
-                    &code, &allow_fork, &allow_subprocess, &allow_threads)) {
+                    "s$pppp:run_in_subinterp_with_config", kwlist,
+                    &code, &allow_fork, &allow_exec,
+                    &allow_threads, &allow_daemon_threads)) {
         return NULL;
     }
     if (allow_fork < 0) {
         PyErr_SetString(PyExc_ValueError, "missing allow_fork");
         return NULL;
     }
-    if (allow_subprocess < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_subprocess");
+    if (allow_exec < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
         return NULL;
     }
     if (allow_threads < 0) {
         PyErr_SetString(PyExc_ValueError, "missing allow_threads");
+        return NULL;
+    }
+    if (allow_daemon_threads < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
         return NULL;
     }
 
@@ -3265,8 +3262,9 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
     const _PyInterpreterConfig config = {
         .allow_fork = allow_fork,
-        .allow_subprocess = allow_subprocess,
+        .allow_exec = allow_exec,
         .allow_threads = allow_threads,
+        .allow_daemon_threads = allow_daemon_threads,
     };
     substate = _Py_NewInterpreterFromConfig(&config);
     if (substate == NULL) {
@@ -3348,7 +3346,6 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
 static void
 slot_tp_del(PyObject *self)
 {
-    _Py_IDENTIFIER(__tp_del__);
     PyObject *del, *res;
     PyObject *error_type, *error_value, *error_traceback;
 
@@ -3359,15 +3356,21 @@ slot_tp_del(PyObject *self)
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
+    PyObject *tp_del = PyUnicode_InternFromString("__tp_del__");
+    if (tp_del == NULL) {
+        PyErr_WriteUnraisable(NULL);
+        PyErr_Restore(error_type, error_value, error_traceback);
+        return;
+    }
     /* Execute __del__ method, if any. */
-    del = _PyObject_LookupSpecialId(self, &PyId___tp_del__);
+    del = _PyType_Lookup(Py_TYPE(self), tp_del);
+    Py_DECREF(tp_del);
     if (del != NULL) {
-        res = PyObject_CallNoArgs(del);
+        res = PyObject_CallOneArg(del, self);
         if (res == NULL)
             PyErr_WriteUnraisable(del);
         else
             Py_DECREF(res);
-        Py_DECREF(del);
     }
 
     /* Restore the saved exception. */
@@ -3414,8 +3417,7 @@ with_tp_del(PyObject *self, PyObject *args)
         return NULL;
     }
     tp->tp_del = slot_tp_del;
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject *
@@ -3433,8 +3435,7 @@ without_gc(PyObject *Py_UNUSED(self), PyObject *obj)
         tp->tp_clear = NULL;
     }
     assert(!PyType_IS_GC(tp));
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyMethodDef ml;
@@ -3455,8 +3456,7 @@ static PyMethodDef ml = {
 static PyObject *
 _test_incref(PyObject *ob)
 {
-    Py_INCREF(ob);
-    return ob;
+    return Py_NewRef(ob);
 }
 
 static PyObject *
@@ -3803,8 +3803,7 @@ test_setallocators(PyMemAllocatorDomain domain)
         goto fail;
     }
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_NewRef(Py_None);
     goto finally;
 
 fail:
@@ -4064,8 +4063,7 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
         goto exit;
     }
 
-    Py_INCREF(callback);
-    test_c_thread.callback = callback;
+    test_c_thread.callback = Py_NewRef(callback);
 
     PyThread_acquire_lock(test_c_thread.start_event, 1);
     PyThread_acquire_lock(test_c_thread.exit_event, 1);
@@ -4086,8 +4084,7 @@ call_in_temporary_c_thread(PyObject *self, PyObject *callback)
         PyThread_release_lock(test_c_thread.exit_event);
     Py_END_ALLOW_THREADS
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_NewRef(Py_None);
 
 exit:
     Py_CLEAR(test_c_thread.callback);
@@ -4689,7 +4686,6 @@ dict_get_version(PyObject *self, PyObject *args)
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(send);
     PyGenObject *gen;
 
     if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
@@ -4706,7 +4702,7 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
          because we check for signals before every bytecode operation.
      */
     raise(SIGINT);
-    return _PyObject_CallMethodIdOneArg((PyObject *)gen, &PyId_send, Py_None);
+    return PyObject_CallMethod((PyObject *)gen, "send", "O", Py_None);
 }
 
 
@@ -4784,6 +4780,37 @@ mapping_has_key(PyObject* self, PyObject *args)
     return PyLong_FromLong(PyMapping_HasKey(context, key));
 }
 
+static PyObject *
+sequence_set_slice(PyObject* self, PyObject *args)
+{
+    PyObject *sequence, *obj;
+    Py_ssize_t i1, i2;
+    if (!PyArg_ParseTuple(args, "OnnO", &sequence, &i1, &i2, &obj)) {
+        return NULL;
+    }
+
+    int res = PySequence_SetSlice(sequence, i1, i2, obj);
+    if (res == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+sequence_del_slice(PyObject* self, PyObject *args)
+{
+    PyObject *sequence;
+    Py_ssize_t i1, i2;
+    if (!PyArg_ParseTuple(args, "Onn", &sequence, &i1, &i2)) {
+        return NULL;
+    }
+
+    int res = PySequence_DelSlice(sequence, i1, i2);
+    if (res == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 test_pythread_tss_key_state(PyObject *self, PyObject *args)
@@ -4993,8 +5020,7 @@ _null_to_none(PyObject* obj)
     if (obj == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject*
@@ -5090,6 +5116,91 @@ test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_SET_SIZE(obj, 0);
 
     Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+
+// Test Py_CLEAR() macro
+static PyObject*
+test_py_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // simple case with a variable
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_CLEAR(obj);
+    assert(obj == NULL);
+
+    // gh-98724: complex case, Py_CLEAR() argument has a side effect
+    PyObject* array[1];
+    array[0] = PyList_New(0);
+    if (array[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p = array;
+    Py_CLEAR(*p++);
+    assert(array[0] == NULL);
+    assert(p == array + 1);
+
+    Py_RETURN_NONE;
+}
+
+
+// Test Py_SETREF() and Py_XSETREF() macros, similar to test_py_clear()
+static PyObject*
+test_py_setref(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Py_SETREF() simple case with a variable
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_SETREF(obj, NULL);
+    assert(obj == NULL);
+
+    // Py_XSETREF() simple case with a variable
+    PyObject *obj2 = PyList_New(0);
+    if (obj2 == NULL) {
+        return NULL;
+    }
+    Py_XSETREF(obj2, NULL);
+    assert(obj2 == NULL);
+    // test Py_XSETREF() when the argument is NULL
+    Py_XSETREF(obj2, NULL);
+    assert(obj2 == NULL);
+
+    // gh-98724: complex case, Py_SETREF() argument has a side effect
+    PyObject* array[1];
+    array[0] = PyList_New(0);
+    if (array[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p = array;
+    Py_SETREF(*p++, NULL);
+    assert(array[0] == NULL);
+    assert(p == array + 1);
+
+    // gh-98724: complex case, Py_XSETREF() argument has a side effect
+    PyObject* array2[1];
+    array2[0] = PyList_New(0);
+    if (array2[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p2 = array2;
+    Py_XSETREF(*p2++, NULL);
+    assert(array2[0] == NULL);
+    assert(p2 == array2 + 1);
+
+    // test Py_XSETREF() when the argument is NULL
+    p2 = array2;
+    Py_XSETREF(*p2++, NULL);
+    assert(array2[0] == NULL);
+    assert(p2 == array2 + 1);
+
     Py_RETURN_NONE;
 }
 
@@ -5425,8 +5536,7 @@ get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(args))
         PyErr_SetString(PyExc_RuntimeError, "no watchers active");
         return NULL;
     }
-    Py_INCREF(g_dict_watch_events);
-    return g_dict_watch_events;
+    return Py_NewRef(g_dict_watch_events);
 }
 
 
@@ -5564,9 +5674,47 @@ frame_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+test_frame_getvar(PyObject *self, PyObject *args)
+{
+    PyObject *frame, *name;
+    if (!PyArg_ParseTuple(args, "OO", &frame, &name)) {
+        return NULL;
+    }
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+
+    return PyFrame_GetVar((PyFrameObject *)frame, name);
+}
+
+static PyObject *
+test_frame_getvarstring(PyObject *self, PyObject *args)
+{
+    PyObject *frame;
+    const char *name;
+    if (!PyArg_ParseTuple(args, "Oy", &frame, &name)) {
+        return NULL;
+    }
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+
+    return PyFrame_GetVarString((PyFrameObject *)frame, name);
+}
+
+
+static PyObject *
 eval_get_func_name(PyObject *self, PyObject *func)
 {
     return PyUnicode_FromString(PyEval_GetFuncName(func));
+}
+
+static PyObject *
+eval_get_func_desc(PyObject *self, PyObject *func)
+{
+    return PyUnicode_FromString(PyEval_GetFuncDesc(func));
 }
 
 static PyObject *
@@ -5757,8 +5905,7 @@ function_get_code(PyObject *self, PyObject *func)
 {
     PyObject *code = PyFunction_GetCode(func);
     if (code != NULL) {
-        Py_INCREF(code);
-        return code;
+        return Py_NewRef(code);
     } else {
         return NULL;
     }
@@ -5769,8 +5916,7 @@ function_get_globals(PyObject *self, PyObject *func)
 {
     PyObject *globals = PyFunction_GetGlobals(func);
     if (globals != NULL) {
-        Py_INCREF(globals);
-        return globals;
+        return Py_NewRef(globals);
     } else {
         return NULL;
     }
@@ -5781,8 +5927,7 @@ function_get_module(PyObject *self, PyObject *func)
 {
     PyObject *module = PyFunction_GetModule(func);
     if (module != NULL) {
-        Py_INCREF(module);
-        return module;
+        return Py_NewRef(module);
     } else {
         return NULL;
     }
@@ -5793,8 +5938,7 @@ function_get_defaults(PyObject *self, PyObject *func)
 {
     PyObject *defaults = PyFunction_GetDefaults(func);
     if (defaults != NULL) {
-        Py_INCREF(defaults);
-        return defaults;
+        return Py_NewRef(defaults);
     } else if (PyErr_Occurred()) {
         return NULL;
     } else {
@@ -5810,6 +5954,32 @@ function_set_defaults(PyObject *self, PyObject *args)
         return NULL;
     }
     int result = PyFunction_SetDefaults(func, defaults);
+    if (result == -1)
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+function_get_kw_defaults(PyObject *self, PyObject *func)
+{
+    PyObject *defaults = PyFunction_GetKwDefaults(func);
+    if (defaults != NULL) {
+        return Py_NewRef(defaults);
+    } else if (PyErr_Occurred()) {
+        return NULL;
+    } else {
+        Py_RETURN_NONE;  // This can happen when `kwdefaults` are set to `None`
+    }
+}
+
+static PyObject *
+function_set_kw_defaults(PyObject *self, PyObject *args)
+{
+    PyObject *func = NULL, *defaults = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &func, &defaults)) {
+        return NULL;
+    }
+    int result = PyFunction_SetKwDefaults(func, defaults);
     if (result == -1)
         return NULL;
     Py_RETURN_NONE;
@@ -5905,8 +6075,7 @@ get_type_modified_events(PyObject *self, PyObject *Py_UNUSED(args))
         PyErr_SetString(PyExc_RuntimeError, "no watchers active");
         return NULL;
     }
-    Py_INCREF(g_type_modified_events);
-    return g_type_modified_events;
+    return Py_NewRef(g_type_modified_events);
 }
 
 static PyObject *
@@ -6180,6 +6349,8 @@ static PyMethodDef TestMethods[] = {
     {"get_mapping_items", get_mapping_items, METH_O},
     {"test_mapping_has_key_string", test_mapping_has_key_string, METH_NOARGS},
     {"mapping_has_key", mapping_has_key, METH_VARARGS},
+    {"sequence_set_slice", sequence_set_slice, METH_VARARGS},
+    {"sequence_del_slice", sequence_del_slice, METH_VARARGS},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"hamt", new_hamt, METH_NOARGS},
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
@@ -6200,6 +6371,8 @@ static PyMethodDef TestMethods[] = {
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"without_gc", without_gc, METH_O},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
+    {"test_py_clear", test_py_clear, METH_NOARGS},
+    {"test_py_setref", test_py_setref, METH_NOARGS},
     {"test_refcount_macros", test_refcount_macros, METH_NOARGS},
     {"test_refcount_funcs", test_refcount_funcs, METH_NOARGS},
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
@@ -6215,7 +6388,10 @@ static PyMethodDef TestMethods[] = {
     {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
     {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
     {"frame_getlasti", frame_getlasti, METH_O, NULL},
+    {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
+    {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
+    {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
@@ -6231,6 +6407,8 @@ static PyMethodDef TestMethods[] = {
     {"function_get_module", function_get_module, METH_O, NULL},
     {"function_get_defaults", function_get_defaults, METH_O, NULL},
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
+    {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
+    {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"add_type_watcher", add_type_watcher, METH_O, NULL},
     {"clear_type_watcher", clear_type_watcher, METH_O, NULL},
     {"watch_type", watch_type, METH_VARARGS, NULL},
@@ -6526,8 +6704,7 @@ awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    Py_INCREF(v);
-    ao->ao_iterator = v;
+    ao->ao_iterator = Py_NewRef(v);
 
     return (PyObject *)ao;
 }
@@ -6544,8 +6721,7 @@ awaitObject_dealloc(awaitObject *ao)
 static PyObject *
 awaitObject_await(awaitObject *ao)
 {
-    Py_INCREF(ao->ao_iterator);
-    return ao->ao_iterator;
+    return Py_NewRef(ao->ao_iterator);
 }
 
 static PyAsyncMethods awaitType_as_async = {
@@ -6766,8 +6942,7 @@ generic_alias_new(PyObject *item)
     if (o == NULL) {
         return NULL;
     }
-    Py_INCREF(item);
-    o->item = item;
+    o->item = Py_NewRef(item);
     return (PyObject*) o;
 }
 

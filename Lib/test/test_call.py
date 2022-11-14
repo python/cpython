@@ -580,7 +580,7 @@ def testfunction_kw(self, *, kw):
     return self
 
 
-QUICKENING_WARMUP_DELAY = 8
+ADAPTIVE_WARMUP_DELAY = 2
 
 
 class TestPEP590(unittest.TestCase):
@@ -771,7 +771,7 @@ class TestPEP590(unittest.TestCase):
         assert_equal(11, f(num))
         function_setvectorcall(f)
         # make sure specializer is triggered by running > 50 times
-        for _ in range(10 * QUICKENING_WARMUP_DELAY):
+        for _ in range(10 * ADAPTIVE_WARMUP_DELAY):
             assert_equal("overridden", f(num))
 
     def test_setvectorcall_load_attr_specialization_skip(self):
@@ -787,7 +787,7 @@ class TestPEP590(unittest.TestCase):
         function_setvectorcall(X.__getattribute__)
         # make sure specialization doesn't trigger
         # when vectorcall is overridden
-        for _ in range(QUICKENING_WARMUP_DELAY):
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
             assert_equal("overridden", x.a)
 
     def test_setvectorcall_load_attr_specialization_deopt(self):
@@ -803,12 +803,12 @@ class TestPEP590(unittest.TestCase):
         assert_equal = self.assertEqual
         x = X()
         # trigger LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN specialization
-        for _ in range(QUICKENING_WARMUP_DELAY):
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
             assert_equal("a", get_a(x))
         function_setvectorcall(X.__getattribute__)
         # make sure specialized LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
         # gets deopted due to overridden vectorcall
-        for _ in range(QUICKENING_WARMUP_DELAY):
+        for _ in range(ADAPTIVE_WARMUP_DELAY):
             assert_equal("overridden", get_a(x))
 
     @requires_limited_api

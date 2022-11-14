@@ -197,7 +197,6 @@ epub_publisher = 'Python Software Foundation'
 coverage_ignore_modules = [
     r'[T|t][k|K]',
     r'Tix',
-    r'distutils.*',
 ]
 
 coverage_ignore_functions = [

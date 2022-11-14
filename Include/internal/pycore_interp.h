@@ -20,6 +20,7 @@ extern "C" {
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_global_objects.h"  // struct _Py_interp_static_objects
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -123,6 +124,25 @@ struct _is {
 
     // sys.modules dictionary
     PyObject *modules;
+    /* This is the list of module objects for all legacy (single-phase init)
+       extension modules ever loaded in this process (i.e. imported
+       in this interpreter or in any other).  Py_None stands in for
+       modules that haven't actually been imported in this interpreter.
+
+       A module's index (PyModuleDef.m_base.m_index) is used to look up
+       the corresponding module object for this interpreter, if any.
+       (See PyState_FindModule().)  When any extension module
+       is initialized during import, its moduledef gets initialized by
+       PyModuleDef_Init(), and the first time that happens for each
+       PyModuleDef, its index gets set to the current value of
+       a global counter (see _PyRuntimeState.imports.last_module_index).
+       The entry for that index in this interpreter remains unset until
+       the module is actually imported here.  (Py_None is used as
+       a placeholder.)  Note that multi-phase init modules always get
+       an index for which there will never be a module set.
+
+       This is initialized lazily in _PyState_AddModule(), which is also
+       where modules get added. */
     PyObject *modules_by_index;
     // Dictionary of the sys module
     PyObject *sysdict;
@@ -186,6 +206,10 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
+    PyCodeObject *interpreter_trampoline;
+
+    struct _Py_interp_cached_objects cached_objects;
+    struct _Py_interp_static_objects static_objects;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.

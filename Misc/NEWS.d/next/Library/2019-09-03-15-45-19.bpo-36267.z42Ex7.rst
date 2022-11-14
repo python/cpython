@@ -1,0 +1,1 @@
+Fix IndexError in :class:`argparse.ArgumentParser` when a ``store_true`` action is given an explicit argument.

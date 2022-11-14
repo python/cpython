@@ -11,16 +11,17 @@ is available in a given context.  For example, forking the process
 might not be allowed in the current interpreter (i.e. os.fork() would fail).
 */
 
-// We leave the first 10 for less-specific features.
-
 /* Set if threads are allowed. */
-#define Py_RTFLAGS_THREADS      (1UL << 10)
+#define Py_RTFLAGS_THREADS (1UL << 10)
+
+/* Set if daemon threads are allowed. */
+#define Py_RTFLAGS_DAEMON_THREADS (1UL << 11)
 
 /* Set if os.fork() is allowed. */
-#define Py_RTFLAGS_FORK         (1UL << 15)
+#define Py_RTFLAGS_FORK (1UL << 15)
 
-/* Set if subprocesses are allowed. */
-#define Py_RTFLAGS_SUBPROCESS   (1UL << 16)
+/* Set if os.exec*() is allowed. */
+#define Py_RTFLAGS_EXEC (1UL << 16)
 
 
 PyAPI_FUNC(int) _PyInterpreterState_HasFeature(PyInterpreterState *interp,
