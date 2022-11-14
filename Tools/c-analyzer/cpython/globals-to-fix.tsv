@@ -311,34 +311,8 @@ Python/hamt.c	-	_empty_hamt	-
 # global non-objects to fix in core code
 
 #-----------------------
-# initialized/set once
+# effectively-const but initialized lazily
 
-# during init
-Objects/unicodeobject.c	-	bloom_linebreak	-
-Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
-Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
-Python/initconfig.c	-	_Py_global_config_int_max_str_digits	-
-Python/initconfig.c	-	orig_argv	-
-Python/pyhash.c	-	_Py_HashSecret	-
-Python/pylifecycle.c	-	runtime_initialized	-
-Python/sysmodule.c	-	_PySys_ImplCacheTag	-
-Python/sysmodule.c	-	_PySys_ImplName	-
-Python/sysmodule.c	-	_preinit_warnoptions	-
-Python/sysmodule.c	-	_preinit_xoptions	-
-Python/thread.c	-	initialized	-
-Python/thread_pthread.h	-	condattr_monotonic	-
-Python/thread_pthread.h	init_condattr	ca	-
-
-# set by embedders during init
-Python/initconfig.c	-	_Py_StandardStreamEncoding	-
-Python/initconfig.c	-	_Py_StandardStreamErrors	-
-
-# lazy
-Objects/floatobject.c	-	double_format	-
-Objects/floatobject.c	-	float_format	-
-Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
-Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
-Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
 Python/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
