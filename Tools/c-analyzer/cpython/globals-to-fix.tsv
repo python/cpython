@@ -315,6 +315,7 @@ Python/hamt.c	-	_empty_hamt	-
 
 # idempotent
 Python/dtoa.c	-	p5s	-
+Objects/obmalloc.c	new_arena	debug_stats	-
 
 # others
 Python/perf_trampoline.c	-	perf_map_file	-
@@ -322,9 +323,6 @@ Objects/unicodeobject.c	-	ucnhash_capi	-
 
 #-----------------------
 # state
-
-# object allocator
-Objects/obmalloc.c	new_arena	debug_stats	-
 
 # pre-allocated memory
 Python/dtoa.c	-	freelist	-
