@@ -441,7 +441,7 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
             return NULL;
         }
         /* Avoid having our list of hooks show up in the GC module */
-        PyObject_GC_UnTrack(interp->audit_hooks);
+        PyObject_GC_UnTrack(is->audit_hooks);
     }
 
     if (PyList_Append(is->audit_hooks, hook) < 0) {
