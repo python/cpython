@@ -675,7 +675,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         return NULL;
     }
     for (flags++; *flags != '\0'; flags++) {
-        char buf[40];
         switch (*flags) {
 #ifdef GDBM_FAST
             case 'f':
@@ -693,9 +692,8 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
                 break;
 #endif
             default:
-                PyOS_snprintf(buf, sizeof(buf), "Flag '%c' is not supported.",
-                              *flags);
-                PyErr_SetString(state->gdbm_error, buf);
+                PyErr_Format(state->gdbm_error,
+                             "Flag '%c' is not supported.", (unsigned char)*flags);
                 return NULL;
         }
     }
