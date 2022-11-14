@@ -125,6 +125,9 @@ typedef struct pyruntimestate {
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
     struct _getargs_runtime_state getargs;
+    struct {
+        struct _PyTraceMalloc_Config config;
+    } tracemalloc;
 
     PyPreConfig preconfig;
 

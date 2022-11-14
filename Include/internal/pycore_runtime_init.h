@@ -36,6 +36,9 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        .tracemalloc = { \
+            .config = _PyTraceMalloc_Config_INIT, \
+        }, \
         .types = { \
             .next_version_tag = 1, \
         }, \

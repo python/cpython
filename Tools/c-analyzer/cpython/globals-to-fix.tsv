@@ -324,7 +324,6 @@ Objects/unicodeobject.c	-	ucnhash_capi	-
 # state
 
 # object allocator
-Objects/obmalloc.c	-	_Py_tracemalloc_config	-
 Objects/obmalloc.c	new_arena	debug_stats	-
 
 # pre-allocated memory
