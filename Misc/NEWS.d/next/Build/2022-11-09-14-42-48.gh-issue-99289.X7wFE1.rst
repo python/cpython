@@ -1,0 +1,4 @@
+Add a ``COMPILEALL_OPTS`` variable in Makefile to override :mod:`compileall`
+options (default: ``-j0``) in ``make install``. Also merged the ``compileall``
+commands into a single command building .pyc files for the all optimization levels
+(0, 1, 2) at once. Patch by Victor Stinner.
