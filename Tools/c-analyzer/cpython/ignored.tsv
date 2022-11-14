@@ -40,6 +40,10 @@ Objects/floatobject.c	-	float_format	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
+Python/fileutils.c	-	_Py_open_cloexec_works	-
+Python/fileutils.c	-	force_ascii	-
+Python/fileutils.c	set_inheritable	ioctl_works	-
+Python/import.c	import_find_and_load	header	-
 Python/initconfig.c	-	orig_argv	-
 Python/pyhash.c	-	_Py_HashSecret	-
 Python/pylifecycle.c	-	runtime_initialized	-
@@ -60,6 +64,7 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
 Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
 Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
+Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 
 #-----------------------
 # used only in the main thread

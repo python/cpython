@@ -313,13 +313,12 @@ Python/hamt.c	-	_empty_hamt	-
 #-----------------------
 # effectively-const but initialized lazily
 
+# idempotent
+Python/dtoa.c	-	p5s	-
+
+# others
 Python/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
-Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
-Python/dtoa.c	-	p5s	-
-Python/fileutils.c	-	_Py_open_cloexec_works	-
-Python/fileutils.c	-	force_ascii	-
-Python/fileutils.c	set_inheritable	ioctl_works	-
 
 #-----------------------
 # unlikely to change after init (or main thread)
