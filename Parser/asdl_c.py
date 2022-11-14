@@ -1483,6 +1483,10 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
+                if (_PyInterpreterState_Get() == _PyInterpreterState_Main()) {
+                    Py_CLEAR(_Py_CACHED_OBJECT(str_replace_inf));
+                }
+
             #if !defined(NDEBUG)
                 state->initialized = -1;
             #else
