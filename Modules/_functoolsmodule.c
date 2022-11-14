@@ -105,8 +105,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (pto == NULL)
         return NULL;
 
-    pto->fn = func;
-    Py_INCREF(func);
+    pto->fn = Py_NewRef(func);
 
     nargs = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
     if (nargs == NULL) {
@@ -131,8 +130,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             pto->kw = PyDict_New();
         }
         else if (Py_REFCNT(kw) == 1) {
-            Py_INCREF(kw);
-            pto->kw = kw;
+            pto->kw = Py_NewRef(kw);
         }
         else {
             pto->kw = PyDict_Copy(kw);
@@ -302,8 +300,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     PyObject *kwargs2;
     if (PyDict_GET_SIZE(pto->kw) == 0) {
         /* kwargs can be NULL */
-        kwargs2 = kwargs;
-        Py_XINCREF(kwargs2);
+        kwargs2 = Py_XNewRef(kwargs);
     }
     else {
         /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
@@ -463,8 +460,7 @@ partial_setstate(partialobject *pto, PyObject *state)
     else
         Py_INCREF(dict);
 
-    Py_INCREF(fn);
-    Py_SETREF(pto->fn, fn);
+    Py_SETREF(pto->fn, Py_NewRef(fn));
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
     Py_XSETREF(pto->dict, dict);
@@ -588,10 +584,8 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
     if (result == NULL) {
         return NULL;
     }
-    Py_INCREF(ko->cmp);
-    result->cmp = ko->cmp;
-    Py_INCREF(object);
-    result->object = object;
+    result->cmp = Py_NewRef(ko->cmp);
+    result->object = Py_NewRef(object);
     PyObject_GC_Track(result);
     return (PyObject *)result;
 }
@@ -654,8 +648,7 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
     object = PyObject_GC_New(keyobject, state->keyobject_type);
     if (!object)
         return NULL;
-    Py_INCREF(mycmp);
-    object->cmp = mycmp;
+    object->cmp = Py_NewRef(mycmp);
     object->object = NULL;
     PyObject_GC_Track(object);
     return (PyObject *)object;
@@ -837,12 +830,10 @@ lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
             if (PyUnicode_CheckExact(key) || PyLong_CheckExact(key)) {
                 /* For common scalar keys, save space by
                    dropping the enclosing args tuple  */
-                Py_INCREF(key);
-                return key;
+                return Py_NewRef(key);
             }
         }
-        Py_INCREF(args);
-        return args;
+        return Py_NewRef(args);
     }
 
     key_size = PyTuple_GET_SIZE(args);
@@ -858,31 +849,25 @@ lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
     key_pos = 0;
     for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
         PyObject *item = PyTuple_GET_ITEM(args, pos);
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(key, key_pos++, item);
+        PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
     }
     if (kwds_size) {
-        Py_INCREF(kwd_mark);
-        PyTuple_SET_ITEM(key, key_pos++, kwd_mark);
+        PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(kwd_mark));
         for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
-            Py_INCREF(keyword);
-            PyTuple_SET_ITEM(key, key_pos++, keyword);
-            Py_INCREF(value);
-            PyTuple_SET_ITEM(key, key_pos++, value);
+            PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(keyword));
+            PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(value));
         }
         assert(key_pos == PyTuple_GET_SIZE(args) + kwds_size * 2 + 1);
     }
     if (typed) {
         for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
             PyObject *item = (PyObject *)Py_TYPE(PyTuple_GET_ITEM(args, pos));
-            Py_INCREF(item);
-            PyTuple_SET_ITEM(key, key_pos++, item);
+            PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
         }
         if (kwds_size) {
             for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
                 PyObject *item = (PyObject *)Py_TYPE(value);
-                Py_INCREF(item);
-                PyTuple_SET_ITEM(key, key_pos++, item);
+                PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
             }
         }
     }
@@ -1084,8 +1069,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             return NULL;
         }
         lru_cache_append_link(self, link);
-        Py_INCREF(result); /* for return */
-        return result;
+        return Py_NewRef(result);
     }
     /* Since the cache is full, we need to evict an old key and add
        a new key.  Rather than free the old link and allocate a new
@@ -1230,16 +1214,12 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->wrapper = wrapper;
     obj->typed = typed;
     obj->cache = cachedict;
-    Py_INCREF(func);
-    obj->func = func;
+    obj->func = Py_NewRef(func);
     obj->misses = obj->hits = 0;
     obj->maxsize = maxsize;
-    Py_INCREF(state->kwd_mark);
-    obj->kwd_mark = state->kwd_mark;
-    Py_INCREF(state->lru_list_elem_type);
-    obj->lru_list_elem_type = state->lru_list_elem_type;
-    Py_INCREF(cache_info_type);
-    obj->cache_info_type = cache_info_type;
+    obj->kwd_mark = Py_NewRef(state->kwd_mark);
+    obj->lru_list_elem_type = (PyTypeObject*)Py_NewRef(state->lru_list_elem_type);
+    obj->cache_info_type = Py_NewRef(cache_info_type);
     obj->dict = NULL;
     obj->weakreflist = NULL;
     return (PyObject *)obj;
@@ -1306,8 +1286,7 @@ static PyObject *
 lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     if (obj == Py_None || obj == NULL) {
-        Py_INCREF(self);
-        return self;
+        return Py_NewRef(self);
     }
     return PyMethod_New(self, obj);
 }
@@ -1360,15 +1339,13 @@ lru_cache_reduce(PyObject *self, PyObject *unused)
 static PyObject *
 lru_cache_copy(PyObject *self, PyObject *unused)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
 lru_cache_deepcopy(PyObject *self, PyObject *unused)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static int
