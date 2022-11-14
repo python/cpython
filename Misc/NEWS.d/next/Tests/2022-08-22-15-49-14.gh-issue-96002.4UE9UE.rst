@@ -1,1 +1,1 @@
-Add functional test (``test_clinic_functionality``) for Argument Clinic.
+Add functional test for Argument Clinic.
