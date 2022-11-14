@@ -55,7 +55,7 @@ pack_arguments_newref(int argc, ...)
             out[_i] = ((PyObject *[]){__VA_ARGS__})[_i]; \
             assert(out[_i] || PyErr_Occurred()); \
             if (!out[_i]) { \
-                for (int _j = _i - 1; _j >= 0; _j--) { \
+                for (int _j = 0; _j < _i; _j++) { \
                     Py_DECREF(out[_j]); \
                 } \
                 return NULL; \
