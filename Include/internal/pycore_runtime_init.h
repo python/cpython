@@ -61,6 +61,9 @@ extern "C" {
         .dict_state = { \
             .next_keys_version = 2, \
         }, \
+        .func_state = { \
+            .next_version = 1, \
+        }, \
         .types = { \
             .next_version_tag = 1, \
         }, \

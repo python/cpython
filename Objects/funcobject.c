@@ -7,8 +7,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
 
-static uint32_t next_func_version = 1;
-
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
@@ -129,10 +127,10 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
     if (func->vectorcall != _PyFunction_Vectorcall) {
         return 0;
     }
-    if (next_func_version == 0) {
+    if (_PyRuntime.func_state.next_version == 0) {
         return 0;
     }
-    uint32_t v = next_func_version++;
+    uint32_t v = _PyRuntime.func_state.next_version++;
     func->func_version = v;
     return v;
 }
