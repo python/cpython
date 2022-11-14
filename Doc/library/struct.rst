@@ -488,17 +488,17 @@ better to be explicit and use the ``'@'`` prefix character.
 Standard Formats
 ^^^^^^^^^^^^^^^^
 
-When exchanging data beyond your process such as storage or networks,
-byte ordering, size, and alignment should be precisely specified, as
-they may not correspond exactly to that of the local machine
-architecture.  For example, network byte order is big-endian, while
-many popular CPUs are little-endian.  In those situations, the user
-must define this explicitly.  The first character should typically be
-``<`` or ``>`` (or sometimes ``!`` to be explicit that the format will
-use network byte order).  Padding is the responsibility of the
-programmer.  The zero-repeat format character won't work.  Instead,
-the user must explicitly add ``'x'`` pad bytes where needed.
-Revisiting the examples from the previous section, we have::
+When exchanging data beyond your process such as netowkring or data,
+be precise.  Specify the exact byte order, size, and alignment.  Do
+not assume they match the native order of a particular machine.
+For example, network byte order is big-endian, while many popular CPUs
+are little-endian.  In those situations, the user must define this
+explicitly.  The first character should typically be ``<`` or ``>``
+(or sometimes ``!`` to be explicit that the format will use network
+byte order).  Padding is the responsibility of the programmer.  The
+zero-repeat format character won't work.  Instead, the user must
+explicitly add ``'x'`` pad bytes where needed.  Revisiting the
+examples from the previous section, we have::
 
     >>> calcsize('<qh6xq')
     24
