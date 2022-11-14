@@ -757,7 +757,7 @@ alloc_threadstate(void)
 static void
 free_threadstate(PyThreadState *tstate)
 {
-    // The main thread of the interpreter is allocated
+    // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
     if (tstate != &tstate->interp->_initial_thread) {
         PyMem_RawFree(tstate);
