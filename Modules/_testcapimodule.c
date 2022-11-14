@@ -23,6 +23,7 @@
 #include "datetime.h"             // PyDateTimeAPI
 #include "marshal.h"              // PyMarshal_WriteLongToFile
 #include "structmember.h"         // PyMemberDef
+#include "frameobject.h"          // PyFrame_New()
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 
@@ -6107,6 +6108,36 @@ unwatch_type(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+test_gen_new(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyCodeObject *code = PyCode_NewEmpty("filename", "func_name", 1);
+    if (code == NULL) {
+        return NULL;
+    }
+
+    PyObject *globals = PyDict_New();
+    if (globals == NULL) {
+        return NULL;
+    }
+    PyObject *locals = globals;  // borrowed ref
+
+    PyThreadState *tstate = PyThreadState_Get();
+    PyFrameObject *frame = PyFrame_New(tstate, code, globals, locals);
+    if (frame == NULL) {
+        return NULL;
+    }
+
+    PyObject *gen = PyGen_New(frame);
+    Py_DECREF(gen);
+
+    Py_DECREF(code);
+    Py_DECREF(globals);
+    Py_DECREF(frame);
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 static PyObject *getargs_s_hash_int2(PyObject *, PyObject *, PyObject*);
@@ -6414,6 +6445,7 @@ static PyMethodDef TestMethods[] = {
     {"watch_type", watch_type, METH_VARARGS, NULL},
     {"unwatch_type", unwatch_type, METH_VARARGS, NULL},
     {"get_type_modified_events", get_type_modified_events, METH_NOARGS, NULL},
+    {"test_gen_new", test_gen_new, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

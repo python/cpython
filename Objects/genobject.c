@@ -939,7 +939,6 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     frame->owner = FRAME_OWNED_BY_GENERATOR;
     assert(PyObject_GC_IsTracked((PyObject *)f));
     gen->gi_code = PyFrame_GetCode(f);
-    Py_INCREF(gen->gi_code);
     Py_DECREF(f);
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_value = NULL;
