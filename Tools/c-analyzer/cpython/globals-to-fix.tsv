@@ -332,7 +332,6 @@ Python/dtoa.c	-	freelist	-
 Python/dtoa.c	-	private_mem	-
 
 # local buffer
-Python/getversion.c	Py_GetVersion	version	-
 Python/suggestions.c	levenshtein_distance	buffer	-
 
 # linked list
