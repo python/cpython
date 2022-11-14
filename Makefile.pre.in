@@ -2056,6 +2056,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/xmltestdata test/xmltestdata/c14n-20 \
 		test/ziptestdata
 
+COMPILEALL_OPTS=-j0
+
 TEST_MODULES=@TEST_MODULES@
 libinstall:	all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
@@ -2125,32 +2127,15 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py \
 		$(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
+	@ # Build PYC files for the 3 optimization levels (0, 1, 2)
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
-		-j0 -d $(LIBDEST) -f \
-		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
-		$(DESTDIR)$(LIBDEST)
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
-		$(PYTHON_FOR_BUILD) -Wi -O $(DESTDIR)$(LIBDEST)/compileall.py \
-		-j0 -d $(LIBDEST) -f \
-		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
-		$(DESTDIR)$(LIBDEST)
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
-		$(PYTHON_FOR_BUILD) -Wi -OO $(DESTDIR)$(LIBDEST)/compileall.py \
-		-j0 -d $(LIBDEST) -f \
+		-o 0 -o 1 -o 2 $(COMPILEALL_OPTS) -d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
 		$(DESTDIR)$(LIBDEST)
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
-		-j0 -d $(LIBDEST)/site-packages -f \
-		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
-		$(PYTHON_FOR_BUILD) -Wi -O $(DESTDIR)$(LIBDEST)/compileall.py \
-		-j0 -d $(LIBDEST)/site-packages -f \
-		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
-		$(PYTHON_FOR_BUILD) -Wi -OO $(DESTDIR)$(LIBDEST)/compileall.py \
-		-j0 -d $(LIBDEST)/site-packages -f \
+		-o 0 -o 1 -o 2 $(COMPILEALL_OPTS) -d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/Grammar.txt
