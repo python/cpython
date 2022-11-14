@@ -374,8 +374,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     }
     p->atypes[i] = NULL;
 
-    Py_INCREF(restype);
-    p->restype = restype;
+    p->restype = Py_NewRef(restype);
     if (restype == Py_None) {
         p->setfunc = NULL;
         p->ffi_restype = &ffi_type_void;
@@ -446,10 +445,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         goto error;
     }
 
-    Py_INCREF(converters);
-    p->converters = converters;
-    Py_INCREF(callable);
-    p->callable = callable;
+    p->converters = Py_NewRef(converters);
+    p->callable = Py_NewRef(callable);
     return p;
 
   error:

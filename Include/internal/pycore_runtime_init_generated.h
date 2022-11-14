@@ -775,6 +775,7 @@ extern "C" {
     INIT_ID(as_integer_ratio), \
     INIT_ID(attribute), \
     INIT_ID(authorizer_callback), \
+    INIT_ID(autocommit), \
     INIT_ID(b), \
     INIT_ID(backtick), \
     INIT_ID(base), \
