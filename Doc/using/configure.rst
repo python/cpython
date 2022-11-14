@@ -767,6 +767,13 @@ Compiler flags
 
    .. versionadded:: 3.5
 
+.. envvar:: COMPILEALL_OPTS
+
+   Options passed to the :mod:`compileall` command line when building PYC files
+   in ``make install``. Default: ``-j0``.
+
+   .. versionadded:: 3.12
+
 .. envvar:: EXTRA_CFLAGS
 
    Extra C compiler flags.

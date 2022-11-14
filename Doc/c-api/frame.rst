@@ -87,6 +87,8 @@ See also :ref:`Reflection <reflection>`.
    * Raise :exc:`NameError` and return ``NULL`` if the variable does not exist.
    * Raise an exception and return ``NULL`` on error.
 
+   *name* type must be a :class:`str`.
+
    .. versionadded:: 3.12
 
 

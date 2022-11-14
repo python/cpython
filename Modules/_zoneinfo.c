@@ -227,8 +227,7 @@ zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
     }
     Py_DECREF(rv);
 
-    ((PyZoneInfo_ZoneInfo *)self)->key = key;
-    Py_INCREF(key);
+    ((PyZoneInfo_ZoneInfo *)self)->key = Py_NewRef(key);
 
     goto cleanup;
 error:
@@ -381,10 +380,9 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyObject *file_obj,
 
     self->source = SOURCE_FILE;
     self->file_repr = file_repr;
-    self->key = key;
-    Py_INCREF(key);
-
+    self->key = Py_NewRef(key);
     return obj_self;
+
 error:
     Py_XDECREF(file_repr);
     Py_XDECREF(self);
@@ -484,8 +482,7 @@ zoneinfo_utcoffset(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->utcoff);
-    return tti->utcoff;
+    return Py_NewRef(tti->utcoff);
 }
 
 static PyObject *
@@ -495,8 +492,7 @@ zoneinfo_dst(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->dstoff);
-    return tti->dstoff;
+    return Py_NewRef(tti->dstoff);
 }
 
 static PyObject *
@@ -506,8 +502,7 @@ zoneinfo_tzname(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->tzname);
-    return tti->tzname;
+    return Py_NewRef(tti->tzname);
 }
 
 #define GET_DT_TZINFO PyDateTime_DATE_GET_TZINFO
@@ -651,8 +646,7 @@ static PyObject *
 zoneinfo_str(PyZoneInfo_ZoneInfo *self)
 {
     if (!(self->key == Py_None)) {
-        Py_INCREF(self->key);
-        return self->key;
+        return Py_NewRef(self->key);
     }
     else {
         return zoneinfo_repr(self);
@@ -793,8 +787,7 @@ build_ttinfo(long utcoffset, long dstoffset, PyObject *tzname, _ttinfo *out)
         return -1;
     }
 
-    out->tzname = tzname;
-    Py_INCREF(tzname);
+    out->tzname = Py_NewRef(tzname);
 
     return 0;
 }
@@ -1082,8 +1075,7 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         if (PyObject_IsTrue(tti->dstoff)) {
             _ttinfo *tti_after = &(self->tzrule_after.std);
             Py_DECREF(tti_after->dstoff);
-            tti_after->dstoff = tti->dstoff;
-            Py_INCREF(tti_after->dstoff);
+            tti_after->dstoff = Py_NewRef(tti->dstoff);
         }
     }
 
@@ -2285,13 +2277,10 @@ strong_cache_node_new(PyObject *key, PyObject *zone)
         return NULL;
     }
 
-    Py_INCREF(key);
-    Py_INCREF(zone);
-
     node->next = NULL;
     node->prev = NULL;
-    node->key = key;
-    node->zone = zone;
+    node->key = Py_NewRef(key);
+    node->zone = Py_NewRef(zone);
 
     return node;
 }
@@ -2443,8 +2432,7 @@ zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key)
 
     if (node != NULL) {
         move_strong_cache_node_to_front(&ZONEINFO_STRONG_CACHE, node);
-        Py_INCREF(node->zone);
-        return node->zone;
+        return Py_NewRef(node->zone);
     }
 
     return NULL;  // Cache miss
@@ -2679,13 +2667,9 @@ zoneinfomodule_exec(PyObject *m)
     }
 
     if (NO_TTINFO.utcoff == NULL) {
-        NO_TTINFO.utcoff = Py_None;
-        NO_TTINFO.dstoff = Py_None;
-        NO_TTINFO.tzname = Py_None;
-
-        for (size_t i = 0; i < 3; ++i) {
-            Py_INCREF(Py_None);
-        }
+        NO_TTINFO.utcoff = Py_NewRef(Py_None);
+        NO_TTINFO.dstoff = Py_NewRef(Py_None);
+        NO_TTINFO.tzname = Py_NewRef(Py_None);
     }
 
     if (initialize_caches()) {
