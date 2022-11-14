@@ -20,7 +20,7 @@ from unittest import mock
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, is_jython, swap_attr, swap_item, cpython_only, is_emscripten,
+    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
     is_wasi)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
@@ -163,10 +163,7 @@ class ImportTests(unittest.TestCase):
         def test_with_extension(ext):
             # The extension is normally ".py", perhaps ".pyw".
             source = TESTFN + ext
-            if is_jython:
-                pyc = TESTFN + "$py.class"
-            else:
-                pyc = TESTFN + ".pyc"
+            pyc = TESTFN + ".pyc"
 
             with open(source, "w", encoding='utf-8') as f:
                 print("# This tests Python's ability to import a",

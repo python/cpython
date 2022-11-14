@@ -505,6 +505,7 @@ def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
 requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
                         'requires legacy Unicode C API')
 
+# Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
@@ -736,8 +737,6 @@ def gc_collect():
     """
     import gc
     gc.collect()
-    if is_jython:
-        time.sleep(0.1)
     gc.collect()
     gc.collect()
 

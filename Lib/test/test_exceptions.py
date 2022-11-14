@@ -360,10 +360,9 @@ class ExceptionTests(unittest.TestCase):
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
-        if not sys.platform.startswith('java'):
-            test_capi1()
-            test_capi2()
-            test_capi3()
+        test_capi1()
+        test_capi2()
+        test_capi3()
 
     def test_WindowsError(self):
         try:
