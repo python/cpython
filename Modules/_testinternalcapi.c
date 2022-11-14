@@ -14,7 +14,7 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_compile.h"      // _PyCompile_OptimizeCfg()
+#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
@@ -529,6 +529,26 @@ set_eval_frame_record(PyObject *self, PyObject *list)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+
+_testinternalcapi.compiler_codegen -> object
+
+  ast: object
+  filename: object
+  optimize: int
+
+Apply compiler code generation to an AST.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
+                                        PyObject *filename, int optimize)
+/*[clinic end generated code: output=fbbbbfb34700c804 input=e9fbe6562f7f75e4]*/
+{
+    PyCompilerFlags *flags = NULL;
+    return _PyCompile_CodeGen(ast, filename, flags, optimize);
+}
+
 
 /*[clinic input]
 
@@ -612,6 +632,7 @@ static PyMethodDef TestMethods[] = {
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
