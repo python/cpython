@@ -167,8 +167,8 @@ class Analyzer:
         with open(filename) as f:
             self.src = f.read()
 
-    instrs: dict[str, Instruction]
-    supers: dict[str, parser.Super]
+    instrs: dict[str, Instruction]  # Includes ops
+    supers: dict[str, parser.Super]  # Includes macros
     families: dict[str, parser.Family]
 
     def parse(self) -> None:
@@ -290,6 +290,8 @@ class Analyzer:
 
             # Write regular instructions
             for name, instr in self.instrs.items():
+                if instr.kind != "inst":
+                    continue # ops are not real instructions
                 f.write(f"\n{indent}TARGET({name}) {{\n")
                 if instr.predicted:
                     f.write(f"{indent}    PREDICTED({name});\n")
@@ -303,7 +305,7 @@ class Analyzer:
                 components = [self.instrs[name] for name in sup.ops]
                 f.write(f"\n{indent}TARGET({sup.name}) {{\n")
                 for i, instr in enumerate(components):
-                    if i > 0:
+                    if i > 0 and sup.kind == "super":
                         f.write(f"{indent}    NEXTOPARG();\n")
                         f.write(f"{indent}    next_instr++;\n")
                     f.write(f"{indent}    {{\n")

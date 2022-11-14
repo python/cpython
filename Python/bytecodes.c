@@ -70,6 +70,8 @@ do { \
 #define DISPATCH_SAME_OPARG() ((void)0)
 
 #define inst(name, ...) case name:
+#define op(name, ...) /* NAME is ignored */
+#define macro(name) static int MACRO_##name
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
 
@@ -156,10 +158,7 @@ dummy_func(
             res = NULL;
         }
 
-        inst(END_FOR, (value1, value2 --)) {
-            Py_DECREF(value1);
-            Py_DECREF(value2);
-        }
+        macro(END_FOR) = POP_TOP + POP_TOP;
 
         inst(UNARY_POSITIVE, (value -- res)) {
             res = PyNumber_Positive(value);

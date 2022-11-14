@@ -78,15 +78,6 @@
             DISPATCH();
         }
 
-        TARGET(END_FOR) {
-            PyObject *value2 = PEEK(1);
-            PyObject *value1 = PEEK(2);
-            Py_DECREF(value1);
-            Py_DECREF(value2);
-            STACK_SHRINK(2);
-            DISPATCH();
-        }
-
         TARGET(UNARY_POSITIVE) {
             PyObject *value = PEEK(1);
             PyObject *res;
@@ -3805,6 +3796,20 @@
                 Py_INCREF(value);
                 STACK_GROW(1);
                 POKE(1, value);
+            }
+            DISPATCH();
+        }
+
+        TARGET(END_FOR) {
+            {
+                PyObject *value = PEEK(1);
+                Py_DECREF(value);
+                STACK_SHRINK(1);
+            }
+            {
+                PyObject *value = PEEK(1);
+                Py_DECREF(value);
+                STACK_SHRINK(1);
             }
             DISPATCH();
         }
