@@ -267,8 +267,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
         new_descr->size = fdescr->size;
         new_descr->offset = fdescr->offset + offset;
         new_descr->index = fdescr->index + index;
-        new_descr->proto = fdescr->proto;
-        Py_XINCREF(new_descr->proto);
+        new_descr->proto = Py_XNewRef(fdescr->proto);
         new_descr->getfunc = fdescr->getfunc;
         new_descr->setfunc = fdescr->setfunc;
 
@@ -425,8 +424,11 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     }
 
     stgdict = PyType_stgdict(type);
-    if (!stgdict)
+    if (!stgdict) {
+        PyErr_SetString(PyExc_TypeError,
+                        "ctypes state is not initialized");
         return -1;
+    }
     /* If this structure/union is already marked final we cannot assign
        _fields_ anymore. */
 
