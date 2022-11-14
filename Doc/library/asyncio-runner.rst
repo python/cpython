@@ -37,11 +37,11 @@ Running an asyncio Program
    debug mode explicitly. ``None`` is used to respect the global
    :ref:`asyncio-debug-mode` settings.
 
-   If *loop_factory* is not ``None``, it is used to create a new event loop
-   otherwise :func:`asyncio.new_event_loop` is used and the loop is closed at the end.
-   It should be used as a main entry point for asyncio programs, and should ideally
-   only be called once. It is recommended to use *loop_factory* to configure the
-   event loop instead of policies.
+   If *loop_factory* is not ``None``, it is used to create a new event loop;
+   otherwise :func:`asyncio.new_event_loop` is used. The loop is closed at the end.
+   This function should be used as a main entry point for asyncio programs,
+   and should ideally only be called once. It is recommended to use
+   *loop_factory* to configure the event loop instead of policies.
 
    The executor is given a timeout duration of 5 minutes to shutdown.
    If the executor hasn't finished within that duration, a warning is
