@@ -421,18 +421,17 @@ dummy_func(
             DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyDict_GetItemWithError(dict, sub);
-            Py_DECREF(dict);
             if (res == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_SetKeyError(sub);
                 }
-                else {
-                    Py_DECREF(sub);
-                }
+                Py_DECREF(dict);
+                Py_DECREF(sub);
                 ERROR_IF(1, error);
             }
+            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
+            Py_DECREF(dict);
             Py_DECREF(sub);
-            Py_INCREF(res);
         }
 
         inst(BINARY_SUBSCR_GETITEM, (container, sub, unused/1, type_version/2, func_version/1 -- unused)) {

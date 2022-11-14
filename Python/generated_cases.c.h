@@ -427,18 +427,17 @@
             DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyDict_GetItemWithError(dict, sub);
-            Py_DECREF(dict);
             if (res == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_SetKeyError(sub);
                 }
-                else {
-                    Py_DECREF(sub);
-                }
+                Py_DECREF(dict);
+                Py_DECREF(sub);
                 if (1) goto pop_2_error;
             }
+            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
+            Py_DECREF(dict);
             Py_DECREF(sub);
-            Py_INCREF(res);
             STACK_SHRINK(1);
             POKE(1, res);
             next_instr += 4;
