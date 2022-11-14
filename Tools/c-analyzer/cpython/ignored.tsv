@@ -62,6 +62,23 @@ Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
 Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
 
 #-----------------------
+# used only in the main thread
+
+# REPL
+
+Parser/myreadline.c	-	_PyOS_ReadlineLock	-
+Parser/myreadline.c	-	_PyOS_ReadlineTState	-
+Parser/myreadline.c	-	PyOS_InputHook	-
+Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
+
+# handling C argv
+Python/getopt.c	-	_PyOS_optarg	-
+Python/getopt.c	-	_PyOS_opterr	-
+Python/getopt.c	-	_PyOS_optind	-
+Python/getopt.c	-	opt_ptr	-
+Python/pathconfig.c	-	_Py_path_config	-
+
+#-----------------------
 # others
 
 # XXX The analyzer should have ignored these.
