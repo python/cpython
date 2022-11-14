@@ -1243,16 +1243,17 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (s == NULL)
         return NULL;
 
-    s->markers = markers;
-    s->defaultfn = defaultfn;
-    s->encoder = encoder;
-    s->indent = indent;
-    s->key_separator = key_separator;
-    s->item_separator = item_separator;
+    s->markers = Py_NewRef(markers);
+    s->defaultfn = Py_NewRef(defaultfn);
+    s->encoder = Py_NewRef(encoder);
+    s->indent = Py_NewRef(indent);
+    s->key_separator = Py_NewRef(key_separator);
+    s->item_separator = Py_NewRef(item_separator);
     s->sort_keys = sort_keys;
     s->skipkeys = skipkeys;
     s->allow_nan = allow_nan;
     s->fast_encode = NULL;
+
     if (PyCFunction_Check(s->encoder)) {
         PyCFunction f = PyCFunction_GetFunction(s->encoder);
         if (f == (PyCFunction)py_encode_basestring_ascii ||
@@ -1261,12 +1262,6 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    Py_INCREF(s->markers);
-    Py_INCREF(s->defaultfn);
-    Py_INCREF(s->encoder);
-    Py_INCREF(s->indent);
-    Py_INCREF(s->key_separator);
-    Py_INCREF(s->item_separator);
     return (PyObject *)s;
 }
 
@@ -1480,8 +1475,7 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
     PyObject *encoded;
 
     if (PyUnicode_Check(key)) {
-        Py_INCREF(key);
-        keystr = key;
+        keystr = Py_NewRef(key);
     }
     else if (PyFloat_Check(key)) {
         keystr = encoder_encode_float(s, key);
