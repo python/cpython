@@ -547,17 +547,18 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         # First try to create a non-installed python. It's not a real full
         # functional non-installed python, but enough for this test.
+        platlibdir = sys.platlibdir
         non_installed_dir = os.path.realpath(tempfile.mkdtemp())
         try:
             bindir = os.path.join(non_installed_dir, self.bindir)
             os.mkdir(bindir)
             shutil.copy2(sys.executable, bindir)
-            libdir = os.path.join(non_installed_dir, *self.lib)
+            libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
             os.makedirs(libdir)
             landmark = os.path.join(libdir, "os.py")
             stdlib_zip = "python%d%d.zip" % sys.version_info[:2]
             zip_landmark = os.path.join(non_installed_dir,
-                                        self.lib[0],
+                                        platlibdir,
                                         stdlib_zip)
             additional_pythonpath_for_non_installed = []
             # Copy stdlib files to the non-installed python so venv can
@@ -567,7 +568,7 @@ class BasicTest(BaseTest):
                     if os.path.isfile(eachpath):
                         shutil.copyfile(
                             eachpath,
-                            os.path.join(non_installed_dir, self.lib[0]))
+                            os.path.join(non_installed_dir, platlibdir))
                 elif os.path.isfile(os.path.join(eachpath, "os.py")):
                     for name in os.listdir(eachpath):
                         if name == "site-packages":
