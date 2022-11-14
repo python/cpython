@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_gc.h"              // PyGC_Head
 #include "pycore_global_strings.h"  // struct _Py_global_strings
+#include "pycore_typeobject.h"      // pytype_slotdef
 
 
 // These would be in pycore_long.h if it weren't for an include cycle.
@@ -19,6 +20,13 @@ extern "C" {
 
 // Only immutable objects should be considered runtime-global.
 // All others must be per-interpreter.
+
+#define _Py_CACHED_OBJECT(NAME) \
+    _PyRuntime.cached_objects.NAME
+
+struct _Py_cached_objects {
+    PyObject *str_replace_inf;
+};
 
 #define _Py_GLOBAL_OBJECT(NAME) \
     _PyRuntime.global_objects.NAME
@@ -54,6 +62,10 @@ struct _Py_global_objects {
 
 struct _Py_interp_cached_objects {
     int _not_set;
+    /* object.__reduce__ */
+    PyObject *objreduce;
+    PyObject *type_slots_pname;
+    pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \
