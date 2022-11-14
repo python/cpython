@@ -36,6 +36,9 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        .types = { \
+            .next_version_tag = 1, \
+        }, \
         .global_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
