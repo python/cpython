@@ -1221,8 +1221,7 @@ path_converter(PyObject *o, void *p)
 #endif
     }
     else if (is_bytes) {
-        bytes = o;
-        Py_INCREF(bytes);
+        bytes = Py_NewRef(o);
     }
     else if (is_index) {
         if (!_fd_converter(o, &path->fd)) {
@@ -2240,8 +2239,7 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     for (i = 7; i <= 9; i++) {
         if (result->ob_item[i+3] == Py_None) {
             Py_DECREF(Py_None);
-            Py_INCREF(result->ob_item[i]);
-            result->ob_item[i+3] = result->ob_item[i];
+            result->ob_item[i+3] = Py_NewRef(result->ob_item[i]);
         }
     }
     return (PyObject*)result;
@@ -6888,8 +6886,7 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
     res = PyStructSequence_New(type);
     if (!res)
         return NULL;
-    Py_INCREF(sched_priority);
-    PyStructSequence_SET_ITEM(res, 0, sched_priority);
+    PyStructSequence_SET_ITEM(res, 0, Py_NewRef(sched_priority));
     return res;
 }
 
@@ -8017,8 +8014,7 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
         err = GetLastError();
         result = PyErr_SetFromWindowsErr(err);
     } else {
-        Py_INCREF(Py_None);
-        result = Py_None;
+        result = Py_NewRef(Py_None);
     }
 
     CloseHandle(handle);
@@ -8647,7 +8643,7 @@ os_unshare_impl(PyObject *module, int flags)
     if (res != 0) {
         return posix_error();
     }
-    
+
     Py_RETURN_NONE;
 }
 #endif
@@ -13693,8 +13689,7 @@ DirEntry_get_lstat(PyTypeObject *defining_class, DirEntry *self)
         self->lstat = DirEntry_fetch_stat(module, self, 0);
 #endif
     }
-    Py_XINCREF(self->lstat);
-    return self->lstat;
+    return Py_XNewRef(self->lstat);
 }
 
 /*[clinic input]
@@ -13730,8 +13725,7 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
         }
     }
 
-    Py_XINCREF(self->stat);
-    return self->stat;
+    return Py_XNewRef(self->stat);
 }
 
 /* Set exception and return -1 on error, 0 for False, 1 for True */
@@ -13905,8 +13899,7 @@ static PyObject *
 os_DirEntry___fspath___impl(DirEntry *self)
 /*[clinic end generated code: output=6dd7f7ef752e6f4f input=3c49d0cf38df4fac]*/
 {
-    Py_INCREF(self->path);
-    return self->path;
+    return Py_NewRef(self->path);
 }
 
 static PyMemberDef DirEntry_members[] = {
@@ -14114,8 +14107,7 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
         goto error;
 
     if (path->fd != -1) {
-        entry->path = entry->name;
-        Py_INCREF(entry->path);
+        entry->path = Py_NewRef(entry->name);
     }
     else if (!entry->path)
         goto error;
@@ -14306,8 +14298,7 @@ ScandirIterator_close(ScandirIterator *self, PyObject *args)
 static PyObject *
 ScandirIterator_enter(PyObject *self, PyObject *args)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -14515,8 +14506,7 @@ PyOS_FSPath(PyObject *path)
     PyObject *path_repr = NULL;
 
     if (PyUnicode_Check(path) || PyBytes_Check(path)) {
-        Py_INCREF(path);
-        return path;
+        return Py_NewRef(path);
     }
 
     func = _PyObject_LookupSpecial(path, &_Py_ID(__fspath__));
@@ -15881,8 +15871,7 @@ posixmodule_exec(PyObject *m)
     if (setup_confname_tables(m))
         return -1;
 
-    Py_INCREF(PyExc_OSError);
-    PyModule_AddObject(m, "error", PyExc_OSError);
+    PyModule_AddObject(m, "error", Py_NewRef(PyExc_OSError));
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     waitid_result_desc.name = MODNAME ".waitid_result";
@@ -15890,8 +15879,7 @@ posixmodule_exec(PyObject *m)
     if (WaitidResultType == NULL) {
         return -1;
     }
-    Py_INCREF(WaitidResultType);
-    PyModule_AddObject(m, "waitid_result", WaitidResultType);
+    PyModule_AddObject(m, "waitid_result", Py_NewRef(WaitidResultType));
     state->WaitidResultType = WaitidResultType;
 #endif
 
@@ -15903,8 +15891,7 @@ posixmodule_exec(PyObject *m)
     if (StatResultType == NULL) {
         return -1;
     }
-    Py_INCREF(StatResultType);
-    PyModule_AddObject(m, "stat_result", StatResultType);
+    PyModule_AddObject(m, "stat_result", Py_NewRef(StatResultType));
     state->StatResultType = StatResultType;
     structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
@@ -15914,8 +15901,7 @@ posixmodule_exec(PyObject *m)
     if (StatVFSResultType == NULL) {
         return -1;
     }
-    Py_INCREF(StatVFSResultType);
-    PyModule_AddObject(m, "statvfs_result", StatVFSResultType);
+    PyModule_AddObject(m, "statvfs_result", Py_NewRef(StatVFSResultType));
     state->StatVFSResultType = StatVFSResultType;
 #ifdef NEED_TICKS_PER_SECOND
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
@@ -15933,8 +15919,7 @@ posixmodule_exec(PyObject *m)
     if (SchedParamType == NULL) {
         return -1;
     }
-    Py_INCREF(SchedParamType);
-    PyModule_AddObject(m, "sched_param", SchedParamType);
+    PyModule_AddObject(m, "sched_param", Py_NewRef(SchedParamType));
     state->SchedParamType = SchedParamType;
     ((PyTypeObject *)SchedParamType)->tp_new = os_sched_param;
 #endif
@@ -15944,8 +15929,7 @@ posixmodule_exec(PyObject *m)
     if (TerminalSizeType == NULL) {
         return -1;
     }
-    Py_INCREF(TerminalSizeType);
-    PyModule_AddObject(m, "terminal_size", TerminalSizeType);
+    PyModule_AddObject(m, "terminal_size", Py_NewRef(TerminalSizeType));
     state->TerminalSizeType = TerminalSizeType;
 
     /* initialize scandir types */
@@ -15959,8 +15943,7 @@ posixmodule_exec(PyObject *m)
     if (DirEntryType == NULL) {
         return -1;
     }
-    Py_INCREF(DirEntryType);
-    PyModule_AddObject(m, "DirEntry", DirEntryType);
+    PyModule_AddObject(m, "DirEntry", Py_NewRef(DirEntryType));
     state->DirEntryType = DirEntryType;
 
     times_result_desc.name = MODNAME ".times_result";
@@ -15968,16 +15951,15 @@ posixmodule_exec(PyObject *m)
     if (TimesResultType == NULL) {
         return -1;
     }
-    Py_INCREF(TimesResultType);
-    PyModule_AddObject(m, "times_result", TimesResultType);
+    PyModule_AddObject(m, "times_result", Py_NewRef(TimesResultType));
     state->TimesResultType = TimesResultType;
 
     PyTypeObject *UnameResultType = PyStructSequence_NewType(&uname_result_desc);
     if (UnameResultType == NULL) {
         return -1;
     }
-    Py_INCREF(UnameResultType);
-    PyModule_AddObject(m, "uname_result", (PyObject *)UnameResultType);
+    ;
+    PyModule_AddObject(m, "uname_result", Py_NewRef(UnameResultType));
     state->UnameResultType = (PyObject *)UnameResultType;
 
     if ((state->billion = PyLong_FromLong(1000000000)) == NULL)
