@@ -256,8 +256,7 @@ _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value)
     res = gdbm_subscript(self, key);
     if (res == NULL && PyErr_ExceptionMatches(PyExc_KeyError)) {
         PyErr_Clear();
-        Py_INCREF(default_value);
-        return default_value;
+        return Py_NewRef(default_value);
     }
     return res;
 }
@@ -566,8 +565,7 @@ _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls)
 static PyObject *
 gdbm__enter__(PyObject *self, PyObject *args)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
