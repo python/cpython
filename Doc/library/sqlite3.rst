@@ -2378,7 +2378,7 @@ Here's an example of a optimised :class:`~collections.namedtuple` factory:
    from functools import lru_cache
 
    def _fields(cursor):
-        return [col[0] for col in cursor.description]
+        return (col[0] for col in cursor.description)
 
    @lru_cache
    def _make_cls(fields):
