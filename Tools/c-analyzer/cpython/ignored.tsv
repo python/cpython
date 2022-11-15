@@ -134,6 +134,12 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 
 
 ##################################
+# not used (kept for compatibility)
+
+Python/pyfpe.c	-	PyFPE_counter	-
+
+
+##################################
 # The analyzer should have ignored these.
 # XXX Fix the analyzer.
 
