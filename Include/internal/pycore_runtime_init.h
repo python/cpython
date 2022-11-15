@@ -55,6 +55,9 @@ extern "C" {
             .config = _PyTraceMalloc_Config_INIT, \
         }, \
         .dtoa = _dtoa_runtime_state_INIT(runtime), \
+        .fileutils = { \
+            .force_ascii = -1, \
+        }, \
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \

@@ -134,6 +134,7 @@ typedef struct pyruntimestate {
         struct _PyTraceMalloc_Config config;
     } tracemalloc;
     struct _dtoa_runtime_state dtoa;
+    struct _fileutils_state fileutils;
 
     PyPreConfig preconfig;
 
