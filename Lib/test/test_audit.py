@@ -197,9 +197,9 @@ class AuditTest(unittest.TestCase):
         actual = [(ev[0], ev[2]) for ev in events]
         expected = [
             ("_thread.start_new_thread", "(<test_func>, (), None)"),
-            ("cpython.PyThreadState_New", "()"),
+            ("cpython.PyThreadState_New", "(2,)"),
             ("test.test_func", "()"),
-            ("cpython.PyThreadState_Clear", "()"),
+            ("cpython.PyThreadState_Clear", "(2,)"),
         ]
 
         self.assertEqual(actual, expected)

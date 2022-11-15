@@ -894,7 +894,7 @@ _PyThreadState_Prealloc(PyInterpreterState *interp)
     if (tstate) {
         if (PySys_Audit("cpython.PyThreadState_New", "K", tstate->id) < 0) {
             PyThreadState_Clear(tstate);
-            _PyThreadState_DeleteCurrent(tstate);
+            _PyThreadState_Delete(tstate, 0);
             return NULL;
         }
     }
