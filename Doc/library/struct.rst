@@ -498,8 +498,7 @@ For example, network byte order is big-endian, while many popular CPUs
 are little-endian.  By defining this explicitly, the user need not
 care about the specifics of the platform their code is running on.
 The first character should typically be ``<`` or ``>``
-(or sometimes ``!`` to be explicit that the format will use network
-byte order).  Padding is the responsibility of the programmer.  The
+(or ``!``).  Padding is the responsibility of the programmer.  The
 zero-repeat format character won't work.  Instead, the user must
 explicitly add ``'x'`` pad bytes where needed.  Revisiting the
 examples from the previous section, we have::
