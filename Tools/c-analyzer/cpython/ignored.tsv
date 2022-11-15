@@ -118,10 +118,19 @@ Python/import.c	-	PyImport_Inittab	-
 Python/sysmodule.c	-	_preinit_warnoptions	-
 Python/sysmodule.c	-	_preinit_xoptions	-
 
+
 ##################################
 # special-use diagnistic state
 
 Parser/pegen.c	-	memo_statistics	-
+
+
+##################################
+# one-off temporary state
+
+# This is safe enough.
+Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
+Python/pylifecycle.c	fatal_error	reentrant	-
 
 
 ##################################
