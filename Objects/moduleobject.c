@@ -9,7 +9,6 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "structmember.h"         // PyMemberDef
 
-static Py_ssize_t max_module_number;
 
 static PyMemberDef module_members[] = {
     {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
@@ -43,10 +42,10 @@ PyModuleDef_Init(PyModuleDef* def)
 {
     assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
-        max_module_number++;
+        _PyRuntime.imports.last_module_index++;
         Py_SET_REFCNT(def, 1);
         Py_SET_TYPE(def, &PyModuleDef_Type);
-        def->m_base.m_index = max_module_number;
+        def->m_base.m_index = _PyRuntime.imports.last_module_index;
     }
     return (PyObject*)def;
 }
@@ -70,8 +69,7 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
     if (PyDict_SetItem(md_dict, &_Py_ID(__spec__), Py_None) != 0)
         return -1;
     if (PyUnicode_CheckExact(name)) {
-        Py_INCREF(name);
-        Py_XSETREF(mod->md_name, name);
+        Py_XSETREF(mod->md_name, Py_NewRef(name));
     }
 
     return 0;
@@ -506,8 +504,7 @@ PyModule_GetNameObject(PyObject *m)
         }
         return NULL;
     }
-    Py_INCREF(name);
-    return name;
+    return Py_NewRef(name);
 }
 
 const char *
@@ -541,8 +538,7 @@ PyModule_GetFilenameObject(PyObject *m)
         }
         return NULL;
     }
-    Py_INCREF(fileobj);
-    return fileobj;
+    return Py_NewRef(fileobj);
 }
 
 const char *

@@ -1,0 +1,2 @@
+In :mod:`importlib._bootstrap`, enhance namespace package repr to `<module
+'x' (namespace) from ['path']>`.

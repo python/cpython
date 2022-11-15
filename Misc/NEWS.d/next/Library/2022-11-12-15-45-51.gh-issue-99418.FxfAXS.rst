@@ -1,0 +1,2 @@
+Fix bug in :func:`urllib.parse.urlparse` that causes URL schemes that begin
+with a digit, a plus sign, or a minus sign to be parsed incorrectly.

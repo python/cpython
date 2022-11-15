@@ -52,9 +52,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_runtime_init.h"  // _PyUnicode_InitStaticStrings()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
+#include "pycore_unicodeobject_generated.h"  // _PyUnicode_InitStaticStrings()
 #include "stringlib/eq.h"         // unicode_eq()
 
 #ifdef MS_WINDOWS
@@ -221,8 +221,7 @@ static inline PyObject* unicode_get_empty(void)
 static inline PyObject* unicode_new_empty(void)
 {
     PyObject *empty = unicode_get_empty();
-    Py_INCREF(empty);
-    return empty;
+    return Py_NewRef(empty);
 }
 
 /* This dictionary holds all interned unicode strings.  Note that references
@@ -611,8 +610,7 @@ static PyObject*
 unicode_result_unchanged(PyObject *unicode)
 {
     if (PyUnicode_CheckExact(unicode)) {
-        Py_INCREF(unicode);
-        return unicode;
+        return Py_NewRef(unicode);
     }
     else
         /* Subtype -- return genuine unicode string with the same value. */
@@ -2947,8 +2945,7 @@ PyUnicode_FromObject(PyObject *obj)
     /* XXX Perhaps we should make this API an alias of
        PyObject_Str() instead ?! */
     if (PyUnicode_CheckExact(obj)) {
-        Py_INCREF(obj);
-        return obj;
+        return Py_NewRef(obj);
     }
     if (PyUnicode_Check(obj)) {
         /* For a Unicode subtype that's not a Unicode object,
@@ -8668,8 +8665,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
     }
     if (PyUnicode_IS_ASCII(unicode)) {
         /* If the string is already ASCII, just return the same string */
-        Py_INCREF(unicode);
-        return unicode;
+        return Py_NewRef(unicode);
     }
 
     Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
@@ -9413,8 +9409,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     if (seqlen == 1) {
         if (PyUnicode_CheckExact(items[0])) {
             res = items[0];
-            Py_INCREF(res);
-            return res;
+            return Py_NewRef(res);
         }
         seplen = 0;
         maxchar = 0;
@@ -9733,8 +9728,7 @@ split(PyObject *self,
         out = PyList_New(1);
         if (out == NULL)
             return NULL;
-        Py_INCREF(self);
-        PyList_SET_ITEM(out, 0, self);
+        PyList_SET_ITEM(out, 0, Py_NewRef(self));
         return out;
     }
     buf1 = PyUnicode_DATA(self);
@@ -9826,8 +9820,7 @@ rsplit(PyObject *self,
         out = PyList_New(1);
         if (out == NULL)
             return NULL;
-        Py_INCREF(self);
-        PyList_SET_ITEM(out, 0, self);
+        PyList_SET_ITEM(out, 0, Py_NewRef(self));
         return out;
     }
     buf1 = PyUnicode_DATA(self);
@@ -10746,8 +10739,7 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
     PyObject *empty = unicode_get_empty();  // Borrowed reference
     if (left == empty) {
         Py_DECREF(left);
-        Py_INCREF(right);
-        *p_left = right;
+        *p_left = Py_NewRef(right);
         return;
     }
     if (right == empty) {
@@ -12977,8 +12969,7 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
         if (writer->buffer == NULL && !writer->overallocate) {
             assert(_PyUnicode_CheckConsistency(str, 1));
             writer->readonly = 1;
-            Py_INCREF(str);
-            writer->buffer = str;
+            writer->buffer = Py_NewRef(str);
             _PyUnicodeWriter_Update(writer);
             writer->pos += len;
             return 0;
@@ -13641,8 +13632,7 @@ mainformatlong(PyObject *v,
         assert(PyLong_Check(iobj));
     }
     else {
-        iobj = v;
-        Py_INCREF(iobj);
+        iobj = Py_NewRef(v);
     }
 
     if (PyLong_CheckExact(v)
@@ -13965,8 +13955,7 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
         }
 
         if (PyUnicode_CheckExact(v) && arg->ch == 's') {
-            *p_str = v;
-            Py_INCREF(*p_str);
+            *p_str = Py_NewRef(v);
         }
         else {
             if (arg->ch == 's')
@@ -14616,8 +14605,7 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     if (t != s) {
-        Py_INCREF(t);
-        Py_SETREF(*p, t);
+        Py_SETREF(*p, Py_NewRef(t));
         return;
     }
 
@@ -14887,8 +14875,7 @@ unicode_iter(PyObject *seq)
     if (it == NULL)
         return NULL;
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = seq;
+    it->it_seq = Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }

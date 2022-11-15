@@ -1,0 +1,1 @@
+Fix :class:`statistics.NormalDist` pickle with ``0`` and ``1`` protocols.

@@ -877,9 +877,14 @@ TLS Upgrade
 
    Upgrade an existing transport-based connection to TLS.
 
-   Return a new transport instance, that the *protocol* must start using
-   immediately after the *await*.  The *transport* instance passed to
-   the *start_tls* method should never be used again.
+   Create a TLS coder/decoder instance and insert it between the *transport*
+   and the *protocol*. The coder/decoder implements both *transport*-facing
+   protocol and *protocol*-facing transport.
+
+   Return the created two-interface instance. After *await*, the *protocol*
+   must stop using the original *transport* and communicate with the returned
+   object only because the coder caches *protocol*-side data and sporadically
+   exchanges extra TLS session packets with *transport*.
 
    Parameters:
 

@@ -4,6 +4,8 @@ filename	funcname	name	reason
 ##################################
 # mutable but known to be safe
 
+Python/import.c	-	inittab_copy	-
+Python/import.c	-	PyImport_Inittab	-
 Python/pylifecycle.c	-	_PyRuntime	-
 
 # All uses of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.
@@ -179,6 +181,8 @@ Modules/_testbuffer.c	ndarray_memoryview_from_buffer	strides	-
 Modules/_testbuffer.c	ndarray_memoryview_from_buffer	suboffsets	-
 Modules/_testbuffer.c	ndarray_push	kwlist	-
 Modules/_testbuffer.c	staticarray_init	kwlist	-
+Modules/_testcapi/heaptype.c	-	_testcapimodule	-
+Modules/_testcapi/unicode.c	-	_testcapimodule	-
 Modules/_testcapimodule.c	-	ContainerNoGC_members	-
 Modules/_testcapimodule.c	-	ContainerNoGC_type	-
 Modules/_testcapimodule.c	-	FmData	-
@@ -261,6 +265,10 @@ Modules/_testcapimodule.c	test_capsule	buffer	-
 Modules/_testcapimodule.c	test_empty_argparse	kwlist	-
 Modules/_testcapimodule.c	test_structmembers_new	keywords	-
 Modules/_testcapimodule.c	getargs_s_hash_int	keywords	-
+Modules/_testcapimodule.c	-	g_dict_watch_events	-
+Modules/_testcapimodule.c	-	g_dict_watchers_installed	-
+Modules/_testcapimodule.c	-	g_type_modified_events	-
+Modules/_testcapimodule.c	-	g_type_watchers_installed	-
 Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-
@@ -373,6 +381,7 @@ Modules/_decimal/_decimal.c	-	ssize_constants	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_io/_iomodule.c	-	static_types	-
 Modules/_io/textio.c	-	encodefuncs	-
+Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 Modules/_localemodule.c	-	langinfo_constants	-
 Modules/_pickle.c	-	READ_WHOLE_LINE	-
 Modules/_sqlite/module.c	-	error_codes	-
@@ -467,6 +476,7 @@ Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	usedpools	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Objects/typeobject.c	-	name_op	-
+Objects/typeobject.c	-	slotdefs	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
 Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-
@@ -501,6 +511,5 @@ Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compare_masks	-
-Python/specialize.c	-	_PyOpcode_Adaptive	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	whatstrings	-
