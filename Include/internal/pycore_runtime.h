@@ -136,7 +136,15 @@ typedef struct pyruntimestate {
 
     struct _Py_unicode_runtime_ids unicode_ids;
 
+    struct {
+        /* Used to set PyTypeObject.tp_version_tag */
+        // bpo-42745: next_version_tag remains shared by all interpreters
+        // because of static types.
+        unsigned int next_version_tag;
+    } types;
+
     /* All the objects that are shared by the runtime's interpreters. */
+    struct _Py_cached_objects cached_objects;
     struct _Py_global_objects global_objects;
 
     /* The following fields are here to avoid allocation during init.

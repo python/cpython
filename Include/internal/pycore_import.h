@@ -21,6 +21,17 @@ struct _import_runtime_state {
        This is initialized lazily in _PyImport_FixupExtensionObject().
        Modules are added there and looked up in _imp.find_extension(). */
     PyObject *extensions;
+    /* The global import lock. */
+    struct {
+        PyThread_type_lock mutex;
+        unsigned long thread;
+        int level;
+    } lock;
+    struct {
+        int import_level;
+        _PyTime_t accumulated;
+        int header;
+    } find_and_load;
 };
 
 
