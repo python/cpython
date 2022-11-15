@@ -396,7 +396,9 @@ def iscoroutinefunction(obj):
 
     Coroutine functions are defined with "async def" syntax.
     """
-    return _has_code_flag(obj, CO_COROUTINE)
+    return _has_code_flag(obj, CO_COROUTINE) or (
+        callable(obj) and _has_code_flag(obj.__call__, CO_COROUTINE)
+    )
 
 def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.
