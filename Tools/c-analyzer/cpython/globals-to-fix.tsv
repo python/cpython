@@ -337,7 +337,6 @@ Python/perf_trampoline.c	-	extra_code_index	-
 Python/perf_trampoline.c	-	code_arena	-
 Python/perf_trampoline.c	-	trampoline_api	-
 Parser/pegen.c	-	memo_statistics	-
-Python/bootstrap_hash.c	-	urandom_cache	-
 Python/modsupport.c	-	_Py_PackageContext	-
 Python/thread_pthread_stubs.h	-	py_tls_entries	-
 Python/pyfpe.c	-	PyFPE_counter	-
