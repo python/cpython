@@ -37,6 +37,10 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 #define _Py_FatalRefcountError(message) \
     _Py_FatalRefcountErrorFunc(__func__, (message))
 
+#ifdef Py_REF_DEBUG
+# define _Py_RefTotal (_PyRuntime.object_state.reftotal)
+#endif
+
 // Increment reference count by n
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {

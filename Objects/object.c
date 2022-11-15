@@ -54,8 +54,6 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 
 
 #ifdef Py_REF_DEBUG
-Py_ssize_t _Py_RefTotal;
-
 Py_ssize_t
 _Py_GetRefTotal(void)
 {
