@@ -124,62 +124,6 @@ class APITests(
     def test_entry_points_missing_group(self):
         assert entry_points(group='missing') == ()
 
-    def test_entry_points_dict_construction(self):
-        """
-        Prior versions of entry_points() returned simple lists and
-        allowed casting those lists into maps by name using ``dict()``.
-        Capture this now deprecated use-case.
-        """
-        with suppress_known_deprecation() as caught:
-            eps = dict(entry_points(group='entries'))
-
-        assert 'main' in eps
-        assert eps['main'] == entry_points(group='entries')['main']
-
-        # check warning
-        expected = next(iter(caught))
-        assert expected.category is DeprecationWarning
-        assert "Construction of dict of EntryPoints is deprecated" in str(expected)
-
-    def test_entry_points_by_index(self):
-        """
-        Prior versions of Distribution.entry_points would return a
-        tuple that allowed access by index.
-        Capture this now deprecated use-case
-        See python/importlib_metadata#300 and bpo-44246.
-        """
-        eps = distribution('distinfo-pkg').entry_points
-        with suppress_known_deprecation() as caught:
-            eps[0]
-
-        # check warning
-        expected = next(iter(caught))
-        assert expected.category is DeprecationWarning
-        assert "Accessing entry points by index is deprecated" in str(expected)
-
-    def test_entry_points_groups_getitem(self):
-        """
-        Prior versions of entry_points() returned a dict. Ensure
-        that callers using '.__getitem__()' are supported but warned to
-        migrate.
-        """
-        with suppress_known_deprecation():
-            entry_points()['entries'] == entry_points(group='entries')
-
-            with self.assertRaises(KeyError):
-                entry_points()['missing']
-
-    def test_entry_points_groups_get(self):
-        """
-        Prior versions of entry_points() returned a dict. Ensure
-        that callers using '.get()' are supported but warned to
-        migrate.
-        """
-        with suppress_known_deprecation():
-            entry_points().get('missing', 'default') == 'default'
-            entry_points().get('entries', 'default') == entry_points()['entries']
-            entry_points().get('missing', ()) == ()
-
     def test_entry_points_allows_no_attributes(self):
         ep = entry_points().select(group='entries', name='main')
         with self.assertRaises(AttributeError):

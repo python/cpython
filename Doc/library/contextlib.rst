@@ -66,6 +66,8 @@ Functions and classes provided:
               # Code to release resource, e.g.:
               release_resource(resource)
 
+   The function can then be used like this::
+
       >>> with managed_resource(timeout=3600) as resource:
       ...     # Resource is released at the end of this block,
       ...     # even if code in the block raises an exception
@@ -140,9 +142,9 @@ Functions and classes provided:
          finally:
              print(f'it took {time.monotonic() - now}s to run')
 
-      @timeit()
-      async def main():
-          # ... async code ...
+     @timeit()
+     async def main():
+         # ... async code ...
 
    When used as a decorator, a new generator instance is implicitly created on
    each function call. This allows the otherwise "one-shot" context managers
@@ -249,15 +251,15 @@ Functions and classes provided:
    :ref:`asynchronous context managers <async-context-managers>`::
 
        async def send_http(session=None):
-          if not session:
-              # If no http session, create it with aiohttp
-              cm = aiohttp.ClientSession()
-          else:
-              # Caller is responsible for closing the session
-              cm = nullcontext(session)
+           if not session:
+               # If no http session, create it with aiohttp
+               cm = aiohttp.ClientSession()
+           else:
+               # Caller is responsible for closing the session
+               cm = nullcontext(session)
 
-          async with cm as session:
-              # Send http requests with session
+           async with cm as session:
+               # Send http requests with session
 
    .. versionadded:: 3.7
 
@@ -396,6 +398,8 @@ Functions and classes provided:
               print('Finishing')
               return False
 
+   The class can then be used like this::
+
       >>> @mycontext()
       ... def function():
       ...     print('The bit in the middle')
@@ -465,6 +469,8 @@ Functions and classes provided:
           async def __aexit__(self, *exc):
               print('Finishing')
               return False
+
+   The class can then be used like this::
 
       >>> @mycontext()
       ... async def function():

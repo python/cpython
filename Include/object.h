@@ -511,11 +511,11 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline void Py_INCREF(PyObject *op)
 {
-    _Py_INCREF_STAT_INC();
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
     _Py_IncRef(op);
 #else
+    _Py_INCREF_STAT_INC();
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
 #ifdef Py_REF_DEBUG
@@ -598,15 +598,20 @@ static inline void Py_DECREF(PyObject *op)
  * one of those can't cause problems -- but in part that relies on that
  * Python integers aren't currently weakly referencable.  Best practice is
  * to use Py_CLEAR() even if you can't think of a reason for why you need to.
+ *
+ * gh-98724: Use the _py_tmp_ptr variable to evaluate the macro argument
+ * exactly once, to prevent the duplication of side effects in this macro.
  */
-#define Py_CLEAR(op)                            \
-    do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
-        if (_py_tmp != NULL) {                  \
-            (op) = NULL;                        \
-            Py_DECREF(_py_tmp);                 \
-        }                                       \
+#define Py_CLEAR(op)                                          \
+    do {                                                      \
+        PyObject **_py_tmp_ptr = _Py_CAST(PyObject**, &(op)); \
+        if (*_py_tmp_ptr != NULL) {                           \
+            PyObject* _py_tmp = (*_py_tmp_ptr);               \
+            *_py_tmp_ptr = NULL;                              \
+            Py_DECREF(_py_tmp);                               \
+        }                                                     \
     } while (0)
+
 
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)

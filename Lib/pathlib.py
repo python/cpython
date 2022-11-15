@@ -64,6 +64,7 @@ def _is_wildcard_pattern(pat):
 # Globbing helpers
 #
 
+@functools.lru_cache()
 def _make_selector(pattern_parts, flavour):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
@@ -78,9 +79,6 @@ def _make_selector(pattern_parts, flavour):
     else:
         cls = _PreciseSelector
     return cls(pat, child_parts, flavour)
-
-if hasattr(functools, "lru_cache"):
-    _make_selector = functools.lru_cache()(_make_selector)
 
 
 class _Selector:
@@ -527,10 +525,13 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
-    def relative_to(self, *other):
+    def relative_to(self, *other, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
-        a subpath of the other path), raise ValueError.
+        related to the other path), raise ValueError.
+
+        The *walk_up* parameter controls whether `..` may be used to resolve
+        the path.
         """
         # For the purpose of this method, drive and root are considered
         # separate parts, i.e.:
@@ -545,25 +546,35 @@ class PurePath(object):
             abs_parts = [drv, root] + parts[1:]
         else:
             abs_parts = parts
-        to_drv, to_root, to_parts = self._parse_args(other)
-        if to_root:
-            to_abs_parts = [to_drv, to_root] + to_parts[1:]
+        other_drv, other_root, other_parts = self._parse_args(other)
+        if other_root:
+            other_abs_parts = [other_drv, other_root] + other_parts[1:]
         else:
-            to_abs_parts = to_parts
-        n = len(to_abs_parts)
-        if not n:
-            is_error = root or drv
+            other_abs_parts = other_parts
+        num_parts = len(other_abs_parts)
+        normcase = self._flavour.normcase
+        num_common_parts = 0
+        for part, other_part in zip(abs_parts, other_abs_parts):
+            if normcase(part) != normcase(other_part):
+                break
+            num_common_parts += 1
+        if walk_up:
+            failure = root != other_root
+            if drv or other_drv:
+                failure = normcase(drv) != normcase(other_drv) or (failure and num_parts > 1)
+            error_message = "{!r} is not on the same drive as {!r}"
+            up_parts = (num_parts-num_common_parts)*['..']
         else:
-            nc_abs_parts = list(map(self._flavour.normcase, abs_parts[:n]))
-            nc_to_abs_parts = list(map(self._flavour.normcase, to_abs_parts[:n]))
-            is_error = nc_abs_parts != nc_to_abs_parts
-        if is_error:
-            formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
-            raise ValueError("{!r} is not in the subpath of {!r}"
-                    " OR one path is relative and the other is absolute."
-                             .format(str(self), str(formatted)))
-        return self._from_parsed_parts('', root if n == 1 else '',
-                                       abs_parts[n:])
+            failure = (root or drv) if num_parts == 0 else num_common_parts != num_parts
+            error_message = "{!r} is not in the subpath of {!r}"
+            up_parts = []
+        error_message += " OR one path is relative and the other is absolute."
+        if failure:
+            formatted = self._format_parsed_parts(other_drv, other_root, other_parts)
+            raise ValueError(error_message.format(str(self), str(formatted)))
+        path_parts = up_parts + abs_parts[num_common_parts:]
+        new_root = root if num_common_parts == 1 else ''
+        return self._from_parsed_parts('', new_root, path_parts)
 
     def is_relative_to(self, *other):
         """Return True if the path is relative to another path or False.
@@ -783,8 +794,10 @@ class Path(PurePath):
         return self._flavour.samestat(st, other_st)
 
     def iterdir(self):
-        """Iterate over the files in this directory.  Does not yield any
-        result for the special paths '.' and '..'.
+        """Yield path objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
         """
         for name in os.listdir(self):
             yield self._make_child_relpath(name)

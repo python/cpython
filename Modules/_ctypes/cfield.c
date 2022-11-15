@@ -144,8 +144,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     self->getfunc = getfunc;
     self->index = index;
 
-    Py_INCREF(proto);
-    self->proto = proto;
+    self->proto = Py_NewRef(proto);
 
     switch (fieldtype) {
     case NEW_BITFIELD:
@@ -1097,8 +1096,7 @@ O_get(void *ptr, Py_ssize_t size)
                             "PyObject is NULL");
         return NULL;
     }
-    Py_INCREF(ob);
-    return ob;
+    return Py_NewRef(ob);
 }
 
 static PyObject *
@@ -1106,8 +1104,7 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     /* Hm, does the memory block need it's own refcount or not? */
     *(PyObject **)ptr = value;
-    Py_INCREF(value);
-    return value;
+    return Py_NewRef(value);
 }
 
 
@@ -1233,8 +1230,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     }
 
-    Py_INCREF(value);
-    return value;
+    return Py_NewRef(value);
 }
 
 
@@ -1292,13 +1288,11 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     if (value == Py_None) {
         *(char **)ptr = NULL;
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     }
     if (PyBytes_Check(value)) {
         *(const char **)ptr = PyBytes_AsString(value);
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     } else if (PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
         *(char **)ptr = (char *)PyLong_AsUnsignedLongLongMask(value);
@@ -1334,8 +1328,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     if (value == Py_None) {
         *(wchar_t **)ptr = NULL;
-        Py_INCREF(value);
-        return value;
+        return Py_NewRef(value);
     }
     if (PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG

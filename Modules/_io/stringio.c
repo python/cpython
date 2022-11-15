@@ -188,8 +188,7 @@ write_str(stringio *self, PyObject *obj)
             self->decoder, obj, 1 /* always final */);
     }
     else {
-        decoded = obj;
-        Py_INCREF(decoded);
+        decoded = Py_NewRef(obj);
     }
     if (self->writenl) {
         PyObject *translated = PyUnicode_Replace(
@@ -710,8 +709,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
        is pointless for StringIO)
     */
     if (newline != NULL && newline[0] == '\r') {
-        self->writenl = self->readnl;
-        Py_INCREF(self->writenl);
+        self->writenl = Py_NewRef(self->readnl);
     }
 
     if (self->readuniversal) {
@@ -823,8 +821,7 @@ stringio_getstate(stringio *self, PyObject *Py_UNUSED(ignored))
     if (initvalue == NULL)
         return NULL;
     if (self->dict == NULL) {
-        Py_INCREF(Py_None);
-        dict = Py_None;
+        dict = Py_NewRef(Py_None);
     }
     else {
         dict = PyDict_Copy(self->dict);
@@ -934,8 +931,7 @@ stringio_setstate(stringio *self, PyObject *state)
                 return NULL;
         }
         else {
-            Py_INCREF(dict);
-            self->dict = dict;
+            self->dict = Py_NewRef(dict);
         }
     }
 

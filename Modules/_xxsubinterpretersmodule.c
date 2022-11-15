@@ -1722,8 +1722,7 @@ _channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
     xid->resolve = ((channelid *)obj)->resolve;
 
     data->data = xid;
-    Py_INCREF(obj);
-    data->obj = obj;
+    data->obj = Py_NewRef(obj);
     data->new_object = _channelid_from_xid;
     data->free = PyMem_Free;
     return 0;
@@ -2003,8 +2002,11 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
+    const _PyInterpreterConfig config = isolated
+        ? (_PyInterpreterConfig)_PyInterpreterConfig_INIT
+        : (_PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
     // XXX Possible GILState issues?
-    PyThreadState *tstate = _Py_NewInterpreter(isolated);
+    PyThreadState *tstate = _Py_NewInterpreterFromConfig(&config);
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to
@@ -2631,12 +2633,12 @@ PyInit__xxsubinterpreters(void)
     }
 
     /* Add other types */
-    Py_INCREF(&ChannelIDtype);
-    if (PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype) != 0) {
+    if (PyDict_SetItemString(ns, "ChannelID",
+                             Py_NewRef(&ChannelIDtype)) != 0) {
         return NULL;
     }
-    Py_INCREF(&_PyInterpreterID_Type);
-    if (PyDict_SetItemString(ns, "InterpreterID", (PyObject *)&_PyInterpreterID_Type) != 0) {
+    if (PyDict_SetItemString(ns, "InterpreterID",
+                             Py_NewRef(&_PyInterpreterID_Type)) != 0) {
         return NULL;
     }
 

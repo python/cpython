@@ -891,6 +891,13 @@ class SysLogHandler(logging.Handler):
                 raise
 
     def createSocket(self):
+        """
+        Try to create a socket and, if it's not a datagram socket, connect it
+        to the other end. This method is called during handler initialization,
+        but it's not regarded as an error if the other end isn't listening yet
+        --- the method will be called again when emitting an event,
+        if there is no socket at that point.
+        """
         address = self.address
         socktype = self.socktype
 
@@ -898,7 +905,7 @@ class SysLogHandler(logging.Handler):
             self.unixsocket = True
             # Syslog server may be unavailable during handler initialisation.
             # C's openlog() function also ignores connection errors.
-            # Moreover, we ignore these errors while logging, so it not worse
+            # Moreover, we ignore these errors while logging, so it's not worse
             # to ignore it also here.
             try:
                 self._connect_unixsocket(address)
@@ -1111,7 +1118,16 @@ class NTEventLogHandler(logging.Handler):
                 dllname = os.path.join(dllname[0], r'win32service.pyd')
             self.dllname = dllname
             self.logtype = logtype
-            self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            # Administrative privileges are required to add a source to the registry.
+            # This may not be available for a user that just wants to add to an
+            # existing source - handle this specific case.
+            try:
+                self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            except Exception as e:
+                # This will probably be a pywintypes.error. Only raise if it's not
+                # an "access denied" error, else let it pass
+                if getattr(e, 'winerror', None) != 5:  # not access denied
+                    raise
             self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
             self.typemap = {
                 logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,

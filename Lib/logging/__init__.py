@@ -340,7 +340,7 @@ class LogRecord(object):
         self.lineno = lineno
         self.funcName = func
         self.created = ct
-        self.msecs = (ct - int(ct)) * 1000
+        self.msecs = int((ct - int(ct)) * 1000) + 0.0  # see gh-89047
         self.relativeCreated = (self.created - _startTime) * 1000
         if logThreads:
             self.thread = threading.get_ident()
@@ -1827,6 +1827,25 @@ class Logger(Filterer):
         if self.root is not self:
             suffix = '.'.join((self.name, suffix))
         return self.manager.getLogger(suffix)
+
+    def getChildren(self):
+
+        def _hierlevel(logger):
+            if logger is logger.manager.root:
+                return 0
+            return 1 + logger.name.count('.')
+
+        d = self.manager.loggerDict
+        _acquireLock()
+        try:
+            # exclude PlaceHolders - the last check is to ensure that lower-level
+            # descendants aren't returned - if there are placeholders, a logger's
+            # parent field might point to a grandparent or ancestor thereof.
+            return set(item for item in d.values()
+                       if isinstance(item, Logger) and item.parent is self and
+                       _hierlevel(item) == 1 + _hierlevel(item.parent))
+        finally:
+            _releaseLock()
 
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())

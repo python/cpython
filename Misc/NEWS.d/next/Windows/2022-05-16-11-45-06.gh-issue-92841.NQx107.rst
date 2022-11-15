@@ -1,2 +1,0 @@
-:mod:`asyncio` no longer throws ``RuntimeError: Event loop is closed`` on
-interpreter exit after asynchronous socket activity. Patch by Oleg Iarygin.

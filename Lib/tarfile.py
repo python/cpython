@@ -57,13 +57,9 @@ except ImportError:
     grp = None
 
 # os.symlink on Windows prior to 6.0 raises NotImplementedError
-symlink_exception = (AttributeError, NotImplementedError)
-try:
-    # OSError (winerror=1314) will be raised if the caller does not hold the
-    # SeCreateSymbolicLinkPrivilege privilege
-    symlink_exception += (OSError,)
-except NameError:
-    pass
+# OSError (winerror=1314) will be raised if the caller does not hold the
+# SeCreateSymbolicLinkPrivilege privilege
+symlink_exception = (AttributeError, NotImplementedError, OSError)
 
 # from tarfile import *
 __all__ = ["TarFile", "TarInfo", "is_tarfile", "TarError", "ReadError",

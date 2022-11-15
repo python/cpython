@@ -131,7 +131,8 @@ General Options
    Turn on internal statistics gathering.
 
    The statistics will be dumped to a arbitrary (probably unique) file in
-   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows. If that directory
+   does not exist, results will be printed on stdout.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
 
@@ -231,6 +232,9 @@ also be used to improve performance.
 
    .. versionadded:: 3.11
       To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
+
+   .. versionchanged:: 3.12
+      Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.
 
 .. cmdoption:: --enable-bolt
 
@@ -752,16 +756,23 @@ Compiler flags
 
    In particular, :envvar:`CFLAGS` should not contain:
 
-   * the compiler flag `-I` (for setting the search path for include files).
-     The `-I` flags are processed from left to right, and any flags in
-     :envvar:`CFLAGS` would take precedence over user- and package-supplied `-I`
+   * the compiler flag ``-I`` (for setting the search path for include files).
+     The ``-I`` flags are processed from left to right, and any flags in
+     :envvar:`CFLAGS` would take precedence over user- and package-supplied ``-I``
      flags.
 
-   * hardening flags such as `-Werror` because distributions cannot control
+   * hardening flags such as ``-Werror`` because distributions cannot control
      whether packages installed by users conform to such heightened
      standards.
 
    .. versionadded:: 3.5
+
+.. envvar:: COMPILEALL_OPTS
+
+   Options passed to the :mod:`compileall` command line when building PYC files
+   in ``make install``. Default: ``-j0``.
+
+   .. versionadded:: 3.12
 
 .. envvar:: EXTRA_CFLAGS
 
@@ -875,9 +886,9 @@ Linker flags
 
    In particular, :envvar:`LDFLAGS` should not contain:
 
-   * the compiler flag `-L` (for setting the search path for libraries).
-     The `-L` flags are processed from left to right, and any flags in
-     :envvar:`LDFLAGS` would take precedence over user- and package-supplied `-L`
+   * the compiler flag ``-L`` (for setting the search path for libraries).
+     The ``-L`` flags are processed from left to right, and any flags in
+     :envvar:`LDFLAGS` would take precedence over user- and package-supplied ``-L``
      flags.
 
 .. envvar:: CONFIGURE_LDFLAGS_NODIST
