@@ -332,17 +332,18 @@ Objects/dictobject.c	-	_pydict_global_version	-
 Objects/dictobject.c	-	next_dict_keys_version	-
 Objects/funcobject.c	-	next_func_version	-
 Objects/object.c	-	_Py_RefTotal	-
+Parser/pegen.c	-	memo_statistics	-
+Python/fileutils.c	-	force_ascii	-
+Python/modsupport.c	-	_Py_PackageContext	-
 Python/perf_trampoline.c	-	perf_status	-
 Python/perf_trampoline.c	-	extra_code_index	-
 Python/perf_trampoline.c	-	code_arena	-
 Python/perf_trampoline.c	-	trampoline_api	-
-Parser/pegen.c	-	memo_statistics	-
-Python/modsupport.c	-	_Py_PackageContext	-
-Python/thread_pthread_stubs.h	-	py_tls_entries	-
 Python/pyfpe.c	-	PyFPE_counter	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
 Python/pylifecycle.c	fatal_error	reentrant	-
+Python/thread_pthread_stubs.h	-	py_tls_entries	-
 
 
 ##################################
