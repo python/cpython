@@ -1,6 +1,7 @@
 # Implementat marshal.loads() in pure Python
 
 import ast
+import opcode
 
 from typing import Any, Tuple
 
@@ -46,6 +47,8 @@ NULL = object()  # marker
 CO_FAST_LOCAL = 0x20
 CO_FAST_CELL = 0x40
 CO_FAST_FREE = 0x80
+
+CACHE = opcode.opmap["CACHE"]
 
 
 class Code:
@@ -177,6 +180,23 @@ class Reader:
             return self._r_object()
         finally:
             self.level = old_level
+    
+    def r_bytecode(self) -> bytes:
+        nbytes = self.r_long() * 2
+        bytecode = bytearray()
+        while len(bytecode) < nbytes:
+            opcode_byte = self.r_byte()
+            if opcode.HAVE_ARGUMENT <= opcode_byte:
+                oparg_byte = self.r_byte()
+            else:
+                oparg_byte = 0
+            assert 0x00 <= opcode_byte < 0x100
+            assert 0x00 <= oparg_byte < 0x100
+            bytecode.extend([opcode_byte, oparg_byte])
+            for _ in range(opcode._inline_cache_entries[opcode_byte]):
+                bytecode.extend([CACHE, 0])
+        assert len(bytecode) == nbytes
+        return bytes(bytecode)
 
     def _r_object(self) -> Any:
         code = self.r_byte()
@@ -279,7 +299,7 @@ class Reader:
             retval.co_kwonlyargcount = self.r_long()
             retval.co_stacksize = self.r_long()
             retval.co_flags = self.r_long()
-            retval.co_code = self.r_object()
+            retval.co_code = self.r_bytecode()
             retval.co_consts = self.r_object()
             retval.co_names = self.r_object()
             retval.co_localsplusnames = self.r_object()

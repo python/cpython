@@ -12,6 +12,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_opcode.h"
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
 /*[clinic input]
@@ -291,6 +292,21 @@ w_float_str(double v, WFILE *p)
     PyMem_Free(buf);
 }
 
+static void 
+w_bytecode(PyCodeObject *code, WFILE *p)
+{
+    W_SIZE(Py_SIZE(code), p);
+    for (Py_ssize_t i = 0; i < Py_SIZE(code); i++) {
+        _Py_CODEUNIT instruction = _PyCode_CODE(code)[i];
+        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+        w_byte(opcode, p);
+        if (HAS_ARG(opcode)) {
+            w_byte(_Py_OPARG(instruction), p);
+        }
+        i += _PyOpcode_Caches[opcode];
+    }
+}
+
 static int
 w_ref(PyObject *v, char *flag, WFILE *p)
 {
@@ -550,18 +566,13 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
     else if (PyCode_Check(v)) {
         PyCodeObject *co = (PyCodeObject *)v;
-        PyObject *co_code = _PyCode_GetCode(co);
-        if (co_code == NULL) {
-            p->error = WFERR_NOMEMORY;
-            return;
-        }
         W_TYPE(TYPE_CODE, p);
         w_long(co->co_argcount, p);
         w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
-        w_object(co_code, p);
+        w_bytecode(co, p);
         w_object(co->co_consts, p);
         w_object(co->co_names, p);
         w_object(co->co_localsplusnames, p);
@@ -572,7 +583,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
         w_object(co->co_exceptiontable, p);
-        Py_DECREF(co_code);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -919,6 +929,59 @@ r_float_str(RFILE *p)
     memcpy(buf, ptr, n);
     buf[n] = '\0';
     return PyOS_string_to_double(buf, NULL, NULL);
+}
+
+static PyObject *
+r_bytecode(RFILE *p)
+{
+    long size = r_long(p);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_ssize_t nbytes = size * sizeof(_Py_CODEUNIT);
+    if (nbytes < 0 || SIZE32_MAX < nbytes) {
+        const char *e = "bad marshal data (bytecode size out of range)";
+        PyErr_SetString(PyExc_ValueError, e);
+        return NULL;
+    }
+    PyObject *bytecode = PyBytes_FromStringAndSize(NULL, nbytes);
+    if (bytecode == NULL) {
+        return NULL;
+    }
+    _Py_CODEUNIT *buffer = (_Py_CODEUNIT *)PyBytes_AS_STRING(bytecode);
+    long i = 0;
+    while (i < size) {
+        int opcode = r_byte(p);
+        if (opcode == EOF) {
+            const char *e = "EOF read where opcode expected";
+            PyErr_SetString(PyExc_EOFError, e);
+            return NULL;
+        }
+        int oparg;
+        if (HAS_ARG(opcode)) {
+            oparg = r_byte(p);
+            if (oparg == EOF) {
+                const char *e = "EOF read where oparg expected";
+                PyErr_SetString(PyExc_EOFError, e);
+                return NULL;
+            }
+        }
+        else {
+            oparg = 0;
+        }
+        assert(0x00 <= opcode && opcode < 0x100);
+        assert(0x00 <= oparg && oparg < 0x100);
+        buffer[i++] = _Py_MAKECODEUNIT(opcode, oparg);
+        for (int j = 0; j < _PyOpcode_Caches[opcode]; j++) {
+            buffer[i++] = _Py_MAKECODEUNIT(CACHE, oparg);
+        }
+    }
+    if (i != size) {
+        const char *e = "bad marshal data (bytecode size incorrect)";
+        PyErr_SetString(PyExc_ValueError, e);
+        return NULL;
+    }
+    return bytecode;
 }
 
 /* allocate the reflist index for a new object. Return -1 on failure */
@@ -1382,7 +1445,7 @@ r_object(RFILE *p)
             flags = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
-            code = r_object(p);
+            code = r_bytecode(p);
             if (code == NULL)
                 goto code_error;
             consts = r_object(p);
