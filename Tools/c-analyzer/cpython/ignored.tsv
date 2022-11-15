@@ -48,8 +48,6 @@ Python/getversion.c	-	version	-
 #-----------------------
 # effectively const, initialized during init
 
-Objects/floatobject.c	-	double_format	-
-Objects/floatobject.c	-	float_format	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-

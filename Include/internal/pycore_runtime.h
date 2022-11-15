@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_dtoa.h"            // struct _dtoa_runtime_state
+#include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_gil.h"             // struct _gil_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
@@ -142,6 +143,7 @@ typedef struct pyruntimestate {
     void *open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head;
 
+    struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_ids unicode_ids;
 
     struct {
