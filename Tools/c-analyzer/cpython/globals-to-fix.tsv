@@ -368,8 +368,6 @@ Python/dtoa.c	-	p5s	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	-	force_ascii	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
-Python/import.c	-	import_lock	-
-Python/import.c	import_find_and_load	header	-
 
 #-----------------------
 # unlikely to change after init (or main thread)
@@ -431,10 +429,6 @@ Python/bootstrap_hash.c	-	urandom_cache	-
 Python/ceval_gil.c	make_pending_calls	busy	-
 Python/ceval.c	_PyEval_SetProfile	reentrant	-
 Python/ceval.c	_PyEval_SetTrace	reentrant	-
-Python/import.c	-	import_lock_level	-
-Python/import.c	-	import_lock_thread	-
-Python/import.c	import_find_and_load	accumulated	-
-Python/import.c	import_find_and_load	import_level	-
 Python/modsupport.c	-	_Py_PackageContext	-
 Python/thread_pthread_stubs.h	-	py_tls_entries	-
 Python/pyfpe.c	-	PyFPE_counter	-

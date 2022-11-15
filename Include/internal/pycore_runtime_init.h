@@ -39,6 +39,16 @@ extern "C" {
         .types = { \
             .next_version_tag = 1, \
         }, \
+        .imports = { \
+            .lock = { \
+                .mutex = NULL, \
+                .thread = PYTHREAD_INVALID_THREAD_ID, \
+                .level = 0, \
+            }, \
+            .find_and_load = { \
+                .header = 1, \
+            }, \
+        }, \
         .global_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
@@ -73,7 +83,6 @@ extern "C" {
 
 #define _PyInterpreterState_INIT \
     { \
-        ._static = 1, \
         .id_refcount = -1, \
         DLOPENFLAGS_INIT \
         .ceval = { \
@@ -98,7 +107,6 @@ extern "C" {
 
 #define _PyThreadState_INIT \
     { \
-        ._static = 1, \
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
