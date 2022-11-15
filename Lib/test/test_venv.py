@@ -537,6 +537,78 @@ class BasicTest(BaseTest):
         self.assertRaises(ValueError, venv.create, bad_itempath)
         self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
 
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    @requireVenvCreate
+    def test_zippath_from_non_installed_posix(self):
+        """
+        Test that when create venv from non-installed python, the zip path
+        value is as expected.
+        """
+        rmtree(self.env_dir)
+        # First try to create a non-installed python. It's not a real full
+        # functional non-installed python, but enough for this test.
+        platlibdir = sys.platlibdir
+        non_installed_dir = os.path.realpath(tempfile.mkdtemp())
+        self.addCleanup(rmtree, non_installed_dir)
+        bindir = os.path.join(non_installed_dir, self.bindir)
+        os.mkdir(bindir)
+        shutil.copy2(sys.executable, bindir)
+        libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
+        os.makedirs(libdir)
+        landmark = os.path.join(libdir, "os.py")
+        stdlib_zip = "python%d%d.zip" % sys.version_info[:2]
+        zip_landmark = os.path.join(non_installed_dir,
+                                    platlibdir,
+                                    stdlib_zip)
+        additional_pythonpath_for_non_installed = []
+        # Copy stdlib files to the non-installed python so venv can
+        # correctly calculate the prefix.
+        for eachpath in sys.path:
+            if eachpath.endswith(".zip"):
+                if os.path.isfile(eachpath):
+                    shutil.copyfile(
+                        eachpath,
+                        os.path.join(non_installed_dir, platlibdir))
+            elif os.path.isfile(os.path.join(eachpath, "os.py")):
+                for name in os.listdir(eachpath):
+                    if name == "site-packages":
+                        continue
+                    fn = os.path.join(eachpath, name)
+                    if os.path.isfile(fn):
+                        shutil.copy(fn, libdir)
+                    elif os.path.isdir(fn):
+                        shutil.copytree(fn, os.path.join(libdir, name))
+            else:
+                additional_pythonpath_for_non_installed.append(
+                    eachpath)
+        cmd = [os.path.join(non_installed_dir, self.bindir, self.exe),
+               "-m",
+               "venv",
+               "--without-pip",
+               self.env_dir]
+        # Our fake non-installed python is not fully functional because
+        # it cannot find the extensions. Set PYTHONPATH so it can run the
+        # venv module correctly.
+        pythonpath = os.pathsep.join(
+            additional_pythonpath_for_non_installed)
+        # For python built with shared enabled. We need to set
+        # LD_LIBRARY_PATH so the non-installed python can find and link
+        # libpython.so
+        ld_library_path = os.path.abspath(os.path.dirname(sys.executable))
+        if sys.platform == 'darwin':
+            ld_library_path_env = "DYLD_LIBRARY_PATH"
+        else:
+            ld_library_path_env = "LD_LIBRARY_PATH"
+        subprocess.check_call(cmd,
+                              env={"PYTHONPATH": pythonpath,
+                                   ld_library_path_env: ld_library_path})
+        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
+        # Now check the venv created from the non-installed python has
+        # correct zip path in pythonpath.
+        cmd = [envpy, '-S', '-c', 'import sys; print(sys.path)']
+        out, err = check_output(cmd)
+        self.assertTrue(zip_landmark.encode() in out)
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""

@@ -2048,8 +2048,7 @@ factorial_odd_part(unsigned long n)
     inner = PyLong_FromLong(1);
     if (inner == NULL)
         return NULL;
-    outer = inner;
-    Py_INCREF(outer);
+    outer = Py_NewRef(inner);
 
     upper = 3;
     for (i = _Py_bit_length(n) - 2; i >= 0; i--) {
@@ -3521,8 +3520,7 @@ perm_comb(PyObject *n, unsigned long long k, int iscomb)
         return PyLong_FromLong(1);
     }
     if (k == 1) {
-        Py_INCREF(n);
-        return n;
+        return Py_NewRef(n);
     }
 
     /* P(n, k) = P(n, j) * P(n-j, k-j) */

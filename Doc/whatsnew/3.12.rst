@@ -217,6 +217,11 @@ asyncio
   and will be removed in Python 3.14.
   (Contributed by Kumar Aditya in :gh:`94597`.)
 
+* Add *loop_factory* parameter to :func:`asyncio.run` to allow specifying
+  a custom event loop factory.
+  (Contributed by Kumar Aditya in :gh:`99388`.)
+
+
 pathlib
 -------
 
@@ -674,6 +679,12 @@ Build Changes
 * CPython now uses the ThinLTO option as the default link time optimization policy
   if the Clang compiler accepts the flag.
   (Contributed by Dong-hee Na in :gh:`89536`.)
+
+* Add ``COMPILEALL_OPTS`` variable in Makefile to override :mod:`compileall`
+  options (default: ``-j0``) in ``make install``. Also merged the 3
+  ``compileall`` commands into a single command to build .pyc files for all
+  optimization levels (0, 1, 2) at once.
+  (Contributed by Victor Stinner in :gh:`99289`.)
 
 
 C API Changes
