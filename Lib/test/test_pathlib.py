@@ -23,36 +23,12 @@ except ImportError:
     grp = pwd = None
 
 
-#
-# Tests for the pure classes.
-#
-
-class _BasePurePathTest(object):
-
-    # Keys are canonical paths, values are list of tuples of arguments
-    # supposed to produce equal paths.
-    equivalences = {
-        'a/b': [
-            ('a', 'b'), ('a/', 'b'), ('a', 'b/'), ('a/', 'b/'),
-            ('a/b/',), ('a//b',), ('a//b//',),
-            # Empty components get removed.
-            ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
-            ],
-        '/b/c/d': [
-            ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
-            # Empty components get removed.
-            ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
-            ],
-    }
-
-    def setUp(self):
-        self.sep = self.cls._flavour.sep
-        self.altsep = self.cls._flavour.altsep
+class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
         f = self.cls._parse_parts
-        sep = self.sep
-        altsep = self.altsep
+        sep = self.flavour.sep
+        altsep = self.flavour.altsep
         actual = f([x.replace('/', sep) for x in arg])
         self.assertEqual(actual, expected)
         if altsep:
@@ -61,7 +37,7 @@ class _BasePurePathTest(object):
 
     def test_parse_parts_common(self):
         check = self._check_parse_parts
-        sep = self.sep
+        sep = self.flavour.sep
         # Unanchored parts.
         check([],                   ('', '', []))
         check(['a'],                ('', '', ['a']))
@@ -86,6 +62,140 @@ class _BasePurePathTest(object):
         # Ignoring parts before an anchored part.
         check(['a', '/b', 'c'],     ('', sep, [sep, 'b', 'c']))
         check(['a', '/b', '/c'],    ('', sep, [sep, 'c']))
+
+
+class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
+    cls = pathlib.PurePosixPath
+    flavour = pathlib.PurePosixPath._flavour
+
+    def test_parse_parts(self):
+        check = self._check_parse_parts
+        # Collapsing of excess leading slashes, except for the double-slash
+        # special case.
+        check(['//a', 'b'],             ('', '//', ['//', 'a', 'b']))
+        check(['///a', 'b'],            ('', '/', ['/', 'a', 'b']))
+        check(['////a', 'b'],           ('', '/', ['/', 'a', 'b']))
+        # Paths which look like NT paths aren't treated specially.
+        check(['c:a'],                  ('', '', ['c:a']))
+        check(['c:\\a'],                ('', '', ['c:\\a']))
+        check(['\\a'],                  ('', '', ['\\a']))
+
+    def test_splitroot(self):
+        f = self.cls._split_root
+        self.assertEqual(f(''), ('', '', ''))
+        self.assertEqual(f('a'), ('', '', 'a'))
+        self.assertEqual(f('a/b'), ('', '', 'a/b'))
+        self.assertEqual(f('a/b/'), ('', '', 'a/b/'))
+        self.assertEqual(f('/a'), ('', '/', 'a'))
+        self.assertEqual(f('/a/b'), ('', '/', 'a/b'))
+        self.assertEqual(f('/a/b/'), ('', '/', 'a/b/'))
+        # The root is collapsed when there are redundant slashes
+        # except when there are exactly two leading slashes, which
+        # is a special case in POSIX.
+        self.assertEqual(f('//a'), ('', '//', 'a'))
+        self.assertEqual(f('///a'), ('', '/', 'a'))
+        self.assertEqual(f('///a/b'), ('', '/', 'a/b'))
+        # Paths which look like NT paths aren't treated specially.
+        self.assertEqual(f('c:/a/b'), ('', '', 'c:/a/b'))
+        self.assertEqual(f('\\/a/b'), ('', '', '\\/a/b'))
+        self.assertEqual(f('\\a\\b'), ('', '', '\\a\\b'))
+
+
+class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
+    cls = pathlib.PureWindowsPath
+    flavour = pathlib.PureWindowsPath._flavour
+
+    def test_parse_parts(self):
+        check = self._check_parse_parts
+        # First part is anchored.
+        check(['c:'],                   ('c:', '', ['c:']))
+        check(['c:/'],                  ('c:', '\\', ['c:\\']))
+        check(['/'],                    ('', '\\', ['\\']))
+        check(['c:a'],                  ('c:', '', ['c:', 'a']))
+        check(['c:/a'],                 ('c:', '\\', ['c:\\', 'a']))
+        check(['/a'],                   ('', '\\', ['\\', 'a']))
+        # UNC paths.
+        check(['//a/b'],                ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
+        check(['//a/b/'],               ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
+        check(['//a/b/c'],              ('\\\\a\\b', '\\', ['\\\\a\\b\\', 'c']))
+        # Second part is anchored, so that the first part is ignored.
+        check(['a', 'Z:b', 'c'],        ('Z:', '', ['Z:', 'b', 'c']))
+        check(['a', 'Z:/b', 'c'],       ('Z:', '\\', ['Z:\\', 'b', 'c']))
+        # UNC paths.
+        check(['a', '//b/c', 'd'],      ('\\\\b\\c', '\\', ['\\\\b\\c\\', 'd']))
+        # Collapsing and stripping excess slashes.
+        check(['a', 'Z://b//c/', 'd/'], ('Z:', '\\', ['Z:\\', 'b', 'c', 'd']))
+        # UNC paths.
+        check(['a', '//b/c//', 'd'],    ('\\\\b\\c', '\\', ['\\\\b\\c\\', 'd']))
+        # Extended paths.
+        check(['//?/c:/'],              ('\\\\?\\c:', '\\', ['\\\\?\\c:\\']))
+        check(['//?/c:/a'],             ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'a']))
+        check(['//?/c:/a', '/b'],       ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'b']))
+        # Extended UNC paths (format is "\\?\UNC\server\share").
+        check(['//?/UNC/b/c'],          ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\']))
+        check(['//?/UNC/b/c/d'],        ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\', 'd']))
+        # Second part has a root but not drive.
+        check(['a', '/b', 'c'],         ('', '\\', ['\\', 'b', 'c']))
+        check(['Z:/a', '/b', 'c'],      ('Z:', '\\', ['Z:\\', 'b', 'c']))
+        check(['//?/Z:/a', '/b', 'c'],  ('\\\\?\\Z:', '\\', ['\\\\?\\Z:\\', 'b', 'c']))
+        # Joining with the same drive => the first path is appended to if
+        # the second path is relative.
+        check(['c:/a/b', 'c:x/y'], ('c:', '\\', ['c:\\', 'a', 'b', 'x', 'y']))
+        check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
+
+    def test_splitroot(self):
+        f = self.cls._split_root
+        self.assertEqual(f(''), ('', '', ''))
+        self.assertEqual(f('a'), ('', '', 'a'))
+        self.assertEqual(f('a\\b'), ('', '', 'a\\b'))
+        self.assertEqual(f('\\a'), ('', '\\', 'a'))
+        self.assertEqual(f('\\a\\b'), ('', '\\', 'a\\b'))
+        self.assertEqual(f('c:a\\b'), ('c:', '', 'a\\b'))
+        self.assertEqual(f('c:\\a\\b'), ('c:', '\\', 'a\\b'))
+        # Redundant slashes in the root are collapsed.
+        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
+        self.assertEqual(f('\\\\\\a/b'), ('', '\\', 'a/b'))
+        self.assertEqual(f('c:\\\\a'), ('c:', '\\', 'a'))
+        self.assertEqual(f('c:\\\\\\a/b'), ('c:', '\\', 'a/b'))
+        # Valid UNC paths.
+        self.assertEqual(f('\\\\a\\b'), ('\\\\a\\b', '\\', ''))
+        self.assertEqual(f('\\\\a\\b\\'), ('\\\\a\\b', '\\', ''))
+        self.assertEqual(f('\\\\a\\b\\c\\d'), ('\\\\a\\b', '\\', 'c\\d'))
+        # These are non-UNC paths (according to ntpath.py and test_ntpath).
+        # However, command.com says such paths are invalid, so it's
+        # difficult to know what the right semantics are.
+        self.assertEqual(f('\\\\\\a\\b'), ('', '\\', 'a\\b'))
+        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
+
+
+#
+# Tests for the pure classes.
+#
+
+class _BasePurePathTest(object):
+
+    # Keys are canonical paths, values are list of tuples of arguments
+    # supposed to produce equal paths.
+    equivalences = {
+        'a/b': [
+            ('a', 'b'), ('a/', 'b'), ('a', 'b/'), ('a/', 'b/'),
+            ('a/b/',), ('a//b',), ('a//b//',),
+            # Empty components get removed.
+            ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
+            ],
+        '/b/c/d': [
+            ('a', '/b/c', 'd'), ('a', '///b//c', 'd/'),
+            ('/a', '/b/c', 'd'),
+            # Empty components get removed.
+            ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
+            ],
+    }
+
+    def setUp(self):
+        p = self.cls('a')
+        self.flavour = p._flavour
+        self.sep = self.flavour.sep
+        self.altsep = self.flavour.altsep
 
     def test_constructor_common(self):
         P = self.cls
@@ -523,7 +633,7 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
         self.assertRaises(ValueError, P('a/b').with_suffix,
-                          (self.sep, 'd'))
+                          (self.flavour.sep, 'd'))
 
     def test_relative_to_common(self):
         P = self.cls
@@ -640,38 +750,6 @@ class _BasePurePathTest(object):
 class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePosixPath
 
-    def test_parse_parts(self):
-        check = self._check_parse_parts
-        # Collapsing of excess leading slashes, except for the double-slash
-        # special case.
-        check(['//a', 'b'],             ('', '//', ['//', 'a', 'b']))
-        check(['///a', 'b'],            ('', '/', ['/', 'a', 'b']))
-        check(['////a', 'b'],           ('', '/', ['/', 'a', 'b']))
-        # Paths which look like NT paths aren't treated specially.
-        check(['c:a'],                  ('', '', ['c:a']))
-        check(['c:\\a'],                ('', '', ['c:\\a']))
-        check(['\\a'],                  ('', '', ['\\a']))
-
-    def test_split_root(self):
-        f = self.cls._split_root
-        self.assertEqual(f(''), ('', '', ''))
-        self.assertEqual(f('a'), ('', '', 'a'))
-        self.assertEqual(f('a/b'), ('', '', 'a/b'))
-        self.assertEqual(f('a/b/'), ('', '', 'a/b/'))
-        self.assertEqual(f('/a'), ('', '/', 'a'))
-        self.assertEqual(f('/a/b'), ('', '/', 'a/b'))
-        self.assertEqual(f('/a/b/'), ('', '/', 'a/b/'))
-        # The root is collapsed when there are redundant slashes
-        # except when there are exactly two leading slashes, which
-        # is a special case in POSIX.
-        self.assertEqual(f('//a'), ('', '//', 'a'))
-        self.assertEqual(f('///a'), ('', '/', 'a'))
-        self.assertEqual(f('///a/b'), ('', '/', 'a/b'))
-        # Paths which look like NT paths aren't treated specially.
-        self.assertEqual(f('c:/a/b'), ('', '', 'c:/a/b'))
-        self.assertEqual(f('\\/a/b'), ('', '', '\\/a/b'))
-        self.assertEqual(f('\\a\\b'), ('', '', '\\a\\b'))
-
     def test_root(self):
         P = self.cls
         self.assertEqual(P('/a/b').root, '/')
@@ -760,61 +838,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
             ('//a/b', 'c'), ('//a/b/', 'c'),
             ],
     })
-
-    def test_parse_parts(self):
-        check = self._check_parse_parts
-        # First part is anchored.
-        check(['c:'],                   ('c:', '', ['c:']))
-        check(['c:/'],                  ('c:', '\\', ['c:\\']))
-        check(['/'],                    ('', '\\', ['\\']))
-        check(['c:a'],                  ('c:', '', ['c:', 'a']))
-        check(['c:/a'],                 ('c:', '\\', ['c:\\', 'a']))
-        check(['/a'],                   ('', '\\', ['\\', 'a']))
-        # UNC paths.
-        check(['//a/b'],                ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
-        check(['//a/b/'],               ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
-        check(['//a/b/c'],              ('\\\\a\\b', '\\', ['\\\\a\\b\\', 'c']))
-        # Second part is anchored, so that the first part is ignored.
-        check(['a', 'Z:b', 'c'],        ('Z:', '', ['Z:', 'b', 'c']))
-        check(['a', 'Z:/b', 'c'],       ('Z:', '\\', ['Z:\\', 'b', 'c']))
-        # UNC paths.
-        check(['a', '//b/c', 'd'],      ('\\\\b\\c', '\\', ['\\\\b\\c\\', 'd']))
-        # Collapsing and stripping excess slashes.
-        check(['a', 'Z://b//c/', 'd/'], ('Z:', '\\', ['Z:\\', 'b', 'c', 'd']))
-        # UNC paths.
-        check(['a', '//b/c//', 'd'],    ('\\\\b\\c', '\\', ['\\\\b\\c\\', 'd']))
-        # Extended paths.
-        check(['//?/c:/'],              ('\\\\?\\c:', '\\', ['\\\\?\\c:\\']))
-        check(['//?/c:/a'],             ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'a']))
-        check(['//?/c:/a', '/b'],       ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'b']))
-        # Extended UNC paths (format is "\\?\UNC\server\share").
-        check(['//?/UNC/b/c'],          ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\']))
-        check(['//?/UNC/b/c/d'],        ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\', 'd']))
-        # Second part has a root but not drive.
-        check(['a', '/b', 'c'],         ('', '\\', ['\\', 'b', 'c']))
-        check(['Z:/a', '/b', 'c'],      ('Z:', '\\', ['Z:\\', 'b', 'c']))
-        check(['//?/Z:/a', '/b', 'c'],  ('\\\\?\\Z:', '\\', ['\\\\?\\Z:\\', 'b', 'c']))
-        # Joining with the same drive => the first path is appended to if
-        # the second path is relative.
-        check(['c:/a/b', 'c:x/y'], ('c:', '\\', ['c:\\', 'a', 'b', 'x', 'y']))
-        check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
-
-    def test_split_root(self):
-        f = self.cls._split_root
-        self.assertEqual(f(''), ('', '', ''))
-        self.assertEqual(f('a'), ('', '', 'a'))
-        self.assertEqual(f('a\\b'), ('', '', 'a\\b'))
-        self.assertEqual(f('\\a'), ('', '\\', 'a'))
-        self.assertEqual(f('\\a\\b'), ('', '\\', 'a\\b'))
-        self.assertEqual(f('c:a\\b'), ('c:', '', 'a\\b'))
-        self.assertEqual(f('c:\\a\\b'), ('c:', '\\', 'a\\b'))
-        # Redundant slashes in the root are collapsed.
-        self.assertEqual(f('c:\\\\a'), ('c:', '\\', 'a'))
-        self.assertEqual(f('c:\\\\\\a/b'), ('c:', '\\', 'a/b'))
-        # Valid UNC paths.
-        self.assertEqual(f('\\\\a\\b'), ('\\\\a\\b', '\\', ''))
-        self.assertEqual(f('\\\\a\\b\\'), ('\\\\a\\b', '\\', ''))
-        self.assertEqual(f('\\\\a\\b\\c\\d'), ('\\\\a\\b', '\\', 'c\\d'))
 
     def test_str(self):
         p = self.cls('a/b/c')
