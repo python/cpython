@@ -311,109 +311,21 @@ Python/hamt.c	-	_empty_hamt	-
 # global non-objects to fix in core code
 
 #-----------------------
-# initialized/set once
+# effectively-const but initialized lazily
 
-# pre-allocated buffer
-Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
+# idempotent
+Python/dtoa.c	-	p5s	-
+Objects/obmalloc.c	new_arena	debug_stats	-
 
-# during init
-Objects/unicodeobject.c	-	bloom_linebreak	-
-Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
-Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
-Python/initconfig.c	-	_Py_global_config_int_max_str_digits	-
-Python/initconfig.c	-	Py_DebugFlag	-
-Python/initconfig.c	-	Py_UTF8Mode	-
-Python/initconfig.c	-	Py_DebugFlag	-
-Python/initconfig.c	-	Py_VerboseFlag	-
-Python/initconfig.c	-	Py_QuietFlag	-
-Python/initconfig.c	-	Py_InteractiveFlag	-
-Python/initconfig.c	-	Py_InspectFlag	-
-Python/initconfig.c	-	Py_OptimizeFlag	-
-Python/initconfig.c	-	Py_NoSiteFlag	-
-Python/initconfig.c	-	Py_BytesWarningFlag	-
-Python/initconfig.c	-	Py_FrozenFlag	-
-Python/initconfig.c	-	Py_IgnoreEnvironmentFlag	-
-Python/initconfig.c	-	Py_DontWriteBytecodeFlag	-
-Python/initconfig.c	-	Py_NoUserSiteDirectory	-
-Python/initconfig.c	-	Py_UnbufferedStdioFlag	-
-Python/initconfig.c	-	Py_HashRandomizationFlag	-
-Python/initconfig.c	-	Py_IsolatedFlag	-
-Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
-Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
-Python/initconfig.c	-	orig_argv	-
-Python/pyhash.c	-	_Py_HashSecret	-
-Python/pylifecycle.c	-	runtime_initialized	-
-Python/sysmodule.c	-	_PySys_ImplCacheTag	-
-Python/sysmodule.c	-	_PySys_ImplName	-
-Python/sysmodule.c	-	_preinit_warnoptions	-
-Python/sysmodule.c	-	_preinit_xoptions	-
-Python/thread.c	-	initialized	-
-Python/thread_pthread.h	-	condattr_monotonic	-
-Python/thread_pthread.h	init_condattr	ca	-
-
-# set by embedders during init
-Python/initconfig.c	-	_Py_StandardStreamEncoding	-
-Python/initconfig.c	-	_Py_StandardStreamErrors	-
-
-# lazy
-Objects/floatobject.c	-	double_format	-
-Objects/floatobject.c	-	float_format	-
-Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
-Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
-Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
+# others
 Python/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
-Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
-Python/dtoa.c	-	p5s	-
-Python/fileutils.c	-	_Py_open_cloexec_works	-
-Python/fileutils.c	-	force_ascii	-
-Python/fileutils.c	set_inheritable	ioctl_works	-
-
-#-----------------------
-# unlikely to change after init (or main thread)
-
-# through C-API
-Python/frozen.c	-	PyImport_FrozenModules	-
-Python/frozen.c	-	_PyImport_FrozenAliases	-
-Python/frozen.c	-	_PyImport_FrozenBootstrap	-
-Python/frozen.c	-	_PyImport_FrozenStdlib	-
-Python/frozen.c	-	_PyImport_FrozenTest	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
-Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
-
-# REPL
-Parser/myreadline.c	-	_PyOS_ReadlineLock	-
-Parser/myreadline.c	-	_PyOS_ReadlineTState	-
-Parser/myreadline.c	-	PyOS_InputHook	-
-Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
-
-# handling C argv
-Python/getopt.c	-	_PyOS_optarg	-
-Python/getopt.c	-	_PyOS_opterr	-
-Python/getopt.c	-	_PyOS_optind	-
-Python/getopt.c	-	opt_ptr	-
-Python/pathconfig.c	-	_Py_path_config	-
 
 #-----------------------
 # state
 
-# object allocator
-Objects/obmalloc.c	-	_Py_tracemalloc_config	-
-Objects/obmalloc.c	new_arena	debug_stats	-
-
-# pre-allocated memory
-Python/dtoa.c	-	freelist	-
-Python/dtoa.c	-	private_mem	-
-
 # local buffer
-Python/getversion.c	Py_GetVersion	version	-
 Python/suggestions.c	levenshtein_distance	buffer	-
-
-# linked list
-Python/dtoa.c	-	pmem_next	-
-Python/getargs.c	-	static_arg_parsers	-
 
 # other
 Objects/dictobject.c	-	_pydict_global_version	-
