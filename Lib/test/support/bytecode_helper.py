@@ -44,6 +44,25 @@ class BytecodeTestCase(unittest.TestCase):
                     msg = msg % (opname, argval, disassembly)
                     self.fail(msg)
 
+    def assertSequenceInBytecode(self, x, *opname_argval_tuples):
+        """Find the contiguous instr sequence, or raise AssertionError"""
+        expected = [t if len(t) == 2 else (t[0], _UNSPECIFIED)
+                                for t in opname_argval_tuples]
+        for opname, argval in expected:
+            self.assertIn(opname, dis.opmap)
+        k = len(opname_argval_tuples)
+        instructions = list(dis.get_instructions(x))
+        for start in range(len(instructions)):
+            if all(
+                instr.opname == opname
+                and (argval is _UNSPECIFIED or instr.argval == argval)
+                for instr, (opname, argval)
+                in zip(instructions[start:start+k], expected)
+            ):
+                return
+        self.fail(f"Instruction sequence {expected} not found. Got:\n"
+                  + self.get_disassembly_as_string(x))
+
 class CompilationStepTestCase(unittest.TestCase):
 
     HAS_ARG = set(dis.hasarg)
