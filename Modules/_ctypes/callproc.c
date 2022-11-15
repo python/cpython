@@ -1880,7 +1880,6 @@ POINTER(PyObject *self, PyObject *cls)
     PyObject *result;
     PyTypeObject *typ;
     PyObject *key;
-    char *buf;
 
     result = PyDict_GetItemWithError(_ctypes_ptrtype_cache, cls);
     if (result) {
@@ -1890,18 +1889,11 @@ POINTER(PyObject *self, PyObject *cls)
         return NULL;
     }
     if (PyUnicode_CheckExact(cls)) {
-        const char *name = PyUnicode_AsUTF8(cls);
-        if (name == NULL)
-            return NULL;
-        buf = PyMem_Malloc(strlen(name) + 3 + 1);
-        if (buf == NULL)
-            return PyErr_NoMemory();
-        sprintf(buf, "LP_%s", name);
+        PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
-                                       "s(O){}",
-                                       buf,
+                                       "N(O){}",
+                                       name,
                                        &PyCPointer_Type);
-        PyMem_Free(buf);
         if (result == NULL)
             return result;
         key = PyLong_FromVoidPtr(result);
@@ -1911,16 +1903,12 @@ POINTER(PyObject *self, PyObject *cls)
         }
     } else if (PyType_Check(cls)) {
         typ = (PyTypeObject *)cls;
-        buf = PyMem_Malloc(strlen(typ->tp_name) + 3 + 1);
-        if (buf == NULL)
-            return PyErr_NoMemory();
-        sprintf(buf, "LP_%s", typ->tp_name);
+        PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
-                                       "s(O){sO}",
-                                       buf,
+                                       "N(O){sO}",
+                                       name,
                                        &PyCPointer_Type,
                                        "_type_", cls);
-        PyMem_Free(buf);
         if (result == NULL)
             return result;
         key = Py_NewRef(cls);

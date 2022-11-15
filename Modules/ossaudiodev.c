@@ -534,8 +534,7 @@ oss_close(oss_audio_t *self, PyObject *unused)
 static PyObject *
 oss_self(PyObject *self, PyObject *unused)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -1135,10 +1134,8 @@ PyInit_ossaudiodev(void)
                                        NULL, NULL);
     if (OSSAudioError) {
         /* Each call to PyModule_AddObject decrefs it; compensate: */
-        Py_INCREF(OSSAudioError);
-        Py_INCREF(OSSAudioError);
-        PyModule_AddObject(m, "error", OSSAudioError);
-        PyModule_AddObject(m, "OSSAudioError", OSSAudioError);
+        PyModule_AddObject(m, "error", Py_NewRef(OSSAudioError));
+        PyModule_AddObject(m, "OSSAudioError", Py_NewRef(OSSAudioError));
     }
 
     /* Build 'control_labels' and 'control_names' lists and add them
