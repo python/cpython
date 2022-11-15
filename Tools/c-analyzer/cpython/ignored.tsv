@@ -39,6 +39,8 @@ Python/fileutils.c	set_inheritable	ioctl_works	-
 Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
 Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
 Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
+Objects/unicodeobject.c	-	bloom_linebreak	-
+Objects/unicodeobject.c	_init_global_state	initialized	-
 
 # XXX Move to _PyRuntimeState?
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
@@ -111,9 +113,6 @@ Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
 Python/frozen.c	-	PyImport_FrozenModules	-
 Python/import.c	-	inittab_copy	-
 Python/import.c	-	PyImport_Inittab	-
-
-# initialized during init
-Objects/unicodeobject.c	-	bloom_linebreak	-
 
 # used temporarily during init
 Python/sysmodule.c	-	_preinit_warnoptions	-
