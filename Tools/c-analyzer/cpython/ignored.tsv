@@ -118,6 +118,11 @@ Python/import.c	-	PyImport_Inittab	-
 Python/sysmodule.c	-	_preinit_warnoptions	-
 Python/sysmodule.c	-	_preinit_xoptions	-
 
+##################################
+# special-use diagnistic state
+
+Parser/pegen.c	-	memo_statistics	-
+
 
 ##################################
 # The analyzer should have ignored these.
