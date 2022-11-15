@@ -5274,11 +5274,19 @@ class TestStartMethod(unittest.TestCase):
         rc, out, err = test.support.script_helper.assert_python_ok(name)
         out = out.decode()
         err = err.decode()
-        if out.rstrip() != 'ok' or err != '':
-            print(out)
-            print(err)
+        expected = "mp_preload\nmp_preload\nmp_preload_import\nf\nf\nf"
+        if out.rstrip() != expected or err != '':
+            print("expected out: " + expected)
+            print("actual out  : " + out)
+            print("err         : " + err)
             self.fail("failed spawning forkserver or grandchild")
 
+    def test_preload_exception(self):
+        if multiprocessing.get_start_method() != 'forkserver':
+            self.skipTest("test only relevant for 'forkserver' method")
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_exception.py')
+        for raise_exception in [0,1]:
+            rc, out, err = test.support.script_helper.assert_python_ok(name, str(raise_exception))
 
 @unittest.skipIf(sys.platform == "win32",
                  "test semantics don't make sense on Windows")
