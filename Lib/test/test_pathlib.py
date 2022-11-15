@@ -3077,7 +3077,7 @@ class PurePathSubclassTest(_BasePurePathTest, unittest.TestCase):
     class cls(pathlib.PurePath):
         pass
 
-    # repr() roundtripping is not supported in custom subclass
+    # repr() roundtripping is not supported in custom subclass.
     test_repr_roundtrips = None
 
 
@@ -3085,7 +3085,7 @@ class PathSubclassTest(_BasePathTest, unittest.TestCase):
     class cls(pathlib.Path):
         pass
 
-    # repr() roundtripping is not supported in custom subclass
+    # repr() roundtripping is not supported in custom subclass.
     test_repr_roundtrips = None
 
 
