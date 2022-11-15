@@ -101,12 +101,6 @@
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
-#if defined(__has_builtin)
-#if __has_builtin(__builtin_available)
-#define HAVE_BUILTIN_AVAILABLE 1
-#endif
-#endif
-
 
 static void pymem_destructor(PyObject *ptr)
 {

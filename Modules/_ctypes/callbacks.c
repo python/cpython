@@ -26,14 +26,6 @@
 #include <alloca.h>
 #endif
 
-#ifdef __APPLE__
-#if defined(__has_builtin)
-#if __has_builtin(__builtin_available)
-#define HAVE_BUILTIN_AVAILABLE 1
-#endif
-#endif
-#endif
-
 /**************************************************************/
 
 static void
