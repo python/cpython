@@ -2302,43 +2302,43 @@
 [typedef.releasebufferproc]
     added = '3.12'
 
-[const.PY_T_BYTE]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_SHORT]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_INT]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_LONG]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_LONGLONG]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_UBYTE]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_UINT]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_USHORT]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_ULONG]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_ULONGLONG]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_PYSSIZET]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_FLOAT]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_DOUBLE]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_BOOL]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_STRING]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_STRING_INPLACE]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_CHAR]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_T_OBJECT_EX]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_READONLY]
-    added = '3.12'  # Before 3.12, available in "structmember.h" w/o PY_ prefix
-[const.PY_AUDIT_READ]
+[const.Py_T_BYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_SHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_INT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_LONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_LONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_UBYTE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_UINT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_USHORT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_ULONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_ULONGLONG]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_PYSSIZET]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_FLOAT]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_DOUBLE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_BOOL]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_STRING]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_STRING_INPLACE]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_CHAR]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_T_OBJECT_EX]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_READONLY]
+    added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
+[const.Py_AUDIT_READ]
     added = '3.12'  # Before 3.12, available in "structmember.h"
