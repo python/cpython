@@ -332,7 +332,6 @@ Objects/dictobject.c	-	_pydict_global_version	-
 Objects/dictobject.c	-	next_dict_keys_version	-
 Objects/funcobject.c	-	next_func_version	-
 Objects/object.c	-	_Py_RefTotal	-
-Python/modsupport.c	-	_Py_PackageContext	-
 Python/perf_trampoline.c	-	perf_status	-
 Python/perf_trampoline.c	-	extra_code_index	-
 Python/perf_trampoline.c	-	code_arena	-
