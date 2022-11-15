@@ -6,15 +6,17 @@
 #endif
 
 
-#ifndef MS_WINDOWS
 struct pyhash_runtime_state {
+    // This is a placeholder so the struct isn't empty on Windows.
+    int _not_used;
+#ifndef MS_WINDOWS
     struct {
         int fd;
         dev_t st_dev;
         ino_t st_ino;
     } urandom_cache;
-};
 #endif
+};
 
 
 uint64_t _Py_KeyedHash(uint64_t, const char *, Py_ssize_t);
