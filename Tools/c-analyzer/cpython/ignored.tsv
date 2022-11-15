@@ -50,7 +50,6 @@ Python/getversion.c	-	version	-
 
 Objects/unicodeobject.c	-	bloom_linebreak	-
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
-Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	-	force_ascii	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
@@ -60,13 +59,17 @@ Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
 Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
-Python/pyhash.c	-	_Py_HashSecret	-
 Python/pylifecycle.c	-	runtime_initialized	-
 Python/sysmodule.c	-	_preinit_warnoptions	-
 Python/sysmodule.c	-	_preinit_xoptions	-
 Python/thread.c	-	initialized	-
 Python/thread_pthread.h	-	condattr_monotonic	-
 Python/thread_pthread.h	init_condattr	ca	-
+
+# set during the first init and preserved thread later init
+# (treated like a process-global resource)
+Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
+Python/pyhash.c	-	_Py_HashSecret	-
 
 # set by embedders during init
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
