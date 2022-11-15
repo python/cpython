@@ -440,6 +440,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(as_integer_ratio);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(ast);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(attribute);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(authorizer_callback);

@@ -358,8 +358,7 @@ _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     }
 
-    Py_INCREF(default_value);
-    return default_value;
+    return Py_NewRef(default_value);
 }
 
 /*[clinic input]
@@ -419,8 +418,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 static PyObject *
 dbm__enter__(PyObject *self, PyObject *args)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
