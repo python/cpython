@@ -68,7 +68,7 @@ Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
 
 
 ##################################
-# state tied to each runtime init
+# state tied to each runtime init/fini cycle
 
 Python/pylifecycle.c	-	_PyRuntime	-
 Python/pylifecycle.c	-	runtime_initialized	-
