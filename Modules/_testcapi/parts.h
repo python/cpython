@@ -27,6 +27,9 @@
 int _PyTestCapi_Init_Vectorcall(PyObject *module);
 int _PyTestCapi_Init_Heaptype(PyObject *module);
 int _PyTestCapi_Init_Unicode(PyObject *module);
+int _PyTestCapi_Init_GetArgs(PyObject *module);
+int _PyTestCapi_Init_PyTime(PyObject *module);
+int _PyTestCapi_Init_DateTime(PyObject *module);
 
 #ifdef LIMITED_API_AVAILABLE
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);

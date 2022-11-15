@@ -493,7 +493,9 @@ class _AnyMeta(type):
         return super().__instancecheck__(obj)
 
     def __repr__(self):
-        return "typing.Any"
+        if self is Any:
+            return "typing.Any"
+        return super().__repr__()  # respect to subclasses
 
 
 class Any(metaclass=_AnyMeta):
@@ -1435,6 +1437,10 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         new_args = []
         for old_arg in self.__args__:
 
+            if isinstance(old_arg, type):
+                new_args.append(old_arg)
+                continue
+
             substfunc = getattr(old_arg, '__typing_subst__', None)
             if substfunc:
                 new_arg = substfunc(new_arg_by_param[old_arg])
@@ -2099,7 +2105,7 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         if isinstance(origin, _AnnotatedAlias):
             metadata = origin.__metadata__ + metadata
             origin = origin.__origin__
-        super().__init__(origin, origin)
+        super().__init__(origin, origin, name='Annotated')
         self.__metadata__ = metadata
 
     def copy_with(self, params):
@@ -2131,6 +2137,9 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         if attr in {'__name__', '__qualname__'}:
             return 'Annotated'
         return super().__getattr__(attr)
+
+    def __mro_entries__(self, bases):
+        return (self.__origin__,)
 
 
 class Annotated:

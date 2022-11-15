@@ -11,7 +11,10 @@ extern "C" {
 #include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_gil.h"             // struct _gil_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
+#include "pycore_import.h"          // struct _import_runtime_state
 #include "pycore_interp.h"          // PyInterpreterState
+#include "pycore_pymem.h"           // struct _pymem_allocators
+#include "pycore_obmalloc.h"        // struct obmalloc_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 struct _getargs_runtime_state {
@@ -85,6 +88,9 @@ typedef struct pyruntimestate {
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
 
+    struct _pymem_allocators allocators;
+    struct _obmalloc_state obmalloc;
+
     struct pyinterpreters {
         PyThread_type_lock mutex;
         /* The linked list of interpreters, newest first. */
@@ -93,8 +99,8 @@ typedef struct pyruntimestate {
            in the operation of the runtime.  It is also often the only
            interpreter. */
         PyInterpreterState *main;
-        /* _next_interp_id is an auto-numbered sequence of small
-           integers.  It gets initialized in _PyInterpreterState_Init(),
+        /* next_id is an auto-numbered sequence of small
+           integers.  It gets initialized in _PyInterpreterState_Enable(),
            which is called in Py_Initialize(), and used in
            PyInterpreterState_New().  A negative interpreter ID
            indicates an error occurred.  The main interpreter will
@@ -115,6 +121,7 @@ typedef struct pyruntimestate {
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
 
+    struct _import_runtime_state imports;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
     struct _getargs_runtime_state getargs;
@@ -129,7 +136,15 @@ typedef struct pyruntimestate {
 
     struct _Py_unicode_runtime_ids unicode_ids;
 
+    struct {
+        /* Used to set PyTypeObject.tp_version_tag */
+        // bpo-42745: next_version_tag remains shared by all interpreters
+        // because of static types.
+        unsigned int next_version_tag;
+    } types;
+
     /* All the objects that are shared by the runtime's interpreters. */
+    struct _Py_cached_objects cached_objects;
     struct _Py_global_objects global_objects;
 
     /* The following fields are here to avoid allocation during init.

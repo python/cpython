@@ -371,8 +371,7 @@ convert_to_double(PyObject **v, double *dbl)
         }
     }
     else {
-        Py_INCREF(Py_NotImplemented);
-        *v = Py_NotImplemented;
+        *v = Py_NewRef(Py_NotImplemented);
         return -1;
     }
     return 0;
@@ -904,8 +903,7 @@ float_is_integer_impl(PyObject *self)
                              PyExc_ValueError);
         return NULL;
     }
-    Py_INCREF(o);
-    return o;
+    return Py_NewRef(o);
 }
 
 /*[clinic input]
@@ -1124,11 +1122,12 @@ float___round___impl(PyObject *self, PyObject *o_ndigits)
 static PyObject *
 float_float(PyObject *v)
 {
-    if (PyFloat_CheckExact(v))
-        Py_INCREF(v);
-    else
-        v = PyFloat_FromDouble(((PyFloatObject *)v)->ob_fval);
-    return v;
+    if (PyFloat_CheckExact(v)) {
+        return Py_NewRef(v);
+    }
+    else {
+        return PyFloat_FromDouble(((PyFloatObject *)v)->ob_fval);
+    }
 }
 
 /*[clinic input]

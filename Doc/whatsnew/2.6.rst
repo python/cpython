@@ -217,7 +217,7 @@ the time required to finish the job.
 During the 2.6 development cycle, Georg Brandl put a lot of effort
 into building a new toolchain for processing the documentation.  The
 resulting package is called Sphinx, and is available from
-http://sphinx-doc.org/.
+https://www.sphinx-doc.org/.
 
 Sphinx concentrates on HTML output, producing attractively styled and
 modern HTML; printed output is still supported through conversion to
@@ -235,7 +235,7 @@ have adopted Sphinx as their documentation tool.
    `Documenting Python <https://devguide.python.org/documenting/>`__
        Describes how to write for Python's documentation.
 
-   `Sphinx <http://sphinx-doc.org/>`__
+   `Sphinx <https://www.sphinx-doc.org/>`__
      Documentation and code for the Sphinx toolchain.
 
    `Docutils <https://docutils.sourceforge.io>`__
@@ -717,13 +717,13 @@ This will produce the output::
 PEP 3101: Advanced String Formatting
 =====================================================
 
-In Python 3.0, the `%` operator is supplemented by a more powerful string
+In Python 3.0, the ``%`` operator is supplemented by a more powerful string
 formatting method, :meth:`format`.  Support for the :meth:`str.format` method
 has been backported to Python 2.6.
 
-In 2.6, both 8-bit and Unicode strings have a `.format()` method that
+In 2.6, both 8-bit and Unicode strings have a ``.format()`` method that
 treats the string as a template and takes the arguments to be formatted.
-The formatting template uses curly brackets (`{`, `}`) as special characters::
+The formatting template uses curly brackets (``{``, ``}``) as special characters::
 
      >>> # Substitute positional argument 0 into the string.
      >>> "User ID: {0}".format("root")
@@ -1926,7 +1926,7 @@ changes, or look through the Subversion logs for all the details.
   the left to six places.  (Contributed by Skip Montanaro; :issue:`1158`.)
 
 * The :mod:`decimal` module was updated to version 1.66 of
-  `the General Decimal Specification <http://speleotrove.com/decimal/decarith.html>`__.  New features
+  `the General Decimal Specification <https://speleotrove.com/decimal/decarith.html>`__.  New features
   include some methods for some basic mathematical functions such as
   :meth:`exp` and :meth:`log10`::
 
@@ -2389,7 +2389,7 @@ changes, or look through the Subversion logs for all the details.
   has been updated from version 2.3.2 in Python 2.5 to
   version 2.4.1.
 
-* The :mod:`struct` module now supports the C99 :c:type:`_Bool` type,
+* The :mod:`struct` module now supports the C99 :c:expr:`_Bool` type,
   using the format character ``'?'``.
   (Contributed by David Remahl.)
 

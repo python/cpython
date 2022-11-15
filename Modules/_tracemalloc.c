@@ -347,8 +347,8 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     else {
         /* tracemalloc_filenames is responsible to keep a reference
            to the filename */
-        Py_INCREF(filename);
-        if (_Py_hashtable_set(tracemalloc_filenames, filename, NULL) < 0) {
+        if (_Py_hashtable_set(tracemalloc_filenames, Py_NewRef(filename),
+                              NULL) < 0) {
             Py_DECREF(filename);
 #ifdef TRACE_DEBUG
             tracemalloc_error("failed to intern the filename");
@@ -400,7 +400,13 @@ traceback_get_frames(traceback_t *traceback)
     }
 
     _PyInterpreterFrame *pyframe = tstate->cframe->current_frame;
-    for (; pyframe != NULL;) {
+    for (;;) {
+        while (pyframe && _PyFrame_IsIncomplete(pyframe)) {
+            pyframe = pyframe->previous;
+        }
+        if (pyframe == NULL) {
+            break;
+        }
         if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
             assert(traceback->frames[traceback->nframe].filename != NULL);
@@ -410,8 +416,7 @@ traceback_get_frames(traceback_t *traceback)
             traceback->total_nframe++;
         }
 
-        _PyInterpreterFrame *back = pyframe->previous;
-        pyframe = back;
+        pyframe = pyframe->previous;
     }
 }
 
@@ -1080,8 +1085,7 @@ frame_to_pyobject(frame_t *frame)
     if (frame_obj == NULL)
         return NULL;
 
-    Py_INCREF(frame->filename);
-    PyTuple_SET_ITEM(frame_obj, 0, frame->filename);
+    PyTuple_SET_ITEM(frame_obj, 0, Py_NewRef(frame->filename));
 
     lineno_obj = PyLong_FromUnsignedLong(frame->lineno);
     if (lineno_obj == NULL) {
@@ -1102,8 +1106,7 @@ traceback_to_pyobject(traceback_t *traceback, _Py_hashtable_t *intern_table)
     if (intern_table != NULL) {
         frames = _Py_hashtable_get(intern_table, (const void *)traceback);
         if (frames) {
-            Py_INCREF(frames);
-            return frames;
+            return Py_NewRef(frames);
         }
     }
 
