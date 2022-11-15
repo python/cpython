@@ -117,6 +117,9 @@ gdbpy_version, _ = run_gdb("--eval-command=python import sys; print(sys.version_
 if not gdbpy_version:
     raise unittest.SkipTest("gdb not built with embedded python support")
 
+if "major=2" in gdbpy_version:
+    raise unittest.SkipTest("gdb built with Python 2")
+
 # Verify that "gdb" can load our custom hooks, as OS security settings may
 # disallow this without a customized .gdbinit.
 _, gdbpy_errors = run_gdb('--args', sys.executable)

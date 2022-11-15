@@ -195,6 +195,7 @@ def ismount(path):
         if stat.S_ISLNK(s1.st_mode):
             return False
 
+    path = os.fspath(path)
     if isinstance(path, bytes):
         parent = join(path, b'..')
     else:
@@ -364,7 +365,7 @@ except ImportError:
         initial_slashes = path.startswith(sep)
         # POSIX allows one or two initial slashes, but treats three or more
         # as single slash.
-        # (see http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13)
+        # (see https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13)
         if (initial_slashes and
             path.startswith(sep*2) and not path.startswith(sep*3)):
             initial_slashes = 2

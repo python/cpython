@@ -1,0 +1,3 @@
+Fix use-after-free in ``Py_SetPythonHome(NULL)``,
+``Py_SetProgramName(NULL)`` and ``_Py_SetProgramFullPath(NULL)`` function
+calls. Issue reported by Benedikt Reinartz. Patch by Victor Stinner.

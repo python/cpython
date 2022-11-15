@@ -4,12 +4,14 @@ from doctest import DocTestSuite
 from test import support
 from test.support import threading_helper
 import weakref
-import gc
 
 # Modules under test
 import _thread
 import threading
 import _threading_local
+
+
+threading_helper.requires_working_threading(module=True)
 
 
 class Weak(object):

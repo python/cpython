@@ -139,6 +139,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def get_coro(self):
         return self._coro
 
+    def get_context(self):
+        return self._context
+
     def get_name(self):
         return self._name
 
@@ -238,8 +241,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     def uncancel(self):
         """Decrement the task's count of cancellation requests.
 
-        This should be used by tasks that catch CancelledError
-        and wish to continue indefinitely until they are cancelled again.
+        This should be called by the party that called `cancel()` on the task
+        beforehand.
 
         Returns the remaining number of cancellation requests.
         """
@@ -387,7 +390,7 @@ ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
 
 async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
-    """Wait for the Futures and coroutines given by fs to complete.
+    """Wait for the Futures or Tasks given by fs to complete.
 
     The fs iterable must not be empty.
 
@@ -405,22 +408,16 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     if not fs:
-        raise ValueError('Set of coroutines/Futures is empty.')
+        raise ValueError('Set of Tasks/Futures is empty.')
     if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
         raise ValueError(f'Invalid return_when value: {return_when}')
-
-    loop = events.get_running_loop()
 
     fs = set(fs)
 
     if any(coroutines.iscoroutine(f) for f in fs):
-        warnings.warn("The explicit passing of coroutine objects to "
-                      "asyncio.wait() is deprecated since Python 3.8, and "
-                      "scheduled for removal in Python 3.11.",
-                      DeprecationWarning, stacklevel=2)
+        raise TypeError("Passing coroutines is forbidden, use tasks explicitly.")
 
-    fs = {ensure_future(f, loop=loop) for f in fs}
-
+    loop = events.get_running_loop()
     return await _wait(fs, timeout, return_when, loop)
 
 
@@ -849,7 +846,8 @@ def shield(arg):
 
     The statement
 
-        res = await shield(something())
+        task = asyncio.create_task(something())
+        res = await shield(task)
 
     is exactly equivalent to the statement
 
@@ -865,10 +863,16 @@ def shield(arg):
     If you want to completely ignore cancellation (not recommended)
     you can combine shield() with a try/except clause, as follows:
 
+        task = asyncio.create_task(something())
         try:
-            res = await shield(something())
+            res = await shield(task)
         except CancelledError:
             res = None
+
+    Save a reference to tasks passed to this function, to avoid
+    a task disappearing mid-execution. The event loop only keeps
+    weak references to tasks. A task that isn't referenced elsewhere
+    may get garbage collected at any time, even before it's done.
     """
     inner = _ensure_future(arg)
     if inner.done():

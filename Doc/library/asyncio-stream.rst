@@ -67,6 +67,12 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_connection`.
 
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      :class:`StreamWriter` created. To close the socket, call its
+      :meth:`~asyncio.StreamWriter.close` method.
+
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
 
@@ -103,6 +109,12 @@ and work with streams:
    The rest of the arguments are passed directly to
    :meth:`loop.create_server`.
 
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      server created. To close the socket, call the server's
+      :meth:`~asyncio.Server.close` method.
+
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* and *start_serving* parameters.
 
@@ -122,6 +134,12 @@ and work with streams:
    Similar to :func:`open_connection` but operates on Unix sockets.
 
    See also the documentation of :meth:`loop.create_unix_connection`.
+
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      :class:`StreamWriter` created. To close the socket, call its
+      :meth:`~asyncio.StreamWriter.close` method.
 
    .. availability:: Unix.
 
@@ -143,6 +161,12 @@ and work with streams:
 
    See also the documentation of :meth:`loop.create_unix_server`.
 
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      server created. To close the socket, call the server's
+      :meth:`~asyncio.Server.close` method.
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.7
@@ -159,7 +183,8 @@ StreamReader
 .. class:: StreamReader
 
    Represents a reader object that provides APIs to read data
-   from the IO stream.
+   from the IO stream. As an :term:`asynchronous iterable`, the
+   object supports the :keyword:`async for` statement.
 
    It is not recommended to instantiate *StreamReader* objects
    directly; use :func:`open_connection` and :func:`start_server`
@@ -192,7 +217,7 @@ StreamReader
       can be read.  Use the :attr:`IncompleteReadError.partial`
       attribute to get the partially read data.
 
-   .. coroutinemethod:: readuntil(separator=b'\\n')
+   .. coroutinemethod:: readuntil(separator=b'\n')
 
       Read data from the stream until *separator* is found.
 
@@ -294,6 +319,24 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
+
+   .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
+                          ssl_handshake_timeout=None)
+
+      Upgrade an existing stream-based connection to TLS.
+
+      Parameters:
+
+      * *sslcontext*: a configured instance of :class:`~ssl.SSLContext`.
+
+      * *server_hostname*: sets or overrides the host name that the target
+        server's certificate will be matched against.
+
+      * *ssl_handshake_timeout* is the time in seconds to wait for the TLS
+        handshake to complete before aborting the connection.  ``60.0`` seconds
+        if ``None`` (default).
+
+      .. versionadded:: 3.11
 
    .. method:: is_closing()
 
