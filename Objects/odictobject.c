@@ -889,8 +889,7 @@ odict_inplace_or(PyObject *self, PyObject *other)
     if (mutablemapping_update_arg(self, other) < 0) {
         return NULL;
     }
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 /* tp_as_number */
@@ -1007,8 +1006,7 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
                 return NULL;
             assert(_odict_find_node(self, key) == NULL);
             if (PyODict_SetItem((PyObject *)self, key, default_value) >= 0) {
-                result = default_value;
-                Py_INCREF(result);
+                result = Py_NewRef(default_value);
             }
         }
         else {
@@ -1024,8 +1022,7 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
             result = PyObject_GetItem((PyObject *)self, key);
         }
         else if (PyObject_SetItem((PyObject *)self, key, default_value) >= 0) {
-            result = default_value;
-            Py_INCREF(result);
+            result = Py_NewRef(default_value);
         }
     }
 
@@ -1055,8 +1052,7 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
     else if (value == NULL && !PyErr_Occurred()) {
         /* Apply the fallback value, if necessary. */
         if (failobj) {
-            value = failobj;
-            Py_INCREF(failobj);
+            value = Py_NewRef(failobj);
         }
         else {
             PyErr_SetObject(PyExc_KeyError, key);
@@ -1497,8 +1493,7 @@ odict_richcompare(PyObject *v, PyObject *w, int op)
             return NULL;
 
         res = (eq == (op == Py_EQ)) ? Py_True : Py_False;
-        Py_INCREF(res);
-        return res;
+        return Py_NewRef(res);
     } else {
         Py_RETURN_NOTIMPLEMENTED;
     }
@@ -1714,8 +1709,7 @@ odictiter_nextkey(odictiterobject *di)
         di->di_current = NULL;
     }
     else {
-        di->di_current = _odictnode_KEY(node);
-        Py_INCREF(di->di_current);
+        di->di_current = Py_NewRef(_odictnode_KEY(node));
     }
 
     return key;
@@ -1872,12 +1866,10 @@ odictiter_new(PyODictObject *od, int kind)
 
     di->kind = kind;
     node = reversed ? _odict_LAST(od) : _odict_FIRST(od);
-    di->di_current = node ? _odictnode_KEY(node) : NULL;
-    Py_XINCREF(di->di_current);
+    di->di_current = node ? Py_NewRef(_odictnode_KEY(node)) : NULL;
     di->di_size = PyODict_SIZE(od);
     di->di_state = od->od_state;
-    di->di_odict = od;
-    Py_INCREF(od);
+    di->di_odict = (PyODictObject*)Py_NewRef(od);
 
     _PyObject_GC_TRACK(di);
     return (PyObject *)di;

@@ -222,6 +222,9 @@ implementation used by the asyncio event loop:
       This method has to be called to ensure that underlying
       resources are cleaned-up.
 
+   .. deprecated:: 3.12
+
+
 .. class:: ThreadedChildWatcher
 
    This implementation starts a new waiting thread for every subprocess spawn.

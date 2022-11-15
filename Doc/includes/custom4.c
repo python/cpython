@@ -67,14 +67,12 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 
     if (first) {
         tmp = self->first;
-        Py_INCREF(first);
-        self->first = first;
+        self->first = Py_NewRef(first);
         Py_DECREF(tmp);
     }
     if (last) {
         tmp = self->last;
-        Py_INCREF(last);
-        self->last = last;
+        self->last = Py_NewRef(last);
         Py_DECREF(tmp);
     }
     return 0;
@@ -89,8 +87,7 @@ static PyMemberDef Custom_members[] = {
 static PyObject *
 Custom_getfirst(CustomObject *self, void *closure)
 {
-    Py_INCREF(self->first);
-    return self->first;
+    return Py_NewRef(self->first);
 }
 
 static int
@@ -114,8 +111,7 @@ Custom_setfirst(CustomObject *self, PyObject *value, void *closure)
 static PyObject *
 Custom_getlast(CustomObject *self, void *closure)
 {
-    Py_INCREF(self->last);
-    return self->last;
+    return Py_NewRef(self->last);
 }
 
 static int
@@ -192,9 +188,7 @@ PyInit_custom4(void)
     if (m == NULL)
         return NULL;
 
-    Py_INCREF(&CustomType);
-    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
-        Py_DECREF(&CustomType);
+    if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
         Py_DECREF(m);
         return NULL;
     }

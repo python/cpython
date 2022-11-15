@@ -10,6 +10,7 @@
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_genobject.h"     // _PyAsyncGen_Fini()
+#include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_list.h"          // _PyList_Fini()
@@ -28,6 +29,7 @@
 #include "pycore_tuple.h"         // _PyTuple_InitTypes()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
+#include "opcode.h"
 
 extern void _PyIO_Fini(void);
 
@@ -102,7 +104,7 @@ _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
-= _PyRuntimeState_INIT;
+= _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
 static int runtime_initialized = 0;
@@ -603,6 +605,11 @@ pycore_init_runtime(_PyRuntimeState *runtime,
         return status;
     }
 
+    status = _PyImport_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PyInterpreterState_Enable(runtime);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -778,6 +785,21 @@ pycore_init_types(PyInterpreterState *interp)
     return _PyStatus_OK();
 }
 
+static const uint8_t INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
+    /* Put a NOP at the start, so that the IP points into
+    * the code, rather than before it */
+    NOP, 0,
+    INTERPRETER_EXIT, 0,
+    /* RESUME at end makes sure that the frame appears incomplete */
+    RESUME, 0
+};
+
+static const _PyShimCodeDef INTERPRETER_TRAMPOLINE_CODEDEF = {
+    INTERPRETER_TRAMPOLINE_INSTRUCTIONS,
+    sizeof(INTERPRETER_TRAMPOLINE_INSTRUCTIONS),
+    1,
+    "<interpreter trampoline>"
+};
 
 static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
@@ -797,8 +819,7 @@ pycore_init_builtins(PyThreadState *tstate)
     if (builtins_dict == NULL) {
         goto error;
     }
-    Py_INCREF(builtins_dict);
-    interp->builtins = builtins_dict;
+    interp->builtins = Py_NewRef(builtins_dict);
 
     PyObject *isinstance = PyDict_GetItem(builtins_dict, &_Py_ID(isinstance));
     assert(isinstance);
@@ -812,7 +833,10 @@ pycore_init_builtins(PyThreadState *tstate)
     PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
     assert(object__getattribute__);
     interp->callable_cache.object__getattribute__ = object__getattribute__;
-
+    interp->interpreter_trampoline = _Py_MakeShimCode(&INTERPRETER_TRAMPOLINE_CODEDEF);
+    if (interp->interpreter_trampoline == NULL) {
+        return _PyStatus_ERR("failed to create interpreter trampoline.");
+    }
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
@@ -1725,7 +1749,7 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyUnicode_Fini(interp);
     _PyFloat_Fini(interp);
 #ifdef Py_DEBUG
-    _PyStaticObjects_CheckRefcnt();
+    _PyStaticObjects_CheckRefcnt(interp);
 #endif
 }
 
@@ -2288,8 +2312,7 @@ create_stdio(const PyConfig *config, PyObject* io,
             goto error;
     }
     else {
-        raw = buf;
-        Py_INCREF(raw);
+        raw = Py_NewRef(buf);
     }
 
 #ifdef MS_WINDOWS
@@ -2551,8 +2574,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
 
     _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
-        tb = Py_None;
-        Py_INCREF(tb);
+        tb = Py_NewRef(Py_None);
     }
     PyException_SetTraceback(v, tb);
     if (exception == NULL) {

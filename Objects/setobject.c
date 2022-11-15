@@ -588,8 +588,7 @@ set_merge(PySetObject *so, PyObject *otherset)
             key = other_entry->key;
             if (key != NULL) {
                 assert(so_entry->key == NULL);
-                Py_INCREF(key);
-                so_entry->key = key;
+                so_entry->key = Py_NewRef(key);
                 so_entry->hash = other_entry->hash;
             }
         }
@@ -607,8 +606,8 @@ set_merge(PySetObject *so, PyObject *otherset)
         for (i = other->mask + 1; i > 0 ; i--, other_entry++) {
             key = other_entry->key;
             if (key != NULL && key != dummy) {
-                Py_INCREF(key);
-                set_insert_clean(newtable, newmask, key, other_entry->hash);
+                set_insert_clean(newtable, newmask, Py_NewRef(key),
+                                 other_entry->hash);
             }
         }
         return 0;
@@ -820,8 +819,7 @@ static PyObject *setiter_iternext(setiterobject *si)
         goto fail;
     si->len--;
     key = entry[i].key;
-    Py_INCREF(key);
-    return key;
+    return Py_NewRef(key);
 
 fail:
     si->si_set = NULL;
@@ -868,8 +866,7 @@ set_iter(PySetObject *so)
     setiterobject *si = PyObject_GC_New(setiterobject, &PySetIter_Type);
     if (si == NULL)
         return NULL;
-    Py_INCREF(so);
-    si->si_set = so;
+    si->si_set = (PySetObject*)Py_NewRef(so);
     si->si_used = so->used;
     si->si_pos = 0;
     si->len = so->used;
@@ -997,8 +994,7 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 
     if (iterable != NULL && PyFrozenSet_CheckExact(iterable)) {
         /* frozenset(f) is idempotent */
-        Py_INCREF(iterable);
-        return iterable;
+        return Py_NewRef(iterable);
     }
     return make_new_set(type, iterable);
 }
@@ -1100,8 +1096,7 @@ static PyObject *
 frozenset_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     if (PyFrozenSet_CheckExact(so)) {
-        Py_INCREF(so);
-        return (PyObject *)so;
+        return Py_NewRef(so);
     }
     return set_copy(so, NULL);
 }
@@ -1173,8 +1168,7 @@ set_ior(PySetObject *so, PyObject *other)
 
     if (set_update_internal(so, other))
         return NULL;
-    Py_INCREF(so);
-    return (PyObject *)so;
+    return Py_NewRef(so);
 }
 
 static PyObject *
@@ -1264,12 +1258,11 @@ static PyObject *
 set_intersection_multi(PySetObject *so, PyObject *args)
 {
     Py_ssize_t i;
-    PyObject *result = (PyObject *)so;
 
     if (PyTuple_GET_SIZE(args) == 0)
         return set_copy(so, NULL);
 
-    Py_INCREF(so);
+    PyObject *result = Py_NewRef(so);
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
         PyObject *newresult = set_intersection((PySetObject *)result, other);
@@ -1336,8 +1329,7 @@ set_iand(PySetObject *so, PyObject *other)
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
-    Py_INCREF(so);
-    return (PyObject *)so;
+    return Py_NewRef(so);
 }
 
 static PyObject *
