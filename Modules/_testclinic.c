@@ -54,7 +54,7 @@ pack_arguments_newref(int argc, ...)
         arg_type in[argc] = {__VA_ARGS__}; \
         PyObject *out[argc] = {NULL,}; \
         for (int _i = 0; _i < argc; _i++) { \
-            out[_i] = wrapper((arg_type)in[_i]); \
+            out[_i] = wrapper(in[_i]); \
             assert(out[_i] || PyErr_Occurred()); \
             if (!out[_i]) { \
                 for (int _j = 0; _j < _i; _j++) { \
@@ -563,7 +563,6 @@ bytes_from_buffer(Py_buffer *buf)
         Py_DECREF(bytes_obj);
         return NULL;
     }
-    PyBuffer_Release(buf);
     return bytes_obj;
 }
 
