@@ -2180,6 +2180,38 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
 }
 
 
+/*[clinic input]
+sys._get_calling_module_name
+
+    depth: int = 0
+
+Return the name of the calling module.
+
+The default depth returns the module containing the call to this function.
+A more typical use in a library will pass a depth of 1 to get the user's
+module rather than the library module.
+[clinic start generated code]*/
+
+static PyObject *
+sys__get_calling_module_name_impl(PyObject *module, int depth)
+/*[clinic end generated code: output=bd04c211226f8b84 input=dd268ae6a20311ab]*/
+{
+    _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
+    while (f && (f->owner == FRAME_OWNED_BY_CSTACK || depth-- > 0)) {
+        f = f->previous;
+    }
+    if (f == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *r = PyDict_GetItemWithError(f->f_globals, &_Py_ID(__name__));
+    if (!r) {
+        PyErr_Clear();
+        r = Py_None;
+    }
+    return Py_NewRef(r);
+}
+
+
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
@@ -2197,6 +2229,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
+    SYS__GET_CALLING_MODULE_NAME_METHODDEF
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
 #ifdef Py_TRACE_REFS

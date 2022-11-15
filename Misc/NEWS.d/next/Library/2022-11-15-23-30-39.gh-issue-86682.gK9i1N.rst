@@ -1,0 +1,2 @@
+Changes internal function used to ensure runtime-created collections have
+the correct module name from ``_getframe`` to ``_get_calling_module_name``.
