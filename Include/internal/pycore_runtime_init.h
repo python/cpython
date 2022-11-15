@@ -25,11 +25,7 @@ extern "C" {
             _pymem_allocators_obj_arena_INIT, \
         }, \
         .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
-        .pyhash_state = { \
-            .urandom_cache = { \
-                .fd = -1, \
-            }, \
-        }, \
+        .pyhash_state = pyhash_state_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
