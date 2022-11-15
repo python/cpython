@@ -275,7 +275,9 @@ alloc_interpreter(void)
 static void
 free_interpreter(PyInterpreterState *interp)
 {
-    if (!interp->_static) {
+    // The main interpreter is statically allocated so
+    // should not be freed.
+    if (interp != &_PyRuntime._main_interpreter) {
         PyMem_RawFree(interp);
     }
 }
@@ -359,7 +361,6 @@ PyInterpreterState_New(void)
         interp = &runtime->_main_interpreter;
         assert(interp->id == 0);
         assert(interp->next == NULL);
-        assert(interp->_static);
 
         interpreters->main = interp;
     }
@@ -374,9 +375,6 @@ PyInterpreterState_New(void)
         // Set to _PyInterpreterState_INIT.
         memcpy(interp, &initial._main_interpreter,
                sizeof(*interp));
-        // We need to adjust any fields that are different from the initial
-        // interpreter (as defined in _PyInterpreterState_INIT):
-        interp->_static = false;
 
         if (id < 0) {
             /* overflow or Py_Initialize() not called yet! */
@@ -762,7 +760,9 @@ alloc_threadstate(void)
 static void
 free_threadstate(PyThreadState *tstate)
 {
-    if (!tstate->_static) {
+    // The initial thread state of the interpreter is allocated
+    // as part of the interpreter state so should not be freed.
+    if (tstate != &tstate->interp->_initial_thread) {
         PyMem_RawFree(tstate);
     }
 }
@@ -845,7 +845,6 @@ new_threadstate(PyInterpreterState *interp)
         assert(id == 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
-        assert(tstate->_static);
     }
     else {
         // Every valid interpreter must have at least one thread.
@@ -857,9 +856,6 @@ new_threadstate(PyInterpreterState *interp)
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
-        // We need to adjust any fields that are different from the initial
-        // thread (as defined in _PyThreadState_INIT):
-        tstate->_static = false;
     }
     interp->threads.head = tstate;
 
