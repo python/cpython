@@ -47,7 +47,7 @@ extern void _Py_AddRefTotal(Py_ssize_t);
 extern void _Py_IncRefTotal(void);
 extern void _Py_DecRefTotal(void);
 
-#  define _Py_DEC_REFTOTAL() _Py_RefTotal--
+#  define _Py_DEC_REFTOTAL() _PyRuntime.object_state.reftotal--
 #endif
 
 // Increment reference count by n

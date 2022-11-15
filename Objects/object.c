@@ -54,13 +54,13 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 
 
 #ifdef Py_REF_DEBUG
-// XXX Move this to _PyRuntimeState.
+/* We keep the legacy symbol around for backward compatibility. */
 Py_ssize_t _Py_RefTotal;
 #endif
 
 #ifdef Py_REF_DEBUG
 
-#  define REFTOTAL _Py_RefTotal
+#  define REFTOTAL (_PyRuntime.object_state.reftotal)
 
 static inline void
 reftotal_increment(void)
