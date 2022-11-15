@@ -675,8 +675,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("if (%s == NULL) goto failed;" % field.name, depth+1)
             self.emit("for (i = 0; i < len; i++) {", depth+1)
             self.emit("%s val;" % ctype, depth+2)
-            self.emit("PyObject *tmp2 = PyList_GET_ITEM(tmp, i);", depth+2)
-            self.emit("Py_INCREF(tmp2);", depth+2)
+            self.emit("PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));", depth+2)
             with self.recursive_call(name, depth+2):
                 self.emit("res = obj2ast_%s(state, tmp2, &val, arena);" %
                           field.type, depth+2, reflow=False)
@@ -1021,9 +1020,11 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
             *out = NULL;
             return -1;
         }
-        Py_INCREF(obj);
+        *out = Py_NewRef(obj);
     }
-    *out = obj;
+    else {
+        *out = NULL;
+    }
     return 0;
 }
 
