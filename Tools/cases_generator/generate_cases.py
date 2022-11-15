@@ -300,17 +300,41 @@ class Analyzer:
                     f.write(f"{indent}    DISPATCH();\n")
                 f.write(f"{indent}}}\n")
 
-            # Write super-instructions
+            # Write super-instructions and macros
+            # TODO: Cleanup the hacks
             for name, sup in self.supers.items():
-                components = [self.instrs[name] for name in sup.ops]
                 f.write(f"\n{indent}TARGET({sup.name}) {{\n")
+                components = [self.instrs[name] for name in sup.ops]
+                lowest, highest = self.super_macro_analysis(name, components)
+                current = 0
+                for i in range(lowest, current):
+                    f.write(f"{indent}    PyObject *_tmp_{i - lowest + 1} = PEEK({-i});\n")
+                for i in range(current, highest):
+                    f.write(f"{indent}    PyObject *_tmp_{i - lowest + 1};\n")
                 for i, instr in enumerate(components):
                     if i > 0 and sup.kind == "super":
                         f.write(f"{indent}    NEXTOPARG();\n")
                         f.write(f"{indent}    next_instr++;\n")
                     f.write(f"{indent}    {{\n")
-                    instr.write(f, indent, dedent=-4)
+                    for seffect in reversed(instr.input_effects):
+                        if seffect.name != "unused":
+                            f.write(f"{indent}        PyObject *{seffect.name} = _tmp_{current - lowest};\n")
+                        current -= 1
+                    for oeffect in instr.output_effects:
+                        if oeffect.name != "unused":
+                            f.write(f"{indent}        PyObject *{oeffect.name};\n")
+                    instr.write_body(f, indent, dedent=-4)
+                    for oeffect in instr.output_effects:
+                        if oeffect.name != "unused":
+                            f.write(f"{indent}        _tmp_{current - lowest + 1} = {oeffect.name};\n")
+                        current += 1
                     f.write(f"    {indent}}}\n")
+                if current > 0:
+                    f.write(f"{indent}    STACK_GROW({current});\n")
+                elif current < 0:
+                    f.write(f"{indent}    STACK_SHRINK({-current});\n")
+                for i in range(lowest, current):
+                    f.write(f"{indent}    POKE({i - lowest + 1}, _tmp_{current - i});\n")
                 f.write(f"{indent}    DISPATCH();\n")
                 f.write(f"{indent}}}\n")
 
@@ -319,6 +343,25 @@ class Analyzer:
                 f"{len(self.supers)} super-instructions to {filename}",
                 file=sys.stderr,
             )
+
+    # TODO: Move this into analysis phase
+    def super_macro_analysis(self, name: str, components: list[Instruction]) -> tuple[int, int]:
+        """Analyze a super-instruction or macro."""
+        lowest = current = highest = 0
+        for instr in components:
+            if instr.cache_effects:
+                print(
+                    f"Super-instruction {name!r} has cache effects in {instr.name!r}",
+                    file=sys.stderr,
+                )
+                self.errors += 1
+            current -= len(instr.input_effects)
+            lowest = min(lowest, current)
+            current += len(instr.output_effects)
+            highest = max(highest, current)
+        # At this point, 'current' is the net stack effect,
+        # and 'lowest' and 'highest' are the extremes.
+        return lowest, highest
 
 
 def always_exits(block: parser.Block) -> bool:

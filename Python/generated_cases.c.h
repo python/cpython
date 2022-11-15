@@ -3702,13 +3702,14 @@
         }
 
         TARGET(LOAD_FAST__LOAD_FAST) {
+            PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_1 = value;
             }
             NEXTOPARG();
             next_instr++;
@@ -3717,20 +3718,23 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_2 = value;
             }
+            STACK_GROW(2);
+            POKE(1, _tmp_2);  // lowest=0 current=2 highest=2 i=0
+            POKE(2, _tmp_1);  // lowest=0 current=2 highest=2 i=1
             DISPATCH();
         }
 
         TARGET(LOAD_FAST__LOAD_CONST) {
+            PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_1 = value;
             }
             NEXTOPARG();
             next_instr++;
@@ -3738,17 +3742,19 @@
                 PyObject *value;
                 value = GETITEM(consts, oparg);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_2 = value;
             }
+            STACK_GROW(2);
+            POKE(1, _tmp_2);  // lowest=0 current=2 highest=2 i=0
+            POKE(2, _tmp_1);  // lowest=0 current=2 highest=2 i=1
             DISPATCH();
         }
 
         TARGET(STORE_FAST__LOAD_FAST) {
+            PyObject *_tmp_1 = PEEK(1);
             {
-                PyObject *value = PEEK(1);
+                PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
-                STACK_SHRINK(1);
             }
             NEXTOPARG();
             next_instr++;
@@ -3757,35 +3763,37 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_1 = value;
             }
+            POKE(1, _tmp_1);  // lowest=-1 current=0 highest=0 i=-1
             DISPATCH();
         }
 
         TARGET(STORE_FAST__STORE_FAST) {
+            PyObject *_tmp_1 = PEEK(2);
+            PyObject *_tmp_2 = PEEK(1);
             {
-                PyObject *value = PEEK(1);
+                PyObject *value = _tmp_2;
                 SETLOCAL(oparg, value);
-                STACK_SHRINK(1);
             }
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *value = PEEK(1);
+                PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
-                STACK_SHRINK(1);
             }
+            STACK_SHRINK(2);
             DISPATCH();
         }
 
         TARGET(LOAD_CONST__LOAD_FAST) {
+            PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_1 = value;
             }
             NEXTOPARG();
             next_instr++;
@@ -3794,22 +3802,25 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_2 = value;
             }
+            STACK_GROW(2);
+            POKE(1, _tmp_2);  // lowest=0 current=2 highest=2 i=0
+            POKE(2, _tmp_1);  // lowest=0 current=2 highest=2 i=1
             DISPATCH();
         }
 
         TARGET(END_FOR) {
+            PyObject *_tmp_1 = PEEK(2);
+            PyObject *_tmp_2 = PEEK(1);
             {
-                PyObject *value = PEEK(1);
+                PyObject *value = _tmp_2;
                 Py_DECREF(value);
-                STACK_SHRINK(1);
             }
             {
-                PyObject *value = PEEK(1);
+                PyObject *value = _tmp_1;
                 Py_DECREF(value);
-                STACK_SHRINK(1);
             }
+            STACK_SHRINK(2);
             DISPATCH();
         }
