@@ -177,8 +177,8 @@ class ForkServer(object):
                 finally:
                     os.close(alive_r)
                     os.close(authkey_r)
-                # Prevent access from processes not in our process tree that
-                # have the same shared key for this forkserver.
+                # Authenticate our control socket to prevent access from
+                # processes we have not shared this key with.
                 try:
                     self._forkserver_authkey = os.urandom(_authkey_len)
                     os.write(authkey_w, self._forkserver_authkey)
@@ -196,10 +196,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
          *, authkey_r=None):
     """Run forkserver."""
     if authkey_r is not None:
-        # If there is no authkey, the parent closes the pipe without writing
-        # anything resulting in an empty authkey of b'' here.
         authkey = os.read(authkey_r, _authkey_len)
-        assert len(authkey) == _authkey_len or not authkey
+        assert len(authkey) == _authkey_len, f'{len(authkey)} < {_authkey_len}'
         os.close(authkey_r)
     else:
         authkey = b''
