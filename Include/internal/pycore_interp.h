@@ -26,6 +26,7 @@ extern "C" {
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
+
 struct _pending_calls {
     PyThread_type_lock lock;
     /* Request for running pending calls. */
