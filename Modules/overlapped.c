@@ -912,8 +912,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
                 _PyBytes_Resize(&self->allocated_buffer, transferred))
                 return NULL;
 
-            Py_INCREF(self->allocated_buffer);
-            return self->allocated_buffer;
+            return Py_NewRef(self->allocated_buffer);
         case TYPE_READ_FROM:
             assert(PyBytes_CheckExact(self->read_from.allocated_buffer));
 
@@ -940,14 +939,12 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             }
 
             // first item: message
-            Py_INCREF(self->read_from.allocated_buffer);
             PyTuple_SET_ITEM(self->read_from.result, 0,
-                             self->read_from.allocated_buffer);
+                             Py_NewRef(self->read_from.allocated_buffer));
             // second item: address
             PyTuple_SET_ITEM(self->read_from.result, 1, addr);
 
-            Py_INCREF(self->read_from.result);
-            return self->read_from.result;
+            return Py_NewRef(self->read_from.result);
         case TYPE_READ_FROM_INTO:
             // unparse the address
             addr = unparse_address((SOCKADDR*)&self->read_from_into.address,
@@ -970,8 +967,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             // second item: address
             PyTuple_SET_ITEM(self->read_from_into.result, 1, addr);
 
-            Py_INCREF(self->read_from_into.result);
-            return self->read_from_into.result;
+            return Py_NewRef(self->read_from_into.result);
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
     }

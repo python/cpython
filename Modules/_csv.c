@@ -179,8 +179,7 @@ get_char_or_None(Py_UCS4 c)
 static PyObject *
 Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
 {
-    Py_XINCREF(self->lineterminator);
-    return self->lineterminator;
+    return Py_XNewRef(self->lineterminator);
 }
 
 static PyObject *
@@ -319,8 +318,7 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
         else {
             if (PyUnicode_READY(src) == -1)
                 return -1;
-            Py_INCREF(src);
-            Py_XSETREF(*target, src);
+            Py_XSETREF(*target, Py_NewRef(src));
         }
     }
     return 0;
@@ -517,8 +515,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto err;
     }
 
-    ret = (PyObject *)self;
-    Py_INCREF(self);
+    ret = Py_NewRef(self);
 err:
     Py_CLEAR(self);
     Py_CLEAR(dialect);

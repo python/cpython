@@ -39,13 +39,16 @@ class Node:
 
     @property
     def text(self) -> str:
+        return self.to_text()
+
+    def to_text(self, dedent: int = 0) -> str:
         context = self.context
         if not context:
             return ""
         tokens = context.owner.tokens
         begin = context.begin
         end = context.end
-        return lx.to_text(tokens[begin:end])
+        return lx.to_text(tokens[begin:end], dedent)
 
 
 @dataclass
@@ -54,11 +57,34 @@ class Block(Node):
 
 
 @dataclass
-class InstDef(Node):
+class InstHeader(Node):
     name: str
-    inputs: list[str] | None
-    outputs: list[str] | None
-    block: Block | None
+    inputs: list[str]
+    outputs: list[str]
+
+
+@dataclass
+class InstDef(Node):
+    header: InstHeader
+    block: Block
+
+    @property
+    def name(self):
+        return self.header.name
+
+    @property
+    def inputs(self):
+        return self.header.inputs
+
+    @property
+    def outputs(self):
+        return self.header.outputs
+
+
+@dataclass
+class Super(Node):
+    name: str
+    ops: list[str]
 
 
 @dataclass
@@ -73,30 +99,42 @@ class Parser(PLexer):
     def inst_def(self) -> InstDef | None:
         if header := self.inst_header():
             if block := self.block():
-                header.block = block
-                return header
+                return InstDef(header, block)
             raise self.make_syntax_error("Expected block")
         return None
 
     @contextual
-    def inst_header(self):
+    def inst_header(self) -> InstHeader | None:
         # inst(NAME) | inst(NAME, (inputs -- outputs))
         # TODO: Error out when there is something unexpected.
-        # TODO: Make INST a keyword in the lexer.
+        # TODO: Make INST a keyword in the lexer.``
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "inst":
             if (self.expect(lx.LPAREN)
                     and (tkn := self.expect(lx.IDENTIFIER))):
                 name = tkn.text
                 if self.expect(lx.COMMA):
                     inp, outp = self.stack_effect()
-                    if (self.expect(lx.RPAREN)
-                            and self.peek().kind == lx.LBRACE):
-                        return InstDef(name, inp, outp, [])
+                    if self.expect(lx.RPAREN):
+                        if ((tkn := self.peek())
+                                and tkn.kind == lx.LBRACE):
+                            self.check_overlaps(inp, outp)
+                            return InstHeader(name, inp, outp)
                 elif self.expect(lx.RPAREN):
-                    return InstDef(name, None, None, [])
+                    return InstHeader(name, [], [])
         return None
 
-    def stack_effect(self):
+    def check_overlaps(self, inp: list[str], outp: list[str]):
+        for i, name in enumerate(inp):
+            try:
+                j = outp.index(name)
+            except ValueError:
+                continue
+            else:
+                if i != j:
+                    raise self.make_syntax_error(
+                        f"Input {name!r} at pos {i} repeated in output at different pos {j}")
+
+    def stack_effect(self) -> tuple[list[str], list[str]]:
         # '(' [inputs] '--' [outputs] ')'
         if self.expect(lx.LPAREN):
             inp = self.inputs() or []
@@ -106,7 +144,7 @@ class Parser(PLexer):
                     return inp, outp
         raise self.make_syntax_error("Expected stack effect")
 
-    def inputs(self):
+    def inputs(self) -> list[str] | None:
         # input (, input)*
         here = self.getpos()
         if inp := self.input():
@@ -119,7 +157,7 @@ class Parser(PLexer):
         self.setpos(here)
         return None
 
-    def input(self):
+    def input(self) -> str | None:
         # IDENTIFIER
         if (tkn := self.expect(lx.IDENTIFIER)):
             if self.expect(lx.LBRACKET):
@@ -139,7 +177,7 @@ class Parser(PLexer):
             return "??"
         return None
 
-    def outputs(self):
+    def outputs(self) -> list[str] | None:
         # output (, output)*
         here = self.getpos()
         if outp := self.output():
@@ -152,24 +190,42 @@ class Parser(PLexer):
         self.setpos(here)
         return None
 
-    def output(self):
+    def output(self) -> str | None:
         return self.input()  # TODO: They're not quite the same.
 
     @contextual
+    def super_def(self) -> Super | None:
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "super":
+            if self.expect(lx.LPAREN):
+                if (tkn := self.expect(lx.IDENTIFIER)):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if ops := self.ops():
+                                res = Super(tkn.text, ops)
+                                return res
+
+    def ops(self) -> list[str] | None:
+        if tkn := self.expect(lx.IDENTIFIER):
+            ops = [tkn.text]
+            while self.expect(lx.PLUS):
+                if tkn := self.require(lx.IDENTIFIER):
+                    ops.append(tkn.text)
+            self.require(lx.SEMI)
+            return ops
+
+    @contextual
     def family_def(self) -> Family | None:
-        here = self.getpos()
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "family":
             if self.expect(lx.LPAREN):
                 if (tkn := self.expect(lx.IDENTIFIER)):
-                    name = tkn.text
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if members := self.members():
                                 if self.expect(lx.SEMI):
-                                    return Family(name, members)
+                                    return Family(tkn.text, members)
         return None
 
-    def members(self):
+    def members(self) -> list[str] | None:
         here = self.getpos()
         if tkn := self.expect(lx.IDENTIFIER):
             near = self.getpos()
@@ -186,8 +242,8 @@ class Parser(PLexer):
         tokens = self.c_blob()
         return Block(tokens)
 
-    def c_blob(self):
-        tokens = []
+    def c_blob(self) -> list[lx.Token]:
+        tokens: list[lx.Token] = []
         level = 0
         while tkn := self.next(raw=True):
             if tkn.kind in (lx.LBRACE, lx.LPAREN, lx.LBRACKET):
