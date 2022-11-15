@@ -210,6 +210,12 @@ class TestPredicates(IsTestBase):
 
             def fn3():
                 return _fn3()
+
+            # TODO: Move this to decorator function.
+            fn3.__code__ = fn3.__code__.replace(
+                co_flags=fn3.__code__.co_flags | inspect.CO_COROUTINE
+            )
+
             self.assertTrue(inspect.iscoroutinefunction(fn3))
 
         with self.subTest("Awaitable instance not recongnised."):
