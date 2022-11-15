@@ -1438,13 +1438,6 @@ pending_threadfunc(PyObject *self, PyObject *arg)
     Py_RETURN_TRUE;
 }
 
-/* This is here to provide a docstring for test_descr. */
-static PyObject *
-test_with_docstring(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    Py_RETURN_NONE;
-}
-
 /* Test PyOS_string_to_double. */
 static PyObject *
 test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored)) {
@@ -2748,62 +2741,6 @@ remove_mem_hooks(PyObject *self, PyObject *Py_UNUSED(ignored))
     fm_remove_hooks();
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(docstring_empty,
-""
-);
-
-PyDoc_STRVAR(docstring_no_signature,
-"This docstring has no signature."
-);
-
-PyDoc_STRVAR(docstring_with_invalid_signature,
-"docstring_with_invalid_signature($module, /, boo)\n"
-"\n"
-"This docstring has an invalid signature."
-);
-
-PyDoc_STRVAR(docstring_with_invalid_signature2,
-"docstring_with_invalid_signature2($module, /, boo)\n"
-"\n"
-"--\n"
-"\n"
-"This docstring also has an invalid signature."
-);
-
-PyDoc_STRVAR(docstring_with_signature,
-"docstring_with_signature($module, /, sig)\n"
-"--\n"
-"\n"
-"This docstring has a valid signature."
-);
-
-PyDoc_STRVAR(docstring_with_signature_but_no_doc,
-"docstring_with_signature_but_no_doc($module, /, sig)\n"
-"--\n"
-"\n"
-);
-
-PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
-"docstring_with_signature_and_extra_newlines($module, /, parameter)\n"
-"--\n"
-"\n"
-"\n"
-"This docstring has a valid signature and some extra newlines."
-);
-
-PyDoc_STRVAR(docstring_with_signature_with_defaults,
-"docstring_with_signature_with_defaults(module, s='avocado',\n"
-"        b=b'bytes', d=3.14, i=35, n=None, t=True, f=False,\n"
-"        local=the_number_three, sys=sys.maxsize,\n"
-"        exp=sys.maxsize - 1)\n"
-"--\n"
-"\n"
-"\n"
-"\n"
-"This docstring has a valid signature with parameters,\n"
-"and the parameters take defaults of varying types."
-);
 
 typedef struct {
     PyThread_type_lock start_event;
@@ -4758,8 +4695,6 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
-    {"test_with_docstring",     test_with_docstring,             METH_NOARGS,
-     PyDoc_STR("This is a pretty normal docstring.")},
     {"test_string_to_double",   test_string_to_double,           METH_NOARGS},
     {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
     {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
@@ -4806,32 +4741,6 @@ static PyMethodDef TestMethods[] = {
      PyDoc_STR("set_nomemory(start:int, stop:int = 0)")},
     {"remove_mem_hooks",        remove_mem_hooks,                METH_NOARGS,
      PyDoc_STR("Remove memory hooks.")},
-    {"no_docstring",
-        (PyCFunction)test_with_docstring, METH_NOARGS},
-    {"docstring_empty",
-        (PyCFunction)test_with_docstring, METH_NOARGS,
-        docstring_empty},
-    {"docstring_no_signature",
-        (PyCFunction)test_with_docstring, METH_NOARGS,
-        docstring_no_signature},
-    {"docstring_with_invalid_signature",
-        (PyCFunction)test_with_docstring, METH_NOARGS,
-        docstring_with_invalid_signature},
-    {"docstring_with_invalid_signature2",
-        (PyCFunction)test_with_docstring, METH_NOARGS,
-        docstring_with_invalid_signature2},
-    {"docstring_with_signature",
-        (PyCFunction)test_with_docstring, METH_NOARGS,
-        docstring_with_signature},
-    {"docstring_with_signature_but_no_doc",
-        (PyCFunction)test_with_docstring, METH_NOARGS,
-        docstring_with_signature_but_no_doc},
-    {"docstring_with_signature_and_extra_newlines",
-        (PyCFunction)test_with_docstring, METH_NOARGS,
-        docstring_with_signature_and_extra_newlines},
-    {"docstring_with_signature_with_defaults",
-        (PyCFunction)test_with_docstring, METH_NOARGS,
-        docstring_with_signature_with_defaults},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
     {"pymarshal_write_long_to_file",
@@ -5758,6 +5667,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_DateTime(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Docstring(m) < 0) {
         return NULL;
     }
 
