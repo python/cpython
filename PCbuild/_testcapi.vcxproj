@@ -101,6 +101,7 @@
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testcapi\pytime.c" />
     <ClCompile Include="..\Modules\_testcapi\datetime.c" />
+    <ClCompile Include="..\Modules\_testcapi\structmember.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
