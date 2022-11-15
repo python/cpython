@@ -22,8 +22,9 @@ and the C layer.
 
 .. note::
 
-   Native mode is the default, packing or unpacking data based on the
-   platform and compiler on which the Python interpreter was built.
+   When no prefix character is given, native mode is the default. It
+   packs or unpacks data based on the platform and compiler on which
+   the Python interpreter was built.
    The result of packing a given C struct includes pad bytes which
    maintain proper alignment for the C types involved; similarly,
    alignment is taken into account when unpacking.  In contrast, when
@@ -125,8 +126,8 @@ rules used by the C compiler).
 This behavior is chosen so
 that the bytes of a packed struct correspond exactly to the memory layout
 of the corresponding C struct.
-Whether you use native byte ordering
-and padding or standard formats depends on your application.
+Whether to use native byte ordering
+and padding or standard formats depends on the application.
 
 .. index::
    single: @ (at); in struct format strings
@@ -157,7 +158,7 @@ If the first character is not one of these, ``'@'`` is assumed.
 
 Native byte order is big-endian or little-endian, depending on the
 host system. For example, Intel x86, AMD64 (x86-64), and Apple M1 are
-little-endian; IBM z and most legacy architectures are big-endian.
+little-endian; IBM z and many legacy architectures are big-endian.
 Use :data:`sys.byteorder` to check the endianness of your system.
 
 Native size and alignment are determined using the C compiler's
@@ -301,7 +302,7 @@ Notes:
    format <half precision format_>`_ for more information.
 
 (7)
-   For padding, ``'x'`` inserts null bytes.
+   For padding, ``'x'`` inserts one NUL byte.
 
 (8)
    The ``'p'`` format character encodes a "Pascal string", meaning a short
@@ -401,8 +402,10 @@ the result in a named tuple::
     >>> Student._make(unpack('<10sHHb', record))
     Student(name=b'raymond   ', serialnum=4658, school=264, gradelevel=8)
 
-The ordering of format characters may have an impact on size since the
-padding needed to satisfy alignment requirements is different. Note in
+The ordering of format characters may have an impact on size in native
+mode since padding is implicit. In standard mode, the user is
+responsible for inserting any desired padding.
+Note in
 the first ``pack`` call below that three NUL bytes were added after the
 packed ``'#'`` to align the following integer on a four-byte boundary.
 In this example, the output was produced on a little endian machine::
@@ -488,12 +491,13 @@ better to be explicit and use the ``'@'`` prefix character.
 Standard Formats
 ^^^^^^^^^^^^^^^^
 
-When exchanging data beyond your process such as netowkring or data,
+When exchanging data beyond your process such as networking or storage,
 be precise.  Specify the exact byte order, size, and alignment.  Do
 not assume they match the native order of a particular machine.
 For example, network byte order is big-endian, while many popular CPUs
-are little-endian.  In those situations, the user must define this
-explicitly.  The first character should typically be ``<`` or ``>``
+are little-endian.  By defining this explicitly, the user need not
+care about the specifics of the platform their code is running on.
+The first character should typically be ``<`` or ``>``
 (or sometimes ``!`` to be explicit that the format will use network
 byte order).  Padding is the responsibility of the programmer.  The
 zero-repeat format character won't work.  Instead, the user must
@@ -515,9 +519,9 @@ examples from the previous section, we have::
     >>> pack('@llh0l', 1, 2, 3) == pack('<qqh6x', 1, 2, 3)
     True
 
-The last expression isn't guaranteed to be ``True`` on different
-machines.  On an example 32-bit machine the ``'l'`` and ``'q'`` format
-characters happen not to be the same size::
+The above results (executed on a 64-bit machine) aren't guaranteed to
+match when executed on different machines.  For example, the examples
+below were executed on a 32-bit machine::
 
     >>> calcsize('<qqh6x')
     24
