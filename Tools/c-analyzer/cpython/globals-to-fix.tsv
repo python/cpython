@@ -336,7 +336,6 @@ Python/perf_trampoline.c	-	perf_status	-
 Python/perf_trampoline.c	-	extra_code_index	-
 Python/perf_trampoline.c	-	code_arena	-
 Python/perf_trampoline.c	-	trampoline_api	-
-Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
 Python/thread_pthread_stubs.h	-	py_tls_entries	-
 
 

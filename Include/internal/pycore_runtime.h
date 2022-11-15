@@ -95,6 +95,11 @@ typedef struct pyruntimestate {
     struct _pymem_allocators allocators;
     struct _obmalloc_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
+    struct {
+        /* True if the main interpreter thread exited due to an unhandled
+         * KeyboardInterrupt exception, suggesting the user pressed ^C. */
+        int unhandled_keyboard_interrupt;
+    } signals;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
