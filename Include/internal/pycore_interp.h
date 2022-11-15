@@ -28,6 +28,7 @@ extern "C" {
 
 
 struct _pending_calls {
+    int busy;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
     _Py_atomic_int calls_to_do;
