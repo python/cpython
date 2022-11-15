@@ -195,6 +195,11 @@ class AuditTest(unittest.TestCase):
             ('syslog.closelog', '', '')]
         )
 
+    def test_not_in_gc(self):
+        returncode, _, stderr = self.run_python("test_not_in_gc")
+        if returncode:
+            self.fail(stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
