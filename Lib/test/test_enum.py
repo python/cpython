@@ -1321,6 +1321,21 @@ class TestSpecial(unittest.TestCase):
             self.assertIn(e, MinorEnum)
             self.assertIs(type(e), MinorEnum)
 
+    def test_programmatic_function_is_value_call(self):
+        class TwoPart(Enum):
+            ONE = 1, 1.0
+            TWO = 2, 2.0
+            THREE = 3, 3.0
+        self.assertRaisesRegex(ValueError, '1 is not a valid .*TwoPart', TwoPart, 1)
+        self.assertIs(TwoPart((1, 1.0)), TwoPart.ONE)
+        self.assertIs(TwoPart(1, 1.0), TwoPart.ONE)
+        class ThreePart(Enum):
+            ONE = 1, 1.0, 'one'
+            TWO = 2, 2.0, 'two'
+            THREE = 3, 3.0, 'three'
+        self.assertIs(ThreePart((3, 3.0, 'three')), ThreePart.THREE)
+        self.assertIs(ThreePart(3, 3.0, 'three'), ThreePart.THREE)
+
     def test_intenum_from_bytes(self):
         self.assertIs(IntStooges.from_bytes(b'\x00\x03', 'big'), IntStooges.MOE)
         with self.assertRaises(ValueError):
@@ -1463,7 +1478,7 @@ class TestSpecial(unittest.TestCase):
             class EvenMoreColor(Color, IntEnum):
                 chartruese = 7
         #
-        with self.assertRaisesRegex(TypeError, "<enum .Foo.> cannot extend <enum .Color.>"):
+        with self.assertRaisesRegex(ValueError, "\(.Foo., \(.pink., .black.\)\) is not a valid .*Color"):
             Color('Foo', ('pink', 'black'))
 
     def test_exclude_methods(self):
@@ -4181,7 +4196,7 @@ expected_help_output_with_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
+ |  Color(value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None)
  |
  |  Method resolution order:
  |      Color
@@ -4237,7 +4252,7 @@ expected_help_output_without_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1)
+ |  Color(value, names=None, *values, module=None, qualname=None, type=None, start=1)
  |
  |  Method resolution order:
  |      Color

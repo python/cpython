@@ -4,22 +4,111 @@ filename	funcname	name	reason
 ##################################
 # mutable but known to be safe
 
-Python/import.c	-	inittab_copy	-
-Python/import.c	-	PyImport_Inittab	-
 Python/pylifecycle.c	-	_PyRuntime	-
 
 # All uses of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.
 
 #-----------------------
-# others
+# legacy config flags
 
-# XXX The analyzer should have ignored these.
+Python/initconfig.c	-	Py_UTF8Mode	-
+Python/initconfig.c	-	Py_DebugFlag	-
+Python/initconfig.c	-	Py_VerboseFlag	-
+Python/initconfig.c	-	Py_QuietFlag	-
+Python/initconfig.c	-	Py_InteractiveFlag	-
+Python/initconfig.c	-	Py_InspectFlag	-
+Python/initconfig.c	-	Py_OptimizeFlag	-
+Python/initconfig.c	-	Py_NoSiteFlag	-
+Python/initconfig.c	-	Py_BytesWarningFlag	-
+Python/initconfig.c	-	Py_FrozenFlag	-
+Python/initconfig.c	-	Py_IgnoreEnvironmentFlag	-
+Python/initconfig.c	-	Py_DontWriteBytecodeFlag	-
+Python/initconfig.c	-	Py_NoUserSiteDirectory	-
+Python/initconfig.c	-	Py_UnbufferedStdioFlag	-
+Python/initconfig.c	-	Py_HashRandomizationFlag	-
+Python/initconfig.c	-	Py_IsolatedFlag	-
+Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
+Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
+
+#-----------------------
+# effectively const, initialized before init
+
+Python/frozen.c	-	PyImport_FrozenModules	-
+Python/import.c	-	inittab_copy	-
+Python/import.c	-	PyImport_Inittab	-
+
+#-----------------------
+# effectively const, initialized before/during init
+
+Modules/getbuildinfo.c	-	buildinfo	-
+Modules/getbuildinfo.c	-	initialized	-
+Python/getversion.c	-	initialized	-
+Python/getversion.c	-	version	-
+
+#-----------------------
+# effectively const, initialized during init
+
+Objects/floatobject.c	-	double_format	-
+Objects/floatobject.c	-	float_format	-
+Objects/unicodeobject.c	-	bloom_linebreak	-
+Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
+Python/fileutils.c	-	_Py_open_cloexec_works	-
+Python/fileutils.c	-	force_ascii	-
+Python/fileutils.c	set_inheritable	ioctl_works	-
+Python/import.c	import_find_and_load	header	-
+Python/initconfig.c	-	orig_argv	-
+Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
+Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
+Python/pyhash.c	-	_Py_HashSecret	-
+Python/pylifecycle.c	-	runtime_initialized	-
+Python/sysmodule.c	-	_preinit_warnoptions	-
+Python/sysmodule.c	-	_preinit_xoptions	-
+Python/thread.c	-	initialized	-
+Python/thread_pthread.h	-	condattr_monotonic	-
+Python/thread_pthread.h	init_condattr	ca	-
+
+# set by embedders during init
+Python/initconfig.c	-	_Py_StandardStreamEncoding	-
+Python/initconfig.c	-	_Py_StandardStreamErrors	-
+
+#-----------------------
+# effectively const but initialized lazily
+# XXX Move them to _PyRuntimeState?
+
+# idempotent
+Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
+Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
+Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
+Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
+
+#-----------------------
+# used only in the main thread
+
+# REPL
+Parser/myreadline.c	-	_PyOS_ReadlineLock	-
+Parser/myreadline.c	-	_PyOS_ReadlineTState	-
+Parser/myreadline.c	-	PyOS_InputHook	-
+Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
+
+# handling C argv
+Python/getopt.c	-	_PyOS_optarg	-
+Python/getopt.c	-	_PyOS_opterr	-
+Python/getopt.c	-	_PyOS_optind	-
+Python/getopt.c	-	opt_ptr	-
+Python/pathconfig.c	-	_Py_path_config	-
+
+
+##################################
+# The analyzer should have ignored these.
+# XXX Fix the analyzer.
+
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
 
-##################################
 # forward/extern references
-# XXX The analyzer should have ignored these.
 
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
@@ -474,7 +563,6 @@ Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	usedpools	-
-Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
 Objects/unicodeobject.c	-	stripfuncnames	-
@@ -499,10 +587,15 @@ Python/frozen.c	-	aliases	-
 Python/frozen.c	-	bootstrap_modules	-
 Python/frozen.c	-	stdlib_modules	-
 Python/frozen.c	-	test_modules	-
+Python/frozen.c	-	_PyImport_FrozenAliases	-
+Python/frozen.c	-	_PyImport_FrozenBootstrap	-
+Python/frozen.c	-	_PyImport_FrozenStdlib	-
+Python/frozen.c	-	_PyImport_FrozenTest	-
 Python/getopt.c	-	longopts	-
 Python/import.c	-	_PyImport_Inittab	-
 Python/import.c	-	_PySys_ImplCacheTag	-
 Python/opcode_targets.h	-	opcode_targets	-
+Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Python/pyhash.c	-	PyHash_Func	-
 Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
 Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
@@ -512,4 +605,6 @@ Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compare_masks	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
+Python/sysmodule.c	-	_PySys_ImplCacheTag	-
+Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
