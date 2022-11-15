@@ -239,6 +239,7 @@ inserted data and retrieved values from it in multiple ways.
       * :ref:`sqlite3-adapters`
       * :ref:`sqlite3-converters`
       * :ref:`sqlite3-connection-context-manager`
+      * :ref:`sqlite3-row-factory-how-to`
 
    * :ref:`sqlite3-explanation` for in-depth background on transaction control.
 
