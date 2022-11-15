@@ -114,7 +114,6 @@ Python/import.c	-	PyImport_Inittab	-
 
 # initialized during init
 Objects/unicodeobject.c	-	bloom_linebreak	-
-Python/import.c	import_find_and_load	header	-
 
 # used temporarily during init
 Python/sysmodule.c	-	_preinit_warnoptions	-
