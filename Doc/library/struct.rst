@@ -420,7 +420,7 @@ In this example, the output was produced on a little endian machine::
     5
 
 The following format ``'llh0l'`` results in two pad bytes being added
-at the end, assuming longs are aligned on 4-byte boundaries::
+at the end, assuming the platform's longs are aligned on 4-byte boundaries::
 
     >>> pack('@llh0l', 1, 2, 3)
     b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x03\x00\x00'
