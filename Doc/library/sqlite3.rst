@@ -1320,27 +1320,11 @@ Connection objects
       a :class:`Cursor` object and the raw row results as a :class:`tuple`,
       and returns a custom object representing an SQLite row.
 
-      Example:
-
-      .. doctest::
-
-         >>> def dict_factory(cursor, row):
-         ...     col_names = [col[0] for col in cursor.description]
-         ...     return {key: value for key, value in zip(col_names, row)}
-         >>> con = sqlite3.connect(":memory:")
-         >>> con.row_factory = dict_factory
-         >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
-         ...     print(row)
-         {'a': 1, 'b': 2}
-
       If returning a tuple doesn't suffice and you want name-based access to
       columns, you should consider setting :attr:`row_factory` to the
-      highly optimized :class:`sqlite3.Row` type. :class:`Row` provides both
-      index-based and case-insensitive name-based access to columns with almost no
-      memory overhead. It will probably be better than your own custom
-      dictionary-based approach or even a db_row based solution.
+      highly optimized :class:`sqlite3.Row`
 
-      .. XXX what's a db_row-based solution?
+      See :ref:`sqlite3-row-factory-how-to` for more details.
 
    .. attribute:: text_factory
 
@@ -1611,6 +1595,8 @@ Row objects
 
    Two row objects compare equal if have equal columns and equal members.
 
+   See :ref:`sqlite3-row-factory-how-to` for more details.
+
    .. method:: keys
 
       Return a :class:`list` of column names as :class:`strings <str>`.
@@ -1619,21 +1605,6 @@ Row objects
 
    .. versionchanged:: 3.5
       Added support of slicing.
-
-   Example:
-
-   .. doctest::
-
-      >>> con = sqlite3.connect(":memory:")
-      >>> con.row_factory = sqlite3.Row
-      >>> res = con.execute("SELECT 'Earth' AS name, 6378 AS radius")
-      >>> row = res.fetchone()
-      >>> row.keys()
-      ['name', 'radius']
-      >>> row[0], row["name"]  # Access by index and name.
-      ('Earth', 'Earth')
-      >>> row["RADIUS"]  # Column names are case-insensitive.
-      6378
 
 
 .. _sqlite3-blob-objects:
@@ -2356,6 +2327,84 @@ More information about this feature, including a list of parameters,
 can be found in the `SQLite URI documentation`_.
 
 .. _SQLite URI documentation: https://www.sqlite.org/uri.html
+
+
+.. _sqlite3-row-factory-how-to:
+
+How to work with row factories
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, :mod:`!sqlite3` represent fetched rows as :class:`tuples <tuple>`.
+If a :class:`!tuple` does not suit your needs,
+use the built-in :class:`Row` type or a custom :attr:`~Connection.row_factory`.
+The former provides both indexed and case-insensitive named access to columns,
+with low memory overhead and minimal performance impact.
+Example use:
+
+.. doctest::
+
+   >>> con = sqlite3.connect(":memory:")
+   >>> con.row_factory = sqlite3.Row
+   >>> res = con.execute("SELECT 'Earth' AS name, 6378 AS radius")
+   >>> row = res.fetchone()
+   >>> row.keys()
+   ['name', 'radius']
+   >>> row[0], row["name"]  # Access by index and name.
+   ('Earth', 'Earth')
+   >>> row["RADIUS"]  # Column names are case-insensitive.
+   6378
+
+If you need more flexibility, you can design your own row factory.
+Here's an example of a :class:`dict` row factory:
+
+.. doctest::
+
+   >>> def dict_factory(cursor, row):
+   ...     col_names = [col[0] for col in cursor.description]
+   ...     return {key: value for key, value in zip(col_names, row)}
+
+   >>> con = sqlite3.connect(":memory:")
+   >>> con.row_factory = dict_factory
+   >>> for row in con.execute("SELECT 1 AS a, 2 AS b"):
+   ...     print(row)
+   {'a': 1, 'b': 2}
+
+Here's an example of a optimised :class:`~collections.namedtuple` factory:
+
+.. testcode::
+
+   from collections import namedtuple
+   from functools import lru_cache
+
+   def _fields(cursor):
+        return [col[0] for col in cursor.description]
+
+   @lru_cache
+   def _make_cls(fields):
+       return namedtuple("Row", fields)
+
+   def NamedTupleFactory(cursor, row):
+       cls = _make_cls(_fields(cursor))
+       return cls._make(row)
+
+Example use:
+
+.. doctest::
+
+   >>> con = sqlite3.connect(":memory:")
+   >>> con.row_factory = NamedTupleRow
+   >>> cur = con.execute("SELECT 1 AS a, 2 AS b")
+   >>> row = cur.fetchone()
+   >>> row
+   Row(a='1', b='2')
+   >>> row[0]  # Indexed access.
+   1
+   >>> row.b   # Attribute access.
+   2
+
+With some adjustments, the above recipe can be adapted to use a
+:class:`~dataclasses.dataclass`, or any other custom class,
+instead of a :class:`~collections.namedtuple`.
 
 
 .. _sqlite3-explanation:
