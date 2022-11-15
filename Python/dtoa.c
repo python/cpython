@@ -119,6 +119,7 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
+#include "pycore_runtime.h"       // _PyRuntime
 #include <stdlib.h>               // exit()
 
 /* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile
@@ -156,7 +157,7 @@
 #endif
 
 
-typedef uint32_t ULong;
+// ULong is defined in pycore_dtoa.h.
 typedef int32_t Long;
 typedef uint64_t ULLong;
 
@@ -170,12 +171,6 @@ typedef uint64_t ULLong;
 #ifdef DEBUG
 #define Bug(x) {fprintf(stderr, "%s\n", x); exit(1);}
 #endif
-
-#ifndef PRIVATE_MEM
-#define PRIVATE_MEM 2304
-#endif
-#define PRIVATE_mem ((PRIVATE_MEM+sizeof(double)-1)/sizeof(double))
-static double private_mem[PRIVATE_mem], *pmem_next = private_mem;
 
 #ifdef __cplusplus
 extern "C" {
@@ -298,8 +293,6 @@ BCinfo {
 
 #define FFFFFFFF 0xffffffffUL
 
-#define Kmax 7
-
 /* struct Bigint is used to represent arbitrary-precision integers.  These
    integers are stored in sign-magnitude format, with the magnitude stored as
    an array of base 2**32 digits.  Bigints are always normalized: if x is a
@@ -322,13 +315,7 @@ BCinfo {
        significant (x[0]) to most significant (x[wds-1]).
 */
 
-struct
-Bigint {
-    struct Bigint *next;
-    int k, maxwds, sign, wds;
-    ULong x[1];
-};
-
+// struct Bigint is defined in pycore_dtoa.h.
 typedef struct Bigint Bigint;
 
 #ifndef Py_USING_MEMORY_DEBUGGER
@@ -352,7 +339,9 @@ typedef struct Bigint Bigint;
    Bfree to PyMem_Free.  Investigate whether this has any significant
    performance on impact. */
 
-static Bigint *freelist[Kmax+1];
+#define freelist _PyRuntime.dtoa.freelist
+#define private_mem _PyRuntime.dtoa.preallocated
+#define pmem_next _PyRuntime.dtoa.preallocated_next
 
 /* Allocate space for a Bigint with up to 1<<k digits */
 
@@ -363,13 +352,15 @@ Balloc(int k)
     Bigint *rv;
     unsigned int len;
 
-    if (k <= Kmax && (rv = freelist[k]))
+    if (k <= Bigint_Kmax && (rv = freelist[k]))
         freelist[k] = rv->next;
     else {
         x = 1 << k;
         len = (sizeof(Bigint) + (x-1)*sizeof(ULong) + sizeof(double) - 1)
             /sizeof(double);
-        if (k <= Kmax && pmem_next - private_mem + len <= (Py_ssize_t)PRIVATE_mem) {
+        if (k <= Bigint_Kmax &&
+            pmem_next - private_mem + len <= (Py_ssize_t)Bigint_PREALLOC_SIZE
+        ) {
             rv = (Bigint*)pmem_next;
             pmem_next += len;
         }
@@ -391,7 +382,7 @@ static void
 Bfree(Bigint *v)
 {
     if (v) {
-        if (v->k > Kmax)
+        if (v->k > Bigint_Kmax)
             FREE((void*)v);
         else {
             v->next = freelist[v->k];
@@ -399,6 +390,10 @@ Bfree(Bigint *v)
         }
     }
 }
+
+#undef pmem_next
+#undef private_mem
+#undef freelist
 
 #else
 

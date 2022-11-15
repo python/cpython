@@ -36,6 +36,10 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        .tracemalloc = { \
+            .config = _PyTraceMalloc_Config_INIT, \
+        }, \
+        .dtoa = _dtoa_runtime_state_INIT(runtime), \
         .types = { \
             .next_version_tag = 1, \
         }, \
