@@ -192,9 +192,10 @@ class _BasePurePathTest(object):
             inner = r[len(clsname) + 1 : -1]
             self.assertEqual(eval(inner), p.as_posix())
 
-            if self.cls.__name__ == 'cls':
-                continue
-
+    def test_repr_roundtrips(self):
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            p = self.cls(pathstr)
+            r = repr(p)
             # The repr() roundtrips.
             q = eval(r, pathlib.__dict__)
             self.assertIs(q.__class__, p.__class__)
@@ -3054,10 +3055,16 @@ class PurePathSubclassTest(_BasePurePathTest, unittest.TestCase):
     class cls(pathlib.PurePath):
         pass
 
+    # repr() roundtripping is not supported in custom subclass
+    test_repr_roundtrips = None
+
 
 class PathSubclassTest(_BasePathTest, unittest.TestCase):
     class cls(pathlib.Path):
         pass
+
+    # repr() roundtripping is not supported in custom subclass
+    test_repr_roundtrips = None
 
 
 class CompatiblePathTest(unittest.TestCase):
