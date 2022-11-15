@@ -2393,7 +2393,7 @@ Example use:
 .. doctest::
 
    >>> con = sqlite3.connect(":memory:")
-   >>> con.row_factory = NamedTupleRow
+   >>> con.row_factory = NamedTupleFactory
    >>> cur = con.execute("SELECT 1 AS a, 2 AS b")
    >>> row = cur.fetchone()
    >>> row
