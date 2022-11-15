@@ -1829,8 +1829,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
         Py_DECREF(iter);
         return NULL;
     }
-    Py_INCREF(self);
-    iter->so = self;
+    iter->so = (PyStructObject*)Py_NewRef(self);
     iter->index = 0;
     return (PyObject *)iter;
 }
@@ -2178,8 +2177,7 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
 
     s_object = PyDict_GetItemWithError(state->cache, fmt);
     if (s_object != NULL) {
-        Py_INCREF(s_object);
-        *ptr = (PyStructObject *)s_object;
+        *ptr = (PyStructObject *)Py_NewRef(s_object);
         return Py_CLEANUP_SUPPORTED;
     }
     else if (PyErr_Occurred()) {
