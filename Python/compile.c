@@ -8023,7 +8023,7 @@ assemble_jump_offsets(basicblock *entryblock)
 }
 
 
-// helper functions for add_checks_for_loads_of_unknown_variables
+// helper functions for add_local_null_checks
 static void
 mark_instruction_unsafe(struct instr *instr)
 {
@@ -8164,8 +8164,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
 }
 
 static int
-add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
-                                                struct compiler *c)
+add_local_null_checks(basicblock *entryblock, struct compiler *c)
 {
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     if (nlocals == 0) {
@@ -8947,7 +8946,7 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
-    if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
+    if (add_local_null_checks(g->g_entryblock, c) < 0) {
         goto error;
     }
     if (expand_del_noerror(g->g_entryblock, none_oparg)) {
