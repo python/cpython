@@ -803,7 +803,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             del x
         self.assertSequenceInBytecode(f,
             ("CALL", 1),
-            ("POP_TOP",)
+            ("POP_TOP",),
             ("LOAD_FAST_CHECK", "x"),
             ("POP_TOP",),
             ("DELETE_FAST", "x"),

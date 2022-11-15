@@ -8024,6 +8024,43 @@ assemble_jump_offsets(basicblock *entryblock)
 
 
 // helper functions for add_checks_for_loads_of_unknown_variables
+static void
+mark_instruction_unsafe(struct instr *instr)
+{
+    switch (instr->i_opcode) {
+        case DELETE_FAST:
+            instr->i_opcode = DELETE_FAST_CHECK;
+            break;
+        case DELETE_FAST_NOERROR:
+            instr->i_opcode = DELETE_FAST_NOERROR_CHECK;
+            break;
+        case LOAD_FAST:
+            instr->i_opcode = LOAD_FAST_CHECK;
+            break;
+    }
+}
+
+static int
+opcode_safety_change(int opcode)
+{
+    switch (opcode) {
+        case DELETE_FAST:
+        case DELETE_FAST_NOERROR:
+        case DELETE_FAST_CHECK:
+        case DELETE_FAST_NOERROR_CHECK:
+            // Unsafe after this.
+            return -1;
+        case LOAD_FAST:
+        case LOAD_FAST_CHECK:
+        case STORE_FAST:
+            // Safe after this.
+            return +1;
+        default:
+            // No safety change.
+            return 0;
+    }
+}
+
 static inline void
 maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 {
@@ -8059,26 +8096,16 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
         }
         assert(instr->i_oparg >= 0);
         uint64_t bit = (uint64_t)1 << instr->i_oparg;
-        switch (instr->i_opcode) {
-            case DELETE_FAST_NOERROR:
-                if (unsafe_mask & bit) {
-                    instr->i_opcode = DELETE_FAST_NOERROR_CHECK;
-                }
-                /* fallthrough */
-            case DELETE_FAST_NOERROR_CHECK:
-            case DELETE_FAST:
-                // The local is unsafe after these.
+        if (unsafe_mask & bit) {
+            mark_instruction_unsafe(instr);
+        }
+        switch (opcode_safety_change(instr->i_opcode)) {
+            case -1:
+                // Now potentially uninitialized.
                 unsafe_mask |= bit;
                 break;
-
-            case LOAD_FAST:
-                if (unsafe_mask & bit) {
-                    instr->i_opcode = LOAD_FAST_CHECK;
-                }
-                /* fallthrough */
-            case LOAD_FAST_CHECK:
-            case STORE_FAST:
-                // The local is certainly defined after these.
+            case +1:
+                // Now certainly initialized.
                 unsafe_mask &= ~bit;
                 break;
         }
@@ -8103,7 +8130,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
         return -1;
     }
     Py_ssize_t blocknum = 0;
-    // state[i - 64] == blocknum if local i is guaranteed to
+    // state[j - 64] == blocknum if local j is guaranteed to
     // be initialized, i.e., if it has had a previous LOAD_FAST or
     // STORE_FAST within that basicblock (not followed by DELETE_FAST).
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -8117,30 +8144,18 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
                 continue;
             }
             assert(arg >= 0);
-            switch (instr->i_opcode) {
-                case DELETE_FAST_NOERROR:
-                    if (states[arg - 64] != blocknum) {
-                        instr->i_opcode = DELETE_FAST_NOERROR_CHECK;
-                    }
-                    /* fallthrough */
-                case DELETE_FAST:
-                    // The local is unsafe after these.
+            if (states[arg - 64] != blocknum) {
+                mark_instruction_unsafe(instr);
+            }
+            switch (opcode_safety_change(instr->i_opcode)) {
+                case -1:
+                    // Now potentially uninitialized.
                     states[arg - 64] = blocknum - 1;
                     break;
-
-                case LOAD_FAST:
-                    if (states[arg - 64] != blocknum) {
-                        instr->i_opcode = LOAD_FAST_CHECK;
-                    }
-                    /* fallthrough */
-                case STORE_FAST:
-                    // The local is certainly defined after these.
+                case +1:
+                    // Now certainly initialized.
                     states[arg - 64] = blocknum;
                     break;
-
-                case DELETE_FAST_NOERROR_CHECK:
-                case LOAD_FAST_CHECK:
-                    Py_UNREACHABLE();
             }
         }
     }
