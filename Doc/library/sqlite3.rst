@@ -2397,7 +2397,7 @@ Example use:
    >>> cur = con.execute("SELECT 1 AS a, 2 AS b")
    >>> row = cur.fetchone()
    >>> row
-   Row(a='1', b='2')
+   Row(a=1, b=2)
    >>> row[0]  # Indexed access.
    1
    >>> row.b   # Attribute access.
