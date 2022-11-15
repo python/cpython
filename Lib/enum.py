@@ -692,13 +692,15 @@ class EnumType(type):
         """
         return True
 
-    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None):
+    def __call__(cls, value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None):
         """
         Either returns an existing member, or creates a new enum class.
 
         This method is used both when an enum class is given a value to match
         to an enumeration member (i.e. Color(3)) and for the functional API
         (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
+
+        The value lookup branch is chosen if the enum is final.
 
         When used for the functional API:
 
@@ -717,12 +719,15 @@ class EnumType(type):
 
         `type`, if set, will be mixed in as the first base class.
         """
-        if names is None:  # simple value lookup
+        if cls._member_map_:
+            # simple value lookup if members exist
+            if names:
+                value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
         return cls._create_(
-                value,
-                names,
+                class_name=value,
+                names=names,
                 module=module,
                 qualname=qualname,
                 type=type,
