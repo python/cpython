@@ -8144,7 +8144,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
                 continue;
             }
             assert(arg >= 0);
-            if (states[arg - 64] != blocknum) {
+            if (arg < nlocals && states[arg - 64] != blocknum) {
                 mark_instruction_unsafe(instr);
             }
             switch (opcode_safety_change(instr->i_opcode)) {

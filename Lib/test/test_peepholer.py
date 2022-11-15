@@ -828,6 +828,8 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             while True:
                 print(a00, a01, a62, a63)
                 print(a64, a65, a78, a79)
+                # large unrelated opargs caused overflows in one version
+                z, *z, z = z
 
         for i in 0, 1, 62, 63:
             # First 64 locals: analyze completely
