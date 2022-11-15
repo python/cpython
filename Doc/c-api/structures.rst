@@ -547,12 +547,12 @@ Macro name                       C type                        Python type
 .. c:macro:: Py_T_OBJECT_EX      :c:expr:`PyObject *`          :py:class:`object` (D)
 ================================ ============================= ======================
 
-   (*): String of length 1. Only ASCII is accepted.
-
-   (**): Zero-terminated, UTF8-encoded C string.
+   (*): Zero-terminated, UTF8-encoded C string.
    With :c:macro:`!Py_T_STRING` the C representation is a pointer;
    with :c:macro:`!Py_T_STRING_INLINE` the string is stored directly
    in the structure.
+
+   (**): String of length 1. Only ASCII is accepted.
 
    (RO): Implies :c:macro:`Py_READONLY`.
 
