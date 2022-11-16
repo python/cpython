@@ -298,14 +298,6 @@ Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
-#-----------------------
-# other
-
-# initialized once
-Python/context.c	-	_token_missing	-
-Python/hamt.c	-	_empty_bitmap_node	-
-Python/hamt.c	-	_empty_hamt	-
-
 
 ##################################
 # global non-objects to fix in core code
