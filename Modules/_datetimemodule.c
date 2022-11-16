@@ -6247,13 +6247,10 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
     else {
         /* Result is already aware - just replace tzinfo. */
-        temp = result->tzinfo;
-        result->tzinfo = Py_NewRef(PyDateTime_TimeZone_UTC);
-        Py_DECREF(temp);
+        Py_SETREF(result->tzinfo, Py_NewRef(PyDateTime_TimeZone_UTC));
     }
 
     /* Attach new tzinfo and let fromutc() do the rest. */
-    temp = result->tzinfo;
     if (tzinfo == Py_None) {
         tzinfo = local_timezone(result);
         if (tzinfo == NULL) {
@@ -6263,8 +6260,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
     else
       Py_INCREF(tzinfo);
-    result->tzinfo = tzinfo;
-    Py_DECREF(temp);
+    Py_SETREF(result->tzinfo, tzinfo);
 
     temp = (PyObject *)result;
     result = (PyDateTime_DateTime *)

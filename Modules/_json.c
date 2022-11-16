@@ -709,9 +709,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             if (memokey == NULL) {
                 goto bail;
             }
-            Py_INCREF(memokey);
-            Py_DECREF(key);
-            key = memokey;
+            Py_SETREF(key, Py_NewRef(memokey));
             idx = next_idx;
 
             /* skip whitespace between key and : delimiter, read :, skip whitespace */
