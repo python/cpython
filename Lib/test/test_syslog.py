@@ -96,14 +96,16 @@ class Test(unittest.TestCase):
             self.assertEqual(res, 0)
 
         syslog.openlog()
-        with self.subTest('after openlog()'):
-            code = dedent('''
-                import syslog
-                syslog.syslog('foo')
-            ''')
-            res = support.run_in_subinterp(code)
-            self.assertEqual(res, 0)
-        syslog.closelog()
+        try:
+            with self.subTest('after openlog()'):
+                code = dedent('''
+                    import syslog
+                    syslog.syslog('foo')
+                ''')
+                res = support.run_in_subinterp(code)
+                self.assertEqual(res, 0)
+        finally:
+            syslog.closelog()
 
     def test_subinterpreter_openlog(self):
         code = dedent('''
