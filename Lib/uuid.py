@@ -728,9 +728,58 @@ def uuid5(namespace, name):
     hash = sha1(namespace.bytes + bytes(name, "utf-8")).digest()
     return UUID(bytes=hash[:16], version=5)
 
+
+def main():
+    """Run the uuid command line interface."""
+    uuid_funcs = {"uuid1": uuid1,
+                  "uuid3": uuid3,
+                  "uuid4": uuid4,
+                  "uuid5": uuid5}
+    uuid_namespace_funcs = ("uuid3", "uuid5")
+    namespaces = {
+        "NAMESPACE_DNS": NAMESPACE_DNS,
+        "NAMESPACE_URL": NAMESPACE_URL,
+        "NAMESPACE_OID": NAMESPACE_OID,
+        "NAMESPACE_X500": NAMESPACE_X500
+    }
+
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Generates a uuid using the selected uuid function.")
+    parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
+                        help="The function to use to generate the uuid. "
+                             "By default uuid4 function is used.")
+    parser.add_argument("-ns", "--namespace",
+                        help="The namespace used as part of generating the uuid. "
+                        "Only required for uuid3/uuid5 functions.")
+    parser.add_argument("-n", "--name",
+                        help="The name used as part of generating the uuid. "
+                        "Only required for uuid3/uuid5 functions.")
+
+    args = parser.parse_args()
+    uuid_func = uuid_funcs[args.uuid]
+    namespace = args.namespace
+    name = args.name
+
+    if args.uuid in uuid_namespace_funcs:
+        if not namespace or not name:
+            parser.error(
+                "Incorrect number of arguments. "
+                f"{args.uuid} requires a namespace and a name. "
+                "Run 'python -m uuid -h' for more information."
+            )
+        namespace = namespaces[namespace] if namespace in namespaces else UUID(namespace)
+        print(uuid_func(namespace, name))
+    else:
+        print(uuid_func())
+
+
 # The following standard UUIDs are for use with uuid3() or uuid5().
 
 NAMESPACE_DNS = UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_URL = UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_OID = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
+
+if __name__ == "__main__":
+    main()
