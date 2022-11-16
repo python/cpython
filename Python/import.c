@@ -625,8 +625,7 @@ import_add_module(PyThreadState *tstate, PyObject *name)
 
     PyObject *m;
     if (PyDict_CheckExact(modules)) {
-        m = PyDict_GetItemWithError(modules, name);
-        Py_XINCREF(m);
+        m = Py_XNewRef(PyDict_GetItemWithError(modules, name));
     }
     else {
         m = PyObject_GetItem(modules, name);
