@@ -2207,12 +2207,6 @@ sys__getcaller_impl(PyObject *module, int depth)
         Py_RETURN_NONE;
     }
     return Py_NewRef(f->f_funcobj);
-    PyObject *r = PyDict_GetItemWithError(f->f_globals, &_Py_ID(__name__));
-    if (!r) {
-        PyErr_Clear();
-        r = Py_None;
-    }
-    return Py_NewRef(r);
 }
 
 
