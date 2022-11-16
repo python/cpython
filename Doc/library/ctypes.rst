@@ -378,7 +378,7 @@ Calling varadic functions
 
 On a lot of platforms calling variadic functions through ctypes is exactly the same
 as calling functions with a fixed number of parameters. On some platforms, and in
-particular ARM64 for Apple Platforms, the calling convention for variadic functions 
+particular ARM64 for Apple Platforms, the calling convention for variadic functions
 is different than that for regular functions.
 
 On those platforms it is required to specify the *argtypes* attribute for the
