@@ -205,8 +205,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     /* Incref ident, because it can be decrefed if syslog.openlog() is
      * called when the GIL is released.
      */
-    PyObject *ident = S_ident_o;
-    Py_XINCREF(ident);
+    PyObject *ident = Py_XNewRef(S_ident_o);
 #ifdef __APPLE__
     // gh-98178: On macOS, libc syslog() is not thread-safe
     syslog(priority, "%s", message);
