@@ -108,34 +108,39 @@ class Test(unittest.TestCase):
             syslog.closelog()
 
     def test_subinterpreter_openlog(self):
-        code = dedent('''
-            import syslog
-            caught_error = False
-            try:
-                syslog.openlog()
-            except RuntimeError:
-                caught_error = True
+        try:
+            code = dedent('''
+                import syslog
+                caught_error = False
+                try:
+                    syslog.openlog()
+                except RuntimeError:
+                    caught_error = True
 
-            assert(caught_error)
-        ''')
-        res = support.run_in_subinterp(code)
-        self.assertEqual(res, 0)
+                assert(caught_error)
+            ''')
+            res = support.run_in_subinterp(code)
+            self.assertEqual(res, 0)
+        finally:
+            syslog.closelog()
 
     def test_subinterpreter_closelog(self):
         syslog.openlog('python')
-        code = dedent('''
-            import syslog
-            caught_error = False
-            try:
-                syslog.closelog()
-            except RuntimeError:
-                caught_error = True
+        try:
+            code = dedent('''
+                import syslog
+                caught_error = False
+                try:
+                    syslog.closelog()
+                except RuntimeError:
+                    caught_error = True
 
-            assert(caught_error)
-        ''')
-        res = support.run_in_subinterp(code)
-        self.assertEqual(res, 0)
-        syslog.closelog()
+                assert(caught_error)
+            ''')
+            res = support.run_in_subinterp(code)
+            self.assertEqual(res, 0)
+        finally:
+            syslog.closelog()
 
 
 if __name__ == "__main__":
