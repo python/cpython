@@ -73,10 +73,10 @@ class _Outcome(object):
                 else:
                     _addError(self.result, test_case, sys.exc_info())
                 if self.debug:
-                    _handle_debug_exception(
-                        self.debug,
-                        on_crash=not subTest and
-                        (lambda: self.pm_frame_holds.append(_AutoDelRunner(self.pm_cleanup))))
+                    on_crash = None
+                    if not subTest:
+                        on_crash = lambda: self.pm_frame_holds.append(_AutoDelRunner(self.pm_cleanup))
+                    _handle_debug_exception(self.debug, on_crash=on_crash)
         else:
             if subTest and self.success:
                 self.result.addSubTest(test_case.test_case, test_case, None)

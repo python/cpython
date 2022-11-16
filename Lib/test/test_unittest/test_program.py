@@ -534,7 +534,7 @@ class TestCommandLineArgs(unittest.TestCase):
             # Use -E to ignore PYTHONSAFEPATH env var
             cmd = [sys.executable, '-E', '-m', 'unittest'] + args
             p = subprocess.Popen(cmd,
-                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, cwd=os.path.dirname(__file__) or '.')
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, cwd=os.path.dirname(__file__))
             with p:
                 _, stderr = p.communicate()
             return stderr.decode()
