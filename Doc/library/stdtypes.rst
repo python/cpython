@@ -1597,8 +1597,9 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is described in section 3.13 of the `Unicode 
-   Standard <https://unicode.org/standard>`_.
+   The casefolding algorithm is
+   `described in section 3.13 of the Unicode Standard
+   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G53253>`__.
 
    .. versionadded:: 3.3
 
