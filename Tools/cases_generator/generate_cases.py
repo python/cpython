@@ -5,6 +5,7 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
+import contextlib
 import os
 import re
 import sys
@@ -51,9 +52,7 @@ class Instruction(parser.InstDef):
         ]
         self.output_effects = self.outputs  # For consistency/completeness
 
-    def write(
-        self, f: typing.TextIO, indent: str, dedent: int = 0
-    ) -> None:
+    def write(self, f: typing.TextIO, indent: str, dedent: int = 0) -> None:
         """Write one instruction, sans prologue and epilogue."""
         if dedent < 0:
             indent += " " * -dedent  # DO WE NEED THIS?
@@ -114,9 +113,7 @@ class Instruction(parser.InstDef):
         if self.cache_offset:
             f.write(f"{indent}    next_instr += {self.cache_offset};\n")
 
-    def write_body(
-        self, f: typing.TextIO, ndent: str, dedent: int
-    ) -> None:
+    def write_body(self, f: typing.TextIO, ndent: str, dedent: int) -> None:
         """Write the instruction body."""
 
         # Get lines of text with proper dedelt
@@ -180,7 +177,9 @@ class Analyzer:
             if tkn.text == BEGIN_MARKER:
                 break
         else:
-            raise psr.make_syntax_error(f"Couldn't find {BEGIN_MARKER!r} in {psr.filename}")
+            raise psr.make_syntax_error(
+                f"Couldn't find {BEGIN_MARKER!r} in {psr.filename}"
+            )
 
         # Parse until end marker
         self.instrs = {}
@@ -292,7 +291,7 @@ class Analyzer:
             n_instrs = 0
             for name, instr in self.instrs.items():
                 if instr.kind != "inst":
-                    continue # ops are not real instructions
+                    continue  # ops are not real instructions
                 n_instrs += 1
                 f.write(f"\n{indent}TARGET({name}) {{\n")
                 if instr.predicted:
@@ -321,45 +320,80 @@ class Analyzer:
     def write_super_macro(
         self, f: typing.TextIO, sup: parser.Super, indent: str = ""
     ) -> None:
-        f.write(f"\n{indent}TARGET({sup.name}) {{\n")
-        components = [self.instrs[name] for name in sup.ops]
-        lowest, highest = self.super_macro_analysis(sup.name, components)
-        # TODO: Rename tmp variables _tmp_A, _tmp_B, etc.
-        current = 0
-        for i in range(lowest, current):
-            f.write(f"{indent}    PyObject *_tmp_{i - lowest + 1} = PEEK({-i});\n")
-        for i in range(current, highest):
-            f.write(f"{indent}    PyObject *_tmp_{i - lowest + 1};\n")
-        for i, instr in enumerate(components):
-            if i > 0 and sup.kind == "super":
-                f.write(f"{indent}    NEXTOPARG();\n")
-                f.write(f"{indent}    next_instr++;\n")
-            f.write(f"{indent}    {{\n")
-            for seffect in reversed(instr.input_effects):
-                if seffect.name != "unused":
-                    f.write(f"{indent}        PyObject *{seffect.name} = _tmp_{current - lowest};\n")
-                current -= 1
-            for oeffect in instr.output_effects:
-                if oeffect.name != "unused":
-                    f.write(f"{indent}        PyObject *{oeffect.name};\n")
-            instr.write_body(f, indent, dedent=-4)
-            for oeffect in instr.output_effects:
-                if oeffect.name != "unused":
-                    f.write(f"{indent}        _tmp_{current - lowest + 1} = {oeffect.name};\n")
-                current += 1
-            f.write(f"    {indent}}}\n")
-        if current > 0:
-            f.write(f"{indent}    STACK_GROW({current});\n")
-        elif current < 0:
-            f.write(f"{indent}    STACK_SHRINK({-current});\n")
-        for i in range(lowest, current):
-            f.write(f"{indent}    POKE({i - lowest + 1}, _tmp_{current - i});\n")
-        f.write(f"{indent}    DISPATCH();\n")
-        f.write(f"{indent}}}\n")
+
+        # TODO: Make write() and block() methods of some Formatter class
+        def write(arg: str) -> None:
+            if arg:
+                f.write(f"{indent}{arg}\n")
+            else:
+                f.write("\n")
+
+        @contextlib.contextmanager
+        def block(head: str):
+            if head:
+                write(head + " {")
+            else:
+                write("{")
+            nonlocal indent
+            indent += "    "
+            yield
+            indent = indent[:-4]
+            write("}")
+
+        write("")
+        with block(f"TARGET({sup.name})"):
+            components = [self.instrs[name] for name in sup.ops]
+            stack, nbelow = self.super_macro_analysis(sup.name, components)
+            sp = nbelow
+
+            for i, var in enumerate(stack):
+                if i < sp:
+                    write(f"PyObject *{var} = PEEK({sp - i});")
+                else:
+                    write(f"PyObject *{var};")
+
+            for i, instr in enumerate(components):
+                if i > 0 and sup.kind == "super":
+                    write(f"NEXTOPARG();")
+                    write(f"next_instr++;")
+
+                with block(""):
+                    instack = stack[sp - len(instr.input_effects) : sp]
+                    for var, ineffect in zip(instack, instr.input_effects):
+                        if ineffect.name != "unused":
+                            write(f"PyObject *{ineffect.name} = {var};")
+                    for outeffect in instr.output_effects:
+                        if outeffect.name != "unused":
+                            write(f"PyObject *{outeffect.name};")
+
+                    instr.write_body(f, indent, dedent=-4)
+
+                    sp -= len(instack)
+                    nout = len(instr.output_effects)
+                    sp += nout
+                    outstack = stack[sp - nout : sp]
+                    for var, outeffect in zip(outstack, instr.output_effects):
+                        if outeffect.name != "unused":
+                            write(f"{var} = {outeffect.name};")
+
+            if sp > nbelow:
+                write(f"STACK_GROW({sp - nbelow});")
+            elif sp < nbelow:
+                write(f"STACK_SHRINK({nbelow - sp});")
+            for i, var in enumerate(reversed(stack[:sp]), 1):
+                write(f"POKE({i}, {var});")
+            write(f"DISPATCH();")
 
     # TODO: Move this into analysis phase
-    def super_macro_analysis(self, name: str, components: list[Instruction]) -> tuple[int, int]:
-        """Analyze a super-instruction or macro."""
+    def super_macro_analysis(
+        self, name: str, components: list[Instruction]
+    ) -> tuple[list[str], int]:
+        """Analyze a super-instruction or macro.
+
+        Print an error if there's a cache effect (which we don't support yet).
+
+        Return the list of variable names and the initial stack pointer.
+        """
         lowest = current = highest = 0
         for instr in components:
             if instr.cache_effects:
@@ -374,7 +408,9 @@ class Analyzer:
             highest = max(highest, current)
         # At this point, 'current' is the net stack effect,
         # and 'lowest' and 'highest' are the extremes.
-        return lowest, highest
+        # Note that 'lowest' may be negative.
+        stack = [f"_tmp_{i+1}" for i in range(highest - lowest)]
+        return stack, -lowest
 
 
 def always_exits(block: parser.Block) -> bool:
