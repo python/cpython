@@ -1756,8 +1756,7 @@ future_new_iter(PyObject *fut)
         }
     }
 
-    Py_INCREF(fut);
-    it->future = (FutureObj*)fut;
+    it->future = (FutureObj*)Py_NewRef(fut);
     PyObject_GC_Track(it);
     return (PyObject*)it;
 }
@@ -1821,8 +1820,7 @@ static PyObject *
 TaskStepMethWrapper_get___self__(TaskStepMethWrapper *o, void *Py_UNUSED(ignored))
 {
     if (o->sw_task) {
-        Py_INCREF(o->sw_task);
-        return (PyObject*)o->sw_task;
+        return Py_NewRef(o->sw_task);
     }
     Py_RETURN_NONE;
 }
