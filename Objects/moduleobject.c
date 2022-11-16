@@ -218,6 +218,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
        _Py_PackageContext, and PyModule_Create*() will substitute this
        (if the name actually matches).
     */
+#define _Py_PackageContext (_PyRuntime.imports.pkgcontext)
     if (_Py_PackageContext != NULL) {
         const char *p = strrchr(_Py_PackageContext, '.');
         if (p != NULL && strcmp(module->m_name, p+1) == 0) {
@@ -225,6 +226,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
             _Py_PackageContext = NULL;
         }
     }
+#undef _Py_PackageContext
     if ((m = (PyModuleObject*)PyModule_New(name)) == NULL)
         return NULL;
 

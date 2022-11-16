@@ -191,7 +191,7 @@ extern int _Py_normalize_encoding(const char *, char *, size_t);
           Py_DecodeLocale() uses mbstowcs()
       -1: unknown, need to call check_force_ascii() to get the value
 */
-static int force_ascii = -1;
+#define force_ascii (_PyRuntime.fileutils.force_ascii)
 
 static int
 check_force_ascii(void)

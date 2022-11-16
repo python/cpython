@@ -77,8 +77,6 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
-int _Py_UnhandledKeyboardInterrupt = 0;
-
 /* The following places the `_PyRuntime` structure in a location that can be
  * found without any external information. This is meant to ease access to the
  * interpreter state for various runtime debugging tools, but is *not* an
