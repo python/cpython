@@ -1145,11 +1145,6 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
-    if (PySys_Audit("_thread.start_new_thread", "OOO",
-                    func, args, kwargs ? kwargs : Py_None) < 0) {
-        return NULL;
-    }
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1165,10 +1160,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     boot->tstate = _PyThreadState_Prealloc(boot->interp);
     if (boot->tstate == NULL) {
         PyMem_Free(boot);
-        if (!PyErr_Occurred()) {
-            return PyErr_NoMemory();
-        }
-        return NULL;
+        return PyErr_NoMemory();
     }
     boot->runtime = runtime;
     boot->func = Py_NewRef(func);
