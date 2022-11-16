@@ -32,6 +32,8 @@ struct _import_runtime_state {
         _PyTime_t accumulated;
         int header;
     } find_and_load;
+    /* Package context -- the full module name for package imports */
+    const char * pkgcontext;
 };
 
 

@@ -236,11 +236,6 @@ static int dictresize(PyDictObject *mp, uint8_t log_newsize, int unicode);
 
 static PyObject* dict_iter(PyDictObject *dict);
 
-/*Global counter used to set ma_version_tag field of dictionary.
- * It is incremented each time that a dictionary is created and each
- * time that a dictionary is modified. */
-uint64_t _pydict_global_version = 0;
-
 #include "clinic/dictobject.c.h"
 
 
@@ -1883,13 +1878,11 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     assert(hash != -1);
     mp = (PyDictObject *)op;
 
-    Py_INCREF(key);
-    Py_INCREF(value);
     if (mp->ma_keys == Py_EMPTY_KEYS) {
-        return insert_to_emptydict(mp, key, hash, value);
+        return insert_to_emptydict(mp, Py_NewRef(key), hash, Py_NewRef(value));
     }
     /* insertdict() handles any resizing that might be necessary */
-    return insertdict(mp, key, hash, value);
+    return insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
 }
 
 static void
@@ -2197,9 +2190,8 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
         return NULL;
     }
     assert(old_value != NULL);
-    Py_INCREF(old_value);
     uint64_t new_version = _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
-    delitem_common(mp, hash, ix, old_value, new_version);
+    delitem_common(mp, hash, ix, Py_NewRef(old_value), new_version);
 
     ASSERT_CONSISTENT(mp);
     return old_value;
@@ -5661,17 +5653,15 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys)
     dictkeys_decref(keys);
 }
 
-static uint32_t next_dict_keys_version = 2;
-
 uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys)
 {
     if (dictkeys->dk_version != 0) {
         return dictkeys->dk_version;
     }
-    if (next_dict_keys_version == 0) {
+    if (_PyRuntime.dict_state.next_keys_version == 0) {
         return 0;
     }
-    uint32_t v = next_dict_keys_version++;
+    uint32_t v = _PyRuntime.dict_state.next_keys_version++;
     dictkeys->dk_version = v;
     return v;
 }
@@ -5683,7 +5673,7 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->dict_watchers[watcher_id]) {
+    if (!interp->dict_state.watchers[watcher_id]) {
         PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
         return -1;
     }
@@ -5726,8 +5716,8 @@ PyDict_AddWatcher(PyDict_WatchCallback callback)
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
-        if (!interp->dict_watchers[i]) {
-            interp->dict_watchers[i] = callback;
+        if (!interp->dict_state.watchers[i]) {
+            interp->dict_state.watchers[i] = callback;
             return i;
         }
     }
@@ -5743,7 +5733,7 @@ PyDict_ClearWatcher(int watcher_id)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    interp->dict_watchers[watcher_id] = NULL;
+    interp->dict_state.watchers[watcher_id] = NULL;
     return 0;
 }
 
@@ -5757,7 +5747,7 @@ _PyDict_SendEvent(int watcher_bits,
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (watcher_bits & 1) {
-            PyDict_WatchCallback cb = interp->dict_watchers[i];
+            PyDict_WatchCallback cb = interp->dict_state.watchers[i];
             if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
                 // some dict modification paths (e.g. PyDict_Clear) can't raise, so we
                 // can't propagate exceptions from dict watchers.

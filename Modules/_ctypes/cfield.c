@@ -230,8 +230,7 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
 {
     CDataObject *src;
     if (inst == NULL) {
-        Py_INCREF(self);
-        return (PyObject *)self;
+        return Py_NewRef(self);
     }
     if (!CDataObject_Check(inst)) {
         PyErr_SetString(PyExc_TypeError,
