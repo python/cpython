@@ -1465,8 +1465,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
                 goto errorexit;
         }
 
-        Py_DECREF(cres);
-        cres = NULL;
+        Py_CLEAR(cres);
 
         if (sizehint < 0 || buf.writer.pos != 0 || rsize == 0)
             break;

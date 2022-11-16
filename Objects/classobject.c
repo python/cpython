@@ -283,8 +283,7 @@ method_repr(PyMethodObject *a)
     }
 
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
-        Py_DECREF(funcname);
-        funcname = NULL;
+        Py_CLEAR(funcname);
     }
 
     /* XXX Shouldn't use repr()/%R here! */
@@ -484,8 +483,7 @@ instancemethod_repr(PyObject *self)
         return NULL;
     }
     if (funcname != NULL && !PyUnicode_Check(funcname)) {
-        Py_DECREF(funcname);
-        funcname = NULL;
+        Py_CLEAR(funcname);
     }
 
     result = PyUnicode_FromFormat("<instancemethod %V at %p>",

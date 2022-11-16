@@ -2320,8 +2320,7 @@ channel_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, *cur, 0,
                                                 &_globals.channels, 0, 0);
         if (id == NULL) {
-            Py_DECREF(ids);
-            ids = NULL;
+            Py_CLEAR(ids);
             break;
         }
         PyList_SET_ITEM(ids, (Py_ssize_t)i, id);
@@ -2383,8 +2382,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     goto finally;
 
 except:
-    Py_XDECREF(ids);
-    ids = NULL;
+    Py_CLEAR(ids);
 
 finally:
     return ids;

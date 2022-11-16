@@ -4025,14 +4025,12 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
                 Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
             }
             if (v == NULL) {
-                Py_DECREF(list);
-                list = NULL;
+                Py_CLEAR(list);
                 break;
             }
             if (PyList_Append(list, v) != 0) {
                 Py_DECREF(v);
-                Py_DECREF(list);
-                list = NULL;
+                Py_CLEAR(list);
                 break;
             }
             Py_DECREF(v);
@@ -13120,15 +13118,13 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
                 PyObject *attribute = PyUnicode_DecodeFSDefaultAndSize(start,
                                                                  trace - start);
                 if (!attribute) {
-                    Py_DECREF(result);
-                    result = NULL;
+                    Py_CLEAR(result);
                     goto exit;
                 }
                 error = PyList_Append(result, attribute);
                 Py_DECREF(attribute);
                 if (error) {
-                    Py_DECREF(result);
-                    result = NULL;
+                    Py_CLEAR(result);
                     goto exit;
                 }
                 start = trace + 1;

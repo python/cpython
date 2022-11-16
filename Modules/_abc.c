@@ -624,8 +624,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
 
     switch (PyObject_IsTrue(result)) {
     case -1:
-        Py_DECREF(result);
-        result = NULL;
+        Py_CLEAR(result);
         break;
     case 0:
         Py_DECREF(result);
