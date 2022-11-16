@@ -1900,23 +1900,17 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         manager = multiprocessing.Manager()
         self.addCleanup(manager.shutdown)
         child_started = manager.Event()
-        child_handler_called = manager.Event()
-        parent_handler_called = manager.Event()
-
-        def parent_handler(*args):
-            parent_handler_called.set()
-
-        def child_handler(*args):
-            child_handler_called.set()
+        child_handled = manager.Event()
+        parent_handled = manager.Event()
 
         def child_main():
-            signal.signal(signal.SIGTERM, child_handler)
+            signal.signal(signal.SIGTERM, lambda *args: child_handled.set())
             child_started.set()
             time.sleep(1)
 
         async def main():
             loop = asyncio.get_running_loop()
-            loop.add_signal_handler(signal.SIGTERM, parent_handler)
+            loop.add_signal_handler(signal.SIGTERM, lambda *args: parent_handled.set())
 
             process = multiprocessing.Process(target=child_main)
             process.start()
@@ -1926,8 +1920,8 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
         asyncio.run(main())
 
-        self.assertFalse(parent_handler_called.is_set())
-        self.assertTrue(child_handler_called.is_set())
+        self.assertFalse(parent_handled.is_set())
+        self.assertTrue(child_handled.is_set())
 
 if __name__ == '__main__':
     unittest.main()
