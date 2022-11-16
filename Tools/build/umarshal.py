@@ -1,7 +1,7 @@
 # Implementat marshal.loads() in pure Python
 
 import ast
-import opcode
+import opcode_for_build as opcode
 
 from typing import Any, Tuple
 
@@ -180,7 +180,7 @@ class Reader:
             return self._r_object()
         finally:
             self.level = old_level
-    
+
     def r_bytecode(self) -> bytes:
         nbytes = self.r_long() * 2
         bytecode = bytearray()

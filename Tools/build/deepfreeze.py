@@ -17,13 +17,13 @@ import types
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
+import opcode_for_build as opcode
 from generate_global_objects import get_identifiers_and_strings
 
 verbose = False
 identifiers, strings = get_identifiers_and_strings()
 
-# This must be kept in sync with opcode.py
-RESUME = 151
+RESUME = opcode.opmap["RESUME"]
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
