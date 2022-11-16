@@ -1829,8 +1829,7 @@ get_deep_attribute(PyObject *obj, PyObject *names, PyObject **pparent)
     n = PyList_GET_SIZE(names);
     for (i = 0; i < n; i++) {
         PyObject *name = PyList_GET_ITEM(names, i);
-        Py_XDECREF(parent);
-        parent = obj;
+        Py_XSETREF(parent, obj);
         (void)_PyObject_LookupAttr(parent, name, &obj);
         if (obj == NULL) {
             Py_DECREF(parent);
@@ -3717,9 +3716,7 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
     else {
   gen_global:
         if (parent == module) {
-            Py_INCREF(lastname);
-            Py_DECREF(global_name);
-            global_name = lastname;
+            Py_SETREF(global_name, Py_NewRef(lastname));
         }
         if (self->proto >= 4) {
             const char stack_global_op = STACK_GLOBAL;

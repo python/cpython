@@ -1072,8 +1072,7 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         // that the dstoff is set correctly in that case.
         if (PyObject_IsTrue(tti->dstoff)) {
             _ttinfo *tti_after = &(self->tzrule_after.std);
-            Py_DECREF(tti_after->dstoff);
-            tti_after->dstoff = Py_NewRef(tti->dstoff);
+            Py_SETREF(tti_after->dstoff, Py_NewRef(tti->dstoff));
         }
     }
 

@@ -574,8 +574,7 @@ test_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     temp = PyNumber_Add(num, one);
     Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
+    Py_SETREF(num, temp);
     if (num == NULL)
         return NULL;
     overflow = 0;
@@ -618,8 +617,7 @@ test_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     temp = PyNumber_Subtract(num, one);
     Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
+    Py_SETREF(num, temp);
     if (num == NULL)
         return NULL;
     overflow = 0;
@@ -738,8 +736,7 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     temp = PyNumber_Add(num, one);
     Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
+    Py_SETREF(num, temp);
     if (num == NULL)
         return NULL;
     overflow = 0;
@@ -782,8 +779,7 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     temp = PyNumber_Subtract(num, one);
     Py_DECREF(one);
-    Py_DECREF(num);
-    num = temp;
+    Py_SETREF(num, temp);
     if (num == NULL)
         return NULL;
     overflow = 0;
