@@ -239,7 +239,7 @@ inserted data and retrieved values from it in multiple ways.
       * :ref:`sqlite3-adapters`
       * :ref:`sqlite3-converters`
       * :ref:`sqlite3-connection-context-manager`
-      * :ref:`sqlite3-row-factory-how-to`
+      * :ref:`sqlite3-howto-row-factory`
 
    * :ref:`sqlite3-explanation` for in-depth background on transaction control.
 
@@ -1321,11 +1321,12 @@ Connection objects
       a :class:`Cursor` object and the raw row results as a :class:`tuple`,
       and returns a custom object representing an SQLite row.
 
-      If returning a tuple doesn't suffice and you want name-based access to
-      columns, you should consider setting :attr:`row_factory` to the
-      highly optimized :class:`sqlite3.Row`
+      If returning a tuple doesn't suffice
+      and name-based access to columns is needed,
+      :attr:`row_factory` can be set to the
+      highly optimized :class:`sqlite3.Row` row factory.
 
-      See :ref:`sqlite3-row-factory-how-to` for more details.
+      See :ref:`sqlite3-howto-row-factory` for more details.
 
    .. attribute:: text_factory
 
@@ -1594,9 +1595,9 @@ Row objects
    It supports iteration, equality testing, :func:`len`,
    and :term:`mapping` access by column name and index.
 
-   Two row objects compare equal if have equal columns and equal members.
+   Two row objects compare equal if they have equal columns and equal members.
 
-   See :ref:`sqlite3-row-factory-how-to` for more details.
+   See :ref:`sqlite3-howto-row-factory` for more details.
 
    .. method:: keys
 
@@ -2330,17 +2331,18 @@ can be found in the `SQLite URI documentation`_.
 .. _SQLite URI documentation: https://www.sqlite.org/uri.html
 
 
-.. _sqlite3-row-factory-how-to:
+.. _sqlite3-howto-row-factory:
 
-How to work with row factories
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to create and use row factories
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, :mod:`!sqlite3` represent fetched rows as :class:`tuples <tuple>`.
 If a :class:`!tuple` does not suit your needs,
-use the built-in :class:`Row` type or a custom :attr:`~Connection.row_factory`.
-The former provides both indexed and case-insensitive named access to columns,
+use the :class:`sqlite3.Row` class or a custom :attr:`~Connection.row_factory`.
+
+:class:`!Row` provides indexed and case-insensitive named access to columns,
 with low memory overhead and minimal performance impact.
-Example use:
+For example:
 
 .. doctest::
 
@@ -2350,13 +2352,15 @@ Example use:
    >>> row = res.fetchone()
    >>> row.keys()
    ['name', 'radius']
-   >>> row[0], row["name"]  # Access by index and name.
-   ('Earth', 'Earth')
+   >>> row[0]  # Access by index.
+   'Earth'
+   >>> row["name"]    # Access by name.
+   'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
 
-If you need more flexibility, you can design your own row factory.
-Here's an example of a :class:`dict` row factory:
+If you need more flexibility, you can implement your own row factory.
+Here's an example of one returning a :class:`dict`:
 
 .. doctest::
 
@@ -2370,30 +2374,28 @@ Here's an example of a :class:`dict` row factory:
    ...     print(row)
    {'a': 1, 'b': 2}
 
-Here's an example of a optimised :class:`~collections.namedtuple` factory:
+Here's an example of a factory that return a :class:`~collections.namedtuple`.
 
 .. testcode::
 
    from collections import namedtuple
-   from functools import lru_cache
 
-   def _fields(cursor):
+   def _get_fields(cursor):
         return (col[0] for col in cursor.description)
 
-   @lru_cache
    def _make_cls(fields):
        return namedtuple("Row", fields)
 
-   def NamedTupleFactory(cursor, row):
-       cls = _make_cls(_fields(cursor))
+   def namedtuple_factory(cursor, row):
+       cls = _make_cls(_get_fields(cursor))
        return cls._make(row)
 
-Example use:
+:func:`!namedtuple_factory` can be used as follows:
 
 .. doctest::
 
    >>> con = sqlite3.connect(":memory:")
-   >>> con.row_factory = NamedTupleFactory
+   >>> con.row_factory = namedtuple_factory
    >>> cur = con.execute("SELECT 1 AS a, 2 AS b")
    >>> row = cur.fetchone()
    >>> row
