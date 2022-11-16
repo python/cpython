@@ -596,6 +596,82 @@ check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 #endif
 }
 
+// Tracemalloc tests
+static PyObject *
+tracemalloc_track(PyObject *self, PyObject *args)
+{
+    unsigned int domain;
+    PyObject *ptr_obj;
+    Py_ssize_t size;
+    int release_gil = 0;
+
+    if (!PyArg_ParseTuple(args, "IOn|i",
+                          &domain, &ptr_obj, &size, &release_gil))
+    {
+        return NULL;
+    }
+    void *ptr = PyLong_AsVoidPtr(ptr_obj);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    int res;
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        res = PyTraceMalloc_Track(domain, (uintptr_t)ptr, size);
+    }
+    if (res < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Track error");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+tracemalloc_untrack(PyObject *self, PyObject *args)
+{
+    unsigned int domain;
+    PyObject *ptr_obj;
+
+    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
+        return NULL;
+    }
+    void *ptr = PyLong_AsVoidPtr(ptr_obj);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    int res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    if (res < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+tracemalloc_get_traceback(PyObject *self, PyObject *args)
+{
+    unsigned int domain;
+    PyObject *ptr_obj;
+
+    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
+        return NULL;
+    }
+    void *ptr = PyLong_AsVoidPtr(ptr_obj);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    return _PyTraceMalloc_GetTraceback(domain, (uintptr_t)ptr);
+}
+
 static PyMethodDef test_methods[] = {
     {"check_pyobject_forbidden_bytes_is_freed",
                             check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
@@ -617,6 +693,11 @@ static PyMethodDef test_methods[] = {
     {"test_pymem_setrawallocators",   test_pymem_setrawallocators,   METH_NOARGS},
     {"test_pyobject_new",             test_pyobject_new,             METH_NOARGS},
     {"test_pyobject_setallocators",   test_pyobject_setallocators,   METH_NOARGS},
+
+    // Tracemalloc tests
+    {"tracemalloc_track",             tracemalloc_track,             METH_VARARGS},
+    {"tracemalloc_untrack",           tracemalloc_untrack,           METH_VARARGS},
+    {"tracemalloc_get_traceback",     tracemalloc_get_traceback,     METH_VARARGS},
     {NULL},
 };
 
