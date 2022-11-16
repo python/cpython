@@ -5,9 +5,6 @@ import unittest
 from test import support
 from test.support import socket_helper
 
-# This requires the 'network' resource as given on the regrtest command line.
-skip_expected = not support.is_resource_enabled('network')
-
 import time
 import errno
 import socket
@@ -20,7 +17,7 @@ def resolve_address(host, port):
     We must perform name resolution before timeout tests, otherwise it will be
     performed by connect().
     """
-    with support.transient_internet(host):
+    with socket_helper.transient_internet(host):
         return socket.getaddrinfo(host, port, socket.AF_INET,
                                   socket.SOCK_STREAM)[0][4]
 
@@ -53,10 +50,10 @@ class CreationTestCase(unittest.TestCase):
     def testReturnType(self):
         # Test return type of gettimeout()
         self.sock.settimeout(1)
-        self.assertEqual(type(self.sock.gettimeout()), type(1.0))
+        self.assertIs(type(self.sock.gettimeout()), float)
 
         self.sock.settimeout(3.9)
-        self.assertEqual(type(self.sock.gettimeout()), type(1.0))
+        self.assertIs(type(self.sock.gettimeout()), float)
 
     def testTypeCheck(self):
         # Test type checking by settimeout()
@@ -122,7 +119,7 @@ class TimeoutTestCase(unittest.TestCase):
         """
         Test the specified socket method.
 
-        The method is run at most `count` times and must raise a socket.timeout
+        The method is run at most `count` times and must raise a TimeoutError
         within `timeout` + self.fuzz seconds.
         """
         self.sock.settimeout(timeout)
@@ -131,11 +128,11 @@ class TimeoutTestCase(unittest.TestCase):
             t1 = time.monotonic()
             try:
                 method(*args)
-            except socket.timeout as e:
+            except TimeoutError as e:
                 delta = time.monotonic() - t1
                 break
         else:
-            self.fail('socket.timeout was not raised')
+            self.fail('TimeoutError was not raised')
         # These checks should account for timing unprecision
         self.assertLess(delta, timeout + self.fuzz)
         self.assertGreater(delta, timeout - 1.0)
@@ -204,7 +201,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         sock.settimeout(timeout)
         try:
             sock.connect((whitehole))
-        except socket.timeout:
+        except TimeoutError:
             pass
         except OSError as err:
             if err.errno == errno.ECONNREFUSED:
@@ -230,12 +227,12 @@ class TCPTimeoutTestCase(TimeoutTestCase):
 
         # All that hard work just to test if connect times out in 0.001s ;-)
         self.addr_remote = blackhole
-        with support.transient_internet(self.addr_remote[0]):
+        with socket_helper.transient_internet(self.addr_remote[0]):
             self._sock_operation(1, 0.001, 'connect', self.addr_remote)
 
     def testRecvTimeout(self):
         # Test recv() timeout
-        with support.transient_internet(self.addr_remote[0]):
+        with socket_helper.transient_internet(self.addr_remote[0]):
             self.sock.connect(self.addr_remote)
             self._sock_operation(1, 1.5, 'recv', 1024)
 
@@ -290,13 +287,10 @@ class UDPTimeoutTestCase(TimeoutTestCase):
         self._sock_operation(1, 1.5, 'recvfrom', 1024)
 
 
-def test_main():
+def setUpModule():
     support.requires('network')
-    support.run_unittest(
-        CreationTestCase,
-        TCPTimeoutTestCase,
-        UDPTimeoutTestCase,
-    )
+    support.requires_working_socket(module=True)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

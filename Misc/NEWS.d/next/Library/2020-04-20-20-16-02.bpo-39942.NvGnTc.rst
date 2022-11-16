@@ -1,2 +1,0 @@
-Set "__main__" as the default module name when "__name__" is missing in
-:class:`typing.TypeVar`. Patch by Weipeng Hong.

@@ -1,2 +1,0 @@
-Fix the Windows implementation of :func:`os.waitpid` for exit code larger than
-``INT_MAX >> 8``. The exit status is now interpreted as an unsigned number.

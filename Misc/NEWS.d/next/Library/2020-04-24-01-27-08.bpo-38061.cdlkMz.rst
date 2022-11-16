@@ -1,6 +1,0 @@
-On FreeBSD, ``os.closerange(fd_low, fd_high)`` now calls ``closefrom(fd_low)``
-if *fd_high* is greater than or equal to ``sysconf(_SC_OPEN_MAX)``.
-
-Initial patch by Ed Maste (emaste), Conrad Meyer (cem), Kyle Evans (kevans)
-and Kubilay Kocak (koobs):
-https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=242274

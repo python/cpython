@@ -1,5 +1,0 @@
-Switch to a new parser, based on PEG.  For more details see PEP 617. To
-temporarily switch back to the old parser, use ``-X oldparser`` or
-``PYTHONOLDPARSER=1``.  In Python 3.10 we will remove the old parser
-completely, including the ``parser`` module (already deprecated) and
-anything that depends on it.
