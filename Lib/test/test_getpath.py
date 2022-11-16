@@ -382,6 +382,39 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_non_installed_zip_path_posix(self):
+        "Test a venv created from non-installed python has correct zip path."""
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/usr",
+            ENV_PATH="/venv/bin:/usr/bin",
+        )
+        ns.add_known_xfile("/path/to/non-installed/bin/python")
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_link("/venv/bin/python",
+                          "/path/to/non-installed/bin/python")
+        ns.add_known_file("/path/to/non-installed/lib/python9.8/os.py")
+        ns.add_known_dir("/path/to/non-installed/lib/python9.8/lib-dynload")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /path/to/non-installed"
+        ])
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/path/to/non-installed",
+            exec_prefix="/path/to/non-installed",
+            base_executable="/path/to/non-installed/bin/python",
+            base_prefix="/path/to/non-installed",
+            base_exec_prefix="/path/to/non-installed",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/path/to/non-installed/lib/python98.zip",
+                "/path/to/non-installed/lib/python9.8",
+                "/path/to/non-installed/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_venv_changed_name_copy_posix(self):
         "Test a venv --copies layout on *nix that lacks a distributed 'python'"
         ns = MockPosixNamespace(
