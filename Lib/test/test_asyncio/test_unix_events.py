@@ -11,10 +11,13 @@ import stat
 import sys
 import threading
 import unittest
+import time
 from unittest import mock
 import warnings
+import multiprocessing
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import wait_process
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -1866,6 +1869,62 @@ class TestFunctional(unittest.TestCase):
             rsock.close()
             wsock.close()
 
+
+@unittest.skipUnless(hasattr(os, 'fork'), 'requires os.fork()')
+class TestFork(unittest.IsolatedAsyncioTestCase):
+
+    async def test_fork(self):
+        loop = asyncio.get_running_loop()
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        pid = os.fork()
+        if pid == 0:
+            # child
+            try:
+                loop = asyncio.get_event_loop_policy().get_event_loop()
+                os.write(w, str(id(loop)).encode())
+            finally:
+                os._exit(0)
+        else:
+            # parent
+            child_loop = int(os.read(r, 100).decode())
+            self.assertNotEqual(child_loop, id(loop))
+            wait_process(pid, exitcode=0)
+
+    def test_fork_signal_handling(self):
+        multiprocessing.set_start_method('fork')
+        manager = multiprocessing.Manager()
+        self.addCleanup(manager.shutdown)
+        child_started = manager.Event()
+        child_handler_called = manager.Event()
+        parent_handler_called = manager.Event()
+
+        def parent_handler(*args):
+            parent_handler_called.set()
+
+        def child_handler(*args):
+            child_handler_called.set()
+
+        def child_main():
+            signal.signal(signal.SIGTERM, child_handler)
+            child_started.set()
+            time.sleep(1)
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.add_signal_handler(signal.SIGTERM, parent_handler)
+
+            process = multiprocessing.Process(target=child_main)
+            process.start()
+            child_started.wait()
+            os.kill(process.pid, signal.SIGTERM)
+            process.join()
+
+        asyncio.run(main())
+
+        self.assertFalse(parent_handler_called.is_set())
+        self.assertTrue(child_handler_called.is_set())
 
 if __name__ == '__main__':
     unittest.main()
