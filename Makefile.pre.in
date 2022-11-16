@@ -2572,7 +2572,9 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 ##########################################################################
 # Module dependencies and platform-specific files
 
-MODULE_DEPS=$(PYTHON_HEADERS) Modules/config.c $(EXPORTSYMS)
+# force rebuild when header file or module build flavor (static/shared) is changed
+MODULE_DEPS_STATIC=Modules/config.c
+MODULE_DEPS_SHARED=$(MODULE_DEPS_STATIC) $(EXPORTSYMS)
 
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
