@@ -33,8 +33,8 @@ struct _Py_dict_state {
 #if PyDict_MAXFREELIST > 0
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
-    int numfree;
     PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    int numfree;
     int keys_numfree;
 #endif
     PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
