@@ -515,8 +515,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     if (v == Py_None) {
         Py_DECREF(v);
         _Py_DECLARE_STR(anon_string, "<string>");
-        *filename = &_Py_STR(anon_string);
-        Py_INCREF(*filename);
+        *filename = Py_NewRef(&_Py_STR(anon_string));
     }
     else {
         *filename = v;
