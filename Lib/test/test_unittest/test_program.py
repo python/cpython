@@ -164,11 +164,18 @@ class Test_TestProgram(unittest.TestCase):
         self.assertTrue(out.endswith(expected))
 
     class TestRaise(unittest.TestCase):
+        td_count = 0
+        tdc_count = 0
         class Error(Exception):
             pass
         def test_raise(self):
             self = self
             raise self.Error
+        def tearDown(self):
+            self.__class__.td_count += 1
+        @classmethod
+        def tearDownClass(cls):
+            cls.tdc_count += 1
 
     class TestRaiseLoader(unittest.TestLoader):
         def loadTestsFromModule(self, module):
@@ -180,12 +187,25 @@ class Test_TestProgram(unittest.TestCase):
                 [self.loadTestsFromTestCase(Test_TestProgram.TestRaise)])
 
     def test_debug(self):
-        self.assertRaises(
-            self.TestRaise.Error,
-            unittest.main,
-            argv=["TestRaise", "--debug"],
-            testRunner=unittest.TextTestRunner(stream=io.StringIO()),
-            testLoader=self.TestRaiseLoader())
+        td0 = self.TestRaise.td_count
+        tdc0 = self.TestRaise.tdc_count
+        try:
+            unittest.main(
+                argv=["TestRaise", "--debug"],
+                testRunner=unittest.TextTestRunner(stream=io.StringIO()),
+                testLoader=self.TestRaiseLoader())
+        except self.TestRaise.Error:
+            assert self.TestRaise.td_count - td0 == 0
+            assert self.TestRaise.tdc_count - tdc0 == 0
+        else:
+            self.fail("TestRaise not raised")
+        # test delayed teardown
+        if not hasattr(sys, 'getrefcount'):
+            # PyPy etc.
+            import gc
+            gc.collect()
+        assert self.TestRaise.td_count - tdc0 == 1
+        assert self.TestRaise.tdc_count - tdc0 == 1
 
     def test_no_debug(self):
         self.assertRaises(
