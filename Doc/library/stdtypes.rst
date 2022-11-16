@@ -1758,8 +1758,8 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the "Alphabetic" property defined in the `Unicode Standard
-   <https://unicode.org/standard>`_.
+   from the `Alphabetic property defined in the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G91002>`_.
 
 
 .. method:: str.isascii()
