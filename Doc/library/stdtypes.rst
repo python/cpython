@@ -1893,8 +1893,9 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is described in section 3.13 of the `Unicode 
-   Standard <https://unicode.org/standard>`_.
+   The lowercasing algorithm used is
+   `described in section 3.13 of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
 .. method:: str.lstrip([chars])
