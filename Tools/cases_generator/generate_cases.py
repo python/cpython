@@ -198,7 +198,7 @@ class Analyzer:
 
         print(
             f"Read {len(self.instrs)} instructions, "
-            f"{len(self.supers)} supers, "
+            f"{len(self.supers)} supers/macros, "
             f"and {len(self.families)} families from {self.filename}",
             file=sys.stderr,
         )
@@ -289,9 +289,11 @@ class Analyzer:
             f.write(f"// Do not edit!\n")
 
             # Write regular instructions
+            n_instrs = 0
             for name, instr in self.instrs.items():
                 if instr.kind != "inst":
                     continue # ops are not real instructions
+                n_instrs += 1
                 f.write(f"\n{indent}TARGET({name}) {{\n")
                 if instr.predicted:
                     f.write(f"{indent}    PREDICTED({name});\n")
@@ -301,48 +303,59 @@ class Analyzer:
                 f.write(f"{indent}}}\n")
 
             # Write super-instructions and macros
-            # TODO: Cleanup the hacks
-            for name, sup in self.supers.items():
-                f.write(f"\n{indent}TARGET({sup.name}) {{\n")
-                components = [self.instrs[name] for name in sup.ops]
-                lowest, highest = self.super_macro_analysis(name, components)
-                current = 0
-                for i in range(lowest, current):
-                    f.write(f"{indent}    PyObject *_tmp_{i - lowest + 1} = PEEK({-i});\n")
-                for i in range(current, highest):
-                    f.write(f"{indent}    PyObject *_tmp_{i - lowest + 1};\n")
-                for i, instr in enumerate(components):
-                    if i > 0 and sup.kind == "super":
-                        f.write(f"{indent}    NEXTOPARG();\n")
-                        f.write(f"{indent}    next_instr++;\n")
-                    f.write(f"{indent}    {{\n")
-                    for seffect in reversed(instr.input_effects):
-                        if seffect.name != "unused":
-                            f.write(f"{indent}        PyObject *{seffect.name} = _tmp_{current - lowest};\n")
-                        current -= 1
-                    for oeffect in instr.output_effects:
-                        if oeffect.name != "unused":
-                            f.write(f"{indent}        PyObject *{oeffect.name};\n")
-                    instr.write_body(f, indent, dedent=-4)
-                    for oeffect in instr.output_effects:
-                        if oeffect.name != "unused":
-                            f.write(f"{indent}        _tmp_{current - lowest + 1} = {oeffect.name};\n")
-                        current += 1
-                    f.write(f"    {indent}}}\n")
-                if current > 0:
-                    f.write(f"{indent}    STACK_GROW({current});\n")
-                elif current < 0:
-                    f.write(f"{indent}    STACK_SHRINK({-current});\n")
-                for i in range(lowest, current):
-                    f.write(f"{indent}    POKE({i - lowest + 1}, _tmp_{current - i});\n")
-                f.write(f"{indent}    DISPATCH();\n")
-                f.write(f"{indent}}}\n")
+            n_supers = 0
+            n_macros = 0
+            for sup in self.supers.values():
+                if sup.kind == "super":
+                    n_supers += 1
+                elif sup.kind == "macro":
+                    n_macros += 1
+                self.write_super_macro(f, sup, indent)
 
             print(
-                f"Wrote {len(self.instrs)} instructions and "
-                f"{len(self.supers)} super-instructions to {filename}",
+                f"Wrote {n_instrs} instructions, {n_supers} supers, "
+                f"and {n_macros} macros to {filename}",
                 file=sys.stderr,
             )
+
+    def write_super_macro(
+        self, f: typing.TextIO, sup: parser.Super, indent: str = ""
+    ) -> None:
+        f.write(f"\n{indent}TARGET({sup.name}) {{\n")
+        components = [self.instrs[name] for name in sup.ops]
+        lowest, highest = self.super_macro_analysis(sup.name, components)
+        # TODO: Rename tmp variables _tmp_A, _tmp_B, etc.
+        current = 0
+        for i in range(lowest, current):
+            f.write(f"{indent}    PyObject *_tmp_{i - lowest + 1} = PEEK({-i});\n")
+        for i in range(current, highest):
+            f.write(f"{indent}    PyObject *_tmp_{i - lowest + 1};\n")
+        for i, instr in enumerate(components):
+            if i > 0 and sup.kind == "super":
+                f.write(f"{indent}    NEXTOPARG();\n")
+                f.write(f"{indent}    next_instr++;\n")
+            f.write(f"{indent}    {{\n")
+            for seffect in reversed(instr.input_effects):
+                if seffect.name != "unused":
+                    f.write(f"{indent}        PyObject *{seffect.name} = _tmp_{current - lowest};\n")
+                current -= 1
+            for oeffect in instr.output_effects:
+                if oeffect.name != "unused":
+                    f.write(f"{indent}        PyObject *{oeffect.name};\n")
+            instr.write_body(f, indent, dedent=-4)
+            for oeffect in instr.output_effects:
+                if oeffect.name != "unused":
+                    f.write(f"{indent}        _tmp_{current - lowest + 1} = {oeffect.name};\n")
+                current += 1
+            f.write(f"    {indent}}}\n")
+        if current > 0:
+            f.write(f"{indent}    STACK_GROW({current});\n")
+        elif current < 0:
+            f.write(f"{indent}    STACK_SHRINK({-current});\n")
+        for i in range(lowest, current):
+            f.write(f"{indent}    POKE({i - lowest + 1}, _tmp_{current - i});\n")
+        f.write(f"{indent}    DISPATCH();\n")
+        f.write(f"{indent}}}\n")
 
     # TODO: Move this into analysis phase
     def super_macro_analysis(self, name: str, components: list[Instruction]) -> tuple[int, int]:

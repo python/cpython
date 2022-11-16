@@ -3721,8 +3721,8 @@
                 _tmp_2 = value;
             }
             STACK_GROW(2);
-            POKE(1, _tmp_2);  // lowest=0 current=2 highest=2 i=0
-            POKE(2, _tmp_1);  // lowest=0 current=2 highest=2 i=1
+            POKE(1, _tmp_2);
+            POKE(2, _tmp_1);
             DISPATCH();
         }
 
@@ -3745,8 +3745,8 @@
                 _tmp_2 = value;
             }
             STACK_GROW(2);
-            POKE(1, _tmp_2);  // lowest=0 current=2 highest=2 i=0
-            POKE(2, _tmp_1);  // lowest=0 current=2 highest=2 i=1
+            POKE(1, _tmp_2);
+            POKE(2, _tmp_1);
             DISPATCH();
         }
 
@@ -3765,7 +3765,7 @@
                 Py_INCREF(value);
                 _tmp_1 = value;
             }
-            POKE(1, _tmp_1);  // lowest=-1 current=0 highest=0 i=-1
+            POKE(1, _tmp_1);
             DISPATCH();
         }
 
@@ -3805,8 +3805,8 @@
                 _tmp_2 = value;
             }
             STACK_GROW(2);
-            POKE(1, _tmp_2);  // lowest=0 current=2 highest=2 i=0
-            POKE(2, _tmp_1);  // lowest=0 current=2 highest=2 i=1
+            POKE(1, _tmp_2);
+            POKE(2, _tmp_1);
             DISPATCH();
         }
 
