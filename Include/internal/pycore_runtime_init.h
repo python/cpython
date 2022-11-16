@@ -75,6 +75,12 @@ extern "C" {
                 .tuple_empty = { \
                     .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
                 }, \
+                .hamt_bitmap_node_empty = { \
+                    .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                }, \
+                .context_token_missing = { \
+                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
+                }, \
             }, \
         }, \
         ._main_interpreter = _PyInterpreterState_INIT, \
@@ -112,6 +118,10 @@ extern "C" {
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
+                .hamt_empty = { \
+                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
+                    .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
+                }, \
             }, \
         }, \
         ._initial_thread = _PyThreadState_INIT, \
