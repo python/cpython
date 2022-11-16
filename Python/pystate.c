@@ -873,14 +873,29 @@ PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
     PyThreadState *tstate = new_threadstate(interp);
-    _PyThreadState_SetCurrent(tstate);
+    if (tstate) {
+        _PyThreadState_SetCurrent(tstate);
+        if (PySys_Audit("cpython.PyThreadState_New", "K", tstate->id) < 0) {
+            PyThreadState_Clear(tstate);
+            _PyThreadState_DeleteCurrent(tstate);
+            return NULL;
+        }
+    }
     return tstate;
 }
 
 PyThreadState *
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
-    return new_threadstate(interp);
+    PyThreadState *tstate = new_threadstate(interp);
+    if (tstate) {
+        if (PySys_Audit("cpython.PyThreadState_New", "K", tstate->id) < 0) {
+            PyThreadState_Clear(tstate);
+            _PyThreadState_Delete(tstate, 0);
+            return NULL;
+        }
+    }
+    return tstate;
 }
 
 // We keep this around for (accidental) stable ABI compatibility.
@@ -1028,6 +1043,10 @@ _PyInterpreterState_ClearModules(PyInterpreterState *interp)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
+    if (PySys_Audit("cpython.PyThreadState_Clear", "K", tstate->id) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
     if (verbose && tstate->cframe->current_frame != NULL) {
@@ -1545,15 +1564,15 @@ _PyGILState_Init(_PyRuntimeState *runtime)
 PyStatus
 _PyGILState_SetTstate(PyThreadState *tstate)
 {
+    /* must init with valid states */
+    assert(tstate != NULL);
+    assert(tstate->interp != NULL);
+
     if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, PyGILState is shared by all interpreters. The main
          * interpreter is responsible to initialize it. */
         return _PyStatus_OK();
     }
-
-    /* must init with valid states */
-    assert(tstate != NULL);
-    assert(tstate->interp != NULL);
 
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
 
