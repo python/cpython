@@ -45,8 +45,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyCodeObject *code_obj = (PyCodeObject *)code;
-    Py_INCREF(code_obj);
+    PyCodeObject *code_obj = (PyCodeObject *)Py_NewRef(code);
 
     PyObject *name = code_obj->co_name;
     assert(name != NULL);

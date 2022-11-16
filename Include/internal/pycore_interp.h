@@ -26,6 +26,7 @@ extern "C" {
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
+
 struct _pending_calls {
     PyThread_type_lock lock;
     /* Request for running pending calls. */
@@ -115,9 +116,6 @@ struct _is {
        after allocation. */
     int _initialized;
     int finalizing;
-
-    /* Was this interpreter statically allocated? */
-    bool _static;
 
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
