@@ -19,29 +19,17 @@ extern "C" {
 
 #define _PyRuntimeState_INIT(runtime) \
     { \
-        .gilstate = { \
-            .check_enabled = 1, \
-            /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
-               in accordance with the specification. */ \
-            .autoTSSkey = Py_tss_NEEDS_INIT, \
-        }, \
         .allocators = { \
             _pymem_allocators_standard_INIT(runtime), \
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
         .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
+        .pyhash_state = pyhash_state_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
-        }, \
-        .tracemalloc = { \
-            .config = _PyTraceMalloc_Config_INIT, \
-        }, \
-        .dtoa = _dtoa_runtime_state_INIT(runtime), \
-        .types = { \
-            .next_version_tag = 1, \
         }, \
         .imports = { \
             .lock = { \
@@ -52,6 +40,26 @@ extern "C" {
             .find_and_load = { \
                 .header = 1, \
             }, \
+        }, \
+        .gilstate = { \
+            .check_enabled = 1, \
+            /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
+               in accordance with the specification. */ \
+            .autoTSSkey = Py_tss_NEEDS_INIT, \
+        }, \
+        .tracemalloc = { \
+            .config = _PyTraceMalloc_Config_INIT, \
+        }, \
+        .dtoa = _dtoa_runtime_state_INIT(runtime), \
+        .fileutils = { \
+            .force_ascii = -1, \
+        }, \
+        .float_state = { \
+            .float_format = _py_float_format_unknown, \
+            .double_format = _py_float_format_unknown, \
+        }, \
+        .types = { \
+            .next_version_tag = 1, \
         }, \
         .global_objects = { \
             .singletons = { \
