@@ -1868,15 +1868,16 @@ How to use placeholders to bind values in SQL queries
 
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
-are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
-<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
+are vulnerable to `SQL injection attacks`_. For example::
 
-   # Never do this -- insecure!
-   # An attacker can select all stocks by entering "' OR 1 = 1; --",
-   # or load any extension by entering "' OR load_extension('./any.so'); --"
-   # if extension loading is enabled.
-   symbol = input()
-   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+   >>> # Never do this -- insecure!
+   >>> # An attacker can select all stocks with a crafted input.
+   >>> symbol = input()
+   ' OR 1 = 1; --
+   >>> sql = "SELECT * FROM stocks WHERE symbol = '%s'" % symbol
+   >>> sql
+   "SELECT * FROM stocks WHERE symbol = '' OR 1 = 1; --'"
+   >>> cur.execute(sql)
 
 Instead, use the DB-API's parameter substitution. To insert a variable into a
 query string, use a placeholder in the string, and substitute the actual values
