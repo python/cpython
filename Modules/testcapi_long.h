@@ -202,6 +202,5 @@ TESTNAME(PyObject *error(const char*))
         Py_DECREF(Py_None);
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }

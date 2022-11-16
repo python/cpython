@@ -781,6 +781,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(arguments));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(argv));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(as_integer_ratio));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ast));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(attribute));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(authorizer_callback));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(autocommit));
@@ -1474,6 +1475,9 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     /* non-generated */
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(bytes_empty));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(tuple_empty));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(hamt_bitmap_node_empty));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_INTERP_SINGLETON(interp, hamt_empty));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(context_token_missing));
 }
 #endif  // Py_DEBUG
 /* End auto-generated code */

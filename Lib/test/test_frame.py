@@ -352,6 +352,12 @@ class TestCAPI(unittest.TestCase):
         with self.assertRaises(NameError):
             _testcapi.frame_getvarstring(current_frame, b"y")
 
+        # wrong name type
+        with self.assertRaises(TypeError):
+            _testcapi.frame_getvar(current_frame, b'x')
+        with self.assertRaises(TypeError):
+            _testcapi.frame_getvar(current_frame, 123)
+
     def getgenframe(self):
         yield sys._getframe()
 

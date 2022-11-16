@@ -389,8 +389,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
 #endif
     }
     else if (PyBytes_Check(obj)) {
-        Py_INCREF(obj);
-        *bytes = obj;
+        *bytes = Py_NewRef(obj);
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
             Py_DECREF(obj);

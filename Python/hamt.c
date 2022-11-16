@@ -321,20 +321,9 @@ typedef struct {
 
 typedef struct {
     PyObject_VAR_HEAD
-    uint32_t b_bitmap;
-    PyObject *b_array[1];
-} PyHamtNode_Bitmap;
-
-
-typedef struct {
-    PyObject_VAR_HEAD
     int32_t c_hash;
     PyObject *c_array[1];
 } PyHamtNode_Collision;
-
-
-static PyHamtNode_Bitmap *_empty_bitmap_node;
-static PyHamtObject *_empty_hamt;
 
 
 static PyHamtObject *
@@ -521,12 +510,15 @@ hamt_node_bitmap_new(Py_ssize_t size)
     PyHamtNode_Bitmap *node;
     Py_ssize_t i;
 
+    if (size == 0) {
+        /* Since bitmap nodes are immutable, we can cache the instance
+           for size=0 and reuse it whenever we need an empty bitmap node.
+        */
+        return (PyHamtNode *)Py_NewRef(&_Py_SINGLETON(hamt_bitmap_node_empty));
+    }
+
     assert(size >= 0);
     assert(size % 2 == 0);
-
-    if (size == 0 && _empty_bitmap_node != NULL) {
-        return (PyHamtNode *)Py_NewRef(_empty_bitmap_node);
-    }
 
     /* No freelist; allocate a new bitmap node */
     node = PyObject_GC_NewVar(
@@ -544,13 +536,6 @@ hamt_node_bitmap_new(Py_ssize_t size)
     node->b_bitmap = 0;
 
     _PyObject_GC_TRACK(node);
-
-    if (size == 0 && _empty_bitmap_node == NULL) {
-        /* Since bitmap nodes are immutable, we can cache the instance
-           for size=0 and reuse it whenever we need an empty bitmap node.
-        */
-        _empty_bitmap_node = (PyHamtNode_Bitmap*)Py_NewRef(node);
-    }
 
     return (PyHamtNode *)node;
 }
@@ -853,8 +838,7 @@ hamt_node_bitmap_assoc(PyHamtNode_Bitmap *self,
 
                     if (self->b_array[j] == NULL) {
                         new_node->a_array[i] =
-                            (PyHamtNode *)self->b_array[j + 1];
-                        Py_INCREF(new_node->a_array[i]);
+                            (PyHamtNode *)Py_NewRef(self->b_array[j + 1]);
                     }
                     else {
                         int32_t rehash = hamt_hash(self->b_array[j]);
@@ -1141,6 +1125,16 @@ hamt_node_bitmap_dealloc(PyHamtNode_Bitmap *self)
 
     Py_ssize_t len = Py_SIZE(self);
     Py_ssize_t i;
+
+    if (Py_SIZE(self) == 0) {
+        /* The empty node is statically allocated. */
+        assert(self == &_Py_SINGLETON(hamt_bitmap_node_empty));
+#ifdef Py_DEBUG
+        _Py_FatalRefcountError("deallocating the empty hamt node bitmap singleton");
+#else
+        return;
+#endif
+    }
 
     PyObject_GC_UnTrack(self);
     Py_TRASHCAN_BEGIN(self, hamt_node_bitmap_dealloc)
@@ -2431,33 +2425,15 @@ hamt_alloc(void)
     return o;
 }
 
+#define _empty_hamt \
+    (&_Py_INTERP_SINGLETON(_PyInterpreterState_Get(), hamt_empty))
+
 PyHamtObject *
 _PyHamt_New(void)
 {
-    if (_empty_hamt != NULL) {
-        /* HAMT is an immutable object so we can easily cache an
-           empty instance. */
-        return (PyHamtObject*)Py_NewRef(_empty_hamt);
-    }
-
-    PyHamtObject *o = hamt_alloc();
-    if (o == NULL) {
-        return NULL;
-    }
-
-    o->h_root = hamt_node_bitmap_new(0);
-    if (o->h_root == NULL) {
-        Py_DECREF(o);
-        return NULL;
-    }
-
-    o->h_count = 0;
-
-    if (_empty_hamt == NULL) {
-        _empty_hamt = (PyHamtObject*)Py_NewRef(o);
-    }
-
-    return o;
+    /* HAMT is an immutable object so we can easily cache an
+       empty instance. */
+    return (PyHamtObject*)Py_NewRef(_empty_hamt);
 }
 
 #ifdef Py_DEBUG
@@ -2673,6 +2649,15 @@ hamt_tp_traverse(PyHamtObject *self, visitproc visit, void *arg)
 static void
 hamt_tp_dealloc(PyHamtObject *self)
 {
+    if (self == _empty_hamt) {
+        /* The empty one is statically allocated. */
+#ifdef Py_DEBUG
+        _Py_FatalRefcountError("deallocating the empty hamt singleton");
+#else
+        return;
+#endif
+    }
+
     PyObject_GC_UnTrack(self);
     if (self->h_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
@@ -2908,11 +2893,3 @@ PyTypeObject _PyHamt_CollisionNode_Type = {
     .tp_free = PyObject_GC_Del,
     .tp_hash = PyObject_HashNotImplemented,
 };
-
-
-void
-_PyHamt_Fini(PyInterpreterState *interp)
-{
-    Py_CLEAR(_empty_hamt);
-    Py_CLEAR(_empty_bitmap_node);
-}
