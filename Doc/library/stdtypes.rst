@@ -2239,8 +2239,9 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is described in section 3.13 of the `Unicode 
-   Standard <https://unicode.org/standard>`_.
+   The uppercasing algorithm used is
+    `described in section 3.13 of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
 .. method:: str.zfill(width)
