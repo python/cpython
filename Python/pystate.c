@@ -875,7 +875,9 @@ PyThreadState_New(PyInterpreterState *interp)
     PyThreadState *tstate = new_threadstate(interp);
     if (tstate) {
         _PyThreadState_SetCurrent(tstate);
-        if (PySys_Audit("cpython.PyThreadState_New", "K", tstate->id) < 0) {
+        if (_PyThreadState_GET()
+            && PySys_Audit("cpython.PyThreadState_New", "K", tstate->id) < 0
+        ) {
             PyThreadState_Clear(tstate);
             _PyThreadState_DeleteCurrent(tstate);
             return NULL;
