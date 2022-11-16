@@ -1577,6 +1577,15 @@ Cursor objects
       including :abbr:`CTE (Common Table Expression)` queries.
       It is only updated by the :meth:`execute` and :meth:`executemany` methods.
 
+   .. attribute:: row_factory
+
+      This attribute is copied from :attr:`Connection.row_factory`
+      upon :class:`!Cursor` creation.
+      Assigning to this attribute does not affect the original
+      connection :attr:`!row_factory`.
+
+      See :ref:`sqlite3-howto-row-factory` for more details.
+
 
 .. The sqlite3.Row example used to be a how-to. It has now been incorporated
    into the Row reference. We keep the anchor here in order not to break
@@ -2342,12 +2351,18 @@ use the :class:`sqlite3.Row` class or a custom :attr:`~Connection.row_factory`.
 
 :class:`!Row` provides indexed and case-insensitive named access to columns,
 with low memory overhead and minimal performance impact.
-For example:
+In order to use :class:`Row` as a row factory,
+simply assign it to the :attr:`Connection.row_factory` attribute:
 
 .. doctest::
 
    >>> con = sqlite3.connect(":memory:")
    >>> con.row_factory = sqlite3.Row
+
+Query results are now processed using :class:`Row`:
+
+.. doctest::
+
    >>> res = con.execute("SELECT 'Earth' AS name, 6378 AS radius")
    >>> row = res.fetchone()
    >>> row.keys()
@@ -2359,7 +2374,27 @@ For example:
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
 
-If you need more flexibility, you can implement your own row factory.
+It is also possible to assign row factories to cursors using
+:attr:`Cursor.row_factory`:
+
+.. doctest::
+
+   >>> cur = con.cursor()
+   >>> cur.row_factory == con.row_factory
+   True
+   >>> cur.row_factory = None  # Override cursor row factory.
+
+   # The cursor and the connection row factories now differ.
+   >>> cur.row_factory == con.row_factory
+   False
+   >>> cur.execute("SELECT 'Hello'").fetchone()
+   ('Hello',)
+
+   # The connection still uses sqlite3.Row, as set in the previous example.
+   >>> con.execute("SELECT 'Hello'").fetchone()
+   <sqlite3.Row object at ...>
+
+If more flexibility is needed, implement a custom row factory.
 Here's an example of one returning a :class:`dict`:
 
 .. doctest::
