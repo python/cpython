@@ -1873,7 +1873,8 @@ class TestFunctional(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'fork'), 'requires os.fork()')
 class TestFork(unittest.IsolatedAsyncioTestCase):
 
-    async def test_fork(self):
+    async def test_fork_not_share_event_loop(self):
+        # The forked process should not share the event loop with the parent
         loop = asyncio.get_running_loop()
         r, w = os.pipe()
         self.addCleanup(os.close, r)
@@ -1893,6 +1894,8 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             wait_process(pid, exitcode=0)
 
     def test_fork_signal_handling(self):
+        # Sending signals to the forked process should not affect the parent
+        # process.
         multiprocessing.set_start_method('fork')
         manager = multiprocessing.Manager()
         self.addCleanup(manager.shutdown)

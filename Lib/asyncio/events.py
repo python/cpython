@@ -668,6 +668,7 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
         self._local = self._Local()
         if hasattr(os, 'fork'):
             def on_fork():
+                # Reset the loop and wakeupfd in the forked child process.
                 self._local = self._Local()
                 signal.set_wakeup_fd(-1)
 
