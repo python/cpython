@@ -9,8 +9,10 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"          /* _Py_atomic_address */
+#include "pycore_dict_state.h"      // struct _Py_dict_runtime_state
 #include "pycore_dtoa.h"            // struct _dtoa_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
+#include "pycore_function.h"        // struct _func_runtime_state
 #include "pycore_gil.h"             // struct _gil_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
@@ -151,6 +153,8 @@ typedef struct pyruntimestate {
 
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
+    struct _Py_dict_runtime_state dict_state;
+    struct _py_func_runtime_state func_state;
 
     struct {
         /* Used to set PyTypeObject.tp_version_tag */
