@@ -223,8 +223,10 @@ Command-line options
 .. cmdoption:: --debug
 
    On test fail or error the test run terminates immediately with original
-   exception - similar to normal script execution. Useful for seamless external
-   post-mortem handling.
+   exception, similar to normal script execution. Useful for seamless external
+   post-mortem handling. Delayed teardowns are run automatically when the raised
+   exception and traceback are recycled; or explicitely before when
+   ``exception.pm_teardown()`` -- a method added to the exception -- is called.
 
 .. cmdoption:: --pdb
 
@@ -232,12 +234,14 @@ Command-line options
 
 .. cmdoption:: --pm=<debugger>
 
-   Run custom post-mortem debugger (module or class) upon each error.
+   Run custom post-mortem debugger (module or class) upon each error using its
+   ``post_mortem()`` function or method.
    Examples: ``--pm=pywin.debugger``, ``--pm=IPython.terminal.debugger.Pdb``
 
 .. cmdoption:: --trace
 
-   Break at the beginning of each test using :mod:`pdb` or the debugger set by ``--pm``
+   Break at the beginning of each test using :mod:`pdb` or the debugger set by
+   :option:`--pm` via its ``runcall()`` function or method.
 
 .. cmdoption:: -f, --failfast
 
