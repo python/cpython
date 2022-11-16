@@ -222,8 +222,8 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         PyDTrace_AUDIT(event, (void *)eventArgs);
     }
 
-    /* Call interpreter hooks if the GIL is held */
-    if (PyGILState_Check() && is->audit_hooks) {
+    /* Call interpreter hooks */
+    if (is->audit_hooks) {
         eventName = PyUnicode_FromString(event);
         if (!eventName) {
             goto exit;
