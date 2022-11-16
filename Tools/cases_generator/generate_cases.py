@@ -6,6 +6,7 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 
 import argparse
 import contextlib
+import dataclasses
 import os
 import re
 import sys
@@ -151,6 +152,71 @@ class Instruction(parser.InstDef):
                 f.write(line)
 
 
+@dataclasses.dataclass
+class SuperComponent:
+    instr: Instruction
+    input_mapping: typing.Dict[str, parser.StackEffect]
+    output_mapping: typing.Dict[str, parser.StackEffect]
+
+
+class SuperInstruction(parser.Super):
+
+    stack: list[str]
+    initial_sp: int
+    final_sp: int
+    parts: list[SuperComponent]
+
+    def __init__(self, sup: parser.Super):
+        super().__init__(sup.kind, sup.name, sup.ops)
+        self.context = sup.context
+
+    def analyze(self, a: "Analyzer") -> None:
+        components = [a.instrs[name] for name in self.ops]
+        self.stack, self.initial_sp = self.super_macro_analysis(a, components)
+        sp = self.initial_sp
+        self.parts = []
+        for instr in components:
+            input_mapping = {}
+            for ieffect in reversed(instr.input_effects):
+                sp -= 1
+                if ieffect.name != "unused":
+                    input_mapping[self.stack[sp]] = ieffect
+            output_mapping = {}
+            for oeffect in instr.output_effects:
+                if oeffect.name != "unused":
+                    output_mapping[self.stack[sp]] = oeffect
+                sp += 1
+            self.parts.append(SuperComponent(instr, input_mapping, output_mapping))
+        self.final_sp = sp
+
+    def super_macro_analysis(
+        self, a: "Analyzer", components: list[Instruction]
+    ) -> tuple[list[str], int]:
+        """Analyze a super-instruction or macro.
+
+        Print an error if there's a cache effect (which we don't support yet).
+
+        Return the list of variable names and the initial stack pointer.
+        """
+        lowest = current = highest = 0
+        for instr in components:
+            if instr.cache_effects:
+                print(
+                    f"Super-instruction {self.name!r} has cache effects in {instr.name!r}",
+                    file=sys.stderr,
+                )
+                a.errors += 1
+            current -= len(instr.input_effects)
+            lowest = min(lowest, current)
+            current += len(instr.output_effects)
+            highest = max(highest, current)
+        # At this point, 'current' is the net stack effect,
+        # and 'lowest' and 'highest' are the extremes.
+        # Note that 'lowest' may be negative.
+        stack = [f"_tmp_{i+1}" for i in range(highest - lowest)]
+        return stack, -lowest
+
+
 class Analyzer:
     """Parse input, analyze it, and write to output."""
 
@@ -166,6 +232,7 @@ class Analyzer:
 
     instrs: dict[str, Instruction]  # Includes ops
     supers: dict[str, parser.Super]  # Includes macros
+    super_instrs: dict[str, SuperInstruction]
     families: dict[str, parser.Family]
 
     def parse(self) -> None:
@@ -210,6 +277,7 @@ class Analyzer:
         self.find_predictions()
         self.map_families()
         self.check_families()
+        self.analyze_supers()
 
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
@@ -278,6 +346,14 @@ class Analyzer:
                     )
                     self.errors += 1
 
+    def analyze_supers(self) -> None:
+        """Analyze each super instruction."""
+        self.super_instrs = {}
+        for name, sup in self.supers.items():
+            dup = SuperInstruction(sup)
+            dup.analyze(self)
+            self.super_instrs[name] = dup
+
     def write_instructions(self, filename: str) -> None:
         """Write instructions to output file."""
         indent = " " * 8
@@ -304,7 +380,7 @@ class Analyzer:
             # Write super-instructions and macros
             n_supers = 0
             n_macros = 0
-            for sup in self.supers.values():
+            for sup in self.super_instrs.values():
                 if sup.kind == "super":
                     n_supers += 1
                 elif sup.kind == "macro":
@@ -318,7 +394,7 @@ class Analyzer:
             )
 
     def write_super_macro(
-        self, f: typing.TextIO, sup: parser.Super, indent: str = ""
+        self, f: typing.TextIO, sup: SuperInstruction, indent: str = ""
     ) -> None:
 
         # TODO: Make write() and block() methods of some Formatter class
@@ -342,75 +418,33 @@ class Analyzer:
 
         write("")
         with block(f"TARGET({sup.name})"):
-            components = [self.instrs[name] for name in sup.ops]
-            stack, nbelow = self.super_macro_analysis(sup.name, components)
-            sp = nbelow
-
-            for i, var in enumerate(stack):
-                if i < sp:
-                    write(f"PyObject *{var} = PEEK({sp - i});")
+            for i, var in enumerate(sup.stack):
+                if i < sup.initial_sp:
+                    write(f"PyObject *{var} = PEEK({sup.initial_sp - i});")
                 else:
                     write(f"PyObject *{var};")
 
-            for i, instr in enumerate(components):
+            for i, comp in enumerate(sup.parts):
                 if i > 0 and sup.kind == "super":
                     write(f"NEXTOPARG();")
                     write(f"next_instr++;")
 
                 with block(""):
-                    instack = stack[sp - len(instr.input_effects) : sp]
-                    for var, ineffect in zip(instack, instr.input_effects):
-                        if ineffect.name != "unused":
-                            write(f"PyObject *{ineffect.name} = {var};")
-                    for outeffect in instr.output_effects:
-                        if outeffect.name != "unused":
-                            write(f"PyObject *{outeffect.name};")
+                    for var, ieffect in comp.input_mapping.items():
+                        write(f"PyObject *{ieffect.name} = {var};")
+                    for oeffect in comp.output_mapping.values():
+                        write(f"PyObject *{oeffect.name};")
+                    comp.instr.write_body(f, indent, dedent=-4)
+                    for var, oeffect in comp.output_mapping.items():
+                        write(f"{var} = {oeffect.name};")
 
-                    instr.write_body(f, indent, dedent=-4)
-
-                    sp -= len(instack)
-                    nout = len(instr.output_effects)
-                    sp += nout
-                    outstack = stack[sp - nout : sp]
-                    for var, outeffect in zip(outstack, instr.output_effects):
-                        if outeffect.name != "unused":
-                            write(f"{var} = {outeffect.name};")
-
-            if sp > nbelow:
-                write(f"STACK_GROW({sp - nbelow});")
-            elif sp < nbelow:
-                write(f"STACK_SHRINK({nbelow - sp});")
-            for i, var in enumerate(reversed(stack[:sp]), 1):
+            if sup.final_sp > sup.initial_sp:
+                write(f"STACK_GROW({sup.final_sp - sup.initial_sp});")
+            elif sup.final_sp < sup.initial_sp:
+                write(f"STACK_SHRINK({sup.initial_sp - sup.final_sp});")
+            for i, var in enumerate(reversed(sup.stack[:sup.final_sp]), 1):
                 write(f"POKE({i}, {var});")
             write(f"DISPATCH();")
-
-    # TODO: Move this into analysis phase
-    def super_macro_analysis(
-        self, name: str, components: list[Instruction]
-    ) -> tuple[list[str], int]:
-        """Analyze a super-instruction or macro.
-
-        Print an error if there's a cache effect (which we don't support yet).
-
-        Return the list of variable names and the initial stack pointer.
-        """
-        lowest = current = highest = 0
-        for instr in components:
-            if instr.cache_effects:
-                print(
-                    f"Super-instruction {name!r} has cache effects in {instr.name!r}",
-                    file=sys.stderr,
-                )
-                self.errors += 1
-            current -= len(instr.input_effects)
-            lowest = min(lowest, current)
-            current += len(instr.output_effects)
-            highest = max(highest, current)
-        # At this point, 'current' is the net stack effect,
-        # and 'lowest' and 'highest' are the extremes.
-        # Note that 'lowest' may be negative.
-        stack = [f"_tmp_{i+1}" for i in range(highest - lowest)]
-        return stack, -lowest
 
 
 def always_exits(block: parser.Block) -> bool:
