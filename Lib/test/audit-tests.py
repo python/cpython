@@ -419,6 +419,17 @@ def test_sys_getframe():
     sys._getframe()
 
 
+def test_sys_getcaller():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    sys._getcaller()
+
+
 def test_wmi_exec_query():
     import _wmi
 

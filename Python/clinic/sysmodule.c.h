@@ -1275,24 +1275,24 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_stack_trampoline_active_impl(module);
 }
 
-PyDoc_STRVAR(sys__get_calling_module_name__doc__,
-"_get_calling_module_name($module, /, depth=0)\n"
+PyDoc_STRVAR(sys__getcaller__doc__,
+"_getcaller($module, /, depth=0)\n"
 "--\n"
 "\n"
-"Return the name of the calling module.\n"
+"Return the calling function object.\n"
 "\n"
-"The default depth returns the module containing the call to this function.\n"
+"The default depth returns the function containing the call to this API.\n"
 "A more typical use in a library will pass a depth of 1 to get the user\'s\n"
-"module rather than the library module.");
+"function rather than the library module.");
 
-#define SYS__GET_CALLING_MODULE_NAME_METHODDEF    \
-    {"_get_calling_module_name", _PyCFunction_CAST(sys__get_calling_module_name), METH_FASTCALL|METH_KEYWORDS, sys__get_calling_module_name__doc__},
-
-static PyObject *
-sys__get_calling_module_name_impl(PyObject *module, int depth);
+#define SYS__GETCALLER_METHODDEF    \
+    {"_getcaller", _PyCFunction_CAST(sys__getcaller), METH_FASTCALL|METH_KEYWORDS, sys__getcaller__doc__},
 
 static PyObject *
-sys__get_calling_module_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+sys__getcaller_impl(PyObject *module, int depth);
+
+static PyObject *
+sys__getcaller(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1316,7 +1316,7 @@ sys__get_calling_module_name(PyObject *module, PyObject *const *args, Py_ssize_t
     static const char * const _keywords[] = {"depth", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "_get_calling_module_name",
+        .fname = "_getcaller",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -1336,7 +1336,7 @@ sys__get_calling_module_name(PyObject *module, PyObject *const *args, Py_ssize_t
         goto exit;
     }
 skip_optional_pos:
-    return_value = sys__get_calling_module_name_impl(module, depth);
+    return_value = sys__getcaller_impl(module, depth);
 
 exit:
     return return_value;
@@ -1385,4 +1385,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=e5518d74e7578a25 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6130a81ea4035753 input=a9049054013a1b77]*/

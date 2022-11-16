@@ -1943,8 +1943,8 @@ def _no_init_or_replace_init(self, *args, **kwargs):
 
 def _caller(depth=1, default='__main__'):
     try:
-        return sys._get_calling_module_name(depth + 1) or default
-    except AttributeError:  # For platforms without _get_calling_module_name()
+        return getattr(sys._getcaller(depth + 1), '__module__', default)
+    except AttributeError:  # For platforms without _getcaller()
         pass
     try:
         return sys._getframe(depth + 1).f_globals.get('__name__', default)

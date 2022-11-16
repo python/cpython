@@ -860,13 +860,11 @@ class EnumType(type):
                 member_name, member_value = item
             classdict[member_name] = member_value
 
-        # TODO: replace the frame hack if a blessed way to know the calling
-        # module is ever developed
         if module is None:
             try:
-                module = sys._get_calling_module_name(2)
+                module = getattr(sys._getcaller(2), '__module__', None)
             except AttributeError:
-                # Fall back on _getframe if _get_calling_module_name is missing
+                # Fall back on _getframe if _getcaller is missing
                 try:
                     module = sys._getframe(2).f_globals['__name__']
                 except (AttributeError, ValueError, KeyError):
