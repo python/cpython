@@ -47,9 +47,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 
     PyCodeObject *code_obj = (PyCodeObject *)Py_NewRef(code);
 
-    PyObject *name = code_obj->co_name;
-    assert(name != NULL);
-    Py_INCREF(name);
+    assert(code_obj->co_name != NULL);
+    PyObject *name = Py_NewRef(code_obj->co_name);
 
     if (!qualname) {
         qualname = code_obj->co_qualname;
@@ -525,10 +524,7 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
             return NULL;
     }
     PyObject *d = func_get_annotation_dict(op);
-    if (d) {
-        Py_INCREF(d);
-    }
-    return d;
+    return Py_XNewRef(d);
 }
 
 static int
