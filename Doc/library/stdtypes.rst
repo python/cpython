@@ -1795,7 +1795,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   You can call :func:`keyword.iskeyword` to test whether string ``s`` is a
+   :func:`keyword.iskeyword` can be used to test whether string ``s`` is a
    reserved identifier, such as :keyword:`def` and :keyword:`class`.
 
    Example:
