@@ -2745,6 +2745,10 @@
         }
 
         TARGET(WITH_EXCEPT_START) {
+            PyObject *val = PEEK(1);
+            PyObject *lasti = PEEK(3);
+            PyObject *exit_func = PEEK(4);
+            PyObject *res;
             /* At the top of the stack are 4 values:
                - TOP = exc_info()
                - SECOND = previous exception
@@ -2753,23 +2757,19 @@
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
             */
-            PyObject *exit_func;
-            PyObject *exc, *val, *tb, *res;
+            PyObject *exc, *tb;
 
-            val = TOP();
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);
             Py_XDECREF(tb);
-            assert(PyLong_Check(PEEK(3)));
-            exit_func = PEEK(4);
+            assert(PyLong_Check(lasti));
             PyObject *stack[4] = {NULL, exc, val, tb};
             res = PyObject_Vectorcall(exit_func, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            if (res == NULL)
-                goto error;
-
-            PUSH(res);
+            if (res == NULL) goto pop_4_error;
+            STACK_GROW(1);
+            POKE(1, res);
             DISPATCH();
         }
 

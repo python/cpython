@@ -82,13 +82,14 @@ class Instruction(parser.InstDef):
         assert cache_offset == self.cache_offset
 
         # Write input stack effect variable declarations and initializations
+        input_names = [seffect.name for seffect in self.input_effects]
         for i, seffect in enumerate(reversed(self.input_effects), 1):
             if seffect.name != "unused":
                 f.write(f"{indent}    PyObject *{seffect.name} = PEEK({i});\n")
 
         # Write output stack effect variable declarations
         for seffect in self.output_effects:
-            if seffect.name != "unused":
+            if seffect.name not in input_names and seffect.name != "unused":
                 f.write(f"{indent}    PyObject *{seffect.name};\n")
 
         self.write_body(f, indent, dedent)
@@ -105,8 +106,8 @@ class Instruction(parser.InstDef):
             f.write(f"{indent}    STACK_SHRINK({-diff});\n")
 
         # Write output stack effect assignments
-        input_names = [seffect.name for seffect in self.input_effects]
         for i, output in enumerate(reversed(self.output_effects), 1):
+            # TODO: Only skip if output occurs at same position as input
             if output.name not in input_names and output.name != "unused":
                 f.write(f"{indent}    POKE({i}, {output.name});\n")
 
