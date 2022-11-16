@@ -1,6 +1,7 @@
 import os
 import sys
 import io
+import gc
 import subprocess
 from test import support
 import unittest
@@ -164,18 +165,31 @@ class Test_TestProgram(unittest.TestCase):
         self.assertTrue(out.endswith(expected))
 
     class TestRaise(unittest.TestCase):
-        td_count = 0
-        tdc_count = 0
+        td_log = ''
         class Error(Exception):
             pass
         def test_raise(self):
             self = self
             raise self.Error
+        def setUp(self):
+            self.addCleanup(self.clInstance)
+            self.addClassCleanup(self.clClass)
+            unittest.case.addModuleCleanup(self.clModule)
         def tearDown(self):
-            self.__class__.td_count += 1
+            __class__.td_log += 't'
+            1 / 0  # should not block further cleanups
+        def clInstance(self):
+            __class__.td_log += 'c'
         @classmethod
         def tearDownClass(cls):
-            cls.tdc_count += 1
+            __class__.td_log += 'T'
+        @classmethod
+        def clClass(cls):
+            __class__.td_log += 'C'
+            2 / 0
+        @staticmethod
+        def clModule():
+            __class__.td_log += 'M'
 
     class TestRaiseLoader(unittest.TestLoader):
         def loadTestsFromModule(self, module):
@@ -187,25 +201,22 @@ class Test_TestProgram(unittest.TestCase):
                 [self.loadTestsFromTestCase(Test_TestProgram.TestRaise)])
 
     def test_debug(self):
-        td0 = self.TestRaise.td_count
-        tdc0 = self.TestRaise.tdc_count
+        self.TestRaise.td_log = ''
         try:
             unittest.main(
                 argv=["TestRaise", "--debug"],
                 testRunner=unittest.TextTestRunner(stream=io.StringIO()),
                 testLoader=self.TestRaiseLoader())
-        except self.TestRaise.Error:
-            assert self.TestRaise.td_count - td0 == 0
-            assert self.TestRaise.tdc_count - tdc0 == 0
+        except self.TestRaise.Error as e:
+            # outer pm handling of original exception
+            assert self.TestRaise.td_log == ''  # still set up!
         else:
             self.fail("TestRaise not raised")
         # test delayed teardown
         if not hasattr(sys, 'getrefcount'):
             # PyPy etc.
-            import gc
             gc.collect()
-        assert self.TestRaise.td_count - tdc0 == 1
-        assert self.TestRaise.tdc_count - tdc0 == 1
+        assert self.TestRaise.td_log == 'tcTCM', self.TestRaise.td_log
 
     def test_no_debug(self):
         self.assertRaises(
@@ -215,36 +226,58 @@ class Test_TestProgram(unittest.TestCase):
             testRunner=unittest.TextTestRunner(stream=io.StringIO()),
             testLoader=self.TestRaiseLoader())
 
-    def test_pdb(self):
+    def test_inline_debugging(self):
         from test.test_pdb import PdbTestInput
-        # post-mortem
+        # post-mortem --pdb
         out, err = io.StringIO(), io.StringIO()
         try:
             with unittest.mock.patch('sys.stdout', out),\
                     unittest.mock.patch('sys.stderr', err),\
-                    PdbTestInput(['c']):
-                p = unittest.main(
+                    PdbTestInput(['c'] * 3):
+                unittest.main(
                     argv=["TestRaise", "--pdb"],
                     testRunner=unittest.TextTestRunner(stream=err),
                     testLoader=self.TestRaiseLoader())
         except SystemExit:
-            assert '-> raise self.Error\n(Pdb)' in out.getvalue()
-            assert 'FAILED (errors=1)' in err.getvalue()
+            assert '-> raise self.Error\n(Pdb)' in out.getvalue(), 'out:' + out.getvalue()
+            assert '-> 2 / 0\n(Pdb)' in out.getvalue(), 'out:' + out.getvalue()
+            assert 'FAILED (errors=3)' in err.getvalue(), 'err:' + err.getvalue()
         else:
-            raise AssertionError
+            self.fail("SystemExit not raised")
+
+        # post-mortem --pm=<DebuggerClass>, early user debugger quit
+        out, err = io.StringIO(), io.StringIO()
+        self.TestRaise.td_log = ''
+        try:
+            with unittest.mock.patch('sys.stdout', out),\
+                    unittest.mock.patch('sys.stderr', err),\
+                    PdbTestInput(['q']):
+                unittest.main(
+                    argv=["TestRaise", "--pm=pdb.Pdb"],
+                    testRunner=unittest.TextTestRunner(stream=err),
+                    testLoader=self.TestRaiseLoader())
+        except unittest.case.DebuggerQuit as e:
+            assert e.__context__.__class__ == self.TestRaise.Error
+            assert self.TestRaise.td_log == ''  # still set up!
+            assert out.getvalue().endswith('-> raise self.Error\n(Pdb) q\n'), 'out:' + out.getvalue()
+        else:
+            self.fail("DebuggerQuit not raised")
+        gc.collect()
+        assert self.TestRaise.td_log == 'tcTCM', self.TestRaise.td_log
+
         # --trace
         out, err = io.StringIO(), io.StringIO()
         try:
             with unittest.mock.patch('sys.stdout', out), PdbTestInput(['c']):
-                p = unittest.main(
+                unittest.main(
                     argv=["TestRaise", "--trace"],
                     testRunner=unittest.TextTestRunner(stream=err),
                     testLoader=self.TestRaiseLoader())
         except SystemExit:
-            assert '-> self = self\n(Pdb)' in out.getvalue()
-            assert 'FAILED (errors=1)' in err.getvalue()
+            assert '-> self = self\n(Pdb)' in out.getvalue(), 'out:' + out.getvalue()
+            assert 'FAILED (errors=3)' in err.getvalue(), 'err:' + err.getvalue()
         else:
-            raise AssertionError
+            self.fail("SystemExit not raised")
 
 
 class InitialisableProgram(unittest.TestProgram):
