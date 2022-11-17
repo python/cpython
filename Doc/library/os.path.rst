@@ -269,7 +269,7 @@ the :mod:`glob` module.)
 .. function:: isjunction(path)
 
    Return ``True`` if *path* is a junction. This function exists for both POSIX
-   and Windows, though can only return True on Windows.
+   and Windows, though only Windows currently supports junctions.
 
    .. versionadded:: 3.12
       
