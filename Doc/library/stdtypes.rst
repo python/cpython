@@ -2240,7 +2240,7 @@ expression support in the :mod:`re` module).
    titlecase).
 
    The uppercasing algorithm used is
-    `described in section 3.13 of the Unicode Standard
+   `described in section 3.13 of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
