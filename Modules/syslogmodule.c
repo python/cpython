@@ -69,13 +69,7 @@ static char S_log_open = 0;
 static inline int
 is_main_interpreter(void)
 {
-    PyInterpreterState *main_interp = PyInterpreterState_Main();
-    PyThreadState *tstate = PyThreadState_GET();
-    PyInterpreterState *current_interp = PyThreadState_GetInterpreter(tstate);
-    if (current_interp == main_interp) {
-        return 1;
-    }
-    return 0;
+    return (PyInterpreterState_Get() == PyInterpreterState_Main());
 }
 
 static PyObject *
@@ -150,7 +144,7 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
     // Since the sys.openlog changes the process level state of syslog library,
     // this operation is only allowed for the main interpreter.
     if (!is_main_interpreter()) {
-        PyErr_SetString(PyExc_RuntimeError, "subinterpreter can not use syslog.openlog");
+        PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.openlog()");
         return NULL;
     }
 
@@ -215,7 +209,7 @@ syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
     /*  if log is not opened, open it now  */
     if (!S_log_open) {
         if (!is_main_interpreter()) {
-            PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.syslog "
+            PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.syslog() "
                                                 "until the syslog is opened by the main interpreter");
             return NULL;
         }
@@ -257,7 +251,7 @@ syslog_closelog_impl(PyObject *module)
     // Since the sys.closelog changes the process level state of syslog library,
     // this operation is only allowed for the main interpreter.
     if (!is_main_interpreter()) {
-        PyErr_SetString(PyExc_RuntimeError, "sunbinterpreter can not use syslog.closelog");
+        PyErr_SetString(PyExc_RuntimeError, "sunbinterpreter can't use syslog.closelog()");
         return NULL;
     }
 
