@@ -1136,11 +1136,7 @@
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
-                if (_Py_Specialize_StoreAttr(owner, next_instr, name)) {
-                    // "undo" the rewind so end up in the correct handler:
-                    next_instr++;
-                    goto error;
-                }
+                _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_ATTR, deferred);
@@ -1718,11 +1714,7 @@
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
-                if (_Py_Specialize_LoadAttr(owner, next_instr, name)) {
-                    // "undo" the rewind so end up in the correct handler:
-                    next_instr++;
-                    goto error;
-                }
+                _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_ATTR, deferred);
