@@ -1,6 +1,5 @@
 import ntpath
 import os
-import subprocess
 import sys
 import unittest
 import warnings
