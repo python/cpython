@@ -8217,94 +8217,80 @@ static int
 expand_del_noerror(basicblock *entryblock, int none_oparg)
 {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        int room_needed = 0;
         for (int i = 0; i < b->b_iused; i++) {
-            struct instr *instr = &b->b_instr[i];
-            switch (instr->i_opcode) {
+            int opcode = b->b_instr[i].i_opcode;
+            int oparg = b->b_instr[i].i_oparg;
+            basicblock *except = b->b_instr[i].i_except;
+            location loc = b->b_instr[i].i_loc;
+            int del_opcode, store_opcode;
+            switch (opcode) {
                 case DELETE_FAST_NOERROR:
                     // Already proved this can't raise UnboundLocalError.
-                    instr->i_opcode = DELETE_FAST;
+                    b->b_instr[i].i_opcode = DELETE_FAST;
                     break;
                 case DELETE_FAST_CHECK:
-                    // LOAD_FAST_CHECK; POP_TOP; DELETE_FAST;
-                    room_needed += 2;
+                    b->b_instr[i].i_opcode = DELETE_FAST;
+                    if (insert_instruction(b, i, &(struct instr) {
+                        .i_opcode = POP_TOP,
+                        .i_oparg = 0,
+                        .i_loc = loc,
+                        .i_except = except,
+                    })) {
+                        return -1;
+                    }
+                    if (insert_instruction(b, i, &(struct instr) {
+                        .i_opcode = LOAD_FAST_CHECK,
+                        .i_oparg = oparg,
+                        .i_loc = loc,
+                        .i_except = except,
+                    })) {
+                        return -1;
+                    }
+                    i += 2;
                     break;
                 case DELETE_FAST_NOERROR_CHECK:
                 case DELETE_DEREF_NOERROR:
                 case DELETE_GLOBAL_NOERROR:
                 case DELETE_NAME_NOERROR:
-                    // LOAD_CONST None; STORE_(...); DELETE_(...);
-                    room_needed += 2;
+                    switch (opcode) {
+                        case DELETE_FAST_NOERROR_CHECK:
+                            del_opcode = DELETE_FAST;
+                            store_opcode = STORE_FAST;
+                            break;
+                        case DELETE_DEREF_NOERROR:
+                            del_opcode = DELETE_DEREF;
+                            store_opcode = STORE_DEREF;
+                            break;
+                        case DELETE_GLOBAL_NOERROR:
+                            del_opcode = DELETE_GLOBAL;
+                            store_opcode = STORE_GLOBAL;
+                            break;
+                        case DELETE_NAME_NOERROR:
+                            del_opcode = DELETE_NAME;
+                            store_opcode = STORE_NAME;
+                            break;
+                    }
+                    b->b_instr[i].i_opcode = del_opcode;
+                    if (insert_instruction(b, i, &(struct instr) {
+                        .i_opcode = store_opcode,
+                        .i_oparg = oparg,
+                        .i_loc = loc,
+                        .i_except = except,
+                    })) {
+                        return -1;
+                    }
+                    if (insert_instruction(b, i, &(struct instr) {
+                        .i_opcode = LOAD_CONST,
+                        .i_oparg = none_oparg,
+                        .i_loc = loc,
+                        .i_except = except,
+                    })) {
+                        return -1;
+                    }
+                    i += 2;
                     break;
             }
         }
-        if (!room_needed) {
-            continue;
-        }
-        for (int r = 0; r < room_needed; r++) {
-            if (!basicblock_addop(b, NOP, 0, NO_LOCATION)) {
-                return -1;
-            }
-        }
-        int dest = b->b_iused - 1;
-        int src = b->b_iused - 1 - room_needed;
-        for (; src >= 0; src--) {
-            assert(src <= dest);
-            int op1, arg1, op2, arg2, op3, arg3;
-            int src_oparg = b->b_instr[src].i_oparg;
-            switch (b->b_instr[src].i_opcode) {
-                case DELETE_FAST_CHECK:
-                    op1 = LOAD_FAST_CHECK; arg1 = src_oparg;
-                    op2 = POP_TOP; arg2 = 0;
-                    op3 = DELETE_FAST; arg3 = src_oparg;
-                    break;
-                case DELETE_FAST_NOERROR_CHECK:
-                    op1 = LOAD_CONST; arg1 = none_oparg;
-                    op2 = STORE_FAST; arg2 = src_oparg;
-                    op3 = DELETE_FAST; arg3 = src_oparg;
-                    break;
-                case DELETE_DEREF_NOERROR:
-                    op1 = LOAD_CONST; arg1 = none_oparg;
-                    op2 = STORE_DEREF; arg2 = src_oparg;
-                    op3 = DELETE_DEREF; arg3 = src_oparg;
-                    break;
-                case DELETE_GLOBAL_NOERROR:
-                    op1 = LOAD_CONST; arg1 = none_oparg;
-                    op2 = STORE_GLOBAL; arg2 = src_oparg;
-                    op3 = DELETE_GLOBAL; arg3 = src_oparg;
-                    break;
-                case DELETE_NAME_NOERROR:
-                    op1 = LOAD_CONST; arg1 = none_oparg;
-                    op2 = STORE_NAME; arg2 = src_oparg;
-                    op3 = DELETE_NAME; arg3 = src_oparg;
-                    break;
-                default:
-                    b->b_instr[dest--] = b->b_instr[src];
-                    continue;
-            }
-            b->b_instr[dest--] = (struct instr) {
-                .i_except = b->b_instr[src].i_except,
-                .i_loc = b->b_instr[src].i_loc,
-                .i_opcode = op3,
-                .i_oparg = arg3,
-                .i_target = NULL,
-            };
-            b->b_instr[dest--] = (struct instr) {
-                .i_except = b->b_instr[src].i_except,
-                .i_loc = b->b_instr[src].i_loc,
-                .i_opcode = op2,
-                .i_oparg = arg2,
-                .i_target = NULL,
-            };
-            b->b_instr[dest--] = (struct instr) {
-                .i_except = b->b_instr[src].i_except,
-                .i_loc = b->b_instr[src].i_loc,
-                .i_opcode = op1,
-                .i_oparg = arg1,
-                .i_target = NULL,
-            };
-        }
-        assert(dest == -1);
     }
     return 0;
 }
