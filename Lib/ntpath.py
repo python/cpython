@@ -270,13 +270,18 @@ def islink(path):
 
 # Is a path a junction?
 
-def isjunction(path):
-    """Test whether a path is a junction"""
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError, AttributeError):
+if hasattr(os.stat_result, 'st_reparse_tag'):
+    def isjunction(path):
+        """Test whether a path is a junction"""
+        try:
+            st = os.lstat(path)
+        except (OSError, ValueError, AttributeError):
+            return False
+        return bool(st.st_reparse_tag & stat.IO_REPARSE_TAG_MOUNT_POINT)
+else:
+    def isjunction(path):
+        """Test whether a path is a junction"""
         return False
-    return bool(st.st_reparse_tag & stat.IO_REPARSE_TAG_MOUNT_POINT)
 
 
 # Being true for dangling symbolic links is also useful.
