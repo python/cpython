@@ -233,6 +233,9 @@ pathlib
   to allow the insertion of ``..`` entries in the result; this behavior is
   more consistent with :func:`os.path.relpath`.
   (Contributed by Domenico Ragusa in :issue:`40358`.)
+  
+* Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
+
 
 dis
 ---
@@ -251,6 +254,9 @@ os
 * Add :data:`os.PIDFD_NONBLOCK` to open a file descriptor
   for a process with :func:`os.pidfd_open` in non-blocking mode.
   (Contributed by Kumar Aditya in :gh:`93312`.)
+  
+* Add :func:`os.path.isjunction` to check if a given path is a junction. 
+
 
 shutil
 ------
