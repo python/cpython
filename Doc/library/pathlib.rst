@@ -894,7 +894,7 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.is_junction()
 
    Return ``True`` if the path points to a junction, and ``False`` for any other
-   type of file (as returned by :func:`os.path.isjunction`).
+   type of file. Currently only Windows supports junctions.
 
    .. versionadded:: 3.12
 
