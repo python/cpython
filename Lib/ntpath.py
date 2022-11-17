@@ -281,6 +281,7 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
 else:
     def isjunction(path):
         """Test whether a path is a junction"""
+        os.fspath(path)
         return False
 
 
