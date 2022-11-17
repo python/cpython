@@ -864,7 +864,7 @@ class TestNtpath(NtpathTestCase):
 
                 import _winapi
                 try:
-                    _winapi.CreateJunction(tmpdir, 'testjunc')
+                    _winapi.CreateJunction('tmpdir', 'testjunc')
                 except OSError:
                     raise unittest.SkipTest('creating the test junction failed')
 
