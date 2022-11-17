@@ -933,8 +933,7 @@ _elementtree_Element___getstate___impl(ElementObject *self)
     if (!children)
         return NULL;
     for (i = 0; i < PyList_GET_SIZE(children); i++) {
-        PyObject *child = self->extra->children[i];
-        Py_INCREF(child);
+        PyObject *child = Py_NewRef(self->extra->children[i]);
         PyList_SET_ITEM(children, i, child);
     }
 
@@ -1365,8 +1364,7 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
 /*[clinic end generated code: output=523c614142595d75 input=ee153bbf8cdb246e]*/
 {
     if (self->extra && self->extra->attrib) {
-        PyObject *attrib = self->extra->attrib;
-        Py_INCREF(attrib);
+        PyObject *attrib = Py_NewRef(self->extra->attrib);
         PyObject *value = PyDict_GetItemWithError(attrib, key);
         Py_XINCREF(value);
         Py_DECREF(attrib);
@@ -1723,8 +1721,7 @@ element_subscr(PyObject* self_, PyObject* item)
 
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
-                PyObject* item = self->extra->children[cur];
-                Py_INCREF(item);
+                PyObject* item = Py_NewRef(self->extra->children[cur]);
                 PyList_SET_ITEM(list, i, item);
             }
 
@@ -2761,8 +2758,7 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
     if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0)
         return NULL;
 
-    Py_INCREF(self->last);
-    return (PyObject*) self->last;
+    return Py_NewRef(self->last);
 }
 
 LOCAL(PyObject*)

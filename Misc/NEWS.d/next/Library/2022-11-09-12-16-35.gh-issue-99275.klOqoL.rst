@@ -1,2 +1,0 @@
-Fix ``SystemError`` in :mod:`ctypes` when exception was not set during
-``__initsubclass__``.

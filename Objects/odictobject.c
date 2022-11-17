@@ -1114,8 +1114,7 @@ OrderedDict_popitem_impl(PyODictObject *self, int last)
     }
 
     node = last ? _odict_LAST(self) : _odict_FIRST(self);
-    key = _odictnode_KEY(node);
-    Py_INCREF(key);
+    key = Py_NewRef(_odictnode_KEY(node));
     value = _odict_popkey_hash((PyObject *)self, key, NULL, _odictnode_HASH(node));
     if (value == NULL)
         return NULL;

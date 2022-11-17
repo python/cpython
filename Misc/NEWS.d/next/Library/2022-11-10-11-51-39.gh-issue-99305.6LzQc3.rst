@@ -1,1 +1,0 @@
-Improve performance of :func:`secrets.token_hex`.

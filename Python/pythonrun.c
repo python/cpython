@@ -515,8 +515,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     if (v == Py_None) {
         Py_DECREF(v);
         _Py_DECLARE_STR(anon_string, "<string>");
-        *filename = &_Py_STR(anon_string);
-        Py_INCREF(*filename);
+        *filename = Py_NewRef(&_Py_STR(anon_string));
     }
     else {
         *filename = v;
@@ -1688,7 +1687,8 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
      * uncaught exception to trigger an unexplained signal exit from a future
      * Py_Main() based one.
      */
-    _Py_UnhandledKeyboardInterrupt = 0;
+    // XXX Isn't this dealt with by the move to _PyRuntimeState?
+    _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
     if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
@@ -1702,7 +1702,7 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (!v && _PyErr_Occurred(tstate) == PyExc_KeyboardInterrupt) {
-        _Py_UnhandledKeyboardInterrupt = 1;
+        _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
     }
     return v;
 }
