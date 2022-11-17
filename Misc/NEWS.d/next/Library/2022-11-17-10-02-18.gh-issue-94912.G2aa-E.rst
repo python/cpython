@@ -1,0 +1,1 @@
+Added ``@markcoroutinefunction`` decorator to ``inspect`` module.
