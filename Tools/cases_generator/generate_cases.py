@@ -118,7 +118,7 @@ class Instruction(parser.InstDef):
     def write_body(self, f: typing.TextIO, ndent: str, dedent: int) -> None:
         """Write the instruction body."""
 
-        # Get lines of text with proper dedelt
+        # Get lines of text with proper dedent
         blocklines = self.block.to_text(dedent=dedent).splitlines(True)
 
         # Remove blank lines from both ends
