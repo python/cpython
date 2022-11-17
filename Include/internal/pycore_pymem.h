@@ -113,8 +113,6 @@ struct _PyTraceMalloc_Config {
      .tracing = 0, \
      .max_nframe = 1}
 
-PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
-
 #ifdef __cplusplus
 }
 #endif
