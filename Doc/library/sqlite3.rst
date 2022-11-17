@@ -2351,7 +2351,7 @@ use the :class:`sqlite3.Row` class or a custom :attr:`~Connection.row_factory`.
 
 :class:`!Row` provides indexed and case-insensitive named access to columns,
 with low memory overhead and minimal performance impact.
-In order to use :class:`Row` as a row factory,
+In order to use :class:`!Row` as a row factory,
 simply assign it to the :attr:`Connection.row_factory` attribute:
 
 .. doctest::
@@ -2359,7 +2359,7 @@ simply assign it to the :attr:`Connection.row_factory` attribute:
    >>> con = sqlite3.connect(":memory:")
    >>> con.row_factory = sqlite3.Row
 
-Query results are now processed using :class:`Row`:
+Query results are now returned as :class:`!Row` instances:
 
 .. doctest::
 
@@ -2440,10 +2440,14 @@ Here's an example of a factory that return a :class:`~collections.namedtuple`.
    >>> row.b   # Attribute access.
    2
 
+As an optimisation, decorate :func:`!_make_cls` with
+:func:`!functools.lru_cache` to avoid creating multiple named tuples
+with identical column spec.
+See :func:`functools.lru_cache` for more details.
+
 With some adjustments, the above recipe can be adapted to use a
 :class:`~dataclasses.dataclass`, or any other custom class,
 instead of a :class:`~collections.namedtuple`.
-
 
 .. _sqlite3-explanation:
 
