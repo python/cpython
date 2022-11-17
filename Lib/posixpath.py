@@ -175,6 +175,7 @@ def islink(path):
 def isjunction(path):
     """Test whether a path is a junction
     Junctions are not a part of posix semantics"""
+    os.fspath(path)
     return False
 
 
