@@ -76,13 +76,9 @@ do { \
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
 
-typedef struct {
-    PyObject *kwnames;
-} CallShape;
-
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
-static PyObject *container, *start, *stop, *v;
+static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 
 static PyObject *
 dummy_func(
@@ -101,6 +97,8 @@ dummy_func(
     binaryfunc binary_ops[]
 )
 {
+    _PyInterpreterFrame  entry_frame;
+
     switch (opcode) {
 
 // BEGIN BYTECODES //
@@ -193,7 +191,21 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
+        family(binary_op, INLINE_CACHE_ENTRIES_BINARY_OP) = {
+            BINARY_OP,
+            BINARY_OP_ADD_FLOAT,
+            BINARY_OP_ADD_INT,
+            BINARY_OP_ADD_UNICODE,
+            BINARY_OP_GENERIC,
+            // BINARY_OP_INPLACE_ADD_UNICODE,  // This is an odd duck.
+            BINARY_OP_MULTIPLY_FLOAT,
+            BINARY_OP_MULTIPLY_INT,
+            BINARY_OP_SUBTRACT_FLOAT,
+            BINARY_OP_SUBTRACT_INT,
+        };
+
+
+        inst(BINARY_OP_MULTIPLY_INT, (left, right, unused/1 -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -202,10 +214,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(prod == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_MULTIPLY_FLOAT, (left, right -- prod)) {
+        inst(BINARY_OP_MULTIPLY_FLOAT, (left, right, unused/1 -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -216,10 +227,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(prod == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_SUBTRACT_INT, (left, right -- sub)) {
+        inst(BINARY_OP_SUBTRACT_INT, (left, right, unused/1 -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -228,10 +238,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(sub == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_SUBTRACT_FLOAT, (left, right -- sub)) {
+        inst(BINARY_OP_SUBTRACT_FLOAT, (left, right, unused/1 -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -241,10 +250,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(sub == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+        inst(BINARY_OP_ADD_UNICODE, (left, right, unused/1 -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -253,7 +261,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             ERROR_IF(res == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
         // This is a subtle one. It's a super-instruction for
@@ -292,7 +299,7 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }
 
-        inst(BINARY_OP_ADD_FLOAT, (left, right -- sum)) {
+        inst(BINARY_OP_ADD_FLOAT, (left, right, unused/1 -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -303,10 +310,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(sum == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_ADD_INT, (left, right -- sum)) {
+        inst(BINARY_OP_ADD_INT, (left, right, unused/1 -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -315,7 +321,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(sum == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
         inst(BINARY_SUBSCR, (container, sub -- res)) {
@@ -3192,7 +3197,7 @@ dummy_func(
                 goto error;
             }
             PyObject *arg = TOP();
-            PyObject *res = cfunc(PyCFunction_GET_SELF(callable), arg);
+            PyObject *res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -3393,7 +3398,7 @@ dummy_func(
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *res = cfunc(self, arg);
+            PyObject *res = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -3465,7 +3470,7 @@ dummy_func(
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *res = cfunc(self, NULL);
+            PyObject *res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -3691,30 +3696,21 @@ dummy_func(
             PUSH(Py_NewRef(peek));
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_GENERIC) {
-            PyObject *rhs = POP();
-            PyObject *lhs = TOP();
+        inst(BINARY_OP_GENERIC, (lhs, rhs, unused/1 -- res)) {
             assert(0 <= oparg);
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
-            PyObject *res = binary_ops[oparg](lhs, rhs);
+            res = binary_ops[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
+            ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP) {
+        // This always dispatches, so the result is unused.
+        inst(BINARY_OP, (lhs, rhs, unused/1 -- unused)) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *lhs = SECOND();
-                PyObject *rhs = TOP();
                 next_instr--;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
                 DISPATCH_SAME_OPARG();
@@ -3761,13 +3757,8 @@ dummy_func(
     ;
 }
 
-// Families go below this point //
+// Future families go below this point //
 
-family(binary_op) = {
-    BINARY_OP, BINARY_OP_ADD_FLOAT,
-    BINARY_OP_ADD_INT, BINARY_OP_ADD_UNICODE, BINARY_OP_GENERIC, BINARY_OP_INPLACE_ADD_UNICODE,
-    BINARY_OP_MULTIPLY_FLOAT, BINARY_OP_MULTIPLY_INT, BINARY_OP_SUBTRACT_FLOAT,
-    BINARY_OP_SUBTRACT_INT };
 family(binary_subscr) = {
     BINARY_SUBSCR, BINARY_SUBSCR_DICT,
     BINARY_SUBSCR_GETITEM, BINARY_SUBSCR_LIST_INT, BINARY_SUBSCR_TUPLE_INT };

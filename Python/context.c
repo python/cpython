@@ -1235,25 +1235,29 @@ token_new(PyContext *ctx, PyContextVar *var, PyObject *val)
 /////////////////////////// Token.MISSING
 
 
-static PyObject *_token_missing;
-
-
-typedef struct {
-    PyObject_HEAD
-} PyContextTokenMissing;
-
-
 static PyObject *
 context_token_missing_tp_repr(PyObject *self)
 {
     return PyUnicode_FromString("<Token.MISSING>");
 }
 
+static void
+context_token_missing_tp_dealloc(_PyContextTokenMissing *Py_UNUSED(self))
+{
+#ifdef Py_DEBUG
+    /* The singleton is statically allocated. */
+    _Py_FatalRefcountError("deallocating the token missing singleton");
+#else
+    return;
+#endif
+}
+
 
 PyTypeObject _PyContextTokenMissing_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Token.MISSING",
-    sizeof(PyContextTokenMissing),
+    sizeof(_PyContextTokenMissing),
+    .tp_dealloc = (destructor)context_token_missing_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_repr = context_token_missing_tp_repr,
@@ -1263,17 +1267,7 @@ PyTypeObject _PyContextTokenMissing_Type = {
 static PyObject *
 get_token_missing(void)
 {
-    if (_token_missing != NULL) {
-        return Py_NewRef(_token_missing);
-    }
-
-    _token_missing = (PyObject *)PyObject_New(
-        PyContextTokenMissing, &_PyContextTokenMissing_Type);
-    if (_token_missing == NULL) {
-        return NULL;
-    }
-
-    return Py_NewRef(_token_missing);
+    return Py_NewRef(&_Py_SINGLETON(context_token_missing));
 }
 
 
@@ -1298,15 +1292,11 @@ _PyContext_ClearFreeList(PyInterpreterState *interp)
 void
 _PyContext_Fini(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(interp)) {
-        Py_CLEAR(_token_missing);
-    }
     _PyContext_ClearFreeList(interp);
 #if defined(Py_DEBUG) && PyContext_MAXFREELIST > 0
     struct _Py_context_state *state = &interp->context;
     state->numfree = -1;
 #endif
-    _PyHamt_Fini(interp);
 }
 
 

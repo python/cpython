@@ -74,7 +74,7 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
             PyErr_Format(PyExc_AttributeError,
                          "'%.200s' object has no attribute '%s'",
                          tp->tp_name, l->name);
-       }
+        }
         Py_XINCREF(v);
         break;
     case T_LONGLONG:

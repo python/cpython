@@ -7,8 +7,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
 
-static uint32_t next_func_version = 1;
-
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
@@ -45,12 +43,10 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyCodeObject *code_obj = (PyCodeObject *)code;
-    Py_INCREF(code_obj);
+    PyCodeObject *code_obj = (PyCodeObject *)Py_NewRef(code);
 
-    PyObject *name = code_obj->co_name;
-    assert(name != NULL);
-    Py_INCREF(name);
+    assert(code_obj->co_name != NULL);
+    PyObject *name = Py_NewRef(code_obj->co_name);
 
     if (!qualname) {
         qualname = code_obj->co_qualname;
@@ -130,10 +126,10 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
     if (func->vectorcall != _PyFunction_Vectorcall) {
         return 0;
     }
-    if (next_func_version == 0) {
+    if (_PyRuntime.func_state.next_version == 0) {
         return 0;
     }
-    uint32_t v = next_func_version++;
+    uint32_t v = _PyRuntime.func_state.next_version++;
     func->func_version = v;
     return v;
 }
@@ -526,10 +522,7 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
             return NULL;
     }
     PyObject *d = func_get_annotation_dict(op);
-    if (d) {
-        Py_INCREF(d);
-    }
-    return d;
+    return Py_XNewRef(d);
 }
 
 static int

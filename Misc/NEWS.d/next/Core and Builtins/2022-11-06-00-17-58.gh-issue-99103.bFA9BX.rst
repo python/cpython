@@ -1,2 +1,0 @@
-Fix the error reporting positions of specialized traceback anchors when the
-source line contains Unicode characters.
