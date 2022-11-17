@@ -8751,20 +8751,6 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, NO_LOCATION, RETURN_VALUE);
     }
 
-    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
-    assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
-    assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
-    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(c->u->u_freevars);
-    assert(INT_MAX - nlocals - ncellvars > 0);
-    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
-    int nlocalsplus = nlocals + ncellvars + nfreevars;
-    int *cellfixedoffsets = build_cellfixedoffsets(c);
-    if (cellfixedoffsets == NULL) {
-        goto error;
-    }
-
     int nblocks = 0;
     for (basicblock *b = CFG_BUILDER(c)->g_block_list; b != NULL; b = b->b_list) {
         nblocks++;
@@ -8786,19 +8772,6 @@ assemble(struct compiler *c, int addNone)
             c->u->u_firstlineno = 1;
         }
     }
-
-    // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
-        goto error;
-    }
-
-    int numdropped = fix_cell_offsets(c, g->g_entryblock, cellfixedoffsets);
-    PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
-    cellfixedoffsets = NULL;
-    if (numdropped < 0) {
-        goto error;
-    }
-    nlocalsplus -= numdropped;
 
     /** Preprocessing **/
     /* Map labels to targets and mark exception handlers */
@@ -8839,6 +8812,35 @@ assemble(struct compiler *c, int addNone)
     }
 
     /** Assembly **/
+
+    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
+    assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
+    assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(c->u->u_freevars);
+    assert(INT_MAX - nlocals - ncellvars > 0);
+    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
+    int nlocalsplus = nlocals + ncellvars + nfreevars;
+    int* cellfixedoffsets = build_cellfixedoffsets(c);
+    if (cellfixedoffsets == NULL) {
+        goto error;
+    }
+
+    // This must be called before fix_cell_offsets().
+    if (insert_prefix_instructions(c, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
+        PyMem_Free(cellfixedoffsets);
+        goto error;
+    }
+
+    int numdropped = fix_cell_offsets(c, g->g_entryblock, cellfixedoffsets);
+    PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
+    cellfixedoffsets = NULL;
+    if (numdropped < 0) {
+        goto error;
+    }
+    nlocalsplus -= numdropped;
+
     int maxdepth = stackdepth(g->g_entryblock, code_flags);
     if (maxdepth < 0) {
         goto error;
@@ -8904,9 +8906,6 @@ assemble(struct compiler *c, int addNone)
  error:
     Py_XDECREF(consts);
     assemble_free(&a);
-    if (cellfixedoffsets != NULL) {
-        PyMem_Free(cellfixedoffsets);
-    }
     return co;
 }
 
