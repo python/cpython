@@ -295,13 +295,6 @@ sys
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
 
-syslog
-------
-
-* :func:`syslog.openlog` and :func:`syslog.closelog` are only available from the main interpreter not subinterpreter.
-  :func:`syslog.syslog` is only available to subinterpreters if :func:`syslog.openlog` was already called from the main interpreter.
-  (Contributed by Dong-hee Na in :gh:`99127`.)
-
 
 Optimizations
 =============
@@ -655,6 +648,10 @@ Changes in the Python API
   :class:`bytearray` and :class:`memoryview` types: only the exact
   :class:`bytes` type is accepted for bytes strings.
   (Contributed by Victor Stinner in :gh:`98393`.)
+
+* :func:`syslog.openlog` and :func:`syslog.closelog` are only available from the main interpreter not subinterpreter.
+  :func:`syslog.syslog` is only available to subinterpreters if :func:`syslog.openlog` was already called from the main interpreter.
+  (Contributed by Dong-hee Na in :gh:`99127`.)
 
 
 Build Changes
