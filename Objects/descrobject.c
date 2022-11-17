@@ -17,7 +17,7 @@ class property "propertyobject *" "&PyProperty_Type"
 // see pycore_object.h
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 #include <emscripten.h>
-EM_JS(PyObject*, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
+EM_JS(int, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
     return wasmTable.get(set)(obj, value, closure);
 });
 
