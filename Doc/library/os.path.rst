@@ -272,7 +272,7 @@ the :mod:`glob` module.)
    and Windows, though only Windows currently supports junctions.
 
    .. versionadded:: 3.12
-      
+
 
 .. function:: islink(path)
 
