@@ -1604,7 +1604,8 @@ Row objects
    It supports iteration, equality testing, :func:`len`,
    and :term:`mapping` access by column name and index.
 
-   Two row objects compare equal if they have equal columns and equal members.
+   Two :class:`!Row` objects compare equal
+   if they have equal columns and equal members.
 
    See :ref:`sqlite3-howto-row-factory` for more details.
 
@@ -2345,7 +2346,7 @@ can be found in the `SQLite URI documentation`_.
 How to create and use row factories
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, :mod:`!sqlite3` represent fetched rows as :class:`tuples <tuple>`.
+By default, :mod:`!sqlite3` represents each fetched row as a :class:`tuple`.
 If a :class:`!tuple` does not suit your needs,
 use the :class:`sqlite3.Row` class or a custom :attr:`~Connection.row_factory`.
 
@@ -2409,20 +2410,15 @@ Here's an example of one returning a :class:`dict`:
    ...     print(row)
    {'a': 1, 'b': 2}
 
-Here's an example of a factory that return a :class:`~collections.namedtuple`.
+The following row factory returns a :class:`~collections.namedtuple`.
 
 .. testcode::
 
    from collections import namedtuple
 
-   def _get_fields(cursor):
-        return (col[0] for col in cursor.description)
-
-   def _make_cls(fields):
-       return namedtuple("Row", fields)
-
    def namedtuple_factory(cursor, row):
-       cls = _make_cls(_get_fields(cursor))
+       fields = [col[0] for col in cursor.description]
+       cls = namedtuple("Row", fields)
        return cls._make(row)
 
 :func:`!namedtuple_factory` can be used as follows:
@@ -2440,14 +2436,15 @@ Here's an example of a factory that return a :class:`~collections.namedtuple`.
    >>> row.b   # Attribute access.
    2
 
-As an optimisation, decorate :func:`!_make_cls` with
-:func:`!functools.lru_cache` to avoid creating multiple named tuples
-with identical column spec.
-See :func:`functools.lru_cache` for more details.
-
 With some adjustments, the above recipe can be adapted to use a
 :class:`~dataclasses.dataclass`, or any other custom class,
 instead of a :class:`~collections.namedtuple`.
+
+As an exercise left for the reader, the above example can be optimised
+by extracting to a new function the code that create the ``fields`` variable.
+Then decorate that new function with :func:`functools.lru_cache` to avoid
+creating multiple classes ``cls`` from identical column specs.
+
 
 .. _sqlite3-explanation:
 
