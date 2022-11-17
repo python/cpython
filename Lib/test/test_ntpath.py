@@ -863,9 +863,11 @@ class TestNtpath(NtpathTestCase):
             with os_helper.change_cwd(d):
                 os.mkdir('tmpdir')
 
-                # create a junction via subprocess, since we don't currently
-                # support making them via python directly
-                subprocess.check_call('mklink /J testjunc tmpdir', shell=True)
+                import _winapi
+                try:
+                    _winapi.CreateJunction(tmpdir, 'testjunc')
+                except OSError:
+                    raise unittest.SkipTest('creating the test junction failed')
 
                 self.assertTrue(ntpath.isjunction('testjunc'))
                 self.assertFalse(ntpath.isjunction('tmpdir'))
