@@ -202,30 +202,29 @@ class TestPredicates(IsTestBase):
                     gen_coroutine_function_example))))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
-        # Use subtest initially to see both failures.
-        with self.subTest("Wrapper not recognised."):
-            # First case: sync function returning an awaitable.
-            async def _fn3():
+        async def _fn3():
+            pass
+
+        @inspect.markcoroutinefunction
+        def fn3():
+            return _fn3()
+
+        self.assertTrue(inspect.iscoroutinefunction(fn3))
+
+        class Cl:
+            async def __call__(self):
                 pass
 
-            def fn3():
-                return _fn3()
+        self.assertFalse(inspect.iscoroutinefunction(Cl))
+        self.assertTrue(inspect.iscoroutinefunction(Cl()))
 
-            # TODO: Move this to decorator function.
-            fn3.__code__ = fn3.__code__.replace(
-                co_flags=fn3.__code__.co_flags | inspect.CO_COROUTINE
-            )
+        class Cl2:
+            @inspect.markcoroutinefunction
+            def __call__(self):
+                pass
 
-            self.assertTrue(inspect.iscoroutinefunction(fn3))
-
-        with self.subTest("Awaitable instance not recongnised."):
-            # Second case: a class with an async def __call__.
-            # - instance is awaitable.
-            class Cl:
-                async def __call__(self):
-                    pass
-            cl = Cl()
-            self.assertTrue(inspect.iscoroutinefunction(cl))
+        self.assertFalse(inspect.iscoroutinefunction(Cl2))
+        self.assertTrue(inspect.iscoroutinefunction(Cl2()))
 
         self.assertFalse(
             inspect.iscoroutinefunction(unittest.mock.Mock()))

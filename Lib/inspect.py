@@ -125,6 +125,7 @@ __all__ = [
     "ismodule",
     "isroutine",
     "istraceback",
+    "markcoroutinefunction",
     "signature",
     "stack",
     "trace",
@@ -391,13 +392,22 @@ def isgeneratorfunction(obj):
     See help(isfunction) for a list of attributes."""
     return _has_code_flag(obj, CO_GENERATOR)
 
+def markcoroutinefunction(func):
+    """
+    Decorator to ensure callable is recognised as a coroutine function.
+    """
+    func.__code__ = func.__code__.replace(
+        co_flags=func.__code__.co_flags | CO_COROUTINE
+    )
+    return func
+
 def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
     Coroutine functions are defined with "async def" syntax.
     """
     return _has_code_flag(obj, CO_COROUTINE) or (
-        callable(obj) and _has_code_flag(obj.__call__, CO_COROUTINE)
+        not isclass(obj) and callable(obj) and _has_code_flag(obj.__call__, CO_COROUTINE)
     )
 
 def isasyncgenfunction(obj):
