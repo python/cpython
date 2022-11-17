@@ -1,16 +1,95 @@
 filename	funcname	name	reason
 #???	-	somevar	???
 
+# All globals here are technically mutable but known to be safe.
+
+
 ##################################
-# mutable but known to be safe
+# process-global resources
+
+# Initialization for these should be idempotent.
+
+#-----------------------
+# effectively const, set once before/during first init
+
+Modules/getbuildinfo.c	-	buildinfo	-
+Modules/getbuildinfo.c	-	initialized	-
+Python/getversion.c	-	initialized	-
+Python/getversion.c	-	version	-
+
+#-----------------------
+# effectively const, set once during first init
+
+Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
+Python/pyhash.c	-	_Py_HashSecret	-
+Python/thread.c	-	initialized	-
+Python/thread_pthread.h	-	condattr_monotonic	-
+
+# safe static buffer used during one-time initialization
+Python/thread_pthread.h	init_condattr	ca	-
+
+# indicators for process-global resource availability/capability
+Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/fileutils.c	-	_Py_open_cloexec_works	-
+Python/fileutils.c	set_inheritable	ioctl_works	-
+
+#-----------------------
+# effectively const but set once lazily (*after* first init)
+
+Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
+Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
+Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
+Objects/unicodeobject.c	-	bloom_linebreak	-
+Objects/unicodeobject.c	_init_global_state	initialized	-
+
+# XXX Move to _PyRuntimeState?
+Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
+
+
+##################################
+# state tied to C main() (only in main thread)
+
+#-----------------------
+# handling C argv
+
+Python/getopt.c	-	_PyOS_optarg	-
+Python/getopt.c	-	_PyOS_opterr	-
+Python/getopt.c	-	_PyOS_optind	-
+Python/getopt.c	-	opt_ptr	-
+Python/pathconfig.c	-	_Py_path_config	-
+
+#-----------------------
+# REPL
+
+Parser/myreadline.c	-	_PyOS_ReadlineLock	-
+Parser/myreadline.c	-	_PyOS_ReadlineTState	-
+Parser/myreadline.c	-	PyOS_InputHook	-
+Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
+
+
+##################################
+# state tied to each runtime init/fini cycle
 
 Python/pylifecycle.c	-	_PyRuntime	-
+Python/pylifecycle.c	-	runtime_initialized	-
 
 # All uses of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.
 
 #-----------------------
-# legacy config flags
+# effectively const once init finishes
 
+# set by embedders before init (whether directly or through a call)
+Python/initconfig.c	-	_Py_StandardStreamEncoding	-
+Python/initconfig.c	-	_Py_StandardStreamErrors	-
+Python/initconfig.c	-	orig_argv	-
+
+# deprecated
+Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
+Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
+
+# legacy config flags
 Python/initconfig.c	-	Py_UTF8Mode	-
 Python/initconfig.c	-	Py_DebugFlag	-
 Python/initconfig.c	-	Py_VerboseFlag	-
@@ -30,75 +109,34 @@ Python/initconfig.c	-	Py_IsolatedFlag	-
 Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
 Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
 
-#-----------------------
-# effectively const, initialized before init
-
+# initialized statically, customized by embedders
 Python/frozen.c	-	PyImport_FrozenModules	-
 Python/import.c	-	inittab_copy	-
 Python/import.c	-	PyImport_Inittab	-
 
-#-----------------------
-# effectively const, initialized before/during init
-
-Modules/getbuildinfo.c	-	buildinfo	-
-Modules/getbuildinfo.c	-	initialized	-
-Python/getversion.c	-	initialized	-
-Python/getversion.c	-	version	-
-
-#-----------------------
-# effectively const, initialized during init
-
-Objects/floatobject.c	-	double_format	-
-Objects/floatobject.c	-	float_format	-
-Objects/unicodeobject.c	-	bloom_linebreak	-
-Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
-Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
-Python/fileutils.c	-	_Py_open_cloexec_works	-
-Python/fileutils.c	-	force_ascii	-
-Python/fileutils.c	set_inheritable	ioctl_works	-
-Python/import.c	import_find_and_load	header	-
-Python/initconfig.c	-	orig_argv	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
-Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
-Python/pyhash.c	-	_Py_HashSecret	-
-Python/pylifecycle.c	-	runtime_initialized	-
+# used temporarily during init
 Python/sysmodule.c	-	_preinit_warnoptions	-
 Python/sysmodule.c	-	_preinit_xoptions	-
-Python/thread.c	-	initialized	-
-Python/thread_pthread.h	-	condattr_monotonic	-
-Python/thread_pthread.h	init_condattr	ca	-
 
-# set by embedders during init
-Python/initconfig.c	-	_Py_StandardStreamEncoding	-
-Python/initconfig.c	-	_Py_StandardStreamErrors	-
 
-#-----------------------
-# effectively const but initialized lazily
-# XXX Move them to _PyRuntimeState?
+##################################
+# special-use diagnistic state
 
-# idempotent
-Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
-Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
-Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
-Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
+Parser/pegen.c	-	memo_statistics	-
 
-#-----------------------
-# used only in the main thread
 
-# REPL
-Parser/myreadline.c	-	_PyOS_ReadlineLock	-
-Parser/myreadline.c	-	_PyOS_ReadlineTState	-
-Parser/myreadline.c	-	PyOS_InputHook	-
-Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
+##################################
+# one-off temporary state
 
-# handling C argv
-Python/getopt.c	-	_PyOS_optarg	-
-Python/getopt.c	-	_PyOS_opterr	-
-Python/getopt.c	-	_PyOS_optind	-
-Python/getopt.c	-	opt_ptr	-
-Python/pathconfig.c	-	_Py_path_config	-
+# This is safe enough.
+Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
+Python/pylifecycle.c	fatal_error	reentrant	-
+
+
+##################################
+# not used (kept for compatibility)
+
+Python/pyfpe.c	-	PyFPE_counter	-
 
 
 ##################################

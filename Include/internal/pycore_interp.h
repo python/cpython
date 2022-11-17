@@ -14,7 +14,7 @@ extern "C" {
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
-#include "pycore_dict.h"          // struct _Py_dict_state
+#include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
@@ -28,6 +28,7 @@ extern "C" {
 
 
 struct _pending_calls {
+    int busy;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
     _Py_atomic_int calls_to_do;
@@ -169,8 +170,6 @@ struct _is {
     PyObject *import_func;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
-
-    PyDict_WatchCallback dict_watchers[DICT_MAX_WATCHERS];
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];

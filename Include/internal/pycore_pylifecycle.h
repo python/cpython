@@ -14,10 +14,6 @@ extern "C" {
 struct _PyArgv;
 struct pyruntimestate;
 
-/* True if the main interpreter thread exited due to an unhandled
- * KeyboardInterrupt exception, suggesting the user pressed ^C. */
-PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
-
 extern int _Py_SetFileSystemEncoding(
     const char *encoding,
     const char *errors);
