@@ -859,7 +859,7 @@ class AbstractBasicAuthHandler:
 
     rx = re.compile('(?:^|,)'    # start of the string or ','
                     '[ \t]*'     # optional whitespaces
-                    '([^ \t]+)'  # scheme like "Basic"
+                    '([^ \t,]+)'  # scheme like "Basic"
                     '[ \t]+'     # mandatory whitespaces
                     # realm=xxx
                     # realm='xxx'
