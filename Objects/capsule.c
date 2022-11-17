@@ -214,13 +214,9 @@ PyCapsule_Import(const char *name, int no_block)
         }
 
         if (object == NULL) {
-            if (no_block) {
-                object = PyImport_ImportModuleNoBlock(trace);
-            } else {
-                object = PyImport_ImportModule(trace);
-                if (!object) {
-                    PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
-                }
+            object = PyImport_ImportModule(trace);
+            if (!object) {
+                PyErr_Format(PyExc_ImportError, "PyCapsule_Import could not import module \"%s\"", trace);
             }
         } else {
             PyObject *object2 = PyObject_GetAttrString(object, trace);

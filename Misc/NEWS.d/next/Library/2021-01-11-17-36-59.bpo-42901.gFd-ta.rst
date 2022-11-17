@@ -1,3 +1,0 @@
-[Enum] move member creation from ``EnumMeta.__new__`` to
-``_proto_member.__set_name__``, allowing members to be created and visible
-in ``__init_subclass__``.

@@ -1,3 +1,0 @@
-Fix the :c:func:`_PyUnicode_FromId` function (_Py_IDENTIFIER(var) API) when
-:c:func:`Py_Initialize` / :c:func:`Py_Finalize` is called multiple times:
-preserve ``_PyRuntime.unicode_ids.next_index`` value.
