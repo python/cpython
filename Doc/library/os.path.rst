@@ -266,6 +266,14 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isjunction(path)
+
+   Return ``True`` if *path* is a junction. This function exists for both POSIX
+   and Windows, though can only return True on Windows.
+
+   .. versionadded:: 3.12
+      
+
 .. function:: islink(path)
 
    Return ``True`` if *path* refers to an :func:`existing <exists>` directory

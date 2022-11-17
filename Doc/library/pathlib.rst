@@ -889,6 +889,14 @@ call fails (for example because the path doesn't exist).
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+   
+   
+.. method:: Path.is_junction()
+
+   Return ``True`` if the path points to a junction, and ``False`` for any other
+   type of file (as returned by :func:`os.path.isjunction`).
+
+   .. versionadded:: 3.12
 
 
 .. method:: Path.is_mount()
