@@ -1,0 +1,1 @@
+Fix the shortcuts shown in the IDLE menu for "Show Completions" and "Show Call Tip" on macOS.
