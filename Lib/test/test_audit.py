@@ -186,15 +186,15 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
-    def test_sys_getcaller(self):
-        returncode, events, stderr = self.run_python("test_sys_getcaller")
+    def test_sys_getcallingmodule(self):
+        returncode, events, stderr = self.run_python("test_sys_getcallingmodule")
         if returncode:
             self.fail(stderr)
 
         if support.verbose:
             print(*events, sep='\n')
         actual = [(ev[0], ev[2]) for ev in events]
-        expected = [("sys._getcaller", "0")]
+        expected = [("sys._getcallingmodule", "0")]
 
         self.assertEqual(actual, expected)
 

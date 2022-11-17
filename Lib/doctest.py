@@ -208,11 +208,9 @@ def _normalize_module(module, depth=2):
         return __import__(module, globals(), locals(), ["*"])
     elif module is None:
         try:
-            caller = sys._getcaller(depth)
+            return sys.modules[sys._getcallingmodule(depth)]
         except AttributeError:
             return sys.modules[sys._getframe(depth).f_globals['__name__']]
-        else:
-            return sys.modules[caller.__module__]
     else:
         raise TypeError("Expected a module, string, or None")
 

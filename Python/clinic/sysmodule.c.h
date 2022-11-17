@@ -1275,24 +1275,24 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_stack_trampoline_active_impl(module);
 }
 
-PyDoc_STRVAR(sys__getcaller__doc__,
-"_getcaller($module, /, depth=0)\n"
+PyDoc_STRVAR(sys__getcallingmodule__doc__,
+"_getcallingmodule($module, /, depth=0)\n"
 "--\n"
 "\n"
-"Return the calling function object.\n"
+"Return the name of the calling module, or None if not available.\n"
 "\n"
-"The default depth returns the function containing the call to this API.\n"
+"The default depth returns the module containing the call to this API.\n"
 "A more typical use in a library will pass a depth of 1 to get the user\'s\n"
-"function rather than the library module.");
+"module rather than the library module.");
 
-#define SYS__GETCALLER_METHODDEF    \
-    {"_getcaller", _PyCFunction_CAST(sys__getcaller), METH_FASTCALL|METH_KEYWORDS, sys__getcaller__doc__},
-
-static PyObject *
-sys__getcaller_impl(PyObject *module, int depth);
+#define SYS__GETCALLINGMODULE_METHODDEF    \
+    {"_getcallingmodule", _PyCFunction_CAST(sys__getcallingmodule), METH_FASTCALL|METH_KEYWORDS, sys__getcallingmodule__doc__},
 
 static PyObject *
-sys__getcaller(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+sys__getcallingmodule_impl(PyObject *module, int depth);
+
+static PyObject *
+sys__getcallingmodule(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1316,7 +1316,7 @@ sys__getcaller(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static const char * const _keywords[] = {"depth", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "_getcaller",
+        .fname = "_getcallingmodule",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -1336,7 +1336,7 @@ sys__getcaller(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto exit;
     }
 skip_optional_pos:
-    return_value = sys__getcaller_impl(module, depth);
+    return_value = sys__getcallingmodule_impl(module, depth);
 
 exit:
     return return_value;
@@ -1385,4 +1385,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=6130a81ea4035753 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=20e7ec1ce1732596 input=a9049054013a1b77]*/
