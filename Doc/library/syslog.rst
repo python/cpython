@@ -40,6 +40,10 @@ The module defines the following functions:
       it wasn't called prior to the call to :func:`syslog`, deferring to the syslog
       implementation to call ``openlog()``.
 
+   .. versionchanged:: 3.12
+      Subinterpreters are allowed to call only if the main interpreter already called :func:`openlog`.
+      If not, it will raise :exc:`RuntimeError`.
+
 
 .. function:: openlog([ident[, logoption[, facility]]])
 
@@ -60,6 +64,10 @@ The module defines the following functions:
       In previous versions, keyword arguments were not allowed, and *ident* was
       required.
 
+   .. versionchanged:: 3.12
+      Only the main interpreter is allowed to call. It will raise :exc:`RuntimeError`
+      if subinterpreters call :func:`openlog`.
+
 
 .. function:: closelog()
 
@@ -71,6 +79,10 @@ The module defines the following functions:
    :func:`openlog` parameters are reset to defaults.
 
    .. audit-event:: syslog.closelog "" syslog.closelog
+
+   .. versionchanged:: 3.12
+      Only the main interpreter is allowed to call. It will raise :exc:`RuntimeError`
+      if subinterpreters call :func:`closelog`.
 
 
 .. function:: setlogmask(maskpri)
