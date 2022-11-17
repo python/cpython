@@ -875,11 +875,6 @@ PyThreadState_New(PyInterpreterState *interp)
     PyThreadState *tstate = new_threadstate(interp);
     if (tstate) {
         _PyThreadState_SetCurrent(tstate);
-        if (PySys_Audit("cpython.PyThreadState_New", "K", tstate->id) < 0) {
-            PyThreadState_Clear(tstate);
-            _PyThreadState_DeleteCurrent(tstate);
-            return NULL;
-        }
     }
     return tstate;
 }
@@ -887,15 +882,7 @@ PyThreadState_New(PyInterpreterState *interp)
 PyThreadState *
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
-    PyThreadState *tstate = new_threadstate(interp);
-    if (tstate) {
-        if (PySys_Audit("cpython.PyThreadState_New", "K", tstate->id) < 0) {
-            PyThreadState_Clear(tstate);
-            _PyThreadState_Delete(tstate, 0);
-            return NULL;
-        }
-    }
-    return tstate;
+    return new_threadstate(interp);
 }
 
 // We keep this around for (accidental) stable ABI compatibility.
@@ -1043,10 +1030,6 @@ _PyInterpreterState_ClearModules(PyInterpreterState *interp)
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
-    if (PySys_Audit("cpython.PyThreadState_Clear", "K", tstate->id) < 0) {
-        PyErr_WriteUnraisable(NULL);
-    }
-
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
     if (verbose && tstate->cframe->current_frame != NULL) {
