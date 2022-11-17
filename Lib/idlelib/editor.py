@@ -1645,6 +1645,12 @@ def get_accelerator(keydefs, eventname):
     s = re.sub("><", " ", s)
     s = re.sub("<", "", s)
     s = re.sub(">", "", s)
+    if macosx.isCocoaTk():
+        # GH-88564: On macOS the keybindings
+        # for Ctrl+space and Ctrl+backslash need
+        # an adjustment to be shown.
+        s = re.sub('space', 'Space', s)
+        s = re.sub('backslash', '\\\\', s)
     return s
 
 
