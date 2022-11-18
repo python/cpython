@@ -277,7 +277,7 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
             st = os.lstat(path)
         except (OSError, ValueError, AttributeError):
             return False
-        return bool(st.st_reparse_tag & stat.IO_REPARSE_TAG_MOUNT_POINT)
+        return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
 else:
     def isjunction(path):
         """Test whether a path is a junction"""
