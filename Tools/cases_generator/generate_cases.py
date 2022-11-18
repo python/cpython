@@ -19,6 +19,8 @@ DEFAULT_OUTPUT = "Python/generated_cases.c.h"
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = r"(?s)(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);"
+UNUSED = "unused"
+BITS_PER_CODE_UNIT = 16
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("-i", "--input", type=str, default=DEFAULT_INPUT)
@@ -70,9 +72,9 @@ class Instruction(parser.InstDef):
         # Write cache effect variable declarations
         cache_offset = 0
         for ceffect in self.cache_effects:
-            if ceffect.name != "unused":
+            if ceffect.name != UNUSED:
                 # TODO: if name is 'descr' use PyObject *descr = read_obj(...)
-                bits = ceffect.size * 16
+                bits = ceffect.size * BITS_PER_CODE_UNIT
                 f.write(f"{indent}    uint{bits}_t {ceffect.name} = ")
                 if ceffect.size == 1:
                     f.write(f"*(next_instr + {cache_offset});\n")
@@ -84,12 +86,12 @@ class Instruction(parser.InstDef):
         # Write input stack effect variable declarations and initializations
         input_names = [seffect.name for seffect in self.input_effects]
         for i, seffect in enumerate(reversed(self.input_effects), 1):
-            if seffect.name != "unused":
+            if seffect.name != UNUSED:
                 f.write(f"{indent}    PyObject *{seffect.name} = PEEK({i});\n")
 
         # Write output stack effect variable declarations
         for seffect in self.output_effects:
-            if seffect.name not in input_names and seffect.name != "unused":
+            if seffect.name not in input_names and seffect.name != UNUSED:
                 f.write(f"{indent}    PyObject *{seffect.name};\n")
 
         self.write_body(f, indent, dedent)
@@ -108,7 +110,7 @@ class Instruction(parser.InstDef):
         # Write output stack effect assignments
         for i, output in enumerate(reversed(self.output_effects), 1):
             # TODO: Only skip if output occurs at same position as input
-            if output.name not in input_names and output.name != "unused":
+            if output.name not in input_names and output.name != UNUSED:
                 f.write(f"{indent}    POKE({i}, {output.name});\n")
 
         # Write cache effect
@@ -223,7 +225,7 @@ class Analyzer:
 
     filename: str
     src: str
-    errors: int = 0
+    errors: int = 0  # TODO: add a method to print an error message
 
     def __init__(self, filename: str):
         """Read the input file."""

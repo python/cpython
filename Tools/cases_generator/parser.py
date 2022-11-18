@@ -99,7 +99,7 @@ class InstDef(Node):
         return self.header.inputs
 
     @property
-    def outputs(self) -> list[StackEffect]:
+    def outputs(self) -> list[OutputEffect]:
         return self.header.outputs
 
 
