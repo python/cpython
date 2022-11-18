@@ -218,11 +218,10 @@ class SuperInstruction(parser.Super):
         lowest = current = highest = 0
         for instr in components:
             if instr.cache_effects:
-                print(
+                a.error(
                     f"Super-instruction {self.name!r} has cache effects in {instr.name!r}",
-                    file=sys.stderr,
+                    instr,
                 )
-                a.errors += 1
             current -= len(instr.input_effects)
             lowest = min(lowest, current)
             current += len(instr.output_effects)
@@ -239,7 +238,18 @@ class Analyzer:
 
     filename: str
     src: str
-    errors: int = 0  # TODO: add a method to print an error message
+    errors: int = 0
+
+    def error(self, msg: str, node: parser.Node) -> None:
+        lineno = 0
+        if context := node.context:
+            # Use line number of first non-comment in the node
+            for token in context.owner.tokens[context.begin :  context.end]:
+                lineno = token.line
+                if token.kind != "COMMENT":
+                    break
+        print(f"{self.filename}:{lineno}: {msg}", file=sys.stderr)
+        self.errors += 1
 
     def __init__(self, filename: str):
         """Read the input file."""
@@ -303,11 +313,10 @@ class Analyzer:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
                 else:
-                    print(
+                    self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
-                        file=sys.stderr,
+                        instr,  # TODO: Use better location
                     )
-                    self.errors += 1
 
     def map_families(self) -> None:
         """Make instruction names back to their family, if they have one."""
@@ -316,11 +325,10 @@ class Analyzer:
                 if member_instr := self.instrs.get(member):
                     member_instr.family = family
                 else:
-                    print(
+                    self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
-                        file=sys.stderr,
+                        family,
                     )
-                    self.errors += 1
 
     def check_families(self) -> None:
         """Check each family:
@@ -331,13 +339,11 @@ class Analyzer:
         """
         for family in self.families.values():
             if len(family.members) < 2:
-                print(f"Family {family.name!r} has insufficient members")
-                self.errors += 1
+                self.error(f"Family {family.name!r} has insufficient members", family)
             members = [member for member in family.members if member in self.instrs]
             if members != family.members:
                 unknown = set(family.members) - set(members)
-                print(f"Family {family.name!r} has unknown members: {unknown}")
-                self.errors += 1
+                self.error(f"Family {family.name!r} has unknown members: {unknown}", family)
             if len(members) < 2:
                 continue
             head = self.instrs[members[0]]
@@ -350,18 +356,13 @@ class Analyzer:
                 i = len(instr.input_effects)
                 o = len(instr.output_effects)
                 if (c, i, o) != (cache, input, output):
-                    self.errors += 1
-                    print(
+                    self.error(
                         f"Family {family.name!r} has inconsistent "
-                        f"(cache, inputs, outputs) effects:",
-                        file=sys.stderr,
-                    )
-                    print(
+                        f"(cache, inputs, outputs) effects:\n"
                         f"  {family.members[0]} = {(cache, input, output)}; "
                         f"{member} = {(c, i, o)}",
-                        file=sys.stderr,
+                        family,
                     )
-                    self.errors += 1
 
     def analyze_supers(self) -> None:
         """Analyze each super instruction."""
