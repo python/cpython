@@ -203,8 +203,8 @@ asyncio
   (Contributed by Kumar Aditya in :gh:`98024`.)
 
 * The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`,
-  :class:`~asyncio.FastChildWatcher` and
-  :class:`~asyncio.SafeChildWatcher` are deprecated and
+  :class:`~asyncio.FastChildWatcher`, :class:`~asyncio.AbstractChildWatcher`
+  and :class:`~asyncio.SafeChildWatcher` are deprecated and
   will be removed in Python 3.14. It is recommended to not manually
   configure a child watcher as the event loop now uses the best available
   child watcher for each platform (:class:`~asyncio.PidfdChildWatcher`
@@ -216,6 +216,11 @@ asyncio
   :meth:`asyncio.AbstractEventLoopPolicy.get_child_watcher` are deprecated
   and will be removed in Python 3.14.
   (Contributed by Kumar Aditya in :gh:`94597`.)
+
+* Add *loop_factory* parameter to :func:`asyncio.run` to allow specifying
+  a custom event loop factory.
+  (Contributed by Kumar Aditya in :gh:`99388`.)
+
 
 pathlib
 -------
@@ -262,6 +267,13 @@ sqlite3
 
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
+
+* Add the :attr:`~sqlite3.Connection.autocommit` attribute
+  to :class:`~sqlite3.Connection`
+  and the *autocommit* parameter to :func:`~sqlite3.connect`
+  to control :pep:`249`-compliant
+  :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
+  (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
 threading
 ---------
@@ -668,6 +680,12 @@ Build Changes
   if the Clang compiler accepts the flag.
   (Contributed by Dong-hee Na in :gh:`89536`.)
 
+* Add ``COMPILEALL_OPTS`` variable in Makefile to override :mod:`compileall`
+  options (default: ``-j0``) in ``make install``. Also merged the 3
+  ``compileall`` commands into a single command to build .pyc files for all
+  optimization levels (0, 1, 2) at once.
+  (Contributed by Victor Stinner in :gh:`99289`.)
+
 
 C API Changes
 =============
@@ -791,6 +809,11 @@ Porting to Python 3.12
   paths, like :class:`bytearray` and :class:`memoryview` types: only the exact
   :class:`bytes` type is accepted for bytes strings.
   (Contributed by Victor Stinner in :gh:`98393`.)
+
+* The :c:macro:`Py_CLEAR`, :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF`
+  macros now only evaluate their argument once. If the argument has side
+  effects, these side effects are no longer duplicated.
+  (Contributed by Victor Stinner in :gh:`98724`.)
 
 Deprecated
 ----------

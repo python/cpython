@@ -1722,8 +1722,7 @@ _channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
     xid->resolve = ((channelid *)obj)->resolve;
 
     data->data = xid;
-    Py_INCREF(obj);
-    data->obj = obj;
+    data->obj = Py_NewRef(obj);
     data->new_object = _channelid_from_xid;
     data->free = PyMem_Free;
     return 0;
@@ -2634,12 +2633,12 @@ PyInit__xxsubinterpreters(void)
     }
 
     /* Add other types */
-    Py_INCREF(&ChannelIDtype);
-    if (PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype) != 0) {
+    if (PyDict_SetItemString(ns, "ChannelID",
+                             Py_NewRef(&ChannelIDtype)) != 0) {
         return NULL;
     }
-    Py_INCREF(&_PyInterpreterID_Type);
-    if (PyDict_SetItemString(ns, "InterpreterID", (PyObject *)&_PyInterpreterID_Type) != 0) {
+    if (PyDict_SetItemString(ns, "InterpreterID",
+                             Py_NewRef(&_PyInterpreterID_Type)) != 0) {
         return NULL;
     }
 

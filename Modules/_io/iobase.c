@@ -464,8 +464,7 @@ iobase_enter(PyObject *self, PyObject *args)
     if (iobase_check_closed(self))
         return NULL;
 
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -642,8 +641,7 @@ iobase_iter(PyObject *self)
     if (iobase_check_closed(self))
         return NULL;
 
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *

@@ -438,9 +438,13 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(as_integer_ratio);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(ast);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(attribute);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(authorizer_callback);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(autocommit);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(b);
     PyUnicode_InternInPlace(&string);

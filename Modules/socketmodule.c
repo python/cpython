@@ -4110,8 +4110,7 @@ makeval_recvmsg(ssize_t received, void *data)
 
     if (received < PyBytes_GET_SIZE(*buf))
         _PyBytes_Resize(buf, received);
-    Py_XINCREF(*buf);
-    return *buf;
+    return Py_XNewRef(*buf);
 }
 
 /* s.recvmsg(bufsize[, ancbufsize[, flags]]) method */
@@ -4390,8 +4389,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     } while (len > 0);
     PyBuffer_Release(&pbuf);
 
-    Py_INCREF(Py_None);
-    res = Py_None;
+    res = Py_NewRef(Py_None);
 
 done:
     PyBuffer_Release(&pbuf);
@@ -7346,29 +7344,22 @@ PyInit__socket(void)
     if (m == NULL)
         return NULL;
 
-    Py_INCREF(PyExc_OSError);
-    PyModule_AddObject(m, "error", PyExc_OSError);
+    PyModule_AddObject(m, "error", Py_NewRef(PyExc_OSError));
     socket_herror = PyErr_NewException("socket.herror",
                                        PyExc_OSError, NULL);
     if (socket_herror == NULL)
         return NULL;
-    Py_INCREF(socket_herror);
-    PyModule_AddObject(m, "herror", socket_herror);
+    PyModule_AddObject(m, "herror", Py_NewRef(socket_herror));
     socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError,
         NULL);
     if (socket_gaierror == NULL)
         return NULL;
-    Py_INCREF(socket_gaierror);
-    PyModule_AddObject(m, "gaierror", socket_gaierror);
+    PyModule_AddObject(m, "gaierror", Py_NewRef(socket_gaierror));
     PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError);
 
-    Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "SocketType",
-                           (PyObject *)&sock_type) != 0)
+    if (PyModule_AddObject(m, "SocketType", Py_NewRef(&sock_type)) != 0)
         return NULL;
-    Py_INCREF((PyObject *)&sock_type);
-    if (PyModule_AddObject(m, "socket",
-                           (PyObject *)&sock_type) != 0)
+    if (PyModule_AddObject(m, "socket", Py_NewRef(&sock_type)) != 0)
         return NULL;
 
 #ifdef ENABLE_IPV6
@@ -7376,8 +7367,7 @@ PyInit__socket(void)
 #else
     has_ipv6 = Py_False;
 #endif
-    Py_INCREF(has_ipv6);
-    PyModule_AddObject(m, "has_ipv6", has_ipv6);
+    PyModule_AddObject(m, "has_ipv6", Py_NewRef(has_ipv6));
 
     /* Export C API */
     PySocketModule_APIObject *capi = sock_get_api();
