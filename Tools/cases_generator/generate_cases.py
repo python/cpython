@@ -188,7 +188,7 @@ class SuperInstruction(parser.Super):
         self.context = sup.context
 
     def analyze(self, a: "Analyzer") -> None:
-        components = [a.instrs[name] for name in self.ops]
+        components = self.check_components(a)
         self.stack, self.initial_sp = self.super_macro_analysis(a, components)
         sp = self.initial_sp
         self.parts = []
@@ -205,6 +205,20 @@ class SuperInstruction(parser.Super):
                 sp += 1
             self.parts.append(SuperComponent(instr, input_mapping, output_mapping))
         self.final_sp = sp
+
+    def check_components(self, a: "Analyzer") -> list[Instruction]:
+        components: list[Instruction] = []
+        if not self.ops:
+            a.error(f"{self.kind.capitalize()}-instruction has no operands", self)
+        for name in self.ops:
+            if name not in a.instrs:
+                a.error(f"Unknown instruction {name!r}", self)
+            else:
+                instr = a.instrs[name]
+                if self.kind == "super" and instr.kind != "inst":
+                    a.error(f"Super-instruction operand {instr.name} must be inst, not op", instr)
+                components.append(instr)
+        return components
 
     def super_macro_analysis(
         self, a: "Analyzer", components: list[Instruction]
