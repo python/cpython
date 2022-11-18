@@ -161,6 +161,13 @@ class Instruction(parser.InstDef):
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
                 ninputs = len(self.input_effects)
+                # Don't pop common input/output effects at the bottom!
+                # These aren't DECREF'ed so they can stay.
+                for ieff, oeff in zip(self.input_effects, self.output_effects):
+                    if ieff.name == oeff.name:
+                        ninputs -= 1
+                    else:
+                        break
                 if ninputs:
                     f.write(f"{space}if ({cond}) goto pop_{ninputs}_{label};\n")
                 else:
