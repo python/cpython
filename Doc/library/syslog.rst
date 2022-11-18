@@ -41,8 +41,11 @@ The module defines the following functions:
       implementation to call ``openlog()``.
 
    .. versionchanged:: 3.12
-      Subinterpreters are allowed to call only if the main interpreter already called :func:`openlog`.
-      If not, it will raise :exc:`RuntimeError`.
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      :func:`openlog` must be called in the main interpreter before :func:`syslog` may be used
+      in a subinterpreter.  Otherwise it will raise :exc:`RuntimeError`.
 
 
 .. function:: openlog([ident[, logoption[, facility]]])
@@ -65,8 +68,11 @@ The module defines the following functions:
       required.
 
    .. versionchanged:: 3.12
-      Only the main interpreter is allowed to call. It will raise :exc:`RuntimeError`
-      if subinterpreters call :func:`openlog`.
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      This may only be called in the main interpreter.
+      It will raise :exc:`RuntimeError` if called in a subinterpreter.
 
 
 .. function:: closelog()
@@ -81,8 +87,11 @@ The module defines the following functions:
    .. audit-event:: syslog.closelog "" syslog.closelog
 
    .. versionchanged:: 3.12
-      Only the main interpreter is allowed to call. It will raise :exc:`RuntimeError`
-      if subinterpreters call :func:`closelog`.
+      This function is restricted in subinterpreters.
+      (Only code that runs in multiple interpreters is affected and
+      the restriction is not relevant for most users.)
+      This may only be called in the main interpreter.
+      It will raise :exc:`RuntimeError` if called in a subinterpreter.
 
 
 .. function:: setlogmask(maskpri)
