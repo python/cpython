@@ -73,25 +73,36 @@ class Instruction(parser.InstDef):
         cache_offset = 0
         for ceffect in self.cache_effects:
             if ceffect.name != UNUSED:
-                # TODO: if name is 'descr' use PyObject *descr = read_obj(...)
                 bits = ceffect.size * BITS_PER_CODE_UNIT
-                f.write(f"{indent}    uint{bits}_t {ceffect.name} = ")
-                if ceffect.size == 1:
-                    f.write(f"*(next_instr + {cache_offset});\n")
+                if bits == 64:
+                    # NOTE: We assume that 64-bit data in the cache
+                    # is always an object pointer.
+                    # If this becomes false, we need a way to specify
+                    # syntactically what type the cache data is.
+                    f.write(
+                        f"{indent}    PyObject *{ceffect.name} = "
+                        f"read_obj(next_instr + {cache_offset});\n"
+                    )
                 else:
-                    f.write(f"read_u{bits}(next_instr + {cache_offset});\n")
+                    f.write(f"{indent}    uint{bits}_t {ceffect.name} = ")
+                    if ceffect.size == 1:
+                        # There is no read_u16() helper function.
+                        f.write(f"*(next_instr + {cache_offset});\n")
+                    else:
+                        f.write(f"read_u{bits}(next_instr + {cache_offset});\n")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset
 
         # Write input stack effect variable declarations and initializations
-        input_names = [seffect.name for seffect in self.input_effects]
         for i, seffect in enumerate(reversed(self.input_effects), 1):
             if seffect.name != UNUSED:
                 f.write(f"{indent}    PyObject *{seffect.name} = PEEK({i});\n")
 
         # Write output stack effect variable declarations
+        input_names = {seffect.name for seffect in self.input_effects}
+        input_names.add(UNUSED)
         for seffect in self.output_effects:
-            if seffect.name not in input_names and seffect.name != UNUSED:
+            if seffect.name not in input_names:
                 f.write(f"{indent}    PyObject *{seffect.name};\n")
 
         self.write_body(f, indent, dedent)
@@ -108,10 +119,13 @@ class Instruction(parser.InstDef):
             f.write(f"{indent}    STACK_SHRINK({-diff});\n")
 
         # Write output stack effect assignments
-        for i, output in enumerate(reversed(self.output_effects), 1):
-            # TODO: Only skip if output occurs at same position as input
-            if output.name not in input_names and output.name != UNUSED:
-                f.write(f"{indent}    POKE({i}, {output.name});\n")
+        unmoved_names = {UNUSED}
+        for ieffect, oeffect in zip(self.input_effects, self.output_effects):
+            if ieffect.name == oeffect.name:
+                unmoved_names.add(ieffect.name)
+        for i, seffect in enumerate(reversed(self.output_effects)):
+            if seffect.name not in unmoved_names:
+                f.write(f"{indent}    POKE({i+1}, {seffect.name});\n")
 
         # Write cache effect
         if self.cache_offset:
