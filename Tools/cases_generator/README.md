@@ -2,9 +2,9 @@
 
 What's currently here:
 
-- lexer.py: lexer for C, originally written by Mark Shannon
-- plexer.py: OO interface on top of lexer.py; main class: `PLexer`
-- parser.py: Parser for instruction definition DSL; main class `Parser`
+- `lexer.py`: lexer for C, originally written by Mark Shannon
+- `plexer.py`: OO interface on top of lexer.py; main class: `PLexer`
+- `parser.py`: Parser for instruction definition DSL; main class `Parser`
 - `generate_cases.py`: driver script to read `Python/bytecodes.c` and
   write `Python/generated_cases.c.h`
 
