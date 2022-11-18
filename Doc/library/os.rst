@@ -2745,7 +2745,7 @@ features:
       or if it doesn't exist anymore.
 
       The result is cached on the ``os.DirEntry`` object. Call
-      :func:`os.path.is_junction` to fetch up-to-date information.
+      :func:`os.path.isjunction` to fetch up-to-date information.
 
       .. versionadded:: 3.12
 
