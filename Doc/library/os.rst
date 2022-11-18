@@ -2741,8 +2741,8 @@ features:
    .. method:: is_junction()
 
       Return ``True`` if this entry is a junction (even if broken);
-      return ``False`` if the entry points to a directory or any kind of file,
-      or if it doesn't exist anymore.
+      return ``False`` if the entry points to a regular directory or file, a
+      symlink, or if it doesn't exist anymore.
 
       The result is cached on the ``os.DirEntry`` object. Call
       :func:`os.path.isjunction` to fetch up-to-date information.
