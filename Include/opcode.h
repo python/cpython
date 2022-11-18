@@ -120,6 +120,11 @@ extern "C" {
 #define DICT_UPDATE                            165
 #define CALL                                   171
 #define KW_NAMES                               172
+#define INSTRUMENTED_RESUME                    240
+#define INSTRUMENTED_CALL                      241
+#define INSTRUMENTED_RETURN_VALUE              242
+#define INSTRUMENTED_YIELD_VALUE               243
+#define INSTRUMENTED_CALL_FUNCTION_EX          244
 #define MIN_PSEUDO_OPCODE                      256
 #define SETUP_FINALLY                          256
 #define SETUP_CLEANUP                          257

@@ -74,7 +74,6 @@ typedef struct _PyCFrame {
      * discipline and make sure that instances of this struct cannot
      * accessed outside of their lifetime.
      */
-    uint8_t use_tracing;  // 0 or 255 (or'ed into opcode, hence 8-bit type)
     /* Pointer to the currently executing frame (it can be NULL) */
     struct _PyInterpreterFrame *current_frame;
     struct _PyCFrame *previous;

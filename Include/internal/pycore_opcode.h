@@ -136,6 +136,11 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [IMPORT_FROM] = IMPORT_FROM,
     [IMPORT_NAME] = IMPORT_NAME,
     [IMPORT_STAR] = IMPORT_STAR,
+    [INSTRUMENTED_CALL] = INSTRUMENTED_CALL,
+    [INSTRUMENTED_CALL_FUNCTION_EX] = INSTRUMENTED_CALL_FUNCTION_EX,
+    [INSTRUMENTED_RESUME] = INSTRUMENTED_RESUME,
+    [INSTRUMENTED_RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
+    [INSTRUMENTED_YIELD_VALUE] = INSTRUMENTED_YIELD_VALUE,
     [INTERPRETER_EXIT] = INTERPRETER_EXIT,
     [IS_OP] = IS_OP,
     [JUMP_BACKWARD] = JUMP_BACKWARD,
@@ -473,11 +478,11 @@ static const char *const _PyOpcode_OpName[263] = {
     [237] = "<237>",
     [238] = "<238>",
     [239] = "<239>",
-    [240] = "<240>",
-    [241] = "<241>",
-    [242] = "<242>",
-    [243] = "<243>",
-    [244] = "<244>",
+    [INSTRUMENTED_RESUME] = "INSTRUMENTED_RESUME",
+    [INSTRUMENTED_CALL] = "INSTRUMENTED_CALL",
+    [INSTRUMENTED_RETURN_VALUE] = "INSTRUMENTED_RETURN_VALUE",
+    [INSTRUMENTED_YIELD_VALUE] = "INSTRUMENTED_YIELD_VALUE",
+    [INSTRUMENTED_CALL_FUNCTION_EX] = "INSTRUMENTED_CALL_FUNCTION_EX",
     [245] = "<245>",
     [246] = "<246>",
     [247] = "<247>",
@@ -566,11 +571,6 @@ static const char *const _PyOpcode_OpName[263] = {
     case 237: \
     case 238: \
     case 239: \
-    case 240: \
-    case 241: \
-    case 242: \
-    case 243: \
-    case 244: \
     case 245: \
     case 246: \
     case 247: \

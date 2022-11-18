@@ -338,6 +338,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
+    co->_co_instrument_version = 0;
 
     /* not set */
     co->co_weakreflist = NULL;

@@ -222,6 +222,14 @@ def_op('KW_NAMES', 172)
 hasconst.append(172)
 
 
+# Instrumented instructions
+def_op('INSTRUMENTED_RESUME', 240)
+def_op('INSTRUMENTED_CALL', 241)
+def_op('INSTRUMENTED_RETURN_VALUE', 242)
+def_op('INSTRUMENTED_YIELD_VALUE', 243)
+def_op('INSTRUMENTED_CALL_FUNCTION_EX', 244)
+
+
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
 MIN_PSEUDO_OPCODE = 256

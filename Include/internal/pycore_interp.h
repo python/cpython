@@ -19,7 +19,7 @@ extern "C" {
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_instruments.h"   // PY_INSTRUMENT_EVENTS
+#include "pycore_instruments.h"   // PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
@@ -74,6 +74,9 @@ struct _Py_long_state {
     int max_str_digits;
 };
 
+struct _instrumentation_tool {
+    PyObject *instrument_callables[PY_MONITORING_EVENTS];
+};
 
 /* interpreter state */
 
@@ -86,7 +89,7 @@ struct _is {
 
     PyInterpreterState *next;
 
-    uint64_t instrument_version;
+    uint64_t monitoring_version;
 
     struct pythreads {
         uint64_t next_unique_id;
@@ -191,9 +194,19 @@ struct _is {
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
 
-    uint8_t instrumented[PY_INSTRUMENT_EVENTS];
-    PyObject *instrument_callables[PY_INSTRUMENT_EVENTS];
+    _PyMonitoringToolSet monitoring_tools_per_event[PY_MONITORING_EVENTS];
+    _PyMonitoringEventSet events_per_monitoring_tool[PY_MONITORING_TOOL_IDS];
+    _PyMonitoringEventSet monitored_events;
+    /* The index (plus one) of the sole tool. 0 if 0 or 2+ tools */
+    int8_t sole_tool_plus1[PY_MONITORING_EVENTS];
+    /* Tools numbered 1-8. 0 is the dispatcher/sole tool */
+    struct _instrumentation_tool tools[PY_MONITORING_TOOL_IDS];
+    PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
     bool f_opcode_trace_set;
+    bool sys_profile_initialized;
+    bool sys_trace_initialized;
+    Py_ssize_t sys_profiling_threads;
+    Py_ssize_t sys_tracing_threads;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.

@@ -13,6 +13,7 @@
 #include "pycore_code.h"
 #include "pycore_function.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_instruments.h"
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
@@ -107,14 +108,33 @@ dummy_func(
         inst(NOP, (--)) {
         }
 
+        inst(INSTRUMENTED_RESUME) {
+            /* Check monitoring *before* calling instrument */
+            /* Possibly combine this with eval breaker */
+            assert(oparg < 2);
+            if (frame->f_code->_co_instrument_version != tstate->interp->monitoring_version) {
+                if (_Py_Instrument(frame->f_code, tstate->interp)) {
+                    goto error;
+                }
+            }
+            int err = _Py_call_instrumentation(
+                    tstate, oparg, frame, next_instr-1);
+            ERROR_IF(err, error);
+            if (_Py_atomic_load_relaxed_int32(eval_breaker)) {
+                goto handle_eval_breaker;
+            }
+        }
+
         inst(RESUME, (--)) {
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrument_version != tstate->interp->instrument_version) {
-                if (_Py_Instrument(frame->f_code, tstate->interp)) {
-                    goto error;
-                }
+            if (frame->f_code->_co_instrument_version != tstate->interp->monitoring_version) {
+                int err = _Py_Instrument(frame->f_code, tstate->interp);
+                ERROR_IF(err, error);
+                err = _Py_call_instrumentation(
+                    tstate, oparg, frame, next_instr-1);
+                ERROR_IF(err, error);
             }
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
@@ -200,7 +220,6 @@ dummy_func(
         }
 
         inst(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
@@ -212,7 +231,6 @@ dummy_func(
         }
 
         inst(BINARY_OP_MULTIPLY_FLOAT, (left, right -- prod)) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
@@ -226,7 +244,6 @@ dummy_func(
         }
 
         inst(BINARY_OP_SUBTRACT_INT, (left, right -- sub)) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
@@ -238,7 +255,6 @@ dummy_func(
         }
 
         inst(BINARY_OP_SUBTRACT_FLOAT, (left, right -- sub)) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
@@ -251,7 +267,6 @@ dummy_func(
         }
 
         inst(BINARY_OP_ADD_UNICODE, (left, right -- res)) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
@@ -269,7 +284,6 @@ dummy_func(
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
         inst(BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             _Py_CODEUNIT true_next = next_instr[INLINE_CACHE_ENTRIES_BINARY_OP];
@@ -299,7 +313,6 @@ dummy_func(
         }
 
         inst(BINARY_OP_ADD_FLOAT, (left, right -- sum)) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
@@ -313,7 +326,6 @@ dummy_func(
         }
 
         inst(BINARY_OP_ADD_INT, (left, right -- sum)) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
@@ -327,7 +339,6 @@ dummy_func(
         inst(BINARY_SUBSCR, (container, sub -- res)) {
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 next_instr--;
                 _Py_Specialize_BinarySubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
@@ -373,7 +384,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(BINARY_SUBSCR_LIST_INT) {
-            assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *list = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -398,7 +408,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(BINARY_SUBSCR_TUPLE_INT) {
-            assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *tuple = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
@@ -423,7 +432,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(BINARY_SUBSCR_DICT) {
-            assert(cframe.use_tracing == 0);
             PyObject *dict = SECOND();
             DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
@@ -501,7 +509,6 @@ dummy_func(
         inst(STORE_SUBSCR, (v, container, sub -- )) {
             _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 next_instr--;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
@@ -519,7 +526,6 @@ dummy_func(
 
         // stack effect: (__0, __1, __2 -- )
         inst(STORE_SUBSCR_LIST_INT) {
-            assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *list = SECOND();
             PyObject *value = THIRD();
@@ -545,7 +551,6 @@ dummy_func(
 
         // stack effect: (__0, __1, __2 -- )
         inst(STORE_SUBSCR_DICT) {
-            assert(cframe.use_tracing == 0);
             PyObject *sub = TOP();
             PyObject *dict = SECOND();
             PyObject *value = THIRD();
@@ -623,11 +628,20 @@ dummy_func(
             assert(EMPTY());
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
-            tstate->cframe->use_tracing = cframe.use_tracing;
             assert(tstate->cframe->current_frame == frame->previous);
             assert(!_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallTstate(tstate);
             return retval;
+        }
+
+        // stack effect: (__0 -- _0)
+        inst(INSTRUMENTED_RETURN_VALUE) {
+            PyObject *val = TOP();
+            int err = _Py_call_instrumentation_arg(
+                    tstate, PY_MONITORING_EVENT_PY_RETURN,
+                    frame, next_instr-1, val);
+            ERROR_IF(err, error);
+            GO_TO_INSTRUCTION(RETURN_VALUE);
         }
 
         // stack effect: (__0 -- )
@@ -635,8 +649,6 @@ dummy_func(
             PyObject *retval = POP();
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            TRACE_FUNCTION_EXIT();
-            DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
             frame = cframe.current_frame = pop_frame(tstate, frame);
@@ -793,7 +805,7 @@ dummy_func(
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
                             && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                        monitor_raise(tstate, frame, next_instr-1);
                     if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                         gen_status = PYGEN_RETURN;
                     }
@@ -836,6 +848,16 @@ dummy_func(
         }
 
         // stack effect: ( -- )
+        inst(INSTRUMENTED_YIELD_VALUE) {
+            PyObject *val = TOP();
+            int err = _Py_call_instrumentation_arg(
+                    tstate, PY_MONITORING_EVENT_PY_YIELD,
+                    frame, next_instr-1, val);
+            ERROR_IF(err, error);
+            GO_TO_INSTRUCTION(YIELD_VALUE);
+        }
+
+        // stack effect: ( -- )
         inst(YIELD_VALUE) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
@@ -846,8 +868,6 @@ dummy_func(
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            TRACE_FUNCTION_EXIT();
-            DTRACE_FUNCTION_EXIT();
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
@@ -1062,7 +1082,6 @@ dummy_func(
         inst(UNPACK_SEQUENCE) {
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 PyObject *seq = TOP();
                 next_instr--;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
@@ -1140,7 +1159,6 @@ dummy_func(
         inst(STORE_ATTR) {
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
@@ -1271,7 +1289,6 @@ dummy_func(
         inst(LOAD_GLOBAL) {
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
@@ -1331,7 +1348,6 @@ dummy_func(
 
         // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL_MODULE) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
@@ -1351,7 +1367,6 @@ dummy_func(
 
         // error: LOAD_GLOBAL has irregular stack effect
         inst(LOAD_GLOBAL_BUILTIN) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
             PyDictObject *mdict = (PyDictObject *)GLOBALS();
@@ -1716,7 +1731,6 @@ dummy_func(
         inst(LOAD_ATTR) {
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
@@ -1777,7 +1791,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_INSTANCE_VALUE) {
-            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
             PyTypeObject *tp = Py_TYPE(owner);
@@ -1802,7 +1815,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_MODULE) {
-            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
@@ -1827,7 +1839,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_WITH_HINT) {
-            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
             PyTypeObject *tp = Py_TYPE(owner);
@@ -1866,7 +1877,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_SLOT) {
-            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyObject *res;
             PyTypeObject *tp = Py_TYPE(owner);
@@ -1888,7 +1898,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_CLASS) {
-            assert(cframe.use_tracing == 0);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
 
             PyObject *cls = TOP();
@@ -1911,7 +1920,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_PROPERTY) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
 
@@ -1950,7 +1958,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
-            assert(cframe.use_tracing == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
             PyObject *owner = TOP();
@@ -1991,7 +1998,6 @@ dummy_func(
 
         // stack effect: (__0, __1 -- )
         inst(STORE_ATTR_INSTANCE_VALUE) {
-            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
@@ -2020,7 +2026,6 @@ dummy_func(
 
         // stack effect: (__0, __1 -- )
         inst(STORE_ATTR_WITH_HINT) {
-            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
@@ -2072,7 +2077,6 @@ dummy_func(
 
         // stack effect: (__0, __1 -- )
         inst(STORE_ATTR_SLOT) {
-            assert(cframe.use_tracing == 0);
             PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
@@ -2109,7 +2113,6 @@ dummy_func(
         inst(COMPARE_OP) {
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 PyObject *right = TOP();
                 PyObject *left = SECOND();
                 next_instr--;
@@ -2123,7 +2126,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(COMPARE_OP_FLOAT_JUMP) {
-            assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             int when_to_jump_mask = cache->mask;
@@ -2154,7 +2156,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(COMPARE_OP_INT_JUMP) {
-            assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             int when_to_jump_mask = cache->mask;
@@ -2186,7 +2187,6 @@ dummy_func(
 
         // stack effect: (__0 -- )
         inst(COMPARE_OP_STR_JUMP) {
-            assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             int invert = cache->mask;
@@ -2599,7 +2599,6 @@ dummy_func(
         inst(FOR_ITER) {
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 next_instr--;
                 _Py_Specialize_ForIter(TOP(), next_instr, oparg);
                 DISPATCH_SAME_OPARG();
@@ -2619,7 +2618,7 @@ dummy_func(
                         goto error;
                     }
                     else if (tstate->c_tracefunc != NULL) {
-                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                        monitor_raise(tstate, frame, next_instr-1);
                     }
                     _PyErr_Clear(tstate);
                 }
@@ -2634,7 +2633,6 @@ dummy_func(
 
         // stack effect: ( -- __0)
         inst(FOR_ITER_LIST) {
-            assert(cframe.use_tracing == 0);
             _PyListIterObject *it = (_PyListIterObject *)TOP();
             DEOPT_IF(Py_TYPE(it) != &PyListIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
@@ -2657,7 +2655,6 @@ dummy_func(
 
         // stack effect: ( -- __0)
         inst(FOR_ITER_RANGE) {
-            assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
@@ -2680,7 +2677,6 @@ dummy_func(
         }
 
         inst(FOR_ITER_GEN) {
-            assert(cframe.use_tracing == 0);
             PyGenObject *gen = (PyGenObject *)TOP();
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
@@ -2822,7 +2818,6 @@ dummy_func(
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_WITH_VALUES) {
             /* Cached method object */
-            assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -2847,7 +2842,6 @@ dummy_func(
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_WITH_DICT) {
             /* Can be either a managed dict, or a tp_dictoffset offset.*/
-            assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -2873,7 +2867,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_NO_DICT) {
-            assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -2891,7 +2884,6 @@ dummy_func(
 
         // error: LOAD_ATTR has irregular stack effect
         inst(LOAD_ATTR_METHOD_LAZY_DICT) {
-            assert(cframe.use_tracing == 0);
             PyObject *self = TOP();
             PyTypeObject *self_cls = Py_TYPE(self);
             _PyLoadMethodCache *cache = (_PyLoadMethodCache *)next_instr;
@@ -2933,10 +2925,23 @@ dummy_func(
         }
 
         // stack effect: (__0, __array[oparg] -- )
+        inst(INSTRUMENTED_CALL) {
+            int is_meth = is_method(stack_pointer, oparg);
+            int total_args = oparg + is_meth;
+            PyObject *function = PEEK(total_args + 1);
+            int err = _Py_call_instrumentation_arg(
+                    tstate, PY_MONITORING_EVENT_CALL,
+                    frame, next_instr-1, function);
+            ERROR_IF(err, error);
+            _PyCallCache *cache = (_PyCallCache *)next_instr;
+            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            GO_TO_INSTRUCTION(CALL);
+        }
+
+        // stack effect: (__0, __array[oparg] -- )
         inst(CALL) {
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 int is_meth = is_method(stack_pointer, oparg);
                 int nargs = oparg + is_meth;
                 PyObject *callable = PEEK(nargs + 1);
@@ -2989,16 +2994,26 @@ dummy_func(
             }
             /* Callable is not a normal Python function */
             PyObject *res;
-            if (cframe.use_tracing) {
-                res = trace_call_function(
-                    tstate, function, stack_pointer-total_args,
-                    positional_args, kwnames);
-            }
-            else {
-                res = PyObject_Vectorcall(
-                    function, stack_pointer-total_args,
-                    positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                    kwnames);
+            res = PyObject_Vectorcall(
+                function, stack_pointer-total_args,
+                positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                kwnames);
+            if (opcode == INSTRUMENTED_CALL) {
+                if (!PyFunction_Check(function) && !PyMethod_Check(function)) {
+                    if (res == NULL) {
+                        _Py_call_instrumentation_exc(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, next_instr-1, function);
+                    }
+                    else {
+                        int err = _Py_call_instrumentation_arg(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, next_instr-1, function);
+                        if (err < 0) {
+                            Py_CLEAR(res);
+                        }
+                    }
+                }
             }
             kwnames = NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3093,7 +3108,6 @@ dummy_func(
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_TYPE_1) {
             assert(kwnames == NULL);
-            assert(cframe.use_tracing == 0);
             assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), CALL);
             PyObject *obj = TOP();
@@ -3111,7 +3125,6 @@ dummy_func(
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_STR_1) {
             assert(kwnames == NULL);
-            assert(cframe.use_tracing == 0);
             assert(oparg == 1);
             DEOPT_IF(is_method(stack_pointer, 1), CALL);
             PyObject *callable = PEEK(2);
@@ -3181,7 +3194,6 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_BUILTIN_O) {
-            assert(cframe.use_tracing == 0);
             /* Builtin METH_O functions */
             assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
@@ -3215,7 +3227,6 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_BUILTIN_FAST) {
-            assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL functions, without keywords */
             assert(kwnames == NULL);
             int is_meth = is_method(stack_pointer, oparg);
@@ -3255,7 +3266,6 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-            assert(cframe.use_tracing == 0);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int is_meth = is_method(stack_pointer, oparg);
             int total_args = oparg + is_meth;
@@ -3294,7 +3304,6 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_LEN) {
-            assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             /* len(o) */
             int is_meth = is_method(stack_pointer, oparg);
@@ -3324,7 +3333,6 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_ISINSTANCE) {
-            assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             /* isinstance(o, o2) */
             int is_meth = is_method(stack_pointer, oparg);
@@ -3357,7 +3365,6 @@ dummy_func(
 
         // stack effect: (__0, __array[oparg] -- )
         inst(CALL_NO_KW_LIST_APPEND) {
-            assert(cframe.use_tracing == 0);
             assert(kwnames == NULL);
             assert(oparg == 1);
             PyObject *callable = PEEK(3);
@@ -3520,6 +3527,10 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
+        inst(INSTRUMENTED_CALL_FUNCTION_EX) {
+            GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
+        }
+
         // error: CALL_FUNCTION_EX has irregular stack effect
         inst(CALL_FUNCTION_EX) {
             PyObject *func, *callargs, *kwargs = NULL, *result;
@@ -3542,8 +3553,30 @@ dummy_func(
                 }
             }
             assert(PyTuple_CheckExact(callargs));
-
-            result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
+            EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
+            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX && !PyFunction_Check(func) && !PyMethod_Check(func)) {
+                int err = _Py_call_instrumentation_arg(
+                    tstate, PY_MONITORING_EVENT_CALL,
+                    frame, next_instr-1, func);
+                ERROR_IF(err, error);
+                result = PyObject_Call(func, callargs, kwargs);
+                if (result == NULL) {
+                    _Py_call_instrumentation_exc(
+                        tstate, PY_MONITORING_EVENT_C_RAISE,
+                        frame, next_instr-1, func);
+                }
+                else {
+                    int err = _Py_call_instrumentation_arg(
+                        tstate, PY_MONITORING_EVENT_C_RETURN,
+                        frame, next_instr-1, func);
+                    if (err < 0) {
+                        Py_CLEAR(result);
+                    }
+                }
+            }
+            else {
+                result = PyObject_Call(func, callargs, kwargs);
+            }
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
@@ -3718,7 +3751,6 @@ dummy_func(
         inst(BINARY_OP) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
                 PyObject *lhs = SECOND();
                 PyObject *rhs = TOP();
                 next_instr--;
@@ -3741,7 +3773,6 @@ dummy_func(
         // stack effect: ( -- )
         inst(EXTENDED_ARG) {
             assert(oparg);
-            assert(cframe.use_tracing == 0);
             opcode = _Py_OPCODE(*next_instr);
             oparg = oparg << 8 | _Py_OPARG(*next_instr);
             PRE_DISPATCH_GOTO();

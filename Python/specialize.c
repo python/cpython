@@ -1707,6 +1707,7 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                     PyObject *kwnames)
 {
     assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
+    assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
     int fail;
     if (PyCFunction_CheckExact(callable)) {

@@ -3369,6 +3369,7 @@ error:
     return _PyStatus_ERR("can't set preliminary stderr");
 }
 
+PyObject *_Py_CreateMonitoringObject(void);
 
 /* Create sys module without all attributes.
    _PySys_UpdateConfig() should be called later to add remaining attributes. */
@@ -3411,6 +3412,14 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
 
     if (_PyImport_FixupBuiltin(sysmod, "sys", interp->modules) < 0) {
+        goto error;
+    }
+
+    PyObject *monitoring = _Py_CreateMonitoringObject();
+    if (monitoring == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(sysdict, "monitoring", monitoring) < 0) {
         goto error;
     }
 
