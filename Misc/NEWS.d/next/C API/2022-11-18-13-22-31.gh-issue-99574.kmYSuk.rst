@@ -1,0 +1,2 @@
+Add :c:macro:`Py_SETREF()` and :c:macro:`Py_XSETREF()` macros to the limited
+C API. Patch by Victor Stinner.

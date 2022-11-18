@@ -798,6 +798,10 @@ New Features
   get a frame variable by its name.
   (Contributed by Victor Stinner in :gh:`91248`.)
 
+* Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
+  API.
+  (Contributed by Victor Stinner in :gh:`99574`.)
+
 Porting to Python 3.12
 ----------------------
 
