@@ -712,6 +712,16 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         DISPATCH_GOTO(); \
     }
 
+#define DISPATCH_INLINED(NEW_FRAME)                     \
+    do {                                                \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        frame->prev_instr = next_instr - 1;             \
+        (NEW_FRAME)->previous = frame;                  \
+        frame = cframe.current_frame = (NEW_FRAME);     \
+        CALL_STAT_INC(inlined_py_calls);                \
+        goto start_frame;                               \
+    } while (0)
+
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     if (_Py_atomic_load_relaxed_int32(eval_breaker)) { \

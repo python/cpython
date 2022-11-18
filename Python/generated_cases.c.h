@@ -468,13 +468,8 @@
             for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         TARGET(LIST_APPEND) {
@@ -1949,13 +1944,8 @@
             for (int i = 1; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
@@ -1989,13 +1979,8 @@
             for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
@@ -2099,22 +2084,6 @@
             DISPATCH();
         }
 
-        TARGET(COMPARE_OP_GENERIC) {
-            PREDICTED(COMPARE_OP_GENERIC);
-            assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            DISPATCH();
-        }
-
         TARGET(COMPARE_OP) {
             PREDICTED(COMPARE_OP);
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
@@ -2128,7 +2097,18 @@
             }
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(COMPARE_OP_GENERIC);
+            assert(oparg <= Py_GE);
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            PyObject *res = PyObject_RichCompare(left, right, oparg);
+            SET_TOP(res);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res == NULL) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
+            DISPATCH();
         }
 
         TARGET(COMPARE_OP_FLOAT_JUMP) {
@@ -2699,18 +2679,14 @@
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->yield_offset = oparg;
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            assert(_Py_OPCODE(*next_instr) == END_FOR);
-            frame->prev_instr = next_instr - 1;
             _PyFrame_StackPush(gen_frame, Py_NewRef(Py_None));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            gen_frame->previous = frame;
-            frame = cframe.current_frame = gen_frame;
-            goto start_frame;
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            assert(_Py_OPCODE(*next_instr) == END_FOR);
+            DISPATCH_INLINED(gen_frame);
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
@@ -2990,13 +2966,8 @@
                 if (new_frame == NULL) {
                     goto error;
                 }
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-                frame->prev_instr = next_instr - 1;
-                new_frame->previous = frame;
-                cframe.current_frame = frame = new_frame;
-                CALL_STAT_INC(inlined_py_calls);
-                goto start_frame;
+                DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
             PyObject *res;
@@ -3045,7 +3016,6 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
-            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -3054,12 +3024,8 @@
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
@@ -3079,7 +3045,6 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
-            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -3093,12 +3058,8 @@
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
@@ -3708,11 +3669,21 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_OP_GENERIC) {
-            PREDICTED(BINARY_OP_GENERIC);
+        TARGET(BINARY_OP) {
+            PREDICTED(BINARY_OP);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
             PyObject *rhs = PEEK(1);
             PyObject *lhs = PEEK(2);
             PyObject *res;
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr--;
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(BINARY_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             assert(0 <= oparg);
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
@@ -3724,23 +3695,6 @@
             POKE(1, res);
             next_instr += 1;
             DISPATCH();
-        }
-
-        TARGET(BINARY_OP) {
-            PREDICTED(BINARY_OP);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject *rhs = PEEK(1);
-            PyObject *lhs = PEEK(2);
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                assert(cframe.use_tracing == 0);
-                next_instr--;
-                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(BINARY_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(BINARY_OP_GENERIC);
         }
 
         TARGET(SWAP) {

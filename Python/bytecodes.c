@@ -197,7 +197,6 @@ dummy_func(
             BINARY_OP_ADD_FLOAT,
             BINARY_OP_ADD_INT,
             BINARY_OP_ADD_UNICODE,
-            BINARY_OP_GENERIC,
             // BINARY_OP_INPLACE_ADD_UNICODE,  // This is an odd duck.
             BINARY_OP_MULTIPLY_FLOAT,
             BINARY_OP_MULTIPLY_INT,
@@ -454,13 +453,8 @@ dummy_func(
             for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         // stack effect: (__0 -- )
@@ -1925,13 +1919,8 @@ dummy_func(
             for (int i = 1; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1966,13 +1955,8 @@ dummy_func(
             for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         // stack effect: (__0, __1 -- )
@@ -2077,21 +2061,6 @@ dummy_func(
         }
 
         // stack effect: (__0 -- )
-        inst(COMPARE_OP_GENERIC) {
-            assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-        }
-
-        // stack effect: (__0 -- )
         inst(COMPARE_OP) {
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -2104,7 +2073,17 @@ dummy_func(
             }
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(COMPARE_OP_GENERIC);
+            assert(oparg <= Py_GE);
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            PyObject *res = PyObject_RichCompare(left, right, oparg);
+            SET_TOP(res);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res == NULL) {
+                goto error;
+            }
+            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
         }
 
         // stack effect: (__0 -- )
@@ -2672,18 +2651,14 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->yield_offset = oparg;
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            assert(_Py_OPCODE(*next_instr) == END_FOR);
-            frame->prev_instr = next_instr - 1;
             _PyFrame_StackPush(gen_frame, Py_NewRef(Py_None));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            gen_frame->previous = frame;
-            frame = cframe.current_frame = gen_frame;
-            goto start_frame;
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            assert(_Py_OPCODE(*next_instr) == END_FOR);
+            DISPATCH_INLINED(gen_frame);
         }
 
         // stack effect: ( -- __0)
@@ -2965,13 +2940,8 @@ dummy_func(
                 if (new_frame == NULL) {
                     goto error;
                 }
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-                frame->prev_instr = next_instr - 1;
-                new_frame->previous = frame;
-                cframe.current_frame = frame = new_frame;
-                CALL_STAT_INC(inlined_py_calls);
-                goto start_frame;
+                DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
             PyObject *res;
@@ -3019,7 +2989,6 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
-            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -3028,12 +2997,8 @@ dummy_func(
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -3054,7 +3019,6 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
-            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -3068,12 +3032,8 @@ dummy_func(
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -3683,18 +3643,7 @@ dummy_func(
             PUSH(Py_NewRef(peek));
         }
 
-        inst(BINARY_OP_GENERIC, (lhs, rhs, unused/1 -- res)) {
-            assert(0 <= oparg);
-            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
-            assert(binary_ops[oparg]);
-            res = binary_ops[oparg](lhs, rhs);
-            Py_DECREF(lhs);
-            Py_DECREF(rhs);
-            ERROR_IF(res == NULL, error);
-        }
-
-        // This always dispatches, so the result is unused.
-        inst(BINARY_OP, (lhs, rhs, unused/1 -- unused)) {
+        inst(BINARY_OP, (lhs, rhs, unused/1 -- res)) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -3704,7 +3653,13 @@ dummy_func(
             }
             STAT_INC(BINARY_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(BINARY_OP_GENERIC);
+            assert(0 <= oparg);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg]);
+            res = binary_ops[oparg](lhs, rhs);
+            Py_DECREF(lhs);
+            Py_DECREF(rhs);
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: ( -- )
@@ -3758,7 +3713,7 @@ family(call) = {
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
 family(compare_op) = {
-    COMPARE_OP, COMPARE_OP_FLOAT_JUMP, COMPARE_OP_GENERIC,
+    COMPARE_OP, COMPARE_OP_FLOAT_JUMP,
     COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP };
 family(for_iter) = {
     FOR_ITER, FOR_ITER_LIST,

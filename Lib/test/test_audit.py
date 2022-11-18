@@ -197,18 +197,10 @@ class AuditTest(unittest.TestCase):
         actual = [(ev[0], ev[2]) for ev in events]
         expected = [
             ("_thread.start_new_thread", "(<test_func>, (), None)"),
-            ("cpython.PyThreadState_New", "(2,)"),
             ("test.test_func", "()"),
-            ("cpython.PyThreadState_Clear", "(2,)"),
         ]
 
         self.assertEqual(actual, expected)
-
-    def test_threading_abort(self):
-        # Ensures that aborting PyThreadState_New raises the correct exception
-        returncode, events, stderr = self.run_python("test_threading_abort")
-        if returncode:
-            self.fail(stderr)
 
 
     def test_wmi_exec_query(self):
