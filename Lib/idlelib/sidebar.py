@@ -471,10 +471,7 @@ class ShellSidebar(BaseSideBar):
         index = text.index("@0,0")
         if index.split('.', 1)[1] != '0':
             index = text.index(f'{index}+1line linestart')
-        while True:
-            lineinfo = text.dlineinfo(index)
-            if lineinfo is None:
-                break
+        while (lineinfo := text.dlineinfo(index)) is not None:
             y = lineinfo[1]
             prev_newline_tagnames = text_tagnames(f"{index} linestart -1c")
             prompt = (

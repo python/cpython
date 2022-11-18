@@ -9,8 +9,8 @@ Copyright (C) 1994 Steen Lumholt.
 
 /* TCL/TK VERSION INFO:
 
-    Only Tcl/Tk 8.4 and later are supported.  Older versions are not
-    supported. Use Python 3.4 or older if you cannot upgrade your
+    Only Tcl/Tk 8.5.12 and later are supported.  Older versions are not
+    supported. Use Python 3.10 or older if you cannot upgrade your
     Tcl/Tk libraries.
 */
 
@@ -54,15 +54,11 @@ Copyright (C) 1994 Steen Lumholt.
 
 #include "tkinter.h"
 
-#if TK_HEX_VERSION < 0x08040200
-#error "Tk older than 8.4 not supported"
+#if TK_HEX_VERSION < 0x0805020c
+#error "Tk older than 8.5.12 not supported"
 #endif
 
-#if TK_HEX_VERSION >= 0x08050208 && TK_HEX_VERSION < 0x08060000 || \
-    TK_HEX_VERSION >= 0x08060200
-#define HAVE_LIBTOMMATH
 #include <tclTomMath.h>
-#endif
 
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
@@ -317,10 +313,6 @@ typedef struct {
 } TkappObject;
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
-
-#define DEBUG_REFCNT(v) (printf("DEBUG: id=%p, refcnt=%i\n", \
-(void *) v, Py_REFCNT(v)))
-
 
 
 /**** Error Handling ****/
@@ -792,16 +784,14 @@ PyTclObject_string(PyTclObject *self, void *ignored)
         if (!self->string)
             return NULL;
     }
-    Py_INCREF(self->string);
-    return self->string;
+    return Py_NewRef(self->string);
 }
 
 static PyObject *
 PyTclObject_str(PyTclObject *self)
 {
     if (self->string) {
-        Py_INCREF(self->string);
-        return self->string;
+        return Py_NewRef(self->string);
     }
     /* XXX Could cache result if it is non-ASCII. */
     return unicodeFromTclObj(self->value);
@@ -889,7 +879,6 @@ static PyType_Spec PyTclObject_Type_spec = {
 #define CHECK_STRING_LENGTH(s)
 #endif
 
-#ifdef HAVE_LIBTOMMATH
 static Tcl_Obj*
 asBignumObj(PyObject *value)
 {
@@ -926,7 +915,6 @@ asBignumObj(PyObject *value)
     }
     return result;
 }
-#endif
 
 static Tcl_Obj*
 AsObj(PyObject *value)
@@ -969,9 +957,7 @@ AsObj(PyObject *value)
 #endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
-#ifdef HAVE_LIBTOMMATH
         return asBignumObj(value);
-#endif
         /* If there is no wideInt or bignum support,
            fall through to default object handling. */
     }
@@ -1091,7 +1077,6 @@ fromWideIntObj(TkappObject *tkapp, Tcl_Obj *value)
         return NULL;
 }
 
-#ifdef HAVE_LIBTOMMATH
 static PyObject*
 fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
 {
@@ -1126,7 +1111,6 @@ fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
     mp_clear(&bigValue);
     return res;
 }
-#endif
 
 static PyObject*
 FromObj(TkappObject *tkapp, Tcl_Obj *value)
@@ -1171,13 +1155,11 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
            fall through to bignum handling. */
     }
 
-#ifdef HAVE_LIBTOMMATH
     if (value->typePtr == tkapp->IntType ||
         value->typePtr == tkapp->WideIntType ||
         value->typePtr == tkapp->BignumType) {
         return fromBignumObj(tkapp, value);
     }
-#endif
 
     if (value->typePtr == tkapp->ListType) {
         int size;
@@ -1215,23 +1197,19 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
         return unicodeFromTclObj(value);
     }
 
-#if TK_HEX_VERSION >= 0x08050000
     if (tkapp->BooleanType == NULL &&
         strcmp(value->typePtr->name, "booleanString") == 0) {
         /* booleanString type is not registered in Tcl */
         tkapp->BooleanType = value->typePtr;
         return fromBoolean(tkapp, value);
     }
-#endif
 
-#ifdef HAVE_LIBTOMMATH
     if (tkapp->BignumType == NULL &&
         strcmp(value->typePtr->name, "bignum") == 0) {
         /* bignum type is not registered in Tcl */
         tkapp->BignumType = value->typePtr;
         return fromBignumObj(tkapp, value);
     }
-#endif
 
     return newPyTclObject(value);
 }
@@ -1756,8 +1734,7 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         if (!ok)
             Tkinter_Error(self);
         else {
-            res = Py_None;
-            Py_INCREF(res);
+            res = Py_NewRef(Py_None);
         }
         LEAVE_OVERLAP_TCL
         break;
@@ -1775,8 +1752,7 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         if (!ok)
             Tkinter_Error(self);
         else {
-            res = Py_None;
-            Py_INCREF(res);
+            res = Py_NewRef(Py_None);
         }
         LEAVE_OVERLAP_TCL
         break;
@@ -1862,8 +1838,7 @@ UnsetVar(TkappObject *self, PyObject *args, int flags)
     if (code == TCL_ERROR)
         res = Tkinter_Error(self);
     else {
-        Py_INCREF(Py_None);
-        res = Py_None;
+        res = Py_NewRef(Py_None);
     }
     LEAVE_OVERLAP_TCL
     return res;
@@ -1903,8 +1878,7 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
     PyObject *result;
 
     if (PyLong_Check(arg)) {
-        Py_INCREF(arg);
-        return arg;
+        return Py_NewRef(arg);
     }
 
     if (PyTclObject_Check(arg)) {
@@ -1925,11 +1899,7 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
        Prefer bignum because Tcl_GetWideIntFromObj returns ambiguous result for
        value in ranges -2**64..-2**63-1 and 2**63..2**64-1 (on 32-bit platform).
      */
-#ifdef HAVE_LIBTOMMATH
     result = fromBignumObj(self, value);
-#else
-    result = fromWideIntObj(self, value);
-#endif
     Tcl_DecrRefCount(value);
     if (result != NULL || PyErr_Occurred())
         return result;
@@ -1952,8 +1922,7 @@ _tkinter_tkapp_getdouble(TkappObject *self, PyObject *arg)
     double v;
 
     if (PyFloat_Check(arg)) {
-        Py_INCREF(arg);
-        return arg;
+        return Py_NewRef(arg);
     }
 
     if (PyNumber_Check(arg)) {
@@ -2169,8 +2138,7 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
         return v;
     }
     if (PyTuple_Check(arg)) {
-        Py_INCREF(arg);
-        return arg;
+        return Py_NewRef(arg);
     }
     if (PyList_Check(arg)) {
         return PySequence_Tuple(arg);
@@ -2346,10 +2314,8 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
-    Py_INCREF(self);
-    Py_INCREF(func);
-    data->self = (PyObject *) self;
-    data->func = func;
+    data->self = Py_NewRef(self);
+    data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         Tcl_Condition cond = NULL;
         CommandEvent *ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
@@ -2454,10 +2420,8 @@ NewFHCD(PyObject *func, PyObject *file, int id)
     FileHandler_ClientData *p;
     p = PyMem_NEW(FileHandler_ClientData, 1);
     if (p != NULL) {
-        Py_XINCREF(func);
-        Py_XINCREF(file);
-        p->func = func;
-        p->file = file;
+        p->func = Py_XNewRef(func);
+        p->file = Py_XNewRef(file);
         p->id = id;
         p->next = HeadFHCD;
         HeadFHCD = p;
@@ -2615,13 +2579,11 @@ Tktt_New(PyObject *func)
     if (v == NULL)
         return NULL;
 
-    Py_INCREF(func);
     v->token = NULL;
-    v->func = func;
+    v->func = Py_NewRef(func);
 
     /* Extra reference, deleted when called or when handler is deleted */
-    Py_INCREF(v);
-    return v;
+    return (TkttObject*)Py_NewRef(v);
 }
 
 static void
@@ -2964,9 +2926,8 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
                 if (context->size + 1 > context->maxsize &&
                     !_bump(context, 1))
                     return 0;
-                Py_INCREF(o);
                 PyTuple_SET_ITEM(context->tuple,
-                                 context->size++, o);
+                                 context->size++, Py_NewRef(o));
             }
         }
     } else {
@@ -3290,8 +3251,7 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    Py_INCREF(o);
-    if (PyModule_AddObject(m, "TclError", o)) {
+    if (PyModule_AddObject(m, "TclError", Py_NewRef(o))) {
         Py_DECREF(o);
         Py_DECREF(m);
         return NULL;
@@ -3444,11 +3404,5 @@ PyInit__tkinter(void)
         return NULL;
     }
 
-#if 0
-    /* This was not a good idea; through <Destroy> bindings,
-       Tcl_Finalize() may invoke Python code but at that point the
-       interpreter and thread state have already been destroyed! */
-    Py_AtExit(Tcl_Finalize);
-#endif
     return m;
 }

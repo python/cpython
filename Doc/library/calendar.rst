@@ -289,9 +289,10 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 .. note::
 
-   The :meth:`formatweekday` and :meth:`formatmonthname` methods of these two
-   classes temporarily change the current locale to the given *locale*.  Because
-   the current locale is a process-wide setting, they are not thread-safe.
+   The constructor, :meth:`formatweekday` and :meth:`formatmonthname` methods
+   of these two classes temporarily change the ``LC_TIME`` locale to the given
+   *locale*. Because the current locale is a process-wide setting, they are
+   not thread-safe.
 
 
 For simple text calendars this module provides the following functions.

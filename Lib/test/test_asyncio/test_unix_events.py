@@ -9,10 +9,10 @@ import signal
 import socket
 import stat
 import sys
-import tempfile
 import threading
 import unittest
 from unittest import mock
+import warnings
 from test.support import os_helper
 from test.support import socket_helper
 
@@ -26,6 +26,10 @@ from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 MOCK_ANY = mock.ANY
 
 
@@ -37,10 +41,6 @@ def SIGNAL(signum):
     if not 1 <= signum <= 68:
         raise AssertionError(f'invalid signum {signum}')
     return 32768 - signum
-
-
-def tearDownModule():
-    asyncio.set_event_loop_policy(None)
 
 
 def close_pipe_transport(transport):
@@ -315,11 +315,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                 self.loop.run_until_complete(coro)
 
     def test_create_unix_server_existing_path_nonsock(self):
-        with tempfile.NamedTemporaryFile() as file:
-            coro = self.loop.create_unix_server(lambda: None, file.name)
-            with self.assertRaisesRegex(OSError,
-                                        'Address.*is already in use'):
-                self.loop.run_until_complete(coro)
+        path = test_utils.gen_unix_socket_path()
+        self.addCleanup(os_helper.unlink, path)
+        # create the file
+        open(path, "wb").close()
+
+        coro = self.loop.create_unix_server(lambda: None, path)
+        with self.assertRaisesRegex(OSError,
+                                    'Address.*is already in use'):
+            self.loop.run_until_complete(coro)
 
     def test_create_unix_server_ssl_bool(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',
@@ -356,20 +360,18 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                          'no socket.SOCK_NONBLOCK (linux only)')
     @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
-        sock = socket.socket(
-            socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
-        with tempfile.NamedTemporaryFile() as file:
-            fn = file.name
-        try:
-            with sock:
-                sock.bind(fn)
-                coro = self.loop.create_unix_server(lambda: None, path=None,
-                                                    sock=sock)
-                srv = self.loop.run_until_complete(coro)
-                srv.close()
-                self.loop.run_until_complete(srv.wait_closed())
-        finally:
-            os.unlink(fn)
+        fn = test_utils.gen_unix_socket_path()
+        self.addCleanup(os_helper.unlink, fn)
+
+        sock = socket.socket(socket.AF_UNIX,
+                             socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+        with sock:
+            sock.bind(fn)
+            coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                sock=sock)
+            srv = self.loop.run_until_complete(coro)
+            srv.close()
+            self.loop.run_until_complete(srv.wait_closed())
 
     def test_create_unix_server_ssl_timeout_with_plain_sock(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',
@@ -1106,6 +1108,11 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
 
 class AbstractChildWatcherTests(unittest.TestCase):
 
+    def test_warns_on_subclassing(self):
+        with self.assertWarns(DeprecationWarning):
+            class MyWatcher(asyncio.AbstractChildWatcher):
+                pass
+
     def test_not_implemented(self):
         f = mock.Mock()
         watcher = asyncio.AbstractChildWatcher()
@@ -1530,7 +1537,7 @@ class ChildWatcherTestsMixin:
             self.watcher._sig_chld()
 
         if isinstance(self.watcher, asyncio.FastChildWatcher):
-            # here the FastChildWatche enters a deadlock
+            # here the FastChildWatcher enters a deadlock
             # (there is no way to prevent it)
             self.assertFalse(callback.called)
         else:
@@ -1685,12 +1692,16 @@ class ChildWatcherTestsMixin:
 
 class SafeChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
-        return asyncio.SafeChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return asyncio.SafeChildWatcher()
 
 
 class FastChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
-        return asyncio.FastChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return asyncio.FastChildWatcher()
 
 
 class PolicyTests(unittest.TestCase):
@@ -1701,21 +1712,38 @@ class PolicyTests(unittest.TestCase):
     def test_get_default_child_watcher(self):
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
-
-        watcher = policy.get_child_watcher()
+        unix_events.can_use_pidfd = mock.Mock()
+        unix_events.can_use_pidfd.return_value = False
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
-        self.assertIs(watcher, policy.get_child_watcher())
+        policy = self.create_policy()
+        self.assertIsNone(policy._watcher)
+        unix_events.can_use_pidfd = mock.Mock()
+        unix_events.can_use_pidfd.return_value = True
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
+        self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
+
+        self.assertIs(policy._watcher, watcher)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
-        watcher = asyncio.FastChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            watcher = asyncio.FastChildWatcher()
+            policy.set_child_watcher(watcher)
 
-        policy.set_child_watcher(watcher)
         self.assertIs(policy._watcher, watcher)
-        self.assertIs(watcher, policy.get_child_watcher())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_thread(self):
 
@@ -1724,7 +1752,9 @@ class PolicyTests(unittest.TestCase):
 
             self.assertIsInstance(policy.get_event_loop(),
                                   asyncio.AbstractEventLoop)
-            watcher = policy.get_child_watcher()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                watcher = policy.get_child_watcher()
 
             self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
             self.assertIsNone(watcher._loop)
@@ -1732,7 +1762,9 @@ class PolicyTests(unittest.TestCase):
             policy.get_event_loop().close()
 
         policy = self.create_policy()
-        policy.set_child_watcher(asyncio.SafeChildWatcher())
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            policy.set_child_watcher(asyncio.SafeChildWatcher())
 
         th = threading.Thread(target=f)
         th.start()
@@ -1744,8 +1776,10 @@ class PolicyTests(unittest.TestCase):
 
         # Explicitly setup SafeChildWatcher,
         # default ThreadedChildWatcher has no _loop property
-        watcher = asyncio.SafeChildWatcher()
-        policy.set_child_watcher(watcher)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            watcher = asyncio.SafeChildWatcher()
+            policy.set_child_watcher(watcher)
         watcher.attach_loop(loop)
 
         self.assertIs(watcher._loop, loop)

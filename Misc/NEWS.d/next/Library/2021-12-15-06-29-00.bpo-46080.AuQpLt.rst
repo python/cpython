@@ -1,3 +1,0 @@
-Fix exception in argparse help text generation if a
-:class:`argparse.BooleanOptionalAction` argument's default is
-``argparse.SUPPRESS`` and it has ``help`` specified.  Patch by Felix Fontein.

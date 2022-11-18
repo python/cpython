@@ -1,1 +1,0 @@
-Add CAN Socket support for NetBSD.

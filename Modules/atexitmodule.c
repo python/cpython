@@ -185,7 +185,7 @@ PyDoc_STRVAR(atexit_run_exitfuncs__doc__,
 \n\
 Run all registered exit functions.\n\
 \n\
-If a callaback raises an exception, it is logged with sys.unraisablehook.");
+If a callback raises an exception, it is logged with sys.unraisablehook.");
 
 static PyObject *
 atexit_run_exitfuncs(PyObject *module, PyObject *unused)
@@ -251,7 +251,7 @@ atexit_unregister(PyObject *module, PyObject *func)
 
 
 static PyMethodDef atexit_methods[] = {
-    {"register", (PyCFunction)(void(*)(void)) atexit_register, METH_VARARGS|METH_KEYWORDS,
+    {"register", _PyCFunction_CAST(atexit_register), METH_VARARGS|METH_KEYWORDS,
         atexit_register__doc__},
     {"_clear", (PyCFunction) atexit_clear, METH_NOARGS,
         atexit_clear__doc__},

@@ -30,8 +30,7 @@ class Queue(mixins._LoopBoundMixin):
     interrupted between calling qsize() and doing an operation on the Queue.
     """
 
-    def __init__(self, maxsize=0, *, loop=mixins._marker):
-        super().__init__(loop=loop)
+    def __init__(self, maxsize=0):
         self._maxsize = maxsize
 
         # Futures.

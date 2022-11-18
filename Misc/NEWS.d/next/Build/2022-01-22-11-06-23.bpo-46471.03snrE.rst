@@ -1,1 +1,0 @@
-Use global singletons for single byte bytes objects in deepfreeze.

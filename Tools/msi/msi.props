@@ -115,9 +115,6 @@
         <LinkerBindInputPaths Include="$(PGOBuildPath);$(BuildPath)">
             <BindName></BindName>
         </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(PySourcePath)Doc\build\htmlhelp">
-            <BindName></BindName>
-        </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(PySourcePath)">
             <BindName>src</BindName>
         </LinkerBindInputPaths>

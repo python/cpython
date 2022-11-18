@@ -1,2 +1,0 @@
-os.path.abspath("C:\CON") is now fixed to return "\\.\CON", not the same path.
-The regression was true of all legacy DOS devices such as COM1, LPT1, or NUL.

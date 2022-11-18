@@ -1,3 +1,0 @@
-Add missing test for :class:`types.TracebackType` and
-:class:`types.FrameType`. Calculate them directly from the caught exception
-without calling :func:`sys.exc_info`.
