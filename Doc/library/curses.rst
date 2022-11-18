@@ -9,6 +9,8 @@
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
+**Source code:** :source:`Lib/curses`
+
 --------------
 
 The :mod:`curses` module provides an interface to the curses library, the

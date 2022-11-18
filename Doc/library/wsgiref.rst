@@ -7,6 +7,8 @@
 .. moduleauthor:: Phillip J. Eby <pje@telecommunity.com>
 .. sectionauthor:: Phillip J. Eby <pje@telecommunity.com>
 
+**Source code:** :source:`Lib/wsgiref`
+
 --------------
 
 The Web Server Gateway Interface (WSGI) is a standard interface between web
