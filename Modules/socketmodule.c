@@ -1721,14 +1721,20 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         Py_buffer path;
         int retval = 0;
 
+        args = PyOS_FSPath(args);
+        if (args == NULL) {
+            return retval;
+        }
+
         /* PEP 383.  Not using PyUnicode_FSConverter since we need to
            allow embedded nulls on Linux. */
         if (PyUnicode_Check(args)) {
-            if ((args = PyUnicode_EncodeFSDefault(args)) == NULL)
-                return 0;
+            PyObject *encoded_path = PyUnicode_EncodeFSDefault(args);
+            Py_DECREF(args);
+            args = encoded_path;
+            if (args == NULL)
+                return retval;
         }
-        else
-            Py_INCREF(args);
         if (!PyArg_Parse(args, "y*", &path)) {
             Py_DECREF(args);
             return retval;
