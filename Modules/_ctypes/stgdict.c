@@ -356,14 +356,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int big_endian;
     int arrays_seen = 0;
 
-    /* HACK Alert: I cannot be bothered to fix ctypes.com, so there has to
-       be a way to use the old, broken semantics: _fields_ are not extended
-       but replaced in subclasses.
-
-       XXX Remove this in ctypes 1.0!
-    */
-    int use_broken_old_ctypes_semantics;
-
     if (fields == NULL)
         return 0;
 
@@ -376,19 +368,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     }
     else {
         big_endian = PY_BIG_ENDIAN;
-    }
-
-    if (_PyObject_LookupAttr(type,
-                &_Py_ID(_use_broken_old_ctypes_structure_semantics_), &tmp) < 0)
-    {
-        return -1;
-    }
-    if (tmp) {
-        Py_DECREF(tmp);
-        use_broken_old_ctypes_semantics = 1;
-    }
-    else {
-        use_broken_old_ctypes_semantics = 0;
     }
 
     if (_PyObject_LookupAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
@@ -454,7 +433,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (!isStruct) {
         stgdict->flags |= TYPEFLAG_HASUNION;
     }
-    if (basedict && !use_broken_old_ctypes_semantics) {
+    if (basedict) {
         size = offset = basedict->size;
         align = basedict->align;
         union_size = 0;
