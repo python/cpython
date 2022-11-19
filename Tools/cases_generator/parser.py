@@ -57,27 +57,26 @@ class Block(Node):
 
 
 @dataclass
-class Effect(Node):
-    pass
-
-
-@dataclass
-class StackEffect(Effect):
+class StackEffect(Node):
     name: str
     # TODO: type, condition
 
 
 @dataclass
-class CacheEffect(Effect):
+class CacheEffect(Node):
     name: str
     size: int
+
+
+InputEffect = StackEffect | CacheEffect
+OutputEffect = StackEffect
 
 
 @dataclass
 class InstHeader(Node):
     name: str
-    inputs: list[Effect]
-    outputs: list[Effect]
+    inputs: list[InputEffect]
+    outputs: list[OutputEffect]
 
 
 @dataclass
@@ -90,13 +89,12 @@ class InstDef(Node):
         return self.header.name
 
     @property
-    def inputs(self) -> list[Effect]:
+    def inputs(self) -> list[InputEffect]:
         return self.header.inputs
 
     @property
     def outputs(self) -> list[StackEffect]:
-        # This is always true
-        return [x for x in self.header.outputs if isinstance(x, StackEffect)]
+        return self.header.outputs
 
 
 @dataclass
@@ -126,7 +124,7 @@ class Parser(PLexer):
     def inst_header(self) -> InstHeader | None:
         # inst(NAME) | inst(NAME, (inputs -- outputs))
         # TODO: Error out when there is something unexpected.
-        # TODO: Make INST a keyword in the lexer.``
+        # TODO: Make INST a keyword in the lexer.
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "inst":
             if (self.expect(lx.LPAREN)
                     and (tkn := self.expect(lx.IDENTIFIER))):
@@ -136,32 +134,22 @@ class Parser(PLexer):
                     if self.expect(lx.RPAREN):
                         if ((tkn := self.peek())
                                 and tkn.kind == lx.LBRACE):
-                            self.check_overlaps(inp, outp)
                             return InstHeader(name, inp, outp)
                 elif self.expect(lx.RPAREN):
                     return InstHeader(name, [], [])
         return None
 
-    def check_overlaps(self, inp: list[Effect], outp: list[Effect]):
-        for i, name in enumerate(inp):
-            for j, name2 in enumerate(outp):
-                if name == name2:
-                    if i != j:
-                        raise self.make_syntax_error(
-                            f"Input {name!r} at pos {i} repeated in output at different pos {j}")
-                    break
-
-    def stack_effect(self) -> tuple[list[Effect], list[Effect]]:
+    def stack_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
         # '(' [inputs] '--' [outputs] ')'
         if self.expect(lx.LPAREN):
-            inp = self.inputs() or []
+            inputs = self.inputs() or []
             if self.expect(lx.MINUSMINUS):
-                outp = self.outputs() or []
+                outputs = self.outputs() or []
                 if self.expect(lx.RPAREN):
-                    return inp, outp
+                    return inputs, outputs
         raise self.make_syntax_error("Expected stack effect")
 
-    def inputs(self) -> list[Effect] | None:
+    def inputs(self) -> list[InputEffect] | None:
         # input (',' input)*
         here = self.getpos()
         if inp := self.input():
@@ -175,7 +163,7 @@ class Parser(PLexer):
         return None
 
     @contextual
-    def input(self) -> Effect | None:
+    def input(self) -> InputEffect | None:
         # IDENTIFIER '/' INTEGER (CacheEffect)
         # IDENTIFIER (StackEffect)
         if (tkn := self.expect(lx.IDENTIFIER)):
@@ -192,7 +180,7 @@ class Parser(PLexer):
             else:
                 return StackEffect(tkn.text)
 
-    def outputs(self) -> list[Effect] | None:
+    def outputs(self) -> list[OutputEffect] | None:
         # output (, output)*
         here = self.getpos()
         if outp := self.output():
@@ -206,7 +194,7 @@ class Parser(PLexer):
         return None
 
     @contextual
-    def output(self) -> Effect | None:
+    def output(self) -> OutputEffect | None:
         if (tkn := self.expect(lx.IDENTIFIER)):
             return StackEffect(tkn.text)
 

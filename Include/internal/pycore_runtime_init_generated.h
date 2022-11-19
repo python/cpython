@@ -757,7 +757,6 @@ extern "C" {
     INIT_ID(_swappedbytes_), \
     INIT_ID(_type_), \
     INIT_ID(_uninitialized_submodules), \
-    INIT_ID(_use_broken_old_ctypes_structure_semantics_), \
     INIT_ID(_warn_unawaited_coroutine), \
     INIT_ID(_xoptions), \
     INIT_ID(a), \
