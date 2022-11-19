@@ -642,9 +642,9 @@ class PurePath(object):
             if self.is_relative_to(path):
                 break
         else:
-            raise ValueError("{!r} and {!r} have different anchors".format(str(self), str(other)))
+            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         if step and not walk_up:
-            raise ValueError("{!r} is not in the subpath of {!r}".format(str(self), str(other)))
+            raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
         parts = ('..',) * step + self.parts[len(path.parts):]
         return path_cls(*parts)
 
