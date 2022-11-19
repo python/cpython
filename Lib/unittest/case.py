@@ -580,6 +580,13 @@ class TestCase(object):
             warnings.warn(f'It is deprecated to return a value that is not None from a '
                           f'test case ({method})', DeprecationWarning, stacklevel=3)
 
+    def _callCleanupAfterFailedSetup(self):
+        # Can be overriden for all classes with multipart setup,
+        # like in `IsolatedAsyncioTestCase`. This is useful when one
+        # part of the setup is successful, and the other one is not.
+        # Does nothing by default.
+        pass
+
     def _callTearDown(self):
         self.tearDown()
 
@@ -624,6 +631,8 @@ class TestCase(object):
                     outcome.expecting_failure = False
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
+                else:
+                    self._callCleanupAfterFailedSetup()
                 self.doCleanups()
 
                 if outcome.success:
