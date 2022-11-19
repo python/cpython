@@ -10,7 +10,7 @@ def load_tzdata(key):
 
     try:
         return resources.files(package_name).joinpath(resource_name).open("rb")
-    except (ImportError, FileNotFoundError, UnicodeEncodeError):
+    except (ImportError, FileNotFoundError, UnicodeEncodeError):  # TODO
         # There are three types of exception that can be raised that all amount
         # to "we cannot find this key":
         #
@@ -21,6 +21,8 @@ def load_tzdata(key):
         #   (e.g. Europe/Krasnoy)
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
+        # OSError: If filename is wrong (too long, has invalid ascii symbols)
+        #   or when there's a permissing error.
         raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
 
 

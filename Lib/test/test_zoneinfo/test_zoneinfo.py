@@ -220,6 +220,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "America.Los_Angeles",
             "🇨🇦",  # Non-ascii
             "America/New\ud800York",  # Contains surrogate character
+            "a" * 256,  # Too long
         ]
 
         for bad_key in bad_keys:
