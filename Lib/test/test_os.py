@@ -4215,7 +4215,7 @@ class TestScandir(unittest.TestCase):
 
         import _winapi
         try:
-            _winapi.CreateJunction(os.path.join(self.path, "srcjunc"), dirname)
+            _winapi.CreateJunction(dirname, os.path.join(self.path, "srcjunc"))
         except OSError:
             raise unittest.SkipTest('creating the test junction failed')
 
