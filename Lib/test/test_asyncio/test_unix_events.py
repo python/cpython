@@ -1894,10 +1894,10 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             wait_process(pid, exitcode=0)
 
     def test_fork_signal_handling(self):
-        # Sending signals to the forked process should not affect the parent
-        # process.
-        multiprocessing.set_start_method('fork')
-        manager = multiprocessing.Manager()
+        # Sending signal to the forked process should not affect the parent
+        # process
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
         self.addCleanup(manager.shutdown)
         child_started = manager.Event()
         child_handled = manager.Event()
@@ -1912,16 +1912,39 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             loop = asyncio.get_running_loop()
             loop.add_signal_handler(signal.SIGTERM, lambda *args: parent_handled.set())
 
-            process = multiprocessing.Process(target=child_main)
+            process = ctx.Process(target=child_main)
             process.start()
             child_started.wait()
             os.kill(process.pid, signal.SIGTERM)
             process.join()
 
+            async def func():
+                await asyncio.sleep(0.1)
+                return 42
+
+            # Test parent's loop is still functional
+            self.assertEqual(await asyncio.create_task(func()), 42)
+
         asyncio.run(main())
 
         self.assertFalse(parent_handled.is_set())
         self.assertTrue(child_handled.is_set())
+
+    def test_fork_asyncio_run(self):
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
+        self.addCleanup(manager.shutdown)
+        result = manager.Value('i', 0)
+
+        async def child_main():
+            await asyncio.sleep(0.1)
+            result.value = 42
+
+        process = ctx.Process(target=lambda: asyncio.run(child_main()))
+        process.start()
+        process.join()
+
+        self.assertEqual(result.value, 42)
 
 if __name__ == '__main__':
     unittest.main()
