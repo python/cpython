@@ -965,6 +965,10 @@ their subgroups based on the types of the contained exceptions.
          def derive(self, excs):
             return Errors(excs, self.exit_code)
 
+   Like :exc:`ExceptionGroup`, any subclass of :exc:`BaseExceptionGroup` which
+   is also a subclass of :exc:`Exception` can only wrap instances of
+   :exc:`Exception`.
+
    .. versionadded:: 3.11
 
 
