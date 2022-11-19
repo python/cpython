@@ -56,7 +56,7 @@ created.  Socket addresses are represented as follows:
   an initial null byte; note that sockets in this namespace can
   communicate with normal file system sockets, so programs intended to
   run on Linux may need to deal with both types of address.  A string,
-  bytes-like object, or a :term:`path-like object` can be used for either
+  bytes-like object, or :term:`path-like object` can be used for either
   type of address when passing it as an argument.
 
   .. versionchanged:: 3.3
