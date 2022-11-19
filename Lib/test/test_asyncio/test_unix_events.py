@@ -1946,5 +1946,21 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.value, 42)
 
+    def test_fork_asyncio_subprocess(self):
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
+        self.addCleanup(manager.shutdown)
+        result = manager.Value('i', 1)
+
+        async def child_main():
+            proc = await asyncio.create_subprocess_exec(sys.executable, '-c', 'pass')
+            result.value = await proc.wait()
+
+        process = ctx.Process(target=lambda: asyncio.run(child_main()))
+        process.start()
+        process.join()
+
+        self.assertEqual(result.value, 0)
+
 if __name__ == '__main__':
     unittest.main()
