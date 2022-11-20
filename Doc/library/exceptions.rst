@@ -934,21 +934,38 @@ their subgroups based on the types of the contained exceptions.
 
    .. method:: derive(excs)
 
-      Returns an exception group with the same :attr:`message`,
-      :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
-      and :attr:`__notes__` but which wraps the exceptions in ``excs``.
+      Returns an exception group with the same :attr:`message`, but which
+      wraps the exceptions in ``excs``.
 
       This method is used by :meth:`subgroup` and :meth:`split`. A
       subclass needs to override it in order to make :meth:`subgroup`
       and :meth:`split` return instances of the subclass rather
-      than :exc:`ExceptionGroup`. ::
+      than :exc:`ExceptionGroup`.
+
+      :meth:`subgroup` and :meth:`split` copy the :attr:`__traceback__`,
+      :attr:`__cause__`, :attr:`__context__` and :attr:`__notes__` fields from
+      the original exception group to the one returned by :meth:`derive`, so
+      these fields do not need to be udpated by :meth:`derive`. ::
 
          >>> class MyGroup(ExceptionGroup):
          ...     def derive(self, exc):
          ...         return MyGroup(self.message, exc)
          ...
-         >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
-         (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
+         >>> e = MyGroup("eg", [ValueError(1), TypeError(2)])
+         >>> e.add_note("a note")
+         >>> e.__context__ = Exception("context")
+         >>> e.__cause__ = Exception("cause")
+         >>> try:
+         ...     raise e
+         ... except Exception as e:
+         ...     exc = e
+         ...
+         >>> exc.__context__, exc.__cause__, exc.__traceback__, exc.__notes__
+         ... (Exception('context'), Exception('cause'), <traceback object at 0x10a2cf610>, ['a note'])
+         >>> match.__context__, match.__cause__, match.__traceback__, match.__notes__
+         ... (Exception('context'), Exception('cause'), <traceback object at 0x10a2cf610>, ['a note'])
+         >>> rest.__context__, rest.__cause__, rest.__traceback__, rest.__notes__
+         ... (Exception('context'), Exception('cause'), <traceback object at 0x10a2cf610>, ['a note'])
 
    Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
    subclasses that need a different constructor signature need to
