@@ -1719,24 +1719,32 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     case AF_UNIX:
     {
         Py_buffer path;
+        PyObject *fspath;
         int retval = 0;
 
-        args = PyOS_FSPath(args);
-        if (args == NULL) {
-            return retval;
+        fspath = PyOS_FSPath(args);
+        if (fspath) {
+            args = fspath;
+            /* PEP 383.  Not using PyUnicode_FSConverter since we need to
+               allow embedded nulls on Linux. */
+            if (PyUnicode_Check(args)) {
+                PyObject *encoded_path = PyUnicode_EncodeFSDefault(args);
+                Py_DECREF(args);
+                args = encoded_path;
+                if (args == NULL)
+                    return retval;
+            }
+        } else {
+            PyErr_Clear();
+            Py_INCREF(args);
         }
 
-        /* PEP 383.  Not using PyUnicode_FSConverter since we need to
-           allow embedded nulls on Linux. */
-        if (PyUnicode_Check(args)) {
-            PyObject *encoded_path = PyUnicode_EncodeFSDefault(args);
-            Py_DECREF(args);
-            args = encoded_path;
-            if (args == NULL)
-                return retval;
-        }
         if (!PyArg_Parse(args, "y*", &path)) {
             Py_DECREF(args);
+            PyErr_Format(PyExc_TypeError,
+                "expected str, bytes-like object or os.PathLike object, "
+                "not %.200s",
+                _PyType_Name(Py_TYPE(args)));
             return retval;
         }
         assert(path.len >= 0);
