@@ -326,8 +326,8 @@ w_ref(PyObject *v, char *flag, WFILE *p)
             goto err;
         }
         w = (int)s;
-        Py_INCREF(v);
-        if (_Py_hashtable_set(p->hashtable, v, (void *)(uintptr_t)w) < 0) {
+        if (_Py_hashtable_set(p->hashtable, Py_NewRef(v),
+                              (void *)(uintptr_t)w) < 0) {
             Py_DECREF(v);
             goto err;
         }

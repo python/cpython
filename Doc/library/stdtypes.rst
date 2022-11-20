@@ -353,7 +353,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See https://www.unicode.org/Public/15.0.0/ucd/extracted/DerivedNumericType.txt
+   See `the Unicode Standard <https://unicode.org/Public/UNIDATA/extracted/DerivedNumericType.txt>`_
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -1522,7 +1522,7 @@ multiple fragments.
    printable string representation of *object*.  For string objects, this is
    the string itself.  If *object* does not have a :meth:`~object.__str__`
    method, then :func:`str` falls back to returning
-   :meth:`repr(object) <repr>`.
+   :func:`repr(object) <repr>`.
 
    .. index::
       single: buffer protocol; str (built-in class)
@@ -1597,8 +1597,9 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is described in section 3.13 of the Unicode
-   Standard.
+   The casefolding algorithm is
+   `described in section 3.13 of the Unicode Standard
+   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G53253>`__.
 
    .. versionadded:: 3.3
 
@@ -1757,7 +1758,8 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the "Alphabetic" property defined in the Unicode Standard.
+   from the `Alphabetic property defined in the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G91002>`_.
 
 
 .. method:: str.isascii()
@@ -1794,7 +1796,7 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
+   :func:`keyword.iskeyword` can be used to test whether string ``s`` is a reserved
    identifier, such as :keyword:`def` and :keyword:`class`.
 
    Example:
@@ -1891,8 +1893,9 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
+   The lowercasing algorithm used is
+   `described in section 3.13 of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2236,8 +2239,9 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
+   The uppercasing algorithm used is
+   `described in section 3.13 of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
 
 
 .. method:: str.zfill(width)

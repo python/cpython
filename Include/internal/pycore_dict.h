@@ -9,6 +9,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_dict_state.h"
+#include "pycore_runtime.h"         // _PyRuntime
+
 
 /* runtime lifecycle */
 
@@ -16,25 +19,6 @@ extern void _PyDict_Fini(PyInterpreterState *interp);
 
 
 /* other API */
-
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyDict_MAXFREELIST 0
-#endif
-
-#ifndef PyDict_MAXFREELIST
-#  define PyDict_MAXFREELIST 80
-#endif
-
-struct _Py_dict_state {
-#if PyDict_MAXFREELIST > 0
-    /* Dictionary reuse scheme to save calls to malloc and free */
-    PyDictObject *free_list[PyDict_MAXFREELIST];
-    int numfree;
-    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
-    int keys_numfree;
-#endif
-};
 
 typedef struct {
     /* Cached hash code of me_key. */
@@ -152,13 +136,11 @@ struct _dictvalues {
      (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
-extern uint64_t _pydict_global_version;
-
-#define DICT_MAX_WATCHERS 8
 #define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
 #define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
 
-#define DICT_NEXT_VERSION() (_pydict_global_version += DICT_VERSION_INCREMENT)
+#define DICT_NEXT_VERSION() \
+    (_PyRuntime.dict_state.global_version += DICT_VERSION_INCREMENT)
 
 void
 _PyDict_SendEvent(int watcher_bits,
