@@ -1,1 +1,0 @@
-Fixes `python3x._pth` being ignored on Windows, caused by the fix for :issue:`29778` (CVE-2020-15801).

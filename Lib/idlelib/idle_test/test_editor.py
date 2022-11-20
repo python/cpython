@@ -5,7 +5,6 @@ import unittest
 from collections import namedtuple
 from test.support import requires
 from tkinter import Tk
-from idlelib.idle_test.mock_idle import Func
 
 Editor = editor.EditorWindow
 
@@ -167,7 +166,6 @@ class IndentAndNewlineTest(unittest.TestCase):
                           '2.end'),
                  )
 
-        w.prompt_last_line = ''
         for test in tests:
             with self.subTest(label=test.label):
                 insert(text, test.text)
@@ -181,13 +179,6 @@ class IndentAndNewlineTest(unittest.TestCase):
         nl(None)
         # Deletes selected text before adding new line.
         eq(get('1.0', 'end'), '  def f1(self, a,\n         \n    return a + b\n')
-
-        # Preserves the whitespace in shell prompt.
-        w.prompt_last_line = '>>> '
-        insert(text, '>>> \t\ta =')
-        text.mark_set('insert', '1.5')
-        nl(None)
-        eq(get('1.0', 'end'), '>>> \na =\n')
 
 
 class RMenuTest(unittest.TestCase):

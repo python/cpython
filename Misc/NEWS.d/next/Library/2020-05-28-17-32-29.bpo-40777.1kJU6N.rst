@@ -1,2 +1,0 @@
-Initialize PyDateTime_IsoCalendarDateType.tp_base at run-time to avoid
-errors on some compilers.
