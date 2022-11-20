@@ -351,8 +351,7 @@ Pure paths provide the following methods and properties:
 
 .. data:: PurePath.parents
 
-   An immutable sequence providing access to the logical ancestors of
-   the path::
+   A tuple providing access to the logical ancestors of the path::
 
       >>> p = PureWindowsPath('c:/foo/bar/setup.py')
       >>> p.parents[0]
@@ -364,6 +363,9 @@ Pure paths provide the following methods and properties:
 
    .. versionchanged:: 3.10
       The parents sequence now supports :term:`slices <slice>` and negative index values.
+
+   .. versionchanged:: 3.12
+      Type changed from a tuple-like immutable sequence to a true tuple.
 
 .. data:: PurePath.parent
 
@@ -535,6 +537,30 @@ Pure paths provide the following methods and properties:
       PurePosixPath('/etc/init.d/apache2')
       >>> PureWindowsPath('c:').joinpath('/Program Files')
       PureWindowsPath('c:/Program Files')
+
+
+.. method:: PurePath.makepath(*other)
+
+   Create a new path object of the same type by combining the *other*
+   arguments. This method is called whenever a derivative path is created,
+   such as from :data:`parent` and :method:`relative_to`. Subclasses may
+   override this method to pass information to derivative paths, for example::
+
+      from pathlib import PurePosixPath
+
+      class MyPath(PurePosixPath):
+          def __init__(self, *args, session_id):
+              super().__init__(*args)
+              self.session_id = session_id
+
+          def makepath(self, *other):
+              return type(self)(*other, session_id=self.session_id)
+
+      etc = MyPath('/etc', session_id=42)
+      hosts = etc / 'hosts'
+      print(hosts.session_id)  # 42
+
+   .. versionadded:: 3.12
 
 
 .. method:: PurePath.match(pattern)

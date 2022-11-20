@@ -14,7 +14,6 @@ import posixpath
 import re
 import sys
 import warnings
-from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -121,7 +120,7 @@ class _PreciseSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists, scandir, normcase):
         try:
-            path = parent_path._make_child_relpath(self.name)
+            path = parent_path.joinpath(self.name)
             if (is_dir if self.dironly else exists)(path):
                 for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
                     yield p
@@ -155,7 +154,7 @@ class _WildcardSelector(_Selector):
                         continue
                 name = entry.name
                 if self.match(normcase(name)):
-                    path = parent_path._make_child_relpath(name)
+                    path = parent_path.joinpath(name)
                     for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
                         yield p
         except PermissionError:
@@ -182,7 +181,7 @@ class _RecursiveWildcardSelector(_Selector):
                     if not _ignore_error(e):
                         raise
                 if entry_is_dir and not entry.is_symlink():
-                    path = parent_path._make_child_relpath(entry.name)
+                    path = parent_path.joinpath(entry.name)
                     for p in self._iterate_directories(path, is_dir, scandir):
                         yield p
         except PermissionError:
@@ -208,38 +207,6 @@ class _RecursiveWildcardSelector(_Selector):
 # Public API
 #
 
-class _PathParents(Sequence):
-    """This object provides sequence-like access to the logical ancestors
-    of a path.  Don't try to construct it yourself."""
-    __slots__ = ('_pathcls', '_drv', '_root', '_parts')
-
-    def __init__(self, path):
-        # We don't store the instance to avoid reference cycles
-        self._pathcls = type(path)
-        self._drv = path._drv
-        self._root = path._root
-        self._parts = path._parts
-
-    def __len__(self):
-        if self._drv or self._root:
-            return len(self._parts) - 1
-        else:
-            return len(self._parts)
-
-    def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            return tuple(self[i] for i in range(*idx.indices(len(self))))
-
-        if idx >= len(self) or idx < -len(self):
-            raise IndexError(idx)
-        if idx < 0:
-            idx += len(self)
-        return self._pathcls._from_parsed_parts(self._drv, self._root,
-                                                self._parts[:-idx - 1])
-
-    def __repr__(self):
-        return "<{}.parents>".format(self._pathcls.__name__)
-
 
 class PurePath(object):
     """Base class for manipulating paths without I/O.
@@ -256,7 +223,7 @@ class PurePath(object):
     )
     _flavour = os.path
 
-    def __new__(cls, *args):
+    def __new__(cls, *args, **kwargs):
         """Construct a PurePath from one or several strings and or existing
         PurePath objects.  The strings and path objects are combined so as
         to yield a canonicalized path, which is incorporated into the
@@ -264,7 +231,7 @@ class PurePath(object):
         """
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cls._from_parts(args)
+        return super().__new__(cls)
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -318,24 +285,11 @@ class PurePath(object):
                         % type(a))
         return cls._parse_parts(parts)
 
-    @classmethod
-    def _from_parts(cls, args):
-        # We need to call _parse_args on the instance, so as to get the
-        # right flavour.
-        self = object.__new__(cls)
+    def __init__(self, *args):
         drv, root, parts = self._parse_args(args)
         self._drv = drv
         self._root = root
         self._parts = parts
-        return self
-
-    @classmethod
-    def _from_parsed_parts(cls, drv, root, parts):
-        self = object.__new__(cls)
-        self._drv = drv
-        self._root = root
-        self._parts = parts
-        return self
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, parts):
@@ -497,8 +451,7 @@ class PurePath(object):
         if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
             or drv or root or len(parts) != 1):
             raise ValueError("Invalid name %r" % (name))
-        return self._from_parsed_parts(self._drv, self._root,
-                                       self._parts[:-1] + [name])
+        return self.makepath(*self._parts[:-1], name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -522,8 +475,7 @@ class PurePath(object):
             name = name + suffix
         else:
             name = name[:-len(old_suffix)] + suffix
-        return self._from_parsed_parts(self._drv, self._root,
-                                       self._parts[:-1] + [name])
+        return self.makepath(*self._parts[:-1], name)
 
     def relative_to(self, other, /, *_deprecated, walk_up=False):
         """Return the relative path to another path identified by the passed
@@ -539,8 +491,7 @@ class PurePath(object):
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
                                  remove=(3, 14))
-        path_cls = type(self)
-        other = path_cls(other, *_deprecated)
+        other = self.makepath(other, *_deprecated)
         for step, path in enumerate([other] + list(other.parents)):
             if self.is_relative_to(path):
                 break
@@ -549,7 +500,7 @@ class PurePath(object):
         if step and not walk_up:
             raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
         parts = ('..',) * step + self.parts[len(path.parts):]
-        return path_cls(*parts)
+        return self.makepath(*parts)
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
@@ -560,7 +511,7 @@ class PurePath(object):
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
                                  msg, remove=(3, 14))
-        other = type(self)(other, *_deprecated)
+        other = self.makepath(other, *_deprecated)
         return other == self or other in self.parents
 
     @property
@@ -575,28 +526,20 @@ class PurePath(object):
             self._parts_tuple = tuple(self._parts)
             return self._parts_tuple
 
+    def makepath(self, *args):
+        """Construct a new path object from any number of path-like objects.
+        Subclasses may override this method to customize how new path objects
+        are created from methods like `iterdir()`.
+        """
+        return type(self)(*args)
+
     def joinpath(self, *args):
         """Combine this path with one or several arguments, and return a
         new path representing either a subpath (if all arguments are relative
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        drv1, root1, parts1 = self._drv, self._root, self._parts
-        drv2, root2, parts2 = self._parse_args(args)
-        if root2:
-            if not drv2 and drv1:
-                return self._from_parsed_parts(drv1, root2, [drv1 + root2] + parts2[1:])
-            else:
-                return self._from_parsed_parts(drv2, root2, parts2)
-        elif drv2:
-            if drv2 == drv1 or self._flavour.normcase(drv2) == self._flavour.normcase(drv1):
-                # Same drive => second path is relative to the first.
-                return self._from_parsed_parts(drv1, root1, parts1 + parts2[1:])
-            else:
-                return self._from_parsed_parts(drv2, root2, parts2)
-        else:
-            # Second path is non-anchored (common case).
-            return self._from_parsed_parts(drv1, root1, parts1 + parts2)
+        return self.makepath(*self._parts, *args)
 
     def __truediv__(self, key):
         try:
@@ -606,7 +549,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return self._from_parts([key] + self._parts)
+            return self.makepath(key, *self._parts)
         except TypeError:
             return NotImplemented
 
@@ -618,12 +561,18 @@ class PurePath(object):
         parts = self._parts
         if len(parts) == 1 and (drv or root):
             return self
-        return self._from_parsed_parts(drv, root, parts[:-1])
+        return self.makepath(*parts[:-1])
 
     @property
     def parents(self):
-        """A sequence of this path's logical parents."""
-        return _PathParents(self)
+        """A tuple of this path's logical parents."""
+        path = self
+        parent = self.parent
+        parents = []
+        while path != parent:
+            parents.append(parent)
+            path, parent = parent, parent.parent
+        return tuple(parents)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
@@ -715,17 +664,11 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args)
+        self = super().__new__(cls)
         if self._flavour is not os.path:
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
         return self
-
-    def _make_child_relpath(self, part):
-        # This is an optimization used for dir walking.  `part` must be
-        # a single part relative to this path.
-        parts = self._parts + [part]
-        return self._from_parsed_parts(self._drv, self._root, parts)
 
     def __enter__(self):
         # In previous versions of pathlib, __exit__() marked this path as
@@ -751,7 +694,7 @@ class Path(PurePath):
         """Return a new path pointing to the current working directory
         (as returned by os.getcwd()).
         """
-        return cls(os.getcwd())
+        return cls().absolute()
 
     @classmethod
     def home(cls):
@@ -768,7 +711,7 @@ class Path(PurePath):
         try:
             other_st = other_path.stat()
         except AttributeError:
-            other_st = self.__class__(other_path).stat()
+            other_st = self.makepath(other_path).stat()
         return self._flavour.samestat(st, other_st)
 
     def iterdir(self):
@@ -778,7 +721,7 @@ class Path(PurePath):
         special entries '.' and '..' are not included.
         """
         for name in os.listdir(self):
-            yield self._make_child_relpath(name)
+            yield self.joinpath(name)
 
     def _scandir(self):
         # bpo-24132: a future version of pathlib will support subclassing of
@@ -825,7 +768,7 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return self._from_parts([self.cwd()] + self._parts)
+        return self.makepath(os.getcwd(), self)
 
     def resolve(self, strict=False):
         """
@@ -843,7 +786,7 @@ class Path(PurePath):
         except OSError as e:
             check_eloop(e)
             raise
-        p = self._from_parts((s,))
+        p = self.makepath(s)
 
         # In non-strict mode, realpath() doesn't raise on symlink loops.
         # Ensure we get an exception by calling stat()
@@ -933,7 +876,7 @@ class Path(PurePath):
         """
         if not hasattr(os, "readlink"):
             raise NotImplementedError("os.readlink() not available on this system")
-        return self._from_parts((os.readlink(self),))
+        return self.makepath(os.readlink(self))
 
     def touch(self, mode=0o666, exist_ok=True):
         """
@@ -1022,7 +965,7 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.rename(self, target)
-        return self.__class__(target)
+        return self.makepath(target)
 
     def replace(self, target):
         """
@@ -1035,7 +978,7 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.replace(self, target)
-        return self.__class__(target)
+        return self.makepath(target)
 
     def symlink_to(self, target, target_is_directory=False):
         """
@@ -1207,7 +1150,7 @@ class Path(PurePath):
             homedir = self._flavour.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            return self._from_parts([homedir] + self._parts[1:])
+            return self.makepath(homedir, *self._parts[1:])
 
         return self
 
@@ -1248,7 +1191,7 @@ class Path(PurePath):
             yield self, dirnames, filenames
 
         for dirname in dirnames:
-            dirpath = self._make_child_relpath(dirname)
+            dirpath = self.joinpath(dirname)
             yield from dirpath._walk(top_down, on_error, follow_symlinks)
 
         if not top_down:

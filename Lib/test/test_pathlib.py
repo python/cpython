@@ -165,6 +165,15 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
 # Tests for the pure classes.
 #
 
+class _BasePurePathSubclass(object):
+    def __init__(self, *args, session_id):
+        super().__init__(*args)
+        self.session_id = session_id
+
+    def makepath(self, *args):
+        return type(self)(*args, session_id=self.session_id)
+
+
 class _BasePurePathTest(object):
 
     # Keys are canonical paths, values are list of tuples of arguments
@@ -221,6 +230,22 @@ class _BasePurePathTest(object):
         self._check_str_subclass('a')
         self._check_str_subclass('a/b.txt')
         self._check_str_subclass('/a/b.txt')
+
+    def test_makepath_common(self):
+        class P(_BasePurePathSubclass, self.cls):
+            pass
+        p = P('foo', 'bar', session_id=42)
+        self.assertEqual(42, (p / 'foo').session_id)
+        self.assertEqual(42, ('foo' / p).session_id)
+        self.assertEqual(42, p.makepath('foo').session_id)
+        self.assertEqual(42, p.joinpath('foo').session_id)
+        self.assertEqual(42, p.with_name('foo').session_id)
+        self.assertEqual(42, p.with_stem('foo').session_id)
+        self.assertEqual(42, p.with_suffix('.foo').session_id)
+        self.assertEqual(42, p.relative_to('foo').session_id)
+        self.assertEqual(42, p.parent.session_id)
+        for parent in p.parents:
+            self.assertEqual(42, parent.session_id)
 
     def test_join_common(self):
         P = self.cls
@@ -1594,6 +1619,26 @@ class _BasePathTest(object):
             # bpo-38883: ignore `HOME` when set on windows
             env['HOME'] = os.path.join(BASE, 'home')
             self._test_home(self.cls.home())
+
+    def test_makepath(self):
+        class P(_BasePurePathSubclass, self.cls):
+            pass
+        p = P(BASE, session_id=42)
+        self.assertEqual(42, p.absolute().session_id)
+        self.assertEqual(42, p.resolve().session_id)
+        self.assertEqual(42, p.makepath('~').expanduser().session_id)
+        self.assertEqual(42, (p / 'fileA').rename(p / 'fileB').session_id)
+        self.assertEqual(42, (p / 'fileB').replace(p / 'fileA').session_id)
+        if os_helper.can_symlink():
+            self.assertEqual(42, (p / 'linkA').readlink().session_id)
+        for path in p.iterdir():
+            self.assertEqual(42, path.session_id)
+        for path in p.glob('*'):
+            self.assertEqual(42, path.session_id)
+        for path in p.rglob('*'):
+            self.assertEqual(42, path.session_id)
+        for dirpath, dirnames, filenames in p.walk():
+            self.assertEqual(42, dirpath.session_id)
 
     def test_samefile(self):
         fileA_path = os.path.join(BASE, 'fileA')
