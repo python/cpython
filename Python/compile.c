@@ -4926,12 +4926,16 @@ compiler_joined_str(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
-    if (value_count > STACK_USE_GUIDELINE) {
+    if (!value_count || value_count > STACK_USE_GUIDELINE) {
+        /* Also handle empty f-strings here */
         _Py_DECLARE_STR(empty, "");
         ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
+        if (!value_count) {
+            return 0;
+        }
         ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
         ADDOP_I(c, loc, BUILD_LIST, 0);
-        for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.JoinedStr.values); i++) {
+        for (Py_ssize_t i = 0; i < value_count; i++) {
             VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
             ADDOP_I(c, loc, LIST_APPEND, 1);
         }
@@ -4939,8 +4943,8 @@ compiler_joined_str(struct compiler *c, expr_ty e)
     }
     else {
         VISIT_SEQ(c, expr, e->v.JoinedStr.values);
-        if (asdl_seq_LEN(e->v.JoinedStr.values) != 1) {
-            ADDOP_I(c, loc, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
+        if (value_count != 1) {
+            ADDOP_I(c, loc, BUILD_STRING, value_count);
         }
     }
     return 1;
