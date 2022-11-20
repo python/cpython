@@ -1,0 +1,2 @@
+Fix ``.save()`` method for ``LWPCookieJar`` and ``MozillaCookieJar``: saved
+file was not truncated on repeated save.
