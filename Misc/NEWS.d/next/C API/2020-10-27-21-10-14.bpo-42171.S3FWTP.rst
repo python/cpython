@@ -1,4 +1,0 @@
-The :c:data:`METH_FASTCALL` calling convention is added to the limited API.
-The functions  :c:func:`PyModule_AddType`, :c:func:`PyType_FromModuleAndSpec`,
-:c:func:`PyType_GetModule` and :c:func:`PyType_GetModuleState` are added to
-the limited API on Windows.

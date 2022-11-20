@@ -1,4 +1,5 @@
-from test.support import verbose, is_android
+from decimal import Decimal
+from test.support import verbose, is_android, is_emscripten, is_wasi
 from test.support.warnings_helper import check_warnings
 import unittest
 import locale
@@ -140,18 +141,9 @@ class BaseFormattingTest(object):
     # Utility functions for formatting tests
     #
 
-    def _test_formatfunc(self, format, value, out, func, **format_opts):
-        self.assertEqual(
-            func(format, value, **format_opts), out)
-
-    def _test_format(self, format, value, out, **format_opts):
-        with check_warnings(('', DeprecationWarning)):
-            self._test_formatfunc(format, value, out,
-                func=locale.format, **format_opts)
-
     def _test_format_string(self, format, value, out, **format_opts):
-        self._test_formatfunc(format, value, out,
-            func=locale.format_string, **format_opts)
+        self.assertEqual(
+            locale.format_string(format, value, **format_opts), out)
 
     def _test_currency(self, value, out, **format_opts):
         self.assertEqual(locale.currency(value, **format_opts), out)
@@ -165,44 +157,40 @@ class EnUSNumberFormatting(BaseFormattingTest):
         self.sep = locale.localeconv()['thousands_sep']
 
     def test_grouping(self):
-        self._test_format("%f", 1024, grouping=1, out='1%s024.000000' % self.sep)
-        self._test_format("%f", 102, grouping=1, out='102.000000')
-        self._test_format("%f", -42, grouping=1, out='-42.000000')
-        self._test_format("%+f", -42, grouping=1, out='-42.000000')
+        self._test_format_string("%f", 1024, grouping=1, out='1%s024.000000' % self.sep)
+        self._test_format_string("%f", 102, grouping=1, out='102.000000')
+        self._test_format_string("%f", -42, grouping=1, out='-42.000000')
+        self._test_format_string("%+f", -42, grouping=1, out='-42.000000')
 
     def test_grouping_and_padding(self):
-        self._test_format("%20.f", -42, grouping=1, out='-42'.rjust(20))
+        self._test_format_string("%20.f", -42, grouping=1, out='-42'.rjust(20))
         if self.sep:
-            self._test_format("%+10.f", -4200, grouping=1,
+            self._test_format_string("%+10.f", -4200, grouping=1,
                 out=('-4%s200' % self.sep).rjust(10))
-            self._test_format("%-10.f", -4200, grouping=1,
+            self._test_format_string("%-10.f", -4200, grouping=1,
                 out=('-4%s200' % self.sep).ljust(10))
 
     def test_integer_grouping(self):
-        self._test_format("%d", 4200, grouping=True, out='4%s200' % self.sep)
-        self._test_format("%+d", 4200, grouping=True, out='+4%s200' % self.sep)
-        self._test_format("%+d", -4200, grouping=True, out='-4%s200' % self.sep)
+        self._test_format_string("%d", 4200, grouping=True, out='4%s200' % self.sep)
+        self._test_format_string("%+d", 4200, grouping=True, out='+4%s200' % self.sep)
+        self._test_format_string("%+d", -4200, grouping=True, out='-4%s200' % self.sep)
 
     def test_integer_grouping_and_padding(self):
-        self._test_format("%10d", 4200, grouping=True,
+        self._test_format_string("%10d", 4200, grouping=True,
             out=('4%s200' % self.sep).rjust(10))
-        self._test_format("%-10d", -4200, grouping=True,
+        self._test_format_string("%-10d", -4200, grouping=True,
             out=('-4%s200' % self.sep).ljust(10))
 
     def test_simple(self):
-        self._test_format("%f", 1024, grouping=0, out='1024.000000')
-        self._test_format("%f", 102, grouping=0, out='102.000000')
-        self._test_format("%f", -42, grouping=0, out='-42.000000')
-        self._test_format("%+f", -42, grouping=0, out='-42.000000')
+        self._test_format_string("%f", 1024, grouping=0, out='1024.000000')
+        self._test_format_string("%f", 102, grouping=0, out='102.000000')
+        self._test_format_string("%f", -42, grouping=0, out='-42.000000')
+        self._test_format_string("%+f", -42, grouping=0, out='-42.000000')
 
     def test_padding(self):
-        self._test_format("%20.f", -42, grouping=0, out='-42'.rjust(20))
-        self._test_format("%+10.f", -4200, grouping=0, out='-4200'.rjust(10))
-        self._test_format("%-10.f", 4200, grouping=0, out='4200'.ljust(10))
-
-    def test_format_deprecation(self):
-        with self.assertWarns(DeprecationWarning):
-            locale.format("%-10.f", 4200, grouping=True)
+        self._test_format_string("%20.f", -42, grouping=0, out='-42'.rjust(20))
+        self._test_format_string("%+10.f", -4200, grouping=0, out='-4200'.rjust(10))
+        self._test_format_string("%-10.f", 4200, grouping=0, out='4200'.ljust(10))
 
     def test_complex_formatting(self):
         # Spaces in formatting string
@@ -229,20 +217,9 @@ class EnUSNumberFormatting(BaseFormattingTest):
                 out='int 1%s000 float 1%s000.00 str str' %
                 (self.sep, self.sep))
 
-
-class TestFormatPatternArg(unittest.TestCase):
-    # Test handling of pattern argument of format
-
-    def test_onlyOnePattern(self):
-        with check_warnings(('', DeprecationWarning)):
-            # Issue 2522: accept exactly one % pattern, and no extra chars.
-            self.assertRaises(ValueError, locale.format, "%f\n", 'foo')
-            self.assertRaises(ValueError, locale.format, "%f\r", 'foo')
-            self.assertRaises(ValueError, locale.format, "%f\r\n", 'foo')
-            self.assertRaises(ValueError, locale.format, " %f", 'foo')
-            self.assertRaises(ValueError, locale.format, "%fg", 'foo')
-            self.assertRaises(ValueError, locale.format, "%^g", 'foo')
-            self.assertRaises(ValueError, locale.format, "%f%%", 'foo')
+        self._test_format_string("total=%i%%", 100, out='total=100%')
+        self._test_format_string("newline: %i\n", 3, out='newline: 3\n')
+        self._test_format_string("extra: %ii", 3, out='extra: 3i')
 
 
 class TestLocaleFormatString(unittest.TestCase):
@@ -291,45 +268,45 @@ class TestCNumberFormatting(CCookedTest, BaseFormattingTest):
     # Test number formatting with a cooked "C" locale.
 
     def test_grouping(self):
-        self._test_format("%.2f", 12345.67, grouping=True, out='12345.67')
+        self._test_format_string("%.2f", 12345.67, grouping=True, out='12345.67')
 
     def test_grouping_and_padding(self):
-        self._test_format("%9.2f", 12345.67, grouping=True, out=' 12345.67')
+        self._test_format_string("%9.2f", 12345.67, grouping=True, out=' 12345.67')
 
 
 class TestFrFRNumberFormatting(FrFRCookedTest, BaseFormattingTest):
     # Test number formatting with a cooked "fr_FR" locale.
 
     def test_decimal_point(self):
-        self._test_format("%.2f", 12345.67, out='12345,67')
+        self._test_format_string("%.2f", 12345.67, out='12345,67')
 
     def test_grouping(self):
-        self._test_format("%.2f", 345.67, grouping=True, out='345,67')
-        self._test_format("%.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%.2f", 345.67, grouping=True, out='345,67')
+        self._test_format_string("%.2f", 12345.67, grouping=True, out='12 345,67')
 
     def test_grouping_and_padding(self):
-        self._test_format("%6.2f", 345.67, grouping=True, out='345,67')
-        self._test_format("%7.2f", 345.67, grouping=True, out=' 345,67')
-        self._test_format("%8.2f", 12345.67, grouping=True, out='12 345,67')
-        self._test_format("%9.2f", 12345.67, grouping=True, out='12 345,67')
-        self._test_format("%10.2f", 12345.67, grouping=True, out=' 12 345,67')
-        self._test_format("%-6.2f", 345.67, grouping=True, out='345,67')
-        self._test_format("%-7.2f", 345.67, grouping=True, out='345,67 ')
-        self._test_format("%-8.2f", 12345.67, grouping=True, out='12 345,67')
-        self._test_format("%-9.2f", 12345.67, grouping=True, out='12 345,67')
-        self._test_format("%-10.2f", 12345.67, grouping=True, out='12 345,67 ')
+        self._test_format_string("%6.2f", 345.67, grouping=True, out='345,67')
+        self._test_format_string("%7.2f", 345.67, grouping=True, out=' 345,67')
+        self._test_format_string("%8.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%9.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%10.2f", 12345.67, grouping=True, out=' 12 345,67')
+        self._test_format_string("%-6.2f", 345.67, grouping=True, out='345,67')
+        self._test_format_string("%-7.2f", 345.67, grouping=True, out='345,67 ')
+        self._test_format_string("%-8.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%-9.2f", 12345.67, grouping=True, out='12 345,67')
+        self._test_format_string("%-10.2f", 12345.67, grouping=True, out='12 345,67 ')
 
     def test_integer_grouping(self):
-        self._test_format("%d", 200, grouping=True, out='200')
-        self._test_format("%d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%d", 200, grouping=True, out='200')
+        self._test_format_string("%d", 4200, grouping=True, out='4 200')
 
     def test_integer_grouping_and_padding(self):
-        self._test_format("%4d", 4200, grouping=True, out='4 200')
-        self._test_format("%5d", 4200, grouping=True, out='4 200')
-        self._test_format("%10d", 4200, grouping=True, out='4 200'.rjust(10))
-        self._test_format("%-4d", 4200, grouping=True, out='4 200')
-        self._test_format("%-5d", 4200, grouping=True, out='4 200')
-        self._test_format("%-10d", 4200, grouping=True, out='4 200'.ljust(10))
+        self._test_format_string("%4d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%5d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%10d", 4200, grouping=True, out='4 200'.rjust(10))
+        self._test_format_string("%-4d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%-5d", 4200, grouping=True, out='4 200')
+        self._test_format_string("%-10d", 4200, grouping=True, out='4 200'.ljust(10))
 
     def test_currency(self):
         euro = '\u20ac'
@@ -362,7 +339,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
     locale_type = locale.LC_ALL
 
     def setUp(self):
-        enc = codecs.lookup(locale.getpreferredencoding(False) or 'ascii').name
+        enc = codecs.lookup(locale.getencoding() or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
         if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
@@ -372,11 +349,19 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 
@@ -495,7 +480,7 @@ class NormalizeTest(unittest.TestCase):
 class TestMiscellaneous(unittest.TestCase):
     def test_defaults_UTF8(self):
         # Issue #18378: on (at least) macOS setting LC_CTYPE to "UTF-8" is
-        # valid. Futhermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
+        # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
         # during interpreter startup (on macOS).
         import _locale
         import os
@@ -517,7 +502,8 @@ class TestMiscellaneous(unittest.TestCase):
 
             os.environ['LC_CTYPE'] = 'UTF-8'
 
-            self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
+            with check_warnings(('', DeprecationWarning)):
+                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
 
         finally:
             for k in orig_env:
@@ -528,6 +514,14 @@ class TestMiscellaneous(unittest.TestCase):
 
             if orig_getlocale is not None:
                 _locale._getdefaultlocale = orig_getlocale
+
+    def test_getencoding(self):
+        # Invoke getencoding to make sure it does not cause exceptions.
+        enc = locale.getencoding()
+        self.assertIsInstance(enc, str)
+        self.assertNotEqual(enc, "")
+        # make sure it is valid
+        codecs.lookup(enc)
 
     def test_getpreferredencoding(self):
         # Invoke getpreferredencoding to make sure it does not cause exceptions.
@@ -564,7 +558,13 @@ class TestMiscellaneous(unittest.TestCase):
         loc = locale.getlocale(locale.LC_CTYPE)
         if verbose:
             print('testing with %a' % (loc,), end=' ', flush=True)
-        locale.setlocale(locale.LC_CTYPE, loc)
+        try:
+            locale.setlocale(locale.LC_CTYPE, loc)
+        except locale.Error as exc:
+            # bpo-37945: setlocale(LC_CTYPE) fails with getlocale(LC_CTYPE)
+            # and the tr_TR locale on Windows. getlocale() builds a locale
+            # which is not recognize by setlocale().
+            self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
         self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
     def test_invalid_locale_format_in_localetuple(self):
@@ -628,6 +628,33 @@ class TestfrFRDelocalizeTest(FrFRCookedTest, BaseDelocalizeTest):
     def test_atoi(self):
         self._test_atoi('50000', 50000)
         self._test_atoi('50 000', 50000)
+
+
+class BaseLocalizeTest(BaseLocalizedTest):
+
+    def _test_localize(self, value, out, grouping=False):
+        self.assertEqual(locale.localize(value, grouping=grouping), out)
+
+
+class TestEnUSLocalize(EnUSCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000.00')
+        self._test_localize(
+            '{0:.16f}'.format(Decimal('1.15')), '1.1500000000000000')
+
+
+class TestCLocalize(CCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000.00')
+
+
+class TestfrFRLocalize(FrFRCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000,00')
+        self._test_localize('50000.00', '50 000,00', grouping=True)
 
 
 if __name__ == '__main__':
