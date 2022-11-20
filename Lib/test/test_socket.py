@@ -5639,6 +5639,21 @@ class TestUnixDomain(unittest.TestCase):
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
+    def testPathLikeAndBytesLikeAddr(self):
+        # Test binding to a path-like object that is also bytes-like.
+        path = os.path.abspath(os_helper.TESTFN)
+
+        class Polyglot:
+            def __fspath__(self):
+                return path
+
+            def __bytes__(self):
+                return "bad_file"
+
+        self.bind(self.sock, Polyglot())
+        self.addCleanup(os_helper.unlink, path)
+        self.assertEqual(self.sock.getsockname(), path)
+
     def testSurrogateescapeBind(self):
         # Test binding to a valid non-ASCII pathname, with the
         # non-ASCII bytes supplied using surrogateescape encoding.
