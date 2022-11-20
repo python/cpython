@@ -82,7 +82,7 @@ class Shelf(collections.abc.MutableMapping):
     """
 
     def __init__(self, dict, protocol=None, writeback=False,
-                 keyencoding="utf-8"):
+                 keyencoding="utf-8", pickler=Pickler, unpickler=Unpickler):
         self.dict = dict
         if protocol is None:
             protocol = DEFAULT_PROTOCOL
@@ -90,6 +90,8 @@ class Shelf(collections.abc.MutableMapping):
         self.writeback = writeback
         self.cache = {}
         self.keyencoding = keyencoding
+        self.pickler = pickler
+        self.unpickler = unpickler
 
     def __iter__(self):
         for k in self.dict.keys():
@@ -111,7 +113,7 @@ class Shelf(collections.abc.MutableMapping):
             value = self.cache[key]
         except KeyError:
             f = BytesIO(self.dict[key.encode(self.keyencoding)])
-            value = Unpickler(f).load()
+            value = self.unpickler(f).load()
             if self.writeback:
                 self.cache[key] = value
         return value
@@ -120,7 +122,7 @@ class Shelf(collections.abc.MutableMapping):
         if self.writeback:
             self.cache[key] = value
         f = BytesIO()
-        p = Pickler(f, self._protocol)
+        p = self.pickler(f, self._protocol)
         p.dump(value)
         self.dict[key.encode(self.keyencoding)] = f.getvalue()
 
@@ -170,6 +172,7 @@ class Shelf(collections.abc.MutableMapping):
             self.cache = {}
         if hasattr(self.dict, 'sync'):
             self.dict.sync()
+
 
 
 class BsdDbShelf(Shelf):
@@ -222,12 +225,12 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False,  pickler=Pickler, unpickler=Unpickler):
         import dbm
-        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback)
+        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback,  pickler=pickler, unpickler=unpickler)
 
 
-def open(filename, flag='c', protocol=None, writeback=False):
+def open(filename, flag='c', protocol=None, writeback=False, pickler=Pickler, unpickler=Unpickler):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
@@ -240,4 +243,4 @@ def open(filename, flag='c', protocol=None, writeback=False):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback)
+    return DbfilenameShelf(filename, flag, protocol, writeback, pickler, unpickler)
