@@ -2218,8 +2218,7 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         return NULL;
     }
     if (filename != NULL) {
-        Py_INCREF(filename);
-        tok->filename = filename;
+        tok->filename = Py_NewRef(filename);
     }
     else {
         tok->filename = PyUnicode_FromString("<string>");

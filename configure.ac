@@ -2708,7 +2708,7 @@ AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
-  linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
@@ -3699,7 +3699,7 @@ AS_VAR_IF([with_system_expat], [yes], [
 ], [
   LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
   LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
-  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_HEADERS) \$(LIBEXPAT_A)"
 ])
 
 AC_SUBST([LIBEXPAT_CFLAGS])
@@ -3808,7 +3808,7 @@ AS_VAR_IF([with_system_libmpdec], [yes], [
 ], [
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
-  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
 
   dnl Disable forced inlining in debug builds, see GH-94847
   AS_VAR_IF([with_pydebug], [yes], [

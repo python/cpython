@@ -113,10 +113,8 @@ PyMethod_New(PyObject *func, PyObject *self)
         return NULL;
     }
     im->im_weakreflist = NULL;
-    Py_INCREF(func);
-    im->im_func = func;
-    Py_INCREF(self);
-    im->im_self = self;
+    im->im_func = Py_NewRef(func);
+    im->im_self = Py_NewRef(self);
     im->vectorcall = method_vectorcall;
     _PyObject_GC_TRACK(im);
     return (PyObject *)im;
@@ -195,8 +193,7 @@ method_getattro(PyObject *obj, PyObject *name)
         if (f != NULL)
             return f(descr, obj, (PyObject *)Py_TYPE(obj));
         else {
-            Py_INCREF(descr);
-            return descr;
+            return Py_NewRef(descr);
         }
     }
 
@@ -267,8 +264,7 @@ method_richcompare(PyObject *self, PyObject *other, int op)
         res = eq ? Py_True : Py_False;
     else
         res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 static PyObject *
@@ -359,8 +355,7 @@ PyInstanceMethod_New(PyObject *func) {
     method = PyObject_GC_New(PyInstanceMethodObject,
                              &PyInstanceMethod_Type);
     if (method == NULL) return NULL;
-    Py_INCREF(func);
-    method->func = func;
+    method->func = Py_NewRef(func);
     _PyObject_GC_TRACK(method);
     return (PyObject *)method;
 }
@@ -412,8 +407,7 @@ instancemethod_getattro(PyObject *self, PyObject *name)
         if (f != NULL)
             return f(descr, self, (PyObject *)Py_TYPE(self));
         else {
-            Py_INCREF(descr);
-            return descr;
+            return Py_NewRef(descr);
         }
     }
 
@@ -443,8 +437,7 @@ static PyObject *
 instancemethod_descr_get(PyObject *descr, PyObject *obj, PyObject *type) {
     PyObject *func = PyInstanceMethod_GET_FUNCTION(descr);
     if (obj == NULL) {
-        Py_INCREF(func);
-        return func;
+        return Py_NewRef(func);
     }
     else
         return PyMethod_New(func, obj);
@@ -472,8 +465,7 @@ instancemethod_richcompare(PyObject *self, PyObject *other, int op)
         res = eq ? Py_True : Py_False;
     else
         res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 static PyObject *
