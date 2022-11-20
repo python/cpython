@@ -185,7 +185,7 @@ class SubprocessMixin:
 
     def test_kill_issue43884(self):
         if sys.platform == 'win32':
-            blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(100000000)"'
+            blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(2)"'
         else:
             blocking_shell_command = 'sleep 1; sleep 1'
         creationflags = 0
