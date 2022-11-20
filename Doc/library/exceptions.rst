@@ -961,12 +961,14 @@ their subgroups based on the types of the contained exceptions.
          ...    exc = e
          ...
          >>> match, rest = exc.split(ValueError)
-         >>> exc, exc.__context__, exc.__cause__, exc.__notes__, id(exc.__traceback__)
-         (MyGroup('eg', [ValueError(1), TypeError(2)]), Exception('context'), Exception('cause'), ['a note'], 4395554432)
-         >>> match, match.__context__, match.__cause__, match.__notes__, id(match.__traceback__)
-         (MyGroup('eg', [ValueError(1)]), Exception('context'), Exception('cause'), ['a note'], 4395554432)
-         >>> rest, rest.__context__, rest.__cause__, rest.__notes__, id(rest.__traceback__)
-         (MyGroup('eg', [TypeError(2)]), Exception('context'), Exception('cause'), ['a note'], 4395554432)
+         >>> exc, exc.__context__, exc.__cause__, exc.__notes__
+         (MyGroup('eg', [ValueError(1), TypeError(2)]), Exception('context'), Exception('cause'), ['a note'])
+         >>> match, match.__context__, match.__cause__, match.__notes__
+         (MyGroup('eg', [ValueError(1)]), Exception('context'), Exception('cause'), ['a note'])
+         >>> rest, rest.__context__, rest.__cause__, rest.__notes__
+         (MyGroup('eg', [TypeError(2)]), Exception('context'), Exception('cause'), ['a note'])
+         >>> exc.__traceback__ is match.__traceback__ is rest.__traceback__
+         True
 
 
    Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
