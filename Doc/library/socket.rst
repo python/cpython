@@ -68,6 +68,8 @@ created.  Socket addresses are represented as follows:
 
   .. versionchanged:: 3.12
      :term:`path-like object` is now accepted.
+     Note that object which is both a :term:`path-like object` and a
+     :term:`bytes-like object` will be treated as a :term:`path-like object`.
 
 .. _host_port:
 
