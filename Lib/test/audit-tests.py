@@ -419,6 +419,48 @@ def test_sys_getframe():
     sys._getframe()
 
 
+def test_threading():
+    import _thread
+
+    def hook(event, args):
+        if event.startswith(("_thread.", "cpython.PyThreadState", "test.")):
+            print(event, args)
+
+    sys.addaudithook(hook)
+
+    lock = _thread.allocate_lock()
+    lock.acquire()
+
+    class test_func:
+        def __repr__(self): return "<test_func>"
+        def __call__(self):
+            sys.audit("test.test_func")
+            lock.release()
+
+    i = _thread.start_new_thread(test_func(), ())
+    lock.acquire()
+
+
+def test_threading_abort():
+    # Ensures that aborting PyThreadState_New raises the correct exception
+    import _thread
+
+    class ThreadNewAbortError(Exception):
+        pass
+
+    def hook(event, args):
+        if event == "cpython.PyThreadState_New":
+            raise ThreadNewAbortError()
+
+    sys.addaudithook(hook)
+
+    try:
+        _thread.start_new_thread(lambda: None, ())
+    except ThreadNewAbortError:
+        # Other exceptions are raised and the test will fail
+        pass
+
+
 def test_wmi_exec_query():
     import _wmi
 
@@ -448,6 +490,17 @@ def test_syslog():
     sys.argv = None
     syslog.openlog()
     syslog.closelog()
+
+
+def test_not_in_gc():
+    import gc
+
+    hook = lambda *a: None
+    sys.addaudithook(hook)
+
+    for o in gc.get_objects():
+        if isinstance(o, list):
+            assert hook not in o
 
 
 if __name__ == "__main__":
