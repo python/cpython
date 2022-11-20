@@ -965,9 +965,10 @@ their subgroups based on the types of the contained exceptions.
          def derive(self, excs):
             return Errors(excs, self.exit_code)
 
-   Like :exc:`ExceptionGroup`, any subclass of :exc:`BaseExceptionGroup` which
-   is also a subclass of :exc:`Exception` can only wrap instances of
-   :exc:`Exception`.
+   Subclasses of :exc:`BaseExceptionGroup` cannot wrap :exc:`BaseException`\ s
+   if they extend :exc:`Exception`, as for :exc:`ExceptionGroup`.  However,
+   there is no further restriction: a :exc:`BaseExceptionGroup` subclass
+   which extends :exc:`KeyError` could wrap any :exc:`Exception`.
 
    .. versionadded:: 3.11
 

@@ -102,6 +102,20 @@ class InstanceCreation(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             MyEG("eg", [ValueError(12), KeyboardInterrupt(42)])
 
+    def test_EG_and_specific_subclass_can_wrap_any_nonbase_exception(self):
+        class MyEG(ExceptionGroup, ValueError):
+            pass
+
+        # The restriction is specific to Exception, not "the other base class"
+        MyEG("eg", [ValueError(12), Exception()])
+
+    def test_BEG_and_specific_subclass_can_wrap_any_nonbase_exception(self):
+        class MyEG(BaseExceptionGroup, ValueError):
+            pass
+
+        # The restriction is specific to Exception, not "the other base class"
+        MyEG("eg", [ValueError(12), Exception()])
+
 
     def test_BEG_subclass_wraps_anything(self):
         class MyBEG(BaseExceptionGroup):
