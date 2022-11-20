@@ -1307,7 +1307,8 @@ class Decimal(object):
 
         # Special case for multiplying by zero
         if not self or not other:
-            return Decimal(0)
+            ans = _dec_from_triple(resultsign, '0', 0)
+            return ans
 
         # Special case for multiplying by power of 10
         if self._int == '1':
