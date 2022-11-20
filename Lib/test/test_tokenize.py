@@ -10,6 +10,8 @@ from textwrap import dedent
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support import os_helper
+from test.support.script_helper import run_test_script, make_script
 import os
 import token
 
@@ -1652,6 +1654,20 @@ class TestRoundtrip(TestCase):
         codelines = self.roundtrip(code).split('\n')
         self.assertEqual(codelines[1], codelines[2])
         self.check_roundtrip(code)
+
+
+class CTokenizerBufferTests(unittest.TestCase):
+    def test_newline_at_the_end_of_buffer(self):
+        # See issue 99581: Make sure that if we need to add a new line at the
+        # end of the buffer, we have enough space in the buffer, specially when
+        # the current line is as long as the buffer space available.
+        test_script = f"""\
+        #coding: latin-1
+        #{"a"*10000}
+        #{"a"*10002}"""
+        with os_helper.temp_dir() as temp_dir:
+            file_name = make_script(temp_dir, 'foo', test_script)
+            run_test_script(file_name)
 
 
 if __name__ == "__main__":
