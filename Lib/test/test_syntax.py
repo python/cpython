@@ -2017,12 +2017,12 @@ class SyntaxTestCase(unittest.TestCase):
     def test_except_then_except_star(self):
         self._check_error("try: pass\nexcept ValueError: pass\nexcept* TypeError: pass",
                           r"cannot have both 'except' and 'except\*' on the same 'try'",
-                          lineno=1, end_lineno=1, offset=1, end_offset=4)
+                          lineno=3, end_lineno=3, offset=1, end_offset=8)
 
     def test_except_star_then_except(self):
         self._check_error("try: pass\nexcept* ValueError: pass\nexcept TypeError: pass",
                           r"cannot have both 'except' and 'except\*' on the same 'try'",
-                          lineno=1, end_lineno=1, offset=1, end_offset=4)
+                          lineno=3, end_lineno=3, offset=1, end_offset=7)
 
     def test_empty_line_after_linecont(self):
         # See issue-40847
