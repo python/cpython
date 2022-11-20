@@ -274,8 +274,16 @@ class CAPITest(unittest.TestCase):
 
         # test %ls
         check_format('abc', b'%ls', c_wchar_p('abc'))
+        check_format('\u4eba\u6c11', b'%ls', c_wchar_p('\u4eba\u6c11'))
         check_format('\U0001f4bb+\U0001f40d',
                      b'%ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('   ab', b'%5.2ls', c_wchar_p('abc'))
+        check_format('   \u4eba\u6c11', b'%5ls', c_wchar_p('\u4eba\u6c11'))
+        check_format('  \U0001f4bb+\U0001f40d',
+                     b'%5ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('\u4eba', b'%.1ls', c_wchar_p('\u4eba\u6c11'))
+        check_format('\U0001f4bb' if sizeof(c_wchar) > 2 else '\ud83d',
+                     b'%.1ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
         check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
                      b'%.2ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
 
@@ -284,8 +292,20 @@ class CAPITest(unittest.TestCase):
                      b'%lV', 'abc', c_wchar_p('xyz'))
         check_format('xyz',
                      b'%lV', None, c_wchar_p('xyz'))
+        check_format('\u4eba\u6c11',
+                     b'%lV', None, c_wchar_p('\u4eba\u6c11'))
         check_format('\U0001f4bb+\U0001f40d',
                      b'%lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('   ab',
+                     b'%5.2lV', None, c_wchar_p('abc'))
+        check_format('   \u4eba\u6c11',
+                     b'%5lV', None, c_wchar_p('\u4eba\u6c11'))
+        check_format('  \U0001f4bb+\U0001f40d',
+                     b'%5lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
+        check_format('\u4eba',
+                     b'%.1lV', None, c_wchar_p('\u4eba\u6c11'))
+        check_format('\U0001f4bb' if sizeof(c_wchar) > 2 else '\ud83d',
+                     b'%.1lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
         check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
                      b'%.2lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
 
@@ -296,6 +316,9 @@ class CAPITest(unittest.TestCase):
         check_format('  abc', b'%*U', c_int(5), 'abc')
         check_format('ab', b'%.*U', c_int(2), 'abc')
         check_format('   ab', b'%*.*U', c_int(5), c_int(2), 'abc')
+        check_format('   ab', b'%*.*V', c_int(5), c_int(2), None, b'abc')
+        check_format('   ab', b'%*.*lV', c_int(5), c_int(2),
+                     None, c_wchar_p('abc'))
         check_format('     123', b'%*i', c_int(8), c_int(123))
         check_format('00123', b'%.*i', c_int(5), c_int(123))
         check_format('   00123', b'%*.*i', c_int(8), c_int(5), c_int(123))
