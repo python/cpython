@@ -853,10 +853,11 @@ method, sends back received data::
             lambda: EchoServerProtocol(),
             local_addr=('127.0.0.1', 9999))
 
-        try:
-            await asyncio.sleep(3600)  # Serve for 1 hour.
-        finally:
-            transport.close()
+        while True:
+            try:
+                await asyncio.sleep(1)
+            except KeyboardInterrupt:
+                transport.close()
 
 
     asyncio.run(main())
