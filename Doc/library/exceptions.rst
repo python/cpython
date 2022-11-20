@@ -956,16 +956,18 @@ their subgroups based on the types of the contained exceptions.
          >>> e.__context__ = Exception("context")
          >>> e.__cause__ = Exception("cause")
          >>> try:
-         ...     raise e
+         ...    raise e
          ... except Exception as e:
-         ...     exc = e
+         ...    exc = e
          ...
-         >>> exc.__context__, exc.__cause__, exc.__traceback__, exc.__notes__
-         ... (Exception('context'), Exception('cause'), <traceback object at 0x10a2cf610>, ['a note'])
-         >>> match.__context__, match.__cause__, match.__traceback__, match.__notes__
-         ... (Exception('context'), Exception('cause'), <traceback object at 0x10a2cf610>, ['a note'])
-         >>> rest.__context__, rest.__cause__, rest.__traceback__, rest.__notes__
-         ... (Exception('context'), Exception('cause'), <traceback object at 0x10a2cf610>, ['a note'])
+         >>> match, rest = exc.split(ValueError)
+         >>> exc, exc.__context__, exc.__cause__, exc.__notes__, id(exc.__traceback__)
+         (MyGroup('eg', [ValueError(1), TypeError(2)]), Exception('context'), Exception('cause'), ['a note'], 4395554432)
+         >>> match, match.__context__, match.__cause__, match.__notes__, id(match.__traceback__)
+         (MyGroup('eg', [ValueError(1)]), Exception('context'), Exception('cause'), ['a note'], 4395554432)
+         >>> rest, rest.__context__, rest.__cause__, rest.__notes__, id(rest.__traceback__)
+         (MyGroup('eg', [TypeError(2)]), Exception('context'), Exception('cause'), ['a note'], 4395554432)
+
 
    Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
    subclasses that need a different constructor signature need to
