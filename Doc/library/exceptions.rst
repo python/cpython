@@ -945,7 +945,7 @@ their subgroups based on the types of the contained exceptions.
       :meth:`subgroup` and :meth:`split` copy the :attr:`__traceback__`,
       :attr:`__cause__`, :attr:`__context__` and :attr:`__notes__` fields from
       the original exception group to the one returned by :meth:`derive`, so
-      these fields do not need to be udpated by :meth:`derive`. ::
+      these fields do not need to be updated by :meth:`derive`. ::
 
          >>> class MyGroup(ExceptionGroup):
          ...     def derive(self, exc):
