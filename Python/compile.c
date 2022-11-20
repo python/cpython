@@ -4931,7 +4931,7 @@ compiler_joined_str(struct compiler *c, expr_ty e)
         _Py_DECLARE_STR(empty, "");
         ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
         if (!value_count) {
-            return 0;
+            return 1;
         }
         ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
         ADDOP_I(c, loc, BUILD_LIST, 0);
