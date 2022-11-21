@@ -2467,10 +2467,9 @@ It is suggested to set *autocommit* to ``False``,
 which implies :pep:`249`-compliant transaction control.
 This means:
 
-* :mod:`!sqlite3` ensures that a transaction is always open,
-  so :meth:`Connection.commit` and :meth:`Connection.rollback`
-  will implicitly open a new transaction immediately after closing
-  the pending one.
+* :func:`connect`, :meth:`Connection.commit`, and :meth:`Connection.rollback`
+  implicitly open a new transaction to ensure that a transaction is always
+  open.
   :mod:`!sqlite3` uses ``BEGIN DEFERRED`` statements when opening transactions.
 * Transactions should be committed explicitly using :meth:`!commit`.
 * Transactions should be rolled back explicitly using :meth:`!rollback`.
