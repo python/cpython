@@ -4280,6 +4280,11 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
         case Del: op = DELETE_FAST; break;
         case DelNoErr: op = DELETE_FAST_NOERROR; break;
         }
+        if (op == DELETE_FAST || op == DELETE_FAST_NOERROR) {
+            // Used in expand_del_noerror
+            ADDOP(c, NO_LOCATION, NOP);
+            ADDOP(c, NO_LOCATION, NOP);
+        }
         ADDOP_N(c, loc, op, mangled, varnames);
         return 1;
     case OP_GLOBAL:
@@ -4308,6 +4313,11 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
     }
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
+    }
+    if (ctx == DelNoErr) {
+        // will be replaced in expand_del_noerror
+        ADDOP(c, NO_LOCATION, NOP);
+        ADDOP(c, NO_LOCATION, NOP);
     }
     return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc);
 }
@@ -8213,86 +8223,59 @@ add_local_null_checks(basicblock *entryblock, struct compiler *c)
     return 0;
 }
 
-static int
+static void
 expand_del_noerror(basicblock *entryblock, int none_oparg)
 {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
-            int opcode = b->b_instr[i].i_opcode;
-            int oparg = b->b_instr[i].i_oparg;
-            basicblock *except = b->b_instr[i].i_except;
-            location loc = b->b_instr[i].i_loc;
-            int del_opcode, store_opcode;
-            switch (opcode) {
+            struct instr *instr = &b->b_instr[i];
+            switch (instr->i_opcode) {
                 case DELETE_FAST_NOERROR:
                     // Already proved this can't raise UnboundLocalError.
-                    b->b_instr[i].i_opcode = DELETE_FAST;
+                    instr->i_opcode = DELETE_FAST;
                     break;
                 case DELETE_FAST_CHECK:
-                    b->b_instr[i].i_opcode = DELETE_FAST;
-                    if (insert_instruction(b, i, &(struct instr) {
-                        .i_opcode = POP_TOP,
-                        .i_oparg = 0,
-                        .i_loc = loc,
-                        .i_except = except,
-                    })) {
-                        return -1;
-                    }
-                    if (insert_instruction(b, i, &(struct instr) {
-                        .i_opcode = LOAD_FAST_CHECK,
-                        .i_oparg = oparg,
-                        .i_loc = loc,
-                        .i_except = except,
-                    })) {
-                        return -1;
-                    }
-                    i += 2;
+                    assert(instr[-2].i_opcode == NOP);
+                    assert(instr[-1].i_opcode == NOP);
+                    instr[-2].i_loc = instr[-1].i_loc = instr->i_loc;
+                    instr[-2].i_opcode = LOAD_FAST_CHECK;
+                    instr[-2].i_oparg = instr->i_oparg;
+                    instr[-1].i_opcode = POP_TOP;
+                    instr->i_opcode = DELETE_FAST;
                     break;
                 case DELETE_FAST_NOERROR_CHECK:
                 case DELETE_DEREF_NOERROR:
                 case DELETE_GLOBAL_NOERROR:
                 case DELETE_NAME_NOERROR:
-                    switch (opcode) {
+                    assert(instr[-2].i_opcode == NOP);
+                    assert(instr[-1].i_opcode == NOP);
+                    instr[-2].i_loc = instr[-1].i_loc = instr->i_loc;
+                    instr[-2].i_opcode = LOAD_CONST;
+                    instr[-2].i_oparg = none_oparg;
+                    instr[-1].i_oparg = instr->i_oparg;
+                    switch (instr->i_opcode) {
                         case DELETE_FAST_NOERROR_CHECK:
-                            del_opcode = DELETE_FAST;
-                            store_opcode = STORE_FAST;
+                            instr[-1].i_opcode = STORE_FAST;
+                            instr->i_opcode = DELETE_FAST;
                             break;
                         case DELETE_DEREF_NOERROR:
-                            del_opcode = DELETE_DEREF;
-                            store_opcode = STORE_DEREF;
+                            instr[-1].i_opcode = STORE_DEREF;
+                            instr->i_opcode = DELETE_DEREF;
                             break;
                         case DELETE_GLOBAL_NOERROR:
-                            del_opcode = DELETE_GLOBAL;
-                            store_opcode = STORE_GLOBAL;
+                            instr[-1].i_opcode = STORE_GLOBAL;
+                            instr->i_opcode = DELETE_GLOBAL;
                             break;
                         case DELETE_NAME_NOERROR:
-                            del_opcode = DELETE_NAME;
-                            store_opcode = STORE_NAME;
+                            instr[-1].i_opcode = STORE_NAME;
+                            instr->i_opcode = DELETE_NAME;
                             break;
                     }
-                    b->b_instr[i].i_opcode = del_opcode;
-                    if (insert_instruction(b, i, &(struct instr) {
-                        .i_opcode = store_opcode,
-                        .i_oparg = oparg,
-                        .i_loc = loc,
-                        .i_except = except,
-                    })) {
-                        return -1;
-                    }
-                    if (insert_instruction(b, i, &(struct instr) {
-                        .i_opcode = LOAD_CONST,
-                        .i_oparg = none_oparg,
-                        .i_loc = loc,
-                        .i_except = except,
-                    })) {
-                        return -1;
-                    }
-                    i += 2;
                     break;
             }
         }
+        remove_redundant_nops(b);
     }
-    return 0;
 }
 
 static PyObject *
@@ -8920,22 +8903,22 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    /** Optimization **/
+    /** Dataflow analysis **/
     int none_oparg = (int)compiler_add_const(c, Py_None);
     if (none_oparg < 0) {
-        goto error;
-    }
-    consts = consts_dict_keys_inorder(c->u->u_consts);
-    if (consts == NULL) {
-        goto error;
-    }
-    if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
     if (add_local_null_checks(g->g_entryblock, c) < 0) {
         goto error;
     }
-    if (expand_del_noerror(g->g_entryblock, none_oparg)) {
+    expand_del_noerror(g->g_entryblock, none_oparg);
+
+    /** Optimization **/
+    consts = consts_dict_keys_inorder(c->u->u_consts);
+    if (consts == NULL) {
+        goto error;
+    }
+    if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
     if (remove_unused_consts(g->g_entryblock, consts)) {
