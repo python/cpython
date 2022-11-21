@@ -2395,14 +2395,28 @@ exec_builtin_or_dynamic(PyObject *mod) {
     return PyModule_ExecDef(mod, def);
 }
 
+static bool
+check_multi_interp_extensions(PyInterpreterState *interp)
+{
+    int override = interp->override_multi_interp_extensions_check;
+    if (override < 0) {
+        return false;
+    }
+    else if (override > 0) {
+        return true;
+    }
+    else if (_PyInterpreterState_HasFeature(
+                interp, Py_RTFLAGS_MULTI_INTERP_EXTENSIONS)) {
+        return true;
+    }
+    return false;
+}
+
 int
 _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (_PyInterpreterState_HasFeature(
-                interp, Py_RTFLAGS_MULTI_INTERP_EXTENSIONS) &&
-        !interp->override_multi_interp_extensions_check
-    ) {
+    if (check_multi_interp_extensions(interp)) {
         assert(!_Py_IsMainInterpreter(interp));
         PyErr_Format(PyExc_ImportError,
                      "module %s does not support loading in subinterpreters",
