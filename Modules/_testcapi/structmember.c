@@ -64,8 +64,9 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     const char *s = NULL;
     Py_ssize_t string_len = 0;
     ob = PyObject_New(test_structmembers, type);
-    if (ob == NULL)
+    if (ob == NULL) {
         return NULL;
+    }
     memset(&ob->structmembers, 0, sizeof(all_structmembers));
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
                                      &ob->structmembers.bool_member,
@@ -80,10 +81,10 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
                                      &ob->structmembers.pyssizet_member,
                                      &ob->structmembers.float_member,
                                      &ob->structmembers.double_member,
-                                     &s, &string_len
-                                     , &ob->structmembers.longlong_member,
-                                     &ob->structmembers.ulonglong_member
-        )) {
+                                     &s, &string_len,
+                                     &ob->structmembers.longlong_member,
+                                     &ob->structmembers.ulonglong_member))
+    {
         Py_DECREF(ob);
         return NULL;
     }
@@ -142,6 +143,7 @@ test_structmembers_free(PyObject *ob)
     PyObject_Free(ob);
 }
 
+/* Designated initializers would work too, but this does test the *old* API */
 static PyTypeObject test_structmembersType_OldAPI= {
     PyVarObject_HEAD_INIT(NULL, 0)
     "test_structmembersType_OldAPI",
@@ -185,7 +187,8 @@ static PyTypeObject test_structmembersType_OldAPI= {
 
 
 int
-_PyTestCapi_Init_Structmember(PyObject *m) {
+_PyTestCapi_Init_Structmember(PyObject *m)
+{
     int res;
     res = PyType_Ready(&test_structmembersType_OldAPI);
     if (res < 0) {

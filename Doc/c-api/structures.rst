@@ -434,11 +434,13 @@ Accessing attributes of extension types
           {NULL}  /* Sentinel */
       };
 
+   (You may need to ``#include <stddef.h>`` for :c:func:`!offsetof`.)
+
    The legacy offsets :c:member:`~PyTypeObject.tp_dictoffset` and
-   :c:member:`~PyTypeObject.tp_weaklistoffset` can similarly be defined using
+   :c:member:`~PyTypeObject.tp_weaklistoffset` can be defined similarly using
    ``"__dictoffset__"`` and ``"__weaklistoffset__"`` members, but extensions
-   are strongly encouraged to use ``Py_TPFLAGS_MANAGED_DICT`` and
-   ``Py_TPFLAGS_MANAGED_WEAKREF`` instead.
+   are strongly encouraged to use :const:`Py_TPFLAGS_MANAGED_DICT` and
+   :const:`Py_TPFLAGS_MANAGED_WEAKREF` instead.
 
    .. versionchanged:: 3.12
 
