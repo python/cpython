@@ -1723,12 +1723,14 @@ float___getnewargs___impl(PyObject *self)
 }
 
 /* this is for the benefit of the pack/unpack routines below */
+typedef enum _py_float_format_type float_format_type;
+#define unknown_format _py_float_format_unknown
+#define ieee_big_endian_format _py_float_format_ieee_big_endian
+#define ieee_little_endian_format _py_float_format_ieee_little_endian
 
-typedef enum {
-    unknown_format, ieee_big_endian_format, ieee_little_endian_format
-} float_format_type;
+#define float_format (_PyRuntime.float_state.float_format)
+#define double_format (_PyRuntime.float_state.double_format)
 
-static float_format_type double_format, float_format;
 
 /*[clinic input]
 @classmethod
@@ -1929,13 +1931,9 @@ PyTypeObject PyFloat_Type = {
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
-void
-_PyFloat_InitState(PyInterpreterState *interp)
+static void
+_init_global_state(void)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     float_format_type detected_double_format, detected_float_format;
 
     /* We attempt to determine if this machine is using IEEE
@@ -1983,6 +1981,15 @@ _PyFloat_InitState(PyInterpreterState *interp)
 
     double_format = detected_double_format;
     float_format = detected_float_format;
+}
+
+void
+_PyFloat_InitState(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+    _init_global_state();
 }
 
 PyStatus

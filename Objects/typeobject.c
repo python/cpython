@@ -4,6 +4,7 @@
 #include "pycore_call.h"
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
+#include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
@@ -5437,8 +5438,7 @@ object_getstate_default(PyObject *obj, int required)
         for (i = 0; i < slotnames_size; i++) {
             PyObject *name, *value;
 
-            name = PyList_GET_ITEM(slotnames, i);
-            Py_INCREF(name);
+            name = Py_NewRef(PyList_GET_ITEM(slotnames, i));
             if (_PyObject_LookupAttr(obj, name, &value) < 0) {
                 Py_DECREF(name);
                 goto error;
@@ -5570,10 +5570,8 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
             Py_DECREF(newargs);
             return -1;
         }
-        *args = PyTuple_GET_ITEM(newargs, 0);
-        Py_INCREF(*args);
-        *kwargs = PyTuple_GET_ITEM(newargs, 1);
-        Py_INCREF(*kwargs);
+        *args = Py_NewRef(PyTuple_GET_ITEM(newargs, 0));
+        *kwargs = Py_NewRef(PyTuple_GET_ITEM(newargs, 1));
         Py_DECREF(newargs);
 
         /* XXX We should perhaps allow None to be passed here. */
@@ -9601,8 +9599,7 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
             return -1;
         Py_INCREF(obj);
     }
-    Py_INCREF(type);
-    Py_XSETREF(su->type, type);
+    Py_XSETREF(su->type, Py_NewRef(type));
     Py_XSETREF(su->obj, obj);
     Py_XSETREF(su->obj_type, obj_type);
     return 0;

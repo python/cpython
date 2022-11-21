@@ -178,8 +178,7 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
     }
     if (value != NULL && PyExceptionInstance_Check(value))
         tb = PyException_GetTraceback(value);
-    Py_XINCREF(exception);
-    _PyErr_Restore(tstate, exception, value, tb);
+    _PyErr_Restore(tstate, Py_XNewRef(exception), value, tb);
 }
 
 void
@@ -489,13 +488,9 @@ _PyErr_GetExcInfo(PyThreadState *tstate,
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
 
-    *p_type = get_exc_type(exc_info->exc_value);
-    *p_value = exc_info->exc_value;
-    *p_traceback = get_exc_traceback(exc_info->exc_value);
-
-    Py_XINCREF(*p_type);
-    Py_XINCREF(*p_value);
-    Py_XINCREF(*p_traceback);
+    *p_type = Py_XNewRef(get_exc_type(exc_info->exc_value));
+    *p_value = Py_XNewRef(exc_info->exc_value);
+    *p_traceback = Py_XNewRef(get_exc_traceback(exc_info->exc_value));
 }
 
 PyObject*
@@ -674,9 +669,9 @@ _PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
 
     _PyErr_Fetch(tstate, &exc, &val2, &tb);
     _PyErr_NormalizeException(tstate, &exc, &val2, &tb);
-    Py_INCREF(val);
-    PyException_SetCause(val2, val);
-    PyException_SetContext(val2, val);
+    PyException_SetCause(val2, Py_NewRef(val));
+    PyException_SetContext(val2, Py_NewRef(val));
+    Py_DECREF(val);
     _PyErr_Restore(tstate, exc, val2, tb);
 
     return NULL;
@@ -1165,9 +1160,7 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
             goto failure;
     }
     if (PyTuple_Check(base)) {
-        bases = base;
-        /* INCREF as we create a new ref in the else branch */
-        Py_INCREF(bases);
+        bases = Py_NewRef(base);
     } else {
         bases = PyTuple_Pack(1, base);
         if (bases == NULL)

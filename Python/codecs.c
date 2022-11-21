@@ -428,8 +428,7 @@ _PyCodec_EncodeInternal(PyObject *object,
                         "encoder must return a tuple (object, integer)");
         goto onError;
     }
-    v = PyTuple_GET_ITEM(result,0);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(result,0));
     /* We don't check or use the second (integer) entry. */
 
     Py_DECREF(args);
@@ -473,8 +472,7 @@ _PyCodec_DecodeInternal(PyObject *object,
                         "decoder must return a tuple (object,integer)");
         goto onError;
     }
-    v = PyTuple_GET_ITEM(result,0);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(result,0));
     /* We don't check or use the second (integer) entry. */
 
     Py_DECREF(args);
@@ -569,8 +567,7 @@ PyObject *codec_getitem_checked(const char *encoding,
     if (codec == NULL)
         return NULL;
 
-    v = PyTuple_GET_ITEM(codec, index);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(codec, index));
     Py_DECREF(codec);
     return v;
 }

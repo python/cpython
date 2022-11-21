@@ -341,8 +341,7 @@ _PyGen_yf(PyGenObject *gen)
             /* Not in a yield from */
             return NULL;
         }
-        yf = _PyFrame_StackPeek(frame);
-        Py_INCREF(yf);
+        yf = Py_NewRef(_PyFrame_StackPeek(frame));
     }
 
     return yf;
@@ -494,8 +493,7 @@ throw_here:
             /* Normalize to raise <class>, <instance> */
             Py_XDECREF(val);
             val = typ;
-            typ = PyExceptionInstance_Class(typ);
-            Py_INCREF(typ);
+            typ = Py_NewRef(PyExceptionInstance_Class(typ));
 
             if (tb == NULL)
                 /* Returns NULL if there's no traceback */
