@@ -15,8 +15,8 @@
 // MSVC makes static_assert a keyword, contrary to the C standard.
 //
 // In C++ 11 static_assert is a keyword, redefining is undefined behaviour.
-#if !defined(static_assert) && !defined(_MSC_VER) \
-     && !(defined(__cplusplus) && __cplusplus >= 201103L)
+#if !defined(static_assert) && defined(__GNUC__) \
+     && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #  define static_assert _Static_assert
 #endif
 
