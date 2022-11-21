@@ -134,7 +134,8 @@ extern "C" {
 #define DELETE_DEREF_NOERROR                   266
 #define DELETE_GLOBAL_NOERROR                  267
 #define DELETE_NAME_NOERROR                    268
-#define MAX_PSEUDO_OPCODE                      268
+#define DEL_PLACEHOLDER                        269
+#define MAX_PSEUDO_OPCODE                      269
 #define BINARY_OP_ADD_FLOAT                      5
 #define BINARY_OP_ADD_INT                        6
 #define BINARY_OP_ADD_UNICODE                    7

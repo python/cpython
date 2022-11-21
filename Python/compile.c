@@ -4280,8 +4280,8 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
         }
         if (op == DELETE_FAST || op == DELETE_FAST_NOERROR) {
             // Used in expand_del_noerror
-            ADDOP(c, NO_LOCATION, NOP);
-            ADDOP(c, NO_LOCATION, NOP);
+            ADDOP(c, NO_LOCATION, DEL_PLACEHOLDER);
+            ADDOP(c, NO_LOCATION, DEL_PLACEHOLDER);
         }
         ADDOP_N(c, loc, op, mangled, varnames);
         return 1;
@@ -4314,8 +4314,8 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
     }
     if (ctx == DelNoErr) {
         // will be replaced in expand_del_noerror
-        ADDOP(c, NO_LOCATION, NOP);
-        ADDOP(c, NO_LOCATION, NOP);
+        ADDOP(c, NO_LOCATION, DEL_PLACEHOLDER);
+        ADDOP(c, NO_LOCATION, DEL_PLACEHOLDER);
     }
     return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc);
 }
@@ -8225,7 +8225,7 @@ static void
 expand_del_noerror(basicblock *entryblock, int none_oparg)
 {
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int i = 0; i < b->b_iused; i++) {
+        for (int i = b->b_iused - 1; i >= 0; i--) {
             struct instr *instr = &b->b_instr[i];
             switch (instr->i_opcode) {
                 case DELETE_FAST_NOERROR:
@@ -8233,8 +8233,8 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                     instr->i_opcode = DELETE_FAST;
                     break;
                 case DELETE_FAST_CHECK:
-                    assert(instr[-2].i_opcode == NOP);
-                    assert(instr[-1].i_opcode == NOP);
+                    assert(instr[-2].i_opcode == DEL_PLACEHOLDER);
+                    assert(instr[-1].i_opcode == DEL_PLACEHOLDER);
                     instr[-2].i_loc = instr[-1].i_loc = instr->i_loc;
                     instr[-2].i_opcode = LOAD_FAST_CHECK;
                     instr[-2].i_oparg = instr->i_oparg;
@@ -8245,8 +8245,8 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                 case DELETE_DEREF_NOERROR:
                 case DELETE_GLOBAL_NOERROR:
                 case DELETE_NAME_NOERROR:
-                    assert(instr[-2].i_opcode == NOP);
-                    assert(instr[-1].i_opcode == NOP);
+                    assert(instr[-2].i_opcode == DEL_PLACEHOLDER);
+                    assert(instr[-1].i_opcode == DEL_PLACEHOLDER);
                     instr[-2].i_loc = instr[-1].i_loc = instr->i_loc;
                     instr[-2].i_opcode = LOAD_CONST;
                     instr[-2].i_oparg = none_oparg;
@@ -8269,6 +8269,9 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                             instr->i_opcode = DELETE_NAME;
                             break;
                     }
+                    break;
+                case DEL_PLACEHOLDER:
+                    instr->i_opcode = NOP;
                     break;
             }
         }
@@ -8765,6 +8768,8 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
 static void
 propagate_line_numbers(basicblock *entryblock);
 
+static void eliminate_empty_basic_blocks(cfg_builder *g);
+
 #ifndef NDEBUG
 static bool
 no_redundant_jumps(cfg_builder *g) {
@@ -8901,17 +8906,12 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    /** Dataflow analysis **/
+
+    /** Optimization **/
     int none_oparg = (int)compiler_add_const(c, Py_None);
     if (none_oparg < 0) {
         goto error;
     }
-    if (add_local_null_checks(g->g_entryblock, c) < 0) {
-        goto error;
-    }
-    expand_del_noerror(g->g_entryblock, none_oparg);
-
-    /** Optimization **/
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {
         goto error;
@@ -8919,6 +8919,11 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
+    if (add_local_null_checks(g->g_entryblock, c) < 0) {
+        goto error;
+    }
+    expand_del_noerror(g->g_entryblock, none_oparg);
+    eliminate_empty_basic_blocks(g);
     if (remove_unused_consts(g->g_entryblock, consts)) {
         goto error;
     }
