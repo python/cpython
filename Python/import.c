@@ -2388,8 +2388,9 @@ _imp__override_multi_interp_extensions_check_impl(PyObject *module,
 /*[clinic end generated code: output=3ff043af52bbf280 input=e086a2ea181f92ae]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    int oldvalue = interp->override_multi_interp_extensions_check;
     interp->override_multi_interp_extensions_check = override;
-    Py_RETURN_NONE;
+    return PyLong_FromLong(oldvalue);
 }
 
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
