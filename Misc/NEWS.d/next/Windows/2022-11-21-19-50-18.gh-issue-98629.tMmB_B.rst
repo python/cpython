@@ -1,0 +1,1 @@
+Fix initialization of :data:`sys.version` and ``sys._git`` on Windows
