@@ -31,6 +31,10 @@ try:
     import _testmultiphase
 except ImportError:
     _testmultiphase = None
+try:
+    import _testsinglephase
+except ImportError:
+    _testsinglephase = None
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
@@ -1325,11 +1329,91 @@ class SubinterpreterTest(unittest.TestCase):
                         json.dump(settings, stdin)
                     ''')
                 with os.fdopen(r) as stdout:
-                    support.run_in_subinterp_with_config(script, **kwargs)
+                    ret = support.run_in_subinterp_with_config(script, **kwargs)
+                    self.assertEqual(ret, 0)
                     out = stdout.read()
                 settings = json.loads(out)
 
                 self.assertEqual(settings, expected)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglphase module")
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_overridden_setting_extensions_subinterp_check(self):
+        """
+        PyInterpreterConfig.check_multi_interp_extensions can be overridden
+        with PyInterpreterState.override_multi_interp_extensions_check.
+        This verifies that the override works but does not modify
+        the underlying setting.
+        """
+        import json
+
+        EXTENSIONS = 1<<8
+        THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
+        FORK = 1<<15
+        EXEC = 1<<16
+        BASE_FLAGS = FORK | EXEC | THREADS | DAEMON_THREADS
+        base_kwargs = {
+            'allow_fork': True,
+            'allow_exec': True,
+            'allow_threads': True,
+            'allow_daemon_threads': True,
+        }
+
+        def check(enabled, override):
+            kwargs = dict(
+                base_kwargs,
+                check_multi_interp_extensions=enabled,
+            )
+            flags = BASE_FLAGS | EXTENSIONS if enabled else BASE_FLAGS
+            settings = {
+                'feature_flags': flags,
+            }
+            if override == 0:
+                enabled_after = enabled
+            else:
+                enabled_after = (override > 0)
+            expected = {
+                'settings_before': settings,
+                'enabled_initial': enabled,
+                'override_initial': 0,
+                'settings_after': settings,
+                'enabled_after': enabled_after,
+                'override_actual': override,
+                'settings_final': settings,
+                'override_noop': 0,
+                'settings_noop': settings,
+                'enabled_restored': enabled,
+            }
+
+            r, w = os.pipe()
+            script = textwrap.dedent(f'''
+                from test.test_capi.check_config import run_check
+                run_check({override}, {w})
+                ''')
+            with os.fdopen(r) as stdout:
+                ret = support.run_in_subinterp_with_config(script, **kwargs)
+                self.assertEqual(ret, 0)
+                out = stdout.read()
+            results = json.loads(out)
+
+            self.assertEqual(results, expected)
+
+        # setting: check disabled
+        with self.subTest('config disabled, override disabled'):
+            check(False, -1)
+        with self.subTest('config disabled, override cleared'):
+            check(False, 0)
+        with self.subTest('config disabled, override enabled'):
+            check(False, 1)
+
+        # setting: check enabled
+        with self.subTest('config enabled, override disabled'):
+            check(True, -1)
+        with self.subTest('config enabled, override cleared'):
+            check(True, 0)
+        with self.subTest('config enabled, override enabled'):
+            check(True, 1)
 
     def test_mutate_exception(self):
         """

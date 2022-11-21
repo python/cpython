@@ -2388,6 +2388,12 @@ _imp__override_multi_interp_extensions_check_impl(PyObject *module,
 /*[clinic end generated code: output=3ff043af52bbf280 input=e086a2ea181f92ae]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_Py_IsMainInterpreter(interp)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "_imp._override_multi_interp_extensions_check() "
+                        "cannot be used in the main interpreter");
+        return NULL;
+    }
     int oldvalue = interp->override_multi_interp_extensions_check;
     interp->override_multi_interp_extensions_check = override;
     return PyLong_FromLong(oldvalue);
