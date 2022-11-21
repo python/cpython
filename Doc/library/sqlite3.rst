@@ -1255,20 +1255,19 @@ Connection objects
 
    .. attribute:: autocommit
 
-      This attribute controls :pep:`249`-compliant transaction behaviour.
+      This attribute controls transaction behaviour.
       :attr:`!autocommit` has three allowed values:
 
-      * ``False``: Select :pep:`249`-compliant transaction behaviour,
-        implying that :mod:`!sqlite3` ensures a transaction is always open.
+      * ``False``: :pep:`249`-compliant manual commit mode.
         Use :meth:`commit` and :meth:`rollback` to close transactions.
 
         This is the recommended value of :attr:`!autocommit`.
 
-      * ``True``: Use SQLite's `autocommit mode`_.
+      * ``True``: SQLite's `autocommit mode`_.
         :meth:`commit` and :meth:`rollback` have no effect in this mode.
 
       * :data:`LEGACY_TRANSACTION_CONTROL`:
-        Pre-Python 3.12 (non-:pep:`249`-compliant) transaction control.
+        Legacy (pre-Python 3.12) transaction control.
         See :attr:`isolation_level` for more details.
 
         This is currently the default value of :attr:`!autocommit`.
@@ -2463,8 +2462,8 @@ the :attr:`Connection.autocommit` attribute,
 which should preferrably be set using the *autocommit* parameter
 of :func:`connect`.
 
-It is suggested to set *autocommit* to ``False``,
-which implies :pep:`249`-compliant transaction control.
+It is suggested to set *autocommit* to ``False`` to enable the
+:pep:`249`-compliant manual commit mode.
 This means:
 
 * :mod:`!sqlite3` ensures that a transaction is always open,
@@ -2478,15 +2477,21 @@ This means:
   :meth:`~Connection.close`-ed with pending changes.
 
 Set *autocommit* to ``True`` to enable SQLite's `autocommit mode`_.
-In this mode, :meth:`Connection.commit` and :meth:`Connection.rollback`
-have no effect.
+This means:
+
+* No implicit transaction control is performed.
+  This allows the user to perform their own transaction control
+  using explicit SQL-transaction statements.
+* :meth:`Connection.commit` and :meth:`Connection.rollback` have no effect.
+
 Note that SQLite's autocommit mode is distinct from
-the :pep:`249`-compliant :attr:`Connection.autocommit` attribute;
+the :attr:`Connection.autocommit` attribute;
 use :attr:`Connection.in_transaction` to query
 the low-level SQLite autocommit mode.
 
-Set *autocommit* to :data:`LEGACY_TRANSACTION_CONTROL`
-to leave transaction control behaviour to the
+Set *autocommit* to :data:`LEGACY_TRANSACTION_CONTROL` to enable legacy
+(pre-Python 3.12) transaction control.
+This means transaction control behaviour is left to the
 :attr:`Connection.isolation_level` attribute.
 See :ref:`sqlite3-transaction-control-isolation-level` for more information.
 
