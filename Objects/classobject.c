@@ -6,6 +6,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "structmember.h"         // PyMemberDef
+#include "pycore_compile.h"       // _Py_Mangle()
 
 #include "clinic/classobject.c.h"
 
@@ -134,8 +135,16 @@ method___reduce___impl(PyMethodObject *self)
     if (funcname == NULL) {
         return NULL;
     }
+    PyObject *name = PyObject_GetAttr((PyObject *)Py_TYPE(funcself),
+                                     &_Py_ID(__name__));
+    PyObject *mangled = _Py_Mangle(name, funcname);
+    Py_DECREF(name);
+    Py_DECREF(funcname);
+    if (mangled == NULL) {
+        return NULL;
+    }
     return Py_BuildValue(
-            "N(ON)", _PyEval_GetBuiltin(&_Py_ID(getattr)), funcself, funcname);
+            "N(ON)", _PyEval_GetBuiltin(&_Py_ID(getattr)), funcself, mangled);
 }
 
 static PyMethodDef method_methods[] = {
