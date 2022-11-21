@@ -148,6 +148,33 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
 }
 
 
+/* module state *************************************************************/
+
+typedef struct {
+    int _not_used;
+} module_state;
+
+static inline module_state *
+get_module_state(PyObject *mod)
+{
+    module_state *state = PyModule_GetState(mod);
+    assert(state != NULL);
+    return state;
+}
+
+static int
+traverse_module_state(module_state *state, visitproc visit, void *arg)
+{
+    return 0;
+}
+
+static int
+clear_module_state(module_state *state)
+{
+    return 0;
+}
+
+
 /* data-sharing-specific code ***********************************************/
 
 struct _sharednsitem {
@@ -2934,12 +2961,39 @@ error:
     return -1;
 }
 
+static int
+module_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    module_state *state = get_module_state(mod);
+    traverse_module_state(state, visit, arg);
+    return 0;
+}
+
+static int
+module_clear(PyObject *mod)
+{
+    module_state *state = get_module_state(mod);
+    clear_module_state(state);
+    return 0;
+}
+
+static void
+module_free(void *mod)
+{
+    (void)module_clear((PyObject *)mod);
+    (void)_PyCrossInterpreterData_UnregisterClass(&ChannelIDType);
+    _globals_fini();
+}
+
 static struct PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = MODULE_NAME,
     .m_doc = module_doc,
-    .m_size = -1,
+    .m_size = sizeof(module_state),
     .m_methods = module_functions,
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = (freefunc)module_free,
 };
 
 
