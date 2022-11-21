@@ -2371,6 +2371,27 @@ _imp__override_frozen_modules_for_tests_impl(PyObject *module, int override)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_imp._override_multi_interp_extensions_check
+
+    override: int
+    /
+
+(internal-only) Override PyInterpreterConfig.check_multi_interp_extensions.
+
+(-1: "never", 1: "always", 0: no override)
+[clinic start generated code]*/
+
+static PyObject *
+_imp__override_multi_interp_extensions_check_impl(PyObject *module,
+                                                  int override)
+/*[clinic end generated code: output=3ff043af52bbf280 input=e086a2ea181f92ae]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->override_multi_interp_extensions_check = override;
+    Py_RETURN_NONE;
+}
+
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
 static int
 exec_builtin_or_dynamic(PyObject *mod) {
@@ -2572,6 +2593,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_IS_FROZEN_METHODDEF
     _IMP__FROZEN_MODULE_NAMES_METHODDEF
     _IMP__OVERRIDE_FROZEN_MODULES_FOR_TESTS_METHODDEF
+    _IMP__OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP_EXEC_BUILTIN_METHODDEF
