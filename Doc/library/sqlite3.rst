@@ -2429,18 +2429,17 @@ transaction behaviour is controlled using
 the :attr:`Connection.isolation_level` attribute.
 Otherwise, :attr:`!isolation_level` has no effect.
 
-If the connection attribute :attr:`~Connection.isolation_level`
-is not ``None``,
-new transactions are implicitly opened before
-:meth:`~Cursor.execute` and :meth:`~Cursor.executemany` executes
-``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statements;
-for other statements, no implicit transaction handling is performed.
-Use the :meth:`~Connection.commit` and :meth:`~Connection.rollback` methods
-to respectively commit and roll back pending transactions.
-You can choose the underlying `SQLite transaction behaviour`_ —
-that is, whether and what type of ``BEGIN`` statements :mod:`!sqlite3`
-implicitly executes –
-via the :attr:`~Connection.isolation_level` attribute.
+If :attr:`~Connection.isolation_level` is not ``None``:
+
+* :meth:`~Cursor.execute` and :meth:`~Cursor.executemany` implicitly open a new
+  transaction before executing an
+  ``INSERT``, ``UPDATE``, ``DELETE``, or ``REPLACE`` statement;
+  for other statements, no implicit transaction control is performed.
+  The type of ``BEGIN`` statement that those methods use for the underlying
+  `SQLite transaction behaviour`_ can be chosen via the
+  :attr:`~Connection.isolation_level` attribute.
+* Transactions should be explicitly committed using :meth:`!commit`.
+* Transactions should be explicitly rolled back using :meth:`!rollback`.
 
 If :attr:`~Connection.isolation_level` is set to ``None``,
 no transactions are implicitly opened at all.
