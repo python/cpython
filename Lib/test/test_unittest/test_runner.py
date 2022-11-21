@@ -536,6 +536,44 @@ class TestClassCleanup(unittest.TestCase):
 
         self.assertEqual(TestableTest._class_cleanups, [])
 
+    def test_run_nested_test(self):
+        ordering = []
+
+        class InnerTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass2')
+                cls.addClassCleanup(ordering.append, 'cleanup2')
+            def test(self):
+                ordering.append('test2')
+
+        class OuterTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass1')
+                cls.addClassCleanup(ordering.append, 'cleanup1')
+            def test(self):
+                ordering.append('start test1')
+                runTests(InnerTest)
+                ordering.append('end test1')
+
+        runTests(OuterTest)
+        self.assertEqual(ordering, ['setUpClass1', 'start test1',
+                                    'setUpClass2', 'test2', 'cleanup2',
+                                    'end test1', 'cleanup1'])
+
+
+    def test_debug_nested_test(self):
+        ordering = []
+
+        class InnerTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass2')
+                cls.addClassCleanup(ordering.append, 'cleanup2')
+            def test(self):
+                ordering.append('test2')
+
 
 class TestModuleCleanUp(unittest.TestCase):
     def test_add_and_do_ModuleCleanup(self):
