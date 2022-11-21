@@ -1367,5 +1367,17 @@ x = (
         with self.assertRaisesRegex(SyntaxError, error_msg):
             compile("f'{**a}'", "?", "exec")
 
+    def test_syntax_error_for_assignment_statements(self):
+        self.assertAllRaise(
+            SyntaxError,
+            "expected expression, not assignment statement",
+            [
+                """f'{a = bcde}'""",
+                """f'{a = 1!r}'""",
+                """f'{a = b, 1, !r }'""",
+                """f'{a = b !r :5 }'""",
+            ]
+        )
+
 if __name__ == '__main__':
     unittest.main()

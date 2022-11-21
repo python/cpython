@@ -829,6 +829,13 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     }
 
     if (*str >= end || **str != '}') {
+        /* If we're in = mode (detected by non-NULL expr_text),
+           provide a more helpful error */
+        if (*expr_text) {
+            RAISE_SYNTAX_ERROR("f-string: expected expression, "
+                               "not assignment statement");
+            goto error;
+        }
         goto unexpected_end_of_string;
     }
 
