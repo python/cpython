@@ -1229,6 +1229,7 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_DEREF_NOERROR:
         case DELETE_GLOBAL_NOERROR:
         case DELETE_NAME_NOERROR:
+        case DEL_PLACEHOLDER:
             return 0;
 
         /* Iterators and generators */
