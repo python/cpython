@@ -2591,15 +2591,11 @@ PyDoc_STRVAR(module_doc,
 The 'interpreters' module provides a more convenient interface.");
 
 static struct PyModuleDef interpretersmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_xxsubinterpreters",  /* m_name */
-    module_doc,            /* m_doc */
-    -1,                    /* m_size */
-    module_functions,      /* m_methods */
-    NULL,                  /* m_slots */
-    NULL,                  /* m_traverse */
-    NULL,                  /* m_clear */
-    NULL                   /* m_free */
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_xxsubinterpreters",
+    .m_doc = module_doc,
+    .m_size = -1,
+    .m_methods = module_functions,
 };
 
 
