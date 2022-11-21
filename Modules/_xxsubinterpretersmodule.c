@@ -3016,6 +3016,11 @@ error:
     return -1;
 }
 
+static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, module_exec},
+    {0, NULL},
+};
+
 static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
@@ -3049,23 +3054,14 @@ static struct PyModuleDef moduledef = {
     .m_doc = module_doc,
     .m_size = sizeof(module_state),
     .m_methods = module_functions,
+    .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
     .m_free = (freefunc)module_free,
 };
 
-
 PyMODINIT_FUNC
 PyInit__xxsubinterpreters(void)
 {
-    /* Create the module */
-    PyObject *mod = PyModule_Create(&moduledef);
-    if (mod == NULL) {
-        return NULL;
-    }
-    if (module_exec(mod) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
+    return PyModuleDef_Init(&moduledef);
 }
