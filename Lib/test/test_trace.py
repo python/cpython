@@ -414,11 +414,12 @@ class TestCoverage(unittest.TestCase):
         self.assertEqual(coverage[modname], (5, 100))
 
     def test_coverageresults_update(self):
-        outfile = TESTFN + '-outfile'
-        with open(outfile, 'wb') as f:
+        # Update empty CoverageResults with a non-empty infile.
+        infile = TESTFN + '-infile'
+        with open(infile, 'wb') as f:
             pickle.dump(({}, {}, {'caller': 1}), f, protocol=1)
-        self.addCleanup(unlink, outfile)
-        results = trace.CoverageResults({}, {}, outfile, {})
+        self.addCleanup(unlink, infile)
+        results = trace.CoverageResults({}, {}, infile, {})
         self.assertEqual(results.callers, {'caller': 1})
 
 ### Tests that don't mess with sys.settrace and can be traced
