@@ -1,0 +1,7 @@
+.. bpo: 0
+.. date: 2022-11-16
+.. nonce: as$i9+
+.. release date: 2022-11-16
+.. section: Library
+
+Address CVE-2021-3733 in urllib2
