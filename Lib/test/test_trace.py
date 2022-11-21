@@ -1,5 +1,5 @@
 import os
-import pickle
+from pickle import dump
 import sys
 from test.support import captured_stdout
 from test.support.os_helper import (TESTFN, rmtree, unlink)
@@ -417,7 +417,7 @@ class TestCoverage(unittest.TestCase):
         # Update empty CoverageResults with a non-empty infile.
         infile = TESTFN + '-infile'
         with open(infile, 'wb') as f:
-            pickle.dump(({}, {}, {'caller': 1}), f, protocol=1)
+            dump(({}, {}, {'caller': 1}), f, protocol=1)
         self.addCleanup(unlink, infile)
         results = trace.CoverageResults({}, {}, infile, {})
         self.assertEqual(results.callers, {'caller': 1})
