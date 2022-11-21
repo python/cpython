@@ -38,6 +38,25 @@ _get_current(void)
     return PyInterpreterState_Get();
 }
 
+static PyObject *
+add_new_exception(PyObject *mod, const char *name, PyObject *base)
+{
+    assert(!PyObject_HasAttrString(mod, name));
+    PyObject *exctype = PyErr_NewException(name, base, NULL);
+    if (exctype == NULL) {
+        return NULL;
+    }
+    int res = PyModule_AddType(mod, (PyTypeObject *)exctype);
+    Py_DECREF(exctype);
+    if (res < 0) {
+        return NULL;
+    }
+    return exctype;
+}
+
+#define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
+    add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
+
 
 /* data-sharing-specific code ***********************************************/
 
@@ -301,57 +320,27 @@ channel_exceptions_init(PyObject *mod)
 {
     // XXX Move the exceptions into per-module memory?
 
-    PyObject *ns = PyModule_GetDict(mod);  // borrowed
+#define ADD(NAME, BASE) \
+    do { \
+        if (NAME == NULL) { \
+            NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
+            if (NAME == NULL) { \
+                return -1; \
+            } \
+        } \
+    } while (0)
 
     // A channel-related operation failed.
-    ChannelError = PyErr_NewException("_xxsubinterpreters.ChannelError",
-                                      PyExc_RuntimeError, NULL);
-    if (ChannelError == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(ns, "ChannelError", ChannelError) != 0) {
-        return -1;
-    }
-
+    ADD(ChannelError, PyExc_RuntimeError);
     // An operation tried to use a channel that doesn't exist.
-    ChannelNotFoundError = PyErr_NewException(
-            "_xxsubinterpreters.ChannelNotFoundError", ChannelError, NULL);
-    if (ChannelNotFoundError == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(ns, "ChannelNotFoundError", ChannelNotFoundError) != 0) {
-        return -1;
-    }
-
+    ADD(ChannelNotFoundError, ChannelError);
     // An operation tried to use a closed channel.
-    ChannelClosedError = PyErr_NewException(
-            "_xxsubinterpreters.ChannelClosedError", ChannelError, NULL);
-    if (ChannelClosedError == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(ns, "ChannelClosedError", ChannelClosedError) != 0) {
-        return -1;
-    }
-
+    ADD(ChannelClosedError, ChannelError);
     // An operation tried to pop from an empty channel.
-    ChannelEmptyError = PyErr_NewException(
-            "_xxsubinterpreters.ChannelEmptyError", ChannelError, NULL);
-    if (ChannelEmptyError == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(ns, "ChannelEmptyError", ChannelEmptyError) != 0) {
-        return -1;
-    }
-
+    ADD(ChannelEmptyError, ChannelError);
     // An operation tried to close a non-empty channel.
-    ChannelNotEmptyError = PyErr_NewException(
-            "_xxsubinterpreters.ChannelNotEmptyError", ChannelError, NULL);
-    if (ChannelNotEmptyError == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(ns, "ChannelNotEmptyError", ChannelNotEmptyError) != 0) {
-        return -1;
-    }
+    ADD(ChannelNotEmptyError, ChannelError);
+#undef ADD
 
     return 0;
 }
@@ -1816,19 +1805,19 @@ interp_exceptions_init(PyObject *mod)
 {
     // XXX Move the exceptions into per-module memory?
 
-    PyObject *ns = PyModule_GetDict(mod);  // borrowed
+#define ADD(NAME, BASE) \
+    do { \
+        if (NAME == NULL) { \
+            NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
+            if (NAME == NULL) { \
+                return -1; \
+            } \
+        } \
+    } while (0)
 
-    if (RunFailedError == NULL) {
-        // An uncaught exception came out of interp_run_string().
-        RunFailedError = PyErr_NewException("_xxsubinterpreters.RunFailedError",
-                                            PyExc_RuntimeError, NULL);
-        if (RunFailedError == NULL) {
-            return -1;
-        }
-        if (PyDict_SetItemString(ns, "RunFailedError", RunFailedError) != 0) {
-            return -1;
-        }
-    }
+    // An uncaught exception came out of interp_run_string().
+    ADD(RunFailedError, PyExc_RuntimeError);
+#undef ADD
 
     return 0;
 }
