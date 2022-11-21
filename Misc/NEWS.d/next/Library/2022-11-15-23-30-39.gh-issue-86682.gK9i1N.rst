@@ -1,2 +1,2 @@
-Changes internal function used to ensure runtime-created collections have
-the correct module name from :func:`sys._getframe` to :func:`sys._getcaller`.
+Ensure runtime-created collections have the correct module name using
+the newly added (internal) :func:`sys._getcallingmodulename`.
