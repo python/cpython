@@ -663,31 +663,32 @@ static int specialize_attr_loadmethod(PyObject* owner, _Py_CODEUNIT* instr, PyOb
     PyObject* descr, DescriptorClassification kind);
 static int specialize_class_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject* name);
 
-int
+void
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 {
     assert(_PyOpcode_Caches[LOAD_ATTR] == INLINE_CACHE_ENTRIES_LOAD_ATTR);
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
+    PyTypeObject *type = Py_TYPE(owner);
+    if (!_PyType_IsReady(type)) {
+        // We *might* not really need this check, but we inherited it from
+        // PyObject_GenericGetAttr and friends... and this way we still do the
+        // right thing if someone forgets to call PyType_Ready(type):
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
+        goto fail;
+    }
     if (PyModule_CheckExact(owner)) {
-        int err = specialize_module_load_attr(owner, instr, name, LOAD_ATTR,
-                                              LOAD_ATTR_MODULE);
-        if (err) {
+        if (specialize_module_load_attr(owner, instr, name, LOAD_ATTR,
+                                        LOAD_ATTR_MODULE))
+        {
             goto fail;
         }
         goto success;
     }
     if (PyType_Check(owner)) {
-        int err = specialize_class_load_attr(owner, instr, name);
-        if (err) {
+        if (specialize_class_load_attr(owner, instr, name)) {
             goto fail;
         }
         goto success;
-    }
-    PyTypeObject *type = Py_TYPE(owner);
-    if (type->tp_dict == NULL) {
-        if (PyType_Ready(type) < 0) {
-            return -1;
-        }
     }
     PyObject *descr = NULL;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
@@ -803,14 +804,9 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         case ABSENT:
             break;
     }
-    int err = specialize_dict_access(
-        owner, instr, type, kind, name,
-        LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT
-    );
-    if (err < 0) {
-        return -1;
-    }
-    if (err) {
+    if (specialize_dict_access(owner, instr, type, kind, name, LOAD_ATTR,
+                               LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_WITH_HINT))
+    {
         goto success;
     }
 fail:
@@ -818,20 +814,26 @@ fail:
     assert(!PyErr_Occurred());
     _Py_SET_OPCODE(*instr, LOAD_ATTR);
     cache->counter = adaptive_counter_backoff(cache->counter);
-    return 0;
+    return;
 success:
     STAT_INC(LOAD_ATTR, success);
     assert(!PyErr_Occurred());
     cache->counter = adaptive_counter_cooldown();
-    return 0;
 }
 
-int
+void
 _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 {
     assert(_PyOpcode_Caches[STORE_ATTR] == INLINE_CACHE_ENTRIES_STORE_ATTR);
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyTypeObject *type = Py_TYPE(owner);
+    if (!_PyType_IsReady(type)) {
+        // We *might* not really need this check, but we inherited it from
+        // PyObject_GenericSetAttr and friends... and this way we still do the
+        // right thing if someone forgets to call PyType_Ready(type):
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
+        goto fail;
+    }
     if (PyModule_CheckExact(owner)) {
         SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_OVERRIDDEN);
         goto fail;
@@ -890,15 +892,9 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         case ABSENT:
             break;
     }
-
-    int err = specialize_dict_access(
-        owner, instr, type, kind, name,
-        STORE_ATTR, STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT
-    );
-    if (err < 0) {
-        return -1;
-    }
-    if (err) {
+    if (specialize_dict_access(owner, instr, type, kind, name, STORE_ATTR,
+                               STORE_ATTR_INSTANCE_VALUE, STORE_ATTR_WITH_HINT))
+    {
         goto success;
     }
 fail:
@@ -906,12 +902,11 @@ fail:
     assert(!PyErr_Occurred());
     _Py_SET_OPCODE(*instr, STORE_ATTR);
     cache->counter = adaptive_counter_backoff(cache->counter);
-    return 0;
+    return;
 success:
     STAT_INC(STORE_ATTR, success);
     assert(!PyErr_Occurred());
     cache->counter = adaptive_counter_cooldown();
-    return 0;
 }
 
 
@@ -1880,16 +1875,6 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                 goto success;
             }
             break;
-#ifndef Py_STATS
-        default:
-            // These operators don't have any available specializations. Rather
-            // than repeatedly attempting to specialize them, just convert them
-            // back to BINARY_OP (unless we're collecting stats, where it's more
-            // important to get accurate hit counts for the unadaptive version
-            // and each of the different failure types):
-            _Py_SET_OPCODE(*instr, BINARY_OP_GENERIC);
-            return;
-#endif
     }
     SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     STAT_INC(BINARY_OP, failure);
@@ -1957,23 +1942,13 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
     int next_opcode = _Py_OPCODE(instr[INLINE_CACHE_ENTRIES_COMPARE_OP + 1]);
-    if (next_opcode != POP_JUMP_IF_FALSE &&
-        next_opcode != POP_JUMP_IF_TRUE) {
-        // Can't ever combine, so don't don't bother being adaptive (unless
-        // we're collecting stats, where it's more important to get accurate hit
-        // counts for the unadaptive version and each of the different failure
-        // types):
-#ifndef Py_STATS
-        _Py_SET_OPCODE(*instr, COMPARE_OP_GENERIC);
-        return;
-#else
+    if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
         if (next_opcode == EXTENDED_ARG) {
             SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_EXTENDED_ARG);
             goto failure;
         }
         SPECIALIZATION_FAIL(COMPARE_OP, SPEC_FAIL_COMPARE_OP_NOT_FOLLOWED_BY_COND_JUMP);
         goto failure;
-#endif
     }
     assert(oparg <= Py_GE);
     int when_to_jump_mask = compare_masks[oparg];
