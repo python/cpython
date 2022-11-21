@@ -654,7 +654,7 @@ Connection objects
       If :attr:`autocommit` is ``False``, this method implicitly rolls back
       any open transaction before closing.
       If :attr:`!autocommit` is ``True`` or :data:`LEGACY_TRANSACTION_CONTROL`,
-      this method does not execute any implicit transaction control.
+      this method does not perform any implicit transaction control.
       Make sure to :meth:`commit` before closing
       to avoid losing pending changes.
 
@@ -1285,7 +1285,7 @@ Connection objects
 
    .. attribute:: in_transaction
 
-      This read-only attribute corresponds to the low-level SQLite
+      This read-only attribute corresponds to the low-level SQLite's
       `autocommit mode`_.
 
       ``True`` if a transaction is active (there are uncommitted changes),
@@ -2392,10 +2392,9 @@ This means:
   and :meth:`Connection.rollback` implicitly open a new transaction to ensure
   that a transaction is always open.
   Those methods use a ``BEGIN DEFERRED`` statement when opening a transaction.
-* Transactions should be committed explicitly using :meth:`!commit`.
-* Transactions should be rolled back explicitly using :meth:`!rollback`.
-* An implicit rollback is performed if the database is
-  :meth:`~Connection.close`-ed with pending changes.
+* Transactions should be explicitly committed using :meth:`!commit`.
+* Transactions should be explicitly rolled back using :meth:`!rollback`.
+* :meth:`Connection.close` implicitly rolls back any open transaction.
 
 Set *autocommit* to ``True`` to enable the :pep:`249`-compliant autocommit mode.
 This means:
@@ -2408,8 +2407,8 @@ This means:
 
 Note that SQLite's autocommit mode is distinct from
 the :pep:`249`-compliant :attr:`Connection.autocommit` attribute;
-use :attr:`Connection.in_transaction` to query
-the low-level SQLite autocommit mode.
+SQLite's autocommit mode can be queried using the
+:attr:`Connection.in_transaction` attribute.
 
 Set *autocommit* to :data:`LEGACY_TRANSACTION_CONTROL` to enable legacy
 (pre-Python 3.12) transaction control.
@@ -2448,15 +2447,16 @@ If :attr:`~Connection.isolation_level` is not ``None``:
 * Transactions should be explicitly rolled back using :meth:`!rollback`.
 
 If :attr:`~Connection.isolation_level` is set to ``None``,
-no transactions are implicitly opened at all.
-This leaves the underlying SQLite library in `autocommit mode`_,
-but also allows the user to perform their own transaction handling
-using explicit SQL statements.
-The underlying SQLite library autocommit mode can be queried using the
+no implicit transaction control is performed.
+This leaves SQLite in `autocommit mode`_,
+but also allows the user to perform their own transaction control
+using explicit SQL-transaction statements.
+
+SQLite's autocommit mode can be queried using the
 :attr:`~Connection.in_transaction` attribute.
 
-The :meth:`~Cursor.executescript` method implicitly commits
-any pending transaction before execution of the given SQL script,
+:meth:`~Cursor.executescript` implicitly commits any open transaction before
+executing the given SQL script,
 regardless of the value of :attr:`~Connection.isolation_level`.
 
 .. versionchanged:: 3.6
