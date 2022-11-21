@@ -1,4 +1,5 @@
 import faulthandler
+from dataclasses import dataclass
 import json
 import os.path
 import queue
@@ -9,7 +10,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import NamedTuple, NoReturn, Literal, Any, TextIO
+from typing import Iterator, NamedTuple, NoReturn, Literal, Any, TextIO
 
 from test import support
 from test.support import os_helper
@@ -42,6 +43,13 @@ JOIN_TIMEOUT = 30.0   # seconds
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
+@dataclass
+class ShardInfo:
+    number: int
+    total_shards: int
+    status_file: str = ""
+
+
 def must_stop(result: TestResult, ns: Namespace) -> bool:
     if isinstance(result, Interrupted):
         return True
@@ -56,7 +64,7 @@ def parse_worker_args(worker_args) -> tuple[Namespace, str]:
     return (ns, test_name)
 
 
-def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str, stdout_fh: TextIO) -> subprocess.Popen:
+def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str, stdout_fh: TextIO, shard: ShardInfo|None = None) -> subprocess.Popen:
     ns_dict = vars(ns)
     worker_args = (ns_dict, testname)
     worker_args = json.dumps(worker_args)
@@ -74,6 +82,13 @@ def run_test_in_subprocess(testname: str, ns: Namespace, tmp_dir: str, stdout_fh
         env['TMPDIR'] = tmp_dir
         env['TEMP'] = tmp_dir
         env['TMP'] = tmp_dir
+
+    if shard:
+        # This follows the "Bazel test sharding protocol"
+        shard.status_file = os.path.join(tmp_dir, 'sharded')
+        env['TEST_SHARD_STATUS_FILE'] = shard.status_file
+        env['TEST_SHARD_INDEX'] = str(shard.number)
+        env['TEST_TOTAL_SHARDS'] = str(shard.total_shards)
 
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
@@ -109,7 +124,7 @@ class MultiprocessIterator:
 
     """A thread-safe iterator over tests for multiprocess mode."""
 
-    def __init__(self, tests_iter):
+    def __init__(self, tests_iter: Iterator[tuple[str, ShardInfo|None]]):
         self.lock = threading.Lock()
         self.tests_iter = tests_iter
 
@@ -215,12 +230,17 @@ class TestWorkerProcess(threading.Thread):
         test_result.duration_sec = time.monotonic() - self.start_time
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, test_name: str, tmp_dir: str, stdout_fh: TextIO) -> int:
+    def _run_process(self, test_name: str, tmp_dir: str, stdout_fh: TextIO,
+                     shard: ShardInfo|None = None) -> int:
         self.start_time = time.monotonic()
 
-        self.current_test_name = test_name
+        if shard:
+            self.current_test_name = f'{test_name}-shard-{shard.number:02}/{shard.total_shards-1:02}'
+        else:
+            self.current_test_name = test_name
         try:
-            popen = run_test_in_subprocess(test_name, self.ns, tmp_dir, stdout_fh)
+            popen = run_test_in_subprocess(
+                    test_name, self.ns, tmp_dir, stdout_fh, shard)
 
             self._killed = False
             self._popen = popen
@@ -240,6 +260,17 @@ class TestWorkerProcess(threading.Thread):
                 # gh-94026: stdout+stderr are written to tempfile
                 retcode = popen.wait(timeout=self.timeout)
                 assert retcode is not None
+                if shard and shard.status_file:
+                    if os.path.exists(shard.status_file):
+                        try:
+                            os.unlink(shard.status_file)
+                        except IOError:
+                            pass
+                    else:
+                        print_warning(
+                                f"{self.current_test_name} process exited "
+                                f"{retcode} without touching a shard status "
+                                f"file. Does it really support sharding?")
                 return retcode
             except subprocess.TimeoutExpired:
                 if self._stopped:
@@ -269,7 +300,7 @@ class TestWorkerProcess(threading.Thread):
             self._popen = None
             self.current_test_name = None
 
-    def _runtest(self, test_name: str) -> MultiprocessResult:
+    def _runtest(self, test_name: str, shard: ShardInfo|None) -> MultiprocessResult:
         if sys.platform == 'win32':
             # gh-95027: When stdout is not a TTY, Python uses the ANSI code
             # page for the sys.stdout encoding. If the main process runs in a
@@ -290,7 +321,7 @@ class TestWorkerProcess(threading.Thread):
                 tmp_dir = tempfile.mkdtemp(prefix="test_python_")
                 tmp_dir = os.path.abspath(tmp_dir)
                 try:
-                    retcode = self._run_process(test_name, tmp_dir, stdout_fh)
+                    retcode = self._run_process(test_name, tmp_dir, stdout_fh, shard)
                 finally:
                     tmp_files = os.listdir(tmp_dir)
                     os_helper.rmtree(tmp_dir)
@@ -335,11 +366,11 @@ class TestWorkerProcess(threading.Thread):
         while not self._stopped:
             try:
                 try:
-                    test_name = next(self.pending)
+                    test_name, shard_info = next(self.pending)
                 except StopIteration:
                     break
 
-                mp_result = self._runtest(test_name)
+                mp_result = self._runtest(test_name, shard_info)
                 self.output.put((False, mp_result))
 
                 if must_stop(mp_result.result, self.ns):
@@ -402,8 +433,19 @@ class MultiprocessTestRunner:
         self.regrtest = regrtest
         self.log = self.regrtest.log
         self.ns = regrtest.ns
+        self.num_procs: int = self.ns.use_mp
         self.output: queue.Queue[QueueOutput] = queue.Queue()
-        self.pending = MultiprocessIterator(self.regrtest.tests)
+        tests_and_shards = []
+        for test in self.regrtest.tests:
+            if self.num_procs > 2 and test in self.regrtest.tests_to_shard:
+                # Split shardable tests across multiple processes to run
+                # distinct subsets of tests within a given test module.
+                shards = min(self.num_procs//2+1, 8)  # avoid diminishing returns
+                for shard_no in range(shards):
+                    tests_and_shards.append((test, ShardInfo(shard_no, shards)))
+            else:
+                tests_and_shards.append((test, None))
+        self.pending = MultiprocessIterator(iter(tests_and_shards))
         if self.ns.timeout is not None:
             # Rely on faulthandler to kill a worker process. This timouet is
             # when faulthandler fails to kill a worker process. Give a maximum
@@ -416,7 +458,7 @@ class MultiprocessTestRunner:
 
     def start_workers(self) -> None:
         self.workers = [TestWorkerProcess(index, self)
-                        for index in range(1, self.ns.use_mp + 1)]
+                        for index in range(1, self.num_procs + 1)]
         msg = f"Run tests in parallel using {len(self.workers)} child processes"
         if self.ns.timeout:
             msg += (" (timeout: %s, worker timeout: %s)"

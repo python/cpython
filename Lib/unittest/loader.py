@@ -1,11 +1,12 @@
 """Loading unittests."""
 
+import itertools
+import functools
 import os
 import re
 import sys
 import traceback
 import types
-import functools
 import warnings
 
 from fnmatch import fnmatch, fnmatchcase
@@ -63,7 +64,7 @@ def _jython_aware_splitext(path):
     return os.path.splitext(path)[0]
 
 
-class TestLoader(object):
+class TestLoader:
     """
     This class is responsible for loading tests according to various criteria
     and returning them wrapped in a TestSuite
@@ -73,6 +74,43 @@ class TestLoader(object):
     testNamePatterns = None
     suiteClass = suite.TestSuite
     _top_level_dir = None
+    _sharding_setup_complete = False
+    _shard_bucket_iterator = None
+    _shard_index = None
+
+    def __new__(cls, *args, **kwargs):
+        new_instance = super().__new__(cls, *args, **kwargs)
+        if cls._sharding_setup_complete:
+            return new_instance
+        # This assumes single threaded TestLoader construction.
+        cls._sharding_setup_complete = True
+
+        # It may be useful to write the shard file even if the other sharding
+        # environment variables are not set. Test runners may use this functionality
+        # to query whether a test binary implements the test sharding protocol.
+        if 'TEST_SHARD_STATUS_FILE' in os.environ:
+            status_name = os.environ['TEST_SHARD_STATUS_FILE']
+            try:
+                with open(status_name, 'w') as f:
+                    f.write('')
+            except IOError as error:
+                raise RuntimeError(
+                    f'Error opening TEST_SHARD_STATUS_FILE {status_name=}.')
+
+        if 'TEST_TOTAL_SHARDS' not in os.environ:
+            # Not using sharding? nothing more to do.
+            return new_instance
+
+        total_shards = int(os.environ['TEST_TOTAL_SHARDS'])
+        cls._shard_index = int(os.environ['TEST_SHARD_INDEX'])
+
+        if cls._shard_index < 0 or cls._shard_index >= total_shards:
+            raise RuntimeError(
+                    'ERROR: Bad sharding values. '
+                    f'index={cls._shard_index}, {total_shards=}')
+
+        cls._shard_bucket_iterator = itertools.cycle(range(total_shards))
+        return new_instance
 
     def __init__(self):
         super(TestLoader, self).__init__()
@@ -198,8 +236,28 @@ class TestLoader(object):
         suites = [self.loadTestsFromName(name, module) for name in names]
         return self.suiteClass(suites)
 
+    def _getShardedTestCaseNames(self, testCaseClass):
+        filtered_names = []
+        # We need to sort the list of tests in order to determine which tests this
+        # shard is responsible for; however, it's important to preserve the order
+        # returned by the base loader, e.g. in the case of randomized test ordering.
+        ordered_names = self._getTestCaseNames(testCaseClass)
+        for testcase in sorted(ordered_names):
+            bucket = next(self._shard_bucket_iterator)
+            if bucket == self._shard_index:
+                filtered_names.append(testcase)
+        return [x for x in ordered_names if x in filtered_names]
+
     def getTestCaseNames(self, testCaseClass):
-        """Return a sorted sequence of method names found within testCaseClass
+        """Return a sorted sequence of method names found within testCaseClass.
+        Or a unique sharded subset thereof if sharding is enabled.
+        """
+        if self._shard_bucket_iterator:
+            return self._getShardedTestCaseNames(testCaseClass)
+        return self._getTestCaseNames(testCaseClass)
+
+    def _getTestCaseNames(self, testCaseClass):
+        """Return a sorted sequence of all method names found within testCaseClass.
         """
         def shouldIncludeMethod(attrname):
             if not attrname.startswith(self.testMethodPrefix):

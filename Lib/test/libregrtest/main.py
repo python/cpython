@@ -64,6 +64,23 @@ class Regrtest:
         # tests
         self.tests = []
         self.selected = []
+        self.tests_to_shard = set()
+        # TODO(gpshead): this list belongs elsewhere - it'd be nice to tag
+        # these within the test module/package itself but loading everything
+        # to detect those tags is complicated. As is a feedback mechanism
+        # from a shard file.
+        # Our slowest tests per a "-o" run:
+        self.tests_to_shard.add('test_concurrent_futures')
+        self.tests_to_shard.add('test_multiprocessing_spawn')
+        self.tests_to_shard.add('test_asyncio')
+        self.tests_to_shard.add('test_tools')
+        self.tests_to_shard.add('test_multiprocessing_forkserver')
+        self.tests_to_shard.add('test_multiprocessing_fork')
+        self.tests_to_shard.add('test_signal')
+        self.tests_to_shard.add('test_socket')
+        self.tests_to_shard.add('test_io')
+        self.tests_to_shard.add('test_imaplib')
+        self.tests_to_shard.add('test_subprocess')
 
         # test results
         self.good = []
