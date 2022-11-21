@@ -85,7 +85,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-       r = tcgetattr(fd, &mode); 
+    r = tcgetattr(fd, &mode); 
     Py_END_ALLOW_THREADS
     if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -177,7 +177,7 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-        r = tcgetattr(fd, &mode);
+    r = tcgetattr(fd, &mode);
     Py_END_ALLOW_THREADS
     if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -223,7 +223,7 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         return PyErr_SetFromErrno(state->TermiosError);
 
     Py_BEGIN_ALLOW_THREADS
-        r = tcsetattr(fd, when, &mode);
+    r = tcsetattr(fd, when, &mode);
     Py_END_ALLOW_THREADS
 
     if (r == -1)
@@ -253,7 +253,7 @@ termios_tcsendbreak_impl(PyObject *module, int fd, int duration)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-        r = tcsendbreak(fd, duration);
+    r = tcsendbreak(fd, duration);
     Py_END_ALLOW_THREADS
 
     if (r == -1) {
@@ -280,7 +280,7 @@ termios_tcdrain_impl(PyObject *module, int fd)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-        r = tcdrain(fd);
+    r = tcdrain(fd);
     Py_END_ALLOW_THREADS
 
     if (r == -1) {
@@ -312,7 +312,7 @@ termios_tcflush_impl(PyObject *module, int fd, int queue)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-        r = tcflush(fd, queue);
+    r = tcflush(fd, queue);
     Py_END_ALLOW_THREADS
 
     if (r == -1) {
@@ -344,7 +344,7 @@ termios_tcflow_impl(PyObject *module, int fd, int action)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-        r = tcflow(fd, action);
+    r = tcflow(fd, action);
     Py_END_ALLOW_THREADS
 
     if (r == -1) {
@@ -375,7 +375,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
     int r; 
 
     Py_BEGIN_ALLOW_THREADS
-        r = ioctl(fd, TIOCGWINSZ, &w);
+    r = ioctl(fd, TIOCGWINSZ, &w);
     Py_END_ALLOW_THREADS
 
     if (r == -1) {
@@ -400,7 +400,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-        r = ioctl(fd, TIOCGSIZE, &s);
+    r = ioctl(fd, TIOCGSIZE, &s);
     Py_END_ALLOW_THREADS
     if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -485,7 +485,7 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
 
     int r;
     Py_BEGIN_ALLOW_THREADS
-        r = ioctl(fd, TIOCSWINSZ, &w);
+    r = ioctl(fd, TIOCSWINSZ, &w);
     Py_END_ALLOW_THREADS
 
     if (r == -1) {
@@ -498,7 +498,7 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
     int r;
     /* Get the old ttysize because it might have more fields. */
     Py_BEGIN_ALLOW_THREADS
-        r = ioctl(fd, TIOCGSIZE, &s);
+    r = ioctl(fd, TIOCGSIZE, &s);
     Py_END_ALLOW_THREADS
 
     if (r == -1) {
@@ -514,7 +514,7 @@ termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
     }
 
     Py_BEGIN_ALLOW_THREADS
-        r = ioctl(fd, TIOCSSIZE, &s);
+    r = ioctl(fd, TIOCSSIZE, &s);
     Py_END_ALLOW_THREADS
 
     if (r == -1) {
