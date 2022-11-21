@@ -11,6 +11,9 @@
 #include "pycore_interpreteridobject.h"
 
 
+#define MODULE_NAME "_xxsubinterpreters"
+
+
 static char *
 _copy_raw_string(PyObject *strobj)
 {
@@ -294,9 +297,11 @@ static PyObject *ChannelEmptyError;
 static PyObject *ChannelNotEmptyError;
 
 static int
-channel_exceptions_init(PyObject *ns)
+channel_exceptions_init(PyObject *mod)
 {
     // XXX Move the exceptions into per-module memory?
+
+    PyObject *ns = PyModule_GetDict(mod);  // borrowed
 
     // A channel-related operation failed.
     ChannelError = PyErr_NewException("_xxsubinterpreters.ChannelError",
@@ -1807,9 +1812,11 @@ static PyTypeObject ChannelIDtype = {
 static PyObject * RunFailedError = NULL;
 
 static int
-interp_exceptions_init(PyObject *ns)
+interp_exceptions_init(PyObject *mod)
 {
     // XXX Move the exceptions into per-module memory?
+
+    PyObject *ns = PyModule_GetDict(mod);  // borrowed
 
     if (RunFailedError == NULL) {
         // An uncaught exception came out of interp_run_string().
@@ -2590,9 +2597,9 @@ PyDoc_STRVAR(module_doc,
 "This module provides primitive operations to manage Python interpreters.\n\
 The 'interpreters' module provides a more convenient interface.");
 
-static struct PyModuleDef interpretersmodule = {
+static struct PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_xxsubinterpreters",
+    .m_name = MODULE_NAME,
     .m_doc = module_doc,
     .m_size = -1,
     .m_methods = module_functions,
@@ -2612,27 +2619,24 @@ PyInit__xxsubinterpreters(void)
     }
 
     /* Create the module */
-    PyObject *module = PyModule_Create(&interpretersmodule);
-    if (module == NULL) {
+    PyObject *mod = PyModule_Create(&moduledef);
+    if (mod == NULL) {
         return NULL;
     }
 
     /* Add exception types */
-    PyObject *ns = PyModule_GetDict(module);  // borrowed
-    if (interp_exceptions_init(ns) != 0) {
+    if (interp_exceptions_init(mod) != 0) {
         return NULL;
     }
-    if (channel_exceptions_init(ns) != 0) {
+    if (channel_exceptions_init(mod) != 0) {
         return NULL;
     }
 
     /* Add other types */
-    if (PyDict_SetItemString(ns, "ChannelID",
-                             Py_NewRef(&ChannelIDtype)) != 0) {
+    if (PyModule_AddType(mod, &ChannelIDtype) < 0) {
         return NULL;
     }
-    if (PyDict_SetItemString(ns, "InterpreterID",
-                             Py_NewRef(&_PyInterpreterID_Type)) != 0) {
+    if (PyModule_AddType(mod, &_PyInterpreterID_Type) < 0) {
         return NULL;
     }
 
@@ -2640,5 +2644,5 @@ PyInit__xxsubinterpreters(void)
         return NULL;
     }
 
-    return module;
+    return mod;
 }
