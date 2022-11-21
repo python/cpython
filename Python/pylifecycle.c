@@ -82,6 +82,10 @@ static void call_ll_exitfuncs(_PyRuntimeState *runtime);
  * interpreter state for various runtime debugging tools, but is *not* an
  * officially supported feature */
 
+/* Suppress deprecation warning for PyBytesObject.ob_shash */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 #if defined(MS_WINDOWS)
 
 #pragma section("PyRuntime", read, write)
@@ -95,9 +99,6 @@ __attribute__((
 
 #endif
 
-/* Suppress deprecation warning for PyBytesObject.ob_shash */
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))

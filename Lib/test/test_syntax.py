@@ -756,6 +756,27 @@ SyntaxError: cannot assign to __debug__
 >>> __debug__: int
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
+>>> f(a=)
+Traceback (most recent call last):
+SyntaxError: expected argument value expression
+>>> f(a, b, c=)
+Traceback (most recent call last):
+SyntaxError: expected argument value expression
+>>> f(a, b, c=, d)
+Traceback (most recent call last):
+SyntaxError: expected argument value expression
+>>> f(*args=[0])
+Traceback (most recent call last):
+SyntaxError: cannot assign to iterable argument unpacking
+>>> f(a, b, *args=[0])
+Traceback (most recent call last):
+SyntaxError: cannot assign to iterable argument unpacking
+>>> f(**kwargs={'a': 1})
+Traceback (most recent call last):
+SyntaxError: cannot assign to keyword argument unpacking
+>>> f(a, b, *args, **kwargs={'a': 1})
+Traceback (most recent call last):
+SyntaxError: cannot assign to keyword argument unpacking
 
 
 More set_context():
