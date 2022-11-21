@@ -167,12 +167,12 @@ class CoverageResults:
         self.callers = self.callers.copy()
         self.infile = infile
         self.outfile = outfile
-        if self.infile is not None:
+        if self.infile:
             # Try to merge existing counts file.
             try:
                 with open(self.infile, 'rb') as f:
                     counts, calledfuncs, callers = pickle.load(f)
-                self.update(CoverageResults(counts, calledfuncs, callers=callers))
+                self.update(self.__class__(counts, calledfuncs, callers=callers))
             except (OSError, EOFError, ValueError) as err:
                 print(("Skipping counts file %r: %s"
                                       % (self.infile, err)), file=sys.stderr)
