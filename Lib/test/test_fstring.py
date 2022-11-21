@@ -1114,6 +1114,8 @@ x = (
                              "f'x{<'",  # See bpo-46762.
                              "f'x{>'",
                              "f'{i='",  # See gh-93418.
+                             "f'{i=!r'",
+                             "f'{i=!r:10 '",
                              ])
 
         # But these are just normal strings.
