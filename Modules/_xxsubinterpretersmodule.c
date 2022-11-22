@@ -165,6 +165,7 @@ typedef struct {
 static inline module_state *
 get_module_state(PyObject *mod)
 {
+    assert(mod != NULL);
     module_state *state = PyModule_GetState(mod);
     assert(state != NULL);
     return state;
@@ -468,12 +469,6 @@ _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 #define ERR_CHANNELS_MUTEX_INIT -8
 #define ERR_NO_NEXT_CHANNEL_ID -9
 
-static PyObject *ChannelError;
-static PyObject *ChannelNotFoundError;
-static PyObject *ChannelClosedError;
-static PyObject *ChannelEmptyError;
-static PyObject *ChannelNotEmptyError;
-
 static int
 channel_exceptions_init(PyObject *mod)
 {
@@ -489,66 +484,65 @@ channel_exceptions_init(PyObject *mod)
         if (state->NAME == NULL) { \
             return -1; \
         } \
-        if (NAME == NULL) { \
-            NAME = Py_NewRef(state->NAME); \
-        } \
     } while (0)
 
     // A channel-related operation failed.
     ADD(ChannelError, PyExc_RuntimeError);
     // An operation tried to use a channel that doesn't exist.
-    ADD(ChannelNotFoundError, ChannelError);
+    ADD(ChannelNotFoundError, state->ChannelError);
     // An operation tried to use a closed channel.
-    ADD(ChannelClosedError, ChannelError);
+    ADD(ChannelClosedError, state->ChannelError);
     // An operation tried to pop from an empty channel.
-    ADD(ChannelEmptyError, ChannelError);
+    ADD(ChannelEmptyError, state->ChannelError);
     // An operation tried to close a non-empty channel.
-    ADD(ChannelNotEmptyError, ChannelError);
+    ADD(ChannelNotEmptyError, state->ChannelError);
 #undef ADD
 
     return 0;
 }
 
 static int
-handle_channel_error(int err, PyObject *Py_UNUSED(mod), int64_t cid)
+handle_channel_error(int err, PyObject *mod, int64_t cid)
 {
     if (err == 0) {
         assert(!PyErr_Occurred());
         return 0;
     }
     assert(err < 0);
+    module_state *state = get_module_state(mod);
+    assert(state != NULL);
     if (err == ERR_CHANNEL_NOT_FOUND) {
-        PyErr_Format(ChannelNotFoundError,
+        PyErr_Format(state->ChannelNotFoundError,
                      "channel %" PRId64 " not found", cid);
     }
     else if (err == ERR_CHANNEL_CLOSED) {
-        PyErr_Format(ChannelClosedError,
+        PyErr_Format(state->ChannelClosedError,
                      "channel %" PRId64 " is closed", cid);
     }
     else if (err == ERR_CHANNEL_INTERP_CLOSED) {
-        PyErr_Format(ChannelClosedError,
+        PyErr_Format(state->ChannelClosedError,
                      "channel %" PRId64 " is already closed", cid);
     }
     else if (err == ERR_CHANNEL_EMPTY) {
-        PyErr_Format(ChannelEmptyError,
+        PyErr_Format(state->ChannelEmptyError,
                      "channel %" PRId64 " is empty", cid);
     }
     else if (err == ERR_CHANNEL_NOT_EMPTY) {
-        PyErr_Format(ChannelNotEmptyError,
+        PyErr_Format(state->ChannelNotEmptyError,
                      "channel %" PRId64 " may not be closed "
                      "if not empty (try force=True)",
                      cid);
     }
     else if (err == ERR_CHANNEL_MUTEX_INIT) {
-        PyErr_SetString(ChannelError,
+        PyErr_SetString(state->ChannelError,
                         "can't initialize mutex for new channel");
     }
     else if (err == ERR_CHANNELS_MUTEX_INIT) {
-        PyErr_SetString(ChannelError,
+        PyErr_SetString(state->ChannelError,
                         "can't initialize mutex for channel management");
     }
     else if (err == ERR_NO_NEXT_CHANNEL_ID) {
-        PyErr_SetString(ChannelError,
+        PyErr_SetString(state->ChannelError,
                         "failed to get a channel ID");
     }
     else {
@@ -2086,8 +2080,6 @@ static PyTypeObject ChannelIDType = {
 
 /* interpreter-specific code ************************************************/
 
-static PyObject * RunFailedError = NULL;
-
 static int
 interp_exceptions_init(PyObject *mod)
 {
@@ -2102,9 +2094,6 @@ interp_exceptions_init(PyObject *mod)
         state->NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
         if (state->NAME == NULL) { \
             return -1; \
-        } \
-        if (NAME == NULL) { \
-            NAME = Py_NewRef(state->NAME); \
         } \
     } while (0)
 
@@ -2253,7 +2242,9 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Propagate any exception out to the caller.
     if (exc != NULL) {
-        _sharedexception_apply(exc, RunFailedError);
+        module_state *state = get_module_state(mod);
+        assert(state != NULL);
+        _sharedexception_apply(exc, state->RunFailedError);
         _sharedexception_free(exc);
     }
     else if (result != 0) {
@@ -3001,6 +2992,7 @@ static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
+    assert(state != NULL);
     traverse_module_state(state, visit, arg);
     return 0;
 }
@@ -3009,6 +3001,7 @@ static int
 module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
+    assert(state != NULL);
     clear_module_state(state);
     return 0;
 }

@@ -523,12 +523,6 @@ Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelNotFoundError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelClosedError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelEmptyError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelNotEmptyError	-
-Modules/_xxsubinterpretersmodule.c	-	RunFailedError	-
 Modules/ossaudiodev.c	-	OSSAudioError	-
 Modules/socketmodule.c	-	socket_herror	-
 Modules/socketmodule.c	-	socket_gaierror	-
