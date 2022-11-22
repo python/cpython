@@ -106,6 +106,7 @@
     <ClCompile Include="..\Modules\_testcapi\watchers.c" />
     <ClCompile Include="..\Modules\_testcapi\float.c" />
     <ClCompile Include="..\Modules\_testcapi\long.c" />
+    <ClCompile Include="..\Modules\_testcapi\structmember.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
