@@ -2764,6 +2764,7 @@
             tb = PyException_GetTraceback(val);
             Py_XDECREF(tb);
             assert(PyLong_Check(lasti));
+            (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};
             res = PyObject_Vectorcall(exit_func, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
