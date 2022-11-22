@@ -84,12 +84,8 @@ class Instruction(parser.InstDef):
                         f"read_obj(next_instr + {cache_offset});\n"
                     )
                 else:
-                    f.write(f"{indent}    uint{bits}_t {ceffect.name} = ")
-                    if ceffect.size == 1:
-                        # There is no read_u16() helper function.
-                        f.write(f"*(next_instr + {cache_offset});\n")
-                    else:
-                        f.write(f"read_u{bits}(next_instr + {cache_offset});\n")
+                    f.write(f"{indent}    uint{bits}_t {ceffect.name} = "
+                        f"read_u{bits}(next_instr + {cache_offset});\n")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset
 
