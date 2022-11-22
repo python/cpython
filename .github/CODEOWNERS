@@ -63,7 +63,7 @@ Python/traceback.c            @iritkatriel
 # bytecode.
 **/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-**/*importlib/resources/*      @jaraco @warsaw @brettcannon
+**/*importlib/resources/*      @jaraco @warsaw @brettcannon @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
@@ -137,8 +137,6 @@ Lib/ast.py                    @isidentical
 
 **/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra @AlexWaygood
 
-**/*asyncore                  @giampaolo
-**/*asynchat                  @giampaolo
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
 
@@ -147,6 +145,8 @@ Lib/ast.py                    @isidentical
 **/*tarfile*                  @ethanfurman
 
 **/*tomllib*                  @encukou
+
+**/*sysconfig*                @FFY00
 
 # macOS
 /Mac/                         @python/macos-team

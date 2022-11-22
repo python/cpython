@@ -291,8 +291,7 @@ _winapi_Overlapped_getbuffer_impl(OverlappedObject *self)
         return NULL;
     }
     res = self->read_buffer ? self->read_buffer : Py_None;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 /*[clinic input]
@@ -1086,14 +1085,6 @@ _winapi_CreateProcess_impl(PyObject *module,
 
     if (PySys_Audit("_winapi.CreateProcess", "uuu", application_name,
                     command_line, current_directory) < 0) {
-        return NULL;
-    }
-
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (config->_isolated_interpreter) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "subprocess not supported for isolated subinterpreters");
         return NULL;
     }
 

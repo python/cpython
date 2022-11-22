@@ -383,11 +383,11 @@ Project, https://www.wide.ad.jp/. ::
    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
    SUCH DAMAGE.
 
-
 Asynchronous socket services
 ----------------------------
 
-The :mod:`asynchat` and :mod:`asyncore` modules contain the following notice::
+The :mod:`test.support.asynchat` and :mod:`test.support.asyncore`
+modules contain the following notice::
 
    Copyright 1996 by Sam Rushing
 

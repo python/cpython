@@ -63,8 +63,7 @@ update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
             }
             for (j = 0; j < i; j++) {
                 base = args[j];
-                PyList_SET_ITEM(new_bases, j, base);
-                Py_INCREF(base);
+                PyList_SET_ITEM(new_bases, j, Py_NewRef(base));
             }
         }
         j = PyList_GET_SIZE(new_bases);
@@ -169,9 +168,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
         if (winner != meta) {
-            Py_DECREF(meta);
-            meta = winner;
-            Py_INCREF(meta);
+            Py_SETREF(meta, Py_NewRef(winner));
         }
     }
     /* else: meta is not a class, so we cannot do the metaclass
@@ -804,8 +801,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
     if (is_ast) {
         if (flags & PyCF_ONLY_AST) {
-            Py_INCREF(source);
-            result = source;
+            result = Py_NewRef(source);
         }
         else {
             PyArena *arena;
@@ -1128,8 +1124,7 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs > 2) {
         if (_PyObject_LookupAttr(v, name, &result) == 0) {
             PyObject *dflt = args[2];
-            Py_INCREF(dflt);
-            return dflt;
+            return Py_NewRef(dflt);
         }
     }
     else {
@@ -1162,8 +1157,7 @@ builtin_globals_impl(PyObject *module)
     PyObject *d;
 
     d = PyEval_GetGlobals();
-    Py_XINCREF(d);
-    return d;
+    return Py_XNewRef(d);
 }
 
 
@@ -1390,12 +1384,10 @@ map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
     Py_ssize_t i;
     if (args == NULL)
         return NULL;
-    Py_INCREF(lz->func);
-    PyTuple_SET_ITEM(args, 0, lz->func);
+    PyTuple_SET_ITEM(args, 0, Py_NewRef(lz->func));
     for (i = 0; i<numargs; i++){
         PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
-        Py_INCREF(it);
-        PyTuple_SET_ITEM(args, i+1, it);
+        PyTuple_SET_ITEM(args, i+1, Py_NewRef(it));
     }
 
     return Py_BuildValue("ON", Py_TYPE(lz), args);
@@ -1486,8 +1478,7 @@ builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
                 return NULL;
             PyErr_Clear();
         }
-        Py_INCREF(def);
-        return def;
+        return Py_NewRef(def);
     } else if (PyErr_Occurred()) {
         return NULL;
     } else {
@@ -1723,8 +1714,7 @@ builtin_locals_impl(PyObject *module)
     PyObject *d;
 
     d = PyEval_GetLocals();
-    Py_XINCREF(d);
-    return d;
+    return Py_XNewRef(d);
 }
 
 
@@ -1785,8 +1775,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
         }
         /* no key function; the value is the item */
         else {
-            val = item;
-            Py_INCREF(val);
+            val = Py_NewRef(item);
         }
 
         /* maximum value and item are unset; set them */
@@ -1816,8 +1805,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
     if (maxval == NULL) {
         assert(maxitem == NULL);
         if (defaultval != NULL) {
-            Py_INCREF(defaultval);
-            maxitem = defaultval;
+            maxitem = Py_NewRef(defaultval);
         } else {
             PyErr_Format(PyExc_ValueError,
                          "%s() arg is an empty sequence", name);
@@ -2413,8 +2401,7 @@ builtin_vars(PyObject *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
         return NULL;
     if (v == NULL) {
-        d = PyEval_GetLocals();
-        Py_XINCREF(d);
+        d = Py_XNewRef(PyEval_GetLocals());
     }
     else {
         if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &d) == 0) {
@@ -2737,8 +2724,7 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     for (i=0 ; i < tuplesize ; i++) {
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(result, i, Py_None);
+        PyTuple_SET_ITEM(result, i, Py_NewRef(Py_None));
     }
 
     /* create zipobject structure */

@@ -1,2 +1,0 @@
-Fraction literals now support whitespace around the forward slash,
-``Fraction('2 / 3')``.

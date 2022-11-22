@@ -1,2 +1,0 @@
-Fix :class:`asyncio.streams.StreamReaderProtocol` to keep a strong reference
-to the created task, so that it's not garbage collected
