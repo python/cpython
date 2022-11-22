@@ -946,6 +946,15 @@ _channels_init(_channels *channels)
     return 0;
 }
 
+static void
+_channels_fini(_channels *channels)
+{
+    if (channels->mutex != NULL) {
+        PyThread_free_lock(channels->mutex);
+        channels->mutex = NULL;
+    }
+}
+
 static int64_t
 _channels_next_id(_channels *channels)  // needs lock
 {
@@ -1968,16 +1977,36 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
    the data that we need to share between interpreters, so it cannot
    hold PyObject values. */
 static struct globals {
+    int module_count;
     _channels channels;
-} _globals = {{0}};
+} _globals = {0};
 
 static int
-_init_globals(void)
+_globals_init(void)
 {
+    // XXX This isn't thread-safe.
+    _globals.module_count++;
+    if (_globals.module_count > 1) {
+        // Already initialized.
+        return 0;
+    }
+
     if (_channels_init(&_globals.channels) != 0) {
         return -1;
     }
     return 0;
+}
+
+static void
+_globals_fini(void)
+{
+    // XXX This isn't thread-safe.
+    if (_globals.module_count > 1) {
+        return;
+    }
+    _globals.module_count--;
+
+    _channels_fini(&_globals.channels);
 }
 
 static _channels *
@@ -2598,40 +2627,44 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__xxsubinterpreters(void)
 {
-    if (_init_globals() != 0) {
+    if (_globals_init() != 0) {
         return NULL;
     }
 
     /* Initialize types */
     if (PyType_Ready(&ChannelIDtype) != 0) {
-        return NULL;
+        goto error;
     }
 
     /* Create the module */
     PyObject *mod = PyModule_Create(&moduledef);
     if (mod == NULL) {
-        return NULL;
+        goto error;
     }
 
     /* Add exception types */
     if (interp_exceptions_init(mod) != 0) {
-        return NULL;
+        goto error;
     }
     if (channel_exceptions_init(mod) != 0) {
-        return NULL;
+        goto error;
     }
 
     /* Add other types */
     if (PyModule_AddType(mod, &ChannelIDtype) < 0) {
-        return NULL;
+        goto error;
     }
     if (PyModule_AddType(mod, &_PyInterpreterID_Type) < 0) {
-        return NULL;
+        goto error;
     }
 
     if (_PyCrossInterpreterData_RegisterClass(&ChannelIDtype, _channelid_shared)) {
-        return NULL;
+        goto error;
     }
 
     return mod;
+
+error:
+    _globals_fini();
+    return NULL;
 }
