@@ -8280,9 +8280,7 @@ merge_const_one(PyObject *const_cache, PyObject **obj)
         t = PyTuple_GET_ITEM(t, 1);
     }
 
-    Py_INCREF(t);
-    Py_DECREF(*obj);
-    *obj = t;
+    Py_SETREF(*obj, Py_NewRef(t));
     return 1;
 }
 
