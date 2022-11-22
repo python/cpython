@@ -231,8 +231,7 @@ zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
 
     goto cleanup;
 error:
-    Py_XDECREF(self);
-    self = NULL;
+    Py_CLEAR(self);
 cleanup:
     if (file_obj != NULL) {
         PyObject *exc, *val, *tb;
@@ -2606,14 +2605,9 @@ static PyMethodDef module_methods[] = {{NULL, NULL}};
 static void
 module_free(void *m)
 {
-    Py_XDECREF(_tzpath_find_tzfile);
-    _tzpath_find_tzfile = NULL;
-
-    Py_XDECREF(_common_mod);
-    _common_mod = NULL;
-
-    Py_XDECREF(io_open);
-    io_open = NULL;
+    Py_CLEAR(_tzpath_find_tzfile);
+    Py_CLEAR(_common_mod);
+    Py_CLEAR(io_open);
 
     xdecref_ttinfo(&NO_TTINFO);
 
