@@ -12,6 +12,7 @@ extern "C" {
 /* runtime lifecycle */
 
 extern PyStatus _PyErr_InitTypes(PyInterpreterState *);
+extern void _PyErr_FiniTypes(PyInterpreterState *);
 
 
 /* other API */
@@ -87,9 +88,9 @@ PyAPI_FUNC(PyObject *) _PyExc_CreateExceptionGroup(
     const char *msg,
     PyObject *excs);
 
-PyAPI_FUNC(PyObject *) _PyExc_ExceptionGroupProjection(
-    PyObject *left,
-    PyObject *right);
+PyAPI_FUNC(PyObject *) _PyExc_PrepReraiseStar(
+    PyObject *orig,
+    PyObject *excs);
 
 PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
@@ -98,13 +99,6 @@ PyAPI_FUNC(void) _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);
-
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
-    const char *func,
-    const char *message);
-
-#define _Py_FatalRefcountError(message) _Py_FatalRefcountErrorFunc(__func__, message)
-
 
 #ifdef __cplusplus
 }

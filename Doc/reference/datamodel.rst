@@ -316,7 +316,7 @@ Sequences
 
          A string is a sequence of values that represent Unicode code points.
          All the code points in the range ``U+0000 - U+10FFFF`` can be
-         represented in a string.  Python doesn't have a :c:type:`char` type;
+         represented in a string.  Python doesn't have a :c:expr:`char` type;
          instead, every code point in the string is represented as a string
          object with length ``1``.  The built-in function :func:`ord`
          converts a code point from its string form to an integer in the
@@ -1270,7 +1270,7 @@ Basic customization
 
    Typical implementations create a new instance of the class by invoking the
    superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
-   with appropriate arguments and then modifying the newly-created instance
+   with appropriate arguments and then modifying the newly created instance
    as necessary before returning it.
 
    If :meth:`__new__` is invoked during object construction and it returns an
@@ -1501,7 +1501,7 @@ Basic customization
 
    Called by built-in function :func:`hash` and for operations on members of
    hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  :meth:`__hash__` should return an integer. The only required
+   :class:`dict`.  The ``__hash__()`` method should return an integer. The only required
    property is that objects which compare equal have the same hash value; it is
    advised to mix together the hash values of the components of the object that
    also play a part in comparison of objects by packing them into a tuple and
@@ -1560,7 +1560,7 @@ Basic customization
       predictable between repeated invocations of Python.
 
       This is intended to provide protection against a denial-of-service caused
-      by carefully-chosen inputs that exploit the worst case performance of a
+      by carefully chosen inputs that exploit the worst case performance of a
       dict insertion, O(n\ :sup:`2`) complexity.  See
       http://www.ocert.org/advisories/ocert-2011-003.html for details.
 
@@ -1904,6 +1904,8 @@ Attribute lookup speed can be significantly improved as well.
    and *__weakref__* for each instance.
 
 
+.. _datamodel-note-slots:
+
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
@@ -1944,9 +1946,12 @@ Notes on using *__slots__*
 * Nonempty *__slots__* does not work for classes derived from "variable-length"
   built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
 
-* Any non-string iterable may be assigned to *__slots__*. Mappings may also be
-  used; however, in the future, special meaning may be assigned to the values
-  corresponding to each key.
+* Any non-string :term:`iterable` may be assigned to *__slots__*.
+
+* If a :class:`dictionary <dict>` is used to assign *__slots__*, the dictionary
+  keys will be used as the slot names. The values of the dictionary can be used
+  to provide per-attribute docstrings that will be recognised by
+  :func:`inspect.getdoc` and displayed in the output of :func:`help`.
 
 * :attr:`~instance.__class__` assignment works only if both classes have the
   same *__slots__*.
@@ -1968,7 +1973,7 @@ Customizing class creation
 --------------------------
 
 Whenever a class inherits from another class, :meth:`~object.__init_subclass__` is
-called on that class. This way, it is possible to write classes which
+called on the parent class. This way, it is possible to write classes which
 change the behavior of subclasses. This is closely related to class
 decorators, but where class decorators only affect the specific class they're
 applied to, ``__init_subclass__`` solely applies to future subclasses of the
@@ -2757,6 +2762,9 @@ left undefined.
    The built-in function :func:`int` falls back to :meth:`__trunc__` if neither
    :meth:`__int__` nor :meth:`__index__` is defined.
 
+   .. versionchanged:: 3.11
+      The delegation of :func:`int` to :meth:`__trunc__` is deprecated.
+
 
 .. _context-managers:
 
@@ -2978,7 +2986,8 @@ generators, coroutines do not directly support iteration.
    :exc:`StopIteration`, or other exception) is the same as when
    iterating over the :meth:`__await__` return value, described above.
 
-.. method:: coroutine.throw(type[, value[, traceback]])
+.. method:: coroutine.throw(value)
+            coroutine.throw(type[, value[, traceback]])
 
    Raises the specified exception in the coroutine.  This method delegates
    to the :meth:`~generator.throw` method of the iterator that caused
@@ -2988,6 +2997,11 @@ generators, coroutines do not directly support iteration.
    when iterating over the :meth:`~object.__await__` return value, described
    above.  If the exception is not caught in the coroutine, it propagates
    back to the caller.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
 
 .. method:: coroutine.close()
 

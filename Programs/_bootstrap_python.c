@@ -2,7 +2,7 @@
 /* Frozen modules bootstrap
  *
  * Limited and restricted Python interpreter to run
- * "Tools/scripts/deepfreeze.py" on systems with no or older Python
+ * "Tools/build/deepfreeze.py" on systems with no or older Python
  * interpreter.
  */
 
@@ -13,6 +13,17 @@
 #include "Python/frozen_modules/importlib._bootstrap.h"
 #include "Python/frozen_modules/importlib._bootstrap_external.h"
 /* End includes */
+
+/* Empty initializer for deepfrozen modules */
+int _Py_Deepfreeze_Init(void)
+{
+    return 0;
+}
+/* Empty finalizer for deepfrozen modules */
+void
+_Py_Deepfreeze_Fini(void)
+{
+}
 
 /* Note that a negative size indicates a package. */
 
@@ -60,6 +71,7 @@ main(int argc, char **argv)
     config.parse_argv = 1;
     // add current script dir to sys.path
     config.isolated = 0;
+    config.safe_path = 0;
 
 #ifdef MS_WINDOWS
     status = PyConfig_SetArgv(&config, argc, argv);
@@ -103,3 +115,4 @@ error:
     }
     Py_ExitStatusException(status);
 }
+

@@ -236,7 +236,7 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
     in hardware they will fall back to a full memory barrier as well.
 
     This might affect performance but likely only in some very specific and
-    hard to meassure scenario.
+    hard to measure scenario.
 */
 #if defined(_M_IX86) || defined(_M_X64)
 typedef enum _Py_memory_order {

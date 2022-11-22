@@ -18,6 +18,7 @@ typedef struct {
     PyTypeObject *reader_type;
     PyTypeObject *writer_type;
     PyTypeObject *multibytecodec_type;
+    PyObject *str_write;
 } _multibytecodec_state;
 
 static _multibytecodec_state *
@@ -32,7 +33,7 @@ static struct PyModuleDef _multibytecodecmodule;
 static _multibytecodec_state *
 _multibyte_codec_find_state_by_type(PyTypeObject *type)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &_multibytecodecmodule);
+    PyObject *module = PyType_GetModuleByDef(type, &_multibytecodecmodule);
     assert(module != NULL);
     return _multibytecodec_get_state(module);
 }
@@ -70,8 +71,6 @@ static PyObject *multibytecodec_encode(MultibyteCodec *,
                 PyObject *, int);
 
 #define MBENC_RESET     MBENC_MAX<<1 /* reset after an encoding session */
-
-_Py_IDENTIFIER(write);
 
 static PyObject *
 make_tuple(PyObject *object, Py_ssize_t len)
@@ -142,8 +141,7 @@ codecctx_errors_get(MultibyteStatefulCodecContext *self, void *Py_UNUSED(ignored
     else if (self->errors == ERROR_REPLACE)
         errors = "replace";
     else {
-        Py_INCREF(self->errors);
-        return self->errors;
+        return Py_NewRef(self->errors);
     }
 
     return PyUnicode_FromString(errors);
@@ -342,8 +340,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
             goto errorexit;
     }
     else {
-        Py_INCREF(tobj);
-        retstr = tobj;
+        retstr = Py_NewRef(tobj);
     }
 
     assert(PyBytes_Check(retstr));
@@ -787,11 +784,9 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     if (ctx->pending) {
         PyObject *inbuf_tmp;
 
-        Py_INCREF(ctx->pending);
-        origpending = ctx->pending;
+        origpending = Py_NewRef(ctx->pending);
 
-        Py_INCREF(ctx->pending);
-        inbuf_tmp = ctx->pending;
+        inbuf_tmp = Py_NewRef(ctx->pending);
         PyUnicode_Append(&inbuf_tmp, unistr);
         if (inbuf_tmp == NULL)
             goto errorexit;
@@ -801,8 +796,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     else {
         origpending = NULL;
 
-        Py_INCREF(unistr);
-        inbuf = unistr;
+        inbuf = Py_NewRef(unistr);
     }
     if (PyUnicode_READY(inbuf) < 0)
         goto errorexit;
@@ -986,8 +980,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
         goto errorexit;
     }
 
-    Py_CLEAR(self->pending);
-    self->pending = pending;
+    Py_XSETREF(self->pending, pending);
     memcpy(self->state.c, statebytes+1+statebytes[0],
            sizeof(self->state.c));
 
@@ -1444,8 +1437,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
             memcpy(ctrdata + self->pendingsize,
                     PyBytes_AS_STRING(cres),
                     PyBytes_GET_SIZE(cres));
-            Py_DECREF(cres);
-            cres = ctr;
+            Py_SETREF(cres, ctr);
             self->pendingsize = 0;
         }
 
@@ -1646,8 +1638,7 @@ mbstreamreader_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     self->codec = ((MultibyteCodecObject *)codec)->codec;
-    self->stream = stream;
-    Py_INCREF(stream);
+    self->stream = Py_NewRef(stream);
     self->pendingsize = 0;
     self->errors = internal_error_callback(errors);
     if (self->errors == NULL)
@@ -1714,7 +1705,7 @@ static PyType_Spec reader_spec = {
 
 static int
 mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
-                      PyObject *unistr)
+                      PyObject *unistr, PyObject *str_write)
 {
     PyObject *str, *wr;
 
@@ -1722,7 +1713,7 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
     if (str == NULL)
         return -1;
 
-    wr = _PyObject_CallMethodIdOneArg(self->stream, &PyId_write, str);
+    wr = _PyObject_CallMethodOneArg(self->stream, str_write, str);
     Py_DECREF(str);
     if (wr == NULL)
         return -1;
@@ -1734,32 +1725,38 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
 /*[clinic input]
  _multibytecodec.MultibyteStreamWriter.write
 
+    cls: defining_class
     strobj: object
     /
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self,
-                                            PyObject *strobj)
-/*[clinic end generated code: output=e13ae841c895251e input=551dc4c018c10a2b]*/
+_multibytecodec_MultibyteStreamWriter_write_impl(MultibyteStreamWriterObject *self,
+                                                 PyTypeObject *cls,
+                                                 PyObject *strobj)
+/*[clinic end generated code: output=68ade3aea26410ac input=199f26f68bd8425a]*/
 {
-    if (mbstreamwriter_iwrite(self, strobj))
+    _multibytecodec_state *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+    if (mbstreamwriter_iwrite(self, strobj, state->str_write)) {
         return NULL;
-    else
-        Py_RETURN_NONE;
+    }
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
  _multibytecodec.MultibyteStreamWriter.writelines
 
+    cls: defining_class
     lines: object
     /
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *self,
-                                                 PyObject *lines)
-/*[clinic end generated code: output=e5c4285ac8e7d522 input=57797fe7008d4e96]*/
+_multibytecodec_MultibyteStreamWriter_writelines_impl(MultibyteStreamWriterObject *self,
+                                                      PyTypeObject *cls,
+                                                      PyObject *lines)
+/*[clinic end generated code: output=b4c99d2cf23ffb88 input=a6d5fe7c74972a34]*/
 {
     PyObject *strobj;
     int i, r;
@@ -1770,13 +1767,15 @@ _multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *se
         return NULL;
     }
 
+    _multibytecodec_state *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
     for (i = 0; i < PySequence_Length(lines); i++) {
         /* length can be changed even within this loop */
         strobj = PySequence_GetItem(lines, i);
         if (strobj == NULL)
             return NULL;
 
-        r = mbstreamwriter_iwrite(self, strobj);
+        r = mbstreamwriter_iwrite(self, strobj, state->str_write);
         Py_DECREF(strobj);
         if (r == -1)
             return NULL;
@@ -1790,11 +1789,16 @@ _multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *se
 
 /*[clinic input]
  _multibytecodec.MultibyteStreamWriter.reset
+
+    cls: defining_class
+    /
+
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *self)
-/*[clinic end generated code: output=8f54a4d9b03db5ff input=b56dbcbaf35cc10c]*/
+_multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *self,
+                                                 PyTypeObject *cls)
+/*[clinic end generated code: output=32ef224c2a38aa3d input=28af6a9cd38d1979]*/
 {
     PyObject *pwrt;
 
@@ -1813,10 +1817,14 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
         return NULL;
 
     assert(PyBytes_Check(pwrt));
+
+    _multibytecodec_state *state = PyType_GetModuleState(cls);
+    assert(state != NULL);
+
     if (PyBytes_Size(pwrt) > 0) {
         PyObject *wr;
 
-        wr = _PyObject_CallMethodIdOneArg(self->stream, &PyId_write, pwrt);
+        wr = _PyObject_CallMethodOneArg(self->stream, state->str_write, pwrt);
         if (wr == NULL) {
             Py_DECREF(pwrt);
             return NULL;
@@ -1853,8 +1861,7 @@ mbstreamwriter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     self->codec = ((MultibyteCodecObject *)codec)->codec;
-    self->stream = stream;
-    Py_INCREF(stream);
+    self->stream = Py_NewRef(stream);
     self->pending = NULL;
     self->errors = internal_error_callback(errors);
     if (self->errors == NULL)
@@ -1988,6 +1995,7 @@ _multibytecodec_clear(PyObject *mod)
     Py_CLEAR(state->decoder_type);
     Py_CLEAR(state->reader_type);
     Py_CLEAR(state->writer_type);
+    Py_CLEAR(state->str_write);
     return 0;
 }
 
@@ -2016,6 +2024,10 @@ static int
 _multibytecodec_exec(PyObject *mod)
 {
     _multibytecodec_state *state = _multibytecodec_get_state(mod);
+    state->str_write = PyUnicode_InternFromString("write");
+    if (state->str_write == NULL) {
+        return -1;
+    }
     CREATE_TYPE(mod, state->multibytecodec_type, &multibytecodec_spec);
     CREATE_TYPE(mod, state->encoder_type, &encoder_spec);
     CREATE_TYPE(mod, state->decoder_type, &decoder_spec);

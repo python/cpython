@@ -217,7 +217,7 @@ class OtherFileTests:
             self._checkBufferSize(1)
 
     def testTruncateOnWindows(self):
-        # SF bug <http://www.python.org/sf/801631>
+        # SF bug <https://bugs.python.org/issue801631>
         # "file.truncate fault on windows"
 
         f = self.open(TESTFN, 'wb')

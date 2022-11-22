@@ -1,2 +1,0 @@
-Add a --with-pystats configure option to turn on internal statistics
-gathering.
