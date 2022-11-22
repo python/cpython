@@ -2615,30 +2615,15 @@ PyDoc_STRVAR(module_doc,
 "This module provides primitive operations to manage Python interpreters.\n\
 The 'interpreters' module provides a more convenient interface.");
 
-static struct PyModuleDef moduledef = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = MODULE_NAME,
-    .m_doc = module_doc,
-    .m_size = -1,
-    .m_methods = module_functions,
-};
-
-
-PyMODINIT_FUNC
-PyInit__xxsubinterpreters(void)
+static int
+module_exec(PyObject *mod)
 {
     if (_globals_init() != 0) {
-        return NULL;
+        return -1;
     }
 
     /* Initialize types */
     if (PyType_Ready(&ChannelIDtype) != 0) {
-        goto error;
-    }
-
-    /* Create the module */
-    PyObject *mod = PyModule_Create(&moduledef);
-    if (mod == NULL) {
         goto error;
     }
 
@@ -2662,9 +2647,33 @@ PyInit__xxsubinterpreters(void)
         goto error;
     }
 
-    return mod;
+    return 0;
 
 error:
     _globals_fini();
-    return NULL;
+    return -1;
+}
+
+static struct PyModuleDef moduledef = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = MODULE_NAME,
+    .m_doc = module_doc,
+    .m_size = -1,
+    .m_methods = module_functions,
+};
+
+
+PyMODINIT_FUNC
+PyInit__xxsubinterpreters(void)
+{
+    /* Create the module */
+    PyObject *mod = PyModule_Create(&moduledef);
+    if (mod == NULL) {
+        return NULL;
+    }
+    if (module_exec(mod) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
 }
