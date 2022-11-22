@@ -73,10 +73,7 @@ class _Outcome(object):
                 else:
                     _addError(self.result, test_case, sys.exc_info())
                 if self.debug:
-                    on_crash = None
-                    if not subTest:
-                        on_crash = lambda: self.pm_frame_holds.append(_AutoDelRunner(self.pm_cleanup))
-                    _handle_debug_exception(self.debug, on_crash=on_crash)
+                    _handle_debug_exception(self.debug)
         else:
             if subTest and self.success:
                 self.result.addSubTest(test_case.test_case, test_case, None)
@@ -662,17 +659,8 @@ class TestCase(object):
                     if getattr(deb, '_user_requested_quit', False):
                         raise DebuggerQuit("Debugger user quit")
                 testMethod = trace_wrapper
-                debug = False
             else:
                 outcome.debug = debug
-                # delayed post-mortem (--debug) cleanup when frame is finally recycled
-                def pm_cleanup1():
-                    self.doCleanups()
-                def pm_cleanup2():
-                    self._callTearDown()
-                    self.doCleanups()
-                outcome.pm_cleanup = pm_cleanup1
-                outcome.pm_frame_holds = frame_holds = []  # noqa
 
         result.startTest(self)
         try:
@@ -689,25 +677,22 @@ class TestCase(object):
                 getattr(testMethod, "__unittest_expecting_failure__", False)
             )
 
+            pm_state = 'c'
             try:
                 self._outcome = outcome
 
                 with outcome.testPartExecutor(self):
                     self._callSetUp()
                 if outcome.success:
+                    pm_state = 'tc'
                     outcome.expecting_failure = expecting_failure
-                    if debug:
-                        outcome.pm_cleanup = pm_cleanup2
                     with outcome.testPartExecutor(self):
                         self._callTestMethod(testMethod)
                     outcome.expecting_failure = False
-                    if debug:
-                        outcome.pm_cleanup = pm_cleanup1
                     with outcome.testPartExecutor(self):
+                        pm_state = 'c'
                         self._callTearDown()
 
-                # Not dropping pm_cleanup1 here - doCleanups() pops from
-                # a LIFO and its desirable to continue delayed upon pm crash
                 self.doCleanups()
 
                 if outcome.success:
@@ -719,6 +704,17 @@ class TestCase(object):
                     else:
                         result.addSuccess(self)
                 return result
+            except:
+                def pm_teardown_case():
+                    try:
+                        if 't' in pm_state:
+                            self._callTearDown()
+                    finally:
+                        # doCleanups() pops from a LIFO and may continue upon break
+                        self.doCleanups()
+                # delayed post-mortem teardown when frame is finally recycled
+                auto_pm_teardown = _AutoDelRunner(pm_teardown_case)  # noqa
+                raise
             finally:
                 # explicitly break reference cycle:
                 # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure

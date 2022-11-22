@@ -107,41 +107,60 @@ class TestSuite(BaseTestSuite):
         if getattr(result, '_testRunEntered', False) is False:
             result._testRunEntered = topLevel = True
 
-        for index, test in enumerate(self):
-            if result.shouldStop:
-                break
+        result._pm_state = 'CM'
+        try:
+            for index, test in enumerate(self):
+                if result.shouldStop:
+                    break
 
-            if _isnotsuite(test):
-                self._tearDownPreviousClass(test, result)
-                self._handleModuleFixture(test, result)
-                self._handleClassSetUp(test, result)
-                result._previousTestClass = test.__class__
+                if _isnotsuite(test):
+                    result._pm_state = 'M'
+                    self._tearDownPreviousClass(test, result)
+                    result._pm_state = ''
+                    self._handleModuleFixture(test, result)
+                    result._pm_state = 'M'
+                    result._previousTCM = test.__class__  # ClassSetUp may fail
+                    self._handleClassSetUp(test, result)
+                    result._pm_state = 'CM'
+                    result._previousTestClass = test.__class__
 
-                if (getattr(test.__class__, '_classSetupFailed', False) or
-                    getattr(result, '_moduleSetUpFailed', False)):
-                    continue
+                    if (getattr(test.__class__, '_classSetupFailed', False) or
+                        getattr(result, '_moduleSetUpFailed', False)):
+                        continue
 
-            try:
                 test(result)
-            except:
-                def pm_teardown():
-                    # delayed post-mortem (--debug) teardown when frame is finally recycled
-                    if topLevel:
-                        try:
-                            self._tearDownPreviousClass(None, result)
-                        finally:
-                            self._handleModuleTearDown(result)
-                        result._testRunEntered = False
-                frame_holds = case._AutoDelRunner(pm_teardown)  # noqa
-                raise
 
-            if self._cleanup:
-                self._removeTestAtIndex(index)
+                if self._cleanup:
+                    self._removeTestAtIndex(index)
 
-        if topLevel:
-            self._tearDownPreviousClass(None, result)
-            self._handleModuleTearDown(result)
-            result._testRunEntered = False
+            if topLevel:
+                result._pm_state = 'M'
+                self._tearDownPreviousClass(None, result)
+                result._pm_state = ''
+                self._handleModuleTearDown(result)
+                result._testRunEntered = False
+        except:
+            def pm_teardown():
+                if topLevel:
+                    result._debug = None
+                    if 'C' in result._pm_state:
+                        self._tearDownPreviousClass(None, result)
+                    elif getattr(result, '_previousTCM', None):
+                        result._previousTestClass = result._previousTCM
+                    previousClass = getattr(result, '_previousTestClass', None)
+                    doClassCleanups = getattr(previousClass, 'doClassCleanups', None)
+                    if doClassCleanups is not None:
+                        # LIFO, safe to repeat / continue upon brake
+                        doClassCleanups()
+                    if 'M' in result._pm_state:
+                        self._handleModuleTearDown(result)
+                    case.doModuleCleanups()  # LIFO
+                    result._pm_state = ''
+                    result._testRunEntered = False
+            # delayed post-mortem teardown when frame is finally recycled
+            auto_pm_teardown = case._AutoDelRunner(pm_teardown)  # noqa
+            raise
+
         return result
 
     def debug(self):
@@ -195,6 +214,8 @@ class TestSuite(BaseTestSuite):
                                 result, exc_info[1], 'setUpClass', className,
                                 info=exc_info)
             finally:
+                exc_info = None  # break ref cycle
+                currentClass.tearDown_exceptions = None
                 _call_if_exists(result, '_restoreStdout')
 
     def _get_previous_module(self, result):
@@ -339,6 +360,8 @@ class TestSuite(BaseTestSuite):
                                                             className,
                                                             info=exc_info)
         finally:
+            exc_info = None  # break ref cycle
+            previousClass.tearDown_exceptions = None
             _call_if_exists(result, '_restoreStdout')
 
 
