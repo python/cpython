@@ -90,6 +90,8 @@ class _AutoDelRunner(object):
         self.func()
 
 def _load_debugger(name):
+    if name == 'pdb':
+        name = 'pdb.Pdb'  # allows to detect user quit
     mod, fr = name, None
     if "." in mod:
         mod, fr = mod.rsplit('.', 1)
@@ -97,6 +99,9 @@ def _load_debugger(name):
     if fr:
         deb = getattr(deb, fr)
     return deb
+
+class DebuggerQuit(KeyboardInterrupt):
+    pass
 
 def _handle_debug_exception(debug, exc_info=None, on_crash=None):
     if isinstance(debug, str):
@@ -110,7 +115,11 @@ def _handle_debug_exception(debug, exc_info=None, on_crash=None):
             deb.reset()
             deb.interaction(None, exc_info[2])
         else:
-            deb.post_mortem(exc_info[2])
+            deb = deb.post_mortem(exc_info[2])
+        if getattr(deb, '_user_requested_quit', False):
+            if on_crash:
+                on_crash()
+            raise DebuggerQuit("Debugger user quit")
     elif debug == True:
         # --debug : Terminate the test run with original exception
         if on_crash:
@@ -650,6 +659,8 @@ class TestCase(object):
                 @functools.wraps(testMethod_org)
                 def trace_wrapper(*args, **kwargs):
                     deb.runcall(testMethod_org, *args, **kwargs)
+                    if getattr(deb, '_user_requested_quit', False):
+                        raise DebuggerQuit("Debugger user quit")
                 testMethod = trace_wrapper
                 debug = False
             else:
