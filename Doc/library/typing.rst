@@ -1339,7 +1339,7 @@ These are not used in annotations. They are building blocks for creating generic
     ``Unpack[Ts]``.)
 
     Type variable tuples must *always* be unpacked. This helps distinguish type
-    variable types from normal type variables::
+    variable tuples from normal type variables::
 
         x: Ts          # Not valid
         x: tuple[Ts]   # Not valid
