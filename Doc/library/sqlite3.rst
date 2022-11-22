@@ -1317,14 +1317,11 @@ Connection objects
 
    .. attribute:: row_factory
 
-      A callable that accepts two arguments,
-      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
-      and returns a custom object representing an SQLite row.
-
-      If returning a tuple doesn't suffice
-      and name-based access to columns is needed,
-      :attr:`row_factory` can be set to the
-      highly optimized :class:`sqlite3.Row` row factory.
+      Define the default :attr:`Cursor.row_factory`
+      for cursors created off of this connection.
+      Assigning to this attribute does not affect the :attr:`!row_factory`
+      of open cursors belonging to this connection.
+      Is ``None`` by default.
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
@@ -1483,7 +1480,7 @@ Cursor objects
 
    .. method:: fetchone()
 
-      If :attr:`~Connection.row_factory` is ``None``,
+      If :attr:`~Cursor.row_factory` is ``None``,
       return the next row query result set as a :class:`tuple`.
       Else, pass it to the row factory and return its result.
       Return ``None`` if no more data is available.
@@ -1579,10 +1576,17 @@ Cursor objects
 
    .. attribute:: row_factory
 
-      This attribute is copied from :attr:`Connection.row_factory`
+      Control how a row fetched from this :class:`!Cursor` is represented.
+      Set to :class:`sqlite3.Row` or a custom :term:`callable`
+      that accept two arguments,
+      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
+      and return a custom object representing an SQLite row.
+      If ``None``, a fetched row is represented as a :class:`tuple`.
+
+      Defaults to what :attr:`Connection.row_factory` was set to
       upon :class:`!Cursor` creation.
-      Assigning to this attribute does not affect the original
-      connection :attr:`!row_factory`.
+      Assigning to this attribute does not affect
+      :attr:`Connection.row_factory` of the parent connection.
 
       See :ref:`sqlite3-howto-row-factory` for more details.
 
@@ -2348,7 +2352,12 @@ How to create and use row factories
 
 By default, :mod:`!sqlite3` represents each fetched row as a :class:`tuple`.
 If a :class:`!tuple` does not suit your needs,
-use the :class:`sqlite3.Row` class or a custom :attr:`~Connection.row_factory`.
+use the :class:`sqlite3.Row` class or a custom :attr:`~Cursor.row_factory`.
+
+Even though :attr:`!row_factory` exists as an attribute both on the
+:class:`Cursor` and the :class:`Connection`,
+it is recommended to set it as :class:`Connection.row_factory`,
+so all cursors created off of the connection will use the same row factory.
 
 :class:`!Row` provides indexed and case-insensitive named access to columns,
 with low memory overhead and minimal performance impact.
@@ -2374,29 +2383,6 @@ Query results are now returned as :class:`!Row` instances:
    'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
-
-It is also possible to assign row factories to cursors using
-:attr:`Cursor.row_factory`:
-
-.. doctest::
-
-   >>> cur = con.cursor()
-   >>> cur.row_factory == con.row_factory
-   True
-   >>> cur.row_factory = None  # Override cursor row factory.
-
-   # The cursor and the connection row factories now differ.
-   >>> cur.row_factory == con.row_factory
-   False
-   >>> cur.execute("SELECT 'Hello'").fetchone()
-   ('Hello',)
-
-   # The connection still uses sqlite3.Row, as set in the previous example.
-   >>> con.execute("SELECT 'Hello'").fetchone()
-   <sqlite3.Row object at ...>
-
-If more flexibility is needed, implement a custom row factory.
-Here's an example of one returning a :class:`dict`:
 
 .. doctest::
 
