@@ -41,12 +41,13 @@ _get_current_interp(void)
 static PyObject *
 _get_current_module(void)
 {
-    // It might not have been imported yet in the current interpreter.
-    // However, it will (almost) always have been imported already
-    // in the main interpreter.
-    // XXX Do the import in _sharedns_apply()
-    // and use PyImport_GetModule() here instead.
-    PyObject *mod = PyImport_ImportModule(MODULE_NAME);
+    // We ensured it was imported in _run_script().
+    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *mod = PyImport_GetModule(name);
+    Py_DECREF(name);
     if (mod == NULL) {
         return NULL;
     }
@@ -180,9 +181,12 @@ _sharedns_free(_sharedns *shared)
     PyMem_Free(shared);
 }
 
+static PyTypeObject ChannelIDtype;
+
 static _sharedns *
-_get_shared_ns(PyObject *shareable)
+_get_shared_ns(PyObject *shareable, int *needs_import)
 {
+    *needs_import = 0;
     if (shareable == NULL || shareable == Py_None) {
         return NULL;
     }
@@ -203,6 +207,9 @@ _get_shared_ns(PyObject *shareable)
         }
         if (_sharednsitem_init(&shared->items[i], key, value) != 0) {
             break;
+        }
+        if (Py_TYPE(value) == &ChannelIDtype) {
+            *needs_import = 1;
         }
     }
     if (PyErr_Occurred()) {
@@ -2021,11 +2028,23 @@ _ensure_not_running(PyInterpreterState *interp)
 
 static int
 _run_script(PyInterpreterState *interp, const char *codestr,
-            _sharedns *shared, _sharedexception **exc)
+            _sharedns *shared, int needs_import,
+            _sharedexception **exc)
 {
     PyObject *exctype = NULL;
     PyObject *excval = NULL;
     PyObject *tb = NULL;
+
+    if (needs_import) {
+        // It might not have been imported yet in the current interpreter.
+        // However, it will (almost) always have been imported already
+        // in the main interpreter.
+        PyObject *mod = PyImport_ImportModule(MODULE_NAME);
+        if (mod == NULL) {
+            goto error;
+        }
+        Py_DECREF(mod);
+    }
 
     PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
@@ -2086,7 +2105,8 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
         return -1;
     }
 
-    _sharedns *shared = _get_shared_ns(shareables);
+    int needs_import = 0;
+    _sharedns *shared = _get_shared_ns(shareables, &needs_import);
     if (shared == NULL && PyErr_Occurred()) {
         return -1;
     }
@@ -2102,7 +2122,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Run the script.
     _sharedexception *exc = NULL;
-    int result = _run_script(interp, codestr, shared, &exc);
+    int result = _run_script(interp, codestr, shared, needs_import, &exc);
 
     // Switch back.
     if (save_tstate != NULL) {
