@@ -980,8 +980,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
         goto errorexit;
     }
 
-    Py_CLEAR(self->pending);
-    self->pending = pending;
+    Py_XSETREF(self->pending, pending);
     memcpy(self->state.c, statebytes+1+statebytes[0],
            sizeof(self->state.c));
 
@@ -1438,8 +1437,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
             memcpy(ctrdata + self->pendingsize,
                     PyBytes_AS_STRING(cres),
                     PyBytes_GET_SIZE(cres));
-            Py_DECREF(cres);
-            cres = ctr;
+            Py_SETREF(cres, ctr);
             self->pendingsize = 0;
         }
 

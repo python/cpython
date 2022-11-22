@@ -5968,8 +5968,7 @@ object___dir___impl(PyObject *self)
     else {
         /* Copy __dict__ to avoid mutating it. */
         PyObject *temp = PyDict_Copy(dict);
-        Py_DECREF(dict);
-        dict = temp;
+        Py_SETREF(dict, temp);
     }
 
     if (dict == NULL)
@@ -9377,8 +9376,7 @@ super_getattro(PyObject *self, PyObject *name)
                        (See SF ID #743627)  */
                     (su->obj == (PyObject *)starttype) ? NULL : su->obj,
                     (PyObject *)starttype);
-                Py_DECREF(res);
-                res = res2;
+                Py_SETREF(res, res2);
             }
 
             Py_DECREF(mro);

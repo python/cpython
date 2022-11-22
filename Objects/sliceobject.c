@@ -448,8 +448,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
         if (_PyLong_Sign(start) < 0) {
             /* start += length */
             PyObject *tmp = PyNumber_Add(start, length);
-            Py_DECREF(start);
-            start = tmp;
+            Py_SETREF(start, tmp);
             if (start == NULL)
                 goto error;
 
@@ -457,9 +456,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             if (cmp_result < 0)
                 goto error;
             if (cmp_result) {
-                Py_INCREF(lower);
-                Py_DECREF(start);
-                start = lower;
+                Py_SETREF(start, Py_NewRef(lower));
             }
         }
         else {
@@ -467,9 +464,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             if (cmp_result < 0)
                 goto error;
             if (cmp_result) {
-                Py_INCREF(upper);
-                Py_DECREF(start);
-                start = upper;
+                Py_SETREF(start, Py_NewRef(upper));
             }
         }
     }
@@ -486,8 +481,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
         if (_PyLong_Sign(stop) < 0) {
             /* stop += length */
             PyObject *tmp = PyNumber_Add(stop, length);
-            Py_DECREF(stop);
-            stop = tmp;
+            Py_SETREF(stop, tmp);
             if (stop == NULL)
                 goto error;
 
@@ -495,9 +489,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             if (cmp_result < 0)
                 goto error;
             if (cmp_result) {
-                Py_INCREF(lower);
-                Py_DECREF(stop);
-                stop = lower;
+                Py_SETREF(stop, Py_NewRef(lower));
             }
         }
         else {
@@ -505,9 +497,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             if (cmp_result < 0)
                 goto error;
             if (cmp_result) {
-                Py_INCREF(upper);
-                Py_DECREF(stop);
-                stop = upper;
+                Py_SETREF(stop, Py_NewRef(upper));
             }
         }
     }

@@ -1270,8 +1270,7 @@ set_intersection_multi(PySetObject *so, PyObject *args)
             Py_DECREF(result);
             return NULL;
         }
-        Py_DECREF(result);
-        result = newresult;
+        Py_SETREF(result, newresult);
     }
     return result;
 }
