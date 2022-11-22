@@ -1605,7 +1605,7 @@ Row objects
    and :term:`mapping` access by column name and index.
 
    Two :class:`!Row` objects compare equal
-   if they have equal columns and equal members.
+   if they have identical columns and values.
 
    See :ref:`sqlite3-howto-row-factory` for more details.
 
@@ -2439,11 +2439,6 @@ The following row factory returns a :class:`~collections.namedtuple`.
 With some adjustments, the above recipe can be adapted to use a
 :class:`~dataclasses.dataclass`, or any other custom class,
 instead of a :class:`~collections.namedtuple`.
-
-As an exercise left for the reader, the above example can be optimised
-by extracting to a new function the code that create the ``fields`` variable.
-Then decorate that new function with :func:`functools.lru_cache` to avoid
-creating multiple classes ``cls`` from identical column specs.
 
 
 .. _sqlite3-explanation:
