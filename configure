@@ -642,6 +642,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTCLINIC_FALSE
+MODULE__TESTCLINIC_TRUE
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
 MODULE__HASHLIB_FALSE
@@ -27747,6 +27749,40 @@ fi
 $as_echo "$py_cv_module__testcapi" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testclinic" >&5
+$as_echo_n "checking for stdlib extension module _testclinic... " >&6; }
+        if test "$py_cv_module__testclinic" != "n/a"; then :
+
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testclinic=yes
+else
+  py_cv_module__testclinic=missing
+fi
+else
+  py_cv_module__testclinic=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTCLINIC_STATE=$py_cv_module__testclinic$as_nl"
+  if test "x$py_cv_module__testclinic" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module__testclinic" = yes; then
+  MODULE__TESTCLINIC_TRUE=
+  MODULE__TESTCLINIC_FALSE='#'
+else
+  MODULE__TESTCLINIC_TRUE='#'
+  MODULE__TESTCLINIC_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testclinic" >&5
+$as_echo "$py_cv_module__testclinic" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"; then :
@@ -28464,6 +28500,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCLINIC_TRUE}" && test -z "${MODULE__TESTCLINIC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCLINIC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then

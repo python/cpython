@@ -491,8 +491,7 @@ throw_here:
         }
         else {
             /* Normalize to raise <class>, <instance> */
-            Py_XDECREF(val);
-            val = typ;
+            Py_XSETREF(val, typ);
             typ = Py_NewRef(PyExceptionInstance_Class(typ));
 
             if (tb == NULL)

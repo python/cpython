@@ -353,16 +353,13 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
             if (fixed_value == NULL) {
                 goto error;
             }
-            Py_DECREF(value);
-            value = fixed_value;
+            Py_SETREF(value, fixed_value);
         }
         /* If the class of the instance doesn't exactly match the
            class of the type, believe the instance.
         */
         else if (inclass != type) {
-            Py_INCREF(inclass);
-            Py_DECREF(type);
-            type = inclass;
+            Py_SETREF(type, Py_NewRef(inclass));
         }
     }
     *exc = type;
