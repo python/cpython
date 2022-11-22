@@ -234,6 +234,10 @@ pathlib
   more consistent with :func:`os.path.relpath`.
   (Contributed by Domenico Ragusa in :issue:`40358`.)
 
+* Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
+
 dis
 ---
 
@@ -251,6 +255,14 @@ os
 * Add :data:`os.PIDFD_NONBLOCK` to open a file descriptor
   for a process with :func:`os.pidfd_open` in non-blocking mode.
   (Contributed by Kumar Aditya in :gh:`93312`.)
+
+* Add :func:`os.path.isjunction` to check if a given path is a junction.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
+* :class:`os.DirEntry` now includes an :meth:`os.DirEntry.is_junction`
+  method to check if the entry is a junction.
+  (Contributed by Charles Machalow in :gh:`99547`.)
+
 
 shutil
 ------
