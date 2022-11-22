@@ -1256,7 +1256,6 @@ deque_remove(dequeobject *deque, PyObject *value)
 static int
 deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 {
-    PyObject *old_value;
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
 
@@ -1282,9 +1281,7 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
         while (--n >= 0)
             b = b->leftlink;
     }
-    old_value = b->data[i];
-    b->data[i] = Py_NewRef(v);
-    Py_DECREF(old_value);
+    Py_SETREF(b->data[i], Py_NewRef(v));
     return 0;
 }
 

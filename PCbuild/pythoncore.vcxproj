@@ -595,7 +595,7 @@
     </PropertyGroup>
     <Message Text="Building $(GitTag):$(GitVersion) $(GitBranch)" Importance="high" />
     <ItemGroup>
-      <ClCompile Condition="$(Filename) == 'getbuildinfo'">
+      <ClCompile Condition="%(Filename) == 'getbuildinfo'">
         <PreprocessorDefinitions>GITVERSION="$(GitVersion)";GITTAG="$(GitTag)";GITBRANCH="$(GitBranch)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       </ClCompile>
     </ItemGroup>

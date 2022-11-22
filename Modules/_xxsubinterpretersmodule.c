@@ -2383,8 +2383,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     goto finally;
 
 except:
-    Py_XDECREF(ids);
-    ids = NULL;
+    Py_CLEAR(ids);
 
 finally:
     return ids;

@@ -480,6 +480,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(bytes_per_sep);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(c);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(c_call);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(c_exception);
@@ -578,6 +580,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(cwd);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(d);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(data);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(database);
@@ -631,6 +635,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(dst_dir_fd);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(duration);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(e);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(effective_ids);
     PyUnicode_InternInPlace(&string);

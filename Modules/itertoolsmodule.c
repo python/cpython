@@ -834,8 +834,7 @@ teedataobject_safe_decref(PyObject *obj)
            Py_REFCNT(obj) == 1) {
         PyObject *nextlink = ((teedataobject *)obj)->nextlink;
         ((teedataobject *)obj)->nextlink = NULL;
-        Py_DECREF(obj);
-        obj = nextlink;
+        Py_SETREF(obj, nextlink);
     }
     Py_XDECREF(obj);
 }

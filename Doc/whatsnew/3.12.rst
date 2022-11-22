@@ -849,6 +849,37 @@ Deprecated
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases is deprecated and will be disabled in Python 3.14.
 
+* The ``structmember.h`` header is deprecated, though it continues to be
+  available and there are no plans to remove it.
+
+  Its contents are now available just by including ``Python.h``,
+  with a ``Py`` prefix added if it was missing:
+
+  - :c:struct:`PyMemberDef`, :c:func:`PyMember_GetOne` and
+    :c:func:`PyMember_SetOne`
+  - Type macros like :c:macro:`Py_T_INT`, :c:macro:`Py_T_DOUBLE`, etc.
+    (previously ``T_INT``, ``T_DOUBLE``, etc.)
+  - The flags :c:macro:`Py_READONLY` (previously ``READONLY``) and
+    :c:macro:`Py_AUDIT_READ` (previously all uppercase)
+
+  Several items are not exposed from ``Python.h``:
+
+  - :c:macro:`T_OBJECT` (use :c:macro:`Py_T_OBJECT_EX`)
+  - :c:macro:`T_NONE` (previously undocumented, and pretty quirky)
+  - The macro ``WRITE_RESTRICTED`` which does nothing.
+  - The macros ``RESTRICTED`` and ``READ_RESTRICTED``, equivalents of
+    :c:macro:`Py_AUDIT_READ`.
+  - In some configurations, ``<stddef.h>`` is not included from ``Python.h``.
+    It should be included manually when using ``offsetof()``.
+
+  The deprecated header continues to provide its original
+  contents under the original names.
+  Your old code can stay unchanged, unless the extra include and non-namespaced
+  macros bother you greatly.
+
+  (Contributed in :gh:`47146` by Petr Viktorin, based on
+  earlier work by Alexander Belopolsky and Matthias Braun.)
+
 
 Removed
 -------

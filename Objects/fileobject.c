@@ -88,8 +88,7 @@ PyFile_GetLine(PyObject *f, int n)
             else {
                 PyObject *v;
                 v = PyBytes_FromStringAndSize(s, len-1);
-                Py_DECREF(result);
-                result = v;
+                Py_SETREF(result, v);
             }
         }
     }
@@ -104,8 +103,7 @@ PyFile_GetLine(PyObject *f, int n)
         else if (PyUnicode_READ_CHAR(result, len-1) == '\n') {
             PyObject *v;
             v = PyUnicode_Substring(result, 0, len-1);
-            Py_DECREF(result);
-            result = v;
+            Py_SETREF(result, v);
         }
     }
     return result;

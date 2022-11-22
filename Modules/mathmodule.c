@@ -2069,8 +2069,7 @@ factorial_odd_part(unsigned long n)
         Py_DECREF(partial);
         if (tmp == NULL)
             goto error;
-        Py_DECREF(inner);
-        inner = tmp;
+        Py_SETREF(inner, tmp);
         /* Now inner is the product of all odd integers j in the range (0,
            n/2**i], giving the inner product in the formula above. */
 
@@ -2078,8 +2077,7 @@ factorial_odd_part(unsigned long n)
         tmp = PyNumber_Multiply(outer, inner);
         if (tmp == NULL)
             goto error;
-        Py_DECREF(outer);
-        outer = tmp;
+        Py_SETREF(outer, tmp);
     }
     Py_DECREF(inner);
     return outer;
