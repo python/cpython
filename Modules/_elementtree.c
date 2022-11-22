@@ -345,8 +345,7 @@ get_attrib_from_keywords(PyObject *kwds)
         }
         attrib = PyDict_Copy(attrib);
         if (attrib && PyDict_DelItem(kwds, attrib_str) < 0) {
-            Py_DECREF(attrib);
-            attrib = NULL;
+            Py_SETREF(attrib, NULL);
         }
     }
     else if (!PyErr_Occurred()) {
