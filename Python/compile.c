@@ -1226,9 +1226,6 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_FAST_CHECK:
         case DELETE_FAST_NOERROR:
         case DELETE_FAST_NOERROR_CHECK:
-        case DELETE_DEREF_NOERROR:
-        case DELETE_GLOBAL_NOERROR:
-        case DELETE_NAME_NOERROR:
         case DEL_PLACEHOLDER:
             return 0;
 
@@ -1350,7 +1347,7 @@ static int
 cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
 {
     if (cfg_builder_maybe_start_new_block(g) != 0) {
-        return -1;
+        return 0;
     }
     return basicblock_addop(g->g_curblock, opcode, oparg, loc);
 }
@@ -4212,7 +4209,7 @@ addop_yield(struct compiler *c, location loc) {
 static int
 compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
 {
-    int op, scope;
+    int op, scope, store_op;
     Py_ssize_t arg;
     enum { OP_FAST, OP_GLOBAL, OP_DEREF, OP_NAME } optype;
 
@@ -4231,6 +4228,7 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
         return 0;
 
     op = 0;
+    store_op = 0;
     optype = OP_NAME;
     scope = _PyST_GetScope(c->u->u_ste, mangled);
     switch (scope) {
@@ -4269,7 +4267,10 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
             break;
         case Store: op = STORE_DEREF; break;
         case Del: op = DELETE_DEREF; break;
-        case DelNoErr: op = DELETE_DEREF_NOERROR; break;
+        case DelNoErr:
+            op = DELETE_DEREF;
+            store_op = STORE_DEREF;
+            break;
         }
         break;
     case OP_FAST:
@@ -4291,7 +4292,10 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
         case Load: op = LOAD_GLOBAL; break;
         case Store: op = STORE_GLOBAL; break;
         case Del: op = DELETE_GLOBAL; break;
-        case DelNoErr: op = DELETE_GLOBAL_NOERROR; break;
+        case DelNoErr:
+            op = DELETE_GLOBAL;
+            store_op = STORE_GLOBAL;
+            break;
         }
         break;
     case OP_NAME:
@@ -4299,7 +4303,10 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
         case Load: op = LOAD_NAME; break;
         case Store: op = STORE_NAME; break;
         case Del: op = DELETE_NAME; break;
-        case DelNoErr: op = DELETE_NAME_NOERROR; break;
+        case DelNoErr:
+            op = DELETE_NAME;
+            store_op = STORE_NAME;
+            break;
         }
         break;
     }
@@ -4314,11 +4321,11 @@ compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
         arg <<= 1;
     }
     if (ctx == DelNoErr) {
-        // will be replaced in expand_del_noerror
-        ADDOP(c, NO_LOCATION, DEL_PLACEHOLDER);
-        ADDOP(c, NO_LOCATION, DEL_PLACEHOLDER);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADDOP_I(c, loc, store_op, arg);
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc);
+    ADDOP_I(c, loc, op, arg);
+    return 1;
 }
 
 static int
@@ -8091,7 +8098,7 @@ maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 static void
 scan_block_for_locals(basicblock *b, basicblock ***sp)
 {
-    // bit i is set if local i is potentially uninitialized
+    // bit j is set if local j is potentially uninitialized
     uint64_t unsafe_mask = b->b_unsafe_locals_mask;
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
@@ -8243,34 +8250,14 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                     instr->i_opcode = DELETE_FAST;
                     break;
                 case DELETE_FAST_NOERROR_CHECK:
-                case DELETE_DEREF_NOERROR:
-                case DELETE_GLOBAL_NOERROR:
-                case DELETE_NAME_NOERROR:
                     assert(instr[-2].i_opcode == DEL_PLACEHOLDER);
                     assert(instr[-1].i_opcode == DEL_PLACEHOLDER);
                     instr[-2].i_loc = instr[-1].i_loc = instr->i_loc;
                     instr[-2].i_opcode = LOAD_CONST;
                     instr[-2].i_oparg = none_oparg;
                     instr[-1].i_oparg = instr->i_oparg;
-                    switch (instr->i_opcode) {
-                        case DELETE_FAST_NOERROR_CHECK:
-                            instr[-1].i_opcode = STORE_FAST;
-                            instr->i_opcode = DELETE_FAST;
-                            break;
-                        case DELETE_DEREF_NOERROR:
-                            instr[-1].i_opcode = STORE_DEREF;
-                            instr->i_opcode = DELETE_DEREF;
-                            break;
-                        case DELETE_GLOBAL_NOERROR:
-                            instr[-1].i_opcode = STORE_GLOBAL;
-                            instr->i_opcode = DELETE_GLOBAL;
-                            break;
-                        case DELETE_NAME_NOERROR:
-                            instr[-1].i_opcode = STORE_NAME;
-                            instr->i_opcode = DELETE_NAME;
-                            break;
-                    }
-                    break;
+                    instr[-1].i_opcode = STORE_FAST;
+                    instr->i_opcode = DELETE_FAST;
                 case DEL_PLACEHOLDER:
                     instr->i_opcode = NOP;
                     break;
@@ -8753,7 +8740,6 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
                 case LOAD_DEREF:
                 case STORE_DEREF:
                 case DELETE_DEREF:
-                case DELETE_DEREF_NOERROR:
                 case LOAD_CLASSDEREF:
                     assert(oldoffset >= 0);
                     assert(oldoffset < noffsets);

@@ -131,11 +131,8 @@ extern "C" {
 #define DELETE_FAST_CHECK                      263
 #define DELETE_FAST_NOERROR                    264
 #define DELETE_FAST_NOERROR_CHECK              265
-#define DELETE_DEREF_NOERROR                   266
-#define DELETE_GLOBAL_NOERROR                  267
-#define DELETE_NAME_NOERROR                    268
-#define DEL_PLACEHOLDER                        269
-#define MAX_PSEUDO_OPCODE                      269
+#define DEL_PLACEHOLDER                        266
+#define MAX_PSEUDO_OPCODE                      266
 #define BINARY_OP_ADD_FLOAT                      5
 #define BINARY_OP_ADD_INT                        6
 #define BINARY_OP_ADD_UNICODE                    7
@@ -206,9 +203,6 @@ extern "C" {
     || ((op) == DELETE_FAST_CHECK) \
     || ((op) == DELETE_FAST_NOERROR) \
     || ((op) == DELETE_FAST_NOERROR_CHECK) \
-    || ((op) == DELETE_DEREF_NOERROR) \
-    || ((op) == DELETE_GLOBAL_NOERROR) \
-    || ((op) == DELETE_NAME_NOERROR) \
     )
 
 #define HAS_CONST(op) (false\

@@ -230,7 +230,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif   // NEED_OPCODE_TABLES
 
 #ifdef Py_DEBUG
-static const char *const _PyOpcode_OpName[270] = {
+static const char *const _PyOpcode_OpName[267] = {
     [CACHE] = "CACHE",
     [POP_TOP] = "POP_TOP",
     [PUSH_NULL] = "PUSH_NULL",
@@ -497,9 +497,6 @@ static const char *const _PyOpcode_OpName[270] = {
     [DELETE_FAST_CHECK] = "DELETE_FAST_CHECK",
     [DELETE_FAST_NOERROR] = "DELETE_FAST_NOERROR",
     [DELETE_FAST_NOERROR_CHECK] = "DELETE_FAST_NOERROR_CHECK",
-    [DELETE_DEREF_NOERROR] = "DELETE_DEREF_NOERROR",
-    [DELETE_GLOBAL_NOERROR] = "DELETE_GLOBAL_NOERROR",
-    [DELETE_NAME_NOERROR] = "DELETE_NAME_NOERROR",
     [DEL_PLACEHOLDER] = "DEL_PLACEHOLDER",
 };
 #endif
