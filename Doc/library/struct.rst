@@ -302,7 +302,7 @@ Notes:
    format <half precision format_>`_ for more information.
 
 (7)
-   For padding, ``'x'`` inserts one NUL byte.
+   When packing, ``'x'`` inserts one NUL byte.
 
 (8)
    The ``'p'`` format character encodes a "Pascal string", meaning a short
