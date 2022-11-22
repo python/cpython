@@ -1,7 +1,6 @@
 #ifndef Py_BUILD_CORE_MODULE
 #  define Py_BUILD_CORE_MODULE
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 /* Always enable assertion (even in release mode) */
 #undef NDEBUG
@@ -22,7 +21,7 @@ char **main_argv;
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
  *
- * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
+ * Executed via Lib/test/test_embed.py
  *********************************************************/
 
 // Use to display the usage
@@ -73,12 +72,18 @@ static void init_from_config_clear(PyConfig *config)
 }
 
 
-static void _testembed_Py_Initialize(void)
+static void _testembed_Py_InitializeFromConfig(void)
 {
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
     config_set_program_name(&config);
     init_from_config_clear(&config);
+}
+
+static void _testembed_Py_Initialize(void)
+{
+   Py_SetProgramName(PROGRAM_NAME);
+   Py_Initialize();
 }
 
 
@@ -110,7 +115,7 @@ static int test_repeated_init_and_subinterpreters(void)
 
     for (int i=1; i <= INIT_LOOPS; i++) {
         printf("--- Pass %d ---\n", i);
-        _testembed_Py_Initialize();
+        _testembed_Py_InitializeFromConfig();
         mainstate = PyThreadState_Get();
 
         PyEval_ReleaseThread(mainstate);
@@ -168,12 +173,29 @@ static int test_repeated_init_exec(void)
         fprintf(stderr, "--- Loop #%d ---\n", i);
         fflush(stderr);
 
-        _testembed_Py_Initialize();
+        _testembed_Py_InitializeFromConfig();
         int err = PyRun_SimpleString(code);
         Py_Finalize();
         if (err) {
             return 1;
         }
+    }
+    return 0;
+}
+
+/****************************************************************************
+ * Test the Py_Initialize(Ex) convenience/compatibility wrappers
+ ***************************************************************************/
+// This is here to help ensure there are no wrapper resource leaks (gh-96853)
+static int test_repeated_simple_init(void)
+{
+    for (int i=1; i <= INIT_LOOPS; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i);
+        fflush(stderr);
+
+        _testembed_Py_Initialize();
+        Py_Finalize();
+        printf("Finalized\n"); // Give test_embed some output to check
     }
     return 0;
 }
@@ -199,7 +221,7 @@ static void check_stdio_details(const char *encoding, const char * errors)
     fflush(stdout);
     /* Force the given IO encoding */
     Py_SetStandardStreamEncoding(encoding, errors);
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     PyRun_SimpleString(
         "import sys;"
         "print('stdin: {0.encoding}:{0.errors}'.format(sys.stdin));"
@@ -308,7 +330,7 @@ static int test_pre_initialization_sys_options(void)
     dynamic_xoption = NULL;
 
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
     PyRun_SimpleString("import sys; "
                        "print('sys.warnoptions:', sys.warnoptions); "
@@ -352,7 +374,7 @@ static int test_bpo20891(void)
         return 1;
     }
 
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &lock);
     if (thrd == PYTHREAD_INVALID_THREAD_ID) {
@@ -375,7 +397,7 @@ static int test_bpo20891(void)
 
 static int test_initialize_twice(void)
 {
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     /* bpo-33932: Calling Py_Initialize() twice should do nothing
      * (and not crash!). */
@@ -393,7 +415,7 @@ static int test_initialize_pymain(void)
                         L"print(f'Py_Main() after Py_Initialize: "
                         L"sys.argv={sys.argv}')"),
                        L"arg2"};
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     /* bpo-34008: Calling Py_Main() after Py_Initialize() must not crash */
     Py_Main(Py_ARRAY_LENGTH(argv), argv);
@@ -416,7 +438,7 @@ dump_config(void)
 
 static int test_init_initialize_config(void)
 {
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
     return 0;
@@ -681,7 +703,8 @@ static int test_init_from_config(void)
 
     config.safe_path = 1;
 
-    config._isolated_interpreter = 1;
+    putenv("PYTHONINTMAXSTRDIGITS=6666");
+    config.int_max_str_digits = 31337;
 
     init_from_config_clear(&config);
 
@@ -748,6 +771,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONIOENCODING=iso8859-1:replace");
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
     putenv("PYTHONSAFEPATH=1");
+    putenv("PYTHONINTMAXSTRDIGITS=4567");
 }
 
 
@@ -765,7 +789,7 @@ static int test_init_compat_env(void)
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars();
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
     return 0;
@@ -801,7 +825,7 @@ static int test_init_env_dev_mode(void)
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
     return 0;
@@ -814,7 +838,7 @@ static int test_init_env_dev_mode_alloc(void)
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
     putenv("PYTHONMALLOC=malloc");
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
     return 0;
@@ -1154,7 +1178,7 @@ static int test_open_code_hook(void)
     }
 
     Py_IgnoreEnvironmentFlag = 0;
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     result = 0;
 
     PyObject *r = PyFile_OpenCode("$$test-filename");
@@ -1218,7 +1242,7 @@ static int _test_audit(Py_ssize_t setValue)
 
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook, &sawSet);
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     if (PySys_Audit("_testembed.raise", NULL) == 0) {
         printf("No error raised");
@@ -1274,7 +1298,7 @@ static int test_audit_subinterpreter(void)
 {
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     Py_NewInterpreter();
     Py_NewInterpreter();
@@ -1581,7 +1605,7 @@ static int test_init_is_python_build(void)
     config._is_python_build = INT_MAX;
     env = getenv("NEGATIVE_ISPYTHONBUILD");
     if (env && strcmp(env, "0") != 0) {
-        config._is_python_build++;
+        config._is_python_build = INT_MIN;
     }
     init_from_config_clear(&config);
     Py_Finalize();
@@ -1866,16 +1890,23 @@ static int test_unicode_id_init(void)
 {
     // bpo-42882: Test that _PyUnicode_FromId() works
     // when Python is initialized multiples times.
-    _Py_IDENTIFIER(test_unicode_id_init);
+
+    // This is equivalent to `_Py_IDENTIFIER(test_unicode_id_init)`
+    // but since `_Py_IDENTIFIER` is disabled when `Py_BUILD_CORE`
+    // is defined, it is manually expanded here.
+    static _Py_Identifier PyId_test_unicode_id_init = {
+        .string = "test_unicode_id_init",
+        .index = -1,
+    };
 
     // Initialize Python once without using the identifier
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     Py_Finalize();
 
     // Now initialize Python multiple times and use the identifier.
     // The first _PyUnicode_FromId() call initializes the identifier index.
     for (int i=0; i<3; i++) {
-        _testembed_Py_Initialize();
+        _testembed_Py_InitializeFromConfig();
 
         PyObject *str1, *str2;
 
@@ -1893,6 +1924,18 @@ static int test_unicode_id_init(void)
 
         Py_Finalize();
     }
+    return 0;
+}
+
+
+static int test_init_main_interpreter_settings(void)
+{
+    _testembed_Py_Initialize();
+    (void) PyRun_SimpleStringFlags(
+        "import _testinternalcapi, json; "
+        "print(json.dumps(_testinternalcapi.get_interp_settings(0)))",
+        0);
+    Py_Finalize();
     return 0;
 }
 
@@ -1950,6 +1993,73 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
+static void wrap_allocator(PyMemAllocatorEx *allocator);
+static void unwrap_allocator(PyMemAllocatorEx *allocator);
+
+static void *
+malloc_wrapper(void *ctx, size_t size)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    unwrap_allocator(allocator);
+    PyEval_GetFrame();  // BOOM!
+    wrap_allocator(allocator);
+    return allocator->malloc(allocator->ctx, size);
+}
+
+static void *
+calloc_wrapper(void *ctx, size_t nelem, size_t elsize)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    return allocator->calloc(allocator->ctx, nelem, elsize);
+}
+
+static void *
+realloc_wrapper(void *ctx, void *ptr, size_t new_size)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    return allocator->realloc(allocator->ctx, ptr, new_size);
+}
+
+static void
+free_wrapper(void *ctx, void *ptr)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    allocator->free(allocator->ctx, ptr);
+}
+
+static void
+wrap_allocator(PyMemAllocatorEx *allocator)
+{
+    PyMem_GetAllocator(PYMEM_DOMAIN_OBJ, allocator);
+    PyMemAllocatorEx wrapper = {
+        .malloc = &malloc_wrapper,
+        .calloc = &calloc_wrapper,
+        .realloc = &realloc_wrapper,
+        .free = &free_wrapper,
+        .ctx = allocator,
+    };
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &wrapper);
+}
+
+static void
+unwrap_allocator(PyMemAllocatorEx *allocator)
+{
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, allocator);
+}
+
+static int
+test_get_incomplete_frame(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyMemAllocatorEx allocator;
+    wrap_allocator(&allocator);
+    // Force an allocation with an incomplete (generator) frame:
+    int result = PyRun_SimpleString("(_ for _ in ())");
+    unwrap_allocator(&allocator);
+    Py_Finalize();
+    return result;
+}
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -1972,6 +2082,7 @@ struct TestCase
 static struct TestCase TestCases[] = {
     // Python initialization
     {"test_repeated_init_exec", test_repeated_init_exec},
+    {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
@@ -2016,6 +2127,7 @@ static struct TestCase TestCases[] = {
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
     {"test_init_use_frozen_modules", test_init_use_frozen_modules},
+    {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
 
     // Audit
     {"test_open_code_hook", test_open_code_hook},
@@ -2032,6 +2144,7 @@ static struct TestCase TestCases[] = {
 #ifndef MS_WINDOWS
     {"test_frozenmain", test_frozenmain},
 #endif
+    {"test_get_incomplete_frame", test_get_incomplete_frame},
 
     {NULL, NULL}
 };

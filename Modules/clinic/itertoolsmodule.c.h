@@ -8,6 +8,85 @@ preserve
 #endif
 
 
+PyDoc_STRVAR(batched_new__doc__,
+"batched(iterable, n)\n"
+"--\n"
+"\n"
+"Batch data into lists of length n. The last batch may be shorter than n.\n"
+"\n"
+"Loops over the input iterable and accumulates data into lists\n"
+"up to size n.  The input is consumed lazily, just enough to\n"
+"fill a list.  The result is yielded as soon as a batch is full\n"
+"or when the input iterable is exhausted.\n"
+"\n"
+"    >>> for batch in batched(\'ABCDEFG\', 3):\n"
+"    ...     print(batch)\n"
+"    ...\n"
+"    [\'A\', \'B\', \'C\']\n"
+"    [\'D\', \'E\', \'F\']\n"
+"    [\'G\']");
+
+static PyObject *
+batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n);
+
+static PyObject *
+batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(iterable), &_Py_ID(n), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"iterable", "n", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "batched",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *iterable;
+    Py_ssize_t n;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    iterable = fastargs[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(fastargs[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        n = ival;
+    }
+    return_value = batched_new_impl(type, iterable, n);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(pairwise_new__doc__,
 "pairwise(iterable, /)\n"
 "--\n"
@@ -834,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b1056d63f68a9059 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=efea8cd1e647bd17 input=a9049054013a1b77]*/

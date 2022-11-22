@@ -9,6 +9,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_dict_state.h"
+#include "pycore_runtime.h"         // _PyRuntime
+
 
 /* runtime lifecycle */
 
@@ -16,25 +19,6 @@ extern void _PyDict_Fini(PyInterpreterState *interp);
 
 
 /* other API */
-
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyDict_MAXFREELIST 0
-#endif
-
-#ifndef PyDict_MAXFREELIST
-#  define PyDict_MAXFREELIST 80
-#endif
-
-struct _Py_dict_state {
-#if PyDict_MAXFREELIST > 0
-    /* Dictionary reuse scheme to save calls to malloc and free */
-    PyDictObject *free_list[PyDict_MAXFREELIST];
-    int numfree;
-    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
-    int keys_numfree;
-#endif
-};
 
 typedef struct {
     /* Cached hash code of me_key. */
@@ -141,17 +125,8 @@ struct _dictvalues {
 #define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
 #if SIZEOF_VOID_P > 4
 #define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : DK_LOG_SIZE(dk) <= 31 ?   \
-                4 : sizeof(int64_t))
 #else
 #define DK_SIZE(dk)      (1<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : sizeof(int32_t))
 #endif
 #define DK_ENTRIES(dk) \
     (assert((dk)->dk_kind == DICT_KEYS_GENERAL), \
@@ -161,9 +136,32 @@ struct _dictvalues {
      (PyDictUnicodeEntry*)(&((int8_t*)((dk)->dk_indices))[(size_t)1 << (dk)->dk_log2_index_bytes]))
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
-extern uint64_t _pydict_global_version;
+#define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
+#define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
 
-#define DICT_NEXT_VERSION() (++_pydict_global_version)
+#define DICT_NEXT_VERSION() \
+    (_PyRuntime.dict_state.global_version += DICT_VERSION_INCREMENT)
+
+void
+_PyDict_SendEvent(int watcher_bits,
+                  PyDict_WatchEvent event,
+                  PyDictObject *mp,
+                  PyObject *key,
+                  PyObject *value);
+
+static inline uint64_t
+_PyDict_NotifyEvent(PyDict_WatchEvent event,
+                    PyDictObject *mp,
+                    PyObject *key,
+                    PyObject *value)
+{
+    int watcher_bits = mp->ma_version_tag & DICT_VERSION_MASK;
+    if (watcher_bits) {
+        _PyDict_SendEvent(watcher_bits, event, mp, key, value);
+        return DICT_NEXT_VERSION() | watcher_bits;
+    }
+    return DICT_NEXT_VERSION();
+}
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
 extern PyObject *_PyDict_FromItems(

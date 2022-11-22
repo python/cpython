@@ -1997,7 +1997,10 @@ class Helper:
     _GoInteractive = object()
     def __call__(self, request=_GoInteractive):
         if request is not self._GoInteractive:
-            self.help(request)
+            try:
+                self.help(request)
+            except ImportError as e:
+                self.output.write(f'{e}\n')
         else:
             self.intro()
             self.interact()

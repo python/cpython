@@ -173,6 +173,7 @@ yourself some work and use :func:`auto()` for the values::
     ...     FRIDAY = auto()
     ...     SATURDAY = auto()
     ...     SUNDAY = auto()
+    ...     WEEKEND = SATURDAY | SUNDAY
 
 
 .. _enum-advanced-tutorial:
@@ -305,6 +306,10 @@ Iterating over the members of an enum does not provide the aliases::
 
     >>> list(Shape)
     [<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
+    >>> list(Weekday)
+    [<Weekday.MONDAY: 1>, <Weekday.TUESDAY: 2>, <Weekday.WEDNESDAY: 4>, <Weekday.THURSDAY: 8>, <Weekday.FRIDAY: 16>, <Weekday.SATURDAY: 32>, <Weekday.SUNDAY: 64>]
+
+Note that the aliases ``Shape.ALIAS_FOR_SQUARE`` and ``Weekday.WEEKEND`` aren't shown.
 
 The special attribute ``__members__`` is a read-only ordered mapping of names
 to members.  It includes all names defined in the enumeration, including the
@@ -323,6 +328,11 @@ the enumeration members.  For example, finding all the aliases::
 
     >>> [name for name, member in Shape.__members__.items() if member.name != name]
     ['ALIAS_FOR_SQUARE']
+
+.. note::
+
+   Aliases for flags include values with multiple flags set, such as ``3``,
+   and no flags set, i.e. ``0``.
 
 
 Comparisons
@@ -751,7 +761,7 @@ flags being set, the boolean evaluation is :data:`False`::
     False
 
 Individual flags should have values that are powers of two (1, 2, 4, 8, ...),
-while combinations of flags won't::
+while combinations of flags will not::
 
     >>> class Color(Flag):
     ...     RED = auto()
@@ -1096,8 +1106,8 @@ example of when ``KEEP`` is needed).
 
 .. _enum-class-differences:
 
-How are Enums different?
-------------------------
+How are Enums and Flags different?
+----------------------------------
 
 Enums have a custom metaclass that affects many aspects of both derived :class:`Enum`
 classes and their instances (members).
@@ -1109,11 +1119,18 @@ Enum Classes
 The :class:`EnumType` metaclass is responsible for providing the
 :meth:`__contains__`, :meth:`__dir__`, :meth:`__iter__` and other methods that
 allow one to do things with an :class:`Enum` class that fail on a typical
-class, such as `list(Color)` or `some_enum_var in Color`.  :class:`EnumType` is
+class, such as ``list(Color)`` or ``some_enum_var in Color``.  :class:`EnumType` is
 responsible for ensuring that various other methods on the final :class:`Enum`
 class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
 :meth:`__str__` and :meth:`__repr__`).
 
+Flag Classes
+^^^^^^^^^^^^
+
+Flags have an expanded view of aliasing: to be canonical, the value of a flag
+needs to be a power-of-two value, and not a duplicate name.  So, in addition to the
+:class:`Enum` definition of alias, a flag with no value (a.k.a. ``0``) or with more than one
+power-of-two value (e.g. ``3``) is considered an alias.
 
 Enum Members (aka instances)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1123,8 +1140,34 @@ The most interesting thing about enum members is that they are singletons.
 and then puts a custom :meth:`__new__` in place to ensure that no new ones are
 ever instantiated by returning only the existing member instances.
 
+Flag Members
+^^^^^^^^^^^^
+
+Flag members can be iterated over just like the :class:`Flag` class, and only the
+canonical members will be returned.  For example::
+
+    >>> list(Color)
+    [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]
+
+(Note that ``BLACK``, ``PURPLE``, and ``WHITE`` do not show up.)
+
+Inverting a flag member returns the corresponding positive value,
+rather than a negative value --- for example::
+
+    >>> ~Color.RED
+    <Color.GREEN|BLUE: 6>
+
+Flag members have a length corresponding to the number of power-of-two values
+they contain.  For example::
+
+    >>> len(Color.PURPLE)
+    2
+
 
 .. _enum-cookbook:
+
+Enum Cookbook
+-------------
 
 
 While :class:`Enum`, :class:`IntEnum`, :class:`StrEnum`, :class:`Flag`, and
@@ -1299,7 +1342,7 @@ enumerations)::
 DuplicateFreeEnum
 ^^^^^^^^^^^^^^^^^
 
-Raises an error if a duplicate member name is found instead of creating an
+Raises an error if a duplicate member value is found instead of creating an
 alias::
 
     >>> class DuplicateFreeEnum(Enum):

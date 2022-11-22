@@ -39,12 +39,12 @@ Large File Support
 
 Several operating systems (including AIX and Solaris) provide
 support for files that are larger than 2 GiB from a C programming model where
-:c:type:`int` and :c:type:`long` are 32-bit values. This is typically accomplished
+:c:expr:`int` and :c:expr:`long` are 32-bit values. This is typically accomplished
 by defining the relevant size and offset types as 64-bit values. Such files are
 sometimes referred to as :dfn:`large files`.
 
 Large file support is enabled in Python when the size of an :c:type:`off_t` is
-larger than a :c:type:`long` and the :c:type:`long long` is at least as large
+larger than a :c:expr:`long` and the :c:expr:`long long` is at least as large
 as an :c:type:`off_t`.
 It may be necessary to configure and compile Python with certain compiler flags
 to enable this mode. For example, with Solaris 2.6 and 2.7 you need to do

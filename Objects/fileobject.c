@@ -88,8 +88,7 @@ PyFile_GetLine(PyObject *f, int n)
             else {
                 PyObject *v;
                 v = PyBytes_FromStringAndSize(s, len-1);
-                Py_DECREF(result);
-                result = v;
+                Py_SETREF(result, v);
             }
         }
     }
@@ -104,8 +103,7 @@ PyFile_GetLine(PyObject *f, int n)
         else if (PyUnicode_READ_CHAR(result, len-1) == '\n') {
             PyObject *v;
             v = PyUnicode_Substring(result, 0, len-1);
-            Py_DECREF(result);
-            result = v;
+            Py_SETREF(result, v);
         }
     }
     return result;
@@ -230,16 +228,8 @@ _PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
     return 1;
 }
 
-/*
-** Py_UniversalNewlineFgets is an fgets variation that understands
-** all of \r, \n and \r\n conventions.
-** The stream should be opened in binary mode.
-** The fobj parameter exists solely for legacy reasons and must be NULL.
-** Note that we need no error handling: fgets() treats error and eof
-** identically.
-*/
 char *
-Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
+_Py_UniversalNewlineFgetsWithSize(char *buf, int n, FILE *stream, PyObject *fobj, size_t* size)
 {
     char *p = buf;
     int c;
@@ -265,9 +255,26 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
     }
     FUNLOCKFILE(stream);
     *p = '\0';
-    if (p == buf)
+    if (p == buf) {
         return NULL;
+    }
+    *size = p - buf;
     return buf;
+}
+
+/*
+** Py_UniversalNewlineFgets is an fgets variation that understands
+** all of \r, \n and \r\n conventions.
+** The stream should be opened in binary mode.
+** The fobj parameter exists solely for legacy reasons and must be NULL.
+** Note that we need no error handling: fgets() treats error and eof
+** identically.
+*/
+
+char *
+Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj) {
+    size_t size;
+    return _Py_UniversalNewlineFgetsWithSize(buf, n, stream, fobj, &size);
 }
 
 /* **************************** std printer ****************************

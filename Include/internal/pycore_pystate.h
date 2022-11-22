@@ -85,13 +85,14 @@ _PyThreadState_GET(void)
     return _PyRuntimeState_GetThreadState(&_PyRuntime);
 }
 
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalError_TstateNULL(const char *func);
-
 static inline void
 _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 {
     if (tstate == NULL) {
-        _Py_FatalError_TstateNULL(func);
+        _Py_FatalErrorFunc(func,
+            "the function must be called with the GIL held, "
+            "after Python initialization and before Python finalization, "
+            "but the GIL is released (the current Python thread state is NULL)");
     }
 }
 

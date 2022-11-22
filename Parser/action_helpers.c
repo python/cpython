@@ -12,6 +12,7 @@ _create_dummy_identifier(Parser *p)
 void *
 _PyPegen_dummy_name(Parser *p, ...)
 {
+    // XXX This leaks memory from the initial arena.
     static void *cache = NULL;
 
     if (cache != NULL) {
