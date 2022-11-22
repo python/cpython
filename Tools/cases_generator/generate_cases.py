@@ -203,11 +203,11 @@ class SuperInstruction(parser.Super):
             input_mapping = {}
             for ieffect in reversed(instr.input_effects):
                 sp -= 1
-                if ieffect.name != "unused":
+                if ieffect.name != UNUSED:
                     input_mapping[self.stack[sp]] = ieffect
             output_mapping = {}
             for oeffect in instr.output_effects:
-                if oeffect.name != "unused":
+                if oeffect.name != UNUSED:
                     output_mapping[self.stack[sp]] = oeffect
                 sp += 1
             self.parts.append(SuperComponent(instr, input_mapping, output_mapping))
