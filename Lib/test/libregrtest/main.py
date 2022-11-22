@@ -73,7 +73,7 @@ class Regrtest:
         self.tests_to_shard.add('test_concurrent_futures')
         self.tests_to_shard.add('test_multiprocessing_spawn')
         self.tests_to_shard.add('test_asyncio')
-        self.tests_to_shard.add('test_tools')
+        # Only 1 long test case #self.tests_to_shard.add('test_tools')
         self.tests_to_shard.add('test_multiprocessing_forkserver')
         self.tests_to_shard.add('test_multiprocessing_fork')
         self.tests_to_shard.add('test_signal')

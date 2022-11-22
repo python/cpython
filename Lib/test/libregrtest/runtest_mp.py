@@ -235,7 +235,7 @@ class TestWorkerProcess(threading.Thread):
         self.start_time = time.monotonic()
 
         if shard:
-            self.current_test_name = f'{test_name}-shard-{shard.number:02}/{shard.total_shards-1:02}'
+            self.current_test_name = f'{test_name}-subset:{shard.number}/{shard.total_shards}'
         else:
             self.current_test_name = test_name
         try:
@@ -437,10 +437,10 @@ class MultiprocessTestRunner:
         self.output: queue.Queue[QueueOutput] = queue.Queue()
         tests_and_shards = []
         for test in self.regrtest.tests:
-            if self.num_procs > 2 and test in self.regrtest.tests_to_shard:
+            if self.num_procs > 1 and test in self.regrtest.tests_to_shard:
                 # Split shardable tests across multiple processes to run
                 # distinct subsets of tests within a given test module.
-                shards = min(self.num_procs//2+1, 8)  # avoid diminishing returns
+                shards = min(self.num_procs*2//3+1, 10)  # diminishing returns
                 for shard_no in range(shards):
                     tests_and_shards.append((test, ShardInfo(shard_no, shards)))
             else:
