@@ -587,7 +587,11 @@ def _rmtree_unsafe(path, onerror):
         entries = []
     for entry in entries:
         fullname = entry.path
-        if entry.is_dir(follow_symlinks=False) and not entry.is_junction():
+        try:
+            is_dir = (entry.is_dir(follow_symlinks=False) and
+                      not entry.is_junction())
+        except OSError:
+            is_dir = False
             try:
                 if entry.is_symlink():
                     # This can only happen if someone replaces
