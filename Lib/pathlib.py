@@ -1223,6 +1223,12 @@ class Path(PurePath):
             # Non-encodable path
             return False
 
+    def is_junction(self):
+        """
+        Whether this path is a junction.
+        """
+        return self._flavour.pathmod.isjunction(self)
+
     def is_block_device(self):
         """
         Whether this path is a block device.
