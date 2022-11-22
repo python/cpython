@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "structmember.h"
+#include <stddef.h> /* for offsetof() */
 
 typedef struct {
     PyObject_HEAD
@@ -63,11 +63,11 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef Custom_members[] = {
-    {"first", T_OBJECT_EX, offsetof(CustomObject, first), 0,
+    {"first", Py_T_OBJECT_EX, offsetof(CustomObject, first), 0,
      "first name"},
-    {"last", T_OBJECT_EX, offsetof(CustomObject, last), 0,
+    {"last", Py_T_OBJECT_EX, offsetof(CustomObject, last), 0,
      "last name"},
-    {"number", T_INT, offsetof(CustomObject, number), 0,
+    {"number", Py_T_INT, offsetof(CustomObject, number), 0,
      "custom number"},
     {NULL}  /* Sentinel */
 };
