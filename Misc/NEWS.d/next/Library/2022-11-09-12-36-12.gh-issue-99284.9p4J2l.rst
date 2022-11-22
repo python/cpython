@@ -1,0 +1,2 @@
+Remove ``_use_broken_old_ctypes_structure_semantics_``
+old untested and undocumented hack from :mod:`ctypes`.
