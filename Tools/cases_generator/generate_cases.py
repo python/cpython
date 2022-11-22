@@ -179,8 +179,8 @@ class Instruction(parser.InstDef):
 @dataclasses.dataclass
 class SuperComponent:
     instr: Instruction
-    input_mapping: typing.Dict[str, parser.StackEffect]
-    output_mapping: typing.Dict[str, parser.StackEffect]
+    input_mapping: dict[str, parser.StackEffect]
+    output_mapping: dict[str, parser.StackEffect]
 
 
 class SuperInstruction(parser.Super):
