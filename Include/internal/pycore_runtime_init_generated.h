@@ -793,6 +793,7 @@ extern "C" {
     INIT_ID(byteorder), \
     INIT_ID(bytes), \
     INIT_ID(bytes_per_sep), \
+    INIT_ID(c), \
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
     INIT_ID(c_return), \
@@ -842,6 +843,7 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(cwd), \
+    INIT_ID(d), \
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(decode), \
@@ -869,6 +871,7 @@ extern "C" {
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
     INIT_ID(duration), \
+    INIT_ID(e), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
     INIT_ID(encode), \
