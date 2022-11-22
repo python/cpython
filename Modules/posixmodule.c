@@ -13633,6 +13633,25 @@ os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class)
 #endif
 }
 
+/*[clinic input]
+os.DirEntry.is_junction -> bool
+    defining_class: defining_class
+    /
+
+Return True if the entry is a junction; cached per entry.
+[clinic start generated code]*/
+
+static int
+os_DirEntry_is_junction_impl(DirEntry *self, PyTypeObject *defining_class)
+/*[clinic end generated code: output=7061a07b0ef2cd1f input=475cd36fb7d4723f]*/
+{
+#ifdef MS_WINDOWS
+    return self->win32_lstat.st_reparse_tag == IO_REPARSE_TAG_MOUNT_POINT;
+#else
+    return 0;
+#endif
+}
+
 static PyObject *
 DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 {
@@ -13927,6 +13946,7 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_IS_DIR_METHODDEF
     OS_DIRENTRY_IS_FILE_METHODDEF
     OS_DIRENTRY_IS_SYMLINK_METHODDEF
+    OS_DIRENTRY_IS_JUNCTION_METHODDEF
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF

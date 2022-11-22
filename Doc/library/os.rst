@@ -2738,6 +2738,17 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
+   .. method:: is_junction()
+
+      Return ``True`` if this entry is a junction (even if broken);
+      return ``False`` if the entry points to a regular directory, any kind
+      of file, a symlink, or if it doesn't exist anymore.
+
+      The result is cached on the ``os.DirEntry`` object. Call
+      :func:`os.path.isjunction` to fetch up-to-date information.
+
+      .. versionadded:: 3.12
+
    .. method:: stat(*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
@@ -2760,8 +2771,8 @@ features:
    Note that there is a nice correspondence between several attributes
    and methods of ``os.DirEntry`` and of :class:`pathlib.Path`.  In
    particular, the ``name`` attribute has the same
-   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``
-   and ``stat()`` methods.
+   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``,
+   ``is_junction()``, and ``stat()`` methods.
 
    .. versionadded:: 3.5
 
