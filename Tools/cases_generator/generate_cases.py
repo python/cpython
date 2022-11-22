@@ -465,8 +465,8 @@ class Analyzer:
 
             for i, comp in enumerate(sup.parts):
                 if i > 0 and sup.kind == "super":
-                    write(f"NEXTOPARG();")
-                    write(f"next_instr++;")
+                    write("NEXTOPARG();")
+                    write("next_instr++;")
 
                 with block(""):
                     for var, ieffect in comp.input_mapping.items():
@@ -483,7 +483,7 @@ class Analyzer:
                 write(f"STACK_SHRINK({sup.initial_sp - sup.final_sp});")
             for i, var in enumerate(reversed(sup.stack[:sup.final_sp]), 1):
                 write(f"POKE({i}, {var});")
-            write(f"DISPATCH();")
+            write("DISPATCH();")
 
 
 def always_exits(block: parser.Block) -> bool:
