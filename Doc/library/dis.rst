@@ -1481,14 +1481,11 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: DELETE_FAST_NOERROR
 .. opcode:: DELETE_FAST_NOERROR_CHECK
-.. opcode:: DELETE_DEREF_NOERROR
-.. opcode:: DELETE_GLOBAL_NOERROR
-.. opcode:: DELETE_NAME_NOERROR
 
    Used after the body of an ``except E as e:``
    exception handler block to delete ``e`` without
-   raising :exc:`UnboundLocalError` or :exc:`NameError`.
-   Emitted as ``LOAD_CONST None; STORE_(...) e; DELETE_(...) e``
+   raising :exc:`UnboundLocalError`.
+   Emitted as ``LOAD_CONST None; STORE_FAST e; DELETE_FAST e``
    by default, or just ``DELETE_FAST e`` if it is guaranteed
    that ``e`` will be bound.
 
