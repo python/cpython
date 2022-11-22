@@ -542,37 +542,26 @@ class TestClassCleanup(unittest.TestCase):
         class InnerTest(unittest.TestCase):
             @classmethod
             def setUpClass(cls):
-                ordering.append('setUpClass2')
-                cls.addClassCleanup(ordering.append, 'cleanup2')
+                ordering.append('inner setup')
+                cls.addClassCleanup(ordering.append, 'inner cleanup')
             def test(self):
-                ordering.append('test2')
+                ordering.append('inner test')
 
         class OuterTest(unittest.TestCase):
             @classmethod
             def setUpClass(cls):
-                ordering.append('setUpClass1')
-                cls.addClassCleanup(ordering.append, 'cleanup1')
+                ordering.append('outer setup')
+                cls.addClassCleanup(ordering.append, 'outer cleanup')
             def test(self):
-                ordering.append('start test1')
+                ordering.append('start outer test')
                 runTests(InnerTest)
-                ordering.append('end test1')
+                ordering.append('end outer test')
 
         runTests(OuterTest)
-        self.assertEqual(ordering, ['setUpClass1', 'start test1',
-                                    'setUpClass2', 'test2', 'cleanup2',
-                                    'end test1', 'cleanup1'])
-
-
-    def test_debug_nested_test(self):
-        ordering = []
-
-        class InnerTest(unittest.TestCase):
-            @classmethod
-            def setUpClass(cls):
-                ordering.append('setUpClass2')
-                cls.addClassCleanup(ordering.append, 'cleanup2')
-            def test(self):
-                ordering.append('test2')
+        self.assertEqual(ordering, [
+                'outer setup', 'start outer test',
+                'inner setup', 'inner test', 'inner cleanup',
+                'end outer test', 'outer cleanup'])
 
 
 class TestModuleCleanUp(unittest.TestCase):
