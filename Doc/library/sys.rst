@@ -607,11 +607,11 @@ always available.
    | :const:`rounds`     | FLT_ROUNDS     | The rounding mode for floating-point addition is |
    |                     |                | characterized by the implementation defined value|
    |                     |                | of FLT_ROUNDS:                                   |
-   |                     |                | -1  indeterminable                               |
-   |                     |                | 0   toward zero                                  |
-   |                     |                | 1   to nearest                                   |
-   |                     |                | 2   toward positive infinity                     |
-   |                     |                | 3   toward negative infinity                     |
+   |                     |                | ``-1`` indeterminable,                           |
+   |                     |                | ``0`` toward zero,                               |
+   |                     |                | ``1`` to nearest,                                |
+   |                     |                | ``2`` toward positive infinity,                  |
+   |                     |                | ``3`` toward negative infinity                   |
    |                     |                |                                                  |
    |                     |                | All other values for FLT_ROUNDS characterize     |
    |                     |                | implementation-defined rounding behavior.        |
