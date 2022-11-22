@@ -8258,6 +8258,7 @@ expand_del_noerror(basicblock *entryblock, int none_oparg)
                     instr[-1].i_oparg = instr->i_oparg;
                     instr[-1].i_opcode = STORE_FAST;
                     instr->i_opcode = DELETE_FAST;
+                    break;
                 case DEL_PLACEHOLDER:
                     instr->i_opcode = NOP;
                     break;
