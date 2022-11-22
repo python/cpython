@@ -58,7 +58,7 @@ static int
 Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"first", "last", "number", NULL};
-    PyObject *first = NULL, *last = NULL, *tmp;
+    PyObject *first = NULL, *last = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UUi", kwlist,
                                      &first, &last,
@@ -66,14 +66,10 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (first) {
-        tmp = self->first;
-        self->first = Py_NewRef(first);
-        Py_DECREF(tmp);
+        Py_SETREF(self->first, Py_NewRef(first));
     }
     if (last) {
-        tmp = self->last;
-        self->last = Py_NewRef(last);
-        Py_DECREF(tmp);
+        Py_SETREF(self->last, Py_NewRef(last));
     }
     return 0;
 }
@@ -102,9 +98,7 @@ Custom_setfirst(CustomObject *self, PyObject *value, void *closure)
                         "The first attribute value must be a string");
         return -1;
     }
-    Py_INCREF(value);
-    Py_CLEAR(self->first);
-    self->first = value;
+    Py_XSETREF(self->first, Py_NewRef(value));
     return 0;
 }
 
@@ -126,9 +120,7 @@ Custom_setlast(CustomObject *self, PyObject *value, void *closure)
                         "The last attribute value must be a string");
         return -1;
     }
-    Py_INCREF(value);
-    Py_CLEAR(self->last);
-    self->last = value;
+    Py_XSETREF(self->last, Py_NewRef(value));
     return 0;
 }
 

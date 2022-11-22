@@ -537,8 +537,7 @@ element_get_text(ElementObject* self)
             if (!tmp)
                 return NULL;
             self->text = tmp;
-            Py_DECREF(res);
-            res = tmp;
+            Py_SETREF(res, tmp);
         }
     }
 
@@ -559,8 +558,7 @@ element_get_tail(ElementObject* self)
             if (!tmp)
                 return NULL;
             self->tail = tmp;
-            Py_DECREF(res);
-            res = tmp;
+            Py_SETREF(res, tmp);
         }
     }
 

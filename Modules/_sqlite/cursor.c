@@ -1123,8 +1123,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         PyObject *factory = self->row_factory;
         PyObject *args[] = { (PyObject *)self, row, };
         PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
-        Py_DECREF(row);
-        row = new_row;
+        Py_SETREF(row, new_row);
     }
     return row;
 }

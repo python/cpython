@@ -42,7 +42,7 @@ static int
 Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"first", "last", "number", NULL};
-    PyObject *first = NULL, *last = NULL, *tmp;
+    PyObject *first = NULL, *last = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UUi", kwlist,
                                      &first, &last,
@@ -50,14 +50,10 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (first) {
-        tmp = self->first;
-        self->first = Py_NewRef(first);
-        Py_DECREF(tmp);
+        Py_SETREF(self->first, Py_NewRef(first));
     }
     if (last) {
-        tmp = self->last;
-        self->last = Py_NewRef(last);
-        Py_DECREF(tmp);
+        Py_SETREF(self->last, Py_NewRef(last));
     }
     return 0;
 }
@@ -77,7 +73,6 @@ Custom_getfirst(CustomObject *self, void *closure)
 static int
 Custom_setfirst(CustomObject *self, PyObject *value, void *closure)
 {
-    PyObject *tmp;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
         return -1;
@@ -87,9 +82,7 @@ Custom_setfirst(CustomObject *self, PyObject *value, void *closure)
                         "The first attribute value must be a string");
         return -1;
     }
-    tmp = self->first;
-    self->first = Py_NewRef(value);
-    Py_DECREF(tmp);
+    Py_SETREF(self->first, Py_NewRef(value));
     return 0;
 }
 
@@ -102,7 +95,6 @@ Custom_getlast(CustomObject *self, void *closure)
 static int
 Custom_setlast(CustomObject *self, PyObject *value, void *closure)
 {
-    PyObject *tmp;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete the last attribute");
         return -1;
@@ -112,9 +104,7 @@ Custom_setlast(CustomObject *self, PyObject *value, void *closure)
                         "The last attribute value must be a string");
         return -1;
     }
-    tmp = self->last;
-    self->last = Py_NewRef(value);
-    Py_DECREF(tmp);
+    Py_SETREF(self->last, Py_NewRef(value));
     return 0;
 }
 
