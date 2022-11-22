@@ -408,8 +408,6 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_uninitialized_submodules);
     PyUnicode_InternInPlace(&string);
-    string = &_Py_ID(_use_broken_old_ctypes_structure_semantics_);
-    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_warn_unawaited_coroutine);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_xoptions);
@@ -440,9 +438,13 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(as_integer_ratio);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(ast);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(attribute);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(authorizer_callback);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(autocommit);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(b);
     PyUnicode_InternInPlace(&string);
@@ -477,6 +479,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(bytes);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(bytes_per_sep);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(c);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(c_call);
     PyUnicode_InternInPlace(&string);
@@ -576,6 +580,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(cwd);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(d);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(data);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(database);
@@ -629,6 +635,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(dst_dir_fd);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(duration);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(e);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(effective_ids);
     PyUnicode_InternInPlace(&string);

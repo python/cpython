@@ -2402,8 +2402,7 @@ builtin_vars(PyObject *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
         return NULL;
     if (v == NULL) {
-        d = PyEval_GetLocals();
-        Py_XINCREF(d);
+        d = Py_XNewRef(PyEval_GetLocals());
     }
     else {
         if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &d) == 0) {

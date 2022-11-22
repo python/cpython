@@ -3699,7 +3699,7 @@ AS_VAR_IF([with_system_expat], [yes], [
 ], [
   LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
   LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
-  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_HEADERS) \$(LIBEXPAT_A)"
 ])
 
 AC_SUBST([LIBEXPAT_CFLAGS])
@@ -3808,7 +3808,7 @@ AS_VAR_IF([with_system_libmpdec], [yes], [
 ], [
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
-  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
 
   dnl Disable forced inlining in debug builds, see GH-94847
   AS_VAR_IF([with_pydebug], [yes], [
@@ -7350,6 +7350,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
