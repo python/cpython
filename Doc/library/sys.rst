@@ -604,9 +604,10 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`rounds`     | FLT_ROUNDS     | The rounding mode for floating-point addition is |
-   |                     |                | characterized by the implementation defined value|
-   |                     |                | of FLT_ROUNDS:                                   |
+   | :const:`rounds`     | FLT_ROUNDS     | integer representing the rounding mode for       |
+   |                     |                | floating-point arithmetic. This reflects the     |
+   |                     |                | value of the system FLT_ROUNDS macro at          |
+   |                     |                | interpreter startup time:                        |
    |                     |                | ``-1`` indeterminable,                           |
    |                     |                | ``0`` toward zero,                               |
    |                     |                | ``1`` to nearest,                                |
