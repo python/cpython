@@ -83,6 +83,8 @@ static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 static PyObject *list, *tuple, *dict;
 static PyObject *exit_func, *lasti, *val;
+#define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1
+#define _BINARY_OP_INPLACE_ADD_UNICODE_PART_2 2
 
 static PyObject *
 dummy_func(
@@ -197,7 +199,7 @@ dummy_func(
             BINARY_OP_ADD_FLOAT,
             BINARY_OP_ADD_INT,
             BINARY_OP_ADD_UNICODE,
-            // BINARY_OP_INPLACE_ADD_UNICODE,  // This is an odd duck.
+            _BINARY_OP_INPLACE_ADD_UNICODE_PART_1,
             BINARY_OP_MULTIPLY_FLOAT,
             BINARY_OP_MULTIPLY_INT,
             BINARY_OP_SUBTRACT_FLOAT,
@@ -263,13 +265,10 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // This is a subtle one. It's a super-instruction for
-        // BINARY_OP_ADD_UNICODE followed by STORE_FAST
-        // where the store goes into the left argument.
-        // So the inputs are the same as for all BINARY_OP
-        // specializations, but there is no output.
-        // At the end we just skip over the STORE_FAST.
-        inst(BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
+        // Part 1's output effect is a lie -- it has no result.
+        // Part 2's input effect is equally a lie, and the two lies
+        // cancel each other out.
+        op(_BINARY_OP_INPLACE_ADD_UNICODE_PART_1, (left, right, unused/1 -- unused)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -295,9 +294,12 @@ dummy_func(
             PyUnicode_Append(target_local, right);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             ERROR_IF(*target_local == NULL, error);
-            // The STORE_FAST is already done.
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }
+        op(_BINARY_OP_INPLACE_ADD_UNICODE_PART_2, (unused --)) {
+            // The STORE_FAST is already done; oparg is dead.
+        }
+        super(BINARY_OP_INPLACE_ADD_UNICODE) =
+            _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 + _BINARY_OP_INPLACE_ADD_UNICODE_PART_2;
 
         inst(BINARY_OP_ADD_FLOAT, (left, right, unused/1 -- sum)) {
             assert(cframe.use_tracing == 0);
