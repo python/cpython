@@ -62,8 +62,7 @@ get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
     PyObject *v = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
-    Py_INCREF(v);
-    return v;
+    return Py_NewRef(v);
 }
 
 static PyLongObject *
@@ -1785,8 +1784,7 @@ pylong_int_to_decimal_string(PyObject *aa,
         goto success;
     }
     else {
-        *p_output = (PyObject *)s;
-        Py_INCREF(s);
+        *p_output = Py_NewRef(s);
         goto success;
     }
 
@@ -2911,8 +2909,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
             return -1;
         }
         PyObject *zero = _PyLong_GetZero();
-        Py_INCREF(zero);
-        *pdiv = (PyLongObject*)zero;
+        *pdiv = (PyLongObject*)Py_NewRef(zero);
         return 0;
     }
     if (size_b == 1) {
@@ -3747,10 +3744,8 @@ k_mul(PyLongObject *a, PyLongObject *b)
     assert(Py_SIZE(ah) > 0);            /* the split isn't degenerate */
 
     if (a == b) {
-        bh = ah;
-        bl = al;
-        Py_INCREF(bh);
-        Py_INCREF(bl);
+        bh = (PyLongObject*)Py_NewRef(ah);
+        bl = (PyLongObject*)Py_NewRef(al);
     }
     else if (kmul_split(b, shift, &bh, &bl) < 0) goto fail;
 
@@ -3822,8 +3817,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
     ah = al = NULL;
 
     if (a == b) {
-        t2 = t1;
-        Py_INCREF(t2);
+        t2 = (PyLongObject*)Py_NewRef(t1);
     }
     else if ((t2 = x_add(bh, bl)) == NULL) {
         Py_DECREF(t1);
@@ -4067,12 +4061,10 @@ pylong_int_divmod(PyLongObject *v, PyLongObject *w,
         return -1;
     }
     if (pdiv != NULL) {
-        Py_INCREF(q);
-        *pdiv = (PyLongObject *)q;
+        *pdiv = (PyLongObject *)Py_NewRef(q);
     }
     if (pmod != NULL) {
-        Py_INCREF(r);
-        *pmod = (PyLongObject *)r;
+        *pmod = (PyLongObject *)Py_NewRef(r);
     }
     Py_DECREF(result);
     return 0;
@@ -4628,7 +4620,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     /* k-ary values.  If the exponent is large enough, table is
      * precomputed so that table[i] == a**(2*i+1) % c for i in
      * range(EXP_TABLE_LEN).
-     * Note: this is uninitialzed stack trash: don't pay to set it to known
+     * Note: this is uninitialized stack trash: don't pay to set it to known
      * values unless it's needed. Instead ensure that num_table_entries is
      * set to the number of entries actually filled whenever a branch to the
      * Error or Done labels is possible.
@@ -4638,11 +4630,10 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
     /* a, b, c = v, w, x */
     CHECK_BINOP(v, w);
-    a = (PyLongObject*)v; Py_INCREF(a);
-    b = (PyLongObject*)w; Py_INCREF(b);
+    a = (PyLongObject*)Py_NewRef(v);
+    b = (PyLongObject*)Py_NewRef(w);
     if (PyLong_Check(x)) {
-        c = (PyLongObject *)x;
-        Py_INCREF(x);
+        c = (PyLongObject *)Py_NewRef(x);
     }
     else if (x == Py_None)
         c = NULL;
@@ -4824,8 +4815,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         /* Left-to-right k-ary sliding window exponentiation
          * (Handbook of Applied Cryptography (HAC) Algorithm 14.85)
          */
-        Py_INCREF(a);
-        table[0] = a;
+        table[0] = (PyLongObject*)Py_NewRef(a);
         num_table_entries = 1;
         MULT(a, a, a2);
         /* table[i] == a**(2*i + 1) % c */
@@ -5362,11 +5352,12 @@ long_or(PyObject *a, PyObject *b)
 static PyObject *
 long_long(PyObject *v)
 {
-    if (PyLong_CheckExact(v))
-        Py_INCREF(v);
-    else
-        v = _PyLong_Copy((PyLongObject *)v);
-    return v;
+    if (PyLong_CheckExact(v)) {
+        return Py_NewRef(v);
+    }
+    else {
+        return _PyLong_Copy((PyLongObject *)v);
+    }
 }
 
 PyObject *
@@ -5473,8 +5464,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             Py_SET_SIZE(c, size_a);
         }
         else if (Py_REFCNT(a) == 1) {
-            Py_INCREF(a);
-            c = a;
+            c = (PyLongObject*)Py_NewRef(a);
         }
         else {
             alloc_a = size_a;
@@ -5487,8 +5477,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             Py_SET_SIZE(d, size_a);
         }
         else if (Py_REFCNT(b) == 1 && size_a <= alloc_b) {
-            Py_INCREF(b);
-            d = b;
+            d = (PyLongObject*)Py_NewRef(b);
             Py_SET_SIZE(d, size_a);
         }
         else {

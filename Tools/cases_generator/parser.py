@@ -39,13 +39,16 @@ class Node:
 
     @property
     def text(self) -> str:
+        return self.to_text()
+
+    def to_text(self, dedent: int = 0) -> str:
         context = self.context
         if not context:
             return ""
         tokens = context.owner.tokens
         begin = context.begin
         end = context.end
-        return lx.to_text(tokens[begin:end])
+        return lx.to_text(tokens[begin:end], dedent)
 
 
 @dataclass
@@ -54,16 +57,56 @@ class Block(Node):
 
 
 @dataclass
-class InstDef(Node):
+class StackEffect(Node):
     name: str
-    inputs: list[str] | None
-    outputs: list[str] | None
-    block: Block | None
+    # TODO: type, condition
+
+
+@dataclass
+class CacheEffect(Node):
+    name: str
+    size: int
+
+
+InputEffect = StackEffect | CacheEffect
+OutputEffect = StackEffect
+
+
+@dataclass
+class InstHeader(Node):
+    name: str
+    inputs: list[InputEffect]
+    outputs: list[OutputEffect]
+
+
+@dataclass
+class InstDef(Node):
+    header: InstHeader
+    block: Block
+
+    @property
+    def name(self) -> str:
+        return self.header.name
+
+    @property
+    def inputs(self) -> list[InputEffect]:
+        return self.header.inputs
+
+    @property
+    def outputs(self) -> list[StackEffect]:
+        return self.header.outputs
+
+
+@dataclass
+class Super(Node):
+    name: str
+    ops: list[str]
 
 
 @dataclass
 class Family(Node):
     name: str
+    size: str  # Variable giving the cache size in code units
     members: list[str]
 
 
@@ -73,13 +116,12 @@ class Parser(PLexer):
     def inst_def(self) -> InstDef | None:
         if header := self.inst_header():
             if block := self.block():
-                header.block = block
-                return header
+                return InstDef(header, block)
             raise self.make_syntax_error("Expected block")
         return None
 
     @contextual
-    def inst_header(self):
+    def inst_header(self) -> InstHeader | None:
         # inst(NAME) | inst(NAME, (inputs -- outputs))
         # TODO: Error out when there is something unexpected.
         # TODO: Make INST a keyword in the lexer.
@@ -89,25 +131,26 @@ class Parser(PLexer):
                 name = tkn.text
                 if self.expect(lx.COMMA):
                     inp, outp = self.stack_effect()
-                    if (self.expect(lx.RPAREN)
-                            and self.peek().kind == lx.LBRACE):
-                        return InstDef(name, inp, outp, [])
+                    if self.expect(lx.RPAREN):
+                        if ((tkn := self.peek())
+                                and tkn.kind == lx.LBRACE):
+                            return InstHeader(name, inp, outp)
                 elif self.expect(lx.RPAREN):
-                    return InstDef(name, None, None, [])
+                    return InstHeader(name, [], [])
         return None
 
-    def stack_effect(self):
+    def stack_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
         # '(' [inputs] '--' [outputs] ')'
         if self.expect(lx.LPAREN):
-            inp = self.inputs() or []
+            inputs = self.inputs() or []
             if self.expect(lx.MINUSMINUS):
-                outp = self.outputs() or []
+                outputs = self.outputs() or []
                 if self.expect(lx.RPAREN):
-                    return inp, outp
+                    return inputs, outputs
         raise self.make_syntax_error("Expected stack effect")
 
-    def inputs(self):
-        # input (, input)*
+    def inputs(self) -> list[InputEffect] | None:
+        # input (',' input)*
         here = self.getpos()
         if inp := self.input():
             near = self.getpos()
@@ -119,27 +162,25 @@ class Parser(PLexer):
         self.setpos(here)
         return None
 
-    def input(self):
-        # IDENTIFIER
+    @contextual
+    def input(self) -> InputEffect | None:
+        # IDENTIFIER '/' INTEGER (CacheEffect)
+        # IDENTIFIER (StackEffect)
         if (tkn := self.expect(lx.IDENTIFIER)):
-            if self.expect(lx.LBRACKET):
-                if arg := self.expect(lx.IDENTIFIER):
-                    if self.expect(lx.RBRACKET):
-                        return f"{tkn.text}[{arg.text}]"
-                    if self.expect(lx.TIMES):
-                        if num := self.expect(lx.NUMBER):
-                            if self.expect(lx.RBRACKET):
-                                return f"{tkn.text}[{arg.text}*{num.text}]"
-                raise self.make_syntax_error("Expected argument in brackets", tkn)
+            if self.expect(lx.DIVIDE):
+                if num := self.expect(lx.NUMBER):
+                    try:
+                        size = int(num.text)
+                    except ValueError:
+                        raise self.make_syntax_error(
+                            f"Expected integer, got {num.text!r}")
+                    else:
+                        return CacheEffect(tkn.text, size)
+                raise self.make_syntax_error("Expected integer")
+            else:
+                return StackEffect(tkn.text)
 
-            return tkn.text
-        if self.expect(lx.CONDOP):
-            while self.expect(lx.CONDOP):
-                pass
-            return "??"
-        return None
-
-    def outputs(self):
+    def outputs(self) -> list[OutputEffect] | None:
         # output (, output)*
         here = self.getpos()
         if outp := self.output():
@@ -152,32 +193,63 @@ class Parser(PLexer):
         self.setpos(here)
         return None
 
-    def output(self):
-        return self.input()  # TODO: They're not quite the same.
+    @contextual
+    def output(self) -> OutputEffect | None:
+        if (tkn := self.expect(lx.IDENTIFIER)):
+            return StackEffect(tkn.text)
+
+    @contextual
+    def super_def(self) -> Super | None:
+        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "super":
+            if self.expect(lx.LPAREN):
+                if (tkn := self.expect(lx.IDENTIFIER)):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if ops := self.ops():
+                                res = Super(tkn.text, ops)
+                                return res
+
+    def ops(self) -> list[str] | None:
+        if tkn := self.expect(lx.IDENTIFIER):
+            ops = [tkn.text]
+            while self.expect(lx.PLUS):
+                if tkn := self.require(lx.IDENTIFIER):
+                    ops.append(tkn.text)
+            self.require(lx.SEMI)
+            return ops
 
     @contextual
     def family_def(self) -> Family | None:
-        here = self.getpos()
         if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "family":
+            size = None
             if self.expect(lx.LPAREN):
                 if (tkn := self.expect(lx.IDENTIFIER)):
-                    name = tkn.text
+                    if self.expect(lx.COMMA):
+                        if not (size := self.expect(lx.IDENTIFIER)):
+                            raise self.make_syntax_error(
+                                "Expected identifier")
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
+                            if not self.expect(lx.LBRACE):
+                                raise self.make_syntax_error("Expected {")
                             if members := self.members():
-                                if self.expect(lx.SEMI):
-                                    return Family(name, members)
+                                if self.expect(lx.RBRACE) and self.expect(lx.SEMI):
+                                    return Family(tkn.text, size.text if size else "", members)
         return None
 
-    def members(self):
+    def members(self) -> list[str] | None:
         here = self.getpos()
         if tkn := self.expect(lx.IDENTIFIER):
-            near = self.getpos()
-            if self.expect(lx.COMMA):
-                if rest := self.members():
-                    return [tkn.text] + rest
-            self.setpos(near)
-            return [tkn.text]
+            members = [tkn.text]
+            while self.expect(lx.COMMA):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    members.append(tkn.text)
+                else:
+                    break
+            peek = self.peek()
+            if not peek or peek.kind != lx.RBRACE:
+                raise self.make_syntax_error("Expected comma or right paren")
+            return members
         self.setpos(here)
         return None
 
@@ -186,8 +258,8 @@ class Parser(PLexer):
         tokens = self.c_blob()
         return Block(tokens)
 
-    def c_blob(self):
-        tokens = []
+    def c_blob(self) -> list[lx.Token]:
+        tokens: list[lx.Token] = []
         level = 0
         while tkn := self.next(raw=True):
             if tkn.kind in (lx.LBRACE, lx.LPAREN, lx.LBRACKET):
@@ -218,5 +290,5 @@ if __name__ == "__main__":
         filename = None
         src = "if (x) { x.foo; // comment\n}"
     parser = Parser(src, filename)
-    x = parser.inst_def()
+    x = parser.inst_def() or parser.super_def() or parser.family_def()
     print(x)
