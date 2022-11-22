@@ -167,7 +167,11 @@ There are a few functions specific to Python functions.
    If *event* is ``PyFunction_EVENT_CREATE``, then the callback is invoked
    after `func` has been fully initialized. Otherwise, the callback is invoked
    before the modification to *func* takes place, so the prior state of *func*
-   can be inspected.
+   can be inspected. The runtime is permitted to optimize away the creation of
+   function objects when possible. In such cases no event will be emitted.
+   Although this creates the possitibility of an observable difference of
+   runtime behavior depending on optimization decisions, it does not change
+   the semantics of the Python code being executed.
 
    If the callback returns with an exception set, it must return ``-1``; this
    exception will be printed as an unraisable exception using
