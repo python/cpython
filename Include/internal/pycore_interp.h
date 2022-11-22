@@ -174,6 +174,8 @@ struct _is {
 
     PyDict_WatchCallback dict_watchers[DICT_MAX_WATCHERS];
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
+    // One bit is set for each non-NULL entry in func_watchers
+    uint8_t active_func_watchers;
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];

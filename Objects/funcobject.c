@@ -9,14 +9,24 @@
 #include "structmember.h"         // PyMemberDef
 
 static void
-handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
+notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
+                     PyFunctionObject *func, PyObject *new_value)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < FUNC_MAX_WATCHERS; i++) {
         PyFunction_WatchCallback cb = interp->func_watchers[i];
         if ((cb != NULL) && (cb(event, func, new_value) < 0)) {
             PyErr_WriteUnraisable((PyObject *) func);
         }
+    }
+}
+
+static inline void
+handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
+                  PyObject *new_value)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->active_func_watchers) {
+        notify_func_watchers(interp, event, func, new_value);
     }
 }
 
@@ -28,6 +38,7 @@ PyFunction_AddWatcher(PyFunction_WatchCallback callback)
     for (int i = 0; i < FUNC_MAX_WATCHERS; i++) {
         if (interp->func_watchers[i] == NULL) {
             interp->func_watchers[i] = callback;
+            interp->active_func_watchers |= (1 << i);
             return i;
         }
     }
@@ -50,6 +61,7 @@ PyFunction_ClearWatcher(int watcher_id)
         return -1;
     }
     interp->func_watchers[watcher_id] = NULL;
+    interp->active_func_watchers &= ~(1 << watcher_id);
     return 0;
 }
 
