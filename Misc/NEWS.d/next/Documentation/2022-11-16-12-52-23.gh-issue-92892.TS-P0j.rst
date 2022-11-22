@@ -1,0 +1,1 @@
+Document that calling variadic functions with ctypes requires special care on macOS/arm64 (and possibly other platforms).
