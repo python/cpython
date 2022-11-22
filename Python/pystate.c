@@ -461,6 +461,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->dict_state.watchers[i] = NULL;
     }
 
+    for (int i=0; i < FUNC_MAX_WATCHERS; i++) {
+        interp->func_watchers[i] = NULL;
+    }
+    interp->active_func_watchers = 0;
+
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
