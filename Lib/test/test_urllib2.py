@@ -1361,6 +1361,15 @@ class HandlerTests(unittest.TestCase):
                 request = handler.last_buf
                 self.assertTrue(request.startswith(expected), repr(request))
 
+    def test_redirect_head_request(self):
+        from_url = "http://example.com/a.html"
+        to_url = "http://example.com/b.html"
+        h = urllib.request.HTTPRedirectHandler()
+        req = Request(from_url, method="HEAD")
+        fp = MockFile()
+        new_req = h.redirect_request(req, fp, 302, "Permanently Moved", {}, to_url)
+        self.assertEqual(new_req.get_method(), "HEAD")
+
     def test_proxy(self):
         u = "proxy.example.com:3128"
         for d in dict(http=u), dict(HTTP=u):
