@@ -9,7 +9,7 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import tasks
-
+from . import constants
 
 class _State(enum.Enum):
     CREATED = "created"
@@ -69,7 +69,8 @@ class Runner:
             loop = self._loop
             _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.run_until_complete(loop.shutdown_default_executor())
+            loop.run_until_complete(
+                loop.shutdown_default_executor(constants.THREAD_JOIN_TIMEOUT))
         finally:
             if self._set_event_loop:
                 events.set_event_loop(None)
@@ -114,8 +115,6 @@ class Runner:
 
         self._interrupt_count = 0
         try:
-            if self._set_event_loop:
-                events.set_event_loop(self._loop)
             return self._loop.run_until_complete(task)
         except exceptions.CancelledError:
             if self._interrupt_count > 0:
@@ -136,7 +135,11 @@ class Runner:
             return
         if self._loop_factory is None:
             self._loop = events.new_event_loop()
-            self._set_event_loop = True
+            if not self._set_event_loop:
+                # Call set_event_loop only once to avoid calling
+                # attach_loop multiple times on child watchers
+                events.set_event_loop(self._loop)
+                self._set_event_loop = True
         else:
             self._loop = self._loop_factory()
         if self._debug is not None:
@@ -154,12 +157,12 @@ class Runner:
         raise KeyboardInterrupt()
 
 
-def run(main, *, debug=None):
+def run(main, *, debug=None, loop_factory=None):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and finalizing asynchronous
-    generators.
+    managing the asyncio event loop, finalizing asynchronous
+    generators and closing the default executor.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
@@ -169,6 +172,10 @@ def run(main, *, debug=None):
     This function always creates a new event loop and closes it at the end.
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
+
+    The executor is given a timeout duration of 5 minutes to shutdown.
+    If the executor hasn't finished within that duration, a warning is
+    emitted and the executor is closed.
 
     Example:
 
@@ -183,7 +190,7 @@ def run(main, *, debug=None):
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug) as runner:
+    with Runner(debug=debug, loop_factory=loop_factory) as runner:
         return runner.run(main)
 
 

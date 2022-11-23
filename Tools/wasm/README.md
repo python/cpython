@@ -1,11 +1,16 @@
 # Python WebAssembly (WASM) build
 
-**WARNING: WASM support is highly experimental! Lots of features are not working yet.**
+**WARNING: WASM support is work-in-progress! Lots of features are not working yet.**
 
 This directory contains configuration and helpers to facilitate cross
-compilation of CPython to WebAssembly (WASM). For now we support
-*wasm32-emscripten* builds for modern browser and for *Node.js*. WASI
-(*wasm32-wasi*) is work-in-progress
+compilation of CPython to WebAssembly (WASM). Python supports Emscripten
+(*wasm32-emscripten*) and WASI (*wasm32-wasi*) targets. Emscripten builds
+run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
+use WASM runtimes such as *wasmtime*.
+
+Users and developers are encouraged to use the script
+`Tools/wasm/wasm_build.py`. The tool automates the build process and provides
+assistance with installation of SDKs.
 
 ## wasm32-emscripten build
 
@@ -17,7 +22,7 @@ access the file system directly.
 
 Cross compiling to the wasm32-emscripten platform needs the
 [Emscripten](https://emscripten.org/) SDK and a build Python interpreter.
-Emscripten 3.1.8 or newer are recommended. All commands below are relative
+Emscripten 3.1.19 or newer are recommended. All commands below are relative
 to a repository checkout.
 
 Christian Heimes maintains a container image with Emscripten SDK, Python
@@ -152,7 +157,7 @@ functions.
 
 - Threading is disabled by default. The ``configure`` option
   ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
-  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``. 
+  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``.
 - pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
   The Node.JS runtime keeps a pool of web workers around. Each web worker
   uses several file descriptors (eventfd, epoll, pipe).
@@ -198,7 +203,7 @@ functions.
 - The interactive shell does not handle copy 'n paste and unicode support
   well.
 - The bundled stdlib is limited. Network-related modules,
-  distutils, multiprocessing, dbm, tests and similar modules
+  multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
 - In-memory file system (MEMFS) is not persistent and limited.
@@ -278,7 +283,7 @@ popd
 
 ## WASI limitations and issues (WASI SDK 15.0)
 
-A lot of Emscripten limitations also apply to WASI. Noticable restrictions
+A lot of Emscripten limitations also apply to WASI. Noticeable restrictions
 are:
 
 - Call stack size is limited. Default recursion limit and parser stack size
@@ -336,26 +341,46 @@ if os.name == "posix":
 ```python
 >>> import os, sys
 >>> os.uname()
-posix.uname_result(sysname='Emscripten', nodename='emscripten', release='1.0', version='#1', machine='wasm32')
+posix.uname_result(
+    sysname='Emscripten',
+    nodename='emscripten',
+    release='3.1.19',
+    version='#1',
+    machine='wasm32'
+)
 >>> os.name
 'posix'
 >>> sys.platform
 'emscripten'
 >>> sys._emscripten_info
 sys._emscripten_info(
-    emscripten_version=(3, 1, 8),
-    runtime='Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0',
+    emscripten_version=(3, 1, 10),
+    runtime='Mozilla/5.0 (X11; Linux x86_64; rv:104.0) Gecko/20100101 Firefox/104.0',
     pthreads=False,
     shared_memory=False
 )
+```
+
+```python
 >>> sys._emscripten_info
-sys._emscripten_info(emscripten_version=(3, 1, 8), runtime='Node.js v14.18.2', pthreads=True, shared_memory=True)
+sys._emscripten_info(
+    emscripten_version=(3, 1, 19),
+    runtime='Node.js v14.18.2',
+    pthreads=True,
+    shared_memory=True
+)
 ```
 
 ```python
 >>> import os, sys
 >>> os.uname()
-posix.uname_result(sysname='wasi', nodename='(none)', release='0.0.0', version='0.0.0', machine='wasm32')
+posix.uname_result(
+    sysname='wasi',
+    nodename='(none)',
+    release='0.0.0',
+    version='0.0.0',
+    machine='wasm32'
+)
 >>> os.name
 'posix'
 >>> sys.platform
@@ -446,7 +471,8 @@ embuilder build --pic zlib bzip2 MINIMAL_PIC
 
 **NOTE**: WASI-SDK's clang may show a warning on Fedora:
 ``/lib64/libtinfo.so.6: no version information available``,
-[RHBZ#1875587](https://bugzilla.redhat.com/show_bug.cgi?id=1875587).
+[RHBZ#1875587](https://bugzilla.redhat.com/show_bug.cgi?id=1875587). The
+warning can be ignored.
 
 ```shell
 export WASI_VERSION=16
@@ -471,6 +497,8 @@ ln -srf -t /usr/local/bin/ ~/.wasmtime/bin/wasmtime
 
 ### WASI debugging
 
-* ``wasmtime run -g`` generates debugging symbols for gdb and lldb.
+* ``wasmtime run -g`` generates debugging symbols for gdb and lldb. The
+  feature is currently broken, see
+  https://github.com/bytecodealliance/wasmtime/issues/4669 .
 * The environment variable ``RUST_LOG=wasi_common`` enables debug and
   trace logging.

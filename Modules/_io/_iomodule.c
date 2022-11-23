@@ -212,8 +212,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     is_number = PyNumber_Check(file);
 
     if (is_number) {
-        path_or_fd = file;
-        Py_INCREF(path_or_fd);
+        path_or_fd = Py_NewRef(file);
     } else {
         path_or_fd = PyOS_FSPath(file);
         if (path_or_fd == NULL) {
@@ -489,8 +488,7 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
             encoding = &_Py_ID(locale);
         }
     }
-    Py_INCREF(encoding);
-    return encoding;
+    return Py_NewRef(encoding);
 }
 
 
@@ -697,16 +695,15 @@ PyInit__io(void)
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         goto fail;
-    Py_INCREF(state->unsupported_operation);
     if (PyModule_AddObject(m, "UnsupportedOperation",
-                           state->unsupported_operation) < 0)
+                           Py_NewRef(state->unsupported_operation)) < 0)
         goto fail;
 
     /* BlockingIOError, for compatibility */
-    Py_INCREF(PyExc_BlockingIOError);
-    if (PyModule_AddObject(m, "BlockingIOError",
-                           (PyObject *) PyExc_BlockingIOError) < 0)
+    if (PyModule_AddObjectRef(m, "BlockingIOError",
+                              (PyObject *) PyExc_BlockingIOError) < 0) {
         goto fail;
+    }
 
     // Set type base classes
     PyFileIO_Type.tp_base = &PyRawIOBase_Type;

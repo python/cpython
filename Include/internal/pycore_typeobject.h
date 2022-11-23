@@ -11,13 +11,21 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern PyStatus _PyTypes_InitState(PyInterpreterState *);
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
 
 
 /* other API */
+
+/* Length of array of slotdef pointers used to store slots with the
+   same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
+   the same __name__, for any __name__. Since that's a static property, it is
+   appropriate to declare fixed-size arrays for this. */
+#define MAX_EQUIV 10
+
+typedef struct wrapperbase pytype_slotdef;
+
 
 // Type attribute lookup cache: speed up attribute and method lookups,
 // see _PyType_Lookup().
@@ -67,13 +75,14 @@ struct types_state {
 };
 
 
-extern PyStatus _PyTypes_InitSlotDefs(void);
-
 extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
 extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
 extern void _PyStaticType_ClearWeakRefs(PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
+
+PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
+PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
 
 #ifdef __cplusplus
 }

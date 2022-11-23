@@ -746,7 +746,12 @@ depending on the system error code.
 
    Raised when trying to run an operation without the adequate access
    rights - for example filesystem permissions.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EACCES` and :py:data:`~errno.EPERM`.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EACCES`,
+   :py:data:`~errno.EPERM`, and :py:data:`~errno.ENOTCAPABLE`.
+
+   .. versionchanged:: 3.11.1
+      WASI's :py:data:`~errno.ENOTCAPABLE` is now mapped to
+      :exc:`PermissionError`.
 
 .. exception:: ProcessLookupError
 
@@ -959,6 +964,10 @@ their subgroups based on the types of the contained exceptions.
 
          def derive(self, excs):
             return Errors(excs, self.exit_code)
+
+   Like :exc:`ExceptionGroup`, any subclass of :exc:`BaseExceptionGroup` which
+   is also a subclass of :exc:`Exception` can only wrap instances of
+   :exc:`Exception`.
 
    .. versionadded:: 3.11
 

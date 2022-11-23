@@ -173,7 +173,7 @@ class RunPyMixin:
                     errors="ignore",
                 ) as p:
                     p.stdin.close()
-                    version = next(p.stdout).splitlines()[0].rpartition(" ")[2]
+                    version = next(p.stdout, "\n").splitlines()[0].rpartition(" ")[2]
                     p.stdout.read()
                     p.wait(10)
                 if not sys.version.startswith(version):
@@ -238,9 +238,11 @@ class RunPyMixin:
         return data
 
     def py_ini(self, content):
-        if not self.py_exe:
-            self.py_exe = self.find_py()
-        return PreservePyIni(self.py_exe.with_name("py.ini"), content)
+        local_appdata = os.environ.get("LOCALAPPDATA")
+        if not local_appdata:
+            raise unittest.SkipTest("LOCALAPPDATA environment variable is "
+                                    "missing or empty")
+        return PreservePyIni(Path(local_appdata) / "py.ini", content)
 
     @contextlib.contextmanager
     def script(self, content, encoding="utf-8"):
@@ -367,6 +369,13 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100", data["env.tag"])
 
+    def test_filter_to_company_with_default(self):
+        company = "PythonTestSuite"
+        data = self.run_py([f"-V:{company}/"], env=dict(PY_PYTHON="3.0"))
+        self.assertEqual("X.Y.exe", data["LaunchCommand"])
+        self.assertEqual(company, data["env.company"])
+        self.assertEqual("3.100", data["env.tag"])
+
     def test_filter_to_tag(self):
         company = "PythonTestSuite"
         data = self.run_py([f"-V:3.100"])
@@ -458,6 +467,15 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
         self.assertEqual("X.Y-arm64.exe -X fake_arg_for_test -arg", data["stdout"].strip())
 
+    def test_py_default_short_argv0(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            for argv0 in ['"py.exe"', 'py.exe', '"py"', 'py']:
+                with self.subTest(argv0):
+                    data = self.run_py(["--version"], argv=f'{argv0} --version')
+                    self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+                    self.assertEqual("3.100", data["SearchInfo.tag"])
+                    self.assertEqual(f'X.Y.exe --version', data["stdout"].strip())
+
     def test_py_default_in_list(self):
         data = self.run_py(["-0"], env=TEST_PY_ENV)
         default = None
@@ -502,6 +520,14 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
     def test_py_shebang(self):
         with self.py_ini(TEST_PY_COMMANDS):
             with self.script("#! /usr/bin/python -prearg") as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_python_shebang(self):
+        with self.py_ini(TEST_PY_COMMANDS):
+            with self.script("#! python -prearg") as script:
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
@@ -556,6 +582,13 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("3.100", data["SearchInfo.tag"])
         self.assertEqual(f'X.Y.exe -prearg "{script}" -postarg', data["stdout"].strip())
 
+    def test_py_handle_64_in_ini(self):
+        with self.py_ini("\n".join(["[defaults]", "python=3.999-64"])):
+            # Expect this to fail, but should get oldStyleTag flipped on
+            data = self.run_py([], allow_fail=True, expect_returncode=103)
+        self.assertEqual("3.999-64", data["SearchInfo.tag"])
+        self.assertEqual("True", data["SearchInfo.oldStyleTag"])
+
     def test_search_path(self):
         stem = Path(sys.executable).stem
         with self.py_ini(TEST_PY_COMMANDS):
@@ -601,3 +634,42 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             self.assertIn("winget.exe", cmd)
         # Both command lines include the store ID
         self.assertIn("9PJPW5LDXLZ5", cmd)
+
+    def test_literal_shebang_absolute(self):
+        with self.script(f"#! C:/some_random_app -witharg") as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f"C:\\some_random_app -witharg {script}",
+            data["stdout"].strip(),
+        )
+
+    def test_literal_shebang_relative(self):
+        with self.script(f"#! ..\\some_random_app -witharg") as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f"{script.parent.parent}\\some_random_app -witharg {script}",
+            data["stdout"].strip(),
+        )
+
+    def test_literal_shebang_quoted(self):
+        with self.script(f'#! "some random app" -witharg') as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f'"{script.parent}\\some random app" -witharg {script}',
+            data["stdout"].strip(),
+        )
+
+        with self.script(f'#! some" random "app -witharg') as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f'"{script.parent}\\some random app" -witharg {script}',
+            data["stdout"].strip(),
+        )
+
+    def test_literal_shebang_quoted_escape(self):
+        with self.script(f'#! some\\" random "app -witharg') as script:
+            data = self.run_py([script])
+        self.assertEqual(
+            f'"{script.parent}\\some\\ random app" -witharg {script}',
+            data["stdout"].strip(),
+        )

@@ -393,12 +393,6 @@ typedef struct {
     // only currently possible high priority environment is an active virtual
     // environment
     bool lowPriorityTag;
-    // if true, we had an old-style tag with '-64' suffix, and so do not
-    // want to match tags like '3.x-32'
-    bool exclude32Bit;
-    // if true, we had an old-style tag with '-32' suffix, and so *only*
-    // want to match tags like '3.x-32'
-    bool only32Bit;
     // if true, allow PEP 514 lookup to override 'executable'
     bool allowExecutableOverride;
     // if true, allow a nearby pyvenv.cfg to locate the executable
@@ -483,8 +477,6 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG_2(tag, tagLength);
     DEBUG_BOOL(oldStyleTag);
     DEBUG_BOOL(lowPriorityTag);
-    DEBUG_BOOL(exclude32Bit);
-    DEBUG_BOOL(only32Bit);
     DEBUG_BOOL(allowDefaults);
     DEBUG_BOOL(allowExecutableOverride);
     DEBUG_BOOL(windowed);
@@ -499,62 +491,39 @@ dumpSearchInfo(SearchInfo *search)
 
 
 int
-findArgumentLength(const wchar_t *buffer, int bufferLength)
+findArgv0Length(const wchar_t *buffer, int bufferLength)
 {
-    if (bufferLength < 0) {
-        bufferLength = (int)wcsnlen_s(buffer, MAXLEN);
-    }
-    if (bufferLength == 0) {
-        return 0;
-    }
-    const wchar_t *end;
-    int i;
-
-    if (buffer[0] != L'"') {
-        end = wcschr(buffer, L' ');
-        if (!end) {
-            return bufferLength;
-        }
-        i = (int)(end - buffer);
-        return i < bufferLength ? i : bufferLength;
-    }
-
-    i = 0;
-    while (i < bufferLength) {
-        end = wcschr(&buffer[i + 1], L'"');
-        if (!end) {
-            return bufferLength;
-        }
-
-        i = (int)(end - buffer);
-        if (i >= bufferLength) {
-            return bufferLength;
-        }
-
-        int j = i;
-        while (j > 1 && buffer[--j] == L'\\') {
-            if (j > 0 && buffer[--j] == L'\\') {
-                // Even number, so back up and keep counting
-            } else {
-                // Odd number, so it's escaped and we want to keep searching
-                continue;
+    // Note: this implements semantics that are only valid for argv0.
+    // Specifically, there is no escaping of quotes, and quotes within
+    // the argument have no effect. A quoted argv0 must start and end
+    // with a double quote character; otherwise, it ends at the first
+    // ' ' or '\t'.
+    int quoted = buffer[0] == L'"';
+    for (int i = 1; bufferLength < 0 || i < bufferLength; ++i) {
+        switch (buffer[i]) {
+        case L'\0':
+            return i;
+        case L' ':
+        case L'\t':
+            if (!quoted) {
+                return i;
             }
-        }
-
-        // Non-escaped quote with space after it - end of the argument!
-        if (i + 1 >= bufferLength || isspace(buffer[i + 1])) {
-            return i + 1;
+            break;
+        case L'"':
+            if (quoted) {
+                return i + 1;
+            }
+            break;
         }
     }
-
     return bufferLength;
 }
 
 
 const wchar_t *
-findArgumentEnd(const wchar_t *buffer, int bufferLength)
+findArgv0End(const wchar_t *buffer, int bufferLength)
 {
-    return &buffer[findArgumentLength(buffer, bufferLength)];
+    return &buffer[findArgv0Length(buffer, bufferLength)];
 }
 
 
@@ -570,11 +539,16 @@ parseCommandLine(SearchInfo *search)
         return RC_NO_COMMANDLINE;
     }
 
-    const wchar_t *tail = findArgumentEnd(search->originalCmdLine, -1);
-    const wchar_t *end = tail;
-    search->restOfCmdLine = tail;
+    const wchar_t *argv0End = findArgv0End(search->originalCmdLine, -1);
+    const wchar_t *tail = argv0End; // will be start of the executable name
+    const wchar_t *end = argv0End;  // will be end of the executable name
+    search->restOfCmdLine = argv0End;   // will be first space after argv0
     while (--tail != search->originalCmdLine) {
-        if (*tail == L'.' && end == search->restOfCmdLine) {
+        if (*tail == L'"' && end == argv0End) {
+            // Move the "end" up to the quote, so we also allow moving for
+            // a period later on.
+            end = argv0End = tail;
+        } else if (*tail == L'.' && end == argv0End) {
             end = tail;
         } else if (*tail == L'\\' || *tail == L'/') {
             ++tail;
@@ -649,17 +623,6 @@ parseCommandLine(SearchInfo *search)
                 search->tagLength = argLen;
                 search->oldStyleTag = true;
                 search->restOfCmdLine = tail;
-                // If the tag ends with -64, we want to exclude 32-bit runtimes
-                // (If the tag ends with -32, it will be filtered later)
-                if (argLen > 3) {
-                    if (0 == _compareArgument(&arg[argLen - 3], 3, L"-64", 3)) {
-                        search->tagLength -= 3;
-                        search->exclude32Bit = true;
-                    } else if (0 == _compareArgument(&arg[argLen - 3], 3, L"-32", 3)) {
-                        search->tagLength -= 3;
-                        search->only32Bit = true;
-                    }
-                }
             } else if (STARTSWITH(L"V:") || STARTSWITH(L"-version:")) {
                 // Arguments starting with 'V:' specify company and/or tag
                 const wchar_t *argStart = wcschr(arg, L':') + 1;
@@ -672,6 +635,7 @@ parseCommandLine(SearchInfo *search)
                     search->tag = argStart;
                 }
                 search->tagLength = (int)(tail - search->tag);
+                search->allowDefaults = false;
                 search->restOfCmdLine = tail;
             } else if (MATCHES(L"0") || MATCHES(L"-list")) {
                 search->list = true;
@@ -890,6 +854,62 @@ _findCommand(SearchInfo *search, const wchar_t *command, int commandLength)
 
 
 int
+_useShebangAsExecutable(SearchInfo *search, const wchar_t *shebang, int shebangLength)
+{
+    wchar_t buffer[MAXLEN];
+    wchar_t script[MAXLEN];
+    wchar_t command[MAXLEN];
+
+    int commandLength = 0;
+    int inQuote = 0;
+
+    if (!shebang || !shebangLength) {
+        return 0;
+    }
+
+    wchar_t *pC = command;
+    for (int i = 0; i < shebangLength; ++i) {
+        wchar_t c = shebang[i];
+        if (isspace(c) && !inQuote) {
+            commandLength = i;
+            break;
+        } else if (c == L'"') {
+            inQuote = !inQuote;
+        } else if (c == L'/' || c == L'\\') {
+            *pC++ = L'\\';
+        } else {
+            *pC++ = c;
+        }
+    }
+    *pC = L'\0';
+
+    if (!GetCurrentDirectoryW(MAXLEN, buffer) ||
+        wcsncpy_s(script, MAXLEN, search->scriptFile, search->scriptFileLength) ||
+        FAILED(PathCchCombineEx(buffer, MAXLEN, buffer, script,
+                                PATHCCH_ALLOW_LONG_PATHS)) ||
+        FAILED(PathCchRemoveFileSpec(buffer, MAXLEN)) ||
+        FAILED(PathCchCombineEx(buffer, MAXLEN, buffer, command,
+                                PATHCCH_ALLOW_LONG_PATHS))
+    ) {
+        return RC_NO_MEMORY;
+    }
+
+    int n = (int)wcsnlen(buffer, MAXLEN);
+    wchar_t *path = allocSearchInfoBuffer(search, n + 1);
+    if (!path) {
+        return RC_NO_MEMORY;
+    }
+    wcscpy_s(path, n + 1, buffer);
+    search->executablePath = path;
+    if (commandLength) {
+        search->executableArgs = &shebang[commandLength];
+        search->executableArgsLength = shebangLength - commandLength;
+    }
+    return 0;
+}
+
+
+int
 checkShebang(SearchInfo *search)
 {
     // Do not check shebang if a tag was provided or if no script file
@@ -981,13 +1001,19 @@ checkShebang(SearchInfo *search)
         L"/usr/bin/env ",
         L"/usr/bin/",
         L"/usr/local/bin/",
-        L"",
+        L"python",
         NULL
     };
 
     for (const wchar_t **tmpl = shebangTemplates; *tmpl; ++tmpl) {
         if (_shebangStartsWith(shebang, shebangLength, *tmpl, &command)) {
             commandLength = 0;
+            // Normally "python" is the start of the command, but we also need it
+            // as a shebang prefix for back-compat. We move the command marker back
+            // if we match on that one.
+            if (0 == wcscmp(*tmpl, L"python")) {
+                command -= 6;
+            }
             while (command[commandLength] && !isspace(command[commandLength])) {
                 commandLength += 1;
             }
@@ -1030,11 +1056,14 @@ checkShebang(SearchInfo *search)
                 debug(L"# Found shebang command but could not execute it: %.*s\n",
                     commandLength, command);
             }
-            break;
+            // search is done by this point
+            return 0;
         }
     }
 
-    return 0;
+    // Unrecognised commands are joined to the script's directory and treated
+    // as the executable path
+    return _useShebangAsExecutable(search, shebang, shebangLength);
 }
 
 
@@ -1087,6 +1116,7 @@ checkDefaults(SearchInfo *search)
         if (!slash) {
             search->tag = tag;
             search->tagLength = n;
+            search->oldStyleTag = true;
         } else {
             search->company = tag;
             search->companyLength = (int)(slash - tag);
@@ -1690,6 +1720,7 @@ struct AppxSearchInfo {
 
 struct AppxSearchInfo APPX_SEARCH[] = {
     // Releases made through the Store
+    { L"PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0", L"3.12", 10 },
     { L"PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0", L"3.11", 10 },
     { L"PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0", L"3.10", 10 },
     { L"PythonSoftwareFoundation.Python.3.9_qbz5n2kfra8p0", L"3.9", 10 },
@@ -1698,6 +1729,7 @@ struct AppxSearchInfo APPX_SEARCH[] = {
     // Side-loadable releases. Note that the publisher ID changes whenever we
     // renew our code-signing certificate, so the newer ID has a higher
     // priority (lower sortKey)
+    { L"PythonSoftwareFoundation.Python.3.12_3847v3x7pw1km", L"3.12", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_3847v3x7pw1km", L"3.11", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_hd69rhyc2wevp", L"3.11", 12 },
     { L"PythonSoftwareFoundation.Python.3.10_3847v3x7pw1km", L"3.10", 11 },
@@ -1772,7 +1804,8 @@ struct StoreSearchInfo {
 
 
 struct StoreSearchInfo STORE_SEARCH[] = {
-    { L"3", /* 3.10 */ L"9PJPW5LDXLZ5" },
+    { L"3", /* 3.11 */ L"9NRWMJP3717K" },
+    { L"3.12", L"9NCVDN91XZQP" },
     { L"3.11", L"9NRWMJP3717K" },
     { L"3.10", L"9PJPW5LDXLZ5" },
     { L"3.9", L"9P7QFQMJRFP7" },
@@ -1966,10 +1999,25 @@ _selectEnvironment(const SearchInfo *search, EnvironmentInfo *env, EnvironmentIn
             }
         } else if (0 == _compare(env->company, -1, L"PythonCore", -1)) {
             // Old-style tags can only match PythonCore entries
-            if (_startsWith(env->tag, -1, search->tag, search->tagLength)) {
-                if (search->exclude32Bit && _is32Bit(env)) {
+
+            // If the tag ends with -64, we want to exclude 32-bit runtimes
+            // (If the tag ends with -32, it will be filtered later)
+            int tagLength = search->tagLength;
+            bool exclude32Bit = false, only32Bit = false;
+            if (tagLength > 3) {
+                if (0 == _compareArgument(&search->tag[tagLength - 3], 3, L"-64", 3)) {
+                    tagLength -= 3;
+                    exclude32Bit = true;
+                } else if (0 == _compareArgument(&search->tag[tagLength - 3], 3, L"-32", 3)) {
+                    tagLength -= 3;
+                    only32Bit = true;
+                }
+            }
+
+            if (_startsWith(env->tag, -1, search->tag, tagLength)) {
+                if (exclude32Bit && _is32Bit(env)) {
                     debug(L"# Excluding %s/%s because it looks like 32bit\n", env->company, env->tag);
-                } else if (search->only32Bit && !_is32Bit(env)) {
+                } else if (only32Bit && !_is32Bit(env)) {
                     debug(L"# Excluding %s/%s because it doesn't look 32bit\n", env->company, env->tag);
                 } else {
                     *best = env;

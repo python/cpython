@@ -131,7 +131,8 @@ General Options
    Turn on internal statistics gathering.
 
    The statistics will be dumped to a arbitrary (probably unique) file in
-   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows.
+   ``/tmp/py_stats/``, or ``C:\temp\py_stats\`` on Windows. If that directory
+   does not exist, results will be printed on stdout.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
 
@@ -191,7 +192,8 @@ Performance options
 -------------------
 
 Configuring Python using ``--enable-optimizations --with-lto`` (PGO + LTO) is
-recommended for best performance.
+recommended for best performance. The experimental ``--enable-bolt`` flag can
+also be used to improve performance.
 
 .. cmdoption:: --enable-optimizations
 
@@ -230,6 +232,27 @@ recommended for best performance.
 
    .. versionadded:: 3.11
       To use ThinLTO feature, use ``--with-lto=thin`` on Clang.
+
+   .. versionchanged:: 3.12
+      Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.
+
+.. cmdoption:: --enable-bolt
+
+   Enable usage of the `BOLT post-link binary optimizer
+   <https://github.com/llvm/llvm-project/tree/main/bolt>`_ (disabled by
+   default).
+
+   BOLT is part of the LLVM project but is not always included in their binary
+   distributions. This flag requires that ``llvm-bolt`` and ``merge-fdata``
+   are available.
+
+   BOLT is still a fairly new project so this flag should be considered
+   experimental for now. Because this tool operates on machine code its success
+   is dependent on a combination of the build environment + the other
+   optimization configure args + the CPU architecture, and not all combinations
+   are supported.
+
+   .. versionadded:: 3.12
 
 .. cmdoption:: --with-computed-gotos
 
@@ -733,16 +756,23 @@ Compiler flags
 
    In particular, :envvar:`CFLAGS` should not contain:
 
-   * the compiler flag `-I` (for setting the search path for include files).
-     The `-I` flags are processed from left to right, and any flags in
-     :envvar:`CFLAGS` would take precedence over user- and package-supplied `-I`
+   * the compiler flag ``-I`` (for setting the search path for include files).
+     The ``-I`` flags are processed from left to right, and any flags in
+     :envvar:`CFLAGS` would take precedence over user- and package-supplied ``-I``
      flags.
 
-   * hardening flags such as `-Werror` because distributions cannot control
+   * hardening flags such as ``-Werror`` because distributions cannot control
      whether packages installed by users conform to such heightened
      standards.
 
    .. versionadded:: 3.5
+
+.. envvar:: COMPILEALL_OPTS
+
+   Options passed to the :mod:`compileall` command line when building PYC files
+   in ``make install``. Default: ``-j0``.
+
+   .. versionadded:: 3.12
 
 .. envvar:: EXTRA_CFLAGS
 
@@ -856,9 +886,9 @@ Linker flags
 
    In particular, :envvar:`LDFLAGS` should not contain:
 
-   * the compiler flag `-L` (for setting the search path for libraries).
-     The `-L` flags are processed from left to right, and any flags in
-     :envvar:`LDFLAGS` would take precedence over user- and package-supplied `-L`
+   * the compiler flag ``-L`` (for setting the search path for libraries).
+     The ``-L`` flags are processed from left to right, and any flags in
+     :envvar:`LDFLAGS` would take precedence over user- and package-supplied ``-L``
      flags.
 
 .. envvar:: CONFIGURE_LDFLAGS_NODIST

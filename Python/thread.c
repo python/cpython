@@ -59,7 +59,7 @@ PyThread_init_thread(void)
 #   define PYTHREAD_NAME "pthread-stubs"
 #   include "thread_pthread_stubs.h"
 #elif defined(_POSIX_THREADS)
-#   if defined(__EMSCRIPTEN__) || !defined(__EMSCRIPTEN_PTHREADS__)
+#   if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
 #     define PYTHREAD_NAME "pthread-stubs"
 #   else
 #     define PYTHREAD_NAME "pthread"
@@ -207,8 +207,7 @@ PyThread_GetInfo(void)
     if (value == NULL)
 #endif
     {
-        Py_INCREF(Py_None);
-        value = Py_None;
+        value = Py_NewRef(Py_None);
     }
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;
