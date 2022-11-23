@@ -198,7 +198,7 @@ class Future:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
         if self._exception is not None:
-            raise self._exception
+            raise self._exception.with_traceback(self._exception_tb)
         return self._result
 
     def exception(self):
@@ -274,6 +274,7 @@ class Future:
             raise TypeError("StopIteration interacts badly with generators "
                             "and cannot be raised into a Future")
         self._exception = exception
+        self._exception_tb = exception.__traceback__
         self._state = _FINISHED
         self.__schedule_callbacks()
         self.__log_traceback = True
@@ -395,6 +396,8 @@ def _chain_future(source, destination):
         if dest_loop is None or dest_loop is source_loop:
             _set_state(destination, source)
         else:
+            if dest_loop.is_closed():
+                return
             dest_loop.call_soon_threadsafe(_set_state, destination, source)
 
     destination.add_done_callback(_call_check_cancel)

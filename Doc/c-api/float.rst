@@ -44,7 +44,7 @@ Floating Point Objects
 
 .. c:function:: double PyFloat_AsDouble(PyObject *pyfloat)
 
-   Return a C :c:type:`double` representation of the contents of *pyfloat*.  If
+   Return a C :c:expr:`double` representation of the contents of *pyfloat*.  If
    *pyfloat* is not a Python floating point object but has a :meth:`__float__`
    method, this method will first be called to convert *pyfloat* into a float.
    If ``__float__()`` is not defined then it falls back to :meth:`__index__`.
@@ -57,7 +57,7 @@ Floating Point Objects
 
 .. c:function:: double PyFloat_AS_DOUBLE(PyObject *pyfloat)
 
-   Return a C :c:type:`double` representation of the contents of *pyfloat*, but
+   Return a C :c:expr:`double` representation of the contents of *pyfloat*, but
    without error checking.
 
 
@@ -70,9 +70,9 @@ Floating Point Objects
 
 .. c:function:: double PyFloat_GetMax()
 
-   Return the maximum representable finite float *DBL_MAX* as C :c:type:`double`.
+   Return the maximum representable finite float *DBL_MAX* as C :c:expr:`double`.
 
 
 .. c:function:: double PyFloat_GetMin()
 
-   Return the minimum normalized positive float *DBL_MIN* as C :c:type:`double`.
+   Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.

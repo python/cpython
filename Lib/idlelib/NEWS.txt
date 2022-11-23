@@ -1,8 +1,29 @@
 What's New in IDLE 3.10.z
-after 3.10.0 until 3.10.?
-Released on 2022-05-16
+after 3.10.0 until 3.10.10?
+Released 2023-04-03?
 =========================
 
+
+gh-97527: Fix a bug in the previous bugfix that caused IDLE to not
+start when run with 3.10.8, 3.12.0a1, and at least Microsoft Python
+3.10.2288.0 installed without the Lib/test package.  3.11.0 was never
+affected.
+
+gh-65802: Document handling of extensions in Save As dialogs.
+
+gh-95191: Include prompts when saving Shell (interactive input/output).
+
+gh-95511: Fix the Shell context menu copy-with-prompts bug of copying
+an extra line when one selects whole lines.
+
+gh-95471: Tweak Edit menu. Move 'Select All' above 'Cut' as it is used
+with 'Cut' and 'Copy' but not 'Paste'.  Add a separator between 'Replace'
+and 'Go to Line' to help IDLE issue triagers.
+
+gh-95411: Enable using IDLE's module browser with .pyw files.
+
+gh-89610: Add .pyi as a recognized extension for IDLE on macOS.  This allows
+opening stub files by double clicking on them in the Finder.
 
 bpo-28950: Apply IDLE syntax highlighting to `.pyi` files.  Add util.py
 for common components.  Patch by Alex Waygood and Terry Jan Reedy.
@@ -29,6 +50,7 @@ What's New in IDLE 3.10.0
 Released on 2021-10-04
 =========================
 
+bpo-45193: Make completion boxes appear on Ubuntu again.
 
 bpo-40128: Mostly fix completions on macOS when not using tcl/tk 8.6.11
 (as with 3.9).

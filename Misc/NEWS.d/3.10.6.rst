@@ -1,0 +1,819 @@
+.. date: 2022-06-15-20-09-23
+.. gh-issue: 87389
+.. nonce: QVaC3f
+.. release date: 2022-08-01
+.. section: Security
+
+:mod:`http.server`: Fix an open redirection vulnerability in the HTTP server
+when an URI path starts with ``//``.  Vulnerability discovered, and initial
+fix proposed, by Hamza Avvan.
+
+..
+
+.. date: 2022-05-19-08-53-07
+.. gh-issue: 92888
+.. nonce: TLtR9W
+.. section: Security
+
+Fix ``memoryview`` use after free when accessing the backing buffer in
+certain cases.
+
+..
+
+.. date: 2022-07-28-08-33-31
+.. gh-issue: 95355
+.. nonce: yN4XVk
+.. section: Core and Builtins
+
+``_PyPegen_Parser_New`` now properly detects token memory allocation errors.
+Patch by Honglin Zhu.
+
+..
+
+.. date: 2022-07-19-09-41-55
+.. gh-issue: 94938
+.. nonce: xYBlM7
+.. section: Core and Builtins
+
+Fix error detection in some builtin functions when keyword argument name is
+an instance of a str subclass with overloaded ``__eq__`` and ``__hash__``.
+Previously it could cause SystemError or other undesired behavior.
+
+..
+
+.. date: 2022-07-18-05-10-29
+.. gh-issue: 94949
+.. nonce: OsZ7_s
+.. section: Core and Builtins
+
+:func:`ast.parse` will no longer parse parenthesized context managers when
+passed ``feature_version`` less than ``(3, 9)``. Patch by Shantanu Jain.
+
+..
+
+.. date: 2022-07-18-04-48-34
+.. gh-issue: 94947
+.. nonce: df9gUw
+.. section: Core and Builtins
+
+:func:`ast.parse` will no longer parse assignment expressions when passed
+``feature_version`` less than ``(3, 8)``. Patch by Shantanu Jain.
+
+..
+
+.. date: 2022-07-16-08-14-17
+.. gh-issue: 94869
+.. nonce: eRwMsX
+.. section: Core and Builtins
+
+Fix the column offsets for some expressions in multi-line f-strings
+:mod:`ast` nodes. Patch by Pablo Galindo.
+
+..
+
+.. date: 2022-07-15-16-15-04
+.. gh-issue: 91153
+.. nonce: HiBmtt
+.. section: Core and Builtins
+
+Fix an issue where a :class:`bytearray` item assignment could crash if it's
+resized by the new value's :meth:`__index__` method.
+
+..
+
+.. date: 2022-06-29-15-45-04
+.. gh-issue: 94329
+.. nonce: olUQyk
+.. section: Core and Builtins
+
+Compile and run code with unpacking of extremely large sequences (1000s of
+elements). Such code failed to compile. It now compiles and runs correctly.
+
+..
+
+.. date: 2022-06-28-14-20-36
+.. gh-issue: 94360
+.. nonce: DiEnen
+.. section: Core and Builtins
+
+Fixed a tokenizer crash when reading encoded files with syntax errors from
+``stdin`` with non utf-8 encoded text. Patch by Pablo Galindo
+
+..
+
+.. date: 2022-06-26-14-37-03
+.. gh-issue: 94192
+.. nonce: ab7tn7
+.. section: Core and Builtins
+
+Fix error for dictionary literals with invalid expression as value.
+
+..
+
+.. date: 2022-06-21-05-07-00
+.. gh-issue: 93964
+.. nonce: Cg1LE7
+.. section: Core and Builtins
+
+Strengthened compiler overflow checks to prevent crashes when compiling very
+large source files.
+
+..
+
+.. date: 2022-06-10-12-03-17
+.. gh-issue: 93671
+.. nonce: idkQqG
+.. section: Core and Builtins
+
+Fix some exponential backtrace case happening with deeply nested sequence
+patterns in match statements. Patch by Pablo Galindo
+
+..
+
+.. date: 2022-05-20-09-25-34
+.. gh-issue: 93021
+.. nonce: k3Aji2
+.. section: Core and Builtins
+
+Fix the :attr:`__text_signature__` for :meth:`__get__` methods implemented
+in C. Patch by Jelle Zijlstra.
+
+..
+
+.. date: 2022-05-18-18-34-45
+.. gh-issue: 92930
+.. nonce: kpYPOb
+.. section: Core and Builtins
+
+Fixed a crash in ``_pickle.c`` from mutating collections during
+``__reduce__`` or ``persistent_id``.
+
+..
+
+.. date: 2022-05-18-08-32-33
+.. gh-issue: 92914
+.. nonce: tJUeTD
+.. section: Core and Builtins
+
+Always round the allocated size for lists up to the nearest even number.
+
+..
+
+.. date: 2022-05-17-20-41-43
+.. gh-issue: 92858
+.. nonce: eIXJTn
+.. section: Core and Builtins
+
+Improve error message for some suites with syntax error before ':'
+
+..
+
+.. date: 2022-07-27-19-43-07
+.. gh-issue: 95339
+.. nonce: NuVQ68
+.. section: Library
+
+Update bundled pip to 22.2.1.
+
+..
+
+.. date: 2022-07-27-11-35-45
+.. gh-issue: 95045
+.. nonce: iysT-Q
+.. section: Library
+
+Fix GC crash when deallocating ``_lsprof.Profiler`` by untracking it before
+calling any callbacks. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-07-24-12-59-02
+.. gh-issue: 95087
+.. nonce: VvqXkN
+.. section: Library
+
+Fix IndexError in parsing invalid date in the :mod:`email` module.
+
+..
+
+.. date: 2022-07-24-12-00-06
+.. gh-issue: 95199
+.. nonce: -5A64k
+.. section: Library
+
+Upgrade bundled setuptools to 63.2.0.
+
+..
+
+.. date: 2022-07-24-09-15-35
+.. gh-issue: 95194
+.. nonce: ERVmqG
+.. section: Library
+
+Upgrade bundled pip to 22.2.
+
+..
+
+.. date: 2022-07-23-10-50-05
+.. gh-issue: 93899
+.. nonce: VT34A5
+.. section: Library
+
+Fix check for existence of :data:`os.EFD_CLOEXEC`, :data:`os.EFD_NONBLOCK`
+and :data:`os.EFD_SEMAPHORE` flags on older kernel versions where these
+flags are not present. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-07-23-10-42-05
+.. gh-issue: 95166
+.. nonce: xw6p3C
+.. section: Library
+
+Fix :meth:`concurrent.futures.Executor.map` to cancel the currently waiting
+on future on an error - e.g. TimeoutError or KeyboardInterrupt.
+
+..
+
+.. date: 2022-07-22-17-19-57
+.. gh-issue: 93157
+.. nonce: RXByAk
+.. section: Library
+
+Fix :mod:`fileinput` module didn't support ``errors`` option when
+``inplace`` is true.
+
+..
+
+.. date: 2022-07-14-00-43-52
+.. gh-issue: 94821
+.. nonce: e17ghU
+.. section: Library
+
+Fix binding of unix socket to empty address on Linux to use an available
+address from the abstract namespace, instead of "\0".
+
+..
+
+.. date: 2022-07-11-10-41-48
+.. gh-issue: 94736
+.. nonce: EbsgeK
+.. section: Library
+
+Fix crash when deallocating an instance of a subclass of
+``_multiprocessing.SemLock``. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-07-07-15-46-55
+.. gh-issue: 94637
+.. nonce: IYEiUM
+.. section: Library
+
+:meth:`SSLContext.set_default_verify_paths` now releases the GIL around
+``SSL_CTX_set_default_verify_paths`` call. The function call performs I/O
+and CPU intensive work.
+
+..
+
+.. date: 2022-07-02-19-46-30
+.. gh-issue: 94510
+.. nonce: xOatDC
+.. section: Library
+
+Re-entrant calls to :func:`sys.setprofile` and :func:`sys.settrace` now
+raise :exc:`RuntimeError`. Patch by Pablo Galindo.
+
+..
+
+.. date: 2022-06-29-09-48-37
+.. gh-issue: 92336
+.. nonce: otA6c6
+.. section: Library
+
+Fix bug where :meth:`linecache.getline` fails on bad files with
+:exc:`UnicodeDecodeError` or :exc:`SyntaxError`. It now returns an empty
+string as per the documentation.
+
+..
+
+.. date: 2022-06-26-10-59-15
+.. gh-issue: 89988
+.. nonce: K8rnmt
+.. section: Library
+
+Fix memory leak in :class:`pickle.Pickler` when looking up
+:attr:`dispatch_table`. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-06-25-16-27-02
+.. gh-issue: 94254
+.. nonce: beP16v
+.. section: Library
+
+Fixed types of :mod:`struct` module to be immutable. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-06-25-13-33-18
+.. gh-issue: 94245
+.. nonce: -zQY1a
+.. section: Library
+
+Fix pickling and copying of ``typing.Tuple[()]``.
+
+..
+
+.. date: 2022-06-24-19-23-59
+.. gh-issue: 94207
+.. nonce: VhS1eS
+.. section: Library
+
+Made :class:`_struct.Struct` GC-tracked in order to fix a reference leak in
+the :mod:`_struct` module.
+
+..
+
+.. date: 2022-06-22-11-16-11
+.. gh-issue: 94101
+.. nonce: V9vDG8
+.. section: Library
+
+Manual instantiation of :class:`ssl.SSLSession` objects is no longer allowed
+as it lead to misconfigured instances that crashed the interpreter when
+attributes where accessed on them.
+
+..
+
+.. date: 2022-06-21-11-40-31
+.. gh-issue: 84753
+.. nonce: FW1pxO
+.. section: Library
+
+:func:`inspect.iscoroutinefunction`, :func:`inspect.isgeneratorfunction`,
+and :func:`inspect.isasyncgenfunction` now properly return ``True`` for
+duck-typed function-like objects like instances of
+:class:`unittest.mock.AsyncMock`.
+
+This makes :func:`inspect.iscoroutinefunction` consistent with the behavior
+of :func:`asyncio.iscoroutinefunction`.  Patch by Mehdi ABAAKOUK.
+
+..
+
+.. date: 2022-06-15-21-28-16
+.. gh-issue: 83499
+.. nonce: u3DQJ-
+.. section: Library
+
+Fix double closing of file description in :mod:`tempfile`.
+
+..
+
+.. date: 2022-06-11-13-32-17
+.. gh-issue: 79512
+.. nonce: A1KTDr
+.. section: Library
+
+Fixed names and ``__module__`` value of :mod:`weakref` classes
+:class:`~weakref.ReferenceType`, :class:`~weakref.ProxyType`,
+:class:`~weakref.CallableProxyType`. It makes them pickleable.
+
+..
+
+.. date: 2022-06-08-20-11-02
+.. gh-issue: 90494
+.. nonce: LIZT85
+.. section: Library
+
+:func:`copy.copy` and :func:`copy.deepcopy` now always raise a TypeError if
+``__reduce__()`` returns a tuple with length 6 instead of silently ignore
+the 6th item or produce incorrect result.
+
+..
+
+.. date: 2022-06-07-14-53-46
+.. gh-issue: 90549
+.. nonce: T4FMKY
+.. section: Library
+
+Fix a multiprocessing bug where a global named resource (such as a
+semaphore) could leak when a child process is spawned (as opposed to
+forked).
+
+..
+
+.. date: 2022-06-06-12-58-27
+.. gh-issue: 79579
+.. nonce: e8rB-M
+.. section: Library
+
+:mod:`sqlite3` now correctly detects DML queries with leading comments.
+Patch by Erlend E. Aasland.
+
+..
+
+.. date: 2022-06-05-22-22-42
+.. gh-issue: 93421
+.. nonce: 43UO_8
+.. section: Library
+
+Update :data:`sqlite3.Cursor.rowcount` when a DML statement has run to
+completion. This fixes the row count for SQL queries like ``UPDATE ...
+RETURNING``. Patch by Erlend E. Aasland.
+
+..
+
+.. date: 2022-06-02-08-40-58
+.. gh-issue: 91810
+.. nonce: Gtk44w
+.. section: Library
+
+Suppress writing an XML declaration in open files in ``ElementTree.write()``
+with ``encoding='unicode'`` and ``xml_declaration=None``.
+
+..
+
+.. date: 2022-05-31-14-58-40
+.. gh-issue: 93353
+.. nonce: 9Hvm6o
+.. section: Library
+
+Fix the :func:`importlib.resources.as_file` context manager to remove the
+temporary file if destroyed late during Python finalization: keep a local
+reference to the :func:`os.remove` function. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-05-30-21-42-50
+.. gh-issue: 83658
+.. nonce: 01Ntx0
+.. section: Library
+
+Make :class:`multiprocessing.Pool` raise an exception if
+``maxtasksperchild`` is not ``None`` or a positive int.
+
+..
+
+.. date: 2022-05-24-11-19-04
+.. gh-issue: 74696
+.. nonce: -cnf-A
+.. section: Library
+
+:func:`shutil.make_archive` no longer temporarily changes the current
+working directory during creation of standard ``.zip`` or tar archives.
+
+..
+
+.. date: 2022-04-15-17-38-55
+.. gh-issue: 91577
+.. nonce: Ah7cLL
+.. section: Library
+
+Move imports in :class:`~multiprocessing.SharedMemory` methods to module
+level so that they can be executed late in python finalization.
+
+..
+
+.. bpo: 47231
+.. date: 2022-04-08-22-12-11
+.. nonce: lvyglt
+.. section: Library
+
+Fixed an issue with inconsistent trailing slashes in tarfile longname
+directories.
+
+..
+
+.. bpo: 46755
+.. date: 2022-02-15-12-40-48
+.. nonce: zePJfx
+.. section: Library
+
+In :class:`QueueHandler`, clear ``stack_info`` from :class:`LogRecord` to
+prevent stack trace from being written twice.
+
+..
+
+.. bpo: 46053
+.. date: 2022-02-06-12-59-32
+.. nonce: sHFo3S
+.. section: Library
+
+Fix OSS audio support on NetBSD.
+
+..
+
+.. bpo: 46197
+.. date: 2022-01-03-15-07-06
+.. nonce: Z0djv6
+.. section: Library
+
+Fix :mod:`ensurepip` environment isolation for subprocess running ``pip``.
+
+..
+
+.. bpo: 45924
+.. date: 2021-12-27-15-32-15
+.. nonce: 0ZpHX2
+.. section: Library
+
+Fix :mod:`asyncio` incorrect traceback when future's exception is raised
+multiple times. Patch by Kumar Aditya.
+
+..
+
+.. bpo: 34828
+.. date: 2018-09-28-22-18-03
+.. nonce: 5Zyi_S
+.. section: Library
+
+:meth:`sqlite3.Connection.iterdump` now handles databases that use
+``AUTOINCREMENT`` in one or more tables.
+
+..
+
+.. date: 2022-07-07-08-42-05
+.. gh-issue: 94321
+.. nonce: pmCIPb
+.. section: Documentation
+
+Document the :pep:`246` style protocol type
+:class:`sqlite3.PrepareProtocol`.
+
+..
+
+.. date: 2022-06-19-18-18-22
+.. gh-issue: 86128
+.. nonce: 39DDTD
+.. section: Documentation
+
+Document a limitation in ThreadPoolExecutor where its exit handler is
+executed before any handlers in atexit.
+
+..
+
+.. date: 2022-06-16-10-10-59
+.. gh-issue: 61162
+.. nonce: 1ypkG8
+.. section: Documentation
+
+Clarify :mod:`sqlite3` behavior when
+:ref:`sqlite3-connection-context-manager`.
+
+..
+
+.. date: 2022-06-15-12-12-49
+.. gh-issue: 87260
+.. nonce: epyI7D
+.. section: Documentation
+
+Align :mod:`sqlite3` argument specs with the actual implementation.
+
+..
+
+.. date: 2022-05-29-21-22-54
+.. gh-issue: 86986
+.. nonce: lFXw8j
+.. section: Documentation
+
+The minimum Sphinx version required to build the documentation is now 3.2.
+
+..
+
+.. date: 2022-05-26-14-51-25
+.. gh-issue: 88831
+.. nonce: 5Cccr5
+.. section: Documentation
+
+Augmented documentation of asyncio.create_task(). Clarified the need to keep
+strong references to tasks and added a code snippet detailing how to do
+this.
+
+..
+
+.. bpo: 47161
+.. date: 2022-03-30-17-56-01
+.. nonce: gesHfS
+.. section: Documentation
+
+Document that :class:`pathlib.PurePath` does not collapse initial double
+slashes because they denote UNC paths.
+
+..
+
+.. date: 2022-07-26-15-22-19
+.. gh-issue: 95280
+.. nonce: h8HvbP
+.. section: Tests
+
+Fix problem with ``test_ssl`` ``test_get_ciphers`` on systems that require
+perfect forward secrecy (PFS) ciphers.
+
+..
+
+.. date: 2022-07-24-20-19-05
+.. gh-issue: 95212
+.. nonce: fHiU4e
+.. section: Tests
+
+Make multiprocessing test case ``test_shared_memory_recreate``
+parallel-safe.
+
+..
+
+.. date: 2022-07-05-17-53-13
+.. gh-issue: 91330
+.. nonce: Qys5IL
+.. section: Tests
+
+Added more tests for :mod:`dataclasses` to cover behavior with data
+descriptor-based fields.
+
+..
+
+.. date: 2022-06-27-21-27-20
+.. gh-issue: 94208
+.. nonce: VR6HX-
+.. section: Tests
+
+``test_ssl`` is now checking for supported TLS version and protocols in more
+tests.
+
+..
+
+.. date: 2022-06-17-15-20-09
+.. gh-issue: 93951
+.. nonce: CW1Vv4
+.. section: Tests
+
+In test_bdb.StateTestCase.test_skip, avoid including auxiliary importers.
+
+..
+
+.. date: 2022-06-17-13-55-11
+.. gh-issue: 93957
+.. nonce: X4ovYV
+.. section: Tests
+
+Provide nicer error reporting from subprocesses in
+test_venv.EnsurePipTest.test_with_pip.
+
+..
+
+.. date: 2022-06-03-16-26-04
+.. gh-issue: 57539
+.. nonce: HxWgYO
+.. section: Tests
+
+Increase calendar test coverage for
+:meth:`calendar.LocaleTextCalendar.formatweekday`.
+
+..
+
+.. date: 2022-05-25-23-00-35
+.. gh-issue: 92886
+.. nonce: Y-vrWj
+.. section: Tests
+
+Fixing tests that fail when running with optimizations (``-O``) in
+``test_zipimport.py``
+
+..
+
+.. bpo: 47016
+.. date: 2022-03-14-23-28-17
+.. nonce: K-t2QX
+.. section: Tests
+
+Create a GitHub Actions workflow for verifying bundled pip and setuptools.
+Patch by Illia Volochii and Adam Turner.
+
+..
+
+.. date: 2022-07-14-02-45-44
+.. gh-issue: 94841
+.. nonce: lLRTdf
+.. section: Build
+
+Fix the possible performance regression of :c:func:`PyObject_Free` compiled
+with MSVC version 1932.
+
+..
+
+.. bpo: 45816
+.. date: 2021-11-16-14-44-06
+.. nonce: nbdmVK
+.. section: Build
+
+Python now supports building with Visual Studio 2022 (MSVC v143, VS Version
+17.0). Patch by Jeremiah Vivian.
+
+..
+
+.. date: 2022-07-16-16-18-32
+.. gh-issue: 90844
+.. nonce: vwITT3
+.. section: Windows
+
+Allow virtual environments to correctly launch when they have spaces in the
+path.
+
+..
+
+.. date: 2022-05-16-11-45-06
+.. gh-issue: 92841
+.. nonce: NQx107
+.. section: Windows
+
+:mod:`asyncio` no longer throws ``RuntimeError: Event loop is closed`` on
+interpreter exit after asynchronous socket activity. Patch by Oleg Iarygin.
+
+..
+
+.. bpo: 42658
+.. date: 2022-03-20-15-47-35
+.. nonce: 16eXtb
+.. section: Windows
+
+Support native Windows case-insensitive path comparisons by using
+``LCMapStringEx`` instead of :func:`str.lower` in :func:`ntpath.normcase`.
+Add ``LCMapStringEx`` to the :mod:`_winapi` module.
+
+..
+
+.. date: 2022-07-31-22-15-14
+.. gh-issue: 95511
+.. nonce: WX6PmB
+.. section: IDLE
+
+Fix the Shell context menu copy-with-prompts bug of copying an extra line
+when one selects whole lines.
+
+..
+
+.. date: 2022-07-30-15-10-39
+.. gh-issue: 95471
+.. nonce: z3scVG
+.. section: IDLE
+
+In the Edit menu, move ``Select All`` and add a new separator.
+
+..
+
+.. date: 2022-07-29-11-08-52
+.. gh-issue: 95411
+.. nonce: dazlqH
+.. section: IDLE
+
+Enable using IDLE's module browser with .pyw files.
+
+..
+
+.. date: 2022-07-28-18-56-57
+.. gh-issue: 89610
+.. nonce: hcosiM
+.. section: IDLE
+
+Add .pyi as a recognized extension for IDLE on macOS.    This allows opening
+stub files by double clicking on them in the Finder.
+
+..
+
+.. date: 2022-07-04-01-37-42
+.. gh-issue: 94538
+.. nonce: 1rgy1Y
+.. section: Tools/Demos
+
+Fix Argument Clinic output to custom file destinations. Patch by Erlend E.
+Aasland.
+
+..
+
+.. date: 2022-06-29-22-47-11
+.. gh-issue: 94430
+.. nonce: hdov8L
+.. section: Tools/Demos
+
+Allow parameters named ``module`` and ``self`` with custom C names in
+Argument Clinic. Patch by Erlend E. Aasland
+
+..
+
+.. date: 2022-07-17-18-21-40
+.. gh-issue: 94930
+.. nonce: gPFGDL
+.. section: C API
+
+Fix ``SystemError`` raised when :c:func:`PyArg_ParseTupleAndKeywords` is
+used with ``#`` in ``(...)`` but without ``PY_SSIZE_T_CLEAN`` defined.
+
+..
+
+.. date: 2022-07-16-14-57-23
+.. gh-issue: 94864
+.. nonce: Pb41ab
+.. section: C API
+
+Fix ``PyArg_Parse*`` with deprecated format units "u" and "Z". It returned 1
+(success) when warnings are turned into exceptions.

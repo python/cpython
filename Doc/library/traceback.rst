@@ -401,9 +401,9 @@ exception and traceback:
    import sys, traceback
 
    def lumberjack():
-       bright_side_of_death()
+       bright_side_of_life()
 
-   def bright_side_of_death():
+   def bright_side_of_life():
        return tuple()[0]
 
    try:
@@ -413,9 +413,7 @@ exception and traceback:
        print("*** print_tb:")
        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
        print("*** print_exception:")
-       # exc_type below is ignored on 3.5 and later
-       traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                 limit=2, file=sys.stdout)
+       traceback.print_exception(exc_value, limit=2, file=sys.stdout)
        print("*** print_exc:")
        traceback.print_exc(limit=2, file=sys.stdout)
        print("*** format_exc, first and last line:")
@@ -423,9 +421,7 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
-       # exc_type below is ignored on 3.5 and later
-       print(repr(traceback.format_exception(exc_type, exc_value,
-                                             exc_traceback)))
+       print(repr(traceback.format_exception(exc_value)))
        print("*** extract_tb:")
        print(repr(traceback.extract_tb(exc_traceback)))
        print("*** format_tb:")
@@ -445,14 +441,14 @@ The output for the example would look similar to this:
      File "<doctest...>", line 10, in <module>
        lumberjack()
      File "<doctest...>", line 4, in lumberjack
-       bright_side_of_death()
+       bright_side_of_life()
    IndexError: tuple index out of range
    *** print_exc:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
      File "<doctest...>", line 4, in lumberjack
-       bright_side_of_death()
+       bright_side_of_life()
    IndexError: tuple index out of range
    *** format_exc, first and last line:
    Traceback (most recent call last):
@@ -460,17 +456,17 @@ The output for the example would look similar to this:
    *** format_exception:
    ['Traceback (most recent call last):\n',
     '  File "<doctest...>", line 10, in <module>\n    lumberjack()\n',
-    '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_death()\n',
-    '  File "<doctest...>", line 7, in bright_side_of_death\n    return tuple()[0]\n',
+    '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_life()\n',
+    '  File "<doctest...>", line 7, in bright_side_of_life\n    return tuple()[0]\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
    [<FrameSummary file <doctest...>, line 10 in <module>>,
     <FrameSummary file <doctest...>, line 4 in lumberjack>,
-    <FrameSummary file <doctest...>, line 7 in bright_side_of_death>]
+    <FrameSummary file <doctest...>, line 7 in bright_side_of_life>]
    *** format_tb:
    ['  File "<doctest...>", line 10, in <module>\n    lumberjack()\n',
-    '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_death()\n',
-    '  File "<doctest...>", line 7, in bright_side_of_death\n    return tuple()[0]\n']
+    '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_life()\n',
+    '  File "<doctest...>", line 7, in bright_side_of_life\n    return tuple()[0]\n']
    *** tb_lineno: 10
 
 

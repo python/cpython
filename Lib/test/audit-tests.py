@@ -408,6 +408,38 @@ def test_sqlite3():
             raise RuntimeError("Expected sqlite3.load_extension to fail")
 
 
+def test_syslog():
+    import syslog
+
+    def hook(event, args):
+        if event.startswith("syslog."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    syslog.openlog('python')
+    syslog.syslog('test')
+    syslog.setlogmask(syslog.LOG_DEBUG)
+    syslog.closelog()
+    # implicit open
+    syslog.syslog('test2')
+    # open with default ident
+    syslog.openlog(logoption=syslog.LOG_NDELAY, facility=syslog.LOG_LOCAL0)
+    sys.argv = None
+    syslog.openlog()
+    syslog.closelog()
+
+
+def test_not_in_gc():
+    import gc
+
+    hook = lambda *a: None
+    sys.addaudithook(hook)
+
+    for o in gc.get_objects():
+        if isinstance(o, list):
+            assert hook not in o
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 

@@ -148,7 +148,7 @@ static PyObject *
 winreg_ConnectRegistry(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *computer_name;
+    const Py_UNICODE *computer_name = NULL;
     HKEY key;
     HKEY _return_value;
 
@@ -220,7 +220,7 @@ winreg_CreateKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     HKEY _return_value;
 
     if (!_PyArg_CheckPositional("CreateKey", nargs, 2, 2)) {
@@ -301,7 +301,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
     static _PyArg_Parser _parser = {"O&O&|ii:CreateKeyEx", _keywords, 0};
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
@@ -354,7 +354,7 @@ winreg_DeleteKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
 
     if (!_PyArg_CheckPositional("DeleteKey", nargs, 2, 2)) {
         goto exit;
@@ -390,7 +390,7 @@ PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "            reserved=0)\n"
 "--\n"
 "\n"
-"Deletes the specified key (64-bit OS only).\n"
+"Deletes the specified key (intended for 64-bit OS).\n"
 "\n"
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
@@ -403,6 +403,9 @@ PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "    desired security access for the key. Default is KEY_WOW64_64KEY.\n"
 "  reserved\n"
 "    A reserved integer, and must be zero.  Default is zero.\n"
+"\n"
+"While this function is intended to be used for 64-bit OS, it is also\n"
+" available on 32-bit systems.\n"
 "\n"
 "This method can not delete keys with subkeys.\n"
 "\n"
@@ -425,7 +428,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static const char * const _keywords[] = {"key", "sub_key", "access", "reserved", NULL};
     static _PyArg_Parser _parser = {"O&O&|ii:DeleteKeyEx", _keywords, 0};
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
@@ -466,7 +469,7 @@ winreg_DeleteValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *value;
+    const Py_UNICODE *value = NULL;
 
     if (!_PyArg_CheckPositional("DeleteValue", nargs, 2, 2)) {
         goto exit;
@@ -616,7 +619,7 @@ static PyObject *
 winreg_ExpandEnvironmentStrings(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *string;
+    const Py_UNICODE *string = NULL;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("ExpandEnvironmentStrings", "argument", "str", arg);
@@ -721,8 +724,8 @@ winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
-    const Py_UNICODE *file_name;
+    const Py_UNICODE *sub_key = NULL;
+    const Py_UNICODE *file_name = NULL;
 
     if (!_PyArg_CheckPositional("LoadKey", nargs, 3, 3)) {
         goto exit;
@@ -802,7 +805,7 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
     static _PyArg_Parser _parser = {"O&O&|ii:OpenKey", _keywords, 0};
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_READ;
     HKEY _return_value;
@@ -859,7 +862,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
     static _PyArg_Parser _parser = {"O&O&|ii:OpenKeyEx", _keywords, 0};
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_READ;
     HKEY _return_value;
@@ -950,7 +953,7 @@ winreg_QueryValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
 
     if (!_PyArg_CheckPositional("QueryValue", nargs, 2, 2)) {
         goto exit;
@@ -1013,7 +1016,7 @@ winreg_QueryValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *name;
+    const Py_UNICODE *name = NULL;
 
     if (!_PyArg_CheckPositional("QueryValueEx", nargs, 2, 2)) {
         goto exit;
@@ -1081,7 +1084,7 @@ winreg_SaveKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *file_name;
+    const Py_UNICODE *file_name = NULL;
 
     if (!_PyArg_CheckPositional("SaveKey", nargs, 2, 2)) {
         goto exit;
@@ -1150,7 +1153,7 @@ winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     DWORD type;
     PyObject *value_obj;
 
@@ -1225,7 +1228,7 @@ winreg_SetValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *value_name;
+    const Py_UNICODE *value_name = NULL;
     PyObject *reserved;
     DWORD type;
     PyObject *value;
@@ -1346,4 +1349,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=497a2e804821d5c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c96481d6be5c0d8 input=a9049054013a1b77]*/

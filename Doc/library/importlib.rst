@@ -854,6 +854,8 @@ ABC hierarchy::
 
        Read contents of self as text.
 
+    Note: In Python 3.11 and later, this class is found in ``importlib.resources.abc``.
+
 
 .. class:: TraversableResources
 
@@ -867,6 +869,8 @@ ABC hierarchy::
     implement this interface.
 
     .. versionadded:: 3.9
+
+    Note: In Python 3.11 and later, this class is found in ``importlib.resources.abc``.
 
 
 :mod:`importlib.resources` -- Resources
@@ -930,7 +934,7 @@ The following functions are available.
 
 .. function:: files(package)
 
-    Returns an :class:`importlib.resources.abc.Traversable` object
+    Returns an :class:`importlib.abc.Traversable` object
     representing the resource container for the package (think directory)
     and its resources (think files). A Traversable may contain other
     containers (think subdirectories).
@@ -942,7 +946,7 @@ The following functions are available.
 
 .. function:: as_file(traversable)
 
-    Given a :class:`importlib.resources.abc.Traversable` object representing
+    Given a :class:`importlib.abc.Traversable` object representing
     a file, typically from :func:`importlib.resources.files`, return
     a context manager for use in a :keyword:`with` statement.
     The context manager provides a :class:`pathlib.Path` object.

@@ -346,9 +346,38 @@ non-important content
         self.assertEqual(binop.lineno, 4)
         self.assertEqual(binop.left.lineno, 4)
         self.assertEqual(binop.right.lineno, 6)
-        self.assertEqual(binop.col_offset, 4)
-        self.assertEqual(binop.left.col_offset, 4)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
         self.assertEqual(binop.right.col_offset, 7)
+
+        expr = """
+a = f'''
+          {blech}
+    '''
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # Check f'...'
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(type(t.body[0].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[0].value.values), 3)
+        self.assertEqual(type(t.body[0].value.values[1]), ast.FormattedValue)
+        self.assertEqual(t.body[0].lineno, 2)
+        self.assertEqual(t.body[0].value.lineno, 2)
+        self.assertEqual(t.body[0].value.values[0].lineno, 2)
+        self.assertEqual(t.body[0].value.values[1].lineno, 2)
+        self.assertEqual(t.body[0].value.values[2].lineno, 2)
+        self.assertEqual(t.body[0].col_offset, 0)
+        self.assertEqual(t.body[0].value.col_offset, 4)
+        self.assertEqual(t.body[0].value.values[0].col_offset, 4)
+        self.assertEqual(t.body[0].value.values[1].col_offset, 4)
+        self.assertEqual(t.body[0].value.values[2].col_offset, 4)
+        # Check {blech}
+        self.assertEqual(t.body[0].value.values[1].value.lineno, 3)
+        self.assertEqual(t.body[0].value.values[1].value.end_lineno, 3)
+        self.assertEqual(t.body[0].value.values[1].value.col_offset, 11)
+        self.assertEqual(t.body[0].value.values[1].value.end_col_offset, 16)
 
     def test_ast_line_numbers_with_parentheses(self):
         expr = """

@@ -1,0 +1,1 @@
+Restrict use of sockets instead of pipes for stdin of subprocesses created by :mod:`asyncio` to AIX platform only.

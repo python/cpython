@@ -718,10 +718,10 @@ PyInit__io(void)
         goto fail;
 
     /* BlockingIOError, for compatibility */
-    Py_INCREF(PyExc_BlockingIOError);
-    if (PyModule_AddObject(m, "BlockingIOError",
-                           (PyObject *) PyExc_BlockingIOError) < 0)
+    if (PyModule_AddObjectRef(m, "BlockingIOError",
+                              (PyObject *) PyExc_BlockingIOError) < 0) {
         goto fail;
+    }
 
     /* Concrete base types of the IO ABCs.
        (the ABCs themselves are declared through inheritance in io.py)

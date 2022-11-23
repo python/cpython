@@ -16,6 +16,8 @@ AUDIT_TESTS_PY = support.findfile("audit-tests.py")
 
 
 class AuditTest(unittest.TestCase):
+    maxDiff = None
+
     def do_test(self, *args):
         with subprocess.Popen(
             [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
@@ -152,10 +154,7 @@ class AuditTest(unittest.TestCase):
 
 
     def test_sqlite3(self):
-        try:
-            import sqlite3
-        except ImportError:
-            return
+        sqlite3 = import_helper.import_module("sqlite3")
         returncode, events, stderr = self.run_python("test_sqlite3")
         if returncode:
             self.fail(stderr)
@@ -171,6 +170,35 @@ class AuditTest(unittest.TestCase):
                 "sqlite3.load_extension",
             ]
         self.assertEqual(actual, expected)
+
+
+    def test_syslog(self):
+        syslog = import_helper.import_module("syslog")
+
+        returncode, events, stderr = self.run_python("test_syslog")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print('Events:', *events, sep='\n  ')
+
+        self.assertSequenceEqual(
+            events,
+            [('syslog.openlog', ' ', f'python 0 {syslog.LOG_USER}'),
+            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test'),
+            ('syslog.setlogmask', ' ', f'{syslog.LOG_DEBUG}'),
+            ('syslog.closelog', '', ''),
+            ('syslog.syslog', ' ', f'{syslog.LOG_INFO} test2'),
+            ('syslog.openlog', ' ', f'audit-tests.py 0 {syslog.LOG_USER}'),
+            ('syslog.openlog', ' ', f'audit-tests.py {syslog.LOG_NDELAY} {syslog.LOG_LOCAL0}'),
+            ('syslog.openlog', ' ', f'None 0 {syslog.LOG_USER}'),
+            ('syslog.closelog', '', '')]
+        )
+
+    def test_not_in_gc(self):
+        returncode, _, stderr = self.run_python("test_not_in_gc")
+        if returncode:
+            self.fail(stderr)
 
 
 if __name__ == "__main__":

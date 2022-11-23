@@ -1122,8 +1122,8 @@ Test cases
       Example::
 
          with self.assertLogs('foo', level='INFO') as cm:
-            logging.getLogger('foo').info('first message')
-            logging.getLogger('foo.bar').error('second message')
+             logging.getLogger('foo').info('first message')
+             logging.getLogger('foo.bar').error('second message')
          self.assertEqual(cm.output, ['INFO:foo:first message',
                                       'ERROR:foo.bar:second message'])
 
@@ -1738,7 +1738,7 @@ Loading and running tests
 
       A list of the non-fatal errors encountered while loading tests. Not reset
       by the loader at any point. Fatal errors are signalled by the relevant
-      a method raising an exception to the caller. Non-fatal errors are also
+      method raising an exception to the caller. Non-fatal errors are also
       indicated by a synthetic test that will raise the original error when
       run.
 

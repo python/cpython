@@ -247,7 +247,6 @@ func_get_annotation_dict(PyFunctionObject *op)
         }
         Py_SETREF(op->func_annotations, ann_dict);
     }
-    Py_INCREF(op->func_annotations);
     assert(PyDict_Check(op->func_annotations));
     return op->func_annotations;
 }
@@ -474,7 +473,11 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         if (op->func_annotations == NULL)
             return NULL;
     }
-    return func_get_annotation_dict(op);
+    PyObject *d = func_get_annotation_dict(op);
+    if (d) {
+        Py_INCREF(d);
+    }
+    return d;
 }
 
 static int

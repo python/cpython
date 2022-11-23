@@ -40,7 +40,7 @@ If you'd like to create the virtual environment in a different location,
 you can specify it using the ``VENVDIR`` variable.
 
 You can also skip creating the virtual environment altogether, in which case
-the Makefile will look for instances of ``sphinxbuild`` and ``blurb``
+the Makefile will look for instances of ``sphinx-build`` and ``blurb``
 installed on your process ``PATH`` (configurable with the ``SPHINXBUILD`` and
 ``BLURB`` variables).
 
@@ -91,7 +91,7 @@ Available make targets are:
 
 * "pydoc-topics", which builds a Python module containing a dictionary with
   plain text documentation for the labels defined in
-  `tools/pyspecific.py` -- pydoc needs these to show topic and keyword help.
+  ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
 
 * "suspicious", which checks the parsed markup for text that looks like
   malformed and thus unconverted reST.

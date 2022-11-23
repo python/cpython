@@ -146,6 +146,23 @@ class AsyncPatchCMTest(unittest.TestCase):
 
         run(test_async())
 
+    def test_patch_dict_async_def(self):
+        foo = {'a': 'a'}
+        @patch.dict(foo, {'a': 'b'})
+        async def test_async():
+            self.assertEqual(foo['a'], 'b')
+
+        self.assertTrue(iscoroutinefunction(test_async))
+        run(test_async())
+
+    def test_patch_dict_async_def_context(self):
+        foo = {'a': 'a'}
+        async def test_async():
+            with patch.dict(foo, {'a': 'b'}):
+                self.assertEqual(foo['a'], 'b')
+
+        run(test_async())
+
 
 class AsyncMockTest(unittest.TestCase):
     def test_iscoroutinefunction_default(self):

@@ -36,6 +36,11 @@ New features are frequently added to the ``typing`` module.
 The `typing_extensions <https://pypi.org/project/typing-extensions/>`_ package
 provides backports of these new features to older versions of Python.
 
+.. seealso::
+
+   The documentation at https://typing.readthedocs.io/ serves as useful reference
+   for type system features, useful typing related tools and typing best practices.
+
 .. _relevant-peps:
 
 Relevant PEPs
@@ -86,7 +91,7 @@ A type alias is defined by assigning the type to the alias. In this example,
    def scale(scalar: float, vector: Vector) -> Vector:
        return [scalar * num for num in vector]
 
-   # typechecks; a list of floats qualifies as a Vector.
+   # passes type checking; a list of floats qualifies as a Vector.
    new_vector = scale(2.0, [1.0, -4.2, 5.4])
 
 Type aliases are useful for simplifying complex type signatures. For example::
@@ -128,10 +133,10 @@ of the original type. This is useful in helping catch logical errors::
    def get_user_name(user_id: UserId) -> str:
        ...
 
-   # typechecks
+   # passes type checking
    user_a = get_user_name(UserId(42351))
 
-   # does not typecheck; an int is not a UserId
+   # fails type checking; an int is not a UserId
    user_b = get_user_name(-1)
 
 You may still perform all ``int`` operations on a variable of type ``UserId``,
@@ -157,7 +162,7 @@ It is invalid to create a subtype of ``Derived``::
 
    UserId = NewType('UserId', int)
 
-   # Fails at runtime and does not typecheck
+   # Fails at runtime and does not pass type checking
    class AdminUserId(UserId): pass
 
 However, it is possible to create a :class:`NewType` based on a 'derived' ``NewType``::
@@ -229,7 +234,7 @@ respectively.
 
 .. versionchanged:: 3.10
    ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-   See :pep:`612` for more information.
+   See :pep:`612` for more details.
 
 .. seealso::
    The documentation for :class:`ParamSpec` and :class:`Concatenate` provides
@@ -300,7 +305,7 @@ single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
 The :class:`Generic` base class defines :meth:`~object.__class_getitem__` so
-that ``LoggedVar[t]`` is valid as a type::
+that ``LoggedVar[T]`` is valid as a type::
 
    from collections.abc import Iterable
 
@@ -444,12 +449,12 @@ value of type :data:`Any` and assign it to any variable::
    s = a           # OK
 
    def foo(item: Any) -> int:
-       # Typechecks; 'item' could be any type,
+       # Passes type checking; 'item' could be any type,
        # and that type might have a 'bar' method
        item.bar()
        ...
 
-Notice that no typechecking is performed when assigning a value of type
+Notice that no type checking is performed when assigning a value of type
 :data:`Any` to a more precise type. For example, the static type checker did
 not report an error when assigning ``a`` to ``s`` even though ``s`` was
 declared to be of type :class:`str` and receives an :class:`int` value at
@@ -481,20 +486,20 @@ reject almost all operations on it, and assigning it to a variable (or using
 it as a return value) of a more specialized type is a type error. For example::
 
    def hash_a(item: object) -> int:
-       # Fails; an object does not have a 'magic' method.
+       # Fails type checking; an object does not have a 'magic' method.
        item.magic()
        ...
 
    def hash_b(item: Any) -> int:
-       # Typechecks
+       # Passes type checking
        item.magic()
        ...
 
-   # Typechecks, since ints and strs are subclasses of object
+   # Passes type checking, since ints and strs are subclasses of object
    hash_a(42)
    hash_a("foo")
 
-   # Typechecks, since Any is compatible with all types
+   # Passes type checking, since Any is compatible with all types
    hash_b(42)
    hash_b("foo")
 
@@ -626,8 +631,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
 
    .. deprecated:: 3.9
-      :class:`builtins.tuple <tuple>` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. data:: Union
 
@@ -715,12 +720,12 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    respectively.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Callable` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`collections.abc.Callable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
    .. versionchanged:: 3.10
       ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-      See :pep:`612` for more information.
+      See :pep:`612` for more details.
 
    .. seealso::
       The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
@@ -822,8 +827,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. versionadded:: 3.5.2
 
    .. deprecated:: 3.9
-      :class:`builtins.type <type>` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`builtins.type <type>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. data:: Literal
 
@@ -1045,8 +1050,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       is not a subtype of the former, since ``List`` is invariant.
       The responsibility of writing type-safe type guards is left to the user.
 
-   ``TypeGuard`` also works with type variables.  For more information, see
-   :pep:`647` (User-Defined Type Guards).
+   ``TypeGuard`` also works with type variables.  See :pep:`647` for more details.
 
    .. versionadded:: 3.10
 
@@ -1318,7 +1322,7 @@ These are not used in annotations. They are building blocks for creating generic
 
       func(C())  # Passes static type check
 
-   See :pep:`544` for details. Protocol classes decorated with
+   See :pep:`544` for more details. Protocol classes decorated with
    :func:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
    type signatures.
@@ -1544,6 +1548,9 @@ These are not used in annotations. They are building blocks for declaring types.
          True
 
    .. attribute:: __required_keys__
+
+      .. versionadded:: 3.9
+
    .. attribute:: __optional_keys__
 
       ``Point2D.__required_keys__`` and ``Point2D.__optional_keys__`` return
@@ -1565,6 +1572,8 @@ These are not used in annotations. They are building blocks for declaring types.
          True
          >>> Point3D.__optional_keys__ == frozenset({'x', 'y'})
          True
+
+      .. versionadded:: 3.9
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -1588,8 +1597,8 @@ Corresponding to built-in types
           ...
 
    .. deprecated:: 3.9
-      :class:`builtins.dict <dict>` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`builtins.dict <dict>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: List(list, MutableSequence[T])
 
@@ -1609,8 +1618,8 @@ Corresponding to built-in types
           return [item for item in vector if item > 0]
 
    .. deprecated:: 3.9
-      :class:`builtins.list <list>` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`builtins.list <list>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Set(set, MutableSet[T])
 
@@ -1619,16 +1628,17 @@ Corresponding to built-in types
    to use an abstract collection type such as :class:`AbstractSet`.
 
    .. deprecated:: 3.9
-      :class:`builtins.set <set>` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`builtins.set <set>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: FrozenSet(frozenset, AbstractSet[T_co])
 
    A generic version of :class:`builtins.frozenset <frozenset>`.
 
    .. deprecated:: 3.9
-      :class:`builtins.frozenset <frozenset>` now supports ``[]``. See
-      :pep:`585` and :ref:`types-genericalias`.
+      :class:`builtins.frozenset <frozenset>`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. note:: :data:`Tuple` is a special form.
 
@@ -1642,8 +1652,8 @@ Corresponding to types in :mod:`collections`
    .. versionadded:: 3.5.2
 
    .. deprecated:: 3.9
-      :class:`collections.defaultdict` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`collections.defaultdict` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
 
@@ -1652,8 +1662,8 @@ Corresponding to types in :mod:`collections`
    .. versionadded:: 3.7.2
 
    .. deprecated:: 3.9
-      :class:`collections.OrderedDict` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`collections.OrderedDict` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
@@ -1663,8 +1673,8 @@ Corresponding to types in :mod:`collections`
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
-      :class:`collections.ChainMap` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`collections.ChainMap` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Counter(collections.Counter, Dict[T, int])
 
@@ -1674,8 +1684,8 @@ Corresponding to types in :mod:`collections`
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
-      :class:`collections.Counter` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`collections.Counter` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Deque(deque, MutableSequence[T])
 
@@ -1685,8 +1695,8 @@ Corresponding to types in :mod:`collections`
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
-      :class:`collections.deque` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`collections.deque` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 Other concrete types
 """"""""""""""""""""
@@ -1700,7 +1710,7 @@ Other concrete types
    represent the types of I/O streams such as returned by
    :func:`open`.
 
-   .. deprecated-removed:: 3.8 3.12
+   .. deprecated-removed:: 3.8 3.13
       The ``typing.io`` namespace is deprecated and will be removed.
       These types should be directly imported from ``typing`` instead.
 
@@ -1714,7 +1724,7 @@ Other concrete types
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
 
-   .. deprecated-removed:: 3.8 3.12
+   .. deprecated-removed:: 3.8 3.13
       The ``typing.re`` namespace is deprecated and will be removed.
       These types should be directly imported from ``typing`` instead.
 
@@ -1742,13 +1752,13 @@ Abstract Base Classes
 Corresponding to collections in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 
-.. class:: AbstractSet(Sized, Collection[T_co])
+.. class:: AbstractSet(Collection[T_co])
 
    A generic version of :class:`collections.abc.Set`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Set` now supports ``[]``. See :pep:`585` and
-      :ref:`types-genericalias`.
+      :class:`collections.abc.Set` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: ByteString(Sequence[int])
 
@@ -1761,8 +1771,8 @@ Corresponding to collections in :mod:`collections.abc`
    annotate arguments of any of the types mentioned above.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.ByteString` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.ByteString` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
@@ -1771,34 +1781,34 @@ Corresponding to collections in :mod:`collections.abc`
    .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Collection` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Collection` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Container(Generic[T_co])
 
    A generic version of :class:`collections.abc.Container`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Container` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Container` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
+.. class:: ItemsView(MappingView, AbstractSet[tuple[KT_co, VT_co]])
 
    A generic version of :class:`collections.abc.ItemsView`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.ItemsView` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.ItemsView` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+.. class:: KeysView(MappingView, AbstractSet[KT_co])
 
    A generic version of :class:`collections.abc.KeysView`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.KeysView` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.KeysView` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
+.. class:: Mapping(Collection[KT], Generic[KT, VT_co])
 
    A generic version of :class:`collections.abc.Mapping`.
    This type can be used as follows::
@@ -1807,56 +1817,58 @@ Corresponding to collections in :mod:`collections.abc`
          return word_list[word]
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Mapping` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Mapping` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: MappingView(Sized, Iterable[T_co])
+.. class:: MappingView(Sized)
 
    A generic version of :class:`collections.abc.MappingView`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.MappingView` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.MappingView` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: MutableMapping(Mapping[KT, VT])
 
    A generic version of :class:`collections.abc.MutableMapping`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.MutableMapping` now supports ``[]``. See
-      :pep:`585` and :ref:`types-genericalias`.
+      :class:`collections.abc.MutableMapping`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: MutableSequence(Sequence[T])
 
    A generic version of :class:`collections.abc.MutableSequence`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.MutableSequence` now supports ``[]``. See
-      :pep:`585` and :ref:`types-genericalias`.
+      :class:`collections.abc.MutableSequence`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: MutableSet(AbstractSet[T])
 
    A generic version of :class:`collections.abc.MutableSet`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.MutableSet` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.MutableSet` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Sequence(Reversible[T_co], Collection[T_co])
 
    A generic version of :class:`collections.abc.Sequence`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Sequence` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Sequence` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
-.. class:: ValuesView(MappingView[VT_co])
+.. class:: ValuesView(MappingView, Collection[_VT_co])
 
    A generic version of :class:`collections.abc.ValuesView`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.ValuesView` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.ValuesView` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 Corresponding to other types in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1866,16 +1878,16 @@ Corresponding to other types in :mod:`collections.abc`
    A generic version of :class:`collections.abc.Iterable`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Iterable` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Iterator(Iterable[T_co])
 
    A generic version of :class:`collections.abc.Iterator`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Iterator` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
@@ -1909,8 +1921,8 @@ Corresponding to other types in :mod:`collections.abc`
               start += 1
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Generator` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Generator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Hashable
 
@@ -1921,8 +1933,8 @@ Corresponding to other types in :mod:`collections.abc`
    A generic version of :class:`collections.abc.Reversible`.
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Reversible` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Sized
 
@@ -1946,8 +1958,8 @@ Asynchronous programming
    .. versionadded:: 3.5.3
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Coroutine` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Coroutine` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
 
@@ -1983,8 +1995,9 @@ Asynchronous programming
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
-      :class:`collections.abc.AsyncGenerator` now supports ``[]``. See
-      :pep:`585` and :ref:`types-genericalias`.
+      :class:`collections.abc.AsyncGenerator`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: AsyncIterable(Generic[T_co])
 
@@ -1993,8 +2006,8 @@ Asynchronous programming
    .. versionadded:: 3.5.2
 
    .. deprecated:: 3.9
-      :class:`collections.abc.AsyncIterable` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.AsyncIterable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
@@ -2003,8 +2016,8 @@ Asynchronous programming
    .. versionadded:: 3.5.2
 
    .. deprecated:: 3.9
-      :class:`collections.abc.AsyncIterator` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.AsyncIterator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: Awaitable(Generic[T_co])
 
@@ -2013,8 +2026,8 @@ Asynchronous programming
    .. versionadded:: 3.5.2
 
    .. deprecated:: 3.9
-      :class:`collections.abc.Awaitable` now supports ``[]``. See :pep:`585`
-      and :ref:`types-genericalias`.
+      :class:`collections.abc.Awaitable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 
 Context manager types
@@ -2028,8 +2041,9 @@ Context manager types
    .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
-      :class:`contextlib.AbstractContextManager` now supports ``[]``. See
-      :pep:`585` and :ref:`types-genericalias`.
+      :class:`contextlib.AbstractContextManager`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 .. class:: AsyncContextManager(Generic[T_co])
 
@@ -2039,8 +2053,9 @@ Context manager types
    .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9
-      :class:`contextlib.AbstractAsyncContextManager` now supports ``[]``. See
-      :pep:`585` and :ref:`types-genericalias`.
+      :class:`contextlib.AbstractAsyncContextManager`
+      now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
 
 Protocols
 ---------
@@ -2117,7 +2132,7 @@ Functions and decorators
       def process(response):
           <actual implementation>
 
-   See :pep:`484` for details and comparison with other typing semantics.
+   See :pep:`484` for more details and comparison with other typing semantics.
 
 .. decorator:: final
 

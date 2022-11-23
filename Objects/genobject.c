@@ -439,20 +439,25 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             /* `yf` is a generator or a coroutine. */
             PyThreadState *tstate = _PyThreadState_GET();
             PyFrameObject *f = tstate->frame;
+            PyFrameObject *gf = gen->gi_frame;
 
             /* Since we are fast-tracking things by skipping the eval loop,
                we need to update the current frame so the stack trace
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            tstate->frame = gen->gi_frame;
+            assert(gf->f_back == NULL);
+            Py_XINCREF(f);
+            gf->f_back = f;
+            tstate->frame = gf;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
-            PyFrameState state = gen->gi_frame->f_state;
-            gen->gi_frame->f_state = FRAME_EXECUTING;
+            PyFrameState state = gf->f_state;
+            gf->f_state = FRAME_EXECUTING;
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
-            gen->gi_frame->f_state = state;
+            gf->f_state = state;
+            Py_CLEAR(gf->f_back);
             tstate->frame = f;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */

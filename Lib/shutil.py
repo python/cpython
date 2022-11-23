@@ -487,12 +487,13 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     # otherwise let the copy occur. copy2 will raise an error
                     if srcentry.is_dir():
                         copytree(srcobj, dstname, symlinks, ignore,
-                                 copy_function, dirs_exist_ok=dirs_exist_ok)
+                                 copy_function, ignore_dangling_symlinks,
+                                 dirs_exist_ok)
                     else:
                         copy_function(srcobj, dstname)
             elif srcentry.is_dir():
                 copytree(srcobj, dstname, symlinks, ignore, copy_function,
-                         dirs_exist_ok=dirs_exist_ok)
+                         ignore_dangling_symlinks, dirs_exist_ok)
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcobj, dstname)
@@ -1108,6 +1109,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     save_cwd = None
     if root_dir is not None:
         if support_root_dir:
+            # Support path-like base_name here for backwards-compatibility.
+            base_name = os.fspath(base_name)
             kwargs['root_dir'] = root_dir
         else:
             save_cwd = os.getcwd()

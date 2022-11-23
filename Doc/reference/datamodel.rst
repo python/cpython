@@ -316,7 +316,7 @@ Sequences
 
          A string is a sequence of values that represent Unicode code points.
          All the code points in the range ``U+0000 - U+10FFFF`` can be
-         represented in a string.  Python doesn't have a :c:type:`char` type;
+         represented in a string.  Python doesn't have a :c:expr:`char` type;
          instead, every code point in the string is represented as a string
          object with length ``1``.  The built-in function :func:`ord`
          converts a code point from its string form to an integer in the
@@ -1836,6 +1836,8 @@ Attribute lookup speed can be significantly improved as well.
    :attr:`~object.__dict__`
    and *__weakref__* for each instance.
 
+
+.. _datamodel-note-slots:
 
 Notes on using *__slots__*
 """"""""""""""""""""""""""

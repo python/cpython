@@ -10,44 +10,111 @@
 # and PC/pythonXYstub.def
 
 
+# The current format is a simple line-based one with significant indentation.
+# Anything after a hash is a comment.
+
+# There are these kinds of top-level "items":
+# - struct: A C struct. Currently this file does not distinguish between:
+#   - opaque structs, which the Limited API only handles via pointers
+#     (so these can change at any time)
+#   - structs where only certain members are part of the stable ABI (e.g.
+#     PyObject)
+#   - structs which must not be changed at all (e.g. PyType_Slot, which is
+#     fully defined and used in arrays)
+# - function: A function that must be kept available (and exported, i.e. not
+#   converted to a macro).
+# - const: A simple value, defined with `#define`.
+# - macro: A preprocessor macro more complex than a simple `const` value.
+# - data: An exported object, which must continue to be available but its exact
+#   value may change.
+# - typedef: A C typedef which is used in other definitions in the limited API.
+#   Its size/layout/signature must not change.
+
+# Each top-level item can have details defined below it:
+# - added: The version in which the item was added to the stable ABI.
+# - ifdef: A feature macro: the item is only available if this macro is defined
+# - abi_only: If present, the item is not part of the Limited API, but it *is*
+#   part of the stable ABI. The item will not show up in user-facing docs.
+#   Typically used for:
+#   - private functions called by public macros, e.g. _Py_BuildValue_SizeT
+#   - items that were part of the limited API in the past, and must remain part
+#     of the stable ABI.
+#   - a combination of the above (functions that were called by macros that
+#     were public in the past)
+
+# For structs, one of the following must be set:
+# - opaque: The struct name is available in the Limited API, but its members
+#   are not. Users must manipulate it via pointers.
+# - members: Space-separated list of members which are part of the
+#   Limited API and Stable ABI.
+#   Members that aren't listed are not accessible to applications.
+# - full-abi: The entire struct -- all its members and its size -- is part of
+#   the Stable ABI, and must not change.
+
+# Removing items from this file is generally not allowed, and additions should
+# be considered with that in mind. See the devguide for exact rules:
+#    https://devguide.python.org/c-api/#limited-api
+
+# User-facing docs are at:
+#    https://docs.python.org/3/c-api/stable.html#stable
+
+
 # Mentioned in PEP 384:
 
 struct PyObject
     added 3.2
+    members ob_refcnt ob_type
 struct PyVarObject
     added 3.2
+    members ob_base ob_size
 struct PyMethodDef
     added 3.2
+    full-abi
 struct PyMemberDef
     added 3.2
+    full-abi
 struct PyGetSetDef
     added 3.2
+    full-abi
 struct PyModuleDef_Base
     added 3.2
+    full-abi
 struct PyModuleDef
     added 3.2
+    full-abi
 struct PyStructSequence_Field
     added 3.2
+    full-abi
 struct PyStructSequence_Desc
     added 3.2
+    full-abi
 struct PyType_Slot
     added 3.2
+    full-abi
 struct PyType_Spec
     added 3.2
+    full-abi
 struct PyThreadState
     added 3.2
+    opaque
 struct PyInterpreterState
     added 3.2
+    opaque
 struct PyFrameObject
     added 3.2
+    opaque
 struct symtable
     added 3.2
+    opaque
 struct PyWeakReference
     added 3.2
+    opaque
 struct PyLongObject
     added 3.2
+    opaque
 struct PyTypeObject
     added 3.2
+    opaque
 
 function PyType_FromSpec
     added 3.2
@@ -259,11 +326,11 @@ typedef newfunc
     added 3.2
 typedef allocfunc
     added 3.2
-struct PyCFunction
+typedef PyCFunction
     added 3.2
-struct PyCFunctionWithKeywords
+typedef PyCFunctionWithKeywords
     added 3.2
-struct PyCapsule_Destructor
+typedef PyCapsule_Destructor
     added 3.2
 typedef getter
     added 3.2

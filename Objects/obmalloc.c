@@ -1397,9 +1397,19 @@ static int arena_map_bot_count;
 static arena_map_bot_t arena_map_root;
 #endif
 
+#if defined(Py_DEBUG)
+#  define ALWAYS_INLINE
+#elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#  define ALWAYS_INLINE __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#  define ALWAYS_INLINE __forceinline
+#else
+#  define ALWAYS_INLINE
+#endif
+
 /* Return a pointer to a bottom tree node, return NULL if it doesn't exist or
  * it cannot be created */
-static arena_map_bot_t *
+static ALWAYS_INLINE arena_map_bot_t *
 arena_map_get(block *p, int create)
 {
 #ifdef USE_INTERIOR_NODES
@@ -2952,7 +2962,6 @@ _PyObject_DebugMallocStats(FILE *out)
      * will be living in full pools -- would be a shame to miss them.
      */
     for (i = 0; i < maxarenas; ++i) {
-        uint j;
         uintptr_t base = arenas[i].address;
 
         /* Skip arenas which are not allocated. */
@@ -2971,8 +2980,7 @@ _PyObject_DebugMallocStats(FILE *out)
 
         /* visit every pool in the arena */
         assert(base <= (uintptr_t) arenas[i].pool_address);
-        for (j = 0; base < (uintptr_t) arenas[i].pool_address;
-             ++j, base += POOL_SIZE) {
+        for (; base < (uintptr_t) arenas[i].pool_address; base += POOL_SIZE) {
             poolp p = (poolp)base;
             const uint sz = p->szidx;
             uint freeblocks;

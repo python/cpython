@@ -20,6 +20,13 @@ on:
     - 'Doc/**'
     - 'Misc/**'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   build_doc:
     name: 'Docs'
@@ -36,8 +43,6 @@ jobs:
         cache-dependency-path: 'Doc/requirements.txt'
     - name: 'Install build dependencies'
       run: make -C Doc/ venv
-    - name: 'Check documentation'
-      run: make -C Doc/ suspicious
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
     - name: 'Upload'

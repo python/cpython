@@ -18,6 +18,10 @@ and Tasks.
 Coroutines
 ==========
 
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
+----------------------------------------------------
+
 :term:`Coroutines <coroutine>` declared with the async/await syntax is the
 preferred way of writing asyncio applications.  For example, the following
 snippet of code prints "hello", waits 1 second,
@@ -247,6 +251,10 @@ Running an asyncio Program
 Creating Tasks
 ==============
 
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+-----------------------------------------------
+
 .. function:: create_task(coro, *, name=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
@@ -262,9 +270,9 @@ Creating Tasks
    .. important::
 
       Save a reference to the result of this function, to avoid
-      a task disappearing mid execution. The event loop only keeps
+      a task disappearing mid-execution. The event loop only keeps
       weak references to tasks. A task that isn't referenced elsewhere
-      may get garbage-collected at any time, even before it's done.
+      may get garbage collected at any time, even before it's done.
       For reliable "fire-and-forget" background tasks, gather them in
       a collection::
 
@@ -441,7 +449,8 @@ Shielding From Cancellation
 
    The statement::
 
-       res = await shield(something())
+       task = asyncio.create_task(something())
+       res = await shield(task)
 
    is equivalent to::
 
@@ -460,10 +469,18 @@ Shielding From Cancellation
    the ``shield()`` function should be combined with a try/except
    clause, as follows::
 
+       task = asyncio.create_task(something())
        try:
-           res = await shield(something())
+           res = await shield(task)
        except CancelledError:
            res = None
+
+   .. important::
+
+      Save a reference to tasks passed to this function, to avoid
+      a task disappearing mid-execution. The event loop only keeps
+      weak references to tasks. A task that isn't referenced elsewhere
+      may get garbage collected at any time, even before it's done.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
@@ -698,17 +715,17 @@ Running in Threads
        # blocking_io complete at 19:50:54
        # finished main at 19:50:54
 
-   Directly calling `blocking_io()` in any coroutine would block the event loop
+   Directly calling ``blocking_io()`` in any coroutine would block the event loop
    for its duration, resulting in an additional 1 second of run time. Instead,
-   by using `asyncio.to_thread()`, we can run it in a separate thread without
+   by using ``asyncio.to_thread()``, we can run it in a separate thread without
    blocking the event loop.
 
    .. note::
 
-      Due to the :term:`GIL`, `asyncio.to_thread()` can typically only be used
+      Due to the :term:`GIL`, ``asyncio.to_thread()`` can typically only be used
       to make IO-bound functions non-blocking. However, for extension modules
       that release the GIL or alternative Python implementations that don't
-      have one, `asyncio.to_thread()` can also be used for CPU-bound functions.
+      have one, ``asyncio.to_thread()`` can also be used for CPU-bound functions.
 
    .. versionadded:: 3.9
 
