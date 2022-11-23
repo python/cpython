@@ -9,10 +9,22 @@
 --------------
 
 This module constructs higher-level threading interfaces on top of the lower
-level :mod:`_thread` module.  See also the :mod:`queue` module.
+level :mod:`_thread` module.
 
 .. versionchanged:: 3.7
    This module used to be optional, it is now always available.
+
+.. seealso::
+
+   :class:`concurrent.futures.ThreadPoolExecutor` offers a higher level interface
+   to push tasks to a background thread without blocking execution of the
+   calling thread, while still being able to retrieve their results when needed.
+
+   :mod:`queue` provides a thread-safe interface for exchanging data between
+   running threads.
+
+   :mod:`asyncio` offers an alternative approach to achieving task level
+   concurrency without requiring the use of multiple operating system threads.
 
 .. note::
 
@@ -33,6 +45,7 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
    However, threading is still an appropriate model if you want to run
    multiple I/O-bound tasks simultaneously.
 
+.. include:: ../includes/wasm-notavail.rst
 
 This module defines the following functions:
 
@@ -192,7 +205,9 @@ This module defines the following functions:
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
 
-   .. availability:: Windows, systems with POSIX threads.
+   .. availability:: Windows, pthreads.
+
+      Unix platforms with POSIX threads support.
 
 
 This module also defines the following constant:
@@ -429,7 +444,7 @@ since it is impossible to detect the termination of alien threads.
          system-wide) from the time the thread is created until the thread
          has been terminated.
 
-      .. availability:: Requires :func:`get_native_id` function.
+      .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
       .. versionadded:: 3.8
 

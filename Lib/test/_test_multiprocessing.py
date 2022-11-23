@@ -3971,7 +3971,7 @@ class _TestSharedMemory(BaseTestCase):
             'multiprocessing.shared_memory._make_filename') as mock_make_filename:
 
             NAME_PREFIX = shared_memory._SHM_NAME_PREFIX
-            names = ['test01_fn', 'test02_fn']
+            names = [self._new_shm_name('test03_fn'), self._new_shm_name('test04_fn')]
             # Prepend NAME_PREFIX which can be '/psm_' or 'wnsm_', necessary
             # because some POSIX compliant systems require name to start with /
             names = [NAME_PREFIX + name for name in names]
@@ -5438,6 +5438,14 @@ class TestResourceTracker(unittest.TestCase):
 
         self.assertTrue(is_resource_tracker_reused)
 
+    def test_too_long_name_resource(self):
+        # gh-96819: Resource names that will make the length of a write to a pipe
+        # greater than PIPE_BUF are not allowed
+        rtype = "shared_memory"
+        too_long_name_resource = "a" * (512 - len(rtype))
+        with self.assertRaises(ValueError):
+            resource_tracker.register(too_long_name_resource, rtype)
+
 
 class TestSimpleQueue(unittest.TestCase):
 
@@ -6026,3 +6034,15 @@ def install_tests_in_module_dict(remote_globs, start_method):
 
     remote_globs['setUpModule'] = setUpModule
     remote_globs['tearDownModule'] = tearDownModule
+
+
+@unittest.skipIf(not hasattr(_multiprocessing, 'SemLock'), 'SemLock not available')
+@unittest.skipIf(sys.platform != "linux", "Linux only")
+class SemLockTests(unittest.TestCase):
+
+    def test_semlock_subclass(self):
+        class SemLock(_multiprocessing.SemLock):
+            pass
+        name = f'test_semlock_subclass-{os.getpid()}'
+        s = SemLock(1, 0, 10, name, 0)
+        _multiprocessing.sem_unlink(name)

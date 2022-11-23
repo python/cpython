@@ -1639,7 +1639,7 @@
     <elf-symbol name='_PyNotImplemented_Type' size='408' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyOS_ReadlineTState' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyParser_TokenNames' size='520' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
-    <elf-symbol name='_PyRuntime' size='166672' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <elf-symbol name='_PyRuntime' size='166688' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PySet_Dummy' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyWeakref_CallableProxyType' size='408' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
     <elf-symbol name='_PyWeakref_ProxyType' size='408' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
@@ -1825,7 +1825,7 @@
     </class-decl>
     <typedef-decl name='PyThreadState' type-id='type-id-9' filepath='./Include/pytypedefs.h' line='24' column='1' id='type-id-25'/>
     <pointer-type-def type-id='type-id-25' size-in-bits='64' id='type-id-10'/>
-    <class-decl name='_is' size-in-bits='861888' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp.h' line='78' column='1' id='type-id-26'>
+    <class-decl name='_is' size-in-bits='862016' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_interp.h' line='78' column='1' id='type-id-26'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='next' type-id='type-id-11' visibility='default' filepath='./Include/internal/pycore_interp.h' line='80' column='1'/>
       </data-member>
@@ -1964,13 +1964,16 @@
       <data-member access='public' layout-offset-in-bits='57280'>
         <var-decl name='ast' type-id='type-id-49' visibility='default' filepath='./Include/internal/pycore_interp.h' line='175' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='72384'>
+      <data-member access='public' layout-offset-in-bits='72448'>
         <var-decl name='type_cache' type-id='type-id-50' visibility='default' filepath='./Include/internal/pycore_interp.h' line='176' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='858816'>
+      <data-member access='public' layout-offset-in-bits='858880'>
         <var-decl name='callable_cache' type-id='type-id-51' visibility='default' filepath='./Include/internal/pycore_interp.h' line='177' column='1'/>
       </data-member>
-      <data-member access='public' layout-offset-in-bits='859008'>
+      <data-member access='public' layout-offset-in-bits='859072'>
+        <var-decl name='int_max_str_digits' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_interp.h' line='179' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='859136'>
         <var-decl name='_initial_thread' type-id='type-id-25' visibility='default' filepath='./Include/internal/pycore_interp.h' line='192' column='1'/>
       </data-member>
     </class-decl>
@@ -1995,7 +1998,7 @@
     <typedef-decl name='uint64_t' type-id='type-id-55' filepath='/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h' line='27' column='1' id='type-id-19'/>
     <type-decl name='long int' size-in-bits='64' id='type-id-53'/>
     <typedef-decl name='size_t' type-id='type-id-16' filepath='/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h' line='209' column='1' id='type-id-54'/>
-    <class-decl name='pyruntimestate' size-in-bits='1333376' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='59' column='1' id='type-id-56'>
+    <class-decl name='pyruntimestate' size-in-bits='1333504' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='59' column='1' id='type-id-56'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='_initialized' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_runtime.h' line='64' column='1'/>
       </data-member>
@@ -2269,7 +2272,7 @@
     </class-decl>
     <typedef-decl name='__ssize_t' type-id='type-id-53' filepath='/usr/include/x86_64-linux-gnu/bits/types.h' line='193' column='1' id='type-id-110'/>
     <typedef-decl name='ssize_t' type-id='type-id-110' filepath='/usr/include/x86_64-linux-gnu/sys/types.h' line='108' column='1' id='type-id-111'/>
-    <typedef-decl name='Py_ssize_t' type-id='type-id-111' filepath='./Include/pyport.h' line='179' column='1' id='type-id-36'/>
+    <typedef-decl name='Py_ssize_t' type-id='type-id-111' filepath='./Include/pyport.h' line='131' column='1' id='type-id-36'/>
     <typedef-decl name='PyTypeObject' type-id='type-id-76' filepath='./Include/pytypedefs.h' line='20' column='1' id='type-id-112'/>
     <pointer-type-def type-id='type-id-112' size-in-bits='64' id='type-id-74'/>
     <typedef-decl name='PyObject' type-id='type-id-109' filepath='./Include/pytypedefs.h' line='18' column='1' id='type-id-108'/>
@@ -2487,7 +2490,7 @@
     <typedef-decl name='objobjargproc' type-id='type-id-158' filepath='./Include/object.h' line='205' column='1' id='type-id-156'/>
     <typedef-decl name='PyMappingMethods' type-id='type-id-155' filepath='./Include/cpython/object.h' line='126' column='1' id='type-id-154'/>
     <pointer-type-def type-id='type-id-154' size-in-bits='64' id='type-id-85'/>
-    <typedef-decl name='Py_hash_t' type-id='type-id-36' filepath='./Include/pyport.h' line='193' column='1' id='type-id-159'/>
+    <typedef-decl name='Py_hash_t' type-id='type-id-36' filepath='./Include/pyport.h' line='145' column='1' id='type-id-159'/>
     <pointer-type-def type-id='type-id-160' size-in-bits='64' id='type-id-161'/>
     <typedef-decl name='hashfunc' type-id='type-id-161' filepath='./Include/object.h' line='219' column='1' id='type-id-86'/>
     <typedef-decl name='getattrofunc' type-id='type-id-135' filepath='./Include/object.h' line='215' column='1' id='type-id-88'/>
@@ -5079,714 +5082,720 @@
     </class-decl>
     <typedef-decl name='PyBaseExceptionObject' type-id='type-id-431' filepath='./Include/cpython/pyerrors.h' line='15' column='1' id='type-id-430'/>
     <pointer-type-def type-id='type-id-430' size-in-bits='64' id='type-id-429'/>
-    <class-decl name='ast_state' size-in-bits='15104' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='13' column='1' id='type-id-49'>
+    <class-decl name='ast_state' size-in-bits='15168' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='13' column='1' id='type-id-49'>
       <data-member access='public' layout-offset-in-bits='0'>
         <var-decl name='initialized' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='14' column='1'/>
       </data-member>
+      <data-member access='public' layout-offset-in-bits='32'>
+        <var-decl name='recursion_depth' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='15' column='1'/>
+      </data-member>
       <data-member access='public' layout-offset-in-bits='64'>
-        <var-decl name='AST_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='15' column='1'/>
+        <var-decl name='recursion_limit' type-id='type-id-8' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='16' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='128'>
-        <var-decl name='Add_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='16' column='1'/>
+        <var-decl name='AST_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='17' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='192'>
-        <var-decl name='Add_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='17' column='1'/>
+        <var-decl name='Add_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='18' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='256'>
-        <var-decl name='And_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='18' column='1'/>
+        <var-decl name='Add_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='19' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='320'>
-        <var-decl name='And_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='19' column='1'/>
+        <var-decl name='And_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='20' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='384'>
-        <var-decl name='AnnAssign_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='20' column='1'/>
+        <var-decl name='And_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='21' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='448'>
-        <var-decl name='Assert_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='21' column='1'/>
+        <var-decl name='AnnAssign_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='22' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='512'>
-        <var-decl name='Assign_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='22' column='1'/>
+        <var-decl name='Assert_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='23' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='576'>
-        <var-decl name='AsyncFor_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='23' column='1'/>
+        <var-decl name='Assign_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='24' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='640'>
-        <var-decl name='AsyncFunctionDef_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='24' column='1'/>
+        <var-decl name='AsyncFor_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='25' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='704'>
-        <var-decl name='AsyncWith_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='25' column='1'/>
+        <var-decl name='AsyncFunctionDef_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='26' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='768'>
-        <var-decl name='Attribute_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='26' column='1'/>
+        <var-decl name='AsyncWith_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='27' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='832'>
-        <var-decl name='AugAssign_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='27' column='1'/>
+        <var-decl name='Attribute_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='28' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='896'>
-        <var-decl name='Await_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='28' column='1'/>
+        <var-decl name='AugAssign_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='29' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='960'>
-        <var-decl name='BinOp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='29' column='1'/>
+        <var-decl name='Await_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='30' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1024'>
-        <var-decl name='BitAnd_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='30' column='1'/>
+        <var-decl name='BinOp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='31' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1088'>
-        <var-decl name='BitAnd_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='31' column='1'/>
+        <var-decl name='BitAnd_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='32' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1152'>
-        <var-decl name='BitOr_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='32' column='1'/>
+        <var-decl name='BitAnd_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='33' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1216'>
-        <var-decl name='BitOr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='33' column='1'/>
+        <var-decl name='BitOr_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='34' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1280'>
-        <var-decl name='BitXor_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='34' column='1'/>
+        <var-decl name='BitOr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='35' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1344'>
-        <var-decl name='BitXor_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='35' column='1'/>
+        <var-decl name='BitXor_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='36' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1408'>
-        <var-decl name='BoolOp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='36' column='1'/>
+        <var-decl name='BitXor_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='37' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1472'>
-        <var-decl name='Break_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='37' column='1'/>
+        <var-decl name='BoolOp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='38' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1536'>
-        <var-decl name='Call_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='38' column='1'/>
+        <var-decl name='Break_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='39' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1600'>
-        <var-decl name='ClassDef_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='39' column='1'/>
+        <var-decl name='Call_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='40' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1664'>
-        <var-decl name='Compare_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='40' column='1'/>
+        <var-decl name='ClassDef_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='41' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1728'>
-        <var-decl name='Constant_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='41' column='1'/>
+        <var-decl name='Compare_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='42' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1792'>
-        <var-decl name='Continue_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='42' column='1'/>
+        <var-decl name='Constant_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='43' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1856'>
-        <var-decl name='Del_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='43' column='1'/>
+        <var-decl name='Continue_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='44' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1920'>
-        <var-decl name='Del_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='44' column='1'/>
+        <var-decl name='Del_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='45' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='1984'>
-        <var-decl name='Delete_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='45' column='1'/>
+        <var-decl name='Del_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='46' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2048'>
-        <var-decl name='DictComp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='46' column='1'/>
+        <var-decl name='Delete_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='47' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2112'>
-        <var-decl name='Dict_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='47' column='1'/>
+        <var-decl name='DictComp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='48' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2176'>
-        <var-decl name='Div_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='48' column='1'/>
+        <var-decl name='Dict_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='49' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2240'>
-        <var-decl name='Div_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='49' column='1'/>
+        <var-decl name='Div_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='50' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2304'>
-        <var-decl name='Eq_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='50' column='1'/>
+        <var-decl name='Div_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='51' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2368'>
-        <var-decl name='Eq_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='51' column='1'/>
+        <var-decl name='Eq_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='52' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2432'>
-        <var-decl name='ExceptHandler_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='52' column='1'/>
+        <var-decl name='Eq_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='53' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2496'>
-        <var-decl name='Expr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='53' column='1'/>
+        <var-decl name='ExceptHandler_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='54' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2560'>
-        <var-decl name='Expression_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='54' column='1'/>
+        <var-decl name='Expr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='55' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2624'>
-        <var-decl name='FloorDiv_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='55' column='1'/>
+        <var-decl name='Expression_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='56' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2688'>
-        <var-decl name='FloorDiv_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='56' column='1'/>
+        <var-decl name='FloorDiv_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='57' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2752'>
-        <var-decl name='For_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='57' column='1'/>
+        <var-decl name='FloorDiv_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='58' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2816'>
-        <var-decl name='FormattedValue_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='58' column='1'/>
+        <var-decl name='For_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='59' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2880'>
-        <var-decl name='FunctionDef_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='59' column='1'/>
+        <var-decl name='FormattedValue_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='60' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='2944'>
-        <var-decl name='FunctionType_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='60' column='1'/>
+        <var-decl name='FunctionDef_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='61' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3008'>
-        <var-decl name='GeneratorExp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='61' column='1'/>
+        <var-decl name='FunctionType_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='62' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3072'>
-        <var-decl name='Global_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='62' column='1'/>
+        <var-decl name='GeneratorExp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='63' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3136'>
-        <var-decl name='GtE_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='63' column='1'/>
+        <var-decl name='Global_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='64' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3200'>
-        <var-decl name='GtE_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='64' column='1'/>
+        <var-decl name='GtE_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='65' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3264'>
-        <var-decl name='Gt_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='65' column='1'/>
+        <var-decl name='GtE_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='66' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3328'>
-        <var-decl name='Gt_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='66' column='1'/>
+        <var-decl name='Gt_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='67' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3392'>
-        <var-decl name='IfExp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='67' column='1'/>
+        <var-decl name='Gt_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='68' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3456'>
-        <var-decl name='If_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='68' column='1'/>
+        <var-decl name='IfExp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='69' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3520'>
-        <var-decl name='ImportFrom_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='69' column='1'/>
+        <var-decl name='If_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='70' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3584'>
-        <var-decl name='Import_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='70' column='1'/>
+        <var-decl name='ImportFrom_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='71' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3648'>
-        <var-decl name='In_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='71' column='1'/>
+        <var-decl name='Import_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='72' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3712'>
-        <var-decl name='In_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='72' column='1'/>
+        <var-decl name='In_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='73' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3776'>
-        <var-decl name='Interactive_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='73' column='1'/>
+        <var-decl name='In_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='74' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3840'>
-        <var-decl name='Invert_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='74' column='1'/>
+        <var-decl name='Interactive_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='75' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3904'>
-        <var-decl name='Invert_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='75' column='1'/>
+        <var-decl name='Invert_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='76' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='3968'>
-        <var-decl name='IsNot_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='76' column='1'/>
+        <var-decl name='Invert_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='77' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4032'>
-        <var-decl name='IsNot_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='77' column='1'/>
+        <var-decl name='IsNot_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='78' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4096'>
-        <var-decl name='Is_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='78' column='1'/>
+        <var-decl name='IsNot_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='79' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4160'>
-        <var-decl name='Is_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='79' column='1'/>
+        <var-decl name='Is_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='80' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4224'>
-        <var-decl name='JoinedStr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='80' column='1'/>
+        <var-decl name='Is_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='81' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4288'>
-        <var-decl name='LShift_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='81' column='1'/>
+        <var-decl name='JoinedStr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='82' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4352'>
-        <var-decl name='LShift_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='82' column='1'/>
+        <var-decl name='LShift_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='83' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4416'>
-        <var-decl name='Lambda_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='83' column='1'/>
+        <var-decl name='LShift_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='84' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4480'>
-        <var-decl name='ListComp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='84' column='1'/>
+        <var-decl name='Lambda_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='85' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4544'>
-        <var-decl name='List_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='85' column='1'/>
+        <var-decl name='ListComp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='86' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4608'>
-        <var-decl name='Load_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='86' column='1'/>
+        <var-decl name='List_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='87' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4672'>
-        <var-decl name='Load_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='87' column='1'/>
+        <var-decl name='Load_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='88' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4736'>
-        <var-decl name='LtE_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='88' column='1'/>
+        <var-decl name='Load_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='89' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4800'>
-        <var-decl name='LtE_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='89' column='1'/>
+        <var-decl name='LtE_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='90' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4864'>
-        <var-decl name='Lt_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='90' column='1'/>
+        <var-decl name='LtE_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='91' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4928'>
-        <var-decl name='Lt_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='91' column='1'/>
+        <var-decl name='Lt_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='92' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='4992'>
-        <var-decl name='MatMult_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='92' column='1'/>
+        <var-decl name='Lt_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='93' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5056'>
-        <var-decl name='MatMult_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='93' column='1'/>
+        <var-decl name='MatMult_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='94' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5120'>
-        <var-decl name='MatchAs_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='94' column='1'/>
+        <var-decl name='MatMult_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='95' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5184'>
-        <var-decl name='MatchClass_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='95' column='1'/>
+        <var-decl name='MatchAs_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='96' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5248'>
-        <var-decl name='MatchMapping_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='96' column='1'/>
+        <var-decl name='MatchClass_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='97' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5312'>
-        <var-decl name='MatchOr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='97' column='1'/>
+        <var-decl name='MatchMapping_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='98' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5376'>
-        <var-decl name='MatchSequence_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='98' column='1'/>
+        <var-decl name='MatchOr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='99' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5440'>
-        <var-decl name='MatchSingleton_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='99' column='1'/>
+        <var-decl name='MatchSequence_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='100' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5504'>
-        <var-decl name='MatchStar_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='100' column='1'/>
+        <var-decl name='MatchSingleton_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='101' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5568'>
-        <var-decl name='MatchValue_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='101' column='1'/>
+        <var-decl name='MatchStar_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='102' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5632'>
-        <var-decl name='Match_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='102' column='1'/>
+        <var-decl name='MatchValue_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='103' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5696'>
-        <var-decl name='Mod_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='103' column='1'/>
+        <var-decl name='Match_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='104' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5760'>
-        <var-decl name='Mod_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='104' column='1'/>
+        <var-decl name='Mod_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='105' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5824'>
-        <var-decl name='Module_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='105' column='1'/>
+        <var-decl name='Mod_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='106' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5888'>
-        <var-decl name='Mult_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='106' column='1'/>
+        <var-decl name='Module_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='107' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='5952'>
-        <var-decl name='Mult_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='107' column='1'/>
+        <var-decl name='Mult_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='108' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6016'>
-        <var-decl name='Name_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='108' column='1'/>
+        <var-decl name='Mult_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='109' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6080'>
-        <var-decl name='NamedExpr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='109' column='1'/>
+        <var-decl name='Name_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='110' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6144'>
-        <var-decl name='Nonlocal_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='110' column='1'/>
+        <var-decl name='NamedExpr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='111' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6208'>
-        <var-decl name='NotEq_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='111' column='1'/>
+        <var-decl name='Nonlocal_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='112' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6272'>
-        <var-decl name='NotEq_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='112' column='1'/>
+        <var-decl name='NotEq_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='113' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6336'>
-        <var-decl name='NotIn_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='113' column='1'/>
+        <var-decl name='NotEq_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='114' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6400'>
-        <var-decl name='NotIn_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='114' column='1'/>
+        <var-decl name='NotIn_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='115' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6464'>
-        <var-decl name='Not_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='115' column='1'/>
+        <var-decl name='NotIn_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='116' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6528'>
-        <var-decl name='Not_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='116' column='1'/>
+        <var-decl name='Not_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='117' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6592'>
-        <var-decl name='Or_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='117' column='1'/>
+        <var-decl name='Not_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='118' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6656'>
-        <var-decl name='Or_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='118' column='1'/>
+        <var-decl name='Or_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='119' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6720'>
-        <var-decl name='Pass_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='119' column='1'/>
+        <var-decl name='Or_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='120' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6784'>
-        <var-decl name='Pow_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='120' column='1'/>
+        <var-decl name='Pass_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='121' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6848'>
-        <var-decl name='Pow_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='121' column='1'/>
+        <var-decl name='Pow_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='122' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6912'>
-        <var-decl name='RShift_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='122' column='1'/>
+        <var-decl name='Pow_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='123' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='6976'>
-        <var-decl name='RShift_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='123' column='1'/>
+        <var-decl name='RShift_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='124' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7040'>
-        <var-decl name='Raise_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='124' column='1'/>
+        <var-decl name='RShift_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='125' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7104'>
-        <var-decl name='Return_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='125' column='1'/>
+        <var-decl name='Raise_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='126' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7168'>
-        <var-decl name='SetComp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='126' column='1'/>
+        <var-decl name='Return_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='127' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7232'>
-        <var-decl name='Set_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='127' column='1'/>
+        <var-decl name='SetComp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='128' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7296'>
-        <var-decl name='Slice_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='128' column='1'/>
+        <var-decl name='Set_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='129' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7360'>
-        <var-decl name='Starred_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='129' column='1'/>
+        <var-decl name='Slice_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='130' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7424'>
-        <var-decl name='Store_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='130' column='1'/>
+        <var-decl name='Starred_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='131' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7488'>
-        <var-decl name='Store_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='131' column='1'/>
+        <var-decl name='Store_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='132' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7552'>
-        <var-decl name='Sub_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='132' column='1'/>
+        <var-decl name='Store_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='133' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7616'>
-        <var-decl name='Sub_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='133' column='1'/>
+        <var-decl name='Sub_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='134' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7680'>
-        <var-decl name='Subscript_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='134' column='1'/>
+        <var-decl name='Sub_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='135' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7744'>
-        <var-decl name='TryStar_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='135' column='1'/>
+        <var-decl name='Subscript_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='136' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7808'>
-        <var-decl name='Try_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='136' column='1'/>
+        <var-decl name='TryStar_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='137' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7872'>
-        <var-decl name='Tuple_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='137' column='1'/>
+        <var-decl name='Try_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='138' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='7936'>
-        <var-decl name='TypeIgnore_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='138' column='1'/>
+        <var-decl name='Tuple_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='139' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8000'>
-        <var-decl name='UAdd_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='139' column='1'/>
+        <var-decl name='TypeIgnore_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='140' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8064'>
-        <var-decl name='UAdd_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='140' column='1'/>
+        <var-decl name='UAdd_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='141' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8128'>
-        <var-decl name='USub_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='141' column='1'/>
+        <var-decl name='UAdd_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='142' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8192'>
-        <var-decl name='USub_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='142' column='1'/>
+        <var-decl name='USub_singleton' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='143' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8256'>
-        <var-decl name='UnaryOp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='143' column='1'/>
+        <var-decl name='USub_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='144' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8320'>
-        <var-decl name='While_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='144' column='1'/>
+        <var-decl name='UnaryOp_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='145' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8384'>
-        <var-decl name='With_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='145' column='1'/>
+        <var-decl name='While_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='146' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8448'>
-        <var-decl name='YieldFrom_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='146' column='1'/>
+        <var-decl name='With_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='147' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8512'>
-        <var-decl name='Yield_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='147' column='1'/>
+        <var-decl name='YieldFrom_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='148' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8576'>
-        <var-decl name='__dict__' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='148' column='1'/>
+        <var-decl name='Yield_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='149' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8640'>
-        <var-decl name='__doc__' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='149' column='1'/>
+        <var-decl name='__dict__' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='150' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8704'>
-        <var-decl name='__match_args__' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='150' column='1'/>
+        <var-decl name='__doc__' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='151' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8768'>
-        <var-decl name='__module__' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='151' column='1'/>
+        <var-decl name='__match_args__' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='152' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8832'>
-        <var-decl name='_attributes' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='152' column='1'/>
+        <var-decl name='__module__' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='153' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8896'>
-        <var-decl name='_fields' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='153' column='1'/>
+        <var-decl name='_attributes' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='154' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='8960'>
-        <var-decl name='alias_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='154' column='1'/>
+        <var-decl name='_fields' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='155' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9024'>
-        <var-decl name='annotation' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='155' column='1'/>
+        <var-decl name='alias_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='156' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9088'>
-        <var-decl name='arg' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='156' column='1'/>
+        <var-decl name='annotation' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='157' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9152'>
-        <var-decl name='arg_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='157' column='1'/>
+        <var-decl name='arg' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='158' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9216'>
-        <var-decl name='args' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='158' column='1'/>
+        <var-decl name='arg_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='159' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9280'>
-        <var-decl name='argtypes' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='159' column='1'/>
+        <var-decl name='args' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='160' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9344'>
-        <var-decl name='arguments_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='160' column='1'/>
+        <var-decl name='argtypes' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='161' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9408'>
-        <var-decl name='asname' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='161' column='1'/>
+        <var-decl name='arguments_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='162' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9472'>
-        <var-decl name='ast' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='162' column='1'/>
+        <var-decl name='asname' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='163' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9536'>
-        <var-decl name='attr' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='163' column='1'/>
+        <var-decl name='ast' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='164' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9600'>
-        <var-decl name='bases' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='164' column='1'/>
+        <var-decl name='attr' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='165' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9664'>
-        <var-decl name='body' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='165' column='1'/>
+        <var-decl name='bases' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='166' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9728'>
-        <var-decl name='boolop_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='166' column='1'/>
+        <var-decl name='body' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='167' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9792'>
-        <var-decl name='cases' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='167' column='1'/>
+        <var-decl name='boolop_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='168' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9856'>
-        <var-decl name='cause' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='168' column='1'/>
+        <var-decl name='cases' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='169' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9920'>
-        <var-decl name='cls' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='169' column='1'/>
+        <var-decl name='cause' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='170' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='9984'>
-        <var-decl name='cmpop_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='170' column='1'/>
+        <var-decl name='cls' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='171' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10048'>
-        <var-decl name='col_offset' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='171' column='1'/>
+        <var-decl name='cmpop_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='172' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10112'>
-        <var-decl name='comparators' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='172' column='1'/>
+        <var-decl name='col_offset' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='173' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10176'>
-        <var-decl name='comprehension_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='173' column='1'/>
+        <var-decl name='comparators' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='174' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10240'>
-        <var-decl name='context_expr' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='174' column='1'/>
+        <var-decl name='comprehension_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='175' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10304'>
-        <var-decl name='conversion' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='175' column='1'/>
+        <var-decl name='context_expr' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='176' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10368'>
-        <var-decl name='ctx' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='176' column='1'/>
+        <var-decl name='conversion' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='177' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10432'>
-        <var-decl name='decorator_list' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='177' column='1'/>
+        <var-decl name='ctx' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='178' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10496'>
-        <var-decl name='defaults' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='178' column='1'/>
+        <var-decl name='decorator_list' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='179' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10560'>
-        <var-decl name='elt' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='179' column='1'/>
+        <var-decl name='defaults' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='180' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10624'>
-        <var-decl name='elts' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='180' column='1'/>
+        <var-decl name='elt' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='181' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10688'>
-        <var-decl name='end_col_offset' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='181' column='1'/>
+        <var-decl name='elts' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='182' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10752'>
-        <var-decl name='end_lineno' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='182' column='1'/>
+        <var-decl name='end_col_offset' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='183' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10816'>
-        <var-decl name='exc' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='183' column='1'/>
+        <var-decl name='end_lineno' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='184' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10880'>
-        <var-decl name='excepthandler_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='184' column='1'/>
+        <var-decl name='exc' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='185' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='10944'>
-        <var-decl name='expr_context_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='185' column='1'/>
+        <var-decl name='excepthandler_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='186' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11008'>
-        <var-decl name='expr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='186' column='1'/>
+        <var-decl name='expr_context_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='187' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11072'>
-        <var-decl name='finalbody' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='187' column='1'/>
+        <var-decl name='expr_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='188' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11136'>
-        <var-decl name='format_spec' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='188' column='1'/>
+        <var-decl name='finalbody' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='189' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11200'>
-        <var-decl name='func' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='189' column='1'/>
+        <var-decl name='format_spec' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='190' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11264'>
-        <var-decl name='generators' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='190' column='1'/>
+        <var-decl name='func' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='191' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11328'>
-        <var-decl name='guard' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='191' column='1'/>
+        <var-decl name='generators' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='192' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11392'>
-        <var-decl name='handlers' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='192' column='1'/>
+        <var-decl name='guard' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='193' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11456'>
-        <var-decl name='id' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='193' column='1'/>
+        <var-decl name='handlers' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='194' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11520'>
-        <var-decl name='ifs' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='194' column='1'/>
+        <var-decl name='id' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='195' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11584'>
-        <var-decl name='is_async' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='195' column='1'/>
+        <var-decl name='ifs' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='196' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11648'>
-        <var-decl name='items' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='196' column='1'/>
+        <var-decl name='is_async' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='197' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11712'>
-        <var-decl name='iter' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='197' column='1'/>
+        <var-decl name='items' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='198' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11776'>
-        <var-decl name='key' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='198' column='1'/>
+        <var-decl name='iter' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='199' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11840'>
-        <var-decl name='keys' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='199' column='1'/>
+        <var-decl name='key' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='200' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11904'>
-        <var-decl name='keyword_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='200' column='1'/>
+        <var-decl name='keys' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='201' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='11968'>
-        <var-decl name='keywords' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='201' column='1'/>
+        <var-decl name='keyword_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='202' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12032'>
-        <var-decl name='kind' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='202' column='1'/>
+        <var-decl name='keywords' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='203' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12096'>
-        <var-decl name='kw_defaults' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='203' column='1'/>
+        <var-decl name='kind' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='204' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12160'>
-        <var-decl name='kwarg' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='204' column='1'/>
+        <var-decl name='kw_defaults' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='205' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12224'>
-        <var-decl name='kwd_attrs' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='205' column='1'/>
+        <var-decl name='kwarg' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='206' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12288'>
-        <var-decl name='kwd_patterns' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='206' column='1'/>
+        <var-decl name='kwd_attrs' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='207' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12352'>
-        <var-decl name='kwonlyargs' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='207' column='1'/>
+        <var-decl name='kwd_patterns' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='208' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12416'>
-        <var-decl name='left' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='208' column='1'/>
+        <var-decl name='kwonlyargs' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='209' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12480'>
-        <var-decl name='level' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='209' column='1'/>
+        <var-decl name='left' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='210' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12544'>
-        <var-decl name='lineno' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='210' column='1'/>
+        <var-decl name='level' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='211' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12608'>
-        <var-decl name='lower' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='211' column='1'/>
+        <var-decl name='lineno' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='212' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12672'>
-        <var-decl name='match_case_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='212' column='1'/>
+        <var-decl name='lower' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='213' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12736'>
-        <var-decl name='mod_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='213' column='1'/>
+        <var-decl name='match_case_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='214' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12800'>
-        <var-decl name='module' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='214' column='1'/>
+        <var-decl name='mod_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='215' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12864'>
-        <var-decl name='msg' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='215' column='1'/>
+        <var-decl name='module' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='216' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12928'>
-        <var-decl name='name' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='216' column='1'/>
+        <var-decl name='msg' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='217' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='12992'>
-        <var-decl name='names' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='217' column='1'/>
+        <var-decl name='name' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='218' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13056'>
-        <var-decl name='op' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='218' column='1'/>
+        <var-decl name='names' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='219' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13120'>
-        <var-decl name='operand' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='219' column='1'/>
+        <var-decl name='op' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='220' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13184'>
-        <var-decl name='operator_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='220' column='1'/>
+        <var-decl name='operand' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='221' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13248'>
-        <var-decl name='ops' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='221' column='1'/>
+        <var-decl name='operator_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='222' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13312'>
-        <var-decl name='optional_vars' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='222' column='1'/>
+        <var-decl name='ops' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='223' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13376'>
-        <var-decl name='orelse' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='223' column='1'/>
+        <var-decl name='optional_vars' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='224' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13440'>
-        <var-decl name='pattern' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='224' column='1'/>
+        <var-decl name='orelse' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='225' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13504'>
-        <var-decl name='pattern_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='225' column='1'/>
+        <var-decl name='pattern' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='226' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13568'>
-        <var-decl name='patterns' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='226' column='1'/>
+        <var-decl name='pattern_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='227' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13632'>
-        <var-decl name='posonlyargs' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='227' column='1'/>
+        <var-decl name='patterns' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='228' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13696'>
-        <var-decl name='rest' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='228' column='1'/>
+        <var-decl name='posonlyargs' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='229' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13760'>
-        <var-decl name='returns' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='229' column='1'/>
+        <var-decl name='rest' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='230' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13824'>
-        <var-decl name='right' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='230' column='1'/>
+        <var-decl name='returns' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='231' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13888'>
-        <var-decl name='simple' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='231' column='1'/>
+        <var-decl name='right' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='232' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='13952'>
-        <var-decl name='slice' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='232' column='1'/>
+        <var-decl name='simple' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='233' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14016'>
-        <var-decl name='step' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='233' column='1'/>
+        <var-decl name='slice' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='234' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14080'>
-        <var-decl name='stmt_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='234' column='1'/>
+        <var-decl name='step' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='235' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14144'>
-        <var-decl name='subject' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='235' column='1'/>
+        <var-decl name='stmt_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='236' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14208'>
-        <var-decl name='tag' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='236' column='1'/>
+        <var-decl name='subject' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='237' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14272'>
-        <var-decl name='target' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='237' column='1'/>
+        <var-decl name='tag' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='238' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14336'>
-        <var-decl name='targets' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='238' column='1'/>
+        <var-decl name='target' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='239' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14400'>
-        <var-decl name='test' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='239' column='1'/>
+        <var-decl name='targets' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='240' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14464'>
-        <var-decl name='type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='240' column='1'/>
+        <var-decl name='test' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='241' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14528'>
-        <var-decl name='type_comment' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='241' column='1'/>
+        <var-decl name='type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='242' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14592'>
-        <var-decl name='type_ignore_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='242' column='1'/>
+        <var-decl name='type_comment' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='243' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14656'>
-        <var-decl name='type_ignores' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='243' column='1'/>
+        <var-decl name='type_ignore_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='244' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14720'>
-        <var-decl name='unaryop_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='244' column='1'/>
+        <var-decl name='type_ignores' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='245' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14784'>
-        <var-decl name='upper' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='245' column='1'/>
+        <var-decl name='unaryop_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='246' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14848'>
-        <var-decl name='value' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='246' column='1'/>
+        <var-decl name='upper' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='247' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14912'>
-        <var-decl name='values' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='247' column='1'/>
+        <var-decl name='value' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='248' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='14976'>
-        <var-decl name='vararg' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='248' column='1'/>
+        <var-decl name='values' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='249' column='1'/>
       </data-member>
       <data-member access='public' layout-offset-in-bits='15040'>
-        <var-decl name='withitem_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='249' column='1'/>
+        <var-decl name='vararg' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='250' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='15104'>
+        <var-decl name='withitem_type' type-id='type-id-14' visibility='default' filepath='./Include/internal/pycore_ast_state.h' line='251' column='1'/>
       </data-member>
     </class-decl>
     <class-decl name='type_cache' size-in-bits='786432' is-struct='yes' visibility='default' filepath='./Include/internal/pycore_typeobject.h' line='33' column='1' id='type-id-50'>
@@ -6868,8 +6877,8 @@
     <var-decl name='PyBool_Type' type-id='type-id-112' mangled-name='PyBool_Type' visibility='default' filepath='./Include/boolobject.h' line='10' column='1' elf-symbol-id='PyBool_Type'/>
     <var-decl name='_Py_FalseStruct' type-id='type-id-259' mangled-name='_Py_FalseStruct' visibility='default' filepath='./Include/boolobject.h' line='18' column='1' elf-symbol-id='_Py_FalseStruct'/>
     <var-decl name='_Py_TrueStruct' type-id='type-id-259' mangled-name='_Py_TrueStruct' visibility='default' filepath='./Include/boolobject.h' line='19' column='1' elf-symbol-id='_Py_TrueStruct'/>
-    <function-decl name='PyBool_FromLong' mangled-name='PyBool_FromLong' filepath='Objects/boolobject.c' line='17' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyBool_FromLong'>
-      <parameter type-id='type-id-53' name='ok' filepath='Objects/boolobject.c' line='17' column='1'/>
+    <function-decl name='PyBool_FromLong' mangled-name='PyBool_FromLong' filepath='Objects/boolobject.c' line='18' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyBool_FromLong'>
+      <parameter type-id='type-id-53' name='ok' filepath='Objects/boolobject.c' line='18' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
   </abi-instr>
@@ -7479,30 +7488,30 @@
       <return type-id='type-id-8'/>
     </function-decl>
     <pointer-type-def type-id='type-id-8' size-in-bits='64' id='type-id-501'/>
-    <function-decl name='PyCode_Addr2Location' mangled-name='PyCode_Addr2Location' filepath='Objects/codeobject.c' line='966' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Location'>
-      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='966' column='1'/>
-      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='966' column='1'/>
-      <parameter type-id='type-id-501' name='start_line' filepath='Objects/codeobject.c' line='967' column='1'/>
-      <parameter type-id='type-id-501' name='start_column' filepath='Objects/codeobject.c' line='967' column='1'/>
-      <parameter type-id='type-id-501' name='end_line' filepath='Objects/codeobject.c' line='968' column='1'/>
-      <parameter type-id='type-id-501' name='end_column' filepath='Objects/codeobject.c' line='968' column='1'/>
+    <function-decl name='PyCode_Addr2Location' mangled-name='PyCode_Addr2Location' filepath='Objects/codeobject.c' line='965' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Location'>
+      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='965' column='1'/>
+      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='965' column='1'/>
+      <parameter type-id='type-id-501' name='start_line' filepath='Objects/codeobject.c' line='966' column='1'/>
+      <parameter type-id='type-id-501' name='start_column' filepath='Objects/codeobject.c' line='966' column='1'/>
+      <parameter type-id='type-id-501' name='end_line' filepath='Objects/codeobject.c' line='967' column='1'/>
+      <parameter type-id='type-id-501' name='end_column' filepath='Objects/codeobject.c' line='967' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
     <pointer-type-def type-id='type-id-445' size-in-bits='64' id='type-id-502'/>
-    <function-decl name='_PyCode_CheckLineNumber' mangled-name='_PyCode_CheckLineNumber' filepath='Objects/codeobject.c' line='789' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckLineNumber'>
-      <parameter type-id='type-id-8' name='lasti' filepath='Objects/codeobject.c' line='789' column='1'/>
-      <parameter type-id='type-id-502' name='bounds' filepath='Objects/codeobject.c' line='789' column='1'/>
+    <function-decl name='_PyCode_CheckLineNumber' mangled-name='_PyCode_CheckLineNumber' filepath='Objects/codeobject.c' line='788' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyCode_CheckLineNumber'>
+      <parameter type-id='type-id-8' name='lasti' filepath='Objects/codeobject.c' line='788' column='1'/>
+      <parameter type-id='type-id-502' name='bounds' filepath='Objects/codeobject.c' line='788' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyCode_Addr2Line' mangled-name='PyCode_Addr2Line' filepath='Objects/codeobject.c' line='751' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Line'>
-      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='751' column='1'/>
-      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='751' column='1'/>
+    <function-decl name='PyCode_Addr2Line' mangled-name='PyCode_Addr2Line' filepath='Objects/codeobject.c' line='750' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Addr2Line'>
+      <parameter type-id='type-id-444' name='co' filepath='Objects/codeobject.c' line='750' column='1'/>
+      <parameter type-id='type-id-8' name='addrq' filepath='Objects/codeobject.c' line='750' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyCode_NewEmpty' mangled-name='PyCode_NewEmpty' filepath='Objects/codeobject.c' line='647' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_NewEmpty'>
-      <parameter type-id='type-id-3' name='filename' filepath='Objects/codeobject.c' line='647' column='1'/>
-      <parameter type-id='type-id-3' name='funcname' filepath='Objects/codeobject.c' line='647' column='1'/>
-      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='647' column='1'/>
+    <function-decl name='PyCode_NewEmpty' mangled-name='PyCode_NewEmpty' filepath='Objects/codeobject.c' line='646' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_NewEmpty'>
+      <parameter type-id='type-id-3' name='filename' filepath='Objects/codeobject.c' line='646' column='1'/>
+      <parameter type-id='type-id-3' name='funcname' filepath='Objects/codeobject.c' line='646' column='1'/>
+      <parameter type-id='type-id-8' name='firstlineno' filepath='Objects/codeobject.c' line='646' column='1'/>
       <return type-id='type-id-444'/>
     </function-decl>
     <function-decl name='PyCode_New' mangled-name='PyCode_New' filepath='Objects/codeobject.c' line='622' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_New'>
@@ -7988,7 +7997,7 @@
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='Objects/genericaliasobject.c' comp-dir-path='/src' language='LANG_C99'>
     <var-decl name='Py_GenericAliasType' type-id='type-id-112' mangled-name='Py_GenericAliasType' visibility='default' filepath='./Include/genericaliasobject.h' line='9' column='1' elf-symbol-id='Py_GenericAliasType'/>
-    <function-decl name='Py_GenericAlias' mangled-name='Py_GenericAlias' filepath='Objects/genericaliasobject.c' line='942' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_GenericAlias'>
+    <function-decl name='Py_GenericAlias' mangled-name='Py_GenericAlias' filepath='Objects/genericaliasobject.c' line='946' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_GenericAlias'>
       <parameter type-id='type-id-14' name='callable' filepath='Objects/call.c' line='438' column='1'/>
       <parameter type-id='type-id-14' name='args' filepath='Objects/call.c' line='438' column='1'/>
       <return type-id='type-id-14'/>
@@ -8286,60 +8295,60 @@
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='Objects/frameobject.c' comp-dir-path='/src' language='LANG_C99'>
     <var-decl name='PyFrame_Type' type-id='type-id-112' mangled-name='PyFrame_Type' visibility='default' filepath='./Include/cpython/pyframe.h' line='5' column='1' elf-symbol-id='PyFrame_Type'/>
-    <function-decl name='PyFrame_GetGenerator' mangled-name='PyFrame_GetGenerator' filepath='Objects/frameobject.c' line='1172' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetGenerator'>
-      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1172' column='1'/>
+    <function-decl name='PyFrame_GetGenerator' mangled-name='PyFrame_GetGenerator' filepath='Objects/frameobject.c' line='1207' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetGenerator'>
+      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1207' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyFrame_GetLasti' mangled-name='PyFrame_GetLasti' filepath='Objects/frameobject.c' line='1162' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLasti'>
-      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1162' column='1'/>
+    <function-decl name='PyFrame_GetLasti' mangled-name='PyFrame_GetLasti' filepath='Objects/frameobject.c' line='1197' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLasti'>
+      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1197' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyFrame_GetBuiltins' mangled-name='PyFrame_GetBuiltins' filepath='Objects/frameobject.c' line='1156' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetBuiltins'>
+    <function-decl name='PyFrame_GetBuiltins' mangled-name='PyFrame_GetBuiltins' filepath='Objects/frameobject.c' line='1191' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetBuiltins'>
       <parameter type-id='type-id-438' name='f' filepath='Objects/genobject.c' line='1009' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyFrame_GetGlobals' mangled-name='PyFrame_GetGlobals' filepath='Objects/frameobject.c' line='1150' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetGlobals'>
+    <function-decl name='PyFrame_GetGlobals' mangled-name='PyFrame_GetGlobals' filepath='Objects/frameobject.c' line='1185' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetGlobals'>
       <parameter type-id='type-id-438' name='f' filepath='Objects/genobject.c' line='1009' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyFrame_GetLocals' mangled-name='PyFrame_GetLocals' filepath='Objects/frameobject.c' line='1144' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLocals'>
+    <function-decl name='PyFrame_GetLocals' mangled-name='PyFrame_GetLocals' filepath='Objects/frameobject.c' line='1179' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLocals'>
       <parameter type-id='type-id-438' name='f' filepath='Objects/genobject.c' line='1009' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyFrame_GetBack' mangled-name='PyFrame_GetBack' filepath='Objects/frameobject.c' line='1132' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetBack'>
-      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1132' column='1'/>
+    <function-decl name='PyFrame_GetBack' mangled-name='PyFrame_GetBack' filepath='Objects/frameobject.c' line='1161' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetBack'>
+      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1161' column='1'/>
       <return type-id='type-id-438'/>
     </function-decl>
-    <function-decl name='PyFrame_GetCode' mangled-name='PyFrame_GetCode' filepath='Objects/frameobject.c' line='1121' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetCode'>
-      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1121' column='1'/>
+    <function-decl name='PyFrame_GetCode' mangled-name='PyFrame_GetCode' filepath='Objects/frameobject.c' line='1150' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetCode'>
+      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1150' column='1'/>
       <return type-id='type-id-444'/>
     </function-decl>
-    <function-decl name='_PyFrame_IsEntryFrame' mangled-name='_PyFrame_IsEntryFrame' filepath='Objects/frameobject.c' line='1113' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyFrame_IsEntryFrame'>
-      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1113' column='1'/>
+    <function-decl name='_PyFrame_IsEntryFrame' mangled-name='_PyFrame_IsEntryFrame' filepath='Objects/frameobject.c' line='1142' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyFrame_IsEntryFrame'>
+      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1142' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyFrame_LocalsToFast' mangled-name='PyFrame_LocalsToFast' filepath='Objects/frameobject.c' line='1104' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_LocalsToFast'>
-      <parameter type-id='type-id-438' name='f' filepath='Objects/frameobject.c' line='1104' column='1'/>
-      <parameter type-id='type-id-8' name='clear' filepath='Objects/frameobject.c' line='1104' column='1'/>
+    <function-decl name='PyFrame_LocalsToFast' mangled-name='PyFrame_LocalsToFast' filepath='Objects/frameobject.c' line='1133' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_LocalsToFast'>
+      <parameter type-id='type-id-438' name='f' filepath='Objects/frameobject.c' line='1133' column='1'/>
+      <parameter type-id='type-id-8' name='clear' filepath='Objects/frameobject.c' line='1133' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PyFrame_FastToLocals' mangled-name='PyFrame_FastToLocals' filepath='Objects/frameobject.c' line='1025' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_FastToLocals'>
-      <parameter type-id='type-id-438' name='f' filepath='Objects/frameobject.c' line='1025' column='1'/>
+    <function-decl name='PyFrame_FastToLocals' mangled-name='PyFrame_FastToLocals' filepath='Objects/frameobject.c' line='1054' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_FastToLocals'>
+      <parameter type-id='type-id-438' name='f' filepath='Objects/frameobject.c' line='1054' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PyFrame_FastToLocalsWithError' mangled-name='PyFrame_FastToLocalsWithError' filepath='Objects/frameobject.c' line='1011' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_FastToLocalsWithError'>
-      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1162' column='1'/>
+    <function-decl name='PyFrame_FastToLocalsWithError' mangled-name='PyFrame_FastToLocalsWithError' filepath='Objects/frameobject.c' line='1040' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_FastToLocalsWithError'>
+      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1197' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyFrame_New' mangled-name='PyFrame_New' filepath='Objects/frameobject.c' line='858' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_New'>
-      <parameter type-id='type-id-10' name='tstate' filepath='Objects/frameobject.c' line='858' column='1'/>
-      <parameter type-id='type-id-444' name='code' filepath='Objects/frameobject.c' line='858' column='1'/>
-      <parameter type-id='type-id-14' name='globals' filepath='Objects/frameobject.c' line='859' column='1'/>
-      <parameter type-id='type-id-14' name='locals' filepath='Objects/frameobject.c' line='859' column='1'/>
+    <function-decl name='PyFrame_New' mangled-name='PyFrame_New' filepath='Objects/frameobject.c' line='887' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_New'>
+      <parameter type-id='type-id-10' name='tstate' filepath='Objects/frameobject.c' line='887' column='1'/>
+      <parameter type-id='type-id-444' name='code' filepath='Objects/frameobject.c' line='887' column='1'/>
+      <parameter type-id='type-id-14' name='globals' filepath='Objects/frameobject.c' line='888' column='1'/>
+      <parameter type-id='type-id-14' name='locals' filepath='Objects/frameobject.c' line='888' column='1'/>
       <return type-id='type-id-438'/>
     </function-decl>
     <function-decl name='PyFrame_GetLineNumber' mangled-name='PyFrame_GetLineNumber' filepath='Objects/frameobject.c' line='36' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyFrame_GetLineNumber'>
-      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1113' column='1'/>
+      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1142' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
   </abi-instr>
@@ -11160,7 +11169,7 @@
     </function-decl>
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='Python/Python-ast.c' comp-dir-path='/src' language='LANG_C99'>
-    <function-decl name='PyInit__ast' mangled-name='PyInit__ast' filepath='Python/Python-ast.c' line='12225' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__ast'>
+    <function-decl name='PyInit__ast' mangled-name='PyInit__ast' filepath='Python/Python-ast.c' line='12305' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyInit__ast'>
       <return type-id='type-id-14'/>
     </function-decl>
   </abi-instr>
@@ -11175,32 +11184,32 @@
     <var-decl name='PyZip_Type' type-id='type-id-112' mangled-name='PyZip_Type' visibility='default' filepath='./Include/bltinmodule.h' line='9' column='1' elf-symbol-id='PyZip_Type'/>
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='Python/ceval.c' comp-dir-path='/src' language='LANG_C99'>
-    <function-decl name='Py_LeaveRecursiveCall' mangled-name='Py_LeaveRecursiveCall' filepath='Python/ceval.c' line='7908' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_LeaveRecursiveCall'>
+    <function-decl name='Py_LeaveRecursiveCall' mangled-name='Py_LeaveRecursiveCall' filepath='Python/ceval.c' line='7954' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_LeaveRecursiveCall'>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='Py_EnterRecursiveCall' mangled-name='Py_EnterRecursiveCall' filepath='Python/ceval.c' line='7901' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_EnterRecursiveCall'>
-      <parameter type-id='type-id-3' name='where' filepath='Python/ceval.c' line='7901' column='1'/>
+    <function-decl name='Py_EnterRecursiveCall' mangled-name='Py_EnterRecursiveCall' filepath='Python/ceval.c' line='7947' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='Py_EnterRecursiveCall'>
+      <parameter type-id='type-id-3' name='where' filepath='Python/ceval.c' line='7947' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyEval_RequestCodeExtraIndex' mangled-name='_PyEval_RequestCodeExtraIndex' filepath='Python/ceval.c' line='7820' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_RequestCodeExtraIndex'>
-      <parameter type-id='type-id-104' name='free' filepath='Python/ceval.c' line='7820' column='1'/>
+    <function-decl name='_PyEval_RequestCodeExtraIndex' mangled-name='_PyEval_RequestCodeExtraIndex' filepath='Python/ceval.c' line='7866' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_RequestCodeExtraIndex'>
+      <parameter type-id='type-id-104' name='free' filepath='Python/ceval.c' line='7866' column='1'/>
       <return type-id='type-id-36'/>
     </function-decl>
-    <function-decl name='_PyEval_SliceIndexNotNone' mangled-name='_PyEval_SliceIndexNotNone' filepath='Python/ceval.c' line='7340' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndexNotNone'>
+    <function-decl name='_PyEval_SliceIndexNotNone' mangled-name='_PyEval_SliceIndexNotNone' filepath='Python/ceval.c' line='7386' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndexNotNone'>
       <parameter type-id='type-id-14' name='exc' filepath='Objects/exceptions.c' line='2704' column='1'/>
       <parameter type-id='type-id-168' name='end' filepath='Objects/exceptions.c' line='2704' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyEval_SliceIndex' mangled-name='_PyEval_SliceIndex' filepath='Python/ceval.c' line='7318' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndex'>
-      <parameter type-id='type-id-14' name='v' filepath='Python/ceval.c' line='7318' column='1'/>
-      <parameter type-id='type-id-168' name='pi' filepath='Python/ceval.c' line='7318' column='1'/>
+    <function-decl name='_PyEval_SliceIndex' mangled-name='_PyEval_SliceIndex' filepath='Python/ceval.c' line='7364' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SliceIndex'>
+      <parameter type-id='type-id-14' name='v' filepath='Python/ceval.c' line='7364' column='1'/>
+      <parameter type-id='type-id-168' name='pi' filepath='Python/ceval.c' line='7364' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyEval_GetFuncDesc' mangled-name='PyEval_GetFuncDesc' filepath='Python/ceval.c' line='7191' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncDesc'>
+    <function-decl name='PyEval_GetFuncDesc' mangled-name='PyEval_GetFuncDesc' filepath='Python/ceval.c' line='7237' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncDesc'>
       <parameter type-id='type-id-14' name='ob' filepath='Objects/exceptions.c' line='421' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='PyEval_GetFuncName' mangled-name='PyEval_GetFuncName' filepath='Python/ceval.c' line='7178' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncName'>
+    <function-decl name='PyEval_GetFuncName' mangled-name='PyEval_GetFuncName' filepath='Python/ceval.c' line='7224' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFuncName'>
       <parameter type-id='type-id-14' name='ob' filepath='Objects/exceptions.c' line='421' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
@@ -11214,33 +11223,33 @@
     </class-decl>
     <typedef-decl name='PyCompilerFlags' type-id='type-id-592' filepath='./Include/cpython/compile.h' line='29' column='1' id='type-id-591'/>
     <pointer-type-def type-id='type-id-591' size-in-bits='64' id='type-id-593'/>
-    <function-decl name='PyEval_MergeCompilerFlags' mangled-name='PyEval_MergeCompilerFlags' filepath='Python/ceval.c' line='7159' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_MergeCompilerFlags'>
-      <parameter type-id='type-id-593' name='cf' filepath='Python/ceval.c' line='7159' column='1'/>
+    <function-decl name='PyEval_MergeCompilerFlags' mangled-name='PyEval_MergeCompilerFlags' filepath='Python/ceval.c' line='7205' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_MergeCompilerFlags'>
+      <parameter type-id='type-id-593' name='cf' filepath='Python/ceval.c' line='7205' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyEval_GetGlobals' mangled-name='PyEval_GetGlobals' filepath='Python/ceval.c' line='7148' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetGlobals'>
+    <function-decl name='PyEval_GetGlobals' mangled-name='PyEval_GetGlobals' filepath='Python/ceval.c' line='7194' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetGlobals'>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyEval_GetLocals' mangled-name='PyEval_GetLocals' filepath='Python/ceval.c' line='7129' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetLocals'>
+    <function-decl name='PyEval_GetLocals' mangled-name='PyEval_GetLocals' filepath='Python/ceval.c' line='7175' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetLocals'>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='_PyEval_GetBuiltinId' mangled-name='_PyEval_GetBuiltinId' filepath='Python/ceval.c' line='7123' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetBuiltinId'>
-      <parameter type-id='type-id-499' name='name' filepath='Python/ceval.c' line='7123' column='1'/>
+    <function-decl name='_PyEval_GetBuiltinId' mangled-name='_PyEval_GetBuiltinId' filepath='Python/ceval.c' line='7169' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetBuiltinId'>
+      <parameter type-id='type-id-499' name='name' filepath='Python/ceval.c' line='7169' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='_PyEval_GetBuiltin' mangled-name='_PyEval_GetBuiltin' filepath='Python/ceval.c' line='7109' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetBuiltin'>
+    <function-decl name='_PyEval_GetBuiltin' mangled-name='_PyEval_GetBuiltin' filepath='Python/ceval.c' line='7155' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_GetBuiltin'>
       <parameter type-id='type-id-14' name='v' filepath='Objects/abstract.c' line='2122' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyEval_GetBuiltins' mangled-name='PyEval_GetBuiltins' filepath='Python/ceval.c' line='7101' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetBuiltins'>
+    <function-decl name='PyEval_GetBuiltins' mangled-name='PyEval_GetBuiltins' filepath='Python/ceval.c' line='7147' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetBuiltins'>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PyEval_GetFrame' mangled-name='PyEval_GetFrame' filepath='Python/ceval.c' line='7077' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrame'>
+    <function-decl name='PyEval_GetFrame' mangled-name='PyEval_GetFrame' filepath='Python/ceval.c' line='7123' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_GetFrame'>
       <return type-id='type-id-438'/>
     </function-decl>
-    <function-decl name='PyEval_SetTrace' mangled-name='PyEval_SetTrace' filepath='Python/ceval.c' line='6997' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_SetTrace'>
-      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6997' column='1'/>
-      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6997' column='1'/>
+    <function-decl name='PyEval_SetTrace' mangled-name='PyEval_SetTrace' filepath='Python/ceval.c' line='7043' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_SetTrace'>
+      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='7043' column='1'/>
+      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='7043' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
     <class-decl name='_ts' size-in-bits='2880' is-struct='yes' visibility='default' filepath='./Include/cpython/pystate.h' line='82' column='1' id='type-id-594'>
@@ -11366,51 +11375,51 @@
       </data-member>
     </class-decl>
     <pointer-type-def type-id='type-id-24' size-in-bits='64' id='type-id-595'/>
-    <function-decl name='_PyEval_SetTrace' mangled-name='_PyEval_SetTrace' filepath='Python/ceval.c' line='6965' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetTrace'>
-      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='6965' column='1'/>
-      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6965' column='1'/>
-      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6965' column='1'/>
+    <function-decl name='_PyEval_SetTrace' mangled-name='_PyEval_SetTrace' filepath='Python/ceval.c' line='7000' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetTrace'>
+      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='7000' column='1'/>
+      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='7000' column='1'/>
+      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='7000' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyEval_SetProfile' mangled-name='PyEval_SetProfile' filepath='Python/ceval.c' line='6955' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_SetProfile'>
-      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6997' column='1'/>
-      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6997' column='1'/>
+    <function-decl name='PyEval_SetProfile' mangled-name='PyEval_SetProfile' filepath='Python/ceval.c' line='6990' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_SetProfile'>
+      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='7043' column='1'/>
+      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='7043' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='_PyEval_SetProfile' mangled-name='_PyEval_SetProfile' filepath='Python/ceval.c' line='6924' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetProfile'>
-      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='6965' column='1'/>
-      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='6965' column='1'/>
-      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='6965' column='1'/>
+    <function-decl name='_PyEval_SetProfile' mangled-name='_PyEval_SetProfile' filepath='Python/ceval.c' line='6948' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_SetProfile'>
+      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='7000' column='1'/>
+      <parameter type-id='type-id-13' name='func' filepath='Python/ceval.c' line='7000' column='1'/>
+      <parameter type-id='type-id-14' name='arg' filepath='Python/ceval.c' line='7000' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyThreadState_LeaveTracing' mangled-name='PyThreadState_LeaveTracing' filepath='Python/ceval.c' line='6828' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_LeaveTracing'>
+    <function-decl name='PyThreadState_LeaveTracing' mangled-name='PyThreadState_LeaveTracing' filepath='Python/ceval.c' line='6852' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_LeaveTracing'>
       <parameter type-id='type-id-10' name='tstate' filepath='Objects/object.c' line='2291' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PyThreadState_EnterTracing' mangled-name='PyThreadState_EnterTracing' filepath='Python/ceval.c' line='6822' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_EnterTracing'>
+    <function-decl name='PyThreadState_EnterTracing' mangled-name='PyThreadState_EnterTracing' filepath='Python/ceval.c' line='6846' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyThreadState_EnterTracing'>
       <parameter type-id='type-id-10' name='tstate' filepath='Objects/object.c' line='2291' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PyEval_EvalCodeEx' mangled-name='PyEval_EvalCodeEx' filepath='Python/ceval.c' line='6425' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_EvalCodeEx'>
-      <parameter type-id='type-id-14' name='_co' filepath='Python/ceval.c' line='6425' column='1'/>
-      <parameter type-id='type-id-14' name='globals' filepath='Python/ceval.c' line='6425' column='1'/>
-      <parameter type-id='type-id-14' name='locals' filepath='Python/ceval.c' line='6425' column='1'/>
-      <parameter type-id='type-id-200' name='args' filepath='Python/ceval.c' line='6426' column='1'/>
-      <parameter type-id='type-id-8' name='argcount' filepath='Python/ceval.c' line='6426' column='1'/>
-      <parameter type-id='type-id-200' name='kws' filepath='Python/ceval.c' line='6427' column='1'/>
-      <parameter type-id='type-id-8' name='kwcount' filepath='Python/ceval.c' line='6427' column='1'/>
-      <parameter type-id='type-id-200' name='defs' filepath='Python/ceval.c' line='6428' column='1'/>
-      <parameter type-id='type-id-8' name='defcount' filepath='Python/ceval.c' line='6428' column='1'/>
-      <parameter type-id='type-id-14' name='kwdefs' filepath='Python/ceval.c' line='6429' column='1'/>
-      <parameter type-id='type-id-14' name='closure' filepath='Python/ceval.c' line='6429' column='1'/>
+    <function-decl name='PyEval_EvalCodeEx' mangled-name='PyEval_EvalCodeEx' filepath='Python/ceval.c' line='6449' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_EvalCodeEx'>
+      <parameter type-id='type-id-14' name='_co' filepath='Python/ceval.c' line='6449' column='1'/>
+      <parameter type-id='type-id-14' name='globals' filepath='Python/ceval.c' line='6449' column='1'/>
+      <parameter type-id='type-id-14' name='locals' filepath='Python/ceval.c' line='6449' column='1'/>
+      <parameter type-id='type-id-200' name='args' filepath='Python/ceval.c' line='6450' column='1'/>
+      <parameter type-id='type-id-8' name='argcount' filepath='Python/ceval.c' line='6450' column='1'/>
+      <parameter type-id='type-id-200' name='kws' filepath='Python/ceval.c' line='6451' column='1'/>
+      <parameter type-id='type-id-8' name='kwcount' filepath='Python/ceval.c' line='6451' column='1'/>
+      <parameter type-id='type-id-200' name='defs' filepath='Python/ceval.c' line='6452' column='1'/>
+      <parameter type-id='type-id-8' name='defcount' filepath='Python/ceval.c' line='6452' column='1'/>
+      <parameter type-id='type-id-14' name='kwdefs' filepath='Python/ceval.c' line='6453' column='1'/>
+      <parameter type-id='type-id-14' name='closure' filepath='Python/ceval.c' line='6453' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
     <typedef-decl name='_PyInterpreterFrame' type-id='type-id-375' filepath='./Include/internal/pycore_frame.h' line='67' column='1' id='type-id-596'/>
     <pointer-type-def type-id='type-id-596' size-in-bits='64' id='type-id-597'/>
-    <function-decl name='_PyEval_EvalFrameDefault' mangled-name='_PyEval_EvalFrameDefault' filepath='Python/ceval.c' line='1643' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_EvalFrameDefault'>
-      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='1643' column='1'/>
-      <parameter type-id='type-id-597' name='frame' filepath='Python/ceval.c' line='1643' column='1'/>
-      <parameter type-id='type-id-8' name='throwflag' filepath='Python/ceval.c' line='1643' column='1'/>
+    <function-decl name='_PyEval_EvalFrameDefault' mangled-name='_PyEval_EvalFrameDefault' filepath='Python/ceval.c' line='1647' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyEval_EvalFrameDefault'>
+      <parameter type-id='type-id-10' name='tstate' filepath='Python/ceval.c' line='1647' column='1'/>
+      <parameter type-id='type-id-597' name='frame' filepath='Python/ceval.c' line='1647' column='1'/>
+      <parameter type-id='type-id-8' name='throwflag' filepath='Python/ceval.c' line='1647' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
     <function-decl name='PyEval_EvalFrameEx' mangled-name='PyEval_EvalFrameEx' filepath='Python/ceval.c' line='1171' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_EvalFrameEx'>
@@ -11419,7 +11428,7 @@
       <return type-id='type-id-14'/>
     </function-decl>
     <function-decl name='PyEval_EvalFrame' mangled-name='PyEval_EvalFrame' filepath='Python/ceval.c' line='1163' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_EvalFrame'>
-      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1172' column='1'/>
+      <parameter type-id='type-id-438' name='frame' filepath='Objects/frameobject.c' line='1207' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
     <function-decl name='PyEval_EvalCode' mangled-name='PyEval_EvalCode' filepath='Python/ceval.c' line='1130' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyEval_EvalCode'>
@@ -11631,12 +11640,11 @@
     <qualified-type-def type-id='type-id-598' const='yes' id='type-id-599'/>
     <var-decl name='_PyOpcode_Caches' type-id='type-id-599' visibility='default' filepath='./Include/internal/pycore_opcode.h' line='15' column='1'/>
     <var-decl name='_PyOpcode_Deopt' type-id='type-id-599' visibility='default' filepath='./Include/internal/pycore_opcode.h' line='17' column='1'/>
-    <var-decl name='_PyOpcode_Original' type-id='type-id-599' visibility='default' filepath='./Include/internal/pycore_opcode.h' line='19' column='1'/>
-    <function-decl name='PyCode_Optimize' mangled-name='PyCode_Optimize' filepath='Python/compile.c' line='9363' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Optimize'>
-      <parameter type-id='type-id-14' name='code' filepath='Python/compile.c' line='9363' column='1'/>
-      <parameter type-id='type-id-14' name='_unused_consts' filepath='Python/compile.c' line='9363' column='1'/>
-      <parameter type-id='type-id-14' name='_unused_names' filepath='Python/compile.c' line='9364' column='1'/>
-      <parameter type-id='type-id-14' name='_unused_lnotab_obj' filepath='Python/compile.c' line='9364' column='1'/>
+    <function-decl name='PyCode_Optimize' mangled-name='PyCode_Optimize' filepath='Python/compile.c' line='9389' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCode_Optimize'>
+      <parameter type-id='type-id-14' name='code' filepath='Python/compile.c' line='9389' column='1'/>
+      <parameter type-id='type-id-14' name='_unused_consts' filepath='Python/compile.c' line='9389' column='1'/>
+      <parameter type-id='type-id-14' name='_unused_names' filepath='Python/compile.c' line='9390' column='1'/>
+      <parameter type-id='type-id-14' name='_unused_lnotab_obj' filepath='Python/compile.c' line='9390' column='1'/>
       <return type-id='type-id-14'/>
     </function-decl>
     <function-decl name='PyCompile_OpcodeStackEffect' mangled-name='PyCompile_OpcodeStackEffect' filepath='Python/compile.c' line='1206' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyCompile_OpcodeStackEffect'>
@@ -13284,43 +13292,43 @@
     </function-decl>
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='Python/getargs.c' comp-dir-path='/src' language='LANG_C99'>
-    <function-decl name='_PyArg_NoKwnames' mangled-name='_PyArg_NoKwnames' filepath='Python/getargs.c' line='2923' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_NoKwnames'>
-      <parameter type-id='type-id-3' name='funcname' filepath='Python/getargs.c' line='2923' column='1'/>
-      <parameter type-id='type-id-14' name='kwnames' filepath='Python/getargs.c' line='2923' column='1'/>
+    <function-decl name='_PyArg_NoKwnames' mangled-name='_PyArg_NoKwnames' filepath='Python/getargs.c' line='2921' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_NoKwnames'>
+      <parameter type-id='type-id-3' name='funcname' filepath='Python/getargs.c' line='2921' column='1'/>
+      <parameter type-id='type-id-14' name='kwnames' filepath='Python/getargs.c' line='2921' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyArg_NoPositional' mangled-name='_PyArg_NoPositional' filepath='Python/getargs.c' line='2906' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_NoPositional'>
-      <parameter type-id='type-id-3' name='funcname' filepath='Python/getargs.c' line='2923' column='1'/>
-      <parameter type-id='type-id-14' name='kwnames' filepath='Python/getargs.c' line='2923' column='1'/>
+    <function-decl name='_PyArg_NoPositional' mangled-name='_PyArg_NoPositional' filepath='Python/getargs.c' line='2904' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_NoPositional'>
+      <parameter type-id='type-id-3' name='funcname' filepath='Python/getargs.c' line='2921' column='1'/>
+      <parameter type-id='type-id-14' name='kwnames' filepath='Python/getargs.c' line='2921' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyArg_NoKeywords' mangled-name='_PyArg_NoKeywords' filepath='Python/getargs.c' line='2887' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_NoKeywords'>
-      <parameter type-id='type-id-3' name='funcname' filepath='Python/getargs.c' line='2923' column='1'/>
-      <parameter type-id='type-id-14' name='kwnames' filepath='Python/getargs.c' line='2923' column='1'/>
+    <function-decl name='_PyArg_NoKeywords' mangled-name='_PyArg_NoKeywords' filepath='Python/getargs.c' line='2885' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_NoKeywords'>
+      <parameter type-id='type-id-3' name='funcname' filepath='Python/getargs.c' line='2921' column='1'/>
+      <parameter type-id='type-id-14' name='kwnames' filepath='Python/getargs.c' line='2921' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyArg_UnpackStack' mangled-name='_PyArg_UnpackStack' filepath='Python/getargs.c' line='2860' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_UnpackStack'>
-      <parameter type-id='type-id-200' name='args' filepath='Python/getargs.c' line='2860' column='1'/>
-      <parameter type-id='type-id-36' name='nargs' filepath='Python/getargs.c' line='2860' column='1'/>
-      <parameter type-id='type-id-3' name='name' filepath='Python/getargs.c' line='2860' column='1'/>
-      <parameter type-id='type-id-36' name='min' filepath='Python/getargs.c' line='2861' column='1'/>
-      <parameter type-id='type-id-36' name='max' filepath='Python/getargs.c' line='2861' column='1'/>
+    <function-decl name='_PyArg_UnpackStack' mangled-name='_PyArg_UnpackStack' filepath='Python/getargs.c' line='2858' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_UnpackStack'>
+      <parameter type-id='type-id-200' name='args' filepath='Python/getargs.c' line='2858' column='1'/>
+      <parameter type-id='type-id-36' name='nargs' filepath='Python/getargs.c' line='2858' column='1'/>
+      <parameter type-id='type-id-3' name='name' filepath='Python/getargs.c' line='2858' column='1'/>
+      <parameter type-id='type-id-36' name='min' filepath='Python/getargs.c' line='2859' column='1'/>
+      <parameter type-id='type-id-36' name='max' filepath='Python/getargs.c' line='2859' column='1'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PyArg_UnpackTuple' mangled-name='PyArg_UnpackTuple' filepath='Python/getargs.c' line='2834' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyArg_UnpackTuple'>
-      <parameter type-id='type-id-14' name='args' filepath='Python/getargs.c' line='2834' column='1'/>
-      <parameter type-id='type-id-3' name='name' filepath='Python/getargs.c' line='2834' column='1'/>
-      <parameter type-id='type-id-36' name='min' filepath='Python/getargs.c' line='2834' column='1'/>
-      <parameter type-id='type-id-36' name='max' filepath='Python/getargs.c' line='2834' column='1'/>
+    <function-decl name='PyArg_UnpackTuple' mangled-name='PyArg_UnpackTuple' filepath='Python/getargs.c' line='2832' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyArg_UnpackTuple'>
+      <parameter type-id='type-id-14' name='args' filepath='Python/getargs.c' line='2832' column='1'/>
+      <parameter type-id='type-id-3' name='name' filepath='Python/getargs.c' line='2832' column='1'/>
+      <parameter type-id='type-id-36' name='min' filepath='Python/getargs.c' line='2832' column='1'/>
+      <parameter type-id='type-id-36' name='max' filepath='Python/getargs.c' line='2832' column='1'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyArg_CheckPositional' mangled-name='_PyArg_CheckPositional' filepath='Python/getargs.c' line='2772' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_CheckPositional'>
-      <parameter type-id='type-id-3' name='name' filepath='Python/getargs.c' line='2772' column='1'/>
-      <parameter type-id='type-id-36' name='nargs' filepath='Python/getargs.c' line='2772' column='1'/>
-      <parameter type-id='type-id-36' name='min' filepath='Python/getargs.c' line='2773' column='1'/>
-      <parameter type-id='type-id-36' name='max' filepath='Python/getargs.c' line='2773' column='1'/>
+    <function-decl name='_PyArg_CheckPositional' mangled-name='_PyArg_CheckPositional' filepath='Python/getargs.c' line='2770' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyArg_CheckPositional'>
+      <parameter type-id='type-id-3' name='name' filepath='Python/getargs.c' line='2770' column='1'/>
+      <parameter type-id='type-id-36' name='nargs' filepath='Python/getargs.c' line='2770' column='1'/>
+      <parameter type-id='type-id-36' name='min' filepath='Python/getargs.c' line='2771' column='1'/>
+      <parameter type-id='type-id-36' name='max' filepath='Python/getargs.c' line='2771' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
     <class-decl name='_PyArg_Parser' size-in-bits='512' is-struct='yes' visibility='default' filepath='./Include/cpython/modsupport.h' line='51' column='1' id='type-id-766'>
@@ -13607,7 +13615,7 @@
         <var-decl name='value' type-id='type-id-18' visibility='default' filepath='./Include/internal/pycore_hashtable.h' line='34' column='1'/>
       </data-member>
     </class-decl>
-    <typedef-decl name='Py_uhash_t' type-id='type-id-54' filepath='./Include/pyport.h' line='196' column='1' id='type-id-785'/>
+    <typedef-decl name='Py_uhash_t' type-id='type-id-54' filepath='./Include/pyport.h' line='148' column='1' id='type-id-785'/>
     <typedef-decl name='_Py_hashtable_entry_t' type-id='type-id-784' filepath='./Include/internal/pycore_hashtable.h' line='35' column='1' id='type-id-783'/>
     <pointer-type-def type-id='type-id-783' size-in-bits='64' id='type-id-786'/>
     <typedef-decl name='_Py_hashtable_t' type-id='type-id-770' filepath='./Include/internal/pycore_hashtable.h' line='42' column='1' id='type-id-787'/>
@@ -13894,7 +13902,7 @@
     <var-decl name='Py_UnbufferedStdioFlag' type-id='type-id-8' mangled-name='Py_UnbufferedStdioFlag' visibility='default' filepath='./Include/cpython/pydebug.h' line='20' column='1' elf-symbol-id='Py_UnbufferedStdioFlag'/>
     <var-decl name='Py_HashRandomizationFlag' type-id='type-id-8' mangled-name='Py_HashRandomizationFlag' visibility='default' filepath='./Include/cpython/pydebug.h' line='21' column='1' elf-symbol-id='Py_HashRandomizationFlag'/>
     <var-decl name='Py_IsolatedFlag' type-id='type-id-8' mangled-name='Py_IsolatedFlag' visibility='default' filepath='./Include/cpython/pydebug.h' line='22' column='1' elf-symbol-id='Py_IsolatedFlag'/>
-    <function-decl name='_Py_GetConfigsAsDict' mangled-name='_Py_GetConfigsAsDict' filepath='Python/initconfig.c' line='2964' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_GetConfigsAsDict'>
+    <function-decl name='_Py_GetConfigsAsDict' mangled-name='_Py_GetConfigsAsDict' filepath='Python/initconfig.c' line='2967' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_GetConfigsAsDict'>
       <return type-id='type-id-14'/>
     </function-decl>
     <class-decl name='__anonymous_struct__' size-in-bits='256' is-struct='yes' is-anonymous='yes' naming-typedef-id='type-id-806' visibility='default' filepath='./Include/cpython/initconfig.h' line='10' column='1' id='type-id-807'>
@@ -13919,30 +13927,30 @@
     </enum-decl>
     <typedef-decl name='PyStatus' type-id='type-id-807' filepath='./Include/cpython/initconfig.h' line='19' column='1' id='type-id-806'/>
     <pointer-type-def type-id='type-id-34' size-in-bits='64' id='type-id-809'/>
-    <function-decl name='PyConfig_Read' mangled-name='PyConfig_Read' filepath='Python/initconfig.c' line='2957' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyConfig_Read'>
-      <parameter type-id='type-id-809' name='config' filepath='Python/initconfig.c' line='2957' column='1'/>
+    <function-decl name='PyConfig_Read' mangled-name='PyConfig_Read' filepath='Python/initconfig.c' line='2960' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyConfig_Read'>
+      <parameter type-id='type-id-809' name='config' filepath='Python/initconfig.c' line='2960' column='1'/>
       <return type-id='type-id-806'/>
     </function-decl>
     <pointer-type-def type-id='type-id-372' size-in-bits='64' id='type-id-810'/>
-    <function-decl name='PyConfig_SetWideStringList' mangled-name='PyConfig_SetWideStringList' filepath='Python/initconfig.c' line='2873' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyConfig_SetWideStringList'>
-      <parameter type-id='type-id-809' name='config' filepath='Python/initconfig.c' line='2873' column='1'/>
-      <parameter type-id='type-id-810' name='list' filepath='Python/initconfig.c' line='2873' column='1'/>
-      <parameter type-id='type-id-36' name='length' filepath='Python/initconfig.c' line='2874' column='1'/>
-      <parameter type-id='type-id-374' name='items' filepath='Python/initconfig.c' line='2874' column='1'/>
+    <function-decl name='PyConfig_SetWideStringList' mangled-name='PyConfig_SetWideStringList' filepath='Python/initconfig.c' line='2876' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyConfig_SetWideStringList'>
+      <parameter type-id='type-id-809' name='config' filepath='Python/initconfig.c' line='2876' column='1'/>
+      <parameter type-id='type-id-810' name='list' filepath='Python/initconfig.c' line='2876' column='1'/>
+      <parameter type-id='type-id-36' name='length' filepath='Python/initconfig.c' line='2877' column='1'/>
+      <parameter type-id='type-id-374' name='items' filepath='Python/initconfig.c' line='2877' column='1'/>
       <return type-id='type-id-806'/>
     </function-decl>
     <qualified-type-def type-id='type-id-281' const='yes' id='type-id-811'/>
     <pointer-type-def type-id='type-id-811' size-in-bits='64' id='type-id-812'/>
-    <function-decl name='PyConfig_SetArgv' mangled-name='PyConfig_SetArgv' filepath='Python/initconfig.c' line='2861' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyConfig_SetArgv'>
-      <parameter type-id='type-id-809' name='config' filepath='Python/initconfig.c' line='2861' column='1'/>
-      <parameter type-id='type-id-36' name='argc' filepath='Python/initconfig.c' line='2861' column='1'/>
-      <parameter type-id='type-id-812' name='argv' filepath='Python/initconfig.c' line='2861' column='1'/>
+    <function-decl name='PyConfig_SetArgv' mangled-name='PyConfig_SetArgv' filepath='Python/initconfig.c' line='2864' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyConfig_SetArgv'>
+      <parameter type-id='type-id-809' name='config' filepath='Python/initconfig.c' line='2864' column='1'/>
+      <parameter type-id='type-id-36' name='argc' filepath='Python/initconfig.c' line='2864' column='1'/>
+      <parameter type-id='type-id-812' name='argv' filepath='Python/initconfig.c' line='2864' column='1'/>
       <return type-id='type-id-806'/>
     </function-decl>
-    <function-decl name='PyConfig_SetBytesArgv' mangled-name='PyConfig_SetBytesArgv' filepath='Python/initconfig.c' line='2849' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyConfig_SetBytesArgv'>
-      <parameter type-id='type-id-809' name='config' filepath='Python/initconfig.c' line='2849' column='1'/>
-      <parameter type-id='type-id-36' name='argc' filepath='Python/initconfig.c' line='2849' column='1'/>
-      <parameter type-id='type-id-477' name='argv' filepath='Python/initconfig.c' line='2849' column='1'/>
+    <function-decl name='PyConfig_SetBytesArgv' mangled-name='PyConfig_SetBytesArgv' filepath='Python/initconfig.c' line='2852' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyConfig_SetBytesArgv'>
+      <parameter type-id='type-id-809' name='config' filepath='Python/initconfig.c' line='2852' column='1'/>
+      <parameter type-id='type-id-36' name='argc' filepath='Python/initconfig.c' line='2852' column='1'/>
+      <parameter type-id='type-id-477' name='argv' filepath='Python/initconfig.c' line='2852' column='1'/>
       <return type-id='type-id-806'/>
     </function-decl>
     <function-decl name='_PyConfig_FromDict' mangled-name='_PyConfig_FromDict' filepath='Python/initconfig.c' line='1270' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyConfig_FromDict'>
@@ -14922,7 +14930,7 @@
       <return type-id='type-id-14'/>
     </function-decl>
     <function-decl name='PyRun_SimpleString' mangled-name='PyRun_SimpleString' filepath='Python/pythonrun.c' line='1976' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyRun_SimpleString'>
-      <parameter type-id='type-id-3' name='where' filepath='Python/ceval.c' line='7901' column='1'/>
+      <parameter type-id='type-id-3' name='where' filepath='Python/ceval.c' line='7947' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
     <function-decl name='PyRun_String' mangled-name='PyRun_String' filepath='Python/pythonrun.c' line='1969' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyRun_String'>
@@ -15562,60 +15570,60 @@
     </function-decl>
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='./Python/sysmodule.c' comp-dir-path='/src' language='LANG_C99'>
-    <function-decl name='PySys_FormatStderr' mangled-name='PySys_FormatStderr' filepath='./Python/sysmodule.c' line='3452' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_FormatStderr'>
-      <parameter type-id='type-id-3' name='format' filepath='./Python/sysmodule.c' line='3452' column='1'/>
+    <function-decl name='PySys_FormatStderr' mangled-name='PySys_FormatStderr' filepath='./Python/sysmodule.c' line='3462' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_FormatStderr'>
+      <parameter type-id='type-id-3' name='format' filepath='./Python/sysmodule.c' line='3462' column='1'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_FormatStdout' mangled-name='PySys_FormatStdout' filepath='./Python/sysmodule.c' line='3442' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_FormatStdout'>
-      <parameter type-id='type-id-3' name='format' filepath='./Python/sysmodule.c' line='3452' column='1'/>
+    <function-decl name='PySys_FormatStdout' mangled-name='PySys_FormatStdout' filepath='./Python/sysmodule.c' line='3452' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_FormatStdout'>
+      <parameter type-id='type-id-3' name='format' filepath='./Python/sysmodule.c' line='3462' column='1'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_WriteStderr' mangled-name='PySys_WriteStderr' filepath='./Python/sysmodule.c' line='3409' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_WriteStderr'>
-      <parameter type-id='type-id-3' name='format' filepath='./Python/sysmodule.c' line='3452' column='1'/>
+    <function-decl name='PySys_WriteStderr' mangled-name='PySys_WriteStderr' filepath='./Python/sysmodule.c' line='3419' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_WriteStderr'>
+      <parameter type-id='type-id-3' name='format' filepath='./Python/sysmodule.c' line='3462' column='1'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_WriteStdout' mangled-name='PySys_WriteStdout' filepath='./Python/sysmodule.c' line='3399' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_WriteStdout'>
-      <parameter type-id='type-id-3' name='format' filepath='./Python/sysmodule.c' line='3452' column='1'/>
+    <function-decl name='PySys_WriteStdout' mangled-name='PySys_WriteStdout' filepath='./Python/sysmodule.c' line='3409' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_WriteStdout'>
+      <parameter type-id='type-id-3' name='format' filepath='./Python/sysmodule.c' line='3462' column='1'/>
       <parameter is-variadic='yes'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_SetArgv' mangled-name='PySys_SetArgv' filepath='./Python/sysmodule.c' line='3303' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetArgv'>
-      <parameter type-id='type-id-8' name='argc' filepath='./Python/sysmodule.c' line='3303' column='1'/>
-      <parameter type-id='type-id-374' name='argv' filepath='./Python/sysmodule.c' line='3303' column='1'/>
+    <function-decl name='PySys_SetArgv' mangled-name='PySys_SetArgv' filepath='./Python/sysmodule.c' line='3313' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetArgv'>
+      <parameter type-id='type-id-8' name='argc' filepath='./Python/sysmodule.c' line='3313' column='1'/>
+      <parameter type-id='type-id-374' name='argv' filepath='./Python/sysmodule.c' line='3313' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_SetArgvEx' mangled-name='PySys_SetArgvEx' filepath='./Python/sysmodule.c' line='3259' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetArgvEx'>
-      <parameter type-id='type-id-8' name='argc' filepath='./Python/sysmodule.c' line='3259' column='1'/>
-      <parameter type-id='type-id-374' name='argv' filepath='./Python/sysmodule.c' line='3259' column='1'/>
-      <parameter type-id='type-id-8' name='updatepath' filepath='./Python/sysmodule.c' line='3259' column='1'/>
+    <function-decl name='PySys_SetArgvEx' mangled-name='PySys_SetArgvEx' filepath='./Python/sysmodule.c' line='3269' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetArgvEx'>
+      <parameter type-id='type-id-8' name='argc' filepath='./Python/sysmodule.c' line='3269' column='1'/>
+      <parameter type-id='type-id-374' name='argv' filepath='./Python/sysmodule.c' line='3269' column='1'/>
+      <parameter type-id='type-id-8' name='updatepath' filepath='./Python/sysmodule.c' line='3269' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_SetPath' mangled-name='PySys_SetPath' filepath='./Python/sysmodule.c' line='3227' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetPath'>
+    <function-decl name='PySys_SetPath' mangled-name='PySys_SetPath' filepath='./Python/sysmodule.c' line='3237' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_SetPath'>
       <parameter type-id='type-id-545' name='program_full_path' filepath='Python/pathconfig.c' line='297' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_GetXOptions' mangled-name='PySys_GetXOptions' filepath='./Python/sysmodule.c' line='2351' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_GetXOptions'>
+    <function-decl name='PySys_GetXOptions' mangled-name='PySys_GetXOptions' filepath='./Python/sysmodule.c' line='2361' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_GetXOptions'>
       <return type-id='type-id-14'/>
     </function-decl>
-    <function-decl name='PySys_AddXOption' mangled-name='PySys_AddXOption' filepath='./Python/sysmodule.c' line='2337' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddXOption'>
-      <parameter type-id='type-id-545' name='s' filepath='./Python/sysmodule.c' line='2337' column='1'/>
+    <function-decl name='PySys_AddXOption' mangled-name='PySys_AddXOption' filepath='./Python/sysmodule.c' line='2347' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddXOption'>
+      <parameter type-id='type-id-545' name='s' filepath='./Python/sysmodule.c' line='2347' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_HasWarnOptions' mangled-name='PySys_HasWarnOptions' filepath='./Python/sysmodule.c' line='2263' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_HasWarnOptions'>
+    <function-decl name='PySys_HasWarnOptions' mangled-name='PySys_HasWarnOptions' filepath='./Python/sysmodule.c' line='2273' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_HasWarnOptions'>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='PySys_AddWarnOption' mangled-name='PySys_AddWarnOption' filepath='./Python/sysmodule.c' line='2244' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddWarnOption'>
+    <function-decl name='PySys_AddWarnOption' mangled-name='PySys_AddWarnOption' filepath='./Python/sysmodule.c' line='2254' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddWarnOption'>
       <parameter type-id='type-id-545' name='path' filepath='Python/pathconfig.c' line='215' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_AddWarnOptionUnicode' mangled-name='PySys_AddWarnOptionUnicode' filepath='./Python/sysmodule.c' line='2232' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddWarnOptionUnicode'>
+    <function-decl name='PySys_AddWarnOptionUnicode' mangled-name='PySys_AddWarnOptionUnicode' filepath='./Python/sysmodule.c' line='2242' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_AddWarnOptionUnicode'>
       <parameter type-id='type-id-14' name='m' filepath='Objects/moduleobject.c' line='578' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PySys_ResetWarnOptions' mangled-name='PySys_ResetWarnOptions' filepath='./Python/sysmodule.c' line='2204' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_ResetWarnOptions'>
+    <function-decl name='PySys_ResetWarnOptions' mangled-name='PySys_ResetWarnOptions' filepath='./Python/sysmodule.c' line='2214' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PySys_ResetWarnOptions'>
       <return type-id='type-id-70'/>
     </function-decl>
     <function-decl name='_PySys_GetSizeOf' mangled-name='_PySys_GetSizeOf' filepath='./Python/sysmodule.c' line='1624' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PySys_GetSizeOf'>
@@ -15765,45 +15773,45 @@
   </abi-instr>
   <abi-instr version='1.0' address-size='64' path='Python/traceback.c' comp-dir-path='/src' language='LANG_C99'>
     <var-decl name='PyTraceBack_Type' type-id='type-id-112' mangled-name='PyTraceBack_Type' visibility='default' filepath='./Include/traceback.h' line='13' column='1' elf-symbol-id='PyTraceBack_Type'/>
-    <function-decl name='_Py_DumpTracebackThreads' mangled-name='_Py_DumpTracebackThreads' filepath='Python/traceback.c' line='1273' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpTracebackThreads'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1273' column='1'/>
-      <parameter type-id='type-id-11' name='interp' filepath='Python/traceback.c' line='1273' column='1'/>
-      <parameter type-id='type-id-10' name='current_tstate' filepath='Python/traceback.c' line='1274' column='1'/>
+    <function-decl name='_Py_DumpTracebackThreads' mangled-name='_Py_DumpTracebackThreads' filepath='Python/traceback.c' line='1283' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpTracebackThreads'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1283' column='1'/>
+      <parameter type-id='type-id-11' name='interp' filepath='Python/traceback.c' line='1283' column='1'/>
+      <parameter type-id='type-id-10' name='current_tstate' filepath='Python/traceback.c' line='1284' column='1'/>
       <return type-id='type-id-3'/>
     </function-decl>
-    <function-decl name='_Py_DumpTraceback' mangled-name='_Py_DumpTraceback' filepath='Python/traceback.c' line='1243' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpTraceback'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1243' column='1'/>
-      <parameter type-id='type-id-10' name='tstate' filepath='Python/traceback.c' line='1243' column='1'/>
+    <function-decl name='_Py_DumpTraceback' mangled-name='_Py_DumpTraceback' filepath='Python/traceback.c' line='1253' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpTraceback'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1253' column='1'/>
+      <parameter type-id='type-id-10' name='tstate' filepath='Python/traceback.c' line='1253' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='_Py_DumpASCII' mangled-name='_Py_DumpASCII' filepath='Python/traceback.c' line='1074' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpASCII'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1074' column='1'/>
-      <parameter type-id='type-id-14' name='text' filepath='Python/traceback.c' line='1074' column='1'/>
+    <function-decl name='_Py_DumpASCII' mangled-name='_Py_DumpASCII' filepath='Python/traceback.c' line='1084' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpASCII'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1084' column='1'/>
+      <parameter type-id='type-id-14' name='text' filepath='Python/traceback.c' line='1084' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='_Py_DumpHexadecimal' mangled-name='_Py_DumpHexadecimal' filepath='Python/traceback.c' line='1051' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpHexadecimal'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1051' column='1'/>
-      <parameter type-id='type-id-358' name='value' filepath='Python/traceback.c' line='1051' column='1'/>
-      <parameter type-id='type-id-36' name='width' filepath='Python/traceback.c' line='1051' column='1'/>
+    <function-decl name='_Py_DumpHexadecimal' mangled-name='_Py_DumpHexadecimal' filepath='Python/traceback.c' line='1061' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpHexadecimal'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1061' column='1'/>
+      <parameter type-id='type-id-358' name='value' filepath='Python/traceback.c' line='1061' column='1'/>
+      <parameter type-id='type-id-36' name='width' filepath='Python/traceback.c' line='1061' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='_Py_DumpDecimal' mangled-name='_Py_DumpDecimal' filepath='Python/traceback.c' line='1027' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpDecimal'>
-      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1027' column='1'/>
-      <parameter type-id='type-id-54' name='value' filepath='Python/traceback.c' line='1027' column='1'/>
+    <function-decl name='_Py_DumpDecimal' mangled-name='_Py_DumpDecimal' filepath='Python/traceback.c' line='1037' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DumpDecimal'>
+      <parameter type-id='type-id-8' name='fd' filepath='Python/traceback.c' line='1037' column='1'/>
+      <parameter type-id='type-id-54' name='value' filepath='Python/traceback.c' line='1037' column='1'/>
       <return type-id='type-id-70'/>
     </function-decl>
-    <function-decl name='PyTraceBack_Print' mangled-name='PyTraceBack_Print' filepath='Python/traceback.c' line='1011' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyTraceBack_Print'>
+    <function-decl name='PyTraceBack_Print' mangled-name='PyTraceBack_Print' filepath='Python/traceback.c' line='1021' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='PyTraceBack_Print'>
       <parameter type-id='type-id-14' name='op' filepath='Objects/dictobject.c' line='3691' column='1'/>
       <parameter type-id='type-id-14' name='key' filepath='Objects/dictobject.c' line='3691' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
-    <function-decl name='_PyTraceBack_Print_Indented' mangled-name='_PyTraceBack_Print_Indented' filepath='Python/traceback.c' line='971' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTraceBack_Print_Indented'>
-      <parameter type-id='type-id-14' name='v' filepath='Python/traceback.c' line='971' column='1'/>
-      <parameter type-id='type-id-8' name='indent' filepath='Python/traceback.c' line='971' column='1'/>
-      <parameter type-id='type-id-3' name='margin' filepath='Python/traceback.c' line='971' column='1'/>
-      <parameter type-id='type-id-3' name='header_margin' filepath='Python/traceback.c' line='972' column='1'/>
-      <parameter type-id='type-id-3' name='header' filepath='Python/traceback.c' line='972' column='1'/>
-      <parameter type-id='type-id-14' name='f' filepath='Python/traceback.c' line='972' column='1'/>
+    <function-decl name='_PyTraceBack_Print_Indented' mangled-name='_PyTraceBack_Print_Indented' filepath='Python/traceback.c' line='981' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_PyTraceBack_Print_Indented'>
+      <parameter type-id='type-id-14' name='v' filepath='Python/traceback.c' line='981' column='1'/>
+      <parameter type-id='type-id-8' name='indent' filepath='Python/traceback.c' line='981' column='1'/>
+      <parameter type-id='type-id-3' name='margin' filepath='Python/traceback.c' line='981' column='1'/>
+      <parameter type-id='type-id-3' name='header_margin' filepath='Python/traceback.c' line='982' column='1'/>
+      <parameter type-id='type-id-3' name='header' filepath='Python/traceback.c' line='982' column='1'/>
+      <parameter type-id='type-id-14' name='f' filepath='Python/traceback.c' line='982' column='1'/>
       <return type-id='type-id-8'/>
     </function-decl>
     <function-decl name='_Py_DisplaySourceLine' mangled-name='_Py_DisplaySourceLine' filepath='Python/traceback.c' line='578' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='_Py_DisplaySourceLine'>

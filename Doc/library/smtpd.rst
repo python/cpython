@@ -31,6 +31,7 @@ interaction behaviour with SMTP clients.
 The code supports :RFC:`5321`, plus the :rfc:`1870` SIZE and :rfc:`6531`
 SMTPUTF8 extensions.
 
+.. include:: ../includes/wasm-notavail.rst
 
 SMTPServer Objects
 ------------------

@@ -1360,7 +1360,8 @@ PyDoc_STRVAR(os_mkdir__doc__,
 "dir_fd may not be implemented on your platform.\n"
 "  If it is unavailable, using it will raise a NotImplementedError.\n"
 "\n"
-"The mode argument is ignored on Windows.");
+"The mode argument is ignored on Windows. Where it is used, the current umask\n"
+"value is first masked out.");
 
 #define OS_MKDIR_METHODDEF    \
     {"mkdir", _PyCFunction_CAST(os_mkdir), METH_FASTCALL|METH_KEYWORDS, os_mkdir__doc__},
@@ -1749,7 +1750,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     static const char * const _keywords[] = {"command", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "system", 0};
     PyObject *argsbuf[1];
-    const Py_UNICODE *command;
+    const Py_UNICODE *command = NULL;
     long _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
@@ -4691,6 +4692,8 @@ exit:
     return return_value;
 }
 
+#if ((defined(HAVE_DUP3) || defined(F_DUPFD) || defined(MS_WINDOWS)))
+
 PyDoc_STRVAR(os_dup2__doc__,
 "dup2($module, /, fd, fd2, inheritable=True)\n"
 "--\n"
@@ -4745,6 +4748,8 @@ skip_optional_pos:
 exit:
     return return_value;
 }
+
+#endif /* ((defined(HAVE_DUP3) || defined(F_DUPFD) || defined(MS_WINDOWS))) */
 
 #if defined(HAVE_LOCKF)
 
@@ -7887,7 +7892,7 @@ exit:
 
 #endif /* defined(HAVE_MEMFD_CREATE) */
 
-#if defined(HAVE_EVENTFD)
+#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd__doc__,
 "eventfd($module, /, initval, flags=EFD_CLOEXEC)\n"
@@ -7933,9 +7938,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_EVENTFD) */
+#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
-#if defined(HAVE_EVENTFD)
+#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd_read__doc__,
 "eventfd_read($module, /, fd)\n"
@@ -7971,9 +7976,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_EVENTFD) */
+#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
-#if defined(HAVE_EVENTFD)
+#if (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC))
 
 PyDoc_STRVAR(os_eventfd_write__doc__,
 "eventfd_write($module, /, fd, value)\n"
@@ -8013,7 +8018,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_EVENTFD) */
+#endif /* (defined(HAVE_EVENTFD) && defined(EFD_CLOEXEC)) */
 
 #if (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL))
 
@@ -9123,6 +9128,10 @@ exit:
     #define OS_TCSETPGRP_METHODDEF
 #endif /* !defined(OS_TCSETPGRP_METHODDEF) */
 
+#ifndef OS_DUP2_METHODDEF
+    #define OS_DUP2_METHODDEF
+#endif /* !defined(OS_DUP2_METHODDEF) */
+
 #ifndef OS_LOCKF_METHODDEF
     #define OS_LOCKF_METHODDEF
 #endif /* !defined(OS_LOCKF_METHODDEF) */
@@ -9370,4 +9379,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=6150bcc25f5e4bc7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8dd784bf1e41b881 input=a9049054013a1b77]*/

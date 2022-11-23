@@ -715,6 +715,24 @@ class BaseBytesTest:
         self.assertEqual(b, b'hello,\x00world!')
         self.assertIs(type(b), self.type2test)
 
+        def check(fmt, vals, result):
+            b = self.type2test(fmt)
+            b = b % vals
+            self.assertEqual(b, result)
+            self.assertIs(type(b), self.type2test)
+
+        # A set of tests adapted from test_unicode:UnicodeTest.test_formatting
+        check(b'...%(foo)b...', {b'foo':b"abc"}, b'...abc...')
+        check(b'...%(f(o)o)b...', {b'f(o)o':b"abc", b'foo':b'bar'}, b'...abc...')
+        check(b'...%(foo)b...', {b'foo':b"abc",b'def':123}, b'...abc...')
+        check(b'%*b', (5, b'abc',), b'  abc')
+        check(b'%*b', (-5, b'abc',), b'abc  ')
+        check(b'%*.*b', (5, 2, b'abc',), b'   ab')
+        check(b'%*.*b', (5, 3, b'abc',), b'  abc')
+        check(b'%i %*.*b', (10, 5, 3, b'abc',), b'10   abc')
+        check(b'%i%b %*.*b', (10, b'3', 5, 3, b'abc',), b'103   abc')
+        check(b'%c', b'a', b'a')
+
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
         orig = b
@@ -1709,6 +1727,23 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(b1, b'xc')
         self.assertEqual(b1, b)
         self.assertEqual(b3, b'xcxcxc')
+
+    def test_mutating_index(self):
+        class Boom:
+            def __index__(self):
+                b.clear()
+                return 0
+
+        with self.subTest("tp_as_mapping"):
+            b = bytearray(b'Now you see me...')
+            with self.assertRaises(IndexError):
+                b[0] = Boom()
+
+        with self.subTest("tp_as_sequence"):
+            _testcapi = import_helper.import_module('_testcapi')
+            b = bytearray(b'Now you see me...')
+            with self.assertRaises(IndexError):
+                _testcapi.sequence_setitem(b, 0, Boom())
 
 
 class AssortedBytesTest(unittest.TestCase):

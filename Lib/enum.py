@@ -22,14 +22,14 @@ Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
 
 class nonmember(object):
     """
-    Protects item from becaming an Enum member during class creation.
+    Protects item from becoming an Enum member during class creation.
     """
     def __init__(self, value):
         self.value = value
 
 class member(object):
     """
-    Forces item to became an Enum member during class creation.
+    Forces item to become an Enum member during class creation.
     """
     def __init__(self, value):
         self.value = value
@@ -114,9 +114,12 @@ def _make_class_unpicklable(obj):
         setattr(obj, '__module__', '<unknown>')
 
 def _iter_bits_lsb(num):
-    # num must be an integer
+    # num must be a positive integer
+    original = num
     if isinstance(num, Enum):
         num = num.value
+    if num < 0:
+        raise ValueError('%r is not a positive integer' % original)
     while num:
         b = num & (~num + 1)
         yield b
@@ -171,7 +174,8 @@ class auto:
     """
     Instances are replaced with an appropriate value in Enum class suites.
     """
-    value = _auto_null
+    def __init__(self, value=_auto_null):
+        self.value = value
 
     def __repr__(self):
         return "auto(%r)" % self.value
@@ -247,7 +251,10 @@ class _proto_member:
         if not enum_class._use_args_:
             enum_member = enum_class._new_member_(enum_class)
             if not hasattr(enum_member, '_value_'):
-                enum_member._value_ = value
+                try:
+                    enum_member._value_ = enum_class._member_type_(*args)
+                except Exception as exc:
+                    enum_member._value_ = value
         else:
             enum_member = enum_class._new_member_(enum_class, *args)
             if not hasattr(enum_member, '_value_'):
@@ -407,7 +414,7 @@ class _EnumDict(dict):
             value = value.value
         elif _is_descriptor(value):
             pass
-        # TODO: uncomment next three lines in 3.12
+        # TODO: uncomment next three lines in 3.13
         # elif _is_internal_class(self._cls_name, value):
         #     # do nothing, name will be a normal attribute
         #     pass
@@ -418,15 +425,31 @@ class _EnumDict(dict):
             elif isinstance(value, member):
                 # unwrap value here -- it will become a member
                 value = value.value
+            non_auto_store = True
+            single = False
             if isinstance(value, auto):
-                if value.value == _auto_null:
-                    value.value = self._generate_next_value(
-                            key, 1, len(self._member_names), self._last_values[:],
-                            )
-                    self._auto_called = True
-                value = value.value
+                single = True
+                value = (value, )
+            if isinstance(value, tuple):
+                auto_valued = []
+                for v in value:
+                    if isinstance(v, auto):
+                        non_auto_store = False
+                        if v.value == _auto_null:
+                            v.value = self._generate_next_value(
+                                    key, 1, len(self._member_names), self._last_values[:],
+                                    )
+                            self._auto_called = True
+                        v = v.value
+                        self._last_values.append(v)
+                    auto_valued.append(v)
+                if single:
+                    value = auto_valued[0]
+                else:
+                    value = tuple(auto_valued)
             self._member_names[key] = None
-            self._last_values.append(value)
+            if non_auto_store:
+                self._last_values.append(value)
         super().__setitem__(key, value)
 
     def update(self, members, **more_members):
@@ -562,7 +585,13 @@ class EnumType(type):
                 classdict['__str__'] = enum_class.__str__
         for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
             if name not in classdict:
-                setattr(enum_class, name, getattr(first_enum, name))
+                # check for mixin overrides before replacing
+                enum_method = getattr(first_enum, name)
+                found_method = getattr(enum_class, name)
+                object_method = getattr(object, name)
+                data_type_method = getattr(member_type, name)
+                if found_method in (data_type_method, object_method):
+                    setattr(enum_class, name, enum_method)
         #
         # for Flag, add __or__, __and__, __xor__, and __invert__
         if Flag is not None and issubclass(enum_class, Flag):
@@ -950,16 +979,18 @@ class EnumType(type):
     @classmethod
     def _find_data_type_(mcls, class_name, bases):
         data_types = set()
+        base_chain = set()
         for chain in bases:
             candidate = None
             for base in chain.__mro__:
+                base_chain.add(base)
                 if base is object:
                     continue
                 elif issubclass(base, Enum):
                     if base._member_type_ is not object:
                         data_types.add(base._member_type_)
                         break
-                elif '__new__' in base.__dict__:
+                elif '__new__' in base.__dict__ or '__init__' in base.__dict__:
                     if issubclass(base, Enum):
                         continue
                     data_types.add(candidate or base)
@@ -1281,7 +1312,7 @@ class FlagBoundary(StrEnum):
 STRICT, CONFORM, EJECT, KEEP = FlagBoundary
 
 
-class Flag(Enum, boundary=STRICT):
+class Flag(Enum, boundary=CONFORM):
     """
     Support for flags
     """
@@ -1663,7 +1694,13 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         enum_class = type(cls_name, (etype, ), body, boundary=boundary, _simple=True)
         for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
             if name not in body:
-                setattr(enum_class, name, getattr(etype, name))
+                # check for mixin overrides before replacing
+                enum_method = getattr(etype, name)
+                found_method = getattr(enum_class, name)
+                object_method = getattr(object, name)
+                data_type_method = getattr(member_type, name)
+                if found_method in (data_type_method, object_method):
+                    setattr(enum_class, name, enum_method)
         gnv_last_values = []
         if issubclass(enum_class, Flag):
             # Flag / IntFlag
@@ -1822,6 +1859,9 @@ class verify:
                     if name in member_names:
                         # not an alias
                         continue
+                    if alias.value < 0:
+                        # negative numbers are not checked
+                        continue
                     values = list(_iter_bits_lsb(alias.value))
                     missed = [v for v in values if v not in member_values]
                     if missed:
@@ -1887,7 +1927,7 @@ def _test_simple_enum(checked_enum, simple_enum):
             else:
                 checked_value = checked_dict[key]
                 simple_value = simple_dict[key]
-                if callable(checked_value):
+                if callable(checked_value) or isinstance(checked_value, bltns.property):
                     continue
                 if key == '__doc__':
                     # remove all spaces/tabs
@@ -1994,7 +2034,6 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
         members.sort(key=lambda t: t[0])
     cls = etype(name, members, module=module, boundary=boundary or KEEP)
     cls.__reduce_ex__ = _reduce_ex_by_global_name
-    cls.__repr__ = global_enum_repr
     return cls
 
 _stdlib_enums = IntEnum, StrEnum, IntFlag

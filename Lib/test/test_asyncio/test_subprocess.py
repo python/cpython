@@ -1,4 +1,5 @@
 import os
+import shutil
 import signal
 import sys
 import unittest
@@ -50,8 +51,6 @@ class SubprocessTransportTests(test_utils.TestCase):
 
     def create_transport(self, waiter=None):
         protocol = mock.Mock()
-        protocol.connection_made._is_coroutine = False
-        protocol.process_exited._is_coroutine = False
         transport = TestSubprocessTransport(
                         self.loop, protocol, ['test'], False,
                         None, None, None, 0, waiter=waiter)
@@ -176,6 +175,33 @@ class SubprocessMixin:
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(*args)
         )
+        proc.kill()
+        returncode = self.loop.run_until_complete(proc.wait())
+        if sys.platform == 'win32':
+            self.assertIsInstance(returncode, int)
+            # expect 1 but sometimes get 0
+        else:
+            self.assertEqual(-signal.SIGKILL, returncode)
+
+    def test_kill_issue43884(self):
+        if sys.platform == 'win32':
+            blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(2)"'
+        else:
+            blocking_shell_command = 'sleep 1; sleep 1'
+        creationflags = 0
+        if sys.platform == 'win32':
+            from subprocess import CREATE_NEW_PROCESS_GROUP
+            # On windows create a new process group so that killing process
+            # kills the process and all its children.
+            creationflags = CREATE_NEW_PROCESS_GROUP
+        proc = self.loop.run_until_complete(
+            asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
+            creationflags=creationflags)
+        )
+        self.loop.run_until_complete(asyncio.sleep(1))
+        if sys.platform == 'win32':
+            proc.send_signal(signal.CTRL_BREAK_EVENT)
+        # On windows it is an alias of terminate which sets the return code
         proc.kill()
         returncode = self.loop.run_until_complete(proc.wait())
         if sys.platform == 'win32':
@@ -402,6 +428,26 @@ class SubprocessMixin:
 
         output, exitcode = self.loop.run_until_complete(empty_error())
         self.assertEqual(output, None)
+        self.assertEqual(exitcode, 0)
+
+    @unittest.skipIf(sys.platform != 'linux', "Don't have /dev/stdin")
+    def test_devstdin_input(self):
+
+        async def devstdin_input(message):
+            code = 'file = open("/dev/stdin"); data = file.read(); print(len(data))'
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, '-c', code,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                close_fds=False,
+            )
+            stdout, stderr = await proc.communicate(message)
+            exitcode = await proc.wait()
+            return (stdout, exitcode)
+
+        output, exitcode = self.loop.run_until_complete(devstdin_input(b'abc'))
+        self.assertEqual(output.rstrip(), b'3')
         self.assertEqual(exitcode, 0)
 
     def test_cancel_process_wait(self):
@@ -702,6 +748,32 @@ if sys.platform != 'win32':
                                       test_utils.TestCase):
         Watcher = unix_events.PidfdChildWatcher
 
+
+    class GenericWatcherTests(test_utils.TestCase):
+
+        def test_create_subprocess_fails_with_inactive_watcher(self):
+            watcher = mock.create_autospec(
+                asyncio.AbstractChildWatcher,
+                **{"__enter__.return_value.is_active.return_value": False}
+            )
+
+            async def execute():
+                asyncio.set_child_watcher(watcher)
+
+                with self.assertRaises(RuntimeError):
+                    await subprocess.create_subprocess_exec(
+                        os_helper.FakePath(sys.executable), '-c', 'pass')
+
+                watcher.add_child_handler.assert_not_called()
+
+            with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
+                self.assertIsNone(runner.run(execute()))
+            self.assertListEqual(watcher.mock_calls, [
+                mock.call.__enter__(),
+                mock.call.__enter__().is_active(),
+                mock.call.__exit__(RuntimeError, mock.ANY, mock.ANY),
+            ])
+
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
@@ -710,26 +782,6 @@ else:
             super().setUp()
             self.loop = asyncio.ProactorEventLoop()
             self.set_event_loop(self.loop)
-
-
-class GenericWatcherTests:
-
-    def test_create_subprocess_fails_with_inactive_watcher(self):
-
-        async def execute():
-            watcher = mock.create_authspec(asyncio.AbstractChildWatcher)
-            watcher.is_active.return_value = False
-            asyncio.set_child_watcher(watcher)
-
-            with self.assertRaises(RuntimeError):
-                await subprocess.create_subprocess_exec(
-                    os_helper.FakePath(sys.executable), '-c', 'pass')
-
-            watcher.add_child_handler.assert_not_called()
-
-        self.assertIsNone(self.loop.run_until_complete(execute()))
-
-
 
 
 if __name__ == '__main__':

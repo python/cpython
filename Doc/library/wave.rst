@@ -12,7 +12,8 @@
 --------------
 
 The :mod:`wave` module provides a convenient interface to the WAV sound format.
-It does not support compression/decompression, but it does support mono/stereo.
+Only files using ``WAVE_FORMAT_PCM`` are supported. Note that this does not
+include files using ``WAVE_FORMAT_EXTENSIBLE`` even if the subformat is PCM.
 
 The :mod:`wave` module defines the following function and exception:
 

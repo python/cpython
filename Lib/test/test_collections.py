@@ -802,6 +802,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
             def __await__(self):
                 yield
 
+        self.validate_abstract_methods(Awaitable, '__await__')
+
         non_samples = [None, int(), gen(), object()]
         for x in non_samples:
             self.assertNotIsInstance(x, Awaitable)
@@ -851,6 +853,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
                 super().throw(typ, val, tb)
             def __await__(self):
                 yield
+
+        self.validate_abstract_methods(Coroutine, '__await__', 'send', 'throw')
 
         non_samples = [None, int(), gen(), object(), Bar()]
         for x in non_samples:
@@ -1594,6 +1598,7 @@ class TestCollectionABCs(ABCTestCase):
         containers = [
             seq,
             ItemsView({1: nan, 2: obj}),
+            KeysView({1: nan, 2: obj}),
             ValuesView({1: nan, 2: obj})
         ]
         for container in containers:
@@ -1857,6 +1862,8 @@ class TestCollectionABCs(ABCTestCase):
         mymap['red'] = 5
         self.assertIsInstance(mymap.keys(), Set)
         self.assertIsInstance(mymap.keys(), KeysView)
+        self.assertIsInstance(mymap.values(), Collection)
+        self.assertIsInstance(mymap.values(), ValuesView)
         self.assertIsInstance(mymap.items(), Set)
         self.assertIsInstance(mymap.items(), ItemsView)
 
@@ -1932,6 +1939,7 @@ class TestCollectionABCs(ABCTestCase):
             self.assertFalse(issubclass(sample, ByteString))
         self.assertNotIsInstance(memoryview(b""), ByteString)
         self.assertFalse(issubclass(memoryview, ByteString))
+        self.validate_abstract_methods(ByteString, '__getitem__', '__len__')
 
     def test_MutableSequence(self):
         for sample in [tuple, str, bytes]:

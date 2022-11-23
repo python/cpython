@@ -638,7 +638,7 @@ dis_extended_arg_quick_code = """\
 %3d           0 RESUME                   0
 
 %3d           2 LOAD_CONST               1 (Ellipsis)
-              4 EXTENDED_ARG_QUICK       1
+              4 EXTENDED_ARG             1
               6 UNPACK_EX              256
               8 STORE_FAST               0 (_)
              10 STORE_FAST               0 (_)
@@ -1076,7 +1076,7 @@ class DisWithFileTests(DisTests):
         return output.getvalue()
 
 
-if sys.flags.optimize:
+if dis.code_info.__doc__ is None:
     code_info_consts = "0: None"
 else:
     code_info_consts = "0: 'Formatted details of methods, functions, or code.'"

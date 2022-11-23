@@ -502,6 +502,9 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
+   * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
+     length limitation <int_max_str_digits>`.  See also
+     :envvar:`PYTHONINTMAXSTRDIGITS`.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
@@ -573,6 +576,8 @@ Miscellaneous options
    .. versionadded:: 3.11
       The ``-X frozen_modules`` option.
 
+   .. versionadded:: 3.11
+      The ``-X int_max_str_digits`` option.
 
 
 Options you shouldn't use
@@ -582,7 +587,7 @@ Options you shouldn't use
 
    Reserved for use by Jython_.
 
-.. _Jython: http://www.jython.org/
+.. _Jython: https://www.jython.org/
 
 
 .. _using-on-envvars:
@@ -749,6 +754,13 @@ conflict.
 
    .. versionadded:: 3.2.3
 
+.. envvar:: PYTHONINTMAXSTRDIGITS
+
+   If this variable is set to an integer, it is used to configure the
+   interpreter's global :ref:`integer string conversion length limitation
+   <int_max_str_digits>`.
+
+   .. versionadded:: 3.11
 
 .. envvar:: PYTHONIOENCODING
 
@@ -975,7 +987,7 @@ conflict.
    order to force the interpreter to use ``ASCII`` instead of ``UTF-8`` for
    system interfaces.
 
-   .. availability:: \*nix.
+   .. availability:: Unix.
 
    .. versionadded:: 3.7
       See :pep:`538` for more details.

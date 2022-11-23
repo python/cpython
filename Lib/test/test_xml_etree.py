@@ -2734,6 +2734,20 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         except ZeroDivisionError:
             pass
 
+    def test_findtext_with_falsey_text_attribute(self):
+        root_elem = ET.Element('foo')
+        sub_elem = ET.SubElement(root_elem, 'bar')
+        falsey = ["", 0, False, [], (), {}]
+        for val in falsey:
+            sub_elem.text = val
+            self.assertEqual(root_elem.findtext('./bar'), val)
+
+    def test_findtext_with_none_text_attribute(self):
+        root_elem = ET.Element('foo')
+        sub_elem = ET.SubElement(root_elem, 'bar')
+        sub_elem.text = None
+        self.assertEqual(root_elem.findtext('./bar'), '')
+
     def test_findall_with_mutating(self):
         e = ET.Element('foo')
         e.extend([ET.Element('bar')])
@@ -3739,13 +3753,7 @@ class IOTest(unittest.TestCase):
         tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         tree.write(TESTFN, encoding='unicode')
         with open(TESTFN, 'rb') as f:
-            data = f.read()
-            expected = "<site>\xf8</site>".encode(encoding, 'xmlcharrefreplace')
-            if encoding.lower() in ('utf-8', 'ascii'):
-                self.assertEqual(data, expected)
-            else:
-                self.assertIn(b"<?xml version='1.0' encoding=", data)
-                self.assertIn(expected, data)
+            self.assertEqual(f.read(), b"<site>\xc3\xb8</site>")
 
     def test_write_to_text_file(self):
         self.addCleanup(os_helper.unlink, TESTFN)
@@ -3760,17 +3768,13 @@ class IOTest(unittest.TestCase):
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(),  convlinesep(
-                             b'''<?xml version='1.0' encoding='ascii'?>\n'''
-                             b'''<site>&#248;</site>'''))
+            self.assertEqual(f.read(),  b'''<site>&#248;</site>''')
 
         with open(TESTFN, 'w', encoding='ISO-8859-1') as f:
             tree.write(f, encoding='unicode')
             self.assertFalse(f.closed)
         with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(),  convlinesep(
-                             b'''<?xml version='1.0' encoding='ISO-8859-1'?>\n'''
-                             b'''<site>\xf8</site>'''))
+            self.assertEqual(f.read(), b'''<site>\xf8</site>''')
 
     def test_write_to_binary_file(self):
         self.addCleanup(os_helper.unlink, TESTFN)

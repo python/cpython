@@ -2224,6 +2224,11 @@ best_base(PyObject *bases)
     return base;
 }
 
+#define ADDED_FIELD_AT_OFFSET(name, offset) \
+    (type->tp_ ## name  && (base->tp_ ##name == 0) && \
+    type->tp_ ## name + sizeof(PyObject *) == (offset) && \
+    type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+
 static int
 extra_ivars(PyTypeObject *type, PyTypeObject *base)
 {
@@ -2236,10 +2241,18 @@ extra_ivars(PyTypeObject *type, PyTypeObject *base)
         return t_size != b_size ||
             type->tp_itemsize != base->tp_itemsize;
     }
-    if (type->tp_weaklistoffset && base->tp_weaklistoffset == 0 &&
-        type->tp_weaklistoffset + sizeof(PyObject *) == t_size &&
-        type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+    /* Check for __dict__ and __weakrefs__ slots in either order */
+    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
         t_size -= sizeof(PyObject *);
+    }
+    if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0 &&
+        ADDED_FIELD_AT_OFFSET(dictoffset, t_size)) {
+        t_size -= sizeof(PyObject *);
+    }
+    /* Check __weakrefs__ again, in case it precedes __dict__ */
+    if (ADDED_FIELD_AT_OFFSET(weaklistoffset, t_size)) {
+        t_size -= sizeof(PyObject *);
+    }
     return t_size != b_size;
 }
 
@@ -3189,11 +3202,6 @@ type_new_impl(type_new_ctx *ctx)
     // Put the proper slots in place
     fixup_slot_dispatchers(type);
 
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyHeapTypeObject *et = (PyHeapTypeObject*)type;
-        et->ht_cached_keys = _PyDict_NewKeysForClass();
-    }
-
     if (type_new_set_names(type) < 0) {
         goto error;
     }
@@ -3574,10 +3582,6 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
     if (PyType_Ready(type) < 0)
         goto fail;
-
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        res->ht_cached_keys = _PyDict_NewKeysForClass();
-    }
 
     if (type->tp_doc) {
         PyObject *__doc__ = PyUnicode_FromString(_PyType_DocWithoutSignature(type->tp_name, type->tp_doc));
@@ -6396,6 +6400,29 @@ type_ready_set_new(PyTypeObject *type)
     return 0;
 }
 
+static int
+type_ready_managed_dict(PyTypeObject *type)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        return 0;
+    }
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_SystemError,
+                     "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                     "but not Py_TPFLAGS_HEAPTYPE flag",
+                     type->tp_name);
+        return -1;
+    }
+    PyHeapTypeObject* et = (PyHeapTypeObject*)type;
+    if (et->ht_cached_keys == NULL) {
+        et->ht_cached_keys = _PyDict_NewKeysForClass();
+        if (et->ht_cached_keys == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+    return 0;
+}
 
 static int
 type_ready_post_checks(PyTypeObject *type)
@@ -6454,6 +6481,9 @@ type_ready(PyTypeObject *type)
         return -1;
     }
     if (type_ready_add_subclasses(type) < 0) {
+        return -1;
+    }
+    if (type_ready_managed_dict(type) < 0) {
         return -1;
     }
     if (type_ready_post_checks(type) < 0) {

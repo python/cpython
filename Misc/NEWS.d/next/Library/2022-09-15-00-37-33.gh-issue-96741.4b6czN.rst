@@ -1,0 +1,1 @@
+Corrected type annotation for dataclass attribute ``pstats.FunctionProfile.ncalls`` to be ``str``.

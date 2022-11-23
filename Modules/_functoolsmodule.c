@@ -1471,9 +1471,8 @@ _functools_exec(PyObject *module)
     if (state->keyobject_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->keyobject_type) < 0) {
-        return -1;
-    }
+    // keyobject_type is used only internally.
+    // So we don't expose it in module namespace.
 
     state->lru_list_elem_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &lru_list_elem_type_spec, NULL);

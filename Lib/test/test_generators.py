@@ -206,6 +206,25 @@ class GeneratorTest(unittest.TestCase):
         finally:
             gc.set_threshold(*thresholds)
 
+    def test_ag_frame_f_back(self):
+        async def f():
+            yield
+        ag = f()
+        self.assertIsNone(ag.ag_frame.f_back)
+
+    def test_cr_frame_f_back(self):
+        async def f():
+            pass
+        cr = f()
+        self.assertIsNone(cr.cr_frame.f_back)
+        cr.close()  # Suppress RuntimeWarning.
+
+    def test_gi_frame_f_back(self):
+        def f():
+            yield
+        gi = f()
+        self.assertIsNone(gi.gi_frame.f_back)
+
 
 
 class ExceptionTest(unittest.TestCase):

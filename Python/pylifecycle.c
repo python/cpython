@@ -82,6 +82,10 @@ int _Py_UnhandledKeyboardInterrupt = 0;
  * interpreter state for various runtime debugging tools, but is *not* an
  * officially supported feature */
 
+/* Suppress deprecation warning for PyBytesObject.ob_shash */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 #if defined(MS_WINDOWS)
 
 #pragma section("PyRuntime", read, write)
@@ -95,9 +99,6 @@ __attribute__((
 
 #endif
 
-/* Suppress deprecation warning for PyBytesObject.ob_shash */
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
@@ -1289,6 +1290,7 @@ Py_InitializeEx(int install_sigs)
     config.install_signal_handlers = install_sigs;
 
     status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }

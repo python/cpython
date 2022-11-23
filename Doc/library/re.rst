@@ -481,6 +481,9 @@ The special characters are:
    some fixed length.  Patterns which start with negative lookbehind assertions may
    match at the beginning of the string being searched.
 
+.. _re-conditional-expression:
+.. index:: single: (?(; in regular expressions
+
 ``(?(id/name)yes-pattern|no-pattern)``
    Will try to match with ``yes-pattern`` if the group with given *id* or
    *name* exists, and with ``no-pattern`` if it doesn't. ``no-pattern`` is
@@ -781,7 +784,8 @@ Flags
    more readable by allowing you to visually separate logical sections of the
    pattern and add comments. Whitespace within the pattern is ignored, except
    when in a character class, or when preceded by an unescaped backslash,
-   or within tokens like ``*?``, ``(?:`` or ``(?P<...>``.
+   or within tokens like ``*?``, ``(?:`` or ``(?P<...>``. For example, ``(? :``
+   and ``* ?`` are not allowed.
    When a line contains a ``#`` that is not in a character class and is not
    preceded by an unescaped backslash, all characters from the leftmost such
    ``#`` through the end of the line are ignored.

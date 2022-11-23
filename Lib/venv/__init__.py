@@ -128,6 +128,11 @@ class EnvBuilder:
         context.prompt = '(%s) ' % prompt
         create_if_needed(env_dir)
         executable = sys._base_executable
+        if not executable:  # see gh-96861
+            raise ValueError('Unable to determine path to the running '
+                             'Python interpreter. Provide an explicit path or '
+                             'check that your PATH environment variable is '
+                             'correctly set.')
         dirname, exename = os.path.split(os.path.abspath(executable))
         context.executable = executable
         context.python_dir = dirname
@@ -254,7 +259,7 @@ class EnvBuilder:
                                  basename + ext)
             # Builds or venv's from builds need to remap source file
             # locations, as we do not put them into Lib/venv/scripts
-            if sysconfig.is_python_build(True) or not os.path.isfile(srcfn):
+            if sysconfig.is_python_build() or not os.path.isfile(srcfn):
                 if basename.endswith('_d'):
                     ext = '_d' + ext
                     basename = basename[:-2]
@@ -305,7 +310,7 @@ class EnvBuilder:
                     f for f in os.listdir(dirname) if
                     os.path.normcase(os.path.splitext(f)[1]) in ('.exe', '.dll')
                 ]
-                if sysconfig.is_python_build(True):
+                if sysconfig.is_python_build():
                     suffixes = [
                         f for f in suffixes if
                         os.path.normcase(f).startswith(('python', 'vcruntime'))
@@ -320,7 +325,7 @@ class EnvBuilder:
                 if os.path.lexists(src):
                     copier(src, os.path.join(binpath, suffix))
 
-            if sysconfig.is_python_build(True):
+            if sysconfig.is_python_build():
                 # copy init.tcl
                 for root, dirs, files in os.walk(context.python_dir):
                     if 'init.tcl' in files:
@@ -333,14 +338,25 @@ class EnvBuilder:
                         shutil.copyfile(src, dst)
                         break
 
+    def _call_new_python(self, context, *py_args, **kwargs):
+        """Executes the newly created Python using safe-ish options"""
+        # gh-98251: We do not want to just use '-I' because that masks
+        # legitimate user preferences (such as not writing bytecode). All we
+        # really need is to ensure that the path variables do not overrule
+        # normal venv handling.
+        args = [context.env_exec_cmd, *py_args]
+        kwargs['env'] = env = os.environ.copy()
+        env['VIRTUAL_ENV'] = context.env_dir
+        env.pop('PYTHONHOME', None)
+        env.pop('PYTHONPATH', None)
+        kwargs['cwd'] = context.env_dir
+        kwargs['executable'] = context.env_exec_cmd
+        subprocess.check_output(args, **kwargs)
+
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
-        # We run ensurepip in isolated mode to avoid side effects from
-        # environment vars, the current directory and anything else
-        # intended for the global Python environment
-        cmd = [context.env_exec_cmd, '-Im', 'ensurepip', '--upgrade',
-                                                         '--default-pip']
-        subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        self._call_new_python(context, '-m', 'ensurepip', '--upgrade',
+                              '--default-pip', stderr=subprocess.STDOUT)
 
     def setup_scripts(self, context):
         """
@@ -439,9 +455,8 @@ class EnvBuilder:
         logger.debug(
             f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
-        cmd = [context.env_exec_cmd, '-m', 'pip', 'install', '--upgrade']
-        cmd.extend(CORE_VENV_DEPS)
-        subprocess.check_call(cmd)
+        self._call_new_python(context, '-m', 'pip', 'install', '--upgrade',
+                              *CORE_VENV_DEPS)
 
 
 def create(env_dir, system_site_packages=False, clear=False,

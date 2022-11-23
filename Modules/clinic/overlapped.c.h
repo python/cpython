@@ -220,7 +220,7 @@ _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *EventAttributes;
     BOOL ManualReset;
     BOOL InitialState;
-    const Py_UNICODE *Name;
+    const Py_UNICODE *Name = NULL;
 
     if (!_PyArg_ParseStack(args, nargs, "OiiO&:CreateEvent",
         &EventAttributes, &ManualReset, &InitialState, _PyUnicode_WideCharString_Opt_Converter, &Name)) {
@@ -806,7 +806,7 @@ static PyObject *
 _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *Address;
+    const Py_UNICODE *Address = NULL;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("ConnectPipe", "argument", "str", arg);
@@ -851,8 +851,8 @@ _overlapped_WSAConnect(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     HANDLE ConnectSocket;
     PyObject *AddressObj;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"O:WSAConnect",
-        &ConnectSocket, &AddressObj)) {
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"O!:WSAConnect",
+        &ConnectSocket, &PyTuple_Type, &AddressObj)) {
         goto exit;
     }
     return_value = _overlapped_WSAConnect_impl(module, ConnectSocket, AddressObj);
@@ -884,8 +884,8 @@ _overlapped_Overlapped_WSASendTo(OverlappedObject *self, PyObject *const *args, 
     DWORD flags;
     PyObject *AddressObj;
 
-    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*kO:WSASendTo",
-        &handle, &bufobj, &flags, &AddressObj)) {
+    if (!_PyArg_ParseStack(args, nargs, ""F_HANDLE"y*kO!:WSASendTo",
+        &handle, &bufobj, &flags, &PyTuple_Type, &AddressObj)) {
         goto exit;
     }
     return_value = _overlapped_Overlapped_WSASendTo_impl(self, handle, &bufobj, flags, AddressObj);
@@ -968,4 +968,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b0f15f5c09f1147e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5023f7748f0e073e input=a9049054013a1b77]*/

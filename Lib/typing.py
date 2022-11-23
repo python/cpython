@@ -493,7 +493,9 @@ class _AnyMeta(type):
         return super().__instancecheck__(obj)
 
     def __repr__(self):
-        return "typing.Any"
+        if self is Any:
+            return "typing.Any"
+        return super().__repr__()  # respect to subclasses
 
 
 class Any(metaclass=_AnyMeta):
@@ -569,7 +571,7 @@ def Self(self, parameters):
       from typing import Self
 
       class Foo:
-          def returns_self(self) -> Self:
+          def return_self(self) -> Self:
               ...
               return self
 
@@ -1071,7 +1073,7 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     def __typing_prepare_subst__(self, alias, args):
         params = alias.__parameters__
         typevartuple_index = params.index(self)
-        for param in enumerate(params[typevartuple_index + 1:]):
+        for param in params[typevartuple_index + 1:]:
             if isinstance(param, TypeVarTuple):
                 raise TypeError(f"More than one TypeVarTuple parameter in {alias}")
 
@@ -1422,6 +1424,10 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
         new_args = []
         for old_arg in self.__args__:
+
+            if isinstance(old_arg, type):
+                new_args.append(old_arg)
+                continue
 
             substfunc = getattr(old_arg, '__typing_subst__', None)
             if substfunc:

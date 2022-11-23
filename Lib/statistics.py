@@ -298,7 +298,7 @@ def _exact_ratio(x):
 
     # The integer ratios for binary floats can have numerators or
     # denominators with over 300 decimal digits.  The problem is more
-    # acute with decimal floats where the the default decimal context
+    # acute with decimal floats where the default decimal context
     # supports a huge range of exponents from Emin=-999999 to
     # Emax=999999.  When expanded with as_integer_ratio(), numbers like
     # Decimal('3.14E+5000') and Decimal('3.14E-5000') have large
@@ -1382,3 +1382,9 @@ class NormalDist:
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
+
+    def __getstate__(self):
+        return self._mu, self._sigma
+
+    def __setstate__(self, state):
+        self._mu, self._sigma = state

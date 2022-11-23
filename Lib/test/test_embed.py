@@ -284,7 +284,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                         "test_pre_initialization_sys_options", env=env)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
-            "sys._xoptions: {'dev': '2', 'utf8': '1'}\n"
+            "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
             "warnings.filters[:3]: ['default', 'module', 'once']\n"
         )
         self.assertIn(expected_output, out)
@@ -340,6 +340,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             code = fp.read()
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, 'Tests passed\n' * INIT_LOOPS)
+
+    def test_simple_initialization_api(self):
+        # _testembed now uses Py_InitializeFromConfig by default
+        # This case specifically checks Py_Initialize(Ex) still works
+        out, err = self.run_embedded_interpreter("test_repeated_simple_init")
+        self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
     def test_quickened_static_code_gets_unquickened_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
@@ -842,14 +848,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'argv': ['-c', 'arg2'],
             'orig_argv': ['python3',
                           '-W', 'cmdline_warnoption',
-                          '-X', 'dev',
+                          '-X', 'cmdline_xoption',
                           '-c', 'pass',
                           'arg2'],
             'parse_argv': 2,
             'xoptions': [
-                'dev=3',
-                'utf8',
-                'dev',
+                'config_xoption1=3',
+                'config_xoption2=',
+                'config_xoption3',
+                'cmdline_xoption',
             ],
             'warnoptions': [
                 'cmdline_warnoption',
@@ -1077,8 +1084,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'faulthandler': 1,
             'xoptions': [
-                'dev',
-                'utf8',
+                'config_xoption',
+                'cmdline_xoption',
+                'sysadd_xoption',
                 'faulthandler',
             ],
             'warnoptions': [
@@ -1088,12 +1096,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ],
             'orig_argv': ['python3',
                           '-W', 'ignore:::cmdline_warnoption',
-                          '-X', 'utf8'],
+                          '-X', 'cmdline_xoption'],
         }
-        preconfig = {'utf8_mode': 1}
-        self.check_all_configs("test_init_sys_add", config,
-                               expected_preconfig=preconfig,
-                               api=API_PYTHON)
+        self.check_all_configs("test_init_sys_add", config, api=API_PYTHON)
 
     def test_init_run_main(self):
         code = ('import _testinternalcapi, json; '
@@ -1474,17 +1479,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if not MS_WINDOWS:
                 paths[-1] = lib_dynload
             else:
-                # Include DLLs directory as well
-                paths.insert(1, '.\\DLLs')
-                for index, path in enumerate(paths):
-                    if index == 0:
-                        # Because we copy the DLLs into tmpdir as well, the zip file
-                        # entry in sys.path will be there. For a regular venv, it will
-                        # usually be in the home directory.
-                        paths[index] = os.path.join(tmpdir, os.path.basename(path))
-                    else:
-                        paths[index] = os.path.join(pyvenv_home, os.path.basename(path))
-                paths[-1] = pyvenv_home
+                paths = [
+                    os.path.join(tmpdir, os.path.basename(paths[0])),
+                    pyvenv_home,
+                    os.path.join(pyvenv_home, "Lib"),
+                ]
 
             executable = self.test_exe
             base_executable = os.path.join(pyvenv_home, os.path.basename(executable))
@@ -1501,12 +1500,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
-                config['use_frozen_modules'] = not Py_DEBUG
+                config['use_frozen_modules'] = int(not Py_DEBUG)
             else:
                 # cannot reliably assume stdlib_dir here because it
                 # depends too much on our build. But it ought to be found
                 config['stdlib_dir'] = self.IGNORE_CONFIG
-                config['use_frozen_modules'] = not Py_DEBUG
+                config['use_frozen_modules'] = int(not Py_DEBUG)
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1709,6 +1708,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_audit_run_stdin",
                                       timeout=support.SHORT_TIMEOUT,
                                       returncode=1)
+
+    def test_get_incomplete_frame(self):
+        self.run_embedded_interpreter("test_get_incomplete_frame")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

@@ -1,0 +1,404 @@
+.. date: 2022-08-07-16-53-38
+.. gh-issue: 95778
+.. nonce: ch010gps
+.. release date: 2022-09-11
+.. section: Security
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+
+This new limit can be configured or disabled by environment variable,
+command line flag, or :mod:`sys` APIs. See the :ref:`integer string
+conversion length limitation <int_max_str_digits>` documentation.  The
+default limit is 4300 digits in string form.
+
+Patch by Gregory P. Smith [Google] and Christian Heimes [Red Hat] with
+feedback from Victor Stinner, Thomas Wouters, Steve Dower, Ned Deily, and
+Mark Dickinson.
+
+..
+
+.. date: 2022-09-09-13-13-27
+.. gh-issue: 96678
+.. nonce: vMxi9F
+.. section: Core and Builtins
+
+Fix case of undefined behavior in ceval.c
+
+..
+
+.. date: 2022-09-07-13-38-37
+.. gh-issue: 96641
+.. nonce: wky0Fc
+.. section: Core and Builtins
+
+Do not expose ``KeyWrapper`` in :mod:`_functools`.
+
+..
+
+.. date: 2022-09-07-12-02-11
+.. gh-issue: 96636
+.. nonce: YvN-K6
+.. section: Core and Builtins
+
+Ensure that tracing, ``sys.setrace()``, is turned on immediately. In
+pre-release versions of 3.11, some tracing events might have been lost when
+turning on tracing in a ``__del__`` method or interrupt.
+
+..
+
+.. date: 2022-09-06-16-54-49
+.. gh-issue: 96572
+.. nonce: 8DRsaW
+.. section: Core and Builtins
+
+Fix use after free in trace refs build mode. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-09-06-16-22-13
+.. gh-issue: 96611
+.. nonce: 14wIX8
+.. section: Core and Builtins
+
+When loading a file with invalid UTF-8 inside a multi-line string, a correct
+SyntaxError is emitted.
+
+..
+
+.. date: 2022-09-06-14-26-36
+.. gh-issue: 96612
+.. nonce: P4ZbeY
+.. section: Core and Builtins
+
+Make sure that incomplete frames do not show up in tracemalloc traces.
+
+..
+
+.. date: 2022-09-05-16-43-44
+.. gh-issue: 96569
+.. nonce: 9lmTCC
+.. section: Core and Builtins
+
+Remove two cases of undefined behavior, by adding NULL checks.
+
+..
+
+.. date: 2022-09-05-15-07-25
+.. gh-issue: 96582
+.. nonce: HEsL5s
+.. section: Core and Builtins
+
+Fix possible ``NULL`` pointer dereference in ``_PyThread_CurrentFrames``.
+Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-08-28-10-51-19
+.. gh-issue: 96352
+.. nonce: jTLD2d
+.. section: Core and Builtins
+
+Fix :exc:`AttributeError` missing ``name`` and ``obj`` attributes in
+:meth:`object.__getattribute__`. Patch by Philip Georgi.
+
+..
+
+.. date: 2022-08-25-10-19-34
+.. gh-issue: 96268
+.. nonce: AbYrLB
+.. section: Core and Builtins
+
+Loading a file with invalid UTF-8 will now report the broken character at
+the correct location.
+
+..
+
+.. date: 2022-08-22-21-33-28
+.. gh-issue: 96187
+.. nonce: W_6SRG
+.. section: Core and Builtins
+
+Fixed a bug that caused ``_PyCode_GetExtra`` to return garbage for negative
+indexes. Patch by Pablo Galindo
+
+..
+
+.. date: 2022-08-19-06-51-17
+.. gh-issue: 96071
+.. nonce: mVgPAo
+.. section: Core and Builtins
+
+Fix a deadlock in :c:func:`PyGILState_Ensure` when allocating new thread
+state. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-08-18-13-47-59
+.. gh-issue: 96046
+.. nonce: 5Hqbka
+.. section: Core and Builtins
+
+:c:func:`PyType_Ready` now initializes ``ht_cached_keys`` and performs
+additional checks to ensure that type objects are properly configured. This
+avoids crashes in 3rd party packages that don't use regular API to create
+new types.
+
+..
+
+.. date: 2022-08-11-11-01-56
+.. gh-issue: 95818
+.. nonce: iClLdl
+.. section: Core and Builtins
+
+Skip over incomplete frames in :c:func:`PyThreadState_GetFrame`.
+
+..
+
+.. date: 2022-08-11-09-19-55
+.. gh-issue: 95876
+.. nonce: YpQfoV
+.. section: Core and Builtins
+
+Fix format string in ``_PyPegen_raise_error_known_location`` that can lead
+to memory corruption on some 64bit systems. The function was building a
+tuple with ``i`` (int) instead of ``n`` (Py_ssize_t) for Py_ssize_t
+arguments.
+
+..
+
+.. date: 2022-08-04-18-46-54
+.. gh-issue: 95605
+.. nonce: FbpCoG
+.. section: Core and Builtins
+
+Fix misleading contents of error message when converting an all-whitespace
+string to :class:`float`.
+
+..
+
+.. date: 2022-07-19-04-34-56
+.. gh-issue: 94996
+.. nonce: dV564A
+.. section: Core and Builtins
+
+:func:`ast.parse` will no longer parse function definitions with
+positional-only params when passed ``feature_version`` less than ``(3, 8)``.
+Patch by Shantanu Jain.
+
+..
+
+.. date: 2022-09-08-23-23-24
+.. gh-issue: 96700
+.. nonce: J0MQGK
+.. section: Library
+
+Fix incorrect error message in the :mod:`io` module.
+
+..
+
+.. date: 2022-09-07-22-49-37
+.. gh-issue: 96652
+.. nonce: YqOKxI
+.. section: Library
+
+Fix the faulthandler implementation of ``faulthandler.register(signal,
+chain=True)`` if the ``sigaction()`` function is not available: don't call
+the previous signal handler if it's NULL. Patch by Victor Stinner.
+
+..
+
+.. date: 2022-09-04-12-32-52
+.. gh-issue: 68163
+.. nonce: h6TJCc
+.. section: Library
+
+Correct conversion of :class:`numbers.Rational`'s to :class:`float`.
+
+..
+
+.. date: 2022-08-29-15-28-39
+.. gh-issue: 96385
+.. nonce: uLRTsf
+.. section: Library
+
+Fix ``TypeVarTuple.__typing_prepare_subst__``. ``TypeError`` was not raised
+when using more than one ``TypeVarTuple``, like ``[*T, *V]`` in type alias
+substitutions.
+
+..
+
+.. date: 2022-08-27-14-38-49
+.. gh-issue: 90467
+.. nonce: VOOB0p
+.. section: Library
+
+Fix :class:`asyncio.streams.StreamReaderProtocol` to keep a strong reference
+to the created task, so that it's not garbage collected
+
+..
+
+.. date: 2022-08-22-18-42-17
+.. gh-issue: 96159
+.. nonce: 3bFU39
+.. section: Library
+
+Fix a performance regression in logging TimedRotatingFileHandler. Only check
+for special files when the rollover time has passed.
+
+..
+
+.. date: 2022-08-22-13-54-20
+.. gh-issue: 96175
+.. nonce: bH7zGU
+.. section: Library
+
+Fix unused ``localName`` parameter in the ``Attr`` class in
+:mod:`xml.dom.minidom`.
+
+..
+
+.. date: 2022-08-19-18-21-01
+.. gh-issue: 96125
+.. nonce: ODcF1Y
+.. section: Library
+
+Fix incorrect condition that causes ``sys.thread_info.name`` to be wrong on
+pthread platforms.
+
+..
+
+.. date: 2022-08-18-14-53-53
+.. gh-issue: 95463
+.. nonce: GpP05c
+.. section: Library
+
+Remove an incompatible change from :issue:`28080` that caused a regression
+that ignored the utf8 in ``ZipInfo.flag_bits``. Patch by Pablo Galindo.
+
+..
+
+.. date: 2022-08-11-18-52-17
+.. gh-issue: 95899
+.. nonce: _Bi4uG
+.. section: Library
+
+Fix :class:`asyncio.Runner` to call :func:`asyncio.set_event_loop` only once
+to avoid calling :meth:`~asyncio.AbstractChildWatcher.attach_loop` multiple
+times on child watchers. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-08-11-18-22-29
+.. gh-issue: 95736
+.. nonce: LzRZXe
+.. section: Library
+
+Fix :class:`unittest.IsolatedAsyncioTestCase` to set event loop before
+calling setup functions. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-08-08-01-42-11
+.. gh-issue: 95704
+.. nonce: MOPFfX
+.. section: Library
+
+When a task catches :exc:`asyncio.CancelledError` and raises some other
+error, the other error should generally not silently be suppressed.
+
+..
+
+.. date: 2022-07-25-15-45-06
+.. gh-issue: 95231
+.. nonce: i807-g
+.. section: Library
+
+Fail gracefully if :data:`~errno.EPERM` or :data:`~errno.ENOSYS` is raised
+when loading :mod:`crypt` methods. This may happen when trying to load
+``MD5`` on a Linux kernel with :abbr:`FIPS (Federal Information Processing
+Standard)` enabled.
+
+..
+
+.. date: 2022-07-09-08-55-04
+.. gh-issue: 74116
+.. nonce: 0XwYC1
+.. section: Library
+
+Allow :meth:`asyncio.StreamWriter.drain` to be awaited concurrently by
+multiple tasks. Patch by Kumar Aditya.
+
+..
+
+.. date: 2022-05-19-22-34-42
+.. gh-issue: 92986
+.. nonce: e6uKxj
+.. section: Library
+
+Fix :func:`ast.unparse` when ``ImportFrom.level`` is None
+
+..
+
+.. date: 2022-08-19-17-07-45
+.. gh-issue: 96098
+.. nonce: nDp43u
+.. section: Documentation
+
+Improve discoverability of the higher level concurrent.futures module by
+providing clearer links from the lower level threading and multiprocessing
+modules.
+
+..
+
+.. date: 2022-08-13-20-34-51
+.. gh-issue: 95957
+.. nonce: W9ZZAx
+.. section: Documentation
+
+What's New 3.11 now has instructions for how to provide compiler and linker
+flags for Tcl/Tk and OpenSSL on RHEL 7 and CentOS 7.
+
+..
+
+.. date: 2022-08-22-14-59-42
+.. gh-issue: 95243
+.. nonce: DeD66V
+.. section: Tests
+
+Mitigate the inherent race condition from using find_unused_port() in
+testSockName() by trying to find an unused port a few times before failing.
+Patch by Ross Burton.
+
+..
+
+.. date: 2022-07-08-10-28-23
+.. gh-issue: 94682
+.. nonce: ZtGt_0
+.. section: Build
+
+Build and test with OpenSSL 1.1.1q
+
+..
+
+.. date: 2022-09-07-00-11-33
+.. gh-issue: 96577
+.. nonce: kV4K_1
+.. section: Windows
+
+Fixes a potential buffer overrun in :mod:`msilib`.
+
+..
+
+.. date: 2022-09-05-18-32-47
+.. gh-issue: 96559
+.. nonce: 561sUd
+.. section: Windows
+
+Fixes the Windows launcher not using the compatible interpretation of
+default tags found in configuration files when no tag was passed to the
+command.

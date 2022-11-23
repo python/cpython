@@ -801,4 +801,4 @@ Querying the size of the output terminal
    http://www.manpagez.com/man/3/copyfile/
 
 .. _`Other Environment Variables`:
-   http://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003
+   https://pubs.opengroup.org/onlinepubs/7908799/xbd/envvar.html#tag_002_003

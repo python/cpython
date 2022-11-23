@@ -2379,7 +2379,7 @@ _Py_dup(int fd)
         return -1;
     }
 
-#else
+#elif HAVE_DUP
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     fd = dup(fd);
@@ -2396,6 +2396,10 @@ _Py_dup(int fd)
         _Py_END_SUPPRESS_IPH
         return -1;
     }
+#else
+    errno = ENOTSUP;
+    PyErr_SetFromErrno(PyExc_OSError);
+    return -1;
 #endif
     return fd;
 }

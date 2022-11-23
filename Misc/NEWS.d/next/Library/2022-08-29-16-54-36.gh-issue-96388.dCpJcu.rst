@@ -1,0 +1,2 @@
+Work around missing socket functions in :class:`~socket.socket`'s
+``__repr__``.

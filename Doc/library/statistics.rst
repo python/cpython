@@ -813,7 +813,7 @@ of applications in statistics.
        The relative likelihood is computed as the probability of a sample
        occurring in a narrow range divided by the width of the range (hence
        the word "density").  Since the likelihood is relative to other points,
-       its value can be greater than `1.0`.
+       its value can be greater than ``1.0``.
 
     .. method:: NormalDist.cdf(x)
 
@@ -938,7 +938,7 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
 
 Normal distributions can be used to approximate `Binomial
-distributions <http://mathworld.wolfram.com/BinomialDistribution.html>`_
+distributions <https://mathworld.wolfram.com/BinomialDistribution.html>`_
 when the sample size is large and when the probability of a successful
 trial is near 50%.
 

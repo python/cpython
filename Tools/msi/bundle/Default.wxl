@@ -79,15 +79,15 @@ Select Customize to review current options.</String>
   <String Id="Include_launcherRemove">Use Programs and Features to remove the 'py' launcher.</String>
   <String Id="Include_launcherUpgrade">Upgrades the global 'py' launcher from the previous version.</String>
   
-  <String Id="AssociateFilesLabel">Associate &amp;files with Python (requires the py launcher)</String>
+  <String Id="AssociateFilesLabel">Associate &amp;files with Python (requires the 'py' launcher)</String>
   <String Id="ShortcutsLabel">Create shortcuts for installed applications</String>
   <String Id="PrependPathLabel">Add Python to &amp;environment variables</String>
-  <String Id="ShortPrependPathLabel">Add &amp;Python [ShortVersion] to PATH</String>
+  <String Id="ShortPrependPathLabel">Add &amp;python.exe to PATH</String>
   <String Id="AppendPathLabel">Append Python to &amp;environment variables</String>
-  <String Id="ShortAppendPathLabel">Append &amp;Python [ShortVersion] to PATH</String>
-  <String Id="InstallAllUsersLabel">Install for &amp;all users</String>
-  <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires elevation)</String>
-  <String Id="ShortInstallLauncherAllUsersLabel">Install &amp;launcher for all users (recommended)</String>
+  <String Id="ShortAppendPathLabel">Append &amp;python.exe to PATH</String>
+  <String Id="InstallAllUsersLabel">Install Python [ShortVersion] for &amp;all users</String>
+  <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires admin privileges)</String>
+  <String Id="ShortInstallLauncherAllUsersLabel">Use admin privi&amp;leges when installing py.exe</String>
   <String Id="PrecompileLabel">&amp;Precompile standard library</String>
   <String Id="Include_symbolsLabel">Download debugging &amp;symbols</String>
   <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2017 or later)</String>

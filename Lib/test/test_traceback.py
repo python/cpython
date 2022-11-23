@@ -532,6 +532,23 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
         result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def test_caret_for_binary_operators_with_unicode(self):
+        def f_with_binary_operator():
+            áóí = 20
+            return 10 + áóí / 0 + 30
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
+            '    return 10 + áóí / 0 + 30\n'
+            '                ~~~~^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
     def test_caret_for_binary_operators_two_char(self):
         def f_with_binary_operator():
             divisor = 20
@@ -562,6 +579,23 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
             "    return some_dict['x']['y']['z']\n"
             '           ~~~~~~~~~~~~~~~~~~~^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_subscript)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_subscript_unicode(self):
+        def f_with_subscript():
+            some_dict = {'ó': {'á': {'í': {'theta': 1}}}}
+            return some_dict['ó']['á']['í']['beta']
+
+        lineno_f = f_with_subscript.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_subscript\n'
+            "    return some_dict['ó']['á']['í']['beta']\n"
+            '           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^\n'
         )
         result_lines = self.get_exception(f_with_subscript)
         self.assertEqual(result_lines, expected_error.splitlines())
@@ -777,6 +811,56 @@ class TracebackErrorLocationCaretTests(unittest.TestCase):
             f"      ^^^^^^",
         ]
         self.assertEqual(actual, expected)
+
+    def test_wide_characters_unicode_with_problematic_byte_offset(self):
+        def f():
+            ｗｉｄｔｈ
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
+            f"    ｗｉｄｔｈ",
+        ]
+        self.assertEqual(actual, expected)
+
+
+    def test_byte_offset_with_wide_characters_middle(self):
+        def f():
+            ｗｉｄｔｈ = 1
+            raise ValueError(ｗｉｄｔｈ)
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
+            f"    raise ValueError(ｗｉｄｔｈ)",
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_byte_offset_multiline(self):
+        def f():
+            ｗｗｗ = 1
+            ｔｈ = 0
+
+            print(1, ｗｗｗ(
+                    ｔｈ))
+
+        actual = self.get_exception(f)
+        expected = [
+            f"Traceback (most recent call last):",
+            f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
+            f"    callable()",
+            f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 4}, in f",
+            f"    print(1, ｗｗｗ(",
+            f"             ^^^^",
+        ]
+        self.assertEqual(actual, expected)
+
 
 @cpython_only
 @requires_debug_ranges()
