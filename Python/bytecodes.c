@@ -70,6 +70,8 @@ do { \
 #define DISPATCH_SAME_OPARG() ((void)0)
 
 #define inst(name, ...) case name:
+#define op(name, ...) /* NAME is ignored */
+#define macro(name) static int MACRO_##name
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
 
@@ -80,6 +82,7 @@ do { \
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 static PyObject *list, *tuple, *dict;
+static PyObject *exit_func, *lasti, *val;
 
 static PyObject *
 dummy_func(
@@ -156,10 +159,7 @@ dummy_func(
             res = NULL;
         }
 
-        inst(END_FOR, (value1, value2 --)) {
-            Py_DECREF(value1);
-            Py_DECREF(value2);
-        }
+        macro(END_FOR) = POP_TOP + POP_TOP;
 
         inst(UNARY_POSITIVE, (value -- res)) {
             res = PyNumber_Positive(value);
@@ -2725,33 +2725,27 @@ dummy_func(
             PUSH(res);
         }
 
-        // stack effect: ( -- __0)
-        inst(WITH_EXCEPT_START) {
+        inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res)) {
             /* At the top of the stack are 4 values:
-               - TOP = exc_info()
-               - SECOND = previous exception
-               - THIRD: lasti of exception in exc_info()
-               - FOURTH: the context.__exit__ bound method
+               - val: TOP = exc_info()
+               - unused: SECOND = previous exception
+               - lasti: THIRD = lasti of exception in exc_info()
+               - exit_func: FOURTH = the context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
             */
-            PyObject *exit_func;
-            PyObject *exc, *val, *tb, *res;
+            PyObject *exc, *tb;
 
-            val = TOP();
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);
             Py_XDECREF(tb);
-            assert(PyLong_Check(PEEK(3)));
-            exit_func = PEEK(4);
+            assert(PyLong_Check(lasti));
+            (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};
             res = PyObject_Vectorcall(exit_func, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            if (res == NULL)
-                goto error;
-
-            PUSH(res);
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: ( -- __0)
