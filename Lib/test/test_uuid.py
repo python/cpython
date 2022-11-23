@@ -830,6 +830,7 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
             print(hex, end=' ')
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
+        self.assertNotEqual(node, int("ac:de:48:00:11:22".replace(":", ""), 16))
 
     @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS,
         "ifconfig is not used for introspection on this platform")

@@ -403,8 +403,15 @@ def _get_command_stdout(command, *args):
 #
 # See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local
 
+
 def _is_universal(mac):
     return not (mac & (1 << 41))
+
+# MAC adresses that are blacklisted for finding a node id
+_MAC_BLACKLIST={
+    # (GH-85724) Hardcoded MAC adres for all Intel MacBook's with Touch Bar.
+    int("ac:de:48:00:11:22".replace(":", ""), 16),
+}
 
 
 def _find_mac_near_keyword(command, args, keywords, get_word_index):
@@ -436,6 +443,8 @@ def _find_mac_near_keyword(command, args, keywords, get_word_index):
                     # real MAC address
                     pass
                 else:
+                    if mac in _MAC_BLACKLIST:
+                        continue
                     if _is_universal(mac):
                         return mac
                     first_local_mac = first_local_mac or mac
@@ -497,6 +506,8 @@ def _find_mac_under_heading(command, args, heading):
 
         mac = _parse_mac(word)
         if mac is None:
+            continue
+        if mac in _MAC_BLACKLIST:
             continue
         if _is_universal(mac):
             return mac
@@ -581,6 +592,18 @@ try:
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
     _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
+
+    if sys.platform == "darwin" and _generate_time_safe is not None:
+        # On macOS check if generate_time_safe uses the MAC adddress
+        # of the Touch Bar on Intel Macbooks and ignore the function
+        # if it does because this is a single MAC adress for all 
+        # devices. See GH-85724
+        _x = _generate_time_safe()[0]
+        if _x.endswith(bytes.fromhex("ac:de:48:00:11:22".replace(":", ""))):
+            _has_uuid_generate_time_safe = False
+            _generate_time_safe = None
+        del _x
+
 except ImportError:
     _uuid = None
     _generate_time_safe = None
