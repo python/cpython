@@ -191,6 +191,7 @@ struct _is {
 
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
+    PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
 
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
