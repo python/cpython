@@ -1,0 +1,2 @@
+Support for reading and writing ULAW / ALAW files in wave.py
+Patch by Thibo Rosemplatt.
