@@ -413,13 +413,13 @@ class Analyzer:
         """Analyze each super- and macro instruction."""
         self.super_instrs = {}
         self.macro_instrs = {}
-        for name, sup in self.supers.items():
-            self.super_instrs[name] = self.analyze_super(sup)
+        for name, super in self.supers.items():
+            self.super_instrs[name] = self.analyze_super(super)
         for name, macro in self.macros.items():
             self.macro_instrs[name] = self.analyze_macro(macro)
 
-    def analyze_super(self, supe: parser.Super) -> SuperInstruction:
-        components = self.check_super_components(supe)
+    def analyze_super(self, super: parser.Super) -> SuperInstruction:
+        components = self.check_super_components(super)
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
         parts: list[Component] = []
@@ -442,10 +442,10 @@ class Analyzer:
                 case _:
                     typing.assert_never(component)
         final_sp = sp
-        return SuperInstruction(supe, stack, initial_sp, final_sp, parts)
+        return SuperInstruction(super, stack, initial_sp, final_sp, parts)
 
-    def analyze_macro(self, supe: parser.Macro) -> MacroInstruction:
-        components = self.check_macro_components(supe)
+    def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
+        components = self.check_macro_components(macro)
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
@@ -468,36 +468,30 @@ class Analyzer:
                 case _:
                     typing.assert_never(component)
         final_sp = sp
-        return MacroInstruction(supe, stack, initial_sp, final_sp, parts)
+        return MacroInstruction(macro, stack, initial_sp, final_sp, parts)
 
-    def check_super_components(self, supe: parser.Super) -> list[Instruction]:
+    def check_super_components(self, super: parser.Super) -> list[Instruction]:
         components: list[Instruction] = []
-        if not supe.ops:
-            self.error(f"Super-instruction has no operands", supe)
-        for op in supe.ops:
+        if not super.ops:
+            self.error(f"Super-instruction has no operands", super)
+        for op in super.ops:
             if op.name not in self.instrs:
-                self.error(f"Unknown instruction {op.name!r}", supe)
+                self.error(f"Unknown instruction {op.name!r}", super)
             else:
-                instr = self.instrs[op.name]
-                if instr.kind != "inst":
-                    self.error(
-                        f"Super-instruction operand {instr.name} must be inst, not op",
-                        instr,
-                    )
-                components.append(instr)
+                components.append(self.instrs[op.name])
         return components
 
     def check_macro_components(
-        self, supe: parser.Macro
+        self, macro: parser.Macro
     ) -> list[InstructionOrCacheEffect]:
         components: list[InstructionOrCacheEffect] = []
-        if not supe.uops:
-            self.error(f"Macro instruction has no operands", supe)
-        for uop in supe.uops:
+        if not macro.uops:
+            self.error(f"Macro instruction has no operands", macro)
+        for uop in macro.uops:
             match uop:
                 case parser.OpName(name):
                     if name not in self.instrs:
-                        self.error(f"Unknown instruction {name!r}", supe)
+                        self.error(f"Unknown instruction {name!r}", macro)
                     components.append(self.instrs[name])
                 case parser.CacheEffect():
                     components.append(uop)
@@ -595,15 +589,15 @@ class Analyzer:
             self.write_stack_pokes(sup.stack, sup.initial_sp, sup.final_sp)
             self.out.emit("DISPATCH();")
 
-    def write_macro(self, macro: MacroInstruction) -> None:
+    def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
         self.out.emit("")
 
-        with self.out.block(f"TARGET({macro.name})"):
-            self.write_stack_vars(macro.stack, macro.initial_sp)
+        with self.out.block(f"TARGET({mac.name})"):
+            self.write_stack_vars(mac.stack, mac.initial_sp)
 
             cache_adjust = 0
-            for part in macro.parts:
+            for part in mac.parts:
                 match part:
                     case parser.CacheEffect(size=size):
                         cache_adjust += size
@@ -611,7 +605,7 @@ class Analyzer:
                         comp.write_body(self.out, cache_adjust)
                         cache_adjust += comp.instr.cache_offset
 
-            self.write_stack_pokes(macro.stack, macro.initial_sp, macro.final_sp)
+            self.write_stack_pokes(mac.stack, mac.initial_sp, mac.final_sp)
             if cache_adjust:
                 self.out.emit(f"next_instr += {cache_adjust};")
             self.out.emit(f"DISPATCH();")
