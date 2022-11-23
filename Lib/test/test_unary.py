@@ -21,10 +21,9 @@ class UnaryOpTestCase(unittest.TestCase):
         self.assertEqual(+2j, 2j)
 
     def test_invert(self):
-        self.assertTrue(-2 == 0 - 2)
-        self.assertEqual(-0, 0)
-        self.assertEqual(--2, 2)
-        self.assertTrue(-2 == 0 - 2)
+        self.assertTrue(~2 == -(2+1))
+        self.assertEqual(~0, -1)
+        self.assertEqual(~~2, 2)
 
     def test_no_overflow(self):
         nines = "9" * 32
