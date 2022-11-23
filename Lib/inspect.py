@@ -396,6 +396,8 @@ def markcoroutinefunction(func):
     """
     Decorator to ensure callable is recognised as a coroutine function.
     """
+    if hasattr(func, '__func__'):
+        func = func.__func__
     func.__code__ = func.__code__.replace(
         co_flags=func.__code__.co_flags | CO_COROUTINE
     )

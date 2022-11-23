@@ -210,6 +210,11 @@ class TestPredicates(IsTestBase):
             return _fn3()
 
         self.assertTrue(inspect.iscoroutinefunction(fn3))
+        self.assertTrue(
+            inspect.iscoroutinefunction(
+                inspect.markcoroutinefunction(lambda: _fn3())
+            )
+        )
 
         class Cl:
             async def __call__(self):
@@ -225,6 +230,20 @@ class TestPredicates(IsTestBase):
 
         self.assertFalse(inspect.iscoroutinefunction(Cl2))
         self.assertTrue(inspect.iscoroutinefunction(Cl2()))
+
+        class Cl3:
+            @inspect.markcoroutinefunction
+            @classmethod
+            def do_something_classy(cls):
+                pass
+
+            @inspect.markcoroutinefunction
+            @staticmethod
+            def do_something_static():
+                pass
+
+        self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_classy))
+        self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_static))
 
         self.assertFalse(
             inspect.iscoroutinefunction(unittest.mock.Mock()))
