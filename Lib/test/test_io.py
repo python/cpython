@@ -889,8 +889,8 @@ class IOTest(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'opener returned -2')
 
     def test_opener_invalid_fd(self):
-        self.open(support.TESTFN, 'w').close()
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        self.open(os_helper.TESTFN, 'w').close()
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         os.close(fd)
         # fd is now an invalid file descriptor
         with self.assertRaises(OSError) as cm:
