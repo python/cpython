@@ -1852,10 +1852,13 @@ Sub-commands
      >>> parser.parse_args(['co', 'bar'])
      Namespace(foo='bar')
 
-   One particularly effective way of handling sub-commands is to combine the use
-   of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
-   that each subparser knows which Python function it should execute.  For
-   example::
+   One particularly effective way of handling sub-commands is to
+   combine the use of the :meth:`add_subparsers` method with calls to
+   :meth:`set_defaults` so that each subparser knows which Python
+   function it should execute.  The :meth:`set_defaults` method of the
+   main parser is called to handle the case when no subcommand is
+   included in the command line. The main parser :meth:`print_help`
+   method is called to display the help in this case.  For example::
 
      >>> # sub-command functions
      >>> def foo(args):
