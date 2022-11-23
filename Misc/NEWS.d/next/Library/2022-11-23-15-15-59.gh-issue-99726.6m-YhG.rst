@@ -1,2 +1,2 @@
-Adds `fast` argument to :func:`os.stat` and :func:`os.lstat` to enable
+Adds ``fast`` argument to :func:`os.stat` and :func:`os.lstat` to enable
 performance optimizations by skipping some fields in the result.
