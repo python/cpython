@@ -1,0 +1,1 @@
+When inheriting from a dataclass, only show the field names in the value section of the member repr(), and not the dataclass' class name.
