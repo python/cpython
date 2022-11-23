@@ -14,17 +14,28 @@ import typing
 
 import parser
 
-DEFAULT_INPUT = "Python/bytecodes.c"
-DEFAULT_OUTPUT = "Python/generated_cases.c.h"
+DEFAULT_INPUT = os.path.relpath(
+    os.path.join(os.path.dirname(__file__), "../../Python/bytecodes.c")
+)
+DEFAULT_OUTPUT = os.path.relpath(
+    os.path.join(os.path.dirname(__file__), "../../Python/generated_cases.c.h")
+)
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
 RE_PREDICTED = r"(?s)(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);"
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
-arg_parser = argparse.ArgumentParser()
-arg_parser.add_argument("-i", "--input", type=str, default=DEFAULT_INPUT)
-arg_parser.add_argument("-o", "--output", type=str, default=DEFAULT_OUTPUT)
+arg_parser = argparse.ArgumentParser(
+    description="Generate the code for the interpreter switch.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
+arg_parser.add_argument(
+    "-i", "--input", type=str, help="Instruction definitions", default=DEFAULT_INPUT
+)
+arg_parser.add_argument(
+    "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
+)
 
 
 class Formatter:
@@ -79,7 +90,7 @@ class Instruction(parser.InstDef):
     predicted: bool = False
 
     def __init__(self, inst: parser.InstDef):
-        super().__init__(inst.header, inst.block)
+        super().__init__(inst.kind, inst.name, inst.inputs, inst.outputs, inst.block)
         self.context = inst.context
         self.always_exits = always_exits(self.block)
         self.cache_effects = [

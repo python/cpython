@@ -91,25 +91,11 @@ class InstHeader(Node):
 
 @dataclass
 class InstDef(Node):
-    # TODO: Merge InstHeader and InstDef
-    header: InstHeader
+    kind: Literal["inst", "op"]
+    name: str
+    inputs: list[InputEffect]
+    outputs: list[OutputEffect]
     block: Block
-
-    @property
-    def kind(self) -> Literal["inst", "op"]:
-        return self.header.kind
-
-    @property
-    def name(self) -> str:
-        return self.header.name
-
-    @property
-    def inputs(self) -> list[InputEffect]:
-        return self.header.inputs
-
-    @property
-    def outputs(self) -> list[OutputEffect]:
-        return self.header.outputs
 
 
 @dataclass
@@ -145,9 +131,9 @@ class Parser(PLexer):
 
     @contextual
     def inst_def(self) -> InstDef | None:
-        if header := self.inst_header():
+        if hdr := self.inst_header():
             if block := self.block():
-                return InstDef(header, block)
+                return InstDef(hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block)
             raise self.make_syntax_error("Expected block")
         return None
 
@@ -156,7 +142,6 @@ class Parser(PLexer):
         # inst(NAME)
         #   | inst(NAME, (inputs -- outputs))
         #   | op(NAME, (inputs -- outputs))
-        # TODO: Error out when there is something unexpected.
         # TODO: Make INST a keyword in the lexer.
         if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in ("inst", "op"):
             if self.expect(lx.LPAREN) and (tkn := self.expect(lx.IDENTIFIER)):
