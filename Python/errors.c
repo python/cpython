@@ -37,8 +37,7 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
     if (traceback != NULL && !PyTraceBack_Check(traceback)) {
         /* XXX Should never happen -- fatal error instead? */
         /* Well, it could be None. */
-        Py_DECREF(traceback);
-        traceback = NULL;
+        Py_SETREF(traceback, NULL);
     }
 
     /* Save these in locals to safeguard against recursive
