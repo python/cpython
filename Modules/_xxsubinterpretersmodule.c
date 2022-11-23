@@ -96,6 +96,25 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 #define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
     add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
 
+static PyTypeObject *
+add_new_type(PyObject *mod, PyTypeObject *cls, crossinterpdatafunc shared)
+{
+    if (PyType_Ready(cls) != 0) {
+        return NULL;
+    }
+    if (PyModule_AddType(mod, cls) != 0) {
+        // XXX When this becomes a heap type, we need to decref here.
+        return NULL;
+    }
+    if (shared != NULL) {
+        if (_PyCrossInterpreterData_RegisterClass(cls, shared)) {
+            // XXX When this becomes a heap type, we need to decref here.
+            return NULL;
+        }
+    }
+    return cls;
+}
+
 static int
 _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
 {
@@ -219,10 +238,9 @@ _sharedns_free(_sharedns *shared)
     PyMem_Free(shared);
 }
 
-static PyTypeObject ChannelIDtype;
-
 static _sharedns *
-_get_shared_ns(PyObject *shareable, int *needs_import)
+_get_shared_ns(PyObject *shareable, PyTypeObject *channelidtype,
+               int *needs_import)
 {
     *needs_import = 0;
     if (shareable == NULL || shareable == Py_None) {
@@ -246,7 +264,7 @@ _get_shared_ns(PyObject *shareable, int *needs_import)
         if (_sharednsitem_init(&shared->items[i], key, value) != 0) {
             break;
         }
-        if (Py_TYPE(value) == &ChannelIDtype) {
+        if (Py_TYPE(value) == channelidtype) {
             *needs_import = 1;
         }
     }
@@ -1585,7 +1603,7 @@ _channel_is_associated(_channels *channels, int64_t cid, int64_t interp,
 
 /* ChannelID class */
 
-static PyTypeObject ChannelIDtype;
+static PyTypeObject ChannelIDType;
 
 typedef struct channelid {
     PyObject_HEAD
@@ -1595,11 +1613,17 @@ typedef struct channelid {
     _channels *channels;
 } channelid;
 
+struct channel_id_converter_data {
+    PyObject *module;
+    int64_t cid;
+};
+
 static int
 channel_id_converter(PyObject *arg, void *ptr)
 {
     int64_t cid;
-    if (PyObject_TypeCheck(arg, &ChannelIDtype)) {
+    struct channel_id_converter_data *data = ptr;
+    if (PyObject_TypeCheck(arg, &ChannelIDType)) {
         cid = ((channelid *)arg)->id;
     }
     else if (PyIndex_Check(arg)) {
@@ -1619,7 +1643,7 @@ channel_id_converter(PyObject *arg, void *ptr)
                      Py_TYPE(arg)->tp_name);
         return 0;
     }
-    *(int64_t *)ptr = cid;
+    data->cid = cid;
     return 1;
 }
 
@@ -1661,14 +1685,20 @@ _channelid_new(PyObject *mod, PyTypeObject *cls,
 {
     static char *kwlist[] = {"id", "send", "recv", "force", "_resolve", NULL};
     int64_t cid;
+    struct channel_id_converter_data cid_data = {
+        .module = mod,
+    };
     int send = -1;
     int recv = -1;
     int force = 0;
     int resolve = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&|$pppp:ChannelID.__new__", kwlist,
-                                     channel_id_converter, &cid, &send, &recv, &force, &resolve))
+                                     channel_id_converter, &cid_data,
+                                     &send, &recv, &force, &resolve)) {
         return NULL;
+    }
+    cid = cid_data.cid;
 
     // Handle "send" and "recv".
     if (send == 0 && recv == 0) {
@@ -1744,43 +1774,8 @@ channelid_int(PyObject *self)
 }
 
 static PyNumberMethods channelid_as_number = {
-     0,                        /* nb_add */
-     0,                        /* nb_subtract */
-     0,                        /* nb_multiply */
-     0,                        /* nb_remainder */
-     0,                        /* nb_divmod */
-     0,                        /* nb_power */
-     0,                        /* nb_negative */
-     0,                        /* nb_positive */
-     0,                        /* nb_absolute */
-     0,                        /* nb_bool */
-     0,                        /* nb_invert */
-     0,                        /* nb_lshift */
-     0,                        /* nb_rshift */
-     0,                        /* nb_and */
-     0,                        /* nb_xor */
-     0,                        /* nb_or */
-     (unaryfunc)channelid_int, /* nb_int */
-     0,                        /* nb_reserved */
-     0,                        /* nb_float */
-
-     0,                        /* nb_inplace_add */
-     0,                        /* nb_inplace_subtract */
-     0,                        /* nb_inplace_multiply */
-     0,                        /* nb_inplace_remainder */
-     0,                        /* nb_inplace_power */
-     0,                        /* nb_inplace_lshift */
-     0,                        /* nb_inplace_rshift */
-     0,                        /* nb_inplace_and */
-     0,                        /* nb_inplace_xor */
-     0,                        /* nb_inplace_or */
-
-     0,                        /* nb_floor_divide */
-     0,                        /* nb_true_divide */
-     0,                        /* nb_inplace_floor_divide */
-     0,                        /* nb_inplace_true_divide */
-
-     (unaryfunc)channelid_int, /* nb_index */
+    .nb_int = (unaryfunc)channelid_int, /* nb_int */
+    .nb_index = (unaryfunc)channelid_int, /* nb_index */
 };
 
 static Py_hash_t
@@ -1803,13 +1798,13 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (!PyObject_TypeCheck(self, &ChannelIDtype)) {
+    if (!PyObject_TypeCheck(self, &ChannelIDType)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
     channelid *cid = (channelid *)self;
     int equal;
-    if (PyObject_TypeCheck(other, &ChannelIDtype)) {
+    if (PyObject_TypeCheck(other, &ChannelIDType)) {
         channelid *othercid = (channelid *)other;
         equal = (cid->end == othercid->end) && (cid->id == othercid->id);
     }
@@ -1877,37 +1872,42 @@ static PyObject *
 _channelid_from_xid(_PyCrossInterpreterData *data)
 {
     struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+
+    PyObject *mod = _get_current_module();
+    if (mod == NULL) {
+        return NULL;
+    }
+
     // Note that we do not preserve the "resolve" flag.
     PyObject *cid = NULL;
-    int err = newchannelid(&ChannelIDtype, xid->id, xid->end,
+    int err = newchannelid(&ChannelIDType, xid->id, xid->end,
                            _global_channels(), 0, 0,
                            (channelid **)&cid);
     if (err != 0) {
         assert(cid == NULL);
-        PyObject *mod = _get_current_module();
-        if (mod == NULL) {
-            return NULL;
-        }
         (void)handle_channel_error(err, mod, xid->id);
-        Py_DECREF(mod);
-        return NULL;
+        goto done;
     }
     assert(cid != NULL);
     if (xid->end == 0) {
-        return cid;
+        goto done;
     }
     if (!xid->resolve) {
-        return cid;
+        goto done;
     }
 
     /* Try returning a high-level channel end but fall back to the ID. */
     PyObject *chan = _channel_from_cid(cid, xid->end);
     if (chan == NULL) {
         PyErr_Clear();
-        return cid;
+        goto done;
     }
     Py_DECREF(cid);
-    return chan;
+    cid = chan;
+
+done:
+    Py_DECREF(mod);
+    return cid;
 }
 
 static int
@@ -1977,7 +1977,7 @@ static PyGetSetDef channelid_getsets[] = {
 PyDoc_STRVAR(channelid_doc,
 "A channel ID identifies a channel and may be used as an int.");
 
-static PyTypeObject ChannelIDtype = {
+static PyTypeObject ChannelIDType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "_xxsubinterpreters.ChannelID", /* tp_name */
     sizeof(channelid),              /* tp_basicsize */
@@ -2154,7 +2154,8 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     }
 
     int needs_import = 0;
-    _sharedns *shared = _get_shared_ns(shareables, &needs_import);
+    _sharedns *shared = _get_shared_ns(shareables, &ChannelIDType,
+                                       &needs_import);
     if (shared == NULL && PyErr_Occurred()) {
         return -1;
     }
@@ -2515,7 +2516,7 @@ channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
     PyObject *id = NULL;
-    int err = newchannelid(&ChannelIDtype, cid, 0,
+    int err = newchannelid(&ChannelIDType, cid, 0,
                            &_globals.channels, 0, 0,
                            (channelid **)&id);
     if (handle_channel_error(err, self, cid)) {
@@ -2541,10 +2542,14 @@ channel_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", NULL};
     int64_t cid;
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_destroy", kwlist,
-                                     channel_id_converter, &cid)) {
+                                     channel_id_converter, &cid_data)) {
         return NULL;
     }
+    cid = cid_data.cid;
 
     int err = _channel_destroy(&_globals.channels, cid);
     if (handle_channel_error(err, self, cid)) {
@@ -2577,7 +2582,7 @@ channel_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
     int64_t *cur = cids;
     for (int64_t i=0; i < count; cur++, i++) {
         PyObject *id = NULL;
-        int err = newchannelid(&ChannelIDtype, *cur, 0,
+        int err = newchannelid(&ChannelIDType, *cur, 0,
                                &_globals.channels, 0, 0,
                                (channelid **)&id);
         if (handle_channel_error(err, self, *cur)) {
@@ -2604,6 +2609,9 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "send", NULL};
     int64_t cid;            /* Channel ID */
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
     int send = 0;           /* Send or receive end? */
     int64_t id;
     PyObject *ids, *id_obj;
@@ -2611,9 +2619,10 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds, "O&$p:channel_list_interpreters",
-            kwlist, channel_id_converter, &cid, &send)) {
+            kwlist, channel_id_converter, &cid_data, &send)) {
         return NULL;
     }
+    cid = cid_data.cid;
 
     ids = PyList_New(0);
     if (ids == NULL) {
@@ -2666,11 +2675,15 @@ channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "obj", NULL};
     int64_t cid;
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
     PyObject *obj;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
-                                     channel_id_converter, &cid, &obj)) {
+                                     channel_id_converter, &cid_data, &obj)) {
         return NULL;
     }
+    cid = cid_data.cid;
 
     int err = _channel_send(&_globals.channels, cid, obj);
     if (handle_channel_error(err, self, cid)) {
@@ -2689,11 +2702,15 @@ channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "default", NULL};
     int64_t cid;
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
     PyObject *dflt = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|O:channel_recv", kwlist,
-                                     channel_id_converter, &cid, &dflt)) {
+                                     channel_id_converter, &cid_data, &dflt)) {
         return NULL;
     }
+    cid = cid_data.cid;
 
     PyObject *obj = NULL;
     int err = _channel_recv(&_globals.channels, cid, &obj);
@@ -2726,14 +2743,19 @@ channel_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
     int64_t cid;
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
     int send = 0;
     int recv = 0;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&|$ppp:channel_close", kwlist,
-                                     channel_id_converter, &cid, &send, &recv, &force)) {
+                                     channel_id_converter, &cid_data,
+                                     &send, &recv, &force)) {
         return NULL;
     }
+    cid = cid_data.cid;
 
     int err = _channel_close(&_globals.channels, cid, send-recv, force);
     if (handle_channel_error(err, self, cid)) {
@@ -2775,14 +2797,19 @@ channel_release(PyObject *self, PyObject *args, PyObject *kwds)
     // Note that only the current interpreter is affected.
     static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
     int64_t cid;
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
     int send = 0;
     int recv = 0;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O&|$ppp:channel_release", kwlist,
-                                     channel_id_converter, &cid, &send, &recv, &force)) {
+                                     channel_id_converter, &cid_data,
+                                     &send, &recv, &force)) {
         return NULL;
     }
+    cid = cid_data.cid;
     if (send == 0 && recv == 0) {
         send = 1;
         recv = 1;
@@ -2808,7 +2835,7 @@ ends are closed.  Closing an already closed end is a noop.");
 static PyObject *
 channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyTypeObject *cls = &ChannelIDtype;
+    PyTypeObject *cls = &ChannelIDType;
     PyObject *mod = get_module_from_owned_type(cls);
     if (mod == NULL) {
         return NULL;
@@ -2873,11 +2900,6 @@ module_exec(PyObject *mod)
         return -1;
     }
 
-    /* Initialize types */
-    if (PyType_Ready(&ChannelIDtype) != 0) {
-        goto error;
-    }
-
     /* Add exception types */
     if (interp_exceptions_init(mod) != 0) {
         goto error;
@@ -2887,14 +2909,10 @@ module_exec(PyObject *mod)
     }
 
     /* Add other types */
-    if (PyModule_AddType(mod, &ChannelIDtype) < 0) {
+    if (add_new_type(mod, &ChannelIDType, _channelid_shared) == NULL) {
         goto error;
     }
     if (PyModule_AddType(mod, &_PyInterpreterID_Type) < 0) {
-        goto error;
-    }
-
-    if (_PyCrossInterpreterData_RegisterClass(&ChannelIDtype, _channelid_shared)) {
         goto error;
     }
 
