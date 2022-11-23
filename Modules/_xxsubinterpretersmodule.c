@@ -151,7 +151,15 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
 /* module state *************************************************************/
 
 typedef struct {
-    int _not_used;
+    /* interpreter exceptions */
+    PyObject *RunFailedError;
+
+    /* channel exceptions */
+    PyObject *ChannelError;
+    PyObject *ChannelNotFoundError;
+    PyObject *ChannelClosedError;
+    PyObject *ChannelEmptyError;
+    PyObject *ChannelNotEmptyError;
 } module_state;
 
 static inline module_state *
@@ -165,12 +173,30 @@ get_module_state(PyObject *mod)
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
+    /* interpreter exceptions */
+    Py_VISIT(state->RunFailedError);
+
+    /* channel exceptions */
+    Py_VISIT(state->ChannelError);
+    Py_VISIT(state->ChannelNotFoundError);
+    Py_VISIT(state->ChannelClosedError);
+    Py_VISIT(state->ChannelEmptyError);
+    Py_VISIT(state->ChannelNotEmptyError);
     return 0;
 }
 
 static int
 clear_module_state(module_state *state)
 {
+    /* interpreter exceptions */
+    Py_CLEAR(state->RunFailedError);
+
+    /* channel exceptions */
+    Py_CLEAR(state->ChannelError);
+    Py_CLEAR(state->ChannelNotFoundError);
+    Py_CLEAR(state->ChannelClosedError);
+    Py_CLEAR(state->ChannelEmptyError);
+    Py_CLEAR(state->ChannelNotEmptyError);
     return 0;
 }
 
@@ -451,15 +477,20 @@ static PyObject *ChannelNotEmptyError;
 static int
 channel_exceptions_init(PyObject *mod)
 {
-    // XXX Move the exceptions into per-module memory?
+    module_state *state = get_module_state(mod);
+    if (state == NULL) {
+        return -1;
+    }
 
 #define ADD(NAME, BASE) \
     do { \
+        assert(state->NAME == NULL); \
+        state->NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
+        if (state->NAME == NULL) { \
+            return -1; \
+        } \
         if (NAME == NULL) { \
-            NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
-            if (NAME == NULL) { \
-                return -1; \
-            } \
+            NAME = Py_NewRef(state->NAME); \
         } \
     } while (0)
 
@@ -2060,15 +2091,20 @@ static PyObject * RunFailedError = NULL;
 static int
 interp_exceptions_init(PyObject *mod)
 {
-    // XXX Move the exceptions into per-module memory?
+    module_state *state = get_module_state(mod);
+    if (state == NULL) {
+        return -1;
+    }
 
 #define ADD(NAME, BASE) \
     do { \
+        assert(state->NAME == NULL); \
+        state->NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
+        if (state->NAME == NULL) { \
+            return -1; \
+        } \
         if (NAME == NULL) { \
-            NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
-            if (NAME == NULL) { \
-                return -1; \
-            } \
+            NAME = Py_NewRef(state->NAME); \
         } \
     } while (0)
 
