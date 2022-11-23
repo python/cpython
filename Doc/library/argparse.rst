@@ -1889,6 +1889,17 @@ Sub-commands
      >>> args = parser.parse_args('bar XYZYX'.split())
      >>> args.func(args)
      ((XYZYX))
+     >>>
+     >>> # show the help when called without arguments
+     >>> args = parser.parse_args()
+     >>> args.func(args)
+     usage: app.py [-h] {foo,bar} ...
+
+     positional arguments:
+       {foo,bar}
+
+     options:
+       -h, --help  show this help message and exit
 
    This way, you can let :meth:`parse_args` do the job of calling the
    appropriate function after argument parsing is complete.  Associating
