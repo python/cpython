@@ -209,7 +209,7 @@ class PosixPathTest(unittest.TestCase):
         # Simulate the path being on a different device from its parent by
         # mocking out st_dev.
         save_lstat = os.lstat
-        def fake_lstat(path):
+        def fake_lstat(path, fast=False):
             st_ino = 0
             st_dev = 0
             if path == ABSTFN:
@@ -227,7 +227,7 @@ class PosixPathTest(unittest.TestCase):
         # issue #2466: Simulate ismount run on a directory that is not
         # readable, which used to return False.
         save_lstat = os.lstat
-        def fake_lstat(path):
+        def fake_lstat(path, fast=False):
             st_ino = 0
             st_dev = 0
             if path.startswith(ABSTFN) and path != ABSTFN:
