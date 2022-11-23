@@ -1,1 +1,0 @@
-Allow pure Python implementation of :mod:`pickle` to work even when the C :mod:`_pickle` module is unavailable.

@@ -1,1 +1,0 @@
-Fixes path for :data:`sys.executable` when running from the Microsoft Store.

@@ -1,0 +1,2 @@
+Fix :func:`ast.increment_lineno` to also cover :class:`ast.TypeIgnore` when
+changing line numbers.
