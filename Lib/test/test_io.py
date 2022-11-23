@@ -893,8 +893,8 @@ class IOTest(unittest.TestCase):
         fd = os.open(support.TESTFN, os.O_RDONLY)
         os.close(fd)
         # fd is now an invalid file descriptor
-        with self.assertRaises(OSError):
-            self.assertEqual(exc.errno, errno.EBADF)
+        with self.assertRaises(OSError) as cm:
+            self.assertEqual(cm.exception.errno, errno.EBADF)
             self.open('foo', opener=lambda name, flags: fd)
 
     def test_fileio_closefd(self):
