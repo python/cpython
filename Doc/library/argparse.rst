@@ -1866,6 +1866,7 @@ Sub-commands
      ...
      >>> # create the top-level parser
      >>> parser = argparse.ArgumentParser()
+     >>> parser.set_defaults(func=lambda args: parser.print_help())
      >>> subparsers = parser.add_subparsers()
      >>>
      >>> # create the parser for the "foo" command
