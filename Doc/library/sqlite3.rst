@@ -1317,10 +1317,10 @@ Connection objects
 
    .. attribute:: row_factory
 
-      Define the default :attr:`Cursor.row_factory`
-      for cursors created off of this connection.
+      The default :attr:`~Cursor.row_factory`
+      for :class:`Cursor` objects created from this connection.
       Assigning to this attribute does not affect the :attr:`!row_factory`
-      of open cursors belonging to this connection.
+      of existing cursors belonging to this connection, only new ones.
       Is ``None`` by default.
 
       See :ref:`sqlite3-howto-row-factory` for more details.
@@ -1577,14 +1577,14 @@ Cursor objects
    .. attribute:: row_factory
 
       Control how a row fetched from this :class:`!Cursor` is represented.
-      Set to :class:`sqlite3.Row` or a custom :term:`callable`
-      that accept two arguments,
-      a :class:`Cursor` object and the raw row results as a :class:`tuple`,
-      and return a custom object representing an SQLite row.
+      Set to :class:`sqlite3.Row`;
+      or a custom :term:`callable` that accepts two arguments,
+      a :class:`Cursor` object and a :class:`tuple` of the row results,
+      and returns a custom object representing an SQLite row.
       If ``None``, a fetched row is represented as a :class:`tuple`.
 
       Defaults to what :attr:`Connection.row_factory` was set to
-      upon :class:`!Cursor` creation.
+      when the :class:`!Cursor` was created.
       Assigning to this attribute does not affect
       :attr:`Connection.row_factory` of the parent connection.
 
@@ -1609,7 +1609,7 @@ Row objects
    and :term:`mapping` access by column name and index.
 
    Two :class:`!Row` objects compare equal
-   if they have identical columns and values.
+   if they have identical column names and values.
 
    See :ref:`sqlite3-howto-row-factory` for more details.
 
@@ -2352,16 +2352,17 @@ How to create and use row factories
 
 By default, :mod:`!sqlite3` represents each fetched row as a :class:`tuple`.
 If a :class:`!tuple` does not suit your needs,
-use the :class:`sqlite3.Row` class or a custom :attr:`~Cursor.row_factory`.
+you can use the :class:`sqlite3.Row` class
+or a custom :attr:`~Cursor.row_factory`.
 
-Even though :attr:`!row_factory` exists as an attribute both on the
+While :attr:`!row_factory` exists as an attribute both on the
 :class:`Cursor` and the :class:`Connection`,
-it is recommended to set it as :class:`Connection.row_factory`,
-so all cursors created off of the connection will use the same row factory.
+it is recommended to set :class:`Connection.row_factory`,
+so all cursors created from the connection will use the same row factory.
 
 :class:`!Row` provides indexed and case-insensitive named access to columns,
-with low memory overhead and minimal performance impact.
-In order to use :class:`!Row` as a row factory,
+with minimal memory overhead and performance impact over a :class:`!tuple`.
+To use :class:`!Row` as a row factory,
 simply assign it to the :attr:`Connection.row_factory` attribute:
 
 .. doctest::
@@ -2377,7 +2378,7 @@ Query results are now returned as :class:`!Row` instances:
    >>> row = res.fetchone()
    >>> row.keys()
    ['name', 'radius']
-   >>> row[0]  # Access by index.
+   >>> row[0]         # Access by index.
    'Earth'
    >>> row["name"]    # Access by name.
    'Earth'
@@ -2387,7 +2388,7 @@ Query results are now returned as :class:`!Row` instances:
 .. doctest::
 
    >>> def dict_factory(cursor, row):
-   ...     col_names = [col[0] for col in cursor.description]
+   ...     col_names = [column[0] for column in cursor.description]
    ...     return {key: value for key, value in zip(col_names, row)}
 
    >>> con = sqlite3.connect(":memory:")
@@ -2396,14 +2397,14 @@ Query results are now returned as :class:`!Row` instances:
    ...     print(row)
    {'a': 1, 'b': 2}
 
-The following row factory returns a :class:`~collections.namedtuple`.
+The following row factory returns a :term:`named tuple`:
 
 .. testcode::
 
    from collections import namedtuple
 
    def namedtuple_factory(cursor, row):
-       fields = [col[0] for col in cursor.description]
+       fields = [column[0] for column in cursor.description]
        cls = namedtuple("Row", fields)
        return cls._make(row)
 
