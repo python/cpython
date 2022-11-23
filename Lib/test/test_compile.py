@@ -1146,6 +1146,17 @@ if 1:
                 with self.subTest(source):
                     self.assertEqual(actual_positions, expected_positions)
 
+    def test_if_expression_expression_empty_block(self):
+        # See regression in gh-99708
+        exprs = [
+            "assert (False if 1 else True)",
+            "def f():\n\tif not (False if 1 else True): raise AssertionError",
+            "def f():\n\tif not (False if 1 else True): return 12",
+        ]
+        for expr in exprs:
+            with self.subTest(expr=expr):
+                compile(expr, "<single>", "exec")
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
