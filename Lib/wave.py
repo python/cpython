@@ -83,6 +83,8 @@ class Error(Exception):
     pass
 
 WAVE_FORMAT_PCM = 0x0001
+WAVE_FORMAT_ALAW = 0x0006
+WAVE_FORMAT_MULAW = 0x0007
 WAVE_FORMAT_EXTENSIBLE = 0xFFFE
 # Derived from uuid.UUID("00000001-0000-0010-8000-00aa00389b71").bytes_le
 KSDATAFORMAT_SUBTYPE_PCM = b'\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x008\x9bq'
@@ -380,7 +382,24 @@ class Wave_read:
             wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
         except struct.error:
             raise EOFError from None
-        if wFormatTag != WAVE_FORMAT_PCM and wFormatTag != WAVE_FORMAT_EXTENSIBLE:
+
+        if wFormatTag == WAVE_FORMAT_PCM:
+            self._comptype = 'NONE'
+            self._compname = 'not compressed'
+
+        elif wFormatTag == WAVE_FORMAT_MULAW:
+            self._comptype = 'ULAW'
+            self._compname = 'CCITT G.711 u-law'
+
+        elif wFormatTag == WAVE_FORMAT_ALAW:
+            self._comptype = 'ALAW'
+            self._compname = 'CCITT G.711 a-law'
+
+        elif wFormatTag == WAVE_FORMAT_EXTENSIBLE:
+            self._comptype = '?'
+            self._compname = '?'
+
+        else:
             raise Error('unknown format: %r' % (wFormatTag,))
         try:
             sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
@@ -408,8 +427,6 @@ class Wave_read:
         if not self._nchannels:
             raise Error('bad # of channels')
         self._framesize = self._nchannels * self._sampwidth
-        self._comptype = 'NONE'
-        self._compname = 'not compressed'
 
 class Wave_write:
     """Variables used in this class:
@@ -459,6 +476,8 @@ class Wave_write:
         self._nframeswritten = 0
         self._datawritten = 0
         self._datalength = 0
+        self._comptype = 'NONE'
+        self._compname = 'not compressed'
         self._headerwritten = False
 
     def __del__(self):
@@ -520,7 +539,7 @@ class Wave_write:
     def setcomptype(self, comptype, compname):
         if self._datawritten:
             raise Error('cannot change parameters after starting to write')
-        if comptype not in ('NONE',):
+        if comptype not in ('NONE', 'ULAW', 'ALAW'):
             raise Error('unsupported compression type')
         self._comptype = comptype
         self._compname = compname
@@ -615,13 +634,36 @@ class Wave_write:
             self._form_length_pos = self._file.tell()
         except (AttributeError, OSError):
             self._form_length_pos = None
-        self._file.write(struct.pack('<L4s4sLHHLLHH4s',
-            36 + self._datalength, b'WAVE', b'fmt ', 16,
-            WAVE_FORMAT_PCM, self._nchannels, self._framerate,
-            self._nchannels * self._framerate * self._sampwidth,
-            self._nchannels * self._sampwidth,
-            self._sampwidth * 8, b'data'))
+
+        if self._comptype == 'NONE':
+            self._packstr = '<l4s4slhhllhh4s'
+            self._file.write(struct.pack(self._packstr,
+                                         struct.calcsize(self._packstr) + self._datalength, b'WAVE', b'fmt ', 16,
+                                         WAVE_FORMAT_PCM, self._nchannels, self._framerate,
+                                         self._nchannels * self._framerate * self._sampwidth,
+                                         self._nchannels * self._sampwidth,
+                                         self._sampwidth * 8, b'data'))
+
+        if self._comptype == 'ULAW':
+            self._packstr = '<l4s4slhhllhhh4sll4s'
+            self._file.write(struct.pack(self._packstr,
+                                         struct.calcsize(self._packstr) + self._datalength, b'WAVE', b'fmt ', 18,
+                                         WAVE_FORMAT_MULAW, self._nchannels, self._framerate,
+                                         self._nchannels * self._framerate * self._sampwidth,
+                                         self._nchannels * self._sampwidth,
+                                         self._sampwidth * 8, 0, b'fact', 4, self._datalength, b'data'))
+
+        if self._comptype == 'ALAW':
+            self._packstr = '<l4s4slhhllhhh4sll4s'
+            self._file.write(struct.pack(self._packstr,
+                                         struct.calcsize(self._packstr) + self._datalength, b'WAVE', b'fmt ', 18,
+                                         WAVE_FORMAT_ALAW, self._nchannels, self._framerate,
+                                         self._nchannels * self._framerate * self._sampwidth,
+                                         self._nchannels * self._sampwidth,
+                                         self._sampwidth * 8, 0, b'fact', 4, self._datalength, b'data'))
+
         if self._form_length_pos is not None:
+            self._fact_length_pos = self._file.tell() - 8
             self._data_length_pos = self._file.tell()
         self._file.write(struct.pack('<L', self._datalength))
         self._headerwritten = True
@@ -632,7 +674,12 @@ class Wave_write:
             return
         curpos = self._file.tell()
         self._file.seek(self._form_length_pos, 0)
-        self._file.write(struct.pack('<L', 36 + self._datawritten))
+        self._file.write(struct.pack('<l', struct.calcsize(self._packstr) + self._datawritten))
+
+        if self._comptype in ('ULAW', 'ALAW'):
+            self._file.seek(self._fact_length_pos, 0)
+            self._file.write(struct.pack('<l', self._datawritten))
+
         self._file.seek(self._data_length_pos, 0)
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
