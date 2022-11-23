@@ -1037,16 +1037,26 @@ as internal buffering of data.
    .. availability:: Unix.
 
 
-.. function:: fstat(fd)
+.. function:: fstat(fd, *, fast=False)
 
    Get the status of the file descriptor *fd*. Return a :class:`stat_result`
    object.
 
-   As of Python 3.3, this is equivalent to ``os.stat(fd)``.
+   As of Python 3.3, this is equivalent to ``os.stat(fd, fast=fast)``.
+
+   Passing *fast* as ``True`` may omit some information on some platforms
+   for the sake of performance. These omissions are not guaranteed (that is,
+   the information may be returned anyway), and may change between Python
+   releases without a deprecation period or due to operating system updates
+   without warning. See :class:`stat_result` documentation for the fields
+   that are guaranteed to be present under this option.
 
    .. seealso::
 
       The :func:`.stat` function.
+
+   .. versionchanged:: 3.12
+      Added the *fast* parameter.
 
 
 .. function:: fstatvfs(fd, /)

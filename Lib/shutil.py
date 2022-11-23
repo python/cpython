@@ -130,7 +130,7 @@ def _fastcopy_sendfile(fsrc, fdst):
     # should not make any difference, also in case the file content
     # changes while being copied.
     try:
-        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MiB
+        blocksize = max(os.fstat(infd, fast=True).st_size, 2 ** 23)  # min 8MiB
     except OSError:
         blocksize = 2 ** 27  # 128MiB
     # On 32-bit architectures truncate to 1GiB to avoid OverflowError,
@@ -219,7 +219,7 @@ def _samefile(src, dst):
             os.path.normcase(os.path.abspath(dst)))
 
 def _stat(fn):
-    return fn.stat() if isinstance(fn, os.DirEntry) else os.stat(fn)
+    return fn.stat() if isinstance(fn, os.DirEntry) else os.stat(fn, fast=True)
 
 def _islink(fn):
     return fn.is_symlink() if isinstance(fn, os.DirEntry) else os.path.islink(fn)
@@ -567,7 +567,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
 if hasattr(os.stat_result, 'st_file_attributes'):
     def _rmtree_islink(path):
         try:
-            st = os.lstat(path)
+            st = os.lstat(path, fast=True)
             return (stat.S_ISLNK(st.st_mode) or
                 (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
                  and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))

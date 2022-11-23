@@ -164,7 +164,7 @@ def dirname(p):
 def islink(path):
     """Test whether a path is a symbolic link"""
     try:
-        st = os.lstat(path)
+        st = os.lstat(path, fast=True)
     except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
@@ -184,7 +184,7 @@ def isjunction(path):
 def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
-        os.lstat(path)
+        os.lstat(path, fast=True)
     except (OSError, ValueError):
         return False
     return True
@@ -196,7 +196,7 @@ def lexists(path):
 def ismount(path):
     """Test whether a path is a mount point"""
     try:
-        s1 = os.lstat(path)
+        s1 = os.lstat(path, fast=True)
     except (OSError, ValueError):
         # It doesn't exist -- so not a mount point. :-)
         return False
@@ -215,6 +215,10 @@ def ismount(path):
         s2 = os.lstat(parent)
     except (OSError, ValueError):
         return False
+
+    # No st_dev/ino? Get the full stat instead of the fast one
+    if not s1.st_dev or not s1.st_ino:
+        s1 = os.lstat(path)
 
     dev1 = s1.st_dev
     dev2 = s2.st_dev
@@ -458,7 +462,7 @@ def _joinrealpath(path, rest, strict, seen):
             continue
         newpath = join(path, name)
         try:
-            st = os.lstat(newpath)
+            st = os.lstat(newpath, fast=True)
         except OSError:
             if strict:
                 raise
@@ -478,7 +482,7 @@ def _joinrealpath(path, rest, strict, seen):
             # The symlink is not resolved, so we must have a symlink loop.
             if strict:
                 # Raise OSError(errno.ELOOP)
-                os.stat(newpath)
+                os.stat(newpath, fast=True)
             else:
                 # Return already resolved part + rest of the path unchanged.
                 return join(newpath, rest), False

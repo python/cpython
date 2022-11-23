@@ -722,7 +722,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return None
 
         try:
-            fs = os.fstat(f.fileno())
+            fs = os.fstat(f.fileno(), fast=True)
             # Use browser cache if possible
             if ("If-Modified-Since" in self.headers
                     and "If-None-Match" not in self.headers):

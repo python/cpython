@@ -307,7 +307,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             # Check for abstract socket. `str` and `bytes` paths are supported.
             if path[0] not in (0, '\x00'):
                 try:
-                    if stat.S_ISSOCK(os.stat(path).st_mode):
+                    if stat.S_ISSOCK(os.stat(path, fast=True).st_mode):
                         os.remove(path)
                 except FileNotFoundError:
                     pass
@@ -363,7 +363,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         except (AttributeError, io.UnsupportedOperation) as err:
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
-            fsize = os.fstat(fileno).st_size
+            fsize = os.fstat(fileno, fast=True).st_size
         except OSError:
             raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
@@ -472,7 +472,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         self._closing = False
         self._paused = False
 
-        mode = os.fstat(self._fileno).st_mode
+        mode = os.fstat(self._fileno, fast=True).st_mode
         if not (stat.S_ISFIFO(mode) or
                 stat.S_ISSOCK(mode) or
                 stat.S_ISCHR(mode)):
@@ -607,7 +607,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         self._conn_lost = 0
         self._closing = False  # Set when close() or write_eof() called.
 
-        mode = os.fstat(self._fileno).st_mode
+        mode = os.fstat(self._fileno, fast=True).st_mode
         is_char = stat.S_ISCHR(mode)
         is_fifo = stat.S_ISFIFO(mode)
         is_socket = stat.S_ISSOCK(mode)

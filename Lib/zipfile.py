@@ -525,7 +525,7 @@ class ZipInfo (object):
         """
         if isinstance(filename, os.PathLike):
             filename = os.fspath(filename)
-        st = os.stat(filename)
+        st = os.stat(filename, fast=True)
         isdir = stat.S_ISDIR(st.st_mode)
         mtime = time.localtime(st.st_mtime)
         date_time = mtime[0:6]
@@ -2129,23 +2129,23 @@ class PyZipFile(ZipFile):
         if self._optimize == -1:
             # legacy mode: use whatever file is present
             if (os.path.isfile(file_pyc) and
-                  os.stat(file_pyc).st_mtime >= os.stat(file_py).st_mtime):
+                  os.stat(file_pyc, fast=True).st_mtime >= os.stat(file_py, fast=True).st_mtime):
                 # Use .pyc file.
                 arcname = fname = file_pyc
             elif (os.path.isfile(pycache_opt0) and
-                  os.stat(pycache_opt0).st_mtime >= os.stat(file_py).st_mtime):
+                  os.stat(pycache_opt0, fast=True).st_mtime >= os.stat(file_py, fast=True).st_mtime):
                 # Use the __pycache__/*.pyc file, but write it to the legacy pyc
                 # file name in the archive.
                 fname = pycache_opt0
                 arcname = file_pyc
             elif (os.path.isfile(pycache_opt1) and
-                  os.stat(pycache_opt1).st_mtime >= os.stat(file_py).st_mtime):
+                  os.stat(pycache_opt1, fast=True).st_mtime >= os.stat(file_py, fast=True).st_mtime):
                 # Use the __pycache__/*.pyc file, but write it to the legacy pyc
                 # file name in the archive.
                 fname = pycache_opt1
                 arcname = file_pyc
             elif (os.path.isfile(pycache_opt2) and
-                  os.stat(pycache_opt2).st_mtime >= os.stat(file_py).st_mtime):
+                  os.stat(pycache_opt2, fast=True).st_mtime >= os.stat(file_py, fast=True).st_mtime):
                 # Use the __pycache__/*.pyc file, but write it to the legacy pyc
                 # file name in the archive.
                 fname = pycache_opt2
@@ -2177,7 +2177,7 @@ class PyZipFile(ZipFile):
                     msg = "invalid value for 'optimize': {!r}".format(self._optimize)
                     raise ValueError(msg)
             if not (os.path.isfile(fname) and
-                    os.stat(fname).st_mtime >= os.stat(file_py).st_mtime):
+                    os.stat(fname, fast=True).st_mtime >= os.stat(file_py, fast=True).st_mtime):
                 if not _compile(file_py, optimize=self._optimize):
                     fname = arcname = file_py
         archivename = os.path.split(arcname)[1]

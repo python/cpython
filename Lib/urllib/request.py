@@ -1505,7 +1505,7 @@ class FileHandler(BaseHandler):
         filename = req.selector
         localfile = url2pathname(filename)
         try:
-            stats = os.stat(localfile)
+            stats = os.stat(localfile, fast=True)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(filename)[0]
@@ -2022,7 +2022,7 @@ class URLopener:
         host, file = _splithost(url)
         localname = url2pathname(file)
         try:
-            stats = os.stat(localname)
+            stats = os.stat(localname, fast=True)
         except OSError as e:
             raise URLError(e.strerror, e.filename)
         size = stats.st_size

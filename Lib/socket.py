@@ -354,7 +354,7 @@ class socket(_socket.socket):
             except (AttributeError, io.UnsupportedOperation) as err:
                 raise _GiveupOnSendfile(err)  # not a regular file
             try:
-                fsize = os.fstat(fileno).st_size
+                fsize = os.fstat(fileno, fast=True).st_size
             except OSError as err:
                 raise _GiveupOnSendfile(err)  # not a regular file
             if not fsize:

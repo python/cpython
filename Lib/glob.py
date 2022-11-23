@@ -193,7 +193,7 @@ def _lexists(pathname, dir_fd):
     if dir_fd is None:
         return os.path.lexists(pathname)
     try:
-        os.lstat(pathname, dir_fd=dir_fd)
+        os.lstat(pathname, dir_fd=dir_fd, fast=True)
     except (OSError, ValueError):
         return False
     else:
@@ -204,7 +204,7 @@ def _isdir(pathname, dir_fd):
     if dir_fd is None:
         return os.path.isdir(pathname)
     try:
-        st = os.stat(pathname, dir_fd=dir_fd)
+        st = os.stat(pathname, dir_fd=dir_fd, fast=True)
     except (OSError, ValueError):
         return False
     else:

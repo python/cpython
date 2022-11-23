@@ -110,7 +110,7 @@ class SharedMemory:
             try:
                 if create and size:
                     os.ftruncate(self._fd, size)
-                stats = os.fstat(self._fd)
+                stats = os.fstat(self._fd, fast=True)
                 size = stats.st_size
                 self._mmap = mmap.mmap(self._fd, size)
             except OSError:

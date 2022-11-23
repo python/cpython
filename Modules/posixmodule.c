@@ -10254,19 +10254,27 @@ os.fstat
 
     fd : int
 
+    *
+
+    fast: bool = False
+        If True, certain data may be omitted on some platforms to
+        allow faster results. See the documentation for specific cases.
+
 Perform a stat system call on the given file descriptor.
 
 Like stat(), but for an open file descriptor.
-Equivalent to os.stat(fd).
+Equivalent to os.stat(fd, fast=fast).
 [clinic start generated code]*/
 
 static PyObject *
-os_fstat_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=efc038cb5f654492 input=27e0e0ebbe5600c9]*/
+os_fstat_impl(PyObject *module, int fd, int fast)
+/*[clinic end generated code: output=7bd835f9da58993a input=a21b5b699d3a18c7]*/
 {
     STRUCT_STAT st;
     int res;
     int async_err = 0;
+    /* Currently we do not do anything with the fast option. */
+    (void)fast;
 
     do {
         Py_BEGIN_ALLOW_THREADS

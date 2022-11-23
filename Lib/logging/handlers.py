@@ -263,7 +263,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         # path object (see Issue #27493), but self.baseFilename will be a string
         filename = self.baseFilename
         if os.path.exists(filename):
-            t = os.stat(filename)[ST_MTIME]
+            t = os.stat(filename, fast=True)[ST_MTIME]
         else:
             t = int(time.time())
         self.rolloverAt = self.computeRollover(t)

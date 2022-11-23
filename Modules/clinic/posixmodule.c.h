@@ -6756,19 +6756,23 @@ exit:
 #endif /* defined(__APPLE__) */
 
 PyDoc_STRVAR(os_fstat__doc__,
-"fstat($module, /, fd)\n"
+"fstat($module, /, fd, *, fast=False)\n"
 "--\n"
 "\n"
 "Perform a stat system call on the given file descriptor.\n"
 "\n"
+"  fast\n"
+"    If True, certain data may be omitted on some platforms to\n"
+"    allow faster results. See the documentation for specific cases.\n"
+"\n"
 "Like stat(), but for an open file descriptor.\n"
-"Equivalent to os.stat(fd).");
+"Equivalent to os.stat(fd, fast=fast).");
 
 #define OS_FSTAT_METHODDEF    \
     {"fstat", _PyCFunction_CAST(os_fstat), METH_FASTCALL|METH_KEYWORDS, os_fstat__doc__},
 
 static PyObject *
-os_fstat_impl(PyObject *module, int fd);
+os_fstat_impl(PyObject *module, int fd, int fast);
 
 static PyObject *
 os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -6776,14 +6780,14 @@ os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(fd), },
+        .ob_item = { &_Py_ID(fd), &_Py_ID(fast), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -6792,15 +6796,17 @@ os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"fd", NULL};
+    static const char * const _keywords[] = {"fd", "fast", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "fstat",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int fd;
+    int fast = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -6810,7 +6816,15 @@ os_fstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = os_fstat_impl(module, fd);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    fast = PyObject_IsTrue(args[1]);
+    if (fast < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os_fstat_impl(module, fd, fast);
 
 exit:
     return return_value;
@@ -11577,4 +11591,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=8653c0259a7b7c5e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ac51554262db9eb input=a9049054013a1b77]*/
