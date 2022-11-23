@@ -630,14 +630,16 @@ static PyMethodDef test_methods[] = {
     {"clear_dict_watcher",       clear_dict_watcher,      METH_O,       NULL},
     {"watch_dict",               watch_dict,              METH_VARARGS, NULL},
     {"unwatch_dict",             unwatch_dict,            METH_VARARGS, NULL},
-    {"get_dict_watcher_events",  get_dict_watcher_events, METH_NOARGS,  NULL},
+    {"get_dict_watcher_events",
+     (PyCFunction) get_dict_watcher_events,               METH_NOARGS,  NULL},
 
     // Type watchers.
     {"add_type_watcher",         add_type_watcher,        METH_O,       NULL},
     {"clear_type_watcher",       clear_type_watcher,      METH_O,       NULL},
     {"watch_type",               watch_type,              METH_VARARGS, NULL},
     {"unwatch_type",             unwatch_type,            METH_VARARGS, NULL},
-    {"get_type_modified_events", get_type_modified_events, METH_NOARGS, NULL},
+    {"get_type_modified_events",
+     (PyCFunction) get_type_modified_events,              METH_NOARGS, NULL},
 
     // Code object watchers.
     {"add_code_watcher",         add_code_watcher,        METH_O,       NULL},
