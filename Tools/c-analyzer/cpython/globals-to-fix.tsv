@@ -496,7 +496,6 @@ Modules/_pickle.c	-	PicklerMemoProxyType	-
 Modules/_pickle.c	-	Pickler_Type	-
 Modules/_pickle.c	-	UnpicklerMemoProxyType	-
 Modules/_pickle.c	-	Unpickler_Type	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelIDtype	-
 Modules/_zoneinfo.c	-	PyZoneInfo_ZoneInfoType	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
