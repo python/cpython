@@ -717,4 +717,7 @@ extern char * _getpty(int *, int, mode_t, int);
 #  endif
 #endif
 
+// Get the type of an expression
+#define _PY_TYPEOF(EXPR) __typeof__(EXPR)
+
 #endif /* Py_PYPORT_H */

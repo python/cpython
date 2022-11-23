@@ -604,9 +604,9 @@ static inline void Py_DECREF(PyObject *op)
  */
 #define Py_CLEAR(op)                                          \
     do {                                                      \
-        PyObject **_py_tmp_ptr = _Py_CAST(PyObject**, &(op)); \
+        _PY_TYPEOF(op)* _py_tmp_ptr = &(op);                  \
         if (*_py_tmp_ptr != NULL) {                           \
-            PyObject* _py_tmp = (*_py_tmp_ptr);               \
+            _PY_TYPEOF(op) _py_tmp = *_py_tmp_ptr;            \
             *_py_tmp_ptr = NULL;                              \
             Py_DECREF(_py_tmp);                               \
         }                                                     \
