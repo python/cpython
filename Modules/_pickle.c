@@ -4344,8 +4344,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         if (reduce_value != Py_NotImplemented) {
             goto reduce;
         }
-        Py_DECREF(reduce_value);
-        reduce_value = NULL;
+        Py_SETREF(reduce_value, NULL);
     }
 
     if (type == &PyType_Type) {
