@@ -1004,8 +1004,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertFullArgSpecEquals(
              os.stat,
              args_e=['path'],
-             kwonlyargs_e=['dir_fd', 'follow_symlinks'],
-             kwonlydefaults_e={'dir_fd': None, 'follow_symlinks': True})
+             kwonlyargs_e=['dir_fd', 'follow_symlinks', 'fast'],
+             kwonlydefaults_e={'dir_fd': None, 'follow_symlinks': True, 'fast': False})
 
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
