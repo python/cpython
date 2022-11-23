@@ -389,6 +389,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(false)
         STRUCT_FOR_ID(family)
         STRUCT_FOR_ID(fanout)
+        STRUCT_FOR_ID(fast)
         STRUCT_FOR_ID(fd)
         STRUCT_FOR_ID(fd2)
         STRUCT_FOR_ID(fdel)

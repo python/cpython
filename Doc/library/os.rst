@@ -2175,7 +2175,7 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: lstat(path, *, dir_fd=None)
+.. function:: lstat(path, *, dir_fd=None, fast=False)
 
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
@@ -2184,8 +2184,15 @@ features:
    On platforms that do not support symbolic links, this is an alias for
    :func:`~os.stat`.
 
+   Passing *fast* as ``True`` may omit some information on some platforms
+   for the sake of performance. These omissions are not guaranteed (that is,
+   the information may be returned anyway), and may change between Python
+   releases without a deprecation period or due to operating system updates
+   without warning. See :class:`stat_result` documentation for the fields
+   that are guaranteed to be present under this option.
+
    As of Python 3.3, this is equivalent to ``os.stat(path, dir_fd=dir_fd,
-   follow_symlinks=False)``.
+   follow_symlinks=False, fast=fast)``.
 
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -2208,6 +2215,9 @@ features:
       (name surrogates), including symbolic links and directory junctions.
       Other kinds of reparse points are resolved by the operating system as
       for :func:`~os.stat`.
+
+   .. versionchanged:: 3.12
+      Added the *fast* parameter.
 
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
@@ -2781,7 +2791,7 @@ features:
       for :class:`bytes` paths on Windows.
 
 
-.. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
+.. function:: stat(path, *, dir_fd=None, follow_symlinks=True, fast=False)
 
    Get the status of a file or a file descriptor. Perform the equivalent of a
    :c:func:`stat` system call on the given path. *path* may be specified as
@@ -2805,6 +2815,13 @@ features:
    :func:`os.path.realpath` function to resolve the path name as far as
    possible and call :func:`lstat` on the result. This does not apply to
    dangling symlinks or junction points, which will raise the usual exceptions.
+
+   Passing *fast* as ``True`` may omit some information on some platforms
+   for the sake of performance. These omissions are not guaranteed (that is,
+   the information may be returned anyway), and may change between Python
+   releases without a deprecation period or due to operating system updates
+   without warning. See :class:`stat_result` documentation for the fields
+   that are guaranteed to be present under this option.
 
    .. index:: module: stat
 
@@ -2838,6 +2855,9 @@ features:
       returns the information for the original path as if
       ``follow_symlinks=False`` had been specified instead of raising an error.
 
+   .. versionchanged:: 3.12
+      Added the *fast* parameter.
+
 
 .. class:: stat_result
 
@@ -2845,11 +2865,21 @@ features:
    :c:type:`stat` structure. It is used for the result of :func:`os.stat`,
    :func:`os.fstat` and :func:`os.lstat`.
 
+   When the *fast* argument to these functions is passed ``True``, some
+   information may be reduced or omitted. Those attributes that are
+   guaranteed to be valid, and those currently known to be omitted, are
+   marked in the documentation below. If not specified and you depend on
+   that field, explicitly pass *fast* as ``False`` to ensure it is
+   calculated.
+
    Attributes:
 
    .. attribute:: st_mode
 
       File mode: file type and file mode bits (permissions).
+
+      When *fast* is ``True``, only the file type bits are guaranteed
+      to be valid (the mode bits may be zero).
 
    .. attribute:: st_ino
 
@@ -2864,6 +2894,8 @@ features:
    .. attribute:: st_dev
 
       Identifier of the device on which this file resides.
+
+      On Windows, when *fast* is ``True``, this may be zero.
 
    .. attribute:: st_nlink
 
@@ -2883,6 +2915,8 @@ features:
       The size of a symbolic link is the length of the pathname it contains,
       without a terminating null byte.
 
+      This field is guaranteed to be filled when specifying *fast*.
+
    Timestamps:
 
    .. attribute:: st_atime
@@ -2892,6 +2926,8 @@ features:
    .. attribute:: st_mtime
 
       Time of most recent content modification expressed in seconds.
+
+      This field is guaranteed to be filled when specifying *fast*.
 
    .. attribute:: st_ctime
 
@@ -2908,6 +2944,9 @@ features:
 
       Time of most recent content modification expressed in nanoseconds as an
       integer.
+
+      This field is guaranteed to be filled when specifying *fast*, subject
+      to the note below.
 
    .. attribute:: st_ctime_ns
 
@@ -2998,11 +3037,15 @@ features:
       :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
       constants in the :mod:`stat` module.
 
+      This field is guaranteed to be filled when specifying *fast*.
+
    .. attribute:: st_reparse_tag
 
       When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
       set, this field contains the tag identifying the type of reparse point.
       See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
+
+      This field is guaranteed to be filled when specifying *fast*.
 
    The standard module :mod:`stat` defines functions and constants that are
    useful for extracting information from a :c:type:`stat` structure. (On
@@ -3038,6 +3081,10 @@ features:
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.
+
+   .. versionchanged:: 3.12
+      Added the *fast* argument and defined the minimum set of returned
+      fields.
 
 .. function:: statvfs(path)
 

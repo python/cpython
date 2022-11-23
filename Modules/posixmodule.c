@@ -36,6 +36,7 @@
 #  include "posixmodule.h"
 #else
 #  include "winreparse.h"
+#  include "pycore_fileutils_windows.h" // GetFileInformationByName()
 #endif
 
 #if !defined(EX_OK) && defined(EXIT_SUCCESS)
@@ -664,6 +665,8 @@ PyOS_AfterFork(void)
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
 void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
                                             ULONG, struct _Py_stat_struct *);
+void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
+                                 struct _Py_stat_struct *);
 #endif
 
 
@@ -1834,16 +1837,109 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     return TRUE;
 }
 
+static void
+win32_xstat_fixup_exec_mode(const wchar_t *path,
+                            struct _Py_stat_struct *result)
+{
+    if (!(result->st_file_attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* Fix the file execute permissions. This hack sets S_IEXEC if
+           the filename has an extension that is commonly used by files
+           that CreateProcessW can execute. A real implementation calls
+           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
+           AccessCheck to check for generic read, write, and execute
+           access. */
+        const wchar_t *fileExtension = wcsrchr(path, '.');
+        if (fileExtension) {
+            if (_wcsicmp(fileExtension, L".exe") == 0 ||
+                _wcsicmp(fileExtension, L".bat") == 0 ||
+                _wcsicmp(fileExtension, L".cmd") == 0 ||
+                _wcsicmp(fileExtension, L".com") == 0) {
+                result->st_mode |= 0111;
+            }
+        }
+    }
+}
+
+static int
+win32_xstat_get_st_dev(const wchar_t *path,
+                       struct _Py_stat_struct *result)
+{
+    const wchar_t *rootEnd;
+    WCHAR rootBuffer[MAX_PATH];
+    WCHAR *root = rootBuffer;
+    DWORD oldErrorMode;
+    DWORD vsn = 0;
+    int retval = 0;
+
+    if (result->st_dev || !path || !path[0]) {
+        return 0;
+    }
+
+    if (PathCchSkipRoot(path, &rootEnd) ||
+        wcsncpy_s(rootBuffer, MAX_PATH, path, (rootEnd - path))) {
+        /* No root for the path, so let it use the current volume */
+        root = NULL;
+    }
+
+    /* Change the thread's error mode to avoid popping up dialogs for
+       "no disk in drive" situations. */
+    if (!SetThreadErrorMode(SEM_FAILCRITICALERRORS, &oldErrorMode)) {
+        oldErrorMode = 0;
+    }
+
+    if (GetVolumeInformationW(root, NULL, 0, &vsn, NULL, NULL, NULL, 0)) {
+        result->st_dev = vsn;
+        result->st_rdev = vsn;
+    } else {
+        retval = -1;
+    }
+
+    SetThreadErrorMode(oldErrorMode, NULL);
+    return retval;
+}
+
 static int
 win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
-                 BOOL traverse)
+                 BOOL traverse, BOOL fast)
 {
     HANDLE hFile;
+    FILE_STAT_BASIC_INFORMATION statInfo;
     BY_HANDLE_FILE_INFORMATION fileInfo;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
-    DWORD fileType, error;
+    DWORD fileType, error = 0;
     BOOL isUnhandledTag = FALSE;
     int retval = 0;
+
+    /* Try the fast path first. This is an lstat equivalent, but if we
+       don't find a symlink it'll be faster to try it first */
+    if (GetFileInformationByName(path, FileStatBasicByNameInfo,
+                                 &statInfo, sizeof(statInfo))) {
+        /* Fast path succeeded. If we're not traversing or the file isn't
+           a name surrogate reparse point, we can continue */
+        if (!traverse ||
+            !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+              IsReparseTagNameSurrogate(statInfo.ReparseTag))) {
+            _Py_stat_basic_info_to_stat(&statInfo, result);
+            if (!fast) {
+                win32_xstat_fixup_exec_mode(path, result);
+                /* st_dev is not included in FileStatBasicByName,
+                   so we get it separately */
+                if (win32_xstat_get_st_dev(path, result) != 0) {
+                    return -1;
+                }
+            }
+            return 0;
+        }
+    } else {
+        /* Some errors aren't worth retrying with the slow path */
+        switch(GetLastError()) {
+        case ERROR_FILE_NOT_FOUND:
+        case ERROR_PATH_NOT_FOUND:
+        case ERROR_NOT_READY:
+        case ERROR_BAD_NET_NAME:
+            return -1;
+        }
+    }
 
     DWORD access = FILE_READ_ATTRIBUTES;
     DWORD flags = FILE_FLAG_BACKUP_SEMANTICS; /* Allow opening directories. */
@@ -1969,7 +2065,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                    for an unhandled tag. */
                 } else if (!isUnhandledTag) {
                     CloseHandle(hFile);
-                    return win32_xstat_impl(path, result, TRUE);
+                    return win32_xstat_impl(path, result, TRUE, fast);
                 }
             }
         }
@@ -1991,23 +2087,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
     }
 
     _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, result);
-
-    if (!(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        /* Fix the file execute permissions. This hack sets S_IEXEC if
-           the filename has an extension that is commonly used by files
-           that CreateProcessW can execute. A real implementation calls
-           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
-           AccessCheck to check for generic read, write, and execute
-           access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
-                result->st_mode |= 0111;
-            }
-        }
+    if (!fast) {
+        win32_xstat_fixup_exec_mode(path, result);
     }
 
 cleanup:
@@ -2026,11 +2107,12 @@ cleanup:
 }
 
 static int
-win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
+win32_xstat(const wchar_t *path, struct _Py_stat_struct *result,
+            BOOL traverse, BOOL fast)
 {
     /* Protocol violation: we explicitly clear errno, instead of
        setting it to a POSIX error. Callers should use GetLastError. */
-    int code = win32_xstat_impl(path, result, traverse);
+    int code = win32_xstat_impl(path, result, traverse, fast);
     errno = 0;
     return code;
 }
@@ -2047,13 +2129,13 @@ win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
 static int
 win32_lstat(const wchar_t* path, struct _Py_stat_struct *result)
 {
-    return win32_xstat(path, result, FALSE);
+    return win32_xstat(path, result, FALSE, TRUE);
 }
 
 static int
 win32_stat(const wchar_t* path, struct _Py_stat_struct *result)
 {
-    return win32_xstat(path, result, TRUE);
+    return win32_xstat(path, result, TRUE, TRUE);
 }
 
 #endif /* MS_WINDOWS */
@@ -2463,7 +2545,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 
 static PyObject *
 posix_do_stat(PyObject *module, const char *function_name, path_t *path,
-              int dir_fd, int follow_symlinks)
+              int dir_fd, int follow_symlinks, int fast)
 {
     STRUCT_STAT st;
     int result;
@@ -2486,10 +2568,8 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
     if (path->fd != -1)
         result = FSTAT(path->fd, &st);
 #ifdef MS_WINDOWS
-    else if (follow_symlinks)
-        result = win32_stat(path->wide, &st);
     else
-        result = win32_lstat(path->wide, &st);
+        result = win32_xstat(path->wide, &st, follow_symlinks, fast);
 #else
     else
 #if defined(HAVE_LSTAT)
@@ -2837,6 +2917,10 @@ os.stat
         stat will examine the symbolic link itself instead of the file
         the link points to.
 
+    fast: bool = False
+        If True, certain data may be omitted on some platforms to
+        allow faster results. See the documentation for specific cases.
+
 Perform a stat system call on the given path.
 
 dir_fd and follow_symlinks may not be implemented
@@ -2849,10 +2933,12 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 [clinic start generated code]*/
 
 static PyObject *
-os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7d4976e6f18a59c5 input=01d362ebcc06996b]*/
+os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks,
+             int fast)
+/*[clinic end generated code: output=2657ee2ccb8586f6 input=ec99c0b72e50d965]*/
 {
-    return posix_do_stat(module, "stat", path, dir_fd, follow_symlinks);
+    return posix_do_stat(module, "stat", path, dir_fd,
+                         follow_symlinks, fast);
 }
 
 
@@ -2865,6 +2951,10 @@ os.lstat
 
     dir_fd : dir_fd(requires='fstatat') = None
 
+    fast: bool = False
+        If True, certain data may be omitted on some platforms to
+        allow faster results. See the documentation for specific cases.
+
 Perform a stat system call on the given path, without following symbolic links.
 
 Like stat(), but do not follow symbolic links.
@@ -2872,11 +2962,12 @@ Equivalent to stat(path, follow_symlinks=False).
 [clinic start generated code]*/
 
 static PyObject *
-os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=ef82a5d35ce8ab37 input=0b7474765927b925]*/
+os_lstat_impl(PyObject *module, path_t *path, int dir_fd, int fast)
+/*[clinic end generated code: output=e7fc00813e269d21 input=4311ddb7b2baed54]*/
 {
     int follow_symlinks = 0;
-    return posix_do_stat(module, "lstat", path, dir_fd, follow_symlinks);
+    return posix_do_stat(module, "lstat", path, dir_fd,
+                         follow_symlinks, fast);
 }
 
 

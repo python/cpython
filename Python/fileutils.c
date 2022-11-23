@@ -9,6 +9,7 @@
 #  include <malloc.h>
 #  include <windows.h>
 #  include <pathcch.h>            // PathCchCombineEx
+#  include "pycore_fileutils_windows.h" // FILE_STAT_BASIC_INFORMATION
 extern int winerror_to_errno(int);
 #endif
 
@@ -1048,6 +1049,18 @@ FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, time_t *time_out, int* nsec_out)
     *time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, time_t);
 }
 
+static void
+LARGE_INTEGER_to_time_t_nsec(LARGE_INTEGER *in_ptr, time_t *time_out, int* nsec_out)
+{
+    /* XXX endianness. Shouldn't matter, as all Windows implementations are little-endian */
+    /* Cannot simply cast and dereference in_ptr,
+       since it might not be aligned properly */
+    __int64 in;
+    memcpy(&in, in_ptr, sizeof(in));
+    *nsec_out = (int)(in % 10000000) * 100; /* FILETIME is in units of 100 nsec. */
+    *time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, time_t);
+}
+
 void
 _Py_time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr)
 {
@@ -1104,6 +1117,51 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
     }
     result->st_file_attributes = info->dwFileAttributes;
 }
+
+void
+_Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
+                            struct _Py_stat_struct *result)
+{
+    memset(result, 0, sizeof(*result));
+    result->st_mode = attributes_to_mode(info->FileAttributes);
+    result->st_size = info->EndOfFile.QuadPart;
+    result->st_dev = 0;
+    result->st_rdev = 0;
+    LARGE_INTEGER_to_time_t_nsec(&info->CreationTime, &result->st_ctime, &result->st_ctime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    result->st_nlink = info->NumberOfLinks;
+    result->st_ino = info->FileId.QuadPart;
+    /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
+       open other name surrogate reparse points without traversing them. To
+       detect/handle these, check st_file_attributes and st_reparse_tag. */
+    result->st_reparse_tag = info->ReparseTag;
+    if (info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        info->ReparseTag == IO_REPARSE_TAG_SYMLINK) {
+        /* set the bits that make this a symlink */
+        result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
+    }
+    result->st_file_attributes = info->FileAttributes;
+    switch (info->DeviceType) {
+    case FILE_TYPE_DISK:
+        break;
+    case FILE_TYPE_CHAR:
+        /* \\.\nul */
+        result->st_mode = (result->st_mode & ~S_IFMT) | _S_IFCHR;
+        break;
+    case FILE_TYPE_PIPE:
+        /* \\.\pipe\spam */
+        result->st_mode = (result->st_mode & ~S_IFMT) | _S_IFIFO;
+        break;
+    default:
+        if (info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            /* \\.\pipe\ or \\.\mailslot\ */
+            result->st_mode = (result->st_mode & ~S_IFMT) | _S_IFDIR;
+        }
+        break;
+    }
+}
+
 #endif
 
 /* Return information about a file.

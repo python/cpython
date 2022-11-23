@@ -903,6 +903,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(false));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(family));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fanout));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fast));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fd2));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fdel));

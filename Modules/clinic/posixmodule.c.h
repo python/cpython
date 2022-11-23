@@ -9,7 +9,7 @@ preserve
 
 
 PyDoc_STRVAR(os_stat__doc__,
-"stat($module, /, path, *, dir_fd=None, follow_symlinks=True)\n"
+"stat($module, /, path, *, dir_fd=None, follow_symlinks=True, fast=False)\n"
 "--\n"
 "\n"
 "Perform a stat system call on the given path.\n"
@@ -25,6 +25,9 @@ PyDoc_STRVAR(os_stat__doc__,
 "    If False, and the last element of the path is a symbolic link,\n"
 "    stat will examine the symbolic link itself instead of the file\n"
 "    the link points to.\n"
+"  fast\n"
+"    If True, certain data may be omitted on some platforms to\n"
+"    allow faster results. See the documentation for specific cases.\n"
 "\n"
 "dir_fd and follow_symlinks may not be implemented\n"
 "  on your platform.  If they are unavailable, using them will raise a\n"
@@ -37,7 +40,8 @@ PyDoc_STRVAR(os_stat__doc__,
     {"stat", _PyCFunction_CAST(os_stat), METH_FASTCALL|METH_KEYWORDS, os_stat__doc__},
 
 static PyObject *
-os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks);
+os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks,
+             int fast);
 
 static PyObject *
 os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -45,14 +49,14 @@ os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), },
+        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), &_Py_ID(fast), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -61,18 +65,19 @@ os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
+    static const char * const _keywords[] = {"path", "dir_fd", "follow_symlinks", "fast", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "stat",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("stat", "path", 0, 1);
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
+    int fast = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -92,12 +97,21 @@ os_stat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
             goto skip_optional_kwonly;
         }
     }
-    follow_symlinks = PyObject_IsTrue(args[2]);
-    if (follow_symlinks < 0) {
+    if (args[2]) {
+        follow_symlinks = PyObject_IsTrue(args[2]);
+        if (follow_symlinks < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    fast = PyObject_IsTrue(args[3]);
+    if (fast < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = os_stat_impl(module, &path, dir_fd, follow_symlinks);
+    return_value = os_stat_impl(module, &path, dir_fd, follow_symlinks, fast);
 
 exit:
     /* Cleanup for path */
@@ -107,10 +121,14 @@ exit:
 }
 
 PyDoc_STRVAR(os_lstat__doc__,
-"lstat($module, /, path, *, dir_fd=None)\n"
+"lstat($module, /, path, *, dir_fd=None, fast=False)\n"
 "--\n"
 "\n"
 "Perform a stat system call on the given path, without following symbolic links.\n"
+"\n"
+"  fast\n"
+"    If True, certain data may be omitted on some platforms to\n"
+"    allow faster results. See the documentation for specific cases.\n"
 "\n"
 "Like stat(), but do not follow symbolic links.\n"
 "Equivalent to stat(path, follow_symlinks=False).");
@@ -119,7 +137,7 @@ PyDoc_STRVAR(os_lstat__doc__,
     {"lstat", _PyCFunction_CAST(os_lstat), METH_FASTCALL|METH_KEYWORDS, os_lstat__doc__},
 
 static PyObject *
-os_lstat_impl(PyObject *module, path_t *path, int dir_fd);
+os_lstat_impl(PyObject *module, path_t *path, int dir_fd, int fast);
 
 static PyObject *
 os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -127,14 +145,14 @@ os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), },
+        .ob_item = { &_Py_ID(path), &_Py_ID(dir_fd), &_Py_ID(fast), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -143,17 +161,18 @@ os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", "dir_fd", NULL};
+    static const char * const _keywords[] = {"path", "dir_fd", "fast", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "lstat",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("lstat", "path", 0, 0);
     int dir_fd = DEFAULT_DIR_FD;
+    int fast = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -165,11 +184,20 @@ os_lstat(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (!FSTATAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+    if (args[1]) {
+        if (!FSTATAT_DIR_FD_CONVERTER(args[1], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    fast = PyObject_IsTrue(args[2]);
+    if (fast < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = os_lstat_impl(module, &path, dir_fd);
+    return_value = os_lstat_impl(module, &path, dir_fd, fast);
 
 exit:
     /* Cleanup for path */
@@ -11549,4 +11577,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=4192d8e09e216300 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8653c0259a7b7c5e input=a9049054013a1b77]*/

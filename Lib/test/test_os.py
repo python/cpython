@@ -613,6 +613,18 @@ class StatAttributeTests(unittest.TestCase):
             unpickled = pickle.loads(p)
             self.assertEqual(result, unpickled)
 
+    def test_stat_result_fast(self):
+        # Minimum guaranteed fields when requesting incomplete info
+        result_1 = os.stat(self.fname, fast=True)
+        result_2 = os.stat(self.fname, fast=False)
+        result_3 = os.stat(self.fname)
+        self.assertEqual(stat.S_IFMT(result_1.st_mode),
+                         stat.S_IFMT(result_2.st_mode))
+        self.assertEqual(result_1.st_size, result_2.st_size)
+        self.assertEqual(result_1.st_mtime, result_2.st_mtime)
+        # Ensure the default matches fast=False
+        self.assertEqual(result_2, result_3)
+
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
         result = os.statvfs(self.fname)

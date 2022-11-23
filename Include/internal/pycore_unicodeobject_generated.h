@@ -684,6 +684,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(fanout);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(fast);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(fd);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(fd2);

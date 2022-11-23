@@ -895,6 +895,7 @@ extern "C" {
     INIT_ID(false), \
     INIT_ID(family), \
     INIT_ID(fanout), \
+    INIT_ID(fast), \
     INIT_ID(fd), \
     INIT_ID(fd2), \
     INIT_ID(fdel), \
