@@ -1162,7 +1162,7 @@ class TestDescriptions(unittest.TestCase):
     @requires_docstrings
     def test_module_level_callable(self):
         self.assertEqual(self._get_summary_line(os.stat),
-            "stat(path, *, dir_fd=None, follow_symlinks=True)")
+            "stat(path, *, dir_fd=None, follow_symlinks=True, fast=False)")
 
     @requires_docstrings
     def test_staticmethod(self):

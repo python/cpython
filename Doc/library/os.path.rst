@@ -437,6 +437,9 @@ the :mod:`glob` module.)
    :func:`os.lstat`, or :func:`os.stat`.  This function implements the
    underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
 
+   Do not use stat results created with the *fast* argument, as they may be
+   missing information necessary to compare the two files.
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
