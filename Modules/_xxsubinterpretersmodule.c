@@ -47,8 +47,8 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
         return NULL;
     }
     int res = PyModule_AddType(mod, (PyTypeObject *)exctype);
-    Py_DECREF(exctype);
     if (res < 0) {
+        Py_DECREF(exctype);
         return NULL;
     }
     return exctype;
