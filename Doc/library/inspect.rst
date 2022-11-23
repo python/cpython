@@ -358,7 +358,7 @@ attributes:
       wrapped function is a :term:`coroutine function`.
 
 
-.. function:: markcoroutinefunction(object)
+.. function:: markcoroutinefunction(func)
 
    Decorator to mark a callable as a :term:`coroutine function` if it would not
    otherwise be detected by :func:`iscoroutinefunction`.
