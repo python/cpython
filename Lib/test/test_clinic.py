@@ -1054,6 +1054,17 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.str_converter('a', b'b', b'c'), ('a', 'b', 'c'))
         self.assertEqual(ac_tester.str_converter('a', b'b', 'c\0c'), ('a', 'b', 'c\0c'))
 
+    def test_str_converter_encoding(self):
+        with self.assertRaises(TypeError):
+            ac_tester.str_converter_encoding(1)
+        self.assertEqual(ac_tester.str_converter_encoding('a', 'b', 'c'), ('a', 'b', 'c'))
+        with self.assertRaises(TypeError):
+            ac_tester.str_converter_encoding('a', b'b\0b', 'c')
+        self.assertEqual(ac_tester.str_converter_encoding('a', b'b', bytearray([ord('c')])), ('a', 'b', 'c'))
+        self.assertEqual(ac_tester.str_converter_encoding('a', b'b', bytearray([ord('c'), 0, ord('c')])),
+                         ('a', 'b', 'c\x00c'))
+        self.assertEqual(ac_tester.str_converter_encoding('a', b'b', b'c\x00c'), ('a', 'b', 'c\x00c'))
+
     def test_py_buffer_converter(self):
         with self.assertRaises(TypeError):
             ac_tester.py_buffer_converter('a', 'b')
@@ -1227,6 +1238,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
 
+    def test_vararg_and_posonly(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_and_posonly()
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_and_posonly(1, b=2)
+        self.assertEqual(ac_tester.vararg_and_posonly(1, 2, 3, 4), (1, (2, 3, 4)))
+
     def test_vararg(self):
         with self.assertRaises(TypeError):
             ac_tester.vararg()
@@ -1253,6 +1271,19 @@ class ClinicFunctionalTest(unittest.TestCase):
 
     def test_gh_32092_kw_pass(self):
         ac_tester.gh_32092_kw_pass(1, 2, 3)
+
+    def test_gh_99233_refcount(self):
+        arg = '*A unique string is not referenced by anywhere else.*'
+        arg_refcount_origin = sys.getrefcount(arg)
+        ac_tester.gh_99233_refcount(arg)
+        arg_refcount_after = sys.getrefcount(arg)
+        self.assertEqual(arg_refcount_origin, arg_refcount_after)
+
+    def test_gh_99240_double_free(self):
+        expected_error = r'gh_99240_double_free\(\) argument 2 must be encoded string without null bytes, not str'
+        with self.assertRaisesRegex(TypeError, expected_error):
+            ac_tester.gh_99240_double_free('a', '\0b')
+
 
 if __name__ == "__main__":
     unittest.main()

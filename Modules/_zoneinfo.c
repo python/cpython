@@ -220,8 +220,7 @@ zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
     }
 
     PyObject *rv = PyObject_CallMethod(file_obj, "close", NULL);
-    Py_DECREF(file_obj);
-    file_obj = NULL;
+    Py_SETREF(file_obj, NULL);
     if (rv == NULL) {
         goto error;
     }

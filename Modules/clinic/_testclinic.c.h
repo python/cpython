@@ -1165,6 +1165,43 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(str_converter_encoding__doc__,
+"str_converter_encoding($module, a, b, c, /)\n"
+"--\n"
+"\n");
+
+#define STR_CONVERTER_ENCODING_METHODDEF    \
+    {"str_converter_encoding", _PyCFunction_CAST(str_converter_encoding), METH_FASTCALL, str_converter_encoding__doc__},
+
+static PyObject *
+str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
+                            Py_ssize_t c_length);
+
+static PyObject *
+str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+    char *c = NULL;
+    Py_ssize_t c_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "esetet#:str_converter_encoding",
+        "idna", &a, "idna", &b, "idna", &c, &c_length)) {
+        goto exit;
+    }
+    return_value = str_converter_encoding_impl(module, a, b, c, c_length);
+    /* Post parse cleanup for a */
+    PyMem_FREE(a);
+    /* Post parse cleanup for b */
+    PyMem_FREE(b);
+    /* Post parse cleanup for c */
+    PyMem_FREE(c);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(py_buffer_converter__doc__,
 "py_buffer_converter($module, a, b, /)\n"
 "--\n"
@@ -2349,6 +2386,39 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(vararg_and_posonly__doc__,
+             "vararg_and_posonly($module, a, /, *args)\n"
+             "--\n"
+             "\n");
+
+#define VARARG_AND_POSONLY_METHODDEF    \
+    {"vararg_and_posonly", _PyCFunction_CAST(vararg_and_posonly), METH_FASTCALL, vararg_and_posonly__doc__},
+
+static PyObject *
+vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args);
+
+static PyObject *
+vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("vararg_and_posonly", nargs, 1, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = PyTuple_New(nargs - 1);
+    for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[1 + i]));
+    }
+    return_value = vararg_and_posonly_impl(module, a, __clinic_args);
+
+    exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(vararg__doc__,
 "vararg($module, /, a, *args)\n"
 "--\n"
@@ -2677,3 +2747,69 @@ exit:
     return return_value;
 }
 /*[clinic end generated code: output=8895d3fff51da68a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gh_99233_refcount__doc__,
+             "gh_99233_refcount($module, /, *args)\n"
+             "--\n"
+             "\n"
+             "Proof-of-concept of GH-99233 refcount error bug.");
+
+#define GH_99233_REFCOUNT_METHODDEF    \
+    {"gh_99233_refcount", _PyCFunction_CAST(gh_99233_refcount), METH_FASTCALL, gh_99233_refcount__doc__},
+
+static PyObject *
+gh_99233_refcount_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("gh_99233_refcount", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = gh_99233_refcount_impl(module, __clinic_args);
+
+    exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(gh_99240_double_free__doc__,
+             "gh_99240_double_free($module, a, b, /)\n"
+             "--\n"
+             "\n"
+             "Proof-of-concept of GH-99240 double-free bug.");
+
+#define GH_99240_DOUBLE_FREE_METHODDEF    \
+    {"gh_99240_double_free", _PyCFunction_CAST(gh_99240_double_free), METH_FASTCALL, gh_99240_double_free__doc__},
+
+static PyObject *
+gh_99240_double_free_impl(PyObject *module, char *a, char *b);
+
+static PyObject *
+gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+
+    if (!_PyArg_ParseStack(args, nargs, "eses:gh_99240_double_free",
+                           "idna", &a, "idna", &b)) {
+        goto exit;
+    }
+    return_value = gh_99240_double_free_impl(module, a, b);
+    /* Post parse cleanup for a */
+    PyMem_FREE(a);
+    /* Post parse cleanup for b */
+    PyMem_FREE(b);
+
+    exit:
+    return return_value;
+}
+/*[clinic end generated code: output=49dced2c99bcd0fb input=a9049054013a1b77]*/
