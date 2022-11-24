@@ -2616,7 +2616,6 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
 {
     STRUCT_STAT st;
     int result;
-    unsigned int result_mask = ST_DEFAULT_STX_MASK;
 
 #ifdef HAVE_FSTATAT
     int fstatat_unavailable = 0;
@@ -3141,13 +3140,10 @@ os_statx_impl(PyObject *module, path_t *path, int mask, int dir_fd,
 
 #else /* MS_WINDOWS */
 
-#ifdef AT_SYMLINK_NOFOLLOW
     if (!follow_symlinks) {
         flags |= AT_SYMLINK_NOFOLLOW;
     }
-#endif
-
-    return posix_do_statx(module, "stat", path, dir_fd, follow_symlinks);
+    return posix_do_statx(module, path, mask, dir_fd, flags);
 #endif
 }
 
