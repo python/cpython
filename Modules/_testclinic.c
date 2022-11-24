@@ -892,6 +892,41 @@ keyword_only_parameter_impl(PyObject *module, PyObject *a)
 }
 
 
+/*[clinic input]
+vararg_and_posonly
+
+    a: object
+    *args: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
+/*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
+{
+    return pack_arguments_newref(2, a, args);
+}
+
+
+/*[clinic input]
+gh_99233_refcount
+
+    *args: object
+    /
+
+Proof-of-concept of GH-99233 refcount error bug.
+
+[clinic start generated code]*/
+
+static PyObject *
+gh_99233_refcount_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=585855abfbca9a7f input=85f5fb47ac91a626]*/
+{
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -933,6 +968,8 @@ static PyMethodDef tester_methods[] = {
     POSONLY_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     POSONLY_OPT_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     KEYWORD_ONLY_PARAMETER_METHODDEF
+    VARARG_AND_POSONLY_METHODDEF
+    GH_99233_REFCOUNT_METHODDEF
     {NULL, NULL}
 };
 

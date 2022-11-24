@@ -1914,4 +1914,69 @@ keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=83f439d06635a2e9 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(vararg_and_posonly__doc__,
+"vararg_and_posonly($module, a, /, *args)\n"
+"--\n"
+"\n");
+
+#define VARARG_AND_POSONLY_METHODDEF    \
+    {"vararg_and_posonly", _PyCFunction_CAST(vararg_and_posonly), METH_FASTCALL, vararg_and_posonly__doc__},
+
+static PyObject *
+vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args);
+
+static PyObject *
+vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("vararg_and_posonly", nargs, 1, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = PyTuple_New(nargs - 1);
+    for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[1 + i]));
+    }
+    return_value = vararg_and_posonly_impl(module, a, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(gh_99233_refcount__doc__,
+"gh_99233_refcount($module, /, *args)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-99233 refcount error bug.");
+
+#define GH_99233_REFCOUNT_METHODDEF    \
+    {"gh_99233_refcount", _PyCFunction_CAST(gh_99233_refcount), METH_FASTCALL, gh_99233_refcount__doc__},
+
+static PyObject *
+gh_99233_refcount_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("gh_99233_refcount", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = gh_99233_refcount_impl(module, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+/*[clinic end generated code: output=16848e04bd5ddf7d input=a9049054013a1b77]*/

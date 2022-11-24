@@ -1211,6 +1211,20 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter(1)
         self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
+    def test_vararg_and_posonly(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_and_posonly()
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_and_posonly(1, b=2)
+        self.assertEqual(ac_tester.vararg_and_posonly(1, 2, 3, 4), (1, (2, 3, 4)))
+
+    def test_gh_99233_refcount(self):
+        arg = '*A unique string is not referenced by anywhere else.*'
+        arg_refcount_origin = sys.getrefcount(arg)
+        ac_tester.gh_99233_refcount(arg)
+        arg_refcount_after = sys.getrefcount(arg)
+        self.assertEqual(arg_refcount_origin, arg_refcount_after)
+
 
 if __name__ == "__main__":
     unittest.main()
