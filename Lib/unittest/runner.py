@@ -45,7 +45,6 @@ class TextTestResult(result.TestResult):
         self.descriptions = descriptions
         self._newline = True
         self.durations = durations
-        self._lastDuration = None
 
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
@@ -139,10 +138,6 @@ class TextTestResult(result.TestResult):
         elif self.dots:
             self.stream.write("u")
             self.stream.flush()
-
-    def addDuration(self, test, duration):
-        super(TextTestResult, self).addDuration(test, duration)
-        self._lastDuration = duration
 
     def printErrors(self):
         if self.dots or self.showAll:
