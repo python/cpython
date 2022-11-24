@@ -793,7 +793,7 @@ always available.
    is given, return the module that many calls below the top of the stack.  If
    that is deeper than the call stack, or if the module is unidentifiable,
    ``None`` is returned.  The default for *depth* is zero, returning the
-   function at the top of the call stack.
+   module at the top of the call stack.
 
    .. audit-event:: sys._getcallingmodule depth sys._getcallingmodule
 
