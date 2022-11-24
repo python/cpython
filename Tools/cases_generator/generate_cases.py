@@ -74,9 +74,15 @@ class Formatter:
         self.emit("}")
 
 
-# This is not a data class
-class Instruction(parser.InstDef):
+@dataclasses.dataclass
+class Instruction:
     """An instruction with additional data and code."""
+
+    # Parts of the underlying instruction definition
+    inst: parser.InstDef
+    kind: typing.Literal["inst", "op"]
+    name: str
+    block: parser.Block
 
     # Computed by constructor
     always_exits: bool
@@ -90,17 +96,19 @@ class Instruction(parser.InstDef):
     predicted: bool = False
 
     def __init__(self, inst: parser.InstDef):
-        super().__init__(inst.kind, inst.name, inst.inputs, inst.outputs, inst.block)
-        self.context = inst.context
+        self.inst = inst
+        self.kind = inst.kind
+        self.name = inst.name
+        self.block = inst.block
         self.always_exits = always_exits(self.block)
         self.cache_effects = [
-            effect for effect in self.inputs if isinstance(effect, parser.CacheEffect)
+            effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
         self.input_effects = [
-            effect for effect in self.inputs if isinstance(effect, parser.StackEffect)
+            effect for effect in inst.inputs if isinstance(effect, parser.StackEffect)
         ]
-        self.output_effects = self.outputs  # For consistency/completeness
+        self.output_effects = inst.outputs  # For consistency/completeness
 
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
@@ -235,34 +243,31 @@ class Component:
 
 
 # TODO: Use a common base class for {Super,Macro}Instruction
+
 @dataclasses.dataclass
-class SuperInstruction:
+class SuperOrMacroInstruction:
+    """Common fields for super- and macro instructions."""
+
+    name: str
+    stack: list[str]
+    initial_sp: int
+    final_sp: int
+
+
+@dataclasses.dataclass
+class SuperInstruction(SuperOrMacroInstruction):
     """A super-instruction."""
 
     super: parser.Super
-    stack: list[str]
-    initial_sp: int
-    final_sp: int
     parts: list[Component]
-
-    @property
-    def name(self) -> str:
-        return self.super.name
 
 
 @dataclasses.dataclass
-class MacroInstruction:
+class MacroInstruction(SuperOrMacroInstruction):
     """A macro instruction."""
 
     macro: parser.Macro
-    stack: list[str]
-    initial_sp: int
-    final_sp: int
     parts: list[Component | parser.CacheEffect]
-
-    @property
-    def name(self) -> str:
-        return self.macro.name
 
 
 class Analyzer:
@@ -369,7 +374,7 @@ class Analyzer:
                 else:
                     self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
-                        instr,  # TODO: Use better location
+                        instr.inst,  # TODO: Use better location
                     )
 
     def map_families(self) -> None:
@@ -453,7 +458,7 @@ class Analyzer:
                 case _:
                     typing.assert_never(component)
         final_sp = sp
-        return SuperInstruction(super, stack, initial_sp, final_sp, parts)
+        return SuperInstruction(super.name, stack, initial_sp, final_sp, super, parts)
 
     def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
@@ -479,12 +484,10 @@ class Analyzer:
                 case _:
                     typing.assert_never(component)
         final_sp = sp
-        return MacroInstruction(macro, stack, initial_sp, final_sp, parts)
+        return MacroInstruction(macro.name, stack, initial_sp, final_sp, macro, parts)
 
     def check_super_components(self, super: parser.Super) -> list[Instruction]:
         components: list[Instruction] = []
-        if not super.ops:
-            self.error(f"Super-instruction has no operands", super)
         for op in super.ops:
             if op.name not in self.instrs:
                 self.error(f"Unknown instruction {op.name!r}", super)
@@ -496,8 +499,6 @@ class Analyzer:
         self, macro: parser.Macro
     ) -> list[InstructionOrCacheEffect]:
         components: list[InstructionOrCacheEffect] = []
-        if not macro.uops:
-            self.error(f"Macro instruction has no operands", macro)
         for uop in macro.uops:
             match uop:
                 case parser.OpName(name):
