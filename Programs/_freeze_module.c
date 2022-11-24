@@ -194,6 +194,7 @@ write_frozen(const char *outpath, const char *inpath, const char *name,
 
     if (ferror(outfile)) {
         fprintf(stderr, "error when writing to '%s'\n", outpath);
+        fclose(outfile);
         return -1;
     }
     fclose(outfile);
