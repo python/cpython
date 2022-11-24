@@ -3440,7 +3440,7 @@ class str_converter(CConverter):
     def post_parsing(self):
         if self.encoding:
             name = self.name
-            return "".join(["if (", name, ") {\n   PyMem_FREE(", name, ");\n}\n"])
+            return f"PyMem_FREE({name});\n"
 
     def parse_arg(self, argname, displayname):
         if self.format_unit == 's':
