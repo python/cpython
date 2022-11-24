@@ -78,15 +78,6 @@
             DISPATCH();
         }
 
-        TARGET(END_FOR) {
-            PyObject *value2 = PEEK(1);
-            PyObject *value1 = PEEK(2);
-            Py_DECREF(value1);
-            Py_DECREF(value2);
-            STACK_SHRINK(2);
-            DISPATCH();
-        }
-
         TARGET(UNARY_POSITIVE) {
             PyObject *value = PEEK(1);
             PyObject *res;
@@ -446,7 +437,7 @@
 
         TARGET(BINARY_SUBSCR_GETITEM) {
             uint32_t type_version = read_u32(next_instr + 1);
-            uint16_t func_version = *(next_instr + 3);
+            uint16_t func_version = read_u16(next_instr + 3);
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
             PyTypeObject *tp = Py_TYPE(container);
@@ -2754,31 +2745,32 @@
         }
 
         TARGET(WITH_EXCEPT_START) {
+            PyObject *val = PEEK(1);
+            PyObject *lasti = PEEK(3);
+            PyObject *exit_func = PEEK(4);
+            PyObject *res;
             /* At the top of the stack are 4 values:
-               - TOP = exc_info()
-               - SECOND = previous exception
-               - THIRD: lasti of exception in exc_info()
-               - FOURTH: the context.__exit__ bound method
+               - val: TOP = exc_info()
+               - unused: SECOND = previous exception
+               - lasti: THIRD = lasti of exception in exc_info()
+               - exit_func: FOURTH = the context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
             */
-            PyObject *exit_func;
-            PyObject *exc, *val, *tb, *res;
+            PyObject *exc, *tb;
 
-            val = TOP();
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);
             Py_XDECREF(tb);
-            assert(PyLong_Check(PEEK(3)));
-            exit_func = PEEK(4);
+            assert(PyLong_Check(lasti));
+            (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};
             res = PyObject_Vectorcall(exit_func, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            if (res == NULL)
-                goto error;
-
-            PUSH(res);
+            if (res == NULL) goto error;
+            STACK_GROW(1);
+            POKE(1, res);
             DISPATCH();
         }
 
@@ -3711,13 +3703,14 @@
         }
 
         TARGET(LOAD_FAST__LOAD_FAST) {
+            PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_1 = value;
             }
             NEXTOPARG();
             next_instr++;
@@ -3726,20 +3719,23 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_2 = value;
             }
+            STACK_GROW(2);
+            POKE(1, _tmp_2);
+            POKE(2, _tmp_1);
             DISPATCH();
         }
 
         TARGET(LOAD_FAST__LOAD_CONST) {
+            PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_1 = value;
             }
             NEXTOPARG();
             next_instr++;
@@ -3747,17 +3743,19 @@
                 PyObject *value;
                 value = GETITEM(consts, oparg);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_2 = value;
             }
+            STACK_GROW(2);
+            POKE(1, _tmp_2);
+            POKE(2, _tmp_1);
             DISPATCH();
         }
 
         TARGET(STORE_FAST__LOAD_FAST) {
+            PyObject *_tmp_1 = PEEK(1);
             {
-                PyObject *value = PEEK(1);
+                PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
-                STACK_SHRINK(1);
             }
             NEXTOPARG();
             next_instr++;
@@ -3766,35 +3764,37 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_1 = value;
             }
+            POKE(1, _tmp_1);
             DISPATCH();
         }
 
         TARGET(STORE_FAST__STORE_FAST) {
+            PyObject *_tmp_1 = PEEK(2);
+            PyObject *_tmp_2 = PEEK(1);
             {
-                PyObject *value = PEEK(1);
+                PyObject *value = _tmp_2;
                 SETLOCAL(oparg, value);
-                STACK_SHRINK(1);
             }
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *value = PEEK(1);
+                PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
-                STACK_SHRINK(1);
             }
+            STACK_SHRINK(2);
             DISPATCH();
         }
 
         TARGET(LOAD_CONST__LOAD_FAST) {
+            PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_1 = value;
             }
             NEXTOPARG();
             next_instr++;
@@ -3803,8 +3803,25 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                STACK_GROW(1);
-                POKE(1, value);
+                _tmp_2 = value;
             }
+            STACK_GROW(2);
+            POKE(1, _tmp_2);
+            POKE(2, _tmp_1);
+            DISPATCH();
+        }
+
+        TARGET(END_FOR) {
+            PyObject *_tmp_1 = PEEK(2);
+            PyObject *_tmp_2 = PEEK(1);
+            {
+                PyObject *value = _tmp_2;
+                Py_DECREF(value);
+            }
+            {
+                PyObject *value = _tmp_1;
+                Py_DECREF(value);
+            }
+            STACK_SHRINK(2);
             DISPATCH();
         }

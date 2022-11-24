@@ -2163,8 +2163,7 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     for (i = 0; i < argc; i++) {
         PyObject *s = unicodeFromTclString(argv[i]);
         if (!s) {
-            Py_DECREF(v);
-            v = NULL;
+            Py_SETREF(v, NULL);
             goto finally;
         }
         PyTuple_SET_ITEM(v, i, s);

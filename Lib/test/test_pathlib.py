@@ -2411,6 +2411,13 @@ class _BasePathTest(object):
             self.assertIs((P / 'linkA\udfff').is_file(), False)
             self.assertIs((P / 'linkA\x00').is_file(), False)
 
+    def test_is_junction(self):
+        P = self.cls(BASE)
+
+        with mock.patch.object(P._flavour, 'pathmod'):
+            self.assertEqual(P.is_junction(), P._flavour.pathmod.isjunction.return_value)
+            P._flavour.pathmod.isjunction.assert_called_once_with(P)
+
     def test_is_fifo_false(self):
         P = self.cls(BASE)
         self.assertFalse((P / 'fileA').is_fifo())
