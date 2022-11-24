@@ -244,6 +244,7 @@ class Component:
 
 # TODO: Use a common base class for {Super,Macro}Instruction
 
+
 @dataclasses.dataclass
 class SuperOrMacroInstruction:
     """Common fields for super- and macro instructions."""
@@ -583,11 +584,7 @@ class Analyzer:
 
     def write_super(self, sup: SuperInstruction) -> None:
         """Write code for a super-instruction."""
-        self.out.emit("")
-
-        with self.out.block(f"TARGET({sup.name})"):
-            self.write_stack_vars(sup.stack, sup.initial_sp)
-
+        with self.wrap_super_or_macro(sup):
             first = True
             for comp in sup.parts:
                 if not first:
@@ -598,16 +595,9 @@ class Analyzer:
                 if comp.instr.cache_offset:
                     self.out.emit(f"next_instr += {comp.instr.cache_offset};")
 
-            self.write_stack_pokes(sup.stack, sup.initial_sp, sup.final_sp)
-            self.out.emit("DISPATCH();")
-
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
-        self.out.emit("")
-
-        with self.out.block(f"TARGET({mac.name})"):
-            self.write_stack_vars(mac.stack, mac.initial_sp)
-
+        with self.wrap_super_or_macro(mac):
             cache_adjust = 0
             for part in mac.parts:
                 match part:
@@ -617,27 +607,30 @@ class Analyzer:
                         comp.write_body(self.out, cache_adjust)
                         cache_adjust += comp.instr.cache_offset
 
-            self.write_stack_pokes(mac.stack, mac.initial_sp, mac.final_sp)
             if cache_adjust:
                 self.out.emit(f"next_instr += {cache_adjust};")
+
+    @contextlib.contextmanager
+    def wrap_super_or_macro(self, up: SuperOrMacroInstruction):
+        """Shared boilerplate for super- and macro instructions."""
+        self.out.emit("")
+        with self.out.block(f"TARGET({up.name})"):
+            for i, var in enumerate(up.stack):
+                if i < up.initial_sp:
+                    self.out.emit(f"PyObject *{var} = PEEK({up.initial_sp - i});")
+                else:
+                    self.out.emit(f"PyObject *{var};")
+
+            yield
+
+            if up.final_sp > up.initial_sp:
+                self.out.emit(f"STACK_GROW({up.final_sp - up.initial_sp});")
+            elif up.final_sp < up.initial_sp:
+                self.out.emit(f"STACK_SHRINK({up.initial_sp - up.final_sp});")
+            for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
+                self.out.emit(f"POKE({i}, {var});")
+
             self.out.emit(f"DISPATCH();")
-
-    def write_stack_vars(self, stack: list[str], initial_sp: int) -> None:
-        for i, var in enumerate(stack):
-            if i < initial_sp:
-                self.out.emit(f"PyObject *{var} = PEEK({initial_sp - i});")
-            else:
-                self.out.emit(f"PyObject *{var};")
-
-    def write_stack_pokes(
-        self, stack: list[str], initial_sp: int, final_sp: int
-    ) -> None:
-        if final_sp > initial_sp:
-            self.out.emit(f"STACK_GROW({final_sp - initial_sp});")
-        elif final_sp < initial_sp:
-            self.out.emit(f"STACK_SHRINK({initial_sp - final_sp});")
-        for i, var in enumerate(reversed(stack[:final_sp]), 1):
-            self.out.emit(f"POKE({i}, {var});")
 
 
 def always_exits(block: parser.Block) -> bool:
