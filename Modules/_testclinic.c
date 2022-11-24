@@ -551,6 +551,64 @@ error:
 }
 
 
+/*[clinic input]
+str_converter_encoding
+
+    a: str(encoding="idna")
+    b: str(encoding="idna", accept={bytes, bytearray, str})
+    c: str(encoding="idna", accept={bytes, bytearray, str}, zeroes=True)
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
+                            Py_ssize_t c_length)
+/*[clinic end generated code: output=af68766049248a1c input=0c5cf5159d0e870d]*/
+{
+    assert(!PyErr_Occurred());
+    PyObject *out[3] = {NULL,};
+    int i = 0;
+    PyObject *arg;
+
+    arg = PyUnicode_FromString(a);
+    assert(arg || PyErr_Occurred());
+    if (!arg) {
+        goto error;
+    }
+    out[i++] = arg;
+
+    arg = PyUnicode_FromString(b);
+    assert(arg || PyErr_Occurred());
+    if (!arg) {
+        goto error;
+    }
+    out[i++] = arg;
+
+    arg = PyUnicode_FromStringAndSize(c, c_length);
+    assert(arg || PyErr_Occurred());
+    if (!arg) {
+        goto error;
+    }
+    out[i++] = arg;
+
+    PyObject *tuple = PyTuple_New(3);
+    if (!tuple) {
+        goto error;
+    }
+    for (int j = 0; j < 3; j++) {
+        PyTuple_SET_ITEM(tuple, j, out[j]);
+    }
+    return tuple;
+
+error:
+    for (int j = 0; j < i; j++) {
+        Py_DECREF(out[j]);
+    }
+    return NULL;
+}
+
+
 static PyObject *
 bytes_from_buffer(Py_buffer *buf)
 {
@@ -892,6 +950,34 @@ keyword_only_parameter_impl(PyObject *module, PyObject *a)
 }
 
 
+/*[clinic input]
+gh_99240_double_free
+
+    a: str(encoding="idna")
+    b: str(encoding="idna")
+    /
+
+Proof-of-concept of GH-99240 double-free bug.
+
+If parsing `a` successes, `a` will be assigned an address points to an allocated memory.
+After that, if parsing `b` fails, the memory which `a` points to is freed by function `_PyArg_ParseStack`,
+and `_PyArg_ParseStack` returns 0, then control flow goes to label "exit".
+At this time, `a` is not NULL, so the memory it points to is freed again,
+which cause a double-free problem and a runtime crash.
+
+Calling this function by gh_99240_double_free('a', '\0b')
+to trigger this bug (crash).
+
+[clinic start generated code]*/
+
+static PyObject *
+gh_99240_double_free_impl(PyObject *module, char *a, char *b)
+/*[clinic end generated code: output=586dc714992fe2ed input=419d3a3790de435e]*/
+{
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -916,6 +1002,7 @@ static PyMethodDef tester_methods[] = {
     DOUBLE_CONVERTER_METHODDEF
     PY_COMPLEX_CONVERTER_METHODDEF
     STR_CONVERTER_METHODDEF
+    STR_CONVERTER_ENCODING_METHODDEF
     PY_BUFFER_CONVERTER_METHODDEF
     KEYWORDS_METHODDEF
     KEYWORDS_KWONLY_METHODDEF
@@ -933,6 +1020,7 @@ static PyMethodDef tester_methods[] = {
     POSONLY_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     POSONLY_OPT_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     KEYWORD_ONLY_PARAMETER_METHODDEF
+    GH_99240_DOUBLE_FREE_METHODDEF
     {NULL, NULL}
 };
 

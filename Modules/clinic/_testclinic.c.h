@@ -1165,6 +1165,49 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(str_converter_encoding__doc__,
+"str_converter_encoding($module, a, b, c, /)\n"
+"--\n"
+"\n");
+
+#define STR_CONVERTER_ENCODING_METHODDEF    \
+    {"str_converter_encoding", _PyCFunction_CAST(str_converter_encoding), METH_FASTCALL, str_converter_encoding__doc__},
+
+static PyObject *
+str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
+                            Py_ssize_t c_length);
+
+static PyObject *
+str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+    char *c = NULL;
+    Py_ssize_t c_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "esetet#:str_converter_encoding",
+        "idna", &a, "idna", &b, "idna", &c, &c_length)) {
+        goto exit;
+    }
+    return_value = str_converter_encoding_impl(module, a, b, c, c_length);
+    /* Post operation for a */
+    if (a) {
+       PyMem_FREE(a);
+    }
+    /* Post operation for b */
+    if (b) {
+       PyMem_FREE(b);
+    }
+    /* Post operation for c */
+    if (c) {
+       PyMem_FREE(c);
+    }
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(py_buffer_converter__doc__,
 "py_buffer_converter($module, a, b, /)\n"
 "--\n"
@@ -2288,4 +2331,50 @@ keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a9212f8e6ba18bba input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gh_99240_double_free__doc__,
+"gh_99240_double_free($module, a, b, /)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-99240 double-free bug.\n"
+"\n"
+"If parsing `a` successes, `a` will be assigned an address points to an allocated memory.\n"
+"After that, if parsing `b` fails, the memory which `a` points to is freed by function `_PyArg_ParseStack`,\n"
+"and `_PyArg_ParseStack` returns 0, then control flow goes to label \"exit\".\n"
+"At this time, `a` is not NULL, so the memory it points to is freed again,\n"
+"which cause a double-free problem and a runtime crash.\n"
+"\n"
+"Calling this function by gh_99240_double_free(\'a\', \'\\0b\')\n"
+"to trigger this bug (crash).");
+
+#define GH_99240_DOUBLE_FREE_METHODDEF    \
+    {"gh_99240_double_free", _PyCFunction_CAST(gh_99240_double_free), METH_FASTCALL, gh_99240_double_free__doc__},
+
+static PyObject *
+gh_99240_double_free_impl(PyObject *module, char *a, char *b);
+
+static PyObject *
+gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+
+    if (!_PyArg_ParseStack(args, nargs, "eses:gh_99240_double_free",
+        "idna", &a, "idna", &b)) {
+        goto exit;
+    }
+    return_value = gh_99240_double_free_impl(module, a, b);
+    /* Post operation for a */
+    if (a) {
+       PyMem_FREE(a);
+    }
+    /* Post operation for b */
+    if (b) {
+       PyMem_FREE(b);
+    }
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=a2e5c02750be8f94 input=a9049054013a1b77]*/
