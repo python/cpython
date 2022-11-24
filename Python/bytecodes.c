@@ -3475,10 +3475,55 @@ dummy_func(
             }
             assert(PyTuple_CheckExact(callargs));
 
-            result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
-            Py_DECREF(func);
-            Py_DECREF(callargs);
-            Py_XDECREF(kwargs);
+            if (Py_IS_TYPE(func, &PyFunction_Type) &&
+                tstate->interp->eval_frame == NULL &&
+                ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                assert(PyTuple_CheckExact(callargs));
+                Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+
+                bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
+                PyObject *kwnames = NULL;
+                PyObject *const *newargs = has_dict
+                    ? _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs),
+                        nargs, kwargs, &kwnames)
+                    : &PyTuple_GET_ITEM(callargs, 0);
+                if (newargs == NULL) {
+                    goto error;
+                }
+                if (!has_dict) {
+                    /* We need to incref all our args since the new frame steals the references. */
+                    for (Py_ssize_t i = 0; i < nargs; ++i) {
+                        Py_INCREF(PyTuple_GET_ITEM(callargs, i));
+                    }
+                }
+                _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+                    tstate, (PyFunctionObject *)func, locals,
+                    newargs, nargs, kwnames
+                );
+                STACK_SHRINK(2); /* get rid of func and NULL */
+                Py_DECREF(callargs);
+                Py_XDECREF(kwargs);
+                if (has_dict) {
+                    _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
+                }
+                if (new_frame == NULL) {
+                    goto error;
+                }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                frame->prev_instr = next_instr - 1;
+                new_frame->previous = frame;
+                cframe.current_frame = frame = new_frame;
+                CALL_STAT_INC(inlined_py_calls);
+                goto start_frame;
+            }
+            else {
+                result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
+                Py_DECREF(func);
+                Py_DECREF(callargs);
+                Py_XDECREF(kwargs);
+            }
 
             STACK_SHRINK(1);
             assert(TOP() == NULL);
