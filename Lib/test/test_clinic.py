@@ -1220,6 +1220,39 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.keyword_only_parameter(1)
         self.assertEqual(ac_tester.keyword_only_parameter(a=1), (1,))
 
+    def test_posonly_vararg(self):
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg()
+        self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
+        self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
+        self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
+
+    def test_vararg(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg()
+        with self.assertRaises(TypeError):
+            ac_tester.vararg(1, b=2)
+        self.assertEqual(ac_tester.vararg(1, 2, 3, 4), (1, (2, 3, 4)))
+
+    def test_vararg_with_default(self):
+        with self.assertRaises(TypeError):
+            ac_tester.vararg_with_default()
+        self.assertEqual(ac_tester.vararg_with_default(1, b=False), (1, (), False))
+        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), False))
+        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4, b=True), (1, (2, 3, 4), True))
+
+    def test_vararg_with_only_defaults(self):
+        self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))
+        self.assertEqual(ac_tester.vararg_with_only_defaults(b=2), ((), 2))
+        self.assertEqual(ac_tester.vararg_with_only_defaults(1, b=2), ((1, ), 2))
+        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4), ((1, 2, 3, 4), None))
+        self.assertEqual(ac_tester.vararg_with_only_defaults(1, 2, 3, 4, b=5), ((1, 2, 3, 4), 5))
+
+    def test_gh_32092_oob(self):
+        ac_tester.gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
+
+    def test_gh_32092_kw_pass(self):
+        ac_tester.gh_32092_kw_pass(1, 2, 3)
 
 if __name__ == "__main__":
     unittest.main()
