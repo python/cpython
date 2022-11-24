@@ -2331,7 +2331,6 @@ posonly_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
-    Py_ssize_t noptargs = Py_MIN(nargs, 2) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
     PyObject *b;
     PyObject *__clinic_args = NULL;
@@ -2391,7 +2390,6 @@ vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwna
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
-    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *__clinic_args = NULL;
 
@@ -2690,4 +2688,4 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=8d776b1fc84b649e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6af75e9c44ffab5c input=a9049054013a1b77]*/
