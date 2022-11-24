@@ -2514,13 +2514,13 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
 #endif
 #endif
       val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
-      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
-                                val);
+      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX, val);
     }
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
     PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
                               PyLong_FromLong((long)st->st_flags));
+#endif
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX,
@@ -2542,10 +2542,23 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
                               PyLong_FromUnsignedLong(stx_mask));
 
 #ifdef HAVE_STATX
+    /* ensure unused fields that are present for statx are initialized */
     PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_IDX, PyLong_FromLong(0));
     PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_MASK_IDX, PyLong_FromLong(0));
 #ifdef STATX_MNT_ID
     PyStructSequence_SET_ITEM(v, STX_MNT_ID_IDX, PyLong_FromLong(0));
+#endif
+#ifndef HAVE_STRUCT_STAT_ST_BLKSIZE
+    PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX, PyLong_FromLong(0));
+#endif
+#ifndef HAVE_STRUCT_STAT_ST_BLOCKS
+    PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX, PyLong_FromLong(0));
+#endif
+#ifndef HAVE_STRUCT_STAT_ST_RDEV
+    PyStructSequence_SET_ITEM(v, ST_RDEV_IDX, PyLong_FromLong(0));
+#endif
+#ifndef HAVE_STRUCT_STAT_ST_FLAGS
+    PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX, PyLong_FromLong(0));
 #endif
 #endif
 
@@ -2615,7 +2628,7 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
                               PyLong_FromUnsignedLongLong(st->stx_mnt_id));
 #endif
 
-
+    /* ensure unused fields that are present for regular stat are initialized */
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
     PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX, PyLong_FromLong(0));
 #endif
