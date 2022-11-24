@@ -114,9 +114,12 @@ def _make_class_unpicklable(obj):
         setattr(obj, '__module__', '<unknown>')
 
 def _iter_bits_lsb(num):
-    # num must be an integer
+    # num must be a positive integer
+    original = num
     if isinstance(num, Enum):
         num = num.value
+    if num < 0:
+        raise ValueError('%r is not a positive integer' % original)
     while num:
         b = num & (~num + 1)
         yield b
@@ -417,7 +420,7 @@ class _EnumDict(dict):
             value = value.value
         elif _is_descriptor(value):
             pass
-        # TODO: uncomment next three lines in 3.12
+        # TODO: uncomment next three lines in 3.13
         # elif _is_internal_class(self._cls_name, value):
         #     # do nothing, name will be a normal attribute
         #     pass
@@ -689,13 +692,15 @@ class EnumType(type):
         """
         return True
 
-    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None):
+    def __call__(cls, value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None):
         """
         Either returns an existing member, or creates a new enum class.
 
         This method is used both when an enum class is given a value to match
         to an enumeration member (i.e. Color(3)) and for the functional API
         (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
+
+        The value lookup branch is chosen if the enum is final.
 
         When used for the functional API:
 
@@ -714,12 +719,15 @@ class EnumType(type):
 
         `type`, if set, will be mixed in as the first base class.
         """
-        if names is None:  # simple value lookup
+        if cls._member_map_:
+            # simple value lookup if members exist
+            if names:
+                value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
         return cls._create_(
-                value,
-                names,
+                class_name=value,
+                names=names,
                 module=module,
                 qualname=qualname,
                 type=type,
@@ -1838,6 +1846,9 @@ class verify:
                 for name, alias in enumeration._member_map_.items():
                     if name in member_names:
                         # not an alias
+                        continue
+                    if alias.value < 0:
+                        # negative numbers are not checked
                         continue
                     values = list(_iter_bits_lsb(alias.value))
                     missed = [v for v in values if v not in member_values]

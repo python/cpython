@@ -1,0 +1,4 @@
+Improve error messages when there's a syntax error with call arguments. The following three cases are covered:
+- No value is assigned to a named argument, eg ``foo(a=)``.
+- A value is assigned to a star argument, eg ``foo(*args=[0])``.
+- A value is assigned to a double-star keyword argument, eg ``foo(**kwarg={'a': 0})``.
