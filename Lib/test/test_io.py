@@ -891,7 +891,6 @@ class IOTest(unittest.TestCase):
     def test_opener_invalid_fd(self):
         # Check that OSError is raised with EBADF error code if the opener returns an invalid
         # file descriptor (see gh-82212).
-        
         fd = os_helper.make_bad_fd()
         with self.assertRaises(OSError) as cm:
             self.open('foo', opener=lambda name, flags: fd)
