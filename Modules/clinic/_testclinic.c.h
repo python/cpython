@@ -1159,6 +1159,43 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(str_converter_encoding__doc__,
+"str_converter_encoding($module, a, b, c, /)\n"
+"--\n"
+"\n");
+
+#define STR_CONVERTER_ENCODING_METHODDEF    \
+    {"str_converter_encoding", (PyCFunction)(void(*)(void))str_converter_encoding, METH_FASTCALL, str_converter_encoding__doc__},
+
+static PyObject *
+str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
+                            Py_ssize_clean_t c_length);
+
+static PyObject *
+str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+    char *c = NULL;
+    Py_ssize_clean_t c_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "esetet#:str_converter_encoding",
+        "idna", &a, "idna", &b, "idna", &c, &c_length)) {
+        goto exit;
+    }
+    return_value = str_converter_encoding_impl(module, a, b, c, c_length);
+    /* Post parse cleanup for a */
+    PyMem_FREE(a);
+    /* Post parse cleanup for b */
+    PyMem_FREE(b);
+    /* Post parse cleanup for c */
+    PyMem_FREE(c);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(py_buffer_converter__doc__,
 "py_buffer_converter($module, a, b, /)\n"
 "--\n"
@@ -1914,4 +1951,37 @@ keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2d5ac6b41daadf6f input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(gh_99240_double_free__doc__,
+"gh_99240_double_free($module, a, b, /)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-99240 double-free bug.");
+
+#define GH_99240_DOUBLE_FREE_METHODDEF    \
+    {"gh_99240_double_free", (PyCFunction)(void(*)(void))gh_99240_double_free, METH_FASTCALL, gh_99240_double_free__doc__},
+
+static PyObject *
+gh_99240_double_free_impl(PyObject *module, char *a, char *b);
+
+static PyObject *
+gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+
+    if (!_PyArg_ParseStack(args, nargs, "eses:gh_99240_double_free",
+        "idna", &a, "idna", &b)) {
+        goto exit;
+    }
+    return_value = gh_99240_double_free_impl(module, a, b);
+    /* Post parse cleanup for a */
+    PyMem_FREE(a);
+    /* Post parse cleanup for b */
+    PyMem_FREE(b);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=ecc55cbeac4adae6 input=a9049054013a1b77]*/
