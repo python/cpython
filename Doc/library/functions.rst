@@ -2018,7 +2018,7 @@ are always available.  They are listed here in alphabetical order.
    object, the names to import are retrieved and assigned to their respective
    names.
 
-   A :exc:`ImportError` exception can be raised if the module cannot be imported
+   An :exc:`ImportError` exception can be raised if the module cannot be imported
    successfully.
 
    If you simply want to import a module (potentially within a package) by name,
