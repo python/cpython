@@ -2736,7 +2736,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 
         # post_parsing
         if post_parsing := self.post_parsing():
-            data.post_parsing.append('/* Post operation for ' + name + ' */\n' + post_parsing.rstrip() + "\n")
+            data.post_parsing.append('/* Post parse cleanup for ' + name + ' */\n' + post_parsing.rstrip() + '\n')
 
         # cleanup
         cleanup = self.cleanup()

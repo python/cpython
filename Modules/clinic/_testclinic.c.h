@@ -1191,11 +1191,11 @@ str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     return_value = str_converter_encoding_impl(module, a, b, c, c_length);
-    /* Post operation for a */
+    /* Post parse cleanup for a */
     PyMem_FREE(a);
-    /* Post operation for b */
+    /* Post parse cleanup for b */
     PyMem_FREE(b);
-    /* Post operation for c */
+    /* Post parse cleanup for c */
     PyMem_FREE(c);
 
 exit:
@@ -2350,12 +2350,12 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     return_value = gh_99240_double_free_impl(module, a, b);
-    /* Post operation for a */
+    /* Post parse cleanup for a */
     PyMem_FREE(a);
-    /* Post operation for b */
+    /* Post parse cleanup for b */
     PyMem_FREE(b);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4e20fb88b2861703 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d66fb0c51d666229 input=a9049054013a1b77]*/

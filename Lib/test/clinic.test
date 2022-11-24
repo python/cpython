@@ -1740,15 +1740,15 @@ test_str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t 
         goto exit;
     }
     return_value = test_str_converter_encoding_impl(module, a, b, c, d, d_length, e, e_length);
-    /* Post operation for a */
+    /* Post parse cleanup for a */
     PyMem_FREE(a);
-    /* Post operation for b */
+    /* Post parse cleanup for b */
     PyMem_FREE(b);
-    /* Post operation for c */
+    /* Post parse cleanup for c */
     PyMem_FREE(c);
-    /* Post operation for d */
+    /* Post parse cleanup for d */
     PyMem_FREE(d);
-    /* Post operation for e */
+    /* Post parse cleanup for e */
     PyMem_FREE(e);
 
 exit:
@@ -1759,7 +1759,7 @@ static PyObject *
 test_str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
                                  char *d, Py_ssize_t d_length, char *e,
                                  Py_ssize_t e_length)
-/*[clinic end generated code: output=a9f5b30da7f9bfaf input=eb4c38e1f898f402]*/
+/*[clinic end generated code: output=999c1deecfa15b0a input=eb4c38e1f898f402]*/
 
 
 /*[clinic input]
