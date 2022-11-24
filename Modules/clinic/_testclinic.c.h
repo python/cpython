@@ -2390,7 +2390,6 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=a5c9f181f3a32d85 input=a9049054013a1b77]*/
 
 PyDoc_STRVAR(gh_99240_double_free__doc__,
 "gh_99240_double_free($module, a, b, /)\n"
@@ -2424,4 +2423,4 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d66fb0c51d666229 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=49dced2c99bcd0fb input=a9049054013a1b77]*/
