@@ -322,7 +322,7 @@ sys
 unittest
 --------
 
-Added ``--durations`` command line option, showing the slowest test cases::
+Added ``--durations`` command line option, showing the N slowest test cases::
 
   python3 -m unittest --durations=3 lib.tests.test_threading
   .....

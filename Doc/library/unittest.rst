@@ -244,9 +244,9 @@ Command-line options
 
    Show local variables in tracebacks.
 
-.. cmdoption:: --durations
+.. cmdoption:: --durations N
 
-   Show the slowest test cases.
+   Show the N slowest test cases (N=0 for all).
 
 .. versionadded:: 3.2
    The command-line options ``-b``, ``-c`` and ``-f`` were added.

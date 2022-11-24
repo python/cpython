@@ -181,8 +181,8 @@ class TestProgram(object):
                             action='store_true',
                             help='Show local variables in tracebacks')
         parser.add_argument('--durations', dest='durations', type=int,
-                            default=None,
-                            help='Show test durations')
+                            default=None, metavar="N",
+                            help='Show the N slowest test cases (N=0 for all)')
         if self.failfast is None:
             parser.add_argument('-f', '--failfast', dest='failfast',
                                 action='store_true',
