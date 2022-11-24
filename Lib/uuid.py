@@ -407,7 +407,7 @@ def _get_command_stdout(command, *args):
 def _is_universal(mac):
     return not (mac & (1 << 41))
 
-# (GH-85724) Hardcoded MAC adres for all Intel MacBook's with Touch Bar.
+# (GH-85724) Hardcoded MAC address for all Intel MacBook's with Touch Bar.
 _MACOS_TOUCHBAR_MAC="ac:de:48:00:11:22"
 _MACOS_TOUCHBAR_MAC_AS_INT=int(_MACOS_TOUCHBAR_MAC.replace(":", ""), 16)
 
