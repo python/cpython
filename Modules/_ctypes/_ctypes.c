@@ -2247,12 +2247,16 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
         value = PyCSimpleType_from_param(type, as_parameter);
         _Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
-        Py_DECREF(exc);
-        Py_DECREF(val);
-        Py_DECREF(tb);
+        Py_XDECREF(exc);
+        Py_XDECREF(val);
+        Py_XDECREF(tb);
         return value;
     }
-    PyErr_Restore(exc, val, tb);
+    if (exc)
+        PyErr_Restore(exc, val, tb);
+    else
+        PyErr_SetString(PyExc_TypeError,
+                        "wrong type");
     return NULL;
 }
 
