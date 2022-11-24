@@ -1,2 +1,0 @@
-Add ``--quiet`` option to command-line interface of :mod:`py_compile`.
-Patch by Gregory Schevchenko.

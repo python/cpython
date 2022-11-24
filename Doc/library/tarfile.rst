@@ -37,7 +37,7 @@ Some facts and figures:
    Added support for :mod:`lzma` compression.
 
 
-.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
+.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
    Return a :class:`TarFile` object for the pathname *name*. For detailed
    information on :class:`TarFile` objects and the keyword arguments that are
@@ -63,19 +63,19 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | ``'x'`` or       | Create a tarfile exclusively without        |
    | ``'x:'``         | compression.                                |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:gz'``       | Create a tarfile with gzip compression.     |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:bz2'``      | Create a tarfile with bzip2 compression.    |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:xz'``       | Create a tarfile with lzma compression.     |
-   |                  | Raise an :exc:`FileExistsError` exception   |
+   |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'a' or 'a:'``  | Open for appending with no compression. The |
@@ -98,9 +98,12 @@ Some facts and figures:
    If *fileobj* is specified, it is used as an alternative to a :term:`file object`
    opened in binary mode for *name*. It is supposed to be at position 0.
 
-   For modes ``'w:gz'``, ``'r:gz'``, ``'w:bz2'``, ``'r:bz2'``, ``'x:gz'``,
-   ``'x:bz2'``, :func:`tarfile.open` accepts the keyword argument
+   For modes ``'w:gz'``, ``'x:gz'``, ``'w|gz'``, ``'w:bz2'``, ``'x:bz2'``,
+   ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
    *compresslevel* (default ``9``) to specify the compression level of the file.
+
+   For modes ``'w:xz'`` and ``'x:xz'``, :func:`tarfile.open` accepts the
+   keyword argument *preset* to specify the compression level of the file.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
@@ -149,8 +152,12 @@ Some facts and figures:
    .. versionchanged:: 3.6
       The *name* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.12
+      The *compresslevel* keyword argument also works for streams.
+
 
 .. class:: TarFile
+   :noindex:
 
    Class for reading and writing tar archives. Do not use this class directly:
    use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.
@@ -444,10 +451,11 @@ be finalized; only the internally used file object will be closed. See the
 
 .. method:: TarFile.extractfile(member)
 
-   Extract a member from the archive as a file object. *member* may be a filename
-   or a :class:`TarInfo` object. If *member* is a regular file or a link, an
-   :class:`io.BufferedReader` object is returned. Otherwise, :const:`None` is
-   returned.
+   Extract a member from the archive as a file object. *member* may be
+   a filename or a :class:`TarInfo` object. If *member* is a regular file or
+   a link, an :class:`io.BufferedReader` object is returned. For all other
+   existing members, :const:`None` is returned. If *member* does not appear
+   in the archive, :exc:`KeyError` is raised.
 
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
@@ -831,7 +839,7 @@ There are three tar formats that can be created with the :mod:`tarfile` module:
   files and stores pathnames in a portable way. Modern tar implementations,
   including GNU tar, bsdtar/libarchive and star, fully support extended *pax*
   features; some old or unmaintained libraries may not, but should treat
-  *pax* archives as if they were in the universally-supported *ustar* format.
+  *pax* archives as if they were in the universally supported *ustar* format.
   It is the current default format for new archives.
 
   It extends the existing *ustar* format with extra headers for information

@@ -37,8 +37,16 @@ if os.name == 'posix':
     import _multiprocessing
     import _posixshmem
 
+    # Use sem_unlink() to clean up named semaphores.
+    #
+    # sem_unlink() may be missing if the Python build process detected the
+    # absence of POSIX named semaphores. In that case, no named semaphores were
+    # ever opened, so no cleanup would be necessary.
+    if hasattr(_multiprocessing, 'sem_unlink'):
+        _CLEANUP_FUNCS.update({
+            'semaphore': _multiprocessing.sem_unlink,
+        })
     _CLEANUP_FUNCS.update({
-        'semaphore': _multiprocessing.sem_unlink,
         'shared_memory': _posixshmem.shm_unlink,
     })
 
@@ -153,10 +161,10 @@ class ResourceTracker(object):
     def _send(self, cmd, name, rtype):
         self.ensure_running()
         msg = '{0}:{1}:{2}\n'.format(cmd, name, rtype).encode('ascii')
-        if len(name) > 512:
+        if len(msg) > 512:
             # posix guarantees that writes to a pipe of less than PIPE_BUF
             # bytes are atomic, and that PIPE_BUF >= 512
-            raise ValueError('name too long')
+            raise ValueError('msg too long')
         nbytes = os.write(self._fd, msg)
         assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
             nbytes, len(msg))

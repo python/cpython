@@ -1,1 +1,0 @@
-:meth:`collections.OrderedDict.pop` is now 2 times faster.

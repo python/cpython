@@ -1,1 +1,0 @@
-Removed ``PyLong_FromUnicode()``.

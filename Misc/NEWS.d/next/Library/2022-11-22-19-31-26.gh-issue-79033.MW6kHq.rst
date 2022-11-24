@@ -1,0 +1,1 @@
+Fix :func:`asyncio.Server.wait_closed` to actually do what the docs promise -- wait for all existing connections to complete, after closing the server.
