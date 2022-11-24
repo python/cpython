@@ -1,1 +1,0 @@
-Fix a possible resource leak in ``Programs/_freeze_module.c`` introduced in Python 3.11.
