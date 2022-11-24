@@ -1401,6 +1401,7 @@ Example::
    if __name__ == "__main__":
        unittest.main()
 
+
 venv
 ----
 
@@ -2140,6 +2141,7 @@ Changes in the C API
   :file:`libs` directory under your Python installation.
 
   (Contributed by Steve Dower in :issue:`37351`.)
+
 
 CPython bytecode changes
 ------------------------

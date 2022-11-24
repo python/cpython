@@ -203,6 +203,7 @@ class TestProgram(object):
                                 action='append', type=_convert_select_pattern,
                                 help='Only run tests which match the given substring')
             self.testNamePatterns = []
+
         return parser
 
     def _getMainArgParser(self, parent):

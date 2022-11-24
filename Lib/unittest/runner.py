@@ -47,7 +47,7 @@ class TextTestResult(result.TestResult):
         self.durations = durations
         self._lastDuration = None
 
-    def _formatDuration(self, s):
+    def _formatTestOutcome(self, s):
         if self.durations is not None:
             return "[%.3fs] %s" % (self._lastDuration, s)
         else:
@@ -99,7 +99,7 @@ class TextTestResult(result.TestResult):
     def addSuccess(self, test):
         super(TextTestResult, self).addSuccess(test)
         if self.showAll:
-            self._write_status(test, self._formatDuration("ok"))
+            self._write_status(test, self._formatTestOutcome("ok"))
         elif self.dots:
             self.stream.write('.')
             self.stream.flush()
@@ -107,7 +107,7 @@ class TextTestResult(result.TestResult):
     def addError(self, test, err):
         super(TextTestResult, self).addError(test, err)
         if self.showAll:
-            self._write_status(test, self._formatDuration("ERROR"))
+            self._write_status(test, self._formatTestOutcome("ERROR"))
         elif self.dots:
             self.stream.write('E')
             self.stream.flush()
@@ -115,7 +115,7 @@ class TextTestResult(result.TestResult):
     def addFailure(self, test, err):
         super(TextTestResult, self).addFailure(test, err)
         if self.showAll:
-            self._write_status(test, self._formatDuration("FAIL"))
+            self._write_status(test, self._formatTestOutcome("FAIL"))
         elif self.dots:
             self.stream.write('F')
             self.stream.flush()
@@ -131,7 +131,7 @@ class TextTestResult(result.TestResult):
     def addExpectedFailure(self, test, err):
         super(TextTestResult, self).addExpectedFailure(test, err)
         if self.showAll:
-            self.stream.writeln(self._formatDuration("expected failure"))
+            self.stream.writeln(self._formatTestOutcome("expected failure"))
             self.stream.flush()
         elif self.dots:
             self.stream.write("x")
@@ -140,7 +140,7 @@ class TextTestResult(result.TestResult):
     def addUnexpectedSuccess(self, test):
         super(TextTestResult, self).addUnexpectedSuccess(test)
         if self.showAll:
-            self.stream.writeln(self._formatDuration("unexpected success"))
+            self.stream.writeln(self._formatTestOutcome("unexpected success"))
             self.stream.flush()
         elif self.dots:
             self.stream.write("u")
