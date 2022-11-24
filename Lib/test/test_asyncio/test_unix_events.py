@@ -18,6 +18,7 @@ import multiprocessing
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import wait_process
+from test.support import hashlib_helper
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -1893,6 +1894,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             self.assertNotEqual(child_loop, id(loop))
             wait_process(pid, exitcode=0)
 
+    @hashlib_helper.requires_hashdigest('md5')
     def test_fork_signal_handling(self):
         # Sending signal to the forked process should not affect the parent
         # process
@@ -1930,6 +1932,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(parent_handled.is_set())
         self.assertTrue(child_handled.is_set())
 
+    @hashlib_helper.requires_hashdigest('md5')
     def test_fork_asyncio_run(self):
         ctx = multiprocessing.get_context('fork')
         manager = ctx.Manager()
@@ -1946,6 +1949,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.value, 42)
 
+    @hashlib_helper.requires_hashdigest('md5')
     def test_fork_asyncio_subprocess(self):
         ctx = multiprocessing.get_context('fork')
         manager = ctx.Manager()
