@@ -2327,12 +2327,7 @@ PyDoc_STRVAR(gh_99233_refcount__doc__,
 "gh_99233_refcount($module, /, *args)\n"
 "--\n"
 "\n"
-"Proof-of-concept of GH-99233 refcount error bug.\n"
-"\n"
-"While AC-generated code is packing varargs to a tuple, the arguments\' refcounts are not increased.\n"
-"So all the packed arguments\' refcounts are decreased 1 improperly when the tuple is released later.\n"
-"\n"
-"Call this function with whatever arguments and check if the arguments\' refcount is correct.");
+"Proof-of-concept of GH-99233 refcount error bug.");
 
 #define GH_99233_REFCOUNT_METHODDEF    \
     {"gh_99233_refcount", _PyCFunction_CAST(gh_99233_refcount), METH_FASTCALL, gh_99233_refcount__doc__},
@@ -2360,4 +2355,4 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=be283ebc1e845c8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ca3fb3a99fe5800 input=a9049054013a1b77]*/
