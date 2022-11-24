@@ -719,7 +719,7 @@ class CLanguage(Language):
         vararg = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
-            if p.is_keyword_only() or vararg != NO_VARARG:
+            if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
                     min_kw_only = i - max_pos
@@ -1016,13 +1016,14 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, *parser_code)
 
         else:
-            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters))
+            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                     min_pos,
                     max_pos,
                     min_kw_only
                 )
+                nargs = "nargs"
             else:
                 args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
@@ -1030,6 +1031,7 @@ class CLanguage(Language):
                     min_kw_only,
                     vararg
                 )
+                nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
             if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
@@ -1037,8 +1039,7 @@ class CLanguage(Language):
                 declarations = declare_parser(f)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
-                    pre_buffer = "0" if vararg != NO_VARARG else "nargs"
-                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
                     if (!args) {{
@@ -1055,7 +1056,7 @@ class CLanguage(Language):
                 declarations += "\nPyObject * const *fastargs;"
                 declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
                     if (!fastargs) {{
