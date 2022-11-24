@@ -2035,11 +2035,12 @@
 
         TARGET(COMPARE_OP) {
             PREDICTED(COMPARE_OP);
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *res;
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *right = TOP();
-                PyObject *left = SECOND();
                 next_instr--;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
@@ -2047,16 +2048,13 @@
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
+            res = PyObject_RichCompare(left, right, oparg);
             Py_DECREF(left);
             Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
+            if (res == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            POKE(1, res);
+            next_instr += 2;
             DISPATCH();
         }
 

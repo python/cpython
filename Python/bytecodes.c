@@ -2054,13 +2054,17 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP) {
+        // family(compare_op) = {
+        //     COMPARE_OP,
+        //     COMPARE_OP_FLOAT_JUMP,
+        //     COMPARE_OP_INT_JUMP,
+        //     COMPARE_OP_STR_JUMP,
+        // };
+
+        inst(COMPARE_OP, (unused/1, left, right, unused/1 -- res)) {
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *right = TOP();
-                PyObject *left = SECOND();
                 next_instr--;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
@@ -2068,16 +2072,10 @@ dummy_func(
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
+            res = PyObject_RichCompare(left, right, oparg);
             Py_DECREF(left);
             Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: (__0 -- )
@@ -3690,9 +3688,6 @@ dummy_func(
 
 // Future families go below this point //
 
-family(binary_subscr) = {
-    BINARY_SUBSCR, BINARY_SUBSCR_DICT,
-    BINARY_SUBSCR_GETITEM, BINARY_SUBSCR_LIST_INT, BINARY_SUBSCR_TUPLE_INT };
 family(call) = {
     CALL, CALL_PY_EXACT_ARGS,
     CALL_PY_WITH_DEFAULTS, CALL_BOUND_METHOD_EXACT_ARGS, CALL_BUILTIN_CLASS,
@@ -3701,9 +3696,6 @@ family(call) = {
     CALL_NO_KW_LIST_APPEND, CALL_NO_KW_METHOD_DESCRIPTOR_FAST, CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
-family(compare_op) = {
-    COMPARE_OP, COMPARE_OP_FLOAT_JUMP,
-    COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP };
 family(for_iter) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };
