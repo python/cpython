@@ -1484,7 +1484,7 @@ bytes_contains(PyObject *self, PyObject *arg)
 static PyObject *
 bytes_item(PyBytesObject *a, Py_ssize_t i)
 {
-    if (i < 0 || i >= Py_SIZE(a)) {
+    if (invalid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
@@ -1591,7 +1591,7 @@ bytes_subscript(PyBytesObject* self, PyObject* item)
             return NULL;
         if (i < 0)
             i += PyBytes_GET_SIZE(self);
-        if (i < 0 || i >= PyBytes_GET_SIZE(self)) {
+        if (invalid_index(i, PyBytes_GET_SIZE(self))) {
             PyErr_SetString(PyExc_IndexError,
                             "index out of range");
             return NULL;

@@ -804,7 +804,7 @@ array_length(arrayobject *a)
 static PyObject *
 array_item(arrayobject *a, Py_ssize_t i)
 {
-    if (i < 0 || i >= Py_SIZE(a)) {
+    if (invalid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError, "array index out of range");
         return NULL;
     }
@@ -966,7 +966,7 @@ array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 static int
 array_ass_item(arrayobject *a, Py_ssize_t i, PyObject *v)
 {
-    if (i < 0 || i >= Py_SIZE(a)) {
+    if (invalid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError,
                          "array assignment index out of range");
         return -1;
@@ -1249,7 +1249,7 @@ array_array_pop_impl(arrayobject *self, Py_ssize_t i)
     }
     if (i < 0)
         i += Py_SIZE(self);
-    if (i < 0 || i >= Py_SIZE(self)) {
+    if (invalid_index(i, Py_SIZE(self))) {
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
@@ -2407,7 +2407,7 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
             return -1;
         if (i < 0)
             i += Py_SIZE(self);
-        if (i < 0 || i >= Py_SIZE(self)) {
+        if (invalid_index(i, Py_SIZE(self))) {
             PyErr_SetString(PyExc_IndexError,
                 "array assignment index out of range");
             return -1;

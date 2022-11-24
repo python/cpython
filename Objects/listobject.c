@@ -226,18 +226,6 @@ PyList_Size(PyObject *op)
         return Py_SIZE(op);
 }
 
-static inline int
-valid_index(Py_ssize_t i, Py_ssize_t limit)
-{
-    /* The cast to size_t lets us use just a single comparison
-       to check whether i is in the range: 0 <= i < limit.
-
-       See:  Section 14.2 "Bounds Checking" in the Agner Fog
-       optimization manual found at:
-       https://www.agner.org/optimize/optimizing_cpp.pdf
-    */
-    return (size_t) i < (size_t) limit;
-}
 
 PyObject *
 PyList_GetItem(PyObject *op, Py_ssize_t i)
@@ -246,7 +234,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (!valid_index(i, Py_SIZE(op))) {
+    if (invalid_index(i, Py_SIZE(op))) {
         _Py_DECLARE_STR(list_err, "list index out of range");
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
@@ -264,7 +252,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
         PyErr_BadInternalCall();
         return -1;
     }
-    if (!valid_index(i, Py_SIZE(op))) {
+    if (invalid_index(i, Py_SIZE(op))) {
         Py_XDECREF(newitem);
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
@@ -455,7 +443,7 @@ list_contains(PyListObject *a, PyObject *el)
 static PyObject *
 list_item(PyListObject *a, Py_ssize_t i)
 {
-    if (!valid_index(i, Py_SIZE(a))) {
+    if (invalid_index(i, Py_SIZE(a))) {
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
@@ -767,7 +755,7 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 static int
 list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
 {
-    if (!valid_index(i, Py_SIZE(a))) {
+    if (invalid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
         return -1;
@@ -1018,7 +1006,7 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     }
     if (index < 0)
         index += Py_SIZE(self);
-    if (!valid_index(index, Py_SIZE(self))) {
+    if (invalid_index(index, Py_SIZE(self))) {
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
@@ -2584,9 +2572,8 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
     }
     if (stop < 0) {
         stop += Py_SIZE(self);
-        if (stop < 0)
-            stop = 0;
     }
+
     for (i = start; i < stop && i < Py_SIZE(self); i++) {
         PyObject *obj = self->ob_item[i];
         Py_INCREF(obj);
