@@ -1,0 +1,1 @@
+Preserve a more detailed exception in ``_ctypes._SimpleCData.from_param``.
