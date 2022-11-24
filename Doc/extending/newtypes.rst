@@ -207,8 +207,8 @@ a special case, for which the new value passed to the handler is ``NULL``.
 
 Python supports two pairs of attribute handlers; a type that supports attributes
 only needs to implement the functions for one pair.  The difference is that one
-pair takes the name of the attribute as a :c:type:`char\*`, while the other
-accepts a :c:type:`PyObject\*`.  Each type can use whichever pair makes more
+pair takes the name of the attribute as a :c:expr:`char\*`, while the other
+accepts a :c:expr:`PyObject*`.  Each type can use whichever pair makes more
 sense for the implementation's convenience. ::
 
    getattrfunc  tp_getattr;        /* char * version */
@@ -219,7 +219,7 @@ sense for the implementation's convenience. ::
 
 If accessing attributes of an object is always a simple operation (this will be
 explained shortly), there are generic implementations which can be used to
-provide the :c:type:`PyObject\*` version of the attribute management functions.
+provide the :c:expr:`PyObject*` version of the attribute management functions.
 The actual need for type-specific attribute handlers almost completely
 disappeared starting with Python 2.2, though there are many examples which have
 not been updated to use some of the new generic mechanism that is available.
@@ -286,36 +286,11 @@ be read-only or read-write.  The structures in the table are defined as::
 
 For each entry in the table, a :term:`descriptor` will be constructed and added to the
 type which will be able to extract a value from the instance structure.  The
-:attr:`type` field should contain one of the type codes defined in the
-:file:`structmember.h` header; the value will be used to determine how to
+:attr:`type` field should contain a type code like :c:macro:`Py_T_INT` or
+:c:macro:`Py_T_DOUBLE`; the value will be used to determine how to
 convert Python values to and from C values.  The :attr:`flags` field is used to
-store flags which control how the attribute can be accessed.
-
-The following flag constants are defined in :file:`structmember.h`; they may be
-combined using bitwise-OR.
-
-+---------------------------+----------------------------------------------+
-| Constant                  | Meaning                                      |
-+===========================+==============================================+
-| :const:`READONLY`         | Never writable.                              |
-+---------------------------+----------------------------------------------+
-| :const:`PY_AUDIT_READ`    | Emit an ``object.__getattr__``               |
-|                           | :ref:`audit events <audit-events>` before    |
-|                           | reading.                                     |
-+---------------------------+----------------------------------------------+
-
-.. versionchanged:: 3.10
-   :const:`RESTRICTED`, :const:`READ_RESTRICTED` and :const:`WRITE_RESTRICTED`
-   are deprecated. However, :const:`READ_RESTRICTED` is an alias for
-   :const:`PY_AUDIT_READ`, so fields that specify either :const:`RESTRICTED`
-   or :const:`READ_RESTRICTED` will also raise an audit event.
-
-.. index::
-   single: READONLY
-   single: READ_RESTRICTED
-   single: WRITE_RESTRICTED
-   single: RESTRICTED
-   single: PY_AUDIT_READ
+store flags which control how the attribute can be accessed: you can set it to
+:c:macro:`Py_READONLY` to prevent Python code from setting it.
 
 An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table to build
 descriptors that are used at runtime is that any attribute defined this way can
@@ -339,9 +314,9 @@ of ``NULL`` is required.
 Type-specific Attribute Management
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For simplicity, only the :c:type:`char\*` version will be demonstrated here; the
-type of the name parameter is the only difference between the :c:type:`char\*`
-and :c:type:`PyObject\*` flavors of the interface. This example effectively does
+For simplicity, only the :c:expr:`char\*` version will be demonstrated here; the
+type of the name parameter is the only difference between the :c:expr:`char\*`
+and :c:expr:`PyObject*` flavors of the interface. This example effectively does
 the same thing as the generic example above, but does not use the generic
 support added in Python 2.2.  It explains how the handler functions are
 called, so that if you do need to extend their functionality, you'll understand

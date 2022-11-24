@@ -17,6 +17,7 @@ import socket
 import subprocess
 import sys
 import threading
+import signal
 
 from . import format_helpers
 
@@ -60,6 +61,9 @@ class Handle:
             return self._repr
         info = self._repr_info()
         return '<{}>'.format(' '.join(info))
+
+    def get_context(self):
+        return self._context
 
     def cancel(self):
         if not self._cancelled:
@@ -662,6 +666,14 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
     def __init__(self):
         self._local = self._Local()
+        if hasattr(os, 'fork'):
+            def on_fork():
+                # Reset the loop and wakeupfd in the forked child process.
+                self._local = self._Local()
+                signal.set_wakeup_fd(-1)
+
+            os.register_at_fork(after_in_child=on_fork)
+
 
     def get_event_loop(self):
         """Get the event loop for the current context.

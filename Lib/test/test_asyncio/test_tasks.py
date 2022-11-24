@@ -109,11 +109,7 @@ class BaseTaskTests:
         self.assertTrue(hasattr(t, '_cancel_message'))
         self.assertEqual(t._cancel_message, None)
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing 'msg' argument"
-        ):
-            t.cancel('my message')
+        t.cancel('my message')
         self.assertEqual(t._cancel_message, 'my message')
 
         with self.assertRaises(asyncio.CancelledError) as cm:
@@ -125,11 +121,7 @@ class BaseTaskTests:
         async def coro():
             pass
         t = self.new_task(self.loop, coro())
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing 'msg' argument"
-        ):
-            t.cancel('my message')
+        t.cancel('my message')
         t._cancel_message = 'my new message'
         self.assertEqual(t._cancel_message, 'my new message')
 
@@ -643,27 +635,30 @@ class BaseTaskTests:
             await asyncio.sleep(0)
             return timed_out, structured_block_finished, outer_code_reached
 
-        # Test which timed out.
-        t1 = self.new_task(loop, make_request_with_timeout(sleep=10.0, timeout=0.1))
-        timed_out, structured_block_finished, outer_code_reached = (
-            loop.run_until_complete(t1)
-        )
-        self.assertTrue(timed_out)
-        self.assertFalse(structured_block_finished)  # it was cancelled
-        self.assertTrue(outer_code_reached)  # task got uncancelled after leaving
-                                             # the structured block and continued until
-                                             # completion
-        self.assertEqual(t1.cancelling(), 0) # no pending cancellation of the outer task
+        try:
+            # Test which timed out.
+            t1 = self.new_task(loop, make_request_with_timeout(sleep=10.0, timeout=0.1))
+            timed_out, structured_block_finished, outer_code_reached = (
+                loop.run_until_complete(t1)
+            )
+            self.assertTrue(timed_out)
+            self.assertFalse(structured_block_finished)  # it was cancelled
+            self.assertTrue(outer_code_reached)  # task got uncancelled after leaving
+                                                 # the structured block and continued until
+                                                 # completion
+            self.assertEqual(t1.cancelling(), 0) # no pending cancellation of the outer task
 
-        # Test which did not time out.
-        t2 = self.new_task(loop, make_request_with_timeout(sleep=0, timeout=10.0))
-        timed_out, structured_block_finished, outer_code_reached = (
-            loop.run_until_complete(t2)
-        )
-        self.assertFalse(timed_out)
-        self.assertTrue(structured_block_finished)
-        self.assertTrue(outer_code_reached)
-        self.assertEqual(t2.cancelling(), 0)
+            # Test which did not time out.
+            t2 = self.new_task(loop, make_request_with_timeout(sleep=0, timeout=10.0))
+            timed_out, structured_block_finished, outer_code_reached = (
+                loop.run_until_complete(t2)
+            )
+            self.assertFalse(timed_out)
+            self.assertTrue(structured_block_finished)
+            self.assertTrue(outer_code_reached)
+            self.assertEqual(t2.cancelling(), 0)
+        finally:
+            loop.close()
 
     def test_cancel(self):
 
@@ -706,14 +701,7 @@ class BaseTaskTests:
                 async def coro():
                     task = self.new_task(loop, sleep())
                     await asyncio.sleep(0)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            task.cancel(*cancel_args)
-                    else:
-                        task.cancel(*cancel_args)
+                    task.cancel(*cancel_args)
                     done, pending = await asyncio.wait([task])
                     task.result()
 
@@ -747,14 +735,7 @@ class BaseTaskTests:
                 async def coro():
                     task = self.new_task(loop, sleep())
                     await asyncio.sleep(0)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            task.cancel(*cancel_args)
-                    else:
-                        task.cancel(*cancel_args)
+                    task.cancel(*cancel_args)
                     done, pending = await asyncio.wait([task])
                     task.exception()
 
@@ -777,17 +758,10 @@ class BaseTaskTests:
             fut.set_result(None)
             await asyncio.sleep(10)
 
-        def cancel(task, msg):
-            with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "Passing 'msg' argument"
-            ):
-                task.cancel(msg)
-
         async def coro():
             inner_task = self.new_task(loop, sleep())
             await fut
-            loop.call_soon(cancel, inner_task, 'msg')
+            loop.call_soon(inner_task.cancel, 'msg')
             try:
                 await inner_task
             except asyncio.CancelledError as ex:
@@ -813,11 +787,7 @@ class BaseTaskTests:
         async def coro():
             task = self.new_task(loop, sleep())
             # We deliberately leave out the sleep here.
-            with self.assertWarnsRegex(
-                    DeprecationWarning,
-                    "Passing 'msg' argument"
-            ):
-                task.cancel('my message')
+            task.cancel('my message')
             done, pending = await asyncio.wait([task])
             task.exception()
 
@@ -2179,14 +2149,7 @@ class BaseTaskTests:
                 async def main():
                     qwe = self.new_task(loop, test())
                     await asyncio.sleep(0.2)
-                    if cancel_args not in ((), (None,)):
-                        with self.assertWarnsRegex(
-                                DeprecationWarning,
-                                "Passing 'msg' argument"
-                        ):
-                            qwe.cancel(*cancel_args)
-                    else:
-                        qwe.cancel(*cancel_args)
+                    qwe.cancel(*cancel_args)
                     await qwe
 
                 try:
@@ -2479,6 +2442,17 @@ class BaseTaskTests:
             task = self.new_task(loop, coro)
             loop.run_until_complete(task)
             self.assertIs(task.get_coro(), coro)
+        finally:
+            loop.close()
+
+    def test_get_context(self):
+        loop = asyncio.new_event_loop()
+        coro = coroutine_function()
+        context = contextvars.copy_context()
+        try:
+            task = self.new_task(loop, coro, context=context)
+            loop.run_until_complete(task)
+            self.assertIs(task.get_context(), context)
         finally:
             loop.close()
 

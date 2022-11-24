@@ -443,7 +443,7 @@ ABC hierarchy::
         from the import.  If the loader inserted a module and the load fails, it
         must be removed by the loader from :data:`sys.modules`; modules already
         in :data:`sys.modules` before the loader began execution should be left
-        alone (see :func:`importlib.util.module_for_loader`).
+        alone.
 
         The loader should set several attributes on the module
         (note that some of these attributes can change when a module is
@@ -1325,67 +1325,6 @@ an :term:`importer`.
    the module as possible.
 
    .. versionadded:: 3.5
-
-.. decorator:: module_for_loader
-
-    A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
-    to handle selecting the proper
-    module object to load with. The decorated method is expected to have a call
-    signature taking two positional arguments
-    (e.g. ``load_module(self, module)``) for which the second argument
-    will be the module **object** to be used by the loader.
-    Note that the decorator will not work on static methods because of the
-    assumption of two arguments.
-
-    The decorated method will take in the **name** of the module to be loaded
-    as expected for a :term:`loader`. If the module is not found in
-    :data:`sys.modules` then a new one is constructed. Regardless of where the
-    module came from, :attr:`__loader__` set to **self** and :attr:`__package__`
-    is set based on what :meth:`importlib.abc.InspectLoader.is_package` returns
-    (if available). These attributes are set unconditionally to support
-    reloading.
-
-    If an exception is raised by the decorated method and a module was added to
-    :data:`sys.modules`, then the module will be removed to prevent a partially
-    initialized module from being in left in :data:`sys.modules`. If the module
-    was already in :data:`sys.modules` then it is left alone.
-
-    .. versionchanged:: 3.3
-       :attr:`__loader__` and :attr:`__package__` are automatically set
-       (when possible).
-
-    .. versionchanged:: 3.4
-       Set :attr:`__name__`, :attr:`__loader__` :attr:`__package__`
-       unconditionally to support reloading.
-
-    .. deprecated:: 3.4
-       The import machinery now directly performs all the functionality
-       provided by this function.
-
-.. decorator:: set_loader
-
-   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
-   to set the :attr:`__loader__`
-   attribute on the returned module. If the attribute is already set the
-   decorator does nothing. It is assumed that the first positional argument to
-   the wrapped method (i.e. ``self``) is what :attr:`__loader__` should be set
-   to.
-
-   .. versionchanged:: 3.4
-      Set ``__loader__`` if set to ``None``, as if the attribute does not
-      exist.
-
-   .. deprecated:: 3.4
-      The import machinery takes care of this automatically.
-
-.. decorator:: set_package
-
-   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module` to set the
-   :attr:`__package__` attribute on the returned module. If :attr:`__package__`
-   is set and has a value other than ``None`` it will not be changed.
-
-   .. deprecated:: 3.4
-      The import machinery takes care of this automatically.
 
 .. function:: spec_from_loader(name, loader, *, origin=None, is_package=None)
 

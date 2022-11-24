@@ -756,6 +756,27 @@ SyntaxError: cannot assign to __debug__
 >>> __debug__: int
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
+>>> f(a=)
+Traceback (most recent call last):
+SyntaxError: expected argument value expression
+>>> f(a, b, c=)
+Traceback (most recent call last):
+SyntaxError: expected argument value expression
+>>> f(a, b, c=, d)
+Traceback (most recent call last):
+SyntaxError: expected argument value expression
+>>> f(*args=[0])
+Traceback (most recent call last):
+SyntaxError: cannot assign to iterable argument unpacking
+>>> f(a, b, *args=[0])
+Traceback (most recent call last):
+SyntaxError: cannot assign to iterable argument unpacking
+>>> f(**kwargs={'a': 1})
+Traceback (most recent call last):
+SyntaxError: cannot assign to keyword argument unpacking
+>>> f(a, b, *args, **kwargs={'a': 1})
+Traceback (most recent call last):
+SyntaxError: cannot assign to keyword argument unpacking
 
 
 More set_context():
@@ -1584,6 +1605,22 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
 
+>>> import a from b
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z from b.y.z
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a from b as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z from b.y.z as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
 
@@ -1997,6 +2034,16 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("foo(x,    y for y in range(3) for z in range(2) if z    , p)",
                           "Generator expression must be parenthesized",
                           lineno=1, end_lineno=1, offset=11, end_offset=53)
+
+    def test_except_then_except_star(self):
+        self._check_error("try: pass\nexcept ValueError: pass\nexcept* TypeError: pass",
+                          r"cannot have both 'except' and 'except\*' on the same 'try'",
+                          lineno=3, end_lineno=3, offset=1, end_offset=8)
+
+    def test_except_star_then_except(self):
+        self._check_error("try: pass\nexcept* ValueError: pass\nexcept TypeError: pass",
+                          r"cannot have both 'except' and 'except\*' on the same 'try'",
+                          lineno=3, end_lineno=3, offset=1, end_offset=7)
 
     def test_empty_line_after_linecont(self):
         # See issue-40847
