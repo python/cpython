@@ -8,8 +8,11 @@ from test import support
 import unittest
 from unittest.case import _Outcome
 
-from test.test_unittest.support import (LoggingResult,
-                                   ResultWithNoStartTestRunStopTestRun)
+from test.test_unittest.support import (
+    BufferedWriter,
+    LoggingResult,
+    ResultWithNoStartTestRunStopTestRun,
+)
 
 
 def resultFactory(*_):
@@ -1362,6 +1365,55 @@ class Test_TextTestRunner(unittest.TestCase):
         f = io.StringIO()
         runner = unittest.TextTestRunner(f)
         self.assertTrue(runner.stream.stream is f)
+
+    def test_durations(self):
+        def run(test):
+            stream = BufferedWriter()
+            runner = unittest.TextTestRunner(stream=stream, durations=5, verbosity=2)
+            result = runner.run(test)
+            self.assertEqual(result.durations, 5)
+            stream.flush()
+            text = stream.getvalue()
+            if 'skipped' not in text:
+                self.assertIn('Slowest test durations', text)
+            else:
+                self.assertNotIn('Slowest test durations', text)
+
+            return len(result.collectedDurations)
+
+        # success
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+        self.assertEqual(run(Foo('test_1')), 1)
+
+        # failure
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                self.assertEqual(0, 1)
+        self.assertEqual(run(Foo('test_1')), 1)
+
+        # error
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                1 / 0
+        self.assertEqual(run(Foo('test_1')), 1)
+
+        # error in setUp and tearDown
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                1 / 0
+            tearDown = setUp
+            def test_1(self):
+                pass
+        self.assertEqual(run(Foo('test_1')), 1)
+
+        # skip (expect 0)
+        class Foo(unittest.TestCase):
+            @unittest.skip("reason")
+            def test_1(self):
+                pass
+        self.assertEqual(run(Foo('test_1')), 0)
 
 
 if __name__ == "__main__":

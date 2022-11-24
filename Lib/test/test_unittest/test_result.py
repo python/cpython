@@ -8,6 +8,7 @@ import traceback
 import unittest
 from unittest import mock
 from unittest.util import strclass
+from test.test_unittest.support import BufferedWriter
 
 
 class MockTraceback(object):
@@ -32,22 +33,6 @@ def bad_cleanup1():
 def bad_cleanup2():
     print('do cleanup2')
     raise ValueError('bad cleanup2')
-
-
-class BufferedWriter:
-    def __init__(self):
-        self.result = ''
-        self.buffer = ''
-
-    def write(self, arg):
-        self.buffer += arg
-
-    def flush(self):
-        self.result += self.buffer
-        self.buffer = ''
-
-    def getvalue(self):
-        return self.result
 
 
 class Test_TestResult(unittest.TestCase):
@@ -342,55 +327,6 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         test_case, formatted_exc = result.errors[0]
         self.assertEqual('A tracebacklocals', formatted_exc)
-
-    def test_durations(self):
-        def run(test):
-            stream = BufferedWriter()
-            runner = unittest.TextTestRunner(stream=stream, durations=5, verbosity=2)
-            result = runner.run(test)
-            self.assertEqual(result.durations, 5)
-            stream.flush()
-            text = stream.getvalue()
-            if 'skipped' not in text:
-                self.assertIn('Slowest test durations', text)
-            else:
-                self.assertNotIn('Slowest test durations', text)
-
-            return len(result.collectedDurations)
-
-        # success
-        class Foo(unittest.TestCase):
-            def test_1(self):
-                pass
-        self.assertEqual(run(Foo('test_1')), 1)
-
-        # failure
-        class Foo(unittest.TestCase):
-            def test_1(self):
-                self.assertEqual(0, 1)
-        self.assertEqual(run(Foo('test_1')), 1)
-
-        # error
-        class Foo(unittest.TestCase):
-            def test_1(self):
-                1 / 0
-        self.assertEqual(run(Foo('test_1')), 1)
-
-        # error in setUp and tearDown
-        class Foo(unittest.TestCase):
-            def setUp(self):
-                1 / 0
-            tearDown = setUp
-            def test_1(self):
-                pass
-        self.assertEqual(run(Foo('test_1')), 1)
-
-        # skip (expect 0)
-        class Foo(unittest.TestCase):
-            @unittest.skip("reason")
-            def test_1(self):
-                pass
-        self.assertEqual(run(Foo('test_1')), 0)
 
     def test_addSubTest(self):
         class Foo(unittest.TestCase):
