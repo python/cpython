@@ -889,10 +889,10 @@ class IOTest(unittest.TestCase):
         self.assertEqual(str(cm.exception), 'opener returned -2')
 
     def test_opener_invalid_fd(self):
-        self.open(os_helper.TESTFN, 'w').close()
-        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
-        os.close(fd)
-        # fd is now an invalid file descriptor
+        # Check that OSError is raised with EBADF error code if the opener returns an invalid
+        # file descriptor (see gh-15688).
+        
+        fd = os_helper.make_bad_fd()
         with self.assertRaises(OSError) as cm:
             self.open('foo', opener=lambda name, flags: fd)
         self.assertEqual(cm.exception.errno, errno.EBADF)
