@@ -178,6 +178,8 @@ exit:
     return return_value;
 }
 
+#if (defined(HAVE_STATX) || defined(MS_WINDOWS))
+
 PyDoc_STRVAR(os_statx__doc__,
 "statx($module, /, path, mask, *, dir_fd=None, follow_symlinks=True,\n"
 "      flags=0)\n"
@@ -304,6 +306,8 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(HAVE_STATX) || defined(MS_WINDOWS)) */
 
 PyDoc_STRVAR(os_access__doc__,
 "access($module, /, path, mode, *, dir_fd=None, effective_ids=False,\n"
@@ -11081,6 +11085,10 @@ exit:
 
 #endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
 
+#ifndef OS_STATX_METHODDEF
+    #define OS_STATX_METHODDEF
+#endif /* !defined(OS_STATX_METHODDEF) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -11676,4 +11684,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=aeba1208190afb68 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9579615df62ee27f input=a9049054013a1b77]*/

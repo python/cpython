@@ -3073,6 +3073,9 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
     return posix_do_stat(module, "lstat", path, dir_fd, follow_symlinks);
 }
 
+
+#if defined(HAVE_STATX) || defined(MS_WINDOWS)
+
 /*[clinic input]
 
 os.statx
@@ -3155,6 +3158,7 @@ os_statx_impl(PyObject *module, path_t *path, int mask, int dir_fd,
 #endif
 }
 
+#endif
 
 /*[clinic input]
 os.access -> bool
