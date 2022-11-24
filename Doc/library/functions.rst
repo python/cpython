@@ -1910,8 +1910,7 @@ are always available.  They are listed here in alphabetical order.
       This is an advanced function that is not needed in everyday Python
       programming, unlike :func:`importlib.import_module`.
 
-   This function is invoked by the :keyword:`import` statement.
-   If the module cannot be imported, :exc:`ImportError` is raised. It can be
+   This function is invoked by the :keyword:`import` statement. It can be
    replaced (by importing the :mod:`builtins` module and assigning to
    ``builtins.__import__``) in order to change semantics of the
    :keyword:`!import` statement, but doing so is **strongly** discouraged as it
@@ -1960,6 +1959,9 @@ are always available.  They are listed here in alphabetical order.
    Here, the ``spam.ham`` module is returned from :func:`__import__`.  From this
    object, the names to import are retrieved and assigned to their respective
    names.
+
+   A :exc:`ImportError` exception can be raised if the module cannot be imported
+   successfully.
 
    If you simply want to import a module (potentially within a package) by name,
    use :func:`importlib.import_module`.

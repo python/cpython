@@ -96,7 +96,7 @@ Functions
     specified in relative terms, then the *package* argument must be set to
     the name of the package which is to act as the anchor for resolving the
     package name (e.g. ``import_module('..mod', 'pkg.subpkg')`` will import
-    ``pkg.mod``). If the module cannot be imported, :exc:`ImportError` is raised.
+    ``pkg.mod``).
 
     The :func:`import_module` function acts as a simplifying wrapper around
     :func:`importlib.__import__`. This means all semantics of the function are
@@ -109,6 +109,9 @@ Functions
     interpreter began execution (e.g., created a Python source file), you may
     need to call :func:`invalidate_caches` in order for the new module to be
     noticed by the import system.
+
+    A :exc:`ImportError` can be raised if the module cannot be imported
+    successfully.
 
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
