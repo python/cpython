@@ -85,13 +85,14 @@ static PyObject *list, *tuple, *dict;
 static PyObject *exit_func, *lasti, *val;
 static PyObject *jump;
 // Dummy variables for stack effects
-static int when_to_jump_mask;
+static _Py_CODEUNIT when_to_jump_mask, invert;
 // Dummy opcode names for 'op' opcodes
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1001
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_2 1002
 #define _COMPARE_OP_FLOAT 1003
 #define _COMPARE_OP_INT 1004
-#define _JUMP_ON_SIGN 1005
+#define _COMPARE_OP_STR 1005
+#define _JUMP_ON_SIGN 1006
 
 static PyObject *
 dummy_func(
@@ -2065,7 +2066,7 @@ dummy_func(
             COMPARE_OP,
             _COMPARE_OP_FLOAT,
             _COMPARE_OP_INT,
-            // COMPARE_OP_STR_JUMP,
+            _COMPARE_OP_STR,
         };
 
         inst(COMPARE_OP, (unused/1, left, right, unused/1 -- res)) {
@@ -2132,35 +2133,22 @@ dummy_func(
         }
         super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_ON_SIGN;
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP_STR_JUMP) {
+        // Similar to COMPARE_OP_FLOAT, but for ==, != only
+        op(_COMPARE_OP_STR, (unused/1, left, right, invert/1 -- jump)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int invert = cache->mask;
-            PyObject *right = TOP();
-            PyObject *left = SECOND();
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int res = _PyUnicode_Equal(left, right);
             assert(oparg == Py_EQ || oparg == Py_NE);
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            NEXTOPARG();
-            assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            STACK_SHRINK(2);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
             assert(invert == 0 || invert == 1);
-            int jump = res ^ invert;
-            if (!jump) {
-                next_instr++;
-            }
-            else {
-                JUMPBY(1 + oparg);
-            }
+            jump = (PyObject *)(size_t)(res ^ invert);
         }
+        super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_ON_SIGN;
 
         // stack effect: (__0 -- )
         inst(IS_OP) {

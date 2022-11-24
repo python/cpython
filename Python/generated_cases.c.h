@@ -2058,36 +2058,6 @@
             DISPATCH();
         }
 
-        TARGET(COMPARE_OP_STR_JUMP) {
-            assert(cframe.use_tracing == 0);
-            // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int invert = cache->mask;
-            PyObject *right = TOP();
-            PyObject *left = SECOND();
-            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            int res = _PyUnicode_Equal(left, right);
-            assert(oparg == Py_EQ || oparg == Py_NE);
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            NEXTOPARG();
-            assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            STACK_SHRINK(2);
-            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            assert(res == 0 || res == 1);
-            assert(invert == 0 || invert == 1);
-            int jump = res ^ invert;
-            if (!jump) {
-                next_instr++;
-            }
-            else {
-                JUMPBY(1 + oparg);
-            }
-            DISPATCH();
-        }
-
         TARGET(IS_OP) {
             PyObject *right = POP();
             PyObject *left = TOP();
@@ -3816,6 +3786,42 @@
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
                 jump = (PyObject *)(size_t)(sign_ish & when_to_jump_mask);
+                _tmp_1 = jump;
+            }
+            next_instr += 2;
+            NEXTOPARG();
+            next_instr++;
+            {
+                PyObject *jump = _tmp_1;
+                assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
+                if (jump) {
+                    JUMPBY(oparg);
+                }
+            }
+            STACK_SHRINK(2);
+            DISPATCH();
+        }
+
+        TARGET(COMPARE_OP_STR_JUMP) {
+            PyObject *_tmp_1 = PEEK(2);
+            PyObject *_tmp_2 = PEEK(1);
+            {
+                PyObject *right = _tmp_2;
+                PyObject *left = _tmp_1;
+                PyObject *jump;
+                uint16_t invert = read_u16(next_instr + 1);
+                assert(cframe.use_tracing == 0);
+                // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
+                DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
+                DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
+                STAT_INC(COMPARE_OP, hit);
+                int res = _PyUnicode_Equal(left, right);
+                assert(oparg == Py_EQ || oparg == Py_NE);
+                _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+                _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+                assert(res == 0 || res == 1);
+                assert(invert == 0 || invert == 1);
+                jump = (PyObject *)(size_t)(res ^ invert);
                 _tmp_1 = jump;
             }
             next_instr += 2;
