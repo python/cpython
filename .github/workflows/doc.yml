@@ -28,6 +28,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   build_doc:
     name: 'Docs'
@@ -46,9 +50,14 @@ jobs:
       run: make -C Doc/ venv
     - name: 'Check documentation'
       run: make -C Doc/ check
+    - name: 'Upload NEWS'
+      uses: actions/upload-artifact@v3
+      with:
+        name: NEWS
+        path: Doc/build/NEWS
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
-    - name: 'Upload'
+    - name: 'Upload docs'
       uses: actions/upload-artifact@v3
       with:
         name: doc-html

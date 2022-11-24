@@ -468,6 +468,12 @@ Opening network connections
      *happy_eyeballs_delay*, *interleave*
      and *local_addr* should be specified.
 
+     .. note::
+
+        The *sock* argument transfers ownership of the socket to the
+        transport created. To close the socket, call the transport's
+        :meth:`~asyncio.BaseTransport.close` method.
+
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
      to bind the socket locally.  The *local_host* and *local_port*
      are looked up using ``getaddrinfo()``, similarly to *host* and *port*.
@@ -576,6 +582,12 @@ Opening network connections
      already connected, :class:`socket.socket` object to be used by the
      transport. If specified, *local_addr* and *remote_addr* should be omitted
      (must be :const:`None`).
+
+     .. note::
+
+        The *sock* argument transfers ownership of the socket to the
+        transport created. To close the socket, call the transport's
+        :meth:`~asyncio.BaseTransport.close` method.
 
    See :ref:`UDP echo client protocol <asyncio-udp-echo-client-protocol>` and
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
@@ -688,6 +700,12 @@ Creating network servers
    * *sock* can optionally be specified in order to use a preexisting
      socket object. If specified, *host* and *port* must not be specified.
 
+     .. note::
+
+        The *sock* argument transfers ownership of the socket to the
+        server created. To close the socket, call the server's
+        :meth:`~asyncio.Server.close` method.
+
    * *backlog* is the maximum number of queued connections passed to
      :meth:`~socket.socket.listen` (defaults to 100).
 
@@ -789,6 +807,12 @@ Creating network servers
    * *sock* is a preexisting socket object returned from
      :meth:`socket.accept <socket.socket.accept>`.
 
+     .. note::
+
+        The *sock* argument transfers ownership of the socket to the
+        transport created. To close the socket, call the transport's
+        :meth:`~asyncio.BaseTransport.close` method.
+
    * *ssl* can be set to an :class:`~ssl.SSLContext` to enable SSL over
      the accepted connections.
 
@@ -853,9 +877,14 @@ TLS Upgrade
 
    Upgrade an existing transport-based connection to TLS.
 
-   Return a new transport instance, that the *protocol* must start using
-   immediately after the *await*.  The *transport* instance passed to
-   the *start_tls* method should never be used again.
+   Create a TLS coder/decoder instance and insert it between the *transport*
+   and the *protocol*. The coder/decoder implements both *transport*-facing
+   protocol and *protocol*-facing transport.
+
+   Return the created two-interface instance. After *await*, the *protocol*
+   must stop using the original *transport* and communicate with the returned
+   object only because the coder caches *protocol*-side data and sporadically
+   exchanges extra TLS session packets with *transport*.
 
    Parameters:
 
@@ -1229,7 +1258,13 @@ Executing code in thread or process pools
                   pool, cpu_bound)
               print('custom process pool', result)
 
-      asyncio.run(main())
+      if __name__ == '__main__':
+          asyncio.run(main())
+
+   Note that the entry point guard (``if __name__ == '__main__'``)
+   is required for option 3 due to the peculiarities of :mod:`multiprocessing`,
+   which is used by :class:`~concurrent.futures.ProcessPoolExecutor`.
+   See :ref:`Safe importing of main module <multiprocessing-safe-main-import>`.
 
    This method returns a :class:`asyncio.Future` object.
 
@@ -1270,6 +1305,15 @@ Allows customizing how exceptions are handled in the event loop.
    is a ``dict`` object containing the details of the exception
    (see :meth:`call_exception_handler` documentation for details
    about context).
+
+   If the handler is called on behalf of a :class:`~asyncio.Task` or
+   :class:`~asyncio.Handle`, it is run in the
+   :class:`contextvars.Context` of that task or callback handle.
+
+   .. versionchanged:: 3.12
+
+      The handler may be called in the :class:`~contextvars.Context`
+      of the task or handle where the exception originated.
 
 .. method:: loop.get_exception_handler()
 
@@ -1474,6 +1518,13 @@ Callback Handles
    A callback wrapper object returned by :meth:`loop.call_soon`,
    :meth:`loop.call_soon_threadsafe`.
 
+   .. method:: get_context()
+
+      Return the :class:`contextvars.Context` object
+      associated with the handle.
+
+      .. versionadded:: 3.12
+
    .. method:: cancel()
 
       Cancel the callback.  If the callback has already been canceled
@@ -1632,9 +1683,12 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       import asyncio
       import selectors
 
-      selector = selectors.SelectSelector()
-      loop = asyncio.SelectorEventLoop(selector)
-      asyncio.set_event_loop(loop)
+      class MyPolicy(asyncio.DefaultEventLoopPolicy):
+         def new_event_loop(self):
+            selector = selectors.SelectSelector()
+            return asyncio.SelectorEventLoop(selector)
+
+      asyncio.set_event_loop_policy(MyPolicy())
 
 
    .. availability:: Unix, Windows.

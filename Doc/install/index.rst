@@ -765,7 +765,7 @@ And on Windows, the configuration files are:
 +--------------+-------------------------------------------------+-------+
 
 On all platforms, the "personal" file can be temporarily disabled by
-passing the `--no-user-cfg` option.
+passing the ``--no-user-cfg`` option.
 
 Notes:
 
