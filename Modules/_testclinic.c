@@ -892,6 +892,46 @@ keyword_only_parameter_impl(PyObject *module, PyObject *a)
 }
 
 
+/*[clinic input]
+vararg_and_posonly
+
+    a: object
+    *args: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
+/*[clinic end generated code: output=42792f799465a14d input=defe017b19ba52e8]*/
+{
+    return pack_arguments_newref(2, a, args);
+}
+
+
+/*[clinic input]
+gh_99233_refcount
+
+    *args: object
+    /
+
+Proof-of-concept of GH-99233 refcount error bug.
+
+While AC-generated code is packing varargs to a tuple, the arguments' refcounts are not increased.
+So all the packed arguments' refcounts are decreased 1 improperly when the tuple is released later.
+
+Call this function with whatever arguments and check if the arguments' refcount is correct.
+
+[clinic start generated code]*/
+
+static PyObject *
+gh_99233_refcount_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=585855abfbca9a7f input=d34627c52b39ed17]*/
+{
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -933,6 +973,8 @@ static PyMethodDef tester_methods[] = {
     POSONLY_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     POSONLY_OPT_KEYWORDS_OPT_KWONLY_OPT_METHODDEF
     KEYWORD_ONLY_PARAMETER_METHODDEF
+    VARARG_AND_POSONLY_METHODDEF
+    GH_99233_REFCOUNT_METHODDEF
     {NULL, NULL}
 };
 
