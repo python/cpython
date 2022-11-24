@@ -1914,11 +1914,11 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
        don't find a symlink it'll be faster to try it first */
     if (GetFileInformationByName(path, FileStatBasicByNameInfo,
                                  &statInfo, sizeof(statInfo))) {
-        /* Fast path succeeded. If we're not traversing or the file isn't
-           a name surrogate reparse point, we can continue */
-        if (!traverse ||
-            !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-              IsReparseTagNameSurrogate(statInfo.ReparseTag))) {
+        /* Fast path succeeded. If the file isn't a reparse point or if it's
+           a name-surrogate reparse point and we're not traversing, then we 
+           can use the fast stat. */
+        if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
+            !traverse && IsReparseTagNameSurrogate(statInfo.ReparseTag)) {
             _Py_stat_basic_info_to_stat(&statInfo, result);
             if (!fast) {
                 win32_xstat_fixup_exec_mode(path, result);
@@ -1930,6 +1930,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             }
             return 0;
         }
+        // Continue to the slow path. For efficiency, set traverse to true.
+        traverse = TRUE;
     } else {
         /* Some errors aren't worth retrying with the slow path */
         switch(GetLastError()) {
