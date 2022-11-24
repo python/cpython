@@ -36,13 +36,13 @@ struct pyruntimestate;
         ._type = _PyStatus_TYPE_EXIT, \
         .exitcode = (EXITCODE)}
 #define _PyStatus_IS_ERROR(err) \
-    (err._type == _PyStatus_TYPE_ERROR)
+    ((err)._type == _PyStatus_TYPE_ERROR)
 #define _PyStatus_IS_EXIT(err) \
-    (err._type == _PyStatus_TYPE_EXIT)
+    ((err)._type == _PyStatus_TYPE_EXIT)
 #define _PyStatus_EXCEPTION(err) \
-    (err._type != _PyStatus_TYPE_OK)
+    ((err)._type != _PyStatus_TYPE_OK)
 #define _PyStatus_UPDATE_FUNC(err) \
-    do { err.func = _PyStatus_GET_FUNC(); } while (0)
+    do { (err).func = _PyStatus_GET_FUNC(); } while (0)
 
 PyObject* _PyErr_SetFromPyStatus(PyStatus status);
 
@@ -155,6 +155,7 @@ extern PyStatus _PyConfig_Copy(
 extern PyStatus _PyConfig_InitPathConfig(
     PyConfig *config,
     int compute_path_config);
+extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
 extern PyStatus _PyConfig_Read(PyConfig *config, int compute_path_config);
 extern PyStatus _PyConfig_Write(const PyConfig *config,
     struct pyruntimestate *runtime);
@@ -164,6 +165,10 @@ extern PyStatus _PyConfig_SetPyArgv(
 
 PyAPI_FUNC(PyObject*) _PyConfig_AsDict(const PyConfig *config);
 PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
+
+extern void _Py_DumpPathConfig(PyThreadState *tstate);
+
+PyAPI_FUNC(PyObject*) _Py_Get_Getpath_CodeObject(void);
 
 
 /* --- Function used for testing ---------------------------------- */

@@ -167,6 +167,8 @@ The :mod:`csv` module defines the following classes:
    All other optional or keyword arguments are passed to the underlying
    :class:`reader` instance.
 
+   If the argument passed to *fieldnames* is an iterator, it will be coerced to a :class:`list`.
+
    .. versionchanged:: 3.6
       Returned rows are now of type :class:`OrderedDict`.
 
@@ -208,6 +210,8 @@ The :mod:`csv` module defines the following classes:
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
    of the :class:`DictWriter` class is not optional.
+
+   If the argument passed to *fieldnames* is an iterator, it will be coerced to a :class:`list`.
 
    A short usage example::
 
@@ -383,6 +387,8 @@ Dialects support the following attributes:
    :const:`False`. On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
 
+   .. versionchanged:: 3.11
+      An empty *escapechar* is not allowed.
 
 .. attribute:: Dialect.lineterminator
 
@@ -402,6 +408,8 @@ Dialects support the following attributes:
    as the *delimiter* or *quotechar*, or which contain new-line characters.  It
    defaults to ``'"'``.
 
+   .. versionchanged:: 3.11
+      An empty *quotechar* is not allowed.
 
 .. attribute:: Dialect.quoting
 
@@ -412,7 +420,7 @@ Dialects support the following attributes:
 
 .. attribute:: Dialect.skipinitialspace
 
-   When :const:`True`, whitespace immediately following the *delimiter* is ignored.
+   When :const:`True`, spaces immediately following the *delimiter* are ignored.
    The default is :const:`False`.
 
 
@@ -538,7 +546,7 @@ The corresponding simplest possible writing example is::
 
 Since :func:`open` is used to open a CSV file for reading, the file
 will by default be decoded into unicode using the system default
-encoding (see :func:`locale.getpreferredencoding`).  To decode a file
+encoding (see :func:`locale.getencoding`).  To decode a file
 using a different encoding, use the ``encoding`` argument of open::
 
    import csv

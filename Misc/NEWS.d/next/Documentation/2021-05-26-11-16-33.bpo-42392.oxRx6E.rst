@@ -1,2 +1,0 @@
-Document the deprecation and removal of the ``loop`` parameter for many
-functions and classes in :mod:`asyncio`.

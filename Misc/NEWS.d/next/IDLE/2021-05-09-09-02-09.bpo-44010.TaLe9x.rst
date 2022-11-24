@@ -1,5 +1,0 @@
-Highlight the new :ref:`match <match>` statement's
-:ref:`soft keywords <soft-keywords>`: :keyword:`match`,
-:keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>`.
-However, this highlighting is not perfect and will be incorrect in some
-rare cases, including some ``_``-s in ``case`` patterns.

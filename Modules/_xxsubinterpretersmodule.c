@@ -1,11 +1,14 @@
 
 /* interpreters module */
 /* low-level access to interpreter primitives */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
-#include "frameobject.h"
 #include "pycore_frame.h"
-#include "interpreteridobject.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_interpreteridobject.h"
 
 
 static char *
@@ -1719,8 +1722,7 @@ _channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
     xid->resolve = ((channelid *)obj)->resolve;
 
     data->data = xid;
-    Py_INCREF(obj);
-    data->obj = obj;
+    data->obj = Py_NewRef(obj);
     data->new_object = _channelid_from_xid;
     data->free = PyMem_Free;
     return 0;
@@ -1835,14 +1837,11 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    InterpreterFrame *frame = tstate->frame;
+    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame == NULL) {
         return 0;
     }
-
-    int executing = _PyFrame_IsExecuting(frame);
-
-    return executing;
+    return 1;
 }
 
 static int
@@ -1931,20 +1930,6 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
         return -1;
     }
 
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    // Switch to interpreter.
-    PyThreadState *new_tstate = PyInterpreterState_ThreadHead(interp);
-    PyThreadState *save1 = PyEval_SaveThread();
-
-    (void)PyThreadState_Swap(new_tstate);
-
-    // Run the script.
-    _sharedexception *exc = NULL;
-    int result = _run_script(interp, codestr, shared, &exc);
-
-    // Switch back.
-    PyEval_RestoreThread(save1);
-#else
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
     if (interp != PyInterpreterState_Get()) {
@@ -1962,7 +1947,6 @@ _run_script_in_interpreter(PyInterpreterState *interp, const char *codestr,
     if (save_tstate != NULL) {
         PyThreadState_Swap(save_tstate);
     }
-#endif
 
     // Propagate any exception out to the caller.
     if (exc != NULL) {
@@ -2017,9 +2001,12 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = PyThreadState_Get();
+    PyThreadState *save_tstate = _PyThreadState_GET();
+    const _PyInterpreterConfig config = isolated
+        ? (_PyInterpreterConfig)_PyInterpreterConfig_INIT
+        : (_PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
     // XXX Possible GILState issues?
-    PyThreadState *tstate = _Py_NewInterpreter(isolated);
+    PyThreadState *tstate = _Py_NewInterpreterFromConfig(&config);
     PyThreadState_Swap(save_tstate);
     if (tstate == NULL) {
         /* Since no new thread state was created, there is no exception to
@@ -2333,11 +2320,10 @@ channel_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyObject *id = (PyObject *)newchannelid(&ChannelIDtype, *cur, 0,
                                                 &_globals.channels, 0, 0);
         if (id == NULL) {
-            Py_DECREF(ids);
-            ids = NULL;
+            Py_SETREF(ids, NULL);
             break;
         }
-        PyList_SET_ITEM(ids, i, id);
+        PyList_SET_ITEM(ids, (Py_ssize_t)i, id);
     }
 
 finally:
@@ -2396,8 +2382,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     goto finally;
 
 except:
-    Py_XDECREF(ids);
-    ids = NULL;
+    Py_CLEAR(ids);
 
 finally:
     return ids;
@@ -2558,9 +2543,9 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                    (PyCFunction)(void(*)(void))interp_create,
+    {"create",                    _PyCFunction_CAST(interp_create),
      METH_VARARGS | METH_KEYWORDS, create_doc},
-    {"destroy",                   (PyCFunction)(void(*)(void))interp_destroy,
+    {"destroy",                   _PyCFunction_CAST(interp_destroy),
      METH_VARARGS | METH_KEYWORDS, destroy_doc},
     {"list_all",                  interp_list_all,
      METH_NOARGS, list_all_doc},
@@ -2568,31 +2553,31 @@ static PyMethodDef module_functions[] = {
      METH_NOARGS, get_current_doc},
     {"get_main",                  interp_get_main,
      METH_NOARGS, get_main_doc},
-    {"is_running",                (PyCFunction)(void(*)(void))interp_is_running,
+    {"is_running",                _PyCFunction_CAST(interp_is_running),
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
-    {"run_string",                (PyCFunction)(void(*)(void))interp_run_string,
+    {"run_string",                _PyCFunction_CAST(interp_run_string),
      METH_VARARGS | METH_KEYWORDS, run_string_doc},
 
-    {"is_shareable",              (PyCFunction)(void(*)(void))object_is_shareable,
+    {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
 
     {"channel_create",            channel_create,
      METH_NOARGS, channel_create_doc},
-    {"channel_destroy",           (PyCFunction)(void(*)(void))channel_destroy,
+    {"channel_destroy",           _PyCFunction_CAST(channel_destroy),
      METH_VARARGS | METH_KEYWORDS, channel_destroy_doc},
     {"channel_list_all",          channel_list_all,
      METH_NOARGS, channel_list_all_doc},
-    {"channel_list_interpreters", (PyCFunction)(void(*)(void))channel_list_interpreters,
+    {"channel_list_interpreters", _PyCFunction_CAST(channel_list_interpreters),
      METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
-    {"channel_send",              (PyCFunction)(void(*)(void))channel_send,
+    {"channel_send",              _PyCFunction_CAST(channel_send),
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
-    {"channel_recv",              (PyCFunction)(void(*)(void))channel_recv,
+    {"channel_recv",              _PyCFunction_CAST(channel_recv),
      METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
-    {"channel_close",             (PyCFunction)(void(*)(void))channel_close,
+    {"channel_close",             _PyCFunction_CAST(channel_close),
      METH_VARARGS | METH_KEYWORDS, channel_close_doc},
-    {"channel_release",           (PyCFunction)(void(*)(void))channel_release,
+    {"channel_release",           _PyCFunction_CAST(channel_release),
      METH_VARARGS | METH_KEYWORDS, channel_release_doc},
-    {"_channel_id",               (PyCFunction)(void(*)(void))channel__channel_id,
+    {"_channel_id",               _PyCFunction_CAST(channel__channel_id),
      METH_VARARGS | METH_KEYWORDS, NULL},
 
     {NULL,                        NULL}           /* sentinel */
@@ -2646,12 +2631,12 @@ PyInit__xxsubinterpreters(void)
     }
 
     /* Add other types */
-    Py_INCREF(&ChannelIDtype);
-    if (PyDict_SetItemString(ns, "ChannelID", (PyObject *)&ChannelIDtype) != 0) {
+    if (PyDict_SetItemString(ns, "ChannelID",
+                             Py_NewRef(&ChannelIDtype)) != 0) {
         return NULL;
     }
-    Py_INCREF(&_PyInterpreterID_Type);
-    if (PyDict_SetItemString(ns, "InterpreterID", (PyObject *)&_PyInterpreterID_Type) != 0) {
+    if (PyDict_SetItemString(ns, "InterpreterID",
+                             Py_NewRef(&_PyInterpreterID_Type)) != 0) {
         return NULL;
     }
 

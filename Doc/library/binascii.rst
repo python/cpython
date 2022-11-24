@@ -8,14 +8,13 @@
 .. index::
    module: uu
    module: base64
-   module: binhex
 
 --------------
 
 The :mod:`binascii` module contains a number of methods to convert between
 binary and various ASCII-encoded binary representations. Normally, you will not
-use these functions directly but use wrapper modules like :mod:`uu`,
-:mod:`base64`, or :mod:`binhex` instead. The :mod:`binascii` module contains
+use these functions directly but use wrapper modules like :mod:`uu` or
+:mod:`base64` instead. The :mod:`binascii` module contains
 low-level functions written in C for greater speed that are used by the
 higher-level modules.
 
@@ -50,7 +49,7 @@ The :mod:`binascii` module defines the following functions:
       Added the *backtick* parameter.
 
 
-.. function:: a2b_base64(string, strict_mode=False)
+.. function:: a2b_base64(string, /, *, strict_mode=False)
 
    Convert a block of base64 data back to binary and return the binary data. More
    than one line may be passed at a time.
@@ -98,45 +97,6 @@ The :mod:`binascii` module defines the following functions:
    stream.
 
 
-.. function:: a2b_hqx(string)
-
-   Convert binhex4 formatted ASCII data to binary, without doing RLE-decompression.
-   The string should contain a complete number of binary bytes, or (in case of the
-   last portion of the binhex4 data) have the remaining bits zero.
-
-   .. deprecated:: 3.9
-
-
-.. function:: rledecode_hqx(data)
-
-   Perform RLE-decompression on the data, as per the binhex4 standard. The
-   algorithm uses ``0x90`` after a byte as a repeat indicator, followed by a count.
-   A count of ``0`` specifies a byte value of ``0x90``. The routine returns the
-   decompressed data, unless data input data ends in an orphaned repeat indicator,
-   in which case the :exc:`Incomplete` exception is raised.
-
-   .. versionchanged:: 3.2
-      Accept only bytestring or bytearray objects as input.
-
-   .. deprecated:: 3.9
-
-
-.. function:: rlecode_hqx(data)
-
-   Perform binhex4 style RLE-compression on *data* and return the result.
-
-   .. deprecated:: 3.9
-
-
-.. function:: b2a_hqx(data)
-
-   Perform hexbin4 binary-to-ASCII translation and return the resulting string. The
-   argument should already be RLE-coded, and have a length divisible by 3 (except
-   possibly the last fragment).
-
-   .. deprecated:: 3.9
-
-
 .. function:: crc_hqx(data, value)
 
    Compute a 16-bit CRC value of *data*, starting with *value* as the
@@ -147,7 +107,7 @@ The :mod:`binascii` module defines the following functions:
 
 .. function:: crc32(data[, value])
 
-   Compute CRC-32, the 32-bit checksum of *data*, starting with an
+   Compute CRC-32, the unsigned 32-bit checksum of *data*, starting with an
    initial CRC of *value*.  The default initial CRC is zero.  The algorithm
    is consistent with the ZIP file checksum.  Since the algorithm is designed for
    use as a checksum algorithm, it is not suitable for use as a general hash
@@ -161,9 +121,6 @@ The :mod:`binascii` module defines the following functions:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
-      To generate the same numeric value across all Python versions and
-      platforms, use ``crc32(data) & 0xffffffff``.
-
 
 .. function:: b2a_hex(data[, sep[, bytes_per_sep=1]])
               hexlify(data[, sep[, bytes_per_sep=1]])
@@ -221,9 +178,6 @@ The :mod:`binascii` module defines the following functions:
    Module :mod:`base64`
       Support for RFC compliant base64-style encoding in base 16, 32, 64,
       and 85.
-
-   Module :mod:`binhex`
-      Support for the binhex format used on the Macintosh.
 
    Module :mod:`uu`
       Support for UU encoding used on Unix.
