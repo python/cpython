@@ -972,18 +972,12 @@ gh_32092_oob
 
 Proof-of-concept of GH-32092 OOB bug.
 
-Array index out-of-bound bug in function
-`_PyArg_UnpackKeywordsWithVararg` .
-
-Calling this function by gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)
-to trigger this bug (crash).
-
 [clinic start generated code]*/
 
 static PyObject *
 gh_32092_oob_impl(PyObject *module, PyObject *pos1, PyObject *pos2,
                   PyObject *varargs, PyObject *kw1, PyObject *kw2)
-/*[clinic end generated code: output=ee259c130054653f input=568c6276e3fdef62]*/
+/*[clinic end generated code: output=ee259c130054653f input=46d15c881608f8ff]*/
 {
     Py_RETURN_NONE;
 }
@@ -998,18 +992,12 @@ gh_32092_kw_pass
 
 Proof-of-concept of GH-32092 keyword args passing bug.
 
-The calculation of `noptargs` in AC-generated function
-`builtin_kw_pass_poc` is incorrect.
-
-Calling this function by gh_32092_kw_pass(1, 2, 3)
-to trigger this bug (crash).
-
 [clinic start generated code]*/
 
 static PyObject *
 gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
                       PyObject *kw)
-/*[clinic end generated code: output=4a2bbe4f7c8604e9 input=5bfe6191e1e7a2fb]*/
+/*[clinic end generated code: output=4a2bbe4f7c8604e9 input=5c0bd5b9079a0cce]*/
 {
     Py_RETURN_NONE;
 }

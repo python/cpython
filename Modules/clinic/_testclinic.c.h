@@ -2540,13 +2540,7 @@ PyDoc_STRVAR(gh_32092_oob__doc__,
 "gh_32092_oob($module, /, pos1, pos2, *varargs, kw1=None, kw2=None)\n"
 "--\n"
 "\n"
-"Proof-of-concept of GH-32092 OOB bug.\n"
-"\n"
-"Array index out-of-bound bug in function\n"
-"`_PyArg_UnpackKeywordsWithVararg` .\n"
-"\n"
-"Calling this function by gh_32092_oob(1, 2, 3, 4, kw1=5, kw2=6)\n"
-"to trigger this bug (crash).");
+"Proof-of-concept of GH-32092 OOB bug.");
 
 #define GH_32092_OOB_METHODDEF    \
     {"gh_32092_oob", _PyCFunction_CAST(gh_32092_oob), METH_FASTCALL|METH_KEYWORDS, gh_32092_oob__doc__},
@@ -2621,13 +2615,7 @@ PyDoc_STRVAR(gh_32092_kw_pass__doc__,
 "gh_32092_kw_pass($module, /, pos, *args, kw=None)\n"
 "--\n"
 "\n"
-"Proof-of-concept of GH-32092 keyword args passing bug.\n"
-"\n"
-"The calculation of `noptargs` in AC-generated function\n"
-"`builtin_kw_pass_poc` is incorrect.\n"
-"\n"
-"Calling this function by gh_32092_kw_pass(1, 2, 3)\n"
-"to trigger this bug (crash).");
+"Proof-of-concept of GH-32092 keyword args passing bug.");
 
 #define GH_32092_KW_PASS_METHODDEF    \
     {"gh_32092_kw_pass", _PyCFunction_CAST(gh_32092_kw_pass), METH_FASTCALL|METH_KEYWORDS, gh_32092_kw_pass__doc__},
@@ -2688,4 +2676,4 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=6af75e9c44ffab5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8895d3fff51da68a input=a9049054013a1b77]*/
