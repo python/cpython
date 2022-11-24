@@ -16,7 +16,7 @@ __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
 def exists(path):
     """Test whether a path exists.  Returns False for broken symbolic links"""
     try:
-        os.stat(path)
+        os.statx(path, stat.STATX_TYPE)
     except (OSError, ValueError):
         return False
     return True
@@ -27,7 +27,7 @@ def exists(path):
 def isfile(path):
     """Test whether a path is a regular file"""
     try:
-        st = os.stat(path)
+        st = os.statx(path, stat.STATX_TYPE)
     except (OSError, ValueError):
         return False
     return stat.S_ISREG(st.st_mode)
@@ -39,7 +39,7 @@ def isfile(path):
 def isdir(s):
     """Return true if the pathname refers to an existing directory."""
     try:
-        st = os.stat(s)
+        st = os.statx(s, stat.STATX_TYPE)
     except (OSError, ValueError):
         return False
     return stat.S_ISDIR(st.st_mode)
@@ -47,21 +47,23 @@ def isdir(s):
 
 def getsize(filename):
     """Return the size of a file, reported by os.stat()."""
-    return os.stat(filename).st_size
+    return os.statx(filename, stat.STATX_SIZE).st_size
 
 
 def getmtime(filename):
     """Return the last modification time of a file, reported by os.stat()."""
-    return os.stat(filename).st_mtime
+    return os.statx(filename, stat.STATX_MTIME).st_mtime
 
 
 def getatime(filename):
     """Return the last access time of a file, reported by os.stat()."""
-    return os.stat(filename).st_atime
+    return os.statx(filename, stat.STATX_ATIME).st_atime
 
 
 def getctime(filename):
     """Return the metadata change time of a file, reported by os.stat()."""
+    # XXX: If we change to statx, st_ctime on Windows will start returning
+    # change time instead of creation time.
     return os.stat(filename).st_ctime
 
 
@@ -86,6 +88,8 @@ def commonprefix(m):
 # describing the same file?
 def samestat(s1, s2):
     """Test whether two stat buffers reference the same file"""
+    if not s1.stx_mask & s2.stx_mask & stat.STATX_INO:
+        raise ValueError("stat values must include STATX_INO")
     return (s1.st_ino == s2.st_ino and
             s1.st_dev == s2.st_dev)
 
@@ -97,8 +101,8 @@ def samefile(f1, f2):
     This is determined by the device number and i-node number and
     raises an exception if an os.stat() call on either pathname fails.
     """
-    s1 = os.stat(f1)
-    s2 = os.stat(f2)
+    s1 = os.statx(f1, stat.STATX_INO)
+    s2 = os.statx(f2, stat.STATX_INO)
     return samestat(s1, s2)
 
 
@@ -106,8 +110,8 @@ def samefile(f1, f2):
 # (Not necessarily the same file descriptor!)
 def sameopenfile(fp1, fp2):
     """Test whether two open file objects reference the same file"""
-    s1 = os.fstat(fp1)
-    s2 = os.fstat(fp2)
+    s1 = os.statx(fp1, stat.STATX_INO)
+    s2 = os.statx(fp2, stat.STATX_INO)
     return samestat(s1, s2)
 
 

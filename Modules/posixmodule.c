@@ -36,6 +36,7 @@
 #  include "posixmodule.h"
 #else
 #  include "winreparse.h"
+#  include "pycore_fileutils_windows.h" // GetFileInformationByName()
 #endif
 
 #if !defined(EX_OK) && defined(EXIT_SUCCESS)
@@ -664,6 +665,8 @@ PyOS_AfterFork(void)
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
 void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
                                             ULONG, struct _Py_stat_struct *);
+void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
+                                 struct _Py_stat_struct *);
 #endif
 
 
@@ -2056,6 +2059,52 @@ win32_stat(const wchar_t* path, struct _Py_stat_struct *result)
     return win32_xstat(path, result, TRUE);
 }
 
+
+/* The statx values we can get from FileStatBasicByNameInfo.
+   Notably absent are STATX_INO (because we can't get st_dev efficiently),
+   and STATX_MODE.
+   Any flags requested that aren't in this mask will cause the FILE_STATS
+   below to be used, even if it is missing other flags. */
+#define WIN32_STATX_BASIC_STATS (0x0EC5)
+/* The statx values we get from GetFileInformationByHandle().
+   Notably absent is STATX_CTIME (we return creation time instead).*/
+#define WIN32_STATX_FILE_STATS (0x0F67)
+
+static int
+win32_statx(const wchar_t *path, struct _Py_stat_struct *result,
+            int mask, int follow_symlinks, unsigned int *result_mask)
+{
+    if (!(mask & ~WIN32_STATX_BASIC_STATS)) {
+        /* Try and use our fast path to fill in the result */
+        FILE_STAT_BASIC_INFORMATION statInfo;
+        if (GetFileInformationByName(path, FileStatBasicByNameInfo,
+                                     &statInfo, sizeof(statInfo))) {
+            if (// Cannot use fast path for reparse points ...
+                !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+                // ... unless it's a name surrogate (symlink) and we're not following
+                || (!follow_symlinks && IsReparseTagNameSurrogate(statInfo.ReparseTag))
+            ) {
+                *result_mask = WIN32_STATX_BASIC_STATS;
+                _Py_stat_basic_info_to_stat(&statInfo, result);
+            }
+        } else {
+            /* Some errors aren't worth retrying with the slow path */
+            switch(GetLastError()) {
+            case ERROR_FILE_NOT_FOUND:
+            case ERROR_PATH_NOT_FOUND:
+            case ERROR_NOT_READY:
+            case ERROR_BAD_NET_NAME:
+                return -1;
+            }
+        }
+    }
+
+    /* No result yet, so either we need to follow a symlink, or the
+       user requested more information than our fast path offers */
+    *result_mask = WIN32_STATX_FILE_STATS;
+    return win32_xstat(path, result, follow_symlinks);
+}
+
 #endif /* MS_WINDOWS */
 
 PyDoc_STRVAR(stat_result__doc__,
@@ -2087,22 +2136,22 @@ static PyStructSequence_Field stat_result_fields[] = {
     {"st_atime_ns",   "time of last access in nanoseconds"},
     {"st_mtime_ns",   "time of last modification in nanoseconds"},
     {"st_ctime_ns",   "time of last change in nanoseconds"},
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+#if defined(HAVE_STRUCT_STAT_ST_BLKSIZE) || defined(HAVE_STATX)
     {"st_blksize", "blocksize for filesystem I/O"},
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
+#if defined(HAVE_STRUCT_STAT_ST_BLOCKS) || defined(HAVE_STATX)
     {"st_blocks",  "number of blocks allocated"},
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_RDEV
+#if defined(HAVE_STRUCT_STAT_ST_RDEV) || defined(HAVE_STATX)
     {"st_rdev",    "device type (if inode device)"},
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_FLAGS
+#if defined(HAVE_STRUCT_STAT_ST_FLAGS) || defined(HAVE_STATX)
     {"st_flags",   "user defined flags for file"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
     {"st_gen",    "generation number"},
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(HAVE_STATX)
     {"st_birthtime",   "time of creation"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
@@ -2114,28 +2163,35 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
     {"st_reparse_tag", "Windows reparse tag"},
 #endif
+    /* the stx_mask attribute is always present to allow for fallbacks */
+    {"stx_mask", "mask of fields provided by the system"},
+#ifdef HAVE_STATX
+    {"stx_attributes", "additional file attributes"},
+    {"stx_attributes_mask", "mask indicating which attributes are supported"},
+    {"stx_mnt_id", "the mount id"},
+#endif
     {0}
 };
 
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+#if defined(HAVE_STRUCT_STAT_ST_BLKSIZE) || defined(HAVE_STATX)
 #define ST_BLKSIZE_IDX 16
 #else
 #define ST_BLKSIZE_IDX 15
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
+#if defined(HAVE_STRUCT_STAT_ST_BLOCKS) || defined(HAVE_STATX)
 #define ST_BLOCKS_IDX (ST_BLKSIZE_IDX+1)
 #else
 #define ST_BLOCKS_IDX ST_BLKSIZE_IDX
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_RDEV
+#if defined(HAVE_STRUCT_STAT_ST_RDEV) || defined(HAVE_STATX)
 #define ST_RDEV_IDX (ST_BLOCKS_IDX+1)
 #else
 #define ST_RDEV_IDX ST_BLOCKS_IDX
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_FLAGS
+#if defined(HAVE_STRUCT_STAT_ST_FLAGS) || defined(HAVE_STATX)
 #define ST_FLAGS_IDX (ST_RDEV_IDX+1)
 #else
 #define ST_FLAGS_IDX ST_RDEV_IDX
@@ -2147,7 +2203,7 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_GEN_IDX ST_FLAGS_IDX
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(HAVE_STATX)
 #define ST_BIRTHTIME_IDX (ST_GEN_IDX+1)
 #else
 #define ST_BIRTHTIME_IDX ST_GEN_IDX
@@ -2170,6 +2226,23 @@ static PyStructSequence_Field stat_result_fields[] = {
 #else
 #define ST_REPARSE_TAG_IDX ST_FSTYPE_IDX
 #endif
+
+#define STX_MASK_IDX (ST_REPARSE_TAG_IDX+1)
+
+#ifdef HAVE_STATX
+#define STX_ATTRIBUTES_IDX (STX_MASK_IDX+1)
+#define STX_ATTRIBUTES_MASK_IDX (STX_ATTRIBUTES_IDX+1)
+#define STX_MNT_ID_IDX (STX_ATTRIBUTES_MASK_IDX+1)
+#endif
+
+/* for when regular stat() gets called */
+#ifdef MS_WINDOWS
+#define ST_DEFAULT_STX_MASK WIN32_STATX_FILE_STATS
+#else
+/* STATX_BASIC_STATS */
+#define ST_DEFAULT_STX_MASK 0x000007ff
+#endif
+
 
 static PyStructSequence_Desc stat_result_desc = {
     "stat_result", /* name */
@@ -2354,7 +2427,7 @@ exit:
 /* pack a system stat C structure into the Python stat tuple
    (used by posix_stat() and posix_fstat()) */
 static PyObject*
-_pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
+_pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
 {
     unsigned long ansec, mnsec, cnsec;
     PyObject *StatResultType = get_posix_state(module)->StatResultType;
@@ -2421,12 +2494,18 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
     {
       PyObject *val;
-      unsigned long bsec,bnsec;
-      bsec = (long)st->st_birthtime;
+      double bsec;
+      unsigned long bnsec;
+#ifdef MS_WINDOWS
+      bsec = (double)st->st_btime;
+      bnsec = st->st_btime_nsec;
+#else
+      bsec = (double)(long)st->st_birthtime;
 #ifdef HAVE_STAT_TV_NSEC2
       bnsec = st->st_birthtimespec.tv_nsec;
 #else
       bnsec = 0;
+#endif
 #endif
       val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
       PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
@@ -2450,6 +2529,12 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
                               PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
+    if (!stx_mask) {
+        stx_mask = ST_DEFAULT_STX_MASK;
+    }
+    PyStructSequence_SET_ITEM(v, STX_MASK_IDX,
+                              PyLong_FromUnsignedLong(stx_mask));
+
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;
@@ -2457,6 +2542,70 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 
     return v;
 }
+
+#ifdef HAVE_STATX
+
+/* pack a system statx C structure into the Python stat tuple
+   (used by posix_statx()) */
+static PyObject*
+_pystat_fromstructstatx(PyObject *module, struct statx *st)
+{
+    unsigned long long dev;
+    PyObject *StatResultType = get_posix_state(module)->StatResultType;
+    PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
+    if (v == NULL)
+        return NULL;
+
+    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->stx_mode));
+    static_assert(sizeof(unsigned long long) >= sizeof(st->stx_ino),
+                  "statx.stx_ino is larger than unsigned long long");
+    PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLongLong(st->stx_ino));
+    dev = (unsigned long long)st->stx_dev_major << 32 | st->stx_dev_minor;
+    PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLongLong(dev));
+    PyStructSequence_SET_ITEM(v, 3, PyLong_FromUnsignedLong(st->stx_nlink));
+    PyStructSequence_SET_ITEM(v, 4, _PyLong_FromUid(st->stx_uid));
+    PyStructSequence_SET_ITEM(v, 5, _PyLong_FromGid(st->stx_gid));
+    static_assert(sizeof(unsigned long long) >= sizeof(st->stx_size),
+                  "statx.stx_size is larger than unsigned long long");
+    PyStructSequence_SET_ITEM(v, 6, PyLong_FromUnsignedLongLong(st->stx_size));
+
+    fill_time(module, v, 7, st->stx_atime.tv_sec, st->stx_atime.tv_nsec);
+    fill_time(module, v, 8, st->stx_mtime.tv_sec, st->stx_mtime.tv_nsec);
+    fill_time(module, v, 9, st->stx_ctime.tv_sec, st->stx_ctime.tv_nsec);
+
+    PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
+                              PyLong_FromUnsignedLong(st->stx_blksize));
+    PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX,
+                              PyLong_FromUnsignedLongLong(st->stx_blocks));
+    dev = (unsigned long long)st->stx_rdev_major << 32 | st->stx_rdev_minor;
+    PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
+                              PyLong_FromUnsignedLongLong(dev));
+
+    {
+        PyObject *btime;
+        btime = PyFloat_FromDouble(st->stx_btime.tv_sec + 1e-9*st->stx_btime.tv_nsec);
+        PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX, btime);
+    }
+
+    PyStructSequence_SET_ITEM(v, STX_MASK_IDX,
+                              PyLong_FromUnsignedLong(st->stx_mask));
+    PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_IDX,
+                              PyLong_FromUnsignedLongLong(st->stx_attributes));
+    PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_MASK_IDX,
+                              PyLong_FromUnsignedLongLong(st->stx_attributes_mask));
+    PyStructSequence_SET_ITEM(v, STX_MNT_ID_IDX,
+                              PyLong_FromUnsignedLongLong(st->stx_mnt_id));
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+
+    return v;
+}
+
+#endif
+
 
 /* POSIX methods */
 
@@ -2467,6 +2616,7 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
 {
     STRUCT_STAT st;
     int result;
+    unsigned int result_mask = ST_DEFAULT_STX_MASK;
 
 #ifdef HAVE_FSTATAT
     int fstatat_unavailable = 0;
@@ -2523,8 +2673,45 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
         return path_error(path);
     }
 
-    return _pystat_fromstructstat(module, &st);
+    return _pystat_fromstructstat(module, &st, 0);
 }
+
+
+#ifdef HAVE_STATX
+
+static PyObject *
+posix_do_statx(PyObject *module, path_t *path, unsigned int mask,
+               int dir_fd, int flags)
+{
+    struct statx st;
+    int result;
+
+    if (path_and_dir_fd_invalid("statx", path, dir_fd) ||
+        dir_fd_and_fd_invalid("statx", dir_fd, path->fd) ||
+        fd_and_follow_symlinks_invalid("statx", path->fd, !(flags & AT_SYMLINK_NOFOLLOW)))
+        return NULL;
+
+    if (dir_fd == DEFAULT_DIR_FD) {
+        dir_fd = AT_FDCWD;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &st);
+    } else {
+        result = statx(dir_fd, path->narrow, flags, mask, &st);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (result != 0) {
+        return path_error(path);
+    }
+
+    return _pystat_fromstructstatx(module, &st);
+}
+
+#endif
+
 
 /*[python input]
 
@@ -2877,6 +3064,91 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 {
     int follow_symlinks = 0;
     return posix_do_stat(module, "lstat", path, dir_fd, follow_symlinks);
+}
+
+/*[clinic input]
+
+os.statx
+
+    path : path_t(allow_fd=True)
+        Path to be examined; can be string, bytes, a path-like object or
+        open-file-descriptor int.
+
+    mask : int
+        A combination of stat.STATX_* flags specifying the fields that the
+        caller is interested in. The stx_mask member of the result will
+        include all fields that are actually filled in, which may be more
+        or fewer than those specified in this argument.
+
+    *
+
+    dir_fd : dir_fd = None
+        If not None, it should be a file descriptor open to a directory,
+        and path should be a relative string; path will then be relative to
+        that directory.
+
+    follow_symlinks: bool = True
+        If False, and the last element of the path is a symbolic link,
+        stat will examine the symbolic link itself instead of the file
+        the link points to.
+
+    flags : int = 0
+        A combination of AT_* flags specifying how path should be resolved.
+        These are only relevant on Linux.
+
+
+Perform a stat system call on the given path, retrieving certain information.
+
+dir_fd and follow_symlinks may not be implemented
+  on your platform.  If they are unavailable, using them will raise a
+  NotImplementedError.
+
+It's an error to use dir_fd or follow_symlinks when specifying path as
+  an open file descriptor.
+
+The follow_symlinks parameter adds the AT_SYMLINK_NOFOLLOW flag into flags
+  (when passed False) but will not remove it. Using this parameter rather
+  than the flag is recommended for maximum portability.
+
+[clinic start generated code]*/
+
+static PyObject *
+os_statx_impl(PyObject *module, path_t *path, int mask, int dir_fd,
+              int follow_symlinks, int flags)
+/*[clinic end generated code: output=e38f7e693d96b2c6 input=5e832dfc79a58fb7]*/
+{
+#ifdef MS_WINDOWS
+    struct _Py_stat_struct st;
+    unsigned int result_mask;
+    int result;
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        _Py_BEGIN_SUPPRESS_IPH
+        result = FSTAT(path->fd, &st);
+        result_mask = ST_DEFAULT_STX_MASK;
+        _Py_END_SUPPRESS_IPH
+    } else {
+        result = win32_statx(path->wide, &st, mask, follow_symlinks, &result_mask);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (result != 0) {
+        return path_error(path);
+    }
+
+    return _pystat_fromstructstat(module, &st, result_mask);
+
+#else /* MS_WINDOWS */
+
+#ifdef AT_SYMLINK_NOFOLLOW
+    if (!follow_symlinks) {
+        flags |= AT_SYMLINK_NOFOLLOW;
+    }
+#endif
+
+    return posix_do_statx(module, "stat", path, dir_fd, follow_symlinks);
+#endif
 }
 
 
@@ -10190,7 +10462,7 @@ os_fstat_impl(PyObject *module, int fd)
 #endif
     }
 
-    return _pystat_fromstructstat(module, &st);
+    return _pystat_fromstructstat(module, &st, 0);
 }
 
 
@@ -13701,7 +13973,7 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
     if (result != 0)
         return path_object_error(self->path);
 
-    return _pystat_fromstructstat(module, &st);
+    return _pystat_fromstructstat(module, &st, 0);
 }
 
 static PyObject *
@@ -13710,7 +13982,7 @@ DirEntry_get_lstat(PyTypeObject *defining_class, DirEntry *self)
     if (!self->lstat) {
         PyObject *module = PyType_GetModule(defining_class);
 #ifdef MS_WINDOWS
-        self->lstat = _pystat_fromstructstat(module, &self->win32_lstat);
+        self->lstat = _pystat_fromstructstat(module, &self->win32_lstat, 0);
 #else /* POSIX */
         self->lstat = DirEntry_fetch_stat(module, self, 0);
 #endif
@@ -14851,6 +15123,7 @@ os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
+    OS_STATX_METHODDEF
     OS_ACCESS_METHODDEF
     OS_TTYNAME_METHODDEF
     OS_CHDIR_METHODDEF

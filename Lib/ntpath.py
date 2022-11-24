@@ -262,7 +262,7 @@ def islink(path):
     This will always return false for Windows prior to 6.0.
     """
     try:
-        st = os.lstat(path)
+        st = os.statx(path, stat.STATX_TYPE, follow_symlinks=False)
     except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
@@ -274,7 +274,7 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
     def isjunction(path):
         """Test whether a path is a junction"""
         try:
-            st = os.lstat(path)
+            st = os.statx(path, stat.STATX_TYPE, follow_symlinks=False)
         except (OSError, ValueError, AttributeError):
             return False
         return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
@@ -290,7 +290,7 @@ else:
 def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
-        st = os.lstat(path)
+        st = os.statx(path, stat.STATX_TYPE, follow_symlinks=False)
     except (OSError, ValueError):
         return False
     return True

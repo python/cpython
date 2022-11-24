@@ -531,6 +531,10 @@ class StatAttributeTests(unittest.TestCase):
     def check_stat_attributes(self, fname):
         result = os.stat(fname)
 
+        # Make sure stx_mask is present and non-zero
+        # Even for non-statx calls we will set this field
+        self.assertNotEqual(result.stx_mask, 0)
+
         # Make sure direct access works
         self.assertEqual(result[stat.ST_SIZE], 3)
         self.assertEqual(result.st_size, 3)

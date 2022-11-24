@@ -1001,6 +1001,7 @@ extern "C" {
     INIT_ID(logoption), \
     INIT_ID(loop), \
     INIT_ID(mapping), \
+    INIT_ID(mask), \
     INIT_ID(match), \
     INIT_ID(max_length), \
     INIT_ID(maxdigits), \

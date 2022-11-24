@@ -896,6 +896,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(mapping);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(mask);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(match);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(max_length);

@@ -1,0 +1,1 @@
+Adds :func:`os.statx` function.

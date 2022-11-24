@@ -1009,6 +1009,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(logoption));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mapping));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mask));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(match));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(max_length));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(maxdigits));

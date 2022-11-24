@@ -2839,17 +2839,74 @@ features:
       ``follow_symlinks=False`` had been specified instead of raising an error.
 
 
+.. function:: statx(path, mask, *, dir_fd=None, follow_symlinks=True, flags=0)
+
+   Get selected fields of the status of a file or a file descriptor. Perform the
+   equivalent of a :c:func:`statx` system call on the given path. *path* may be
+   specified as either a string or bytes -- directly or indirectly through the
+   :class:`PathLike` interface -- or as an open file descriptor. Return a
+   :class:`stat_result` object.
+
+   *mask* is a bitwise combination of the ``STATX_*`` attributes in the
+   :mod:`stat` module, indicating which fields the caller intends to use. Note
+   that the set of fields returned may differ from what's requested, if the
+   operating system or file system does not support the metadata, or if it can
+   provide additional fields with no extra effort.
+
+   This function normally follows symlinks; to stat a symlink add the argument
+   ``follow_symlinks=False``.
+
+   This function can support :ref:`specifying a file descriptor <path_fd>` and
+   :ref:`not following symlinks <follow_symlinks>`.
+
+   On Windows, passing ``follow_symlinks=False`` will disable following all
+   name-surrogate reparse points, which includes symlinks and directory
+   junctions. Other types of reparse points that do not resemble links or that
+   the operating system is unable to follow will be opened directly. When
+   following a chain of multiple links, this may result in the original link
+   being returned instead of the non-link that prevented full traversal. To
+   obtain stat results for the final path in this case, use the
+   :func:`os.path.realpath` function to resolve the path name as far as
+   possible and call :func:`lstat` on the result. This does not apply to
+   dangling symlinks or junction points, which will raise the usual exceptions.
+
+   .. index:: module: stat
+
+   Example::
+
+      >>> import os, stat
+      >>> statinfo = os.statx('somefile.txt', stat.STATX_SIZE)
+      >>> statinfo
+      os.stat_result(st_mode=33188, st_ino=0, st_dev=0,
+      st_nlink=1, st_uid=0, st_gid=0, st_size=264, st_atime=0,
+      st_mtime=0, st_ctime=0)
+      >>> statinfo.stx_mask & stat.STATX_SIZE
+      512
+      >>> statinfo.st_size
+      264
+
+   .. seealso::
+
+      :func:`stat`, :func:`fstat` and :func:`lstat` functions.
+
+   .. versionadded:: 3.12
+      Added ``statx`` function.
+
+
 .. class:: stat_result
 
    Object whose attributes correspond roughly to the members of the
    :c:type:`stat` structure. It is used for the result of :func:`os.stat`,
-   :func:`os.fstat` and :func:`os.lstat`.
+   :func:`os.fstat`, :func:`os.lstat` and :func:`os.statx`.
 
    Attributes:
 
    .. attribute:: st_mode
 
       File mode: file type and file mode bits (permissions).
+
+      This field is set with the :data:`stat.STATX_TYPE` and/or
+      :data:`stat.STATX_MODE` flags.
 
    .. attribute:: st_ino
 
@@ -2861,21 +2918,31 @@ features:
         <https://msdn.microsoft.com/en-us/library/aa363788>`_ on
         Windows
 
+      This field is set with :data:`stat.STATX_INO`.
+
    .. attribute:: st_dev
 
       Identifier of the device on which this file resides.
+
+      On Windows, this field is set with :data:`stat.STATX_INO`.
 
    .. attribute:: st_nlink
 
       Number of hard links.
 
+      This field is set with :data:`stat.STATX_NLINK`.
+
    .. attribute:: st_uid
 
       User identifier of the file owner.
 
+      This field is set with :data:`stat.STATX_UID`.
+
    .. attribute:: st_gid
 
       Group identifier of the file owner.
+
+      This field is set with :data:`stat.STATX_GID`.
 
    .. attribute:: st_size
 
@@ -2883,31 +2950,52 @@ features:
       The size of a symbolic link is the length of the pathname it contains,
       without a terminating null byte.
 
+      This field is set with :data:`stat.STATX_SIZE`.
+
+   .. attribute:: stx_mask
+
+      Flags indicating which values were set. :func`os.statx` allows specifying
+      a mask, though the result may include more or less than requested. Other
+      ``stat`` functions set a default value representing the information they
+      return.
+
    Timestamps:
 
    .. attribute:: st_atime
 
       Time of most recent access expressed in seconds.
 
+      This field is set with :data:`stat.STATX_ATIME`.
+
    .. attribute:: st_mtime
 
       Time of most recent content modification expressed in seconds.
+
+      This field is set with :data:`stat.STATX_MTIME`.
 
    .. attribute:: st_ctime
 
       Platform dependent:
 
       * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in seconds.
+      * the time of creation on Windows, expressed in seconds, except
+        when :data:`stat.STATX_CTIME` is in :attr:`stx_mask`, in which
+        case this is the time of the most recent metadata change
+
+      This field is set with :data:`stat.STATX_CTIME`.
 
    .. attribute:: st_atime_ns
 
       Time of most recent access expressed in nanoseconds as an integer.
 
+      This field is set with :data:`stat.STATX_ATIME`.
+
    .. attribute:: st_mtime_ns
 
       Time of most recent content modification expressed in nanoseconds as an
       integer.
+
+      This field is set with :data:`stat.STATX_MTIME`.
 
    .. attribute:: st_ctime_ns
 
@@ -2915,16 +3003,26 @@ features:
 
       * the time of most recent metadata change on Unix,
       * the time of creation on Windows, expressed in nanoseconds as an
-        integer.
+        integer, except when :data:`stat.STATX_CTIME` is in :attr:`stx_mask`,
+        in which case this is the time of the most recent metadata change
+
+      This field is set with :data:`stat.STATX_CTIME`.
+
+   .. attribute:: st_birthtime
+
+      Time of file creation, if available. The attribute may not be present if
+      your operating system does not support the field.
+
+      This field is set with :data:`stat.STATX_BTIME`.
 
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
-      :attr:`st_mtime`, and :attr:`st_ctime` attributes depend on the operating
-      system and the file system. For example, on Windows systems using the FAT
-      or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
-      :attr:`st_atime` has only 1-day resolution.  See your operating system
-      documentation for details.
+      :attr:`st_mtime`, :attr:`st_ctime` and :attr:`st_birthtime` attributes
+      depend on the operating system and the file system. For example, on
+      Windows systems using the FAT or FAT32 file systems, :attr:`st_mtime` has
+      2-second resolution, and :attr:`st_atime` has only 1-day resolution.
+      See your operating system documentation for details.
 
       Similarly, although :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
       and :attr:`st_ctime_ns` are always expressed in nanoseconds, many
@@ -2943,10 +3041,14 @@ features:
       Number of 512-byte blocks allocated for file.
       This may be smaller than :attr:`st_size`/512 when the file has holes.
 
+      This field is set with :data:`stat.STATX_BLOCKS`.
+
    .. attribute:: st_blksize
 
       "Preferred" blocksize for efficient file system I/O. Writing to a file in
       smaller chunks may cause an inefficient read-modify-rewrite.
+
+      This field is set with :data:`stat.STATX_BLOCKSIZE`.
 
    .. attribute:: st_rdev
 
@@ -2956,16 +3058,26 @@ features:
 
       User defined flags for file.
 
+   .. attribute:: stx_attributes
+
+      Additional attribute flags (``STATX_ATTR_*`` values).
+
+      This field is only set for calls using :func:`os.statx`.
+
+   .. attribute:: stx_attributes_mask
+
+      Attribute flags (``STATX_ATTR_*``) that were supported on the file system
+      containing the file. Flags not set in this mask are meaningless in
+      :attr:`stx_attributes`.
+
+      This field is only set for calls using :func:`os.statx`.
+
    On other Unix systems (such as FreeBSD), the following attributes may be
    available (but may be only filled out if root tries to use them):
 
    .. attribute:: st_gen
 
       File generation number.
-
-   .. attribute:: st_birthtime
-
-      Time of file creation.
 
    On Solaris and derivatives, the following attributes may also be
    available:
@@ -2998,11 +3110,15 @@ features:
       :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
       constants in the :mod:`stat` module.
 
+      This field is requested with :data:`stat.STATX_TYPE`.
+
    .. attribute:: st_reparse_tag
 
       When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
       set, this field contains the tag identifying the type of reparse point.
       See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
+
+      This field is requested with :data:`stat.STATX_TYPE`.
 
    The standard module :mod:`stat` defines functions and constants that are
    useful for extracting information from a :c:type:`stat` structure. (On
@@ -3038,6 +3154,13 @@ features:
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.
+
+   .. versionchanged:: 3.12
+      Added the :attr:`stx_mask` member along with :func:`statx`.
+
+   .. versionchanged:: 3.12
+      Added the :attr:`st_birthtime` member on Windows.
+
 
 .. function:: statvfs(path)
 

@@ -166,6 +166,24 @@ def filemode(mode):
     return "".join(perm)
 
 
+# Mask values for statx()
+STATX_TYPE = 0x00000001 # includes st_file_attributes and st_reparse_tag
+STATX_MODE = 0x00000002
+STATX_NLINK = 0x00000004
+STATX_UID = 0x00000008
+STATX_GID = 0x00000010
+STATX_ATIME = 0x00000020
+STATX_MTIME = 0x00000040
+STATX_CTIME = 0x00000080
+STATX_INO = 0x00000100  # includes st_dev on Windows
+STATX_SIZE = 0x00000200
+STATX_BLOCKS = 0x00000400
+STATX_BASIC_STATS = 0x000007ff
+STATX_BTIME = 0x00000800
+STATX_MNT_ID = 0x00001000
+STATX_DIOALIGN = 0x00002000
+
+
 # Windows FILE_ATTRIBUTE constants for interpreting os.stat()'s
 # "st_file_attributes" member
 

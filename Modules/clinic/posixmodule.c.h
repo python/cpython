@@ -178,6 +178,133 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(os_statx__doc__,
+"statx($module, /, path, mask, *, dir_fd=None, follow_symlinks=True,\n"
+"      flags=0)\n"
+"--\n"
+"\n"
+"Perform a stat system call on the given path, retrieving certain information.\n"
+"\n"
+"  path\n"
+"    Path to be examined; can be string, bytes, a path-like object or\n"
+"    open-file-descriptor int.\n"
+"  mask\n"
+"    A combination of stat.STATX_* flags specifying the fields that the\n"
+"    caller is interested in. The stx_mask member of the result will\n"
+"    include all fields that are actually filled in, which may be more\n"
+"    or fewer than those specified in this argument.\n"
+"  dir_fd\n"
+"    If not None, it should be a file descriptor open to a directory,\n"
+"    and path should be a relative string; path will then be relative to\n"
+"    that directory.\n"
+"  follow_symlinks\n"
+"    If False, and the last element of the path is a symbolic link,\n"
+"    stat will examine the symbolic link itself instead of the file\n"
+"    the link points to.\n"
+"  flags\n"
+"    A combination of AT_* flags specifying how path should be resolved.\n"
+"    These are only relevant on Linux.\n"
+"\n"
+"dir_fd and follow_symlinks may not be implemented\n"
+"  on your platform.  If they are unavailable, using them will raise a\n"
+"  NotImplementedError.\n"
+"\n"
+"It\'s an error to use dir_fd or follow_symlinks when specifying path as\n"
+"  an open file descriptor.\n"
+"\n"
+"The follow_symlinks parameter adds the AT_SYMLINK_NOFOLLOW flag into flags\n"
+"  (when passed False) but will not remove it. Using this parameter rather\n"
+"  than the flag is recommended for maximum portability.");
+
+#define OS_STATX_METHODDEF    \
+    {"statx", _PyCFunction_CAST(os_statx), METH_FASTCALL|METH_KEYWORDS, os_statx__doc__},
+
+static PyObject *
+os_statx_impl(PyObject *module, path_t *path, int mask, int dir_fd,
+              int follow_symlinks, int flags);
+
+static PyObject *
+os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), &_Py_ID(mask), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), &_Py_ID(flags), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", "mask", "dir_fd", "follow_symlinks", "flags", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "statx",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    path_t path = PATH_T_INITIALIZE("statx", "path", 0, 1);
+    int mask;
+    int dir_fd = DEFAULT_DIR_FD;
+    int follow_symlinks = 1;
+    int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    mask = _PyLong_AsInt(args[1]);
+    if (mask == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        if (!dir_fd_converter(args[2], &dir_fd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        follow_symlinks = PyObject_IsTrue(args[3]);
+        if (follow_symlinks < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    flags = _PyLong_AsInt(args[4]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os_statx_impl(module, &path, mask, dir_fd, follow_symlinks, flags);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(os_access__doc__,
 "access($module, /, path, mode, *, dir_fd=None, effective_ids=False,\n"
 "       follow_symlinks=True)\n"
@@ -11549,4 +11676,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=4192d8e09e216300 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aeba1208190afb68 input=a9049054013a1b77]*/

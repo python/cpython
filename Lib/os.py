@@ -178,7 +178,9 @@ if _exists("_have_functions"):
     _add("HAVE_LSTAT",      "stat")
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_UTIMENSAT",  "utime")
+    _add("HAVE_STATX",      "statx")
     _add("MS_WINDOWS",      "stat")
+    _add("MS_WINDOWS",      "statx")
     supports_follow_symlinks = _set
 
     del _set
@@ -1085,6 +1087,17 @@ class PathLike(abc.ABC):
         return NotImplemented
 
     __class_getitem__ = classmethod(GenericAlias)
+
+# If there is no C implementation, make a pure Python version
+if not _exists('statx'):
+    def statx(path, mask, *, dir_fd=None, follow_symlinks=True, flags=0):
+        """Perform a stat system call on the given path, retrieving certain information.
+
+This is a fallback implementation that calls stat() or lstat() based on the
+*follow_symlinks* argument. The *mask* argument is ignored and the stx_mask
+result will be set for the information returned by a normal stat() call.
+"""
+        return (stat if follow_symlinks else lstat)(path, dir_fd=dir_fd)
 
 
 if name == 'nt':
