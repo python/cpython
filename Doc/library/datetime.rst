@@ -2601,8 +2601,8 @@ Notes:
 
 (9)
    When used with the :meth:`strptime` method, the leading zero is optional
-   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%J``, ``%U``,
-   ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
+   for  formats ``%d``, ``%j``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%U``,
+   ``%V``, and ``%W``. Format ``%y`` does require a leading zero.
 
 .. rubric:: Footnotes
 
