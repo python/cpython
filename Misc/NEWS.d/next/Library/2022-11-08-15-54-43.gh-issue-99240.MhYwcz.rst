@@ -1,3 +1,3 @@
-Add "post_operations" section to Argument Clinic generated code.
+Add "post_parsing" section to Argument Clinic generated code.
 Fix double-free bug in Argument Clinic str_converter generated code by
 moving memory clean up out of "exit" label.
