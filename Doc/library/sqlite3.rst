@@ -1317,7 +1317,7 @@ Connection objects
 
    .. attribute:: row_factory
 
-      The default :attr:`~Cursor.row_factory`
+      The initial :attr:`~Cursor.row_factory`
       for :class:`Cursor` objects created from this connection.
       Assigning to this attribute does not affect the :attr:`!row_factory`
       of existing cursors belonging to this connection, only new ones.
@@ -2364,14 +2364,14 @@ so all cursors created from the connection will use the same row factory.
 :class:`!Row` provides indexed and case-insensitive named access to columns,
 with minimal memory overhead and performance impact over a :class:`!tuple`.
 To use :class:`!Row` as a row factory,
-simply assign it to the :attr:`Connection.row_factory` attribute:
+assign it to the :attr:`!row_factory` attribute:
 
 .. doctest::
 
    >>> con = sqlite3.connect(":memory:")
    >>> con.row_factory = sqlite3.Row
 
-Query results are now returned as :class:`!Row` instances:
+Queries now return :class:`!Row` objects:
 
 .. doctest::
 
@@ -2385,6 +2385,9 @@ Query results are now returned as :class:`!Row` instances:
    'Earth'
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
+
+To create and use a custom :attr:`~Cursor.row_factory`,
+in this case returning a :class:`dict` mapping column names to values:
 
 .. doctest::
 
