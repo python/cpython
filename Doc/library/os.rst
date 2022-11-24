@@ -2954,7 +2954,7 @@ features:
 
    .. attribute:: stx_mask
 
-      Flags indicating which values were set. :func`os.statx` allows specifying
+      Flags indicating which values were set. :func:`os.statx` allows specifying
       a mask, though the result may include more or less than requested. Other
       ``stat`` functions set a default value representing the information they
       return.
