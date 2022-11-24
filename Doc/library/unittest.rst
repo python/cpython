@@ -246,8 +246,7 @@ Command-line options
 
 .. cmdoption:: --durations
 
-   Show the slowest test cases. If ``-v`` option is used also shows the
-   elapsed time of each individual test case.
+   Show the slowest test cases.
 
 .. versionadded:: 3.2
    The command-line options ``-b``, ``-c`` and ``-f`` were added.

@@ -345,17 +345,16 @@ class Test_TestResult(unittest.TestCase):
 
     def test_durations(self):
         def run(test):
-            m = mock.MagicMock()
-            result = unittest.TextTestResult(stream=m, descriptions=True,
-                                             verbosity=2, durations=5)
-            result.startTestRun()
-            test.run(result)
-            result.stopTestRun()
-            prefix = m.writeln.call_args[0][0]
-            if 'skipped' not in prefix:
-                self.assertIn('s]', prefix)
+            stream = BufferedWriter()
+            runner = unittest.TextTestRunner(stream=stream, durations=5, verbosity=2)
+            result = runner.run(test)
+            stream.flush()
+            text = stream.getvalue()
+            if 'skipped' not in text:
+                self.assertIn('Slowest test durations', text)
             else:
-                self.assertNotIn('s]', prefix)
+                self.assertNotIn('Slowest test durations', text)
+
             return len(result.collectedDurations)
 
         # success

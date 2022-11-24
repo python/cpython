@@ -322,8 +322,7 @@ sys
 unittest
 --------
 
-Added ``--durations`` command line option, showing the slowest test cases.
-If ``-v`` is used also shows the elapsed time of each individual test case::
+Added ``--durations`` command line option, showing the slowest test cases::
 
   python3 -m unittest --durations=3 lib.tests.test_threading
   .....

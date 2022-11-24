@@ -635,8 +635,8 @@ class TestCase(object):
                     outcome.expecting_failure = False
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
-                self.doCleanups()
                 self._addDuration(result, (time.perf_counter() - start_time))
+                self.doCleanups()
 
                 if outcome.success:
                     if expecting_failure:
