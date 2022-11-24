@@ -1567,7 +1567,6 @@ def _dataclass_repr(self):
             if dcf[k].repr
             )
 
-
 def global_enum_repr(self):
     """
     use module.enum_name instead of class.enum_name
