@@ -2541,6 +2541,14 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
     PyStructSequence_SET_ITEM(v, STX_MASK_IDX,
                               PyLong_FromUnsignedLong(stx_mask));
 
+#ifdef HAVE_STATX
+    PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_IDX, PyLong_FromLong(0));
+    PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_MASK_IDX, PyLong_FromLong(0));
+#ifdef STATX_MNT_ID
+    PyStructSequence_SET_ITEM(v, STX_MNT_ID_IDX, PyLong_FromLong(0));
+#endif
+#endif
+
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;
