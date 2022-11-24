@@ -348,6 +348,7 @@ class Test_TestResult(unittest.TestCase):
             stream = BufferedWriter()
             runner = unittest.TextTestRunner(stream=stream, durations=5, verbosity=2)
             result = runner.run(test)
+            self.assertEqual(result.durations, 5)
             stream.flush()
             text = stream.getvalue()
             if 'skipped' not in text:

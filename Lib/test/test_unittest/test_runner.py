@@ -1209,11 +1209,6 @@ class Test_TextTestRunner(unittest.TestCase):
         result = runner.run(unittest.TestSuite())
         self.assertEqual(True, result.tb_locals)
 
-    def test_durations(self):
-        runner = unittest.TextTestRunner(stream=io.StringIO(), durations=5)
-        result = runner.run(unittest.TestSuite())
-        self.assertEqual(5, result.durations)
-
     def testRunnerRegistersResult(self):
         class Test(unittest.TestCase):
             def testFoo(self):
