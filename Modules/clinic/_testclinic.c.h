@@ -2313,8 +2313,7 @@ vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     a = args[0];
     __clinic_args = PyTuple_New(nargs - 1);
     for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
-        Py_INCREF(args[1 + i]);
-        PyTuple_SET_ITEM(__clinic_args, i, args[1 + i]);
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[1 + i]));
     }
     return_value = vararg_and_posonly_impl(module, a, __clinic_args);
 
@@ -2346,8 +2345,7 @@ gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     __clinic_args = PyTuple_New(nargs - 0);
     for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        Py_INCREF(args[0 + i]);
-        PyTuple_SET_ITEM(__clinic_args, i, args[0 + i]);
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
     return_value = gh_99233_refcount_impl(module, __clinic_args);
 
@@ -2355,4 +2353,4 @@ exit:
     Py_XDECREF(__clinic_args);
     return return_value;
 }
-/*[clinic end generated code: output=2ca3fb3a99fe5800 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a5c9f181f3a32d85 input=a9049054013a1b77]*/
