@@ -2231,9 +2231,7 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     parg->obj = fd->setfunc(&parg->value, value, 0);
     if (parg->obj)
         return (PyObject *)parg;
-
     PyErr_Fetch(&exc, &val, &tb);
-    PyErr_Clear();
     Py_DECREF(parg);
 
     if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
