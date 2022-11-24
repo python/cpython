@@ -2836,8 +2836,8 @@ class CConverter(metaclass=CConverterAutoRegister):
     def post_parsing(self):
         """
         The C statements required to do some operations after the end of parsing but before cleaning up.
-        Returns a string containing this code indented at column 0.
-        If no operation is necessary, returns an empty string.
+        Return a string containing this code indented at column 0.
+        If no operation is necessary, return an empty string.
         """
         return ""
 
