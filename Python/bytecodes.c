@@ -87,10 +87,11 @@ static PyObject *jump;
 // Dummy variables for stack effects
 static int when_to_jump_mask;
 // Dummy opcode names for 'op' opcodes
-#define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1
-#define _BINARY_OP_INPLACE_ADD_UNICODE_PART_2 2
-#define _COMPARE_OP_FLOAT 3
-#define _JUMP_ON_SIGN 4
+#define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1001
+#define _BINARY_OP_INPLACE_ADD_UNICODE_PART_2 1002
+#define _COMPARE_OP_FLOAT 1003
+#define _COMPARE_OP_INT 1004
+#define _JUMP_ON_SIGN 1005
 
 static PyObject *
 dummy_func(
@@ -2063,7 +2064,7 @@ dummy_func(
         family(compare_op) = {
             COMPARE_OP,
             _COMPARE_OP_FLOAT,
-            // COMPARE_OP_INT_JUMP,
+            _COMPARE_OP_INT,
             // COMPARE_OP_STR_JUMP,
         };
 
@@ -2111,14 +2112,10 @@ dummy_func(
         // We're praying that the compiler optimizes the flags manipuations.
         super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_ON_SIGN;
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP_INT_JUMP) {
+        // Similar to COMPARE_OP_FLOAT
+        op(_COMPARE_OP_INT, (unused/1, left, right, when_to_jump_mask/1 -- jump)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int when_to_jump_mask = cache->mask;
-            PyObject *right = TOP();
-            PyObject *left = SECOND();
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
             DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_OP);
@@ -2127,21 +2124,13 @@ dummy_func(
             assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
             Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
             Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-            int sign = (ileft > iright) - (ileft < iright);
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            NEXTOPARG();
-            STACK_SHRINK(2);
+            // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
+            int sign_ish = 2*(ileft > iright) + 2 - (ileft < iright);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            int jump = (1 << (sign + 1)) & when_to_jump_mask;
-            if (!jump) {
-                next_instr++;
-            }
-            else {
-                JUMPBY(1 + oparg);
-            }
+            jump = (PyObject *)(size_t)(sign_ish & when_to_jump_mask);
         }
+        super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_ON_SIGN;
 
         // stack effect: (__0 -- )
         inst(COMPARE_OP_STR_JUMP) {
