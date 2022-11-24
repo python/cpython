@@ -2168,7 +2168,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STATX
     {"stx_attributes", "additional file attributes"},
     {"stx_attributes_mask", "mask indicating which attributes are supported"},
+#ifdef STATX_MNT_ID
     {"stx_mnt_id", "the mount id"},
+#endif
 #endif
     {0}
 };
@@ -2232,7 +2234,11 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STATX
 #define STX_ATTRIBUTES_IDX (STX_MASK_IDX+1)
 #define STX_ATTRIBUTES_MASK_IDX (STX_ATTRIBUTES_IDX+1)
+#ifdef STATX_MNT_ID
 #define STX_MNT_ID_IDX (STX_ATTRIBUTES_MASK_IDX+1)
+#else
+#define STX_MNT_ID_IDX STX_ATTRIBUTES_MASK_IDX
+#endif
 #endif
 
 /* for when regular stat() gets called */
@@ -2593,8 +2599,10 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
                               PyLong_FromUnsignedLongLong(st->stx_attributes));
     PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_MASK_IDX,
                               PyLong_FromUnsignedLongLong(st->stx_attributes_mask));
+#ifdef STATX_MNT_ID
     PyStructSequence_SET_ITEM(v, STX_MNT_ID_IDX,
                               PyLong_FromUnsignedLongLong(st->stx_mnt_id));
+#endif
 
     if (PyErr_Occurred()) {
         Py_DECREF(v);
