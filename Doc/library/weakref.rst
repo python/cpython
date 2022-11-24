@@ -1,3 +1,5 @@
+.. _mod-weakref:
+
 :mod:`weakref` --- Weak references
 ==================================
 
@@ -88,6 +90,10 @@ support weak references but can add support through subclassing::
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.
 
+When ``__slots__`` are defined for a given type, weak reference support is
+disabled unless a ``'__weakref__'`` string is also present in the sequence of
+strings in the ``__slots__`` declaration.
+See :ref:`__slots__ documentation <slots>` for details.
 
 .. class:: ref(object[, callback])
 
@@ -139,6 +145,9 @@ Extension types can easily be made to support weak references; see
    avoids a number of problems related to their fundamentally mutable nature, and
    prevent their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
+
+   Accessing an attribute of the proxy object after the referent is
+   garbage collected raises :exc:`ReferenceError`.
 
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
