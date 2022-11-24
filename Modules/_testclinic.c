@@ -959,20 +959,11 @@ gh_99240_double_free
 
 Proof-of-concept of GH-99240 double-free bug.
 
-If parsing `a` successes, `a` will be assigned an address points to an allocated memory.
-After that, if parsing `b` fails, the memory which `a` points to is freed by function `_PyArg_ParseStack`,
-and `_PyArg_ParseStack` returns 0, then control flow goes to label "exit".
-At this time, `a` is not NULL, so the memory it points to is freed again,
-which cause a double-free problem and a runtime crash.
-
-Calling this function by gh_99240_double_free('a', '\0b')
-to trigger this bug (crash).
-
 [clinic start generated code]*/
 
 static PyObject *
 gh_99240_double_free_impl(PyObject *module, char *a, char *b)
-/*[clinic end generated code: output=586dc714992fe2ed input=419d3a3790de435e]*/
+/*[clinic end generated code: output=586dc714992fe2ed input=23db44aa91870fc7]*/
 {
     Py_RETURN_NONE;
 }
