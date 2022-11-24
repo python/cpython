@@ -2586,6 +2586,9 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
     dev = (unsigned long long)st->stx_rdev_major << 32 | st->stx_rdev_minor;
     PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
                               PyLong_FromUnsignedLongLong(dev));
+#ifdef HAVE_STRUCT_STAT_ST_GEN
+    PyStructSequence_SET_ITEM(v, ST_GEN_IDX, PyLong_FromLong(0));
+#endif
 
     {
         PyObject *btime;
@@ -2602,6 +2605,20 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
 #ifdef STATX_MNT_ID
     PyStructSequence_SET_ITEM(v, STX_MNT_ID_IDX,
                               PyLong_FromUnsignedLongLong(st->stx_mnt_id));
+#endif
+
+
+#ifdef HAVE_STRUCT_STAT_ST_FLAGS
+    PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX, PyLong_FromLong(0));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
+    PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX, PyLong_FromLong(0));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_FSTYPE
+   PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX, Py_NewRef(Py_None));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX, PyLong_FromLong(0));
 #endif
 
     if (PyErr_Occurred()) {
