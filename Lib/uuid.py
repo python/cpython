@@ -407,12 +407,9 @@ def _get_command_stdout(command, *args):
 def _is_universal(mac):
     return not (mac & (1 << 41))
 
-# MAC adresses that are blacklisted for finding a node id
-_MAC_BLACKLIST={
-    # (GH-85724) Hardcoded MAC adres for all Intel MacBook's with Touch Bar.
-    int("ac:de:48:00:11:22".replace(":", ""), 16),
-}
-
+# (GH-85724) Hardcoded MAC adres for all Intel MacBook's with Touch Bar.
+_MACOS_TOUCHBAR_MAC="ac:de:48:00:11:22"
+_MACOS_TOUCHBAR_MAC_AS_INT=int(_MACOS_TOUCHBAR_MAC.replace(":", ""), 16)
 
 def _find_mac_near_keyword(command, args, keywords, get_word_index):
     """Searches a command's output for a MAC address near a keyword.
@@ -443,7 +440,7 @@ def _find_mac_near_keyword(command, args, keywords, get_word_index):
                     # real MAC address
                     pass
                 else:
-                    if mac in _MAC_BLACKLIST:
+                    if mac == _MACOS_TOUCHBAR_MAC_AS_INT:
                         continue
                     if _is_universal(mac):
                         return mac
@@ -507,7 +504,7 @@ def _find_mac_under_heading(command, args, heading):
         mac = _parse_mac(word)
         if mac is None:
             continue
-        if mac in _MAC_BLACKLIST:
+        if mac == _MACOS_TOUCHBAR_MAC_AS_INT:
             continue
         if _is_universal(mac):
             return mac
@@ -599,7 +596,7 @@ try:
         # if it does because this is a single MAC adress for all 
         # devices. See GH-85724
         _x = _generate_time_safe()[0]
-        if _x.endswith(bytes.fromhex("ac:de:48:00:11:22".replace(":", ""))):
+        if _x.endswith(bytes.fromhex(_MACOS_TOUCHBAR_MAC.replace(":", ""))):
             _has_uuid_generate_time_safe = False
             _generate_time_safe = None
         del _x

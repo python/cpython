@@ -805,10 +805,13 @@ lo0       - 127.0.0.0/8   127.0.0.1           259955     -     -   259955     - 
         data = '''
 fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+en5       Link encap:UNSPEC  HWaddr ac:de:48:00:11:22
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
 
         # The above data will only be parsed properly on non-AIX unixes.
+        # The value for 'en5' is the single MAC address used by Touch Bar Mac laptops
+        # and should be ignored.
         with mock.patch.multiple(self.uuid,
                                  _MAC_DELIM=b':',
                                  _MAC_OMITS_LEADING_ZEROES=False,
@@ -830,7 +833,10 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
             print(hex, end=' ')
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
-        self.assertNotEqual(node, int("ac:de:48:00:11:22".replace(":", ""), 16))
+
+        # GH-85724: Ensure that the MAC address of the TouchBar interface
+        # on Intel Macbooks is not used in a UUID.
+        self.assertNotEqual(node, self.uuid._MACOS_TOUCHBAR_MAC_AS_INT)
 
     @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS,
         "ifconfig is not used for introspection on this platform")
