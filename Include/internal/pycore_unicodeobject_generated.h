@@ -850,6 +850,12 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(kind);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(kw);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(kw1);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(kw2);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(lambda);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(last);
@@ -1045,6 +1051,10 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(policy);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(pos);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(pos1);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(pos2);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(print_file_and_line);
     PyUnicode_InternInPlace(&string);

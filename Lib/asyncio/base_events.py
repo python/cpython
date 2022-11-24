@@ -377,7 +377,7 @@ class Server(events.AbstractServer):
             self._serving_forever_fut = None
 
     async def wait_closed(self):
-        if self._sockets is None or self._waiters is None:
+        if self._waiters is None or self._active_count == 0:
             return
         waiter = self._loop.create_future()
         self._waiters.append(waiter)
