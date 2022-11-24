@@ -124,7 +124,7 @@ Functions
     need to call :func:`invalidate_caches` in order for the new module to be
     noticed by the import system.
 
-    A :exc:`ImportError` can be raised if the module cannot be imported
+    A :exc:`ImportError` exception can be raised if the module cannot be imported
     successfully.
 
     .. versionchanged:: 3.3
