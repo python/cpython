@@ -2521,7 +2521,6 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
     PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
                               PyLong_FromLong((long)st->st_flags));
 #endif
-#endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX,
                               PyLong_FromUnsignedLong(st->st_file_attributes));
