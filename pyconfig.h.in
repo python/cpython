@@ -1181,6 +1181,9 @@
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS
 
+/* Define to 1 if you have the `statx' function. */
+#undef HAVE_STATX
+
 /* Define if you have struct stat.st_mtim.tv_nsec */
 #undef HAVE_STAT_TV_NSEC
 
