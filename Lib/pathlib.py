@@ -200,6 +200,7 @@ _posix_flavour = _PosixFlavour()
 # Globbing helpers
 #
 
+@functools.lru_cache()
 def _make_selector(pattern_parts, flavour):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
@@ -214,9 +215,6 @@ def _make_selector(pattern_parts, flavour):
     else:
         cls = _PreciseSelector
     return cls(pat, child_parts, flavour)
-
-if hasattr(functools, "lru_cache"):
-    _make_selector = functools.lru_cache()(_make_selector)
 
 
 class _Selector:
@@ -869,8 +867,10 @@ class Path(PurePath):
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
-        """Iterate over the files in this directory.  Does not yield any
-        result for the special paths '.' and '..'.
+        """Yield path objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
         """
         for name in os.listdir(self):
             yield self._make_child_relpath(name)
@@ -1222,6 +1222,12 @@ class Path(PurePath):
         except ValueError:
             # Non-encodable path
             return False
+
+    def is_junction(self):
+        """
+        Whether this path is a junction.
+        """
+        return self._flavour.pathmod.isjunction(self)
 
     def is_block_device(self):
         """

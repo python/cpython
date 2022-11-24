@@ -1046,8 +1046,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         /* Encode object */
         if (!recode_strings &&
             (PyBytes_Check(arg) || PyByteArray_Check(arg))) {
-            s = arg;
-            Py_INCREF(s);
+            s = Py_NewRef(arg);
             if (PyBytes_Check(arg)) {
                 size = PyBytes_GET_SIZE(s);
                 ptr = PyBytes_AS_STRING(s);
@@ -1847,9 +1846,6 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
 }
 
 
-/* List of static parsers. */
-static struct _PyArg_Parser *static_arg_parsers = NULL;
-
 static int
 scan_keywords(const char * const *keywords, int *ptotal, int *pposonly)
 {
@@ -2025,8 +2021,8 @@ _parser_init(struct _PyArg_Parser *parser)
     parser->initialized = owned ? 1 : -1;
 
     assert(parser->next == NULL);
-    parser->next = static_arg_parsers;
-    static_arg_parsers = parser;
+    parser->next = _PyRuntime.getargs.static_parsers;
+    _PyRuntime.getargs.static_parsers = parser;
     return 1;
 }
 
@@ -2575,8 +2571,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
     /* copy tuple args */
     for (i = 0; i < nargs; i++) {
         if (i >= vararg) {
-            Py_INCREF(args[i]);
-            PyTuple_SET_ITEM(buf[vararg], i - vararg, args[i]);
+            PyTuple_SET_ITEM(buf[vararg], i - vararg, Py_NewRef(args[i]));
             continue;
         }
         else {
@@ -2932,14 +2927,14 @@ _PyArg_NoKwnames(const char *funcname, PyObject *kwnames)
 void
 _PyArg_Fini(void)
 {
-    struct _PyArg_Parser *tmp, *s = static_arg_parsers;
+    struct _PyArg_Parser *tmp, *s = _PyRuntime.getargs.static_parsers;
     while (s) {
         tmp = s->next;
         s->next = NULL;
         parser_clear(s);
         s = tmp;
     }
-    static_arg_parsers = NULL;
+    _PyRuntime.getargs.static_parsers = NULL;
 }
 
 #ifdef __cplusplus
