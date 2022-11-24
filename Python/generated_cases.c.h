@@ -2058,37 +2058,6 @@
             DISPATCH();
         }
 
-        TARGET(COMPARE_OP_FLOAT_JUMP) {
-            assert(cframe.use_tracing == 0);
-            // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int when_to_jump_mask = cache->mask;
-            PyObject *right = TOP();
-            PyObject *left = SECOND();
-            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
-            double dleft = PyFloat_AS_DOUBLE(left);
-            double dright = PyFloat_AS_DOUBLE(right);
-            int sign = (dleft > dright) - (dleft < dright);
-            DEOPT_IF(isnan(dleft), COMPARE_OP);
-            DEOPT_IF(isnan(dright), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            NEXTOPARG();
-            STACK_SHRINK(2);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            int jump = (1 << (sign + 1)) & when_to_jump_mask;
-            if (!jump) {
-                next_instr++;
-            }
-            else {
-                JUMPBY(1 + oparg);
-            }
-            DISPATCH();
-        }
-
         TARGET(COMPARE_OP_INT_JUMP) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
@@ -3813,6 +3782,44 @@
             next_instr++;
             {
                 // The STORE_FAST is already done; oparg is dead.
+            }
+            STACK_SHRINK(2);
+            DISPATCH();
+        }
+
+        TARGET(COMPARE_OP_FLOAT_JUMP) {
+            PyObject *_tmp_1 = PEEK(2);
+            PyObject *_tmp_2 = PEEK(1);
+            {
+                PyObject *right = _tmp_2;
+                PyObject *left = _tmp_1;
+                PyObject *jump;
+                uint16_t when_to_jump_mask = read_u16(next_instr + 1);
+                assert(cframe.use_tracing == 0);
+                // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
+                DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
+                DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+                double dleft = PyFloat_AS_DOUBLE(left);
+                double dright = PyFloat_AS_DOUBLE(right);
+                // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
+                int sign_ish = 2*(dleft > dright) + 2 - (dleft < dright);
+                DEOPT_IF(isnan(dleft), COMPARE_OP);
+                DEOPT_IF(isnan(dright), COMPARE_OP);
+                STAT_INC(COMPARE_OP, hit);
+                _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+                _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+                jump = (PyObject *)(size_t)(sign_ish & when_to_jump_mask);
+                _tmp_1 = jump;
+            }
+            next_instr += 2;
+            NEXTOPARG();
+            next_instr++;
+            {
+                PyObject *jump = _tmp_1;
+                assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
+                if (jump) {
+                    JUMPBY(oparg);
+                }
             }
             STACK_SHRINK(2);
             DISPATCH();

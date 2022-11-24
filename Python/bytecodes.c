@@ -83,8 +83,14 @@ static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 static PyObject *list, *tuple, *dict;
 static PyObject *exit_func, *lasti, *val;
+static PyObject *jump;
+// Dummy variables for stack effects
+static int when_to_jump_mask;
+// Dummy opcode names for 'op' opcodes
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_2 2
+#define _COMPARE_OP_FLOAT 3
+#define _JUMP_ON_SIGN 4
 
 static PyObject *
 dummy_func(
@@ -2054,12 +2060,12 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
-        // family(compare_op) = {
-        //     COMPARE_OP,
-        //     COMPARE_OP_FLOAT_JUMP,
-        //     COMPARE_OP_INT_JUMP,
-        //     COMPARE_OP_STR_JUMP,
-        // };
+        family(compare_op) = {
+            COMPARE_OP,
+            _COMPARE_OP_FLOAT,
+            // COMPARE_OP_INT_JUMP,
+            // COMPARE_OP_STR_JUMP,
+        };
 
         inst(COMPARE_OP, (unused/1, left, right, unused/1 -- res)) {
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
@@ -2078,36 +2084,32 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP_FLOAT_JUMP) {
+        // The result is an int disguised as an object pointer.
+        op(_COMPARE_OP_FLOAT, (unused/1, left, right, when_to_jump_mask/1 -- jump)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int when_to_jump_mask = cache->mask;
-            PyObject *right = TOP();
-            PyObject *left = SECOND();
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
-            int sign = (dleft > dright) - (dleft < dright);
+            // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
+            int sign_ish = 2*(dleft > dright) + 2 - (dleft < dright);
             DEOPT_IF(isnan(dleft), COMPARE_OP);
             DEOPT_IF(isnan(dright), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            NEXTOPARG();
-            STACK_SHRINK(2);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            jump = (PyObject *)(size_t)(sign_ish & when_to_jump_mask);
+        }
+        // The input is an int disguised as an object pointer!
+        op(_JUMP_ON_SIGN, (jump --)) {
             assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            int jump = (1 << (sign + 1)) & when_to_jump_mask;
-            if (!jump) {
-                next_instr++;
-            }
-            else {
-                JUMPBY(1 + oparg);
+            if (jump) {
+                JUMPBY(oparg);
             }
         }
+        // We're praying that the compiler optimizes the flags manipuations.
+        super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_ON_SIGN;
 
         // stack effect: (__0 -- )
         inst(COMPARE_OP_INT_JUMP) {
