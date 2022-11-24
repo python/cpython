@@ -313,8 +313,7 @@ bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
     }
     memcpy(PyByteArray_AS_STRING(self) + size, vo.buf, vo.len);
     PyBuffer_Release(&vo);
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -340,8 +339,7 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
     if (count < 0)
         count = 0;
     else if (count == 1) {
-        Py_INCREF(self);
-        return (PyObject*)self;
+        return Py_NewRef(self);
     }
 
     const Py_ssize_t mysize = Py_SIZE(self);
@@ -354,8 +352,7 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
     char* buf = PyByteArray_AS_STRING(self);
     _PyBytes_Repeat(buf, size, buf, mysize);
 
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -2477,8 +2474,7 @@ bytearray_iter(PyObject *seq)
     if (it == NULL)
         return NULL;
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = (PyByteArrayObject *)seq;
+    it->it_seq = (PyByteArrayObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }

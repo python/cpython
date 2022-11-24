@@ -52,10 +52,8 @@ tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
     }
     tb = PyObject_GC_New(PyTracebackObject, &PyTraceBack_Type);
     if (tb != NULL) {
-        Py_XINCREF(next);
-        tb->tb_next = next;
-        Py_XINCREF(frame);
-        tb->tb_frame = frame;
+        tb->tb_next = (PyTracebackObject*)Py_XNewRef(next);
+        tb->tb_frame = (PyFrameObject*)Py_XNewRef(frame);
         tb->tb_lasti = lasti;
         tb->tb_lineno = lineno;
         PyObject_GC_Track(tb);
@@ -106,8 +104,7 @@ tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
     if (!ret) {
         ret = Py_None;
     }
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static int
@@ -139,10 +136,7 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
         cursor = cursor->tb_next;
     }
 
-    PyObject *old_next = (PyObject*)self->tb_next;
-    Py_XINCREF(new_next);
-    self->tb_next = (PyTracebackObject *)new_next;
-    Py_XDECREF(old_next);
+    Py_XSETREF(self->tb_next, (PyTracebackObject *)Py_XNewRef(new_next));
 
     return 0;
 }
@@ -522,8 +516,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     }
 
     if (line) {
-        Py_INCREF(lineobj);
-        *line = lineobj;
+        *line = Py_NewRef(lineobj);
     }
 
     /* remove the indentation of the line */
@@ -538,8 +531,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         PyObject *truncated;
         truncated = PyUnicode_Substring(lineobj, i, PyUnicode_GET_LENGTH(lineobj));
         if (truncated) {
-            Py_DECREF(lineobj);
-            lineobj = truncated;
+            Py_SETREF(lineobj, truncated);
         } else {
             PyErr_Clear();
         }
@@ -705,8 +697,13 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
 
 done:
     if (res > 0) {
-        *left_anchor += start_offset;
-        *right_anchor += start_offset;
+        // Normalize the AST offsets to byte offsets and adjust them with the
+        // start of the actual line (instead of the source code segment).
+        assert(segment != NULL);
+        assert(*left_anchor >= 0);
+        assert(*right_anchor >= 0);
+        *left_anchor = _PyPegen_byte_offset_to_character_offset(segment, *left_anchor) + start_offset;
+        *right_anchor = _PyPegen_byte_offset_to_character_offset(segment, *right_anchor) + start_offset;
     }
     Py_XDECREF(segment);
     if (arena) {
@@ -1229,6 +1226,15 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         if (frame == NULL) {
             break;
         }
+        if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+            /* Trampoline frame */
+            frame = frame->previous;
+        }
+        if (frame == NULL) {
+            break;
+        }
+        /* Can't have more than one shim frame in a row */
+        assert(frame->owner != FRAME_OWNED_BY_CSTACK);
         depth++;
     }
 }

@@ -867,8 +867,10 @@ class Path(PurePath):
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
-        """Iterate over the files in this directory.  Does not yield any
-        result for the special paths '.' and '..'.
+        """Yield path objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
         """
         for name in os.listdir(self):
             yield self._make_child_relpath(name)
@@ -1220,6 +1222,12 @@ class Path(PurePath):
         except ValueError:
             # Non-encodable path
             return False
+
+    def is_junction(self):
+        """
+        Whether this path is a junction.
+        """
+        return self._flavour.pathmod.isjunction(self)
 
     def is_block_device(self):
         """
