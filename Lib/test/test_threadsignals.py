@@ -4,7 +4,6 @@ import unittest
 import signal
 import os
 import sys
-from test import support
 from test.support import threading_helper
 import _thread as thread
 import time
@@ -37,6 +36,9 @@ def send_signals():
     os.kill(process_pid, signal.SIGUSR2)
     signalled_all.release()
 
+
+@threading_helper.requires_working_threading()
+@unittest.skipUnless(hasattr(signal, "alarm"), "test requires signal.alarm")
 class ThreadSignals(unittest.TestCase):
 
     def test_signals(self):
@@ -231,7 +233,7 @@ class ThreadSignals(unittest.TestCase):
             signal.signal(signal.SIGUSR1, old_handler)
 
 
-def test_main():
+def setUpModule():
     global signal_blackboard
 
     signal_blackboard = { signal.SIGUSR1 : {'tripped': 0, 'tripped_by': 0 },
@@ -239,10 +241,8 @@ def test_main():
                           signal.SIGALRM : {'tripped': 0, 'tripped_by': 0 } }
 
     oldsigs = registerSignals(handle_signals, handle_signals, handle_signals)
-    try:
-        support.run_unittest(ThreadSignals)
-    finally:
-        registerSignals(*oldsigs)
+    unittest.addModuleCleanup(registerSignals, *oldsigs)
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
