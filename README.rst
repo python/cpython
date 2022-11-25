@@ -1,9 +1,5 @@
-This is Python version 3.11.0 alpha 3
+This is Python version 3.12.0 alpha 2
 =====================================
-
-.. image:: https://travis-ci.com/python/cpython.svg?branch=main
-   :alt: CPython build status on Travis CI
-   :target: https://travis-ci.com/python/cpython
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
@@ -18,46 +14,48 @@ This is Python version 3.11.0 alpha 3
    :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2021 Python Software Foundation.  版权所有。
+Copyright © 2001-2022 Python Software Foundation.  All rights reserved.
 
-请参阅此文件的末尾以获得更多的版权和许可信息。
+See the end of this file for further copyright and license information.
 
 .. contents::
 
-基本信息
+General Information
 -------------------
 
-- 官网: https://www.python.org
-- 源代码: https://github.com/python/cpython
-- 问题追踪: https://bugs.python.org
-- 文档: https://docs.python.org
-- 开发者向导: https://devguide.python.org/
+- Website: https://www.python.org
+- Source code: https://github.com/python/cpython
+- Issue tracker: https://github.com/python/cpython/issues
+- Documentation: https://docs.python.org
+- Developer's Guide: https://devguide.python.org/
 
-贡献CPython
+Contributing to CPython
 -----------------------
 
-寻找有关CPython开发的更完整的说明,查看 `Developer Guide`_ 。
+For more complete instructions on contributing to CPython development,
+see the `Developer Guide`_.
 
 .. _Developer Guide: https://devguide.python.org/
 
-使用 Python
+Using Python
 ------------
 
-可安装Python工具包和有关使用Python的信息可以在 `python.org`_ 查看。
+Installable Python kits, and information about using Python, are available at
+`python.org`_.
 
 .. _python.org: https://www.python.org/
 
-构建说明
+Build Instructions
 ------------------
 
-在 Unix, Linux, BSD, macOS, 和 Cygwin 上::
+On Unix, Linux, BSD, macOS, and Cygwin::
 
     ./configure
     make
     make test
     sudo make install
 
-这将以 ``python3`` 的形式安装Python。
+This will install Python as ``python3``.
 
 You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS case-insensitive file systems and on Cygwin,
@@ -67,7 +65,7 @@ Building a complete Python installation requires the use of various
 additional third-party libraries, depending on your build platform and
 configure options.  Not all standard library modules are buildable or
 useable on all platforms.  Refer to the
-`Install dependencies <https://devguide.python.org/setup/#install-dependencies>`_
+`Install dependencies <https://devguide.python.org/getting-started/setup-building.html#build-dependencies>`_
 section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
 
@@ -96,7 +94,7 @@ Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
 below.
 
-概要文件指导优化
+Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PGO takes advantage of recent versions of the GCC or Clang compilers.  If used,
@@ -122,7 +120,7 @@ collected from the instrumented one.  The end result will be a Python binary
 that is optimized; suitable for distribution or production installation.
 
 
-链接时间优化
+Link Time Optimization
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Enabled via configure's ``--with-lto`` flag.  LTO takes advantage of the
@@ -131,13 +129,13 @@ arbitrary ``.o`` file boundary when building final executables or shared
 libraries for additional performance gains.
 
 
-新内容
+What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.10 <https://docs.python.org/3.10/whatsnew/3.10.html>`_ document.  For a more
+3.12 <https://docs.python.org/3.12/whatsnew/3.12.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/main/Misc/NEWS.d>`_, but a full
+<https://github.com/python/cpython/tree/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/main>`_.
 
@@ -145,10 +143,10 @@ If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
 
 
-文档
+Documentation
 -------------
 
-`Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
+`Documentation for Python 3.12 <https://docs.python.org/3.12/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -160,16 +158,16 @@ For information about building Python's documentation, refer to `Doc/README.rst
 <https://github.com/python/cpython/blob/main/Doc/README.rst>`_.
 
 
-从 Python 2.x 转到 3.x
+Converting From Python 2.x to 3.x
 ---------------------------------
 
 Significant backward incompatible changes were made for the release of Python
 3.0, which may cause programs written for Python 2 to fail when run with Python
-1.  For more information about porting your code from Python 2 to Python 3, see
+3.  For more information about porting your code from Python 2 to Python 3, see
 the `Porting HOWTO <https://docs.python.org/3/howto/pyporting.html>`_.
 
 
-测试
+Testing
 -------
 
 To test the interpreter, type ``make test`` in the top-level directory.  The
@@ -187,13 +185,14 @@ example, if ``test_os`` and ``test_gdb`` failed, you can run::
     make test TESTOPTS="-v test_os test_gdb"
 
 If the failure persists and appears to be a problem with Python rather than
-your environment, you can `file a bug report <https://bugs.python.org>`_ and
-include relevant output from that command to show the issue.
+your environment, you can `file a bug report
+<https://github.com/python/cpython/issues>`_ and include relevant output from
+that command to show the issue.
 
-See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
+See `Running & Writing Tests <https://devguide.python.org/testing/run-write-tests.html>`_
 for more on running tests.
 
-安装多版本
+Installing multiple versions
 ----------------------------
 
 On Unix and Mac systems if you intend to install multiple versions of Python
@@ -202,57 +201,58 @@ script) you must take care that your primary python executable is not
 overwritten by the installation of a different version.  All files and
 directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
-``${prefix}/bin/python3`` which refers to ``${prefix}/bin/pythonX.Y``.  If you
+``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
 intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.10 with 3.10 being the
-primary version, you would execute ``make install`` in your 3.10 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.12 with 3.12 being the
+primary version, you would execute ``make install`` in your 3.12 build directory
 and ``make altinstall`` in the others.
 
 
-问题跟踪和邮件列表
+Issue Tracker and Mailing List
 ------------------------------
 
-Bug reports are welcome!  You can use the `issue tracker
-<https://bugs.python.org>`_ to report bugs, and/or submit pull requests `on
-GitHub <https://github.com/python/cpython>`_.
+Bug reports are welcome!  You can use Github to `report bugs
+<https://github.com/python/cpython/issues>`_, and/or `submit pull requests
+<https://github.com/python/cpython/pulls>`_.
 
 You can also follow development discussion on the `python-dev mailing list
 <https://mail.python.org/mailman/listinfo/python-dev/>`_.
 
 
-强烈建议
+Proposals for enhancement
 -------------------------
 
 If you have a proposal to change Python, you may want to send an email to the
 `comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
-`python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
+`peps.python.org <https://peps.python.org/>`_.
 
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
 .. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
-版本系列
+Release Schedule
 ----------------
 
-See :pep:`664` for Python 3.11 release details.
+See :pep:`693` for Python 3.12 release details.
 
 
-版权及证书信息
+Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
-Copyright (c) 2000 BeOpen.com.  All rights reserved.
+Copyright © 2001-2022 Python Software Foundation.  All rights reserved.
 
-Copyright (c) 1995-2001 Corporation for National Research Initiatives.  All
+Copyright © 2000 BeOpen.com.  All rights reserved.
+
+Copyright © 1995-2001 Corporation for National Research Initiatives.  All
 rights reserved.
 
-Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
+Copyright © 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
 See the `LICENSE <https://github.com/python/cpython/blob/main/LICENSE>`_ for
 information on the history of this software, terms & conditions for usage, and a

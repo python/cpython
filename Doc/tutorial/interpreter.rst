@@ -1,112 +1,163 @@
 .. _tut-using:
 
 ****************************
-Python 解释器
+Using the Python Interpreter
 ****************************
 
 
 .. _tut-invoking:
 
-调用解释器
+Invoking the Interpreter
 ========================
 
-Python 解释器通常以 :file:`/usr/local/bin/python3.11` 安装在可用的机器上; 将 :file:`/usr/local/bin` 放到Unix shell的搜索路径中这样就可以通过输入以下命令来启动:
+The Python interpreter is usually installed as :file:`/usr/local/bin/python3.12`
+on those machines where it is available; putting :file:`/usr/local/bin` in your
+Unix shell's search path makes it possible to start it by typing the command:
 
 .. code-block:: text
 
-   python3.11
+   python3.12
 
-这样，就可以在 shell 中运行 Python 了。 [#]_ 因为可以选择安装目录，解释器也有可能安装在别的位置；如果还不明白，就去问问身边的 Python 大神或系统管理员。  (例如, :file:`/usr/local/python` 是常见备选路径。)
+to the shell. [#]_ Since the choice of the directory where the interpreter lives
+is an installation option, other places are possible; check with your local
+Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
+popular alternative location.)
 
-从 :ref:`Microsoft Store
-<windows-store>` 安装 Python 在Windows机器上，可以使用 :file:`python3.11` 命令。如果你已经安装了 :ref:`py.exe launcher <launcher>` ，你可以使用 :file:`py` 命令。参见 :ref:`setting-envvars` 了解启动Python的其他方法。
+On Windows machines where you have installed Python from the :ref:`Microsoft Store
+<windows-store>`, the :file:`python3.12` command will be available. If you have
+the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
+command. See :ref:`setting-envvars` for other ways to launch Python.
 
-在主提示符中，输入文件结束符（Unix 是 :kbd:`Control-D` ，Windows 是  :kbd:`Control-Z` ），就会退出解释器，退出状态码为 0。如果不能退出，还可以输入这个命令: ``quit()``。
+Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
+Windows) at the primary prompt causes the interpreter to exit with a zero exit
+status.  If that doesn't work, you can exit the interpreter by typing the
+following command: ``quit()``.
 
-在支持 GNU Readline 库的系统中，解释器的行编辑功能包括交互式编辑、历史替换、代码补全等。检测是否支持命令行编辑最快速的方式是，在首次出现 Python 提示符时，输入 Control-P。听到“哔”提示音，说明支持行编辑；请参阅附录 交互式编辑和编辑历史，了解功能键。如果没有反应，或回显了 ^P，则说明不支持行编辑；只能用退格键删除当前行的字符。
+The interpreter's line-editing features include interactive editing, history
+substitution and code completion on systems that support the `GNU Readline
+<https://tiswww.case.edu/php/chet/readline/rltop.html>`_ library.
+Perhaps the quickest check to see whether command line editing is supported is
+typing :kbd:`Control-P` to the first Python prompt you get.  If it beeps, you
+have command line editing; see Appendix :ref:`tut-interacting` for an
+introduction to the keys.  If nothing appears to happen, or if ``^P`` is
+echoed, command line editing isn't available; you'll only be able to use
+backspace to remove characters from the current line.
 
-在支持  `GNU Readline
-<https://tiswww.case.edu/php/chet/readline/rltop.html>`_ 库的系统中，解释器的行编辑功能包括交互式编辑、历史替换、代码补全等。查看是否支持命令行编辑最快速的方式是，在首次出现 Python 提示符时，输入 :kbd:`Control-P` 。听到“哔”提示音，说明支持行编辑；请参阅附录 :ref:`tut-interacting` 了解键的介绍。如果没有反应，或回显了 ``^P`` ，则说明不支持行编辑；只能用退格键删除当前行的字符。
+The interpreter operates somewhat like the Unix shell: when called with standard
+input connected to a tty device, it reads and executes commands interactively;
+when called with a file name argument or with a file as standard input, it reads
+and executes a *script* from that file.
 
-解释器的操作方式类似 Unix Shell：用于终端 tty 设备关联的标准输入调用时，可以交互式地读取和执行命令；以文件名参数，或标准输入文件调用时，则读取并执行文件中的 *script*。
+A second way of starting the interpreter is ``python -c command [arg] ...``,
+which executes the statement(s) in *command*, analogous to the shell's
+:option:`-c` option.  Since Python statements often contain spaces or other
+characters that are special to the shell, it is usually advised to quote
+*command* in its entirety.
 
-启动解释器的另一种方式是  ``python -c command [arg] ...``，这与 shell 的 -c 选项类似，其中 *command*需换成要执行的语句。由于 Python 语句经常包含空格等被 shell 特殊对待的字符，一般情况下，建议用单引号标注整个 *command* 。
+Some Python modules are also useful as scripts.  These can be invoked using
+``python -m module [arg] ...``, which executes the source file for *module* as
+if you had spelled out its full name on the command line.
 
-Python 模块也可以当作脚本使用。输入``python -m module [arg] ...``会执行  *module* 的源文件，这跟在命令行把路径写全了一样。
+When a script file is used, it is sometimes useful to be able to run the script
+and enter interactive mode afterwards.  This can be done by passing :option:`-i`
+before the script.
 
-在交互模式下运行脚本文件，只要在脚本名称参数前，加上选项 -i 就可以了。
-
-命令行的所有选项详见 :ref:`using-on-general`.
+All command line options are described in :ref:`using-on-general`.
 
 
 .. _tut-argpassing:
 
-传入参数
+Argument Passing
 ----------------
 
-解释器读取命令行参数，把脚本名与其他参数转化为字符串列表存到  ``sys`` 模块的 ``argv`` 变量里。执行 ``import
-sys``，可以导入这个模块，并访问该列表。该列表最少有一个元素；未给定输入参数时，``sys.argv[0]`` 是空字符串。给定脚本名是 ``'-'`` （标准输入）时，``sys.argv[0]``  是  ``'-'``。使用 :option:`-c` *command*  时， ``sys.argv[0]``   是  ``'-c'``。如果使用选项 :option:`-m` *module*，``sys.argv[0]`` 就是包含目录的模块全名。解释器不处理 :option:`-c` *command*  或  :option:`-m`
-*module*  之后的选项，而是直接留在  ``sys.argv``  中由命令或模块来处理。
+When known to the interpreter, the script name and additional arguments
+thereafter are turned into a list of strings and assigned to the ``argv``
+variable in the ``sys`` module.  You can access this list by executing ``import
+sys``.  The length of the list is at least one; when no script and no arguments
+are given, ``sys.argv[0]`` is an empty string.  When the script name is given as
+``'-'`` (meaning  standard input), ``sys.argv[0]`` is set to ``'-'``.  When
+:option:`-c` *command* is used, ``sys.argv[0]`` is set to ``'-c'``.  When
+:option:`-m` *module* is used, ``sys.argv[0]``  is set to the full name of the
+located module.  Options found after  :option:`-c` *command* or :option:`-m`
+*module* are not consumed  by the Python interpreter's option processing but
+left in ``sys.argv`` for  the command or module to handle.
 
 
 .. _tut-interactive:
 
-交互模式
+Interactive Mode
 ----------------
 
-在终端（tty）输入并执行指令时，解释器在 *交互模式*（interactive mode） 中运行。在这种模式中，会显示 主提示符，提示输入下一条指令，*主提示符*通常用三个大于号（``>>>``）表示；输入连续行时，显示 *次要提示符*，默认是三个点（``...``）。进入解释器时，首先显示欢迎信息、版本信息、版权声明，然后才是提示符：
+When commands are read from a tty, the interpreter is said to be in *interactive
+mode*.  In this mode it prompts for the next command with the *primary prompt*,
+usually three greater-than signs (``>>>``); for continuation lines it prompts
+with the *secondary prompt*, by default three dots (``...``). The interpreter
+prints a welcome message stating its version number and a copyright notice
+before printing the first prompt:
 
 .. code-block:: shell-session
 
-   $ python3.11
-   Python 3.11 (default, April 4 2021, 09:25:04)
+   $ python3.12
+   Python 3.12 (default, April 4 2022, 09:25:04)
    [GCC 10.2.0] on linux
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
 
 .. XXX update for new releases
 
-输入多行架构的语句时，要用连续行。以 :keyword:`if`  为例：
+Continuation lines are needed when entering a multi-line construct. As an
+example, take a look at this :keyword:`if` statement::
 
    >>> the_world_is_flat = True
    >>> if the_world_is_flat:
-   ...     print("小心别掉下来!")
+   ...     print("Be careful not to fall off!")
    ...
-   小心别掉下来!
+   Be careful not to fall off!
 
 
-交互模式的内容详见 :ref:`tut-interac`.
+For more on interactive mode, see :ref:`tut-interac`.
 
 
 .. _tut-interp:
 
-解释器的运行环境
+The Interpreter and Its Environment
 ===================================
 
 
 .. _tut-source-encoding:
 
-源文件的字符编码
+Source Code Encoding
 --------------------
 
-默认情况下，Python 源码文件采用 UTF-8 编码。这种编码支持世界上大多数语言的字符，可以用于字符串字面值、变量、函数名及注释 —— 尽管标准库只使用常规的 ASCII 字符作为变量名或函数名，可移植代码都应遵守此约定。要正确显示这些字符，编辑器必须能识别 UTF-8 编码，并且必须使用支持文件中所有字符的字体。
+By default, Python source files are treated as encoded in UTF-8.  In that
+encoding, characters of most languages in the world can be used simultaneously
+in string literals, identifiers and comments --- although the standard library
+only uses ASCII characters for identifiers, a convention that any portable code
+should follow.  To display all these characters properly, your editor must
+recognize that the file is UTF-8, and it must use a font that supports all the
+characters in the file.
 
-如果不使用默认编码，则要声明文件的编码，文件的 第一 行要写成特殊注释。语法如下：
+To declare an encoding other than the default one, a special comment line
+should be added as the *first* line of the file.  The syntax is as follows::
 
    # -*- coding: encoding -*-
 
-其中，*encoding* 可以是 Python 支持的任意一种  :mod:`codecs` 。
+where *encoding* is one of the valid :mod:`codecs` supported by Python.
 
-比如，声明使用 Windows-1252 编码，源码文件要写成：
+For example, to declare that Windows-1252 encoding is to be used, the first
+line of your source code file should be::
 
    # -*- coding: cp1252 -*-
 
-*第一行* 的规则也有一种例外情况，源码以 :ref:`UNIX "shebang" line <tut-scripts>` 开头。此时，编码声明要写在文件的第二行。例如：
+One exception to the *first line* rule is when the source code starts with a
+:ref:`UNIX "shebang" line <tut-scripts>`.  In this case, the encoding
+declaration should be added as the second line of the file.  For example::
 
    #!/usr/bin/env python3
    # -*- coding: cp1252 -*-
 
-.. rubric:: 脚注
+.. rubric:: Footnotes
 
-
-.. [#] 在Unix 系统中，为了不与同时安装的 Python 2.x 冲突，Python 3.x 解释器默认安装的执行文件名不是 ``python``。
+.. [#] On Unix, the Python 3.x interpreter is by default not installed with the
+   executable named ``python``, so that it does not conflict with a
+   simultaneously installed Python 2.x executable.

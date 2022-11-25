@@ -5,13 +5,13 @@ import textwrap
 import unittest
 import functools
 import contextlib
-import nntplib
 import os.path
 import re
 import threading
 
 from test import support
-from test.support import socket_helper
+from test.support import socket_helper, warnings_helper
+nntplib = warnings_helper.import_deprecated("nntplib")
 from nntplib import NNTP, GroupInfo
 from unittest.mock import patch
 try:
@@ -1593,8 +1593,7 @@ class LocalServerTests(unittest.TestCase):
         self.background.start()
         self.addCleanup(self.background.join)
 
-        self.nntp = NNTP(socket_helper.HOST, port, usenetrc=False).__enter__()
-        self.addCleanup(self.nntp.__exit__, None, None, None)
+        self.nntp = self.enterContext(NNTP(socket_helper.HOST, port, usenetrc=False))
 
     def run_server(self, sock):
         # Could be generalized to handle more commands in separate methods

@@ -26,5 +26,7 @@ Python操作指南是覆盖单一、特定主题的文档，并试图相当完�
    ipaddress.rst
    clinic.rst
    instrumentation.rst
+   perf_profiling.rst
    annotations.rst
+   isolating-extensions.rst
 

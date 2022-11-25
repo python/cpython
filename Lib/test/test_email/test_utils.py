@@ -49,12 +49,21 @@ class DateTimeTests(unittest.TestCase):
             self.naive_dt)
 
     def test_parsedate_to_datetime_with_invalid_raises_valueerror(self):
-        invalid_dates = ['',
-                         '0',
-                         'A Complete Waste of Time'
-                         'Tue, 06 Jun 2017 27:39:33 +0600',
-                         'Tue, 06 Jun 2017 07:39:33 +2600',
-                         'Tue, 06 Jun 2017 27:39:33']
+        # See also test_parsedate_returns_None_for_invalid_strings in test_email.
+        invalid_dates = [
+            '',
+            ' ',
+            '0',
+            'A Complete Waste of Time',
+            'Wed, 3 Apr 2002 12.34.56.78+0800'
+            'Tue, 06 Jun 2017 27:39:33 +0600',
+            'Tue, 06 Jun 2017 07:39:33 +2600',
+            'Tue, 06 Jun 2017 27:39:33',
+            '17 June , 2022',
+            'Friday, -Nov-82 16:14:55 EST',
+            'Friday, Nov--82 16:14:55 EST',
+            'Friday, 19-Nov- 16:14:55 EST',
+        ]
         for dtstr in invalid_dates:
             with self.subTest(dtstr=dtstr):
                 self.assertRaises(ValueError, utils.parsedate_to_datetime, dtstr)

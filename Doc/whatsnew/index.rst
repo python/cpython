@@ -10,6 +10,7 @@ Python 有什么新变化
 .. toctree::
    :maxdepth: 2
 
+   3.12.rst
    3.11.rst
    3.10.rst
    3.9.rst

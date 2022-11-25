@@ -1,2 +1,0 @@
-Document that the *no_block* argument to :c:func:`PyCapsule_Import` is a
-no-op now.

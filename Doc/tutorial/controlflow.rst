@@ -1,18 +1,20 @@
 .. _tut-morecontrol:
 
 ***********************
-更多流程控制工具
+More Control Flow Tools
 ***********************
 
-除了上一章介绍的 :keyword:`while` 语句外, Python 还支持其他语言中常见的流程控制语句，只是稍有不同。
+Besides the :keyword:`while` statement just introduced, Python uses the usual
+flow control statements known from other languages, with some twists.
 
 
 .. _tut-if:
 
-:keyword:`!if` 语句
+:keyword:`!if` Statements
 =========================
 
-最让人耳熟能详的应该是 :keyword:`if` 语句。例如::
+Perhaps the most well-known statement type is the :keyword:`if` statement.  For
+example::
 
    >>> x = int(input("Please enter an integer: "))
    Please enter an integer: 42
@@ -28,37 +30,37 @@
    ...
    More
 
-if 语句包含零个或多个 :keyword:`elif` 子句,  以及可选 :keyword:`else` 子句。  关键字 ':keyword:`!elif`' 是 'else if' 的缩写, 适用于避免过多的缩进。可以把 An  :keyword:`!if` ... :keyword:`!elif` ...
-:keyword:`!elif` ...  序列看作是其他语言中 ``switch`` 或 ``case`` 语句的替代品。
+There can be zero or more :keyword:`elif` parts, and the :keyword:`else` part is
+optional.  The keyword ':keyword:`!elif`' is short for 'else if', and is useful
+to avoid excessive indentation.  An  :keyword:`!if` ... :keyword:`!elif` ...
+:keyword:`!elif` ... sequence is a substitute for the ``switch`` or
+``case`` statements found in other languages.
 
-如果你将相同的值与几个常量进行比较，或者检查特定的类型或属性，你可能还会发现 :keyword:`!match` 语句的用处。更多细节请参见 :ref:`tut-match`。例如::
-   >>> def http_error(status):
-   ...    match status:
-   ...        case 400:
-   ...            return "Bad request"
-   ...        case 404:
-   ...            return "Not found"
-   ...        case 418:
-   ...            return "I'm a teapot"
-   ...        case _:
-   ...            return "Something's wrong with the Internet"     
+If you're comparing the same value to several constants, or checking for specific types or
+attributes, you may also find the :keyword:`!match` statement useful. For more
+details see :ref:`tut-match`.
 
 .. _tut-for:
 
-:keyword:`!for` 语句
+:keyword:`!for` Statements
 ==========================
 
 .. index::
    statement: for
 
-Python 的 :keyword:`for` 语句与 C 或 Pascal 中的不同。  Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和暂停条件的能力（如 C），而是迭代列表或字符串等任意序列，元素的迭代顺序与在序列中出现的顺序一致。 例如：
+The :keyword:`for` statement in Python differs a bit from what you may be used
+to in C or Pascal.  Rather than always iterating over an arithmetic progression
+of numbers (like in Pascal), or giving the user the ability to define both the
+iteration step and halting condition (as C), Python's :keyword:`!for` statement
+iterates over the items of any sequence (a list or a string), in the order that
+they appear in the sequence.  For example (no pun intended):
 
 .. One suggestion was to give a real C example here, but that may only serve to
    confuse non-C programmers.
 
 ::
 
-   >>> # 测量一些字符串:
+   >>> # Measure some strings:
    ... words = ['cat', 'window', 'defenestrate']
    >>> for w in words:
    ...     print(w, len(w))
@@ -67,17 +69,19 @@ Python 的 :keyword:`for` 语句与 C 或 Pascal 中的不同。  Python 的 for
    window 6
    defenestrate 12
 
-遍历某个集合的同时修改该集合的内容，很难获取想要的结果。要在遍历时修改集合的内容，应该遍历该集合的副本或创建新的集合::
+Code that modifies a collection while iterating over that same collection can
+be tricky to get right.  Instead, it is usually more straight-forward to loop
+over a copy of the collection or to create a new collection::
 
-    # 创建一个示例集合
+    # Create a sample collection
     users = {'Hans': 'active', 'Éléonore': 'inactive', '景太郎': 'active'}
 
-    # 策略:迭代一个副本
+    # Strategy:  Iterate over a copy
     for user, status in users.copy().items():
         if status == 'inactive':
             del users[user]
 
-    # 策略:创建一个新的集合
+    # Strategy:  Create a new collection
     active_users = {}
     for user, status in users.items():
         if status == 'active':
@@ -86,10 +90,11 @@ Python 的 :keyword:`for` 语句与 C 或 Pascal 中的不同。  Python 的 for
 
 .. _tut-range:
 
-The :func:`range` 函数
+The :func:`range` Function
 ==========================
 
-内置函数 :func:`range` 常用于遍历数字序列，该函数可以生成算术级数::
+If you do need to iterate over a sequence of numbers, the built-in function
+:func:`range` comes in handy.  It generates arithmetic progressions::
 
     >>> for i in range(5):
     ...     print(i)
@@ -100,8 +105,10 @@ The :func:`range` 函数
     3
     4
 
-生成的序列不包含给定的终止数值； ``range(10)`` 生成 10 个值，这是一个长度为 10 的序列，
-其中的元素索引都是合法的。range 可以不从 0 开始，还可以按指定幅度递增（递增幅度称为 '步数'，支持负数）::
+The given end point is never part of the generated sequence; ``range(10)`` generates
+10 values, the legal indices for items of a sequence of length 10.  It
+is possible to let the range start at another number, or to specify a different
+increment (even negative; sometimes this is called the 'step')::
 
     >>> list(range(5, 10))
     [5, 6, 7, 8, 9]
@@ -112,7 +119,8 @@ The :func:`range` 函数
     >>> list(range(-10, -100, -30))
     [-10, -40, -70]
 
-:func:`range` 和 :func:`len` 组合在一起，可以按索引迭代序列::
+To iterate over the indices of a sequence, you can combine :func:`range` and
+:func:`len` as follows::
 
    >>> a = ['Mary', 'had', 'a', 'little', 'lamb']
    >>> for i in range(len(a)):
@@ -124,30 +132,45 @@ The :func:`range` 函数
    3 little
    4 lamb
 
-不过，大多数情况下 :func:`enumerate` 函数更为便捷，详见 :ref:`tut-loopidioms`.
+In most such cases, however, it is convenient to use the :func:`enumerate`
+function, see :ref:`tut-loopidioms`.
 
-如果只输出 range，会出现意想不到的结果::
+A strange thing happens if you just print a range::
 
    >>> range(10)
    range(0, 10)
 
-:func:`range` 返回对象的操作和列表很像，但其实这两种对象不是一回事。迭代时，该对象基于所需序列返回连续项，并没有生成真正的列表，从而节省了空间。
+In many ways the object returned by :func:`range` behaves as if it is a list,
+but in fact it isn't. It is an object which returns the successive items of
+the desired sequence when you iterate over it, but it doesn't really make
+the list, thus saving space.
 
-这种对象称为可迭代对象 :term:`iterable`, 函数或程序结构可通过该对象获取连续项，直到所有元素全部迭代完毕。 :keyword:`for` 语句就是这样的架构，
- :func:`sum` 是一种把可迭代对象作为参数的函数::
+We say such an object is :term:`iterable`, that is, suitable as a target for
+functions and constructs that expect something from which they can
+obtain successive items until the supply is exhausted.  We have seen that
+the :keyword:`for` statement is such a construct, while an example of a function
+that takes an iterable is :func:`sum`::
 
     >>> sum(range(4))  # 0 + 1 + 2 + 3
     6
 
+Later we will see more functions that return iterables and take iterables as
+arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail about
+:func:`list`.
+
 .. _tut-break:
 
-循环中的 :keyword:`!break` 、 :keyword:`!continue` 语句以及 :keyword:`!else` 子句
+:keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
 ============================================================================================
 
-:keyword:`break` 语句和C语言中的类似, 用于跳出最近的:keyword:`for` 或 :keyword:`while` 循环。
+The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
+:keyword:`for` or :keyword:`while` loop.
 
-循环语句支持 :keyword:`!else` 子句； :keyword:`for` 循环中，
-可迭代对象中的元素全部循环完毕时，或 :keyword:`while` 循环的条件为假时，执行该子句；:keyword:`break` 语句终止循环时，不执行该子句。 请看下面这个查找素数的循环示例::
+Loop statements may have an :keyword:`!else` clause; it is executed when the loop
+terminates through exhaustion of the iterable (with :keyword:`for`) or when the
+condition becomes false (with :keyword:`while`), but not when the loop is
+terminated by a :keyword:`break` statement.  This is exemplified by the
+following loop, which searches for prime numbers::
 
    >>> for n in range(2, 10):
    ...     for x in range(2, n):
@@ -167,13 +190,18 @@ The :func:`range` 函数
    8 equals 2 * 4
    9 equals 3 * 3
 
-(没错，这段代码就是这么写。仔细看： ``else`` 子句属于 :keyword:`for` 循环, **而非** :keyword:`if` 语句。)
+(Yes, this is the correct code.  Look closely: the ``else`` clause belongs to
+the :keyword:`for` loop, **not** the :keyword:`if` statement.)
 
-与 :keyword:`if` 语句相比，循环的 ``else` 子句更像 :keyword:`try` 的 ``else``  子句： :keyword:`try` 的 ``else`` 子句在未触发异常时执行，
-循环的 ``else``   子句则在未运行 ``break`` 时执行。更多有关 :keyword:`!try` 语句和异常, 详见
+When used with a loop, the ``else`` clause has more in common with the
+``else`` clause of a :keyword:`try` statement than it does with that of
+:keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
+when no exception occurs, and a loop's ``else`` clause runs when no ``break``
+occurs. For more on the :keyword:`!try` statement and exceptions, see
 :ref:`tut-handling`.
 
-:keyword:`continue` 语句也借鉴自 C 语言，表示继续执行循环的下一次迭代::
+The :keyword:`continue` statement, also borrowed from C, continues with the next
+iteration of the loop::
 
     >>> for num in range(2, 10):
     ...     if num % 2 == 0:
@@ -192,38 +220,45 @@ The :func:`range` 函数
 
 .. _tut-pass:
 
-:keyword:`!pass` 语句
+:keyword:`!pass` Statements
 ===========================
 
-:keyword:`pass` 语句不执行任何操作。语法上需要一个语句，但程序不实际执行任何动作时，可以使用该语句。例如::
+The :keyword:`pass` statement does nothing. It can be used when a statement is
+required syntactically but the program requires no action. For example::
 
    >>> while True:
    ...     pass  # Busy-wait for keyboard interrupt (Ctrl+C)
    ...
 
-下面这段代码创建了一个最小的类::
+This is commonly used for creating minimal classes::
 
    >>> class MyEmptyClass:
    ...     pass
    ...
 
-此外 :keyword:`pass` 可以用作函数或条件子句的占位符， 让开发者聚焦更抽象的层次。此时，程序直接忽略 :keyword:`!pass` ::
+Another place :keyword:`pass` can be used is as a place-holder for a function or
+conditional body when you are working on new code, allowing you to keep thinking
+at a more abstract level.  The :keyword:`!pass` is silently ignored::
 
    >>> def initlog(*args):
-   ...     pass   # 记住要实现这一点!
+   ...     pass   # Remember to implement this!
    ...
 
 
 .. _tut-match:
 
-:keyword:`!match` 语句
+:keyword:`!match` Statements
 ============================
 
-匹配语句接受一个表达式，并将其值与一个或多个case块给出的连续模式进行比较。
-从表面上看，这类似于C、Java或JavaScript(以及许多其他语言)中的switch语句，
-但它也可以从值中提取组件(序列元素或对象属性)到变量。
+A :keyword:`match` statement takes an expression and compares its value to successive
+patterns given as one or more case blocks.  This is superficially
+similar to a switch statement in C, Java or JavaScript (and many
+other languages), but it's more similar to pattern matching in
+languages like Rust or Haskell. Only the first pattern that matches
+gets executed and it can also extract components (sequence elements
+or object attributes) from the value into variables.
 
-最简单的方式是将值与一个或多个字面量进行比较::
+The simplest form compares a subject value against one or more literals::
 
     def http_error(status):
         match status:
@@ -236,16 +271,18 @@ The :func:`range` 函数
             case _:
                 return "Something's wrong with the internet"
 
-注意最会一块:  "变量名" ``_`` 扮演 *通配符* 匹配其他，如果没有事件匹配，则不执行任何分支。
+Note the last block: the "variable name" ``_`` acts as a *wildcard* and
+never fails to match. If no case matches, none of the branches is executed.
 
-你可以简写匹配模式 ``|`` ("或")::
+You can combine several literals in a single pattern using ``|`` ("or")::
 
             case 401 | 403 | 404:
                 return "Not allowed"
 
-模式可以看作开箱作业,可用于绑定变量::
+Patterns can look like unpacking assignments, and can be used to bind
+variables::
 
-    # point 是一个 (x, y) 元祖
+    # point is an (x, y) tuple
     match point:
         case (0, 0):
             print("Origin")
@@ -258,11 +295,16 @@ The :func:`range` 函数
         case _:
             raise ValueError("Not a point")
 
-仔细研究这个! 第一个模式有两个字面量,可以认为是上面所示的字面量模式的延伸。
-但是接下来的两个模式结合一个数值和一个变量,该变量*绑定*来自对象(``point``)的值。
-第四模式捕获两个值,这使得它在概念上类似于开箱作业``(x, y) = point``。
+Study that one carefully!  The first pattern has two literals, and can
+be thought of as an extension of the literal pattern shown above.  But
+the next two patterns combine a literal and a variable, and the
+variable *binds* a value from the subject (``point``).  The fourth
+pattern captures two values, which makes it conceptually similar to
+the unpacking assignment ``(x, y) = point``.
 
-如果使用类来构建数据，则可以使用类名，后跟类似构造函数的参数列表，但能够将属性捕获到变量中::
+If you are using classes to structure your data
+you can use the class name followed by an argument list resembling a
+constructor, but with the ability to capture attributes into variables::
 
     class Point:
         x: int
@@ -281,21 +323,26 @@ The :func:`range` 函数
             case _:
                 print("Not a point")
 
-您可以使用带有一些内置类的位置参数为其属性提供订购（例如 dataclasses）。
-您还可以通过在类中设置 ``__match_args__`` 特殊属性来定义模式中属性的特定位置。
-如果它设置为（“x”，“y”），则以下模式都是等效的（并且全部将``y``属性绑定到 ``var`` 变量）：
+You can use positional parameters with some builtin classes that provide an
+ordering for their attributes (e.g. dataclasses). You can also define a specific
+position for attributes in patterns by setting the ``__match_args__`` special
+attribute in your classes. If it's set to ("x", "y"), the following patterns are all
+equivalent (and all bind the ``y`` attribute to the ``var`` variable)::
 
     Point(1, var)
     Point(1, y=var)
     Point(x=1, y=var)
     Point(y=var, x=1)
 
-阅读模式的推荐方法是将它们视为你将放在赋值左侧的内容的扩展形式，以便了解哪些变量设置成什么。
-仅独立名称 (如上面的 ``var``) 被匹配语句分配。
-点名称 (如 ``foo.bar``), 属性名称 (上面的 ``x=`` 和 ``y=``) 或者类名
-(如上面的 ``Point`` 旁被识别的 "(...)" ) 则永远不会分配。
+A recommended way to read patterns is to look at them as an extended form of what you
+would put on the left of an assignment, to understand which variables would be set to
+what.
+Only the standalone names (like ``var`` above) are assigned to by a match statement.
+Dotted names (like ``foo.bar``), attribute names (the ``x=`` and ``y=`` above) or class names
+(recognized by the "(...)" next to them like ``Point`` above) are never assigned to.
 
-模式可以任意嵌套。  比如，如果有一个简短的点列表，我们可以这样匹配::
+Patterns can be arbitrarily nested.  For example, if we have a short
+list of points, we could match it like this::
 
     match points:
         case []:
@@ -350,9 +397,11 @@ Several other key features of this statement:
 
       from enum import Enum
       class Color(Enum):
-          RED = 0
-          GREEN = 1
-          BLUE = 2
+          RED = 'red'
+          GREEN = 'green'
+          BLUE = 'blue'
+
+      color = Color(input("Enter your choice of 'red', 'blue' or 'green': "))
 
       match color:
           case Color.RED:
@@ -367,10 +416,11 @@ For a more detailed explanation and additional examples, you can look into
 
 .. _tut-functions:
 
-定义函数
+Defining Functions
 ==================
 
-下列代码创建一个可以输出限定数值内的斐波那契数列函数::
+We can create a function that writes the Fibonacci series to an arbitrary
+boundary::
 
    >>> def fib(n):    # write Fibonacci series up to n
    ...     """Print a Fibonacci series up to n."""
@@ -790,8 +840,9 @@ will always bind to the first parameter. For example::
 
 But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
 
-    def foo(name, /, **kwds):
-        return 'name' in kwds
+    >>> def foo(name, /, **kwds):
+    ...     return 'name' in kwds
+    ...
     >>> foo(1, **{'name': 2})
     True
 
@@ -836,7 +887,7 @@ zero or more normal arguments may occur. ::
        file.write(separator.join(args))
 
 
-Normally, these ``variadic`` arguments will be last in the list of formal
+Normally, these *variadic* arguments will be last in the list of formal
 parameters, because they scoop up all remaining input arguments that are
 passed to the function. Any formal parameters which occur after the ``*args``
 parameter are 'keyword-only' arguments, meaning that they can only be used as
