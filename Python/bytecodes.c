@@ -85,7 +85,8 @@ static PyObject *list, *tuple, *dict, *owner;
 static PyObject *exit_func, *lasti, *val;
 static size_t jump;
 // Dummy variables for cache effects
-static _Py_CODEUNIT when_to_jump_mask, invert, counter;
+static _Py_CODEUNIT when_to_jump_mask, invert, counter, index;
+static uint32_t type_version;
 // Dummy opcode names for 'op' opcodes
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1001
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_2 1002
@@ -1944,22 +1945,15 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR_INSTANCE_VALUE) {
+        inst(STORE_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, value, owner --)) {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
-            Py_ssize_t index = cache->index;
-            STACK_SHRINK(1);
-            PyObject *value = POP();
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
             PyObject *old_value = values->values[index];
             values->values[index] = value;
@@ -1970,7 +1964,6 @@ dummy_func(
                 Py_DECREF(old_value);
             }
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
         // stack effect: (__0, __1 -- )

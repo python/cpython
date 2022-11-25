@@ -1928,20 +1928,18 @@
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
+            PyObject *owner = PEEK(1);
+            PyObject *value = PEEK(2);
+            uint32_t type_version = read_u32(next_instr + 1);
+            uint16_t index = read_u16(next_instr + 3);
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
-            Py_ssize_t index = cache->index;
-            STACK_SHRINK(1);
-            PyObject *value = POP();
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
             PyObject *old_value = values->values[index];
             values->values[index] = value;
@@ -1952,7 +1950,8 @@
                 Py_DECREF(old_value);
             }
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
+            STACK_SHRINK(2);
+            next_instr += 4;
             DISPATCH();
         }
 
