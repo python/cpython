@@ -1252,7 +1252,7 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
 
-    if (!valid_index(i, len)) {
+    if (invalid_index(i, len)) {
         PyErr_SetString(PyExc_IndexError, "deque index out of range");
         return -1;
     }
@@ -2413,7 +2413,7 @@ tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         return NULL;
     }
 
-    if (!valid_index(index, PyTuple_GET_SIZE(obj))) {
+    if (invalid_index(index, PyTuple_GET_SIZE(obj))) {
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
         return NULL;
     }
