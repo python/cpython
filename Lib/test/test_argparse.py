@@ -13,7 +13,6 @@ import unittest
 import argparse
 import warnings
 
-from gettext import gettext as _
 from test.support import os_helper
 from unittest import mock
 
@@ -2196,7 +2195,7 @@ class TestAddSubparsers(TestCase):
             parser.parse_args(('baz',))
         self.assertRegex(
             excinfo.exception.stderr,
-            r"error: argument {foo,bar}: invalid choice: 'baz', maybe you meant 'bar'? \(choose from 'foo', 'bar'\)\n$"
+            r"error: argument {foo,bar}: invalid choice: 'baz', maybe you meant 'bar'? (choose from 'foo', 'bar')"
         )
 
     def test_optional_subparsers(self):
