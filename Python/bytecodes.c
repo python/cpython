@@ -85,7 +85,7 @@ static PyObject *list, *tuple, *dict, *owner;
 static PyObject *exit_func, *lasti, *val;
 static size_t jump;
 // Dummy variables for cache effects
-static _Py_CODEUNIT when_to_jump_mask, invert, counter, index;
+static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
 static uint32_t type_version;
 // Dummy opcode names for 'op' opcodes
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1001
@@ -1966,13 +1966,9 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR_WITH_HINT) {
+        inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value, owner --)) {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
@@ -1982,17 +1978,14 @@ dummy_func(
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, oparg);
-            uint16_t hint = cache->index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
-            PyObject *value, *old_value;
+            PyObject *old_value;
             uint64_t new_version;
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                STACK_SHRINK(1);
-                value = POP();
                 new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
@@ -2001,8 +1994,6 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                STACK_SHRINK(1);
-                value = POP();
                 new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
@@ -2015,7 +2006,6 @@ dummy_func(
             /* PEP 509 */
             dict->ma_version_tag = new_version;
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
         // stack effect: (__0, __1 -- )
