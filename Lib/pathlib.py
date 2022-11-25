@@ -633,11 +633,11 @@ class PurePath(object):
         the path.
         """
         if _deprecated:
-            warnings.warn("support for supplying more than one positional "
-                          "argument to pathlib.PurePath.relative_to() is "
-                          "deprecated and scheduled for removal in Python "
-                          "3.14.",
-                          DeprecationWarning, stacklevel=2)
+            msg = ("support for supplying more than one positional argument "
+                   "to pathlib.PurePath.relative_to() is deprecated and "
+                   "scheduled for removal in Python {remove}")
+            warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
+                                 remove=(3, 14))
         path_cls = type(self)
         other = path_cls(other, *_deprecated)
         for step, path in enumerate([other] + list(other.parents)):
@@ -654,11 +654,11 @@ class PurePath(object):
         """Return True if the path is relative to another path or False.
         """
         if _deprecated:
-            warnings.warn("support for supplying more than one argument to "
-                          "pathlib.PurePath.is_relative_to() is deprecated "
-                          "and scheduled for removal in Python 3.14.",
-                          DeprecationWarning, stacklevel=2)
-            other = type(self)(other, *_deprecated)
+            msg = ("support for supplying more than one argument to "
+                   "pathlib.PurePath.is_relative_to() is deprecated and "
+                   "scheduled for removal in Python {remove}")
+            warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
+                                 msg, remove=(3, 14))
         other = type(self)(other, *_deprecated)
         return other == self or other in self.parents
 
