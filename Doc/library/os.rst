@@ -1841,6 +1841,16 @@ features:
   function on your platform using :data:`os.supports_follow_symlinks`.
   If it's unavailable, using it will raise a :exc:`NotImplementedError`.
 
+  On Windows, ``follow_symlinks`` applies to name-surrogate reparse points,
+  including symlinks and junctions. This type of reparse point is a symbolic
+  link to another path on the system.  All other types of reparse point (e.g.
+  tiered storage) are always traversed, except that reparse points that are
+  not supported by the system are operated on directly.
+
+  If a path is either a symlink or a junction that cannot be traversed to the
+  final path, :func:`os.path.realpath` can be used to resolve as much of the
+  target path as possible.
+
 
 
 .. function:: access(path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True)
@@ -2795,17 +2805,6 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
-   On Windows, passing ``follow_symlinks=False`` will disable following all
-   name-surrogate reparse points, which includes symlinks and directory
-   junctions. Other types of reparse points that do not resemble links or that
-   the operating system is unable to follow will be opened directly. When
-   following a chain of multiple links, this may result in the original link
-   being returned instead of the non-link that prevented full traversal. To
-   obtain stat results for the final path in this case, use the
-   :func:`os.path.realpath` function to resolve the path name as far as
-   possible and call :func:`lstat` on the result. This does not apply to
-   dangling symlinks or junction points, which will raise the usual exceptions.
-
    .. index:: module: stat
 
    Example::
@@ -2858,17 +2857,6 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
-
-   On Windows, passing ``follow_symlinks=False`` will disable following all
-   name-surrogate reparse points, which includes symlinks and directory
-   junctions. Other types of reparse points that do not resemble links or that
-   the operating system is unable to follow will be opened directly. When
-   following a chain of multiple links, this may result in the original link
-   being returned instead of the non-link that prevented full traversal. To
-   obtain stat results for the final path in this case, use the
-   :func:`os.path.realpath` function to resolve the path name as far as
-   possible and call :func:`lstat` on the result. This does not apply to
-   dangling symlinks or junction points, which will raise the usual exceptions.
 
    .. index:: module: stat
 

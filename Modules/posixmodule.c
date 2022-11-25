@@ -2189,7 +2189,7 @@ static PyStructSequence_Field stat_result_fields[] = {
 #endif
     /* the stx_mask attribute is always present to allow for fallbacks */
     {"stx_mask", "mask of fields provided by the system"},
-#ifdef HAVE_STATX
+#if defined(HAVE_STATX) || defined(MS_WINDOWS)
     /* Many of these are duplicates of the optional fields earlier.
        *Presumably* they'll all be present together, but since people
        test for the presence of the st_* fields by name at .py compile
@@ -2266,7 +2266,7 @@ static PyStructSequence_Field stat_result_fields[] = {
 
 #define STX_MASK_IDX (ST_REPARSE_TAG_IDX+1)
 
-#ifdef HAVE_STATX
+#if defined(HAVE_STATX) || defined(MS_WINDOWS)
 #define STX_BLKSIZE_IDX (STX_MASK_IDX+1)
 #define STX_BLOCKS_IDX (STX_BLKSIZE_IDX+1)
 #define STX_RDEV_IDX (STX_BLOCKS_IDX+1)
@@ -2466,12 +2466,11 @@ fill_time(PyObject *module, PyObject *v, int index, int index_f, int index_ns, t
     }
 
     if (index >= 0)
-        PyStructSequence_SET_ITEM(v, index, s);
+        PyStructSequence_SET_ITEM(v, index, Py_NewRef(s));
     if (float_s)
         PyStructSequence_SET_ITEM(v, index_f, float_s);
     if (ns_total)
         PyStructSequence_SET_ITEM(v, index_ns, ns_total);
-    s = NULL;
     float_s = NULL;
     ns_total = NULL;
 exit:
@@ -2549,7 +2548,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
     PyStructSequence_SET_ITEM(v, ST_GEN_IDX,
                               PyLong_FromLong((long)st->st_gen));
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(MS_WINDOWS)
     {
       time_t bsec;
       unsigned long bnsec;
@@ -2564,8 +2563,10 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
       bnsec = 0;
 #endif /* HAVE_STAT_TV_NSEC2 */
 #endif /* MS_WINDOWS */
+#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
       fill_time(module, v, -1, ST_BIRTHTIME_IDX, -1, bsec, bnsec);
-#ifdef HAVE_STATX
+#endif
+#if defined(HAVE_STATX) || defined(MS_WINDOWS)
       fill_time(module, v, -1, STX_BTIME_IDX, STX_BTIME_NS_IDX, bsec, bnsec);
 #endif
     }
@@ -2593,7 +2594,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
     PyStructSequence_SET_ITEM(v, STX_MASK_IDX,
                               PyLong_FromUnsignedLong(stx_mask));
 
-#ifdef HAVE_STATX
+#if defined(HAVE_STATX) || defined(MS_WINDOWS)
     /* ensure unused fields that are present for statx are initialized */
     PyObject *zero = PyLong_FromLong(0);
     if (!zero) {
@@ -2668,7 +2669,7 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
     fill_time(module, v, 7, 10, 13, st->stx_atime.tv_sec, st->stx_atime.tv_nsec);
     fill_time(module, v, 8, 11, 14, st->stx_mtime.tv_sec, st->stx_mtime.tv_nsec);
     fill_time(module, v, 9, 12, 15, st->stx_ctime.tv_sec, st->stx_ctime.tv_nsec);
-    fill_time(module, v, -1, ST_BTIME_IDX, ST_BTIME_NS_IDX,
+    fill_time(module, v, -1, STX_BTIME_IDX, STX_BTIME_NS_IDX,
               st->stx_btime.tv_sec, st->stx_btime.tv_nsec);
 
     PyStructSequence_SET_ITEM(v, STX_BLKSIZE_IDX,
@@ -16261,6 +16262,10 @@ static const struct have_function {
 
 #ifdef HAVE_RENAMEAT
     { "HAVE_RENAMEAT", probe_renameat },
+#endif
+
+#if defined(HAVE_STATX) || defined(MS_WINDOWS)
+    { "HAVE_STATX", NULL },
 #endif
 
 #ifdef HAVE_SYMLINKAT

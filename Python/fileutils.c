@@ -1114,10 +1114,8 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
     result->st_reparse_tag = reparse_tag;
     if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
         reparse_tag == IO_REPARSE_TAG_SYMLINK) {
-        /* first clear the S_IFMT bits */
-        result->st_mode ^= (result->st_mode & S_IFMT);
-        /* now set the bits that make this a symlink */
-        result->st_mode |= S_IFLNK;
+        /* set the bits that make this a symlink */
+        result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
     }
     result->st_file_attributes = info->dwFileAttributes;
 }
