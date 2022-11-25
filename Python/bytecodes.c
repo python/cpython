@@ -1127,6 +1127,13 @@ dummy_func(
             Py_DECREF(seq);
         }
 
+        family(store_attr) = {
+            STORE_ATTR,
+            STORE_ATTR_INSTANCE_VALUE,
+            STORE_ATTR_SLOT,
+            STORE_ATTR_WITH_HINT,
+        };
+
         inst(STORE_ATTR, (counter/1, v, owner, unused/3 --)) {
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2008,24 +2015,17 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR_SLOT) {
+        inst(STORE_ATTR_SLOT, (unused/1, type_version/2, index/1, value, owner --)) {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
-            char *addr = (char *)owner + cache->index;
+            char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
-            STACK_SHRINK(1);
-            PyObject *value = POP();
             PyObject *old_value = *(PyObject **)addr;
             *(PyObject **)addr = value;
             Py_XDECREF(old_value);
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
         family(compare_op) = {
@@ -3655,9 +3655,6 @@ family(load_fast) = { LOAD_FAST, LOAD_FAST__LOAD_CONST, LOAD_FAST__LOAD_FAST };
 family(load_global) = {
     LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,
     LOAD_GLOBAL_MODULE };
-family(store_attr) = {
-    STORE_ATTR, STORE_ATTR_INSTANCE_VALUE,
-    STORE_ATTR_SLOT, STORE_ATTR_WITH_HINT };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
 family(store_subscr) = {
     STORE_SUBSCR, STORE_SUBSCR_DICT,
