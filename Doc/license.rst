@@ -387,7 +387,8 @@ Project, https://www.wide.ad.jp/. ::
 Asynchronous socket services
 ----------------------------
 
-The :mod:`asynchat` and :mod:`asyncore` modules contain the following notice::
+The :mod:`test.support.asynchat` and :mod:`test.support.asyncore`
+modules contain the following notice::
 
    Copyright 1996 by Sam Rushing
 
@@ -988,9 +989,12 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 Audioop
 -------
+
 The audioop module uses the code base in g771.c file of the SoX project::
+
     Programming the AdLib/Sound Blaster
     FM Music Chips
     Version 2.0 (24 Feb 1992)

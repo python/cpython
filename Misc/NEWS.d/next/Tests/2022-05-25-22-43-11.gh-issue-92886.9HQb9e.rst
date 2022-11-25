@@ -1,1 +1,0 @@
-Fixing tests that fail when running with optimizations (``-O``) in ``test_sys_settrace.py``.

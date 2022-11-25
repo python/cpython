@@ -78,16 +78,30 @@ class InstanceCreation(unittest.TestCase):
         beg = BaseExceptionGroup("beg", [ValueError(1), KeyboardInterrupt(2)])
         self.assertIs(type(beg), BaseExceptionGroup)
 
-    def test_EG_subclass_wraps_anything(self):
+    def test_EG_subclass_wraps_non_base_exceptions(self):
         class MyEG(ExceptionGroup):
             pass
 
         self.assertIs(
             type(MyEG("eg", [ValueError(12), TypeError(42)])),
             MyEG)
-        self.assertIs(
-            type(MyEG("eg", [ValueError(12), KeyboardInterrupt(42)])),
-            MyEG)
+
+    def test_EG_subclass_does_not_wrap_base_exceptions(self):
+        class MyEG(ExceptionGroup):
+            pass
+
+        msg = "Cannot nest BaseExceptions in 'MyEG'"
+        with self.assertRaisesRegex(TypeError, msg):
+            MyEG("eg", [ValueError(12), KeyboardInterrupt(42)])
+
+    def test_BEG_and_E_subclass_does_not_wrap_base_exceptions(self):
+        class MyEG(BaseExceptionGroup, ValueError):
+            pass
+
+        msg = "Cannot nest BaseExceptions in 'MyEG'"
+        with self.assertRaisesRegex(TypeError, msg):
+            MyEG("eg", [ValueError(12), KeyboardInterrupt(42)])
+
 
     def test_BEG_subclass_wraps_anything(self):
         class MyBEG(BaseExceptionGroup):

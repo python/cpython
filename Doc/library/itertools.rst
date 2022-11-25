@@ -762,7 +762,7 @@ The primary purpose of the itertools recipes is educational.  The recipes show
 various ways of thinking about individual tools — for example, that
 ``chain.from_iterable`` is related to the concept of flattening.  The recipes
 also give ideas about ways that the tools can be combined — for example, how
-`compress()` and `range()` can work together.  The recipes also show patterns
+``compress()`` and ``range()`` can work together.  The recipes also show patterns
 for using itertools with the :mod:`operator` and :mod:`collections` modules as
 well as with the built-in itertools such as ``map()``, ``filter()``,
 ``reversed()``, and ``enumerate()``.

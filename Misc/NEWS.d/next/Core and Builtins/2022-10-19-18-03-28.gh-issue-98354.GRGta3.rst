@@ -1,1 +1,0 @@
-Added unicode check for ``name`` attribute of ``spec`` argument passed in :func:`_imp.create_builtin` function.

@@ -260,6 +260,8 @@ class BugsTestCase(unittest.TestCase):
         #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
+        elif sys.platform == 'wasi':
+            MAX_MARSHAL_STACK_DEPTH = 1500
         else:
             MAX_MARSHAL_STACK_DEPTH = 2000
         for i in range(MAX_MARSHAL_STACK_DEPTH - 2):

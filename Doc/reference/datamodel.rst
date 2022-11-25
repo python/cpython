@@ -1904,6 +1904,8 @@ Attribute lookup speed can be significantly improved as well.
    and *__weakref__* for each instance.
 
 
+.. _datamodel-note-slots:
+
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 

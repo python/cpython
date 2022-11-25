@@ -1,2 +1,0 @@
-Make multiprocessing test case ``test_shared_memory_recreate``
-parallel-safe.

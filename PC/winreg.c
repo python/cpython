@@ -308,8 +308,7 @@ static PyHKEYObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self)
 /*[clinic end generated code: output=52c34986dab28990 input=c40fab1f0690a8e2]*/
 {
-    Py_XINCREF(self);
-    return self;
+    return (PyHKEYObject*)Py_XNewRef(self);
 }
 
 
@@ -784,8 +783,7 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
            support it natively, we should handle the bits. */
         default:
             if (retDataSize == 0) {
-                Py_INCREF(Py_None);
-                obData = Py_None;
+                obData = Py_NewRef(Py_None);
             }
             else
                 obData = PyBytes_FromStringAndSize(
