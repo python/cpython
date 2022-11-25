@@ -755,7 +755,7 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipUnless(os.path.exists('/dev/fd/0'), 'requires /dev/fd platform')
     def test_script_as_dev_fd(self):
         # GH-87235: On macOS passing a non-trivial script to /dev/fd/N can cause
-        # problems because all open /dev/fd/N file descriptors share the same 
+        # problems because all open /dev/fd/N file descriptors share the same
         # offset.
         script = 'print("12345678912345678912345")'
         with os_helper.temp_dir() as work_dir:
