@@ -1,17 +1,1 @@
 Add closet choice if exists in Argparser if wrong choice picked.
-
-
-```
-import argparser
-
-arg_parser = argparse.ArgumentParser()
-arg_parser.add_argument('family', type=str.casefold, help='Font family', choices=['apple', 'mango'])
-    
-args = arg_parser.parse_args(['mangeo'])
-```
-
-Current behaviour of the above statement:
-error: argument family: invalid choice: 'mangeo' (choose from 'apple', 'mango')
-
-After this PR behaviour would be:
-error: argument family: invalid choice: 'mangeo', maybe you meant 'mango'? (choose from 'apple', 'mango')
