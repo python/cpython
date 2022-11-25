@@ -1930,7 +1930,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    Tuple of base types.
 
    This field should be set to ``NULL`` and treated as read-only.
-   Python will fill it in when the type is :c:func:`finalized <PyType_Ready>`.
+   Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
 
    For dynamically created classes, the ``Py_tp_bases``
    :c:type:`slot <PyType_Slot>` can be used instead of the *bases* argument
@@ -1954,7 +1954,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    and ending with :class:`object`, in Method Resolution Order.
 
    This field should be set to ``NULL`` and treated as read-only.
-   Python will fill it in when the type is :c:func:`finalized <PyType_Ready>`.
+   Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
 
    **Inheritance:**
 
