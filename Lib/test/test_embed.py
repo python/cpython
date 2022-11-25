@@ -714,8 +714,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if MS_WINDOWS:
             value = config.get(key := 'program_name')
             if value and isinstance(value, str):
-                ext = '_d.exe' if debug_build(sys.executable) else '.exe'
-                config[key] = value[:len(value.lower().removesuffix(ext))]
+                value = value[:len(value.lower().removesuffix('.exe'))]
+                if debug_build(sys.executable):
+                    value = value[:len(value.lower().removesuffix('_d'))]
+                config[key] = value
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
                 config.pop(key, None)
