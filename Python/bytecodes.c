@@ -81,11 +81,11 @@ do { \
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
-static PyObject *list, *tuple, *dict;
+static PyObject *list, *tuple, *dict, *owner;
 static PyObject *exit_func, *lasti, *val;
 static size_t jump;
 // Dummy variables for cache effects
-static _Py_CODEUNIT when_to_jump_mask, invert;
+static _Py_CODEUNIT when_to_jump_mask, invert, counter;
 // Dummy opcode names for 'op' opcodes
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1001
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_2 1002
@@ -1126,31 +1126,22 @@ dummy_func(
             Py_DECREF(seq);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR) {
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+        inst(STORE_ATTR, (counter/1, v, owner, unused/3 --)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_ATTR, deferred);
+            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = TOP();
-            PyObject *v = SECOND();
-            int err;
-            STACK_SHRINK(2);
-            err = PyObject_SetAttr(owner, name, v);
+            int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
-            if (err != 0) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
+            ERROR_IF(err != 0, error);
         }
 
         // stack effect: (__0 -- )

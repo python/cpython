@@ -1094,29 +1094,26 @@
 
         TARGET(STORE_ATTR) {
             PREDICTED(STORE_ATTR);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            PyObject *owner = PEEK(1);
+            PyObject *v = PEEK(2);
+            uint16_t counter = read_u16(next_instr + 0);
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_ATTR, deferred);
+            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = TOP();
-            PyObject *v = SECOND();
-            int err;
-            STACK_SHRINK(2);
-            err = PyObject_SetAttr(owner, name, v);
+            int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
-            if (err != 0) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
+            if (err != 0) goto pop_2_error;
+            STACK_SHRINK(2);
+            next_instr += 4;
             DISPATCH();
         }
 
