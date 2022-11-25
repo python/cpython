@@ -696,10 +696,14 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
+<<<<<<< HEAD
    .. versionchanged:: 3.12
       Added support for Spearman's rank correlation coefficient.
 
 .. function:: linear_regression(x, y, /, *, proportional=False)
+=======
+.. function:: linear_regression(x, y, /)
+>>>>>>> main
 
    Return the slope and intercept of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
@@ -733,18 +737,8 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> round(slope * 2019 + intercept)
       16
 
-   If *proportional* is true, the independent variable *x* and the
-   dependent variable *y* are assumed to be directly proportional.
-   The data is fit to a line passing through the origin.
-   Since the *intercept* will always be 0.0, the underlying linear
-   function simplifies to:
-
-      *y = slope \* x + noise*
-
    .. versionadded:: 3.10
 
-   .. versionchanged:: 3.11
-      Added support for *proportional*.
 
 Exceptions
 ----------

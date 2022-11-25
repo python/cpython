@@ -640,7 +640,7 @@ The second variation of :class:`Enum` that is provided is also a subclass of
 by extension, string enumerations of different types can also be compared
 to each other.
 
-.. versionadded:: 3.11
+.. versionadded:: 3.10
 
 
 IntFlag
@@ -662,7 +662,7 @@ members are also integers and can be used wherever an :class:`int` is used.
     details.
 
 .. versionadded:: 3.6
-.. versionchanged:: 3.11
+.. versionchanged:: 3.10
 
 Sample :class:`IntFlag` class::
 
@@ -699,7 +699,7 @@ It is also possible to name the combinations::
     Named combinations are considered aliases.  Aliases do not show up during
     iteration, but can be returned from by-value lookups.
 
-.. versionchanged:: 3.11
+.. versionchanged:: 3.10
 
 Another important difference between :class:`IntFlag` and :class:`Enum` is that
 if no flags are set (the value is 0), its boolean evaluation is :data:`False`::
@@ -731,7 +731,7 @@ be combined with them (but may lose :class:`IntFlag` membership::
     >>> list(RW)
     [<Perm.R: 4>, <Perm.W: 2>]
 
-.. versionadded:: 3.11
+.. versionadded:: 3.10
 
 
 Flag
@@ -792,7 +792,7 @@ value::
     >>> list(purple)
     [<Color.RED: 1>, <Color.BLUE: 2>]
 
-.. versionadded:: 3.11
+.. versionadded:: 3.10
 
 .. note::
 
@@ -945,10 +945,9 @@ and raise an error if the two do not match::
 _Private__names
 """""""""""""""
 
-:ref:`Private names <private-name-mangling>` are not converted to enum members,
-but remain normal attributes.
+Private names are not converted to enum members, but remain normal attributes.
 
-.. versionchanged:: 3.11
+.. versionchanged:: 3.10
 
 
 ``Enum`` member type
@@ -960,7 +959,11 @@ members from other members -- this practice is discouraged, is deprecated
 in ``3.12``, and will be removed in ``3.14``.
 
 .. versionchanged:: 3.5
+<<<<<<< HEAD
 .. versionchanged:: 3.12
+=======
+.. versionchanged:: 3.10
+>>>>>>> main
 
 
 Creating members that are mixed with other data types
@@ -999,9 +1002,15 @@ If you give your enum subclass extra methods, like the `Planet`_
 class below, those methods will show up in a :func:`dir` of the member,
 but not of the class::
 
+<<<<<<< HEAD
     >>> dir(Planet)                         # doctest: +SKIP
     ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
     >>> dir(Planet.EARTH)                   # doctest: +SKIP
+=======
+    >>> dir(Planet)
+    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
+    >>> dir(Planet.EARTH)
+>>>>>>> main
     ['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
 
 

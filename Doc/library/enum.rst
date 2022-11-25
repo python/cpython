@@ -438,6 +438,7 @@ Data Types
       Using :class:`auto` with :class:`StrEnum` results in the lower-cased member
       name as the value.
 
+<<<<<<< HEAD
    .. note::
 
       :meth:`~object.__str__` is :meth:`!str.__str__` to better support the
@@ -445,6 +446,8 @@ Data Types
       :meth:`!str.__format__` for that same reason.
 
    .. versionadded:: 3.11
+=======
+>>>>>>> main
 
 .. class:: Flag
 
@@ -743,6 +746,7 @@ Data Types
 
 ---------------
 
+<<<<<<< HEAD
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
@@ -785,6 +789,10 @@ Supported ``_sunder_`` names
 
 Utilities and Decorators
 ------------------------
+=======
+Utilites and Decorators
+-----------------------
+>>>>>>> main
 
 .. class:: auto
 

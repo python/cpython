@@ -178,14 +178,13 @@ operators are only defined where they make sense; for example, they raise a
    single: __ge__() (instance method)
 
 Non-identical instances of a class normally compare as non-equal unless the
-class defines the :meth:`~object.__eq__` method.
+class defines the :meth:`__eq__` method.
 
 Instances of a class cannot be ordered with respect to other instances of the
 same class, or other types of object, unless the class defines enough of the
-methods :meth:`~object.__lt__`, :meth:`~object.__le__`, :meth:`~object.__gt__`, and
-:meth:`~object.__ge__` (in general, :meth:`~object.__lt__` and
-:meth:`~object.__eq__` are sufficient, if you want the conventional meanings of the
-comparison operators).
+methods :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, and :meth:`__ge__` (in
+general, :meth:`__lt__` and :meth:`__eq__` are sufficient, if you want the
+conventional meanings of the comparison operators).
 
 The behavior of the :keyword:`is` and :keyword:`is not` operators cannot be
 customized; also they can be applied to any two objects and never raise an
@@ -353,7 +352,11 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
+<<<<<<< HEAD
    See `the Unicode Standard <https://unicode.org/Public/UNIDATA/extracted/DerivedNumericType.txt>`_
+=======
+   See https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedNumericType.txt
+>>>>>>> main
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -500,7 +503,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.10
 
-.. method:: int.to_bytes(length=1, byteorder='big', *, signed=False)
+.. method:: int.to_bytes(length, byteorder, *, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -514,31 +517,25 @@ class`. In addition, it provides a few more methods:
         >>> x.to_bytes((x.bit_length() + 7) // 8, byteorder='little')
         b'\xe8\x03'
 
-    The integer is represented using *length* bytes, and defaults to 1.  An
-    :exc:`OverflowError` is raised if the integer is not representable with
-    the given number of bytes.
+    The integer is represented using *length* bytes.  An :exc:`OverflowError`
+    is raised if the integer is not representable with the given number of
+    bytes.
 
     The *byteorder* argument determines the byte order used to represent the
-    integer, and defaults to ``"big"``.  If *byteorder* is
-    ``"big"``, the most significant byte is at the beginning of the byte
-    array.  If *byteorder* is ``"little"``, the most significant byte is at
-    the end of the byte array.
+    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
+    beginning of the byte array.  If *byteorder* is ``"little"``, the most
+    significant byte is at the end of the byte array.  To request the native
+    byte order of the host system, use :data:`sys.byteorder` as the byte order
+    value.
 
     The *signed* argument determines whether two's complement is used to
     represent the integer.  If *signed* is ``False`` and a negative integer is
     given, an :exc:`OverflowError` is raised. The default value for *signed*
     is ``False``.
 
-    The default values can be used to conveniently turn an integer into a
-    single byte object.  However, when using the default arguments, don't try
-    to convert a value greater than 255 or you'll get an :exc:`OverflowError`::
-
-        >>> (65).to_bytes()
-        b'A'
-
     Equivalent to::
 
-        def to_bytes(n, length=1, byteorder='big', signed=False):
+        def to_bytes(n, length, byteorder, signed=False):
             if byteorder == 'little':
                 order = range(length)
             elif byteorder == 'big':
@@ -549,10 +546,8 @@ class`. In addition, it provides a few more methods:
             return bytes((n >> i*8) & 0xff for i in order)
 
     .. versionadded:: 3.2
-    .. versionchanged:: 3.11
-       Added default argument values for ``length`` and ``byteorder``.
 
-.. classmethod:: int.from_bytes(bytes, byteorder='big', *, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -571,18 +566,18 @@ class`. In addition, it provides a few more methods:
     iterable producing bytes.
 
     The *byteorder* argument determines the byte order used to represent the
-    integer, and defaults to ``"big"``.  If *byteorder* is
-    ``"big"``, the most significant byte is at the beginning of the byte
-    array.  If *byteorder* is ``"little"``, the most significant byte is at
-    the end of the byte array.  To request the native byte order of the host
-    system, use :data:`sys.byteorder` as the byte order value.
+    integer.  If *byteorder* is ``"big"``, the most significant byte is at the
+    beginning of the byte array.  If *byteorder* is ``"little"``, the most
+    significant byte is at the end of the byte array.  To request the native
+    byte order of the host system, use :data:`sys.byteorder` as the byte order
+    value.
 
     The *signed* argument indicates whether two's complement is used to
     represent the integer.
 
     Equivalent to::
 
-        def from_bytes(bytes, byteorder='big', signed=False):
+        def from_bytes(bytes, byteorder, signed=False):
             if byteorder == 'little':
                 little_ordered = list(bytes)
             elif byteorder == 'big':
@@ -597,8 +592,6 @@ class`. In addition, it provides a few more methods:
             return n
 
     .. versionadded:: 3.2
-    .. versionchanged:: 3.11
-       Added default argument value for ``byteorder``.
 
 .. method:: int.as_integer_ratio()
 
@@ -699,7 +692,7 @@ Hashing of numeric types
 ------------------------
 
 For numbers ``x`` and ``y``, possibly of different types, it's a requirement
-that ``hash(x) == hash(y)`` whenever ``x == y`` (see the :meth:`~object.__hash__`
+that ``hash(x) == hash(y)`` whenever ``x == y`` (see the :meth:`__hash__`
 method documentation for more details).  For ease of implementation and
 efficiency across a variety of numeric types (including :class:`int`,
 :class:`float`, :class:`decimal.Decimal` and :class:`fractions.Fraction`)
@@ -811,21 +804,21 @@ using two distinct methods; these are used to allow user-defined classes to
 support iteration.  Sequences, described below in more detail, always support
 the iteration methods.
 
-One method needs to be defined for container objects to provide :term:`iterable`
+One method needs to be defined for container objects to provide iteration
 support:
 
 .. XXX duplicated in reference/datamodel!
 
 .. method:: container.__iter__()
 
-   Return an :term:`iterator` object.  The object is required to support the
-   iterator protocol described below.  If a container supports different types
-   of iteration, additional methods can be provided to specifically request
+   Return an iterator object.  The object is required to support the iterator
+   protocol described below.  If a container supports different types of
+   iteration, additional methods can be provided to specifically request
    iterators for those iteration types.  (An example of an object supporting
    multiple forms of iteration would be a tree structure which supports both
    breadth-first and depth-first traversal.)  This method corresponds to the
-   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python
-   objects in the Python/C API.
+   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python objects in the Python/C
+   API.
 
 The iterator objects themselves are required to support the following two
 methods, which together form the :dfn:`iterator protocol`:
@@ -833,19 +826,18 @@ methods, which together form the :dfn:`iterator protocol`:
 
 .. method:: iterator.__iter__()
 
-   Return the :term:`iterator` object itself.  This is required to allow both
-   containers and iterators to be used with the :keyword:`for` and
-   :keyword:`in` statements.  This method corresponds to the
-   :c:member:`~PyTypeObject.tp_iter` slot of the type structure for Python
-   objects in the Python/C API.
+   Return the iterator object itself.  This is required to allow both containers
+   and iterators to be used with the :keyword:`for` and :keyword:`in` statements.
+   This method corresponds to the :c:member:`~PyTypeObject.tp_iter` slot of the type structure for
+   Python objects in the Python/C API.
 
 
 .. method:: iterator.__next__()
 
-   Return the next item from the :term:`iterator`.  If there are no further
-   items, raise the :exc:`StopIteration` exception.  This method corresponds to
-   the :c:member:`~PyTypeObject.tp_iternext` slot of the type structure for
-   Python objects in the Python/C API.
+   Return the next item from the container.  If there are no further items, raise
+   the :exc:`StopIteration` exception.  This method corresponds to the
+   :c:member:`~PyTypeObject.tp_iternext` slot of the type structure for Python objects in the
+   Python/C API.
 
 Python defines several iterator objects to support iteration over general and
 specific sequence types, dictionaries, and other more specialized forms.  The
@@ -1345,7 +1337,7 @@ loops.
            range(start, stop[, step])
 
    The arguments to the range constructor must be integers (either built-in
-   :class:`int` or any object that implements the :meth:`~object.__index__` special
+   :class:`int` or any object that implements the ``__index__`` special
    method).  If the *step* argument is omitted, it defaults to ``1``.
    If the *start* argument is omitted, it defaults to ``0``.
    If *step* is zero, :exc:`ValueError` is raised.
@@ -3836,7 +3828,7 @@ copying.
          Previous versions compared the raw memory disregarding the item format
          and the logical array structure.
 
-   .. method:: tobytes(order='C')
+   .. method:: tobytes(order=None)
 
       Return the data in the buffer as a bytestring.  This is equivalent to
       calling the :class:`bytes` constructor on the memoryview. ::
@@ -4810,9 +4802,9 @@ their implementation of the context management protocol. See the
 Python's :term:`generator`\s and the :class:`contextlib.contextmanager` decorator
 provide a convenient way to implement these protocols.  If a generator function is
 decorated with the :class:`contextlib.contextmanager` decorator, it will return a
-context manager implementing the necessary :meth:`~contextmanager.__enter__` and
-:meth:`~contextmanager.__exit__` methods, rather than the iterator produced by an
-undecorated generator function.
+context manager implementing the necessary :meth:`__enter__` and
+:meth:`__exit__` methods, rather than the iterator produced by an undecorated
+generator function.
 
 Note that there is no specific slot for any of these methods in the type
 structure for Python objects in the Python/C API. Extension types wanting to

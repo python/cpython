@@ -488,8 +488,8 @@ usage patterns to be encapsulated for convenient reuse.
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
 
-#. The context expression (the expression given in the
-   :token:`~python-grammar:with_item`) is evaluated to obtain a context manager.
+#. The context expression (the expression given in the :token:`with_item`) is
+   evaluated to obtain a context manager.
 
 #. The context manager's :meth:`__enter__` is loaded for later use.
 
@@ -656,8 +656,8 @@ Here's an overview of the logical flow of a match statement:
 #. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
    this case all name bindings are guaranteed to have happened.
 
-   * If the guard evaluates as true or is missing, the ``block`` inside
-     ``case_block`` is executed.
+   * If the guard evaluates as truthy or missing, the ``block`` inside ``case_block`` is
+     executed.
 
    * Otherwise, the next ``case_block`` is attempted as described above.
 
@@ -708,10 +708,10 @@ The logical flow of a ``case`` block with a ``guard`` follows:
 
 #. If the pattern succeeded, evaluate the ``guard``.
 
-   * If the ``guard`` condition evaluates as true, the case block is
+   * If the ``guard`` condition evaluates to "truthy", the case block is
      selected.
 
-   * If the ``guard`` condition evaluates as false, the case block is not
+   * If the ``guard`` condition evaluates to "falsy", the case block is not
      selected.
 
    * If the ``guard`` raises an exception during evaluation, the exception
@@ -868,8 +868,7 @@ Syntax:
    capture_pattern: !'_' NAME
 
 A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
-expresses). It is instead treated as a
-:token:`~python-grammar:wildcard_pattern`.
+expresses). It is instead treated as a :token:`wildcard_pattern`.
 
 In a given pattern, a given name can only be bound once.  E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
@@ -1089,7 +1088,7 @@ A class pattern represents a class and its positional and keyword arguments
 
 The same keyword should not be repeated in class patterns.
 
-The following is the logical flow for matching a class pattern against a
+The following is the logical flow for matching a mapping pattern against a
 subject value:
 
 #. If ``name_or_attr`` is not an instance of the builtin :class:`type` , raise
@@ -1127,7 +1126,7 @@ subject value:
    patterns using the :data:`~object.__match_args__` attribute on the class
    ``name_or_attr`` before matching:
 
-   I. The equivalent of ``getattr(cls, "__match_args__", ())`` is called.
+   I. The equivalent of ``getattr(cls, "__match_args__", ()))`` is called.
 
       * If this raises an exception, the exception bubbles up.
 
@@ -1254,9 +1253,9 @@ is roughly equivalent to ::
 except that the original function is not temporarily bound to the name ``func``.
 
 .. versionchanged:: 3.9
-   Functions may be decorated with any valid
-   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
-   much more restrictive; see :pep:`614` for details.
+   Functions may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
 
 .. index::
    triple: default; parameter; value
@@ -1432,9 +1431,9 @@ The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
 
 .. versionchanged:: 3.9
-   Classes may be decorated with any valid
-   :token:`~python-grammar:assignment_expression`. Previously, the grammar was
-   much more restrictive; see :pep:`614` for details.
+   Classes may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a

@@ -11,7 +11,7 @@
 .. versionchanged:: 3.10
    ``importlib.metadata`` is no longer provisional.
 
-**Source code:** :source:`Lib/importlib/metadata/__init__.py`
+**Source code:** :source:`Lib/importlib/metadata.py`
 
 ``importlib_metadata`` is a library that provides access to
 the metadata of an installed `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_,
@@ -300,10 +300,16 @@ function::
 Mapping import to distribution packages
 ---------------------------------------
 
+<<<<<<< HEAD
 A convenience method to resolve the `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_
 name (or names, in the case of a namespace package)
 that provide each importable top-level
 Python module or `Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_::
+=======
+A convience method to resolve the distribution or
+distributions (in the case of a namespace package) for top-level
+Python packages or modules::
+>>>>>>> main
 
     >>> packages_distributions()
     {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}

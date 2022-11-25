@@ -315,7 +315,11 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
+<<<<<<< HEAD
   <https://www.unicode.org/Public/15.0.0/ucd/PropList.txt>`_ to support backwards
+=======
+  <https://www.unicode.org/Public/13.0.0/ucd/PropList.txt>`_ to support backwards
+>>>>>>> main
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -323,8 +327,13 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
+<<<<<<< HEAD
 15.0.0 can be found at
 https://www.unicode.org/Public/15.0.0/ucd/DerivedCoreProperties.txt
+=======
+4.1 can be found at
+https://www.unicode.org/Public/13.0.0/ucd/DerivedCoreProperties.txt
+>>>>>>> main
 
 
 .. _keywords:
@@ -384,28 +393,16 @@ classes are identified by the patterns of leading and trailing underscore
 characters:
 
 ``_*``
-   Not imported by ``from module import *``.
-
-``_``
-   In a ``case`` pattern within a :keyword:`match` statement, ``_`` is a
-   :ref:`soft keyword <soft-keywords>` that denotes a
-   :ref:`wildcard <wildcard-patterns>`.
-
-   Separately, the interactive interpreter makes the result of the last evaluation
-   available in the variable ``_``.
-   (It is stored in the :mod:`builtins` module, alongside built-in
-   functions like ``print``.)
-
-   Elsewhere, ``_`` is a regular identifier. It is often used to name
-   "special" items, but it is not special to Python itself.
+   Not imported by ``from module import *``.  The special identifier ``_`` is used
+   in the interactive interpreter to store the result of the last evaluation; it is
+   stored in the :mod:`builtins` module.  When not in interactive mode, ``_``
+   has no special meaning and is not defined. See section :ref:`import`.
 
    .. note::
 
       The name ``_`` is often used in conjunction with internationalization;
       refer to the documentation for the :mod:`gettext` module for more
       information on this convention.
-
-      It is also commonly used for unused variables.
 
 ``__*__``
    System-defined names, informally known as "dunder" names. These names are
@@ -468,10 +465,10 @@ String literals are described by the following lexical definitions:
    bytesescapeseq: "\" <any ASCII character>
 
 One syntactic restriction not indicated by these productions is that whitespace
-is not allowed between the :token:`~python-grammar:stringprefix` or
-:token:`~python-grammar:bytesprefix` and the rest of the literal. The source
-character set is defined by the encoding declaration; it is UTF-8 if no encoding
-declaration is given in the source file; see section :ref:`encodings`.
+is not allowed between the :token:`stringprefix` or :token:`bytesprefix` and the
+rest of the literal. The source character set is defined by the encoding
+declaration; it is UTF-8 if no encoding declaration is given in the source file;
+see section :ref:`encodings`.
 
 .. index:: triple-quoted string, Unicode Consortium, raw string
    single: """; string literal

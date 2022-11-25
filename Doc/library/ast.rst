@@ -1298,7 +1298,7 @@ Pattern matching
    the pattern matches the subject.
 
    ``body`` contains a list of nodes to execute if the pattern matches and
-   the result of evaluating the guard expression is true.
+   the result of evaluating the guard expression is truthy.
 
    .. doctest::
 
@@ -1949,6 +1949,7 @@ and classes for traversing abstract syntax trees:
    ``await`` as variable names.  The lowest supported version is
    ``(3, 4)``; the highest is ``sys.version_info[0:2]``.
 
+<<<<<<< HEAD
    If source contains a null character ('\0'), :exc:`ValueError` is raised.
 
    .. warning::
@@ -1962,6 +1963,8 @@ and classes for traversing abstract syntax trees:
       In particular, :func:`ast.parse` won't do any scoping checks, which the
       compilation step does.
 
+=======
+>>>>>>> main
    .. warning::
       It is possible to crash the Python interpreter with a
       sufficiently large/complex string due to stack depth limitations

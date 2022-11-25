@@ -22,7 +22,7 @@ ctypes tutorial
 
 Note: The code samples in this tutorial use :mod:`doctest` to make sure that
 they actually work.  Since some code samples behave differently under Linux,
-Windows, or macOS, they contain doctest directives in comments.
+Windows, or Mac OS X, they contain doctest directives in comments.
 
 Note: Some code samples reference the ctypes :class:`c_int` type.  On platforms
 where ``sizeof(long) == sizeof(int)`` it is an alias to :class:`c_long`.
@@ -82,7 +82,7 @@ the library by creating an instance of CDLL by calling the constructor::
    <CDLL 'libc.so.6', handle ... at ...>
    >>>
 
-.. XXX Add section for macOS.
+.. XXX Add section for Mac OS X.
 
 
 .. _ctypes-accessing-functions-from-loaded-dlls:
@@ -333,9 +333,16 @@ property::
    10 b'Hi\x00lo\x00\x00\x00\x00\x00'
    >>>
 
+<<<<<<< HEAD
 The :func:`create_string_buffer` function replaces the old :func:`c_buffer`
 function (which is still available as an alias).  To create a mutable memory
 block containing unicode characters of the C type :c:expr:`wchar_t`, use the
+=======
+The :func:`create_string_buffer` function replaces the :func:`c_buffer` function
+(which is still available as an alias), as well as the :func:`c_string` function
+from earlier ctypes releases.  To create a mutable memory block containing
+unicode characters of the C type :c:type:`wchar_t` use the
+>>>>>>> main
 :func:`create_unicode_buffer` function.
 
 
@@ -1123,9 +1130,7 @@ size, we show only how this table can be read with :mod:`ctypes`::
    >>> class struct_frozen(Structure):
    ...     _fields_ = [("name", c_char_p),
    ...                 ("code", POINTER(c_ubyte)),
-   ...                 ("size", c_int),
-   ...                 ("get_code", POINTER(c_ubyte)),  # Function pointer
-   ...                ]
+   ...                 ("size", c_int)]
    ...
    >>>
 
@@ -1133,7 +1138,7 @@ We have defined the :c:struct:`_frozen` data type, so we can get the pointer
 to the table::
 
    >>> FrozenTable = POINTER(struct_frozen)
-   >>> table = FrozenTable.in_dll(pythonapi, "_PyImport_FrozenBootstrap")
+   >>> table = FrozenTable.in_dll(pythonapi, "PyImport_FrozenModules")
    >>>
 
 Since ``table`` is a ``pointer`` to the array of ``struct_frozen`` records, we
@@ -1149,7 +1154,9 @@ hit the ``NULL`` entry::
    ...
    _frozen_importlib 31764
    _frozen_importlib_external 41499
-   zipimport 12345
+   __hello__ 161
+   __phello__ -161
+   __phello__.spam 161
    >>>
 
 The fact that standard Python has a frozen module and a frozen package
@@ -1323,7 +1330,7 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On macOS, :func:`find_library` tries several predefined naming schemes and paths
+On OS X, :func:`find_library` tries several predefined naming schemes and paths
 to locate the library, and returns a full pathname if successful::
 
    >>> from ctypes.util import find_library
@@ -1355,7 +1362,7 @@ There are several ways to load shared libraries into the Python process.  One
 way is to instantiate one of the following classes:
 
 
-.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
+.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Instances of this class represent loaded shared libraries. Functions in these
    libraries use the standard C calling convention, and are assumed to return
@@ -1377,7 +1384,7 @@ way is to instantiate one of the following classes:
     -- A tool to find DLL dependents.
 
 
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
+.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1390,7 +1397,7 @@ way is to instantiate one of the following classes:
       :exc:`WindowsError` used to be raised.
 
 
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
+.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are

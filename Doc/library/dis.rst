@@ -349,13 +349,12 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: argval
 
-      resolved arg value (if any), otherwise ``None``
+      resolved arg value (if known), otherwise same as arg
 
 
    .. data:: argrepr
 
-      human readable description of operation argument (if any),
-      otherwise an empty string.
+      human readable description of operation argument
 
 
    .. data:: offset
@@ -493,31 +492,168 @@ result back on the stack.
    .. versionadded:: 3.5
 
 
-**Binary and in-place operations**
+**Binary operations**
 
 In the following, TOS is the top-of-stack.
 TOS1, TOS2, TOS3 are the second, third and fourth items on the stack, respectively.
 
+<<<<<<< HEAD
 Binary operations remove the top two items from the stack (TOS and TOS1).
 They perform the operation, then put the result back on the stack.
 
 In-place operations are like binary operations, but the operation is done in-place
-when TOS1 supports it, and the resulting TOS may be (but does not have to be)
-the original TOS1.
+=======
+.. opcode:: BINARY_POWER
+
+   Implements ``TOS = TOS1 ** TOS``.
 
 
-.. opcode:: BINARY_OP (op)
+.. opcode:: BINARY_MULTIPLY
 
-   Implements the binary and in-place operators (depending on the value of
-   *op*).
-   ``TOS = TOS1 op TOS``.
+   Implements ``TOS = TOS1 * TOS``.
 
-   .. versionadded:: 3.11
+
+.. opcode:: BINARY_MATRIX_MULTIPLY
+
+   Implements ``TOS = TOS1 @ TOS``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: BINARY_FLOOR_DIVIDE
+
+   Implements ``TOS = TOS1 // TOS``.
+
+
+.. opcode:: BINARY_TRUE_DIVIDE
+
+   Implements ``TOS = TOS1 / TOS``.
+
+
+.. opcode:: BINARY_MODULO
+
+   Implements ``TOS = TOS1 % TOS``.
+
+
+.. opcode:: BINARY_ADD
+
+   Implements ``TOS = TOS1 + TOS``.
+
+
+.. opcode:: BINARY_SUBTRACT
+
+   Implements ``TOS = TOS1 - TOS``.
 
 
 .. opcode:: BINARY_SUBSCR
 
    Implements ``TOS = TOS1[TOS]``.
+
+
+.. opcode:: BINARY_LSHIFT
+
+   Implements ``TOS = TOS1 << TOS``.
+
+
+.. opcode:: BINARY_RSHIFT
+
+   Implements ``TOS = TOS1 >> TOS``.
+
+
+.. opcode:: BINARY_AND
+
+   Implements ``TOS = TOS1 & TOS``.
+
+
+.. opcode:: BINARY_XOR
+
+   Implements ``TOS = TOS1 ^ TOS``.
+
+
+.. opcode:: BINARY_OR
+
+   Implements ``TOS = TOS1 | TOS``.
+
+
+**In-place operations**
+
+In-place operations are like binary operations, in that they remove TOS and
+TOS1, and push the result back on the stack, but the operation is done in-place
+>>>>>>> main
+when TOS1 supports it, and the resulting TOS may be (but does not have to be)
+the original TOS1.
+
+.. opcode:: INPLACE_POWER
+
+   Implements in-place ``TOS = TOS1 ** TOS``.
+
+<<<<<<< HEAD
+   Implements the binary and in-place operators (depending on the value of
+   *op*).
+   ``TOS = TOS1 op TOS``.
+=======
+>>>>>>> main
+
+.. opcode:: INPLACE_MULTIPLY
+
+   Implements in-place ``TOS = TOS1 * TOS``.
+
+
+.. opcode:: INPLACE_MATRIX_MULTIPLY
+
+   Implements in-place ``TOS = TOS1 @ TOS``.
+
+   .. versionadded:: 3.5
+
+
+.. opcode:: INPLACE_FLOOR_DIVIDE
+
+   Implements in-place ``TOS = TOS1 // TOS``.
+
+
+.. opcode:: INPLACE_TRUE_DIVIDE
+
+   Implements in-place ``TOS = TOS1 / TOS``.
+
+
+.. opcode:: INPLACE_MODULO
+
+   Implements in-place ``TOS = TOS1 % TOS``.
+
+
+.. opcode:: INPLACE_ADD
+
+   Implements in-place ``TOS = TOS1 + TOS``.
+
+
+.. opcode:: INPLACE_SUBTRACT
+
+   Implements in-place ``TOS = TOS1 - TOS``.
+
+
+.. opcode:: INPLACE_LSHIFT
+
+   Implements in-place ``TOS = TOS1 << TOS``.
+
+
+.. opcode:: INPLACE_RSHIFT
+
+   Implements in-place ``TOS = TOS1 >> TOS``.
+
+
+.. opcode:: INPLACE_AND
+
+   Implements in-place ``TOS = TOS1 & TOS``.
+
+
+.. opcode:: INPLACE_XOR
+
+   Implements in-place ``TOS = TOS1 ^ TOS``.
+
+
+.. opcode:: INPLACE_OR
+
+   Implements in-place ``TOS = TOS1 | TOS``.
 
 
 .. opcode:: STORE_SUBSCR
@@ -746,16 +882,35 @@ iterations of the loop.
 
 .. opcode:: WITH_EXCEPT_START
 
+<<<<<<< HEAD
     Calls the function in position 4 on the stack with arguments (type, val, tb)
     representing the exception at the top of the stack.
+=======
+    Calls the function in position 7 on the stack with the top three
+    items on the stack as arguments.
+>>>>>>> main
     Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
+<<<<<<< HEAD
 
     .. versionchanged:: 3.11
        The ``__exit__`` function is in position 4 of the stack rather than 7.
        Exception representation on the stack now consist of one, not three, items.
+=======
+
+
+.. opcode:: POP_EXCEPT_AND_RERAISE
+
+    Pops the exception currently on top of the stack. Pops the integer value on top
+    of the stack and sets the ``f_lasti`` attribute of the frame with that value.
+    Then pops the next exception from the stack uses it to restore the current exception.
+    Finally it re-raises the originally popped exception.
+    Used in excpetion handler cleanup.
+
+    .. versionadded:: 3.11
+>>>>>>> main
 
 
 .. opcode:: LOAD_ASSERTION_ERROR
@@ -781,6 +936,15 @@ iterations of the loop.
    ``__enter__()`` method is pushed onto the stack.
 
    .. versionadded:: 3.11
+
+
+.. opcode:: COPY_DICT_WITHOUT_KEYS
+
+   TOS is a tuple of mapping keys, and TOS1 is the match subject.  Replace TOS
+   with a :class:`dict` formed from the items of TOS1, but without any of the
+   keys in TOS.
+
+   .. versionadded:: 3.10
 
 
 .. opcode:: GET_LEN
@@ -814,13 +978,10 @@ iterations of the loop.
 
    TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
    contains all of the keys in TOS, push a :class:`tuple` containing the
-   corresponding values. Otherwise, push ``None``.
+   corresponding values, followed by ``True``. Otherwise, push ``None``,
+   followed by ``False``.
 
    .. versionadded:: 3.10
-
-   .. versionchanged:: 3.11
-      Previously, this instruction also pushed a boolean value indicating
-      success (``True``) or failure (``False``).
 
 
 .. opcode:: STORE_NAME (namei)
@@ -1037,10 +1198,16 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
+<<<<<<< HEAD
 .. opcode:: POP_JUMP_IF_TRUE (delta)
+=======
+   Tests whether the second value on the stack is an exception matching TOS,
+   and jumps if it is not. Pops two values from the stack.
+>>>>>>> main
 
    If TOS is true, increments the bytecode counter by *delta*.  TOS is popped.
 
+<<<<<<< HEAD
    .. versionchanged:: 3.11
       The oparg is now a relative delta rather than an absolute target.
       This opcode is a pseudo-instruction, replaced in final bytecode by
@@ -1076,6 +1243,8 @@ iterations of the loop.
    If TOS is ``None``, increments the bytecode counter by *delta*.  TOS is popped.
 
    .. versionadded:: 3.11
+=======
+>>>>>>> main
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
@@ -1205,15 +1374,6 @@ iterations of the loop.
 
    .. versionchanged:: 3.11
       ``i`` is no longer offset by the length of ``co_varnames``.
-
-
-.. opcode:: COPY_FREE_VARS (n)
-
-   Copies the ``n`` free variables from the closure into the frame.
-   Removes the need for special code on the caller's side when calling
-   closures.
-
-   .. versionadded:: 3.11
 
 
 .. opcode:: RAISE_VARARGS (argc)
@@ -1350,18 +1510,27 @@ iterations of the loop.
    against, and TOS2 is the match subject.  *count* is the number of positional
    sub-patterns.
 
-   Pop TOS, TOS1, and TOS2.  If TOS2 is an instance of TOS1 and has the
-   positional and keyword attributes required by *count* and TOS, push a tuple
-   of extracted attributes.  Otherwise, push ``None``.
+   Pop TOS.  If TOS2 is an instance of TOS1 and has the positional and keyword
+   attributes required by *count* and TOS, set TOS to ``True`` and TOS1 to a
+   tuple of extracted attributes.  Otherwise, set TOS to ``False``.
 
    .. versionadded:: 3.10
 
+<<<<<<< HEAD
    .. versionchanged:: 3.11
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
 
 
 .. opcode:: RESUME (where)
+=======
+.. opcode:: GEN_START (kind)
+
+    Pops TOS. If TOS was not ``None``, raises an exception. The ``kind``
+    operand corresponds to the type of generator or coroutine and determines
+    the error message. The legal kinds are 0 for generator, 1 for coroutine,
+    and 2 for async generator.
+>>>>>>> main
 
     A no-op. Performs internal tracing, debugging and optimization checks.
 
@@ -1377,6 +1546,7 @@ iterations of the loop.
 
 .. opcode:: RETURN_GENERATOR
 
+<<<<<<< HEAD
     Create a generator, coroutine, or async generator from the current frame.
     Clear the current frame and return the newly created generator.
 
@@ -1403,6 +1573,8 @@ iterations of the loop.
     .. versionadded:: 3.11
 
 
+=======
+>>>>>>> main
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between

@@ -535,7 +535,7 @@ https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    | :const:`KQ_FILTER_PROC`   | Watch for events on a process id            |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_FILTER_NETDEV` | Watch for events on a network device        |
-   |                           | [not available on macOS]                    |
+   |                           | [not available on Mac OS X]                 |
    +---------------------------+---------------------------------------------+
    | :const:`KQ_FILTER_SIGNAL` | Returns whenever the watched signal is      |
    |                           | delivered to the process                    |
@@ -627,7 +627,7 @@ https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
    | :const:`KQ_NOTE_TRACKERR`  | unable to attach to a child                |
    +----------------------------+--------------------------------------------+
 
-   :const:`KQ_FILTER_NETDEV` filter flags (not available on macOS):
+   :const:`KQ_FILTER_NETDEV` filter flags (not available on Mac OS X):
 
    +----------------------------+--------------------------------------------+
    | Constant                   | Meaning                                    |

@@ -18,7 +18,7 @@
 This module provides access to Transport Layer Security (often known as "Secure
 Sockets Layer") encryption and peer authentication facilities for network
 sockets, both client-side and server-side.  This module uses the OpenSSL
-library. It is available on all modern Unix systems, Windows, macOS, and
+library. It is available on all modern Unix systems, Windows, Mac OS X, and
 probably additional platforms, as long as OpenSSL is installed on that platform.
 
 .. note::
@@ -1472,7 +1472,7 @@ to speed up repeated connections from the same clients.
 
    Load a set of default "certification authority" (CA) certificates from
    default locations. On Windows it loads CA certs from the ``CA`` and
-   ``ROOT`` system stores. On all systems it calls
+   ``ROOT`` system stores. On other systems it calls
    :meth:`SSLContext.set_default_verify_paths`. In the future the method may
    load CA certificates from other locations, too.
 

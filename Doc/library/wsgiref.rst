@@ -155,10 +155,16 @@ also provides these miscellaneous utilities:
 
 .. class:: FileWrapper(filelike, blksize=8192)
 
+<<<<<<< HEAD
    A concrete implementation of the :class:`wsgiref.types.FileWrapper`
    protocol used to convert a file-like object to an :term:`iterator`.
    The resulting objects
    are :term:`iterable`\ s. As the object is iterated over, the
+=======
+   A wrapper to convert a file-like object to an :term:`iterator`.  The resulting objects
+   support both :meth:`__getitem__` and :meth:`__iter__` iteration styles, for
+   compatibility with Python 2.1 and Jython. As the object is iterated over, the
+>>>>>>> main
    optional *blksize* parameter will be repeatedly passed to the *filelike*
    object's :meth:`read` method to obtain bytestrings to yield.  When :meth:`read`
    returns an empty bytestring, iteration is ended and is not resumable.
@@ -179,8 +185,8 @@ also provides these miscellaneous utilities:
       for chunk in wrapper:
           print(chunk)
 
-   .. versionchanged:: 3.11
-      Support for :meth:`__getitem__` method has been removed.
+   .. deprecated:: 3.8
+      Support for :meth:`sequence protocol <__getitem__>` is deprecated.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools

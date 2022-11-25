@@ -32,7 +32,7 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y}/site-packages` (on Unix and macOS).  For each
+:file:`lib/python{X.Y}/site-packages` (on Unix and Macintosh).  For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
 added path for configuration files.
@@ -176,8 +176,8 @@ Module contents
 
    Path to the user site-packages for the running Python.  Can be ``None`` if
    :func:`getusersitepackages` hasn't been called yet.  Default value is
-   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework
-   macOS builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for macOS
+   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework Mac
+   OS X builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for Mac
    framework builds, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages`
    on Windows.  This directory is a site directory, which means that
    :file:`.pth` files in it will be processed.
@@ -187,8 +187,8 @@ Module contents
 
    Path to the base directory for the user site-packages.  Can be ``None`` if
    :func:`getuserbase` hasn't been called yet.  Default value is
-   :file:`~/.local` for UNIX and macOS non-framework builds,
-   :file:`~/Library/Python/{X.Y}` for macOS framework builds, and
+   :file:`~/.local` for UNIX and Mac OS X non-framework builds,
+   :file:`~/Library/Python/{X.Y}` for Mac framework builds, and
    :file:`{%APPDATA%}\\Python` for Windows.  This value is used by Distutils to
    compute the installation directories for scripts, data files, Python modules,
    etc. for the :ref:`user installation scheme <inst-alt-install-user>`.

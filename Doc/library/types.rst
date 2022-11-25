@@ -243,7 +243,7 @@ Standard names are defined for the following types:
 
       .. note::
          A future version of Python may stop setting this attribute by default.
-         To guard against this potential change, preferably read from the
+         To guard against this potential change, preferrably read from the
          :attr:`__spec__` attribute instead or use
          ``getattr(module, "__loader__", None)`` if you explicitly need to use
          this attribute.
@@ -268,7 +268,7 @@ Standard names are defined for the following types:
 
       .. note::
          A future version of Python may stop setting this attribute by default.
-         To guard against this potential change, preferably read from the
+         To guard against this potential change, preferrably read from the
          :attr:`__spec__` attribute instead or use
          ``getattr(module, "__package__", None)`` if you explicitly need to use
          this attribute.
@@ -312,7 +312,7 @@ Standard names are defined for the following types:
       This type can now be subclassed.
 
 
-.. class:: UnionType
+.. data:: UnionType
 
    The type of :ref:`union type expressions<types-union>`.
 

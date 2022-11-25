@@ -1,12 +1,13 @@
-:mod:`__main__` --- Top-level code environment
-==============================================
+
+:mod:`__main__` --- Top-level script environment
+================================================
 
 .. module:: __main__
-   :synopsis: The environment where top-level code is run. Covers command-line
-              interfaces, import-time behavior, and ``__name__ == '__main__'``.
+   :synopsis: The environment where the top-level script is run.
 
 --------------
 
+<<<<<<< HEAD
 In Python, the special name ``__main__`` is used for two important constructs:
 
 1. the name of the top-level environment of the program, which can be
@@ -347,22 +348,21 @@ import system's reference for details on how this works.
 
 The Python REPL is another example of a "top-level environment", so anything
 defined in the REPL becomes part of the ``__main__`` scope::
+=======
+``'__main__'`` is the name of the scope in which top-level code executes.
+A module's __name__ is set equal to ``'__main__'`` when read from
+standard input, a script, or from an interactive prompt.
+>>>>>>> main
 
-    >>> import namely
-    >>> namely.did_user_define_their_name()
-    False
-    >>> namely.print_user_name()
-    Traceback (most recent call last):
-    ...
-    ValueError: Define the variable `my_name`!
-    >>> my_name = 'Jabberwocky'
-    >>> namely.did_user_define_their_name()
-    True
-    >>> namely.print_user_name()
-    Jabberwocky
+A module can discover whether or not it is running in the main scope by
+checking its own ``__name__``, which allows a common idiom for conditionally
+executing code in a module when it is run as a script or with ``python
+-m`` but not when it is imported::
 
-Note that in this case the ``__main__`` scope doesn't contain a ``__file__``
-attribute as it's interactive.
+   if __name__ == "__main__":
+       # execute only if run as a script
+       main()
 
-The ``__main__`` scope is used in the implementation of :mod:`pdb` and
-:mod:`rlcompleter`.
+For a package, the same effect can be achieved by including a
+``__main__.py`` module, the contents of which will be executed when the
+module is run with ``-m``.

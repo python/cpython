@@ -532,8 +532,6 @@ loops that truncate the stream.
             next(b, None)
             return zip(a, b)
 
-   .. versionadded:: 3.10
-
 
 .. function:: permutations(iterable, r=None)
 
@@ -908,11 +906,17 @@ which incur interpreter overhead.
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
 
+<<<<<<< HEAD
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
        "Collect data into non-overlapping fixed-length chunks or blocks"
        # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
        # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
+=======
+   def grouper(iterable, n, fillvalue=None):
+       "Collect data into fixed-length chunks or blocks"
+       # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+>>>>>>> main
        args = [iter(iterable)] * n
        if incomplete == 'fill':
            return zip_longest(*args, fillvalue=fillvalue)
@@ -923,6 +927,7 @@ which incur interpreter overhead.
        else:
            raise ValueError('Expected fill, strict, or ignore')
 
+<<<<<<< HEAD
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
        # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
@@ -939,6 +944,8 @@ which incur interpreter overhead.
            window.append(x)
            yield tuple(window)
 
+=======
+>>>>>>> main
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
        # Recipe credited to George Sakkis
@@ -959,6 +966,7 @@ which incur interpreter overhead.
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
 
+<<<<<<< HEAD
    def before_and_after(predicate, it):
        """ Variant of takewhile() that allows complete
            access to the remainder of the iterator.
@@ -994,6 +1002,8 @@ which incur interpreter overhead.
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
        return map(operator.getitem, repeat(seq), slices)
 
+=======
+>>>>>>> main
    def powerset(iterable):
        "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
        s = list(iterable)
@@ -1079,6 +1089,7 @@ which incur interpreter overhead.
            result.append(pool[-1-n])
        return tuple(result)
 
+<<<<<<< HEAD
 .. doctest::
     :hide:
 
@@ -1366,3 +1377,5 @@ which incur interpreter overhead.
     >>> combos = list(combinations(iterable, r))
     >>> all(nth_combination(iterable, r, i) == comb for i, comb in enumerate(combos))
     True
+=======
+>>>>>>> main

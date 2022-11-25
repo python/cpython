@@ -132,9 +132,7 @@ Functions and classes provided:
    either as decorators or with :keyword:`async with` statements::
 
      import time
-     from contextlib import asynccontextmanager
 
-     @asynccontextmanager
      async def timeit():
          now = time.monotonic()
          try:
@@ -357,6 +355,7 @@ Functions and classes provided:
    .. versionadded:: 3.5
 
 
+<<<<<<< HEAD
 .. function:: chdir(path)
 
    Non parallel-safe context manager to change the current working directory.
@@ -374,6 +373,8 @@ Functions and classes provided:
    .. versionadded:: 3.11
 
 
+=======
+>>>>>>> main
 .. class:: ContextDecorator()
 
    A base class that enables a context manager to also be used as a decorator.
@@ -928,8 +929,8 @@ but may also be used *inside* a :keyword:`!with` statement that is already
 using the same context manager.
 
 :class:`threading.RLock` is an example of a reentrant context manager, as are
-:func:`suppress`, :func:`redirect_stdout`, and :func:`chdir`. Here's a very
-simple example of reentrant use::
+:func:`suppress` and :func:`redirect_stdout`. Here's a very simple example of
+reentrant use::
 
     >>> from contextlib import redirect_stdout
     >>> from io import StringIO

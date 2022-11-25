@@ -47,6 +47,7 @@ descriptor.
    ``F_SETPIPE_SZ`` constants, which allow to check and modify a pipe's size
    respectively.
 
+<<<<<<< HEAD
 .. versionchanged:: 3.11
    On FreeBSD, the fcntl module exposes the ``F_DUP2FD`` and ``F_DUP2FD_CLOEXEC``
    constants, which allow to duplicate a file descriptor, the latter setting
@@ -58,6 +59,8 @@ descriptor.
    another file by reflinking on some filesystems (e.g., btrfs, OCFS2, and
    XFS). This behavior is commonly referred to as "copy-on-write".
 
+=======
+>>>>>>> main
 The module defines the following functions:
 
 

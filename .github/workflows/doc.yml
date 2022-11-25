@@ -14,12 +14,20 @@ on:
   #  - 'Doc/**'
   pull_request:
     branches:
+<<<<<<< HEAD
     - 'main'
     - '3.11'
     - '3.10'
     - '3.9'
     - '3.8'
     - '3.7'
+=======
+    - master
+    - 3.10
+    - 3.9
+    - 3.8
+    - 3.7
+>>>>>>> origin/3.10
     paths:
     - 'Doc/**'
     - 'Misc/**'

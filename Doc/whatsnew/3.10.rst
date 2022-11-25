@@ -50,6 +50,13 @@ This article explains the new features in Python 3.10, compared to 3.9.
 Python 3.10 was released on October 4, 2021.
 For full details, see the :ref:`changelog <changelog>`.
 
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.10 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
 Summary -- Release highlights
 =============================
 
@@ -878,13 +885,6 @@ Other Language Changes
   collisions when creating dictionaries and sets containing multiple NaNs.
   (Contributed by Raymond Hettinger in :issue:`43475`.)
 
-* A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting
-  the :const:`__debug__` constant.  (Contributed by Dong-hee Na in :issue:`45000`.)
-
-* :exc:`SyntaxError` exceptions now have ``end_lineno`` and
-  ``end_offset`` attributes.  They will be ``None`` if not determined.
-  (Contributed by Pablo Galindo in :issue:`43914`.)
-
 New Modules
 ===========
 
@@ -931,12 +931,6 @@ bdb
 
 Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
 (Contributed by Irit Katriel in :issue:`24160`.)
-
-bisect
-------
-
-Added the possibility of providing a *key* function to the APIs in the :mod:`bisect`
-module. (Contributed by Raymond Hettinger in :issue:`4356`.)
 
 codecs
 ------
@@ -989,12 +983,10 @@ they are provided by the underlying curses library.
 dataclasses
 -----------
 
-__slots__
-~~~~~~~~~
-
-Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+Add ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
 
+<<<<<<< HEAD
 Keyword-only fields
 ~~~~~~~~~~~~~~~~~~~
 
@@ -1051,6 +1043,8 @@ Here, ``z`` and ``t`` are keyword-only parameters, while ``x`` and
 ``y`` are not.
 (Contributed by Eric V. Smith in :issue:`43532`.)
 
+=======
+>>>>>>> main
 .. _distutils-deprecated:
 
 distutils
@@ -1180,7 +1174,7 @@ Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
 :keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
 pattern-matching statements. However, this highlighting is not perfect
 and will be incorrect in some rare cases, including some ``_``-s in
-``case`` patterns.  (Contributed by Tal Einat in :issue:`44010`.)
+``case`` patterns.  (Contributed by Tal Einat in bpo-44010.)
 
 New in 3.10 maintenance releases.
 
@@ -1197,7 +1191,7 @@ Feature parity with ``importlib_metadata`` 4.6
 (`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
 :ref:`importlib.metadata entry points <entry-points>`
-now provide a nicer experience
+now provides a nicer experience
 for selecting entry points by group and name through a new
 :class:`importlib.metadata.EntryPoints` class. See the Compatibility
 Note in the docs for more info on the deprecation and usage.
@@ -1487,6 +1481,7 @@ subclasses with the :func:`runtime_checkable` decorator
 if they want runtime protocols.
 (Contributed by Yurii Karabas in :issue:`38908`.)
 
+<<<<<<< HEAD
 Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
 :exc:`DeprecationWarning`.  These submodules have been deprecated since
 Python 3.8 and will be removed in a future version of Python.  Anything
@@ -1494,6 +1489,8 @@ belonging to those submodules should be imported directly from
 :mod:`typing` instead.
 (Contributed by Sebastian Rittau in :issue:`38291`.)
 
+=======
+>>>>>>> main
 unittest
 --------
 
@@ -1597,7 +1594,7 @@ Deprecated
 
 * Currently Python accepts numeric literals immediately followed by keywords,
   for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
-  and ambiguous expressions like ``[0x1for x in y]`` (which can be
+  and ambigious expressions like ``[0x1for x in y]`` (which can be
   interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).  Starting in
   this release, a deprecation warning is raised if the numeric literal is
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
@@ -1788,12 +1785,15 @@ Deprecated
   requires a :ref:`debug build of Python <debug-build>`.
   (Contributed by Victor Stinner in :issue:`44584`.)
 
+<<<<<<< HEAD
 * Importing from the ``typing.io`` and ``typing.re`` submodules will now emit
   :exc:`DeprecationWarning`.  These submodules will be removed in a future version
   of Python.  Anything belonging to these submodules should be imported directly
   from :mod:`typing` instead.
   (Contributed by Sebastian Rittau in :issue:`38291`.)
 
+=======
+>>>>>>> main
 .. _whatsnew310-removed:
 
 Removed
@@ -1871,7 +1871,7 @@ Changes in the Python syntax
 
 * Deprecation warning is now emitted when compiling previously valid syntax
   if the numeric literal is immediately followed by a keyword (like in ``0in x``).
-  In future releases it will be changed to syntax warning, and finally to a
+  If future releases it will be changed to syntax warning, and finally to a
   syntax error.  To get rid of the warning and make the code compatible with
   future releases just add a space between the numeric literal and the
   following keyword.
@@ -1934,7 +1934,7 @@ Changes in the Python API
   if the *globals* dictionary has no ``"__builtins__"`` key, rather than using
   ``{"None": None}`` as builtins: same behavior as :func:`eval` and
   :func:`exec` functions.  Defining a function with ``def function(...): ...``
-  in Python is not affected, globals cannot be overridden with this syntax: it
+  in Python is not affected, globals cannot be overriden with this syntax: it
   also inherits the current builtins.
   (Contributed by Victor Stinner in :issue:`42990`.)
 
@@ -1972,13 +1972,6 @@ Changes in the C API
        result = PyObject_CallMethod(fileobject, "close", "");
        source_buf = PyBytes_AsString(source_bytes_object);
        code = Py_CompileString(source_buf, filename, Py_file_input);
-
-  * For ``FrameObject`` objects, the ``f_lasti`` member now represents a wordcode
-    offset instead of a simple offset into the bytecode string. This means that this
-    number needs to be multiplied by 2 to be used with APIs that expect a byte offset
-    instead (like :c:func:`PyCode_Addr2Line` for example). Notice as well that the
-    ``f_lasti`` member of ``FrameObject`` objects is not considered stable: please
-    use :c:func:`PyFrame_GetLineNumber` instead.
 
 CPython bytecode changes
 ========================
@@ -2322,6 +2315,3 @@ Removed
   These functions were undocumented, excluded from the limited C API, and were
   only used internally by the compiler.
   (Contributed by Victor Stinner in :issue:`43244`.)
-
-* The ``PyThreadState.use_tracing`` member has been removed to optimize Python.
-  (Contributed by Mark Shannon in :issue:`43760`.)

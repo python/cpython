@@ -358,13 +358,6 @@ Power and logarithmic functions
    or ``pow(math.e, x)``.
 
 
-.. function:: exp2(x)
-
-   Return *2* raised to the power *x*.
-
-   .. versionadded:: 3.11
-
-
 .. function:: expm1(x)
 
    Return *e* raised to the power *x*, minus 1.  Here *e* is the base of natural

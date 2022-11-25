@@ -132,7 +132,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Suppress error messages when calculating the module search path in
    :c:func:`Py_GetPath`.
 
-   Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
+   Private flag used by ``_freeze_importlib`` and ``frozenmain`` programs.
 
    .. deprecated:: 3.12
 
@@ -595,7 +595,7 @@ Process-wide parameters
    (set by :c:func:`Py_SetProgramName` above) and some environment variables.
    The returned string consists of a series of directory names separated by a
    platform dependent delimiter character.  The delimiter character is ``':'``
-   on Unix and macOS, ``';'`` on Windows.  The returned string points into
+   on Unix and Mac OS X, ``';'`` on Windows.  The returned string points into
    static storage; the caller should not modify its value.  The list
    :data:`sys.path` is initialized with this value on interpreter startup; it
    can be (and usually is) modified later to change the search path for loading
@@ -627,7 +627,7 @@ Process-wide parameters
    default search path but uses the one provided instead.  This is useful if
    Python is embedded by an application that has full knowledge of the location
    of all modules.  The path components should be separated by the platform
-   dependent delimiter character, which is ``':'`` on Unix and macOS, ``';'``
+   dependent delimiter character, which is ``':'`` on Unix and Mac OS X, ``';'``
    on Windows.
 
    This also causes :data:`sys.executable` to be set to the program
@@ -662,8 +662,11 @@ Process-wide parameters
    period.  The returned string points into static storage; the caller should not
    modify its value.  The value is available to Python code as :data:`sys.version`.
 
+<<<<<<< HEAD
    See also the :c:var:`Py_Version` constant.
 
+=======
+>>>>>>> main
 
 .. c:function:: const char* Py_GetPlatform()
 
@@ -672,7 +675,7 @@ Process-wide parameters
    Return the platform identifier for the current platform.  On Unix, this is
    formed from the "official" name of the operating system, converted to lower
    case, followed by the major revision number; e.g., for Solaris 2.x, which is
-   also known as SunOS 5.x, the value is ``'sunos5'``.  On macOS, it is
+   also known as SunOS 5.x, the value is ``'sunos5'``.  On Mac OS X, it is
    ``'darwin'``.  On Windows, it is ``'win'``.  The returned string points into
    static storage; the caller should not modify its value.  The value is available
    to Python code as ``sys.platform``.
@@ -1297,26 +1300,6 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.9
 
 
-.. c:function:: void PyThreadState_EnterTracing(PyThreadState *tstate)
-
-   Suspend tracing and profiling in the Python thread state *tstate*.
-
-   Resume them using the :c:func:`PyThreadState_LeaveTracing` function.
-
-   .. versionadded:: 3.11
-
-
-.. c:function:: void PyThreadState_LeaveTracing(PyThreadState *tstate)
-
-   Resume tracing and profiling in the Python thread state *tstate* suspended
-   by the :c:func:`PyThreadState_EnterTracing` function.
-
-   See also :c:func:`PyEval_SetTrace` and :c:func:`PyEval_SetProfile`
-   functions.
-
-   .. versionadded:: 3.11
-
-
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.
@@ -1770,8 +1753,6 @@ Python-level trace functions in previous versions.
    profile function is called for all monitored events except :const:`PyTrace_LINE`
    :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
 
-   See also the :func:`sys.setprofile` function.
-
    The caller must hold the :term:`GIL`.
 
 .. c:function:: void PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *obj)
@@ -1795,8 +1776,6 @@ Python-level trace functions in previous versions.
    objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
    will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
    :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
-
-   See also the :func:`sys.settrace` function.
 
    The caller must hold the :term:`GIL`.
 

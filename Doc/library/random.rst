@@ -139,10 +139,22 @@ Functions for integers
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
+<<<<<<< HEAD
    .. versionchanged:: 3.12
       Automatic conversion of non-integer types is no longer supported.
       Calls such as ``randrange(10.0)`` and ``randrange(Fraction(10, 1))``
       now raise a :exc:`TypeError`.
+=======
+   .. deprecated:: 3.10
+      The automatic conversion of non-integer types to equivalent integers is
+      deprecated.  Currently ``randrange(10.0)`` is losslessly converted to
+      ``randrange(10)``.  In the future, this will raise a :exc:`TypeError`.
+
+   .. deprecated:: 3.10
+      The exception raised for non-integral values such as ``randrange(10.5)``
+      or ``randrange('10')`` will be changed from :exc:`ValueError` to
+      :exc:`TypeError`.
+>>>>>>> main
 
 .. function:: randint(a, b)
 
@@ -532,7 +544,7 @@ between the effects of a drug versus a placebo::
 
 Simulation of arrival times and service deliveries for a multiserver queue::
 
-    from heapq import heapify, heapreplace
+    from heapq import heappush, heappop
     from random import expovariate, gauss
     from statistics import mean, quantiles
 
@@ -544,15 +556,14 @@ Simulation of arrival times and service deliveries for a multiserver queue::
     waits = []
     arrival_time = 0.0
     servers = [0.0] * num_servers  # time when each server becomes available
-    heapify(servers)
-    for i in range(1_000_000):
+    for i in range(100_000):
         arrival_time += expovariate(1.0 / average_arrival_interval)
-        next_server_available = servers[0]
+        next_server_available = heappop(servers)
         wait = max(0.0, next_server_available - arrival_time)
         waits.append(wait)
-        service_duration = max(0.0, gauss(average_service_time, stdev_service_time))
+        service_duration = gauss(average_service_time, stdev_service_time)
         service_completed = arrival_time + wait + service_duration
-        heapreplace(servers, service_completed)
+        heappush(servers, service_completed)
 
     print(f'Mean wait: {mean(waits):.1f}   Max wait: {max(waits):.1f}')
     print('Quartiles:', [round(q, 1) for q in quantiles(waits)])

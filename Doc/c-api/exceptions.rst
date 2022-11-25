@@ -100,7 +100,7 @@ For convenience, some of these functions will always return a
    This is the most common way to set the error indicator.  The first argument
    specifies the exception type; it is normally one of the standard exceptions,
    e.g. :c:data:`PyExc_RuntimeError`.  You need not increment its reference count.
-   The second argument is an error message; it is decoded from ``'utf-8'``.
+   The second argument is an error message; it is decoded from ``'utf-8``'.
 
 
 .. c:function:: void PyErr_SetObject(PyObject *type, PyObject *value)
@@ -517,8 +517,12 @@ Querying the error indicator
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
    To clear the exception state, pass ``NULL`` for all three arguments.
+<<<<<<< HEAD
    This function is kept for backwards compatibility. Prefer using
    :c:func:`PyErr_SetHandledException`.
+=======
+   For general rules about the three arguments, see :c:func:`PyErr_Restore`.
+>>>>>>> main
 
    .. note::
 
@@ -528,12 +532,6 @@ Querying the error indicator
       state.
 
    .. versionadded:: 3.3
-
-   .. versionchanged:: 3.11
-      The ``type`` and ``traceback`` arguments are no longer used and
-      can be NULL. The interpreter now derives them from the exception
-      instance (the ``value`` argument). The function still steals
-      references of all three arguments.
 
 
 Signal Handling

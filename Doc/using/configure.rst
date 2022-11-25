@@ -46,6 +46,7 @@ General Options
    Set the Python executable suffix to *SUFFIX*.
 
    The default suffix is ``.exe`` on Windows and macOS (``python.exe``
+<<<<<<< HEAD
    executable), ``.js`` on Emscripten node, ``.html`` on Emscripten browser,
    ``.wasm`` on WASI, and an empty string on other platforms (``python``
    executable).
@@ -53,6 +54,9 @@ General Options
    .. versionchanged:: 3.11
       The default suffix on WASM platform is one of ``.js``, ``.html``
       or ``.wasm``.
+=======
+   executable), and an empty string on other platforms (``python`` executable).
+>>>>>>> main
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
@@ -75,7 +79,7 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-dbmliborder=<list of backend names>
+.. cmdoption:: --with-dbmliborder=db1:db2:...
 
    Override order to check db backends for the :mod:`dbm` module
 
@@ -115,6 +119,7 @@ General Options
 
    .. versionadded:: 3.10
 
+<<<<<<< HEAD
 .. cmdoption:: --with-pkg-config=[check|yes|no]
 
    Whether configure should use :program:`pkg-config` to detect build
@@ -165,6 +170,8 @@ WebAssembly Options
 
    .. versionadded:: 3.11
 
+=======
+>>>>>>> main
 
 Install Options
 ---------------
@@ -481,18 +488,14 @@ Libraries options
 Security Options
 ----------------
 
-.. cmdoption:: --with-hash-algorithm=[fnv|siphash13|siphash24]
+.. cmdoption:: --with-hash-algorithm=[fnv|siphash24]
 
    Select hash algorithm for use in ``Python/pyhash.c``:
 
-   * ``siphash13`` (default);
-   * ``siphash24``;
-   * ``fnv``.
+   * ``siphash24`` (default).
+   * ``fnv``;
 
    .. versionadded:: 3.4
-
-   .. versionadded:: 3.11
-      ``siphash13`` is added and it is the new default.
 
 .. cmdoption:: --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
 
@@ -563,6 +566,7 @@ See ``Mac/README.rst``.
    :option:`--enable-framework` is set (default: ``Python``).
 
 
+<<<<<<< HEAD
 Cross Compiling Options
 -----------------------
 
@@ -605,6 +609,8 @@ Cross compiling example::
        --with-build-python=../x86_64/python
 
 
+=======
+>>>>>>> main
 Python Build System
 ===================
 
@@ -664,7 +670,7 @@ Built-in modules have no ``__file__`` attribute::
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraires, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
 Example on Linux x86-64::
 

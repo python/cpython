@@ -58,7 +58,7 @@ Notes on availability
   operating system.
 
 * If not separately noted, all functions that claim "Availability: Unix" are
-  supported on macOS, which builds on a Unix core.
+  supported on Mac OS X, which builds on a Unix core.
 
 * If an availability note contains both a minimum Kernel version and a minimum
   libc version, then both conditions must hold. For example a feature with note

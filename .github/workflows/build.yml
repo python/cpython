@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+<<<<<<< HEAD
     - 'main'
     - '3.11'
     - '3.10'
@@ -21,6 +22,20 @@ on:
     - '3.9'
     - '3.8'
     - '3.7'
+=======
+    - master
+    - 3.10
+    - 3.9
+    - 3.8
+    - 3.7
+  pull_request:
+    branches:
+    - master
+    - 3.10
+    - 3.9
+    - 3.8
+    - 3.7
+>>>>>>> origin/3.10
 
 permissions:
   contents: read
@@ -59,6 +74,28 @@ jobs:
             # https://github.com/python/core-workflow/issues/373
             git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
           fi
+
+  check_abi:
+    name: 'Check if the ABI has changed'
+    runs-on: ubuntu-20.04
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install Dependencies
+        run: |
+            sudo ./.github/workflows/posix-deps-apt.sh
+            sudo apt-get install -yq abigail-tools
+      - name: Build CPython
+        env:
+          CFLAGS: -g3 -O0
+        run: |
+          # Build Python with the libpython dynamic library
+          ./configure --enable-shared
+          make -j4
+      - name: Check for changes in the ABI
+        run: make check-abidump
 
   check_generated_files:
     name: 'Check if generated files are up to date'

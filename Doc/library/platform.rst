@@ -231,13 +231,13 @@ Windows Platform
    .. versionadded:: 3.8
 
 
-macOS Platform
---------------
+Mac OS Platform
+---------------
 
 
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
 
-   Get macOS version information and return it as tuple ``(release, versioninfo,
+   Get Mac OS version information and return it as tuple ``(release, versioninfo,
    machine)`` with *versioninfo* being a tuple ``(version, dev_stage,
    non_release_version)``.
 

@@ -1188,7 +1188,7 @@ Anything with more interesting error-handling or resource management should be
 done downstream after the arguments are parsed.
 
 For example, JSON or YAML conversions have complex error cases that require
-better reporting than can be given by the ``type`` keyword.  A
+better reporting than can be given by the ``type`` keyword.  An
 :exc:`~json.JSONDecodeError` would not be well formatted and a
 :exc:`FileNotFound` exception would not be handled at all.
 

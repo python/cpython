@@ -209,7 +209,7 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
 
    .. code-block:: c
 
-      #include <Python.h>
+      #include "python.h"
       ...
       Py_Initialize();  // Initialize Python.
       initmyAppc();  // Initialize (import) the helper class.

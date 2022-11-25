@@ -44,4 +44,8 @@ This module defines four dictionaries, :data:`html5`,
 
 .. rubric:: Footnotes
 
+<<<<<<< HEAD
 .. [#] See https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references
+=======
+.. [#] See https://www.w3.org/TR/html5/syntax.html#named-character-references
+>>>>>>> main

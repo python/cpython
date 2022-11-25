@@ -54,9 +54,12 @@ Future Functions
       See also the :func:`create_task` function which is the
       preferred way for creating new Tasks.
 
+<<<<<<< HEAD
       Save a reference to the result of this function, to avoid
       a task disappearing mid-execution.
 
+=======
+>>>>>>> main
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
 

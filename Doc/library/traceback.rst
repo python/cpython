@@ -365,12 +365,11 @@ capture data for later printing in a lightweight fashion.
       .. versionchanged:: 3.6
          Long sequences of repeated frames are now abbreviated.
 
-   .. method:: format_frame_summary(frame_summary)
+   .. method:: format_frame(frame)
 
       Returns a string for printing one of the frames involved in the stack.
-      This method is called for each :class:`FrameSummary` object to be
-      printed by :meth:`StackSummary.format`. If it returns ``None``, the
-      frame is omitted from the output.
+      This method gets called for each frame object to be printed in the
+      :class:`StackSummary`.
 
       .. versionadded:: 3.11
 
@@ -380,7 +379,7 @@ capture data for later printing in a lightweight fashion.
 
 .. versionadded:: 3.5
 
-A :class:`FrameSummary` object represents a single frame in a traceback.
+:class:`FrameSummary` objects represent a single frame in a traceback.
 
 .. class:: FrameSummary(filename, lineno, name, lookup_line=True, locals=None, line=None)
 

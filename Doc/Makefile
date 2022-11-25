@@ -109,6 +109,17 @@ linkcheck:
 	     "or in build/$(BUILDER)/output.txt"; \
 	false; }
 
+<<<<<<< HEAD
+=======
+suspicious: BUILDER = suspicious
+suspicious:
+	@$(MAKE) build BUILDER=$(BUILDER) || { \
+	echo "Suspicious check complete; look for any errors in the above output" \
+	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
+	     "positives, append that file to tools/susp-ignored.csv."; \
+	false; }
+
+>>>>>>> main
 coverage: BUILDER = coverage
 coverage: build
 	@echo "Coverage finished; see c.txt and python.txt in build/coverage"

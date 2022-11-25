@@ -100,11 +100,15 @@ under :ref:`reference counting <countingrefs>`.
 
    Return a :term:`borrowed reference`.
 
+<<<<<<< HEAD
    Use the :c:func:`Py_SET_TYPE` function to set an object type.
 
    .. versionchanged:: 3.11
       :c:func:`Py_TYPE()` is changed to an inline static function.
       The parameter type is no longer :c:expr:`const PyObject*`.
+=======
+   The :c:func:`Py_SET_TYPE` function must be used to set an object type.
+>>>>>>> main
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
@@ -122,6 +126,7 @@ under :ref:`reference counting <countingrefs>`.
    .. versionadded:: 3.9
 
 
+<<<<<<< HEAD
 .. c:function:: Py_ssize_t Py_SIZE(PyVarObject *o)
 
    Get the size of the Python object *o*.
@@ -131,6 +136,29 @@ under :ref:`reference counting <countingrefs>`.
    .. versionchanged:: 3.11
       :c:func:`Py_SIZE()` is changed to an inline static function.
       The parameter type is no longer :c:expr:`const PyVarObject*`.
+=======
+.. c:function:: Py_ssize_t Py_REFCNT(const PyObject *o)
+
+   Get the reference count of the Python object *o*.
+
+   .. versionchanged:: 3.10
+      :c:func:`Py_REFCNT()` is changed to the inline static function.
+      Use :c:func:`Py_SET_REFCNT()` to set an object reference count.
+
+
+.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
+
+   Set the object *o* reference counter to *refcnt*.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: Py_ssize_t Py_SIZE(const PyVarObject *o)
+
+   Get the size of the Python object *o*.
+
+   The :c:func:`Py_SET_SIZE` function must be used to set an object size.
+>>>>>>> main
 
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)

@@ -104,7 +104,11 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
+<<<<<<< HEAD
    with the physical backing store on macOS.
+=======
+   with physical backing store on Mac OS X and OpenVMS.
+>>>>>>> main
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 
@@ -258,14 +262,6 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
       raise a :exc:`TypeError` exception.
 
-      **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
-      maps against the same named file. Resizing an anonymous map (ie against the
-      pagefile) will silently create a new map with the original data copied over
-      up to the length of the new size.
-
-      .. versionchanged:: 3.11
-         Correctly fails if attempting to resize when another map is held
-         Allows resize against an anonymous map on Windows
 
    .. method:: rfind(sub[, start[, end]])
 

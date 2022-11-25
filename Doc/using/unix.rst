@@ -158,6 +158,7 @@ Custom OpenSSL
    .. code-block:: shell-session
 
       $ curl -O https://www.openssl.org/source/openssl-VERSION.tar.gz
+<<<<<<< HEAD
       $ tar xzf openssl-VERSION
       $ pushd openssl-VERSION
       $ ./config \
@@ -168,6 +169,17 @@ Custom OpenSSL
       $ make -j8
       $ make install_sw
       $ popd
+=======
+         $ tar xzf openssl-VERSION
+         $ pushd openssl-VERSION
+         $ ./config \
+              --prefix=/usr/local/custom-openssl \
+              --openssldir=/etc/ssl
+         $ make -j1 depend
+         $ make -j8
+         $ make install_sw
+         $ popd
+>>>>>>> main
 
 3. Build Python with custom OpenSSL
    (see the configure ``--with-openssl`` and ``--with-openssl-rpath`` options)

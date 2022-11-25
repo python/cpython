@@ -297,6 +297,7 @@ Tasks can easily and safely be cancelled.
 When a task is cancelled, :exc:`asyncio.CancelledError` will be raised
 in the task at the next opportunity.
 
+<<<<<<< HEAD
 It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
@@ -309,6 +310,9 @@ a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
 should not call :meth:`uncancel <asyncio.Task.uncancel>`.
 
 .. _taskgroups:
+=======
+   .. versionadded:: 3.7
+>>>>>>> main
 
 Task Groups
 ===========
@@ -397,6 +401,12 @@ Sleeping
    Setting the delay to 0 provides an optimized path to allow other
    tasks to run. This can be used by long-running functions to avoid
    blocking the event loop for the full duration of the function call.
+
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
    .. _asyncio_example_sleep:
 

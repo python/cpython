@@ -1036,10 +1036,17 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('covariance requires at least two data points')
+<<<<<<< HEAD
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
     return sxy / (n - 1)
+=======
+    xbar = fmean(x)
+    ybar = fmean(y)
+    total = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    return total / (n - 1)
+>>>>>>> origin/3.10
 
 
 def correlation(x, y, /, *, method='linear'):
@@ -1144,9 +1151,15 @@ def linear_regression(x, y, /, *, proportional=False):
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
+<<<<<<< HEAD
         raise StatisticsError('x is constant')
     intercept = 0.0 if proportional else ybar - slope * xbar
     return LinearRegression(slope=slope, intercept=intercept)
+=======
+        raise StatisticsError('regressor is constant')
+    intercept = fmean(dependent_variable) - slope * fmean(regressor)
+    return LinearRegression(intercept=intercept, slope=slope)
+>>>>>>> origin/3.10
 
 
 ## Normal Distribution #####################################################

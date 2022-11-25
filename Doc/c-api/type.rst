@@ -161,13 +161,6 @@ Type Objects
 
    .. versionadded:: 3.11
 
-.. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
-
-   Return the type's qualified name. Equivalent to getting the
-   type's ``__qualname__`` attribute.
-
-   .. versionadded:: 3.11
-
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
@@ -259,7 +252,7 @@ The following functions and structs are used to create
    The *module* argument can be used to record the module in which the new
    class is defined. It must be a module object or ``NULL``.
    If not ``NULL``, the module is associated with the new type and can later be
-   retrieved with :c:func:`PyType_GetModule`.
+   retreived with :c:func:`PyType_GetModule`.
    The associated module is not inherited by subclasses; it must be specified
    for each class individually.
 

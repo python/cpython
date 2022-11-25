@@ -94,6 +94,7 @@ another rational number, or from a string.
       Underscores are now permitted when creating a :class:`Fraction` instance
       from a string, following :PEP:`515` rules.
 
+<<<<<<< HEAD
    .. versionchanged:: 3.11
       :class:`Fraction` implements ``__int__`` now to satisfy
       ``typing.SupportsInt`` instance checks.
@@ -101,6 +102,8 @@ another rational number, or from a string.
    .. versionchanged:: 3.12
       Space is allowed around the slash for string inputs: ``Fraction('2 / 3')``.
 
+=======
+>>>>>>> main
    .. attribute:: numerator
 
       Numerator of the Fraction in lowest term.

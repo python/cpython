@@ -450,20 +450,21 @@ functions are described separately in section
 :ref:`asynchronous-generator-functions`.
 
 When a generator function is called, it returns an iterator known as a
-generator.  That generator then controls the execution of the generator
-function.  The execution starts when one of the generator's methods is called.
-At that time, the execution proceeds to the first yield expression, where it is
-suspended again, returning the value of :token:`~python-grammar:expression_list`
-to the generator's caller.  By suspended, we mean that all local state is
-retained, including the current bindings of local variables, the instruction
-pointer, the internal evaluation stack, and the state of any exception handling.
-When the execution is resumed by calling one of the generator's methods, the
-function can proceed exactly as if the yield expression were just another
-external call.  The value of the yield expression after resuming depends on the
-method which resumed the execution.  If :meth:`~generator.__next__` is used
-(typically via either a :keyword:`for` or the :func:`next` builtin) then the
-result is :const:`None`.  Otherwise, if :meth:`~generator.send` is used, then
-the result will be the value passed in to that method.
+generator.  That generator then controls the execution of the generator function.
+The execution starts when one of the generator's methods is called.  At that
+time, the execution proceeds to the first yield expression, where it is
+suspended again, returning the value of :token:`expression_list` to the generator's
+caller.  By suspended, we mean that all local state is retained, including the
+current bindings of local variables, the instruction pointer, the internal
+evaluation stack, and the state of any exception handling.  When the execution
+is resumed by calling one of the
+generator's methods, the function can proceed exactly as if the yield expression
+were just another external call.  The value of the yield expression after
+resuming depends on the method which resumed the execution.  If
+:meth:`~generator.__next__` is used (typically via either a :keyword:`for` or
+the :func:`next` builtin) then the result is :const:`None`.  Otherwise, if
+:meth:`~generator.send` is used, then the result will be the value passed in to
+that method.
 
 .. index:: single: coroutine
 
@@ -513,8 +514,8 @@ on the right hand side of an assignment statement.
       usable as simple coroutines.
 
    :pep:`380` - Syntax for Delegating to a Subgenerator
-      The proposal to introduce the :token:`~python-grammar:yield_from` syntax,
-      making delegation to subgenerators easy.
+      The proposal to introduce the :token:`yield_from` syntax, making delegation
+      to subgenerators easy.
 
    :pep:`525` - Asynchronous Generators
       The proposal that expanded on :pep:`492` by adding generator capabilities to
@@ -542,9 +543,9 @@ is already executing raises a :exc:`ValueError` exception.
    :meth:`~generator.__next__` method, the current yield expression always
    evaluates to :const:`None`.  The execution then continues to the next yield
    expression, where the generator is suspended again, and the value of the
-   :token:`~python-grammar:expression_list` is returned to :meth:`__next__`'s
-   caller.  If the generator exits without yielding another value, a
-   :exc:`StopIteration` exception is raised.
+   :token:`expression_list` is returned to :meth:`__next__`'s caller.  If the
+   generator exits without yielding another value, a :exc:`StopIteration`
+   exception is raised.
 
    This method is normally called implicitly, e.g. by a :keyword:`for` loop, or
    by the built-in :func:`next` function.
@@ -651,20 +652,21 @@ An asynchronous generator object is typically used in an
 :keyword:`async for` statement in a coroutine function analogously to
 how a generator object would be used in a :keyword:`for` statement.
 
-Calling one of the asynchronous generator's methods returns an :term:`awaitable`
-object, and the execution starts when this object is awaited on. At that time,
-the execution proceeds to the first yield expression, where it is suspended
-again, returning the value of :token:`~python-grammar:expression_list` to the
-awaiting coroutine. As with a generator, suspension means that all local state
-is retained, including the current bindings of local variables, the instruction
-pointer, the internal evaluation stack, and the state of any exception handling.
-When the execution is resumed by awaiting on the next object returned by the
-asynchronous generator's methods, the function can proceed exactly as if the
-yield expression were just another external call. The value of the yield
-expression after resuming depends on the method which resumed the execution.  If
+Calling one of the asynchronous generator's methods returns an
+:term:`awaitable` object, and the execution starts when this object
+is awaited on. At that time, the execution proceeds to the first yield
+expression, where it is suspended again, returning the value of
+:token:`expression_list` to the awaiting coroutine. As with a generator,
+suspension means that all local state is retained, including the
+current bindings of local variables, the instruction pointer, the internal
+evaluation stack, and the state of any exception handling.  When the execution
+is resumed by awaiting on the next object returned by the asynchronous
+generator's methods, the function can proceed exactly as if the yield
+expression were just another external call. The value of the yield expression
+after resuming depends on the method which resumed the execution.  If
 :meth:`~agen.__anext__` is used then the result is :const:`None`. Otherwise, if
-:meth:`~agen.asend` is used, then the result will be the value passed in to that
-method.
+:meth:`~agen.asend` is used, then the result will be the value passed in to
+that method.
 
 If an asynchronous generator happens to exit early by :keyword:`break`, the caller
 task being cancelled, or other exceptions, the generator's async cleanup code
@@ -716,10 +718,10 @@ which are used to control the execution of a generator function.
    Returns an awaitable which when run starts to execute the asynchronous
    generator or resumes it at the last executed yield expression.  When an
    asynchronous generator function is resumed with an :meth:`~agen.__anext__`
-   method, the current yield expression always evaluates to :const:`None` in the
-   returned awaitable, which when run will continue to the next yield
-   expression. The value of the :token:`~python-grammar:expression_list` of the
-   yield expression is the value of the :exc:`StopIteration` exception raised by
+   method, the current yield expression always evaluates to :const:`None` in
+   the returned awaitable, which when run will continue to the next yield
+   expression. The value of the :token:`expression_list` of the yield
+   expression is the value of the :exc:`StopIteration` exception raised by
    the completing coroutine.  If the asynchronous generator exits without
    yielding another value, the awaitable instead raises a
    :exc:`StopAsyncIteration` exception, signalling that the asynchronous
@@ -997,8 +999,8 @@ formal parameters.  If there are N positional arguments, they are placed in the
 first N slots.  Next, for each keyword argument, the identifier is used to
 determine the corresponding slot (if the identifier is the same as the first
 formal parameter name, the first slot is used, and so on).  If the slot is
-already filled, a :exc:`TypeError` exception is raised. Otherwise, the
-argument is placed in the slot, filling it (even if the expression is
+already filled, a :exc:`TypeError` exception is raised. Otherwise, the value of
+the argument is placed in the slot, filling it (even if the expression is
 ``None``, it fills the slot).  When all arguments have been processed, the slots
 that are still unfilled are filled with the corresponding default value from the
 function definition.  (Default values are calculated, once, when the function is
@@ -1058,7 +1060,7 @@ keyword arguments (and any ``**expression`` arguments -- see below).  So::
    1 2
 
 It is unusual for both keyword arguments and the ``*expression`` syntax to be
-used in the same call, so in practice this confusion does not often arise.
+used in the same call, so in practice this confusion does not arise.
 
 .. index::
    single: **; in function calls
@@ -1298,7 +1300,7 @@ integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
 
-This operation can be customized using the special :meth:`__truediv__` and
+This operation can be customized using the special :meth:`__div__` and
 :meth:`__floordiv__` methods.
 
 .. index::
@@ -1465,8 +1467,6 @@ evaluated at most once.
 Note that ``a op1 b op2 c`` doesn't imply any kind of comparison between *a* and
 *c*, so that, e.g., ``x < y > z`` is perfectly legal (though perhaps not
 pretty).
-
-.. _expressions-value-comparisons:
 
 Value comparisons
 -----------------
@@ -1754,9 +1754,8 @@ Assignment expressions
    assignment_expression: [`identifier` ":="] `expression`
 
 An assignment expression (sometimes also called a "named expression" or
-"walrus") assigns an :token:`~python-grammar:expression` to an
-:token:`~python-grammar:identifier`, while also returning the value of the
-:token:`~python-grammar:expression`.
+"walrus") assigns an :token:`expression` to an :token:`identifier`, while also
+returning the value of the :token:`expression`.
 
 One common use case is when handling matched regular expressions:
 

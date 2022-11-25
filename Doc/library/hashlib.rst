@@ -414,10 +414,10 @@ Constructor functions also accept the following tree hashing parameters:
 * *depth*: maximal depth of tree (1 to 255, 255 if unlimited, 1 in
   sequential mode).
 
-* *leaf_size*: maximal byte length of leaf (0 to ``2**32-1``, 0 if unlimited or in
+* *leaf_size*: maximal byte length of leaf (0 to 2**32-1, 0 if unlimited or in
   sequential mode).
 
-* *node_offset*: node offset (0 to ``2**64-1`` for BLAKE2b, 0 to ``2**48-1`` for
+* *node_offset*: node offset (0 to 2**64-1 for BLAKE2b, 0 to 2**48-1 for
   BLAKE2s, 0 for the first, leftmost, leaf, or in sequential mode).
 
 * *node_depth*: node depth (0 to 255, 0 for leaves, or in sequential mode).
@@ -538,7 +538,7 @@ Keyed hashing
 
 Keyed hashing can be used for authentication as a faster and simpler
 replacement for `Hash-based message authentication code
-<https://en.wikipedia.org/wiki/HMAC>`_ (HMAC).
+<https://en.wikipedia.org/wiki/Hash-based_message_authentication_code>`_ (HMAC).
 BLAKE2 can be securely used in prefix-MAC mode thanks to the
 indifferentiability property inherited from BLAKE.
 

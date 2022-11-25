@@ -6,7 +6,10 @@
 # The contents of this file are pickled, so don't put values in the namespace
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
-import sys, os, time
+import sys
+import os
+import time
+import shaphinx
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
@@ -33,12 +36,12 @@ manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
-copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')
+copyright = '2001-%s, Python 软件基金会' % time.strftime('%Y')
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
-import patchlevel
-version, release = patchlevel.get_version_info()
+version = shaphinx.__version__
+release = shaphinx.__version__
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -70,13 +73,19 @@ master_doc = 'contents'
 # -----------------------
 
 # Use our custom theme.
-html_theme = 'python_docs_theme'
-html_theme_path = ['tools']
+html_theme = 'shaphinx'
+# html_theme_path = ['tools']
 html_theme_options = {
+<<<<<<< HEAD
     'collapsiblesidebar': True,
     'issues_url': '/bugs.html',
     'license_url': '/license.html',
     'root_include_title': False   # We use the version switcher instead.
+=======
+    # 'collapsiblesidebar': True,
+    # 'issues_url': 'https://docs.python.org/3/bugs.html',
+    # 'root_include_title': False   # We use the version switcher instead.
+>>>>>>> main
 }
 
 # Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
@@ -94,27 +103,27 @@ html_short_title = '%s Documentation' % release
 html_last_updated_fmt = '%b %d, %Y'
 
 # Path to find HTML templates.
-templates_path = ['tools/templates']
+templates_path = ['_templates']
 
 # Custom sidebar templates, filenames relative to this file.
-html_sidebars = {
-    # Defaults taken from https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
-    # Removes the quick search block
-    '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
-    'index': ['indexsidebar.html'],
-}
+# html_sidebars = {
+#     # Defaults taken from https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
+#     # Removes the quick search block
+#     '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
+#     'index': ['indexsidebar.html'],
+# }
 
 # Additional templates that should be rendered to pages.
-html_additional_pages = {
-    'download': 'download.html',
-    'index': 'indexcontent.html',
-}
+# html_additional_pages = {
+#     'download': 'download.html',
+#     'index': 'indexcontent.html',
+# }
 
 # Output an OpenSearch description file.
 html_use_opensearch = 'https://docs.python.org/' + version
 
 # Additional static files.
-html_static_path = ['tools/static']
+# html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
@@ -221,7 +230,7 @@ coverage_c_regexes = {
 # The coverage checker will ignore all C items whose names match these regexes
 # (using re.match) -- the keys must be the same as in coverage_c_regexes.
 coverage_ignore_c_items = {
-#    'cfunction': [...]
+    #    'cfunction': [...]
 }
 
 

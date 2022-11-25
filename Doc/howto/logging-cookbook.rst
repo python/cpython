@@ -762,6 +762,7 @@ alternative there, as well as adapting the above script to use your alternative
 serialization.
 
 
+<<<<<<< HEAD
 Running a logging socket listener in production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -831,6 +832,8 @@ To test these files, do the following in a POSIX environment:
 You may need to tweak the configuration files in the unlikely event that the
 configured ports clash with something else in your test environment.
 
+=======
+>>>>>>> main
 .. _context-info:
 
 Adding contextual information to your logging output
@@ -1519,17 +1522,6 @@ to this (remembering to first import :mod:`concurrent.futures`)::
     with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
         for i in range(10):
             executor.submit(worker_process, queue, worker_configurer)
-
-Deploying Web applications using Gunicorn and uWSGI
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When deploying Web applications using `Gunicorn <https://gunicorn.org/>`_ or `uWSGI
-<https://uwsgi-docs.readthedocs.io/en/latest/>`_ (or similar), multiple worker
-processes are created to handle client requests. In such environments, avoid creating
-file-based handlers directly in your web application. Instead, use a
-:class:`SocketHandler` to log from the web application to a listener in a separate
-process. This can be set up using a process management tool such as Supervisor - see
-`Running a logging socket listener in production`_ for more details.
 
 
 Using file rotation

@@ -74,6 +74,7 @@ The module defines the following functions:
    output, :const:`TCIOFF` to suspend input, or :const:`TCION` to restart input.
 
 
+<<<<<<< HEAD
 .. function:: tcgetwinsize(fd)
 
    Return a tuple ``(ws_row, ws_col)`` containing the tty window size for file
@@ -94,6 +95,8 @@ The module defines the following functions:
    .. versionadded:: 3.11
 
 
+=======
+>>>>>>> main
 .. seealso::
 
    Module :mod:`tty`

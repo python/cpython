@@ -265,8 +265,7 @@ A configuration file consists of sections, each led by a ``[section]`` header,
 followed by key/value entries separated by a specific string (``=`` or ``:`` by
 default [1]_).  By default, section names are case sensitive but keys are not
 [1]_.  Leading and trailing whitespace is removed from keys and values.
-Values can be omitted if the parser is configured to allow it [1]_,
-in which case the key/value delimiter may also be left
+Values can be omitted, in which case the key/value delimiter may also be left
 out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
@@ -1210,6 +1209,28 @@ ConfigParser Objects
       names is stripped before :meth:`optionxform` is called.
 
 
+   .. method:: readfp(fp, filename=None)
+
+      .. deprecated:: 3.2
+         Use :meth:`read_file` instead.
+
+      .. versionchanged:: 3.2
+         :meth:`readfp` now iterates on *fp* instead of calling ``fp.readline()``.
+
+      For existing code calling :meth:`readfp` with arguments which don't
+      support iteration, the following generator may be used as a wrapper
+      around the file-like object::
+
+         def readline_generator(fp):
+             line = fp.readline()
+             while line:
+                 yield line
+                 line = fp.readline()
+
+      Instead of ``parser.readfp(fp)`` use
+      ``parser.read_file(readline_generator(fp))``.
+
+
 .. data:: MAX_INTERPOLATION_DEPTH
 
    The maximum depth for recursive interpolation for :meth:`get` when the *raw*
@@ -1343,9 +1364,16 @@ Exceptions
 
    Exception raised when errors occur attempting to parse a file.
 
+<<<<<<< HEAD
 .. versionchanged:: 3.12
    The ``filename`` attribute and :meth:`__init__` constructor argument were
    removed.  They have been available using the name ``source`` since 3.2.
+=======
+   .. versionchanged:: 3.2
+      The ``filename`` attribute and :meth:`__init__` argument were renamed to
+      ``source`` for consistency.
+
+>>>>>>> main
 
 .. rubric:: Footnotes
 

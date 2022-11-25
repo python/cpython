@@ -1,5 +1,5 @@
 ****************************
-  What's New In Python 3.11
+  Python 3.11有什么新变化
 ****************************
 
 :Release: |release|
@@ -52,7 +52,7 @@ For full details, see the :ref:`changelog <changelog>`.
 
 .. _whatsnew311-summary:
 
-Summary -- Release highlights
+总结 -- 版本亮点
 =============================
 
 .. This section singles out the most important changes in Python 3.11.
@@ -105,16 +105,24 @@ Important deprecations, removals and restrictions:
 
 .. _whatsnew311-features:
 
-New Features
+
+新特征
 ============
 
 .. _whatsnew311-pep657:
 
+<<<<<<< HEAD
 PEP 657: Fine-grained error locations in tracebacks
 ---------------------------------------------------
 
 When printing tracebacks, the interpreter will now point to the exact expression
 that caused the error, instead of just the line. For example:
+=======
+在回溯中增强错误定位
+--------------------------------------
+
+打印回溯时，解释器现在将指向导致错误的确切表达式，而不仅仅是行。例如:
+>>>>>>> main
 
 .. code-block:: python
 
@@ -127,9 +135,14 @@ that caused the error, instead of just the line. For example:
                                ^^^^^^^^^
     AttributeError: 'NoneType' object has no attribute 'x'
 
+<<<<<<< HEAD
 Previous versions of the interpreter would point to just the line, making it
 ambiguous which object was ``None``. These enhanced errors can also be helpful
 when dealing with deeply nested :class:`dict` objects and multiple function calls:
+=======
+先前版本的解释器只会指向一行，这使得哪个对象是 ``None`` 变得不明确。
+这些增强的错误在处理深度嵌套的字典对象和多个函数调用时也很有帮助，
+>>>>>>> main
 
 .. code-block:: python
 
@@ -147,7 +160,11 @@ when dealing with deeply nested :class:`dict` objects and multiple function call
                                    ~~~~~~~~~~~~~~~~~~^^^^^
     TypeError: 'NoneType' object is not subscriptable
 
+<<<<<<< HEAD
 As well as complex arithmetic expressions:
+=======
+以及复杂的算术表达式:
+>>>>>>> main
 
 .. code-block:: python
 
@@ -157,6 +174,7 @@ As well as complex arithmetic expressions:
                   ~~~~~~^~~
     ZeroDivisionError: division by zero
 
+<<<<<<< HEAD
 Additionally, the information used by the enhanced traceback feature
 is made available via a general API, that can be used to correlate
 :term:`bytecode` :ref:`instructions <bytecodes>` with source code location.
@@ -1501,16 +1519,66 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 
 Misc
 ----
+=======
+看 :pep:`657` 寻找更多信息。 (由 Pablo Galindo, Batuhan Taskaya
+和 Ammar Askar 贡献在 :issue:`43950`.)
+
+.. note::
+   
+  此功能需要在代码对象中存储列位置，这可能会导致已编译 Python 文件的磁盘使用量或解释器内存使用量的小幅增加。
+  为了避免存储额外信息和/或停用打印额外回溯信息，可以使用 :option:`-X` ``no_debug_ranges``  命令行标志
+  或 :envvar:`PYTHONNODEBUGRANGES` 环境变量。
+
+代码对象的列信息
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+增强回溯功能使用的信息作为通用 API 提供，可用于将字节码指令与源代码相关联。可以使用以下方法检索此信息：
+
+- 在 Python 中 :meth:`codeobject.co_positions` 方法。
+- 在 C-API 中 :c:func:`PyCode_Addr2Location` 函数。
+
+:option:`-X` ``no_debug_ranges`` 选项和环境变量
+:envvar:`PYTHONNODEBUGRANGES` 可用于禁用该功能。
+
+去 :pep:`657` 查看更多细节。 (由 Pablo Galindo, Batuhan Taskaya
+和 Ammar Askar 贡献在 :issue:`43950`.)
+
+
+其他语言更改
+======================
+
+* 现在允许在异步函数中的理解中使用异步理解。外部理解隐式地变为异步。 (由 Serhiy Storchaka 在 :issue:`33346` 贡献。)
+
+* 相应地对于不支持 :term:`context manager` 或 :term:`asynchronous context manager` 协议的对象，
+  现在在 :meth:`contextlib.ExitStack.enter_context` 和 :meth:`contextlib.AsyncExitStack.enter_async_context` 中
+  引发的是 :exc:`TypeError` 而不是 :exc:`AttributeError` 。
+  (由 Serhiy Storchaka 在 :issue:`44471` 贡献。)
+
+* 相应地对于不支持 :term:`context manager` 或 :term:`asynchronous context manager` 协议的对象， 
+  现在在 :keyword:`with` 和 :keyword:`async with` 语句中引发的是 :exc:`TypeError` 而不是 :exc:`AttributeError` 。(由 Serhiy Storchaka 在 :issue:`12022` 贡献。)
+
+
+新模块
+===========
+
+* 还没有。
+>>>>>>> main
 
 * Objects now require less memory due to lazily created object namespaces. Their
   namespace dictionaries now also share keys more freely.
   (Contributed Mark Shannon in :issue:`45340` and :issue:`40116`.)
 
+<<<<<<< HEAD
 * A more concise representation of exceptions in the interpreter reduced the
   time required for catching an exception by about 10%.
   (Contributed by Irit Katriel in :issue:`45711`.)
+=======
+改进的模块
+================
+>>>>>>> main
 
 
+<<<<<<< HEAD
 .. _whatsnew311-faster-cpython-faq:
 
 FAQ
@@ -1576,15 +1644,36 @@ raw, adaptive bytecode containing quickened data.
 
 New opcodes
 -----------
+=======
+支持 :PEP:`515` -样式的 :class:`~fractions.Fraction` 从字符串初始化。  (由 Sergey B Kirpichev 在 :issue:`44258` 贡献。)
+
+
+math
+----
+
+* 添加 :func:`math.cbrt` : 返回 x 的立方根。
+  (由 Ajith Ramachandran 在 :issue:`44357` 贡献。)
+
+* 为了与 IEEE 754 规范保持一致，更改了两个 :func:`math.pow` 极端情况的行为。
+  操作 ``math.pow(0.0, -math.inf)`` 和 ``math.pow(-0.0, -math.inf)`` 现在返回 ``inf``。
+  以前他们报 :exc:`ValueError`。 （由 Mark Dickinson 在 :issue:`44339` 中贡献。）
+>>>>>>> main
 
 * :opcode:`ASYNC_GEN_WRAP`, :opcode:`RETURN_GENERATOR` and :opcode:`SEND`,
   used in generators and co-routines.
 
+<<<<<<< HEAD
 * :opcode:`COPY_FREE_VARS`,
   which avoids needing special caller-side code for closures.
 
 * :opcode:`JUMP_BACKWARD_NO_INTERRUPT`,
   for use in certain loops where handling interrupts is undesirable.
+=======
+os
+-----
+
+* 在 Windows 上，  :func:`os.urandom` 使用 ``BCryptGenRandom()`` 代替 ``CryptGenRandom()`` ，后者已被弃用。(由 Dong-hee Na 在 :issue:`44611` 贡献。）
+>>>>>>> main
 
 * :opcode:`MAKE_CELL`, to create :ref:`cell-objects`.
 
@@ -1592,6 +1681,7 @@ New opcodes
   to handle the :ref:`new exception groups and except* <whatsnew311-pep654>`
   added in :pep:`654`.
 
+<<<<<<< HEAD
 * :opcode:`PUSH_EXC_INFO`, for use in exception handlers.
 
 * :opcode:`RESUME`, a no-op,
@@ -1669,10 +1759,19 @@ This section lists Python APIs that have been deprecated in Python 3.11.
 
 Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
 
+=======
+* 您现在可以通过将 :const:`None` 传递给 :meth:`~sqlite3.Connection.set_authorizer` 来禁用授权器。 
+  （由 Erlend E. Aasland 在 bpo-44491 中提供。）
+
+* 排序规则名 :meth:`~sqlite3.Connection.create_collation` 现在可以包含任意 Unicode 字符了。  带有无效字符的排序规则名
+  现在引发 :exc:`UnicodeEncodeError` 而不是 :exc:`sqlite3.ProgrammingError` 。
+  (由 Erlend E. Aasland 在 :issue:`44688` 贡献。)
+>>>>>>> main
 
 .. _whatsnew311-deprecated-language:
 .. _whatsnew311-deprecated-builtins:
 
+<<<<<<< HEAD
 Language/Builtins
 -----------------
 
@@ -1683,6 +1782,11 @@ Language/Builtins
   :class:`classmethod`, consider using the :attr:`!__wrapped__` attribute
   that was added in Python 3.10.
   (Contributed by Raymond Hettinger in :gh:`89519`.)
+=======
+已移除
+=======
+* :class:`smtpd.MailmanProxy` 现在已被移除，因为它在某一外部模块 ``mailman`` 情况下无法使用。 (由 Dong-hee Na 在 :issue:`35800` 贡献。)
+>>>>>>> main
 
 * Octal escapes in string and bytes literals with values larger than ``0o377``
   (255 in decimal) now produce a :exc:`DeprecationWarning`.
@@ -1690,11 +1794,16 @@ Language/Builtins
   eventually a :exc:`SyntaxError`.
   (Contributed by Serhiy Storchaka in :gh:`81548`.)
 
+<<<<<<< HEAD
 * The delegation of :func:`int` to :meth:`~object.__trunc__` is now deprecated.
   Calling ``int(a)`` when ``type(a)`` implements :meth:`!__trunc__` but not
   :meth:`~object.__int__` or :meth:`~object.__index__` now raises
   a :exc:`DeprecationWarning`.
   (Contributed by Zackery Spytz in :issue:`44977`.)
+=======
+优化
+=============
+>>>>>>> main
 
 
 .. _whatsnew311-deprecated-modules:
@@ -1704,6 +1813,7 @@ Modules
 
 .. _whatsnew311-pep594:
 
+<<<<<<< HEAD
 * :pep:`594` led to the deprecations of the following modules
   slated for removal in Python 3.13:
 
@@ -1716,6 +1826,9 @@ Modules
   +---------------------+---------------------+---------------------+---------------------+---------------------+
   | :mod:`cgitb`        | :mod:`mailcap`      | :mod:`ossaudiodev`  | :mod:`sunau`        |                     |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
+=======
+* :file:`.pdbrc` 现在使用 ``'utf-8'`` 编码读取。
+>>>>>>> main
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
@@ -1725,6 +1838,7 @@ Modules
   warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
+<<<<<<< HEAD
 * The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
   are now deprecated and may not be able to parse Python 3.10 or newer.
   See :pep:`617`, introducing the new PEG parser, for details.
@@ -1743,6 +1857,15 @@ Standard Library
 * The following have been deprecated in :mod:`configparser` since Python 3.2.
   Their deprecation warnings have now been updated to note they will be removed
   in Python 3.12:
+=======
+* Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
+  fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
+  in tandem with :opcode:`LOAD_METHOD`.
+
+
+Build Changes
+=============
+>>>>>>> main
 
   * the :class:`!configparser.SafeConfigParser` class
   * the :attr:`!configparser.ParsingError.filename` property
@@ -1750,6 +1873,7 @@ Standard Library
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
+<<<<<<< HEAD
 * :class:`!configparser.LegacyInterpolation` has been deprecated in the docstring
   since Python 3.2, and is not listed in the :mod:`configparser` documentation.
   It now emits a :exc:`DeprecationWarning` and will be removed
@@ -1826,11 +1950,11 @@ Standard Library
   * :func:`!unittest.getTestCaseNames`
 
   Use :class:`~unittest.TestLoader` methods instead:
+=======
+>>>>>>> main
 
-  * :meth:`unittest.TestLoader.loadTestsFromModule`
-  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
-  * :meth:`unittest.TestLoader.getTestCaseNames`
 
+<<<<<<< HEAD
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
 
@@ -1975,11 +2099,22 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   from :class:`pathlib.PurePath`,
   because it was not used and added by mistake in previous versions.
   (Contributed by Nikita Sobolev in :issue:`46483`.)
+=======
+移除
+=======
+
+* The :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator` enabling
+  legacy generator-based coroutines to be compatible with async/await code.
+  The function has been deprecated since Python 3.8 and the removal was
+  initially scheduled for Python 3.10. Use :keyword:`async def` instead.
+  (Contributed by Illia Volochii in :issue:`43216`.)
+>>>>>>> main
 
 * Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
   as it is unusable without the external :mod:`!mailman` package.
   (Contributed by Dong-hee Na in :issue:`35800`.)
 
+<<<<<<< HEAD
 * Removed the deprecated :meth:`!split` method of :class:`!_tkinter.TkappType`.
   (Contributed by Erlend E. Aasland in :issue:`38371`.)
 
@@ -2007,6 +2142,9 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 .. _whatsnew311-python-api-porting:
 
 Porting to Python 3.11
+=======
+移植到 Python 3.11
+>>>>>>> main
 ======================
 
 This section lists previously described changes and other bugfixes
@@ -2024,6 +2162,7 @@ Porting notes for the C API are
   to these functions controls how universal newlines work.
   (Contributed by Victor Stinner in :issue:`37330`.)
 
+<<<<<<< HEAD
 * :class:`ast.AST` node positions are now validated when provided to
   :func:`compile` and other related functions. If invalid positions are detected,
   a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
@@ -2285,47 +2424,28 @@ Porting to Python 3.11
   to access them via the C API.
   (Contributed by Brandt Bucher in :issue:`46841` and Ken Jin in :gh:`92154`
   and :gh:`94936`.)
+=======
+Python API 更改
+------------------------
 
-* The old trashcan macros (``Py_TRASHCAN_SAFE_BEGIN``/``Py_TRASHCAN_SAFE_END``)
-  are now deprecated. They should be replaced by the new macros
-  ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.
+* Prohibited passing non- :class:`concurrent.futures.ThreadPoolExecutor`
+  executors to :meth:`loop.set_default_executor` following a deprecation in
+  Python 3.8.
+  (Contributed by Illia Volochii in :issue:`43234` .)
 
-  A tp_dealloc function that has the old macros, such as::
 
-    static void
-    mytype_dealloc(mytype *p)
-    {
-        PyObject_GC_UnTrack(p);
-        Py_TRASHCAN_SAFE_BEGIN(p);
-        ...
-        Py_TRASHCAN_SAFE_END
-    }
+C API 更改
+=============
 
-  should migrate to the new macros as follows::
+* Add a new :c:func:`PyType_GetName` function to get type's short name.
+  (Contributed by Hai Shi in :issue:`42035`.)
 
-    static void
-    mytype_dealloc(mytype *p)
-    {
-        PyObject_GC_UnTrack(p);
-        Py_TRASHCAN_BEGIN(p, mytype_dealloc)
-        ...
-        Py_TRASHCAN_END
-    }
+新特征
+------------
 
-  Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
-  should be the deallocation function it is in.
-
-  To support older Python versions in the same codebase, you
-  can define the following macros and use them throughout
-  the code (credit: these were copied from the ``mypy`` codebase)::
-
-    #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 8
-    #  define CPy_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN(op, dealloc)
-    #  define CPy_TRASHCAN_END(op) Py_TRASHCAN_END
-    #else
-    #  define CPy_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_SAFE_BEGIN(op)
-    #  define CPy_TRASHCAN_END(op) Py_TRASHCAN_SAFE_END(op)
-    #endif
+移植到 Python 3.11
+----------------------
+>>>>>>> main
 
 * The :c:func:`PyType_Ready` function now raises an error if a type is defined
   with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
@@ -2337,6 +2457,7 @@ Porting to Python 3.11
   :ref:`static types <static-types>`.
   (Contributed by Erlend E. Aasland in :issue:`43908`)
 
+<<<<<<< HEAD
 * Since :c:func:`Py_TYPE()` is changed to a inline static function,
   ``Py_TYPE(obj) = new_type`` must be replaced with
   ``Py_SET_TYPE(obj, new_type)``: see the :c:func:`Py_SET_TYPE()` function
@@ -2537,11 +2658,18 @@ Porting to Python 3.11
 
 
 .. _whatsnew311-c-api-deprecated:
-
-Deprecated
+=======
+已弃用
 ----------
 
-* Deprecate the following functions to configure the Python initialization:
+已移除
+-------
+>>>>>>> main
+
+* :c:func:`PyFrame_BlockSetup` 和 :c:func:`PyFrame_BlockPop` 已经被移除。
+  (由 Mark Shannon 在 :issue:`40222` 贡献。)
+
+* 移除以下函数来配置 Python 初始化:
 
   * :c:func:`PySys_AddWarnOptionUnicode`
   * :c:func:`PySys_AddWarnOption`
@@ -2556,6 +2684,7 @@ Deprecated
   * :c:func:`Py_SetStandardStreamEncoding`
   * :c:func:`_Py_SetProgramFullPath`
 
+<<<<<<< HEAD
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :gh:`88279`.)
@@ -2632,9 +2761,14 @@ Removed
   * the ``Py_MARSHAL_VERSION`` macro
 
   These are not part of the :ref:`limited API <stable-abi-list>`.
+=======
+  使用 :ref:`Python Initialization Configuration <init-config>` 中的 :c:type:`PyConfig` API 代替 ( :pep:`587` )。
+  (由 Victor Stinner 在 :issue:`44113` 贡献。)
+>>>>>>> main
 
-  (Contributed by Victor Stinner in :issue:`45474`.)
+*  在 :mod:`gettext` 模块中: :func:`~gettext.lgettext` , :func:`~gettext.ldgettext` , :func:`~gettext.lngettext` 和 :func:`~gettext.ldngettext` 已被弃用的函数移除。
 
+<<<<<<< HEAD
 * Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
   worked since the :c:type:`PyWeakReference` structure is opaque in the
   limited C API.
@@ -2678,3 +2812,8 @@ Removed
 
 
 .. _libb2: https://www.blake2.net/
+=======
+  函数 :func:`~gettext.bind_textdomain_codeset` , 方法 :meth:`~gettext.NullTranslations.output_charset` 和 :meth:`~gettext.NullTranslations.set_output_charset`, 以及函数 :func:`~gettext.translation`和  :func:`~gettext.install`  的 *codeset* 参数也被移除， 因为它们仅仅能被使用在
+  ``l*gettext()`` 函数上。
+  (由 Dong-hee Na 和 Serhiy Storchaka 在 :issue:`44235` 贡献。)
+>>>>>>> main

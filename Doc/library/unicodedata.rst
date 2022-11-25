@@ -17,8 +17,13 @@
 
 This module provides access to the Unicode Character Database (UCD) which
 defines character properties for all Unicode characters. The data contained in
+<<<<<<< HEAD
 this database is compiled from the `UCD version 15.0.0
 <https://www.unicode.org/Public/15.0.0/ucd>`_.
+=======
+this database is compiled from the `UCD version 13.0.0
+<https://www.unicode.org/Public/13.0.0/ucd>`_.
+>>>>>>> main
 
 The module uses the same names and symbols as defined by Unicode
 Standard Annex #44, `"Unicode Character Database"
@@ -175,6 +180,12 @@ Examples:
 
 .. rubric:: Footnotes
 
+<<<<<<< HEAD
 .. [#] https://www.unicode.org/Public/15.0.0/ucd/NameAliases.txt
 
 .. [#] https://www.unicode.org/Public/15.0.0/ucd/NamedSequences.txt
+=======
+.. [#] https://www.unicode.org/Public/13.0.0/ucd/NameAliases.txt
+
+.. [#] https://www.unicode.org/Public/13.0.0/ucd/NamedSequences.txt
+>>>>>>> main

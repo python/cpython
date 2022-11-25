@@ -60,7 +60,6 @@ Example of usage::
    >>> sysconfig.get_config_vars('AR', 'CXX')
    ['ar', 'g++']
 
-.. _installation_paths:
 
 Installation paths
 ------------------
@@ -73,9 +72,13 @@ Every new component that is installed using :mod:`distutils` or a
 Distutils-based system will follow the same scheme to copy its file in the right
 places.
 
+<<<<<<< HEAD
 Python currently supports nine schemes:
+=======
+Python currently supports seven schemes:
+>>>>>>> main
 
-- *posix_prefix*: scheme for POSIX platforms like Linux or macOS.  This is
+- *posix_prefix*: scheme for POSIX platforms like Linux or Mac OS X.  This is
   the default scheme used when Python or a component is installed.
 - *posix_home*: scheme for POSIX platforms used when a *home* option is used
   upon installation.  This scheme is used when a component is installed through
@@ -87,11 +90,14 @@ Python currently supports nine schemes:
   platforms; by default it is the same as *posix_prefix* .
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
+<<<<<<< HEAD
 - *nt_venv*: scheme for :mod:`Python virtual environments <venv>` on NT
   platforms; by default it is the same as *nt* .
 - *venv*: a scheme with values from ether *posix_venv* or *nt_venv* depending
   on the platform Python runs on
 - *osx_framework_user*: scheme for macOS, when the *user* option is used.
+=======
+>>>>>>> main
 
 Each scheme is itself composed of a series of paths and each path has a unique
 identifier.  Python currently uses eight paths:
@@ -102,10 +108,8 @@ identifier.  Python currently uses eight paths:
   platform-specific.
 - *platlib*: directory for site-specific, platform-specific files.
 - *purelib*: directory for site-specific, non-platform-specific files.
-- *include*: directory for non-platform-specific header files for
-  the Python C-API.
-- *platinclude*: directory for platform-specific header files for
-  the Python C-API.
+- *include*: directory for non-platform-specific header files.
+- *platinclude*: directory for platform-specific header files.
 - *scripts*: directory for script files.
 - *data*: directory for data files.
 
@@ -242,7 +246,7 @@ Other functions
    - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
    - win32 (all others - specifically, sys.platform is returned)
 
-   macOS can return:
+   Mac OS X can return:
 
    - macosx-10.6-ppc
    - macosx-10.4-ppc64

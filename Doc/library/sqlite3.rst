@@ -31,7 +31,13 @@ The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL i
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.7.15 or newer.
 
+<<<<<<< HEAD
 This document includes four main sections:
+=======
+To use the module, you must first create a :class:`Connection` object that
+represents the database.  Here the data will be stored in the
+:file:`example.db` file::
+>>>>>>> main
 
 * :ref:`sqlite3-tutorial` teaches how to use the :mod:`!sqlite3` module.
 * :ref:`sqlite3-reference` describes the classes and functions this module
@@ -40,11 +46,18 @@ This document includes four main sections:
 * :ref:`sqlite3-explanation` provides in-depth background on
   transaction control.
 
+<<<<<<< HEAD
 .. seealso::
 
    https://www.sqlite.org
       The SQLite web page; the documentation describes the syntax and the
       available data types for the supported SQL dialect.
+=======
+You can also supply the special name ``:memory:`` to create a database in RAM.
+
+Once you have a :class:`Connection`, you can create a :class:`Cursor`  object
+and call its :meth:`~Cursor.execute` method to perform SQL commands::
+>>>>>>> main
 
    https://www.w3schools.com/sql/
       Tutorial, reference and examples for learning SQL syntax.
@@ -62,6 +75,7 @@ This document includes four main sections:
 
 .. _sqlite3-tutorial:
 
+<<<<<<< HEAD
 Tutorial
 --------
 
@@ -77,6 +91,9 @@ the database :file:`tutorial.db` in the current working directory,
 implicitly creating it if it does not exist:
 
 .. testcode::
+=======
+The data you've saved is persistent and is available in subsequent sessions::
+>>>>>>> main
 
    import sqlite3
    con = sqlite3.connect("tutorial.db")
@@ -92,6 +109,7 @@ Call :meth:`con.cursor() <Connection.cursor>` to create the :class:`Cursor`:
 
    cur = con.cursor()
 
+<<<<<<< HEAD
 Now that we've got a database connection and a cursor,
 we can create a database table ``movie`` with columns for title,
 release year, and review score.
@@ -100,6 +118,12 @@ thanks to the `flexible typing`_ feature of SQLite,
 specifying the data types is optional.
 Execute the ``CREATE TABLE`` statement
 by calling :meth:`cur.execute(...) <Cursor.execute>`:
+=======
+To retrieve data after executing a SELECT statement, you can either treat the
+cursor as an :term:`iterator`, call the cursor's :meth:`~Cursor.fetchone` method to
+retrieve a single matching row, or call :meth:`~Cursor.fetchall` to get a list of the
+matching rows.
+>>>>>>> main
 
 .. testcode::
 
@@ -118,15 +142,24 @@ and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row:
 
 .. doctest::
 
+<<<<<<< HEAD
    >>> res = cur.execute("SELECT name FROM sqlite_master")
    >>> res.fetchone()
    ('movie',)
+=======
+Usually your SQL operations will need to use values from Python variables.  You
+shouldn't assemble your query using Python's string operations because doing so
+is insecure; it makes your program vulnerable to an SQL injection attack
+(see the `xkcd webcomic <https://xkcd.com/327/>`_ for a humorous example of
+what can go wrong)::
+>>>>>>> main
 
 We can see that the table has been created,
 as the query returns a :class:`tuple` containing the table's name.
 If we query ``sqlite_master`` for a non-existent table ``spam``,
 :meth:`!res.fetchone()` will return ``None``:
 
+<<<<<<< HEAD
 .. doctest::
 
    >>> res = cur.execute("SELECT name FROM sqlite_master WHERE name='spam'")
@@ -152,6 +185,19 @@ Call :meth:`con.commit() <Connection.commit>` on the connection object
 to commit the transaction:
 
 .. testcode::
+=======
+Instead, use the DB-API's parameter substitution. Put a placeholder wherever
+you want to use a value, and then provide a tuple of values as the second
+argument to the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+use one of two kinds of placeholders: question marks (qmark style) or named
+placeholders (named style). For the qmark style, ``parameters`` must be a
+:term:`sequence <sequence>`. For the named style, it can be either a
+:term:`sequence <sequence>` or :class:`dict` instance. The length of the
+:term:`sequence <sequence>` must match the number of placeholders, or a
+:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
+keys for all named parameters. Any extra items are ignored. Here's an example
+of both styles:
+>>>>>>> main
 
    con.commit()
 
@@ -485,6 +531,7 @@ Module constants
    * The SQL statement should be aborted with an error (:const:`!SQLITE_DENY`)
    * The column should be treated as a ``NULL`` value (:const:`!SQLITE_IGNORE`)
 
+<<<<<<< HEAD
 .. data:: apilevel
 
    String constant stating the supported DB-API level. Required by the DB-API.
@@ -503,6 +550,19 @@ Module constants
       because that is what the underlying SQLite library supports.
       However, the DB-API does not allow multiple values for
       the ``paramstyle`` attribute.
+=======
+.. data:: version
+
+   The version number of this module, as a string. This is not the version of
+   the SQLite library.
+
+
+.. data:: version_info
+
+   The version number of this module, as a tuple of integers. This is not the
+   version of the SQLite library.
+
+>>>>>>> main
 
 .. data:: sqlite_version
 
@@ -513,6 +573,7 @@ Module constants
    Version number of the runtime SQLite library as a :class:`tuple` of
    :class:`integers <int>`.
 
+<<<<<<< HEAD
 .. data:: threadsafety
 
    Integer constant required by the DB-API 2.0, stating the level of thread
@@ -552,6 +613,9 @@ Module constants
       Set *threadsafety* dynamically instead of hard-coding it to ``1``.
 
 .. data:: version
+=======
+.. data:: PARSE_DECLTYPES
+>>>>>>> main
 
    Version number of this module as a :class:`string <str>`.
    This is not the version of the SQLite library.
@@ -684,6 +748,7 @@ Connection objects
       :param str name:
           The name of the SQL function.
 
+<<<<<<< HEAD
       :param int narg:
           The number of arguments the SQL function can accept.
           If ``-1``, it may take any number of arguments.
@@ -699,6 +764,13 @@ Connection objects
           If ``True``, the created SQL function is marked as
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
+=======
+   By default you will not get any tracebacks in user-defined functions,
+   aggregates, converters, authorizer callbacks etc. If you want to debug them,
+   you can call this function with *flag* set to ``True``. Afterwards, you will
+   get tracebacks from callbacks on ``sys.stderr``. Use :const:`False` to
+   disable the feature again.
+>>>>>>> main
 
       :raises NotSupportedError:
           If *deterministic* is used with SQLite versions older than 3.8.3.
@@ -957,6 +1029,7 @@ Connection objects
       Register callable *trace_callback* to be invoked for each SQL statement
       that is actually executed by the SQLite backend.
 
+<<<<<<< HEAD
       The only argument passed to the callback is the statement (as
       :class:`str`) that is being executed. The return value of the callback is
       ignored. Note that the backend does not only run statements passed to the
@@ -964,14 +1037,15 @@ Connection objects
       :ref:`transaction management <sqlite3-controlling-transactions>` of the
       :mod:`!sqlite3` module and the execution of triggers defined in the current
       database.
+=======
+      The only argument passed to the callback is the statement (as string) that
+      is being executed. The return value of the callback is ignored. Note that
+      the backend does not only run statements passed to the :meth:`Cursor.execute`
+      methods.  Other sources include the transaction management of the Python
+      module and the execution of triggers defined in the current database.
+>>>>>>> main
 
       Passing ``None`` as *trace_callback* will disable the trace callback.
-
-      .. note::
-         Exceptions raised in the trace callback are not propagated. As a
-         development and debugging aid, use
-         :meth:`~sqlite3.enable_callback_tracebacks` to enable printing
-         tracebacks from exceptions raised in the trace callback.
 
       .. versionadded:: 3.3
 
@@ -1031,7 +1105,14 @@ Connection objects
          for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
              print(row)
 
+<<<<<<< HEAD
          con.close()
+=======
+      Using this attribute you can control what objects are returned for the ``TEXT``
+      data type. By default, this attribute is set to :class:`str` and the
+      :mod:`sqlite3` module will return Unicode objects for ``TEXT``. If you want to
+      return bytestrings instead, you can set it to :class:`bytes`.
+>>>>>>> main
 
       .. testoutput:: sqlite3.loadext
          :hide:
@@ -1135,6 +1216,7 @@ Connection objects
 
       .. versionadded:: 3.7
 
+<<<<<<< HEAD
    .. method:: getlimit(category, /)
 
       Get a connection runtime limit.
@@ -1186,6 +1268,9 @@ Connection objects
 
       Example, limit the number of attached databases to 1
       for :class:`Connection` ``con`` (the default limit is 10):
+=======
+.. _sqlite3-cursor-objects:
+>>>>>>> main
 
       .. doctest:: sqlite3.limits
 
@@ -1278,6 +1363,7 @@ Connection objects
 
       See :ref:`sqlite3-transaction-control-autocommit` for more details.
 
+<<<<<<< HEAD
       .. note::
 
          The :attr:`isolation_level` attribute has no effect unless
@@ -1289,6 +1375,9 @@ Connection objects
 
       This read-only attribute corresponds to the low-level SQLite
       `autocommit mode`_.
+=======
+   .. attribute:: rowcount
+>>>>>>> main
 
       ``True`` if a transaction is active (there are uncommitted changes),
       ``False`` otherwise.
@@ -1734,6 +1823,7 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
    If the exception originated from within the SQLite library,
    the following two attributes are added to the exception:
 
+<<<<<<< HEAD
    .. attribute:: sqlite_errorcode
 
       The numeric error code from the
@@ -1755,6 +1845,8 @@ The exception hierarchy is defined by the DB-API 2.0 (:pep:`249`).
    :mod:`!sqlite3` module.
    ``InterfaceError`` is a subclass of :exc:`Error`.
 
+=======
+>>>>>>> main
 .. exception:: DatabaseError
 
    Exception raised for errors that are related to the database.
@@ -2137,9 +2229,12 @@ The following example illustrates the implicit and explicit approaches:
 .. testoutput::
    :hide:
 
+<<<<<<< HEAD
    with declared types: Point(4.0, -3.2)
    with column names: Point(4.0, -3.2)
 
+=======
+>>>>>>> main
 
 .. _sqlite3-adapter-converter-recipes:
 
@@ -2544,5 +2639,13 @@ regardless of the value of :attr:`~Connection.isolation_level`.
 .. _autocommit mode:
    https://www.sqlite.org/lang_transaction.html#implicit_versus_explicit_transactions
 
+<<<<<<< HEAD
 .. _SQLite transaction behaviour:
    https://www.sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions
+=======
+.. [#f1] The sqlite3 module is not built with loadable extension support by
+   default, because some platforms (notably Mac OS X) have SQLite
+   libraries which are compiled without this feature. To get loadable
+   extension support, you must pass the
+   :option:`--enable-loadable-sqlite-extensions` option to configure.
+>>>>>>> main

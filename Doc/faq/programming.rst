@@ -842,6 +842,7 @@ ago?  ``-190 % 12 == 2`` is useful; ``-190 % 12 == -10`` is a bug waiting to
 bite.
 
 
+<<<<<<< HEAD
 How do I get int literal attribute instead of SyntaxError?
 ----------------------------------------------------------
 
@@ -863,6 +864,8 @@ with either a space or parentheses.
    <class 'int'>
 
 
+=======
+>>>>>>> main
 How do I convert a string to a number?
 --------------------------------------
 
@@ -1869,6 +1872,7 @@ For example, here is the implementation of
                 return True
         return False
 
+<<<<<<< HEAD
 
 How can a subclass control what data is stored in an immutable instance?
 ------------------------------------------------------------------------
@@ -1920,6 +1924,8 @@ The classes can be used like this:
 
 .. _faq-cache-method-calls:
 
+=======
+>>>>>>> main
 How do I cache method calls?
 ----------------------------
 
@@ -2116,7 +2122,7 @@ Jim Roskind suggests performing steps in the following order in each module:
 * ``import`` statements
 * active code (including globals that are initialized from imported values).
 
-Van Rossum doesn't like this approach much because the imports appear in a
+van Rossum doesn't like this approach much because the imports appear in a
 strange place, but it does work.
 
 Matthias Urlichs recommends restructuring your code so that the recursive import

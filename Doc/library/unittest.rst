@@ -152,10 +152,6 @@ The above examples show the most commonly used :mod:`unittest` features which
 are sufficient to meet many everyday testing needs.  The remainder of the
 documentation explores the full feature set from first principles.
 
-.. versionchanged:: 3.11
-   The behavior of returning a value from a test method (other than the default
-   ``None`` value), is now deprecated.
-
 
 .. _unittest-command-line-interface:
 
@@ -228,7 +224,7 @@ Command-line options
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
-   match any of the given patterns are included.
+   match of the given patterns are included.
 
    Patterns that contain a wildcard character (``*``) are matched against the
    test name using :meth:`fnmatch.fnmatchcase`; otherwise simple case-sensitive
@@ -1261,6 +1257,9 @@ Test cases
          :meth:`.assertRegex`.
       .. versionadded:: 3.2
          :meth:`.assertNotRegex`.
+      .. versionadded:: 3.5
+         The name ``assertNotRegexpMatches`` is a deprecated alias
+         for :meth:`.assertNotRegex`.
 
 
    .. method:: assertCountEqual(first, second, msg=None)
@@ -1657,6 +1656,40 @@ Test cases
    :mod:`unittest`-based test framework.
 
 
+.. _deprecated-aliases:
+
+Deprecated aliases
+##################
+
+For historical reasons, some of the :class:`TestCase` methods had one or more
+aliases that are now deprecated.  The following table lists the correct names
+along with their deprecated aliases:
+
+   ==============================  ====================== =======================
+    Method Name                     Deprecated alias       Deprecated alias
+   ==============================  ====================== =======================
+    :meth:`.assertEqual`            failUnlessEqual        assertEquals
+    :meth:`.assertNotEqual`         failIfEqual            assertNotEquals
+    :meth:`.assertTrue`             failUnless             assert\_
+    :meth:`.assertFalse`            failIf
+    :meth:`.assertRaises`           failUnlessRaises
+    :meth:`.assertAlmostEqual`      failUnlessAlmostEqual  assertAlmostEquals
+    :meth:`.assertNotAlmostEqual`   failIfAlmostEqual      assertNotAlmostEquals
+    :meth:`.assertRegex`                                   assertRegexpMatches
+    :meth:`.assertNotRegex`                                assertNotRegexpMatches
+    :meth:`.assertRaisesRegex`                             assertRaisesRegexp
+   ==============================  ====================== =======================
+
+   .. deprecated:: 3.1
+         The fail* aliases listed in the second column have been deprecated.
+   .. deprecated:: 3.2
+         The assert* aliases listed in the third column have been deprecated.
+   .. deprecated:: 3.2
+         ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
+         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
+   .. deprecated:: 3.5
+         The ``assertNotRegexpMatches`` name is deprecated in favor of :meth:`.assertNotRegex`.
+
 .. _testsuite-objects:
 
 Grouping tests
@@ -1782,7 +1815,7 @@ Loading and running tests
       case is created for that method instead.
 
 
-   .. method:: loadTestsFromModule(module, *, pattern=None)
+   .. method:: loadTestsFromModule(module, pattern=None)
 
       Return a suite of all test cases contained in the given module. This
       method searches *module* for classes derived from :class:`TestCase` and
@@ -1806,11 +1839,18 @@ Loading and running tests
          Support for ``load_tests`` added.
 
       .. versionchanged:: 3.5
+<<<<<<< HEAD
          Support for a keyword-only argument *pattern* has been added.
 
       .. versionchanged:: 3.12
          The undocumented and unofficial *use_load_tests* parameter has been
          removed.
+=======
+         The undocumented and unofficial *use_load_tests* default argument is
+         deprecated and ignored, although it is still accepted for backward
+         compatibility.  The method also now accepts a keyword-only argument
+         *pattern* which is passed to ``load_tests`` as the third argument.
+>>>>>>> main
 
 
    .. method:: loadTestsFromName(name, module=None)
@@ -2167,6 +2207,8 @@ Loading and running tests
    :class:`TextTestRunner`.
 
    .. versionadded:: 3.2
+      This class was previously named ``_TextTestResult``. The old name still
+      exists as an alias but is deprecated.
 
 
 .. data:: defaultTestLoader
@@ -2189,7 +2231,10 @@ Loading and running tests
    By default this runner shows :exc:`DeprecationWarning`,
    :exc:`PendingDeprecationWarning`, :exc:`ResourceWarning` and
    :exc:`ImportWarning` even if they are :ref:`ignored by default
-   <warning-ignored>`.  This behavior can
+   <warning-ignored>`. Deprecation warnings caused by :ref:`deprecated unittest
+   methods <deprecated-aliases>` are also special-cased and, when the warning
+   filters are ``'default'`` or ``'always'``, they will appear only once
+   per-module, in order to avoid too many warning messages.  This behavior can
    be overridden using Python's :option:`!-Wd` or :option:`!-Wa` options
    (see :ref:`Warning control <using-on-warnings>`) and leaving
    *warnings* to ``None``.

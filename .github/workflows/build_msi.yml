@@ -4,14 +4,44 @@ on:
   workflow_dispatch:
   push:
     branches:
+<<<<<<< HEAD
     - 'main'
+<<<<<<< HEAD
     - '3.*'
+=======
+    - '3.10'
+    - '3.9'
+    - '3.8'
+    - '3.7'
+=======
+    - master
+    - 3.10
+    - 3.9
+    - 3.8
+    - 3.7
+>>>>>>> origin/3.10
+>>>>>>> main
     paths:
     - 'Tools/msi/**'
   pull_request:
     branches:
+<<<<<<< HEAD
     - 'main'
+<<<<<<< HEAD
     - '3.*'
+=======
+    - '3.10'
+    - '3.9'
+    - '3.8'
+    - '3.7'
+=======
+    - master
+    - 3.10
+    - 3.9
+    - 3.8
+    - 3.7
+>>>>>>> origin/3.10
+>>>>>>> main
     paths:
     - 'Tools/msi/**'
 
