@@ -2387,7 +2387,7 @@ Queries now return :class:`!Row` objects:
    6378
 
 You can create a custom :attr:`~Cursor.row_factory`
-that returns each row as a :class:`dict`, mapping column names to values:
+that returns each row as a :class:`dict`, with column names mapped to values:
 
 .. testcode::
 
