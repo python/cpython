@@ -344,7 +344,7 @@ def _flatten_literal_params(parameters):
 
 
 _cleanups = []
-_caches = { }
+_caches = {}
 
 
 def _tp_cache(func=None, /, *, typed=False):
