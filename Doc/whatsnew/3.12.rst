@@ -822,11 +822,6 @@ Porting to Python 3.12
   :class:`bytes` type is accepted for bytes strings.
   (Contributed by Victor Stinner in :gh:`98393`.)
 
-* The :c:macro:`Py_CLEAR`, :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF`
-  macros now only evaluate their argument once. If the argument has side
-  effects, these side effects are no longer duplicated.
-  (Contributed by Victor Stinner in :gh:`98724`.)
-
 Deprecated
 ----------
 

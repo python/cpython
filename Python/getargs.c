@@ -2598,7 +2598,25 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
             current_arg = NULL;
         }
 
-        buf[i + vararg + 1] = current_arg;
+        /* If an arguments is passed in as a keyword argument,
+         * it should be placed before `buf[vararg]`.
+         *
+         * For example:
+         * def f(a, /, b, *args):
+         *     pass
+         * f(1, b=2)
+         *
+         * This `buf` array should be: [1, 2, NULL].
+         * In this case, nargs < vararg.
+         *
+         * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
+         * so the index is `i + 1`. */
+        if (nargs < vararg) {
+            buf[i] = current_arg;
+        }
+        else {
+            buf[i + 1] = current_arg;
+        }
 
         if (current_arg) {
             --nkwargs;

@@ -1165,6 +1165,43 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(str_converter_encoding__doc__,
+"str_converter_encoding($module, a, b, c, /)\n"
+"--\n"
+"\n");
+
+#define STR_CONVERTER_ENCODING_METHODDEF    \
+    {"str_converter_encoding", _PyCFunction_CAST(str_converter_encoding), METH_FASTCALL, str_converter_encoding__doc__},
+
+static PyObject *
+str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
+                            Py_ssize_t c_length);
+
+static PyObject *
+str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+    char *c = NULL;
+    Py_ssize_t c_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "esetet#:str_converter_encoding",
+        "idna", &a, "idna", &b, "idna", &c, &c_length)) {
+        goto exit;
+    }
+    return_value = str_converter_encoding_impl(module, a, b, c, c_length);
+    /* Post parse cleanup for a */
+    PyMem_FREE(a);
+    /* Post parse cleanup for b */
+    PyMem_FREE(b);
+    /* Post parse cleanup for c */
+    PyMem_FREE(c);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(py_buffer_converter__doc__,
 "py_buffer_converter($module, a, b, /)\n"
 "--\n"
@@ -2288,4 +2325,490 @@ keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a9212f8e6ba18bba input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(posonly_vararg__doc__,
+"posonly_vararg($module, a, /, b, *args)\n"
+"--\n"
+"\n");
+
+#define POSONLY_VARARG_METHODDEF    \
+    {"posonly_vararg", _PyCFunction_CAST(posonly_vararg), METH_FASTCALL|METH_KEYWORDS, posonly_vararg__doc__},
+
+static PyObject *
+posonly_vararg_impl(PyObject *module, PyObject *a, PyObject *b,
+                    PyObject *args);
+
+static PyObject *
+posonly_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "posonly_vararg",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject *a;
+    PyObject *b;
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 2, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    __clinic_args = args[2];
+    return_value = posonly_vararg_impl(module, a, b, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(vararg_and_posonly__doc__,
+"vararg_and_posonly($module, a, /, *args)\n"
+"--\n"
+"\n");
+
+#define VARARG_AND_POSONLY_METHODDEF    \
+    {"vararg_and_posonly", _PyCFunction_CAST(vararg_and_posonly), METH_FASTCALL, vararg_and_posonly__doc__},
+
+static PyObject *
+vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args);
+
+static PyObject *
+vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("vararg_and_posonly", nargs, 1, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = PyTuple_New(nargs - 1);
+    for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[1 + i]));
+    }
+    return_value = vararg_and_posonly_impl(module, a, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(vararg__doc__,
+"vararg($module, /, a, *args)\n"
+"--\n"
+"\n");
+
+#define VARARG_METHODDEF    \
+    {"vararg", _PyCFunction_CAST(vararg), METH_FASTCALL|METH_KEYWORDS, vararg__doc__},
+
+static PyObject *
+vararg_impl(PyObject *module, PyObject *a, PyObject *args);
+
+static PyObject *
+vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "vararg",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = args[1];
+    return_value = vararg_impl(module, a, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(vararg_with_default__doc__,
+"vararg_with_default($module, /, a, *args, b=False)\n"
+"--\n"
+"\n");
+
+#define VARARG_WITH_DEFAULT_METHODDEF    \
+    {"vararg_with_default", _PyCFunction_CAST(vararg_with_default), METH_FASTCALL|METH_KEYWORDS, vararg_with_default__doc__},
+
+static PyObject *
+vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
+                         int b);
+
+static PyObject *
+vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "vararg_with_default",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *a;
+    PyObject *__clinic_args = NULL;
+    int b = 0;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    __clinic_args = args[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    b = PyObject_IsTrue(args[2]);
+    if (b < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = vararg_with_default_impl(module, a, __clinic_args, b);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(vararg_with_only_defaults__doc__,
+"vararg_with_only_defaults($module, /, *args, b=None)\n"
+"--\n"
+"\n");
+
+#define VARARG_WITH_ONLY_DEFAULTS_METHODDEF    \
+    {"vararg_with_only_defaults", _PyCFunction_CAST(vararg_with_only_defaults), METH_FASTCALL|METH_KEYWORDS, vararg_with_only_defaults__doc__},
+
+static PyObject *
+vararg_with_only_defaults_impl(PyObject *module, PyObject *args, PyObject *b);
+
+static PyObject *
+vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"b", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "vararg_with_only_defaults",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *__clinic_args = NULL;
+    PyObject *b = Py_None;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    b = args[1];
+skip_optional_kwonly:
+    return_value = vararg_with_only_defaults_impl(module, __clinic_args, b);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(gh_32092_oob__doc__,
+"gh_32092_oob($module, /, pos1, pos2, *varargs, kw1=None, kw2=None)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-32092 OOB bug.");
+
+#define GH_32092_OOB_METHODDEF    \
+    {"gh_32092_oob", _PyCFunction_CAST(gh_32092_oob), METH_FASTCALL|METH_KEYWORDS, gh_32092_oob__doc__},
+
+static PyObject *
+gh_32092_oob_impl(PyObject *module, PyObject *pos1, PyObject *pos2,
+                  PyObject *varargs, PyObject *kw1, PyObject *kw2);
+
+static PyObject *
+gh_32092_oob(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(pos1), &_Py_ID(pos2), &_Py_ID(kw1), &_Py_ID(kw2), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pos1", "pos2", "kw1", "kw2", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "gh_32092_oob",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = Py_MIN(nargs, 2) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *pos1;
+    PyObject *pos2;
+    PyObject *varargs = NULL;
+    PyObject *kw1 = Py_None;
+    PyObject *kw2 = Py_None;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, 2, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pos1 = args[0];
+    pos2 = args[1];
+    varargs = args[2];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[3]) {
+        kw1 = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    kw2 = args[4];
+skip_optional_kwonly:
+    return_value = gh_32092_oob_impl(module, pos1, pos2, varargs, kw1, kw2);
+
+exit:
+    Py_XDECREF(varargs);
+    return return_value;
+}
+
+PyDoc_STRVAR(gh_32092_kw_pass__doc__,
+"gh_32092_kw_pass($module, /, pos, *args, kw=None)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-32092 keyword args passing bug.");
+
+#define GH_32092_KW_PASS_METHODDEF    \
+    {"gh_32092_kw_pass", _PyCFunction_CAST(gh_32092_kw_pass), METH_FASTCALL|METH_KEYWORDS, gh_32092_kw_pass__doc__},
+
+static PyObject *
+gh_32092_kw_pass_impl(PyObject *module, PyObject *pos, PyObject *args,
+                      PyObject *kw);
+
+static PyObject *
+gh_32092_kw_pass(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(pos), &_Py_ID(kw), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pos", "kw", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "gh_32092_kw_pass",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *pos;
+    PyObject *__clinic_args = NULL;
+    PyObject *kw = Py_None;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pos = args[0];
+    __clinic_args = args[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    kw = args[2];
+skip_optional_kwonly:
+    return_value = gh_32092_kw_pass_impl(module, pos, __clinic_args, kw);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(gh_99233_refcount__doc__,
+"gh_99233_refcount($module, /, *args)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-99233 refcount error bug.");
+
+#define GH_99233_REFCOUNT_METHODDEF    \
+    {"gh_99233_refcount", _PyCFunction_CAST(gh_99233_refcount), METH_FASTCALL, gh_99233_refcount__doc__},
+
+static PyObject *
+gh_99233_refcount_impl(PyObject *module, PyObject *args);
+
+static PyObject *
+gh_99233_refcount(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("gh_99233_refcount", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = gh_99233_refcount_impl(module, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(gh_99240_double_free__doc__,
+"gh_99240_double_free($module, a, b, /)\n"
+"--\n"
+"\n"
+"Proof-of-concept of GH-99240 double-free bug.");
+
+#define GH_99240_DOUBLE_FREE_METHODDEF    \
+    {"gh_99240_double_free", _PyCFunction_CAST(gh_99240_double_free), METH_FASTCALL, gh_99240_double_free__doc__},
+
+static PyObject *
+gh_99240_double_free_impl(PyObject *module, char *a, char *b);
+
+static PyObject *
+gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    char *a = NULL;
+    char *b = NULL;
+
+    if (!_PyArg_ParseStack(args, nargs, "eses:gh_99240_double_free",
+        "idna", &a, "idna", &b)) {
+        goto exit;
+    }
+    return_value = gh_99240_double_free_impl(module, a, b);
+    /* Post parse cleanup for a */
+    PyMem_FREE(a);
+    /* Post parse cleanup for b */
+    PyMem_FREE(b);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=9a5ca5909c087102 input=a9049054013a1b77]*/
