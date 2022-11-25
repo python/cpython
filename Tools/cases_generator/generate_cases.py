@@ -271,9 +271,6 @@ class Component:
                 out.assign(var, oeffect)
 
 
-# TODO: Use a common base class for {Super,Macro}Instruction
-
-
 @dataclasses.dataclass
 class SuperOrMacroInstruction:
     """Common fields for super- and macro instructions."""
@@ -469,22 +466,9 @@ class Analyzer:
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
         parts: list[Component] = []
-        for component in components:
-            match component:
-                case parser.CacheEffect() as ceffect:
-                    parts.append(ceffect)
-                case Instruction() as instr:
-                    input_mapping: StackEffectMapping = []
-                    for ieffect in reversed(instr.input_effects):
-                        sp -= 1
-                        input_mapping.append((stack[sp], ieffect))
-                    output_mapping: StackEffectMapping = []
-                    for oeffect in instr.output_effects:
-                        output_mapping.append((stack[sp], oeffect))
-                        sp += 1
-                    parts.append(Component(instr, input_mapping, output_mapping))
-                case _:
-                    typing.assert_never(component)
+        for instr in components:
+            part, sp = self.analyze_instruction(instr, stack, sp)
+            parts.append(part)
         final_sp = sp
         return SuperInstruction(super.name, stack, initial_sp, final_sp, super, parts)
 
@@ -498,19 +482,25 @@ class Analyzer:
                 case parser.CacheEffect() as ceffect:
                     parts.append(ceffect)
                 case Instruction() as instr:
-                    input_mapping: StackEffectMapping = []
-                    for ieffect in reversed(instr.input_effects):
-                        sp -= 1
-                        input_mapping.append((stack[sp], ieffect))
-                    output_mapping: StackEffectMapping = []
-                    for oeffect in instr.output_effects:
-                        output_mapping.append((stack[sp], oeffect))
-                        sp += 1
-                    parts.append(Component(instr, input_mapping, output_mapping))
+                    part, sp = self.analyze_instruction(instr, stack, sp)
+                    parts.append(part)
                 case _:
                     typing.assert_never(component)
         final_sp = sp
         return MacroInstruction(macro.name, stack, initial_sp, final_sp, macro, parts)
+
+    def analyze_instruction(
+        self, instr: Instruction, stack: list[StackEffect], sp: int
+    ) -> tuple[Component, int]:
+        input_mapping: StackEffectMapping = []
+        for ieffect in reversed(instr.input_effects):
+            sp -= 1
+            input_mapping.append((stack[sp], ieffect))
+        output_mapping: StackEffectMapping = []
+        for oeffect in instr.output_effects:
+            output_mapping.append((stack[sp], oeffect))
+            sp += 1
+        return Component(instr, input_mapping, output_mapping), sp
 
     def check_super_components(self, super: parser.Super) -> list[Instruction]:
         components: list[Instruction] = []
