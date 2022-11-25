@@ -656,8 +656,7 @@ class _BasePurePathTest(object):
         # With several args.
         with self.assertWarns(DeprecationWarning):
             p.relative_to('a', 'b')
-        self.assertEqual(p.relative_to('a', 'b'), P())
-        self.assertEqual(p.relative_to('a', 'b', walk_up=True), P())
+            p.relative_to('a', 'b', walk_up=True)
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('c'))
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
