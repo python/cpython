@@ -69,7 +69,7 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`digest` to an externally-supplied
+      When comparing the output of :meth:`digest` to an externally supplied
       digest during a verification routine, it is recommended to use the
       :func:`compare_digest` function instead of the ``==`` operator
       to reduce the vulnerability to timing attacks.
@@ -83,7 +83,7 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`hexdigest` to an externally-supplied
+      When comparing the output of :meth:`hexdigest` to an externally supplied
       digest during a verification routine, it is recommended to use the
       :func:`compare_digest` function instead of the ``==`` operator
       to reduce the vulnerability to timing attacks.
@@ -137,6 +137,11 @@ This module also provides the following helper function:
       types and lengths of *a* and *b*—but not their values.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+
+      The function uses OpenSSL's ``CRYPTO_memcmp()`` internally when
+      available.
 
 
 .. seealso::
