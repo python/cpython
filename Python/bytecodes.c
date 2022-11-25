@@ -1151,15 +1151,11 @@ dummy_func(
             ERROR_IF(err != 0, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(STORE_GLOBAL) {
+        inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *v = POP();
-            int err;
-            err = PyDict_SetItem(GLOBALS(), name, v);
+            int err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
-            if (err != 0)
-                goto error;
+            ERROR_IF(err != 0, error);
         }
 
         inst(DELETE_GLOBAL, (--)) {

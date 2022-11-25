@@ -1128,13 +1128,12 @@
         }
 
         TARGET(STORE_GLOBAL) {
+            PyObject *v = PEEK(1);
             PyObject *name = GETITEM(names, oparg);
-            PyObject *v = POP();
-            int err;
-            err = PyDict_SetItem(GLOBALS(), name, v);
+            int err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
-            if (err != 0)
-                goto error;
+            if (err != 0) goto pop_1_error;
+            STACK_SHRINK(1);
             DISPATCH();
         }
 
