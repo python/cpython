@@ -2386,14 +2386,18 @@ Queries now return :class:`!Row` objects:
    >>> row["RADIUS"]  # Column names are case-insensitive.
    6378
 
-To create and use a custom :attr:`~Cursor.row_factory`,
-in this case returning a :class:`dict` mapping column names to values:
+You can create a custom :attr:`~Cursor.row_factory`
+that returns each row as a :class:`dict`, mapping column names to values:
+
+.. testcode::
+
+   def dict_factory(cursor, row):
+       fields = [column[0] for column in cursor.description]
+       return {key: value for key, value in zip(fields, row)}
+
+Using it, queries now return a :class:`!dict` instead of a :class:`!tuple`:
 
 .. doctest::
-
-   >>> def dict_factory(cursor, row):
-   ...     col_names = [column[0] for column in cursor.description]
-   ...     return {key: value for key, value in zip(col_names, row)}
 
    >>> con = sqlite3.connect(":memory:")
    >>> con.row_factory = dict_factory
