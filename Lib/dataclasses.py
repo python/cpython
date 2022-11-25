@@ -320,15 +320,25 @@ class _DataclassParams:
                  'order',
                  'unsafe_hash',
                  'frozen',
+                 'match_args',
+                 'kw_only',
+                 'slots',
+                 'weakref_slot',
                  )
 
-    def __init__(self, init, repr, eq, order, unsafe_hash, frozen):
+    def __init__(self,
+                 init, repr, eq, order, unsafe_hash, frozen,
+                 match_args, kw_only, slots, weakref_slot):
         self.init = init
         self.repr = repr
         self.eq = eq
         self.order = order
         self.unsafe_hash = unsafe_hash
         self.frozen = frozen
+        self.match_args = match_args
+        self.kw_only = kw_only
+        self.slots = slots
+        self.weakref_slot = weakref_slot
 
     def __repr__(self):
         return ('_DataclassParams('
@@ -337,7 +347,11 @@ class _DataclassParams:
                 f'eq={self.eq!r},'
                 f'order={self.order!r},'
                 f'unsafe_hash={self.unsafe_hash!r},'
-                f'frozen={self.frozen!r}'
+                f'frozen={self.frozen!r},'
+                f'match_args={self.match_args!r},'
+                f'kw_only={self.kw_only!r},'
+                f'slots={self.slots!r},'
+                f'weakref_slot={self.weakref_slot!r}'
                 ')')
 
 
@@ -412,13 +426,11 @@ def _recursive_repr(user_function):
 
 def _create_fn(name, args, body, *, globals=None, locals=None,
                return_type=MISSING):
-    # Note that we mutate locals when exec() is called.  Caller
-    # beware!  The only callers are internal to this module, so no
+    # Note that we may mutate locals. Callers beware!
+    # The only callers are internal to this module, so no
     # worries about external callers.
     if locals is None:
         locals = {}
-    if 'BUILTINS' not in locals:
-        locals['BUILTINS'] = builtins
     return_annotation = ''
     if return_type is not MISSING:
         locals['_return_type'] = return_type
@@ -429,6 +441,10 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # Compute the text of the entire function.
     txt = f' def {name}({args}){return_annotation}:\n{body}'
 
+    # Free variables in exec are resolved in the global namespace.
+    # The global namespace we have is user-provided, so we can't modify it for
+    # our purposes. So we put the things we need into locals and introduce a
+    # scope to allow the function we're creating to close over them.
     local_vars = ', '.join(locals.keys())
     txt = f"def __create_fn__({local_vars}):\n{txt}\n return {name}"
     ns = {}
@@ -444,7 +460,7 @@ def _field_assign(frozen, name, value, self_name):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'BUILTINS.object.__setattr__({self_name},{name!r},{value})'
+        return f'__dataclass_builtins_object__.__setattr__({self_name},{name!r},{value})'
     return f'{self_name}.{name}={value}'
 
 
@@ -551,6 +567,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     locals.update({
         'MISSING': MISSING,
         '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY,
+        '__dataclass_builtins_object__': object,
     })
 
     body_lines = []
@@ -901,7 +918,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         globals = {}
 
     setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order,
-                                           unsafe_hash, frozen))
+                                           unsafe_hash, frozen,
+                                           match_args, kw_only,
+                                           slots, weakref_slot))
 
     # Find our base classes in reverse MRO order, and exclude
     # ourselves.  In reversed order so that more derived classes
@@ -920,10 +939,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             if getattr(b, _PARAMS).frozen:
                 any_frozen_base = True
 
-    # Annotations that are defined in this class (not in base
-    # classes).  If __annotations__ isn't present, then this class
-    # adds no new annotations.  We use this to compute fields that are
-    # added by this class.
+    # Annotations defined specifically in this class (not in base classes).
     #
     # Fields are found from cls_annotations, which is guaranteed to be
     # ordered.  Default values are from class attributes, if a field
@@ -932,7 +948,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # actual default value.  Pseudo-fields ClassVars and InitVars are
     # included, despite the fact that they're not real fields.  That's
     # dealt with later.
-    cls_annotations = cls.__dict__.get('__annotations__', {})
+    cls_annotations = inspect.get_annotations(cls)
 
     # Now find fields in our class.  While doing so, validate some
     # things, and set the default values (as class attributes) where
@@ -1193,19 +1209,18 @@ def _add_slots(cls, is_frozen, weakref_slot):
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
               unsafe_hash=False, frozen=False, match_args=True,
               kw_only=False, slots=False, weakref_slot=False):
-    """Returns the same class as was passed in, with dunder methods
-    added based on the fields defined in the class.
+    """Add dunder methods based on the fields defined in the class.
 
     Examines PEP 526 __annotations__ to determine fields.
 
-    If init is true, an __init__() method is added to the class. If
-    repr is true, a __repr__() method is added. If order is true, rich
+    If init is true, an __init__() method is added to the class. If repr
+    is true, a __repr__() method is added. If order is true, rich
     comparison dunder methods are added. If unsafe_hash is true, a
-    __hash__() method function is added. If frozen is true, fields may
-    not be assigned to after instance creation. If match_args is true,
-    the __match_args__ tuple is added. If kw_only is true, then by
-    default all fields are keyword-only. If slots is true, an
-    __slots__ attribute is added.
+    __hash__() method is added. If frozen is true, fields may not be
+    assigned to after instance creation. If match_args is true, the
+    __match_args__ tuple is added. If kw_only is true, then by default
+    all fields are keyword-only. If slots is true, a new class with a
+    __slots__ attribute is returned.
     """
 
     def wrap(cls):
@@ -1256,7 +1271,7 @@ def asdict(obj, *, dict_factory=dict):
     """Return the fields of a dataclass instance as a new dictionary mapping
     field names to field values.
 
-    Example usage:
+    Example usage::
 
       @dataclass
       class C:
@@ -1309,6 +1324,14 @@ def _asdict_inner(obj, dict_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
+    elif isinstance(obj, dict) and hasattr(type(obj), 'default_factory'):
+        # obj is a defaultdict, which has a different constructor from
+        # dict as it requires the default_factory as its first arg.
+        # https://bugs.python.org/issue35540
+        result = type(obj)(getattr(obj, 'default_factory'))
+        for k, v in obj.items():
+            result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
+        return result
     elif isinstance(obj, dict):
         return type(obj)((_asdict_inner(k, dict_factory),
                           _asdict_inner(v, dict_factory))
@@ -1327,8 +1350,8 @@ def astuple(obj, *, tuple_factory=tuple):
           x: int
           y: int
 
-    c = C(1, 2)
-    assert astuple(c) == (1, 2)
+      c = C(1, 2)
+      assert astuple(c) == (1, 2)
 
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
@@ -1377,11 +1400,11 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     The dataclass name will be 'cls_name'.  'fields' is an iterable
     of either (name), (name, type) or (name, type, Field) objects. If type is
     omitted, use the string 'typing.Any'.  Field objects are created by
-    the equivalent of calling 'field(name, type [, Field-info])'.
+    the equivalent of calling 'field(name, type [, Field-info])'.::
 
       C = make_dataclass('C', ['x', ('y', int), ('z', int, field(init=False))], bases=(Base,))
 
-    is equivalent to:
+    is equivalent to::
 
       @dataclass
       class C(Base):
@@ -1445,7 +1468,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 def replace(obj, /, **changes):
     """Return a new object replacing specified fields with new values.
 
-    This is especially useful for frozen classes.  Example usage:
+    This is especially useful for frozen classes.  Example usage::
 
       @dataclass(frozen=True)
       class C:
@@ -1455,7 +1478,7 @@ def replace(obj, /, **changes):
       c = C(1, 2)
       c1 = replace(c, x=3)
       assert c1.x == 3 and c1.y == 2
-      """
+    """
 
     # We're going to mutate 'changes', but that's okay because it's a
     # new dict, even if called with 'replace(obj, **my_changes)'.

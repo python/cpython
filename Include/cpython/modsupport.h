@@ -51,6 +51,7 @@ PyAPI_FUNC(PyObject **) _Py_VaBuildStack(
     Py_ssize_t *p_nargs);
 
 typedef struct _PyArg_Parser {
+    int initialized;
     const char *format;
     const char * const *keywords;
     const char *fname;
@@ -105,5 +106,3 @@ PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywordsWithVararg(
                            (minpos), (maxpos), (minkw), (buf)))
 
 PyAPI_FUNC(PyObject *) _PyModule_CreateInitialized(PyModuleDef*, int apiver);
-
-PyAPI_DATA(const char *) _Py_PackageContext;

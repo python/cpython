@@ -340,7 +340,7 @@ class LogRecord(object):
         self.lineno = lineno
         self.funcName = func
         self.created = ct
-        self.msecs = (ct - int(ct)) * 1000
+        self.msecs = int((ct - int(ct)) * 1000) + 0.0  # see gh-89047
         self.relativeCreated = (self.created - _startTime) * 1000
         if logThreads:
             self.thread = threading.get_ident()
@@ -833,17 +833,17 @@ class Filterer(object):
         Determine if a record is loggable by consulting all the filters.
 
         The default is to allow the record to be logged; any filter can veto
-        this by returning a falsy value.
+        this by returning a false value.
         If a filter attached to a handler returns a log record instance,
         then that instance is used in place of the original log record in
         any further processing of the event by that handler.
-        If a filter returns any other truthy value, the original log record
+        If a filter returns any other true value, the original log record
         is used in any further processing of the event by that handler.
 
-        If none of the filters return falsy values, this method returns
+        If none of the filters return false values, this method returns
         a log record.
-        If any of the filters return a falsy value, this method returns
-        a falsy value.
+        If any of the filters return a false value, this method returns
+        a false value.
 
         .. versionchanged:: 3.2
 
@@ -1017,7 +1017,7 @@ class Handler(Filterer):
         the I/O thread lock.
 
         Returns an instance of the log record that was emitted
-        if it passed all filters, otherwise a falsy value is returned.
+        if it passed all filters, otherwise a false value is returned.
         """
         rv = self.filter(record)
         if isinstance(rv, LogRecord):
@@ -1828,6 +1828,25 @@ class Logger(Filterer):
             suffix = '.'.join((self.name, suffix))
         return self.manager.getLogger(suffix)
 
+    def getChildren(self):
+
+        def _hierlevel(logger):
+            if logger is logger.manager.root:
+                return 0
+            return 1 + logger.name.count('.')
+
+        d = self.manager.loggerDict
+        _acquireLock()
+        try:
+            # exclude PlaceHolders - the last check is to ensure that lower-level
+            # descendants aren't returned - if there are placeholders, a logger's
+            # parent field might point to a grandparent or ancestor thereof.
+            return set(item for item in d.values()
+                       if isinstance(item, Logger) and item.parent is self and
+                       _hierlevel(item) == 1 + _hierlevel(item.parent))
+        finally:
+            _releaseLock()
+
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
         return '<%s %s (%s)>' % (self.__class__.__name__, self.name, level)
@@ -2245,7 +2264,11 @@ def shutdown(handlerList=_handlerList):
             if h:
                 try:
                     h.acquire()
-                    h.flush()
+                    # MemoryHandlers might not want to be flushed on close,
+                    # but circular imports prevent us scoping this to just
+                    # those handlers.  hence the default to True.
+                    if getattr(h, 'flushOnClose', True):
+                        h.flush()
                     h.close()
                 except (OSError, ValueError):
                     # Ignore errors which might be caused

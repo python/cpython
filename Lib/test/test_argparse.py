@@ -296,7 +296,7 @@ class TestOptionalsSingleDashCombined(ParserTestCase):
         Sig('-z'),
     ]
     failures = ['a', '--foo', '-xa', '-x --foo', '-x -z', '-z -x',
-                '-yx', '-yz a', '-yyyx', '-yyyza', '-xyza']
+                '-yx', '-yz a', '-yyyx', '-yyyza', '-xyza', '-x=']
     successes = [
         ('', NS(x=False, yyy=None, z=None)),
         ('-x', NS(x=True, yyy=None, z=None)),
@@ -5229,6 +5229,13 @@ class TestParseKnownArgs(TestCase):
         args, extras = parser.parse_known_args(argv)
         self.assertEqual(NS(v=3, spam=True, badger="B"), args)
         self.assertEqual(["C", "--foo", "4"], extras)
+
+    def test_zero_or_more_optional(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('x', nargs='*', choices=('x', 'y'))
+        args = parser.parse_args([])
+        self.assertEqual(NS(x=[]), args)
+
 
 # ===========================
 # parse_intermixed_args tests
