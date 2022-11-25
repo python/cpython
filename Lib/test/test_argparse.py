@@ -2192,10 +2192,22 @@ class TestAddSubparsers(TestCase):
         subparsers.add_parser('foo')
         subparsers.add_parser('bar')
         with self.assertRaises(ArgumentParserError) as excinfo:
+            parser.parse_args(('test',))
+        self.assertRegex(
+            excinfo.exception.stderr,
+            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$"
+        )
+
+    def test_wrong_argument_subparsers_no_destination_error_with_closest_choice_input(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('foo')
+        subparsers.add_parser('bar')
+        with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('baz',))
         self.assertRegex(
             excinfo.exception.stderr,
-            r"error: argument {foo,bar}: invalid choice: 'baz' \(choose from 'foo', 'bar'\)\n$",
+            r"error: argument {foo,bar}: invalid choice: 'baz', maybe you meant bar? \(choose from 'foo', 'bar'\)\n$",
         )
 
     def test_optional_subparsers(self):
