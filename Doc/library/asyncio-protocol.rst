@@ -23,10 +23,10 @@ This documentation page covers both `Transports`_ and `Protocols`_.
 
 .. rubric:: Introduction
 
-The transport is an interface for a closable source of raw bytes,
+The transport is an interface for a source of raw bytes,
 while the protocol represents a consumer of these bytes that may answer back.
 
-The protocol object may either generate and consume data by its own (like a
+The protocol object may either generate and consume data on its own (like a
 fallback background sender behind :func:`~asyncio.loop.sendfile`), be an
 adapter for another I/O interface (like the
 :func:`~asyncio.StreamReader`/:func:`~asyncio.StreamWriter` backend),
