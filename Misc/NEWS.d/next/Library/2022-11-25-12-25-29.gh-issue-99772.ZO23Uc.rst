@@ -1,0 +1,1 @@
+Fix compare operations for datetime.time values with microseconds resolution in utcoffset.
