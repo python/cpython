@@ -2164,8 +2164,7 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
     _structmodulestate *state = get_struct_state(module);
 
     if (fmt == NULL) {
-        Py_DECREF(*ptr);
-        *ptr = NULL;
+        Py_SETREF(*ptr, NULL);
         return 1;
     }
 

@@ -155,6 +155,7 @@
     <ClInclude Include="..\Include\cpython\listobject.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
+    <ClInclude Include="..\Include\cpython\memoryobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
     <ClInclude Include="..\Include\cpython\modsupport.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
