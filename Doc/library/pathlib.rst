@@ -504,8 +504,8 @@ Pure paths provide the following methods and properties:
 
    .. deprecated:: 3.12
 
-      Support for supplying additional arguments is deprecated; if supplied,
-      they are joined with *other*.
+      Passing additional arguments is deprecated; if supplied, they are joined
+      with *other*.
 
 .. method:: PurePath.is_reserved()
 
@@ -611,8 +611,8 @@ Pure paths provide the following methods and properties:
 
    .. deprecated:: 3.12
 
-      Passing additional arguments is deprecated; if supplied, they are joined
-      with *other*.
+      Passing additional positional arguments is deprecated; if supplied,
+      they are joined with *other*.
 
 .. method:: PurePath.with_name(name)
 
