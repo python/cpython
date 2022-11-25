@@ -1118,13 +1118,12 @@
         }
 
         TARGET(DELETE_ATTR) {
+            PyObject *owner = PEEK(1);
             PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = POP();
-            int err;
-            err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
             Py_DECREF(owner);
-            if (err != 0)
-                goto error;
+            if (err != 0) goto pop_1_error;
+            STACK_SHRINK(1);
             DISPATCH();
         }
 

@@ -1144,15 +1144,11 @@ dummy_func(
             ERROR_IF(err != 0, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(DELETE_ATTR) {
+        inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = POP();
-            int err;
-            err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
             Py_DECREF(owner);
-            if (err != 0)
-                goto error;
+            ERROR_IF(err != 0, error);
         }
 
         // stack effect: (__0 -- )
