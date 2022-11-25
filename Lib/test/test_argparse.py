@@ -2197,7 +2197,7 @@ class TestAddSubparsers(TestCase):
         self.assertEqual(
             excinfo.exception.stderr,
             "usage: __main__.py [-h] {foo,bar} ...\n__main__.py: error:"
-            "argument {foo,bar}: invalid choice: 'baz', maybe you meant"
+            " argument {foo,bar}: invalid choice: 'baz', maybe you meant"
             " 'bar'? (choose from 'foo', 'bar')\n"
         )
 
