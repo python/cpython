@@ -1182,10 +1182,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('/Foo'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('C:/Foo'), walk_up=True)
         p = P('C:/Foo/Bar')
-        self.assertEqual(p.relative_to(P('c:')), P('/Foo/Bar'))
-        self.assertEqual(p.relative_to('c:'), P('/Foo/Bar'))
-        self.assertEqual(str(p.relative_to(P('c:'))), '\\Foo\\Bar')
-        self.assertEqual(str(p.relative_to('c:')), '\\Foo\\Bar')
         self.assertEqual(p.relative_to(P('c:/')), P('Foo/Bar'))
         self.assertEqual(p.relative_to('c:/'), P('Foo/Bar'))
         self.assertEqual(p.relative_to(P('c:/foO')), P('Bar'))
@@ -1193,10 +1189,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p.relative_to('c:/foO/'), P('Bar'))
         self.assertEqual(p.relative_to(P('c:/foO/baR')), P())
         self.assertEqual(p.relative_to('c:/foO/baR'), P())
-        self.assertEqual(p.relative_to(P('c:'), walk_up=True), P('/Foo/Bar'))
-        self.assertEqual(p.relative_to('c:', walk_up=True), P('/Foo/Bar'))
-        self.assertEqual(str(p.relative_to(P('c:'), walk_up=True)), '\\Foo\\Bar')
-        self.assertEqual(str(p.relative_to('c:', walk_up=True)), '\\Foo\\Bar')
         self.assertEqual(p.relative_to(P('c:/'), walk_up=True), P('Foo/Bar'))
         self.assertEqual(p.relative_to('c:/', walk_up=True), P('Foo/Bar'))
         self.assertEqual(p.relative_to(P('c:/foO'), walk_up=True), P('Bar'))
@@ -1208,6 +1200,8 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p.relative_to('C:/Foo/Bar/Baz', walk_up=True), P('..'))
         self.assertEqual(p.relative_to('C:/Foo/Baz', walk_up=True), P('../Bar'))
         # Unrelated paths.
+        self.assertRaises(ValueError, p.relative_to, 'c:')
+        self.assertRaises(ValueError, p.relative_to, P('c:'))
         self.assertRaises(ValueError, p.relative_to, P('C:/Baz'))
         self.assertRaises(ValueError, p.relative_to, P('C:/Foo/Bar/Baz'))
         self.assertRaises(ValueError, p.relative_to, P('C:/Foo/Baz'))
@@ -1217,6 +1211,8 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('/'))
         self.assertRaises(ValueError, p.relative_to, P('/Foo'))
         self.assertRaises(ValueError, p.relative_to, P('//C/Foo'))
+        self.assertRaises(ValueError, p.relative_to, 'c:', walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('c:'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('C:Foo'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('d:'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('d:/'), walk_up=True)
@@ -1274,13 +1270,13 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertFalse(p.is_relative_to(P('C:Foo/Bar/Baz')))
         self.assertFalse(p.is_relative_to(P('C:Foo/Baz')))
         p = P('C:/Foo/Bar')
-        self.assertTrue(p.is_relative_to('c:'))
         self.assertTrue(p.is_relative_to(P('c:/')))
         self.assertTrue(p.is_relative_to(P('c:/foO')))
         self.assertTrue(p.is_relative_to('c:/foO/'))
         self.assertTrue(p.is_relative_to(P('c:/foO/baR')))
         self.assertTrue(p.is_relative_to('c:/foO/baR'))
         # Unrelated paths.
+        self.assertFalse(p.is_relative_to('c:'))
         self.assertFalse(p.is_relative_to(P('C:/Baz')))
         self.assertFalse(p.is_relative_to(P('C:/Foo/Bar/Baz')))
         self.assertFalse(p.is_relative_to(P('C:/Foo/Baz')))
@@ -2409,6 +2405,13 @@ class _BasePathTest(object):
         if os_helper.can_symlink():
             self.assertIs((P / 'linkA\udfff').is_file(), False)
             self.assertIs((P / 'linkA\x00').is_file(), False)
+
+    def test_is_junction(self):
+        P = self.cls(BASE)
+
+        with mock.patch.object(P._flavour, 'isjunction'):
+            self.assertEqual(P.is_junction(), P._flavour.isjunction.return_value)
+            P._flavour.isjunction.assert_called_once_with(P)
 
     def test_is_fifo_false(self):
         P = self.cls(BASE)

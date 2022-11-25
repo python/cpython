@@ -2109,9 +2109,7 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
                 changed = 1;
         }
         if (!changed && PyBytes_CheckExact(input_obj)) {
-            Py_INCREF(input_obj);
-            Py_DECREF(result);
-            result = input_obj;
+            Py_SETREF(result, Py_NewRef(input_obj));
         }
         PyBuffer_Release(&del_table_view);
         PyBuffer_Release(&table_view);

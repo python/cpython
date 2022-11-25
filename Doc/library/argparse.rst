@@ -1945,7 +1945,7 @@ Argument groups
 .. method:: ArgumentParser.add_argument_group(title=None, description=None)
 
    By default, :class:`ArgumentParser` groups command-line arguments into
-   "positional arguments" and "optional arguments" when displaying help
+   "positional arguments" and "options" when displaying help
    messages. When there is a better conceptual grouping of arguments than this
    default one, appropriate groups can be created using the
    :meth:`add_argument_group` method::

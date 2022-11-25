@@ -112,10 +112,11 @@ comment_re = r'//.*|/\*([^*]|\*[^/])*\*/'
 COMMENT = 'COMMENT'
 
 newline = r"\n"
-matcher = re.compile(choice(id_re, number_re, str_re, char, newline, macro, comment_re, *operators.values()))
+invalid = r"\S"  # A single non-space character that's not caught by any of the other patterns
+matcher = re.compile(choice(id_re, number_re, str_re, char, newline, macro, comment_re, *operators.values(), invalid))
 letter = re.compile(r'[a-zA-Z_]')
 
-keywords = (
+kwds = (
     'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
     'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
     'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
@@ -124,9 +125,9 @@ keywords = (
     'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',
     'VOLATILE', 'WHILE'
 )
-for name in keywords:
+for name in kwds:
     globals()[name] = name
-keywords = { name.lower() : name for name in keywords }
+keywords = { name.lower() : name for name in kwds }
 
 
 def make_syntax_error(
@@ -177,7 +178,6 @@ class Token:
 
 def tokenize(src, line=1, filename=None):
     linestart = -1
-    # TODO: finditer() skips over unrecognized characters, e.g. '@'
     for m in matcher.finditer(src):
         start, end = m.span()
         text = m.group(0)

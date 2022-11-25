@@ -4,6 +4,7 @@
 #include "pycore_call.h"
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
+#include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
@@ -1212,8 +1213,7 @@ type_repr(PyTypeObject *type)
     if (mod == NULL)
         PyErr_Clear();
     else if (!PyUnicode_Check(mod)) {
-        Py_DECREF(mod);
-        mod = NULL;
+        Py_SETREF(mod, NULL);
     }
     name = type_qualname(type, NULL);
     if (name == NULL) {
@@ -1287,8 +1287,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
         int res = type->tp_init(obj, args, kwds);
         if (res < 0) {
             assert(_PyErr_Occurred(tstate));
-            Py_DECREF(obj);
-            obj = NULL;
+            Py_SETREF(obj, NULL);
         }
         else {
             assert(!_PyErr_Occurred(tstate));
@@ -5006,8 +5005,7 @@ object_repr(PyObject *self)
     if (mod == NULL)
         PyErr_Clear();
     else if (!PyUnicode_Check(mod)) {
-        Py_DECREF(mod);
-        mod = NULL;
+        Py_SETREF(mod, NULL);
     }
     name = type_qualname(type, NULL);
     if (name == NULL) {
@@ -5437,8 +5435,7 @@ object_getstate_default(PyObject *obj, int required)
         for (i = 0; i < slotnames_size; i++) {
             PyObject *name, *value;
 
-            name = PyList_GET_ITEM(slotnames, i);
-            Py_INCREF(name);
+            name = Py_NewRef(PyList_GET_ITEM(slotnames, i));
             if (_PyObject_LookupAttr(obj, name, &value) < 0) {
                 Py_DECREF(name);
                 goto error;
@@ -5570,10 +5567,8 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
             Py_DECREF(newargs);
             return -1;
         }
-        *args = PyTuple_GET_ITEM(newargs, 0);
-        Py_INCREF(*args);
-        *kwargs = PyTuple_GET_ITEM(newargs, 1);
-        Py_INCREF(*kwargs);
+        *args = Py_NewRef(PyTuple_GET_ITEM(newargs, 0));
+        *kwargs = Py_NewRef(PyTuple_GET_ITEM(newargs, 1));
         Py_DECREF(newargs);
 
         /* XXX We should perhaps allow None to be passed here. */
@@ -5970,8 +5965,7 @@ object___dir___impl(PyObject *self)
     else {
         /* Copy __dict__ to avoid mutating it. */
         PyObject *temp = PyDict_Copy(dict);
-        Py_DECREF(dict);
-        dict = temp;
+        Py_SETREF(dict, temp);
     }
 
     if (dict == NULL)
@@ -8110,8 +8104,7 @@ slot_tp_hash(PyObject *self)
     func = lookup_maybe_method(self, &_Py_ID(__hash__), &unbound);
 
     if (func == Py_None) {
-        Py_DECREF(func);
-        func = NULL;
+        Py_SETREF(func, NULL);
     }
 
     if (func == NULL) {
@@ -9379,8 +9372,7 @@ super_getattro(PyObject *self, PyObject *name)
                        (See SF ID #743627)  */
                     (su->obj == (PyObject *)starttype) ? NULL : su->obj,
                     (PyObject *)starttype);
-                Py_DECREF(res);
-                res = res2;
+                Py_SETREF(res, res2);
             }
 
             Py_DECREF(mro);
@@ -9601,8 +9593,7 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
             return -1;
         Py_INCREF(obj);
     }
-    Py_INCREF(type);
-    Py_XSETREF(su->type, type);
+    Py_XSETREF(su->type, Py_NewRef(type));
     Py_XSETREF(su->obj, obj);
     Py_XSETREF(su->obj_type, obj_type);
     return 0;

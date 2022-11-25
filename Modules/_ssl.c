@@ -5864,6 +5864,9 @@ sslmodule_init_constants(PyObject *m)
     PyModule_AddIntConstant(m, "OP_IGNORE_UNEXPECTED_EOF",
                             SSL_OP_IGNORE_UNEXPECTED_EOF);
 #endif
+#ifdef SSL_OP_ENABLE_KTLS
+    PyModule_AddIntConstant(m, "OP_ENABLE_KTLS", SSL_OP_ENABLE_KTLS);
+#endif
 
 #ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
     PyModule_AddIntConstant(m, "HOSTFLAG_ALWAYS_CHECK_SUBJECT",

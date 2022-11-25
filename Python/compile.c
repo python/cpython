@@ -512,7 +512,7 @@ static int compiler_match(struct compiler *, stmt_ty);
 static int compiler_pattern_subpattern(struct compiler *,
                                        pattern_ty, pattern_context *);
 
-static void remove_redundant_nops(basicblock *bb);
+static int remove_redundant_nops(basicblock *bb);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 
@@ -1459,8 +1459,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
             }
             PyObject *u;
             if (PyTuple_CheckExact(k)) {
-                u = PyTuple_GET_ITEM(k, 1);
-                Py_INCREF(u);
+                u = Py_NewRef(PyTuple_GET_ITEM(k, 1));
                 Py_DECREF(k);
             }
             else {
@@ -2732,8 +2731,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     {
         location loc = LOCATION(firstlineno, firstlineno, 0, 0);
         /* use the class name for name mangling */
-        Py_INCREF(s->v.ClassDef.name);
-        Py_XSETREF(c->u->u_private, s->v.ClassDef.name);
+        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         /* load (global) __name__ ... */
         if (!compiler_nameop(c, loc, &_Py_ID(__name__), Load)) {
             compiler_exit_scope(c);
@@ -8282,9 +8280,7 @@ merge_const_one(PyObject *const_cache, PyObject **obj)
         t = PyTuple_GET_ITEM(t, 1);
     }
 
-    Py_INCREF(t);
-    Py_DECREF(*obj);
-    *obj = t;
+    Py_SETREF(*obj, Py_NewRef(t));
     return 1;
 }
 
@@ -8670,6 +8666,17 @@ static void
 propagate_line_numbers(basicblock *entryblock);
 
 #ifndef NDEBUG
+
+static bool
+no_redundant_nops(cfg_builder *g) {
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        if (remove_redundant_nops(b) != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool
 no_redundant_jumps(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
@@ -9439,7 +9446,7 @@ inline_small_exit_blocks(basicblock *bb) {
     return 0;
 }
 
-static void
+static int
 remove_redundant_nops(basicblock *bb) {
     /* Remove NOPs when legal to do so. */
     int dest = 0;
@@ -9487,7 +9494,9 @@ remove_redundant_nops(basicblock *bb) {
         prev_lineno = lineno;
     }
     assert(dest <= bb->b_iused);
+    int num_removed = bb->b_iused - dest;
     bb->b_iused = dest;
+    return num_removed;
 }
 
 static int
@@ -9698,10 +9707,11 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
             b->b_iused = 0;
        }
     }
-    eliminate_empty_basic_blocks(g);
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         remove_redundant_nops(b);
     }
+    eliminate_empty_basic_blocks(g);
+    assert(no_redundant_nops(g));
     if (remove_redundant_jumps(g) < 0) {
         return -1;
     }
