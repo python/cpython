@@ -4475,14 +4475,14 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     else if (offset1 != Py_None && offset2 != Py_None) {
         int64_t offusecs1, offusecs2, diff64;
         assert(offset1 != offset2); /* else last "if" handled it */
-        offusecs1 = TIME_GET_HOUR(self) * 3600000000 +
+        offusecs1 = TIME_GET_HOUR(self) * INT64_C(3600000000) +
                     TIME_GET_MINUTE(self) * INT64_C(60000000) +
                     TIME_GET_SECOND(self) * 1000000 +
                     TIME_GET_MICROSECOND(self) -
                     GET_TD_DAYS(offset1) * 86400000000 -
                     GET_TD_SECONDS(offset1) * INT64_C(1000000) -
                     GET_TD_MICROSECONDS(offset1);
-        offusecs2 = TIME_GET_HOUR(other) * 3600000000 +
+        offusecs2 = TIME_GET_HOUR(other) * INT64_C(3600000000) +
                     TIME_GET_MINUTE(other) * INT64_C(60000000) +
                     TIME_GET_SECOND(other) * 1000000 +
                     TIME_GET_MICROSECOND(other) -
