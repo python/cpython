@@ -83,8 +83,8 @@ static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 static PyObject *list, *tuple, *dict;
 static PyObject *exit_func, *lasti, *val;
-static PyObject *jump;
-// Dummy variables for stack effects
+static size_t jump;
+// Dummy variables for cache effects
 static _Py_CODEUNIT when_to_jump_mask, invert;
 // Dummy opcode names for 'op' opcodes
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1001
@@ -2087,7 +2087,7 @@ dummy_func(
         }
 
         // The result is an int disguised as an object pointer.
-        op(_COMPARE_OP_FLOAT, (unused/1, left, right, when_to_jump_mask/1 -- jump)) {
+        op(_COMPARE_OP_FLOAT, (unused/1, left, right, when_to_jump_mask/1 -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
@@ -2101,10 +2101,10 @@ dummy_func(
             STAT_INC(COMPARE_OP, hit);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            jump = (PyObject *)(size_t)(sign_ish & when_to_jump_mask);
+            jump = sign_ish & when_to_jump_mask;
         }
         // The input is an int disguised as an object pointer!
-        op(_JUMP_ON_SIGN, (jump --)) {
+        op(_JUMP_ON_SIGN, (jump: size_t --)) {
             assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
             if (jump) {
                 JUMPBY(oparg);
@@ -2114,7 +2114,7 @@ dummy_func(
         super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_ON_SIGN;
 
         // Similar to COMPARE_OP_FLOAT
-        op(_COMPARE_OP_INT, (unused/1, left, right, when_to_jump_mask/1 -- jump)) {
+        op(_COMPARE_OP_INT, (unused/1, left, right, when_to_jump_mask/1 -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
@@ -2129,12 +2129,12 @@ dummy_func(
             int sign_ish = 2*(ileft > iright) + 2 - (ileft < iright);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            jump = (PyObject *)(size_t)(sign_ish & when_to_jump_mask);
+            jump = sign_ish & when_to_jump_mask;
         }
         super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_ON_SIGN;
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
-        op(_COMPARE_OP_STR, (unused/1, left, right, invert/1 -- jump)) {
+        op(_COMPARE_OP_STR, (unused/1, left, right, invert/1 -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
@@ -2146,7 +2146,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
             assert(invert == 0 || invert == 1);
-            jump = (PyObject *)(size_t)(res ^ invert);
+            jump = res ^ invert;
         }
         super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_ON_SIGN;
 

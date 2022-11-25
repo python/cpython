@@ -3731,7 +3731,7 @@
             {
                 PyObject *right = _tmp_2;
                 PyObject *left = _tmp_1;
-                PyObject *jump;
+                size_t jump;
                 uint16_t when_to_jump_mask = read_u16(next_instr + 1);
                 assert(cframe.use_tracing == 0);
                 // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
@@ -3746,14 +3746,14 @@
                 STAT_INC(COMPARE_OP, hit);
                 _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
                 _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-                jump = (PyObject *)(size_t)(sign_ish & when_to_jump_mask);
-                _tmp_1 = jump;
+                jump = sign_ish & when_to_jump_mask;
+                _tmp_1 = (PyObject *)jump;
             }
             next_instr += 2;
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *jump = _tmp_1;
+                size_t jump = (size_t)_tmp_1;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
                 if (jump) {
                     JUMPBY(oparg);
@@ -3769,7 +3769,7 @@
             {
                 PyObject *right = _tmp_2;
                 PyObject *left = _tmp_1;
-                PyObject *jump;
+                size_t jump;
                 uint16_t when_to_jump_mask = read_u16(next_instr + 1);
                 assert(cframe.use_tracing == 0);
                 // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
@@ -3785,14 +3785,14 @@
                 int sign_ish = 2*(ileft > iright) + 2 - (ileft < iright);
                 _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-                jump = (PyObject *)(size_t)(sign_ish & when_to_jump_mask);
-                _tmp_1 = jump;
+                jump = sign_ish & when_to_jump_mask;
+                _tmp_1 = (PyObject *)jump;
             }
             next_instr += 2;
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *jump = _tmp_1;
+                size_t jump = (size_t)_tmp_1;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
                 if (jump) {
                     JUMPBY(oparg);
@@ -3808,7 +3808,7 @@
             {
                 PyObject *right = _tmp_2;
                 PyObject *left = _tmp_1;
-                PyObject *jump;
+                size_t jump;
                 uint16_t invert = read_u16(next_instr + 1);
                 assert(cframe.use_tracing == 0);
                 // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
@@ -3821,14 +3821,14 @@
                 _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 assert(res == 0 || res == 1);
                 assert(invert == 0 || invert == 1);
-                jump = (PyObject *)(size_t)(res ^ invert);
-                _tmp_1 = jump;
+                jump = res ^ invert;
+                _tmp_1 = (PyObject *)jump;
             }
             next_instr += 2;
             NEXTOPARG();
             next_instr++;
             {
-                PyObject *jump = _tmp_1;
+                size_t jump = (size_t)_tmp_1;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
                 if (jump) {
                     JUMPBY(oparg);

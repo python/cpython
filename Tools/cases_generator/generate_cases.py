@@ -13,6 +13,7 @@ import sys
 import typing
 
 import parser
+from parser import StackEffect
 
 DEFAULT_INPUT = os.path.relpath(
     os.path.join(os.path.dirname(__file__), "../../Python/bytecodes.c")
@@ -73,6 +74,34 @@ class Formatter:
             yield
         self.emit("}")
 
+    def stack_adjust(self, diff: int):
+        if diff > 0:
+            self.emit(f"STACK_GROW({diff});")
+        elif diff < 0:
+            self.emit(f"STACK_SHRINK({-diff});")
+
+    def declare(self, dst: StackEffect, src: StackEffect | None):
+        if dst.name == UNUSED:
+            return
+        type = f"{dst.type} " if dst.type else "PyObject *"
+        init = ""
+        if src:
+            cast = self.cast(dst, src)
+            init = f" = {cast}{src.name}"
+        self.emit(f"{type}{dst.name}{init};")
+
+    def assign(self, dst: StackEffect, src: StackEffect):
+        if src.name == UNUSED:
+            return
+        cast = self.cast(dst, src)
+        if m := re.match(r"^PEEK\((\d+)\)$", dst.name):
+            self.emit(f"POKE({m.group(1)}, {cast}{src.name});")
+        else:
+            self.emit(f"{dst.name} = {cast}{src.name};")
+
+    def cast(self, dst: StackEffect, src: StackEffect) -> str:
+        return f"({dst.type or 'PyObject *'})" if src.type != dst.type else ""
+
 
 @dataclasses.dataclass
 class Instruction:
@@ -88,8 +117,8 @@ class Instruction:
     always_exits: bool
     cache_offset: int
     cache_effects: list[parser.CacheEffect]
-    input_effects: list[parser.StackEffect]
-    output_effects: list[parser.StackEffect]
+    input_effects: list[StackEffect]
+    output_effects: list[StackEffect]
 
     # Set later
     family: parser.Family | None = None
@@ -106,7 +135,7 @@ class Instruction:
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
         self.input_effects = [
-            effect for effect in inst.inputs if isinstance(effect, parser.StackEffect)
+            effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
         self.output_effects = inst.outputs  # For consistency/completeness
 
@@ -122,16 +151,15 @@ class Instruction:
                     )
 
         # Write input stack effect variable declarations and initializations
-        for i, seffect in enumerate(reversed(self.input_effects), 1):
-            if seffect.name != UNUSED:
-                out.emit(f"PyObject *{seffect.name} = PEEK({i});")
+        for i, ieffect in enumerate(reversed(self.input_effects), 1):
+            src = StackEffect(f"PEEK({i})", "")
+            out.declare(ieffect, src)
 
         # Write output stack effect variable declarations
-        input_names = {seffect.name for seffect in self.input_effects}
-        input_names.add(UNUSED)
-        for seffect in self.output_effects:
-            if seffect.name not in input_names:
-                out.emit(f"PyObject *{seffect.name};")
+        input_names = {ieffect.name for ieffect in self.input_effects}
+        for oeffect in self.output_effects:
+            if oeffect.name not in input_names:
+                out.declare(oeffect, None)
 
         self.write_body(out, 0)
 
@@ -141,19 +169,17 @@ class Instruction:
 
         # Write net stack growth/shrinkage
         diff = len(self.output_effects) - len(self.input_effects)
-        if diff > 0:
-            out.emit(f"STACK_GROW({diff});")
-        elif diff < 0:
-            out.emit(f"STACK_SHRINK({-diff});")
+        out.stack_adjust(diff)
 
         # Write output stack effect assignments
-        unmoved_names = {UNUSED}
+        unmoved_names = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
             if ieffect.name == oeffect.name:
                 unmoved_names.add(ieffect.name)
-        for i, seffect in enumerate(reversed(self.output_effects)):
-            if seffect.name not in unmoved_names:
-                out.emit(f"POKE({i+1}, {seffect.name});")
+        for i, oeffect in enumerate(reversed(self.output_effects), 1):
+            if oeffect.name not in unmoved_names:
+                dst = StackEffect(f"PEEK({i})", "")
+                out.assign(dst, oeffect)
 
         # Write cache effect
         if self.cache_offset:
@@ -223,23 +249,26 @@ class Instruction:
 
 
 InstructionOrCacheEffect = Instruction | parser.CacheEffect
+StackEffectMapping = list[tuple[StackEffect, StackEffect]]
 
 
 @dataclasses.dataclass
 class Component:
     instr: Instruction
-    input_mapping: dict[str, parser.StackEffect]
-    output_mapping: dict[str, parser.StackEffect]
+    input_mapping: StackEffectMapping
+    output_mapping: StackEffectMapping
 
     def write_body(self, out: Formatter, cache_adjust: int) -> None:
         with out.block(""):
-            for var, ieffect in self.input_mapping.items():
-                out.emit(f"PyObject *{ieffect.name} = {var};")
-            for oeffect in self.output_mapping.values():
-                out.emit(f"PyObject *{oeffect.name};")
+            for var, ieffect in self.input_mapping:
+                out.declare(ieffect, var)
+            for _, oeffect in self.output_mapping:
+                out.declare(oeffect, None)
+
             self.instr.write_body(out, dedent=-4, cache_adjust=cache_adjust)
-            for var, oeffect in self.output_mapping.items():
-                out.emit(f"{var} = {oeffect.name};")
+
+            for var, oeffect in self.output_mapping:
+                out.assign(var, oeffect)
 
 
 # TODO: Use a common base class for {Super,Macro}Instruction
@@ -250,7 +279,7 @@ class SuperOrMacroInstruction:
     """Common fields for super- and macro instructions."""
 
     name: str
-    stack: list[str]
+    stack: list[StackEffect]
     initial_sp: int
     final_sp: int
 
@@ -445,15 +474,13 @@ class Analyzer:
                 case parser.CacheEffect() as ceffect:
                     parts.append(ceffect)
                 case Instruction() as instr:
-                    input_mapping = {}
+                    input_mapping: StackEffectMapping = []
                     for ieffect in reversed(instr.input_effects):
                         sp -= 1
-                        if ieffect.name != UNUSED:
-                            input_mapping[stack[sp]] = ieffect
-                    output_mapping = {}
+                        input_mapping.append((stack[sp], ieffect))
+                    output_mapping: StackEffectMapping = []
                     for oeffect in instr.output_effects:
-                        if oeffect.name != UNUSED:
-                            output_mapping[stack[sp]] = oeffect
+                        output_mapping.append((stack[sp], oeffect))
                         sp += 1
                     parts.append(Component(instr, input_mapping, output_mapping))
                 case _:
@@ -471,15 +498,13 @@ class Analyzer:
                 case parser.CacheEffect() as ceffect:
                     parts.append(ceffect)
                 case Instruction() as instr:
-                    input_mapping = {}
+                    input_mapping: StackEffectMapping = []
                     for ieffect in reversed(instr.input_effects):
                         sp -= 1
-                        if ieffect.name != UNUSED:
-                            input_mapping[stack[sp]] = ieffect
-                    output_mapping = {}
+                        input_mapping.append((stack[sp], ieffect))
+                    output_mapping: StackEffectMapping = []
                     for oeffect in instr.output_effects:
-                        if oeffect.name != UNUSED:
-                            output_mapping[stack[sp]] = oeffect
+                        output_mapping.append((stack[sp], oeffect))
                         sp += 1
                     parts.append(Component(instr, input_mapping, output_mapping))
                 case _:
@@ -514,7 +539,7 @@ class Analyzer:
 
     def stack_analysis(
         self, components: typing.Iterable[InstructionOrCacheEffect]
-    ) -> tuple[list[str], int]:
+    ) -> tuple[list[StackEffect], int]:
         """Analyze a super-instruction or macro.
 
         Print an error if there's a cache effect (which we don't support yet).
@@ -536,7 +561,8 @@ class Analyzer:
         # At this point, 'current' is the net stack effect,
         # and 'lowest' and 'highest' are the extremes.
         # Note that 'lowest' may be negative.
-        stack = [f"_tmp_{i+1}" for i in range(highest - lowest)]
+        # TODO: Reverse the numbering.
+        stack = [StackEffect(f"_tmp_{i+1}", "") for i in range(highest - lowest)]
         return stack, -lowest
 
     def write_instructions(self) -> None:
@@ -616,19 +642,17 @@ class Analyzer:
         self.out.emit("")
         with self.out.block(f"TARGET({up.name})"):
             for i, var in enumerate(up.stack):
+                src = None
                 if i < up.initial_sp:
-                    self.out.emit(f"PyObject *{var} = PEEK({up.initial_sp - i});")
-                else:
-                    self.out.emit(f"PyObject *{var};")
+                    src = StackEffect(f"PEEK({up.initial_sp - i})", "")
+                self.out.declare(var, src)
 
             yield
 
-            if up.final_sp > up.initial_sp:
-                self.out.emit(f"STACK_GROW({up.final_sp - up.initial_sp});")
-            elif up.final_sp < up.initial_sp:
-                self.out.emit(f"STACK_SHRINK({up.initial_sp - up.final_sp});")
+            self.out.stack_adjust(up.final_sp - up.initial_sp)
             for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
-                self.out.emit(f"POKE({i}, {var});")
+                dst = StackEffect(f"PEEK({i})", "")
+                self.out.assign(dst, var)
 
             self.out.emit(f"DISPATCH();")
 
