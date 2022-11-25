@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -45,8 +45,7 @@ PyObject_Type(PyObject *o)
     }
 
     v = (PyObject *)Py_TYPE(o);
-    Py_INCREF(v);
-    return v;
+    return Py_NewRef(v);
 }
 
 Py_ssize_t
@@ -185,11 +184,12 @@ PyObject_GetItem(PyObject *o, PyObject *key)
         if (_PyObject_LookupAttr(o, &_Py_ID(__class_getitem__), &meth) < 0) {
             return NULL;
         }
-        if (meth) {
+        if (meth && meth != Py_None) {
             result = PyObject_CallOneArg(meth, key);
             Py_DECREF(meth);
             return result;
         }
+        Py_XDECREF(meth);
         PyErr_Format(PyExc_TypeError, "type '%.200s' is not subscriptable",
                      ((PyTypeObject *)o)->tp_name);
         return NULL;
@@ -525,18 +525,12 @@ _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
 Py_ssize_t
 PyBuffer_SizeFromFormat(const char *format)
 {
-    PyObject *structmodule = NULL;
     PyObject *calcsize = NULL;
     PyObject *res = NULL;
     PyObject *fmt = NULL;
     Py_ssize_t itemsize = -1;
 
-    structmodule = PyImport_ImportModule("struct");
-    if (structmodule == NULL) {
-        return itemsize;
-    }
-
-    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
+    calcsize = _PyImport_GetModuleAttrString("struct", "calcsize");
     if (calcsize == NULL) {
         goto done;
     }
@@ -557,7 +551,6 @@ PyBuffer_SizeFromFormat(const char *format)
     }
 
 done:
-    Py_DECREF(structmodule);
     Py_XDECREF(calcsize);
     Py_XDECREF(fmt);
     Py_XDECREF(res);
@@ -728,9 +721,7 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
         return -1;
     }
 
-    view->obj = obj;
-    if (obj)
-        Py_INCREF(obj);
+    view->obj = Py_XNewRef(obj);
     view->buf = buf;
     view->len = len;
     view->readonly = readonly;
@@ -782,8 +773,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     /* Fast path for common types. */
     if (format_spec == NULL || PyUnicode_GET_LENGTH(format_spec) == 0) {
         if (PyUnicode_CheckExact(obj)) {
-            Py_INCREF(obj);
-            return obj;
+            return Py_NewRef(obj);
         }
         if (PyLong_CheckExact(obj)) {
             return PyObject_Str(obj);
@@ -816,8 +806,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
         PyErr_Format(PyExc_TypeError,
                      "__format__ must return a str, not %.200s",
                      Py_TYPE(result)->tp_name);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         goto done;
     }
 
@@ -1411,8 +1400,7 @@ _PyNumber_Index(PyObject *item)
     }
 
     if (PyLong_Check(item)) {
-        Py_INCREF(item);
-        return item;
+        return Py_NewRef(item);
     }
     if (!_PyIndex_Check(item)) {
         PyErr_Format(PyExc_TypeError,
@@ -1526,8 +1514,7 @@ PyNumber_Long(PyObject *o)
     }
 
     if (PyLong_CheckExact(o)) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
     m = Py_TYPE(o)->tp_as_number;
     if (m && m->nb_int) { /* This should include subclasses of int */
@@ -2051,8 +2038,7 @@ PySequence_Tuple(PyObject *v)
            a tuple *subclass* instance as-is, hence the restriction
            to exact tuples here.  In contrast, lists always make
            a copy, so there's no need for exactness below. */
-        Py_INCREF(v);
-        return v;
+        return Py_NewRef(v);
     }
     if (PyList_CheckExact(v))
         return PyList_AsTuple(v);
@@ -2150,8 +2136,7 @@ PySequence_Fast(PyObject *v, const char *m)
     }
 
     if (PyList_CheckExact(v) || PyTuple_CheckExact(v)) {
-        Py_INCREF(v);
-        return v;
+        return Py_NewRef(v);
     }
 
     it = PyObject_GetIter(v);
@@ -2545,7 +2530,7 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
         break;
     }
     assert(n >= 2);
-    if (Py_EnterRecursiveCall(" in __issubclass__")) {
+    if (_Py_EnterRecursiveCall(" in __issubclass__")) {
         Py_DECREF(bases);
         return -1;
     }
@@ -2555,7 +2540,7 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
             break;
         }
     }
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall();
     Py_DECREF(bases);
     return r;
 }
@@ -2625,10 +2610,14 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return object_isinstance(inst, cls);
     }
 
+    if (_PyUnion_Check(cls)) {
+        cls = _Py_union_args(cls);
+    }
+
     if (PyTuple_Check(cls)) {
         /* Not a general sequence -- that opens up the road to
            recursion and stack overflow. */
-        if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __instancecheck__")) {
             return -1;
         }
         Py_ssize_t n = PyTuple_GET_SIZE(cls);
@@ -2641,19 +2630,19 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
                 break;
             }
         }
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         return r;
     }
 
     PyObject *checker = _PyObject_LookupSpecial(cls, &_Py_ID(__instancecheck__));
     if (checker != NULL) {
-        if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __instancecheck__")) {
             Py_DECREF(checker);
             return -1;
         }
 
         PyObject *res = PyObject_CallOneArg(checker, inst);
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         Py_DECREF(checker);
 
         if (res == NULL) {
@@ -2714,9 +2703,13 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return recursive_issubclass(derived, cls);
     }
 
+    if (_PyUnion_Check(cls)) {
+        cls = _Py_union_args(cls);
+    }
+
     if (PyTuple_Check(cls)) {
 
-        if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __subclasscheck__")) {
             return -1;
         }
         Py_ssize_t n = PyTuple_GET_SIZE(cls);
@@ -2728,19 +2721,19 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
                 /* either found it, or got an error */
                 break;
         }
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         return r;
     }
 
     checker = _PyObject_LookupSpecial(cls, &_Py_ID(__subclasscheck__));
     if (checker != NULL) {
         int ok = -1;
-        if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
+        if (_Py_EnterRecursiveCallTstate(tstate, " in __subclasscheck__")) {
             Py_DECREF(checker);
             return ok;
         }
         PyObject *res = PyObject_CallOneArg(checker, derived);
-        _Py_LeaveRecursiveCall(tstate);
+        _Py_LeaveRecursiveCallTstate(tstate);
         Py_DECREF(checker);
         if (res != NULL) {
             ok = PyObject_IsTrue(res);
@@ -2797,8 +2790,7 @@ PyObject_GetIter(PyObject *o)
                          "iter() returned non-iterator "
                          "of type '%.100s'",
                          Py_TYPE(res)->tp_name);
-            Py_DECREF(res);
-            res = NULL;
+            Py_SETREF(res, NULL);
         }
         return res;
     }
@@ -2818,8 +2810,7 @@ PyObject_GetAIter(PyObject *o) {
         PyErr_Format(PyExc_TypeError,
                      "aiter() returned not an async iterator of type '%.100s'",
                      Py_TYPE(it)->tp_name);
-        Py_DECREF(it);
-        it = NULL;
+        Py_SETREF(it, NULL);
     }
     return it;
 }
