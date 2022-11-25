@@ -132,6 +132,7 @@ import doctest
 import unittest
 import textwrap
 import weakref
+import dis
 
 try:
     import ctypes
@@ -141,6 +142,9 @@ from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
+from test.support import threading_helper
+from opcode import opmap
+COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
 def consts(t):
@@ -174,6 +178,9 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(co.co_filename, "filename")
         self.assertEqual(co.co_name, "funcname")
         self.assertEqual(co.co_firstlineno, 15)
+        #Empty code object should raise, but not crash the VM
+        with self.assertRaises(Exception):
+            exec(co)
 
     @cpython_only
     def test_closure_injection(self):
@@ -185,7 +192,7 @@ class CodeTest(unittest.TestCase):
 
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            return c.replace(co_freevars=c.co_freevars + ('__class__',))
+            return c.replace(co_freevars=c.co_freevars + ('__class__',), co_code=bytes([COPY_FREE_VARS, 1])+c.co_code)
 
         def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)
@@ -228,9 +235,7 @@ class CodeTest(unittest.TestCase):
                         co.co_name,
                         co.co_qualname,
                         co.co_firstlineno,
-                        co.co_lnotab,
-                        co.co_endlinetable,
-                        co.co_columntable,
+                        co.co_linetable,
                         co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
@@ -271,8 +276,6 @@ class CodeTest(unittest.TestCase):
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
             ("co_linetable", code2.co_linetable),
-            ("co_endlinetable", code2.co_endlinetable),
-            ("co_columntable", code2.co_columntable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
@@ -309,9 +312,7 @@ class CodeTest(unittest.TestCase):
                          co.co_name,
                          co.co_qualname,
                          co.co_firstlineno,
-                         co.co_lnotab,
-                         co.co_endlinetable,
-                         co.co_columntable,
+                         co.co_linetable,
                          co.co_exceptiontable,
                          co.co_freevars,
                          co.co_cellvars,
@@ -337,6 +338,17 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
+    def test_invalid_bytecode(self):
+        def foo(): pass
+        foo.__code__ = co = foo.__code__.replace(co_code=b'\xee\x00d\x00S\x00')
+
+        with self.assertRaises(SystemError) as se:
+            foo()
+        self.assertEqual(
+            f"{co.co_filename}:{co.co_firstlineno}: unknown opcode 238",
+            str(se.exception))
+
+
     @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
         import dis
@@ -355,7 +367,7 @@ class CodeTest(unittest.TestCase):
 
         artificial_instructions = []
         for instr, positions in zip(
-            dis.get_instructions(code),
+            dis.get_instructions(code, show_caches=True),
             code.co_positions(),
             strict=True
         ):
@@ -365,7 +377,7 @@ class CodeTest(unittest.TestCase):
             # get assigned the first_lineno but they don't have other positions.
             # There is no easy way of inferring them at that stage, so for now
             # we don't support it.
-            self.assertTrue(positions.count(None) in [0, 4])
+            self.assertIn(positions.count(None), [0, 3, 4])
 
             if not any(positions):
                 artificial_instructions.append(instr)
@@ -381,19 +393,24 @@ class CodeTest(unittest.TestCase):
                 ("STORE_NAME", "e"),  # XX: we know the location for this
                 ("DELETE_NAME", "e"),
                 ("RERAISE", 1),
-                ("POP_EXCEPT_AND_RERAISE", None)
+                ("COPY", 3),
+                ("POP_EXCEPT", None),
+                ("RERAISE", 1)
             ]
         )
 
     def test_endline_and_columntable_none_when_no_debug_ranges(self):
-        # Make sure that if `-X no_debug_ranges` is used, the endlinetable and
-        # columntable are None.
+        # Make sure that if `-X no_debug_ranges` is used, there is
+        # minimal debug info
         code = textwrap.dedent("""
             def f():
                 pass
 
-            assert f.__code__.co_endlinetable is None
-            assert f.__code__.co_columntable is None
+            positions = f.__code__.co_positions()
+            for line, end_line, column, end_column in positions:
+                assert line == end_line
+                assert column is None
+                assert end_column is None
             """)
         assert_python_ok('-X', 'no_debug_ranges', '-c', code)
 
@@ -403,8 +420,11 @@ class CodeTest(unittest.TestCase):
             def f():
                 pass
 
-            assert f.__code__.co_endlinetable is None
-            assert f.__code__.co_columntable is None
+            positions = f.__code__.co_positions()
+            for line, end_line, column, end_column in positions:
+                assert line == end_line
+                assert column is None
+                assert end_column is None
             """)
         assert_python_ok('-c', code, PYTHONNODEBUGRANGES='1')
 
@@ -415,29 +435,31 @@ class CodeTest(unittest.TestCase):
         def func():
             x = 1
         new_code = func.__code__.replace(co_linetable=b'')
-        for line, end_line, column, end_column in new_code.co_positions():
+        positions = new_code.co_positions()
+        for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
 
-    @requires_debug_ranges()
-    def test_co_positions_empty_endlinetable(self):
-        def func():
-            x = 1
-        new_code = func.__code__.replace(co_endlinetable=b'')
-        for line, end_line, column, end_column in new_code.co_positions():
-            self.assertEqual(line, new_code.co_firstlineno + 1)
-            self.assertIsNone(end_line)
-
-    @requires_debug_ranges()
-    def test_co_positions_empty_columntable(self):
-        def func():
-            x = 1
-        new_code = func.__code__.replace(co_columntable=b'')
-        for line, end_line, column, end_column in new_code.co_positions():
-            self.assertEqual(line, new_code.co_firstlineno + 1)
-            self.assertEqual(end_line, new_code.co_firstlineno + 1)
-            self.assertIsNone(column)
-            self.assertIsNone(end_column)
+    def test_code_equality(self):
+        def f():
+            try:
+                a()
+            except:
+                b()
+            else:
+                c()
+            finally:
+                d()
+        code_a = f.__code__
+        code_b = code_a.replace(co_linetable=b"")
+        code_c = code_a.replace(co_exceptiontable=b"")
+        code_d = code_b.replace(co_exceptiontable=b"")
+        self.assertNotEqual(code_a, code_b)
+        self.assertNotEqual(code_a, code_c)
+        self.assertNotEqual(code_a, code_d)
+        self.assertNotEqual(code_b, code_c)
+        self.assertNotEqual(code_b, code_d)
+        self.assertNotEqual(code_c, code_d)
 
 
 def isinterned(s):
@@ -516,6 +538,183 @@ class CodeWeakRefTest(unittest.TestCase):
         self.assertFalse(bool(coderef()))
         self.assertTrue(self.called)
 
+# Python implementation of location table parsing algorithm
+def read(it):
+    return next(it)
+
+def read_varint(it):
+    b = read(it)
+    val = b & 63;
+    shift = 0;
+    while b & 64:
+        b = read(it)
+        shift += 6
+        val |= (b&63) << shift
+    return val
+
+def read_signed_varint(it):
+    uval = read_varint(it)
+    if uval & 1:
+        return -(uval >> 1)
+    else:
+        return uval >> 1
+
+def parse_location_table(code):
+    line = code.co_firstlineno
+    it = iter(code.co_linetable)
+    while True:
+        try:
+            first_byte = read(it)
+        except StopIteration:
+            return
+        code = (first_byte >> 3) & 15
+        length = (first_byte & 7) + 1
+        if code == 15:
+            yield (code, length, None, None, None, None)
+        elif code == 14:
+            line_delta = read_signed_varint(it)
+            line += line_delta
+            end_line = line + read_varint(it)
+            col = read_varint(it)
+            if col == 0:
+                col = None
+            else:
+                col -= 1
+            end_col = read_varint(it)
+            if end_col == 0:
+                end_col = None
+            else:
+                end_col -= 1
+            yield (code, length, line, end_line, col, end_col)
+        elif code == 13: # No column
+            line_delta = read_signed_varint(it)
+            line += line_delta
+            yield (code, length, line, line, None, None)
+        elif code in (10, 11, 12): # new line
+            line_delta = code - 10
+            line += line_delta
+            column = read(it)
+            end_column = read(it)
+            yield (code, length, line, line, column, end_column)
+        else:
+            assert (0 <= code < 10)
+            second_byte = read(it)
+            column = code << 3 | (second_byte >> 4)
+            yield (code, length, line, line, column, column + (second_byte & 15))
+
+def positions_from_location_table(code):
+    for _, length, line, end_line, col, end_col in parse_location_table(code):
+        for _ in range(length):
+            yield (line, end_line, col, end_col)
+
+def dedup(lst, prev=object()):
+    for item in lst:
+        if item != prev:
+            yield item
+            prev = item
+
+def lines_from_postions(positions):
+    return dedup(l for (l, _, _, _) in positions)
+
+def misshappen():
+    """
+
+
+
+
+
+    """
+    x = (
+
+
+        4
+
+        +
+
+        y
+
+    )
+    y = (
+        a
+        +
+            b
+                +
+
+                d
+        )
+    return q if (
+
+        x
+
+        ) else p
+
+def bug93662():
+    example_report_generation_message= (
+            """
+            """
+    ).strip()
+    raise ValueError()
+
+
+class CodeLocationTest(unittest.TestCase):
+
+    def check_positions(self, func):
+        pos1 = list(func.__code__.co_positions())
+        pos2 = list(positions_from_location_table(func.__code__))
+        for l1, l2 in zip(pos1, pos2):
+            self.assertEqual(l1, l2)
+        self.assertEqual(len(pos1), len(pos2))
+
+    def test_positions(self):
+        self.check_positions(parse_location_table)
+        self.check_positions(misshappen)
+        self.check_positions(bug93662)
+
+    def check_lines(self, func):
+        co = func.__code__
+        lines1 = list(dedup(l for (_, _, l) in co.co_lines()))
+        lines2 = list(lines_from_postions(positions_from_location_table(co)))
+        for l1, l2 in zip(lines1, lines2):
+            self.assertEqual(l1, l2)
+        self.assertEqual(len(lines1), len(lines2))
+
+    def test_lines(self):
+        self.check_lines(parse_location_table)
+        self.check_lines(misshappen)
+        self.check_lines(bug93662)
+
+    @cpython_only
+    def test_code_new_empty(self):
+        # If this test fails, it means that the construction of PyCode_NewEmpty
+        # needs to be modified! Please update this test *and* PyCode_NewEmpty,
+        # so that they both stay in sync.
+        def f():
+            pass
+        PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
+        f.__code__ = f.__code__.replace(
+            co_firstlineno=42,
+            co_code=bytes(
+                [
+                    dis.opmap["RESUME"], 0,
+                    dis.opmap["LOAD_ASSERTION_ERROR"], 0,
+                    dis.opmap["RAISE_VARARGS"], 1,
+                ]
+            ),
+            co_linetable=bytes(
+                [
+                    (1 << 7)
+                    | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
+                    | (3 - 1),
+                    0,
+                ]
+            ),
+        )
+        self.assertRaises(AssertionError, f)
+        self.assertEqual(
+            list(f.__code__.co_positions()),
+            3 * [(42, 42, None, None)],
+        )
+
 
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi
@@ -589,6 +788,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             self.assertEqual(extra.value, 300)
             del f
 
+        @threading_helper.requires_working_threading()
         def test_free_different_thread(self):
             # Freeing a code object on a different thread then
             # where the co_extra was set should be safe.

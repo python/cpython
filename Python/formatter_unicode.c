@@ -130,30 +130,13 @@ typedef struct {
     Py_UCS4 fill_char;
     Py_UCS4 align;
     int alternate;
+    int no_neg_0;
     Py_UCS4 sign;
     Py_ssize_t width;
     enum LocaleType thousands_separators;
     Py_ssize_t precision;
     Py_UCS4 type;
 } InternalFormatSpec;
-
-#if 0
-/* Occasionally useful for debugging. Should normally be commented out. */
-static void
-DEBUG_PRINT_FORMAT_SPEC(InternalFormatSpec *format)
-{
-    printf("internal format spec: fill_char %d\n", format->fill_char);
-    printf("internal format spec: align %d\n", format->align);
-    printf("internal format spec: alternate %d\n", format->alternate);
-    printf("internal format spec: sign %d\n", format->sign);
-    printf("internal format spec: width %zd\n", format->width);
-    printf("internal format spec: thousands_separators %d\n",
-           format->thousands_separators);
-    printf("internal format spec: precision %zd\n", format->precision);
-    printf("internal format spec: type %c\n", format->type);
-    printf("\n");
-}
-#endif
 
 
 /*
@@ -184,6 +167,7 @@ parse_internal_render_format_spec(PyObject *obj,
     format->fill_char = ' ';
     format->align = default_align;
     format->alternate = 0;
+    format->no_neg_0 = 0;
     format->sign = '\0';
     format->width = -1;
     format->thousands_separators = LT_NO_LOCALE;
@@ -208,6 +192,13 @@ parse_internal_render_format_spec(PyObject *obj,
     /* Parse the various sign options */
     if (end-pos >= 1 && is_sign_element(READ_spec(pos))) {
         format->sign = READ_spec(pos);
+        ++pos;
+    }
+
+    /* If the next character is z, request coercion of negative 0.
+       Applies only to floats. */
+    if (end-pos >= 1 && READ_spec(pos) == 'z') {
+        format->no_neg_0 = 1;
         ++pos;
     }
 
@@ -617,7 +608,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
 {
     /* Used to keep track of digits, decimal, and remainder. */
     Py_ssize_t d_pos = d_start;
-    const unsigned int kind = writer->kind;
+    const int kind = writer->kind;
     const void *data = writer->data;
     Py_ssize_t r;
 
@@ -797,6 +788,14 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
         goto done;
     }
 
+    /* negative 0 coercion is not allowed on strings */
+    if (format->no_neg_0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Negative zero coercion (z) not allowed in string format "
+                        "specifier");
+        goto done;
+    }
+
     /* alternate is not allowed on strings */
     if (format->alternate) {
         PyErr_SetString(PyExc_ValueError,
@@ -888,6 +887,13 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
     if (format->precision != -1) {
         PyErr_SetString(PyExc_ValueError,
                         "Precision not allowed in integer format specifier");
+        goto done;
+    }
+    /* no negative zero coercion on integers */
+    if (format->no_neg_0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Negative zero coercion (z) not allowed in integer"
+                        " format specifier");
         goto done;
     }
 
@@ -1067,6 +1073,8 @@ format_float_internal(PyObject *value,
 
     if (format->alternate)
         flags |= Py_DTSF_ALT;
+    if (format->no_neg_0)
+        flags |= Py_DTSF_NO_NEG_0;
 
     if (type == '\0') {
         /* Omitted type specifier.  Behaves in the same way as repr(x)
@@ -1207,7 +1215,7 @@ format_complex_internal(PyObject *value,
     int flags = 0;
     int result = -1;
     Py_UCS4 maxchar = 127;
-    enum PyUnicode_Kind rkind;
+    int rkind;
     void *rdata;
     Py_UCS4 re_sign_char = '\0';
     Py_UCS4 im_sign_char = '\0';
@@ -1256,6 +1264,8 @@ format_complex_internal(PyObject *value,
 
     if (format->alternate)
         flags |= Py_DTSF_ALT;
+    if (format->no_neg_0)
+        flags |= Py_DTSF_NO_NEG_0;
 
     if (type == '\0') {
         /* Omitted type specifier. Should be like str(self). */
