@@ -1,1 +1,1 @@
-Add closet choice if exists in Argparser if wrong choice picked.
+Add closest choice if exists in Argparser if wrong choice picked.

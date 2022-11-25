@@ -2544,13 +2544,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _check_value(self, action, value):
         # converted value must be one of the choices (if specified)
         if action.choices is not None and value not in action.choices:
-            closet_choice = _difflib.get_close_matches(value, action.choices)
+            closest_choice = _difflib.get_close_matches(value, action.choices)
             args = {'value': value,
                     'choices': ', '.join(map(repr, action.choices))}
 
-            if closet_choice :=  closet_choice and closet_choice[0] or '':
-                args['closet'] = closet_choice
-                msg = _('invalid choice: %(value)r, maybe you meant %(closet)r? '
+            if closest_choice :=  closest_choice and closest_choice[0] or '':
+                args['closest'] = closest_choice
+                msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
                         '(choose from %(choices)s)')
             else:
                 msg = _('invalid choice: %(value)r (choose from %(choices)s)')
