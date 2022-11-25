@@ -2899,14 +2899,25 @@ features:
    :c:type:`stat` structure. It is used for the result of :func:`os.stat`,
    :func:`os.fstat`, :func:`os.lstat` and :func:`os.statx`.
 
+   Attributes that are optional under :func:`os.stax` calls are marked
+   with the mask value that will be present in :attr:`stx_mask` when the
+   value is present. This can be tested even for regular ``stat`` calls,
+   as ``stx_mask`` will be initialized with a suitable value even if the
+   underlying system call uses regular ``stat``.
+
+   Attributes may be missing from this struct if they are not supported by
+   the underlying operating system. When :func:`os.statx` is supported, all
+   ``stx_*`` attributes are present, but their ``st_*`` equivalents may not
+   be. :attr:`stx_mask` is always present, even if ``statx`` is not supported.
+
    Attributes:
 
    .. attribute:: st_mode
 
       File mode: file type and file mode bits (permissions).
 
-      This field is set with the :data:`stat.STATX_TYPE` and/or
-      :data:`stat.STATX_MODE` flags.
+      This field is set when ``stx_mask`` contains
+      :data:`stat.STATX_TYPE` and/or :data:`stat.STATX_MODE`.
 
    .. attribute:: st_ino
 
@@ -2918,31 +2929,32 @@ features:
         <https://msdn.microsoft.com/en-us/library/aa363788>`_ on
         Windows
 
-      This field is set with :data:`stat.STATX_INO`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_INO`.
 
    .. attribute:: st_dev
 
       Identifier of the device on which this file resides.
 
       On Windows, this field is set with :data:`stat.STATX_INO`.
+      Other platforms always set this value.
 
    .. attribute:: st_nlink
 
       Number of hard links.
 
-      This field is set with :data:`stat.STATX_NLINK`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_NLINK`.
 
    .. attribute:: st_uid
 
       User identifier of the file owner.
 
-      This field is set with :data:`stat.STATX_UID`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_UID`.
 
    .. attribute:: st_gid
 
       Group identifier of the file owner.
 
-      This field is set with :data:`stat.STATX_GID`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_GID`.
 
    .. attribute:: st_size
 
@@ -2950,7 +2962,7 @@ features:
       The size of a symbolic link is the length of the pathname it contains,
       without a terminating null byte.
 
-      This field is set with :data:`stat.STATX_SIZE`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_SIZE`.
 
    .. attribute:: stx_mask
 
@@ -2965,13 +2977,13 @@ features:
 
       Time of most recent access expressed in seconds.
 
-      This field is set with :data:`stat.STATX_ATIME`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_ATIME`.
 
    .. attribute:: st_mtime
 
       Time of most recent content modification expressed in seconds.
 
-      This field is set with :data:`stat.STATX_MTIME`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_MTIME`.
 
    .. attribute:: st_ctime
 
@@ -2982,20 +2994,20 @@ features:
         when :data:`stat.STATX_CTIME` is in :attr:`stx_mask`, in which
         case this is the time of the most recent metadata change
 
-      This field is set with :data:`stat.STATX_CTIME`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_CTIME`.
 
    .. attribute:: st_atime_ns
 
       Time of most recent access expressed in nanoseconds as an integer.
 
-      This field is set with :data:`stat.STATX_ATIME`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_ATIME`.
 
    .. attribute:: st_mtime_ns
 
       Time of most recent content modification expressed in nanoseconds as an
       integer.
 
-      This field is set with :data:`stat.STATX_MTIME`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_MTIME`.
 
    .. attribute:: st_ctime_ns
 
@@ -3006,22 +3018,38 @@ features:
         integer, except when :data:`stat.STATX_CTIME` is in :attr:`stx_mask`,
         in which case this is the time of the most recent metadata change
 
-      This field is set with :data:`stat.STATX_CTIME`.
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_CTIME`.
 
    .. attribute:: st_birthtime
 
       Time of file creation, if available. The attribute may not be present if
       your operating system does not support the field.
 
-      This field is set with :data:`stat.STATX_BTIME`.
+      This field is set with :data:`stat.STATX_BTIME`, but is only present when
+      supported by regular ``stat`` calls. See also: :attr:`stx_btime`.
+
+   .. attribute:: stx_btime
+
+      Alias of :attr:`st_birthtime` that is always present when :func:`statx`
+      is supported. If ``st_birthtime`` is also present, its value will be
+      identical.
+
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_BTIME`.
+
+   .. attribute:: stx_btime_ns
+
+      Time of file creation expressed in nanoseconds as an integer.
+
+      This field is set when ``stx_mask`` contains :data:`stat.STATX_BTIME`.
 
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
-      :attr:`st_mtime`, :attr:`st_ctime` and :attr:`st_birthtime` attributes
-      depend on the operating system and the file system. For example, on
-      Windows systems using the FAT or FAT32 file systems, :attr:`st_mtime` has
-      2-second resolution, and :attr:`st_atime` has only 1-day resolution.
+      :attr:`st_mtime`, :attr:`st_ctime`, :attr:`st_birthtime` and
+      :attr:`stx_btime` attributes depend on the operating system and the file
+      system. For example, on Windows systems using the FAT or FAT32 file
+      systems, :attr:`st_mtime` has 2-second resolution, and :attr:`st_atime`
+      has only 1-day resolution.
       See your operating system documentation for details.
 
       Similarly, although :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
@@ -3041,18 +3069,23 @@ features:
       Number of 512-byte blocks allocated for file.
       This may be smaller than :attr:`st_size`/512 when the file has holes.
 
-      This field is set with :data:`stat.STATX_BLOCKS`.
+      This field is set with :data:`stat.STATX_BLOCKS`, but is only present
+      when supported by regular ``stat`` calls. See also: :attr:`stx_blocks`.
 
    .. attribute:: st_blksize
 
       "Preferred" blocksize for efficient file system I/O. Writing to a file in
       smaller chunks may cause an inefficient read-modify-rewrite.
 
-      This field is set with :data:`stat.STATX_BLOCKSIZE`.
+      This field is set with :data:`stat.STATX_BLOCKSIZE`, but is only present
+      when supported by regular ``stat`` calls. See also: :attr:`stx_blksize`.
 
    .. attribute:: st_rdev
 
       Type of device if an inode device.
+
+      This field is always set when appropriate, but is only present when
+      supported by regular ``stat`` calls. See also: :attr:`stx_rdev`.
 
    .. attribute:: st_flags
 
@@ -3071,6 +3104,28 @@ features:
       :attr:`stx_attributes`.
 
       This field is only set for calls using :func:`os.statx`.
+
+   .. attribute:: stx_blocks
+
+      Alias of :attr:`st_blocks` that is always present when :func:`statx` is
+      supported. If ``st_blocks`` is also present, its value will be identical.
+
+      This field is set with :data:`stat.STATX_BLOCKS`.
+
+   .. attribute:: stx_blksize
+
+      Alias of :attr:`st_blksize` that is always present when :func:`statx` is
+      supported. If ``st_blksize`` is also present, its value will be identical.
+
+      This field is set with :data:`stat.STATX_BLKSIZE`.
+
+   .. attribute:: stx_rdev
+
+      Alias of :attr:`st_rdev` that is always present when :func:`statx` is
+      supported. If ``st_rdev`` is also present, its value will be identical.
+
+      This field is always set, when appropriate, by all ``stat`` calls.
+
 
    On other Unix systems (such as FreeBSD), the following attributes may be
    available (but may be only filled out if root tries to use them):

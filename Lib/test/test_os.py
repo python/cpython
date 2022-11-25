@@ -526,7 +526,11 @@ class StatAttributeTests(unittest.TestCase):
     def setUp(self):
         self.fname = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, self.fname)
-        create_file(self.fname, b"ABC")
+        create_file(self.fname, b"AB")
+        # short delay to ensure write/change time differ from creation
+        time.sleep(0.1)
+        with open(self.fname, "ab") as f:
+            f.write(b"C")
 
     def check_stat_attributes(self, fname):
         result = os.stat(fname)
@@ -616,6 +620,35 @@ class StatAttributeTests(unittest.TestCase):
                 self.assertIn(b'cos\nstat_result\n', p)
             unpickled = pickle.loads(p)
             self.assertEqual(result, unpickled)
+
+    @requires_os_func('statx')
+    def test_statx(self):
+        attrs = {a: getattr(stat, a) for a in dir(stat) if a.startswith('STATX_')}
+        for attr, mask in attrs.items():
+            if mask >= stat.STATX_BASIC_STATS:
+                # Flags above this can't be predicted reliably as they will
+                # vary too much by operating system
+                continue
+            with self.subTest(attr):
+                r = os.statx(self.fname, mask)
+                expect = mask
+                if os.name == 'nt' and attr in {'STATX_GID', 'STATX_UID'}:
+                    # GID and UID will never be set on Windows
+                    expect = 0
+                self.assertEqual(expect, r.stx_mask & mask, r.stx_mask)
+
+    @requires_os_func('statx')
+    @unittest.skipUnless(os.name == 'nt', 'test specific to Windows')
+    def test_statx_win32(self):
+        # Note that this test is checking things that are currently true
+        # about our Win32 implementation of statx to make sure all code
+        # paths are getting coverage. If these change in the future, just
+        # update the test, rather than trying to preserve the behaviour.
+
+        result = os.statx(self.fname, stat.STATX_CTIME | stat.STATX_BTIME)
+        self.assertNotEqual(result.st_ctime, result.st_birthtime)
+        result = os.stat(self.fname)
+        self.assertEqual(result.st_ctime, result.st_birthtime)
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):

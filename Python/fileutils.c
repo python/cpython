@@ -1087,20 +1087,25 @@ attributes_to_mode(DWORD attr)
 
 void
 _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
-                           struct _Py_stat_struct *result)
+                           FILE_BASIC_INFO *basic_info, struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
     result->st_mode = attributes_to_mode(info->dwFileAttributes);
     result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
     result->st_dev = info->dwVolumeSerialNumber;
     result->st_rdev = result->st_dev;
-    FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_btime, &result->st_btime_nsec);
-    /* ctime is the change time, not the creation (birth) time,
-       but we used to set it, so we'd best keep doing it. */
-    result->st_ctime = result->st_btime;
-    result->st_ctime_nsec = result->st_ctime_nsec;
-    FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-    FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    if (basic_info) {
+        LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_btime, &result->st_btime_nsec);
+        LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
+        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    } else {
+        FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_btime, &result->st_btime_nsec);
+        /* We leave ctime as zero because we do not have it without FILE_BASIC_INFO.
+           Our callers will replace it with btime if they want legacy behaviour */
+        FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+        FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    }
     result->st_nlink = info->nNumberOfLinks;
     result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
@@ -1180,6 +1185,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
 {
 #ifdef MS_WINDOWS
     BY_HANDLE_FILE_INFORMATION info;
+    FILE_BASIC_INFO basicInfo;
     HANDLE h;
     int type;
 
@@ -1211,14 +1217,15 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         return 0;
     }
 
-    if (!GetFileInformationByHandle(h, &info)) {
+    if (!GetFileInformationByHandle(h, &info) ||
+        !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo))) {
         /* The Win32 error is already set, but we also set errno for
            callers who expect it */
         errno = winerror_to_errno(GetLastError());
         return -1;
     }
 
-    _Py_attribute_data_to_stat(&info, 0, status);
+    _Py_attribute_data_to_stat(&info, 0, &basicInfo, status);
     /* specific to fstat() */
     status->st_ino = (((uint64_t)info.nFileIndexHigh) << 32) + info.nFileIndexLow;
     return 0;

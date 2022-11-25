@@ -36,7 +36,7 @@
 #  include "posixmodule.h"
 #else
 #  include "winreparse.h"
-#  include "pycore_fileutils_windows.h" // GetFileInformationByName()
+#  include "pycore_fileutils_windows.h" // _Py_GetFileInformationByName()
 #endif
 
 #if !defined(EX_OK) && defined(EXIT_SUCCESS)
@@ -663,8 +663,8 @@ PyOS_AfterFork(void)
 #ifdef MS_WINDOWS
 /* defined in fileutils.c */
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
-void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
-                                            ULONG, struct _Py_stat_struct *);
+void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *, ULONG,
+                                FILE_BASIC_INFO *, struct _Py_stat_struct *);
 void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
                                  struct _Py_stat_struct *);
 #endif
@@ -1843,6 +1843,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
 {
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION fileInfo;
+    FILE_BASIC_INFO basicInfo;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
     BOOL isUnhandledTag = FALSE;
@@ -1977,7 +1978,9 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             }
         }
 
-        if (!GetFileInformationByHandle(hFile, &fileInfo)) {
+        if (!GetFileInformationByHandle(hFile, &fileInfo) ||
+            !GetFileInformationByHandleEx(hFile, FileBasicInfo,
+                                          &basicInfo, sizeof(basicInfo))) {
             switch (GetLastError()) {
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
@@ -1993,7 +1996,7 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         }
     }
 
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, result);
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, result);
 
     if (!(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
         /* Fix the file execute permissions. This hack sets S_IEXEC if
@@ -2037,6 +2040,7 @@ win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
     errno = 0;
     return code;
 }
+
 /* About the following functions: win32_lstat_w, win32_stat, win32_stat_w
 
    In Posix, stat automatically traverses symlinks and returns the stat
@@ -2065,26 +2069,26 @@ win32_stat(const wchar_t* path, struct _Py_stat_struct *result)
    and STATX_MODE.
    Any flags requested that aren't in this mask will cause the FILE_STATS
    below to be used, even if it is missing other flags. */
-#define WIN32_STATX_BASIC_STATS (0x0EC5)
-/* The statx values we get from GetFileInformationByHandle().
-   Notably absent is STATX_CTIME (we return creation time instead).*/
-#define WIN32_STATX_FILE_STATS (0x0F67)
+#define WIN32_STATX_BASIC_STATS (0x0EE5)
+/* The statx values we get from GetFileInformationByHandle(). */
+#define WIN32_STATX_FILE_STATS (0x0FE7)
 
 static int
 win32_statx(const wchar_t *path, struct _Py_stat_struct *result,
             int mask, int follow_symlinks, unsigned int *result_mask)
 {
+    unsigned int rmask = 0;
     if (!(mask & ~WIN32_STATX_BASIC_STATS)) {
         /* Try and use our fast path to fill in the result */
         FILE_STAT_BASIC_INFORMATION statInfo;
-        if (GetFileInformationByName(path, FileStatBasicByNameInfo,
-                                     &statInfo, sizeof(statInfo))) {
+        if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+                                         &statInfo, sizeof(statInfo))) {
             if (// Cannot use fast path for reparse points ...
                 !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
                 // ... unless it's a name surrogate (symlink) and we're not following
                 || (!follow_symlinks && IsReparseTagNameSurrogate(statInfo.ReparseTag))
             ) {
-                *result_mask = WIN32_STATX_BASIC_STATS;
+                rmask = WIN32_STATX_BASIC_STATS;
                 _Py_stat_basic_info_to_stat(&statInfo, result);
             }
         } else {
@@ -2095,14 +2099,34 @@ win32_statx(const wchar_t *path, struct _Py_stat_struct *result,
             case ERROR_NOT_READY:
             case ERROR_BAD_NET_NAME:
                 return -1;
+            case ERROR_NOT_SUPPORTED:
+                /* indicates the API couldn't be loaded */
+                break;
             }
         }
     }
 
-    /* No result yet, so either we need to follow a symlink, or the
-       user requested more information than our fast path offers */
-    *result_mask = WIN32_STATX_FILE_STATS;
-    return win32_xstat(path, result, follow_symlinks);
+    if (!rmask) {
+        /* No result yet, so either we need to follow a symlink, or the
+           user requested more information than our fast path offers */
+        rmask = WIN32_STATX_FILE_STATS;
+        int r = win32_xstat(path, result, follow_symlinks);
+        if (r) {
+            return r;
+        }
+    }
+
+    /* Legacy behaviour: if the caller has not specified STATX_CTIME (0x80),
+       firstly, they shouldn't be looking at the field, but if they do then we
+       want them to see st_btime because that's what we've always done.
+       Provided that the result mask includes STATX_BTIME (0x800), that is. */
+    if (!(mask & 0x80) && (rmask & 0x800)) {
+        result->st_ctime = result->st_btime;
+        result->st_ctime_nsec = result->st_btime_nsec;
+    }
+
+    *result_mask = rmask;
+    return 0;
 }
 
 #endif /* MS_WINDOWS */
@@ -2136,22 +2160,22 @@ static PyStructSequence_Field stat_result_fields[] = {
     {"st_atime_ns",   "time of last access in nanoseconds"},
     {"st_mtime_ns",   "time of last modification in nanoseconds"},
     {"st_ctime_ns",   "time of last change in nanoseconds"},
-#if defined(HAVE_STRUCT_STAT_ST_BLKSIZE) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     {"st_blksize", "blocksize for filesystem I/O"},
 #endif
-#if defined(HAVE_STRUCT_STAT_ST_BLOCKS) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
     {"st_blocks",  "number of blocks allocated"},
 #endif
-#if defined(HAVE_STRUCT_STAT_ST_RDEV) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
     {"st_rdev",    "device type (if inode device)"},
 #endif
-#if defined(HAVE_STRUCT_STAT_ST_FLAGS) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_FLAGS
     {"st_flags",   "user defined flags for file"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
     {"st_gen",    "generation number"},
 #endif
-#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
     {"st_birthtime",   "time of creation"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
@@ -2166,6 +2190,17 @@ static PyStructSequence_Field stat_result_fields[] = {
     /* the stx_mask attribute is always present to allow for fallbacks */
     {"stx_mask", "mask of fields provided by the system"},
 #ifdef HAVE_STATX
+    /* Many of these are duplicates of the optional fields earlier.
+       *Presumably* they'll all be present together, but since people
+       test for the presence of the st_* fields by name at .py compile
+       time, we can't have them present if they won't be filled in by
+       regular stat() calls. But we make sure they're filled in by any
+       statx() call that also fills in these ones */
+    {"stx_blksize",  "blocksize for filesystem I/O"},
+    {"stx_blocks",   "number of blocks allocated"},
+    {"stx_rdev",     "device type (if inode device)"},
+    {"stx_btime",    "time of creation"},
+    {"stx_btime_ns", "time of creation in nanoseconds"},
     {"stx_attributes", "additional file attributes"},
     {"stx_attributes_mask", "mask indicating which attributes are supported"},
 #ifdef STATX_MNT_ID
@@ -2175,25 +2210,25 @@ static PyStructSequence_Field stat_result_fields[] = {
     {0}
 };
 
-#if defined(HAVE_STRUCT_STAT_ST_BLKSIZE) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 #define ST_BLKSIZE_IDX 16
 #else
 #define ST_BLKSIZE_IDX 15
 #endif
 
-#if defined(HAVE_STRUCT_STAT_ST_BLOCKS) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 #define ST_BLOCKS_IDX (ST_BLKSIZE_IDX+1)
 #else
 #define ST_BLOCKS_IDX ST_BLKSIZE_IDX
 #endif
 
-#if defined(HAVE_STRUCT_STAT_ST_RDEV) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
 #define ST_RDEV_IDX (ST_BLOCKS_IDX+1)
 #else
 #define ST_RDEV_IDX ST_BLOCKS_IDX
 #endif
 
-#if defined(HAVE_STRUCT_STAT_ST_FLAGS) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_FLAGS
 #define ST_FLAGS_IDX (ST_RDEV_IDX+1)
 #else
 #define ST_FLAGS_IDX ST_RDEV_IDX
@@ -2205,7 +2240,7 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_GEN_IDX ST_FLAGS_IDX
 #endif
 
-#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(HAVE_STATX)
+#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
 #define ST_BIRTHTIME_IDX (ST_GEN_IDX+1)
 #else
 #define ST_BIRTHTIME_IDX ST_GEN_IDX
@@ -2232,7 +2267,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define STX_MASK_IDX (ST_REPARSE_TAG_IDX+1)
 
 #ifdef HAVE_STATX
-#define STX_ATTRIBUTES_IDX (STX_MASK_IDX+1)
+#define STX_BLKSIZE_IDX (STX_MASK_IDX+1)
+#define STX_BLOCKS_IDX (STX_BLKSIZE_IDX+1)
+#define STX_RDEV_IDX (STX_BLOCKS_IDX+1)
+#define STX_BTIME_IDX (STX_RDEV_IDX+1)
+#define STX_BTIME_NS_IDX (STX_BTIME_IDX+1)
+#define STX_ATTRIBUTES_IDX (STX_BTIME_NS_IDX+1)
 #define STX_ATTRIBUTES_MASK_IDX (STX_ATTRIBUTES_IDX+1)
 #ifdef STATX_MNT_ID
 #define STX_MNT_ID_IDX (STX_ATTRIBUTES_MASK_IDX+1)
@@ -2244,6 +2284,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 /* for when regular stat() gets called */
 #ifdef MS_WINDOWS
 #define ST_DEFAULT_STX_MASK WIN32_STATX_FILE_STATS
+#elif defined(HAVE_STRUCT_STAT_ST_BIRTHTIME)
+/* STATX_BASIC_STATS | STATX_BTIME */
+#define ST_DEFAULT_STX_MASK 0x00000fff
 #else
 /* STATX_BASIC_STATS */
 #define ST_DEFAULT_STX_MASK 0x000007ff
@@ -2392,7 +2435,7 @@ _posix_free(void *module)
 }
 
 static void
-fill_time(PyObject *module, PyObject *v, int index, time_t sec, unsigned long nsec)
+fill_time(PyObject *module, PyObject *v, int index, int index_f, int index_ns, time_t sec, unsigned long nsec)
 {
     PyObject *s = _PyLong_FromTime_t(sec);
     PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
@@ -2403,22 +2446,31 @@ fill_time(PyObject *module, PyObject *v, int index, time_t sec, unsigned long ns
     if (!(s && ns_fractional))
         goto exit;
 
-    s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
-    if (!s_in_ns)
-        goto exit;
+    if (index_ns >= 0) {
+        s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
+        if (!s_in_ns) {
+            goto exit;
+        }
 
-    ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-    if (!ns_total)
-        goto exit;
-
-    float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
-    if (!float_s) {
-        goto exit;
+        ns_total = PyNumber_Add(s_in_ns, ns_fractional);
+        if (!ns_total) {
+            goto exit;
+        }
     }
 
-    PyStructSequence_SET_ITEM(v, index, s);
-    PyStructSequence_SET_ITEM(v, index+3, float_s);
-    PyStructSequence_SET_ITEM(v, index+6, ns_total);
+    if (index_f >= 0) {
+        float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
+        if (!float_s) {
+            goto exit;
+        }
+    }
+
+    if (index >= 0)
+        PyStructSequence_SET_ITEM(v, index, s);
+    if (float_s)
+        PyStructSequence_SET_ITEM(v, index_f, float_s);
+    if (ns_total)
+        PyStructSequence_SET_ITEM(v, index_ns, ns_total);
     s = NULL;
     float_s = NULL;
     ns_total = NULL;
@@ -2477,9 +2529,9 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    fill_time(module, v, 7, st->st_atime, ansec);
-    fill_time(module, v, 8, st->st_mtime, mnsec);
-    fill_time(module, v, 9, st->st_ctime, cnsec);
+    fill_time(module, v, 7, 10, 13, st->st_atime, ansec);
+    fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec);
+    fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec);
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
@@ -2499,24 +2551,25 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
     {
-      PyObject *val;
-      double bsec;
+      time_t bsec;
       unsigned long bnsec;
 #ifdef MS_WINDOWS
-      bsec = (double)st->st_btime;
+      bsec = st->st_btime;
       bnsec = st->st_btime_nsec;
 #else
-      bsec = (double)(long)st->st_birthtime;
+      bsec = st->st_birthtime;
 #ifdef HAVE_STAT_TV_NSEC2
       bnsec = st->st_birthtimespec.tv_nsec;
 #else
       bnsec = 0;
+#endif /* HAVE_STAT_TV_NSEC2 */
+#endif /* MS_WINDOWS */
+      fill_time(module, v, -1, ST_BIRTHTIME_IDX, -1, bsec, bnsec);
+#ifdef HAVE_STATX
+      fill_time(module, v, -1, STX_BTIME_IDX, STX_BTIME_NS_IDX, bsec, bnsec);
 #endif
-#endif
-      val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
-      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX, val);
     }
-#endif
+#endif /* HAVE_STRUCT_STAT_ST_BIRTHTIME */
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
     PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
                               PyLong_FromLong((long)st->st_flags));
@@ -2542,23 +2595,40 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st, unsigned int stx_mask)
 
 #ifdef HAVE_STATX
     /* ensure unused fields that are present for statx are initialized */
-    PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_IDX, PyLong_FromLong(0));
-    PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_MASK_IDX, PyLong_FromLong(0));
+    PyObject *zero = PyLong_FromLong(0);
+    if (!zero) {
+        Py_DECREF(v);
+        return NULL;
+    }
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    PyStructSequence_SET_ITEM(v, STX_BLKSIZE_IDX,
+        Py_NewRef(PyStructSequence_GET_ITEM(v, ST_BLKSIZE_IDX)));
+#else
+    PyStructSequence_SET_ITEM(v, STX_BLKSIZE_IDX, Py_NewRef(zero));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
+    PyStructSequence_SET_ITEM(v, STX_BLOCKS_IDX,
+        Py_NewRef(PyStructSequence_GET_ITEM(v, ST_BLOCKS_IDX)));
+#else
+    PyStructSequence_SET_ITEM(v, STX_BLOCKS_IDX, Py_NewRef(zero));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
+    PyStructSequence_SET_ITEM(v, STX_RDEV_IDX,
+        Py_NewRef(PyStructSequence_GET_ITEM(v, ST_RDEV_IDX)));
+#else
+    PyStructSequence_SET_ITEM(v, STX_RDEV_IDX, Py_NewRef(zero));
+#endif
+#ifndef HAVE_STRUCT_STAT_ST_BIRTHTIME
+    /* would've been filled in by now if we had st_birthtime */
+    PyStructSequence_SET_ITEM(v, STX_BTIME_IDX, Py_NewRef(zero));
+    PyStructSequence_SET_ITEM(v, STX_BTIME_NS_IDX, Py_NewRef(zero));
+#endif
+    PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_IDX, Py_NewRef(zero));
+    PyStructSequence_SET_ITEM(v, STX_ATTRIBUTES_MASK_IDX, Py_NewRef(zero));
 #ifdef STATX_MNT_ID
-    PyStructSequence_SET_ITEM(v, STX_MNT_ID_IDX, PyLong_FromLong(0));
+    PyStructSequence_SET_ITEM(v, STX_MNT_ID_IDX, Py_NewRef(zero));
 #endif
-#ifndef HAVE_STRUCT_STAT_ST_BLKSIZE
-    PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX, PyLong_FromLong(0));
-#endif
-#ifndef HAVE_STRUCT_STAT_ST_BLOCKS
-    PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX, PyLong_FromLong(0));
-#endif
-#ifndef HAVE_STRUCT_STAT_ST_RDEV
-    PyStructSequence_SET_ITEM(v, ST_RDEV_IDX, PyLong_FromLong(0));
-#endif
-#ifndef HAVE_STRUCT_STAT_ST_FLAGS
-    PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX, PyLong_FromLong(0));
-#endif
+    Py_DECREF(zero);
 #endif
 
     if (PyErr_Occurred()) {
@@ -2595,26 +2665,19 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
                   "statx.stx_size is larger than unsigned long long");
     PyStructSequence_SET_ITEM(v, 6, PyLong_FromUnsignedLongLong(st->stx_size));
 
-    fill_time(module, v, 7, st->stx_atime.tv_sec, st->stx_atime.tv_nsec);
-    fill_time(module, v, 8, st->stx_mtime.tv_sec, st->stx_mtime.tv_nsec);
-    fill_time(module, v, 9, st->stx_ctime.tv_sec, st->stx_ctime.tv_nsec);
+    fill_time(module, v, 7, 10, 13, st->stx_atime.tv_sec, st->stx_atime.tv_nsec);
+    fill_time(module, v, 8, 11, 14, st->stx_mtime.tv_sec, st->stx_mtime.tv_nsec);
+    fill_time(module, v, 9, 12, 15, st->stx_ctime.tv_sec, st->stx_ctime.tv_nsec);
+    fill_time(module, v, -1, ST_BTIME_IDX, ST_BTIME_NS_IDX,
+              st->stx_btime.tv_sec, st->stx_btime.tv_nsec);
 
-    PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
+    PyStructSequence_SET_ITEM(v, STX_BLKSIZE_IDX,
                               PyLong_FromUnsignedLong(st->stx_blksize));
-    PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX,
+    PyStructSequence_SET_ITEM(v, STX_BLOCKS_IDX,
                               PyLong_FromUnsignedLongLong(st->stx_blocks));
     dev = (unsigned long long)st->stx_rdev_major << 32 | st->stx_rdev_minor;
-    PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
+    PyStructSequence_SET_ITEM(v, STX_RDEV_IDX,
                               PyLong_FromUnsignedLongLong(dev));
-#ifdef HAVE_STRUCT_STAT_ST_GEN
-    PyStructSequence_SET_ITEM(v, ST_GEN_IDX, PyLong_FromLong(0));
-#endif
-
-    {
-        PyObject *btime;
-        btime = PyFloat_FromDouble(st->stx_btime.tv_sec + 1e-9*st->stx_btime.tv_nsec);
-        PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX, btime);
-    }
 
     PyStructSequence_SET_ITEM(v, STX_MASK_IDX,
                               PyLong_FromUnsignedLong(st->stx_mask));
@@ -2627,18 +2690,45 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
                               PyLong_FromUnsignedLongLong(st->stx_mnt_id));
 #endif
 
+    /* copy stx fields into optional st fields that are present */
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
+        Py_NewRef(PyStructSequence_GET_ITEM(v, STX_BLKSIZE_IDX)));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
+    PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX,
+        Py_NewRef(PyStructSequence_GET_ITEM(v, STX_BLOCKS_IDX)));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
+    PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
+        Py_NewRef(PyStructSequence_GET_ITEM(v, STX_RDEV_IDX)));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+    PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
+        Py_NewRef(PyStructSequence_GET_ITEM(v, STX_BTIME_IDX)));
+#endif
+
     /* ensure unused fields that are present for regular stat are initialized */
+    PyObject *zero = PyLong_FromLong(0);
+    if (!zero) {
+        Py_DECREF(v);
+        return NULL;
+    }
+
+#ifdef HAVE_STRUCT_STAT_ST_GEN
+    PyStructSequence_SET_ITEM(v, ST_GEN_IDX, Py_NewRef(zero));
+#endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
-    PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX, PyLong_FromLong(0));
+    PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX, Py_NewRef(zero));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
-    PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX, PyLong_FromLong(0));
+    PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX, Py_NewRef(zero));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
    PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX, Py_NewRef(Py_None));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
-    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX, PyLong_FromLong(0));
+    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX, Py_NewRef(zero));
 #endif
 
     if (PyErr_Occurred()) {
@@ -2716,6 +2806,14 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
     if (result != 0) {
         return path_error(path);
     }
+
+#ifdef MS_WINDOWS
+    /* Legacy behaviour is to return creation time as st_ctime (change time).
+       We now calculate the change time, so st_ctime is "correct", but we keep
+       replacing it here. Callers who want it should use statx() */
+    st.st_ctime = st.st_btime;
+    st.st_ctime_nsec = st.st_btime_nsec;
+#endif
 
     return _pystat_fromstructstat(module, &st, 0);
 }
@@ -14362,7 +14460,11 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     }
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
-    _Py_attribute_data_to_stat(&file_info, reparse_tag, &entry->win32_lstat);
+    _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, &entry->win32_lstat);
+    /* Without passing FILE_BASIC_INFO, st_ctime will always be 0.
+       For legacy reasons, we copy st_btime into that field */
+    entry->win32_lstat.st_ctime = entry->win32_lstat.st_btime;
+    entry->win32_lstat.st_ctime_nsec = entry->win32_lstat.st_btime_nsec;
 
     return (PyObject *)entry;
 

@@ -42,7 +42,7 @@ typedef BOOL (WINAPI *PGetFileInformationByName)(
     ULONG FileInfoBufferSize
 );
 
-static inline BOOL GetFileInformationByName(
+static inline BOOL _Py_GetFileInformationByName(
     PCWSTR FileName,
     FILE_INFO_BY_NAME_CLASS FileInformationClass,
     PVOID FileInfoBuffer,
