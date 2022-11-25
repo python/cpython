@@ -400,7 +400,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     /* derived values */
     co->co_nlocalsplus = nlocalsplus;
     co->co_nlocals = nlocals;
-    co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
+    int nconsts = (int)PyTuple_Size(co->co_consts);
+    co->co_framesize = nlocalsplus + con->stacksize + nconsts + FRAME_SPECIALS_SIZE;
     co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;

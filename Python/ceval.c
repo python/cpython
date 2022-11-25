@@ -1994,6 +1994,7 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
     CALL_STAT_INC(frames_pushed);
+    int nconsts = (int)PyTuple_Size(code->co_consts);
     _PyInterpreterFrame *frame = _PyThreadState_PushFrame(tstate, code->co_framesize);
     if (frame == NULL) {
         goto fail;
@@ -2007,6 +2008,11 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
         assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
         _PyEvalFrameClearAndPop(tstate, frame);
         return NULL;
+    }
+    if (nconsts > 0) {
+        PyObject **const_regs = localsarray + (code->co_nlocalsplus + code->co_stacksize);
+        PyObject **consts = &PyTuple_GET_ITEM(code->co_consts, 0);
+        Py_MEMCPY(const_regs, consts, sizeof(PyObject*) * nconsts);
     }
     return frame;
 fail:
