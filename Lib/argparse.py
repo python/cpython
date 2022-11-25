@@ -2548,7 +2548,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             args = {'value': value,
                     'choices': ', '.join(map(repr, action.choices))}
 
-            if closest_choice :=  closest_choice and closest_choice[0] or '':
+            if closest_choice := closest_choice and closest_choice[0] or '':
                 args['closest'] = closest_choice
                 msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
                         '(choose from %(choices)s)')
