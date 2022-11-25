@@ -552,7 +552,7 @@ class Analyzer:
         # and 'lowest' and 'highest' are the extremes.
         # Note that 'lowest' may be negative.
         # TODO: Reverse the numbering.
-        stack = [StackEffect(f"_tmp_{i+1}", "") for i in range(highest - lowest)]
+        stack = [StackEffect(f"_tmp_{i+1}", "") for i in reversed(range(highest - lowest))]
         return stack, -lowest
 
     def write_instructions(self) -> None:
@@ -629,6 +629,11 @@ class Analyzer:
     @contextlib.contextmanager
     def wrap_super_or_macro(self, up: SuperOrMacroInstruction):
         """Shared boilerplate for super- and macro instructions."""
+        # TODO: Somewhere (where?) make it so that if one instruction
+        # has an output that is input to another, and the variable names
+        # and types match and don't conflict with other instructions,
+        # that variable is declared with the right name and type in the
+        # outer block, rather than trusting the compiler to optimize it.
         self.out.emit("")
         with self.out.block(f"TARGET({up.name})"):
             for i, var in enumerate(up.stack):
