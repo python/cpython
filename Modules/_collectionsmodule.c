@@ -1149,6 +1149,13 @@ PyDoc_STRVAR(insert_doc,
 PyDoc_STRVAR(remove_doc,
 "D.remove(value) -- remove first occurrence of value.");
 
+static int
+valid_index(Py_ssize_t i, Py_ssize_t limit)
+{
+    /* The cast to size_t lets us use just a single comparison
+       to check whether i is in the range: 0 <= i < limit */
+    return (size_t)i < (size_t)limit;
+}
 
 static PyObject *
 deque_item(dequeobject *deque, Py_ssize_t i)
