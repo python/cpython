@@ -862,7 +862,7 @@ ABC hierarchy::
     An abstract base class for resource readers capable of serving
     the ``files`` interface. Subclasses ResourceReader and provides
     concrete implementations of the ResourceReader's abstract
-    methods. Therefore, any loader supplying TraversableReader
+    methods. Therefore, any loader supplying TraversableResources
     also supplies ResourceReader.
 
     Loaders that wish to support resource reading are expected to
