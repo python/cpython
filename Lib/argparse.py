@@ -2541,14 +2541,23 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         return result
 
     def _check_value(self, action, value):
+        if not action.choices and isinstance(action.choices, list):
+            msg = 'Either add options in choices array or remove it'
+            raise ArgumentError(action, msg)
+
         # converted value must be one of the choices (if specified)
         if action.choices is not None and value not in action.choices:
-            closest_choice = _difflib.get_close_matches(value, action.choices)
+            try:
+                closest_choice = _difflib.get_close_matches(value, action.choices, 1)
+            except TypeError:
+                closest_choice = []
+
             args = {
                 'value': value,
                 'choices': ', '.join(map(repr, action.choices)),
             }
-            if closest_choice := closest_choice and closest_choice[0] or None:
+            if closest_choice:
+                closest_choice = closest_choice[0]
                 args['closest'] = closest_choice
                 msg = _('invalid choice: %(value)r, maybe you meant %(closest)r? '
                         '(choose from %(choices)s)')
