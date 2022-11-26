@@ -9593,7 +9593,7 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
             return -1;
         Py_INCREF(obj);
     }
-    Py_XSETREF(su->type, Py_NewRef(type));
+    Py_XSETREF(su->type, (PyTypeObject*)Py_NewRef(type));
     Py_XSETREF(su->obj, obj);
     Py_XSETREF(su->obj_type, obj_type);
     return 0;
