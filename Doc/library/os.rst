@@ -4685,7 +4685,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: WNOWAIT
 
    This *options* flag causes :func:`waitid` to leave the child in a waitable state, so that
-   a later wait call can be used again to retrieve the child status information.
+   a later :func:`!wait*` call can be used to retrieve the child status information again.
 
    This option is not available for the other ``wait*`` functions.
 
