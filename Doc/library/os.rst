@@ -4552,10 +4552,11 @@ written in Python, such as a mail server's external command delivery program.
    ``-1``, status is requested for any process in the process group ``-pid`` (the
    absolute value of *pid*).
 
-   If :data:`WNOHANG` is specified and there are no matching children in the
-   requested state, ``(0, 0)`` is returned.
-   Otherwise, if there are no matching children
-   that could be waited for, :exc:`ChildProcessError` is raised.
+   *options* is an OR combination of flags.  If it contains :data:`WNOHANG` and
+   there are no matching children in the requested state, ``(0, 0)`` is
+   returned.  Otherwise, if there are no matching children that could be waited
+   for, :exc:`ChildProcessError` is raised.  Other options that can be used are
+   :data:`WUNTRACED` and :data:`WCONTINUED`.
 
    On Windows: Wait for completion of a process given by process handle *pid*, and
    return a tuple containing *pid*, and its exit status shifted left by 8 bits
@@ -4568,7 +4569,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
