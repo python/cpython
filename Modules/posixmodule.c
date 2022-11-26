@@ -21,6 +21,9 @@
       FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
 #  include <windows.h>
 #  include <pathcch.h>
+#  include <lmcons.h>             // UNLEN
+#  include "osdefs.h"             // SEP
+#  define HAVE_SYMLINK
 #endif
 
 #ifdef __VXWORKS__
@@ -430,18 +433,7 @@ extern char        *ctermid_r(char *);
 #  ifdef HAVE_PROCESS_H
 #    include <process.h>
 #  endif
-#  ifndef IO_REPARSE_TAG_SYMLINK
-#    define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
-#  endif
-#  ifndef IO_REPARSE_TAG_MOUNT_POINT
-#    define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
-#  endif
-#  include "osdefs.h"             // SEP
 #  include <malloc.h>
-#  include <windows.h>
-#  include <shellapi.h>           // ShellExecute()
-#  include <lmcons.h>             // UNLEN
-#  define HAVE_SYMLINK
 #endif /* _MSC_VER */
 
 #ifndef MAXPATHLEN
