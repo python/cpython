@@ -1,3 +1,4 @@
-Change :meth:`add_argument_group`'s signature from
-`add_argument_group(*args, **kwargs)` to `add_argument_group(title=None,
-description=None, **kwargs)` for clarity on the important keyword arguments.
+Change :meth:`argparse._ActionsContainer.add_argument_group`'s signature
+from ``add_argument_group(*args, **kwargs)`` to
+``add_argument_group(title=None, description=None, **kwargs)`` for clarity
+on the important keyword arguments.
