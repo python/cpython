@@ -1262,11 +1262,7 @@ class TarInfo(object):
         # the newline. keyword and value are both UTF-8 encoded strings.
         regex = re.compile(br"(\d+) ([^=]+)=")
         pos = 0
-        while True:
-            match = regex.match(buf, pos)
-            if not match:
-                break
-
+        while match := regex.match(buf, pos):
             length, keyword = match.groups()
             length = int(length)
             if length == 0:
@@ -2418,10 +2414,8 @@ class TarFile(object):
         """Read through the entire archive file and look for readable
            members.
         """
-        while True:
-            tarinfo = self.next()
-            if tarinfo is None:
-                break
+        while self.next() is not None:
+            pass
         self._loaded = True
 
     def _check(self, mode=None):
