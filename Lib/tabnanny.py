@@ -23,8 +23,6 @@ __version__ = "6"
 import os
 import sys
 import tokenize
-if not hasattr(tokenize, 'NL'):
-    raise ValueError("tokenize.NL doesn't exist -- tokenize module too old")
 
 __all__ = ["check", "NannyNag", "process_tokens"]
 

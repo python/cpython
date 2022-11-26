@@ -128,8 +128,7 @@ normalizeUserObj(PyObject *obj)
 {
     PyCFunctionObject *fn;
     if (!PyCFunction_Check(obj)) {
-        Py_INCREF(obj);
-        return obj;
+        return Py_NewRef(obj);
     }
     /* Replace built-in function objects with a descriptive string
        because of built-in methods -- keeping a reference to
@@ -142,8 +141,7 @@ normalizeUserObj(PyObject *obj)
         PyObject *modname = NULL;
         if (mod != NULL) {
             if (PyUnicode_Check(mod)) {
-                modname = mod;
-                Py_INCREF(modname);
+                modname = Py_NewRef(mod);
             }
             else if (PyModule_Check(mod)) {
                 modname = PyModule_GetNameObject(mod);
@@ -555,8 +553,7 @@ static int statsForEntry(rotating_node_t *node, void *arg)
         }
     }
     else {
-        Py_INCREF(Py_None);
-        collect->sublist = Py_None;
+        collect->sublist = Py_NewRef(Py_None);
     }
 
     info = PyObject_CallFunction((PyObject*) collect->state->stats_entry_type,
@@ -747,10 +744,11 @@ profiler_traverse(ProfilerObject *op, visitproc visit, void *arg)
 static void
 profiler_dealloc(ProfilerObject *op)
 {
+    PyObject_GC_UnTrack(op);
     if (op->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            PyErr_WriteUnraisable((PyObject *)op);
+            _PyErr_WriteUnraisableMsg("When destroying _lsprof profiler", NULL);
         }
     }
 
@@ -780,14 +778,13 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
     if (setSubcalls(pObj, subcalls) < 0 || setBuiltins(pObj, builtins) < 0)
         return -1;
     pObj->externalTimerUnit = timeunit;
-    Py_XINCREF(timer);
-    Py_XSETREF(pObj->externalTimer, timer);
+    Py_XSETREF(pObj->externalTimer, Py_XNewRef(timer));
     return 0;
 }
 
 static PyMethodDef profiler_methods[] = {
     _LSPROF_PROFILER_GETSTATS_METHODDEF
-    {"enable",          (PyCFunction)(void(*)(void))profiler_enable,
+    {"enable",          _PyCFunction_CAST(profiler_enable),
                     METH_VARARGS | METH_KEYWORDS,       enable_doc},
     {"disable",         (PyCFunction)profiler_disable,
                     METH_NOARGS,                        disable_doc},

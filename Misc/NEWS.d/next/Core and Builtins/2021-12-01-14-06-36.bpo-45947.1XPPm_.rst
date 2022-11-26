@@ -1,3 +1,0 @@
-Place pointers to dict and values immediately before GC header. This reduces
-number of dependent memory loads to access either dict or values from 3 to
-1.

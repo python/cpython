@@ -1,2 +1,0 @@
-Fix the :exc:`SyntaxError` location for errors involving for loops with
-invalid targets. Patch by Pablo Galindo

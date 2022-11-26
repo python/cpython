@@ -1,1 +1,0 @@
-Specialized the ``COMPARE_OP`` opcode using the PEP 659 machinery.

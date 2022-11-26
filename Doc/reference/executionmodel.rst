@@ -67,7 +67,7 @@ The following constructs bind names:
 
   + :keyword:`for` loop header,
   + after :keyword:`!as` in a :keyword:`with` statement, :keyword:`except`
-    clause or in the as-pattern in structural pattern matching,
+    clause, :keyword:`except* <except_star>` clause, or in the as-pattern in structural pattern matching,
   + in a capture pattern in structural pattern matching
 
 * :keyword:`import` statements.
@@ -259,8 +259,9 @@ a stack traceback, except when the exception is :exc:`SystemExit`.
 
 Exceptions are identified by class instances.  The :keyword:`except` clause is
 selected depending on the class of the instance: it must reference the class of
-the instance or a base class thereof.  The instance can be received by the
-handler and can carry additional information about the exceptional condition.
+the instance or a :term:`non-virtual base class <abstract base class>` thereof.
+The instance can be received by the handler and can carry additional information
+about the exceptional condition.
 
 .. note::
 
