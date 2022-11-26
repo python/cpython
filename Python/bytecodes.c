@@ -489,15 +489,21 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        inst(STORE_SUBSCR, (v, container, sub -- )) {
-            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+        family(store_subscr) = {
+            STORE_SUBSCR,
+            STORE_SUBSCR_DICT,
+            STORE_SUBSCR_LIST_INT,
+        };
+
+        inst(STORE_SUBSCR, (counter/1, v, container, sub -- )) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
+            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
@@ -505,15 +511,10 @@ dummy_func(
             Py_DECREF(container);
             Py_DECREF(sub);
             ERROR_IF(err != 0, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
         }
 
-        // stack effect: (__0, __1, __2 -- )
-        inst(STORE_SUBSCR_LIST_INT) {
+        inst(STORE_SUBSCR_LIST_INT, (unused/1, value, list, sub -- )) {
             assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *list = SECOND();
-            PyObject *value = THIRD();
             DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
 
@@ -526,29 +527,19 @@ dummy_func(
 
             PyObject *old_value = PyList_GET_ITEM(list, index);
             PyList_SET_ITEM(list, index, value);
-            STACK_SHRINK(3);
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
         }
 
-        // stack effect: (__0, __1, __2 -- )
-        inst(STORE_SUBSCR_DICT) {
+        inst(STORE_SUBSCR_DICT, (unused/1, value, dict, sub -- )) {
             assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *dict = SECOND();
-            PyObject *value = THIRD();
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
-            STACK_SHRINK(3);
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
             Py_DECREF(dict);
-            if (err != 0) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
+            ERROR_IF(err != 0, error);
         }
 
         // stack effect: (__0, __1 -- )
@@ -3656,9 +3647,6 @@ family(load_global) = {
     LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,
     LOAD_GLOBAL_MODULE };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
-family(store_subscr) = {
-    STORE_SUBSCR, STORE_SUBSCR_DICT,
-    STORE_SUBSCR_LIST_INT };
 family(unpack_sequence) = {
     UNPACK_SEQUENCE, UNPACK_SEQUENCE_LIST,
     UNPACK_SEQUENCE_TUPLE, UNPACK_SEQUENCE_TWO_TUPLE };
