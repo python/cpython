@@ -1055,10 +1055,10 @@ Text I/O
    The initial value of the buffer can be set by providing *initial_value*.
    If newline translation is enabled, newlines will be encoded as if by
    :meth:`~TextIOBase.write`.  The stream is positioned at the start of the
-   buffer which emulates opening an existing file in a `w+` mode, making it
+   buffer which emulates opening an existing file in a ``w+`` mode, making it
    ready for an immediate write from the beginning or for a write that
-   would overwrite the initial value.  To emulate opening a file in an `a+`
-   mode ready for appending, use `f.seek(0, io.SEEK_END)` to reposition the
+   would overwrite the initial value.  To emulate opening a file in an ``a+``
+   mode ready for appending, use ``f.seek(0, io.SEEK_END)`` to reposition the
    stream at the end of the buffer.
 
    The *newline* argument works like that of :class:`TextIOWrapper`,

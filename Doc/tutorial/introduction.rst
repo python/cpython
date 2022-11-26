@@ -70,8 +70,8 @@ the ones with a fractional part (e.g. ``5.0``, ``1.6``) have type
 :class:`float`.  We will see more about numeric types later in the tutorial.
 
 Division (``/``) always returns a float.  To do :term:`floor division` and
-get an integer result (discarding any fractional result) you can use the ``//``
-operator; to calculate the remainder you can use ``%``::
+get an integer result you can use the ``//`` operator; to calculate
+the remainder you can use ``%``::
 
    >>> 17 / 3  # classic division returns a float
    5.666666666666667

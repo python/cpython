@@ -630,6 +630,11 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(r'()(?(2)a)',
                                "invalid group reference 2", 5)
 
+    def test_re_groupref_exists_validation_bug(self):
+        for i in range(256):
+            with self.subTest(code=i):
+                re.compile(r'()(?(1)\x%02x?)' % i)
+
     def test_re_groupref_overflow(self):
         from re._constants import MAXGROUPS
         self.checkTemplateError('()', r'\g<%s>' % MAXGROUPS, 'xx',

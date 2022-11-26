@@ -229,22 +229,14 @@ class BaseFutureTests:
         self.assertTrue(hasattr(f, '_cancel_message'))
         self.assertEqual(f._cancel_message, None)
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing 'msg' argument"
-        ):
-            f.cancel('my message')
+        f.cancel('my message')
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(f)
         self.assertEqual(f._cancel_message, 'my message')
 
     def test_future_cancel_message_setter(self):
         f = self._new_future(loop=self.loop)
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "Passing 'msg' argument"
-        ):
-            f.cancel('my message')
+        f.cancel('my message')
         f._cancel_message = 'my new message'
         self.assertEqual(f._cancel_message, 'my new message')
 

@@ -164,11 +164,10 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     Py_ssize_t current_err_line = current_token->lineno;
 
     int ret = 0;
+    struct token new_token;
 
     for (;;) {
-        const char *start;
-        const char *end;
-        switch (_PyTokenizer_Get(p->tok, &start, &end)) {
+        switch (_PyTokenizer_Get(p->tok, &new_token)) {
             case ERRORTOKEN:
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
