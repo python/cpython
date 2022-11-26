@@ -4527,7 +4527,8 @@ written in Python, such as a mail server's external command delivery program.
    * :attr:`si_code` (see :data:`CLD_EXITED` for possible values)
 
    If :data:`WNOHANG` is specified and there are no matching children in the
-   requested state, ``None`` is returned.  If there are no matching children
+   requested state, ``None`` is returned. 
+   Otherwise, if there are no matching children
    that could be waited for, :exc:`ChildProcessError` is raised.
 
    .. availability:: Unix, not Emscripten, not WASI.
@@ -4552,7 +4553,8 @@ written in Python, such as a mail server's external command delivery program.
    absolute value of *pid*).
 
    If :data:`WNOHANG` is specified and there are no matching children in the
-   requested state, ``(0, 0)`` is returned.  If there are no matching children
+   requested state, ``(0, 0)`` is returned.
+   Otherwise, if there are no matching children
    that could be waited for, :exc:`ChildProcessError` is raised.
 
    On Windows: Wait for completion of a process given by process handle *pid*, and
@@ -4611,36 +4613,36 @@ written in Python, such as a mail server's external command delivery program.
    These are the possible values for *idtype* in :func:`waitid`. They affect
    how *id* is interpreted:
 
-   * :data:`P_PID` - wait for the child whose PID is *id*.
-   * :data:`P_PGID` - wait for any child whose progress group ID is *id*.
-   * :data:`P_ALL` - wait for any child; *id* is ignored.
-   * :data:`P_PIDFD` - wait for the child identified by the file descriptor
+   * :data:`!P_PID` - wait for the child whose PID is *id*.
+   * :data:`!P_PGID` - wait for any child whose progress group ID is *id*.
+   * :data:`!P_ALL` - wait for any child; *id* is ignored.
+   * :data:`!P_PIDFD` - wait for the child identified by the file descriptor
      *id* (a process file descriptor created with :func:`pidfd_open`).
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. note:: ``P_PIDFD`` is only available on Linux >= 5.4.
+   .. note:: :data:`!P_PIDFD` is only available on Linux >= 5.4.
 
    .. versionadded:: 3.3
    .. versionadded:: 3.9
-      The ``P_PIDFD`` constant.
+      The :data:`!P_PIDFD` constant.
 
 
 .. data:: WCONTINUED
 
-   This option for :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
-   :func:`waitid` causes child processes to also be reported if they have been
-   continued from a job control stop since their status was last reported.
+   This *options* flag for :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` causes child processes to be reported if they have been
+   continued from a job control stop since they were last reported.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. data:: WEXITED
 
-   This option for :func:`waitid` causes child processes that have terminated to
+   This *options* flag for :func:`waitid` causes child processes that have terminated to
    be reported.
 
-   The other ``wait*`` function always report children that have terminated,
+   The other ``wait*`` functions always report children that have terminated,
    so this option is not available for them.
 
    .. availability:: Unix, not Emscripten, not WASI.
@@ -4650,7 +4652,7 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: WSTOPPED
 
-   This option for :func:`waitid` causes child processes that have been stopped
+   This *options* flag for :func:`waitid` causes child processes that have been stopped
    by the delivery of a signal to be reported.
 
    This option is not available for the other ``wait*`` functions.
@@ -4662,7 +4664,7 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: WUNTRACED
 
-   This option for :func:`waitpid`, :func:`wait3`, and :func:`wait4` causes
+   This *options* flag for :func:`waitpid`, :func:`wait3`, and :func:`wait4` causes
    child processes to also be reported if they have been stopped but their
    current state has not been reported since they were stopped.
 
@@ -4673,8 +4675,8 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: WNOHANG
 
-   The option for :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
-   :func:`waitid` to return immediately if no child process status is available
+   This *options* flag causes :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` to return right away if no child process status is available
    immediately.
 
    .. availability:: Unix, not Emscripten, not WASI.
@@ -4682,7 +4684,7 @@ written in Python, such as a mail server's external command delivery program.
 
 .. data:: WNOWAIT
 
-   The option for :func:`waitid` to leave the child in a waitable state, so that
+   This *options* flag causes :func:`waitid` to leave the child in a waitable state, so that
    a later wait call can be used again to retrieve the child status information.
 
    This option is not available for the other ``wait*`` functions.
