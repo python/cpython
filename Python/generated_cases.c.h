@@ -586,7 +586,8 @@
         }
 
         TARGET(RETURN_VALUE) {
-            PyObject *retval = POP();
+            PyObject *retval = PEEK(1);
+            STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();

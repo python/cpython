@@ -603,9 +603,8 @@ dummy_func(
             return retval;
         }
 
-        // stack effect: (__0 -- )
-        inst(RETURN_VALUE) {
-            PyObject *retval = POP();
+        inst(RETURN_VALUE, (retval --)) {
+            STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
