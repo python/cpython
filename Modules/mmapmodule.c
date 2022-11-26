@@ -920,7 +920,7 @@ static PyObject *
 mmap_item(mmap_object *self, Py_ssize_t i)
 {
     CHECK_VALID(NULL);
-    if (invalid_index(i, self->size)) {
+    if (!valid_index(i, self->size)) {
         PyErr_SetString(PyExc_IndexError, "mmap index out of range");
         return NULL;
     }
@@ -937,7 +937,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
             return NULL;
         if (i < 0)
             i += self->size;
-        if (invalid_index(i, self->size)) {
+        if (!valid_index(i, self->size)) {
             PyErr_SetString(PyExc_IndexError,
                 "mmap index out of range");
             return NULL;
@@ -988,7 +988,7 @@ mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
     const char *buf;
 
     CHECK_VALID(-1);
-    if (invalid_index(i, self->size)) {
+    if (!valid_index(i, self->size)) {
         PyErr_SetString(PyExc_IndexError, "mmap index out of range");
         return -1;
     }
@@ -1025,7 +1025,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
             return -1;
         if (i < 0)
             i += self->size;
-        if (invalid_index(i, self->size)) {
+        if (!valid_index(i, self->size)) {
             PyErr_SetString(PyExc_IndexError,
                             "mmap index out of range");
             return -1;
