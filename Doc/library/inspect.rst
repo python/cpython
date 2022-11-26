@@ -32,7 +32,7 @@ The :func:`getmembers` function retrieves the members of an object such as a
 class or module. The functions whose names begin with "is" are mainly
 provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
-attributes:
+attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. this function name is too big to fit in the ascii-art table below
 .. |coroutine-origin-link| replace:: :func:`sys.set_coroutine_origin_tracking_depth`
@@ -40,11 +40,6 @@ attributes:
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
-| module    | __doc__           | documentation string      |
-+-----------+-------------------+---------------------------+
-|           | __file__          | filename (missing for     |
-|           |                   | built-in modules)         |
-+-----------+-------------------+---------------------------+
 | class     | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
