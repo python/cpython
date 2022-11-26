@@ -550,21 +550,19 @@ dummy_func(
             ERROR_IF(err != 0, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(PRINT_EXPR) {
-            PyObject *value = POP();
+        inst(PRINT_EXPR, (value --)) {
             PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
             PyObject *res;
+            // Can't use ERROR_IF here.
             if (hook == NULL) {
                 _PyErr_SetString(tstate, PyExc_RuntimeError,
                                  "lost sys.displayhook");
                 Py_DECREF(value);
-                goto error;
+                ERROR_IF(1, error);
             }
             res = PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
-            if (res == NULL)
-                goto error;
+            ERROR_IF(res == NULL, error);
             Py_DECREF(res);
         }
 
