@@ -159,6 +159,10 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(len(ns_test.get_namespaces()), 2)
         self.assertRaises(ValueError, ns_test.get_namespace)
 
+        ns_test_2 = self.top.lookup("glob")
+        self.assertEqual(len(ns_test_2.get_namespaces()), 0)
+        self.assertRaises(ValueError, ns_test_2.get_namespace)
+
     def test_assigned(self):
         self.assertTrue(self.spam.lookup("x").is_assigned())
         self.assertTrue(self.spam.lookup("bar").is_assigned())
@@ -218,10 +222,9 @@ class SymtableTest(unittest.TestCase):
         checkfilename("def f(x): foo)(", 14)  # parse-time
         checkfilename("def f(x): global x", 11)  # symtable-build-time
         symtable.symtable("pass", b"spam", "exec")
-        with self.assertWarns(DeprecationWarning), \
-             self.assertRaises(TypeError):
+        with self.assertRaises(TypeError):
             symtable.symtable("pass", bytearray(b"spam"), "exec")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             symtable.symtable("pass", memoryview(b"spam"), "exec")
         with self.assertRaises(TypeError):
             symtable.symtable("pass", list(b"spam"), "exec")

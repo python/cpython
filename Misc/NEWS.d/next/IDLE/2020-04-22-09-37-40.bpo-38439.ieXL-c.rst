@@ -1,2 +1,0 @@
-Add a 256×256 pixel IDLE icon to the Windows .ico file. Created by Andrew
-Clover. Remove the low-color gif variations from the .ico file.

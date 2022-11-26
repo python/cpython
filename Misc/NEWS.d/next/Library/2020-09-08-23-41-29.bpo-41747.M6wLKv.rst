@@ -1,3 +1,0 @@
-Ensure all methods that generated from :func:`dataclasses.dataclass`
-objects now have the proper ``__qualname__`` attribute referring to
-the class they belong to. Patch by Batuhan Taskaya.
