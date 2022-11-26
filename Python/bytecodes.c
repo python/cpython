@@ -82,7 +82,7 @@ do { \
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 static PyObject *list, *tuple, *dict, *owner;
-static PyObject *exit_func, *lasti, *val, *retval;
+static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
 static size_t jump;
 // Dummy variables for cache effects
 static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
@@ -616,48 +616,37 @@ dummy_func(
             goto resume_frame;
         }
 
-        // stack effect: ( -- )
-        inst(GET_AITER) {
+        inst(GET_AITER, (obj -- iter)) {
             unaryfunc getter = NULL;
-            PyObject *iter = NULL;
-            PyObject *obj = TOP();
             PyTypeObject *type = Py_TYPE(obj);
 
             if (type->tp_as_async != NULL) {
                 getter = type->tp_as_async->am_aiter;
             }
 
-            if (getter != NULL) {
-                iter = (*getter)(obj);
-                Py_DECREF(obj);
-                if (iter == NULL) {
-                    SET_TOP(NULL);
-                    goto error;
-                }
-            }
-            else {
-                SET_TOP(NULL);
+            if (getter == NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'async for' requires an object with "
                               "__aiter__ method, got %.100s",
                               type->tp_name);
                 Py_DECREF(obj);
-                goto error;
+                ERROR_IF(1, error);
             }
+
+            iter = (*getter)(obj);
+            Py_DECREF(obj);
+            ERROR_IF(iter == NULL, error);
 
             if (Py_TYPE(iter)->tp_as_async == NULL ||
                     Py_TYPE(iter)->tp_as_async->am_anext == NULL) {
 
-                SET_TOP(NULL);
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'async for' received an object from __aiter__ "
                               "that does not implement __anext__: %.100s",
                               Py_TYPE(iter)->tp_name);
                 Py_DECREF(iter);
-                goto error;
+                ERROR_IF(1, error);
             }
-
-            SET_TOP(iter);
         }
 
         // stack effect: ( -- __0)
