@@ -324,6 +324,14 @@ class AbstractTestsWithSourceFile:
         self.assertEqual(b_info.compress_type, self.compression)
         self.assertEqual(b_info._compresslevel, 2)
 
+    def test_writestr_permission(self):
+        zipfp = zipfile.ZipFile(TESTFN2, "w")
+        zipfp.writestr("b.txt", "hello world", file_perm=0o755)
+        b_info = zipfp.getinfo('b.txt')
+        perm = oct(b_info.external_attr >> 16)
+        assert perm == '0o755'
+
+
     def test_read_return_size(self):
         # Issue #9837: ZipExtFile.read() shouldn't return more bytes
         # than requested.

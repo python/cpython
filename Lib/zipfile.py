@@ -1810,12 +1810,14 @@ class ZipFile:
                 shutil.copyfileobj(src, dest, 1024*8)
 
     def writestr(self, zinfo_or_arcname, data,
-                 compress_type=None, compresslevel=None):
+                 compress_type=None, compresslevel=None,
+                 file_perm=0o600):
         """Write a file into the archive.  The contents is 'data', which
         may be either a 'str' or a 'bytes' instance; if it is a 'str',
         it is encoded as UTF-8 first.
         'zinfo_or_arcname' is either a ZipInfo instance or
-        the name of the file in the archive."""
+        the name of the file in the archive. Default permission is set to 600
+        (rw-------) but can be specified with file_perm."""
         if isinstance(data, str):
             data = data.encode("utf-8")
         if not isinstance(zinfo_or_arcname, ZipInfo):
@@ -1827,7 +1829,7 @@ class ZipFile:
                 zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
                 zinfo.external_attr |= 0x10           # MS-DOS directory flag
             else:
-                zinfo.external_attr = 0o600 << 16     # ?rw-------
+                zinfo.external_attr = file_perm << 16     # ?rw-------
         else:
             zinfo = zinfo_or_arcname
 

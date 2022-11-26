@@ -1,0 +1,2 @@
+add option to zipfile.writestr to open permissions: new optional argument
+to allow user to choose permission of written file
