@@ -4501,7 +4501,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. seealso::
 
-      The other ``wait*`` functions documented below can be used to wait for the
+      The other :func:`!wait*` functions documented below can be used to wait for the
       completion of a specific child process and have more options.
       :func:`waitpid` is the only one also available on Windows.
 
@@ -4510,19 +4510,21 @@ written in Python, such as a mail server's external command delivery program.
 
    Wait for the completion of a child process.
 
-   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or :data:`P_PIDFD`
-   on Linux.  The interpretation of *id* depends on it, see their individual descriptions.
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or, on Linux, :data:`P_PIDFD`.
+   The interpretation of *id* depends on it; see their individual descriptions.
 
-   *options* is an OR combination of flags.  At least one or more of :data:`WEXITED`,
-   :data:`WSTOPPED` or :data:`WCONTINUED` is required.  Additional optional
-   flags are :data:`WNOHANG` and :data:`WNOWAIT`.
+   *options* is an OR combination of flags.  At least one of :data:`WEXITED`,
+   :data:`WSTOPPED` or :data:`WCONTINUED` is required;
+   :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
 
    The return value is an object representing the data contained in the
-   :c:type:`siginfo_t` structure with the following attributes: :attr:`si_pid`
-   (process ID), :attr:`si_uid` (real user ID of the child), :attr:`si_signo`
-   (always :data:`~signal.SIGCHLD`), :attr:`si_status` (the exit status or
-   signal number, depending on :attr:`si_code`), and :attr:`si_code` (see
-   :data:`CLD_EXITED` for possible values).
+   :c:type:`!siginfo_t` structure with the following attributes:
+   
+   * :attr:`!si_pid` (process ID)
+   * :attr:`!si_uid` (real user ID of the child)
+   * :attr:`!si_signo` (always :data:`~signal.SIGCHLD`)
+   * :attr:`!si_status` (the exit status or signal number, depending on :attr:`!si_code`)
+   * :attr:`si_code` (see :data:`CLD_EXITED` for possible values)
 
    If :data:`WNOHANG` is specified and there are no matching children in the
    requested state, ``None`` is returned.  If there are no matching children
