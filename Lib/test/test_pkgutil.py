@@ -591,20 +591,18 @@ class ImportlibMigrationTests(unittest.TestCase):
         self.assertIsNone(loader)
 
     def test_get_loader_is_deprecated(self):
-        for module in ["sys", "os", "test.support"]:
-            with check_warnings(
-                (r".*\bpkgutil.get_loader\b.*", DeprecationWarning),
-            ):
-                res = pkgutil.get_loader(module)
-            self.assertIsNotNone(res)
+        with check_warnings(
+            (r".*\bpkgutil.get_loader\b.*", DeprecationWarning),
+        ):
+            res = pkgutil.get_loader("sys")
+        self.assertIsNotNone(res)
 
     def test_find_loader_is_deprecated(self):
-        for module in ["sys", "os", "test.support"]:
-            with check_warnings(
-                (r".*\bpkgutil.find_loader\b.*", DeprecationWarning),
-            ):
-                res = pkgutil.find_loader(module)
-            self.assertIsNotNone(res)
+        with check_warnings(
+            (r".*\bpkgutil.find_loader\b.*", DeprecationWarning),
+        ):
+            res = pkgutil.find_loader("sys")
+        self.assertIsNotNone(res)
 
     @ignore_warnings(category=DeprecationWarning)
     def test_find_loader_missing_module(self):
