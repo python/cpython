@@ -542,18 +542,12 @@ dummy_func(
             ERROR_IF(err != 0, error);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(DELETE_SUBSCR) {
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            int err;
-            STACK_SHRINK(2);
+        inst(DELETE_SUBSCR, (container, sub --)) {
             /* del container[sub] */
-            err = PyObject_DelItem(container, sub);
+            int err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0)
-                goto error;
+            ERROR_IF(err != 0, error);
         }
 
         // stack effect: (__0 -- )
