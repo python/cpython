@@ -82,7 +82,7 @@ do { \
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
 static PyObject *container, *start, *stop, *v, *lhs, *rhs;
 static PyObject *list, *tuple, *dict, *owner;
-static PyObject *exit_func, *lasti, *val;
+static PyObject *exit_func, *lasti, *val, *retval;
 static size_t jump;
 // Dummy variables for cache effects
 static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
@@ -589,11 +589,10 @@ dummy_func(
             goto error;
         }
 
-        // stack effect: (__0 -- )
-        inst(INTERPRETER_EXIT) {
+        inst(INTERPRETER_EXIT, (retval --)) {
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
-            PyObject *retval = POP();
+            STACK_SHRINK(1);  // Since we're not going to DISPATCH()
             assert(EMPTY());
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;

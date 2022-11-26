@@ -571,9 +571,10 @@
         }
 
         TARGET(INTERPRETER_EXIT) {
+            PyObject *retval = PEEK(1);
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
-            PyObject *retval = POP();
+            STACK_SHRINK(1);  // Since we're not going to DISPATCH()
             assert(EMPTY());
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
