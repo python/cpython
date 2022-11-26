@@ -2485,8 +2485,8 @@ In the standard library:
 
 * The ElementTree library, :mod:`xml.etree`, no longer escapes
   ampersands and angle brackets when outputting an XML processing
-  instruction (which looks like `<?xml-stylesheet href="#style1"?>`)
-  or comment (which looks like `<!-- comment -->`).
+  instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
+  or comment (which looks like ``<!-- comment -->``).
   (Patch by Neil Muller; :issue:`2746`.)
 
 * The :meth:`~StringIO.StringIO.readline` method of :class:`~StringIO.StringIO` objects now does

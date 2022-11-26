@@ -746,8 +746,7 @@ mmap__enter__method(mmap_object *self, PyObject *args)
 {
     CHECK_VALID(NULL);
 
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -1318,9 +1317,9 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         }
     }
 
-    m_obj->data = mmap(NULL, map_size,
-                       prot, flags,
-                       fd, offset);
+    Py_BEGIN_ALLOW_THREADS
+    m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
+    Py_END_ALLOW_THREADS
 
     if (devzero != -1) {
         close(devzero);
