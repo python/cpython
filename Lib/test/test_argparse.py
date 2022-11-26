@@ -2193,9 +2193,9 @@ class TestAddSubparsers(TestCase):
         subparsers.add_parser('bar')
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('baz',))
-        self.assertRegex(
+        self.assertIn(
+            "error: argument {foo,bar}: invalid choice: 'baz', maybe you meant 'bar'? (choose from 'foo', 'bar')",
             excinfo.exception.stderr,
-            r"error: argument {foo,bar}: invalid choice: 'baz', maybe you meant 'bar'? \(choose from 'foo', 'bar'\)\n$",
         )
 
     def test_optional_subparsers(self):
