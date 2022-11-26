@@ -364,6 +364,7 @@ class ZipInfo (object):
         'CRC',
         'compress_size',
         'file_size',
+        'data_offset',
         '_raw_time',
     )
 
@@ -406,6 +407,7 @@ class ZipInfo (object):
         self.external_attr = 0          # External file attributes
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
+        self.data_offset = None         # Offset to beginning of compressed data
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
@@ -1369,6 +1371,16 @@ class ZipFile:
         result.append('>')
         return ''.join(result)
 
+    def _ComputeDataOffset(self, zinfo: ZipInfo):
+        if self.fp.seekable():
+            self.fp.seek(zinfo.header_offset)
+            fheader = struct.unpack(structFileHeader, self.fp.read(sizeFileHeader))
+            if fheader[_FH_SIGNATURE] != stringFileHeader:
+                return
+            return zinfo.header_offset + \
+                fheader[_FH_FILENAME_LENGTH] + \
+                fheader[_FH_EXTRA_FIELD_LENGTH] + sizeFileHeader
+
     def _RealGetContents(self):
         """Read in the table of contents for the ZIP file."""
         fp = self.fp
@@ -1437,6 +1449,7 @@ class ZipFile:
 
             x._decodeExtra()
             x.header_offset = x.header_offset + concat
+            x.data_offset = self._ComputeDataOffset(x)
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
 

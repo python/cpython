@@ -1,0 +1,1 @@
+class ``zipfile.ZipInfo`` now exposes a data_offset field to indicate offset to beginning of compressed data for this entry.
