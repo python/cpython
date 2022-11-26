@@ -351,8 +351,8 @@ ZipFile Objects
 
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
-   be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
-   used for encrypted files.
+   be a subset of the list returned by :meth:`infolist` or :meth:`namelist`.
+   *pwd* is the password used for encrypted files.
 
    .. warning::
 

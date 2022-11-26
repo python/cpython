@@ -1680,10 +1680,10 @@ class ZipFile:
         """Extract all members from the archive to the current working
            directory. `path' specifies a different directory to extract to.
            `members' is optional and must be a subset of the list returned
-           by namelist().
+           by infolist() or namelist().
         """
         if members is None:
-            members = self.namelist()
+            members = self.infolist()
 
         if path is None:
             path = os.getcwd()
