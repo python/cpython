@@ -2339,6 +2339,8 @@ class TarFile(object):
 
         # Advance the file pointer.
         if self.offset != self.fileobj.tell():
+            if self.offset == 0:
+                return None
             self.fileobj.seek(self.offset - 1)
             if not self.fileobj.read(1):
                 raise ReadError("unexpected end of data")
