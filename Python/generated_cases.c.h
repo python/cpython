@@ -439,13 +439,12 @@
         }
 
         TARGET(SET_ADD) {
-            PyObject *v = POP();
-            PyObject *set = PEEK(oparg);
-            int err;
-            err = PySet_Add(set, v);
+            PyObject *v = PEEK(1);
+            PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
+            int err = PySet_Add(set, v);
             Py_DECREF(v);
-            if (err != 0)
-                goto error;
+            if (err != 0) goto pop_1_error;
+            STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
         }

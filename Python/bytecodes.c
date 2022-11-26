@@ -475,15 +475,12 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        // stack effect: (__0 -- )
-        inst(SET_ADD) {
-            PyObject *v = POP();
-            PyObject *set = PEEK(oparg);
-            int err;
-            err = PySet_Add(set, v);
+        // Alternative: (set, unused[oparg], v -- set, unused[oparg])
+        inst(SET_ADD, (v --)) {
+            PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
+            int err = PySet_Add(set, v);
             Py_DECREF(v);
-            if (err != 0)
-                goto error;
+            ERROR_IF(err != 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
