@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
+#include "pycore_abstract.h"      // valid_index
 #include "pycore_code.h"          // _PyCodeConstructor
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
