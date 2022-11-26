@@ -32,12 +32,16 @@ EXTENSION_PREFIX = """\
 #include "pegen.h"
 
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
-#  define D(x) if (Py_DebugFlag) x;
+#  define D(x) if (p->debug) { x; }
 #else
 #  define D(x)
 #endif
 
-# define MAXSTACK 6000
+#ifdef __wasi__
+#  define MAXSTACK 4000
+#else
+#  define MAXSTACK 6000
+#endif
 
 """
 

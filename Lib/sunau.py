@@ -106,6 +106,8 @@ is destroyed.
 from collections import namedtuple
 import warnings
 
+warnings._deprecated(__name__, remove=(3, 13))
+
 
 _sunau_params = namedtuple('_sunau_params',
                            'nchannels sampwidth framerate nframes comptype compname')
@@ -158,7 +160,7 @@ def _write_u32(file, x):
 class Au_read:
 
     def __init__(self, f):
-        if type(f) == type(''):
+        if isinstance(f, str):
             import builtins
             f = builtins.open(f, 'rb')
             self._opened = True
@@ -310,7 +312,7 @@ class Au_read:
 class Au_write:
 
     def __init__(self, f):
-        if type(f) == type(''):
+        if isinstance(f, str):
             import builtins
             f = builtins.open(f, 'wb')
             self._opened = True

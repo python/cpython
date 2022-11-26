@@ -13,6 +13,7 @@
 import _sre
 from . import _parser
 from ._constants import *
+from ._casefix import _EXTRA_CASES
 
 assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 
@@ -27,77 +28,14 @@ _REPEATING_CODES = {
     POSSESSIVE_REPEAT: (POSSESSIVE_REPEAT, SUCCESS, POSSESSIVE_REPEAT_ONE),
 }
 
-# Sets of lowercase characters which have the same uppercase.
-_equivalences = (
-    # LATIN SMALL LETTER I, LATIN SMALL LETTER DOTLESS I
-    (0x69, 0x131), # iı
-    # LATIN SMALL LETTER S, LATIN SMALL LETTER LONG S
-    (0x73, 0x17f), # sſ
-    # MICRO SIGN, GREEK SMALL LETTER MU
-    (0xb5, 0x3bc), # µμ
-    # COMBINING GREEK YPOGEGRAMMENI, GREEK SMALL LETTER IOTA, GREEK PROSGEGRAMMENI
-    (0x345, 0x3b9, 0x1fbe), # \u0345ιι
-    # GREEK SMALL LETTER IOTA WITH DIALYTIKA AND TONOS, GREEK SMALL LETTER IOTA WITH DIALYTIKA AND OXIA
-    (0x390, 0x1fd3), # ΐΐ
-    # GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND TONOS, GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND OXIA
-    (0x3b0, 0x1fe3), # ΰΰ
-    # GREEK SMALL LETTER BETA, GREEK BETA SYMBOL
-    (0x3b2, 0x3d0), # βϐ
-    # GREEK SMALL LETTER EPSILON, GREEK LUNATE EPSILON SYMBOL
-    (0x3b5, 0x3f5), # εϵ
-    # GREEK SMALL LETTER THETA, GREEK THETA SYMBOL
-    (0x3b8, 0x3d1), # θϑ
-    # GREEK SMALL LETTER KAPPA, GREEK KAPPA SYMBOL
-    (0x3ba, 0x3f0), # κϰ
-    # GREEK SMALL LETTER PI, GREEK PI SYMBOL
-    (0x3c0, 0x3d6), # πϖ
-    # GREEK SMALL LETTER RHO, GREEK RHO SYMBOL
-    (0x3c1, 0x3f1), # ρϱ
-    # GREEK SMALL LETTER FINAL SIGMA, GREEK SMALL LETTER SIGMA
-    (0x3c2, 0x3c3), # ςσ
-    # GREEK SMALL LETTER PHI, GREEK PHI SYMBOL
-    (0x3c6, 0x3d5), # φϕ
-    # CYRILLIC SMALL LETTER VE, CYRILLIC SMALL LETTER ROUNDED VE
-    (0x432, 0x1c80), # вᲀ
-    # CYRILLIC SMALL LETTER DE, CYRILLIC SMALL LETTER LONG-LEGGED DE
-    (0x434, 0x1c81), # дᲁ
-    # CYRILLIC SMALL LETTER O, CYRILLIC SMALL LETTER NARROW O
-    (0x43e, 0x1c82), # оᲂ
-    # CYRILLIC SMALL LETTER ES, CYRILLIC SMALL LETTER WIDE ES
-    (0x441, 0x1c83), # сᲃ
-    # CYRILLIC SMALL LETTER TE, CYRILLIC SMALL LETTER TALL TE, CYRILLIC SMALL LETTER THREE-LEGGED TE
-    (0x442, 0x1c84, 0x1c85), # тᲄᲅ
-    # CYRILLIC SMALL LETTER HARD SIGN, CYRILLIC SMALL LETTER TALL HARD SIGN
-    (0x44a, 0x1c86), # ъᲆ
-    # CYRILLIC SMALL LETTER YAT, CYRILLIC SMALL LETTER TALL YAT
-    (0x463, 0x1c87), # ѣᲇ
-    # CYRILLIC SMALL LETTER UNBLENDED UK, CYRILLIC SMALL LETTER MONOGRAPH UK
-    (0x1c88, 0xa64b), # ᲈꙋ
-    # LATIN SMALL LETTER S WITH DOT ABOVE, LATIN SMALL LETTER LONG S WITH DOT ABOVE
-    (0x1e61, 0x1e9b), # ṡẛ
-    # LATIN SMALL LIGATURE LONG S T, LATIN SMALL LIGATURE ST
-    (0xfb05, 0xfb06), # ﬅﬆ
-)
-
-# Maps the lowercase code to lowercase codes which have the same uppercase.
-_ignorecase_fixes = {i: tuple(j for j in t if i != j)
-                     for t in _equivalences for i in t}
-
-class _CompileData:
-    __slots__ = ('code', 'repeat_count')
-    def __init__(self):
-        self.code = []
-        self.repeat_count = 0
-
 def _combine_flags(flags, add_flags, del_flags,
                    TYPE_FLAGS=_parser.TYPE_FLAGS):
     if add_flags & TYPE_FLAGS:
         flags &= ~TYPE_FLAGS
     return (flags | add_flags) & ~del_flags
 
-def _compile(data, pattern, flags):
+def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
-    code = data.code
     emit = code.append
     _len = len
     LITERAL_CODES = _LITERAL_CODES
@@ -111,7 +49,7 @@ def _compile(data, pattern, flags):
         if flags & SRE_FLAG_UNICODE:
             iscased = _sre.unicode_iscased
             tolower = _sre.unicode_tolower
-            fixes = _ignorecase_fixes
+            fixes = _EXTRA_CASES
         else:
             iscased = _sre.ascii_iscased
             tolower = _sre.ascii_tolower
@@ -163,12 +101,14 @@ def _compile(data, pattern, flags):
             else:
                 emit(ANY)
         elif op in REPEATING_CODES:
+            if flags & SRE_FLAG_TEMPLATE:
+                raise error("internal: unsupported template operator %r" % (op,))
             if _simple(av[2]):
                 emit(REPEATING_CODES[op][2])
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 emit(SUCCESS)
                 code[skip] = _len(code) - skip
             else:
@@ -176,11 +116,7 @@ def _compile(data, pattern, flags):
                 skip = _len(code); emit(0)
                 emit(av[0])
                 emit(av[1])
-                # now op is in (MIN_REPEAT, MAX_REPEAT, POSSESSIVE_REPEAT)
-                if op != POSSESSIVE_REPEAT:
-                    emit(data.repeat_count)
-                    data.repeat_count += 1
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 code[skip] = _len(code) - skip
                 emit(REPEATING_CODES[op][1])
         elif op is SUBPATTERN:
@@ -189,7 +125,7 @@ def _compile(data, pattern, flags):
                 emit(MARK)
                 emit((group-1)*2)
             # _compile_info(code, p, _combine_flags(flags, add_flags, del_flags))
-            _compile(data, p, _combine_flags(flags, add_flags, del_flags))
+            _compile(code, p, _combine_flags(flags, add_flags, del_flags))
             if group:
                 emit(MARK)
                 emit((group-1)*2+1)
@@ -201,7 +137,7 @@ def _compile(data, pattern, flags):
             # pop their stack if they reach it
             emit(ATOMIC_GROUP)
             skip = _len(code); emit(0)
-            _compile(data, av, flags)
+            _compile(code, av, flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
         elif op in SUCCESS_CODES:
@@ -216,13 +152,7 @@ def _compile(data, pattern, flags):
                 if lo != hi:
                     raise error("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
-            _compile(data, av[1], flags)
-            emit(SUCCESS)
-            code[skip] = _len(code) - skip
-        elif op is CALL:
-            emit(op)
-            skip = _len(code); emit(0)
-            _compile(data, av, flags)
+            _compile(code, av[1], flags)
             emit(SUCCESS)
             code[skip] = _len(code) - skip
         elif op is AT:
@@ -241,7 +171,7 @@ def _compile(data, pattern, flags):
             for av in av[1]:
                 skip = _len(code); emit(0)
                 # _compile_info(code, av, flags)
-                _compile(data, av, flags)
+                _compile(code, av, flags)
                 emit(JUMP)
                 tailappend(_len(code)); emit(0)
                 code[skip] = _len(code) - skip
@@ -269,12 +199,12 @@ def _compile(data, pattern, flags):
             emit(op)
             emit(av[0]-1)
             skipyes = _len(code); emit(0)
-            _compile(data, av[1], flags)
+            _compile(code, av[1], flags)
             if av[2]:
                 emit(JUMP)
                 skipno = _len(code); emit(0)
                 code[skipyes] = _len(code) - skipyes + 1
-                _compile(data, av[2], flags)
+                _compile(code, av[2], flags)
                 code[skipno] = _len(code) - skipno
             else:
                 code[skipyes] = _len(code) - skipyes + 1
@@ -641,17 +571,17 @@ def isstring(obj):
 def _code(p, flags):
 
     flags = p.state.flags | flags
-    data = _CompileData()
+    code = []
 
     # compile info block
-    _compile_info(data.code, p, flags)
+    _compile_info(code, p, flags)
 
     # compile the pattern
-    _compile(data, p.data, flags)
+    _compile(code, p.data, flags)
 
-    data.code.append(SUCCESS)
+    code.append(SUCCESS)
 
-    return data
+    return code
 
 def _hex_code(code):
     return '[%s]' % ', '.join('%#0*x' % (_sre.CODESIZE*2+2, x) for x in code)
@@ -752,20 +682,13 @@ def dis(code):
                     else:
                         print_(FAILURE)
                 i += 1
-            elif op in (REPEAT_ONE, MIN_REPEAT_ONE,
+            elif op in (REPEAT, REPEAT_ONE, MIN_REPEAT_ONE,
                         POSSESSIVE_REPEAT, POSSESSIVE_REPEAT_ONE):
                 skip, min, max = code[i: i+3]
                 if max == MAXREPEAT:
                     max = 'MAXREPEAT'
                 print_(op, skip, min, max, to=i+skip)
                 dis_(i+3, i+skip)
-                i += skip
-            elif op is REPEAT:
-                skip, min, max, repeat_index = code[i: i+4]
-                if max == MAXREPEAT:
-                    max = 'MAXREPEAT'
-                print_(op, skip, min, max, repeat_index, to=i+skip)
-                dis_(i+4, i+skip)
                 i += skip
             elif op is GROUPREF_EXISTS:
                 arg, skip = code[i: i+2]
@@ -821,11 +744,11 @@ def compile(p, flags=0):
     else:
         pattern = None
 
-    data = _code(p, flags)
+    code = _code(p, flags)
 
     if flags & SRE_FLAG_DEBUG:
         print()
-        dis(data.code)
+        dis(code)
 
     # map in either direction
     groupindex = p.state.groupdict
@@ -834,6 +757,7 @@ def compile(p, flags=0):
         indexgroup[i] = k
 
     return _sre.compile(
-        pattern, flags | p.state.flags, data.code,
-        p.state.groups-1, groupindex, tuple(indexgroup),
-        data.repeat_count)
+        pattern, flags | p.state.flags, code,
+        p.state.groups-1,
+        groupindex, tuple(indexgroup)
+        )

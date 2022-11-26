@@ -1593,8 +1593,7 @@ class LocalServerTests(unittest.TestCase):
         self.background.start()
         self.addCleanup(self.background.join)
 
-        self.nntp = NNTP(socket_helper.HOST, port, usenetrc=False).__enter__()
-        self.addCleanup(self.nntp.__exit__, None, None, None)
+        self.nntp = self.enterContext(NNTP(socket_helper.HOST, port, usenetrc=False))
 
     def run_server(self, sock):
         # Could be generalized to handle more commands in separate methods

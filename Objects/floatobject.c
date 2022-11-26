@@ -71,7 +71,7 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"min_exp",         "DBL_MIN_EXP -- minimum int e such that radix**(e-1) "
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
-                    "a normalized"},
+                    "a normalized float"},
     {"dig",             "DBL_DIG -- maximum number of decimal digits that "
                     "can be faithfully represented in a float"},
     {"mant_dig",        "DBL_MANT_DIG -- mantissa digits"},
@@ -141,6 +141,7 @@ PyFloat_FromDouble(double fval)
 #endif
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
+        OBJECT_STAT_INC(from_freelist);
     }
     else
 #endif
@@ -161,11 +162,18 @@ float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
     double x;
     const char *end;
     const char *last = s + len;
-    /* strip space */
+    /* strip leading whitespace */
     while (s < last && Py_ISSPACE(*s)) {
         s++;
     }
+    if (s == last) {
+        PyErr_Format(PyExc_ValueError,
+                     "could not convert string to float: "
+                     "%R", obj);
+        return NULL;
+    }
 
+    /* strip trailing whitespace */
     while (s < last - 1 && Py_ISSPACE(last[-1])) {
         last--;
     }
@@ -256,6 +264,7 @@ _PyFloat_ExactDealloc(PyObject *obj)
     state->numfree++;
     Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
     state->free_list = op;
+    OBJECT_STAT_INC(to_freelist);
 #else
     PyObject_Free(op);
 #endif
@@ -362,8 +371,7 @@ convert_to_double(PyObject **v, double *dbl)
         }
     }
     else {
-        Py_INCREF(Py_NotImplemented);
-        *v = Py_NotImplemented;
+        *v = Py_NewRef(Py_NotImplemented);
         return -1;
     }
     return 0;
@@ -523,20 +531,17 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                 temp = _PyLong_Lshift(ww, 1);
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(ww);
-                ww = temp;
+                Py_SETREF(ww, temp);
 
                 temp = _PyLong_Lshift(vv, 1);
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(vv);
-                vv = temp;
+                Py_SETREF(vv, temp);
 
                 temp = PyNumber_Or(vv, _PyLong_GetOne());
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(vv);
-                vv = temp;
+                Py_SETREF(vv, temp);
             }
 
             r = PyObject_RichCompareBool(vv, ww, op);
@@ -895,8 +900,7 @@ float_is_integer_impl(PyObject *self)
                              PyExc_ValueError);
         return NULL;
     }
-    Py_INCREF(o);
-    return o;
+    return Py_NewRef(o);
 }
 
 /*[clinic input]
@@ -1115,11 +1119,12 @@ float___round___impl(PyObject *self, PyObject *o_ndigits)
 static PyObject *
 float_float(PyObject *v)
 {
-    if (PyFloat_CheckExact(v))
-        Py_INCREF(v);
-    else
-        v = PyFloat_FromDouble(((PyFloatObject *)v)->ob_fval);
-    return v;
+    if (PyFloat_CheckExact(v)) {
+        return Py_NewRef(v);
+    }
+    else {
+        return PyFloat_FromDouble(((PyFloatObject *)v)->ob_fval);
+    }
 }
 
 /*[clinic input]
@@ -1715,12 +1720,14 @@ float___getnewargs___impl(PyObject *self)
 }
 
 /* this is for the benefit of the pack/unpack routines below */
+typedef enum _py_float_format_type float_format_type;
+#define unknown_format _py_float_format_unknown
+#define ieee_big_endian_format _py_float_format_ieee_big_endian
+#define ieee_little_endian_format _py_float_format_ieee_little_endian
 
-typedef enum {
-    unknown_format, ieee_big_endian_format, ieee_little_endian_format
-} float_format_type;
+#define float_format (_PyRuntime.float_state.float_format)
+#define double_format (_PyRuntime.float_state.double_format)
 
-static float_format_type double_format, float_format;
 
 /*[clinic input]
 @classmethod
@@ -1921,13 +1928,9 @@ PyTypeObject PyFloat_Type = {
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
-void
-_PyFloat_InitState(PyInterpreterState *interp)
+static void
+_init_global_state(void)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     float_format_type detected_double_format, detected_float_format;
 
     /* We attempt to determine if this machine is using IEEE
@@ -1977,6 +1980,15 @@ _PyFloat_InitState(PyInterpreterState *interp)
     float_format = detected_float_format;
 }
 
+void
+_PyFloat_InitState(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+    _init_global_state();
+}
+
 PyStatus
 _PyFloat_InitTypes(PyInterpreterState *interp)
 {
@@ -1990,7 +2002,8 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&FloatInfoType,
+                                          &floatinfo_desc) < 0) {
             return _PyStatus_ERR("can't init float info type");
         }
     }

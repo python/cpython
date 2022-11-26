@@ -3,9 +3,9 @@ from test import audiotests
 import io
 import struct
 import sys
-import sunau
 from test.support import warnings_helper
 
+sunau = warnings_helper.import_deprecated("sunau")
 audioop = warnings_helper.import_deprecated("audioop")
 
 

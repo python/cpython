@@ -146,7 +146,7 @@ Here are the classes:
    A subclass of :class:`~email.mime.nonmultipart.MIMENonMultipart`, the
    :class:`MIMEAudio` class is used to create MIME message objects of major type
    :mimetype:`audio`. *_audiodata* is a string containing the raw audio data.  If
-   this data can be decoded by the standard Python module :mod:`sndhdr`, then the
+   this data can be decoded as au, wav, aiff, or aifc, then the
    subtype will be automatically included in the :mailheader:`Content-Type` header.
    Otherwise you can explicitly specify the audio subtype via the *_subtype*
    argument.  If the minor type could not be guessed and *_subtype* was not given,

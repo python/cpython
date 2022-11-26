@@ -9,10 +9,10 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore", DeprecationWarning)
     ossaudiodev = import_helper.import_module('ossaudiodev')
 audioop = warnings_helper.import_deprecated('audioop')
+sunau = warnings_helper.import_deprecated('sunau')
 
 import errno
 import sys
-import sunau
 import time
 import unittest
 
