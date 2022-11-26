@@ -223,7 +223,7 @@ class ButtonClickTest(unittest.TestCase):
         self.assertEqual(self.called, True)
         self.assertEqual(self.view.title(), 'TITLE_FILE')
         get = self.view.viewframe.textframe.text.get
-        with open(__file__) as f:
+        with open(__file__, encoding='ascii') as f:
             self.assertEqual(get('1.0', '1.end'), f.readline().strip())
             f.readline()
             self.assertEqual(get('3.0', '3.end'), f.readline().strip())

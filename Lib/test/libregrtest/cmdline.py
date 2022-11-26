@@ -428,13 +428,13 @@ def _parse_args(args, **kwargs):
     if ns.match_filename:
         if ns.match_tests is None:
             ns.match_tests = []
-        with open(ns.match_filename) as fp:
+        with open(ns.match_filename, encoding='utf-8') as fp:
             for line in fp:
                 ns.match_tests.append(line.strip())
     if ns.ignore_filename:
         if ns.ignore_tests is None:
             ns.ignore_tests = []
-        with open(ns.ignore_filename) as fp:
+        with open(ns.ignore_filename, encoding='utf-8') as fp:
             for line in fp:
                 ns.ignore_tests.append(line.strip())
     if ns.forever:

@@ -171,7 +171,7 @@ _CFG = {"width" : 0.5,               # Screen
 
 def config_dict(filename):
     """Convert content of config-file into dictionary."""
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding='utf-8') as f:
         cfglines = f.readlines()
     cfgdict = {}
     for line in cfglines:
@@ -3856,7 +3856,7 @@ def write_docstringdict(filename="turtle_docstringdict"):
         key = "Turtle."+methodname
         docsdict[key] = eval(key).__doc__
 
-    with open("%s.py" % filename,"w") as f:
+    with open("%s.py" % filename, "w", encoding='utf-8') as f:
         keys = sorted(x for x in docsdict
                       if x.split('.')[1] not in _alias_list)
         f.write('docsdict = {\n\n')
@@ -3867,7 +3867,6 @@ def write_docstringdict(filename="turtle_docstringdict"):
         f.write('%s :\n' % repr(key))
         f.write('        """%s\n"""\n\n' % docsdict[key])
         f.write("}\n")
-        f.close()
 
 def read_docstrings(lang):
     """Read in docstrings from lang-specific docstring dictionary.

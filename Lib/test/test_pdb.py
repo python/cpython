@@ -1505,7 +1505,7 @@ class PdbTestCase(unittest.TestCase):
     def run_pdb_script(self, script, commands, expected_returncode=0):
         """Run 'script' lines with pdb and the pdb 'commands'."""
         filename = 'main.py'
-        with open(filename, 'w') as f:
+        with open(filename, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(os_helper.unlink, filename)
         return self._run_pdb([filename], commands, expected_returncode)
@@ -1517,9 +1517,9 @@ class PdbTestCase(unittest.TestCase):
         main_file = self.module_name + '/__main__.py'
         init_file = self.module_name + '/__init__.py'
         os.mkdir(self.module_name)
-        with open(init_file, 'w') as f:
+        with open(init_file, 'wb') as f:
             pass
-        with open(main_file, 'w') as f:
+        with open(main_file, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent(script))
         self.addCleanup(os_helper.rmtree, self.module_name)
         return self._run_pdb(['-m', self.module_name], commands)
@@ -1643,7 +1643,7 @@ def bœr():
             def bar():
                 pass
         """
-        with open('bar.py', 'w') as f:
+        with open('bar.py', 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent(bar))
         self.addCleanup(os_helper.unlink, 'bar.py')
         stdout, stderr = self.run_pdb_script(script, commands)
@@ -1749,7 +1749,7 @@ def bœr():
                 with open('.pdbrc', 'w') as f:
                     f.write("invalid\n")
 
-                with open('main.py', 'w') as f:
+                with open('main.py', 'w', encoding='utf-8') as f:
                     f.write(script)
 
                 cmd = [sys.executable, 'main.py']
@@ -1774,8 +1774,8 @@ def bœr():
             rc_path = os.path.join(temp_dir, ".pdbrc")
             os.path.expanduser.return_value = rc_path
             try:
-                with open(rc_path, "w") as f:
-                    f.write("invalid")
+                with open(rc_path, "wb") as f:
+                    f.write(b"invalid")
                 self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
             finally:
                 if save_home is not None:
@@ -1922,18 +1922,18 @@ def bœr():
         module_file = self.module_name + '/module.py'
         self.addCleanup(os_helper.rmtree, self.module_name)
         os.mkdir(self.module_name)
-        with open(init_file, 'w') as f:
+        with open(init_file, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent("""
                 top_var = "VAR from top"
             """))
-        with open(main_file, 'w') as f:
+        with open(main_file, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent("""
                 from . import top_var
                 from .module import var
                 from . import module
                 pass # We'll stop here and print the vars
             """))
-        with open(module_file, 'w') as f:
+        with open(module_file, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent("""
                 var = "VAR from module"
                 var2 = "second var"
@@ -1960,16 +1960,16 @@ def bœr():
         module_file = self.module_name + '/module.py'
         self.addCleanup(os_helper.rmtree, self.module_name)
         os.mkdir(self.module_name)
-        with open(init_file, 'w') as f:
+        with open(init_file, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent("""
                 top_var = "VAR from top"
             """))
-        with open(main_file, 'w') as f:
+        with open(main_file, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent("""
                 from . import module
                 pass # We'll stop here and print the vars
             """))
-        with open(module_file, 'w') as f:
+        with open(module_file, 'w', encoding='utf-8') as f:
             f.write(textwrap.dedent("""
                 var = "VAR from module"
             """))

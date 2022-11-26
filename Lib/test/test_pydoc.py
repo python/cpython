@@ -711,7 +711,7 @@ class PydocDocTest(unittest.TestCase):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, 'foomod42.py')
             cached_path = importlib.util.cache_from_source(init_path)
-            with open(init_path, 'w') as fobj:
+            with open(init_path, 'w', encoding='ascii') as fobj:
                 fobj.write("foo = 1")
             py_compile.compile(init_path)
             synopsis = pydoc.synopsis(init_path, {})
@@ -731,7 +731,7 @@ class PydocDocTest(unittest.TestCase):
     def test_is_package_when_is_package(self):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, '__init__.py')
-            open(init_path, 'w').close()
+            open(init_path, 'wb').close()
             self.assertTrue(pydoc.ispackage(test_dir))
             os.remove(init_path)
 
@@ -891,7 +891,7 @@ class PydocImportTest(PydocBaseTest):
 
         sourcefn = os.path.join(TESTFN, modname) + os.extsep + "py"
         for importstring, expectedinmsg in testpairs:
-            with open(sourcefn, 'w') as f:
+            with open(sourcefn, 'w', encoding='ascii') as f:
                 f.write("import {}\n".format(importstring))
             result = run_pydoc_fail(modname, PYTHONPATH=TESTFN).decode("ascii")
             expected = badimport_pattern % (modname, expectedinmsg)
@@ -902,7 +902,7 @@ class PydocImportTest(PydocBaseTest):
         pkgdir = os.path.join(TESTFN, "syntaxerr")
         os.mkdir(pkgdir)
         badsyntax = os.path.join(pkgdir, "__init__") + os.extsep + "py"
-        with open(badsyntax, 'w') as f:
+        with open(badsyntax, 'w', encoding='ascii') as f:
             f.write("invalid python syntax = $1\n")
         with self.restrict_walk_packages(path=[TESTFN]):
             with captured_stdout() as out:
@@ -940,7 +940,7 @@ class PydocImportTest(PydocBaseTest):
         os.mkdir(pkgdir)
         self.addCleanup(rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
-        with open(init_path, 'w') as fobj:
+        with open(init_path, 'w', encoding='ascii') as fobj:
             fobj.write("foo = 1")
         current_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
         try:

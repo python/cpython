@@ -44,7 +44,7 @@ def write_code(outfile, marshalled: bytes, varname: str) -> None:
 
 
 def write_frozen(outpath: str, inpath: str, name: str, marshalled: bytes) -> None:
-    with open(outpath, "w") as outfile:
+    with open(outpath, "w", encoding="ascii") as outfile:
         outfile.write(header)
         outfile.write("\n")
         arrayname = get_varname(name, "_Py_M__")

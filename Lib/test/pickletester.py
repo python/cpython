@@ -3429,7 +3429,7 @@ class AbstractPickleModuleTests:
         self.Pickler(f, protocol=-1)
 
     def test_dump_text_file(self):
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "w", encoding='ascii')
         try:
             for proto in protocols:
                 self.assertRaises(TypeError, self.dump, 123, f, proto)

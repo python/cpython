@@ -1322,12 +1322,12 @@ a=A()
 
         # don't import the warnings module
         # (_warnings will try to import it)
-        code = "f = open(%a)" % __file__
+        code = "f = open(%a, encoding='ascii')" % __file__
         rc, out, err = assert_python_ok("-Wd", "-c", code)
         self.assertTrue(err.startswith(expected), ascii(err))
 
         # import the warnings module
-        code = "import warnings; f = open(%a)" % __file__
+        code = "import warnings; f = open(%a, encoding='ascii')" % __file__
         rc, out, err = assert_python_ok("-Wd", "-c", code)
         self.assertTrue(err.startswith(expected), ascii(err))
 

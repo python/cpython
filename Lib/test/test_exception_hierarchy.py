@@ -103,7 +103,7 @@ class HierarchyTest(unittest.TestCase):
         # PyErr_SetFromErrnoWithFilenameObject was called.
         # (it is therefore deliberate that it doesn't use assertRaises)
         try:
-            open(filename)
+            open(filename, 'rb')
         except FileNotFoundError:
             pass
         else:

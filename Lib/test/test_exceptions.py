@@ -70,7 +70,7 @@ class ExceptionTests(unittest.TestCase):
             unlink(TESTFN)
 
         self.raise_catch(OSError, "OSError")
-        self.assertRaises(OSError, open, 'this file does not exist', 'r')
+        self.assertRaises(OSError, open, 'this file does not exist', 'rb')
 
         self.raise_catch(ImportError, "ImportError")
         self.assertRaises(ImportError, __import__, "undefined_module")

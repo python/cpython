@@ -42,7 +42,7 @@ def getcaps():
     lineno = 0
     for mailcap in listmailcapfiles():
         try:
-            fp = open(mailcap, 'r')
+            fp = open(mailcap, 'r', encoding='utf-8')
         except OSError:
             continue
         with fp:

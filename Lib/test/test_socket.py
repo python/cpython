@@ -5752,14 +5752,14 @@ def isTipcAvailable():
     if not hasattr(socket, "AF_TIPC"):
         return False
     try:
-        f = open("/proc/modules", encoding="utf-8")
+        f = open("/proc/modules", "rb")
     except (FileNotFoundError, IsADirectoryError, PermissionError):
         # It's ok if the file does not exist, is a directory or if we
         # have not the permission to read it.
         return False
     with f:
         for line in f:
-            if line.startswith("tipc "):
+            if line.startswith(b"tipc "):
                 return True
     return False
 

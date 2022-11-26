@@ -160,29 +160,23 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'fstatvfs'),
                          'test needs posix.fstatvfs()')
     def test_fstatvfs(self):
-        fp = open(os_helper.TESTFN)
-        try:
+        with open(os_helper.TESTFN, 'rb') as fp:
             self.assertTrue(posix.fstatvfs(fp.fileno()))
             self.assertTrue(posix.statvfs(fp.fileno()))
-        finally:
-            fp.close()
 
     @unittest.skipUnless(hasattr(posix, 'ftruncate'),
                          'test needs posix.ftruncate()')
     def test_ftruncate(self):
-        fp = open(os_helper.TESTFN, 'w+')
-        try:
+        with open(os_helper.TESTFN, 'wb+') as fp:
             # we need to have some data to truncate
-            fp.write('test')
+            fp.write(b'test')
             fp.flush()
             posix.ftruncate(fp.fileno(), 0)
-        finally:
-            fp.close()
 
     @unittest.skipUnless(hasattr(posix, 'truncate'), "test needs posix.truncate()")
     def test_truncate(self):
-        with open(os_helper.TESTFN, 'w') as fp:
-            fp.write('test')
+        with open(os_helper.TESTFN, 'wb') as fp:
+            fp.write(b'test')
             fp.flush()
         posix.truncate(os_helper.TESTFN, 0)
 
@@ -549,13 +543,10 @@ class PosixTester(unittest.TestCase):
                          'test needs posix.dup()')
     @unittest.skipIf(support.is_wasi, "WASI does not have dup()")
     def test_dup(self):
-        fp = open(os_helper.TESTFN)
-        try:
+        with open(os_helper.TESTFN, 'rb') as fp:
             fd = posix.dup(fp.fileno())
             self.assertIsInstance(fd, int)
             os.close(fd)
-        finally:
-            fp.close()
 
     @unittest.skipUnless(hasattr(posix, 'confstr'),
                          'test needs posix.confstr()')
@@ -567,13 +558,8 @@ class PosixTester(unittest.TestCase):
                          'test needs posix.dup2()')
     @unittest.skipIf(support.is_wasi, "WASI does not have dup2()")
     def test_dup2(self):
-        fp1 = open(os_helper.TESTFN)
-        fp2 = open(os_helper.TESTFN)
-        try:
+        with open(os_helper.TESTFN, 'rb') as fp1, open(os_helper.TESTFN, 'rb') as fp2:
             posix.dup2(fp1.fileno(), fp2.fileno())
-        finally:
-            fp1.close()
-            fp2.close()
 
     @unittest.skipUnless(hasattr(os, 'O_CLOEXEC'), "needs os.O_CLOEXEC")
     @support.requires_linux_version(2, 6, 23)
@@ -619,16 +605,13 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'fstat'),
                          'test needs posix.fstat()')
     def test_fstat(self):
-        fp = open(os_helper.TESTFN)
-        try:
+        with open(os_helper.TESTFN, 'rb') as fp:
             self.assertTrue(posix.fstat(fp.fileno()))
             self.assertTrue(posix.stat(fp.fileno()))
 
             self.assertRaisesRegex(TypeError,
                     'should be string, bytes, os.PathLike or integer, not',
                     posix.stat, float(fp.fileno()))
-        finally:
-            fp.close()
 
     def test_stat(self):
         self.assertTrue(posix.stat(os_helper.TESTFN))
@@ -804,13 +787,10 @@ class PosixTester(unittest.TestCase):
         os.unlink(os_helper.TESTFN)
 
         # re-create the file
-        test_file = open(os_helper.TESTFN, 'w')
-        try:
+        with open(os_helper.TESTFN, 'wb') as test_file:
             fd = test_file.fileno()
             self._test_all_chown_common(posix.fchown, fd,
                                         getattr(posix, 'fstat', None))
-        finally:
-            test_file.close()
 
     @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'lchown'), "test needs os.lchown()")
@@ -948,7 +928,7 @@ class PosixTester(unittest.TestCase):
             new_st = os.stat(target_file)
             self.assertEqual(st.st_flags | stat.UF_IMMUTABLE, new_st.st_flags)
             try:
-                fd = open(target_file, 'w+')
+                fd = open(target_file, 'wb+')
             except OSError as e:
                 self.assertEqual(e.errno, errno.EPERM)
         finally:
@@ -1363,8 +1343,8 @@ class TestPosixDirFd(unittest.TestCase):
     @unittest.skipUnless(os.stat in os.supports_dir_fd, "test needs dir_fd support in os.stat()")
     def test_stat_dir_fd(self):
         with self.prepare() as (dir_fd, name, fullname):
-            with open(fullname, 'w') as outfile:
-                outfile.write("testline\n")
+            with open(fullname, 'wb') as outfile:
+                outfile.write(b"testline\n")
             self.addCleanup(posix.unlink, fullname)
 
             s1 = posix.stat(fullname)
@@ -1571,13 +1551,13 @@ class _PosixSpawnMixin:
         self.addCleanup(os_helper.unlink, pidfile)
         script = f"""if 1:
             import os
-            with open({pidfile!r}, "w") as pidfile:
+            with open({pidfile!r}, "w", encoding='ascii') as pidfile:
                 pidfile.write(str(os.getpid()))
             """
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args, os.environ)
         support.wait_process(pid, exitcode=0)
-        with open(pidfile, encoding="utf-8") as f:
+        with open(pidfile, encoding="latin1") as f:
             self.assertEqual(f.read(), str(pid))
 
     def test_no_such_executable(self):

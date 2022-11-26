@@ -190,8 +190,8 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         filename = os_helper.TESTFN_ASCII
         self.addCleanup(os_helper.unlink, filename)
-        with open(filename, 'w') as f:
-            f.write("""set a 1
+        with open(filename, 'wb') as f:
+            f.write(b"""set a 1
             set b 2
             set c [ expr $a + $b ]
             """)
@@ -200,12 +200,28 @@ class TclTest(unittest.TestCase):
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
+    def test_evalfile_non_ascii(self):
+        tcl = self.interp
+        filename = os_helper.TESTFN_ASCII
+        self.addCleanup(os_helper.unlink, filename)
+        try:
+            with open(filename, 'w', encoding='locale') as f:
+                f.write("""
+                set a ß
+                set ß a
+                """)
+        except UnicodeEncodeError:
+            self.skipTest("cannot encode sources with the current locale encoding")
+        tcl.evalfile(filename)
+        self.assertEqual(tcl.eval('set a'),'ß')
+        self.assertEqual(tcl.eval('set ß'),'a')
+
     def test_evalfile_null_in_result(self):
         tcl = self.interp
         filename = os_helper.TESTFN_ASCII
         self.addCleanup(os_helper.unlink, filename)
-        with open(filename, 'w') as f:
-            f.write("""
+        with open(filename, 'wb') as f:
+            f.write(b"""
             set a "a\0b"
             set b "a\\0b"
             """)

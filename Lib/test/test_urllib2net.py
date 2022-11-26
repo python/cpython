@@ -143,10 +143,9 @@ class OtherNetworkTests(unittest.TestCase):
 
     def test_file(self):
         TESTFN = os_helper.TESTFN
-        f = open(TESTFN, 'w')
         try:
-            f.write('hi there\n')
-            f.close()
+            with open(TESTFN, 'wb') as f:
+                f.write(b'hi there\n')
             urls = [
                 'file:' + sanepathname2url(os.path.abspath(TESTFN)),
                 ('file:///nonsensename/etc/passwd', None,

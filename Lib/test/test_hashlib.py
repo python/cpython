@@ -1163,12 +1163,12 @@ class KDFTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             hashlib.file_digest(None, "sha256")
 
-        with self.assertRaises(ValueError):
-            with open(os_helper.TESTFN, "r") as f:
+        with open(os_helper.TESTFN, "r", encoding="latin1") as f:
+            with self.assertRaises(ValueError):
                 hashlib.file_digest(f, "sha256")
 
-        with self.assertRaises(ValueError):
-            with open(os_helper.TESTFN, "wb") as f:
+        with open(os_helper.TESTFN, "wb") as f:
+            with self.assertRaises(ValueError):
                 hashlib.file_digest(f, "sha256")
 
 

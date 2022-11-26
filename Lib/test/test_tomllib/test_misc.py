@@ -31,7 +31,7 @@ class TestMiscellaneous(unittest.TestCase):
             file_path = Path(tmp_dir_path) / "test.toml"
             file_path.write_text(content)
 
-            with open(file_path, "r") as txt_f:
+            with open(file_path, "r", encoding='ascii') as txt_f:
                 with self.assertRaises(TypeError):
                     tomllib.load(txt_f)  # type: ignore[arg-type]
 

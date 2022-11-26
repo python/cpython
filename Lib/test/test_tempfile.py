@@ -1615,8 +1615,8 @@ class TestTemporaryDirectory(BaseTestCase):
             temp_path = pathlib.Path(temp_dir.name)
             self.assertTrue(temp_path.exists(),
                             f"TemporaryDirectory {temp_path!s} does not exist")
-            with open(temp_path / "a_file.txt", "w+t") as open_file:
-                open_file.write("Hello world!\n")
+            with open(temp_path / "a_file.txt", "w+b") as open_file:
+                open_file.write(b"Hello world!\n")
                 temp_dir.cleanup()
             self.assertEqual(len(list(temp_path.glob("*"))),
                              int(sys.platform.startswith("win")),
@@ -1674,8 +1674,8 @@ class TestTemporaryDirectory(BaseTestCase):
             temp_path = pathlib.Path(temp_dir.name)
             self.assertTrue(temp_path.exists(),
                             f"TemporaryDirectory {temp_path!s} does not exist")
-            with open(temp_path / "a_file.txt", "w+t") as open_file:
-                open_file.write("Hello world!\n")
+            with open(temp_path / "a_file.txt", "w+b") as open_file:
+                open_file.write(b"Hello world!\n")
                 del temp_dir
             self.assertEqual(len(list(temp_path.glob("*"))),
                              int(sys.platform.startswith("win")),
@@ -1703,8 +1703,8 @@ class TestTemporaryDirectory(BaseTestCase):
 
                     tmp2 = os.path.join(tmp.name, 'test_dir')
                     os.mkdir(tmp2)
-                    with open(os.path.join(tmp2, "test0.txt"), "w") as f:
-                        f.write("Hello world!")
+                    with open(os.path.join(tmp2, "test0.txt"), "wb") as f:
+                        f.write(b"Hello world!")
 
                     {mod}.tmp = tmp
 
@@ -1733,10 +1733,10 @@ class TestTemporaryDirectory(BaseTestCase):
 
                 temp_dir_2 = pathlib.Path(temp_dir.name) / "test_dir"
                 temp_dir_2.mkdir()
-                with open(temp_dir_2 / "test0.txt", "w") as test_file:
-                    test_file.write("Hello world!")
-                open_file = open(temp_dir_2 / "open_file.txt", "w")
-                open_file.write("Hello world!")
+                with open(temp_dir_2 / "test0.txt", "wb") as test_file:
+                    test_file.write(b"Hello world!")
+                open_file = open(temp_dir_2 / "open_file.txt", "wb")
+                open_file.write(b"Hello world!")
 
                 warnings.filterwarnings("always", category=ResourceWarning)
                 """.format(working_dir=working_dir)

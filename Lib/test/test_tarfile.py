@@ -110,28 +110,27 @@ class UstarReadTest(ReadTest, unittest.TestCase):
     def test_fileobj_readlines(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
         tarinfo = self.tar.getmember("ustar/regtype")
-        with open(os.path.join(TEMPDIR, "ustar/regtype"), "r") as fobj1:
+        with open(os.path.join(TEMPDIR, "ustar/regtype"), "rb") as fobj1:
             lines1 = fobj1.readlines()
 
         with self.tar.extractfile(tarinfo) as fobj:
-            fobj2 = io.TextIOWrapper(fobj)
-            lines2 = fobj2.readlines()
+            lines2 = fobj.readlines()
             self.assertEqual(lines1, lines2,
                     "fileobj.readlines() failed")
             self.assertEqual(len(lines2), 114,
                     "fileobj.readlines() failed")
             self.assertEqual(lines2[83],
-                    "I will gladly admit that Python is not the fastest "
-                    "running scripting language.\n",
-                    "fileobj.readlines() failed")
+                    b"I will gladly admit that Python is not the fastest "
+                    b"running scripting language.\n",
+                    b"fileobj.readlines() failed")
 
     def test_fileobj_iter(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
         tarinfo = self.tar.getmember("ustar/regtype")
-        with open(os.path.join(TEMPDIR, "ustar/regtype"), "r") as fobj1:
+        with open(os.path.join(TEMPDIR, "ustar/regtype"), "rb") as fobj1:
             lines1 = fobj1.readlines()
         with self.tar.extractfile(tarinfo) as fobj2:
-            lines2 = list(io.TextIOWrapper(fobj2))
+            lines2 = list(fobj2)
             self.assertEqual(lines1, lines2,
                     "fileobj.__iter__() failed")
 
@@ -185,8 +184,7 @@ class UstarReadTest(ReadTest, unittest.TestCase):
 
     def test_fileobj_text(self):
         with self.tar.extractfile("ustar/regtype") as fobj:
-            fobj = io.TextIOWrapper(fobj)
-            data = fobj.read().encode("iso8859-1")
+            data = fobj.read()
             self.assertEqual(sha256sum(data), sha256_regtype)
             try:
                 fobj.seek(100)
@@ -1243,8 +1241,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
     def test_ordered_recursion(self):
         path = os.path.join(TEMPDIR, "directory")
         os.mkdir(path)
-        open(os.path.join(path, "1"), "a").close()
-        open(os.path.join(path, "2"), "a").close()
+        open(os.path.join(path, "1"), "ab").close()
+        open(os.path.join(path, "2"), "ab").close()
         try:
             tar = tarfile.open(tmpname, self.mode)
             try:
@@ -1407,8 +1405,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         try:
             source_file = os.path.join(tempdir,'source')
             target_file = os.path.join(tempdir,'symlink')
-            with open(source_file,'w') as f:
-                f.write('something\n')
+            with open(source_file, 'wb') as f:
+                f.write(b'something\n')
             os.symlink(source_file, target_file)
             with tarfile.open(temparchive, 'w') as tar:
                 tar.add(source_file, arcname="source")

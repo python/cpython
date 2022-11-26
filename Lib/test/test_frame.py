@@ -257,7 +257,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             def gen():
                 yield
 
-            fd = open({__file__!r})
+            fd = open({__file__!r}, 'rb')
             l = [fd, GCHello()]
             l.append(l)
             del fd

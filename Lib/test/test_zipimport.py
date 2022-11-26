@@ -809,18 +809,16 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
     def testNotZipFile(self):
         os_helper.unlink(TESTMOD)
-        fp = open(TESTMOD, 'w+')
-        fp.write('a' * 22)
-        fp.close()
+        with open(TESTMOD, 'wb') as fp:
+            fp.write(b'a' * 22)
         self.assertZipFailure(TESTMOD)
 
     # XXX: disabled until this works on Big-endian machines
     def _testBogusZipFile(self):
         os_helper.unlink(TESTMOD)
-        fp = open(TESTMOD, 'w+')
-        fp.write(struct.pack('=I', 0x06054B50))
-        fp.write('a' * 18)
-        fp.close()
+        with open(TESTMOD, 'wb') as fp:
+            fp.write(struct.pack('=I', 0x06054B50))
+            fp.write(b'a' * 18)
         z = zipimport.zipimporter(TESTMOD)
 
         try:

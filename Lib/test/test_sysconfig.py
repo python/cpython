@@ -513,7 +513,7 @@ class MakefileTests(unittest.TestCase):
 
     def test_parse_makefile(self):
         self.addCleanup(unlink, TESTFN)
-        with open(TESTFN, "w") as makefile:
+        with open(TESTFN, "w", encoding='ascii') as makefile:
             print("var1=a$(VAR2)", file=makefile)
             print("VAR2=b$(var3)", file=makefile)
             print("var3=42", file=makefile)

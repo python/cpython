@@ -115,7 +115,7 @@ class TestFilemode:
 
     @os_helper.skip_unless_working_chmod
     def test_mode(self):
-        with open(TESTFN, 'w'):
+        with open(TESTFN, 'wb'):
             pass
         if os.name == 'posix':
             os.chmod(TESTFN, 0o700)

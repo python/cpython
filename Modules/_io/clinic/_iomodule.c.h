@@ -169,7 +169,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *file;
     const char *mode = "r";
     int buffering = -1;
-    const char *encoding = NULL;
+    const char *encoding = default_encoding;
     const char *errors = NULL;
     const char *newline = NULL;
     int closefd = 1;
@@ -407,4 +407,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1f8001287a423470 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1da07f6eb013b43 input=a9049054013a1b77]*/

@@ -1362,7 +1362,7 @@ class TestModule(unittest.TestCase):
             # child process
             try:
                 val = random.getrandbits(128)
-                with open(w, "w") as f:
+                with open(w, "w", encoding='ascii') as f:
                     f.write(str(val))
             finally:
                 os._exit(0)
@@ -1370,7 +1370,7 @@ class TestModule(unittest.TestCase):
             # parent process
             os.close(w)
             val = random.getrandbits(128)
-            with open(r, "r") as f:
+            with open(r, "r", encoding='ascii') as f:
                 child_val = eval(f.read())
             self.assertNotEqual(val, child_val)
 

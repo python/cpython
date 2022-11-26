@@ -2143,7 +2143,7 @@ class PtyTests(unittest.TestCase):
                 # Make sure we don't get stuck if there's a problem
                 signal.alarm(2)
                 os.close(r)
-                with open(w, "w") as wpipe:
+                with open(w, "w", encoding='ascii') as wpipe:
                     child(wpipe)
             except:
                 traceback.print_exc()
@@ -2156,7 +2156,7 @@ class PtyTests(unittest.TestCase):
         os.write(fd, terminal_input)
 
         # Get results from the pipe
-        with open(r, encoding="utf-8") as rpipe:
+        with open(r, encoding="ascii") as rpipe:
             lines = []
             while True:
                 line = rpipe.readline().strip()

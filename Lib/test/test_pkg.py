@@ -83,7 +83,7 @@ class TestPkg(unittest.TestCase):
             if contents is None:
                 os.mkdir(fullname)
             else:
-                with open(fullname, "w") as f:
+                with open(fullname, "w", encoding='ascii') as f:
                     f.write(contents)
                     if not contents.endswith('\n'):
                         f.write('\n')

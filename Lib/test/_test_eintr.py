@@ -344,13 +344,13 @@ class SocketEINTRTest(EINTRBaseTest):
             self.assertEqual(proc.wait(), 0)
 
     def python_open(self, path):
-        fp = open(path, 'w')
+        fp = open(path, 'wb')
         fp.close()
 
     @unittest.skipIf(sys.platform == "darwin",
                      "hangs under macOS; see bpo-25234, bpo-35363")
     def test_open(self):
-        self._test_open("fp = open(path, 'r')\nfp.close()",
+        self._test_open("fp = open(path, 'rb')\nfp.close()",
                         self.python_open)
 
     def os_open(self, path):

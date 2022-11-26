@@ -2171,7 +2171,7 @@ class MaildirTestCase(unittest.TestCase):
         try:
             os.link(tmpname, newname)
         except (AttributeError, PermissionError):
-            with open(newname, "w") as fp:
+            with open(newname, "w", encoding='ascii') as fp:
                 fp.write(DUMMY_MESSAGE)
         self._msgfiles.append(newname)
         return tmpname

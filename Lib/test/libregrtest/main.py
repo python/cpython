@@ -212,7 +212,7 @@ class Regrtest:
         if self.ns.single:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
-                with open(self.next_single_filename, 'r') as fp:
+                with open(self.next_single_filename, 'r', encoding='utf-8') as fp:
                     next_test = fp.read().strip()
                     self.tests = [next_test]
             except OSError:
@@ -223,7 +223,8 @@ class Regrtest:
             # regex to match 'test_builtin' in line:
             # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
             regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
-            with open(os.path.join(os_helper.SAVEDCWD, self.ns.fromfile)) as fp:
+            filepath = os.path.join(os_helper.SAVEDCWD, self.ns.fromfile)
+            with open(filepath, encoding='utf-8', errors='replace') as fp:
                 for line in fp:
                     line = line.split('#', 1)[0]
                     line = line.strip()
@@ -574,7 +575,7 @@ class Regrtest:
     def finalize(self):
         if self.next_single_filename:
             if self.next_single_test:
-                with open(self.next_single_filename, 'w') as fp:
+                with open(self.next_single_filename, 'w', encoding='utf-8') as fp:
                     fp.write(self.next_single_test + '\n')
             else:
                 os.unlink(self.next_single_filename)

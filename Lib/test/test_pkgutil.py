@@ -294,9 +294,8 @@ class PkgutilTests(unittest.TestCase):
                 continue
             # make an empty __init__.py file
             f = os.path.join(d, '__init__.py')
-            with open(f, 'w') as f:
-                f.write('')
-                f.flush()
+            with open(f, 'wb') as f:
+                pass
             # now import the package we just created; clearing the caches is
             # needed, otherwise the newly created package isn't found
             importlib.invalidate_caches()
@@ -371,15 +370,16 @@ class ExtendPathTests(unittest.TestCase):
 
         pkgdir = os.path.join(dirname, pkgname)
         os.mkdir(pkgdir)
-        with open(os.path.join(pkgdir, '__init__.py'), 'w') as fl:
-            fl.write('from pkgutil import extend_path\n__path__ = extend_path(__path__, __name__)\n')
+        with open(os.path.join(pkgdir, '__init__.py'), 'w', encoding='ascii') as fl:
+            fl.write('from pkgutil import extend_path\n'
+                     '__path__ = extend_path(__path__, __name__)\n')
 
         return dirname
 
     def create_submodule(self, dirname, pkgname, submodule_name, value):
         module_name = os.path.join(dirname, pkgname, submodule_name + '.py')
-        with open(module_name, 'w') as fl:
-            print('value={}'.format(value), file=fl)
+        with open(module_name, 'w', encoding='ascii') as fl:
+            print(f'value={value!a}', file=fl)
 
     def test_simple(self):
         pkgname = 'foo'
@@ -503,7 +503,7 @@ class NestedNamespacePackageTest(unittest.TestCase):
         base, final = name.rsplit('.', 1)
         base_path = os.path.join(self.basedir, base.replace('.', os.path.sep))
         os.makedirs(base_path, exist_ok=True)
-        with open(os.path.join(base_path, final + ".py"), 'w') as f:
+        with open(os.path.join(base_path, final + ".py"), 'w', encoding='ascii') as f:
             f.write(contents)
 
     def test_nested(self):

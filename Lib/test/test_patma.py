@@ -19,7 +19,7 @@ class TestCompiler(unittest.TestCase):
         # Hunting for leaks using -R doesn't catch leaks in the compiler itself,
         # just the code under test. This test ensures that if there are leaks in
         # the pattern compiler, those runs will fail:
-        with open(__file__) as file:
+        with open(__file__, 'rb') as file:
             compile(file.read(), __file__, "exec")
 
 

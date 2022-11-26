@@ -65,7 +65,7 @@ class PyCompileTestsBase:
         drive = os.path.splitdrive(self.source_path)[0]
         if drive:
             os.chdir(drive)
-        with open(self.source_path, 'w') as file:
+        with open(self.source_path, 'w', encoding='ascii') as file:
             file.write('x = 123\n')
 
     def tearDown(self):
@@ -166,7 +166,7 @@ class PyCompileTestsBase:
             os.path.join(
                 '__pycache__',
                 'foo.bar.{}.pyc'.format(sys.implementation.cache_tag)))
-        with open(weird_path, 'w') as file:
+        with open(weird_path, 'w', encoding='ascii') as file:
             file.write('x = 123\n')
         py_compile.compile(weird_path)
         self.assertTrue(os.path.exists(cache_path))
@@ -224,7 +224,7 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         self.cache_path = importlib.util.cache_from_source(self.source_path)
-        with open(self.source_path, 'w') as file:
+        with open(self.source_path, 'w', encoding='ascii') as file:
             file.write('x = 123\n')
 
     def tearDown(self):

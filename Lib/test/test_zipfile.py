@@ -1223,13 +1223,13 @@ class PyZipFileTests(unittest.TestCase):
             with captured_stdout() as reportSIO:
                 zipfp.writepy(packagedir)
             reportStr = reportSIO.getvalue()
-            self.assertTrue('SyntaxError' in reportStr)
+            self.assertIn('SyntaxError', reportStr)
 
             # then check that the filter works on the whole package
             with captured_stdout() as reportSIO:
                 zipfp.writepy(packagedir, filterfunc=lambda whatever: False)
             reportStr = reportSIO.getvalue()
-            self.assertTrue('SyntaxError' not in reportStr)
+            self.assertNotIn('SyntaxError', reportStr)
 
             # then check that the filter works on individual files
             def filter(path):
@@ -1239,7 +1239,7 @@ class PyZipFileTests(unittest.TestCase):
             reportStr = reportSIO.getvalue()
             if reportStr:
                 print(reportStr)
-            self.assertTrue('SyntaxError' not in reportStr)
+            self.assertNotIn('SyntaxError', reportStr)
 
     def test_write_with_optimization(self):
         import email

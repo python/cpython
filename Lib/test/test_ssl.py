@@ -490,7 +490,7 @@ class BasicSocketTests(unittest.TestCase):
         )
 
     def test_DER_to_PEM(self):
-        with open(CAFILE_CACERT, 'r') as f:
+        with open(CAFILE_CACERT, 'r', encoding='ascii') as f:
             pem = f.read()
         d1 = ssl.PEM_cert_to_DER_cert(pem)
         p2 = ssl.DER_cert_to_PEM_cert(d1)
@@ -1231,10 +1231,10 @@ class ContextTests(unittest.TestCase):
 
     def test_load_verify_cadata(self):
         # test cadata
-        with open(CAFILE_CACERT) as f:
+        with open(CAFILE_CACERT, encoding='ascii') as f:
             cacert_pem = f.read()
         cacert_der = ssl.PEM_cert_to_DER_cert(cacert_pem)
-        with open(CAFILE_NEURONIO) as f:
+        with open(CAFILE_NEURONIO, encoding='ascii') as f:
             neuronio_pem = f.read()
         neuronio_der = ssl.PEM_cert_to_DER_cert(neuronio_pem)
 
@@ -1402,7 +1402,7 @@ class ContextTests(unittest.TestCase):
                           (('emailAddress', 'support@cacert.org'),)),
               'version': 3}])
 
-        with open(CAFILE_CACERT) as f:
+        with open(CAFILE_CACERT, encoding='ascii') as f:
             pem = f.read()
         der = ssl.PEM_cert_to_DER_cert(pem)
         self.assertEqual(ctx.get_ca_certs(True), [der])
@@ -1470,7 +1470,7 @@ class ContextTests(unittest.TestCase):
         self.assertTrue(ctx.check_hostname)
         self._assert_context_options(ctx)
 
-        with open(SIGNING_CA) as f:
+        with open(SIGNING_CA, encoding='ascii') as f:
             cadata = f.read()
         ctx = ssl.create_default_context(cafile=SIGNING_CA, capath=CAPATH,
                                          cadata=cadata)
@@ -1894,7 +1894,7 @@ class SimpleBackgroundTests(unittest.TestCase):
             self.assertTrue(cert)
 
     def test_connect_cadata(self):
-        with open(SIGNING_CA) as f:
+        with open(SIGNING_CA, encoding='ascii') as f:
             pem = f.read()
         der = ssl.PEM_cert_to_DER_cert(pem)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -4457,7 +4457,7 @@ requires_keylog = unittest.skipUnless(
 class TestSSLDebug(unittest.TestCase):
 
     def keylog_lines(self, fname=os_helper.TESTFN):
-        with open(fname) as f:
+        with open(fname, 'rb') as f:
             return len(list(f))
 
     @requires_keylog

@@ -89,7 +89,7 @@ class PollTests(unittest.TestCase):
         r = p.poll()
         self.assertEqual(r[0], (FD, select.POLLNVAL))
 
-        with open(TESTFN, 'w') as f:
+        with open(TESTFN, 'wb') as f:
             fd = f.fileno()
             p = select.poll()
             p.register(f)

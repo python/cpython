@@ -503,7 +503,7 @@ class ElementTreeTest(unittest.TestCase):
                 '   <ns0:empty-element />\n'
                 '</ns0:root>')
 
-        with open(SIMPLE_XMLFILE) as f:
+        with open(SIMPLE_XMLFILE, 'rb') as f:
             data = f.read()
 
         parser = ET.XMLParser()
@@ -688,7 +688,7 @@ class ElementTreeTest(unittest.TestCase):
     def test_custom_builder(self):
         # Test parser w. custom builder.
 
-        with open(SIMPLE_XMLFILE) as f:
+        with open(SIMPLE_XMLFILE, 'rb') as f:
             data = f.read()
         class Builder(list):
             def start(self, tag, attrib):
@@ -711,7 +711,7 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', 'root'),
             ])
 
-        with open(SIMPLE_NS_XMLFILE) as f:
+        with open(SIMPLE_NS_XMLFILE, 'rb') as f:
             data = f.read()
         class Builder(list):
             def start(self, tag, attrib):
@@ -3717,10 +3717,6 @@ class IOTest(unittest.TestCase):
 
     def test_write_to_filename_as_unicode(self):
         self.addCleanup(os_helper.unlink, TESTFN)
-        with open(TESTFN, 'w') as f:
-            encoding = f.encoding
-        os_helper.unlink(TESTFN)
-
         tree = ET.ElementTree(ET.XML('''<site>\xf8</site>'''))
         tree.write(TESTFN, encoding='unicode')
         with open(TESTFN, 'rb') as f:

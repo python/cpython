@@ -2105,7 +2105,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # We set an unusual umask in the child so as a unique mode
             # for us to test the child's touched file for.
             subprocess.check_call(
-                    [sys.executable, "-c", f"open({name!r}, 'w').close()"],
+                    [sys.executable, "-c", f"open({name!r}, 'wb').close()"],
                     umask=0o053)
             # Ignore execute permissions entirely in our test,
             # filesystems could be mounted to ignore or force that.
@@ -3004,19 +3004,19 @@ class POSIXProcessTestCase(BaseTestCase):
 
 
     def test_stdout_stdin_are_single_inout_fd(self):
-        with io.open(os.devnull, "r+") as inout:
+        with io.open(os.devnull, "r+", encoding='ascii') as inout:
             p = subprocess.Popen(ZERO_RETURN_CMD,
                                  stdout=inout, stdin=inout)
             p.wait()
 
     def test_stdout_stderr_are_single_inout_fd(self):
-        with io.open(os.devnull, "r+") as inout:
+        with io.open(os.devnull, "r+", encoding='ascii') as inout:
             p = subprocess.Popen(ZERO_RETURN_CMD,
                                  stdout=inout, stderr=inout)
             p.wait()
 
     def test_stderr_stdin_are_single_inout_fd(self):
-        with io.open(os.devnull, "r+") as inout:
+        with io.open(os.devnull, "r+", encoding='ascii') as inout:
             p = subprocess.Popen(ZERO_RETURN_CMD,
                                  stderr=inout, stdin=inout)
             p.wait()

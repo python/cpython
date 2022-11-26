@@ -506,10 +506,11 @@ class BasicTest(BaseTest):
         builder.create(self.env_dir)
         activate = os.path.join(self.env_dir, self.bindir, "activate")
         test_script = os.path.join(self.env_dir, "test_strict.sh")
-        with open(test_script, "w") as f:
-            f.write("set -euo pipefail\n"
+        with open(test_script, "wb") as f:
+            f.write(os.fsencode(
+                    f"set -euo pipefail\n"
                     f"source {activate}\n"
-                    "deactivate\n")
+                    f"deactivate\n"))
         out, err = check_output([bash, test_script])
         self.assertEqual(out, "".encode())
         self.assertEqual(err, "".encode())
@@ -664,7 +665,7 @@ class EnsurePipTest(BaseTest):
             # See http://bugs.python.org/issue20053
             with tempfile.TemporaryDirectory() as home_dir:
                 envvars["HOME"] = home_dir
-                bad_config = "[global]\nno-install=1"
+                bad_config = b"[global]\nno-install=1"
                 # Write to both config file names on all platforms to reduce
                 # cross-platform variation in test code behaviour
                 win_location = ("pip", "pip.ini")
@@ -674,7 +675,7 @@ class EnsurePipTest(BaseTest):
                     dirpath = os.path.join(home_dir, dirname)
                     os.mkdir(dirpath)
                     fpath = os.path.join(dirpath, fname)
-                    with open(fpath, 'w') as f:
+                    with open(fpath, 'wb') as f:
                         f.write(bad_config)
 
                 # Actually run the create command with all that unhelpful

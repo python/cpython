@@ -345,7 +345,7 @@ class NullcontextTestCase(unittest.TestCase):
 
 class FileContextTestCase(unittest.TestCase):
 
-    def testWithOpen(self):
+    def testWithOpenText(self):
         tfn = tempfile.mktemp()
         try:
             f = None
@@ -358,6 +358,24 @@ class FileContextTestCase(unittest.TestCase):
                 with open(tfn, "r", encoding="utf-8") as f:
                     self.assertFalse(f.closed)
                     self.assertEqual(f.read(), "Booh\n")
+                    1 / 0
+            self.assertTrue(f.closed)
+        finally:
+            os_helper.unlink(tfn)
+
+    def testWithOpenBinary(self):
+        tfn = tempfile.mktemp()
+        try:
+            f = None
+            with open(tfn, "wb") as f:
+                self.assertFalse(f.closed)
+                f.write(b"Booh\n")
+            self.assertTrue(f.closed)
+            f = None
+            with self.assertRaises(ZeroDivisionError):
+                with open(tfn, "rb") as f:
+                    self.assertFalse(f.closed)
+                    self.assertEqual(f.read(), b"Booh\n")
                     1 / 0
             self.assertTrue(f.closed)
         finally:
