@@ -1617,14 +1617,6 @@ trace_function_exit(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject 
     return 0;
 }
 
-static _PyInterpreterFrame *
-pop_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
-{
-    _PyInterpreterFrame *prev_frame = frame->previous;
-    _PyEvalFrameClearAndPop(tstate, frame);
-    return prev_frame;
-}
-
 /* It is only between the PRECALL instruction and the following CALL,
  * that this has any meaning.
  */
@@ -2441,7 +2433,10 @@ handle_eval_breaker:
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallTstate(tstate);
             if (!frame->is_entry) {
-                frame = cframe.current_frame = pop_frame(tstate, frame);
+                // GH-99729: We need to unlink the frame *before* clearing it:
+                _PyInterpreterFrame *dying = frame;
+                frame = cframe.current_frame = dying->previous;
+                _PyEvalFrameClearAndPop(tstate, dying);
                 _PyFrame_StackPush(frame, retval);
                 goto resume_frame;
             }
@@ -5833,7 +5828,10 @@ exit_unwind:
         assert(tstate->cframe->current_frame == frame->previous);
         return NULL;
     }
-    frame = cframe.current_frame = pop_frame(tstate, frame);
+    // GH-99729: We need to unlink the frame *before* clearing it:
+    _PyInterpreterFrame *dying = frame;
+    frame = cframe.current_frame = dying->previous;
+    _PyEvalFrameClearAndPop(tstate, dying);
 
 resume_with_error:
     SET_LOCALS_FROM_FRAME();
