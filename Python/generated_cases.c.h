@@ -430,10 +430,10 @@
         }
 
         TARGET(LIST_APPEND) {
-            PyObject *v = POP();
-            PyObject *list = PEEK(oparg);
-            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0)
-                goto error;
+            PyObject *v = PEEK(1);
+            PyObject *list = PEEK(oparg + 1);  // +1 to account for v staying on stack
+            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
+            STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
         }

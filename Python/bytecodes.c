@@ -468,12 +468,10 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        // stack effect: (__0 -- )
-        inst(LIST_APPEND) {
-            PyObject *v = POP();
-            PyObject *list = PEEK(oparg);
-            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0)
-                goto error;
+        // Alternative: (list, unused[oparg], v -- list, unused[oparg])
+        inst(LIST_APPEND, (v --)) {
+            PyObject *list = PEEK(oparg + 1);  // +1 to account for v staying on stack
+            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
