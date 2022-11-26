@@ -4519,7 +4519,7 @@ written in Python, such as a mail server's external command delivery program.
 
    The return value is an object representing the data contained in the
    :c:type:`!siginfo_t` structure with the following attributes:
-   
+
    * :attr:`!si_pid` (process ID)
    * :attr:`!si_uid` (real user ID of the child)
    * :attr:`!si_signo` (always :data:`~signal.SIGCHLD`)
@@ -4527,7 +4527,7 @@ written in Python, such as a mail server's external command delivery program.
    * :attr:`si_code` (see :data:`CLD_EXITED` for possible values)
 
    If :data:`WNOHANG` is specified and there are no matching children in the
-   requested state, ``None`` is returned. 
+   requested state, ``None`` is returned.
    Otherwise, if there are no matching children
    that could be waited for, :exc:`ChildProcessError` is raised.
 
