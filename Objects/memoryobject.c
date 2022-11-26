@@ -2299,7 +2299,7 @@ lookup_dimension(const Py_buffer *view, char *ptr, int dim, Py_ssize_t index)
     if (index < 0) {
         index += nitems;
     }
-    if (invalid_index(index, nitems)) {
+    if (!valid_index(index, nitems)) {
         PyErr_Format(PyExc_IndexError,
                      "index out of bounds on dimension %d", dim + 1);
         return NULL;
