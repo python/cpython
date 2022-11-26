@@ -78,7 +78,7 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
     return Py_NewRef((PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i]);
 }
 
-/* Return 1 of the argument is negative or a multi-digit int */
+/* Return 1 if the argument is negative or a multi-digit int */
 #define _PyLong_Negative_or_multi_digit_int(sub) (assert(PyLong_CheckExact(sub)), \
                     ((size_t)Py_SIZE(sub)) > 1)
 
