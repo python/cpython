@@ -12,6 +12,7 @@ except ImportError:
     _testcapi = None
 
 from test import support
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -331,6 +332,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
                 gc.enable()
 
     @support.cpython_only
+    @threading_helper.requires_working_threading()
     def test_sneaky_frame_object_teardown(self):
 
         class SneakyDel:
