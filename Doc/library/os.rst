@@ -4699,7 +4699,7 @@ written in Python, such as a mail server's external command delivery program.
           CLD_STOPPED
           CLD_CONTINUED
 
-   These are the possible values for :attr:`si_code` in the result returned by
+   These are the possible values for :attr:`!si_code` in the result returned by
    :func:`waitid`.
 
    .. availability:: Unix, not Emscripten, not WASI.
