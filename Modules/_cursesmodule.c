@@ -100,11 +100,15 @@ static const char PyCursesVersion[] = "2.2";
 
 /* Includes */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_structseq.h"     // PyStructSequence_InitType()
+#include "pycore_structseq.h"     // _PyStructSequence_NewType()
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -378,14 +382,14 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
             return 0;
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            Py_CLEAR(*bytes);
             return 0;
         }
         return 1;
 #endif
     }
     else if (PyBytes_Check(obj)) {
-        Py_INCREF(obj);
-        *bytes = obj;
+        *bytes = Py_NewRef(obj);
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
             Py_DECREF(obj);
@@ -1226,8 +1230,8 @@ PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
         return NULL;
     }
 
-    color = (short)((attr >> 8) & 0xff);
-    attr = attr - (color << 8);
+    color = (short) PAIR_NUMBER(attr);
+    attr = attr & A_ATTRIBUTES;
 
     if (use_xy) {
         rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
@@ -2171,12 +2175,11 @@ _curses_window_putwin(PyCursesWindowObject *self, PyObject *file)
     while (1) {
         char buf[BUFSIZ];
         Py_ssize_t n = fread(buf, 1, BUFSIZ, fp);
-        _Py_IDENTIFIER(write);
 
         if (n <= 0)
             break;
         Py_DECREF(res);
-        res = _PyObject_CallMethodId(file, &PyId_write, "y#", buf, n);
+        res = PyObject_CallMethod(file, "write", "y#", buf, n);
         if (res == NULL)
             break;
     }
@@ -3045,7 +3048,6 @@ _curses_getwin(PyObject *module, PyObject *file)
     PyObject *data;
     size_t datalen;
     WINDOW *win;
-    _Py_IDENTIFIER(read);
     PyObject *res = NULL;
 
     PyCursesInitialised;
@@ -3057,7 +3059,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (_Py_set_inheritable(fileno(fp), 0, NULL) < 0)
         goto error;
 
-    data = _PyObject_CallMethodIdNoArgs(file, &PyId_read);
+    data = PyObject_CallMethod(file, "read", NULL);
     if (data == NULL)
         goto error;
     if (!PyBytes_Check(data)) {
@@ -3955,9 +3957,7 @@ static int
 update_lines_cols(void)
 {
     PyObject *o;
-    PyObject *m = PyImport_ImportModuleNoBlock("curses");
-    _Py_IDENTIFIER(LINES);
-    _Py_IDENTIFIER(COLS);
+    PyObject *m = PyImport_ImportModule("curses");
 
     if (!m)
         return 0;
@@ -3967,13 +3967,12 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_LINES, o)) {
+    if (PyObject_SetAttrString(m, "LINES", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    /* PyId_LINES.object will be initialized here. */
-    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_LINES), o)) {
+    if (PyDict_SetItemString(ModDict, "LINES", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -3984,12 +3983,12 @@ update_lines_cols(void)
         Py_DECREF(m);
         return 0;
     }
-    if (_PyObject_SetAttrId(m, &PyId_COLS, o)) {
+    if (PyObject_SetAttrString(m, "COLS", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
     }
-    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_COLS), o)) {
+    if (PyDict_SetItemString(ModDict, "COLS", o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -4565,8 +4564,6 @@ PyDoc_STRVAR(ncurses_version__doc__,
 \n\
 Ncurses version information as a named tuple.");
 
-static PyTypeObject NcursesVersionType;
-
 static PyStructSequence_Field ncurses_version_fields[] = {
     {"major", "Major release number"},
     {"minor", "Minor release number"},
@@ -4582,12 +4579,12 @@ static PyStructSequence_Desc ncurses_version_desc = {
 };
 
 static PyObject *
-make_ncurses_version(void)
+make_ncurses_version(PyTypeObject *type)
 {
     PyObject *ncurses_version;
     int pos = 0;
 
-    ncurses_version = PyStructSequence_New(&NcursesVersionType);
+    ncurses_version = PyStructSequence_New(type);
     if (ncurses_version == NULL) {
         return NULL;
     }
@@ -4792,14 +4789,14 @@ PyInit__curses(void)
 
 #ifdef NCURSES_VERSION
     /* ncurses_version */
-    if (NcursesVersionType.tp_name == NULL) {
-        if (_PyStructSequence_InitType(&NcursesVersionType,
-                                       &ncurses_version_desc,
-                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
-            return NULL;
-        }
+    PyTypeObject *version_type;
+    version_type = _PyStructSequence_NewType(&ncurses_version_desc,
+                                             Py_TPFLAGS_DISALLOW_INSTANTIATION);
+    if (version_type == NULL) {
+        return NULL;
     }
-    v = make_ncurses_version();
+    v = make_ncurses_version(version_type);
+    Py_DECREF(version_type);
     if (v == NULL) {
         return NULL;
     }
