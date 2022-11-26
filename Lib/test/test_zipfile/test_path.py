@@ -4,7 +4,12 @@ import contextlib
 import pathlib
 import unittest
 import string
-import functools
+import pickle
+import itertools
+
+from ._test_params import parameterize, Invoked
+from ._functools import compose
+
 
 from test.support.os_helper import temp_dir
 
@@ -76,30 +81,18 @@ def build_alpharep_fixture():
     return zf
 
 
-def pass_alpharep(meth):
-    """
-    Given a method, wrap it in a for loop that invokes method
-    with each subtest.
-    """
+alpharep_generators = [
+    Invoked.wrap(build_alpharep_fixture),
+    Invoked.wrap(compose(add_dirs, build_alpharep_fixture)),
+]
 
-    @functools.wraps(meth)
-    def wrapper(self):
-        for alpharep in self.zipfile_alpharep():
-            meth(self, alpharep=alpharep)
-
-    return wrapper
+pass_alpharep = parameterize(['alpharep'], alpharep_generators)
 
 
 class TestPath(unittest.TestCase):
     def setUp(self):
         self.fixtures = contextlib.ExitStack()
         self.addCleanup(self.fixtures.close)
-
-    def zipfile_alpharep(self):
-        with self.subTest():
-            yield build_alpharep_fixture()
-        with self.subTest():
-            yield add_dirs(build_alpharep_fixture())
 
     def zipfile_ondisk(self, alpharep):
         tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
@@ -418,6 +411,21 @@ class TestPath(unittest.TestCase):
     @pass_alpharep
     def test_inheritance(self, alpharep):
         cls = type('PathChild', (zipfile.Path,), {})
-        for alpharep in self.zipfile_alpharep():
-            file = cls(alpharep).joinpath('some dir').parent
-            assert isinstance(file, cls)
+        file = cls(alpharep).joinpath('some dir').parent
+        assert isinstance(file, cls)
+
+    @parameterize(
+        ['alpharep', 'path_type', 'subpath'],
+        itertools.product(
+            alpharep_generators,
+            [str, pathlib.Path],
+            ['', 'b/'],
+        ),
+    )
+    def test_pickle(self, alpharep, path_type, subpath):
+        zipfile_ondisk = path_type(self.zipfile_ondisk(alpharep))
+
+        saved_1 = pickle.dumps(zipfile.Path(zipfile_ondisk, at=subpath))
+        restored_1 = pickle.loads(saved_1)
+        first, *rest = restored_1.iterdir()
+        assert first.read_text().startswith('content of ')
