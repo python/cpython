@@ -63,7 +63,7 @@ class Block(Node):
 class StackEffect(Node):
     name: str
     type: str = ""
-    # TODO: type, condition
+    # TODO: array, condition
 
 
 @dataclass
