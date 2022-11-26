@@ -2823,7 +2823,7 @@ Customizing positional arguments in class pattern matching
 
 When using a class name in a pattern, positional arguments in the pattern are not
 allowed by default, i.e. ``case MyClass(x, y)`` is typically invalid without special
-support in ``MyClass``. To be able to use that kind of patterns, the class needs to
+support in ``MyClass``. To be able to use that kind of pattern, the class needs to
 define a *__match_args__* attribute.
 
 .. data:: object.__match_args__
