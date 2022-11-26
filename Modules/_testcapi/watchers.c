@@ -2,6 +2,7 @@
 
 #define Py_BUILD_CORE
 #include "pycore_function.h"  // FUNC_MAX_WATCHERS
+#include "pycore_code.h"  // CODE_MAX_WATCHERS
 
 // Test dict watching
 static PyObject *g_dict_watch_events;
@@ -277,6 +278,126 @@ unwatch_type(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+
+// Test code object watching
+
+#define NUM_CODE_WATCHERS 2
+static int num_code_object_created_events[NUM_CODE_WATCHERS] = {0, 0};
+static int num_code_object_destroyed_events[NUM_CODE_WATCHERS] = {0, 0};
+
+static int
+handle_code_object_event(int which_watcher, PyCodeEvent event, PyCodeObject *co) {
+    if (event == PY_CODE_EVENT_CREATE) {
+        num_code_object_created_events[which_watcher]++;
+    }
+    else if (event == PY_CODE_EVENT_DESTROY) {
+        num_code_object_destroyed_events[which_watcher]++;
+    }
+    else {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+first_code_object_callback(PyCodeEvent event, PyCodeObject *co)
+{
+    return handle_code_object_event(0, event, co);
+}
+
+static int
+second_code_object_callback(PyCodeEvent event, PyCodeObject *co)
+{
+    return handle_code_object_event(1, event, co);
+}
+
+static int
+noop_code_event_handler(PyCodeEvent event, PyCodeObject *co)
+{
+    return 0;
+}
+
+static PyObject *
+add_code_watcher(PyObject *self, PyObject *which_watcher)
+{
+    int watcher_id;
+    assert(PyLong_Check(which_watcher));
+    long which_l = PyLong_AsLong(which_watcher);
+    if (which_l == 0) {
+        watcher_id = PyCode_AddWatcher(first_code_object_callback);
+    }
+    else if (which_l == 1) {
+        watcher_id = PyCode_AddWatcher(second_code_object_callback);
+    }
+    else {
+        return NULL;
+    }
+    if (watcher_id < 0) {
+        return NULL;
+    }
+    return PyLong_FromLong(watcher_id);
+}
+
+static PyObject *
+clear_code_watcher(PyObject *self, PyObject *watcher_id)
+{
+    assert(PyLong_Check(watcher_id));
+    long watcher_id_l = PyLong_AsLong(watcher_id);
+    if (PyCode_ClearWatcher(watcher_id_l) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+get_code_watcher_num_created_events(PyObject *self, PyObject *watcher_id)
+{
+    assert(PyLong_Check(watcher_id));
+    long watcher_id_l = PyLong_AsLong(watcher_id);
+    assert(watcher_id_l >= 0 && watcher_id_l < NUM_CODE_WATCHERS);
+    return PyLong_FromLong(num_code_object_created_events[watcher_id_l]);
+}
+
+static PyObject *
+get_code_watcher_num_destroyed_events(PyObject *self, PyObject *watcher_id)
+{
+    assert(PyLong_Check(watcher_id));
+    long watcher_id_l = PyLong_AsLong(watcher_id);
+    assert(watcher_id_l >= 0 && watcher_id_l < NUM_CODE_WATCHERS);
+    return PyLong_FromLong(num_code_object_destroyed_events[watcher_id_l]);
+}
+
+static PyObject *
+allocate_too_many_code_watchers(PyObject *self, PyObject *args)
+{
+    int watcher_ids[CODE_MAX_WATCHERS + 1];
+    int num_watchers = 0;
+    for (unsigned long i = 0; i < sizeof(watcher_ids) / sizeof(int); i++) {
+        int watcher_id = PyCode_AddWatcher(noop_code_event_handler);
+        if (watcher_id == -1) {
+            break;
+        }
+        watcher_ids[i] = watcher_id;
+        num_watchers++;
+    }
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+    for (int i = 0; i < num_watchers; i++) {
+        if (PyCode_ClearWatcher(watcher_ids[i]) < 0) {
+            PyErr_WriteUnraisable(Py_None);
+            break;
+        }
+    }
+    if (type) {
+        PyErr_Restore(type, value, traceback);
+        return NULL;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 // Test function watchers
 
 #define NUM_FUNC_WATCHERS 2
@@ -508,6 +629,16 @@ static PyMethodDef test_methods[] = {
     {"watch_type",               watch_type,              METH_VARARGS, NULL},
     {"unwatch_type",             unwatch_type,            METH_VARARGS, NULL},
     {"get_type_modified_events", get_type_modified_events, METH_NOARGS, NULL},
+
+    // Code object watchers.
+    {"add_code_watcher",         add_code_watcher,        METH_O,       NULL},
+    {"clear_code_watcher",       clear_code_watcher,      METH_O,       NULL},
+    {"get_code_watcher_num_created_events",
+     get_code_watcher_num_created_events,                 METH_O,       NULL},
+    {"get_code_watcher_num_destroyed_events",
+     get_code_watcher_num_destroyed_events,               METH_O,       NULL},
+    {"allocate_too_many_code_watchers",
+     (PyCFunction) allocate_too_many_code_watchers,       METH_NOARGS,  NULL},
 
     // Function watchers.
     {"add_func_watcher",         add_func_watcher,        METH_O,       NULL},
