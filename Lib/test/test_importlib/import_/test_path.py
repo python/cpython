@@ -202,10 +202,11 @@ class FinderTests:
             def invalidate_caches(self):
                 self.called = True
 
-        cache = {'leave_alone': object(), 'finder_to_invalidate': FakeFinder()}
+        key = os.path.abspath('finder_to_invalidate')
+        cache = {'leave_alone': object(), key: FakeFinder()}
         with util.import_state(path_importer_cache=cache):
             self.machinery.PathFinder.invalidate_caches()
-        self.assertTrue(cache['finder_to_invalidate'].called)
+        self.assertTrue(cache[key].called)
 
     def test_invalidate_caches_clear_out_None(self):
         # Clear out None in sys.path_importer_cache() when invalidating caches.
@@ -213,6 +214,16 @@ class FinderTests:
         with util.import_state(path_importer_cache=cache):
             self.machinery.PathFinder.invalidate_caches()
         self.assertEqual(len(cache), 0)
+
+    def test_invalidate_caches_clear_out_relative_path(self):
+        class FakeFinder:
+            def invalidate_caches(self):
+                pass
+
+        cache = {'relative_path': FakeFinder()}
+        with util.import_state(path_importer_cache=cache):
+            self.machinery.PathFinder.invalidate_caches()
+        self.assertEqual(cache, {})
 
 
 class FindModuleTests(FinderTests):

@@ -1,2 +1,0 @@
-Expose :class:`asyncio.base_events.Server` as :class:`asyncio.Server`. Patch
-by Stefan Zabka.

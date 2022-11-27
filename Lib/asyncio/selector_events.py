@@ -58,6 +58,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
+        self._ensure_fd_no_transport(sock)
         return _SelectorSocketTransport(self, sock, protocol, waiter,
                                         extra, server)
 
@@ -68,6 +69,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             ssl_handshake_timeout=constants.SSL_HANDSHAKE_TIMEOUT,
             ssl_shutdown_timeout=constants.SSL_SHUTDOWN_TIMEOUT,
     ):
+        self._ensure_fd_no_transport(rawsock)
         ssl_protocol = sslproto.SSLProtocol(
             self, protocol, sslcontext, waiter,
             server_side, server_hostname,
@@ -80,6 +82,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
     def _make_datagram_transport(self, sock, protocol,
                                  address=None, waiter=None, extra=None):
+        self._ensure_fd_no_transport(sock)
         return _SelectorDatagramTransport(self, sock, protocol,
                                           address, waiter, extra)
 
@@ -620,7 +623,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
 
-        if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
+        if sock.family == socket.AF_INET or (
+                base_events._HAS_IPv6 and sock.family == socket.AF_INET6):
             resolved = await self._ensure_resolved(
                 address, family=sock.family, type=sock.type, proto=sock.proto,
                 loop=self,
@@ -629,7 +633,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         fut = self.create_future()
         self._sock_connect(fut, sock, address)
-        return await fut
+        try:
+            return await fut
+        finally:
+            # Needed to break cycles when an exception occurs.
+            fut = None
 
     def _sock_connect(self, fut, sock, address):
         fd = sock.fileno()
@@ -651,6 +659,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             fut.set_exception(exc)
         else:
             fut.set_result(None)
+        finally:
+            fut = None
 
     def _sock_write_done(self, fd, fut, handle=None):
         if handle is None or not handle.cancelled():
@@ -674,6 +684,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             fut.set_exception(exc)
         else:
             fut.set_result(None)
+        finally:
+            fut = None
 
     async def sock_accept(self, sock):
         """Accept a connection.
@@ -1122,7 +1134,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._empty_waiter = None
 
 
-class _SelectorDatagramTransport(_SelectorTransport):
+class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTransport):
 
     _buffer_factory = collections.deque
 
@@ -1130,6 +1142,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
                  waiter=None, extra=None):
         super().__init__(loop, sock, protocol, extra)
         self._address = address
+        self._buffer_size = 0
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
         self._loop.call_soon(self._add_reader,
@@ -1140,7 +1153,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
                                  waiter, None)
 
     def get_write_buffer_size(self):
-        return sum(len(data) for data, _ in self._buffer)
+        return self._buffer_size
 
     def _read_ready(self):
         if self._conn_lost:
@@ -1199,11 +1212,13 @@ class _SelectorDatagramTransport(_SelectorTransport):
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
+        self._buffer_size += len(data)
         self._maybe_pause_protocol()
 
     def _sendto_ready(self):
         while self._buffer:
             data, addr = self._buffer.popleft()
+            self._buffer_size -= len(data)
             try:
                 if self._extra['peername']:
                     self._sock.send(data)
@@ -1211,6 +1226,7 @@ class _SelectorDatagramTransport(_SelectorTransport):
                     self._sock.sendto(data, addr)
             except (BlockingIOError, InterruptedError):
                 self._buffer.appendleft((data, addr))  # Try again later.
+                self._buffer_size += len(data)
                 break
             except OSError as exc:
                 self._protocol.error_received(exc)

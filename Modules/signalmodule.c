@@ -7,12 +7,13 @@
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
+#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
-#include "pycore_pylifecycle.h"   // NSIG
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_signal.h"        // Py_NSIG
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -105,7 +106,7 @@ static volatile struct {
      * (even though it would probably be otherwise, anyway).
      */
     _Py_atomic_address func;
-} Handlers[NSIG];
+} Handlers[Py_NSIG];
 
 #ifdef MS_WINDOWS
 #define INVALID_FD ((SOCKET_T)-1)
@@ -188,8 +189,8 @@ compare_handler(PyObject *func, PyObject *dfl_ign_handler)
     return PyObject_RichCompareBool(func, dfl_ign_handler, Py_EQ) == 1;
 }
 
-#ifdef HAVE_GETITIMER
-/* auxiliary functions for setitimer */
+#ifdef HAVE_SETITIMER
+/* auxiliary function for setitimer */
 static int
 timeval_from_double(PyObject *obj, struct timeval *tv)
 {
@@ -205,7 +206,10 @@ timeval_from_double(PyObject *obj, struct timeval *tv)
     }
     return _PyTime_AsTimeval(t, tv, _PyTime_ROUND_CEILING);
 }
+#endif
 
+#if defined(HAVE_SETITIMER) || defined(HAVE_GETITIMER)
+/* auxiliary functions for get/setitimer */
 Py_LOCAL_INLINE(double)
 double_from_timeval(struct timeval *tv)
 {
@@ -268,9 +272,8 @@ report_wakeup_write_error(void *data)
     errno = (int) (intptr_t) data;
     PyErr_Fetch(&exc, &val, &tb);
     PyErr_SetFromErrno(PyExc_OSError);
-    PySys_WriteStderr("Exception ignored when trying to write to the "
-                      "signal wakeup fd:\n");
-    PyErr_WriteUnraisable(NULL);
+    _PyErr_WriteUnraisableMsg("when trying to write to the signal wakeup fd",
+                              NULL);
     PyErr_Restore(exc, val, tb);
     errno = save_errno;
     return 0;
@@ -280,15 +283,15 @@ report_wakeup_write_error(void *data)
 static int
 report_wakeup_send_error(void* data)
 {
+    int send_errno = (int) (intptr_t) data;
+
     PyObject *exc, *val, *tb;
     PyErr_Fetch(&exc, &val, &tb);
     /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
-    PyErr_SetExcFromWindowsErr(PyExc_OSError, (int) (intptr_t) data);
-    PySys_WriteStderr("Exception ignored when trying to send to the "
-                      "signal wakeup fd:\n");
-    PyErr_WriteUnraisable(NULL);
+    PyErr_SetExcFromWindowsErr(PyExc_OSError, send_errno);
+    _PyErr_WriteUnraisableMsg("when trying to send to the signal wakeup fd", NULL);
     PyErr_Restore(exc, val, tb);
     return 0;
 }
@@ -480,6 +483,13 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
     if (err) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
+
+    // If the current thread can handle signals, handle immediately
+    // the raised signal.
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -534,7 +544,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
                          "of the main interpreter");
         return NULL;
     }
-    if (signalnum < 1 || signalnum >= NSIG) {
+    if (signalnum < 1 || signalnum >= Py_NSIG) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "signal number out of range");
         return NULL;
@@ -593,7 +603,7 @@ signal_getsignal_impl(PyObject *module, int signalnum)
 /*[clinic end generated code: output=35b3e0e796fd555e input=ac23a00f19dfa509]*/
 {
     PyObject *old_handler;
-    if (signalnum < 1 || signalnum >= NSIG) {
+    if (signalnum < 1 || signalnum >= Py_NSIG) {
         PyErr_SetString(PyExc_ValueError,
                         "signal number out of range");
         return NULL;
@@ -616,17 +626,18 @@ signal.strsignal
 
 Return the system description of the given signal.
 
-The return values can be such as "Interrupt", "Segmentation fault", etc.
-Returns None if the signal is not recognized.
+Returns the description of signal *signalnum*, such as "Interrupt"
+for :const:`SIGINT`. Returns :const:`None` if *signalnum* has no
+description. Raises :exc:`ValueError` if *signalnum* is invalid.
 [clinic start generated code]*/
 
 static PyObject *
 signal_strsignal_impl(PyObject *module, int signalnum)
-/*[clinic end generated code: output=44e12e1e3b666261 input=b77914b03f856c74]*/
+/*[clinic end generated code: output=44e12e1e3b666261 input=238b335847778bc0]*/
 {
     const char *res;
 
-    if (signalnum < 1 || signalnum >= NSIG) {
+    if (signalnum < 1 || signalnum >= Py_NSIG) {
         PyErr_SetString(PyExc_ValueError,
                 "signal number out of range");
         return NULL;
@@ -704,7 +715,7 @@ static PyObject *
 signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 /*[clinic end generated code: output=063816243d85dd19 input=4160acacca3e2099]*/
 {
-    if (signalnum < 1 || signalnum >= NSIG) {
+    if (signalnum < 1 || signalnum >= Py_NSIG) {
         PyErr_SetString(PyExc_ValueError,
                         "signal number out of range");
         return NULL;
@@ -956,7 +967,7 @@ sigset_to_set(sigset_t mask)
     if (result == NULL)
         return NULL;
 
-    for (sig = 1; sig < NSIG; sig++) {
+    for (sig = 1; sig < Py_NSIG; sig++) {
         if (sigismember(&mask, sig) != 1)
             continue;
 
@@ -1373,7 +1384,7 @@ static PyMethodDef signal_methods[] = {
     SIGNAL_RAISE_SIGNAL_METHODDEF
     SIGNAL_STRSIGNAL_METHODDEF
     SIGNAL_GETSIGNAL_METHODDEF
-    {"set_wakeup_fd", (PyCFunction)(void(*)(void))signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
+    {"set_wakeup_fd", _PyCFunction_CAST(signal_set_wakeup_fd), METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
     SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
@@ -1431,12 +1442,14 @@ the first is the signal number, the second is the interrupted stack frame.");
 static int
 signal_add_constants(PyObject *module)
 {
+    if (PyModule_AddIntConstant(module, "NSIG", Py_NSIG) < 0) {
+        return -1;
+    }
+
 #define ADD_INT_MACRO(macro) \
     if (PyModule_AddIntConstant(module, #macro, macro) < 0) { \
         return -1; \
     }
-
-    ADD_INT_MACRO(NSIG);
 
     // SIG_xxx pthread_sigmask() constants
 #ifdef SIG_BLOCK
@@ -1597,7 +1610,7 @@ static int
 signal_get_set_handlers(signal_state_t *state, PyObject *mod_dict)
 {
     // Get signal handlers
-    for (int signum = 1; signum < NSIG; signum++) {
+    for (int signum = 1; signum < Py_NSIG; signum++) {
         void (*c_handler)(int) = PyOS_getsig(signum);
         PyObject *func;
         if (c_handler == SIG_DFL) {
@@ -1754,7 +1767,7 @@ _PySignal_Fini(void)
     signal_state_t *state = &signal_global_state;
 
     // Restore default signals and clear handlers
-    for (int signum = 1; signum < NSIG; signum++) {
+    for (int signum = 1; signum < Py_NSIG; signum++) {
         PyObject *func = get_handler(signum);
         _Py_atomic_store_relaxed(&Handlers[signum].tripped, 0);
         set_handler(signum, NULL);
@@ -1785,6 +1798,19 @@ int
 PyErr_CheckSignals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+
+    /* Opportunistically check if the GC is scheduled to run and run it
+       if we have a request. This is done here because native code needs
+       to call this API if is going to run for some time without executing
+       Python code to ensure signals are handled. Checking for the GC here
+       allows long running native code to clean cycles created using the C-API
+       even if it doesn't run the evaluation loop */
+    struct _ceval_state *interp_ceval_state = &tstate->interp->ceval;
+    if (_Py_atomic_load_relaxed(&interp_ceval_state->gc_scheduled)) {
+        _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
+        _Py_RunGC(tstate);
+    }
+
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
@@ -1797,6 +1823,7 @@ PyErr_CheckSignals(void)
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
 {
+    _Py_CHECK_EMSCRIPTEN_SIGNALS();
     if (!_Py_atomic_load(&is_tripped)) {
         return 0;
     }
@@ -1818,8 +1845,11 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
     _Py_atomic_store(&is_tripped, 0);
 
     _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    while (frame && _PyFrame_IsIncomplete(frame)) {
+        frame = frame->previous;
+    }
     signal_state_t *state = &signal_global_state;
-    for (int i = 1; i < NSIG; i++) {
+    for (int i = 1; i < Py_NSIG; i++) {
         if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
             continue;
         }
@@ -1896,7 +1926,7 @@ _PyErr_CheckSignals(void)
 int
 PyErr_SetInterruptEx(int signum)
 {
-    if (signum < 1 || signum >= NSIG) {
+    if (signum < 1 || signum >= Py_NSIG) {
         return -1;
     }
 
@@ -1986,7 +2016,7 @@ _PySignal_Init(int install_signal_handlers)
     }
 #endif
 
-    for (int signum = 1; signum < NSIG; signum++) {
+    for (int signum = 1; signum < Py_NSIG; signum++) {
         _Py_atomic_store_relaxed(&Handlers[signum].tripped, 0);
     }
 
@@ -2036,7 +2066,7 @@ _clear_pending_signals(void)
     }
 
     _Py_atomic_store(&is_tripped, 0);
-    for (int i = 1; i < NSIG; ++i) {
+    for (int i = 1; i < Py_NSIG; ++i) {
         _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
