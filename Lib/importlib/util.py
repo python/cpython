@@ -1,20 +1,24 @@
 """Utility code for constructing importers, etc."""
-from . import abc
+from ._abc import Loader
 from ._bootstrap import module_from_spec
 from ._bootstrap import _resolve_name
 from ._bootstrap import spec_from_loader
 from ._bootstrap import _find_spec
 from ._bootstrap_external import MAGIC_NUMBER
+from ._bootstrap_external import _RAW_MAGIC_NUMBER
 from ._bootstrap_external import cache_from_source
 from ._bootstrap_external import decode_source
 from ._bootstrap_external import source_from_cache
 from ._bootstrap_external import spec_from_file_location
 
-from contextlib import contextmanager
-import functools
+import _imp
 import sys
 import types
-import warnings
+
+
+def source_hash(source_bytes):
+    "Return the hash of *source_bytes* as used in hash-based pyc files."
+    return _imp.source_hash(_RAW_MAGIC_NUMBER, source_bytes)
 
 
 def resolve_name(name, package):
@@ -22,8 +26,8 @@ def resolve_name(name, package):
     if not name.startswith('.'):
         return name
     elif not package:
-        raise ValueError(f'no package specified for {repr(name)} '
-                         '(required for relative module names)')
+        raise ImportError(f'no package specified for {repr(name)} '
+                          '(required for relative module names)')
     level = 0
     for character in name:
         if character != '.':
@@ -56,10 +60,10 @@ def _find_spec_from_path(name, path=None):
         try:
             spec = module.__spec__
         except AttributeError:
-            raise ValueError('{}.__spec__ is not set'.format(name)) from None
+            raise ValueError(f'{name}.__spec__ is not set') from None
         else:
             if spec is None:
-                raise ValueError('{}.__spec__ is None'.format(name))
+                raise ValueError(f'{name}.__spec__ is None')
             return spec
 
 
@@ -84,11 +88,16 @@ def find_spec(name, package=None):
     if fullname not in sys.modules:
         parent_name = fullname.rpartition('.')[0]
         if parent_name:
-            # Use builtins.__import__() in case someone replaced it.
             parent = __import__(parent_name, fromlist=['__path__'])
-            return _find_spec(fullname, parent.__path__)
+            try:
+                parent_path = parent.__path__
+            except AttributeError as e:
+                raise ModuleNotFoundError(
+                    f"__path__ attribute not found on {parent_name!r} "
+                    f"while trying to find {fullname!r}", name=fullname) from e
         else:
-            return _find_spec(fullname, None)
+            parent_path = None
+        return _find_spec(fullname, parent_path)
     else:
         module = sys.modules[fullname]
         if module is None:
@@ -96,112 +105,11 @@ def find_spec(name, package=None):
         try:
             spec = module.__spec__
         except AttributeError:
-            raise ValueError('{}.__spec__ is not set'.format(name)) from None
+            raise ValueError(f'{name}.__spec__ is not set') from None
         else:
             if spec is None:
-                raise ValueError('{}.__spec__ is None'.format(name))
+                raise ValueError(f'{name}.__spec__ is None')
             return spec
-
-
-@contextmanager
-def _module_to_load(name):
-    is_reload = name in sys.modules
-
-    module = sys.modules.get(name)
-    if not is_reload:
-        # This must be done before open() is called as the 'io' module
-        # implicitly imports 'locale' and would otherwise trigger an
-        # infinite loop.
-        module = type(sys)(name)
-        # This must be done before putting the module in sys.modules
-        # (otherwise an optimization shortcut in import.c becomes wrong)
-        module.__initializing__ = True
-        sys.modules[name] = module
-    try:
-        yield module
-    except Exception:
-        if not is_reload:
-            try:
-                del sys.modules[name]
-            except KeyError:
-                pass
-    finally:
-        module.__initializing__ = False
-
-
-def set_package(fxn):
-    """Set __package__ on the returned module.
-
-    This function is deprecated.
-
-    """
-    @functools.wraps(fxn)
-    def set_package_wrapper(*args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically.',
-                      DeprecationWarning, stacklevel=2)
-        module = fxn(*args, **kwargs)
-        if getattr(module, '__package__', None) is None:
-            module.__package__ = module.__name__
-            if not hasattr(module, '__path__'):
-                module.__package__ = module.__package__.rpartition('.')[0]
-        return module
-    return set_package_wrapper
-
-
-def set_loader(fxn):
-    """Set __loader__ on the returned module.
-
-    This function is deprecated.
-
-    """
-    @functools.wraps(fxn)
-    def set_loader_wrapper(self, *args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically.',
-                      DeprecationWarning, stacklevel=2)
-        module = fxn(self, *args, **kwargs)
-        if getattr(module, '__loader__', None) is None:
-            module.__loader__ = self
-        return module
-    return set_loader_wrapper
-
-
-def module_for_loader(fxn):
-    """Decorator to handle selecting the proper module for loaders.
-
-    The decorated function is passed the module to use instead of the module
-    name. The module passed in to the function is either from sys.modules if
-    it already exists or is a new module. If the module is new, then __name__
-    is set the first argument to the method, __loader__ is set to self, and
-    __package__ is set accordingly (if self.is_package() is defined) will be set
-    before it is passed to the decorated function (if self.is_package() does
-    not work for the module it will be set post-load).
-
-    If an exception is raised and the decorator created the module it is
-    subsequently removed from sys.modules.
-
-    The decorator assumes that the decorated function takes the module name as
-    the second argument.
-
-    """
-    warnings.warn('The import system now takes care of this automatically.',
-                  DeprecationWarning, stacklevel=2)
-    @functools.wraps(fxn)
-    def module_for_loader_wrapper(self, fullname, *args, **kwargs):
-        with _module_to_load(fullname) as module:
-            module.__loader__ = self
-            try:
-                is_package = self.is_package(fullname)
-            except (ImportError, AttributeError):
-                pass
-            else:
-                if is_package:
-                    module.__package__ = fullname
-                else:
-                    module.__package__ = fullname.rpartition('.')[0]
-            # If __package__ was not set above, __import__() will do it later.
-            return fxn(self, module, *args, **kwargs)
-
-    return module_for_loader_wrapper
 
 
 class _LazyModule(types.ModuleType):
@@ -220,7 +128,6 @@ class _LazyModule(types.ModuleType):
         # Figure out exactly what attributes were mutated between the creation
         # of the module and now.
         attrs_then = self.__spec__.loader_state['__dict__']
-        original_type = self.__spec__.loader_state['__class__']
         attrs_now = self.__dict__
         attrs_updated = {}
         for key, value in attrs_now.items():
@@ -251,7 +158,7 @@ class _LazyModule(types.ModuleType):
         delattr(self, attr)
 
 
-class LazyLoader(abc.Loader):
+class LazyLoader(Loader):
 
     """A loader that creates a module which defers loading until attribute access."""
 

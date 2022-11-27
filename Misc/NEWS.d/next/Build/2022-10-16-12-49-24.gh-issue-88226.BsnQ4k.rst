@@ -1,0 +1,3 @@
+Always define ``TARGET_*`` labels in ``Python/ceval.c``, even if
+``USE_COMPUTED_GOTOS`` is disabled.  This allows breakpoints to be
+set at those labels in (for instance) ``gdb``.

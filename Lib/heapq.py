@@ -12,6 +12,8 @@ heappush(heap, item) # pushes a new item on the heap
 item = heappop(heap) # pops the smallest item from the heap
 item = heap[0]       # smallest item on the heap without popping it
 heapify(x)           # transforms list into a heap, in-place, in linear time
+item = heappushpop(heap, item) # pushes a new item and then returns
+                               # the smallest item; the heap size is unchanged
 item = heapreplace(heap, item) # pops and returns smallest item, and adds
                                # new item; the heap size is unchanged
 
@@ -468,10 +470,7 @@ def nsmallest(n, iterable, key=None):
     if n == 1:
         it = iter(iterable)
         sentinel = object()
-        if key is None:
-            result = min(it, default=sentinel)
-        else:
-            result = min(it, default=sentinel, key=key)
+        result = min(it, default=sentinel, key=key)
         return [] if result is sentinel else [result]
 
     # When n>=size, it's faster to use sorted()
@@ -498,10 +497,10 @@ def nsmallest(n, iterable, key=None):
         for elem in it:
             if elem < top:
                 _heapreplace(result, (elem, order))
-                top = result[0][0]
+                top, _order = result[0]
                 order += 1
         result.sort()
-        return [r[0] for r in result]
+        return [elem for (elem, order) in result]
 
     # General case, slowest method
     it = iter(iterable)
@@ -516,10 +515,10 @@ def nsmallest(n, iterable, key=None):
         k = key(elem)
         if k < top:
             _heapreplace(result, (k, order, elem))
-            top = result[0][0]
+            top, _order, _elem = result[0]
             order += 1
     result.sort()
-    return [r[2] for r in result]
+    return [elem for (k, order, elem) in result]
 
 def nlargest(n, iterable, key=None):
     """Find the n largest elements in a dataset.
@@ -531,10 +530,7 @@ def nlargest(n, iterable, key=None):
     if n == 1:
         it = iter(iterable)
         sentinel = object()
-        if key is None:
-            result = max(it, default=sentinel)
-        else:
-            result = max(it, default=sentinel, key=key)
+        result = max(it, default=sentinel, key=key)
         return [] if result is sentinel else [result]
 
     # When n>=size, it's faster to use sorted()
@@ -559,10 +555,10 @@ def nlargest(n, iterable, key=None):
         for elem in it:
             if top < elem:
                 _heapreplace(result, (elem, order))
-                top = result[0][0]
+                top, _order = result[0]
                 order -= 1
         result.sort(reverse=True)
-        return [r[0] for r in result]
+        return [elem for (elem, order) in result]
 
     # General case, slowest method
     it = iter(iterable)
@@ -577,10 +573,10 @@ def nlargest(n, iterable, key=None):
         k = key(elem)
         if top < k:
             _heapreplace(result, (k, order, elem))
-            top = result[0][0]
+            top, _order, _elem = result[0]
             order -= 1
     result.sort(reverse=True)
-    return [r[2] for r in result]
+    return [elem for (k, order, elem) in result]
 
 # If available, use C implementation
 try:
@@ -603,5 +599,5 @@ except ImportError:
 
 if __name__ == "__main__":
 
-    import doctest
-    print(doctest.testmod())
+    import doctest # pragma: no cover
+    print(doctest.testmod()) # pragma: no cover

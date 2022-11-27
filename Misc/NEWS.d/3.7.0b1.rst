@@ -1,0 +1,878 @@
+.. bpo: 32703
+.. date: 2018-01-29-01-15-17
+.. nonce: mwrF4-
+.. release date: 2018-01-30
+.. section: Core and Builtins
+
+Fix coroutine's ResourceWarning when there's an active error set when it's
+being finalized.
+
+..
+
+.. bpo: 32650
+.. date: 2018-01-28-23-01-39
+.. nonce: Bbi7ek
+.. section: Core and Builtins
+
+Pdb and other debuggers dependent on bdb.py will correctly step over (next
+command) native coroutines. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 28685
+.. date: 2018-01-28-15-09-33
+.. nonce: cHThLM
+.. section: Core and Builtins
+
+Optimize list.sort() and sorted() by using type specialized comparisons when
+possible.
+
+..
+
+.. bpo: 32685
+.. date: 2018-01-28-12-25-06
+.. nonce: nGctze
+.. section: Core and Builtins
+
+Improve suggestion when the Python 2 form of print statement is either
+present on the same line as the header of a compound statement or else
+terminated by a semi-colon instead of a newline. Patch by Nitish Chandra.
+
+..
+
+.. bpo: 32697
+.. date: 2018-01-28-09-52-12
+.. nonce: RHlu6k
+.. section: Core and Builtins
+
+Python now explicitly preserves the definition order of keyword-only
+parameters.  It's always preserved their order, but this behavior was never
+guaranteed before; this behavior is now guaranteed and tested.
+
+..
+
+.. bpo: 32690
+.. date: 2018-01-28-09-26-07
+.. nonce: 8i9g5P
+.. section: Core and Builtins
+
+The locals() dictionary now displays in the lexical order that variables
+were defined.  Previously, the order was reversed.
+
+..
+
+.. bpo: 32677
+.. date: 2018-01-26-20-11-09
+.. nonce: xTGfCq
+.. section: Core and Builtins
+
+Add ``.isascii()`` method to ``str``, ``bytes`` and ``bytearray``. It can be
+used to test that string contains only ASCII characters.
+
+..
+
+.. bpo: 32670
+.. date: 2018-01-25-17-03-46
+.. nonce: YsqJUC
+.. section: Core and Builtins
+
+Enforce :pep:`479` for all code.
+This means that manually raising a StopIteration exception from a generator
+is prohibited for all code, regardless of whether 'from __future__ import
+generator_stop' was used or not.
+
+..
+
+.. bpo: 32591
+.. date: 2018-01-20-00-50-33
+.. nonce: 666kl6
+.. section: Core and Builtins
+
+Added built-in support for tracking the origin of coroutine objects; see
+sys.set_coroutine_origin_tracking_depth and CoroutineType.cr_origin. This
+replaces the asyncio debug mode's use of coroutine wrapping for native
+coroutine objects.
+
+..
+
+.. bpo: 31368
+.. date: 2018-01-19-01-54-22
+.. nonce: kzKqUR
+.. section: Core and Builtins
+
+Expose preadv and pwritev system calls in the os module. Patch by Pablo
+Galindo
+
+..
+
+.. bpo: 32544
+.. date: 2018-01-16-18-51-58
+.. nonce: ga-cFE
+.. section: Core and Builtins
+
+``hasattr(obj, name)`` and ``getattr(obj, name, default)`` are about 4 times
+faster than before when ``name`` is not found and ``obj`` doesn't override
+``__getattr__`` or ``__getattribute__``.
+
+..
+
+.. bpo: 26163
+.. date: 2018-01-14-20-32-47
+.. nonce: xv9Iuv
+.. section: Core and Builtins
+
+Improved frozenset() hash to create more distinct hash values when faced
+with datasets containing many similar values.
+
+..
+
+.. bpo: 32550
+.. date: 2018-01-14-12-42-17
+.. nonce: k0EK-4
+.. section: Core and Builtins
+
+Remove the STORE_ANNOTATION bytecode.
+
+..
+
+.. bpo: 20104
+.. date: 2018-01-06-01-14-53
+.. nonce: 9DkKb8
+.. section: Core and Builtins
+
+Expose posix_spawn as a low level API in the os module.
+(removed before 3.7.0rc1)
+
+..
+
+.. bpo: 24340
+.. date: 2018-01-01-21-59-31
+.. nonce: hmKBvg
+.. section: Core and Builtins
+
+Fixed estimation of the code stack size.
+
+..
+
+.. bpo: 32436
+.. date: 2017-12-28-00-20-42
+.. nonce: H159Jv
+.. section: Core and Builtins
+
+Implement :pep:`567` Context Variables.
+
+..
+
+.. bpo: 18533
+.. date: 2017-12-13-16-46-23
+.. nonce: Dlk8d7
+.. section: Core and Builtins
+
+``repr()`` on a dict containing its own ``values()`` or ``items()`` no
+longer raises ``RecursionError``; OrderedDict similarly.  Instead, use
+``...``, as for other recursive structures.  Patch by Ben North.
+
+..
+
+.. bpo: 20891
+.. date: 2017-12-04-18-34-11
+.. nonce: C2TsfR
+.. section: Core and Builtins
+
+Py_Initialize() now creates the GIL. The GIL is no longer created "on
+demand" to fix a race condition when PyGILState_Ensure() is called in a
+non-Python thread.
+
+..
+
+.. bpo: 32028
+.. date: 2017-12-03-22-29-13
+.. nonce: KC2w4Q
+.. section: Core and Builtins
+
+Leading whitespace is now correctly ignored when generating suggestions for
+converting Py2 print statements to Py3 builtin print function calls. Patch
+by Sanyam Khurana.
+
+..
+
+.. bpo: 31179
+.. date: 2017-08-10-17-32-48
+.. nonce: XcgLYI
+.. section: Core and Builtins
+
+Make dict.copy() up to 5.5 times faster.
+
+..
+
+.. bpo: 31113
+.. date: 2017-08-07-16-46-56
+.. nonce: XgNEFg
+.. section: Core and Builtins
+
+Get rid of recursion in the compiler for normal control flow.
+
+..
+
+.. bpo: 25988
+.. date: 2018-01-28-23-48-45
+.. nonce: I9uBct
+.. section: Library
+
+Deprecate exposing the contents of collections.abc in the regular
+collections module.
+
+..
+
+.. bpo: 31429
+.. date: 2018-01-28-22-40-05
+.. nonce: qNt8rQ
+.. section: Library
+
+The default cipher suite selection of the ssl module now uses a blacklist
+approach rather than a hard-coded whitelist. Python no longer re-enables
+ciphers that have been blocked by OpenSSL security update. Default cipher
+suite selection can be configured on compile time.
+
+..
+
+.. bpo: 30306
+.. date: 2018-01-28-14-10-51
+.. nonce: TmKMXi
+.. section: Library
+
+contextlib.contextmanager now releases the arguments passed to the
+underlying generator as soon as the context manager is entered. Previously
+it would keep them alive for as long as the context manager was alive, even
+when not being used as a function decorator. Patch by Martin Teichmann.
+
+..
+
+.. bpo: 21417
+.. date: 2018-01-28-07-55-10
+.. nonce: JFnV99
+.. section: Library
+
+Added support for setting the compression level for zipfile.ZipFile.
+
+..
+
+.. bpo: 32251
+.. date: 2018-01-28-01-21-47
+.. nonce: fOA5qB
+.. section: Library
+
+Implement asyncio.BufferedProtocol (provisional API).
+
+..
+
+.. bpo: 32513
+.. date: 2018-01-27-11-20-16
+.. nonce: ak-iD2
+.. section: Library
+
+In dataclasses, allow easier overriding of dunder methods without specifying
+decorator parameters.
+
+..
+
+.. bpo: 32660
+.. date: 2018-01-26-01-26-00
+.. nonce: tVJIWV
+.. section: Library
+
+:mod:`termios` makes available ``FIONREAD``, ``FIONCLEX``, ``FIOCLEX``,
+``FIOASYNC`` and ``FIONBIO`` also under Solaris/derivatives.
+
+..
+
+.. bpo: 27931
+.. date: 2018-01-25-21-04-11
+.. nonce: e4r52t
+.. section: Library
+
+Fix email address header parsing error when the username is an empty quoted
+string. Patch by Xiang Zhang.
+
+..
+
+.. bpo: 32659
+.. date: 2018-01-25-03-46-00
+.. nonce: VHYoON
+.. section: Library
+
+Under Solaris and derivatives, :class:`os.stat_result` provides a st_fstype
+attribute.
+
+..
+
+.. bpo: 32662
+.. date: 2018-01-25-01-45-30
+.. nonce: oabhd8
+.. section: Library
+
+Implement Server.start_serving(), Server.serve_forever(), and
+Server.is_serving() methods.  Add 'start_serving' keyword parameter to
+loop.create_server() and loop.create_unix_server().
+
+..
+
+.. bpo: 32391
+.. date: 2018-01-24-15-20-12
+.. nonce: 0f8MY9
+.. section: Library
+
+Implement :meth:`asyncio.StreamWriter.wait_closed` and
+:meth:`asyncio.StreamWriter.is_closing` methods
+
+..
+
+.. bpo: 32643
+.. date: 2018-01-24-00-32-58
+.. nonce: VWipsW
+.. section: Library
+
+Make Task._step, Task._wakeup and Future._schedule_callbacks methods
+private.
+
+..
+
+.. bpo: 32630
+.. date: 2018-01-23-01-57-36
+.. nonce: 6KRHBs
+.. section: Library
+
+Refactor decimal module to use contextvars to store decimal context.
+
+..
+
+.. bpo: 32622
+.. date: 2018-01-22-18-18-44
+.. nonce: A1D6FP
+.. section: Library
+
+Add :meth:`asyncio.AbstractEventLoop.sendfile` method.
+
+..
+
+.. bpo: 32304
+.. date: 2018-01-21-16-33-53
+.. nonce: TItrNv
+.. section: Library
+
+distutils' upload command no longer corrupts tar files ending with a CR
+byte, and no longer tries to convert CR to CRLF in any of the upload text
+fields.
+
+..
+
+.. bpo: 32502
+.. date: 2018-01-20-17-15-34
+.. nonce: OXJfn7
+.. section: Library
+
+uuid.uuid1 no longer raises an exception if a 64-bit hardware address is
+encountered.
+
+..
+
+.. bpo: 32596
+.. date: 2018-01-19-19-57-45
+.. nonce: 4aVIie
+.. section: Library
+
+``concurrent.futures`` imports ``ThreadPoolExecutor`` and
+``ProcessPoolExecutor`` lazily (using :pep:`562`). It makes ``import
+asyncio`` about 15% faster because asyncio uses only ``ThreadPoolExecutor``
+by default.
+
+..
+
+.. bpo: 31801
+.. date: 2018-01-18-13-47-40
+.. nonce: 3UGH1h
+.. section: Library
+
+Add ``_ignore_`` to ``Enum`` so temporary variables can be used during class
+construction without being turned into members.
+
+..
+
+.. bpo: 32576
+.. date: 2018-01-17-13-04-16
+.. nonce: iDL09t
+.. section: Library
+
+Use queue.SimpleQueue() in places where it can be invoked from a weakref
+callback.
+
+..
+
+.. bpo: 32574
+.. date: 2018-01-16-20-37-28
+.. nonce: ru8eZ9
+.. section: Library
+
+Fix memory leak in asyncio.Queue, when the queue has limited size and it is
+full, the cancelation of queue.put() can cause a memory leak. Patch by: José
+Melero.
+
+..
+
+.. bpo: 32521
+.. date: 2018-01-15-12-53-13
+.. nonce: IxX4Ba
+.. section: Library
+
+The nis module is now compatible with new libnsl and headers location.
+
+..
+
+.. bpo: 32467
+.. date: 2018-01-11-00-33-42
+.. nonce: YVEOv6
+.. section: Library
+
+collections.abc.ValuesView now inherits from collections.abc.Collection.
+
+..
+
+.. bpo: 32473
+.. date: 2018-01-10-20-37-59
+.. nonce: mP_yJG
+.. section: Library
+
+Improve ABCMeta._dump_registry() output readability
+
+..
+
+.. bpo: 32102
+.. date: 2018-01-10-18-04-21
+.. nonce: 9-CZgD
+.. section: Library
+
+New argument ``capture_output`` for subprocess.run
+
+..
+
+.. bpo: 32521
+.. date: 2018-01-08-18-02-33
+.. nonce: Kh-KoN
+.. section: Library
+
+glibc has removed Sun RPC. Use replacement libtirpc headers and library in
+nis module.
+
+..
+
+.. bpo: 32493
+.. date: 2018-01-08-15-53-37
+.. nonce: vTXxGN
+.. section: Library
+
+UUID module fixes build for FreeBSD/OpenBSD
+
+..
+
+.. bpo: 32503
+.. date: 2018-01-07-09-22-26
+.. nonce: ViMxpD
+.. section: Library
+
+Pickling with protocol 4 no longer creates too small frames.
+
+..
+
+.. bpo: 29237
+.. date: 2018-01-04-14-45-33
+.. nonce: zenYA6
+.. section: Library
+
+Create enum for pstats sorting options
+
+..
+
+.. bpo: 32454
+.. date: 2017-12-30-10-38-05
+.. nonce: wsZnl-
+.. section: Library
+
+Add close(fd) function to the socket module.
+
+..
+
+.. bpo: 25942
+.. date: 2017-12-27-20-15-51
+.. nonce: Giyr8v
+.. section: Library
+
+The subprocess module is now more graceful when handling a Ctrl-C
+KeyboardInterrupt during subprocess.call, subprocess.run, or a Popen context
+manager.  It now waits a short amount of time for the child (presumed to
+have also gotten the SIGINT) to exit, before continuing the
+KeyboardInterrupt exception handling.  This still includes a SIGKILL in the
+call() and run() APIs, but at least the child had a chance first.
+
+..
+
+.. bpo: 32433
+.. date: 2017-12-27-20-09-27
+.. nonce: vmxsVI
+.. section: Library
+
+The hmac module now has hmac.digest(), which provides an optimized HMAC
+digest.
+
+..
+
+.. bpo: 28134
+.. date: 2017-12-24-20-01-09
+.. nonce: HJ8Beb
+.. section: Library
+
+Sockets now auto-detect family, type and protocol from file descriptor by
+default.
+
+..
+
+.. bpo: 32404
+.. date: 2017-12-23-14-54-05
+.. nonce: yJqtlJ
+.. section: Library
+
+Fix bug where :meth:`datetime.datetime.fromtimestamp` did not call __new__
+in :class:`datetime.datetime` subclasses.
+
+..
+
+.. bpo: 32403
+.. date: 2017-12-23-14-51-46
+.. nonce: CVFapH
+.. section: Library
+
+Improved speed of :class:`datetime.date` and :class:`datetime.datetime`
+alternate constructors.
+
+..
+
+.. bpo: 32228
+.. date: 2017-12-22-16-47-41
+.. nonce: waPx3q
+.. section: Library
+
+Ensure that ``truncate()`` preserves the file position (as reported by
+``tell()``) after writes longer than the buffer size.
+
+..
+
+.. bpo: 32410
+.. date: 2017-12-22-16-05-01
+.. nonce: 8JzhvH
+.. section: Library
+
+Implement ``loop.sock_sendfile`` for asyncio event loop.
+
+..
+
+.. bpo: 22908
+.. date: 2017-12-21-22-00-11
+.. nonce: cVm89I
+.. section: Library
+
+Added seek and tell to the ZipExtFile class. This only works if the file
+object used to open the zipfile is seekable.
+
+..
+
+.. bpo: 32373
+.. date: 2017-12-19-09-23-46
+.. nonce: 8qAkoW
+.. section: Library
+
+Add socket.getblocking() method.
+
+..
+
+.. bpo: 32248
+.. date: 2017-12-15-15-34-12
+.. nonce: zmO8G2
+.. section: Library
+
+Add :mod:`importlib.resources` and :class:`importlib.abc.ResourceReader` as
+the unified API for reading resources contained within packages.  Loaders
+wishing to support resource reading must implement the
+:meth:`get_resource_reader()` method.  File-based and zipimport-based
+loaders both implement these APIs.  :class:`importlib.abc.ResourceLoader` is
+deprecated in favor of these new APIs.
+
+..
+
+.. bpo: 32320
+.. date: 2017-12-14-01-36-25
+.. nonce: jwOZlr
+.. section: Library
+
+collections.namedtuple() now supports default values.
+
+..
+
+.. bpo: 29302
+.. date: 2017-12-11-15-14-55
+.. nonce: Nczj9l
+.. section: Library
+
+Add contextlib.AsyncExitStack. Patch by Alexander Mohr and Ilya Kulakov.
+
+..
+
+.. bpo: 31961
+.. date: 2017-11-08-03-38-20
+.. nonce: x5Sv0R
+.. section: Library
+
+*Removed in Python 3.7.0b2.*
+The *args* argument of subprocess.Popen can now be a :term:`path-like
+object`. If *args* is given as a sequence, it's first element can now be a
+:term:`path-like object` as well.
+
+..
+
+.. bpo: 31900
+.. date: 2017-10-30-15-55-32
+.. nonce: -S9xc4
+.. section: Library
+
+The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+locale to the ``LC_NUMERIC`` locale to decode ``decimal_point`` and
+``thousands_sep`` byte strings if they are non-ASCII or longer than 1 byte,
+and the ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale.
+This temporary change affects other threads.
+Same change for the :meth:`str.format` method when formatting a number
+(:class:`int`, :class:`float`, :class:`float` and subclasses) with the ``n``
+type (ex: ``'{:n}'.format(1234)``).
+
+..
+
+.. bpo: 31853
+.. date: 2017-10-23-22-55-51
+.. nonce: h5fjrP
+.. section: Library
+
+Use super().method instead of socket.method in SSLSocket.  They were there
+most likely for legacy reasons.
+
+..
+
+.. bpo: 31399
+.. date: 2017-09-08-14-05-33
+.. nonce: FtBrrt
+.. section: Library
+
+The ssl module now uses OpenSSL's X509_VERIFY_PARAM_set1_host() and
+X509_VERIFY_PARAM_set1_ip() API to verify hostname and IP addresses. Subject
+common name fallback can be disabled with
+SSLContext.hostname_checks_common_name.
+
+..
+
+.. bpo: 14976
+.. date: 2017-09-07-19-12-47
+.. nonce: dx0Zxb
+.. section: Library
+
+Add a queue.SimpleQueue class, an unbounded FIFO queue with a reentrant C
+implementation of put().
+
+..
+
+.. bpo: 32724
+.. date: 2018-01-30-09-00-19
+.. nonce: qPIaM-
+.. section: Documentation
+
+Add references to some commands in the documentation of Pdb. Patch by
+Stéphane Wirtel
+
+..
+
+.. bpo: 32649
+.. date: 2018-01-27-23-36-31
+.. nonce: o7qOjF
+.. section: Documentation
+
+Complete the C API documentation, profiling and tracing part with the newly
+added per-opcode events.
+
+..
+
+.. bpo: 17799
+.. date: 2018-01-22-21-13-46
+.. nonce: rdZ-Vk
+.. section: Documentation
+
+Explain real behaviour of sys.settrace and sys.setprofile and their C-API
+counterparts regarding which type of events are received in each function.
+Patch by Pablo Galindo Salgado.
+
+..
+
+.. bpo: 32721
+.. date: 2018-01-29-21-30-44
+.. nonce: 2Bebm1
+.. section: Tests
+
+Fix test_hashlib to not fail if the _md5 module is not built.
+
+..
+
+.. bpo: 28414
+.. date: 2018-01-28-21-19-13
+.. nonce: a6Onzt
+.. section: Tests
+
+Add test cases for IDNA 2003 and 2008 host names. IDNA 2003
+internationalized host names are working since bpo-31399 has landed. IDNA
+2008 are still broken.
+
+..
+
+.. bpo: 32604
+.. date: 2018-01-26-21-29-09
+.. nonce: 7iazNx
+.. section: Tests
+
+Add a new "_xxsubinterpreters" extension module that exposes the existing
+subinterpreter C-API and a new cross-interpreter data sharing mechanism. The
+module is primarily intended for more thorough testing of the existing
+subinterpreter support.
+Note that the _xxsubinterpreters module has been removed in 3.7.0rc1.
+
+..
+
+.. bpo: 32602
+.. date: 2018-01-19-20-47-11
+.. nonce: dz41pq
+.. section: Tests
+
+Add test certs and test for ECDSA cert and EC/RSA dual mode.
+
+..
+
+.. bpo: 32549
+.. date: 2018-01-14-11-40-22
+.. nonce: fLwbVA
+.. section: Tests
+
+On Travis CI, Python now Compiles and uses a local copy of OpenSSL 1.1.0g
+for testing.
+
+..
+
+.. bpo: 32635
+.. date: 2018-01-23-15-33-40
+.. nonce: qHwIZy
+.. section: Build
+
+Fix segfault of the crypt module when libxcrypt is provided instead of
+libcrypt at the system.
+
+..
+
+.. bpo: 32598
+.. date: 2018-01-19-14-50-19
+.. nonce: hP7bMV
+.. section: Build
+
+Use autoconf to detect OpenSSL libs, headers and supported features. The
+ax_check_openssl M4 macro uses pkg-config to locate OpenSSL and falls back
+to manual search.
+
+..
+
+.. bpo: 32593
+.. date: 2018-01-18-11-10-52
+.. nonce: XIrf3v
+.. section: Build
+
+Drop support of FreeBSD 9 and older.
+
+..
+
+.. bpo: 29708
+.. date: 2018-01-16-08-32-49
+.. nonce: YCaHEx
+.. section: Build
+
+If the :envvar:`SOURCE_DATE_EPOCH` environment variable is set,
+:mod:`py_compile` will always create hash-based ``.pyc`` files.
+
+..
+
+.. bpo: 32588
+.. date: 2018-01-18-14-56-45
+.. nonce: vHww6F
+.. section: Windows
+
+Create standalone _distutils_findvs module and add missing _queue module to
+installer.
+
+..
+
+.. bpo: 29911
+.. date: 2018-01-07-12-33-21
+.. nonce: ewSJKb
+.. section: Windows
+
+Ensure separate Modify and Uninstall buttons are displayed.
+
+..
+
+.. bpo: 32507
+.. date: 2018-01-07-12-32-49
+.. nonce: vB4gxk
+.. section: Windows
+
+Use app-local UCRT install rather than the proper update for old versions of
+Windows.
+
+..
+
+.. bpo: 32726
+.. date: 2018-01-30-07-13-10
+.. nonce: tcARLK
+.. section: macOS
+
+Provide an additional, more modern macOS installer variant that supports
+macOS 10.9+ systems in 64-bit mode only.  Upgrade the supplied third-party
+libraries to OpenSSL 1.1.0g and to SQLite 3.22.0.  The 10.9+ installer now
+links with and supplies its own copy of Tcl/Tk 8.6.
+
+..
+
+.. bpo: 28440
+.. date: 2018-01-30-04-40-12
+.. nonce: W_BUWU
+.. section: macOS
+
+No longer add /Library/Python/3.x/site-packages to sys.path for macOS
+framework builds to avoid future conflicts.
+
+..
+
+.. bpo: 32681
+.. date: 2018-01-26-17-29-29
+.. nonce: N1ruWa
+.. section: C API
+
+Fix uninitialized variable 'res' in the C implementation of os.dup2. Patch
+by Stéphane Wirtel
+
+..
+
+.. bpo: 10381
+.. date: 2017-12-28-15-22-05
+.. nonce: a1E6aF
+.. section: C API
+
+Add C API access to the ``datetime.timezone`` constructor and
+``datetime.timzone.UTC`` singleton.
