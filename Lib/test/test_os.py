@@ -186,6 +186,9 @@ class FileTests(unittest.TestCase):
     @unittest.skipIf(
         support.is_emscripten, "Test is unstable under Emscripten."
     )
+    @unittest.skipIf(
+        support.is_wasi, "WASI does not support dup."
+    )
     def test_closerange(self):
         first = os.open(os_helper.TESTFN, os.O_CREAT|os.O_RDWR)
         # We must allocate two consecutive file descriptors, otherwise
@@ -1588,7 +1591,10 @@ class MakedirTests(unittest.TestCase):
                             'dir5', 'dir6')
         os.makedirs(path)
 
-    @unittest.skipIf(support.is_emscripten, "Emscripten's umask is a stub.")
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_mode(self):
         with os_helper.temp_umask(0o002):
             base = os_helper.TESTFN
@@ -1601,6 +1607,10 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_exist_ok_existing_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
         mode = 0o777
@@ -1615,6 +1625,10 @@ class MakedirTests(unittest.TestCase):
         # Issue #25583: A drive root could raise PermissionError on Windows
         os.makedirs(os.path.abspath('/'), exist_ok=True)
 
+    @unittest.skipIf(
+        support.is_emscripten or support.is_wasi,
+        "Emscripten's/WASI's umask is a stub."
+    )
     def test_exist_ok_s_isgid_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
         S_ISGID = stat.S_ISGID
@@ -1664,7 +1678,7 @@ class MakedirTests(unittest.TestCase):
         os.removedirs(path)
 
 
-@unittest.skipUnless(hasattr(os, 'chown'), "Test needs chown")
+@os_helper.skip_unless_working_chmod
 class ChownFileTests(unittest.TestCase):
 
     @classmethod
@@ -1765,6 +1779,7 @@ class RemoveDirsTests(unittest.TestCase):
         self.assertTrue(os.path.exists(os_helper.TESTFN))
 
 
+@unittest.skipIf(support.is_wasi, "WASI has no /dev/null")
 class DevNullTests(unittest.TestCase):
     def test_devnull(self):
         with open(os.devnull, 'wb', 0) as f:
@@ -2111,6 +2126,7 @@ class Win32ErrorTests(unittest.TestCase):
         self.assertRaises(OSError, os.chmod, os_helper.TESTFN, 0)
 
 
+@unittest.skipIf(support.is_wasi, "Cannot create invalid FD on WASI.")
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
@@ -3649,6 +3665,19 @@ class TermsizeTests(unittest.TestCase):
             raise
         self.assertEqual(expected, actual)
 
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows specific test')
+    def test_windows_fd(self):
+        """Check if get_terminal_size() returns a meaningful value in Windows"""
+        try:
+            conout = open('conout$', 'w')
+        except OSError:
+            self.skipTest('failed to open conout$')
+        with conout:
+            size = os.get_terminal_size(conout.fileno())
+
+        self.assertGreaterEqual(size.columns, 0)
+        self.assertGreaterEqual(size.lines, 0)
+
 
 @unittest.skipUnless(hasattr(os, 'memfd_create'), 'requires os.memfd_create')
 @support.requires_linux_version(3, 17)
@@ -3768,35 +3797,23 @@ class OSErrorTests(unittest.TestCase):
         else:
             encoded = os.fsencode(os_helper.TESTFN)
         self.bytes_filenames.append(encoded)
-        self.bytes_filenames.append(bytearray(encoded))
-        self.bytes_filenames.append(memoryview(encoded))
 
         self.filenames = self.bytes_filenames + self.unicode_filenames
 
     def test_oserror_filename(self):
         funcs = [
             (self.filenames, os.chdir,),
-            (self.filenames, os.chmod, 0o777),
             (self.filenames, os.lstat,),
             (self.filenames, os.open, os.O_RDONLY),
             (self.filenames, os.rmdir,),
             (self.filenames, os.stat,),
             (self.filenames, os.unlink,),
+            (self.filenames, os.listdir,),
+            (self.filenames, os.rename, "dst"),
+            (self.filenames, os.replace, "dst"),
         ]
-        if sys.platform == "win32":
-            funcs.extend((
-                (self.bytes_filenames, os.rename, b"dst"),
-                (self.bytes_filenames, os.replace, b"dst"),
-                (self.unicode_filenames, os.rename, "dst"),
-                (self.unicode_filenames, os.replace, "dst"),
-                (self.unicode_filenames, os.listdir, ),
-            ))
-        else:
-            funcs.extend((
-                (self.filenames, os.listdir,),
-                (self.filenames, os.rename, "dst"),
-                (self.filenames, os.replace, "dst"),
-            ))
+        if os_helper.can_chmod():
+            funcs.append((self.filenames, os.chmod, 0o777))
         if hasattr(os, "chown"):
             funcs.append((self.filenames, os.chown, 0, 0))
         if hasattr(os, "lchown"):
@@ -3810,11 +3827,7 @@ class OSErrorTests(unittest.TestCase):
         if hasattr(os, "chroot"):
             funcs.append((self.filenames, os.chroot,))
         if hasattr(os, "link"):
-            if sys.platform == "win32":
-                funcs.append((self.bytes_filenames, os.link, b"dst"))
-                funcs.append((self.unicode_filenames, os.link, "dst"))
-            else:
-                funcs.append((self.filenames, os.link, "dst"))
+            funcs.append((self.filenames, os.link, "dst"))
         if hasattr(os, "listxattr"):
             funcs.extend((
                 (self.filenames, os.listxattr,),
@@ -3827,21 +3840,16 @@ class OSErrorTests(unittest.TestCase):
         if hasattr(os, "readlink"):
             funcs.append((self.filenames, os.readlink,))
 
-
         for filenames, func, *func_args in funcs:
             for name in filenames:
                 try:
-                    if isinstance(name, (str, bytes)):
-                        func(name, *func_args)
-                    else:
-                        with self.assertWarnsRegex(DeprecationWarning, 'should be'):
-                            func(name, *func_args)
+                    func(name, *func_args)
                 except OSError as err:
                     self.assertIs(err.filename, name, str(func))
                 except UnicodeDecodeError:
                     pass
                 else:
-                    self.fail("No exception thrown by {}".format(func))
+                    self.fail(f"No exception thrown by {func}")
 
 class CPUCountTests(unittest.TestCase):
     def test_cpu_count(self):
@@ -3985,7 +3993,7 @@ class PathTConverterTests(unittest.TestCase):
         ('access', False, (os.F_OK,), None),
         ('chflags', False, (0,), None),
         ('lchflags', False, (0,), None),
-        ('open', False, (0,), getattr(os, 'close', None)),
+        ('open', False, (os.O_RDONLY,), getattr(os, 'close', None)),
     ]
 
     def test_path_t_converter(self):
@@ -4150,6 +4158,8 @@ class TestScandir(unittest.TestCase):
         self.assertEqual(entry.is_file(follow_symlinks=False),
                          stat.S_ISREG(entry_lstat.st_mode))
 
+        self.assertEqual(entry.is_junction(), os.path.isjunction(entry.path))
+
         self.assert_stat_equal(entry.stat(),
                                entry_stat,
                                os.name == 'nt' and not is_symlink)
@@ -4197,6 +4207,21 @@ class TestScandir(unittest.TestCase):
 
             entry = entries['symlink_file.txt']
             self.check_entry(entry, 'symlink_file.txt', False, True, True)
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
+    def test_attributes_junctions(self):
+        dirname = os.path.join(self.path, "tgtdir")
+        os.mkdir(dirname)
+
+        import _winapi
+        try:
+            _winapi.CreateJunction(dirname, os.path.join(self.path, "srcjunc"))
+        except OSError:
+            raise unittest.SkipTest('creating the test junction failed')
+
+        entries = self.get_entries(['srcjunc', 'tgtdir'])
+        self.assertEqual(entries['srcjunc'].is_junction(), True)
+        self.assertEqual(entries['tgtdir'].is_junction(), False)
 
     def get_entry(self, name):
         path = self.bytes_path if isinstance(name, bytes) else self.path
@@ -4320,16 +4345,8 @@ class TestScandir(unittest.TestCase):
 
         for cls in bytearray, memoryview:
             path_bytes = cls(os.fsencode(self.path))
-            with self.assertWarns(DeprecationWarning):
-                entries = list(os.scandir(path_bytes))
-            self.assertEqual(len(entries), 1, entries)
-            entry = entries[0]
-
-            self.assertEqual(entry.name, b'file.txt')
-            self.assertEqual(entry.path,
-                             os.fsencode(os.path.join(self.path, 'file.txt')))
-            self.assertIs(type(entry.name), bytes)
-            self.assertIs(type(entry.path), bytes)
+            with self.assertRaises(TypeError):
+                os.scandir(path_bytes)
 
     @unittest.skipUnless(os.listdir in os.supports_fd,
                          'fd support for listdir required for this test.')
@@ -4357,6 +4374,7 @@ class TestScandir(unittest.TestCase):
                     st = os.stat(entry.name, dir_fd=fd, follow_symlinks=False)
                     self.assertEqual(entry.stat(follow_symlinks=False), st)
 
+    @unittest.skipIf(support.is_wasi, "WASI maps '' to cwd")
     def test_empty_path(self):
         self.assertRaises(FileNotFoundError, os.scandir, '')
 

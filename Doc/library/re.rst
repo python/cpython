@@ -29,7 +29,7 @@ a literal backslash, one might have to write ``'\\\\'`` as the pattern
 string, because the regular expression must be ``\\``, and each
 backslash must be expressed as ``\\`` inside a regular Python string
 literal. Also, please note that any invalid escape sequences in Python's
-usage of the backslash in string literals now generate a :exc:`DeprecationWarning`
+usage of the backslash in string literals now generate a :exc:`SyntaxWarning`
 and in the future this will become a :exc:`SyntaxError`. This behaviour
 will happen even if it is a valid escape sequence for a regular expression.
 
@@ -483,6 +483,9 @@ The special characters are:
    some fixed length.  Patterns which start with negative lookbehind assertions may
    match at the beginning of the string being searched.
 
+.. _re-conditional-expression:
+.. index:: single: (?(; in regular expressions
+
 ``(?(id/name)yes-pattern|no-pattern)``
    Will try to match with ``yes-pattern`` if the group with given *id* or
    *name* exists, and with ``no-pattern`` if it doesn't. ``no-pattern`` is
@@ -783,7 +786,8 @@ Flags
    more readable by allowing you to visually separate logical sections of the
    pattern and add comments. Whitespace within the pattern is ignored, except
    when in a character class, or when preceded by an unescaped backslash,
-   or within tokens like ``*?``, ``(?:`` or ``(?P<...>``.
+   or within tokens like ``*?``, ``(?:`` or ``(?P<...>``. For example, ``(? :``
+   and ``* ?`` are not allowed.
    When a line contains a ``#`` that is not in a character class and is not
    preceded by an unescaped backslash, all characters from the leftmost such
    ``#`` through the end of the line are ignored.
@@ -1325,6 +1329,14 @@ Match objects support the following methods and attributes:
       >>> m[1]       # The first parenthesized subgroup.
       'Isaac'
       >>> m[2]       # The second parenthesized subgroup.
+      'Newton'
+
+   Named groups are supported as well::
+
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Isaac Newton")
+      >>> m['first_name']
+      'Isaac'
+      >>> m['last_name']
       'Newton'
 
    .. versionadded:: 3.6

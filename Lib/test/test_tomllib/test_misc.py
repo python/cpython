@@ -92,8 +92,8 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(obj_copy, expected_obj)
 
     def test_inline_array_recursion_limit(self):
-        # 470 with default recursion limit
-        nest_count = int(sys.getrecursionlimit() * 0.47)
+        # 465 with default recursion limit
+        nest_count = int(sys.getrecursionlimit() * 0.465)
         recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
         tomllib.loads(recursive_array_toml)
 

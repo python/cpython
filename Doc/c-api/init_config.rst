@@ -254,7 +254,7 @@ PyPreConfig
 
    .. c:member:: int configure_locale
 
-      Set the LC_CTYPE locale to the user preferred locale?
+      Set the LC_CTYPE locale to the user preferred locale.
 
       If equals to ``0``, set :c:member:`~PyPreConfig.coerce_c_locale` and
       :c:member:`~PyPreConfig.coerce_c_locale_warn` members to ``0``.
@@ -735,9 +735,8 @@ PyConfig
 
       * ``"utf-8"`` if :c:member:`PyPreConfig.utf8_mode` is non-zero.
       * ``"ascii"`` if Python detects that ``nl_langinfo(CODESET)`` announces
-        the ASCII encoding (or Roman8 encoding on HP-UX), whereas the
-        ``mbstowcs()`` function decodes from a different encoding (usually
-        Latin1).
+        the ASCII encoding, whereas the ``mbstowcs()`` function
+        decodes from a different encoding (usually Latin1).
       * ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string.
       * Otherwise, use the :term:`locale encoding`:
         ``nl_langinfo(CODESET)`` result.
@@ -828,6 +827,24 @@ PyConfig
       Incremented by the :option:`-i` command line option.
 
       Default: ``0``.
+
+   .. c:member:: int int_max_str_digits
+
+      Configures the :ref:`integer string conversion length limitation
+      <int_max_str_digits>`.  An initial value of ``-1`` means the value will
+      be taken from the command line or environment or otherwise default to
+      4300 (:data:`sys.int_info.default_max_str_digits`).  A value of ``0``
+      disables the limitation.  Values greater than zero but less than 640
+      (:data:`sys.int_info.str_digits_check_threshold`) are unsupported and
+      will produce an error.
+
+      Configured by the :option:`-X int_max_str_digits <-X>` command line
+      flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment varable.
+
+      Default: ``-1`` in Python mode.  4300
+      (:data:`sys.int_info.default_max_str_digits`) in isolated mode.
+
+      .. versionadded:: 3.12
 
    .. c:member:: int isolated
 
@@ -985,6 +1002,9 @@ PyConfig
 
       Incremented by the :option:`-d` command line option. Set to the
       :envvar:`PYTHONDEBUG` environment variable value.
+
+      Need a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      must be defined).
 
       Default: ``0``.
 
@@ -1152,6 +1172,20 @@ PyConfig
       :envvar:`PYTHONTRACEMALLOC` environment variable.
 
       Default: ``-1`` in Python mode, ``0`` in isolated mode.
+
+   .. c:member:: int perf_profiling
+
+      Enable compatibility mode with the perf profiler?
+
+      If non-zero, initialize the perf trampoline. See :ref:`perf_profiling`
+      for more information.
+
+      Set by :option:`-X perf <-X>` command line option and by the
+      :envvar:`PYTHONPERFSUPPORT` environment variable.
+
+      Default: ``-1``.
+
+      .. versionadded:: 3.12
 
    .. c:member:: int use_environment
 
@@ -1322,9 +1356,9 @@ initialization::
         }
 
         /* Specify sys.path explicitly */
-        /* To calculate the default and then modify, finish initialization and
-           then use PySys_GetObject("path") to get the list. */
-        condig.module_search_paths_set = 1
+        /* If you want to modify the default set of paths, finish
+           initialization first and then use PySys_GetObject("path") */
+        config.module_search_paths_set = 1;
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/stdlib");
         if (PyStatus_Exception(status)) {
@@ -1537,8 +1571,6 @@ Private provisional API:
 
 * :c:member:`PyConfig._init_main`: if set to ``0``,
   :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
-* :c:member:`PyConfig._isolated_interpreter`: if non-zero,
-  disallow threads, subprocesses and fork.
 
 .. c:function:: PyStatus _Py_InitializeMain(void)
 

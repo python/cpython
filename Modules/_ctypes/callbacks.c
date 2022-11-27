@@ -1,7 +1,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 // windows.h must be included before pycore internal headers
@@ -9,8 +8,9 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "frameobject.h"
+#include "pycore_call.h"            // _PyObject_CallNoArgs()
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_global_objects.h"  // _Py_ID()
 
 #include <stdbool.h>
 
@@ -126,9 +126,7 @@ static void
 TryAddRef(StgDictObject *dict, CDataObject *obj)
 {
     IUnknown *punk;
-    _Py_IDENTIFIER(_needs_com_addref_);
-
-    int r = _PyDict_ContainsId((PyObject *)dict, &PyId__needs_com_addref_);
+    int r = PyDict_Contains((PyObject *)dict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
         if (r < 0) {
             PrintError("getting _needs_com_addref_");
@@ -376,8 +374,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     }
     p->atypes[i] = NULL;
 
-    Py_INCREF(restype);
-    p->restype = restype;
+    p->restype = Py_NewRef(restype);
     if (restype == Py_None) {
         p->setfunc = NULL;
         p->ffi_restype = &ffi_type_void;
@@ -406,9 +403,15 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
                      "ffi_prep_cif failed with %d", result);
         goto error;
     }
+
+
 #if HAVE_FFI_PREP_CLOSURE_LOC
 #   ifdef USING_APPLE_OS_LIBFFI
+#    ifdef HAVE_BUILTIN_AVAILABLE
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#    else
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME (ffi_prep_closure_loc != NULL)
+#    endif
 #   else
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME 1
 #   endif
@@ -448,10 +451,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         goto error;
     }
 
-    Py_INCREF(converters);
-    p->converters = converters;
-    Py_INCREF(callable);
-    p->callable = callable;
+    p->converters = Py_NewRef(converters);
+    p->callable = Py_NewRef(callable);
     return p;
 
   error:
@@ -472,24 +473,17 @@ static void LoadPython(void)
 
 long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
-    PyObject *mod, *func, *result;
+    PyObject *func, *result;
     long retval;
     static PyObject *context;
 
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
-    mod = PyImport_ImportModule("ctypes");
-    if (!mod) {
-        PyErr_WriteUnraisable(context ? context : Py_None);
-        /* There has been a warning before about this already */
-        return E_FAIL;
-    }
-
-    func = PyObject_GetAttrString(mod, "DllGetClassObject");
-    Py_DECREF(mod);
+    func = _PyImport_GetModuleAttrString("ctypes", "DllGetClassObject");
     if (!func) {
         PyErr_WriteUnraisable(context ? context : Py_None);
+        /* There has been a warning before about this already */
         return E_FAIL;
     }
 
