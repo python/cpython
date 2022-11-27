@@ -1,1 +1,0 @@
-Improve the speed and accuracy of statistics.pvariance().

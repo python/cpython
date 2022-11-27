@@ -5,8 +5,6 @@ buildbot        Batchfiles for running on Windows buildbot workers.
 
 ccbench         A Python threads-based concurrency benchmark. (*)
 
-demo            Several Python programming demos.
-
 freeze          Create a stand-alone executable from a Python program.
 
 gdb             Python code to be run inside gdb, to make it easier to
@@ -25,8 +23,6 @@ parser          Un-parsing tool to generate code from an AST.
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
-pynche          A Tkinter-based color editor.
-
 scripts         A number of useful single-file programs, e.g. tabnanny.py
                 by Tim Peters, which checks for inconsistent mixing of
                 tabs and spaces, and 2to3, which converts Python 2 code
@@ -44,3 +40,5 @@ unittestgui     A Tkinter based GUI test runner for unittest, with test
 
 
 (*) A generic benchmark suite is maintained separately at https://github.com/python/performance
+
+Note: The pynche color editor has moved to https://gitlab.com/warsaw/pynche

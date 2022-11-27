@@ -1,1 +1,0 @@
-:mod:`configparser`: using ']' inside a section header will no longer cut the section name short at the ']'

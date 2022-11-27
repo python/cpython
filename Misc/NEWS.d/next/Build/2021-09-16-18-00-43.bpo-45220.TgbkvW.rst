@@ -1,3 +1,0 @@
-Avoid building with the Windows 11 SDK previews automatically. This may be
-overridden by setting the ``DefaultWindowsSDKVersion`` environment variable
-before building.

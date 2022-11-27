@@ -68,21 +68,14 @@ def print_warning(msg):
 orig_unraisablehook = None
 
 
-def flush_std_streams():
-    if sys.stdout is not None:
-        sys.stdout.flush()
-    if sys.stderr is not None:
-        sys.stderr.flush()
-
-
 def regrtest_unraisable_hook(unraisable):
     global orig_unraisablehook
     support.environment_altered = True
-    print_warning("Unraisable exception")
+    support.print_warning("Unraisable exception")
     old_stderr = sys.stderr
     try:
-        flush_std_streams()
-        sys.stderr = sys.__stderr__
+        support.flush_std_streams()
+        sys.stderr = support.print_warning.orig_stderr
         orig_unraisablehook(unraisable)
         sys.stderr.flush()
     finally:
@@ -101,11 +94,11 @@ orig_threading_excepthook = None
 def regrtest_threading_excepthook(args):
     global orig_threading_excepthook
     support.environment_altered = True
-    print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
+    support.print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
     old_stderr = sys.stderr
     try:
-        flush_std_streams()
-        sys.stderr = sys.__stderr__
+        support.flush_std_streams()
+        sys.stderr = support.print_warning.orig_stderr
         orig_threading_excepthook(args)
         sys.stderr.flush()
     finally:
@@ -130,15 +123,6 @@ def clear_caches():
     for stream in (sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__):
         if stream is not None:
             stream.flush()
-
-    # Clear assorted module caches.
-    # Don't worry about resetting the cache if the module is not loaded
-    try:
-        distutils_dir_util = sys.modules['distutils.dir_util']
-    except KeyError:
-        pass
-    else:
-        distutils_dir_util._path_created.clear()
 
     try:
         re = sys.modules['re']
@@ -217,3 +201,10 @@ def clear_caches():
     else:
         for f in typing._cleanups:
             f()
+
+    try:
+        fractions = sys.modules['fractions']
+    except KeyError:
+        pass
+    else:
+        fractions._hash_algorithm.cache_clear()

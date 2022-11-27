@@ -1,1 +1,0 @@
-Interpreter no longer attempts to open files with names in angle brackets (like "<string>" or "<stdin>") when formatting an exception.

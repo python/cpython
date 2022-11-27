@@ -73,7 +73,7 @@ def main() -> None:
 
         package_json = load_json(package_name)
         try:
-            print(f"Dowloading and compressing package {package_name} ... ", end="")
+            print(f"Downloading and compressing package {package_name} ... ", end="")
             download_package_code(package_name, package_json)
             print("Done")
         except (IndexError, KeyError):

@@ -95,6 +95,8 @@ def _parsedate_tz(data):
         return None
     data = data[:5]
     [dd, mm, yy, tm, tz] = data
+    if not (dd and mm and yy):
+        return None
     mm = mm.lower()
     if mm not in _monthnames:
         dd, mm = mm, dd.lower()
@@ -110,6 +112,8 @@ def _parsedate_tz(data):
         yy, tm = tm, yy
     if yy[-1] == ',':
         yy = yy[:-1]
+        if not yy:
+            return None
     if not yy[0].isdigit():
         yy, tz = tz, yy
     if tm[-1] == ',':
@@ -128,6 +132,8 @@ def _parsedate_tz(data):
             tss = 0
         elif len(tm) == 3:
             [thh, tmm, tss] = tm
+        else:
+            return None
     else:
         return None
     try:

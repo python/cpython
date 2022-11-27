@@ -1,5 +1,0 @@
-The ``bdist_msi`` command, deprecated in Python 3.9, is now removed.
-
-Use ``bdist_wheel`` (wheel packages) instead.
-
-Patch by Hugo van Kemenade.

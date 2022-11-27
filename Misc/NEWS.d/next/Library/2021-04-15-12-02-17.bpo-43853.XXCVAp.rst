@@ -1,7 +1,0 @@
-Improved string handling for :mod:`sqlite3` user-defined functions and
-aggregates:
-
-* It is now possible to pass strings with embedded null characters to UDFs
-* Conversion failures now correctly raise :exc:`MemoryError`
-
-Patch by Erlend E. Aasland.

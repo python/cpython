@@ -1,2 +1,0 @@
-Made the internal ``putcmd`` function in :mod:`smtplib` sanitize input for
-presence of ``\r`` and ``\n`` characters to avoid (unlikely) command injection.
