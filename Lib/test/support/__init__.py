@@ -1299,7 +1299,7 @@ print_warning.orig_stderr = sys.stderr
 # to check if a test modified the environment. The flag should be set to False
 # before running a new test.
 #
-# For example, threading_helper.threading_cleanup() sets the flag is the function fails
+# For example, threading_helper.threading_cleanup() sets the flag if the function fails
 # to cleanup threads.
 environment_altered = False
 

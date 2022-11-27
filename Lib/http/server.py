@@ -409,20 +409,22 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             if not self.parse_request():
                 # An error code has been sent, just exit
                 return
-            mname = 'do_' + self.command
-            if not hasattr(self, mname):
-                self.send_error(
-                    HTTPStatus.NOT_IMPLEMENTED,
-                    "Unsupported method (%r)" % self.command)
-                return
-            method = getattr(self, mname)
-            method()
+            
             self.wfile.flush() #actually send the response if not already done.
         except TimeoutError as e:
             #a read or a write timed out.  Discard this connection
             self.log_error("Request timed out: %r", e)
             self.close_connection = True
             return
+        mname = 'do_' + self.command
+        if not hasattr(self, mname):
+            self.send_error(
+                HTTPStatus.NOT_IMPLEMENTED,
+                "Unsupported method (%r)" % self.command)
+            return
+        method = getattr(self, mname)
+        method()
+        return
 
     def handle(self):
         """Handle multiple requests if necessary."""

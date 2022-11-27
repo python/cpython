@@ -328,6 +328,10 @@ class ErrorHandlerTest(unittest.TestCase):
             self.check_result(handled=False)
 
             self.assertIs(cm.exc_type, SystemExit)
+    
+    def test_timeout_handled(self):
+        BaseErrorTestServer(TimeoutError)
+        self.check_result(handled=True)
 
     @requires_forking
     def test_forking_handled(self):

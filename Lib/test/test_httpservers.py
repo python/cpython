@@ -1357,6 +1357,91 @@ class ScriptTestCase(unittest.TestCase):
             self.assertEqual(mock_server.address_family, socket.AF_INET)
 
 
+class ErrorHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        with open(os_helper.TESTFN, 'a') as log:
+            log.write('do_GET called\n')
+        raise self.server.exception('Test error')
+
+
+class BaseErrorTestServer(HTTPServer):
+    def __init__(self, exception):
+        self.exception = exception
+        return super().__init__(('localhost', 0), ErrorHandler)
+    
+    def handle_error(self, request, client_address):
+        with open(os_helper.TESTFN, 'a') as log:
+            log.write('Error handled\n')
+
+
+class TestErrorHandlerServerThread(threading.Thread):
+    def __init__(self, test_object, exception):
+        threading.Thread.__init__(self)
+        self.test_object = test_object
+        self.exception = exception
+
+    def run(self):
+        self.server = BaseErrorTestServer(self.exception)
+        self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()
+        self.test_object.server_started.set()
+        self.test_object = None
+        try:
+            self.server.serve_forever(0.05)
+        finally:
+            self.server.server_close()
+
+    def stop(self):
+        self.server.shutdown()
+        self.join()
+
+
+class BaseErrorHandlingTestCase(unittest.TestCase):
+    def setUp(self):
+        self._threads = threading_helper.threading_setup()
+        self.server_started = threading.Event()
+        with open(os_helper.TESTFN, 'a') as log:
+            log.write('')
+    
+    def start_thread(self, exception):
+        self.thread = TestErrorHandlerServerThread(self, exception)
+        self.thread.start()
+        self.server_started.wait()
+
+    def tearDown(self):
+        self.thread.stop()
+        self.thread = None
+        threading_helper.threading_cleanup(*self._threads)
+        os_helper.unlink(os_helper.TESTFN)
+
+    def request(self, uri, method='GET', body=None, headers={}):
+        connection = http.client.HTTPConnection(self.HOST, self.PORT)
+        try:
+            connection.request(method, uri, body, headers)
+        finally:
+            connection.close()
+        time.sleep(0.01)
+
+    def test_value_error_handled(self):
+        self.start_thread(ValueError)
+        self.request("/")
+        self.check_result(handled=True)
+    
+    def test_generic_exception_handled(self):
+        self.start_thread(Exception)
+        self.request("/")
+        self.check_result(handled=True)
+    
+    def test_timeout_error_handled(self):
+        self.start_thread(TimeoutError)
+        self.request("/")
+        self.check_result(handled=True)
+    
+    def check_result(self, handled):
+        with open(os_helper.TESTFN) as log:
+            expected = 'do_GET called\n' + 'Error handled\n' * handled
+            self.assertEqual(log.read(), expected)
+
+
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
 
