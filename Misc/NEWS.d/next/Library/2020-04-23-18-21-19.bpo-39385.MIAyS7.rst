@@ -1,3 +1,0 @@
-A new test assertion context-manager, :func:`unittest.assertNoLogs` will
-ensure a given block of code emits no log messages using the logging module.
-Contributed by Kit Yan Choi.

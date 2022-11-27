@@ -28,6 +28,8 @@ quality of POP3 servers varies widely, and too many are quite poor. If your
 mailserver supports IMAP, you would be better off using the
 :class:`imaplib.IMAP4` class, as IMAP servers tend to be better implemented.
 
+.. include:: ../includes/wasm-notavail.rst
+
 The :mod:`poplib` module provides two classes:
 
 
@@ -67,7 +69,7 @@ The :mod:`poplib` module provides two classes:
 
    .. audit-event:: poplib.connect self,host,port poplib.POP3_SSL
 
-   .. audit-event:: poplib.putline self,line popplib.POP3_SSL
+   .. audit-event:: poplib.putline self,line poplib.POP3_SSL
 
       All commands will raise an :ref:`auditing event <auditing>`
       ``poplib.putline`` with arguments ``self`` and ``line``,
@@ -118,10 +120,10 @@ One exception is defined as an attribute of the :mod:`poplib` module:
 POP3 Objects
 ------------
 
-All POP3 commands are represented by methods of the same name, in lower-case;
+All POP3 commands are represented by methods of the same name, in lowercase;
 most return the response text sent by the server.
 
-An :class:`POP3` instance has the following methods:
+A :class:`POP3` instance has the following methods:
 
 
 .. method:: POP3.set_debuglevel(level)
