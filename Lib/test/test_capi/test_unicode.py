@@ -11,6 +11,10 @@ except ImportError:
 
 NULL = None
 
+class Str(str):
+    pass
+
+
 class CAPITest(unittest.TestCase):
 
     @support.cpython_only
@@ -22,6 +26,11 @@ class CAPITest(unittest.TestCase):
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
                   'a\ud800b\udfffc', '\ud834\udd1e']:
             self.assertEqual(fromobject(s), s)
+            o = Str(s)
+            s2 = fromobject(o)
+            self.assertEqual(s2, s)
+            self.assertIs(type(s2), str)
+            self.assertIsNot(s2, s)
 
         self.assertRaises(TypeError, fromobject, b'abc')
         self.assertRaises(TypeError, fromobject, [])
@@ -438,7 +447,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, split, 'a|b|c|d', '')
         self.assertRaises(TypeError, split, 'a|b|c|d', ord('|'))
         self.assertRaises(TypeError, split, [], '|')
-        # split(NULL, '|')
+        # CRASHES split(NULL, '|')
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -462,7 +471,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, rsplit, 'a|b|c|d', '')
         self.assertRaises(TypeError, rsplit, 'a|b|c|d', ord('|'))
         self.assertRaises(TypeError, rsplit, [], '|')
-        # rsplit(NULL, '|')
+        # CRASHES rsplit(NULL, '|')
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -530,6 +539,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(translate('abcd', {ord('a'): 'A', ord('b'): ord('B'), ord('c'): '<>'}), 'AB<>d')
         self.assertEqual(translate('абвг', {ord('а'): 'А', ord('б'): ord('Б'), ord('в'): '<>'}), 'АБ<>г')
+        self.assertEqual(translate('abc', {}), 'abc')
         self.assertEqual(translate('abc', []), 'abc')
         self.assertRaises(UnicodeTranslateError, translate, 'abc', {ord('b'): None})
         self.assertRaises(UnicodeTranslateError, translate, 'abc', {ord('b'): None}, 'strict')
@@ -543,6 +553,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, translate, 'abc', {ord('a'): b'A'})
         self.assertRaises(TypeError, translate, 'abc', 123)
         self.assertRaises(TypeError, translate, 'abc', NULL)
+        self.assertRaises(LookupError, translate, 'abc', {ord('b'): None}, 'foo')
         # CRASHES translate(NULL, [])
 
     @support.cpython_only
@@ -551,6 +562,7 @@ class CAPITest(unittest.TestCase):
         """Test PyUnicode_Join()"""
         from _testcapi import unicode_join as join
         self.assertEqual(join('|', ['a', 'b', 'c']), 'a|b|c')
+        self.assertEqual(join('|', ['a', '', 'c']), 'a||c')
         self.assertEqual(join('', ['a', 'b', 'c']), 'abc')
         self.assertEqual(join(NULL, ['a', 'b', 'c']), 'a b c')
         self.assertEqual(join('|', ['а', 'б', 'в']), 'а|б|в')
@@ -595,11 +607,6 @@ class CAPITest(unittest.TestCase):
     def test_tailmatch(self):
         """Test PyUnicode_Tailmatch()"""
         from _testcapi import unicode_tailmatch as tailmatch
-
-        #for str in "\xa1", "\u8000\u8080", "\ud800\udc02", "\U0001f100\U0001f1f1":
-            #for i, ch in enumerate(str):
-                #self.assertEqual(tailmatch(str, ch, 0, len(str), 1), i)
-                #self.assertEqual(tailmatch(str, ch, 0, len(str), -1), i)
 
         str = 'ababahalamaha'
         self.assertEqual(tailmatch(str, 'aba', 0, len(str), -1), 1)
@@ -790,7 +797,7 @@ class CAPITest(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_format(self):
-        """Test PyUnicode_Contains()"""
+        """Test PyUnicode_Format()"""
         from _testcapi import unicode_format as format
 
         self.assertEqual(format('x=%d!', 42), 'x=42!')
@@ -838,6 +845,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(isidentifier("["), 0)
         self.assertEqual(isidentifier("©"), 0)
         self.assertEqual(isidentifier("0"), 0)
+        self.assertEqual(isidentifier("32M"), 0)
 
         # CRASHES isidentifier(b"a")
         # CRASHES isidentifier([])
