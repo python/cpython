@@ -192,7 +192,7 @@ def add_verbosity_cli(parser):
     parser.add_argument('-q', '--quiet', action='count', default=0)
     parser.add_argument('-v', '--verbose', action='count', default=0)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
         key = 'verbosity'
         if key in ns:
@@ -208,7 +208,7 @@ def add_traceback_cli(parser):
     parser.add_argument('--no-traceback', '--no-tb', dest='traceback',
                         action='store_const', const=False)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
         key = 'traceback_cm'
         if key in ns:
@@ -262,7 +262,7 @@ def add_sepval_cli(parser, opt, dest, choices, *, sep=',', **kwargs):
         #kwargs.setdefault('metavar', opt.upper())
         parser.add_argument(opt, dest=dest, action='append', **kwargs)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
 
         # XXX Use normalize_selection()?
@@ -293,7 +293,7 @@ def add_file_filtering_cli(parser, *, excluded=None):
 
     excluded = tuple(excluded or ())
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
         key = 'iter_filenames'
         if key in ns:
@@ -323,7 +323,7 @@ def add_progress_cli(parser, *, threshold=VERBOSITY, **kwargs):
     parser.add_argument('--no-progress', dest='track_progress', action='store_false')
     parser.set_defaults(track_progress=True)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         if args.track_progress:
             ns = vars(args)
             verbosity = ns.get('verbosity', VERBOSITY)
@@ -339,7 +339,7 @@ def add_failure_filtering_cli(parser, pool, *, default=False):
                         metavar=f'"{{all|{"|".join(sorted(pool))}}},..."')
     parser.add_argument('--no-fail', dest='fail', action='store_const', const=())
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
 
         fail = ns.pop('fail')
@@ -371,7 +371,7 @@ def add_failure_filtering_cli(parser, pool, *, default=False):
 def add_kind_filtering_cli(parser, *, default=None):
     parser.add_argument('--kinds', action='append')
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         ns = vars(args)
 
         kinds = []
@@ -486,18 +486,18 @@ def _flatten_processors(processors):
             yield from _flatten_processors(proc)
 
 
-def process_args(args, processors, *, keys=None):
+def process_args(args, argv, processors, *, keys=None):
     processors = _flatten_processors(processors)
     ns = vars(args)
     extracted = {}
     if keys is None:
         for process_args in processors:
-            for key in process_args(args):
+            for key in process_args(args, argv=argv):
                 extracted[key] = ns.pop(key)
     else:
         remainder = set(keys)
         for process_args in processors:
-            hanging = process_args(args)
+            hanging = process_args(args, argv=argv)
             if isinstance(hanging, str):
                 hanging = [hanging]
             for key in hanging or ():
@@ -510,8 +510,8 @@ def process_args(args, processors, *, keys=None):
     return extracted
 
 
-def process_args_by_key(args, processors, keys):
-    extracted = process_args(args, processors, keys=keys)
+def process_args_by_key(args, argv, processors, keys):
+    extracted = process_args(args, argv, processors, keys=keys)
     return [extracted[key] for key in keys]
 
 
