@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_range.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
@@ -104,10 +105,8 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
             if (!stop) {
                 return NULL;
             }
-            start = _PyLong_GetZero();
-            Py_INCREF(start);
-            step = _PyLong_GetOne();
-            Py_INCREF(step);
+            start = Py_NewRef(_PyLong_GetZero());
+            step = Py_NewRef(_PyLong_GetOne());
             break;
         case 0:
             PyErr_SetString(PyExc_TypeError,
@@ -215,8 +214,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
         if (cmp_result < 0)
             return NULL;
         result = zero;
-        Py_INCREF(result);
-        return result;
+        return Py_NewRef(result);
     }
 
     if ((tmp1 = PyNumber_Subtract(hi, lo)) == NULL)
@@ -296,8 +294,7 @@ compute_range_item(rangeobject *r, PyObject *arg)
           return NULL;
         }
     } else {
-        i = arg;
-        Py_INCREF(i);
+        i = Py_NewRef(arg);
     }
 
     /* PyLong equivalent to:
@@ -521,30 +518,24 @@ range_hash(rangeobject *r)
     t = PyTuple_New(3);
     if (!t)
         return -1;
-    Py_INCREF(r->length);
-    PyTuple_SET_ITEM(t, 0, r->length);
+    PyTuple_SET_ITEM(t, 0, Py_NewRef(r->length));
     cmp_result = PyObject_Not(r->length);
     if (cmp_result == -1)
         goto end;
     if (cmp_result == 1) {
-        Py_INCREF(Py_None);
-        Py_INCREF(Py_None);
-        PyTuple_SET_ITEM(t, 1, Py_None);
-        PyTuple_SET_ITEM(t, 2, Py_None);
+        PyTuple_SET_ITEM(t, 1, Py_NewRef(Py_None));
+        PyTuple_SET_ITEM(t, 2, Py_NewRef(Py_None));
     }
     else {
-        Py_INCREF(r->start);
-        PyTuple_SET_ITEM(t, 1, r->start);
+        PyTuple_SET_ITEM(t, 1, Py_NewRef(r->start));
         cmp_result = PyObject_RichCompareBool(r->length, _PyLong_GetOne(), Py_EQ);
         if (cmp_result == -1)
             goto end;
         if (cmp_result == 1) {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(t, 2, Py_None);
+            PyTuple_SET_ITEM(t, 2, Py_NewRef(Py_None));
         }
         else {
-            Py_INCREF(r->step);
-            PyTuple_SET_ITEM(t, 2, r->step);
+            PyTuple_SET_ITEM(t, 2, Py_NewRef(r->step));
         }
     }
     result = PyObject_Hash(t);
@@ -762,13 +753,6 @@ PyTypeObject PyRange_Type = {
    in the normal case, but possible for any numeric value.
 */
 
-typedef struct {
-        PyObject_HEAD
-        long    start;
-        long    stop;
-        long    step;
-} rangeiterobject;
-
 /* Return number of items in range (lo, hi, step).  step != 0
  * required.  The result always fits in an unsigned long.
  */
@@ -798,7 +782,7 @@ get_len_of_range(long lo, long hi, long step)
 }
 
 static PyObject *
-rangeiter_next(rangeiterobject *r)
+rangeiter_next(_PyRangeIterObject *r)
 {
     if (r->step > 0 ? r->start < r->stop : r->start > r->stop) {
         long result = r->start;
@@ -809,7 +793,7 @@ rangeiter_next(rangeiterobject *r)
 }
 
 static PyObject *
-rangeiter_len(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
+rangeiter_len(_PyRangeIterObject *r, PyObject *Py_UNUSED(ignored))
 {
     unsigned long ulen = get_len_of_range(r->start, r->stop, r->step);
     return PyLong_FromUnsignedLong(ulen);
@@ -819,7 +803,7 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
+rangeiter_reduce(_PyRangeIterObject *r, PyObject *Py_UNUSED(ignored))
 {
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
@@ -849,7 +833,7 @@ err:
 }
 
 static PyObject *
-rangeiter_setstate(rangeiterobject *r, PyObject *state)
+rangeiter_setstate(_PyRangeIterObject *r, PyObject *state)
 {
     long index = PyLong_AsLong(state);
     if (index == -1 && PyErr_Occurred())
@@ -881,8 +865,8 @@ static PyMethodDef rangeiter_methods[] = {
 
 PyTypeObject PyRangeIter_Type = {
         PyVarObject_HEAD_INIT(&PyType_Type, 0)
-        "range_iterator",                        /* tp_name */
-        sizeof(rangeiterobject),                /* tp_basicsize */
+        "range_iterator",                       /* tp_name */
+        sizeof(_PyRangeIterObject),             /* tp_basicsize */
         0,                                      /* tp_itemsize */
         /* methods */
         (destructor)PyObject_Del,               /* tp_dealloc */
@@ -918,7 +902,7 @@ PyTypeObject PyRangeIter_Type = {
 static PyObject *
 fast_range_iter(long start, long stop, long step, long len)
 {
-    rangeiterobject *it = PyObject_New(rangeiterobject, &PyRangeIter_Type);
+    _PyRangeIterObject *it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
     if (it == NULL)
         return NULL;
     it->start = start;
@@ -946,11 +930,8 @@ longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
     PyObject *range;
 
     /* create a range object for pickling. */
-    Py_INCREF(r->start);
-    Py_INCREF(r->stop);
-    Py_INCREF(r->step);
     range =  (PyObject*)make_range_object(&PyRange_Type,
-                               r->start, r->stop, r->step);
+                Py_NewRef(r->start), Py_NewRef(r->stop), Py_NewRef(r->step));
     if (range == NULL) {
         Py_DECREF(r->start);
         Py_DECREF(r->stop);
@@ -1118,12 +1099,9 @@ range_iter(PyObject *seq)
     if (it == NULL)
         return NULL;
 
-    it->start = r->start;
-    it->stop = r->stop;
-    it->step = r->step;
-    Py_INCREF(it->start);
-    Py_INCREF(it->stop);
-    Py_INCREF(it->step);
+    it->start = Py_NewRef(r->start);
+    it->stop = Py_NewRef(r->stop);
+    it->step = Py_NewRef(r->step);
     return (PyObject *)it;
 }
 

@@ -2,10 +2,14 @@ __all__ = ('Runner', 'run')
 
 import contextvars
 import enum
+import functools
+import threading
+import signal
 from . import coroutines
 from . import events
+from . import exceptions
 from . import tasks
-
+from . import constants
 
 class _State(enum.Enum):
     CREATED = "created"
@@ -47,6 +51,8 @@ class Runner:
         self._loop_factory = loop_factory
         self._loop = None
         self._context = None
+        self._interrupt_count = 0
+        self._set_event_loop = False
 
     def __enter__(self):
         self._lazy_init()
@@ -63,8 +69,11 @@ class Runner:
             loop = self._loop
             _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.run_until_complete(loop.shutdown_default_executor())
+            loop.run_until_complete(
+                loop.shutdown_default_executor(constants.THREAD_JOIN_TIMEOUT))
         finally:
+            if self._set_event_loop:
+                events.set_event_loop(None)
             loop.close()
             self._loop = None
             self._state = _State.CLOSED
@@ -89,7 +98,35 @@ class Runner:
         if context is None:
             context = self._context
         task = self._loop.create_task(coro, context=context)
-        return self._loop.run_until_complete(task)
+
+        if (threading.current_thread() is threading.main_thread()
+            and signal.getsignal(signal.SIGINT) is signal.default_int_handler
+        ):
+            sigint_handler = functools.partial(self._on_sigint, main_task=task)
+            try:
+                signal.signal(signal.SIGINT, sigint_handler)
+            except ValueError:
+                # `signal.signal` may throw if `threading.main_thread` does
+                # not support signals (e.g. embedded interpreter with signals
+                # not registered - see gh-91880)
+                sigint_handler = None
+        else:
+            sigint_handler = None
+
+        self._interrupt_count = 0
+        try:
+            return self._loop.run_until_complete(task)
+        except exceptions.CancelledError:
+            if self._interrupt_count > 0:
+                uncancel = getattr(task, "uncancel", None)
+                if uncancel is not None and uncancel() == 0:
+                    raise KeyboardInterrupt()
+            raise  # CancelledError
+        finally:
+            if (sigint_handler is not None
+                and signal.getsignal(signal.SIGINT) is sigint_handler
+            ):
+                signal.signal(signal.SIGINT, signal.default_int_handler)
 
     def _lazy_init(self):
         if self._state is _State.CLOSED:
@@ -98,6 +135,11 @@ class Runner:
             return
         if self._loop_factory is None:
             self._loop = events.new_event_loop()
+            if not self._set_event_loop:
+                # Call set_event_loop only once to avoid calling
+                # attach_loop multiple times on child watchers
+                events.set_event_loop(self._loop)
+                self._set_event_loop = True
         else:
             self._loop = self._loop_factory()
         if self._debug is not None:
@@ -105,14 +147,22 @@ class Runner:
         self._context = contextvars.copy_context()
         self._state = _State.INITIALIZED
 
+    def _on_sigint(self, signum, frame, main_task):
+        self._interrupt_count += 1
+        if self._interrupt_count == 1 and not main_task.done():
+            main_task.cancel()
+            # wakeup loop if it is blocked by select() with long timeout
+            self._loop.call_soon_threadsafe(lambda: None)
+            return
+        raise KeyboardInterrupt()
 
 
-def run(main, *, debug=None):
+def run(main, *, debug=None, loop_factory=None):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and finalizing asynchronous
-    generators.
+    managing the asyncio event loop, finalizing asynchronous
+    generators and closing the default executor.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
@@ -122,6 +172,10 @@ def run(main, *, debug=None):
     This function always creates a new event loop and closes it at the end.
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
+
+    The executor is given a timeout duration of 5 minutes to shutdown.
+    If the executor hasn't finished within that duration, a warning is
+    emitted and the executor is closed.
 
     Example:
 
@@ -136,7 +190,7 @@ def run(main, *, debug=None):
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug) as runner:
+    with Runner(debug=debug, loop_factory=loop_factory) as runner:
         return runner.run(main)
 
 
