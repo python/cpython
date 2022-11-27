@@ -524,8 +524,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     }
     int result = PyObject_IsSubclass(subclass, self);
     if (result > 0) {
-        Py_INCREF(subclass);
-        return subclass;  /* Already a subclass. */
+        return Py_NewRef(subclass);  /* Already a subclass. */
     }
     if (result < 0) {
         return NULL;
@@ -561,8 +560,7 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
             set_collection_flag_recursive((PyTypeObject *)subclass, collection_flag);
         }
     }
-    Py_INCREF(subclass);
-    return subclass;
+    return Py_NewRef(subclass);
 }
 
 
@@ -598,8 +596,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
     if (incache > 0) {
-        result = Py_True;
-        Py_INCREF(result);
+        result = Py_NewRef(Py_True);
         goto end;
     }
     subtype = (PyObject *)Py_TYPE(instance);
@@ -610,8 +607,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                 goto end;
             }
             if (incache > 0) {
-                result = Py_False;
-                Py_INCREF(result);
+                result = Py_NewRef(Py_False);
                 goto end;
             }
         }
@@ -628,8 +624,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
 
     switch (PyObject_IsTrue(result)) {
     case -1:
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         break;
     case 0:
         Py_DECREF(result);
@@ -802,8 +797,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 end:
     Py_DECREF(impl);
     Py_XDECREF(subclasses);
-    Py_XINCREF(result);
-    return result;
+    return Py_XNewRef(result);
 }
 
 
@@ -842,8 +836,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     Py_ssize_t i = 0;
 
     while (_PySet_NextEntry(impl->_abc_registry, &pos, &key, &hash)) {
-        Py_INCREF(key);
-        copy[i++] = key;
+        copy[i++] = Py_NewRef(key);
     }
     assert(i == registry_size);
 

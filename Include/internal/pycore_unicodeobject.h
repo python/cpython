@@ -31,6 +31,10 @@ struct _Py_unicode_runtime_ids {
     Py_ssize_t next_index;
 };
 
+struct _Py_unicode_runtime_state {
+    struct _Py_unicode_runtime_ids ids;
+};
+
 /* fs_codec.encoding is initialized to NULL.
    Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
 struct _Py_unicode_fs_codec {
