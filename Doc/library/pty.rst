@@ -2,8 +2,8 @@
 ========================================
 
 .. module:: pty
-   :platform: Linux
-   :synopsis: Pseudo-Terminal Handling for Linux.
+   :platform: Unix
+   :synopsis: Pseudo-Terminal Handling for Unix.
 
 .. moduleauthor:: Steen Lumholt
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
@@ -16,9 +16,9 @@ The :mod:`pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
-Because pseudo-terminal handling is highly platform dependent, there is code to
-do it only for Linux. (The Linux code is supposed to work on other platforms,
-but hasn't been tested yet.)
+Pseudo-terminal handling is highly platform dependent. This code is mainly
+tested on Linux, FreeBSD, and macOS (it is supposed to work on other POSIX
+platforms but it's not been thoroughly tested).
 
 The :mod:`pty` module defines the following functions:
 
@@ -47,10 +47,14 @@ The :mod:`pty` module defines the following functions:
    spawned behind the pty will eventually terminate, and when it does *spawn*
    will return.
 
+   A loop copies STDIN of the current process to the child and data received
+   from the child to STDOUT of the current process. It is not signaled to the
+   child if STDIN of the current process closes down.
+
    The functions *master_read* and *stdin_read* are passed a file descriptor
    which they should read from, and they should always return a byte string. In
    order to force spawn to return before the child process exits an
-   :exc:`OSError` should be thrown.
+   empty byte array should be returned to signal end of file.
 
    The default implementation for both functions will read and return up to 1024
    bytes each time the function is called. The *master_read* callback is passed
@@ -65,9 +69,10 @@ The :mod:`pty` module defines the following functions:
    process will quit without any input, *spawn* will then loop forever. If
    *master_read* signals EOF the same behavior results (on linux at least).
 
-   If both callbacks signal EOF then *spawn* will probably never return, unless
-   *select* throws an error on your platform when passed three empty lists. This
-   is a bug, documented in `issue 26228 <https://bugs.python.org/issue26228>`_.
+   Return the exit status value from :func:`os.waitpid` on the child process.
+
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into
+   an exit code.
 
    .. audit-event:: pty.spawn argv pty.spawn
 
