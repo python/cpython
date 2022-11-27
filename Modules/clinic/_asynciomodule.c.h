@@ -772,6 +772,23 @@ _asyncio_Task_get_coro(TaskObj *self, PyObject *Py_UNUSED(ignored))
     return _asyncio_Task_get_coro_impl(self);
 }
 
+PyDoc_STRVAR(_asyncio_Task_get_context__doc__,
+"get_context($self, /)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO_TASK_GET_CONTEXT_METHODDEF    \
+    {"get_context", (PyCFunction)_asyncio_Task_get_context, METH_NOARGS, _asyncio_Task_get_context__doc__},
+
+static PyObject *
+_asyncio_Task_get_context_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task_get_context(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task_get_context_impl(self);
+}
+
 PyDoc_STRVAR(_asyncio_Task_get_name__doc__,
 "get_name($self, /)\n"
 "--\n"
@@ -1172,4 +1189,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=459a7c7f21bbc290 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f117b2246eaf7a55 input=a9049054013a1b77]*/

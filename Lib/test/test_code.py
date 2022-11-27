@@ -132,6 +132,7 @@ import doctest
 import unittest
 import textwrap
 import weakref
+import dis
 
 try:
     import ctypes
@@ -681,6 +682,38 @@ class CodeLocationTest(unittest.TestCase):
         self.check_lines(parse_location_table)
         self.check_lines(misshappen)
         self.check_lines(bug93662)
+
+    @cpython_only
+    def test_code_new_empty(self):
+        # If this test fails, it means that the construction of PyCode_NewEmpty
+        # needs to be modified! Please update this test *and* PyCode_NewEmpty,
+        # so that they both stay in sync.
+        def f():
+            pass
+        PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
+        f.__code__ = f.__code__.replace(
+            co_firstlineno=42,
+            co_code=bytes(
+                [
+                    dis.opmap["RESUME"], 0,
+                    dis.opmap["LOAD_ASSERTION_ERROR"], 0,
+                    dis.opmap["RAISE_VARARGS"], 1,
+                ]
+            ),
+            co_linetable=bytes(
+                [
+                    (1 << 7)
+                    | (PY_CODE_LOCATION_INFO_NO_COLUMNS << 3)
+                    | (3 - 1),
+                    0,
+                ]
+            ),
+        )
+        self.assertRaises(AssertionError, f)
+        self.assertEqual(
+            list(f.__code__.co_positions()),
+            3 * [(42, 42, None, None)],
+        )
 
 
 if check_impl_detail(cpython=True) and ctypes is not None:

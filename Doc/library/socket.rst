@@ -189,8 +189,11 @@ created.  Socket addresses are represented as follows:
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
-  - *proto* - An in network-byte-order integer specifying the Ethernet
-    protocol number.
+  - *proto* - The Ethernet protocol number.
+    May be :data:`ETH_P_ALL` to capture all protocols,
+    one of the :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
+    or any other Ethernet protocol number.
+    Value must be in network-byte-order.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
@@ -508,6 +511,19 @@ Constants
    .. availability:: Linux >= 2.2.
 
 
+.. data:: ETH_P_ALL
+
+   :data:`!ETH_P_ALL` can be used in the :class:`~socket.socket`
+   constructor as *proto* for the :const:`AF_PACKET` family in order to
+   capture every packet, regardless of protocol.
+
+   For more information, see the :manpage:`packet(7)` manpage.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+
 .. data:: AF_RDS
           PF_RDS
           SOL_RDS
@@ -638,6 +654,22 @@ Constants
 
    .. versionadded:: 3.12
 
+.. _socket-ethernet-types:
+
+.. data:: ETHERTYPE_ARP
+          ETHERTYPE_IP
+          ETHERTYPE_IPV6
+          ETHERTYPE_VLAN
+
+   `IEEE 802.3 protocol number
+   <https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.txt>`_.
+   constants.
+
+   .. availability:: Linux, FreeBSD, macOS.
+
+   .. versionadded:: 3.12
+
+
 Functions
 ^^^^^^^^^
 
@@ -689,7 +721,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
       bit flags are applied to *type* they are cleared, and
       :attr:`socket.type` will not reflect them.  They are still passed
-      to the underlying system `socket()` call.  Therefore,
+      to the underlying system ``socket()`` call.  Therefore,
 
       ::
 
@@ -1059,7 +1091,7 @@ The :mod:`socket` module also offers various network-related services:
    Convert an IPv4 address from dotted-quad string format (for example,
    '123.45.67.89') to 32-bit packed binary format, as a bytes object four characters in
    length.  This is useful when conversing with a program that uses the standard C
-   library and needs objects of type :c:type:`struct in_addr`, which is the C type
+   library and needs objects of type :c:struct:`in_addr`, which is the C type
    for the 32-bit packed binary this function returns.
 
    :func:`inet_aton` also accepts strings with less than three dots; see the
@@ -1078,7 +1110,7 @@ The :mod:`socket` module also offers various network-related services:
    Convert a 32-bit packed IPv4 address (a :term:`bytes-like object` four
    bytes in length) to its standard dotted-quad string representation (for example,
    '123.45.67.89').  This is useful when conversing with a program that uses the
-   standard C library and needs objects of type :c:type:`struct in_addr`, which
+   standard C library and needs objects of type :c:struct:`in_addr`, which
    is the C type for the 32-bit packed binary data this function takes as an
    argument.
 
@@ -1095,8 +1127,8 @@ The :mod:`socket` module also offers various network-related services:
 
    Convert an IP address from its family-specific string format to a packed,
    binary format. :func:`inet_pton` is useful when a library or network protocol
-   calls for an object of type :c:type:`struct in_addr` (similar to
-   :func:`inet_aton`) or :c:type:`struct in6_addr`.
+   calls for an object of type :c:struct:`in_addr` (similar to
+   :func:`inet_aton`) or :c:struct:`in6_addr`.
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the IP address string *ip_string* is invalid,
@@ -1116,8 +1148,8 @@ The :mod:`socket` module also offers various network-related services:
    bytes) to its standard, family-specific string representation (for
    example, ``'7.10.0.5'`` or ``'5aef:2b::8'``).
    :func:`inet_ntop` is useful when a library or network protocol returns an
-   object of type :c:type:`struct in_addr` (similar to :func:`inet_ntoa`) or
-   :c:type:`struct in6_addr`.
+   object of type :c:struct:`in_addr` (similar to :func:`inet_ntoa`) or
+   :c:struct:`in6_addr`.
 
    Supported values for *address_family* are currently :const:`AF_INET` and
    :const:`AF_INET6`. If the bytes object *packed_ip* is not the correct
@@ -1612,7 +1644,7 @@ to sockets.
    ancillary data, items of the form ``(socket.SOL_SOCKET,
    socket.SCM_RIGHTS, fds)``, where *fds* is a :class:`bytes` object
    representing the new file descriptors as a binary array of the
-   native C :c:type:`int` type.  If :meth:`recvmsg` raises an
+   native C :c:expr:`int` type.  If :meth:`recvmsg` raises an
    exception after the system call returns, it will first attempt to
    close any file descriptors received via this mechanism.
 

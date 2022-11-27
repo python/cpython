@@ -1905,8 +1905,8 @@ Changes to Python's build process and to the C API include:
   "")`` instead, but this will be slower than using :const:`METH_NOARGS`.
 
 * :c:func:`PyArg_ParseTuple` accepts new format characters for various sizes of
-  unsigned integers: ``B`` for :c:type:`unsigned char`, ``H`` for :c:type:`unsigned
-  short int`,  ``I`` for :c:type:`unsigned int`,  and ``K`` for :c:type:`unsigned
+  unsigned integers: ``B`` for :c:expr:`unsigned char`, ``H`` for :c:expr:`unsigned
+  short int`,  ``I`` for :c:expr:`unsigned int`,  and ``K`` for :c:expr:`unsigned
   long long`.
 
 * A new function, ``PyObject_DelItemString(mapping, char *key)`` was added

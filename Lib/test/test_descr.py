@@ -1317,6 +1317,15 @@ order (MRO) for bases """
         with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
             X().a
 
+        # Test string subclass in `__slots__`, see gh-98783
+        class SubStr(str):
+            pass
+        class X(object):
+            __slots__ = (SubStr('x'),)
+        X().x = 1
+        with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
+            X().a
+
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
         class D(object):
@@ -3252,12 +3261,8 @@ order (MRO) for bases """
                 if otype:
                     otype = otype.__name__
                 return 'object=%s; type=%s' % (object, otype)
-        class OldClass:
+        class NewClass:
             __doc__ = DocDescr()
-        class NewClass(object):
-            __doc__ = DocDescr()
-        self.assertEqual(OldClass.__doc__, 'object=None; type=OldClass')
-        self.assertEqual(OldClass().__doc__, 'object=OldClass instance; type=OldClass')
         self.assertEqual(NewClass.__doc__, 'object=None; type=NewClass')
         self.assertEqual(NewClass().__doc__, 'object=NewClass instance; type=NewClass')
 
@@ -3588,6 +3593,16 @@ order (MRO) for bases """
         self.assertEqual(repr(o), 'A repr')
         self.assertEqual(o.__str__(), '41')
         self.assertEqual(o.__repr__(), 'A repr')
+
+    def test_repr_with_module_str_subclass(self):
+        # gh-98783
+        class StrSub(str):
+            pass
+        class Some:
+            pass
+        Some.__module__ = StrSub('example')
+        self.assertIsInstance(repr(Some), str)  # should not crash
+        self.assertIsInstance(repr(Some()), str)  # should not crash
 
     def test_keyword_arguments(self):
         # Testing keyword arguments to __init__, __call__...

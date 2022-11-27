@@ -4,8 +4,11 @@
 # It uses the same pattern rule for gitignore file
 # https://git-scm.com/docs/gitignore#_pattern_format
 
+# GitHub
+.github/**                    @ezio-melotti
+
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov @gvanrossum
+**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303
 
 # Core
 **/*context*                  @1st1
@@ -52,7 +55,7 @@ Python/traceback.c            @iritkatriel
 /Lib/html/                    @ezio-melotti
 /Lib/_markupbase.py           @ezio-melotti
 /Lib/test/test_html*.py       @ezio-melotti
-/Tools/scripts/*html5*        @ezio-melotti
+/Tools/build/parse_html5_entities.py   @ezio-melotti
 
 # Import (including importlib).
 # Ignoring importlib.h so as to not get flagged on
@@ -60,7 +63,7 @@ Python/traceback.c            @iritkatriel
 # bytecode.
 **/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-**/*importlib/resources/*      @jaraco @warsaw @brettcannon
+**/*importlib/resources/*      @jaraco @warsaw @brettcannon @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
@@ -132,10 +135,8 @@ Lib/ast.py                    @isidentical
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra
+**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra @AlexWaygood
 
-**/*asyncore                  @giampaolo
-**/*asynchat                  @giampaolo
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
 
@@ -145,9 +146,14 @@ Lib/ast.py                    @isidentical
 
 **/*tomllib*                  @encukou
 
+**/*sysconfig*                @FFY00
+
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
 
 # pathlib
 **/*pathlib*                  @brettcannon
+
+# zipfile.Path
+**/*zipfile/*_path.py         @jaraco

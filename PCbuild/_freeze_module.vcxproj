@@ -129,7 +129,6 @@
     <ClCompile Include="..\Objects\cellobject.c" />
     <ClCompile Include="..\Objects\classobject.c" />
     <ClCompile Include="..\Objects\codeobject.c" />
-    <ClCompile Include="..\Objects\perf_trampoline.c" />
     <ClCompile Include="..\Objects\complexobject.c" />
     <ClCompile Include="..\Objects\descrobject.c" />
     <ClCompile Include="..\Objects\dictobject.c" />
@@ -211,6 +210,7 @@
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
+    <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
@@ -395,7 +395,7 @@
           DependsOnTargets="FindPythonForBuild"
           Condition="$(Configuration) != 'PGUpdate'">
     <!-- BEGIN deepfreeze rule -->
-	<Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" ^
+	<Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h:importlib._bootstrap" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h:importlib._bootstrap_external" ^
 		 "$(PySourcePath)Python\frozen_modules\zipimport.h:zipimport" ^
