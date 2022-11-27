@@ -2627,7 +2627,7 @@ dummy_func(
             }
             else {
                 long value = r->start;
-                r->start += r->step;
+                r->start = value + r->step;
                 r->len--;
                 if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
                     goto error;

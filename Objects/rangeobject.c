@@ -758,7 +758,7 @@ rangeiter_next(_PyRangeIterObject *r)
 {
     if (r->len > 0) {
         long result = r->start;
-        r->start += r->step;
+        r->start = result + r->step;
         r->len--;
         return PyLong_FromLong(result);
     }
