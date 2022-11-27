@@ -1,5 +1,8 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
+#include "pycore_fileutils.h"     // _Py_fstat_noraise()
+#include "pycore_runtime.h"       // _PyRuntime
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <bcrypt.h>
@@ -261,11 +264,7 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
 #endif /* defined(HAVE_GETENTROPY) && !(defined(__sun) && defined(__SVR4)) */
 
 
-static struct {
-    int fd;
-    dev_t st_dev;
-    ino_t st_ino;
-} urandom_cache = { -1 };
+#define urandom_cache (_PyRuntime.pyhash_state.urandom_cache)
 
 /* Read random bytes from the /dev/urandom device:
 
@@ -400,6 +399,9 @@ dev_urandom_close(void)
         urandom_cache.fd = -1;
     }
 }
+
+#undef urandom_cache
+
 #endif /* !MS_WINDOWS */
 
 

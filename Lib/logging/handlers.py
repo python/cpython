@@ -1,4 +1,4 @@
-# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2021 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
@@ -348,11 +348,15 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         record is not used, as we are just comparing times, but it is needed so
         the method signatures are the same
         """
-        # See bpo-45401: Never rollover anything other than regular files
-        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
-            return False
         t = int(time.time())
         if t >= self.rolloverAt:
+            # See #89564: Never rollover anything other than regular files
+            if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+                # The file is not a regular file, so do not rollover, but do
+                # set the next rollover time to avoid repeated checks.
+                self.rolloverAt = self.computeRollover(t)
+                return False
+
             return True
         return False
 
@@ -366,9 +370,22 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         fileNames = os.listdir(dirName)
         result = []
         # See bpo-44753: Don't use the extension when computing the prefix.
-        prefix = os.path.splitext(baseName)[0] + "."
+        n, e = os.path.splitext(baseName)
+        prefix = n + '.'
         plen = len(prefix)
         for fileName in fileNames:
+            if self.namer is None:
+                # Our files will always start with baseName
+                if not fileName.startswith(baseName):
+                    continue
+            else:
+                # Our files could be just about anything after custom naming, but
+                # likely candidates are of the form
+                # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
+                if (not fileName.startswith(baseName) and fileName.endswith(e) and
+                    len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
+                    continue
+
             if fileName[:plen] == prefix:
                 suffix = fileName[plen:]
                 # See bpo-45628: The date/time suffix could be anywhere in the
@@ -874,6 +891,13 @@ class SysLogHandler(logging.Handler):
                 raise
 
     def createSocket(self):
+        """
+        Try to create a socket and, if it's not a datagram socket, connect it
+        to the other end. This method is called during handler initialization,
+        but it's not regarded as an error if the other end isn't listening yet
+        --- the method will be called again when emitting an event,
+        if there is no socket at that point.
+        """
         address = self.address
         socktype = self.socktype
 
@@ -881,7 +905,7 @@ class SysLogHandler(logging.Handler):
             self.unixsocket = True
             # Syslog server may be unavailable during handler initialisation.
             # C's openlog() function also ignores connection errors.
-            # Moreover, we ignore these errors while logging, so it not worse
+            # Moreover, we ignore these errors while logging, so it's not worse
             # to ignore it also here.
             try:
                 self._connect_unixsocket(address)
@@ -1094,7 +1118,16 @@ class NTEventLogHandler(logging.Handler):
                 dllname = os.path.join(dllname[0], r'win32service.pyd')
             self.dllname = dllname
             self.logtype = logtype
-            self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            # Administrative privileges are required to add a source to the registry.
+            # This may not be available for a user that just wants to add to an
+            # existing source - handle this specific case.
+            try:
+                self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            except Exception as e:
+                # This will probably be a pywintypes.error. Only raise if it's not
+                # an "access denied" error, else let it pass
+                if getattr(e, 'winerror', None) != 5:  # not access denied
+                    raise
             self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
             self.typemap = {
                 logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
@@ -1411,6 +1444,7 @@ class QueueHandler(logging.Handler):
         """
         logging.Handler.__init__(self)
         self.queue = queue
+        self.listener = None  # will be set to listener if configured via dictConfig()
 
     def enqueue(self, record):
         """
@@ -1442,7 +1476,7 @@ class QueueHandler(logging.Handler):
         # (if there's exception data), and also returns the formatted
         # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
-        # exc_info and exc_text attributes, as they are no longer
+        # exc_info, exc_text and stack_info attributes, as they are no longer
         # needed and, if not None, will typically not be pickleable.
         msg = self.format(record)
         # bpo-35726: make copy of record to avoid affecting other handlers in the chain.
@@ -1452,6 +1486,7 @@ class QueueHandler(logging.Handler):
         record.args = None
         record.exc_info = None
         record.exc_text = None
+        record.stack_info = None
         return record
 
     def emit(self, record):

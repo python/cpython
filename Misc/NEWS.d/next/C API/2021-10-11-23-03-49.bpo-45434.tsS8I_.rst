@@ -1,5 +1,0 @@
-``<Python.h>`` no longer includes the header files ``<stdlib.h>``,
-``<stdio.h>``, ``<errno.h>`` and ``<string.h>`` when the ``Py_LIMITED_API``
-macro is set to ``0x030b0000`` (Python 3.11) or higher. C extensions should
-explicitly include the header files after ``#include <Python.h>``.
-Patch by Victor Stinner.

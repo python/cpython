@@ -1,5 +1,0 @@
-Fix the ``tempfile._infer_return_type`` function so that the ``dir``
-argument of the :mod:`tempfile` functions accepts an object implementing the
-``os.PathLike`` protocol.
-
-Patch by Kyungmin Lee.

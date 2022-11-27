@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(list_insert__doc__,
 "insert($self, index, object, /)\n"
 "--\n"
@@ -9,7 +15,7 @@ PyDoc_STRVAR(list_insert__doc__,
 "Insert object before index.");
 
 #define LIST_INSERT_METHODDEF    \
-    {"insert", (PyCFunction)(void(*)(void))list_insert, METH_FASTCALL, list_insert__doc__},
+    {"insert", _PyCFunction_CAST(list_insert), METH_FASTCALL, list_insert__doc__},
 
 static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object);
@@ -106,7 +112,7 @@ PyDoc_STRVAR(list_pop__doc__,
 "Raises IndexError if list is empty or index is out of range.");
 
 #define LIST_POP_METHODDEF    \
-    {"pop", (PyCFunction)(void(*)(void))list_pop, METH_FASTCALL, list_pop__doc__},
+    {"pop", _PyCFunction_CAST(list_pop), METH_FASTCALL, list_pop__doc__},
 
 static PyObject *
 list_pop_impl(PyListObject *self, Py_ssize_t index);
@@ -157,7 +163,7 @@ PyDoc_STRVAR(list_sort__doc__,
 "The reverse flag can be set to sort in descending order.");
 
 #define LIST_SORT_METHODDEF    \
-    {"sort", (PyCFunction)(void(*)(void))list_sort, METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
+    {"sort", _PyCFunction_CAST(list_sort), METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse);
@@ -166,8 +172,31 @@ static PyObject *
 list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(key), &_Py_ID(reverse), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"key", "reverse", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "sort", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "sort",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *keyfunc = Py_None;
@@ -224,7 +253,7 @@ PyDoc_STRVAR(list_index__doc__,
 "Raises ValueError if the value is not present.");
 
 #define LIST_INDEX_METHODDEF    \
-    {"index", (PyCFunction)(void(*)(void))list_index, METH_FASTCALL, list_index__doc__},
+    {"index", _PyCFunction_CAST(list_index), METH_FASTCALL, list_index__doc__},
 
 static PyObject *
 list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
@@ -353,4 +382,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=acb2f87736311930 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=782ed6c68b1c9f83 input=a9049054013a1b77]*/

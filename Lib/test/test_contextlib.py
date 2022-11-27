@@ -5,6 +5,7 @@ import os
 import sys
 import tempfile
 import threading
+import traceback
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
@@ -86,6 +87,32 @@ class ContextManagerTestCase(unittest.TestCase):
                 state.append(x)
                 raise ZeroDivisionError()
         self.assertEqual(state, [1, 42, 999])
+
+    def test_contextmanager_traceback(self):
+        @contextmanager
+        def f():
+            yield
+
+        try:
+            with f():
+                1/0
+        except ZeroDivisionError as e:
+            frames = traceback.extract_tb(e.__traceback__)
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+        self.assertEqual(frames[0].line, '1/0')
+
+        # Repeat with RuntimeError (which goes through a different code path)
+        try:
+            with f():
+                raise NotImplementedError(42)
+        except NotImplementedError as e:
+            frames = traceback.extract_tb(e.__traceback__)
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+        self.assertEqual(frames[0].line, 'raise NotImplementedError(42)')
 
     def test_contextmanager_no_reraise(self):
         @contextmanager
@@ -721,6 +748,38 @@ class TestBaseExitStack:
             stack.push(lambda *exc: True)
             1/0
 
+    def test_exit_exception_traceback(self):
+        # This test captures the current behavior of ExitStack so that we know
+        # if we ever unintendedly change it. It is not a statement of what the
+        # desired behavior is (for instance, we may want to remove some of the
+        # internal contextlib frames).
+
+        def raise_exc(exc):
+            raise exc
+
+        try:
+            with self.exit_stack() as stack:
+                stack.callback(raise_exc, ValueError)
+                1/0
+        except ValueError as e:
+            exc = e
+
+        self.assertIsInstance(exc, ValueError)
+        ve_frames = traceback.extract_tb(exc.__traceback__)
+        expected = \
+            [('test_exit_exception_traceback', 'with self.exit_stack() as stack:')] + \
+            self.callback_error_internal_frames + \
+            [('_exit_wrapper', 'callback(*args, **kwds)'),
+             ('raise_exc', 'raise exc')]
+
+        self.assertEqual(
+            [(f.name, f.line) for f in ve_frames], expected)
+
+        self.assertIsInstance(exc.__context__, ZeroDivisionError)
+        zde_frames = traceback.extract_tb(exc.__context__.__traceback__)
+        self.assertEqual([(f.name, f.line) for f in zde_frames],
+                         [('test_exit_exception_traceback', '1/0')])
+
     def test_exit_exception_chaining_reference(self):
         # Sanity check to make sure that ExitStack chaining matches
         # actual nested with statements
@@ -990,6 +1049,10 @@ class TestBaseExitStack:
 
 class TestExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = ExitStack
+    callback_error_internal_frames = [
+        ('__exit__', 'raise exc_details[1]'),
+        ('__exit__', 'if cb(*exc_details):'),
+    ]
 
 
 class TestRedirectStream:
@@ -1117,9 +1180,15 @@ class TestSuppress(unittest.TestCase):
 
 
 class TestChdir(unittest.TestCase):
+    def make_relative_path(self, *parts):
+        return os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            *parts,
+        )
+
     def test_simple(self):
         old_cwd = os.getcwd()
-        target = os.path.join(os.path.dirname(__file__), 'data')
+        target = self.make_relative_path('data')
         self.assertNotEqual(old_cwd, target)
 
         with chdir(target):
@@ -1128,8 +1197,8 @@ class TestChdir(unittest.TestCase):
 
     def test_reentrant(self):
         old_cwd = os.getcwd()
-        target1 = os.path.join(os.path.dirname(__file__), 'data')
-        target2 = os.path.join(os.path.dirname(__file__), 'ziptestdata')
+        target1 = self.make_relative_path('data')
+        target2 = self.make_relative_path('ziptestdata')
         self.assertNotIn(old_cwd, (target1, target2))
         chdir1, chdir2 = chdir(target1), chdir(target2)
 
@@ -1145,7 +1214,7 @@ class TestChdir(unittest.TestCase):
 
     def test_exception(self):
         old_cwd = os.getcwd()
-        target = os.path.join(os.path.dirname(__file__), 'data')
+        target = self.make_relative_path('data')
         self.assertNotEqual(old_cwd, target)
 
         try:

@@ -1,3 +1,0 @@
-Extensions that indicate they use global state (by setting ``m_size`` to -1)
-can again be used in multiple interpreters. This reverts to behavior of
-Python 3.8.

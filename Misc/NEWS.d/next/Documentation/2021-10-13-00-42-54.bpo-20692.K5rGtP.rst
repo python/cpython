@@ -1,2 +1,0 @@
-Add Programming FAQ entry explaining that int literal attribute access
-requires either a space after or parentheses around the literal.

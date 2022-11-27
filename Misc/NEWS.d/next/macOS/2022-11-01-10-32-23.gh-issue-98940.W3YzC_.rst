@@ -1,0 +1,1 @@
+Fix ``Mac/Extras.install.py`` file filter bug.

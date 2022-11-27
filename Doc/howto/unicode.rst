@@ -167,7 +167,7 @@ On the Computerphile Youtube channel, Tom Scott briefly
 (9 minutes 36 seconds).
 
 To help understand the standard, Jukka Korpela has written `an introductory
-guide <http://jkorpela.fi/unicode/guide.html>`_ to reading the
+guide <https://jkorpela.fi/unicode/guide.html>`_ to reading the
 Unicode character tables.
 
 Another `good introductory article <https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/>`_
@@ -517,7 +517,7 @@ References
 
 Some good alternative discussions of Python's Unicode support are:
 
-* `Processing Text Files in Python 3 <http://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html>`_, by Nick Coghlan.
+* `Processing Text Files in Python 3 <https://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html>`_, by Nick Coghlan.
 * `Pragmatic Unicode <https://nedbatchelder.com/text/unipain.html>`_, a PyCon 2012 presentation by Ned Batchelder.
 
 The :class:`str` type is described in the Python library reference at
@@ -735,7 +735,7 @@ References
 ----------
 
 One section of `Mastering Python 3 Input/Output
-<http://pyvideo.org/video/289/pycon-2010--mastering-python-3-i-o>`_,
+<https://pyvideo.org/video/289/pycon-2010--mastering-python-3-i-o>`_,
 a PyCon 2010 talk by David Beazley, discusses text processing and binary data handling.
 
 The `PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware
@@ -745,7 +745,7 @@ discuss questions of character encodings as well as how to internationalize
 and localize an application.  These slides cover Python 2.x only.
 
 `The Guts of Unicode in Python
-<http://pyvideo.org/video/1768/the-guts-of-unicode-in-python>`_
+<https://pyvideo.org/video/1768/the-guts-of-unicode-in-python>`_
 is a PyCon 2013 talk by Benjamin Peterson that discusses the internal Unicode
 representation in Python 3.3.
 
