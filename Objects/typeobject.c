@@ -217,7 +217,7 @@ _PyType_CheckConsistency(PyTypeObject *type)
         return 1;
     }
 
-    CHECK(Py_REFCNT(type) >= 1 || _Py_IsImmortal(type));
+    CHECK(Py_REFCNT(type) >= 1);
     CHECK(PyType_Check(type));
 
     CHECK(!(type->tp_flags & Py_TPFLAGS_READYING));

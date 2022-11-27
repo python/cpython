@@ -97,7 +97,7 @@ cleanup during runtime finalization.
 In 64+ bit systems, an object will be marked as immortal by setting all of the
 lower 32 bits of the reference count field.
 
-i.e in a 64 bit system the reference could will be set to:
+i.e in a 64 bit system the reference count will be set to:
     00000000 00000000 00000000 00000000
     11111111 11111111 11111111 11111111
 
