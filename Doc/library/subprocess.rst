@@ -81,8 +81,10 @@ underlying :class:`Popen` interface can be used directly.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment. It is passed directly
-   to :class:`Popen`.
+   behavior of inheriting the current process' environment. It is passed
+   directly to :class:`Popen`. This mapping can be str to str on any platform
+   or bytes to bytes on POSIX platforms much like :data:`os.environ` or
+   :data:`os.environb`.
 
    Examples::
 
@@ -619,7 +621,9 @@ functions.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment.
+   behavior of inheriting the current process' environment. This mapping can be
+   str to str on any platform or bytes to bytes on POSIX platforms much like
+   :data:`os.environ` or :data:`os.environb`.
 
    .. note::
 
@@ -829,7 +833,7 @@ Instances of the :class:`Popen` class have the following methods:
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
       CTRL_BREAK_EVENT can be sent to processes started with a *creationflags*
-      parameter which includes `CREATE_NEW_PROCESS_GROUP`.
+      parameter which includes ``CREATE_NEW_PROCESS_GROUP``.
 
 
 .. method:: Popen.terminate()

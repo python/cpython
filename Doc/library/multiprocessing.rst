@@ -2954,6 +2954,8 @@ Global variables
     However, global variables which are just module level constants cause no
     problems.
 
+.. _multiprocessing-safe-main-import:
+
 Safe importing of main module
 
     Make sure that the main module can be safely imported by a new Python

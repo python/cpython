@@ -41,7 +41,7 @@ typedef struct _Py_Identifier {
     Py_ssize_t index;
 } _Py_Identifier;
 
-#if defined(NEEDS_PY_IDENTIFIER) || !defined(Py_BUILD_CORE)
+#ifndef Py_BUILD_CORE
 // For now we are keeping _Py_IDENTIFIER for continued use
 // in non-builtin extensions (and naughty PyPI modules).
 
@@ -49,11 +49,7 @@ typedef struct _Py_Identifier {
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
-#endif  /* NEEDS_PY_IDENTIFIER */
-
-typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
-typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
-
+#endif /* !Py_BUILD_CORE */
 
 typedef struct {
     /* Number implementations must check *both*
@@ -224,6 +220,9 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
+
+    /* bitset of which type-watchers care about this type */
+    char tp_watched;
 };
 
 /* This struct is used by the specializer
@@ -510,3 +509,11 @@ Py_DEPRECATED(3.11) typedef int UsingDeprecatedTrashcanMacro;
 
 PyAPI_FUNC(int) _PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
 PyAPI_FUNC(void) _PyObject_ClearManagedDict(PyObject *obj);
+
+#define TYPE_MAX_WATCHERS 8
+
+typedef int(*PyType_WatchCallback)(PyTypeObject *);
+PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
+PyAPI_FUNC(int) PyType_ClearWatcher(int watcher_id);
+PyAPI_FUNC(int) PyType_Watch(int watcher_id, PyObject *type);
+PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);

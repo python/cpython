@@ -1,1 +1,0 @@
-Fix possible ``NULL`` pointer dereference in ``_PyThread_CurrentFrames``. Patch by Kumar Aditya.

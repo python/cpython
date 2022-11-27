@@ -2,6 +2,7 @@
 
 import unittest
 import pickle
+from array import array
 import copy
 from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
@@ -124,7 +125,8 @@ class BaseTest(unittest.TestCase):
                      ShareableList,
                      Future, _WorkItem,
                      Morsel,
-                     DictReader, DictWriter]
+                     DictReader, DictWriter,
+                     array]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
     if ValueProxy is not None:
@@ -205,23 +207,11 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(repr(list[str]), 'list[str]')
         self.assertEqual(repr(list[()]), 'list[()]')
         self.assertEqual(repr(tuple[int, ...]), 'tuple[int, ...]')
-        x1 = tuple[
-            tuple(  # Effectively the same as starring; TODO
-                tuple[int]
-            )
-        ]
+        x1 = tuple[*tuple[int]]
         self.assertEqual(repr(x1), 'tuple[*tuple[int]]')
-        x2 = tuple[
-            tuple(  # Ditto TODO
-                tuple[int, str]
-            )
-        ]
+        x2 = tuple[*tuple[int, str]]
         self.assertEqual(repr(x2), 'tuple[*tuple[int, str]]')
-        x3 = tuple[
-            tuple(  # Ditto TODO
-                tuple[int, ...]
-            )
-        ]
+        x3 = tuple[*tuple[int, ...]]
         self.assertEqual(repr(x3), 'tuple[*tuple[int, ...]]')
         self.assertTrue(repr(MyList[int]).endswith('.BaseTest.test_repr.<locals>.MyList[int]'))
         self.assertEqual(repr(list[str]()), '[]')  # instances should keep their normal repr
@@ -275,42 +265,24 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(L5.__args__, (Callable[[K, V], K],))
         self.assertEqual(L5.__parameters__, (K, V))
 
-        T1 = tuple[
-            tuple(  # Ditto TODO
-                tuple[int]
-            )
-        ]
+        T1 = tuple[*tuple[int]]
         self.assertEqual(
             T1.__args__,
-            tuple(  # Ditto TODO
-                tuple[int]
-            )
+            (*tuple[int],),
         )
         self.assertEqual(T1.__parameters__, ())
 
-        T2 = tuple[
-            tuple(  # Ditto TODO
-                tuple[T]
-            )
-        ]
+        T2 = tuple[*tuple[T]]
         self.assertEqual(
             T2.__args__,
-            tuple(  # Ditto TODO
-                tuple[T]
-            )
+            (*tuple[T],),
         )
         self.assertEqual(T2.__parameters__, (T,))
 
-        T4 = tuple[
-            tuple(  # Ditto TODO
-                tuple[int, str]
-            )
-        ]
+        T4 = tuple[*tuple[int, str]]
         self.assertEqual(
             T4.__args__,
-            tuple(  # Ditto TODO
-                tuple[int, str]
-            )
+            (*tuple[int, str],),
         )
         self.assertEqual(T4.__parameters__, ())
 
@@ -345,18 +317,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(list[int], list[int])
         self.assertEqual(dict[str, int], dict[str, int])
         self.assertEqual((*tuple[int],)[0], (*tuple[int],)[0])
-        self.assertEqual(
-            tuple[
-                tuple(  # Effectively the same as starring; TODO
-                    tuple[int]
-                )
-            ],
-            tuple[
-                tuple(  # Ditto TODO
-                    tuple[int]
-                )
-            ]
-        )
+        self.assertEqual(tuple[*tuple[int]], tuple[*tuple[int]])
         self.assertNotEqual(dict[str, int], dict[str, str])
         self.assertNotEqual(list, list[int])
         self.assertNotEqual(list[int], list)

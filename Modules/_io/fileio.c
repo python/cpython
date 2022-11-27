@@ -485,8 +485,12 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     ret = -1;
     if (!fd_is_own)
         self->fd = -1;
-    if (self->fd >= 0)
+    if (self->fd >= 0) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
         internal_close(self);
+        _PyErr_ChainExceptions(exc, val, tb);
+    }
 
  done:
 #ifdef MS_WINDOWS

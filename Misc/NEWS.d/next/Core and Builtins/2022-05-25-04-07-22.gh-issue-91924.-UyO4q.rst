@@ -1,2 +1,0 @@
-Fix ``__lltrace__`` debug feature if the stdout encoding is not UTF-8. Patch
-by Victor Stinner.

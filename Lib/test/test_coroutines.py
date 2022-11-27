@@ -1287,7 +1287,7 @@ class CoroutineTest(unittest.TestCase):
 
         async def func():
             async with CM():
-                assert (1, ) == 1
+                self.assertEqual((1, ), 1)
 
         with self.assertRaises(AssertionError):
             run_async(func())
