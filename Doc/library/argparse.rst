@@ -63,7 +63,7 @@ Name                   Description                                              
 action_                Specify how an argument should be handled                   ``'store'``, ``'store_const'``, ``'store_true'``, ``'append'``, ``'append_const'``, ``'count'``, ``'help'``, ``'version'``
 choices_               Limit values to a specific set of choices                   ``['foo', 'bar']``, ``range(1, 10)``, or :class:`~collections.abc.Container` instance
 const_                 Store a constant value
-default_               Default value used when an argument is not provided         Defaults to *None*
+default_               Default value used when an argument is not provided         Defaults to ``None``
 dest_                  Specify the attribute name used in the result namespace
 help_                  Help message for an argument
 metavar_               Alternate display name for the argument as shown in help
@@ -201,9 +201,10 @@ ArgumentParser objects
    * usage_ - The string describing the program usage (default: generated from
      arguments added to parser)
 
-   * description_ - Text to display before the argument help (default: none)
+   * description_ - Text to display before the argument help
+     (by default, no text)
 
-   * epilog_ - Text to display after the argument help (default: none)
+   * epilog_ - Text to display after the argument help (by default, no text)
 
    * parents_ - A list of :class:`ArgumentParser` objects whose arguments should
      also be included
@@ -1926,8 +1927,8 @@ FileType objects
       Namespace(out=<_io.TextIOWrapper name='file.txt' mode='w' encoding='UTF-8'>, raw=<_io.FileIO name='raw.dat' mode='wb'>)
 
    FileType objects understand the pseudo-argument ``'-'`` and automatically
-   convert this into ``sys.stdin`` for readable :class:`FileType` objects and
-   ``sys.stdout`` for writable :class:`FileType` objects::
+   convert this into :data:`sys.stdin` for readable :class:`FileType` objects and
+   :data:`sys.stdout` for writable :class:`FileType` objects::
 
       >>> parser = argparse.ArgumentParser()
       >>> parser.add_argument('infile', type=argparse.FileType('r'))
@@ -1944,7 +1945,7 @@ Argument groups
 .. method:: ArgumentParser.add_argument_group(title=None, description=None)
 
    By default, :class:`ArgumentParser` groups command-line arguments into
-   "positional arguments" and "optional arguments" when displaying help
+   "positional arguments" and "options" when displaying help
    messages. When there is a better conceptual grouping of arguments than this
    default one, appropriate groups can be created using the
    :meth:`add_argument_group` method::
@@ -2031,7 +2032,26 @@ Mutual exclusion
 
    Note that currently mutually exclusive argument groups do not support the
    *title* and *description* arguments of
-   :meth:`~ArgumentParser.add_argument_group`.
+   :meth:`~ArgumentParser.add_argument_group`. However, a mutually exclusive
+   group can be added to an argument group that has a title and description.
+   For example::
+
+     >>> parser = argparse.ArgumentParser(prog='PROG')
+     >>> group = parser.add_argument_group('Group title', 'Group description')
+     >>> exclusive_group = group.add_mutually_exclusive_group(required=True)
+     >>> exclusive_group.add_argument('--foo', help='foo help')
+     >>> exclusive_group.add_argument('--bar', help='bar help')
+     >>> parser.print_help()
+     usage: PROG [-h] (--foo FOO | --bar BAR)
+
+     options:
+       -h, --help  show this help message and exit
+
+     Group title:
+       Group description
+
+       --foo FOO   foo help
+       --bar BAR   bar help
 
    .. versionchanged:: 3.11
     Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`

@@ -130,14 +130,10 @@ stmt_reset(pysqlite_Statement *self)
 {
     int rc = SQLITE_OK;
 
-    if (self->in_use && self->st) {
+    if (self->st != NULL) {
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_reset(self->st);
         Py_END_ALLOW_THREADS
-
-        if (rc == SQLITE_OK) {
-            self->in_use = 0;
-        }
     }
 
     return rc;
@@ -770,12 +766,6 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
     }
 }
 
-static inline void
-stmt_mark_dirty(pysqlite_Statement *self)
-{
-    self->in_use = 1;
-}
-
 PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
@@ -852,7 +842,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         goto error;
     }
 
-    if (self->statement->in_use) {
+    if (sqlite3_stmt_busy(self->statement->st)) {
         Py_SETREF(self->statement,
                   pysqlite_statement_create(self->connection, operation));
         if (self->statement == NULL) {
@@ -860,13 +850,13 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
     }
 
-    stmt_reset(self->statement);
-    stmt_mark_dirty(self->statement);
+    (void)stmt_reset(self->statement);
     self->rowcount = self->statement->is_dml ? 0L : -1L;
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
-    if (self->connection->isolation_level
+    if (self->connection->autocommit == AUTOCOMMIT_LEGACY
+        && self->connection->isolation_level
         && self->statement->is_dml
         && sqlite3_get_autocommit(self->connection->db))
     {
@@ -881,8 +871,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         if (!parameters) {
             break;
         }
-
-        stmt_mark_dirty(self->statement);
 
         bind_parameters(state, self->statement, parameters);
         if (PyErr_Occurred()) {
@@ -1046,7 +1034,9 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
 
     // Commit if needed
     sqlite3 *db = self->connection->db;
-    if (!sqlite3_get_autocommit(db)) {
+    if (self->connection->autocommit == AUTOCOMMIT_LEGACY
+        && !sqlite3_get_autocommit(db))
+    {
         int rc = SQLITE_OK;
 
         Py_BEGIN_ALLOW_THREADS
@@ -1133,8 +1123,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         PyObject *factory = self->row_factory;
         PyObject *args[] = { (PyObject *)self, row, };
         PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
-        Py_DECREF(row);
-        row = new_row;
+        Py_SETREF(row, new_row);
     }
     return row;
 }

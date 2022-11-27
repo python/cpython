@@ -35,6 +35,15 @@ always available.
    can then log the event, raise an exception to abort the operation,
    or terminate the process entirely.
 
+   Note that audit hooks are primarily for collecting information about internal
+   or otherwise unobservable actions, whether by Python or libraries written in
+   Python. They are not suitable for implementing a "sandbox". In particular,
+   malicious code can trivially disable or bypass hooks added using this
+   function. At a minimum, any security-sensitive hooks must be added using the
+   C API :c:func:`PySys_AddAuditHook` before initialising the runtime, and any
+   modules allowing arbitrary memory modification (such as :mod:`ctypes`) should
+   be completely removed or closely monitored.
+
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
       Calling :func:`sys.addaudithook` will itself raise an auditing event
@@ -250,7 +259,7 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is `built in debug mode <debug-build>` (:option:`configure
+   If Python is :ref:`built in debug mode <debug-build>` (:option:`configure
    --with-pydebug option <--with-pydebug>`), it also performs some expensive
    internal consistency checks.
 
@@ -338,7 +347,7 @@ always available.
    |                             | memory support.                              |
    +-----------------------------+----------------------------------------------+
 
-   .. availability:: WebAssembly Emscripten platform (*wasm32-emscripten*).
+   .. availability:: Emscripten.
 
    .. versionadded:: 3.11
 
@@ -349,7 +358,7 @@ always available.
    files to (and read them from) a parallel directory tree rooted at this
    directory, rather than from ``__pycache__`` directories in the source code
    tree. Any ``__pycache__`` directories in the source code tree will be ignored
-   and new `.pyc` files written within the pycache prefix. Thus if you use
+   and new ``.pyc`` files written within the pycache prefix. Thus if you use
    :mod:`compileall` as a pre-build step, you must ensure you run it with the
    same pycache prefix (if any) that you will use at runtime.
 
@@ -502,9 +511,9 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= ================================================================
+   ============================= ==============================================================================================================
    attribute                     flag
-   ============================= ================================================================
+   ============================= ==============================================================================================================
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
@@ -521,7 +530,8 @@ always available.
    :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
    :const:`utf8_mode`            :option:`-X utf8 <-X>`
    :const:`safe_path`            :option:`-P`
-   ============================= ================================================================
+   :const:`int_max_str_digits`   :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+   ============================= ==============================================================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -542,6 +552,9 @@ always available.
 
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
+
+   .. versionchanged:: 3.11
+      Added the ``int_max_str_digits`` attribute.
 
 
 .. data:: float_info
@@ -591,12 +604,18 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`rounds`     | FLT_ROUNDS     | integer constant representing the rounding mode  |
-   |                     |                | used for arithmetic operations.  This reflects   |
-   |                     |                | the value of the system FLT_ROUNDS macro at      |
-   |                     |                | interpreter startup time.  See section 5.2.4.2.2 |
-   |                     |                | of the C99 standard for an explanation of the    |
-   |                     |                | possible values and their meanings.              |
+   | :const:`rounds`     | FLT_ROUNDS     | integer representing the rounding mode for       |
+   |                     |                | floating-point arithmetic. This reflects the     |
+   |                     |                | value of the system FLT_ROUNDS macro at          |
+   |                     |                | interpreter startup time:                        |
+   |                     |                | ``-1`` indeterminable,                           |
+   |                     |                | ``0`` toward zero,                               |
+   |                     |                | ``1`` to nearest,                                |
+   |                     |                | ``2`` toward positive infinity,                  |
+   |                     |                | ``3`` toward negative infinity                   |
+   |                     |                |                                                  |
+   |                     |                | All other values for FLT_ROUNDS characterize     |
+   |                     |                | implementation-defined rounding behavior.        |
    +---------------------+----------------+--------------------------------------------------+
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
@@ -723,6 +742,13 @@ always available.
 
    .. versionadded:: 3.6
 
+.. function:: get_int_max_str_digits()
+
+   Returns the current value for the :ref:`integer string conversion length
+   limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
+
+   .. versionadded:: 3.11
+
 .. function:: getrefcount(object)
 
    Return the reference count of the *object*.  The count returned is generally one
@@ -774,7 +800,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe "" sys._getframe
+   .. audit-event:: sys._getframe frame sys._getframe
 
    .. impl-detail::
 
@@ -863,7 +889,7 @@ always available.
 .. function:: get_asyncgen_hooks()
 
    Returns an *asyncgen_hooks* object, which is similar to a
-   :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
+   :class:`~collections.namedtuple` of the form ``(firstiter, finalizer)``,
    where *firstiter* and *finalizer* are expected to be either ``None`` or
    functions which take an :term:`asynchronous generator iterator` as an
    argument, and are used to schedule finalization of an asynchronous
@@ -996,18 +1022,30 @@ always available.
 
    .. tabularcolumns:: |l|L|
 
-   +-------------------------+----------------------------------------------+
-   | Attribute               | Explanation                                  |
-   +=========================+==============================================+
-   | :const:`bits_per_digit` | number of bits held in each digit.  Python   |
-   |                         | integers are stored internally in base       |
-   |                         | ``2**int_info.bits_per_digit``               |
-   +-------------------------+----------------------------------------------+
-   | :const:`sizeof_digit`   | size in bytes of the C type used to          |
-   |                         | represent a digit                            |
-   +-------------------------+----------------------------------------------+
+   +----------------------------------------+-----------------------------------------------+
+   | Attribute                              | Explanation                                   |
+   +========================================+===============================================+
+   | :const:`bits_per_digit`                | number of bits held in each digit.  Python    |
+   |                                        | integers are stored internally in base        |
+   |                                        | ``2**int_info.bits_per_digit``                |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`sizeof_digit`                  | size in bytes of the C type used to           |
+   |                                        | represent a digit                             |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`default_max_str_digits`        | default value for                             |
+   |                                        | :func:`sys.get_int_max_str_digits` when it    |
+   |                                        | is not otherwise explicitly configured.       |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`str_digits_check_threshold`    | minimum non-zero value for                    |
+   |                                        | :func:`sys.set_int_max_str_digits`,           |
+   |                                        | :envvar:`PYTHONINTMAXSTRDIGITS`, or           |
+   |                                        | :option:`-X int_max_str_digits <-X>`.         |
+   +----------------------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.1
+
+   .. versionchanged:: 3.11
+      Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
 
 
 .. data:: __interactivehook__
@@ -1155,10 +1193,10 @@ always available.
      string, which means the current working directory.
 
    To not prepend this potentially unsafe path, use the :option:`-P` command
-   line option or the :envvar:`PYTHONSAFEPATH` environment variable?
+   line option or the :envvar:`PYTHONSAFEPATH` environment variable.
 
    A program is free to modify this list for its own purposes.  Only strings
-   and bytes should be added to :data:`sys.path`; all other data types are
+   should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
@@ -1307,6 +1345,14 @@ always available.
    :data:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
+
+.. function:: set_int_max_str_digits(maxdigits)
+
+   Set the :ref:`integer string conversion length limitation
+   <int_max_str_digits>` used by this interpreter. See also
+   :func:`get_int_max_str_digits`.
+
+   .. versionadded:: 3.11
 
 .. function:: setprofile(profilefunc)
 
@@ -1524,6 +1570,38 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+.. function:: activate_stack_trampoline(backend, /)
+
+   Activate the stack profiler trampoline *backend*.
+   The only supported backend is ``"perf"``.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      * :ref:`perf_profiling`
+      * https://perf.wiki.kernel.org
+
+.. function:: deactivate_stack_trampoline()
+
+   Deactivate the current stack profiler trampoline backend.
+
+   If no stack profiler is activated, this function has no effect.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+.. function:: is_stack_trampoline_active()
+
+   Return ``True`` if a stack profiler trampoline is active.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
@@ -1658,6 +1736,8 @@ always available.
    |                  |                                                         |
    |                  |  * ``'nt'``: Windows threads                            |
    |                  |  * ``'pthread'``: POSIX threads                         |
+   |                  |  * ``'pthread-stubs'``: stub POSIX threads              |
+   |                  |    (on WebAssembly platforms without threading support) |
    |                  |  * ``'solaris'``: Solaris threads                       |
    +------------------+---------------------------------------------------------+
    | :const:`lock`    | Name of the lock implementation:                        |
@@ -1778,13 +1858,13 @@ always available.
 
    .. code-block:: shell-session
 
-      $ ./python -Xpycache_prefix=some_path -Xdev
+      $ ./python -Xa=b -Xc
       Python 3.2a3+ (py3k, Oct 16 2010, 20:14:50)
       [GCC 4.4.3] on linux2
       Type "help", "copyright", "credits" or "license" for more information.
       >>> import sys
       >>> sys._xoptions
-      {'pycache_prefix': 'some_path', 'dev': True}
+      {'a': 'b', 'c': True}
 
    .. impl-detail::
 
@@ -1797,4 +1877,4 @@ always available.
 
 .. rubric:: Citations
 
-.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .
+.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .
