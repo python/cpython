@@ -1,9 +1,11 @@
 #include "Python.h"
-#include "frameobject.h"
 #include "pycore_frame.h"
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_global_objects.h"  // _Py_ID()
 
 #include "pycore_pyerrors.h"
 #include "pycore_code.h"        // _PyCode_GetVarnames()
+#include "stdlib_module_names.h"  // _Py_stdlib_module_names
 
 #define MAX_CANDIDATE_ITEMS 750
 #define MAX_STRING_SIZE 40
@@ -171,12 +173,11 @@ calculate_suggestions(PyObject *dir,
             suggestion_distance = current_distance;
         }
     }
-    Py_XINCREF(suggestion);
-    return suggestion;
+    return Py_XNewRef(suggestion);
 }
 
 static PyObject *
-offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
+get_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
 {
     PyObject *name = exc->name; // borrowed reference
     PyObject *obj = exc->obj; // borrowed reference
@@ -196,6 +197,96 @@ offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
     return suggestions;
 }
 
+static PyObject *
+offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
+{
+    PyObject* suggestion = get_suggestions_for_attribute_error(exc);
+    if (suggestion == NULL) {
+        return NULL;
+    }
+    // Add a trailer ". Did you mean: (...)?"
+    PyObject* result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
+    Py_DECREF(suggestion);
+    return result;
+}
+
+static PyObject *
+get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
+{
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    assert(code != NULL && code->co_localsplusnames != NULL);
+
+    PyObject *varnames = _PyCode_GetVarnames(code);
+    if (varnames == NULL) {
+        return NULL;
+    }
+    PyObject *dir = PySequence_List(varnames);
+    Py_DECREF(varnames);
+    Py_DECREF(code);
+    if (dir == NULL) {
+        return NULL;
+    }
+
+    // Are we inside a method and the instance has an attribute called 'name'?
+    if (PySequence_Contains(dir, &_Py_ID(self)) > 0) {
+        PyObject* locals = PyFrame_GetLocals(frame);
+        if (!locals) {
+            goto error;
+        }
+        PyObject* self = PyDict_GetItem(locals, &_Py_ID(self)); /* borrowed */
+        Py_DECREF(locals);
+        if (!self) {
+            goto error;
+        }
+        
+        if (PyObject_HasAttr(self, name)) {
+            Py_DECREF(dir);
+            return PyUnicode_FromFormat("self.%S", name);
+        }
+    }
+
+    PyObject *suggestions = calculate_suggestions(dir, name);
+    Py_DECREF(dir);
+    if (suggestions != NULL) {
+        return suggestions;
+    }
+
+    dir = PySequence_List(frame->f_frame->f_globals);
+    if (dir == NULL) {
+        return NULL;
+    }
+    suggestions = calculate_suggestions(dir, name);
+    Py_DECREF(dir);
+    if (suggestions != NULL) {
+        return suggestions;
+    }
+
+    dir = PySequence_List(frame->f_frame->f_builtins);
+    if (dir == NULL) {
+        return NULL;
+    }
+    suggestions = calculate_suggestions(dir, name);
+    Py_DECREF(dir);
+
+    return suggestions;
+
+error:
+    Py_DECREF(dir);
+    return NULL;
+}
+
+static bool
+is_name_stdlib_module(PyObject* name)
+{
+    const char* the_name = PyUnicode_AsUTF8(name);
+    Py_ssize_t len = Py_ARRAY_LENGTH(_Py_stdlib_module_names);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (strcmp(the_name, _Py_stdlib_module_names[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 static PyObject *
 offer_suggestions_for_name_error(PyNameErrorObject *exc)
@@ -223,43 +314,57 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
 
     PyFrameObject *frame = traceback->tb_frame;
     assert(frame != NULL);
-    PyCodeObject *code = PyFrame_GetCode(frame);
-    assert(code != NULL && code->co_localsplusnames != NULL);
-    PyObject *varnames = _PyCode_GetVarnames(code);
-    if (varnames == NULL) {
+
+    PyObject* suggestion = get_suggestions_for_name_error(name, frame);
+    bool is_stdlib_module = is_name_stdlib_module(name);
+
+    if (suggestion == NULL && !is_stdlib_module) {
         return NULL;
     }
-    PyObject *dir = PySequence_List(varnames);
-    Py_DECREF(varnames);
-    Py_DECREF(code);
+
+    // Add a trailer ". Did you mean: (...)?"
+    PyObject* result = NULL;
+    if (!is_stdlib_module) {
+        result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
+    } else if (suggestion == NULL) {
+        result = PyUnicode_FromFormat(". Did you forget to import %R?", name);
+    } else {
+        result = PyUnicode_FromFormat(". Did you mean: %R? Or did you forget to import %R?", suggestion, name);
+    }
+    Py_XDECREF(suggestion);
+    return result;
+}
+
+static PyObject *
+offer_suggestions_for_import_error(PyImportErrorObject *exc)
+{
+    PyObject *mod_name = exc->name; // borrowed reference
+    PyObject *name = exc->name_from; // borrowed reference
+    if (name == NULL || mod_name == NULL || name == Py_None ||
+        !PyUnicode_CheckExact(name) || !PyUnicode_CheckExact(mod_name)) {
+        return NULL;
+    }
+
+    PyObject* mod = PyImport_GetModule(mod_name);
+    if (mod == NULL) {
+        return NULL;
+    }
+
+    PyObject *dir = PyObject_Dir(mod);
+    Py_DECREF(mod);
     if (dir == NULL) {
         return NULL;
     }
 
-    PyObject *suggestions = calculate_suggestions(dir, name);
+    PyObject *suggestion = calculate_suggestions(dir, name);
     Py_DECREF(dir);
-    if (suggestions != NULL) {
-        return suggestions;
-    }
-
-    dir = PySequence_List(frame->f_frame->f_globals);
-    if (dir == NULL) {
+    if (!suggestion) {
         return NULL;
     }
-    suggestions = calculate_suggestions(dir, name);
-    Py_DECREF(dir);
-    if (suggestions != NULL) {
-        return suggestions;
-    }
 
-    dir = PySequence_List(frame->f_frame->f_builtins);
-    if (dir == NULL) {
-        return NULL;
-    }
-    suggestions = calculate_suggestions(dir, name);
-    Py_DECREF(dir);
-
-    return suggestions;
+    PyObject* result = PyUnicode_FromFormat(". Did you mean: %R?", suggestion);
+    Py_DECREF(suggestion);
+    return result;
 }
 
 // Offer suggestions for a given exception. Returns a python string object containing the
@@ -274,6 +379,8 @@ _Py_Offer_Suggestions(PyObject *exception)
         result = offer_suggestions_for_attribute_error((PyAttributeErrorObject *) exception);
     } else if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_NameError)) {
         result = offer_suggestions_for_name_error((PyNameErrorObject *) exception);
+    } else if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_ImportError)) {
+        result = offer_suggestions_for_import_error((PyImportErrorObject *) exception);
     }
     return result;
 }

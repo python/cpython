@@ -328,7 +328,7 @@ _enter_buffered_busy(buffered *self)
      : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
-    if (IS_CLOSED(self) & (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
+    if (IS_CLOSED(self) && (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
         PyErr_SetString(PyExc_ValueError, error_msg); \
         return NULL; \
     } \
@@ -481,8 +481,7 @@ buffered_close(buffered *self, PyObject *args)
     if (r < 0)
         goto end;
     if (r > 0) {
-        res = Py_None;
-        Py_INCREF(res);
+        res = Py_NewRef(Py_None);
         goto end;
     }
 
@@ -1007,8 +1006,7 @@ _buffered_readinto_generic(buffered *self, Py_buffer *buffer, char readinto1)
             break;
         if (n < 0) {
             if (n == -2) {
-                Py_INCREF(Py_None);
-                res = Py_None;
+                res = Py_NewRef(Py_None);
             }
             goto end;
         }
@@ -1422,8 +1420,7 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
     if (_PyIOBase_check_readable(raw, Py_True) == NULL)
         return -1;
 
-    Py_INCREF(raw);
-    Py_XSETREF(self->raw, raw);
+    Py_XSETREF(self->raw, Py_NewRef(raw));
     self->buffer_size = buffer_size;
     self->readable = 1;
     self->writable = 0;

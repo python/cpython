@@ -83,7 +83,7 @@ class GetoptTests(unittest.TestCase):
 
         # Much like the preceding, except with a non-alpha character ("-") in
         # option name that precedes "="; failed in
-        # http://python.org/sf/126863
+        # https://bugs.python.org/issue126863
         opts, args = getopt.do_longs([], 'foo=42', ['foo-bar', 'foo=',], [])
         self.assertEqual(opts, [('--foo', '42')])
         self.assertEqual(args, [])

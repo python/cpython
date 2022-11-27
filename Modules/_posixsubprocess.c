@@ -612,8 +612,10 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETPGID
-    if (pgid_to_set >= 0)
+    static_assert(_Py_IS_TYPE_SIGNED(pid_t), "pid_t is unsigned");
+    if (pgid_to_set >= 0) {
         POSIX_CALL(setpgid(0, pgid_to_set));
+    }
 #endif
 
 #ifdef HAVE_SETGROUPS
@@ -823,8 +825,8 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             &preexec_fn, &allow_vfork))
         return NULL;
 
-    if ((preexec_fn != Py_None) &&
-            (PyInterpreterState_Get() != PyInterpreterState_Main())) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if ((preexec_fn != Py_None) && (interp != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");
         return NULL;
@@ -836,14 +838,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     }
     if (_sanity_check_python_fd_sequence(py_fds_to_keep)) {
         PyErr_SetString(PyExc_ValueError, "bad value(s) in fds_to_keep");
-        return NULL;
-    }
-
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (config->_isolated_interpreter) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "subprocess not supported for isolated subinterpreters");
         return NULL;
     }
 
