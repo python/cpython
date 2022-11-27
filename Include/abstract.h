@@ -14,9 +14,9 @@ extern "C" {
 
    Print an object 'o' on file 'fp'.  Returns -1 on error. The flags argument
    is used to enable certain printing options. The only option currently
-   supported is Py_Print_RAW.
-
-   (What should be said about Py_Print_RAW?). */
+   supported is Py_PRINT_RAW. By default (flags=0), PyObject_Print() formats
+   the object by calling PyObject_Repr(). If flags equals to Py_PRINT_RAW, it
+   formats the object by calling PyObject_Str(). */
 
 
 /* Implemented elsewhere:
@@ -88,7 +88,7 @@ extern "C" {
    -1 on failure.
 
    This is the equivalent of the Python statement: del o.attr_name. */
-#define PyObject_DelAttrString(O,A) PyObject_SetAttrString((O),(A), NULL)
+#define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
 
 
 /* Implemented as a macro:
@@ -98,7 +98,7 @@ extern "C" {
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
    statement: del o.attr_name. */
-#define  PyObject_DelAttr(O,A) PyObject_SetAttr((O),(A), NULL)
+#define  PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
 
 
 /* Implemented elsewhere:
@@ -228,6 +228,32 @@ PyAPI_FUNC(PyObject *) PyObject_CallMethodObjArgs(
     PyObject *name,
     ...);
 
+/* Given a vectorcall nargsf argument, return the actual number of arguments.
+ * (For use outside the limited API, this is re-defined as a static inline
+ * function in cpython/abstract.h)
+ */
+PyAPI_FUNC(Py_ssize_t) PyVectorcall_NARGS(size_t nargsf);
+
+/* Call "callable" (which must support vectorcall) with positional arguments
+   "tuple" and keyword arguments "dict". "dict" may also be NULL */
+PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#define PY_VECTORCALL_ARGUMENTS_OFFSET \
+    (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
+
+/* Perform a PEP 590-style vector call on 'callable' */
+PyAPI_FUNC(PyObject *) PyObject_Vectorcall(
+    PyObject *callable,
+    PyObject *const *args,
+    size_t nargsf,
+    PyObject *kwnames);
+
+/* Call the method 'name' on args[0] with arguments in args[1..nargsf-1]. */
+PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
+    PyObject *name, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames);
+#endif
 
 /* Implemented elsewhere:
 
@@ -309,6 +335,53 @@ PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
 PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
 
+/* === Old Buffer API ============================================ */
+
+/* FIXME:  usage of these should all be replaced in Python itself
+   but for backwards compatibility we will implement them.
+   Their usage without a corresponding "unlock" mechanism
+   may create issues (but they would already be there). */
+
+/* Takes an arbitrary object which must support the (character, single segment)
+   buffer interface and returns a pointer to a read-only memory location
+   usable as character based input for subsequent processing.
+
+   Return 0 on success.  buffer and buffer_len are only set in case no error
+   occurs. Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsCharBuffer(PyObject *obj,
+                                      const char **buffer,
+                                      Py_ssize_t *buffer_len);
+
+/* Checks whether an arbitrary object supports the (character, single segment)
+   buffer interface.
+
+   Returns 1 on success, 0 on failure. */
+Py_DEPRECATED(3.0) PyAPI_FUNC(int) PyObject_CheckReadBuffer(PyObject *obj);
+
+/* Same as PyObject_AsCharBuffer() except that this API expects (readable,
+   single segment) buffer interface and returns a pointer to a read-only memory
+   location which can contain arbitrary data.
+
+   0 is returned on success.  buffer and buffer_len are only set in case no
+   error occurs.  Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsReadBuffer(PyObject *obj,
+                                      const void **buffer,
+                                      Py_ssize_t *buffer_len);
+
+/* Takes an arbitrary object which must support the (writable, single segment)
+   buffer interface and returns a pointer to a writable memory location in
+   buffer of size 'buffer_len'.
+
+   Return 0 on success.  buffer and buffer_len are only set in case no error
+   occurs. Otherwise, -1 is returned and an exception set. */
+Py_DEPRECATED(3.0)
+PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
+                                       void **buffer,
+                                       Py_ssize_t *buffer_len);
+
+
 /* === New Buffer API ============================================ */
 
 /* Takes an arbitrary object and returns the result of calling
@@ -324,10 +397,20 @@ PyAPI_FUNC(PyObject *) PyObject_Format(PyObject *obj,
    returns itself. */
 PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 
+/* Takes an AsyncIterable object and returns an AsyncIterator for it.
+   This is typically a new iterator but if the argument is an AsyncIterator,
+   this returns itself. */
+PyAPI_FUNC(PyObject *) PyObject_GetAIter(PyObject *);
+
 /* Returns non-zero if the object 'obj' provides iterator protocols, and 0 otherwise.
 
    This function always succeeds. */
 PyAPI_FUNC(int) PyIter_Check(PyObject *);
+
+/* Returns non-zero if the object 'obj' provides AsyncIterator protocols, and 0 otherwise.
+
+   This function always succeeds. */
+PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
@@ -665,7 +748,7 @@ PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 /* Return the 'i'-th element of the sequence 'o', assuming that o was returned
    by PySequence_Fast, and that i is within bounds. */
 #define PySequence_Fast_GET_ITEM(o, i)\
-     (PyList_Check(o) ? PyList_GET_ITEM(o, i) : PyTuple_GET_ITEM(o, i))
+     (PyList_Check(o) ? PyList_GET_ITEM((o), (i)) : PyTuple_GET_ITEM((o), (i)))
 
 /* Return a pointer to the underlying item array for
    an object returned by PySequence_Fast */
@@ -745,7 +828,7 @@ PyAPI_FUNC(Py_ssize_t) PyMapping_Length(PyObject *o);
    failure.
 
    This is equivalent to the Python statement: del o[key]. */
-#define PyMapping_DelItemString(O,K) PyObject_DelItemString((O),(K))
+#define PyMapping_DelItemString(O, K) PyObject_DelItemString((O), (K))
 
 /* Implemented as a macro:
 
@@ -755,7 +838,7 @@ PyAPI_FUNC(Py_ssize_t) PyMapping_Length(PyObject *o);
    Returns -1 on failure.
 
    This is equivalent to the Python statement: del o[key]. */
-#define PyMapping_DelItem(O,K) PyObject_DelItem((O),(K))
+#define PyMapping_DelItem(O, K) PyObject_DelItem((O), (K))
 
 /* On success, return 1 if the mapping object 'o' has the key 'key',
    and 0 otherwise.
@@ -806,7 +889,7 @@ PyAPI_FUNC(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_ABSTRACTOBJECT_H
-#  include  "cpython/abstract.h"
+#  include "cpython/abstract.h"
 #  undef Py_CPYTHON_ABSTRACTOBJECT_H
 #endif
 

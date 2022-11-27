@@ -1,0 +1,2 @@
+On ``uname_result``, restored expectation that ``_fields`` and ``_asdict``
+would include all six properties including ``processor``.

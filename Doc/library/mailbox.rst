@@ -426,7 +426,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `maildir man page from Courier <http://www.courier-mta.org/maildir.html>`_
+   `maildir man page from Courier <https://www.courier-mta.org/maildir.html>`_
       A specification of the format. Describes a common extension for
       supporting folders.
 
@@ -614,7 +614,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `nmh - Message Handling System <http://www.nongnu.org/nmh/>`_
+   `nmh - Message Handling System <https://www.nongnu.org/nmh/>`_
       Home page of :program:`nmh`, an updated version of the original :program:`mh`.
 
    `MH & nmh: Email for Users & Programmers <https://rand-mh.sourceforge.io/book/>`_
@@ -1510,7 +1510,7 @@ The following exception classes are defined in the :mod:`mailbox` module:
 
    Raised when some mailbox-related condition beyond the control of the program
    causes it to be unable to proceed, such as when failing to acquire a lock that
-   another program already holds a lock, or when a uniquely-generated file name
+   another program already holds a lock, or when a uniquely generated file name
    already exists.
 
 

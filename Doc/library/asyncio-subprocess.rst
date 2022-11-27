@@ -75,6 +75,9 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
                           stdout=None, stderr=None, limit=None, **kwds)
@@ -99,6 +102,9 @@ Creating Subprocesses
       escape whitespace and special shell characters in strings that are going
       to be used to construct shell commands.
 
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
 .. note::
 
    Subprocesses are available for Windows if a :class:`ProactorEventLoop` is
@@ -118,6 +124,7 @@ Constants
 =========
 
 .. data:: asyncio.subprocess.PIPE
+   :module:
 
    Can be passed to the *stdin*, *stdout* or *stderr* parameters.
 
@@ -131,11 +138,13 @@ Constants
    attributes will point to :class:`StreamReader` instances.
 
 .. data:: asyncio.subprocess.STDOUT
+   :module:
 
    Special value that can be used as the *stderr* argument and indicates
    that standard error should be redirected into standard output.
 
 .. data:: asyncio.subprocess.DEVNULL
+   :module:
 
    Special value that can be used as the *stdin*, *stdout* or *stderr* argument
    to process creation functions.  It indicates that the special file
@@ -151,6 +160,7 @@ wrapper that allows communicating with subprocesses and watching for
 their completion.
 
 .. class:: asyncio.subprocess.Process
+   :module:
 
    An object that wraps OS processes created by the
    :func:`create_subprocess_exec` and :func:`create_subprocess_shell`
@@ -165,7 +175,7 @@ their completion.
 
    * the :meth:`~asyncio.subprocess.Process.communicate` and
      :meth:`~asyncio.subprocess.Process.wait` methods don't have a
-     *timeout* parameter: use the :func:`wait_for` function;
+     *timeout* parameter: use the :func:`~asyncio.wait_for` function;
 
    * the :meth:`Process.wait() <asyncio.subprocess.Process.wait>` method
      is asynchronous, whereas :meth:`subprocess.Popen.wait` method
@@ -242,7 +252,7 @@ their completion.
 
    .. method:: kill()
 
-      Kill the child.
+      Kill the child process.
 
       On POSIX systems this method sends :py:data:`SIGKILL` to the child
       process.
@@ -269,7 +279,7 @@ their completion.
       Use the :meth:`communicate` method rather than
       :attr:`process.stdin.write() <stdin>`,
       :attr:`await process.stdout.read() <stdout>` or
-      :attr:`await process.stderr.read <stderr>`.
+      :attr:`await process.stderr.read() <stderr>`.
       This avoids deadlocks due to streams pausing reading or writing
       and blocking the child process.
 
