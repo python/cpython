@@ -66,42 +66,25 @@ _blocking_on = {}
 
 
 class _BlockingOnManager:
-    """
-    A context manager responsible to updating ``_blocking_on`` to track which
-    threads are likely blocked on taking the import locks for which modules.
-    """
+    """A context manager responsible to updating ``_blocking_on``."""
     def __init__(self, tid, lock):
         # The id of the thread in which this manager is being used.
         self.tid = tid
-        # The _ModuleLock for a certain module which the running thread wants
-        # to take.
         self.lock = lock
 
     def __enter__(self):
-        """
-        Mark the running thread as waiting for the lock this manager knows
-        about.
-        """
+        """Mark the running thread as waiting for self.lock. via _blocking_on."""
         # Interactions with _blocking_on are *not* protected by the global
         # import lock here because each thread only touches the state that it
         # owns (state keyed on its thread id).  The global import lock is
-        # re-entrant (ie, a single thread may take it more than once) so it
+        # re-entrant (i.e., a single thread may take it more than once) so it
         # wouldn't help us be correct in the face of re-entrancy either.
 
-        # First look up the module locks the running thread already intends to
-        # take.  If this thread hasn't done an import before, it may not be
-        # present in the dict so be sure to initialize it in this case.
         self.blocked_on = _blocking_on.setdefault(self.tid, [])
-
-        # Whether we are re-entering or not, add this lock to the list because
-        # now this thread is going to be blocked on it.
         self.blocked_on.append(self.lock)
 
     def __exit__(self, *args, **kwargs):
-        """
-        Mark the running thread as no longer waiting for the lock this manager
-        knows about.
-        """
+        """Remove self.lock from this thread's _blocking_on list."""
         self.blocked_on.remove(self.lock)
 
 
@@ -111,11 +94,12 @@ class _DeadlockError(RuntimeError):
 
 
 def _has_deadlock(seen, subject, tids, _blocking_on):
+    """Check if 'subject' is holding the same lock as another thread(s).
+    
+    The search within _blocking_on starts with the threads listed in tids.
+    'seen' contains any threads that are considered already traversed in the search.
+    
     """
-    Considering a graph where nodes are threads (represented by their id
-    as keys in ``blocking_on``) and edges are "blocked on" relationships
-    (represented by values in ``_blocking_on``), determine whether ``subject``
-    is reachable starting from any of the threads given by ``tids``.
 
     :param seen: A set of threads that have already been visited.
     :param subject: The thread id to try to reach.
@@ -136,7 +120,7 @@ def _has_deadlock(seen, subject, tids, _blocking_on):
 
         if tid in seen:
             # bpo 38091: the chain of tid's we encounter here
-            # eventually leads to a fixpoint or a cycle, but
+            # eventually leads to a fixed point or a cycle, but
             # does not reach 'me'.  This means we would not
             # actually deadlock.  This can happen if other
             # threads are at the beginning of acquire() below.
@@ -159,7 +143,7 @@ class _ModuleLock:
 
     def __init__(self, name):
         # Create an RLock for protecting the import process for the
-        # corresponding module.  Since it is an RLock a single thread will be
+        # corresponding module.  Since it is an RLock, a single thread will be
         # able to take it more than once.  This is necessary to support
         # re-entrancy in the import system that arises from (at least) signal
         # handlers and the garbage collector.  Consider the case of:
@@ -188,15 +172,15 @@ class _ModuleLock:
         # identifier for the owning thread.
         self.owner = None
 
-        # This is a count of the number of times the owning thread has
-        # acquired this lock.  This supports RLock-like ("re-entrant lock")
+        # Represent the number of times the owning thread has acquired this lock
+        # via a list of `True`.  This supports RLock-like ("re-entrant lock")
         # behavior, necessary in case a single thread is following a circular
         # import dependency and needs to take the lock for a single module
         # more than once.
         #
         # Counts are represented as a list of None because list.append(None)
-        # and list.pop() are both atomic and thread-safe and it's hard to find
-        # another primitive with the same properties.
+        # and list.pop() are both atomic and thread-safe in CPython and it's hard
+        # to find another primitive with the same properties.
         self.count = []
 
         # This is a count of the number of threads that are blocking on
@@ -261,7 +245,7 @@ class _ModuleLock:
                     # deadlock by acquiring this module lock.  If it would
                     # then just stop with an error.
                     #
-                    # XXX It's not clear who is expected to handle this error.
+                    # It's not clear who is expected to handle this error.
                     # There is one handler in _lock_unlock_module but many
                     # times this method is called when entering the context
                     # manager _ModuleLockManager instead - so _DeadlockError
@@ -271,7 +255,7 @@ class _ModuleLock:
                     # https://stackoverflow.com/questions/59509154
                     # https://github.com/encode/django-rest-framework/issues/7078
                     if self.has_deadlock():
-                        raise _DeadlockError('deadlock detected by %r' % self)
+                        raise _DeadlockError(f'deadlock detected by {self!r}')
 
                     # Check to see if we're going to be able to acquire the
                     # lock.  If we are going to have to wait then increment
@@ -291,9 +275,9 @@ class _ModuleLock:
                 # thread holding this lock (self.owner) calls self.release.
                 self.wakeup.acquire()
 
-                # Taking it has served its purpose (making us wait) so we can
+                # Taking the lock has served its purpose (making us wait), so we can
                 # give it up now.  We'll take it non-blockingly again on the
-                # next iteration around this while loop.
+                # next iteration around this 'while' loop.
                 self.wakeup.release()
 
     def release(self):
