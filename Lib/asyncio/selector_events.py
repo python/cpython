@@ -1111,7 +1111,7 @@ class _SelectorSocketTransport(_SelectorTransport):
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
 
-    def _adjust_leftover_buffer(self, nbytes: int, /) -> None:
+    def _adjust_leftover_buffer(self, nbytes: int) -> None:
         buffer = self._buffer
         while nbytes:
             b = buffer.popleft()
@@ -1127,7 +1127,8 @@ class _SelectorSocketTransport(_SelectorTransport):
         if self._conn_lost:
             return
         try:
-            buffer = self._buffer.popleft()
+            buffer = bytearray().join(self._buffer)
+            self._buffer.clear()
             n = self._sock.send(buffer)
             if n != len(buffer):
                 # Not all data was written

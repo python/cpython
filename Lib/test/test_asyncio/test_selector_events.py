@@ -747,7 +747,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertFalse(self.sock.sendmsg.called)
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
 
-    @unittest.skipUnless(selector_events.HAVE_SENDMSG, 'no sendmsg')
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_full(self):
         data = memoryview(b'data')
         self.sock.sendmsg = mock.Mock()
@@ -760,7 +760,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(self.sock.sendmsg.called)
         self.assertFalse(self.loop.writers)
 
-    @unittest.skipUnless(selector_events.HAVE_SENDMSG, 'no sendmsg')
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_partial(self):
 
         data = memoryview(b'data')
