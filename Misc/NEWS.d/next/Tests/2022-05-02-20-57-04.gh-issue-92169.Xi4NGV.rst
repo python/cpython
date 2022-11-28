@@ -1,2 +1,0 @@
-Use ``warnings_helper.import_deprecated()`` to import deprecated modules
-uniformly in tests. Patch by Hugo van Kemenade.

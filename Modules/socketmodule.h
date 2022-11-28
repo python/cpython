@@ -76,6 +76,15 @@ struct SOCKADDR_BTH_REDEF {
 # else
 typedef int socklen_t;
 # endif /* IPPROTO_IPV6 */
+
+/* Remove ifdef once Py_WINVER >= 0x0604
+ * socket.h only defines AF_HYPERV if _WIN32_WINNT is at that level or higher
+ * so for now it's just manually defined.
+ */
+# ifndef AF_HYPERV
+#  define AF_HYPERV 34
+# endif
+# include <hvsocket.h>
 #endif /* MS_WINDOWS */
 
 #ifdef HAVE_SYS_UN_H
@@ -240,6 +249,11 @@ typedef int SOCKET_T;
 #define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLongLong(fd)
 #endif
 
+// AF_HYPERV is only supported on Windows
+#if defined(AF_HYPERV) && defined(MS_WINDOWS)
+#  define HAVE_AF_HYPERV
+#endif
+
 /* Socket address */
 typedef union sock_addr {
     struct sockaddr_in in;
@@ -287,6 +301,9 @@ typedef union sock_addr {
 #endif
 #ifdef HAVE_LINUX_TIPC_H
     struct sockaddr_tipc tipc;
+#endif
+#ifdef HAVE_AF_HYPERV
+    SOCKADDR_HV hv;
 #endif
 } sock_addr_t;
 

@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 struct _Py_long_state {
+    int max_str_digits;
 #if PyLong_MAXFREELIST > 0
     /* Special free list
        free_list is a singly-linked list of available PyLongObjects,
