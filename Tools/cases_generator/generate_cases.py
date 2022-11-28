@@ -23,7 +23,7 @@ DEFAULT_OUTPUT = os.path.relpath(
 )
 BEGIN_MARKER = "// BEGIN BYTECODES //"
 END_MARKER = "// END BYTECODES //"
-RE_PREDICTED = r"(?s)(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);"
+RE_PREDICTED = r"^\s*(?:PREDICT\(|GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*$"
 UNUSED = "unused"
 BITS_PER_CODE_UNIT = 16
 
@@ -112,6 +112,8 @@ class Instruction:
     kind: typing.Literal["inst", "op"]
     name: str
     block: parser.Block
+    block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
+    predictions: list[str]  # Prediction targets (instruction names)
 
     # Computed by constructor
     always_exits: bool
@@ -129,7 +131,8 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.always_exits = always_exits(self.block)
+        self.block_text, self.predictions = extract_block_text(self.block)
+        self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parser.CacheEffect)
         ]
@@ -164,7 +167,7 @@ class Instruction:
         self.write_body(out, 0)
 
         # Skip the rest if the block always exits
-        if always_exits(self.block):
+        if self.always_exits:
             return
 
         # Write net stack growth/shrinkage
@@ -172,7 +175,7 @@ class Instruction:
         out.stack_adjust(diff)
 
         # Write output stack effect assignments
-        unmoved_names = set()
+        unmoved_names: set[str] = set()
         for ieffect, oeffect in zip(self.input_effects, self.output_effects):
             if ieffect.name == oeffect.name:
                 unmoved_names.add(ieffect.name)
@@ -206,27 +209,10 @@ class Instruction:
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
-        # Get lines of text with proper dedent
-        blocklines = self.block.to_text(dedent=dedent).splitlines(True)
-
-        # Remove blank lines from both ends
-        while blocklines and not blocklines[0].strip():
-            blocklines.pop(0)
-        while blocklines and not blocklines[-1].strip():
-            blocklines.pop()
-
-        # Remove leading and trailing braces
-        assert blocklines and blocklines[0].strip() == "{"
-        assert blocklines and blocklines[-1].strip() == "}"
-        blocklines.pop()
-        blocklines.pop(0)
-
-        # Remove trailing blank lines
-        while blocklines and not blocklines[-1].strip():
-            blocklines.pop()
-
         # Write the body, substituting a goto for ERROR_IF()
-        for line in blocklines:
+        assert dedent <= 0
+        extra = " " * -dedent
+        for line in self.block_text:
             if m := re.match(r"(\s*)ERROR_IF\((.+), (\w+)\);\s*$", line):
                 space, cond, label = m.groups()
                 # ERROR_IF() must pop the inputs from the stack.
@@ -241,11 +227,13 @@ class Instruction:
                     else:
                         break
                 if ninputs:
-                    out.write_raw(f"{space}if ({cond}) goto pop_{ninputs}_{label};\n")
+                    out.write_raw(
+                        f"{extra}{space}if ({cond}) goto pop_{ninputs}_{label};\n"
+                    )
                 else:
-                    out.write_raw(f"{space}if ({cond}) goto {label};\n")
+                    out.write_raw(f"{extra}{space}if ({cond}) goto {label};\n")
             else:
-                out.write_raw(line)
+                out.write_raw(extra + line)
 
 
 InstructionOrCacheEffect = Instruction | parser.CacheEffect
@@ -395,7 +383,11 @@ class Analyzer:
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
         for instr in self.instrs.values():
-            for target in re.findall(RE_PREDICTED, instr.block.text):
+            targets = set(instr.predictions)
+            for line in instr.block_text:
+                if m := re.match(RE_PREDICTED, line):
+                    targets.add(m.group(1))
+            for target in targets:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
                 else:
@@ -552,7 +544,9 @@ class Analyzer:
         # and 'lowest' and 'highest' are the extremes.
         # Note that 'lowest' may be negative.
         # TODO: Reverse the numbering.
-        stack = [StackEffect(f"_tmp_{i+1}", "") for i in reversed(range(highest - lowest))]
+        stack = [
+            StackEffect(f"_tmp_{i+1}", "") for i in reversed(range(highest - lowest))
+        ]
         return stack, -lowest
 
     def write_instructions(self) -> None:
@@ -577,7 +571,9 @@ class Analyzer:
                     if instr.predicted:
                         self.out.emit(f"PREDICTED({name});")
                     instr.write(self.out)
-                    if not always_exits(instr.block):
+                    if not instr.always_exits:
+                        for prediction in instr.predictions:
+                            self.out.emit(f"PREDICT({prediction});")
                         self.out.emit(f"DISPATCH();")
 
             # Write and count super-instructions
@@ -652,18 +648,40 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def always_exits(block: parser.Block) -> bool:
+def extract_block_text(block: parser.Block) -> tuple[list[str], list[str]]:
+    # Get lines of text with proper dedent
+    blocklines = block.text.splitlines(True)
+
+    # Remove blank lines from both ends
+    while blocklines and not blocklines[0].strip():
+        blocklines.pop(0)
+    while blocklines and not blocklines[-1].strip():
+        blocklines.pop()
+
+    # Remove leading and trailing braces
+    assert blocklines and blocklines[0].strip() == "{"
+    assert blocklines and blocklines[-1].strip() == "}"
+    blocklines.pop()
+    blocklines.pop(0)
+
+    # Remove trailing blank lines
+    while blocklines and not blocklines[-1].strip():
+        blocklines.pop()
+
+    # Separate PREDICT(...) macros from end
+    predictions: list[str] = []
+    while blocklines and (m := re.match(r"^\s*PREDICT\((\w+)\);\s*$", blocklines[-1])):
+        predictions.insert(0, m.group(1))
+        blocklines.pop()
+
+    return blocklines, predictions
+
+
+def always_exits(lines: list[str]) -> bool:
     """Determine whether a block always ends in a return/goto/etc."""
-    text = block.text
-    lines = text.splitlines()
-    while lines and not lines[-1].strip():
-        lines.pop()
-    if not lines or lines[-1].strip() != "}":
-        return False
-    lines.pop()
     if not lines:
         return False
-    line = lines.pop().rstrip()
+    line = lines[-1].rstrip()
     # Indent must match exactly (TODO: Do something better)
     if line[:12] != " " * 12:
         return False
