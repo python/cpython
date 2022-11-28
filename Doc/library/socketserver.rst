@@ -430,11 +430,8 @@ Request Handler Objects
    The :attr:`self.rfile` and :attr:`self.wfile` attributes can be
    read or written, respectively, to get the request data or return data
    to the client.
-
-   The :attr:`rfile` attributes of both classes support the
-   :class:`io.BufferedIOBase` readable interface, and
-   the :attr:`wfile` attributes of both classes support the
-   :class:`io.BufferedIOBase` writable interface.
+   The :attr:`!rfile` attributes support the :class:`io.BufferedIOBase` readable interface,
+   and :attr:`!wfile` attributes support the :class:`!io.BufferedIOBase` writable interface.
 
    .. versionchanged:: 3.6
       :attr:`StreamRequestHandler.wfile` also supports the
