@@ -2257,6 +2257,7 @@ monitor_handled(PyThreadState *tstate,
 void
 PyThreadState_EnterTracing(PyThreadState *tstate)
 {
+    assert(tstate->tracing >= 0);
     tstate->tracing++;
 }
 

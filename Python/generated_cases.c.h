@@ -13,12 +13,15 @@
                 if (_Py_Instrument(frame->f_code, tstate->interp)) {
                     goto error;
                 }
+                next_instr--;
             }
-            int err = _Py_call_instrumentation(
-                    tstate, oparg, frame, next_instr-1);
-            if (err) goto error;
-            if (_Py_atomic_load_relaxed_int32(eval_breaker)) {
-                goto handle_eval_breaker;
+            else {
+                int err = _Py_call_instrumentation(
+                        tstate, oparg, frame, next_instr-1);
+                if (err) goto error;
+                if (_Py_atomic_load_relaxed_int32(eval_breaker)) {
+                    goto handle_eval_breaker;
+                }
             }
             DISPATCH();
         }
@@ -30,11 +33,9 @@
             if (frame->f_code->_co_instrument_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(frame->f_code, tstate->interp);
                 if (err) goto error;
-                err = _Py_call_instrumentation(
-                    tstate, oparg, frame, next_instr-1);
-                if (err) goto error;
+                next_instr--;
             }
-            if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
+            else if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }
             DISPATCH();

@@ -193,4 +193,21 @@ monitoring_set_events(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=876a03223495a81d input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(monitoring_restart_events__doc__,
+"restart_events($module, /)\n"
+"--\n"
+"\n");
+
+#define MONITORING_RESTART_EVENTS_METHODDEF    \
+    {"restart_events", (PyCFunction)monitoring_restart_events, METH_NOARGS, monitoring_restart_events__doc__},
+
+static PyObject *
+monitoring_restart_events_impl(PyObject *module);
+
+static PyObject *
+monitoring_restart_events(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return monitoring_restart_events_impl(module);
+}
+/*[clinic end generated code: output=3997247efd06367f input=a9049054013a1b77]*/

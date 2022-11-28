@@ -90,6 +90,7 @@ struct _is {
     PyInterpreterState *next;
 
     uint64_t monitoring_version;
+    uint64_t last_restart_version;;
 
     struct pythreads {
         uint64_t next_unique_id;

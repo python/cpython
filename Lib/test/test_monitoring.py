@@ -23,7 +23,8 @@ def g1():
     for _ in gen():
         pass
 
-TEST_TOOL = 4
+TEST_TOOL = 3
+TEST_TOOL2 = 4
 
 class MonitoringBaseTest(unittest.TestCase):
 
@@ -40,7 +41,7 @@ class MonitoringBaseTest(unittest.TestCase):
         m.register_callback
         # m.insert_marker
         # m.remove_marker
-        # m.restart_events
+        m.restart_events
         m.DISABLE
 
     def test_tool(self):
@@ -267,5 +268,49 @@ class SimulateProfileTest(unittest.TestCase, MonitoringEventsBase):
         self.assertEqual(errors, [])
         self.assertEqual(len(seen), 9)
         self.assertEqual(stack, [sys._getframe()])
+
+
+class CounterWithDisable:
+    def __init__(self):
+        self.disable = False
+        self.count = 0
+    def __call__(self, *args):
+        self.count += 1
+        if self.disable:
+            return sys.monitoring.DISABLE
+
+
+class MontoringDisableAndRestartTest(unittest.TestCase):
+
+    def test_disable(self):
+        counter = CounterWithDisable()
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, counter)
+        sys.monitoring.set_events(TEST_TOOL, E.PY_START)
+        self.assertEqual(counter.count, 0)
+        counter.count = 0
+        f1()
+        self.assertEqual(counter.count, 1)
+        counter.disable = True
+        counter.count = 0
+        f1()
+        self.assertEqual(counter.count, 1)
+        counter.count = 0
+        f1()
+        self.assertEqual(counter.count, 0)
+
+    def test_restart(self):
+        counter = CounterWithDisable()
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, counter)
+        sys.monitoring.set_events(TEST_TOOL, E.PY_START)
+        counter.disable = True
+        f1()
+        counter.count = 0
+        f1()
+        self.assertEqual(counter.count, 0)
+        sys.monitoring.restart_events()
+        counter.count = 0
+        f1()
+        self.assertEqual(counter.count, 1)
+
 
 

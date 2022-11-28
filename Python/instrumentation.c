@@ -24,9 +24,11 @@ call_multiple_instruments(
 }
 
 static const uint8_t DE_INSTRUMENT[256] = {
+    [RESUME] = RESUME,
     [INSTRUMENTED_RESUME] = RESUME,
     [INSTRUMENTED_RETURN_VALUE] = RETURN_VALUE,
     [INSTRUMENTED_CALL] = CALL,
+    [INSTRUMENTED_CALL_FUNCTION_EX] = CALL_FUNCTION_EX,
     [INSTRUMENTED_YIELD_VALUE] = YIELD_VALUE,
 /*
     [INSTRUMENTED_JUMP_FORWARD] = JUMP_FORWARD,
@@ -55,18 +57,24 @@ call_instrument(
         }
         return call_multiple_instruments(interp, code, event, args, nargsf, instr);
     }
-    PyObject *instrument = interp->tools[sole_tool_plus1-1].instrument_callables[event];
+    int sole_tool = sole_tool_plus1-1;
+    if (tstate->monitoring & (1 << sole_tool)) {
+        return 0;
+    }
+    PyObject *instrument = interp->tools[sole_tool].instrument_callables[event];
     if (instrument == NULL) {
        return 0;
     }
+    tstate->monitoring |= (1 << sole_tool);
     PyObject *res = PyObject_Vectorcall(instrument, args, nargsf, NULL);
+    tstate->monitoring &= ~(1 << sole_tool);
     if (res == NULL) {
         return -1;
     }
     if (res == &DISABLE) {
         /* Remove this instrument */
         assert(DE_INSTRUMENT[_Py_OPCODE(*instr)] != 0);
-        _Py_SET_OPCODE(*instr, DE_INSTRUMENT[_Py_OPCODE(*instr)]);
+        *instr = _Py_MAKECODEUNIT(DE_INSTRUMENT[_Py_OPCODE(*instr)], _Py_OPARG(*instr));
     }
     Py_DECREF(res);
     return 0;
@@ -78,17 +86,12 @@ _Py_call_instrumentation(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
 {
-    if (tstate->tracing) {
-        return 0;
-    }
-    tstate->tracing++;
     PyCodeObject *code = frame->f_code;
     int instruction_offset = instr - _PyCode_CODE(code);
     PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
     PyObject *args[3] = { NULL, (PyObject *)code, instruction_offset_obj };
     int err = call_instrument(tstate, code, event, &args[1], 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
     Py_DECREF(instruction_offset_obj);
-    tstate->tracing--;
     return err;
 }
 
@@ -97,17 +100,12 @@ _Py_call_instrumentation_arg(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg)
 {
-    if (tstate->tracing) {
-        return 0;
-    }
-    tstate->tracing++;
     PyCodeObject *code = frame->f_code;
     int instruction_offset = instr - _PyCode_CODE(code);
     PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
     PyObject *args[4] = { NULL, (PyObject *)code, instruction_offset_obj, arg };
     int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
     Py_DECREF(instruction_offset_obj);
-    tstate->tracing--;
     return err;
 }
 
@@ -117,10 +115,6 @@ _Py_call_instrumentation_exc(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg)
 {
     assert(_PyErr_Occurred(tstate));
-    if (tstate->tracing) {
-        return;
-    }
-    tstate->tracing++;
     PyObject *type, *value, *traceback;
     _PyErr_Fetch(tstate, &type, &value, &traceback);
     PyCodeObject *code = frame->f_code;
@@ -139,7 +133,6 @@ _Py_call_instrumentation_exc(
     }
     assert(_PyErr_Occurred(tstate));
     Py_DECREF(instruction_offset_obj);
-    tstate->tracing--;
 }
 
 PyObject *
@@ -212,9 +205,22 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     }
     //printf("Instrumenting code object at %p, code version: %ld interpreter version %ld\n",
     //       code, code->_co_instrument_version, interp->monitoring_version);
-
+    /* Avoid instrumenting code that has been disabled.
+     * Only instrument new events
+     */
+    _PyMonitoringEventSet new_events = interp->monitored_events & ~code->_co_monitored_events;
+    _PyMonitoringEventSet removed_events = code->_co_monitored_events & ~interp->monitored_events;
+    if (interp->last_restart_version > code->_co_instrument_version) {
+        new_events = interp->monitored_events;
+        removed_events = 0;
+    }
+    code->_co_monitored_events = interp->monitored_events;
+    code->_co_instrument_version = interp->monitoring_version;
+    assert((new_events & removed_events) == 0);
+    if ((new_events | removed_events) == 0) {
+        return 0;
+    }
     /* Insert basic instrumentation */
-    int instrumented = 0;
     int code_len = (int)Py_SIZE(code);
     for (int i = 0; i < code_len; i++) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
@@ -227,15 +233,18 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
             continue;
         }
         _PyMonitoringEventSet events = EVENTS_FOR_OPCODE[opcode];
-        if (events & interp->monitored_events) {
-            instrumented++;
+        if (new_events & events) {
             assert(INSTRUMENTED_OPCODES[opcode] != 0);
             *instr = _Py_MAKECODEUNIT(INSTRUMENTED_OPCODES[opcode], _Py_OPARG(*instr));
         }
+        if (removed_events & events) {
+            *instr = _Py_MAKECODEUNIT(opcode, _Py_OPARG(*instr));
+            if (_PyOpcode_Caches[opcode]) {
+                instr[1] = adaptive_counter_warmup();
+            }
+        }
         i += _PyOpcode_Caches[opcode];
     }
-    //printf("Instrumented %d instructions\n", instrumented);
-    code->_co_instrument_version = interp->monitoring_version;
     return 0;
 }
 
@@ -321,7 +330,7 @@ static int
 check_valid_tool(int tool_id)
 {
     if (tool_id < 0 || tool_id >= PY_INSTRUMENT_SYS_PROFILE) {
-        PyErr_Format(PyExc_ValueError, "invalid tool ID: %d (must be between 0 and 5)", tool_id);
+        PyErr_Format(PyExc_ValueError, "invalid tool %d (must be between 0 and 5)", tool_id);
         return -1;
     }
     return 0;
@@ -351,7 +360,7 @@ monitoring_use_tool_impl(PyObject *module, int tool_id, PyObject *name)
     }
     PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->monitoring_tool_names[tool_id] != NULL) {
-        PyErr_SetString(PyExc_ValueError, "tool ID is already in use");
+        PyErr_Format(PyExc_ValueError, "tool %d is already in use", tool_id);
         return NULL;
     }
     interp->monitoring_tool_names[tool_id] = Py_NewRef(name);
@@ -429,7 +438,7 @@ monitoring_register_callback_impl(PyObject *module, int tool_id, int event,
     }
     int event_id = _Py_bit_length(event)-1;
     if (event_id < 0 || event_id >= PY_MONITORING_EVENTS) {
-        PyErr_Format(PyExc_ValueError, "invalid event: %d", event);
+        PyErr_Format(PyExc_ValueError, "invalid event %d", event);
         return NULL;
     }
     if (func == Py_None) {
@@ -454,8 +463,7 @@ static PyObject *
 monitoring_get_events_impl(PyObject *module, int tool_id)
 /*[clinic end generated code: output=d8b92576efaa12f9 input=49b77c12cc517025]*/
 {
-    if (tool_id < 0 || tool_id >= PY_INSTRUMENT_SYS_PROFILE) {
-        PyErr_SetString(PyExc_ValueError, "tool ID must be between 0 and 5");
+    if (check_valid_tool(tool_id))  {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_Get();
@@ -476,8 +484,7 @@ static PyObject *
 monitoring_set_events_impl(PyObject *module, int tool_id, int event_set)
 /*[clinic end generated code: output=1916c1e49cfb5bdb input=a77ba729a242142b]*/
 {
-    if (tool_id < 0 || tool_id >= PY_INSTRUMENT_SYS_PROFILE) {
-        PyErr_SetString(PyExc_ValueError, "tool ID must be between 0 and 5");
+    if (check_valid_tool(tool_id))  {
         return NULL;
     }
     if (event_set < 0 || event_set >= (1 << PY_MONITORING_EVENTS)) {
@@ -485,6 +492,25 @@ monitoring_set_events_impl(PyObject *module, int tool_id, int event_set)
         return NULL;
     }
     _PyMonitoring_SetEvents(tool_id, event_set);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+monitoring.restart_events
+
+[clinic start generated code]*/
+
+static PyObject *
+monitoring_restart_events_impl(PyObject *module)
+/*[clinic end generated code: output=e025dd5ba33314c4 input=add8a855063c8008]*/
+{
+    /* We want to ensure that:
+     * last restart version < current version
+     * last restart version > instrumented version for all code objects
+     */
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    interp->last_restart_version = interp->monitoring_version + 1;
+    interp->monitoring_version += 2;
     Py_RETURN_NONE;
 }
 
@@ -496,6 +522,7 @@ static PyMethodDef methods[] = {
     MONITORING_REGISTER_CALLBACK_METHODDEF
     MONITORING_GET_EVENTS_METHODDEF
     MONITORING_SET_EVENTS_METHODDEF
+    MONITORING_RESTART_EVENTS_METHODDEF
     {NULL, NULL}  // sentinel
 };
 

@@ -99,6 +99,7 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     uint64_t _co_instrument_version; /* current instrumentation version */     \
+    uint32_t _co_monitored_events;   /* current instrumentation */             \
     char *_co_linearray;          /* array of line offsets */                  \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
