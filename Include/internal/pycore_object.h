@@ -355,8 +355,9 @@ extern int _PyType_HasSubclasses(PyTypeObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
 // Access macro to the members which are floating "behind" the object
-#define _PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)(etype)) + Py_TYPE(etype)->tp_basicsize))
+static inline PyMemberDef* _PyHeapType_GET_MEMBERS(PyHeapTypeObject *etype) {
+    return (PyMemberDef*)((char*)etype + Py_TYPE(etype)->tp_basicsize);
+}
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
