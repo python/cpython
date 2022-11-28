@@ -1160,19 +1160,15 @@ class _SelectorSocketTransport(_SelectorTransport):
         if not self._buffer:
             self._sock.shutdown(socket.SHUT_WR)
 
-    if _HAS_SENDMSG:
-        # Use faster implementation with sendmsg() if available otherwise fallback
-        # to the default implementation of writelines in WriteTransport
-        def writelines(self, list_of_data):
-            if self._eof:
-                raise RuntimeError('Cannot call writelines() after write_eof()')
-            if self._empty_waiter is not None:
-                raise RuntimeError('unable to writelines; sendfile is in progress')
-            if not list_of_data:
-                return
-            self._buffer.extend([memoryview(i) for i in list_of_data])
-            self._write_sendmsg()
-
+    def writelines(self, list_of_data):
+        if self._eof:
+            raise RuntimeError('Cannot call writelines() after write_eof()')
+        if self._empty_waiter is not None:
+            raise RuntimeError('unable to writelines; sendfile is in progress')
+        if not list_of_data:
+            return
+        self._buffer.extend([memoryview(i) for i in list_of_data])
+        self._write_ready()
 
     def can_write_eof(self):
         return True
