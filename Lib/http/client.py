@@ -578,11 +578,7 @@ class HTTPResponse(io.BufferedIOBase):
         assert self.chunked != _UNKNOWN
         value = []
         try:
-            while True:
-                chunk_left = self._get_chunk_left()
-                if chunk_left is None:
-                    break
-
+            while (chunk_left := self._get_chunk_left()) is not None:
                 if amt is not None and amt <= chunk_left:
                     value.append(self._safe_read(amt))
                     self.chunk_left = chunk_left - amt
@@ -998,10 +994,7 @@ class HTTPConnection:
             encode = self._is_textIO(data)
             if encode and self.debuglevel > 0:
                 print("encoding file using iso-8859-1")
-            while 1:
-                datablock = data.read(self.blocksize)
-                if not datablock:
-                    break
+            while datablock := data.read(self.blocksize):
                 if encode:
                     datablock = datablock.encode("iso-8859-1")
                 sys.audit("http.client.send", self, datablock)
@@ -1031,10 +1024,7 @@ class HTTPConnection:
         encode = self._is_textIO(readable)
         if encode and self.debuglevel > 0:
             print("encoding file using iso-8859-1")
-        while True:
-            datablock = readable.read(self.blocksize)
-            if not datablock:
-                break
+        while datablock := readable.read(self.blocksize):
             if encode:
                 datablock = datablock.encode("iso-8859-1")
             yield datablock
