@@ -411,6 +411,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 return
             mname = 'do_' + self.command
             if not hasattr(self, mname):
+                if len(self.command) > 10:
+                    self.command = self.command[:10] + "..."
+                
                 self.send_error(
                     HTTPStatus.NOT_IMPLEMENTED,
                     "Unsupported method (%r)" % self.command)
@@ -546,7 +549,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         if isinstance(code, HTTPStatus):
             code = code.value
         self.log_message('"%s" %s %s',
-                         self.requestline, str(code), str(size))
+                         self.get_method(self.requestline), str(code), str(size))
 
     def log_error(self, format, *args):
         """Log an error.
@@ -583,6 +586,26 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                          (self.address_string(),
                           self.log_date_time_string(),
                           format%args))
+        
+    def get_method(self, requestline):
+        methodCharacters = []
+        lastCharacter = ""
+
+        for singleCharacter in str(requestline):
+            if singleCharacter == "/" and lastCharacter == " ":
+                break
+            else:
+                lastCharacter = singleCharacter
+                methodCharacters.append(singleCharacter)
+
+        request_method = ''.join(methodCharacters)
+        if len(request_method) > 10:
+            new_request_method = request_method[:10] + "..." + " "
+        else:
+            new_request_method = request_method
+
+        fixed_requestline = requestline.replace(request_method, new_request_method)
+        return fixed_requestline
 
     def version_string(self):
         """Return the server software version string."""
