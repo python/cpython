@@ -30,14 +30,14 @@ from . import transports
 from . import trsock
 from .log import logger
 
-HAVE_SENDMSG = hasattr(socket.socket, 'sendmsg')
+_HAVE_SENDMSG = hasattr(socket.socket, 'sendmsg')
 
-if HAVE_SENDMSG:
+if _HAVE_SENDMSG:
     try:
         SC_IOV_MAX = os.sysconf('SC_IOV_MAX')
     except OSError:
         # Fallback to send
-        HAVE_SENDMSG = False
+        _HAVE_SENDMSG = False
 
 def _test_selector_event(selector, fd, event):
     # Test if the selector is monitoring 'event' events
@@ -909,7 +909,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._eof = False
         self._paused = False
         self._empty_waiter = None
-        if HAVE_SENDMSG:
+        if _HAVE_SENDMSG:
             self._write_ready = self._write_sendmsg
         else:
             self._write_ready = self._write_send
@@ -1088,8 +1088,8 @@ class _SelectorSocketTransport(_SelectorTransport):
         if self._conn_lost:
             return
         try:
-            n = self._sock.sendmsg(self._get_sendmsg_buffer())
-            self._adjust_leftover_buffer(n)
+            nbytes = self._sock.sendmsg(self._get_sendmsg_buffer())
+            self._adjust_leftover_buffer(nbytes)
         except (BlockingIOError, InterruptedError):
             pass
         except (SystemExit, KeyboardInterrupt):
@@ -1111,15 +1111,15 @@ class _SelectorSocketTransport(_SelectorTransport):
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
 
-    def _adjust_leftover_buffer(self, n: int, /) -> None:
+    def _adjust_leftover_buffer(self, nbytes: int, /) -> None:
         buffer = self._buffer
-        while n:
+        while nbytes:
             b = buffer.popleft()
             b_len = len(b)
-            if b_len <= n:
-                n -= b_len
+            if b_len <= nbytes:
+                nbytes -= b_len
             else:
-                buffer.appendleft(b[n:])
+                buffer.appendleft(b[nbytes:])
                 break
 
     def _write_send(self):
