@@ -4510,7 +4510,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Wait for the completion of a child process.
 
-   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or, on Linux, :data:`P_PIDFD`.
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or (on Linux) :data:`P_PIDFD`.
    The interpretation of *id* depends on it; see their individual descriptions.
 
    *options* is an OR combination of flags.  At least one of :data:`WEXITED`,
@@ -4524,7 +4524,7 @@ written in Python, such as a mail server's external command delivery program.
    * :attr:`!si_uid` (real user ID of the child)
    * :attr:`!si_signo` (always :data:`~signal.SIGCHLD`)
    * :attr:`!si_status` (the exit status or signal number, depending on :attr:`!si_code`)
-   * :attr:`si_code` (see :data:`CLD_EXITED` for possible values)
+   * :attr:`!si_code` (see :data:`CLD_EXITED` for possible values)
 
    If :data:`WNOHANG` is specified and there are no matching children in the
    requested state, ``None`` is returned.
