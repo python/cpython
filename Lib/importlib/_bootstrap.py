@@ -92,7 +92,7 @@ class _DeadlockError(RuntimeError):
 
 
 
-def _has_deadlock(seen, subject, tids, _blocking_on):
+def _has_deadlocked(subject, seen, tids, _blocking_on):
     """Check if 'subject' is holding the same lock as another thread(s).
 
     The search within _blocking_on starts with the threads listed in tids.
@@ -128,7 +128,7 @@ def _has_deadlock(seen, subject, tids, _blocking_on):
 
         # Follow the edges out from this thread.
         edges = [lock.owner for lock in blocking_on]
-        if _has_deadlock(seen, subject, edges, _blocking_on):
+        if _has_deadlocked(subject, seen, edges, _blocking_on):
             return True
 
     return False
@@ -201,10 +201,10 @@ class _ModuleLock:
         # look at the "blocking on" state to see if any threads are blocking
         # on getting the import lock for any module for which the import lock
         # is held by this thread.
-        return _has_deadlock(
-            seen=set(),
+        return _has_deadlocked(
             # Try to find this thread
             subject=_thread.get_ident(),
+            seen=set(),
             # starting from the thread that holds the import lock for this
             # module.
             tids=[self.owner],
