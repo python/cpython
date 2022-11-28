@@ -1,1 +1,0 @@
-remove libnet dependency from detect_socket() for VxWorks

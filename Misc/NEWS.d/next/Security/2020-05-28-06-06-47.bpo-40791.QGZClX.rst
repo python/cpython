@@ -1,1 +1,0 @@
-Add ``volatile`` to the accumulator variable in ``hmac.compare_digest``, making constant-time-defeating optimizations less likely.

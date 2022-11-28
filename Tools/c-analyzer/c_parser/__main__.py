@@ -149,7 +149,7 @@ def add_output_cli(parser):
     parser.add_argument('--showfwd', action='store_true', default=None)
     parser.add_argument('--no-showfwd', dest='showfwd', action='store_false', default=None)
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         pass
     return process_args
 
@@ -243,6 +243,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0], *, subset='parse'):
 
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors[cmd],
         ['verbosity', 'traceback_cm'],
     )

@@ -18,8 +18,9 @@ import sys
 from tempfile import TemporaryFile
 
 from test.support import os_helper
-from test.support import TESTFN, requires_zlib
+from test.support import requires_zlib
 
+TESTFN = os_helper.TESTFN
 TESTFN2 = TESTFN + "2"
 
 # How much time in seconds can pass before we print a 'Still working' message.
@@ -30,10 +31,6 @@ class TestsWithSourceFile(unittest.TestCase):
         # Create test data.
         line_gen = ("Test of zipfile line %d." % i for i in range(1000000))
         self.data = '\n'.join(line_gen).encode('ascii')
-
-        # And write it to a file.
-        with open(TESTFN, "wb") as fp:
-            fp.write(self.data)
 
     def zipTest(self, f, compression):
         # Create the ZIP archive.
@@ -66,6 +63,9 @@ class TestsWithSourceFile(unittest.TestCase):
                     (num, filecount)), file=sys.__stdout__)
                     sys.__stdout__.flush()
 
+            # Check that testzip thinks the archive is valid
+            self.assertIsNone(zipfp.testzip())
+
     def testStored(self):
         # Try the temp file first.  If we do TESTFN2 first, then it hogs
         # gigabytes of disk space for the duration of the test.
@@ -84,9 +84,7 @@ class TestsWithSourceFile(unittest.TestCase):
         self.zipTest(TESTFN2, zipfile.ZIP_DEFLATED)
 
     def tearDown(self):
-        for fname in TESTFN, TESTFN2:
-            if os.path.exists(fname):
-                os.remove(fname)
+        os_helper.unlink(TESTFN2)
 
 
 class OtherTests(unittest.TestCase):
