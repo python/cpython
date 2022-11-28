@@ -1,6 +1,25 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
+// gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
+// defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
+// the static_assert() macro. Define the static_assert() macro in Python until
+// <sys/cdefs.h> suports C11:
+// https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
+#if defined(__FreeBSD__) && !defined(static_assert)
+#  define static_assert _Static_assert
+#endif
+
+// static_assert is defined in glibc from version 2.16. Before it requires
+// compiler support (gcc >= 4.6) and is called _Static_assert.
+// In C++ 11 static_assert is a keyword, redefining is undefined behaviour.
+#if (defined(__GLIBC__) \
+     && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 16)) \
+     && !(defined(__cplusplus) && __cplusplus >= 201103L) \
+     && !defined(static_assert))
+#  define static_assert _Static_assert
+#endif
+
 /* Minimum value between x and y */
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 
@@ -89,12 +108,53 @@
 /* Check if pointer "p" is aligned to "a"-bytes boundary. */
 #define _Py_IS_ALIGNED(p, a) (!((uintptr_t)(p) & (uintptr_t)((a) - 1)))
 
-#ifdef __GNUC__
-#define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
+/* Use this for unused arguments in a function definition to silence compiler
+ * warnings. Example:
+ *
+ * int func(int a, int Py_UNUSED(b)) { return a; }
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#  define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
 #else
-#define Py_UNUSED(name) _unused_ ## name
+#  define Py_UNUSED(name) _unused_ ## name
 #endif
 
-#define Py_UNREACHABLE() abort()
+#if defined(RANDALL_WAS_HERE)
+#  define Py_UNREACHABLE() \
+    Py_FatalError( \
+        "If you're seeing this, the code is in what I thought was\n" \
+        "an unreachable state.\n\n" \
+        "I could give you advice for what to do, but honestly, why\n" \
+        "should you trust me?  I clearly screwed this up.  I'm writing\n" \
+        "a message that should never appear, yet I know it will\n" \
+        "probably appear someday.\n\n" \
+        "On a deep level, I know I'm not up to this task.\n" \
+        "I'm so sorry.\n" \
+        "https://xkcd.com/2200")
+#elif defined(Py_DEBUG)
+#  define Py_UNREACHABLE() \
+    Py_FatalError( \
+        "We've reached an unreachable state. Anything is possible.\n" \
+        "The limits were in our heads all along. Follow your dreams.\n" \
+        "https://xkcd.com/2200")
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#  define Py_UNREACHABLE() __builtin_unreachable()
+#elif defined(__clang__) || defined(__INTEL_COMPILER)
+#  define Py_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define Py_UNREACHABLE() __assume(0)
+#else
+#  define Py_UNREACHABLE() \
+    Py_FatalError("Unreachable C code path reached")
+#endif
+
+// Prevent using an expression as a l-value.
+// For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
+#define _Py_RVALUE(EXPR) ((void)0, (EXPR))
+
+// Return non-zero if the type is signed, return zero if it's unsigned.
+// Use "<= 0" rather than "< 0" to prevent the compiler warning:
+// "comparison of unsigned expression in '< 0' is always false".
+#define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
 #endif /* Py_PYMACRO_H */

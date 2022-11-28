@@ -1,2 +1,0 @@
-Fixed activate.bat to correctly update codepage when chcp.com returns dots in output.
-Patch by Lorenz Mende.

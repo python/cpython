@@ -1,3 +1,0 @@
-enum_certificates function of the ssl module now returns certificates from all available certificate stores inside windows in a query instead of returning only certificates from the system wide certificate store.
-This includes certificates from these certificate stores: local machine, local machine enterprise, local machine group policy, current user, current user group policy, services, users. 
-ssl.enum_crls() function is changed in the same way to return all certificate revocation lists inside the windows certificate revocation list stores.

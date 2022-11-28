@@ -1,3 +1,0 @@
-The :func:`~inspect.getfullargspec` function in the :mod:`inspect` module is
-deprecated in favor of the :func:`inspect.signature` API. Contributed by
-Pablo Galindo.

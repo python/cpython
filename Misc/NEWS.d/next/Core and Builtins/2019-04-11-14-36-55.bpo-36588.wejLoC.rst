@@ -1,5 +1,0 @@
-On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
-Always return ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
-older Python versions include the version number, it is recommended to
-always use ``sys.platform.startswith('aix')``.
-Contributed by M. Felt.

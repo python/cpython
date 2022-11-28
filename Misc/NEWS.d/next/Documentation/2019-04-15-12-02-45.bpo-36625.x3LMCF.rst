@@ -1,1 +1,0 @@
-Remove obsolete comments from docstrings in fractions.Fraction

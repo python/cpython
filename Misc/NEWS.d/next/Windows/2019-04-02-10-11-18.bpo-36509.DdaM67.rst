@@ -1,4 +1,0 @@
-Added preset-iot layout for Windows IoT ARM containers. This layout doesn't
-contain UI components like tkinter or IDLE. It also doesn't contain files to
-support on-target builds since Windows ARM32 builds must be cross-compiled
-when using MSVC.

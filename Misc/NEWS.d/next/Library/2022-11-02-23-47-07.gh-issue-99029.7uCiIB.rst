@@ -1,0 +1,2 @@
+:meth:`pathlib.PurePath.relative_to()` now treats naked Windows drive paths
+as relative. This brings its behaviour in line with other parts of pathlib.

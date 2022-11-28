@@ -1,1 +1,0 @@
-If *debuglevel* is set to >0 in :mod:`http.client`, print all values for headers with multiple values for the same header name. Patch by Matt Houglum.

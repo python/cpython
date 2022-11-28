@@ -1,2 +1,0 @@
-Optimized ``http.client.HTTPResponse.read()`` for large response. Patch by
-Inada Naoki.

@@ -15,10 +15,13 @@
 */
 
 /* SHA1 objects */
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 #include "hashlib.h"
-#include "pystrhex.h"
+#include "pycore_strhex.h"        // _Py_strhex()
 
 /*[clinic input]
 module _sha1
@@ -74,7 +77,7 @@ typedef struct {
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, https://www.libtom.net
  */
 
 /* rotate the hard way (platform optimizations could be done) */
@@ -269,7 +272,7 @@ sha1_done(struct sha1_state *sha1, unsigned char *out)
         sha1->curlen = 0;
     }
 
-    /* pad upto 56 bytes of zeroes */
+    /* pad up to 56 bytes of zeroes */
     while (sha1->curlen < 56) {
         sha1->buf[sha1->curlen++] = (unsigned char)0;
     }
@@ -295,22 +298,42 @@ sha1_done(struct sha1_state *sha1, unsigned char *out)
  * ------------------------------------------------------------------------
  */
 
-static PyTypeObject SHA1type;
+typedef struct {
+    PyTypeObject* sha1_type;
+} SHA1State;
 
+static inline SHA1State*
+sha1_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (SHA1State *)state;
+}
 
 static SHA1object *
-newSHA1object(void)
+newSHA1object(SHA1State *st)
 {
-    return (SHA1object *)PyObject_New(SHA1object, &SHA1type);
+    SHA1object *sha = (SHA1object *)PyObject_GC_New(SHA1object, st->sha1_type);
+    PyObject_GC_Track(sha);
+    return sha;
 }
 
 
 /* Internal methods for a hash object */
+static int
+SHA1_traverse(PyObject *ptr, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(ptr));
+    return 0;
+}
 
 static void
 SHA1_dealloc(PyObject *ptr)
 {
-    PyObject_Del(ptr);
+    PyTypeObject *tp = Py_TYPE(ptr);
+    PyObject_GC_UnTrack(ptr);
+    PyObject_GC_Del(ptr);
+    Py_DECREF(tp);
 }
 
 
@@ -319,16 +342,19 @@ SHA1_dealloc(PyObject *ptr)
 /*[clinic input]
 SHA1Type.copy
 
+    cls: defining_class
+
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-SHA1Type_copy_impl(SHA1object *self)
-/*[clinic end generated code: output=b4e001264620f02a input=b7eae10df6f89b36]*/
+SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
+/*[clinic end generated code: output=b32d4461ce8bc7a7 input=6c22e66fcc34c58e]*/
 {
-    SHA1object *newobj;
+    SHA1State *st = PyType_GetModuleState(cls);
 
-    if ((newobj = newSHA1object()) == NULL)
+    SHA1object *newobj;
+    if ((newobj = newSHA1object(st)) == NULL)
         return NULL;
 
     newobj->hash_state = self->hash_state;
@@ -422,7 +448,6 @@ sha1_get_digest_size(PyObject *self, void *closure)
     return PyLong_FromLong(SHA1_DIGESTSIZE);
 }
 
-
 static PyGetSetDef SHA1_getseters[] = {
     {"block_size",
      (getter)SHA1_get_block_size, NULL,
@@ -439,40 +464,21 @@ static PyGetSetDef SHA1_getseters[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject SHA1type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha1.sha1",               /*tp_name*/
-    sizeof(SHA1object), /*tp_basicsize*/
-    0,                  /*tp_itemsize*/
-    /* methods */
-    SHA1_dealloc,       /*tp_dealloc*/
-    0,                  /*tp_print*/
-    0,                  /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
-    0,                  /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash*/
-    0,                  /*tp_call*/
-    0,                  /*tp_str*/
-    0,                  /*tp_getattro*/
-    0,                  /*tp_setattro*/
-    0,                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT, /*tp_flags*/
-    0,                  /*tp_doc*/
-    0,                  /*tp_traverse*/
-    0,                  /*tp_clear*/
-    0,                  /*tp_richcompare*/
-    0,                  /*tp_weaklistoffset*/
-    0,                  /*tp_iter*/
-    0,                  /*tp_iternext*/
-    SHA1_methods,       /* tp_methods */
-    NULL,               /* tp_members */
-    SHA1_getseters,      /* tp_getset */
+static PyType_Slot sha1_type_slots[] = {
+    {Py_tp_dealloc, SHA1_dealloc},
+    {Py_tp_methods, SHA1_methods},
+    {Py_tp_getset, SHA1_getseters},
+    {Py_tp_traverse, SHA1_traverse},
+    {0,0}
 };
 
+static PyType_Spec sha1_type_spec = {
+    .name = "_sha1.sha1",
+    .basicsize =  sizeof(SHA1object),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
+    .slots = sha1_type_slots
+};
 
 /* The single module-level function: new() */
 
@@ -480,13 +486,15 @@ static PyTypeObject SHA1type = {
 _sha1.sha1
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA1 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha1_sha1_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=e5982830d1dece51 input=27ea54281d995ec2]*/
+_sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=6f8b3af05126e18e input=bd54b68e2bf36a8a]*/
 {
     SHA1object *new;
     Py_buffer buf;
@@ -494,7 +502,8 @@ _sha1_sha1_impl(PyObject *module, PyObject *string)
     if (string)
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
 
-    if ((new = newSHA1object()) == NULL) {
+    SHA1State *st = sha1_get_state(module);
+    if ((new = newSHA1object(st)) == NULL) {
         if (string)
             PyBuffer_Release(&buf);
         return NULL;
@@ -524,38 +533,72 @@ static struct PyMethodDef SHA1_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
+static int
+_sha1_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    SHA1State *state = sha1_get_state(module);
+    Py_VISIT(state->sha1_type);
+    return 0;
+}
+
+static int
+_sha1_clear(PyObject *module)
+{
+    SHA1State *state = sha1_get_state(module);
+    Py_CLEAR(state->sha1_type);
+    return 0;
+}
+
+static void
+_sha1_free(void *module)
+{
+    _sha1_clear((PyObject *)module);
+}
+
+static int
+_sha1_exec(PyObject *module)
+{
+    SHA1State* st = sha1_get_state(module);
+
+    st->sha1_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &sha1_type_spec, NULL);
+
+    if (st->sha1_type == NULL) {
+        return -1;
+    }
+
+    Py_INCREF(st->sha1_type);
+    if (PyModule_AddObject(module,
+                           "SHA1Type",
+                           (PyObject *)st->sha1_type) < 0) {
+        Py_DECREF(st->sha1_type);
+        return -1;
+    }
+
+    return 0;
+}
+
 
 /* Initialize this module. */
 
-#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
-
+static PyModuleDef_Slot _sha1_slots[] = {
+    {Py_mod_exec, _sha1_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef _sha1module = {
         PyModuleDef_HEAD_INIT,
-        "_sha1",
-        NULL,
-        -1,
-        SHA1_functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        .m_name = "_sha1",
+        .m_size = sizeof(SHA1State),
+        .m_methods = SHA1_functions,
+        .m_slots = _sha1_slots,
+        .m_traverse = _sha1_traverse,
+        .m_clear = _sha1_clear,
+        .m_free = _sha1_free
 };
 
 PyMODINIT_FUNC
 PyInit__sha1(void)
 {
-    PyObject *m;
-
-    Py_TYPE(&SHA1type) = &PyType_Type;
-    if (PyType_Ready(&SHA1type) < 0)
-        return NULL;
-
-    m = PyModule_Create(&_sha1module);
-    if (m == NULL)
-        return NULL;
-
-    Py_INCREF((PyObject *)&SHA1type);
-    PyModule_AddObject(m, "SHA1Type", (PyObject *)&SHA1type);
-    return m;
+    return PyModuleDef_Init(&_sha1module);
 }

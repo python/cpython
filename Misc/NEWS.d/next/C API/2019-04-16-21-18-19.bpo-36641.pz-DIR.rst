@@ -1,2 +1,0 @@
-:c:macro:`PyDoc_VAR(name)` and :c:macro:`PyDoc_STRVAR(name,str)` now create
-``static const char name[]`` instead of ``static char name[]``.  Patch by Inada Naoki.

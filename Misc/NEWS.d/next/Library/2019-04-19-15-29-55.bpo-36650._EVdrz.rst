@@ -1,4 +1,0 @@
-The C version of functools.lru_cache() was treating calls with an empty
-``**kwargs`` dictionary as being distinct from calls with no keywords at all.
-This did not result in an incorrect answer, but it did trigger an unexpected
-cache miss.

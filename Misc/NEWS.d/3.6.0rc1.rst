@@ -48,7 +48,7 @@ they still are deprecated and will be disabled in 3.7.
 .. section: Library
 
 Fix a regression introduced in warnings.catch_warnings(): call
-warnings.showwarning() if it was overriden inside the context manager.
+warnings.showwarning() if it was overridden inside the context manager.
 
 ..
 
