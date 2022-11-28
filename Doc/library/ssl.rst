@@ -1328,6 +1328,39 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.3
 
+.. method:: SSLSocket.export_keying_material(label, material_len, context=None)
+
+   Returns a bytes object with keying material as defined by
+   :rfc:`5705` and :rfc:`8446` or None if no keying material is
+   available, i.e. before the SSL handshake or after the SSL
+   connection is closed.
+
+   The appliction specific *label* should contain a value from the the
+   IANA Exporter Label Registry
+   (https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#exporter-labels).
+   Labels beginning with "EXPERIMENTAL" can be used without
+   registration.  *material_len* specifies how many bytes of keying
+   material should be returned.  The optional appliction specific
+   *context* can be used to get multiple distinct keying materials
+   from the same application specific label; None means that no
+   context will be used.
+
+   :exc:`ValueError` will be raised if an unsupported channel binding
+   type is requested.
+
+   In TLSv1.2 passing no context (None) will return different keying
+   material than a zero length context.  In TLSv1.3 not context will
+   return the same keying material as a zero length context.
+
+   If label or context is a string only ASCII is allowed.  Convert the
+   string to a bytes object using an explicit encoding if you want to
+   use non-ASCII data.
+
+   This method is a wrapper around the SSL_export_keying_material
+   function; refer to the OpenSSLfor documentation for more details.
+
+   .. versionadded:: 3.11
+
 .. method:: SSLSocket.get_channel_binding(cb_type="tls-unique")
 
    Get channel binding data for current connection, as a bytes object.  Returns
@@ -2764,6 +2797,9 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
    :rfc:`RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <5246>`
        T. Dierks et. al.
 
+   :rfc:`RFC 5705: Keying Material Exporters for Transport Layer Security (TLS) <5705>`
+       IETF, E. Rescorla
+
    :rfc:`RFC 6066: Transport Layer Security (TLS) Extensions <6066>`
        D. Eastlake
 
@@ -2772,6 +2808,9 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
 
    :rfc:`RFC 7525: Recommendations for Secure Use of Transport Layer Security (TLS) and Datagram Transport Layer Security (DTLS) <7525>`
        IETF
+
+   :rfc:`RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3 <8446>`
+       IETF, E. Rescorla
 
    `Mozilla's Server Side TLS recommendations <https://wiki.mozilla.org/Security/Server_Side_TLS>`_
        Mozilla

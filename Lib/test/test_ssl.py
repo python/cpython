@@ -4452,6 +4452,65 @@ class ThreadedTests(unittest.TestCase):
                 self.assertEqual(str(e.exception),
                                  'Session refers to a different SSLContext.')
 
+    def export_keying_material_test(self, tls_version):
+        client_context, server_context, hostname = testing_context()
+        client_context.minimum_version = tls_version
+        client_context.maximum_version = tls_version
+        server_context.minimum_version = tls_version
+        server_context.maximum_version = tls_version
+
+        with ThreadedEchoServer(context=server_context,
+                                chatty=False) as server:
+            with client_context.wrap_socket(socket.socket(),
+                                            do_handshake_on_connect=False,
+                                            server_hostname=hostname) as s:
+                # can not be used before the connection is open
+                with self.assertRaises(OSError) as cm:
+                    s.export_keying_material('foo', 1)
+                self.assertEqual(cm.exception.errno, errno.ENOTCONN)
+                s.connect((HOST, server.port))
+                # should return None before the handshake is finished
+                t = s.export_keying_material('foo', 1)
+                self.assertEqual(t, None)
+                s.do_handshake()
+                # material_len must be positive
+                with self.assertRaises(ValueError) as cm:
+                    s.export_keying_material('foo', 0)
+                with self.assertRaises(ValueError) as cm:
+                    s.export_keying_material('foo', -1)
+                with self.assertRaises(ValueError) as cm:
+                    s.export_keying_material('foo', -13)
+                # Strings containing non-ASCII labels are not allowed
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    s.export_keying_material('\u0394', 1)
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    s.export_keying_material('foo', 1, '\u0394')
+                for args in [
+                        ( 'foo', 32 ),
+                        ( 'foo', 32, None ),
+                        ( 'foo', 32, '' ),
+                        ( 'foo', 32, 'bar' ),
+                        ( b'foo', 32, b'bar' ),
+                        ( b'foo', 32, b'bar' ),
+                        ( b'foo', 1, b'bar' ),
+                        ( b'foo', 128, b'bar' ),
+                        ( b'\x00\x01\0x2\x03\x80\xa1\xc2\xe3', 128,
+                          b'\x80\xa1\xc2\xe3\x00\x01\0x2\x03' ),
+                        ]:
+                    t = s.export_keying_material(*args)
+                    self.assertEqual(len(t), args[1])
+                s.close()
+                # should return None after the socket has been closed
+                t = s.export_keying_material('foo', 1)
+                self.assertEqual(t, None)
+
+    @requires_tls_version('TLSv1_2')
+    def test_export_keying_material_tlsv1_2(self):
+        self.export_keying_material_test(ssl.TLSVersion.TLSv1_2)
+
+    @requires_tls_version('TLSv1_3')
+    def test_export_keying_material_tlsv1_3(self):
+        self.export_keying_material_test(ssl.TLSVersion.TLSv1_3)
 
 @unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
 class TestPostHandshakeAuth(unittest.TestCase):

@@ -399,6 +399,49 @@ _ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNU
     return _ssl__SSLSocket_verify_client_post_handshake_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_export_keying_material__doc__,
+"export_keying_material($self, /, label, material_len, context)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_EXPORT_KEYING_MATERIAL_METHODDEF    \
+    {"export_keying_material", _PyCFunction_CAST(_ssl__SSLSocket_export_keying_material), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLSocket_export_keying_material__doc__},
+
+static PyObject *
+_ssl__SSLSocket_export_keying_material_impl(PySSLSocket *self,
+                                            Py_buffer *label,
+                                            int material_len,
+                                            Py_buffer *context);
+
+static PyObject *
+_ssl__SSLSocket_export_keying_material(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"label", "material_len", "context", NULL};
+    static _PyArg_Parser _parser = {"s*iz*:export_keying_material", _keywords, 0};
+    Py_buffer label = {NULL, NULL};
+    int material_len;
+    Py_buffer context = {NULL, NULL};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &label, &material_len, &context)) {
+        goto exit;
+    }
+    return_value = _ssl__SSLSocket_export_keying_material_impl(self, &label, material_len, &context);
+
+exit:
+    /* Cleanup for label */
+    if (label.obj) {
+       PyBuffer_Release(&label);
+    }
+    /* Cleanup for context */
+    if (context.obj) {
+       PyBuffer_Release(&context);
+    }
+
+    return return_value;
+}
+
 static PyObject *
 _ssl__SSLContext_impl(PyTypeObject *type, int proto_version);
 
@@ -1361,4 +1404,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=2a488dd0cbc777df input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9c345417cf263cf8 input=a9049054013a1b77]*/
