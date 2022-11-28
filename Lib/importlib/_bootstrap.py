@@ -115,8 +115,8 @@ def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
 
     # Otherwise, try to reach the target_id from each of the given candidate_ids.
     for tid in candidate_ids:
-        blocking_on = blocking_on.get(tid)
-        if not blocking_on:
+        candidate_blocking_on = blocking_on.get(tid)
+        if not candidate_blocking_on:
             # There are no edges out from this node, skip it.
             continue
 
@@ -129,7 +129,7 @@ def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
         seen_ids.add(tid)
 
         # Follow the edges out from this thread.
-        edges = [lock.owner for lock in blocking_on]
+        edges = [lock.owner for lock in candidate_blocking_on]
         if _has_deadlocked(target_id, seen_ids, edges, blocking_on):
             return True
 
