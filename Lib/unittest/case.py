@@ -81,10 +81,45 @@ class _Outcome(object):
             self.success = self.success and old_success
 
 class _AutoDelRunner(object):
+    next = None
+
     def __init__(self, func):
         self.func = func
+
+    def __call__(self):
+        if self.func:
+            try: self.func()
+            except:
+                print("Exception ignored in:", self.func, file=sys.stderr)
+                traceback.print_exc()
+            self.func = None
+        if self.next:
+            self.next()
+
+    def suppress(self):
+        """
+        Suppress (automatic) execution
+        """
+        self.func = None
+        if self.next:
+            self.next.suppress()
+
     def __del__(self):
-        self.func()
+        self()
+
+def _attach_pm_teardown(pm_teardown, exc, result=None):
+    new = _AutoDelRunner(pm_teardown)
+    new.result = result  # expose partial result post-mortem
+    a = getattr(exc, 'pm_teardown', None)
+    if a is None:
+        exc.pm_teardown = new
+        return new
+    else:
+        while a.next:
+            a = a.next
+        a.next = new
+        # only the top error handler frame and exception need to hold a ref
+        return None
 
 def _load_debugger(name):
     if name == 'pdb':
@@ -704,7 +739,7 @@ class TestCase(object):
                     else:
                         result.addSuccess(self)
                 return result
-            except:
+            except BaseException as e:
                 def pm_teardown_case():
                     try:
                         if 't' in pm_state:
@@ -712,8 +747,8 @@ class TestCase(object):
                     finally:
                         # doCleanups() pops from a LIFO and may continue upon break
                         self.doCleanups()
-                # delayed post-mortem teardown when frame is finally recycled
-                auto_pm_teardown = _AutoDelRunner(pm_teardown_case)  # noqa
+                # delayed post-mortem teardown
+                auto_pm_teardown = _attach_pm_teardown(pm_teardown_case, e, result)  # noqa
                 raise
             finally:
                 # explicitly break reference cycle:

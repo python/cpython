@@ -139,7 +139,7 @@ class TestSuite(BaseTestSuite):
                 result._pm_state = ''
                 self._handleModuleTearDown(result)
                 result._testRunEntered = False
-        except:
+        except BaseException as e:
             def pm_teardown():
                 if topLevel:
                     result._debug = None
@@ -157,8 +157,8 @@ class TestSuite(BaseTestSuite):
                     case.doModuleCleanups()  # LIFO
                     result._pm_state = ''
                     result._testRunEntered = False
-            # delayed post-mortem teardown when frame is finally recycled
-            auto_pm_teardown = case._AutoDelRunner(pm_teardown)  # noqa
+            # delayed post-mortem teardown
+            auto_pm_teardown = case._attach_pm_teardown(pm_teardown, e, result)  # noqa
             raise
 
         return result

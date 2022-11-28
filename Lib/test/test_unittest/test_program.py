@@ -1,6 +1,7 @@
 import os
 import sys
 import io
+import traceback
 import gc
 import subprocess
 from test import support
@@ -212,7 +213,9 @@ class Test_TestProgram(unittest.TestCase):
             assert self.TestRaise.td_log == ''  # still set up!
         else:
             self.fail("TestRaise not raised")
-        # test delayed teardown
+        # test delayed automatic teardown after leaving outer exception
+        # handling. Note, the explicit e.pm_teardown() variant is tested below
+        # in test_inline_debugging().
         if not hasattr(sys, 'getrefcount'):
             # PyPy etc.
             gc.collect()
@@ -260,8 +263,16 @@ class Test_TestProgram(unittest.TestCase):
             assert e.__context__.__class__ == self.TestRaise.Error
             assert self.TestRaise.td_log == ''  # still set up!
             assert out.getvalue().endswith('-> raise self.Error\n(Pdb) q\n'), 'out:' + out.getvalue()
+            # test explicit pm teardown variant.
+            e.pm_teardown()
+            assert self.TestRaise.td_log == 'tcTCM', self.TestRaise.td_log
+            assert e.pm_teardown.result.testsRun == 1
+            e_hold = e  # noqa
         else:
             self.fail("DebuggerQuit not raised")
+        # delayed teardowns must not be repeated
+        e_hold.pm_teardown()
+        del e_hold
         gc.collect()
         assert self.TestRaise.td_log == 'tcTCM', self.TestRaise.td_log
 
