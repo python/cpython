@@ -2214,13 +2214,14 @@
                 // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
                 DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+                STAT_INC(COMPARE_OP, hit);
                 double dleft = PyFloat_AS_DOUBLE(left);
                 double dright = PyFloat_AS_DOUBLE(right);
-                // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
-                int sign_ish = 2*(dleft > dright) + 2 - (dleft < dright);
-                DEOPT_IF(isnan(dleft), COMPARE_OP);
-                DEOPT_IF(isnan(dright), COMPARE_OP);
-                STAT_INC(COMPARE_OP, hit);
+                // 1 if <, 2 if ==, 4 if >, 8 if unordered; this matches when_to_jump_mask
+                int sign_ish = (+ 6 * (Py_IS_NAN(dleft) | Py_IS_NAN(dright))
+                                + 2 * (dleft > dright)
+                                - 1 * (dleft < dright)
+                                + 2);
                 _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
                 _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
                 jump = sign_ish & when_to_jump_mask;
