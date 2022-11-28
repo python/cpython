@@ -2175,8 +2175,8 @@ Loading and running tests
 
    .. method:: addDuration(test, elapsed)
 
-      Called when the test case finishes. *elapsed* is the time represented
-      in seconds.
+      Called when the test case finishes.  *elapsed* is the time represented in
+      seconds, and it includes the execution of cleanup functions.
 
       .. versionadded:: 3.12
 

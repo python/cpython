@@ -200,10 +200,10 @@ class TextTestRunner(object):
                                     self.verbosity)
 
     def _printDurations(self, result):
+        if not result.collectedDurations:
+            return
         ls = sorted(result.collectedDurations, key=lambda x: x[1],
                     reverse=True)
-        if not ls:
-            return
         if self.durations > 0:
             ls = ls[:self.durations]
         self.stream.writeln("Slowest test durations")
