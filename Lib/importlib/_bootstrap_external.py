@@ -137,15 +137,26 @@ def _path_split(path):
     return path[:i], path[i + 1:]
 
 
-def _path_stat(path, mask=0x0241):
-    """Stat the path.
+# Check for _os.statx because we've imported posixmodule directly and our
+# fallback method is in os.py and we won't see it.
+if hasattr(_os, 'statx'):
+    def _path_stat(path, mask=0x0241):
+        """Stat the path.
 
-    Made a separate function to make it easier to override in experiments
-    (e.g. cache stat results).
+        Made a separate function to make it easier to override in experiments
+        (e.g. cache stat results).
 
-    Default mask is STATX_SIZE | STATX_MTIME | STATX_TYPE
-    """
-    return _os.statx(path, mask)
+        Default mask is STATX_SIZE | STATX_MTIME | STATX_TYPE
+        """
+        return _os.statx(path, mask)
+else:
+    def _path_stat(path, mask=None):
+        """Stat the path.
+
+        Made a separate function to make it easier to override in experiments
+        (e.g. cache stat results).
+        """
+        return _os.stat(path)
 
 
 def _path_is_mode_type(path, mode):
