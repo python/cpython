@@ -81,15 +81,15 @@ synchronous servers of four types::
    +------------+
    | BaseServer |
    +------------+
-         ^
          |
+         v
    +-----------+        +------------------+
-   | TCPServer |<-------| UnixStreamServer |
+   | TCPServer |------->| UnixStreamServer |
    +-----------+        +------------------+
-         ^
          |
+         v
    +-----------+        +--------------------+
-   | UDPServer |<-------| UnixDatagramServer |
+   | UDPServer |------->| UnixDatagramServer |
    +-----------+        +--------------------+
 
 Note that :class:`UnixDatagramServer` derives from :class:`UDPServer`, not from
