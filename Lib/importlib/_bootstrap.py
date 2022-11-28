@@ -67,9 +67,8 @@ _blocking_on = {}
 
 class _BlockingOnManager:
     """A context manager responsible to updating ``_blocking_on``."""
-    def __init__(self, tid, lock):
-        # The id of the thread in which this manager is being used.
-        self.tid = tid
+    def __init__(self, thread_id, lock):
+        self.thread_id = tid
         self.lock = lock
 
     def __enter__(self):
@@ -80,7 +79,7 @@ class _BlockingOnManager:
         # re-entrant (i.e., a single thread may take it more than once) so it
         # wouldn't help us be correct in the face of re-entrancy either.
 
-        self.blocked_on = _blocking_on.setdefault(self.tid, [])
+        self.blocked_on = _blocking_on.setdefault(self.thread_id, [])
         self.blocked_on.append(self.lock)
 
     def __exit__(self, *args, **kwargs):
@@ -95,10 +94,10 @@ class _DeadlockError(RuntimeError):
 
 def _has_deadlock(seen, subject, tids, _blocking_on):
     """Check if 'subject' is holding the same lock as another thread(s).
-    
+
     The search within _blocking_on starts with the threads listed in tids.
     'seen' contains any threads that are considered already traversed in the search.
-    
+
     """
 
     :param seen: A set of threads that have already been visited.
