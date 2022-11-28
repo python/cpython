@@ -2229,10 +2229,10 @@ static void
 _globals_fini(void)
 {
     // XXX This isn't thread-safe.
-    if (_globals.module_count > 1) {
+    _globals.module_count--;
+    if (_globals.module_count > 0) {
         return;
     }
-    _globals.module_count--;
 
     _channels_fini(&_globals.channels);
 }
