@@ -19,7 +19,7 @@ arguments and return values that cannot be transported through the RPC
 barrier, in particular frame and traceback objects.
 
 """
-
+import reprlib
 import types
 from idlelib import debugger
 
@@ -170,7 +170,7 @@ class IdbAdapter:
     def dict_item(self, did, key):
         dict = dicttable[did]
         value = dict[key]
-        value = repr(value) ### can't pickle module 'builtins'
+        value = reprlib.repr(value) ### can't pickle module 'builtins'
         return value
 
 #----------end class IdbAdapter----------
@@ -390,4 +390,4 @@ def restart_subprocess_debugger(rpcclt):
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_debugger', verbosity=2, exit=False)
+    main('idlelib.idle_test.test_debugger_r', verbosity=2, exit=False)

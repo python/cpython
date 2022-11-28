@@ -1,2 +1,0 @@
-Convert :mod:`sqlite3` to use heap types (PEP 384).
-Patch by Erlend E. Aasland.

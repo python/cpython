@@ -36,8 +36,11 @@ module Python
           | With(withitem* items, stmt* body, string? type_comment)
           | AsyncWith(withitem* items, stmt* body, string? type_comment)
 
+          | Match(expr subject, match_case* cases)
+
           | Raise(expr? exc, expr? cause)
           | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
+          | TryStar(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
           | Assert(expr test, expr? msg)
 
           | Import(alias* names)
@@ -72,7 +75,7 @@ module Python
          -- x < 4 < 3 and (x < 4) < 3
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
-         | FormattedValue(expr value, int? conversion, expr? format_spec)
+         | FormattedValue(expr value, int conversion, expr? format_spec)
          | JoinedStr(expr* values)
          | Constant(constant value, string? kind)
 
@@ -118,8 +121,25 @@ module Python
 
     -- import name with optional 'as' alias.
     alias = (identifier name, identifier? asname)
+             attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 
     withitem = (expr context_expr, expr? optional_vars)
+
+    match_case = (pattern pattern, expr? guard, stmt* body)
+
+    pattern = MatchValue(expr value)
+            | MatchSingleton(constant value)
+            | MatchSequence(pattern* patterns)
+            | MatchMapping(expr* keys, pattern* patterns, identifier? rest)
+            | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)
+
+            | MatchStar(identifier? name)
+            -- The optional "rest" MatchMapping parameter handles capturing extra mapping keys
+
+            | MatchAs(pattern? pattern, identifier? name)
+            | MatchOr(pattern* patterns)
+
+             attributes (int lineno, int col_offset, int end_lineno, int end_col_offset)
 
     type_ignore = TypeIgnore(int lineno, string tag)
 }

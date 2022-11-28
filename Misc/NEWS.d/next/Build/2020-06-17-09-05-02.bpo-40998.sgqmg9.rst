@@ -1,2 +1,0 @@
-Addressed three compiler warnings found by undefined behavior sanitizer
-(ubsan).
