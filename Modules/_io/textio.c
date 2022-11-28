@@ -251,19 +251,16 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *errors)
 /*[clinic end generated code: output=fbd04d443e764ec2 input=89db6b19c6b126bf]*/
 {
-    self->decoder = decoder;
-    Py_INCREF(decoder);
 
     if (errors == NULL) {
-        self->errors = _PyUnicode_FromId(&PyId_strict);
-        if (self->errors == NULL)
+        errors = _PyUnicode_FromId(&PyId_strict);
+        if (errors == NULL) {
             return -1;
+        }
     }
-    else {
-        self->errors = errors;
-    }
-    Py_INCREF(self->errors);
 
+    Py_XSETREF(self->errors, Py_NewRef(errors));
+    Py_XSETREF(self->decoder, Py_NewRef(decoder));
     self->translate = translate ? 1 : 0;
     self->seennl = 0;
     self->pendingcr = 0;
@@ -298,6 +295,13 @@ check_decoded(PyObject *decoded)
     return 0;
 }
 
+#define CHECK_INITIALIZED_DECODER(self) \
+    if (self->errors == NULL) { \
+        PyErr_SetString(PyExc_ValueError, \
+                        "IncrementalNewlineDecoder.__init__() not called"); \
+        return NULL; \
+    }
+
 #define SEEN_CR   1
 #define SEEN_LF   2
 #define SEEN_CRLF 4
@@ -311,11 +315,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
     Py_ssize_t output_len;
     nldecoder_object *self = (nldecoder_object *) myself;
 
-    if (self->decoder == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "IncrementalNewlineDecoder.__init__ not called");
-        return NULL;
-    }
+    CHECK_INITIALIZED_DECODER(self);
 
     /* decode input (with the eventual \r from a previous pass) */
     if (self->decoder != Py_None) {
@@ -529,6 +529,8 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
     PyObject *buffer;
     unsigned long long flag;
 
+    CHECK_INITIALIZED_DECODER(self);
+
     if (self->decoder != Py_None) {
         PyObject *state = PyObject_CallMethodNoArgs(self->decoder,
            _PyIO_str_getstate);
@@ -573,6 +575,8 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
     PyObject *buffer;
     unsigned long long flag;
 
+    CHECK_INITIALIZED_DECODER(self);
+
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError, "state argument must be a tuple");
         return NULL;
@@ -601,6 +605,8 @@ static PyObject *
 _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
 /*[clinic end generated code: output=32fa40c7462aa8ff input=728678ddaea776df]*/
 {
+    CHECK_INITIALIZED_DECODER(self);
+
     self->seennl = 0;
     self->pendingcr = 0;
     if (self->decoder != Py_None)
@@ -612,6 +618,8 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
 static PyObject *
 incrementalnewlinedecoder_newlines_get(nldecoder_object *self, void *context)
 {
+    CHECK_INITIALIZED_DECODER(self);
+
     switch (self->seennl) {
     case SEEN_CR:
         return PyUnicode_FromString("\r");
