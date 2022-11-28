@@ -8,7 +8,6 @@
         TARGET(INSTRUMENTED_RESUME) {
             /* Check monitoring *before* calling instrument */
             /* Possibly combine this with eval breaker */
-            assert(oparg < 2);
             if (frame->f_code->_co_instrument_version != tstate->interp->monitoring_version) {
                 if (_Py_Instrument(frame->f_code, tstate->interp)) {
                     goto error;
@@ -17,9 +16,9 @@
             }
             else {
                 int err = _Py_call_instrumentation(
-                        tstate, oparg, frame, next_instr-1);
+                        tstate, oparg != 0, frame, next_instr-1);
                 if (err) goto error;
-                if (_Py_atomic_load_relaxed_int32(eval_breaker)) {
+                if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                     goto handle_eval_breaker;
                 }
             }

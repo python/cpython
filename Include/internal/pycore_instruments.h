@@ -6,13 +6,15 @@
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_frame.h"
 
+#include "cpython/code.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define PY_MONITORING_TOOL_IDS 8
 
-/* Require dynamic instrumentation */
+/* Require bytecode instrumentation */
 
 #define PY_MONITORING_EVENT_PY_START 0
 #define PY_MONITORING_EVENT_PY_RESUME 1
@@ -24,16 +26,21 @@ extern "C" {
 #define PY_MONITORING_EVENT_JUMP 7
 #define PY_MONITORING_EVENT_BRANCH 8
 
+#define PY_MONITORING_INSTRUMENTED_EVENTS 9
+
+/* Grouped events */
 
 #define PY_MONITORING_EVENT_C_RETURN 9
-#define PY_MONITORING_EVENT_PY_THROW 10
-#define PY_MONITORING_EVENT_RAISE 11
-#define PY_MONITORING_EVENT_EXCEPTION_HANDLED 12
-#define PY_MONITORING_EVENT_C_RAISE 13
+#define PY_MONITORING_EVENT_C_RAISE 10
+
+/* Exceptional events */
+
+#define PY_MONITORING_EVENT_PY_THROW 11
+#define PY_MONITORING_EVENT_RAISE 12
+#define PY_MONITORING_EVENT_EXCEPTION_HANDLED 13
 #define PY_MONITORING_EVENT_PY_UNWIND 14
 
 /* #define INSTRUMENT_EVENT_BRANCH_NOT_TAKEN xxx  -- If we can afford this */
-#define PY_MONITORING_EVENTS 15
 
 /* Temporary and internal events */
 
@@ -41,12 +48,6 @@ extern "C" {
 /* #define PY_INSTRUMENT_JIT_API 17  -- Reserved */
 
 typedef uint32_t _PyMonitoringEventSet;
-
-typedef uint16_t _PyMonitoringSet;
-
-typedef struct _pytoolset {
-    uint8_t tools;
-} _PyMonitoringToolSet;
 
 /* Reserved IDs */
 

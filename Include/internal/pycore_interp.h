@@ -195,11 +195,11 @@ struct _is {
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
 
-    _PyMonitoringToolSet monitoring_tools_per_event[PY_MONITORING_EVENTS];
-    _PyMonitoringEventSet events_per_monitoring_tool[PY_MONITORING_TOOL_IDS];
-    _PyMonitoringEventSet monitored_events;
+    _Py_MonitoringMatrix monitoring_matrix;
     /* The index (plus one) of the sole tool. 0 if 0 or 2+ tools */
     int8_t sole_tool_plus1[PY_MONITORING_EVENTS];
+    bool multiple_tools;
+    uint8_t required_monitoring_bytes;
     /* Tools numbered 1-8. 0 is the dispatcher/sole tool */
     struct _instrumentation_tool tools[PY_MONITORING_TOOL_IDS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];

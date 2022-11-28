@@ -14,15 +14,6 @@ static PyObject DISABLE =
     &PyBaseObject_Type
 };
 
-static int
-call_multiple_instruments(
-    PyInterpreterState *interp, PyCodeObject *code, int event,
-    PyObject **args, Py_ssize_t nargs, _Py_CODEUNIT *instr)
-{
-    PyErr_SetString(PyExc_SystemError, "Multiple tools not supported yet");
-    return -1;
-}
-
 static const uint8_t DE_INSTRUMENT[256] = {
     [RESUME] = RESUME,
     [INSTRUMENTED_RESUME] = RESUME,
@@ -42,10 +33,72 @@ static const uint8_t DE_INSTRUMENT[256] = {
 */
 };
 
+/* Return 1 if DISABLE returned, -1 if error, 0 otherwise */
+static int
+call_one_instrument(
+    PyInterpreterState *interp, PyThreadState *tstate, PyObject **args,
+    Py_ssize_t nargsf, int8_t tool, int event)
+{
+    if (tstate->tracing) {
+        return 0;
+    }
+    PyObject *instrument = interp->tools[tool].instrument_callables[event];
+    if (instrument == NULL) {
+       return 0;
+    }
+    tstate->tracing++;
+    PyObject *res = PyObject_Vectorcall(instrument, args, nargsf, NULL);
+    tstate->tracing--;
+    if (res == NULL) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return (res == &DISABLE);
+}
+
+static int
+call_multiple_instruments(
+    PyInterpreterState *interp, PyThreadState *tstate, PyCodeObject *code, int event,
+    PyObject **args, Py_ssize_t nargsf, uint8_t *opcode)
+{
+    int offset = ((_Py_CODEUNIT *)opcode) - _PyCode_CODE(code);
+    uint8_t *toolsptr = &((uint8_t *)code->_co_monitoring_data)[offset*code->_co_monitoring_data_per_instruction];
+    uint8_t tools = *toolsptr;
+    /* No line or instruction yet */
+    assert(code->_co_monitoring_data_per_instruction == 1);
+    assert(_Py_popcount32(tools) > 0);
+    assert(interp->sole_tool_plus1[event] < 0);
+    /* To do -- speed this up */
+    assert(tools != 0);
+    int tool = 0;
+    do {
+        assert(tool < 8);
+        if (tools & (1 << tool)) {
+            tools &= ~(1 << tool);
+            int res = call_one_instrument(interp, tstate, args, nargsf, tool, event);
+            if (res) {
+                if (res > 0) {
+                    *toolsptr &= ~(1 << tool);
+                    if (*toolsptr == 0) {
+                        /* Remove this instrument */
+                        assert(DE_INSTRUMENT[*opcode] != 0);
+                        *opcode = DE_INSTRUMENT[*opcode];
+                    }
+                }
+                else {
+                    return -1;
+                }
+            }
+        }
+        tool++;
+    } while (tools);
+    return 0;
+}
+
 static int
 call_instrument(
     PyThreadState *tstate, PyCodeObject *code, int event,
-    PyObject **args, Py_ssize_t nargsf, _Py_CODEUNIT *instr)
+    PyObject **args, Py_ssize_t nargsf, uint8_t *opcode)
 {
     assert(!_PyErr_Occurred(tstate));
     PyInterpreterState *interp = tstate->interp;
@@ -55,29 +108,17 @@ call_instrument(
             /* Why is this instrumented if there is no tool? */
             return 0;
         }
-        return call_multiple_instruments(interp, code, event, args, nargsf, instr);
+        return call_multiple_instruments(interp, tstate, code, event, args, nargsf, opcode);
     }
     int sole_tool = sole_tool_plus1-1;
-    if (tstate->monitoring & (1 << sole_tool)) {
-        return 0;
-    }
-    PyObject *instrument = interp->tools[sole_tool].instrument_callables[event];
-    if (instrument == NULL) {
-       return 0;
-    }
-    tstate->monitoring |= (1 << sole_tool);
-    PyObject *res = PyObject_Vectorcall(instrument, args, nargsf, NULL);
-    tstate->monitoring &= ~(1 << sole_tool);
-    if (res == NULL) {
-        return -1;
-    }
-    if (res == &DISABLE) {
+    int res = call_one_instrument(interp, tstate, args, nargsf, sole_tool, event);
+    if (res > 0) {
         /* Remove this instrument */
-        assert(DE_INSTRUMENT[_Py_OPCODE(*instr)] != 0);
-        *instr = _Py_MAKECODEUNIT(DE_INSTRUMENT[_Py_OPCODE(*instr)], _Py_OPARG(*instr));
+        assert(DE_INSTRUMENT[*opcode] != 0);
+        *opcode = DE_INSTRUMENT[*opcode];
+        res = 0;
     }
-    Py_DECREF(res);
-    return 0;
+    return res;
 }
 
 
@@ -90,7 +131,7 @@ _Py_call_instrumentation(
     int instruction_offset = instr - _PyCode_CODE(code);
     PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
     PyObject *args[3] = { NULL, (PyObject *)code, instruction_offset_obj };
-    int err = call_instrument(tstate, code, event, &args[1], 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
+    int err = call_instrument(tstate, code, event, &args[1], 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, (uint8_t*)instr);
     Py_DECREF(instruction_offset_obj);
     return err;
 }
@@ -104,7 +145,7 @@ _Py_call_instrumentation_arg(
     int instruction_offset = instr - _PyCode_CODE(code);
     PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
     PyObject *args[4] = { NULL, (PyObject *)code, instruction_offset_obj, arg };
-    int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, instr);
+    int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, (uint8_t*)instr);
     Py_DECREF(instruction_offset_obj);
     return err;
 }
@@ -122,7 +163,7 @@ _Py_call_instrumentation_exc(
     PyObject *instruction_offset_obj = PyLong_FromSsize_t(instruction_offset);
     PyObject *args[4] = { NULL, (PyObject *)code, instruction_offset_obj, arg };
     Py_ssize_t nargsf = (2 | PY_VECTORCALL_ARGUMENTS_OFFSET) + (arg != NULL);
-    int err = call_instrument(tstate, code, event, &args[1], nargsf, instr);
+    int err = call_instrument(tstate, code, event, &args[1], nargsf, (uint8_t*)instr);
     if (err) {
         Py_XDECREF(type);
         Py_XDECREF(value);
@@ -145,13 +186,18 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
     is->tools[tool_id].instrument_callables[event_id] = Py_XNewRef(obj);
     return callback;
 }
+#define RESUME_0 256
+#define RESUME_1 257
 
-static const uint8_t INSTRUMENTED_OPCODES[256] = {
+
+static const uint8_t INSTRUMENTED_OPCODES[258] = {
     [RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
     [CALL] = INSTRUMENTED_CALL,
     [CALL_FUNCTION_EX] = INSTRUMENTED_CALL_FUNCTION_EX,
     [YIELD_VALUE] = INSTRUMENTED_YIELD_VALUE,
     [RESUME] = INSTRUMENTED_RESUME,
+    [RESUME_0] = INSTRUMENTED_RESUME,
+    [RESUME_1] = INSTRUMENTED_RESUME,
     [INSTRUMENTED_RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
     [INSTRUMENTED_CALL] = INSTRUMENTED_CALL,
     [INSTRUMENTED_CALL_FUNCTION_EX] = INSTRUMENTED_CALL_FUNCTION_EX,
@@ -169,25 +215,87 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
     */
 };
 
-#define SET1(a) (1 << (a))
-#define SET2(a, b ) ( (1 << (a)) | (1 << (b)) )
-#define SET3(a, b, c) ( (1 << (a)) | (1 << (b)) | (1 << (c)) )
 
-#define CALL_EVENTS \
-    SET3(PY_MONITORING_EVENT_CALL, PY_MONITORING_EVENT_C_RAISE, PY_MONITORING_EVENT_C_RETURN)
-
-static const _PyMonitoringEventSet EVENTS_FOR_OPCODE[256] = {
-    [RETURN_VALUE] = SET1(PY_MONITORING_EVENT_PY_RETURN),
-    [INSTRUMENTED_RETURN_VALUE] = SET1(PY_MONITORING_EVENT_PY_RETURN),
-    [CALL] = CALL_EVENTS,
-    [INSTRUMENTED_CALL] = CALL_EVENTS,
-    [CALL_FUNCTION_EX] = CALL_EVENTS,
-    [INSTRUMENTED_CALL_FUNCTION_EX] = CALL_EVENTS,
-    [RESUME] = SET2(PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RESUME),
-    [INSTRUMENTED_RESUME] = SET2(PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RESUME),
-    [YIELD_VALUE] = SET1(PY_MONITORING_EVENT_PY_YIELD),
-    [INSTRUMENTED_YIELD_VALUE] = SET1(PY_MONITORING_EVENT_PY_YIELD),
+static const int8_t EVENT_FOR_OPCODE[258] = {
+    [RETURN_VALUE] = PY_MONITORING_EVENT_PY_RETURN,
+    [INSTRUMENTED_RETURN_VALUE] = PY_MONITORING_EVENT_PY_RETURN,
+    [CALL] = PY_MONITORING_EVENT_CALL,
+    [INSTRUMENTED_CALL] = PY_MONITORING_EVENT_CALL,
+    [CALL_FUNCTION_EX] = PY_MONITORING_EVENT_CALL,
+    [INSTRUMENTED_CALL_FUNCTION_EX] = PY_MONITORING_EVENT_CALL,
+    [RESUME] = -1,
+    [RESUME_0] = PY_MONITORING_EVENT_PY_START,
+    [RESUME_1] = PY_MONITORING_EVENT_PY_RESUME,
+    [YIELD_VALUE] = PY_MONITORING_EVENT_PY_YIELD,
+    [INSTRUMENTED_YIELD_VALUE] = PY_MONITORING_EVENT_PY_YIELD,
 };
+
+static const bool OPCODE_HAS_EVENT[258] = {
+    [RETURN_VALUE] = true,
+    [INSTRUMENTED_RETURN_VALUE] = true,
+    [CALL] = true,
+    [INSTRUMENTED_CALL] = true,
+    [CALL_FUNCTION_EX] = true,
+    [INSTRUMENTED_CALL_FUNCTION_EX] = true,
+    [RESUME] = true,
+    [RESUME_0] = true,
+    [RESUME_1] = true,
+    [YIELD_VALUE] = true,
+    [INSTRUMENTED_YIELD_VALUE] = true,
+};
+
+static inline _Py_MonitoringMatrix
+matrix_sub(_Py_MonitoringMatrix a, _Py_MonitoringMatrix b)
+{
+    _Py_MonitoringMatrix res;
+    for (int i = 0; i < PY_MONITORING_EVENTS; i++) {
+        res.tools[i] = a.tools[i] & ~b.tools[i];
+    }
+    return res;
+}
+
+static inline _Py_MonitoringMatrix
+matrix_and(_Py_MonitoringMatrix a, _Py_MonitoringMatrix b)
+{
+    _Py_MonitoringMatrix res;
+    for (int i = 0; i < PY_MONITORING_EVENTS; i++) {
+        res.tools[i] = a.tools[i] & b.tools[i];
+    }
+    return res;
+}
+
+static inline bool
+matrix_empty(_Py_MonitoringMatrix m)
+{
+    for (int i = 0; i < PY_MONITORING_EVENTS; i++) {
+        if (m.tools[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static inline void
+matrix_set_bit(_Py_MonitoringMatrix *m, int event, int tool, int val)
+{
+    assert(0 <= event && event < PY_MONITORING_EVENTS);
+    assert(0 <= tool && tool < PY_MONITORING_TOOL_IDS);
+    assert(0 <= val && val <= 1);
+    m->tools[event] &= ~(1 << tool);
+    m->tools[event] |= (val << tool);
+}
+
+static inline _PyMonitoringEventSet
+matrix_get_events(_Py_MonitoringMatrix *m, int tool_id)
+{
+    _PyMonitoringEventSet result = 0;
+    for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        if ((m->tools[e] >> tool_id) & 1) {
+            result |= (1 << e);
+        }
+    }
+    return result;
+}
 
 int
 _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
@@ -198,49 +306,86 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     /* First establish how much extra space will need,
      * and free/allocate it if different to what we had before */
     /* For now only allow only one tool per event */
-    assert(interp->monitoring_tools_per_event[PY_MONITORING_EVENT_LINE].tools == 0);
-    assert(interp->monitoring_tools_per_event[PY_MONITORING_EVENT_INSTRUCTION].tools == 0);
-    for (int i = 0; i < PY_MONITORING_EVENTS; i++) {
-       assert(interp->monitoring_tools_per_event[i].tools == 0 || interp->sole_tool_plus1[i] > 0);
+    assert(interp->monitoring_matrix.tools[PY_MONITORING_EVENT_LINE] == 0);
+    assert(interp->monitoring_matrix.tools[PY_MONITORING_EVENT_INSTRUCTION] == 0);
+    int code_len = (int)Py_SIZE(code);
+    if (interp->required_monitoring_bytes > code->_co_monitoring_data_per_instruction) {
+        /* Don't resize if more space than needed, to avoid churn */
+        PyMem_Free(code->_co_monitoring_data);
+        code->_co_monitoring_data = PyMem_Malloc(code_len * interp->required_monitoring_bytes);
+        if (code->_co_monitoring_data == NULL) {
+            code->_co_monitoring_data_per_instruction = 0;
+            PyErr_NoMemory();
+            return -1;
+        }
+        code->_co_monitoring_data_per_instruction = interp->required_monitoring_bytes;
     }
     //printf("Instrumenting code object at %p, code version: %ld interpreter version %ld\n",
     //       code, code->_co_instrument_version, interp->monitoring_version);
     /* Avoid instrumenting code that has been disabled.
      * Only instrument new events
      */
-    _PyMonitoringEventSet new_events = interp->monitored_events & ~code->_co_monitored_events;
-    _PyMonitoringEventSet removed_events = code->_co_monitored_events & ~interp->monitored_events;
+    _Py_MonitoringMatrix new_events = matrix_sub(interp->monitoring_matrix, code->_co_monitoring_matrix);
+    _Py_MonitoringMatrix removed_events = matrix_sub(code->_co_monitoring_matrix, interp->monitoring_matrix);
     if (interp->last_restart_version > code->_co_instrument_version) {
-        new_events = interp->monitored_events;
-        removed_events = 0;
+        new_events = interp->monitoring_matrix;
+        removed_events = (_Py_MonitoringMatrix){ 0 };
     }
-    code->_co_monitored_events = interp->monitored_events;
     code->_co_instrument_version = interp->monitoring_version;
-    assert((new_events & removed_events) == 0);
-    if ((new_events | removed_events) == 0) {
+    assert(matrix_empty(matrix_and(new_events, removed_events)));
+    if (matrix_empty(new_events) && matrix_empty(removed_events)) {
         return 0;
     }
-    /* Insert basic instrumentation */
-    int code_len = (int)Py_SIZE(code);
+    /* Insert instrumentation */
     for (int i = 0; i < code_len; i++) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = _Py_OPCODE(*instr);
+        int oparg = _Py_OPARG(*instr);
         if (_PyOpcode_Deopt[opcode]) {
             opcode = _PyOpcode_Deopt[opcode];
         }
-        /* Don't instrument RESUME in await and yield from. */
-        if (opcode == RESUME && _Py_OPARG(_PyCode_CODE(code)[i]) >= 2) {
-            continue;
+        if (opcode == RESUME) {
+            if (oparg == 0) {
+                opcode = RESUME_0;
+            }
+            else {
+                opcode = RESUME_1;
+            }
         }
-        _PyMonitoringEventSet events = EVENTS_FOR_OPCODE[opcode];
-        if (new_events & events) {
-            assert(INSTRUMENTED_OPCODES[opcode] != 0);
-            *instr = _Py_MAKECODEUNIT(INSTRUMENTED_OPCODES[opcode], _Py_OPARG(*instr));
-        }
-        if (removed_events & events) {
-            *instr = _Py_MAKECODEUNIT(opcode, _Py_OPARG(*instr));
-            if (_PyOpcode_Caches[opcode]) {
-                instr[1] = adaptive_counter_warmup();
+        bool has_event = OPCODE_HAS_EVENT[opcode];
+        if (has_event) {
+            int8_t event = EVENT_FOR_OPCODE[opcode];
+            assert(event >= 0);
+            if (interp->sole_tool_plus1[event] >= 0) {
+                int sole_tool = interp->sole_tool_plus1[event] - 1;
+                if (new_events.tools[event] & (1 << sole_tool)) {
+                    assert(INSTRUMENTED_OPCODES[opcode] != 0);
+                    *instr = _Py_MAKECODEUNIT(INSTRUMENTED_OPCODES[opcode], oparg);
+                }
+                else if (removed_events.tools[event] & (1 << sole_tool)) {
+                    *instr = _Py_MAKECODEUNIT(opcode, _Py_OPARG(*instr));
+                    if (_PyOpcode_Caches[opcode]) {
+                        instr[1] = adaptive_counter_warmup();
+                    }
+                }
+            }
+            else {
+                uint8_t new_tools = new_events.tools[event];
+                if (new_tools) {
+                    assert(INSTRUMENTED_OPCODES[opcode] != 0);
+                    *instr = _Py_MAKECODEUNIT(INSTRUMENTED_OPCODES[opcode], oparg);
+                    code->_co_monitoring_data[i*code->_co_monitoring_data_per_instruction] |= new_tools;
+                }
+                uint8_t removed_tools = removed_events.tools[event];
+                if (removed_tools) {
+                code->_co_monitoring_data[i*code->_co_monitoring_data_per_instruction] &= ~removed_tools;
+                    if (code->_co_monitoring_data[i*code->_co_monitoring_data_per_instruction] == 0) {
+                        *instr = _Py_MAKECODEUNIT(opcode, _Py_OPARG(*instr));
+                        if (_PyOpcode_Caches[opcode]) {
+                            instr[1] = adaptive_counter_warmup();
+                        }
+                    }
+                }
             }
         }
         i += _PyOpcode_Caches[opcode];
@@ -248,44 +393,95 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     return 0;
 }
 
+#define C_RETURN_EVENTS \
+    ((1 << PY_MONITORING_EVENT_C_RETURN) | \
+    (1 << PY_MONITORING_EVENT_C_RAISE))
+
+#define C_CALL_EVENTS \
+    (C_RETURN_EVENTS | (1 << PY_MONITORING_EVENT_CALL))
+
+static int
+cross_check_events(PyInterpreterState *interp)
+{
+    for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        uint8_t tools = interp->monitoring_matrix.tools[e];
+        int popcount = _Py_popcount32(tools);
+        switch(popcount) {
+            case 0:
+                if (interp->sole_tool_plus1[e] != 0) {
+                    return 0;
+                }
+                break;
+            case 1:
+                if (interp->sole_tool_plus1[e] <= 0) {
+                    return 0;
+                }
+                if ((tools & (1 << (interp->sole_tool_plus1[e]-1))) == 0) {
+                    return 0;
+                }
+                break;
+            default:
+                if (interp->sole_tool_plus1[e] >= 0) {
+                    return 0;
+                }
+        }
+    }
+    return 1;
+}
+
 void
 _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (interp->events_per_monitoring_tool[tool_id] == events) {
+    assert((events & C_CALL_EVENTS) == 0 || (events & C_CALL_EVENTS) == C_CALL_EVENTS);
+    uint32_t existing_events = matrix_get_events(&interp->monitoring_matrix, tool_id);
+    if (existing_events == events) {
         return;
-    }
-    interp->events_per_monitoring_tool[tool_id] = events;
-    for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
-        _PyMonitoringToolSet tools = { 0 };
-        for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-            int event_tool_pair = (interp->events_per_monitoring_tool[t] >> e) & 1;
-            tools.tools |= (event_tool_pair << t);
-        }
-        interp->monitoring_tools_per_event[e] = tools;
     }
     int multitools = 0;
     for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
-        _PyMonitoringToolSet tools = interp->monitoring_tools_per_event[e];
-        if (_Py_popcount32(tools.tools) <= 1) {
-            interp->sole_tool_plus1[e] = _Py_bit_length(tools.tools);
+        int val = (events >> e) & 1;
+        matrix_set_bit(&interp->monitoring_matrix, e, tool_id, val);
+        uint8_t tools = interp->monitoring_matrix.tools[e];
+        if (_Py_popcount32(tools) <= 1) {
+            interp->sole_tool_plus1[e] = _Py_bit_length(tools);
         }
         else {
             multitools++;
             interp->sole_tool_plus1[e] = -1;
         }
     }
+    assert(cross_check_events(interp));
+    interp->multiple_tools = multitools;
     if (multitools) {
-        /* Only support one tool for now */
-        assert(0 && "Only support one tool for now");
+        interp->multiple_tools = true;
+    }
+    bool lines = interp->monitoring_matrix.tools[PY_MONITORING_EVENT_LINE] != 0;
+    bool opcodes = interp->monitoring_matrix.tools[PY_MONITORING_EVENT_INSTRUCTION] != 0;
+    if (interp->multiple_tools) {
+        if (opcodes) {
+            interp->required_monitoring_bytes = 6;
+        }
+        else if (lines) {
+            interp->required_monitoring_bytes = 4;
+        }
+        else {
+            interp->required_monitoring_bytes = 1;
+        }
+    }
+    else {
+        if (opcodes) {
+            interp->required_monitoring_bytes = 3;
+        }
+        else if (lines) {
+            interp->required_monitoring_bytes = 2;
+        }
+        else {
+            interp->required_monitoring_bytes = 0;
+        }
     }
     interp->monitoring_version++;
 
-    _PyMonitoringEventSet monitored_events = 0;
-    for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-        monitored_events |= interp->events_per_monitoring_tool[t];
-    }
-    interp->monitored_events = monitored_events;
     /* Instrument all executing code objects */
 
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
@@ -325,7 +521,6 @@ module monitoring
 
 #include "clinic/instrumentation.c.h"
 
-
 static int
 check_valid_tool(int tool_id)
 {
@@ -335,7 +530,6 @@ check_valid_tool(int tool_id)
     }
     return 0;
 }
-
 
 /*[clinic input]
 monitoring.use_tool
@@ -467,7 +661,7 @@ monitoring_get_events_impl(PyObject *module, int tool_id)
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    _PyMonitoringEventSet event_set = interp->events_per_monitoring_tool[tool_id];
+    _PyMonitoringEventSet event_set = matrix_get_events(&interp->monitoring_matrix, tool_id);
     return PyLong_FromUnsignedLong(event_set);
 }
 
@@ -490,6 +684,13 @@ monitoring_set_events_impl(PyObject *module, int tool_id, int event_set)
     if (event_set < 0 || event_set >= (1 << PY_MONITORING_EVENTS)) {
         PyErr_Format(PyExc_ValueError, "invalid event set 0x%x", event_set);
         return NULL;
+    }
+    if ((event_set & C_RETURN_EVENTS) && (event_set & C_CALL_EVENTS) != C_CALL_EVENTS) {
+        PyErr_Format(PyExc_ValueError, "cannot set C_RETURN or C_RAISE events independently");
+        return NULL;
+    }
+    if (event_set & (1 << PY_MONITORING_EVENT_CALL)) {
+        event_set |= C_RETURN_EVENTS;
     }
     _PyMonitoring_SetEvents(tool_id, event_set);
     Py_RETURN_NONE;
@@ -566,6 +767,7 @@ const char *event_names[] = {
     [PY_MONITORING_EVENT_EXCEPTION_HANDLED] = "EXCEPTION_HANDLED",
     [PY_MONITORING_EVENT_C_RAISE] = "C_RAISE",
     [PY_MONITORING_EVENT_PY_UNWIND] = "PY_UNWIND",
+    [15] = "Unused",
 };
 
 PyObject *_Py_CreateMonitoringObject(void)

@@ -7,6 +7,12 @@
 extern "C" {
 #endif
 
+#define PY_MONITORING_EVENTS 16
+
+typedef struct _Py_MonitoringMatrix {
+    uint8_t tools[PY_MONITORING_EVENTS];
+} _Py_MonitoringMatrix;
+
 /* Each instruction in a code object is a fixed-width value,
  * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
  * opcode allows for larger values but the current limit is 3 uses
@@ -99,7 +105,11 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     uint64_t _co_instrument_version; /* current instrumentation version */     \
-    uint32_t _co_monitored_events;   /* current instrumentation */             \
+    uint8_t _co_monitoring_data_per_instruction; /* Number of bytes per instruction */ \
+    uint8_t _co_line_data_offset;  /* Offset in data for line data */          \
+    uint8_t _co_opcode_data_offset;  /* Offset in data for opcode data */      \
+    _Py_MonitoringMatrix _co_monitoring_matrix;                                \
+    uint8_t *_co_monitoring_data; /* array of data for monitoring */           \
     char *_co_linearray;          /* array of line offsets */                  \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \

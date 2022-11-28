@@ -284,7 +284,6 @@ free_interpreter(PyInterpreterState *interp)
    The runtime state is not manipulated.  Instead it is assumed that
    the interpreter is getting added to the runtime.
   */
-
 static void
 init_interpreter(PyInterpreterState *interp,
                  _PyRuntimeState *runtime, int64_t id,
@@ -310,14 +309,10 @@ init_interpreter(PyInterpreterState *interp,
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
     for(int i = 0; i < PY_MONITORING_EVENTS; i++) {
-        interp->monitoring_tools_per_event[i].tools = 0;
+        interp->monitoring_matrix.tools[i] = 0;
         for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
             interp->tools[t].instrument_callables[i] = NULL;
         }
-    }
-    interp->monitored_events = 0;
-    for(int i = 0; i < PY_MONITORING_TOOL_IDS; i++) {
-        interp->events_per_monitoring_tool[i] = 0;
     }
     interp->f_opcode_trace_set = false;
     interp->_initialized = 1;

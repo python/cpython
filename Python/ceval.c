@@ -2202,7 +2202,7 @@ monitor_raise(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr)
 {
-    if (tstate->interp->monitoring_tools_per_event[PY_MONITORING_EVENT_RAISE].tools == 0) {
+    if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_RAISE] == 0) {
         return;
     }
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
@@ -2236,7 +2236,7 @@ monitor_unwind(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr)
 {
-    if (tstate->interp->monitoring_tools_per_event[PY_MONITORING_EVENT_PY_UNWIND].tools == 0) {
+    if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_PY_UNWIND] == 0) {
         return;
     }
     _Py_call_instrumentation_exc(tstate, PY_MONITORING_EVENT_PY_UNWIND, frame, instr, NULL);
@@ -2248,7 +2248,7 @@ monitor_handled(PyThreadState *tstate,
                  _PyInterpreterFrame *frame,
                  _Py_CODEUNIT *instr, PyObject *exc)
 {
-    if (tstate->interp->monitoring_tools_per_event[PY_MONITORING_EVENT_EXCEPTION_HANDLED].tools == 0) {
+    if (tstate->interp->monitoring_matrix.tools[PY_MONITORING_EVENT_EXCEPTION_HANDLED] == 0) {
         return;
     }
     _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);

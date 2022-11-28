@@ -338,8 +338,11 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-    co->_co_instrument_version = 0;
-
+    for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        co->_co_monitoring_matrix.tools[e] = 0;
+    }
+    co->_co_monitoring_data = 0;
+    co->_co_monitoring_data_per_instruction = 0;
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
