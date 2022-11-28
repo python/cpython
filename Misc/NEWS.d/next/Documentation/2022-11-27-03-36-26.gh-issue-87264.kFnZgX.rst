@@ -1,6 +1,1 @@
-tarfile list() method shows file type correctly, eg.
-$ python3 -m tarfile -v -l Python-3.11.0.tgz
-drwxr-xr-x pablogsal/pablogsal          0 2022-10-24 10:48:40 Python-3.11.0/
-drwxr-xr-x pablogsal/pablogsal          0 2022-10-24 10:35:39 Python-3.11.0/Mac/
--rw-r--r-- pablogsal/pablogsal      17973 2022-10-24 10:35:39 Python-3.11.0/Mac/README.rst
-...
+tarfile list() method shows file type correctly instead of as question marks.
