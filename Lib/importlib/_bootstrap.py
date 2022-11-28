@@ -288,7 +288,7 @@ class _ModuleLock:
                 raise RuntimeError('cannot release un-acquired lock')
             assert len(self.count) > 0
             self.count.pop()
-            if len(self.count) == 0:
+            if not len(self.count):
                 self.owner = None
                 if len(self.waiters) > 0:
                     self.waiters.pop()
