@@ -98,12 +98,11 @@ def _has_deadlocked(subject, seen, tids, _blocking_on):
     The search within _blocking_on starts with the threads listed in tids.
     'seen' contains any threads that are considered already traversed in the search.
 
-    """
-
-    :param seen: A set of threads that have already been visited.
-    :param subject: The thread id to try to reach.
-    :param tids: The thread ids from which to begin.
-    :param blocking_on: A dict representing the thread/blocking-on graph.
+    Keyword arguments:
+    subject     -- The thread id to try to reach.
+    seen        -- A set of threads that have already been visited.
+    tids        -- The thread ids from which to begin.
+    blocking_on -- A dict representing the thread/blocking-on graph.
     """
     if subject in tids:
         # If we have already reached the subject, we're done - signal that it
