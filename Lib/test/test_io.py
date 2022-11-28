@@ -3945,7 +3945,15 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         self.assertEqual(decoder.decode(b"\r\r\n"), "\r\r\n")
 
 class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
-    pass
+    @support.cpython_only
+    def test_uninitialized(self):
+        uninitialized = self.IncrementalNewlineDecoder.__new__(
+            self.IncrementalNewlineDecoder)
+        self.assertRaises(ValueError, uninitialized.decode, b'bar')
+        self.assertRaises(ValueError, uninitialized.getstate)
+        self.assertRaises(ValueError, uninitialized.setstate, (b'foo', 0))
+        self.assertRaises(ValueError, uninitialized.reset)
+
 
 class PyIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
     pass
