@@ -179,7 +179,7 @@ class _ModuleLock:
         # import dependency and needs to take the lock for a single module
         # more than once.
         #
-        # Counts are represented as a list of None because list.append(None)
+        # Counts are represented as a list of True because list.append(True)
         # and list.pop() are both atomic and thread-safe in CPython and it's hard
         # to find another primitive with the same properties.
         self.count = []
@@ -235,7 +235,7 @@ class _ModuleLock:
                         # supports circular imports (thread T imports module A
                         # which imports module B which imports module A).
                         self.owner = tid
-                        self.count.append(None)
+                        self.count.append(True)
                         return True
 
                     # At this point we know the lock is held (because count !=
