@@ -116,7 +116,7 @@ def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
     # Otherwise, try to reach the target_id from each of the given candidate_ids.
     for tid in candidate_ids:
         blocking_on = blocking_on.get(tid)
-        if blocking_on is None:
+        if not blocking_on:
             # There are no edges out from this node, skip it.
             continue
 
