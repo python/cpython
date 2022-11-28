@@ -1127,8 +1127,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         if self._conn_lost:
             return
         try:
-            buffer = bytearray().join(self._buffer)
-            self._buffer.clear()
+            buffer = self._buffer.popleft()
             n = self._sock.send(buffer)
             if n != len(buffer):
                 # Not all data was written
