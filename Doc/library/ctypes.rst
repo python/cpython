@@ -1440,10 +1440,10 @@ copy of the windows error code.
 
 The *winmode* parameter is used on Windows to specify how the library is loaded
 (since *mode* is ignored). It takes any value that is valid for the Win32 API
-``LoadLibraryEx`` flags parameter. When it is ``None``, the default is to use
-the flags that result in the most secure DLL load in order to avoid issues such
-as DLL hijacking. Passing the full path to the DLL is the safest way to ensure
-the correct library and dependencies are loaded.
+``LoadLibraryEx`` flags parameter. When omitted, the default is to use the
+flags that result in the most secure DLL load, which avoids issues such as DLL
+hijacking. Passing the full path to the DLL is the safest way to ensure the
+correct library and dependencies are loaded.
 
 .. versionchanged:: 3.8
    Added *winmode* parameter.
