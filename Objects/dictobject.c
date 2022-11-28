@@ -3155,20 +3155,12 @@ static PyObject *
 dict_richcompare(PyObject *v, PyObject *w, int op)
 {
     int cmp;
-    PyObject *res;
 
-    if (!PyDict_Check(v) || !PyDict_Check(w)) {
-        res = Py_NotImplemented;
-    }
-    else if (op == Py_EQ || op == Py_NE) {
-        cmp = dict_equal((PyDictObject *)v, (PyDictObject *)w);
-        if (cmp < 0)
-            return NULL;
-        res = (cmp == (op == Py_EQ)) ? Py_True : Py_False;
-    }
-    else
-        res = Py_NotImplemented;
-    return Py_NewRef(res);
+    if (!PyDict_Check(v) || !PyDict_Check(w) || (op != Py_EQ && op != Py_NE))
+        return Py_NewRef(Py_NotImplemented);
+    if ((cmp = dict_equal((PyDictObject *)v, (PyDictObject *)w)) < 0)
+        return NULL;
+    return Py_NewRef((cmp == (op == Py_EQ)) ? Py_True : Py_False);
 }
 
 /*[clinic input]
