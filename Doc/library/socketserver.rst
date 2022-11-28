@@ -93,9 +93,9 @@ synchronous servers of four types::
    +-----------+        +--------------------+
 
 Note that :class:`UnixDatagramServer` derives from :class:`UDPServer`, not from
-:class:`UnixStreamServer` --- the only difference between an IP and a Unix
-server is the address family, which is simply repeated in both Unix
-server classes.
+:class:`UnixStreamServer` --- the only difference between a TCP or UDP server
+and a Unix stream or datagram server is the address family, which is simply repeated in both Unix
+stream and datagram server classes.
 
 
 .. class:: ForkingMixIn
