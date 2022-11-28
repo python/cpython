@@ -562,12 +562,12 @@ class Executive:
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
+        self.idb = None
 
         if idlelib.testing is False:
             self.locals = __main__.__dict__
             self.calltip = calltip.Calltip()
             self.autocomplete = autocomplete.AutoComplete()
-            self.idb = None
         else:
             self.locals = {}
 
