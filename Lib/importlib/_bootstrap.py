@@ -103,6 +103,9 @@ def _has_deadlocked(subject, seen, tids, blocking_on):
     seen        -- A set of threads that have already been visited.
     tids        -- The thread ids from which to begin.
     blocking_on -- A dict representing the thread/blocking-on graph.
+                   This may be the same object as the global '_blocking_on'
+                   but it is a parameter to reduce the impact that global
+                   mutable state has on the result of this function.
     """
     if subject in tids:
         # If we have already reached the subject, we're done - signal that it
