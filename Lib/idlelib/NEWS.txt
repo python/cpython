@@ -1,8 +1,15 @@
+What's New in IDLE 3.12.0
+(since 3.11.0)
+Released on 2023-10-02
+===========================
+
+
+
+
 What's New in IDLE 3.11.0
 (since 3.10.0)
 Released on 2022-10-03
 =========================
-
 
 gh-97527: Fix a bug in the previous bugfix that caused IDLE to not
 start when run with 3.10.8, 3.12.0a1, and at least Microsoft Python
