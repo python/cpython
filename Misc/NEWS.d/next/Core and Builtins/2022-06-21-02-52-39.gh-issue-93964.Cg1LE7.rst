@@ -1,0 +1,1 @@
+Strengthened compiler overflow checks to prevent crashes when compiling very large source files.

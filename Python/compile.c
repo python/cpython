@@ -7639,16 +7639,41 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
     write_except_byte(a, (value&0x3f) | msb);
 }
 
+/* Make room for at least (logical_length+to_add)*unitsize bytes in the
+   bytes object. Use exponential growth for O(1) amortized runtime.
+   Keep len(bytes)/unitsize <= INT_MAX. */
+static int
+bytes_make_room(PyObject **bytes, Py_ssize_t unitsize,
+                int logical_length, int to_add, const char *overflow_msg)
+{
+    Py_ssize_t b_len = PyBytes_GET_SIZE(*bytes);
+    Py_ssize_t space = b_len / unitsize;
+    assert(space <= INT_MAX);
+    assert(logical_length <= space);
+    if (logical_length >= space - to_add) {
+        // There's not enough room. Double it.
+        if (space > INT_MAX / 2 || b_len > PY_SSIZE_T_MAX / 2) {
+            PyErr_SetString(PyExc_OverflowError, overflow_msg);
+            return 0;
+        }
+        if (_PyBytes_Resize(bytes, b_len * 2) < 0) {
+            return 0;
+        }
+        assert(PyBytes_GET_SIZE(*bytes) / unitsize <= INT_MAX);
+    }
+    return 1;
+}
+
 /* See Objects/exception_handling_notes.txt for details of layout */
 #define MAX_SIZE_OF_ENTRY 20
 
 static int
 assemble_emit_exception_table_entry(struct assembler *a, int start, int end, basicblock *handler)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
-    if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
-        if (_PyBytes_Resize(&a->a_except_table, len * 2) < 0)
-            return 0;
+    if (!bytes_make_room(&a->a_except_table, sizeof(char),
+                         a->a_except_table_off, MAX_SIZE_OF_ENTRY,
+                         "exception table is too long")) {
+        return 0;
     }
     int size = end-start;
     assert(end > start);
@@ -7789,12 +7814,10 @@ write_location_info_no_column(struct assembler* a, int length, int line_delta)
 static int
 write_location_info_entry(struct assembler* a, struct instr* i, int isize)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_linetable);
-    if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
-        assert(len > THEORETICAL_MAX_ENTRY_SIZE);
-        if (_PyBytes_Resize(&a->a_linetable, len*2) < 0) {
-            return 0;
-        }
+    if (!bytes_make_room(&a->a_linetable, sizeof(char),
+                         a->a_location_off, THEORETICAL_MAX_ENTRY_SIZE,
+                         "line number table is too long")) {
+        return 0;
     }
     if (i->i_loc.lineno < 0) {
         write_location_info_none(a, isize);
@@ -7849,15 +7872,11 @@ assemble_emit_location(struct assembler* a, struct instr* i)
 static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
-
     int size = instr_size(i);
-    if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
-        if (len > PY_SSIZE_T_MAX / 2)
-            return 0;
-        if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
-            return 0;
+    if (!bytes_make_room(&a->a_bytecode, sizeof(_Py_CODEUNIT),
+                         a->a_offset, size, "bytecode is too long")) {
+        return 0;
     }
     code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
