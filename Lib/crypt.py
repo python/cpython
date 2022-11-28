@@ -100,7 +100,6 @@ def _add_method(name, *args, rounds=None):
         # Not all libc libraries support all encryption methods.
         if e.errno in {errno.EINVAL, errno.EPERM, errno.ENOSYS}:
             return False
-        raise
     if result and len(result) == method.total_size:
         methods.append(method)
         return True
@@ -122,3 +121,6 @@ _add_method('MD5', '1', 8, 34)
 _add_method('CRYPT', None, 2, 13)
 
 del _v, _add_method
+
+if len(methods) == 0:
+    raise OSError("There are no supported hashing algorithms")
