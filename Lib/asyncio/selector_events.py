@@ -643,7 +643,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         fut = self.create_future()
         self._sock_connect(fut, sock, address)
-        return await fut
+        try:
+            return await fut
+        finally:
+            # Needed to break cycles when an exception occurs.
+            fut = None
 
     def _sock_connect(self, fut, sock, address):
         fd = sock.fileno()
@@ -665,6 +669,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             fut.set_exception(exc)
         else:
             fut.set_result(None)
+        finally:
+            fut = None
 
     def _sock_write_done(self, fd, fut, handle=None):
         if handle is None or not handle.cancelled():
@@ -688,6 +694,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             fut.set_exception(exc)
         else:
             fut.set_result(None)
+        finally:
+            fut = None
 
     async def sock_accept(self, sock):
         """Accept a connection.
@@ -1191,7 +1199,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._empty_waiter = None
 
 
-class _SelectorDatagramTransport(_SelectorTransport):
+class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTransport):
 
     _buffer_factory = collections.deque
 

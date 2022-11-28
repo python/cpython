@@ -1,0 +1,1 @@
+Fix bug when calling trace.CoverageResults with valid infile.

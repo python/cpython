@@ -1,4 +1,0 @@
-test_asyncio, test_logging, test_socket and test_socketserver now create
-AF_UNIX domains in the current directory to no longer fail with
-``OSError("AF_UNIX path too long")`` if the temporary directory (the
-:envvar:`TMPDIR` environment variable) is too long. Patch by Victor Stinner.

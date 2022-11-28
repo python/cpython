@@ -1,0 +1,1 @@
+Add a function to os.path to check if a path is a junction: isjunction. Add similar functionality to pathlib.Path as is_junction.

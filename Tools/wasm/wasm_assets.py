@@ -41,16 +41,12 @@ OMIT_FILES = (
     "ensurepip/",
     "venv/",
     # build system
-    "distutils/",
     "lib2to3/",
     # deprecated
-    "asyncore.py",
-    "asynchat.py",
     "uu.py",
     "xdrlib.py",
     # other platforms
     "_aix_support.py",
-    "_bootsubprocess.py",
     "_osx_support.py",
     # webbrowser
     "antigravity.py",
