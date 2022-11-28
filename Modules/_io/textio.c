@@ -238,7 +238,6 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
     else {
         errors = Py_NewRef(errors);
     }
-    Py_INCREF(self->errors);
 
     Py_XSETREF(self->errors, errors);
     Py_XSETREF(self->decoder, Py_NewRef(decoder));
