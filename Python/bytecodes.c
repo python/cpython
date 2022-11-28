@@ -211,8 +211,8 @@ dummy_func(
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
             ERROR_IF(prod == NULL, error);
         }
 
@@ -235,8 +235,8 @@ dummy_func(
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
             ERROR_IF(sub == NULL, error);
         }
 
@@ -318,8 +318,8 @@ dummy_func(
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             sum = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
             ERROR_IF(sum == NULL, error);
         }
 
@@ -392,7 +392,7 @@ dummy_func(
             res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
             Py_INCREF(res);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
             Py_DECREF(list);
         }
 
@@ -411,7 +411,7 @@ dummy_func(
             res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
             Py_INCREF(res);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
             Py_DECREF(tuple);
         }
 
@@ -518,7 +518,7 @@ dummy_func(
             STACK_SHRINK(3);
             assert(old_value != NULL);
             Py_DECREF(old_value);
-            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)_PyLong_ExactDealloc);
             Py_DECREF(list);
             JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
         }
@@ -2129,8 +2129,8 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
             NEXTOPARG();
             STACK_SHRINK(2);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)_PyLong_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, (destructor)_PyLong_ExactDealloc);
             assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
             int jump = (1 << (sign + 1)) & when_to_jump_mask;
             if (!jump) {
