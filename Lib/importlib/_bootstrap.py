@@ -92,10 +92,10 @@ class _DeadlockError(RuntimeError):
 
 
 
-def _has_deadlocked(subject, seen, tids, _blocking_on):
+def _has_deadlocked(subject, seen, tids, blocking_on):
     """Check if 'subject' is holding the same lock as another thread(s).
 
-    The search within _blocking_on starts with the threads listed in tids.
+    The search within blocking_on starts with the threads listed in tids.
     'seen' contains any threads that are considered already traversed in the search.
 
     Keyword arguments:
@@ -111,7 +111,7 @@ def _has_deadlocked(subject, seen, tids, _blocking_on):
 
     # Otherwise, try to reach the subject from each of the given tids.
     for tid in tids:
-        blocking_on = _blocking_on.get(tid)
+        blocking_on = blocking_on.get(tid)
         if blocking_on is None:
             # There are no edges out from this node, skip it.
             continue
@@ -127,7 +127,7 @@ def _has_deadlocked(subject, seen, tids, _blocking_on):
 
         # Follow the edges out from this thread.
         edges = [lock.owner for lock in blocking_on]
-        if _has_deadlocked(subject, seen, edges, _blocking_on):
+        if _has_deadlocked(subject, seen, edges, blocking_on):
             return True
 
     return False
@@ -208,7 +208,7 @@ class _ModuleLock:
             # module.
             tids=[self.owner],
             # using the global "blocking on" state.
-            _blocking_on=_blocking_on,
+            blocking_on=_blocking_on,
         )
 
     def acquire(self):
