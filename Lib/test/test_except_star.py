@@ -1000,5 +1000,204 @@ class TestExceptStarCleanup(ExceptStarTest):
         self.assertEqual(sys.exc_info(), (None, None, None))
 
 
+class TestExceptStar_WeirdLeafExceptions(ExceptStarTest):
+    # Test that except* works when leaf exceptions are
+    # unhashable or have a bad custom __eq__
+
+    class UnhashableExc(ValueError):
+        __hash__ = None
+
+    class AlwaysEqualExc(ValueError):
+        def __eq__(self, other):
+            return True
+
+    class NeverEqualExc(ValueError):
+        def __eq__(self, other):
+            return False
+
+    class BrokenEqualExc(ValueError):
+        def __eq__(self, other):
+            raise RuntimeError()
+
+    def setUp(self):
+        self.bad_types = [self.UnhashableExc,
+                          self.AlwaysEqualExc,
+                          self.NeverEqualExc,
+                          self.BrokenEqualExc]
+
+    def except_type(self, eg, type):
+        match, rest = None, None
+        try:
+            try:
+                raise eg
+            except* type  as e:
+                match = e
+        except Exception as e:
+            rest = e
+        return match, rest
+
+    def test_catch_unhashable_leaf_exception(self):
+        for Bad in self.bad_types:
+            with self.subTest(Bad):
+                eg = ExceptionGroup("eg", [TypeError(1), Bad(2)])
+                match, rest = self.except_type(eg, Bad)
+                self.assertExceptionIsLike(
+                    match, ExceptionGroup("eg", [Bad(2)]))
+                self.assertExceptionIsLike(
+                    rest, ExceptionGroup("eg", [TypeError(1)]))
+
+    def test_propagate_unhashable_leaf(self):
+        for Bad in self.bad_types:
+            with self.subTest(Bad):
+                eg = ExceptionGroup("eg", [TypeError(1), Bad(2)])
+                match, rest = self.except_type(eg, TypeError)
+                self.assertExceptionIsLike(
+                    match, ExceptionGroup("eg", [TypeError(1)]))
+                self.assertExceptionIsLike(
+                    rest, ExceptionGroup("eg", [Bad(2)]))
+
+    def test_catch_nothing_unhashable_leaf(self):
+        for Bad in self.bad_types:
+            with self.subTest(Bad):
+                eg = ExceptionGroup("eg", [TypeError(1), Bad(2)])
+                match, rest = self.except_type(eg, OSError)
+                self.assertIsNone(match)
+                self.assertExceptionIsLike(rest, eg)
+
+    def test_catch_everything_unhashable_leaf(self):
+        for Bad in self.bad_types:
+            with self.subTest(Bad):
+                eg = ExceptionGroup("eg", [TypeError(1), Bad(2)])
+                match, rest = self.except_type(eg, Exception)
+                self.assertExceptionIsLike(match, eg)
+                self.assertIsNone(rest)
+
+    def test_reraise_unhashable_leaf(self):
+        for Bad in self.bad_types:
+            with self.subTest(Bad):
+                eg = ExceptionGroup(
+                    "eg", [TypeError(1), Bad(2), ValueError(3)])
+
+                try:
+                    try:
+                        raise eg
+                    except* TypeError:
+                        pass
+                    except* Bad:
+                        raise
+                except Exception as e:
+                    exc = e
+
+                self.assertExceptionIsLike(
+                    exc, ExceptionGroup("eg", [Bad(2), ValueError(3)]))
+
+
+class TestExceptStar_WeirdExceptionGroupSubclass(ExceptStarTest):
+    # Test that except* works with exception groups that are
+    # unhashable or have a bad custom __eq__
+
+    class UnhashableEG(ExceptionGroup):
+        __hash__ = None
+
+        def derive(self, excs):
+            return type(self)(self.message, excs)
+
+    class AlwaysEqualEG(ExceptionGroup):
+        def __eq__(self, other):
+            return True
+
+        def derive(self, excs):
+            return type(self)(self.message, excs)
+
+    class NeverEqualEG(ExceptionGroup):
+        def __eq__(self, other):
+            return False
+
+        def derive(self, excs):
+            return type(self)(self.message, excs)
+
+    class BrokenEqualEG(ExceptionGroup):
+        def __eq__(self, other):
+            raise RuntimeError()
+
+        def derive(self, excs):
+            return type(self)(self.message, excs)
+
+    def setUp(self):
+        self.bad_types = [self.UnhashableEG,
+                          self.AlwaysEqualEG,
+                          self.NeverEqualEG,
+                          self.BrokenEqualEG]
+
+    def except_type(self, eg, type):
+        match, rest = None, None
+        try:
+            try:
+                raise eg
+            except* type  as e:
+                match = e
+        except Exception as e:
+            rest = e
+        return match, rest
+
+    def test_catch_some_unhashable_exception_group_subclass(self):
+        for BadEG in self.bad_types:
+            with self.subTest(BadEG):
+                eg = BadEG("eg",
+                           [TypeError(1),
+                            BadEG("nested", [ValueError(2)])])
+
+                match, rest = self.except_type(eg, TypeError)
+                self.assertExceptionIsLike(match, BadEG("eg", [TypeError(1)]))
+                self.assertExceptionIsLike(rest,
+                    BadEG("eg", [BadEG("nested", [ValueError(2)])]))
+
+    def test_catch_none_unhashable_exception_group_subclass(self):
+        for BadEG in self.bad_types:
+            with self.subTest(BadEG):
+
+                eg = BadEG("eg",
+                           [TypeError(1),
+                            BadEG("nested", [ValueError(2)])])
+
+                match, rest = self.except_type(eg, OSError)
+                self.assertIsNone(match)
+                self.assertExceptionIsLike(rest, eg)
+
+    def test_catch_all_unhashable_exception_group_subclass(self):
+        for BadEG in self.bad_types:
+            with self.subTest(BadEG):
+
+                eg = BadEG("eg",
+                           [TypeError(1),
+                            BadEG("nested", [ValueError(2)])])
+
+                match, rest = self.except_type(eg, Exception)
+                self.assertExceptionIsLike(match, eg)
+                self.assertIsNone(rest)
+
+    def test_reraise_unhashable_eg(self):
+        for BadEG in self.bad_types:
+            with self.subTest(BadEG):
+
+                eg = BadEG("eg",
+                           [TypeError(1), ValueError(2),
+                            BadEG("nested", [ValueError(3), OSError(4)])])
+
+                try:
+                    try:
+                        raise eg
+                    except* ValueError:
+                        pass
+                    except* OSError:
+                        raise
+                except Exception as e:
+                    exc = e
+
+                self.assertExceptionIsLike(
+                    exc, BadEG("eg", [TypeError(1),
+                               BadEG("nested", [OSError(4)])]))
+
+
 if __name__ == '__main__':
     unittest.main()
