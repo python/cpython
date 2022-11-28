@@ -1,0 +1,3 @@
+Call ``protocol.get_buffer`` on the protocol given to
+``_ProactorReadPipeTransport`` if the protocol is of instance
+``BufferedProtocol`` instead of creating a new buffer.

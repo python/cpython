@@ -1,0 +1,1 @@
+Add ``BufferedProtocol`` support to ``_UnixReadPipeTransport``.
