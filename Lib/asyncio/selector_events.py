@@ -1080,16 +1080,16 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._buffer.append(data)
         self._maybe_pause_protocol()
 
-    def _get_sendmsg_buffer(self, buffer: collections.deque):
-        return itertools.islice(buffer, SC_IOV_MAX)
+    def _get_sendmsg_buffer(self):
+        return itertools.islice(self._buffer, SC_IOV_MAX)
 
     def _write_sendmsg(self):
         assert self._buffer, 'Data should not be empty'
         if self._conn_lost:
             return
         try:
-            nbytes = self._sock.sendmsg(self._get_sendmsg_buffer(self._buffer))
-            self._adjust_leftover_buffer(self._buffer, nbytes)
+            nbytes = self._sock.sendmsg(self._get_sendmsg_buffer())
+            self._adjust_leftover_buffer(nbytes)
         except (BlockingIOError, InterruptedError):
             pass
         except (SystemExit, KeyboardInterrupt):
@@ -1111,7 +1111,8 @@ class _SelectorSocketTransport(_SelectorTransport):
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
 
-    def _adjust_leftover_buffer(self, buffer: collections.deque, nbytes: int) -> None:
+    def _adjust_leftover_buffer(self, nbytes: int) -> None:
+        buffer = self._buffer
         while nbytes:
             b = buffer.popleft()
             b_len = len(b)
