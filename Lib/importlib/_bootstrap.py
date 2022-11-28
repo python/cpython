@@ -121,11 +121,10 @@ def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
             continue
 
         if tid in seen_ids:
-            # bpo 38091: the chain of tid's we encounter here
-            # eventually leads to a fixed point or a cycle, but
-            # does not reach 'me'.  This means we would not
-            # actually deadlock.  This can happen if other
-            # threads are at the beginning of acquire() below.
+            # bpo 38091: the chain of tid's we encounter here eventually leads
+            # to a fixed point or a cycle, but does not reach 'target_id'.
+            # This means we would not actually deadlock.  This can happen if
+            # other threads are at the beginning of acquire() below.
             return False
         seen_ids.add(tid)
 
