@@ -263,7 +263,6 @@ Module functions
                       autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)
 
    Open a connection to an SQLite database.
-   If *autocommit* is ``False``, a new transaction is implicitly opened.
 
    :param database:
        The path to the database file to be opened.
@@ -326,6 +325,7 @@ Module functions
        enabling various :ref:`sqlite3-uri-tricks`.
 
    :param autocommit:
+       If *autocommit* is ``False``, a new transaction is implicitly opened.
        See :attr:`Connection.autocommit` and
        :ref:`sqlite3-transaction-control-autocommit` for more information.
        *autocommit* currently defaults to
