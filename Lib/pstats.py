@@ -22,6 +22,7 @@
 
 import sys
 import os
+import stat
 import time
 import marshal
 import re
@@ -142,7 +143,7 @@ class Stats:
             with open(arg, 'rb') as f:
                 self.stats = marshal.load(f)
             try:
-                file_stats = os.stat(arg)
+                file_stats = os.statx(arg, stat.STATX_MTIME)
                 arg = time.ctime(file_stats.st_mtime) + "    " + arg
             except:  # in case this is not unix
                 pass

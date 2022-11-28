@@ -73,15 +73,6 @@ template = "tmp"
 _once_lock = _allocate_lock()
 
 
-def _exists(fn):
-    try:
-        _os.lstat(fn)
-    except OSError:
-        return False
-    else:
-        return True
-
-
 def _infer_return_type(*args):
     """Look at the type of all args and divine their implied return type."""
     return_type = None
@@ -406,7 +397,7 @@ def mktemp(suffix="", prefix=template, dir=None):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
-        if not _exists(file):
+        if not _os.path.exists(file):
             return file
 
     raise FileExistsError(_errno.EEXIST,

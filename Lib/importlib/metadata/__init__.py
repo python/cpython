@@ -13,6 +13,7 @@ import functools
 import itertools
 import posixpath
 import collections
+import stat
 
 from . import _adapters, _meta
 from ._collections import FreezableDefaultDict, Pair
@@ -628,7 +629,7 @@ class FastPath:
     @property
     def mtime(self):
         with suppress(OSError):
-            return os.stat(self.root).st_mtime
+            return os.statx(self.root, stat.STATX_MTIME).st_mtime
         self.lookup.cache_clear()
 
     @method_cache

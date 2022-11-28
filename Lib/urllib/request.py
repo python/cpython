@@ -90,6 +90,7 @@ import io
 import os
 import re
 import socket
+import stat
 import string
 import sys
 import time
@@ -1502,7 +1503,7 @@ class FileHandler(BaseHandler):
         filename = req.selector
         localfile = url2pathname(filename)
         try:
-            stats = os.stat(localfile)
+            stats = os.statx(localfile, stat.STATX_MTIME | stat.STATX_SIZE)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(filename)[0]
@@ -2016,7 +2017,7 @@ class URLopener:
         host, file = _splithost(url)
         localname = url2pathname(file)
         try:
-            stats = os.stat(localname)
+            stats = os.statx(localname, stat.STATX_MTIME | stat.STATX_SIZE)
         except OSError as e:
             raise URLError(e.strerror, e.filename)
         size = stats.st_size

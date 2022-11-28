@@ -17,7 +17,8 @@ import warnings
 from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
-from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import (S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO,
+                  STATX_TYPE, STATX_GID, STATX_UID)
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
@@ -914,17 +915,20 @@ class Path(PurePath):
         # Ensure we get an exception by calling stat()
         if not strict:
             try:
-                p.stat()
+                p.stat(mask=STATX_TYPE)
             except OSError as e:
                 check_eloop(e)
         return p
 
-    def stat(self, *, follow_symlinks=True):
+    def stat(self, *, follow_symlinks=True, mask=None):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        return os.stat(self, follow_symlinks=follow_symlinks)
+        if mask is not None:
+            return os.statx(self, mask, follow_symlinks=follow_symlinks)
+        else:
+            return os.stat(self, follow_symlinks=follow_symlinks)
 
     def owner(self):
         """
@@ -932,7 +936,7 @@ class Path(PurePath):
         """
         try:
             import pwd
-            return pwd.getpwuid(self.stat().st_uid).pw_name
+            return pwd.getpwuid(self.stat(mask=STATX_UID).st_uid).pw_name
         except ImportError:
             raise NotImplementedError("Path.owner() is unsupported on this system")
 
@@ -943,7 +947,7 @@ class Path(PurePath):
 
         try:
             import grp
-            return grp.getgrgid(self.stat().st_gid).gr_name
+            return grp.getgrgid(self.stat(mask=STATX_GID).st_gid).gr_name
         except ImportError:
             raise NotImplementedError("Path.group() is unsupported on this system")
 
@@ -1069,12 +1073,12 @@ class Path(PurePath):
         """
         os.rmdir(self)
 
-    def lstat(self):
+    def lstat(self, *, mask=None):
         """
         Like stat(), except if the path points to a symlink, the symlink's
         status information is returned, rather than its target's.
         """
-        return self.stat(follow_symlinks=False)
+        return self.stat(follow_symlinks=False, mask=mask)
 
     def rename(self, target):
         """
@@ -1129,7 +1133,7 @@ class Path(PurePath):
         Whether this path exists.
         """
         try:
-            self.stat()
+            self.stat(mask=STATX_TYPE)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1144,7 +1148,7 @@ class Path(PurePath):
         Whether this path is a directory.
         """
         try:
-            return S_ISDIR(self.stat().st_mode)
+            return S_ISDIR(self.stat(mask=STATX_TYPE).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1161,7 +1165,7 @@ class Path(PurePath):
         to regular files).
         """
         try:
-            return S_ISREG(self.stat().st_mode)
+            return S_ISREG(self.stat(mask=STATX_TYPE).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1183,7 +1187,7 @@ class Path(PurePath):
         Whether this path is a symbolic link.
         """
         try:
-            return S_ISLNK(self.lstat().st_mode)
+            return S_ISLNK(self.lstat(mask=STATX_TYPE).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1204,7 +1208,7 @@ class Path(PurePath):
         Whether this path is a block device.
         """
         try:
-            return S_ISBLK(self.stat().st_mode)
+            return S_ISBLK(self.stat(mask=STATX_TYPE).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1220,7 +1224,7 @@ class Path(PurePath):
         Whether this path is a character device.
         """
         try:
-            return S_ISCHR(self.stat().st_mode)
+            return S_ISCHR(self.stat(mask=STATX_TYPE).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1236,7 +1240,7 @@ class Path(PurePath):
         Whether this path is a FIFO.
         """
         try:
-            return S_ISFIFO(self.stat().st_mode)
+            return S_ISFIFO(self.stat(mask=STATX_TYPE).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1252,7 +1256,7 @@ class Path(PurePath):
         Whether this path is a socket.
         """
         try:
-            return S_ISSOCK(self.stat().st_mode)
+            return S_ISSOCK(self.stat(mask=STATX_TYPE).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise

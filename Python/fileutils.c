@@ -9,6 +9,7 @@
 #  include <malloc.h>
 #  include <windows.h>
 #  include <pathcch.h>            // PathCchCombineEx
+#  include <winioctl.h>
 #  include "pycore_fileutils_windows.h" // FILE_STAT_BASIC_INFORMATION
 extern int winerror_to_errno(int);
 #endif
@@ -1145,13 +1146,29 @@ _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
     }
     result->st_file_attributes = info->FileAttributes;
     switch (info->DeviceType) {
-    case FILE_TYPE_DISK:
+    case FILE_DEVICE_DISK:
+    case FILE_DEVICE_DISK_FILE_SYSTEM:
+    case FILE_DEVICE_VIRTUAL_DISK:
+    case FILE_DEVICE_DFS:
+    case FILE_DEVICE_CD_ROM:
+    case FILE_DEVICE_CD_ROM_FILE_SYSTEM:
+    case FILE_DEVICE_CONTROLLER:
+    case FILE_DEVICE_DATALINK:
         break;
-    case FILE_TYPE_CHAR:
+    case FILE_DEVICE_CONSOLE:
+    case FILE_DEVICE_NULL:
+    case FILE_DEVICE_KEYBOARD:
+    case FILE_DEVICE_MODEM:
+    case FILE_DEVICE_MOUSE:
+    case FILE_DEVICE_PARALLEL_PORT:
+    case FILE_DEVICE_PRINTER:
+    case FILE_DEVICE_SCREEN:
+    case FILE_DEVICE_SERIAL_PORT:
+    case FILE_DEVICE_SOUND:
         /* \\.\nul */
         result->st_mode = (result->st_mode & ~S_IFMT) | _S_IFCHR;
         break;
-    case FILE_TYPE_PIPE:
+    case FILE_DEVICE_NAMED_PIPE:
         /* \\.\pipe\spam */
         result->st_mode = (result->st_mode & ~S_IFMT) | _S_IFIFO;
         break;

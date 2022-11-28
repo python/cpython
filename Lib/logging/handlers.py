@@ -24,7 +24,7 @@ To use, simply 'import logging.handlers' and log away!
 """
 
 import io, logging, socket, os, pickle, struct, time, re
-from stat import ST_DEV, ST_INO, ST_MTIME
+from stat import ST_DEV, ST_INO, ST_MTIME, STATX_INO, STATX_MTIME
 import queue
 import threading
 import copy
@@ -263,7 +263,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         # path object (see Issue #27493), but self.baseFilename will be a string
         filename = self.baseFilename
         if os.path.exists(filename):
-            t = os.stat(filename)[ST_MTIME]
+            t = os.statx(filename, STATX_MTIME)[ST_MTIME]
         else:
             t = int(time.time())
         self.rolloverAt = self.computeRollover(t)
@@ -484,7 +484,7 @@ class WatchedFileHandler(logging.FileHandler):
 
     def _statstream(self):
         if self.stream:
-            sres = os.fstat(self.stream.fileno())
+            sres = os.statx(self.stream.fileno(), STATX_INO)
             self.dev, self.ino = sres[ST_DEV], sres[ST_INO]
 
     def reopenIfNeeded(self):
@@ -501,7 +501,7 @@ class WatchedFileHandler(logging.FileHandler):
         # and patch.
         try:
             # stat the file by path, checking for existence
-            sres = os.stat(self.baseFilename)
+            sres = os.statx(self.baseFilename, STATX_INO)
         except FileNotFoundError:
             sres = None
         # compare file system stat with that of our stream file handle

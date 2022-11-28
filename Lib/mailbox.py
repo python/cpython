@@ -18,6 +18,7 @@ import email.message
 import email.generator
 import io
 import contextlib
+import stat
 from types import GenericAlias
 try:
     import fcntl
@@ -499,7 +500,7 @@ class Maildir(Mailbox):
                                     Maildir._count, hostname)
         path = os.path.join(self._path, 'tmp', uniq)
         try:
-            os.stat(path)
+            os.statx(path, stat.STATX_TYPE)
         except FileNotFoundError:
             Maildir._count += 1
             try:
@@ -699,7 +700,7 @@ class _singlefileMailbox(Mailbox):
         # self._file is about to get replaced, so no need to sync.
         self._file.close()
         # Make sure the new file's mode is the same as the old file's
-        mode = os.stat(self._path).st_mode
+        mode = os.statx(self._path, stat.STATX_MODE).st_mode
         os.chmod(new_file.name, mode)
         try:
             os.rename(new_file.name, self._path)

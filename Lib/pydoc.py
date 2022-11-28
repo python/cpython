@@ -66,6 +66,7 @@ import os
 import pkgutil
 import platform
 import re
+import stat
 import sys
 import sysconfig
 import time
@@ -349,7 +350,7 @@ def source_synopsis(file):
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
-    mtime = os.stat(filename).st_mtime
+    mtime = os.statx(filename, stat.STATX_MTIME).st_mtime
     lastupdate, result = cache.get(filename, (None, None))
     if lastupdate is None or lastupdate < mtime:
         # Look for binary suffixes first, falling back to source.

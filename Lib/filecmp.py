@@ -50,8 +50,8 @@ def cmp(f1, f2, shallow=True):
 
     """
 
-    s1 = _sig(os.stat(f1))
-    s2 = _sig(os.stat(f2))
+    s1 = _sig(os.statx(f1, stat.STATX_TYPE | stat.STATX_SIZE | stat.STATX_MTIME))
+    s2 = _sig(os.statx(f2, stat.STATX_TYPE | stat.STATX_SIZE | stat.STATX_MTIME))
     if s1[0] != stat.S_IFREG or s2[0] != stat.S_IFREG:
         return False
     if shallow and s1 == s2:
@@ -159,12 +159,12 @@ class dircmp:
 
             ok = True
             try:
-                a_stat = os.stat(a_path)
+                a_stat = os.statx(a_path, stat.STATX_TYPE)
             except OSError:
                 # print('Can\'t stat', a_path, ':', why.args[1])
                 ok = False
             try:
-                b_stat = os.stat(b_path)
+                b_stat = os.statx(b_path, stat.STATX_TYPE)
             except OSError:
                 # print('Can\'t stat', b_path, ':', why.args[1])
                 ok = False
