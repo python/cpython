@@ -92,45 +92,46 @@ class _DeadlockError(RuntimeError):
 
 
 
-def _has_deadlocked(subject, seen, tids, blocking_on):
-    """Check if 'subject' is holding the same lock as another thread(s).
+def _has_deadlocked(target_id, seen_ids, candidate_ids, blocking_on):
+    """Check if 'target_id' is holding the same lock as another thread(s).
 
-    The search within blocking_on starts with the threads listed in tids.
-    'seen' contains any threads that are considered already traversed in the search.
+    The search within 'blocking_on' starts with the threads listed in
+    'candidate_ids'.  'seen_ids' contains any threads that are considered
+    already traversed in the search.
 
     Keyword arguments:
-    subject     -- The thread id to try to reach.
-    seen        -- A set of threads that have already been visited.
-    tids        -- The thread ids from which to begin.
-    blocking_on -- A dict representing the thread/blocking-on graph.
-                   This may be the same object as the global '_blocking_on'
-                   but it is a parameter to reduce the impact that global
-                   mutable state has on the result of this function.
+    target_id     -- The thread id to try to reach.
+    seen_ids      -- A set of threads that have already been visited.
+    candidate_ids -- The thread ids from which to begin.
+    blocking_on   -- A dict representing the thread/blocking-on graph.  This may
+                     be the same object as the global '_blocking_on' but it is
+                     a parameter to reduce the impact that global mutable
+                     state has on the result of this function.
     """
-    if subject in tids:
-        # If we have already reached the subject, we're done - signal that it
+    if target_id in candidate_ids:
+        # If we have already reached the target_id, we're done - signal that it
         # is reachable.
         return True
 
-    # Otherwise, try to reach the subject from each of the given tids.
-    for tid in tids:
+    # Otherwise, try to reach the target_id from each of the given candidate_ids.
+    for tid in candidate_ids:
         blocking_on = blocking_on.get(tid)
         if blocking_on is None:
             # There are no edges out from this node, skip it.
             continue
 
-        if tid in seen:
+        if tid in seen_ids:
             # bpo 38091: the chain of tid's we encounter here
             # eventually leads to a fixed point or a cycle, but
             # does not reach 'me'.  This means we would not
             # actually deadlock.  This can happen if other
             # threads are at the beginning of acquire() below.
             return False
-        seen.add(tid)
+        seen_ids.add(tid)
 
         # Follow the edges out from this thread.
         edges = [lock.owner for lock in blocking_on]
-        if _has_deadlocked(subject, seen, edges, blocking_on):
+        if _has_deadlocked(target_id, seen_ids, edges, blocking_on):
             return True
 
     return False
@@ -205,11 +206,11 @@ class _ModuleLock:
         # is held by this thread.
         return _has_deadlocked(
             # Try to find this thread
-            subject=_thread.get_ident(),
-            seen=set(),
+            target_id=_thread.get_ident(),
+            seen_ids=set(),
             # starting from the thread that holds the import lock for this
             # module.
-            tids=[self.owner],
+            candidate_ids=[self.owner],
             # using the global "blocking on" state.
             blocking_on=_blocking_on,
         )
