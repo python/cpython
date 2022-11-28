@@ -79,8 +79,12 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 }
 
 /* Return 1 if the argument is negative or a multi-digit int */
-#define _PyLong_Negative_or_multi_digit_int(sub) (assert(PyLong_CheckExact(sub)), \
-                    ((size_t)Py_SIZE(sub)) > 1)
+static inline int
+_PyLong_Negative_or_multi_digit_int(PyObject* sub) {
+    assert(PyLong_CheckExact(sub));
+    Py_ssize_t signed_magnitude = Py_SIZE(sub);
+    return ((size_t)signed_magnitude) > 1;
+}
 
 PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);

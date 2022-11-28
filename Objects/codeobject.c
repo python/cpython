@@ -1347,7 +1347,7 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    if (!PyCode_Check(code) || !valid_index(index, interp->co_extra_user_count)) {
+    if (!PyCode_Check(code) || !_Py_is_valid_index(index, interp->co_extra_user_count)) {
         PyErr_BadInternalCall();
         return -1;
     }

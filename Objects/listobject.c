@@ -234,7 +234,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (!valid_index(i, Py_SIZE(op))) {
+    if (!_Py_is_valid_index(i, Py_SIZE(op))) {
         _Py_DECLARE_STR(list_err, "list index out of range");
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
@@ -252,7 +252,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
         PyErr_BadInternalCall();
         return -1;
     }
-    if (!valid_index(i, Py_SIZE(op))) {
+    if (!_Py_is_valid_index(i, Py_SIZE(op))) {
         Py_XDECREF(newitem);
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
@@ -443,7 +443,7 @@ list_contains(PyListObject *a, PyObject *el)
 static PyObject *
 list_item(PyListObject *a, Py_ssize_t i)
 {
-    if (!valid_index(i, Py_SIZE(a))) {
+    if (!_Py_is_valid_index(i, Py_SIZE(a))) {
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
@@ -755,7 +755,7 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 static int
 list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
 {
-    if (!valid_index(i, Py_SIZE(a))) {
+    if (!_Py_is_valid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
         return -1;
@@ -1006,7 +1006,7 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     }
     if (index < 0)
         index += Py_SIZE(self);
-    if (!valid_index(index, Py_SIZE(self))) {
+    if (!_Py_is_valid_index(index, Py_SIZE(self))) {
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
