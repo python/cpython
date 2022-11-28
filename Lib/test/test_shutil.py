@@ -371,18 +371,21 @@ class TestRmTree(BaseTest, unittest.TestCase):
     def test_rmtree_does_not_choke_on_failing_lstat(self):
         try:
             orig_lstat = os.lstat
-            def raiser(fn, *args, **kwargs):
+            orig_statx = os.statx
+            def raiser(fn, *args, _orig, **kwargs):
                 if fn != TESTFN:
                     raise OSError()
                 else:
-                    return orig_lstat(fn)
-            os.lstat = raiser
+                    return _orig(fn, *args, **kwargs)
+            os.lstat = functools.partial(raiser, _orig=orig_lstat)
+            os.statx = functools.partial(raiser, _orig=orig_statx)
 
             os.mkdir(TESTFN)
             write_file((TESTFN, 'foo'), 'foo')
             shutil.rmtree(TESTFN)
         finally:
             os.lstat = orig_lstat
+            os.statx = orig_statx
 
     def test_rmtree_uses_safe_fd_version_if_available(self):
         _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
@@ -2571,7 +2574,8 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
         # Emulate a case where src file size cannot be determined.
         # Internally bufsize will be set to a small value and
         # sendfile() will be called repeatedly.
-        with unittest.mock.patch('os.fstat', side_effect=OSError) as m:
+        with (unittest.mock.patch('os.fstat', side_effect=OSError) as m1,
+              unittest.mock.patch('os.statx', side_effect=OSError) as m2):
             with self.get_files() as (src, dst):
                 shutil._fastcopy_sendfile(src, dst)
                 assert m.called
@@ -2584,10 +2588,11 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
         # bigger while it is being copied.
         mock = unittest.mock.Mock()
         mock.st_size = 65536 + 1
-        with unittest.mock.patch('os.fstat', return_value=mock) as m:
+        with (unittest.mock.patch('os.fstat', return_value=mock) as m1,
+              unittest.mock.patch('os.statx', return_value=mock) as m2):
             with self.get_files() as (src, dst):
                 shutil._fastcopy_sendfile(src, dst)
-                assert m.called
+                assert m1.called or m2.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_big_chunk(self):
@@ -2597,10 +2602,11 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
         # performance.
         mock = unittest.mock.Mock()
         mock.st_size = self.FILESIZE + (100 * 1024 * 1024)
-        with unittest.mock.patch('os.fstat', return_value=mock) as m:
+        with (unittest.mock.patch('os.fstat', return_value=mock) as m1,
+              unittest.mock.patch('os.statx', return_value=mock) as m2):
             with self.get_files() as (src, dst):
                 shutil._fastcopy_sendfile(src, dst)
-                assert m.called
+                assert m1.called or m2.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_blocksize_arg(self):

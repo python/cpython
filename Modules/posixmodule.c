@@ -2724,6 +2724,8 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
     PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX, Py_NewRef(zero));
 #endif
 
+    Py_DECREF(zero);
+
     if (PyErr_Occurred()) {
         Py_DECREF(v);
         return NULL;
