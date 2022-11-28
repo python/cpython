@@ -171,10 +171,10 @@ See :ref:`__slots__ documentation <slots>` for details.
       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
 
 :class:`WeakKeyDictionary` objects have an additional method that
-exposes the internal weak references directly.  The weak references are not guaranteed to
-be "live" at the time they are used, so the result of calling them
+exposes the internal references directly.  The references are not guaranteed to
+be "live" at the time they are used, so the result of calling the references
 needs to be checked before being used.  This can be used to avoid creating
-strong references that will cause the garbage collector to keep the keys around longer
+references that will cause the garbage collector to keep the keys around longer
 than needed.
 
 
@@ -294,7 +294,7 @@ objects.
    .. note::
 
       It is important to ensure that *func*, *args* and *kwargs* do
-      not own any strong references to *obj*, either directly or indirectly,
+      not own any references to *obj*, either directly or indirectly,
       since otherwise *obj* will never be garbage collected.  In
       particular, *func* should not be a bound method of *obj*.
 
@@ -349,7 +349,7 @@ obtained, if it still exists, by calling it:
    >>> o is o2
    True
 
-If the referent no longer exists, calling the weak reference returns
+If the referent no longer exists, calling the reference object returns
 :const:`None`:
 
    >>> del o, o2
@@ -377,7 +377,7 @@ applications as well as single-threaded applications.
 Specialized versions of :class:`ref` objects can be created through subclassing.
 This is used in the implementation of the :class:`WeakValueDictionary` to reduce
 the memory overhead for each entry in the mapping.  This may be most useful to
-associate additional information with a weak reference, but could also be used to
+associate additional information with a reference, but could also be used to
 insert additional processing on calls to retrieve the referent.
 
 This example shows how a subclass of :class:`ref` can be used to store
@@ -395,7 +395,7 @@ the referent is accessed::
 
        def __call__(self):
            """Return a pair containing the referent and the number of
-           times the weak reference has been called.
+           times the reference has been called.
            """
            ob = super().__call__()
            if ob is not None:
