@@ -52,10 +52,8 @@ tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
     }
     tb = PyObject_GC_New(PyTracebackObject, &PyTraceBack_Type);
     if (tb != NULL) {
-        Py_XINCREF(next);
-        tb->tb_next = next;
-        Py_XINCREF(frame);
-        tb->tb_frame = frame;
+        tb->tb_next = (PyTracebackObject*)Py_XNewRef(next);
+        tb->tb_frame = (PyFrameObject*)Py_XNewRef(frame);
         tb->tb_lasti = lasti;
         tb->tb_lineno = lineno;
         PyObject_GC_Track(tb);
@@ -106,8 +104,7 @@ tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
     if (!ret) {
         ret = Py_None;
     }
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 static int
@@ -139,10 +136,7 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
         cursor = cursor->tb_next;
     }
 
-    PyObject *old_next = (PyObject*)self->tb_next;
-    Py_XINCREF(new_next);
-    self->tb_next = (PyTracebackObject *)new_next;
-    Py_XDECREF(old_next);
+    Py_XSETREF(self->tb_next, (PyTracebackObject *)Py_XNewRef(new_next));
 
     return 0;
 }
@@ -522,8 +516,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
     }
 
     if (line) {
-        Py_INCREF(lineobj);
-        *line = lineobj;
+        *line = Py_NewRef(lineobj);
     }
 
     /* remove the indentation of the line */
@@ -538,8 +531,7 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         PyObject *truncated;
         truncated = PyUnicode_Substring(lineobj, i, PyUnicode_GET_LENGTH(lineobj));
         if (truncated) {
-            Py_DECREF(lineobj);
-            lineobj = truncated;
+            Py_SETREF(lineobj, truncated);
         } else {
             PyErr_Clear();
         }
@@ -592,7 +584,6 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
  *  Traceback (most recent call last):
  *    File "/home/isidentical/cpython/cpython/t.py", line 10, in <module>
  *      add_values(1, 2, 'x', 3, 4)
- *      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
  *    File "/home/isidentical/cpython/cpython/t.py", line 2, in add_values
  *      return a + b + c + d + e
  *             ~~~~~~^~~
@@ -706,8 +697,13 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
 
 done:
     if (res > 0) {
-        *left_anchor += start_offset;
-        *right_anchor += start_offset;
+        // Normalize the AST offsets to byte offsets and adjust them with the
+        // start of the actual line (instead of the source code segment).
+        assert(segment != NULL);
+        assert(*left_anchor >= 0);
+        assert(*right_anchor >= 0);
+        *left_anchor = _PyPegen_byte_offset_to_character_offset(segment, *left_anchor) + start_offset;
+        *right_anchor = _PyPegen_byte_offset_to_character_offset(segment, *right_anchor) + start_offset;
     }
     Py_XDECREF(segment);
     if (arena) {
@@ -736,7 +732,7 @@ print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py
     int special_chars = (left_end_offset != -1 || right_start_offset != -1);
     const char *str;
     while (++offset <= end_offset) {
-        if (offset <= start_offset || offset > end_offset) {
+        if (offset <= start_offset) {
             str = " ";
         } else if (special_chars && left_end_offset < offset && offset <= right_start_offset) {
             str = secondary;
@@ -792,6 +788,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
 
     int code_offset = tb->tb_lasti;
     PyCodeObject* code = frame->f_frame->f_code;
+    const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
 
     int start_line;
     int end_line;
@@ -813,7 +810,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     //
     //  ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE
     //        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^~~~~~~~~~~~~~~~~~~~
-    //        |              |-> left_end_offset     |                  |-> left_offset
+    //        |              |-> left_end_offset     |                  |-> end_offset
     //        |-> start_offset                       |-> right_start_offset
     //
     // In general we will only have (start_offset, end_offset) but we can gather more information
@@ -822,6 +819,9 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // the different ranges (primary_error_char and secondary_error_char). If we cannot obtain the
     // AST information or we cannot identify special ranges within it, then left_end_offset and
     // right_end_offset will be set to -1.
+    //
+    // To keep the column indicators pertinent, they are not shown when the primary character
+    // spans the whole line.
 
     // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
     assert(source_line);
@@ -859,7 +859,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
             goto done;
         }
 
-        Py_ssize_t i = PyUnicode_GET_LENGTH(source_line);
+        Py_ssize_t i = source_line_len;
         while (--i >= 0) {
             if (!IS_WHITESPACE(source_line_str[i])) {
                 break;
@@ -867,6 +867,13 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         }
 
         end_offset = i + 1;
+    }
+
+    // Elide indicators if primary char spans the frame line
+    Py_ssize_t stripped_line_len = source_line_len - truncation - _TRACEBACK_SOURCE_LINE_INDENT;
+    bool has_secondary_ranges = (left_end_offset != -1 || right_start_offset != -1);
+    if (end_offset - start_offset == stripped_line_len && !has_secondary_ranges) {
+        goto done;
     }
 
     if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
@@ -1219,6 +1226,15 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         if (frame == NULL) {
             break;
         }
+        if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+            /* Trampoline frame */
+            frame = frame->previous;
+        }
+        if (frame == NULL) {
+            break;
+        }
+        /* Can't have more than one shim frame in a row */
+        assert(frame->owner != FRAME_OWNED_BY_CSTACK);
         depth++;
     }
 }

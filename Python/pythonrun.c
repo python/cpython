@@ -515,8 +515,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     if (v == Py_None) {
         Py_DECREF(v);
         _Py_DECLARE_STR(anon_string, "<string>");
-        *filename = &_Py_STR(anon_string);
-        Py_INCREF(*filename);
+        *filename = Py_NewRef(&_Py_STR(anon_string));
     }
     else {
         *filename = v;
@@ -719,8 +718,7 @@ _Py_HandleSystemExit(int *exitcode_p)
         /* The error code should be in the `code' attribute. */
         PyObject *code = PyObject_GetAttr(value, &_Py_ID(code));
         if (code) {
-            Py_DECREF(value);
-            value = code;
+            Py_SETREF(value, code);
             if (value == Py_None)
                 goto done;
         }
@@ -786,8 +784,7 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
 
     _PyErr_NormalizeException(tstate, &exception, &v, &tb);
     if (tb == NULL) {
-        tb = Py_None;
-        Py_INCREF(tb);
+        tb = Py_NewRef(Py_None);
     }
     PyException_SetTraceback(v, tb);
     if (exception == NULL) {
@@ -833,12 +830,10 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
                to be NULL. However PyErr_Display() can't
                tolerate NULLs, so just be safe. */
             if (exception2 == NULL) {
-                exception2 = Py_None;
-                Py_INCREF(exception2);
+                exception2 = Py_NewRef(Py_None);
             }
             if (v2 == NULL) {
-                v2 = Py_None;
-                Py_INCREF(v2);
+                v2 = Py_NewRef(Py_None);
             }
             fflush(stdout);
             PySys_WriteStderr("Error in sys.excepthook:\n");
@@ -1107,14 +1102,7 @@ print_exception_suggestions(struct exception_print_context *ctx,
     PyObject *f = ctx->file;
     PyObject *suggestions = _Py_Offer_Suggestions(value);
     if (suggestions) {
-        // Add a trailer ". Did you mean: (...)?"
-        if (PyFile_WriteString(". Did you mean: '", f) < 0) {
-            goto error;
-        }
         if (PyFile_WriteObject(suggestions, f, Py_PRINT_RAW) < 0) {
-            goto error;
-        }
-        if (PyFile_WriteString("'?", f) < 0) {
             goto error;
         }
         Py_DECREF(suggestions);
@@ -1698,7 +1686,8 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
      * uncaught exception to trigger an unexplained signal exit from a future
      * Py_Main() based one.
      */
-    _Py_UnhandledKeyboardInterrupt = 0;
+    // XXX Isn't this dealt with by the move to _PyRuntimeState?
+    _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
     if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
@@ -1712,7 +1701,7 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (!v && _PyErr_Occurred(tstate) == PyExc_KeyboardInterrupt) {
-        _Py_UnhandledKeyboardInterrupt = 1;
+        _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
     }
     return v;
 }
@@ -1858,7 +1847,7 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
     }
 
     if (strlen(str) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError,
+        PyErr_SetString(PyExc_SyntaxError,
             "source code string cannot contain null bytes");
         Py_CLEAR(*cmd_copy);
         return NULL;

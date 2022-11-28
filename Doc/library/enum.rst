@@ -27,7 +27,8 @@
 An enumeration:
 
 * is a set of symbolic names (members) bound to unique values
-* can be iterated over to return its members in definition order
+* can be iterated over to return its canonical (i.e. non-alias) members in
+  definition order
 * uses *call* syntax to return members by value
 * uses *index* syntax to return members by name
 
@@ -92,6 +93,11 @@ Module Contents
       the bitwise operators without losing their :class:`IntFlag` membership.
       :class:`IntFlag` members are also subclasses of :class:`int`. (`Notes`_)
 
+   :class:`ReprEnum`
+
+      Used by :class:`IntEnum`, :class:`StrEnum`, and :class:`IntFlag`
+      to keep the :class:`str() <str>` of the mixed-in type.
+
    :class:`EnumCheck`
 
       An enumeration with the values ``CONTINUOUS``, ``NAMED_FLAGS``, and
@@ -132,10 +138,20 @@ Module Contents
 
       Do not make ``obj`` a member.  Can be used as a decorator.
 
+   :func:`global_enum`
+
+      Modify the :class:`str() <str>` and :func:`repr` of an enum
+      to show its members as belonging to the module instead of its class.
+      Should only be used if the enum members will be exported to the
+      module global namespace.
+
+   :func:`show_flag_values`
+
+      Return a list of all power-of-two integers contained in a flag.
+
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``FlagBoundary``, ``property``
-.. versionadded:: 3.11  ``member``, ``nonmember``
+.. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
 
 ---------------
 
@@ -175,13 +191,6 @@ Data Types
 
         >>> dir(Color)
         ['BLUE', 'GREEN', 'RED', '__class__', '__contains__', '__doc__', '__getitem__', '__init_subclass__', '__iter__', '__len__', '__members__', '__module__', '__name__', '__qualname__']
-
-   .. method:: EnumType.__getattr__(cls, name)
-
-      Returns the Enum member in *cls* matching *name*, or raises an :exc:`AttributeError`::
-
-        >>> Color.GREEN
-        <Color.GREEN: 2>
 
    .. method:: EnumType.__getitem__(cls, name)
 
@@ -234,8 +243,8 @@ Data Types
 
          Member values can be anything: :class:`int`, :class:`str`, etc..  If
          the exact value is unimportant you may use :class:`auto` instances and an
-         appropriate value will be chosen for you.  Care must be taken if you mix
-         :class:`auto` with other values.
+         appropriate value will be chosen for you.  See :class:`auto` for the
+         details.
 
    .. attribute:: Enum._ignore_
 
@@ -417,19 +426,23 @@ Data Types
    in most of the same places that a string can be used.  The result of any string
    operation performed on or with a *StrEnum* member is not part of the enumeration.
 
-   .. note:: There are places in the stdlib that check for an exact :class:`str`
-             instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
-             instead of ``isinstance(str, unknown)``), and in those locations you
-             will need to use ``str(StrEnum.member)``.
+   .. note::
+
+      There are places in the stdlib that check for an exact :class:`str`
+      instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
+      instead of ``isinstance(unknown, str)``), and in those locations you
+      will need to use ``str(StrEnum.member)``.
 
    .. note::
 
       Using :class:`auto` with :class:`StrEnum` results in the lower-cased member
       name as the value.
 
-   .. note:: :meth:`__str__` is :func:`str.__str__` to better support the
-      *replacement of existing constants* use-case.  :meth:`__format__` is likewise
-      :func:`str.__format__` for that same reason.
+   .. note::
+
+      :meth:`~object.__str__` is :meth:`!str.__str__` to better support the
+      *replacement of existing constants* use-case.  :meth:`~object.__format__` is likewise
+      :meth:`!str.__format__` for that same reason.
 
    .. versionadded:: 3.11
 
@@ -461,12 +474,16 @@ Data Types
 
    .. method:: __iter__(self):
 
-      Returns all contained members::
+      Returns all contained non-alias members::
 
          >>> list(Color.RED)
          [<Color.RED: 1>]
          >>> list(purple)
          [<Color.RED: 1>, <Color.BLUE: 4>]
+
+      .. versionchanged:: 3.11
+
+         Aliases are no longer returned during iteration.
 
    .. method:: __len__(self):
 
@@ -577,10 +594,30 @@ Data Types
       Using :class:`auto` with :class:`IntFlag` results in integers that are powers
       of two, starting with ``1``.
 
-   .. versionchanged:: 3.11 :meth:`__str__` is now :func:`int.__str__` to
-      better support the *replacement of existing constants* use-case.
-      :meth:`__format__` was already :func:`int.__format__` for that same reason.
+   .. versionchanged:: 3.11
 
+      :meth:`~object.__str__` is now :meth:`!int.__str__` to better support the
+      *replacement of existing constants* use-case.  :meth:`~object.__format__` was
+      already :meth:`!int.__format__` for that same reason.
+
+      Inversion of a :class:`!IntFlag` now returns a positive value that is the
+      union of all flags not in the given flag, rather than a negative value.
+      This matches the existing :class:`Flag` behavior.
+
+.. class:: ReprEnum
+
+   :class:`!ReprEum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
+   but the :class:`str() <str>` of the mixed-in data type:
+
+      * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
+      * :meth:`!str.__str__` for :class:`StrEnum`
+
+   Inherit from :class:`!ReprEnum` to keep the :class:`str() <str> / :func:`format`
+   of the mixed-in data type instead of using the
+   :class:`Enum`-default :meth:`str() <Enum.__str__>`.
+
+
+   .. versionadded:: 3.11
 
 .. class:: EnumCheck
 
@@ -756,7 +793,16 @@ Utilities and Decorators
    For *Enum* and *IntEnum* that appropriate value will be the last value plus
    one; for *Flag* and *IntFlag* it will be the first power-of-two greater
    than the last value; for *StrEnum* it will be the lower-cased version of the
-   member's name.
+   member's name.  Care must be taken if mixing *auto()* with manually specified
+   values.
+
+   *auto* instances are only resolved when at the top level of an assignment:
+
+      * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
+      * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
+         used to create the ``SECOND`` enum member;
+      * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
+        create the ``THREE`` enum member)
 
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
@@ -813,6 +859,22 @@ Utilities and Decorators
 .. decorator:: nonmember
 
    A decorator for use in enums: its target will not become a member.
+
+   .. versionadded:: 3.11
+
+.. decorator:: global_enum
+
+   A decorator to change the :class:`str() <str>` and :func:`repr` of an enum
+   to show its members as belonging to the module instead of its class.
+   Should only be used when the enum members are exported
+   to the module global namespace (see :class:`re.RegexFlag` for an example).
+
+
+   .. versionadded:: 3.11
+
+.. function:: show_flag_values(value)
+
+   Return a list of all power-of-two integers contained in a flag *value*.
 
    .. versionadded:: 3.11
 
