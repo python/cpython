@@ -2,15 +2,14 @@
 /* Map C struct members to Python object attributes */
 
 #include "Python.h"
-
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 PyObject *
-PyMember_GetOne(const char *addr, PyMemberDef *l)
+PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
 {
     PyObject *v;
 
-    addr += l->offset;
+    const char* addr = obj_addr + l->offset;
     switch (l->type) {
     case T_BOOL:
         v = PyBool_FromLong(*(char*)addr);
@@ -50,8 +49,7 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
         break;
     case T_STRING:
         if (*(char**)addr == NULL) {
-            Py_INCREF(Py_None);
-            v = Py_None;
+            v = Py_NewRef(Py_None);
         }
         else
             v = PyUnicode_FromString(*(char**)addr);
@@ -70,8 +68,13 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
         break;
     case T_OBJECT_EX:
         v = *(PyObject **)addr;
-        if (v == NULL)
-            PyErr_SetString(PyExc_AttributeError, l->name);
+        if (v == NULL) {
+            PyObject *obj = (PyObject *)obj_addr;
+            PyTypeObject *tp = Py_TYPE(obj);
+            PyErr_Format(PyExc_AttributeError,
+                         "'%.200s' object has no attribute '%s'",
+                         tp->tp_name, l->name);
+        }
         Py_XINCREF(v);
         break;
     case T_LONGLONG:
@@ -81,8 +84,7 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
         v = PyLong_FromUnsignedLongLong(*(unsigned long long *)addr);
         break;
     case T_NONE:
-        v = Py_None;
-        Py_INCREF(v);
+        v = Py_NewRef(Py_None);
         break;
     default:
         PyErr_SetString(PyExc_SystemError, "bad memberdescr type");
@@ -243,9 +245,8 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     case T_OBJECT:
     case T_OBJECT_EX:
-        Py_XINCREF(v);
         oldv = *(PyObject **)addr;
-        *(PyObject **)addr = v;
+        *(PyObject **)addr = Py_XNewRef(v);
         Py_XDECREF(oldv);
         break;
     case T_CHAR: {
