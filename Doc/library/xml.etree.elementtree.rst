@@ -629,7 +629,7 @@ Functions
    parsing, see :class:`XMLPullParser`.
 
    Once *source* is fully read, the returned :term:`iterator` object is populated with a ``root``
-   attribute which references to the root element of the resulting XML tree.
+   attribute which references the root element of the resulting XML tree.
 
    .. note::
 
