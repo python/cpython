@@ -65,7 +65,31 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
+#if defined(HAVE_DLFCN_H)
+#include <dlfcn.h>
+#elif defined(MS_WIN32) || defined(MS_WIN64)
+#define WINDOWS_LEAN_AND_MEAN
+#include "windows.h"
 
+#define HAVE_DLFCN_H
+
+typedef struct {
+    char dli_fname[MAX_PATH];
+} Dl_info;
+
+static int dladdr(const void *addr, Dl_info *info)
+{
+    HMODULE hmodule;
+    if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCSTR)addr, &hmodule)) {
+        if (GetModuleFileName(hmodule, info->dli_fname, sizeof(info->dli_fname))) {
+            info->dli_fname[sizeof(info->dli_fname)-1] = '\0';
+        }
+    }
+    return 1;
+}
+#endif
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -5838,6 +5862,16 @@ sslmodule_init_constants(PyObject *m)
                             X509_V_FLAG_ALLOW_PROXY_CERTS);
     PyModule_AddIntConstant(m, "VERIFY_X509_TRUSTED_FIRST",
                             X509_V_FLAG_TRUSTED_FIRST);
+
+#ifdef HAVE_DLFCN_H
+    {
+        Dl_info info;
+        if (dladdr(OpenSSL_version, &info))
+            PyModule_AddStringConstant(m, "CRYPTO_DLL_PATH", info.dli_fname);
+        if (dladdr(SSL_version, &info))
+            PyModule_AddStringConstant(m, "SSL_DLL_PATH", info.dli_fname);
+    }
+#endif
 
 #ifdef X509_V_FLAG_PARTIAL_CHAIN
     PyModule_AddIntConstant(m, "VERIFY_X509_PARTIAL_CHAIN",
