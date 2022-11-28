@@ -218,7 +218,7 @@ class PosixPathTest(unittest.TestCase):
                 st_ino = 1
             return posix.stat_result((0, st_ino, st_dev, 0, 0, 0, 0, 0, 0, 0))
         try:
-            os.lstat = os.stax = fake_stat
+            os.lstat = os.statx = fake_stat
             self.assertIs(posixpath.ismount(ABSTFN), True)
         finally:
             os.lstat = save_lstat

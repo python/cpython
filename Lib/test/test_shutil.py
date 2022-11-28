@@ -2578,7 +2578,7 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
               unittest.mock.patch('os.statx', side_effect=OSError) as m2):
             with self.get_files() as (src, dst):
                 shutil._fastcopy_sendfile(src, dst)
-                assert m.called
+                assert m1.called or m2.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_small_chunks(self):
