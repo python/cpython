@@ -30,14 +30,14 @@ from . import transports
 from . import trsock
 from .log import logger
 
-_HAVE_SENDMSG = hasattr(socket.socket, 'sendmsg')
+_HAS_SENDMSG = hasattr(socket.socket, 'sendmsg')
 
-if _HAVE_SENDMSG:
+if _HAS_SENDMSG:
     try:
         SC_IOV_MAX = os.sysconf('SC_IOV_MAX')
     except OSError:
         # Fallback to send
-        _HAVE_SENDMSG = False
+        _HAS_SENDMSG = False
 
 def _test_selector_event(selector, fd, event):
     # Test if the selector is monitoring 'event' events
@@ -909,7 +909,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._eof = False
         self._paused = False
         self._empty_waiter = None
-        if _HAVE_SENDMSG:
+        if _HAS_SENDMSG:
             self._write_ready = self._write_sendmsg
         else:
             self._write_ready = self._write_send
