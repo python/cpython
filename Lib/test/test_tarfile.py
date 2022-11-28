@@ -302,11 +302,23 @@ class ListTest(ReadTest, unittest.TestCase):
         # accessories if verbose flag is being used
         # ...
         # ?rw-r--r-- tarfile/tarfile     7011 2003-01-06 07:19:43 ustar/conttype
-        # ?rw-r--r-- tarfile/tarfile     7011 2003-01-06 07:19:43 ustar/regtype
+        # -rw-r--r-- tarfile/tarfile     7011 2003-01-06 07:19:43 ustar/regtype
+        # drwxr-xr-x tarfile/tarfile        0 2003-01-05 15:19:43 ustar/dirtype/
         # ...
-        self.assertRegex(out, (br'\?rw-r--r-- tarfile/tarfile\s+7011 '
-                               br'\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d '
-                               br'ustar/\w+type ?\r?\n') * 2)
+        #
+        # Array of values to modify the regex below:
+        #  ((file_type, file_permissions, file_length), ...)
+        type_perm_lengths = (
+            (r'\?', 'rw-r--r--', '7011'), ('-', 'rw-r--r--', '7011'),
+            ('d', 'rwxr-xr-x', '0'), ('d', 'rwxr-xr-x', '255'),
+            (r'\?', 'rw-r--r--', '0'), ('l', 'rwxrwxrwx', '0'),
+            ('b', 'rw-rw----', '3,0'), ('c', 'rw-rw-rw-', '1,3'),
+            ('p', 'rw-r--r--', '0'))
+        self.assertRegex(out.decode(), ''.join(
+            [(tp + (r'%s tarfile/tarfile\s+%s ' % (perm, ln) +
+                    r'\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d '
+                    r'ustar/\w+type[/>\sa-z-]*\n')) for tp, perm, ln
+                    in type_perm_lengths]))
         # Make sure it prints the source of link with verbose flag
         self.assertIn(b'ustar/symtype -> regtype', out)
         self.assertIn(b'./ustar/linktest2/symtype -> ../linktest1/regtype', out)
