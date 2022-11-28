@@ -1,0 +1,1 @@
+Add :func:`_BaseNetwork.next_network` method.  Patch by Faisal Mahmood.

@@ -1122,6 +1122,47 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
+    def next_network(self, next_prefix=None):
+        """Get the next closest network with a specific prefix.
+
+        Args:
+            next_prefix: The desired next prefix length, if not specified the
+            same self.prefixlen will be used
+
+        Returns:
+            An IPv(4|6) Network object of the next closest network.
+
+        """
+        if next_prefix is None:
+            next_prefix = self.prefixlen
+            new_netmask = self.netmask
+        else:
+            if next_prefix < 1 or next_prefix > self.max_prefixlen:
+                raise ValueError(
+                    f"next prefix must be between 1 and {self.max_prefixlen}"
+                )
+            new_netmask, _ = self._make_netmask(next_prefix)
+
+        bit_shift = (
+            self.max_prefixlen - next_prefix
+            if next_prefix <= self.prefixlen
+            else self.max_prefixlen - self.prefixlen
+        )
+
+        next_ip = (
+            ((new_netmask._ip & self.network_address._ip) >> bit_shift) + 1
+        ) << bit_shift
+
+        try:
+            return self.__class__(
+                f"{self._string_from_ip_int(next_ip)}/{next_prefix}"
+            )
+        except OverflowError:
+            raise ValueError(
+                f"out of address space, cannot make another /{next_prefix} "
+                "network"
+            ) from None
+
 class _BaseV4:
 
     """Base IPv4 object.

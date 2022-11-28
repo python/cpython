@@ -1233,6 +1233,13 @@ itertools
 Add :func:`itertools.pairwise()`.
 (Contributed by Raymond Hettinger in :issue:`38200`.)
 
+ipaddress
+---------
+
+Add :func:`IPv4Network.next_network` and :func:`IPv6Network.next_network`
+methods to find the next nearest network with a specific prefix size.
+(Contributed by Faisal Mahmood in :issue:`42861`.)
+
 linecache
 ---------
 
