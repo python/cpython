@@ -1080,16 +1080,16 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._buffer.append(data)
         self._maybe_pause_protocol()
 
-    def _get_sendmsg_buffer(self):
-        return itertools.islice(self._buffer, SC_IOV_MAX)
+    def _get_sendmsg_buffer(self, buffer: collections.deque):
+        return itertools.islice(buffer, SC_IOV_MAX)
 
     def _write_sendmsg(self):
         assert self._buffer, 'Data should not be empty'
         if self._conn_lost:
             return
         try:
-            nbytes = self._sock.sendmsg(self._get_sendmsg_buffer())
-            self._adjust_leftover_buffer(nbytes)
+            nbytes = self._sock.sendmsg(self._get_sendmsg_buffer(self._buffer))
+            self._adjust_leftover_buffer(self._buffer, nbytes)
         except (BlockingIOError, InterruptedError):
             pass
         except (SystemExit, KeyboardInterrupt):
@@ -1111,8 +1111,7 @@ class _SelectorSocketTransport(_SelectorTransport):
                 elif self._eof:
                     self._sock.shutdown(socket.SHUT_WR)
 
-    def _adjust_leftover_buffer(self, nbytes: int) -> None:
-        buffer = self._buffer
+    def _adjust_leftover_buffer(self, buffer: collections.deque, nbytes: int) -> None:
         while nbytes:
             b = buffer.popleft()
             b_len = len(b)
@@ -1160,15 +1159,19 @@ class _SelectorSocketTransport(_SelectorTransport):
         if not self._buffer:
             self._sock.shutdown(socket.SHUT_WR)
 
-    def writelines(self, list_of_data):
-        if self._eof:
-            raise RuntimeError('Cannot call writelines() after write_eof()')
-        if self._empty_waiter is not None:
-            raise RuntimeError('unable to writelines; sendfile is in progress')
-        if not list_of_data:
-            return
-        self._buffer.extend([memoryview(i) for i in list_of_data])
-        self._loop._add_writer(self._sock_fd, self._write_ready)
+    if _HAS_SENDMSG:
+        # Use faster implementation with sendmsg() if available otherwise fallback
+        # to the default implementation of writelines in WriteTransport
+        def writelines(self, list_of_data):
+            if self._eof:
+                raise RuntimeError('Cannot call writelines() after write_eof()')
+            if self._empty_waiter is not None:
+                raise RuntimeError('unable to writelines; sendfile is in progress')
+            if not list_of_data:
+                return
+            self._buffer.extend([memoryview(i) for i in list_of_data])
+            self._write_sendmsg()
+
 
     def can_write_eof(self):
         return True
