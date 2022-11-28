@@ -1,1 +1,1 @@
-Add method to calculate invalid_index
+Add optimized method `_Py_is_valid_index` to calculate valid indices
