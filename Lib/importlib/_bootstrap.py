@@ -68,7 +68,7 @@ _blocking_on = {}
 class _BlockingOnManager:
     """A context manager responsible to updating ``_blocking_on``."""
     def __init__(self, thread_id, lock):
-        self.thread_id = tid
+        self.thread_id = thread_id
         self.lock = lock
 
     def __enter__(self):
