@@ -2199,9 +2199,9 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             assert(PyBytes_Check(po));
             promptstr = PyBytes_AS_STRING(po);
             if ((Py_ssize_t)strlen(promptstr) != PyBytes_GET_SIZE(po)) {
-                    PyErr_SetString(PyExc_ValueError,
-                                    "input: prompt string cannot contain null characters");
-                    goto _readline_errors;
+                PyErr_SetString(PyExc_ValueError,
+                        "input: prompt string cannot contain null characters");
+                goto _readline_errors;
             }
         }
         else {
