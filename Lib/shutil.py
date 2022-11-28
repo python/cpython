@@ -194,10 +194,7 @@ def copyfileobj(fsrc, fdst, length=0):
     # Localize variable access to minimize overhead.
     fsrc_read = fsrc.read
     fdst_write = fdst.write
-    while True:
-        buf = fsrc_read(length)
-        if not buf:
-            break
+    while buf := fsrc_read(length):
         fdst_write(buf)
 
 def _samefile(src, dst):
