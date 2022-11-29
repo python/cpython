@@ -751,10 +751,10 @@ class StructTest(unittest.TestCase):
                 test_error_msg(prefix, int_type, False)
 
         int_type = 'N'
-        test_error_msg("@", int_type, True)
+        test_error_msg('@', int_type, True)
 
         int_type = 'n'
-        test_error_msg("@", int_type, False)
+        test_error_msg('@', int_type, False)
 
     def test_issue98248_error_propagation(self):
         class Div0:
