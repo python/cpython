@@ -58,7 +58,7 @@ The modern interface provides:
    This allows an application to e.g. generate URL or filesystem safe Base64
    strings.  The default is ``None``, for which the standard Base64 alphabet is used.
 
-   Raises an :exc:`AssertionError` if the length of *altchars* is not 2.  Raises a
+   May assert or raise a a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
 
@@ -82,7 +82,7 @@ The modern interface provides:
 
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
-   Raises an :exc:`AssertionError` if the length of *altchars* is not 2.
+   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
 
 .. function:: standard_b64encode(s)
 
