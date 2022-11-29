@@ -756,6 +756,23 @@ class StructTest(unittest.TestCase):
         int_type = 'n'
         test_error_msg("@", int_type, False)
 
+    def test_issue92848_error_propagation(self):
+        class Div0:
+            def __index__(self):
+                1 / 0
+
+        def test_error_propagation(fmt_str):
+            with self.subTest(format_str=fmt_str, exception="ZeroDivisionError"):
+                with self.assertRaises(ZeroDivisionError):
+                    struct.pack(fmt_str, Div0())
+
+        for prefix in '@=<>':
+            for int_type in 'BHILQbhilq':
+                test_error_propagation(prefix + int_type)
+
+        test_error_propagation('N')
+        test_error_propagation('n')
+
 class UnpackIteratorTest(unittest.TestCase):
     """
     Tests for iterative unpacking (struct.Struct.iter_unpack).
