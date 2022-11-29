@@ -17,7 +17,6 @@ Data members:
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
-#include "pycore_code.h"          // _Py_QuickenedCount
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
@@ -199,8 +198,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         eventArgs = _Py_VaBuildValue_SizeT(argFormat, vargs);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);
-            Py_DECREF(eventArgs);
-            eventArgs = argTuple;
+            Py_SETREF(eventArgs, argTuple);
         }
     }
     else {
@@ -432,6 +430,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
         if (interp->audit_hooks == NULL) {
             return NULL;
         }
+        /* Avoid having our list of hooks show up in the GC module */
+        PyObject_GC_UnTrack(interp->audit_hooks);
     }
 
     if (PyList_Append(interp->audit_hooks, hook) < 0) {
@@ -839,8 +839,7 @@ sys_getdefaultencoding_impl(PyObject *module)
 {
     _Py_DECLARE_STR(utf_8, "utf-8");
     PyObject *ret = &_Py_STR(utf_8);
-    Py_INCREF(ret);
-    return ret;
+    return Py_NewRef(ret);
 }
 
 /*[clinic input]
@@ -1069,8 +1068,7 @@ sys_gettrace_impl(PyObject *module)
 
     if (temp == NULL)
         temp = Py_None;
-    Py_INCREF(temp);
-    return temp;
+    return Py_NewRef(temp);
 }
 
 static PyObject *
@@ -1143,8 +1141,7 @@ sys_getprofile_impl(PyObject *module)
 
     if (temp == NULL)
         temp = Py_None;
-    Py_INCREF(temp);
-    return temp;
+    return Py_NewRef(temp);
 }
 
 
@@ -1369,11 +1366,8 @@ sys_get_asyncgen_hooks_impl(PyObject *module)
         finalizer = Py_None;
     }
 
-    Py_INCREF(firstiter);
-    PyStructSequence_SET_ITEM(res, 0, firstiter);
-
-    Py_INCREF(finalizer);
-    PyStructSequence_SET_ITEM(res, 1, finalizer);
+    PyStructSequence_SET_ITEM(res, 0, Py_NewRef(firstiter));
+    PyStructSequence_SET_ITEM(res, 1, Py_NewRef(finalizer));
 
     return res;
 }
@@ -1806,8 +1800,7 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
         /* Has a default value been given */
         if (dflt != NULL && _PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
             _PyErr_Clear(tstate);
-            Py_INCREF(dflt);
-            return dflt;
+            return Py_NewRef(dflt);
         }
         else
             return NULL;
@@ -1854,17 +1847,6 @@ sys_gettotalrefcount_impl(PyObject *module)
 }
 
 #endif /* Py_REF_DEBUG */
-
-/*[clinic input]
-sys._getquickenedcount -> Py_ssize_t
-[clinic start generated code]*/
-
-static Py_ssize_t
-sys__getquickenedcount_impl(PyObject *module)
-/*[clinic end generated code: output=1ab259e7f91248a2 input=249d448159eca912]*/
-{
-    return _Py_QuickenedCount;
-}
 
 /*[clinic input]
 sys.getallocatedblocks -> Py_ssize_t
@@ -2216,7 +2198,6 @@ static PyMethodDef sys_methods[] = {
     SYS_GETALLOCATEDBLOCKS_METHODDEF
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
-    SYS__GETQUICKENEDCOUNT_METHODDEF
 #ifdef Py_TRACE_REFS
     {"getobjects", _Py_GetObjects, METH_VARARGS},
 #endif
@@ -2272,8 +2253,9 @@ list_builtin_module_names(void)
     if (list == NULL) {
         return NULL;
     }
-    for (Py_ssize_t i = 0; PyImport_Inittab[i].name != NULL; i++) {
-        PyObject *name = PyUnicode_FromString(PyImport_Inittab[i].name);
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
+        PyObject *name = PyUnicode_FromString(inittab[i].name);
         if (name == NULL) {
             goto error;
         }
@@ -2585,8 +2567,7 @@ _PySys_AddXOptionWithError(const wchar_t *s)
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
-        value = Py_True;
-        Py_INCREF(value);
+        value = Py_NewRef(Py_True);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
@@ -3041,8 +3022,7 @@ make_emscripten_info(void)
         }
         PyStructSequence_SET_ITEM(emscripten_info, pos++, oua);
     } else {
-        Py_INCREF(Py_None);
-        PyStructSequence_SET_ITEM(emscripten_info, pos++, Py_None);
+        PyStructSequence_SET_ITEM(emscripten_info, pos++, Py_NewRef(Py_None));
     }
 
 #define SetBoolItem(flag) \
@@ -3239,8 +3219,7 @@ sys_add_xoption(PyObject *opts, const wchar_t *s)
     const wchar_t *name_end = wcschr(s, L'=');
     if (!name_end) {
         name = PyUnicode_FromWideChar(s, -1);
-        value = Py_True;
-        Py_INCREF(value);
+        value = Py_NewRef(Py_True);
     }
     else {
         name = PyUnicode_FromWideChar(s, name_end - s);
@@ -3417,8 +3396,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     if (sysdict == NULL) {
         goto error;
     }
-    Py_INCREF(sysdict);
-    interp->sysdict = sysdict;
+    interp->sysdict = Py_NewRef(sysdict);
 
     if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
         goto error;

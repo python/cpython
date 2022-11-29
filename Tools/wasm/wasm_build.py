@@ -137,7 +137,7 @@ def read_python_version(configure: pathlib.Path = CONFIGURE) -> str:
     configure and configure.ac are the canonical source for major and
     minor version number.
     """
-    version_re = re.compile("^PACKAGE_VERSION='(\d\.\d+)'")
+    version_re = re.compile(r"^PACKAGE_VERSION='(\d\.\d+)'")
     with configure.open(encoding="utf-8") as f:
         for line in f:
             mo = version_re.match(line)

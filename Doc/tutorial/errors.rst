@@ -496,7 +496,7 @@ Raising and Handling Multiple Unrelated Exceptions
 ==================================================
 
 There are situations where it is necessary to report several exceptions that
-have occurred. This it often the case in concurrency frameworks, when several
+have occurred. This is often the case in concurrency frameworks, when several
 tasks may have failed in parallel, but there are also other use cases where
 it is desirable to continue execution and collect multiple errors rather than
 raise the first exception.

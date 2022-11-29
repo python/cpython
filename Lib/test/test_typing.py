@@ -2900,7 +2900,7 @@ class ProtocolTests(BaseTestCase):
             self.assertEqual(x.bar, 'abc')
             self.assertEqual(x.x, 1)
             self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
-            s = pickle.dumps(P)
+            s = pickle.dumps(P, proto)
             D = pickle.loads(s)
 
             class E:
@@ -3915,6 +3915,34 @@ class GenericTests(BaseTestCase):
         self.assertEqual(List[A()].__parameters__, (T,))
         # C version of GenericAlias
         self.assertEqual(list[A()].__parameters__, (T,))
+
+    def test_non_generic_subscript(self):
+        T = TypeVar('T')
+        class G(Generic[T]):
+            pass
+        class A:
+            __parameters__ = (T,)
+
+        for s in (int, G, A, List, list,
+                  TypeVar, TypeVarTuple, ParamSpec,
+                  types.GenericAlias, types.UnionType):
+
+            for t in Tuple, tuple:
+                with self.subTest(tuple=t, sub=s):
+                    self.assertEqual(t[s, T][int], t[s, int])
+                    self.assertEqual(t[T, s][int], t[int, s])
+                    a = t[s]
+                    with self.assertRaises(TypeError):
+                        a[int]
+
+            for c in Callable, collections.abc.Callable:
+                with self.subTest(callable=c, sub=s):
+                    self.assertEqual(c[[s], T][int], c[[s], int])
+                    self.assertEqual(c[[T], s][int], c[[int], s])
+                    a = c[[s], s]
+                    with self.assertRaises(TypeError):
+                        a[int]
+
 
 class ClassVarTests(BaseTestCase):
 

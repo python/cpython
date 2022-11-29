@@ -70,7 +70,6 @@ typedef struct {
     PyObject *co_exceptiontable;   /* Byte string encoding exception handling  \
                                       table */                                 \
     int co_flags;                  /* CO_..., see below */                     \
-    short co_warmup;                 /* Warmup counter for quickening */       \
     short _co_linearray_entry_size;  /* Size of each entry in _co_linearray */ \
                                                                                \
     /* The rest are not so impactful on performance. */                        \
@@ -148,8 +147,13 @@ struct PyCodeObject _PyCode_DEF(1);
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE((op), &PyCode_Type)
-#define PyCode_GetNumFree(op) ((op)->co_nfreevars)
-#define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+
+static inline Py_ssize_t PyCode_GetNumFree(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return op->co_nfreevars;
+}
+
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 /* Public interface */
