@@ -155,6 +155,7 @@
     <ClInclude Include="..\Include\cpython\listobject.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
+    <ClInclude Include="..\Include\cpython\memoryobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
     <ClInclude Include="..\Include\cpython\modsupport.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
@@ -208,6 +209,8 @@
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_dict.h" />
+    <ClInclude Include="..\Include\internal\pycore_dict_state.h" />
     <ClInclude Include="..\Include\internal\pycore_dtoa.h" />
     <ClInclude Include="..\Include\internal\pycore_exceptions.h" />
     <ClInclude Include="..\Include\internal\pycore_fileutils.h" />
@@ -593,7 +596,7 @@
     </PropertyGroup>
     <Message Text="Building $(GitTag):$(GitVersion) $(GitBranch)" Importance="high" />
     <ItemGroup>
-      <ClCompile Condition="$(Filename) == 'getbuildinfo'">
+      <ClCompile Condition="%(Filename) == 'getbuildinfo'">
         <PreprocessorDefinitions>GITVERSION="$(GitVersion)";GITTAG="$(GitTag)";GITBRANCH="$(GitBranch)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       </ClCompile>
     </ItemGroup>

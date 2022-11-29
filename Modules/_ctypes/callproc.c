@@ -101,6 +101,7 @@
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
+
 static void pymem_destructor(PyObject *ptr)
 {
     void *p = PyCapsule_GetPointer(ptr, CTYPES_CAPSULE_NAME_PYMEM);
@@ -831,7 +832,11 @@ static int _call_function_pointer(int flags,
 #endif
 
 #   ifdef USING_APPLE_OS_LIBFFI
+#    ifdef HAVE_BUILTIN_AVAILABLE
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#    else
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME (ffi_prep_cif_var != NULL)
+#    endif
 #   elif HAVE_FFI_PREP_CIF_VAR
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
 #   else
@@ -1444,8 +1449,13 @@ copy_com_pointer(PyObject *self, PyObject *args)
 #else
 #ifdef __APPLE__
 #ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
-#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
-    __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#  ifdef HAVE_BUILTIN_AVAILABLE
+#    define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+        __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#  else
+#    define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+         (_dyld_shared_cache_contains_path != NULL)
+#  endif
 #else
 // Support the deprecated case of compiling on an older macOS version
 static void *libsystem_b_handle;
@@ -1880,7 +1890,6 @@ POINTER(PyObject *self, PyObject *cls)
     PyObject *result;
     PyTypeObject *typ;
     PyObject *key;
-    char *buf;
 
     result = PyDict_GetItemWithError(_ctypes_ptrtype_cache, cls);
     if (result) {
@@ -1890,18 +1899,11 @@ POINTER(PyObject *self, PyObject *cls)
         return NULL;
     }
     if (PyUnicode_CheckExact(cls)) {
-        const char *name = PyUnicode_AsUTF8(cls);
-        if (name == NULL)
-            return NULL;
-        buf = PyMem_Malloc(strlen(name) + 3 + 1);
-        if (buf == NULL)
-            return PyErr_NoMemory();
-        sprintf(buf, "LP_%s", name);
+        PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
-                                       "s(O){}",
-                                       buf,
+                                       "N(O){}",
+                                       name,
                                        &PyCPointer_Type);
-        PyMem_Free(buf);
         if (result == NULL)
             return result;
         key = PyLong_FromVoidPtr(result);
@@ -1911,16 +1913,12 @@ POINTER(PyObject *self, PyObject *cls)
         }
     } else if (PyType_Check(cls)) {
         typ = (PyTypeObject *)cls;
-        buf = PyMem_Malloc(strlen(typ->tp_name) + 3 + 1);
-        if (buf == NULL)
-            return PyErr_NoMemory();
-        sprintf(buf, "LP_%s", typ->tp_name);
+        PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
         result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
-                                       "s(O){sO}",
-                                       buf,
+                                       "N(O){sO}",
+                                       name,
                                        &PyCPointer_Type,
                                        "_type_", cls);
-        PyMem_Free(buf);
         if (result == NULL)
             return result;
         key = Py_NewRef(cls);

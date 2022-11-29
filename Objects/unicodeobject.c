@@ -1856,7 +1856,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
 
     Py_ssize_t index = _Py_atomic_size_get(&id->index);
     if (index < 0) {
-        struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_ids;
+        struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_state.ids;
 
         PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
         // Check again to detect concurrent access. Another thread can have
@@ -13572,8 +13572,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
         for (i = 0; i < numdigits; i++)
             *b1++ = *buf++;
         *b1 = '\0';
-        Py_DECREF(result);
-        result = r1;
+        Py_SETREF(result, r1);
         buf = PyBytes_AS_STRING(result);
         len = numnondigits + prec;
     }
@@ -13590,8 +13589,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
         || buf != PyUnicode_DATA(result)) {
         PyObject *unicode;
         unicode = _PyUnicode_FromASCII(buf, len);
-        Py_DECREF(result);
-        result = unicode;
+        Py_SETREF(result, unicode);
     }
     else if (len != PyUnicode_GET_LENGTH(result)) {
         if (PyUnicode_Resize(&result, len) < 0)
@@ -14491,12 +14489,14 @@ PyTypeObject PyUnicode_Type = {
 
 /* Initialize the Unicode implementation */
 
-void
-_PyUnicode_InitState(PyInterpreterState *interp)
+static void
+_init_global_state(void)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
+    static int initialized = 0;
+    if (initialized) {
         return;
     }
+    initialized = 1;
 
     /* initialize the linebreak bloom filter */
     const Py_UCS2 linebreak[] = {
@@ -14512,6 +14512,15 @@ _PyUnicode_InitState(PyInterpreterState *interp)
     bloom_linebreak = make_bloom_mask(
         PyUnicode_2BYTE_KIND, linebreak,
         Py_ARRAY_LENGTH(linebreak));
+}
+
+void
+_PyUnicode_InitState(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+    _init_global_state();
 }
 
 

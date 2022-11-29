@@ -14,9 +14,10 @@ extern "C" {
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
-#include "pycore_dict.h"          // struct _Py_dict_state
+#include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
@@ -26,7 +27,9 @@ extern "C" {
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
+
 struct _pending_calls {
+    int busy;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
     _Py_atomic_int calls_to_do;
@@ -116,9 +119,6 @@ struct _is {
     int _initialized;
     int finalizing;
 
-    /* Was this interpreter statically allocated? */
-    bool _static;
-
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
@@ -173,6 +173,9 @@ struct _is {
     _PyFrameEvalFunction eval_frame;
 
     PyDict_WatchCallback dict_watchers[DICT_MAX_WATCHERS];
+    PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
+    // One bit is set for each non-NULL entry in func_watchers
+    uint8_t active_func_watchers;
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];

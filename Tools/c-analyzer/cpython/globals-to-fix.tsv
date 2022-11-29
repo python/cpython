@@ -298,163 +298,34 @@ Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
-#-----------------------
-# cached - initialized once
-
-# manually cached PyUnicodeObject
-Python/ast_unparse.c	-	_str_replace_inf	-
-
-# other
-Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
-
-#-----------------------
-# other
-
-# initialized once
-Python/context.c	-	_token_missing	-
-Python/hamt.c	-	_empty_bitmap_node	-
-Python/hamt.c	-	_empty_hamt	-
-
-# state
-Objects/typeobject.c	resolve_slotdups	pname	-
-
 
 ##################################
 # global non-objects to fix in core code
 
 #-----------------------
-# initialized/set once
+# effectively-const but initialized lazily
 
-# pre-allocated buffer
-Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
+# idempotent
+Python/dtoa.c	-	p5s	-
+Objects/obmalloc.c	new_arena	debug_stats	-
 
-# during init
-Objects/unicodeobject.c	-	bloom_linebreak	-
-Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
-Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
-Python/initconfig.c	-	_Py_global_config_int_max_str_digits	-
-Python/initconfig.c	-	Py_DebugFlag	-
-Python/initconfig.c	-	Py_UTF8Mode	-
-Python/initconfig.c	-	Py_DebugFlag	-
-Python/initconfig.c	-	Py_VerboseFlag	-
-Python/initconfig.c	-	Py_QuietFlag	-
-Python/initconfig.c	-	Py_InteractiveFlag	-
-Python/initconfig.c	-	Py_InspectFlag	-
-Python/initconfig.c	-	Py_OptimizeFlag	-
-Python/initconfig.c	-	Py_NoSiteFlag	-
-Python/initconfig.c	-	Py_BytesWarningFlag	-
-Python/initconfig.c	-	Py_FrozenFlag	-
-Python/initconfig.c	-	Py_IgnoreEnvironmentFlag	-
-Python/initconfig.c	-	Py_DontWriteBytecodeFlag	-
-Python/initconfig.c	-	Py_NoUserSiteDirectory	-
-Python/initconfig.c	-	Py_UnbufferedStdioFlag	-
-Python/initconfig.c	-	Py_HashRandomizationFlag	-
-Python/initconfig.c	-	Py_IsolatedFlag	-
-Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
-Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
-Python/initconfig.c	-	orig_argv	-
-Python/pyhash.c	-	_Py_HashSecret	-
-Python/pylifecycle.c	-	runtime_initialized	-
-Python/sysmodule.c	-	_PySys_ImplCacheTag	-
-Python/sysmodule.c	-	_PySys_ImplName	-
-Python/sysmodule.c	-	_preinit_warnoptions	-
-Python/sysmodule.c	-	_preinit_xoptions	-
-Python/thread.c	-	initialized	-
-Python/thread_pthread.h	-	condattr_monotonic	-
-Python/thread_pthread.h	init_condattr	ca	-
-
-# set by embedders during init
-Python/initconfig.c	-	_Py_StandardStreamEncoding	-
-Python/initconfig.c	-	_Py_StandardStreamErrors	-
-
-# lazy
-Objects/floatobject.c	-	double_format	-
-Objects/floatobject.c	-	float_format	-
-Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
-Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
-Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
+# others
 Python/perf_trampoline.c	-	perf_map_file	-
 Objects/unicodeobject.c	-	ucnhash_capi	-
-Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
-Python/dtoa.c	-	p5s	-
-Python/fileutils.c	-	_Py_open_cloexec_works	-
-Python/fileutils.c	-	force_ascii	-
-Python/fileutils.c	set_inheritable	ioctl_works	-
-Python/import.c	-	import_lock	-
-Python/import.c	import_find_and_load	header	-
-
-#-----------------------
-# unlikely to change after init (or main thread)
-
-# through C-API
-Python/frozen.c	-	PyImport_FrozenModules	-
-Python/frozen.c	-	_PyImport_FrozenAliases	-
-Python/frozen.c	-	_PyImport_FrozenBootstrap	-
-Python/frozen.c	-	_PyImport_FrozenStdlib	-
-Python/frozen.c	-	_PyImport_FrozenTest	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
-Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
-
-# REPL
-Parser/myreadline.c	-	_PyOS_ReadlineLock	-
-Parser/myreadline.c	-	_PyOS_ReadlineTState	-
-Parser/myreadline.c	-	PyOS_InputHook	-
-Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
-
-# handling C argv
-Python/getopt.c	-	_PyOS_optarg	-
-Python/getopt.c	-	_PyOS_opterr	-
-Python/getopt.c	-	_PyOS_optind	-
-Python/getopt.c	-	opt_ptr	-
-Python/pathconfig.c	-	_Py_path_config	-
 
 #-----------------------
 # state
 
-# object allocator
-Objects/obmalloc.c	-	_Py_tracemalloc_config	-
-Objects/obmalloc.c	new_arena	debug_stats	-
-
-# pre-allocated memory
-Python/dtoa.c	-	freelist	-
-Python/dtoa.c	-	private_mem	-
-
 # local buffer
-Python/getversion.c	Py_GetVersion	version	-
 Python/suggestions.c	levenshtein_distance	buffer	-
 
-# linked list
-Python/dtoa.c	-	pmem_next	-
-Python/getargs.c	-	static_arg_parsers	-
-
 # other
-Objects/dictobject.c	-	_pydict_global_version	-
-Objects/dictobject.c	-	next_dict_keys_version	-
-Objects/funcobject.c	-	next_func_version	-
 Objects/object.c	-	_Py_RefTotal	-
 Python/perf_trampoline.c	-	perf_status	-
 Python/perf_trampoline.c	-	extra_code_index	-
 Python/perf_trampoline.c	-	code_arena	-
 Python/perf_trampoline.c	-	trampoline_api	-
-Objects/typeobject.c	-	next_version_tag	-
-Objects/typeobject.c	resolve_slotdups	ptrs	-
-Parser/pegen.c	-	memo_statistics	-
-Python/bootstrap_hash.c	-	urandom_cache	-
-Python/ceval_gil.c	make_pending_calls	busy	-
-Python/ceval.c	_PyEval_SetProfile	reentrant	-
-Python/ceval.c	_PyEval_SetTrace	reentrant	-
-Python/import.c	-	import_lock_level	-
-Python/import.c	-	import_lock_thread	-
-Python/import.c	import_find_and_load	accumulated	-
-Python/import.c	import_find_and_load	import_level	-
-Python/modsupport.c	-	_Py_PackageContext	-
 Python/thread_pthread_stubs.h	-	py_tls_entries	-
-Python/pyfpe.c	-	PyFPE_counter	-
-Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
-Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
-Python/pylifecycle.c	fatal_error	reentrant	-
 
 
 ##################################
@@ -513,27 +384,12 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 #-----------------------
 # other
 
-# statically initializd pointer to static type
-# XXX should be const?
-Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
-
-# initialized once
-Modules/_functoolsmodule.c	-	kwd_mark	-
-Modules/_io/_iomodule.c	-	_PyIO_empty_bytes	-
-Modules/_testcapi/heaptype.c	-	_testcapimodule	-
-Modules/_testcapi/unicode.c	-	_testcapimodule	-
-Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
-Modules/signalmodule.c	-	DefaultHandler	-
-Modules/signalmodule.c	-	IgnoreHandler	-
-Modules/signalmodule.c	-	IntHandler	-
-
 # state
 Modules/faulthandler.c	-	fatal_error	-
 Modules/faulthandler.c	-	thread	-
 Modules/faulthandler.c	-	user_signals	-
 Modules/faulthandler.c	-	stack	-
 Modules/faulthandler.c	-	old_stack	-
-Modules/signalmodule.c	-	Handlers	-
 
 
 ##################################
@@ -554,6 +410,7 @@ Modules/timemodule.c	_PyTime_GetProcessTimeWithInfo	ticks_per_second	-
 
 Modules/_tracemalloc.c	-	allocators	-
 Modules/_tracemalloc.c	-	tables_lock	-
+Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
 Modules/_tracemalloc.c	-	tracemalloc_traced_memory	-
 Modules/_tracemalloc.c	-	tracemalloc_peak_traced_memory	-
 Modules/_tracemalloc.c	-	tracemalloc_filenames	-
@@ -567,6 +424,7 @@ Modules/posixmodule.c	-	environ	-
 Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
 Modules/signalmodule.c	-	wakeup	-
+Modules/signalmodule.c	-	Handlers	-
 
 
 ##################################

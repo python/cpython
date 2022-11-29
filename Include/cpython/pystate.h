@@ -120,9 +120,6 @@ struct _ts {
        after allocation. */
     int _initialized;
 
-    /* Was this thread state statically allocated? */
-    int _static;
-
     int py_recursion_remaining;
     int py_recursion_limit;
 

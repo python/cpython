@@ -137,8 +137,8 @@ init_runtime(_PyRuntimeState *runtime,
     // Set it to the ID of the main thread of the main interpreter.
     runtime->main_thread = PyThread_get_thread_ident();
 
-    runtime->unicode_ids.next_index = unicode_next_index;
-    runtime->unicode_ids.lock = unicode_ids_mutex;
+    runtime->unicode_state.ids.next_index = unicode_next_index;
+    runtime->unicode_state.ids.lock = unicode_ids_mutex;
 
     runtime->_initialized = 1;
 }
@@ -154,7 +154,7 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
     // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
     // is called multiple times.
-    Py_ssize_t unicode_next_index = runtime->unicode_ids.next_index;
+    Py_ssize_t unicode_next_index = runtime->unicode_state.ids.next_index;
 
     PyThread_type_lock lock1, lock2, lock3, lock4;
     if (alloc_for_runtime(&lock1, &lock2, &lock3, &lock4) != 0) {
@@ -186,7 +186,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
     FREE_LOCK(runtime->interpreters.mutex);
     FREE_LOCK(runtime->xidregistry.mutex);
-    FREE_LOCK(runtime->unicode_ids.lock);
+    FREE_LOCK(runtime->unicode_state.ids.lock);
     FREE_LOCK(runtime->getargs.mutex);
 
 #undef FREE_LOCK
@@ -209,7 +209,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 
     int reinit_interp = _PyThread_at_fork_reinit(&runtime->interpreters.mutex);
     int reinit_xidregistry = _PyThread_at_fork_reinit(&runtime->xidregistry.mutex);
-    int reinit_unicode_ids = _PyThread_at_fork_reinit(&runtime->unicode_ids.lock);
+    int reinit_unicode_ids = _PyThread_at_fork_reinit(&runtime->unicode_state.ids.lock);
     int reinit_getargs = _PyThread_at_fork_reinit(&runtime->getargs.mutex);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -275,7 +275,9 @@ alloc_interpreter(void)
 static void
 free_interpreter(PyInterpreterState *interp)
 {
-    if (!interp->_static) {
+    // The main interpreter is statically allocated so
+    // should not be freed.
+    if (interp != &_PyRuntime._main_interpreter) {
         PyMem_RawFree(interp);
     }
 }
@@ -359,7 +361,6 @@ PyInterpreterState_New(void)
         interp = &runtime->_main_interpreter;
         assert(interp->id == 0);
         assert(interp->next == NULL);
-        assert(interp->_static);
 
         interpreters->main = interp;
     }
@@ -374,9 +375,6 @@ PyInterpreterState_New(void)
         // Set to _PyInterpreterState_INIT.
         memcpy(interp, &initial._main_interpreter,
                sizeof(*interp));
-        // We need to adjust any fields that are different from the initial
-        // interpreter (as defined in _PyInterpreterState_INIT):
-        interp->_static = false;
 
         if (id < 0) {
             /* overflow or Py_Initialize() not called yet! */
@@ -460,8 +458,13 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->interpreter_trampoline);
 
     for (int i=0; i < DICT_MAX_WATCHERS; i++) {
-        interp->dict_watchers[i] = NULL;
+        interp->dict_state.watchers[i] = NULL;
     }
+
+    for (int i=0; i < FUNC_MAX_WATCHERS; i++) {
+        interp->func_watchers[i] = NULL;
+    }
+    interp->active_func_watchers = 0;
 
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
@@ -762,7 +765,9 @@ alloc_threadstate(void)
 static void
 free_threadstate(PyThreadState *tstate)
 {
-    if (!tstate->_static) {
+    // The initial thread state of the interpreter is allocated
+    // as part of the interpreter state so should not be freed.
+    if (tstate != &tstate->interp->_initial_thread) {
         PyMem_RawFree(tstate);
     }
 }
@@ -845,7 +850,6 @@ new_threadstate(PyInterpreterState *interp)
         assert(id == 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
-        assert(tstate->_static);
     }
     else {
         // Every valid interpreter must have at least one thread.
@@ -857,9 +861,6 @@ new_threadstate(PyInterpreterState *interp)
         memcpy(tstate,
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
-        // We need to adjust any fields that are different from the initial
-        // thread (as defined in _PyThreadState_INIT):
-        tstate->_static = false;
     }
     interp->threads.head = tstate;
 
@@ -877,7 +878,9 @@ PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
     PyThreadState *tstate = new_threadstate(interp);
-    _PyThreadState_SetCurrent(tstate);
+    if (tstate) {
+        _PyThreadState_SetCurrent(tstate);
+    }
     return tstate;
 }
 
@@ -1549,15 +1552,15 @@ _PyGILState_Init(_PyRuntimeState *runtime)
 PyStatus
 _PyGILState_SetTstate(PyThreadState *tstate)
 {
+    /* must init with valid states */
+    assert(tstate != NULL);
+    assert(tstate->interp != NULL);
+
     if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, PyGILState is shared by all interpreters. The main
          * interpreter is responsible to initialize it. */
         return _PyStatus_OK();
     }
-
-    /* must init with valid states */
-    assert(tstate != NULL);
-    assert(tstate->interp != NULL);
 
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
 

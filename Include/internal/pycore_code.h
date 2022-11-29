@@ -213,10 +213,10 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 /* Specialization functions */
 
-extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
-                                   PyObject *name);
-extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
+extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+                                     PyObject *name);
 extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
                                       _Py_CODEUNIT *instr, PyObject *name);
 extern void _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container,
@@ -291,6 +291,12 @@ static inline void
 write_obj(uint16_t *p, PyObject *val)
 {
     memcpy(p, &val, sizeof(val));
+}
+
+static inline uint16_t
+read_u16(uint16_t *p)
+{
+    return *p;
 }
 
 static inline uint32_t
