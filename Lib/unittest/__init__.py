@@ -69,9 +69,6 @@ from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.
 from .loader import makeSuite, getTestCaseNames, findTestCases
 
-# deprecated
-_TextTestResult = TextTestResult
-
 
 # Lazy import of IsolatedAsyncioTestCase from .async_case
 # It imports asyncio, which is relatively heavy, but most tests

@@ -134,11 +134,13 @@ class TestCleanUp(unittest.TestCase):
         class TestableTest(unittest.TestCase):
             def setUp(self):
                 ordering.append('setUp')
+                test.addCleanup(cleanup2)
                 if blowUp:
                     raise Exception('foo')
 
             def testNothing(self):
                 ordering.append('test')
+                test.addCleanup(cleanup3)
 
             def tearDown(self):
                 ordering.append('tearDown')
@@ -149,8 +151,9 @@ class TestCleanUp(unittest.TestCase):
             ordering.append('cleanup1')
         def cleanup2():
             ordering.append('cleanup2')
+        def cleanup3():
+            ordering.append('cleanup3')
         test.addCleanup(cleanup1)
-        test.addCleanup(cleanup2)
 
         def success(some_test):
             self.assertEqual(some_test, test)
@@ -160,7 +163,7 @@ class TestCleanUp(unittest.TestCase):
         result.addSuccess = success
 
         test.run(result)
-        self.assertEqual(ordering, ['setUp', 'test', 'tearDown',
+        self.assertEqual(ordering, ['setUp', 'test', 'tearDown', 'cleanup3',
                                     'cleanup2', 'cleanup1', 'success'])
 
         blowUp = True
@@ -168,7 +171,7 @@ class TestCleanUp(unittest.TestCase):
         test = TestableTest('testNothing')
         test.addCleanup(cleanup1)
         test.run(result)
-        self.assertEqual(ordering, ['setUp', 'cleanup1'])
+        self.assertEqual(ordering, ['setUp', 'cleanup2', 'cleanup1'])
 
     def testTestCaseDebugExecutesCleanups(self):
         ordering = []
@@ -180,9 +183,11 @@ class TestCleanUp(unittest.TestCase):
 
             def testNothing(self):
                 ordering.append('test')
+                self.addCleanup(cleanup3)
 
             def tearDown(self):
                 ordering.append('tearDown')
+                test.addCleanup(cleanup4)
 
         test = TestableTest('testNothing')
 
@@ -191,9 +196,14 @@ class TestCleanUp(unittest.TestCase):
             test.addCleanup(cleanup2)
         def cleanup2():
             ordering.append('cleanup2')
+        def cleanup3():
+            ordering.append('cleanup3')
+        def cleanup4():
+            ordering.append('cleanup4')
 
         test.debug()
-        self.assertEqual(ordering, ['setUp', 'test', 'tearDown', 'cleanup1', 'cleanup2'])
+        self.assertEqual(ordering, ['setUp', 'test', 'tearDown', 'cleanup4',
+                                    'cleanup3', 'cleanup1', 'cleanup2'])
 
 
     def test_enterContext(self):
@@ -352,13 +362,14 @@ class TestClassCleanup(unittest.TestCase):
                 ordering.append('test')
             @classmethod
             def tearDownClass(cls):
+                ordering.append('tearDownClass')
                 raise Exception('TearDownClassExc')
 
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
         with self.assertRaises(Exception) as cm:
             suite.debug()
         self.assertEqual(str(cm.exception), 'TearDownClassExc')
-        self.assertEqual(ordering, ['setUpClass', 'test'])
+        self.assertEqual(ordering, ['setUpClass', 'test', 'tearDownClass'])
         self.assertTrue(TestableTest._class_cleanups)
         TestableTest._class_cleanups.clear()
 
@@ -368,7 +379,7 @@ class TestClassCleanup(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             suite.debug()
         self.assertEqual(str(cm.exception), 'TearDownClassExc')
-        self.assertEqual(ordering, ['setUpClass', 'test'])
+        self.assertEqual(ordering, ['setUpClass', 'test', 'tearDownClass'])
         self.assertTrue(TestableTest._class_cleanups)
         TestableTest._class_cleanups.clear()
 
@@ -535,6 +546,33 @@ class TestClassCleanup(unittest.TestCase):
             TestableTest.enterClassContext(LacksExit())
 
         self.assertEqual(TestableTest._class_cleanups, [])
+
+    def test_run_nested_test(self):
+        ordering = []
+
+        class InnerTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('inner setup')
+                cls.addClassCleanup(ordering.append, 'inner cleanup')
+            def test(self):
+                ordering.append('inner test')
+
+        class OuterTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('outer setup')
+                cls.addClassCleanup(ordering.append, 'outer cleanup')
+            def test(self):
+                ordering.append('start outer test')
+                runTests(InnerTest)
+                ordering.append('end outer test')
+
+        runTests(OuterTest)
+        self.assertEqual(ordering, [
+                'outer setup', 'start outer test',
+                'inner setup', 'inner test', 'inner cleanup',
+                'end outer test', 'outer cleanup'])
 
 
 class TestModuleCleanUp(unittest.TestCase):
@@ -747,6 +785,7 @@ class TestModuleCleanUp(unittest.TestCase):
                 unittest.addModuleCleanup(cleanup, ordering)
             @staticmethod
             def tearDownModule():
+                ordering.append('tearDownModule')
                 raise Exception('CleanUpExc')
 
         class TestableTest(unittest.TestCase):
@@ -765,7 +804,8 @@ class TestModuleCleanUp(unittest.TestCase):
         self.assertEqual(result.errors[0][1].splitlines()[-1],
                          'Exception: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
-                                    'tearDownClass', 'cleanup_good'])
+                                    'tearDownClass', 'tearDownModule',
+                                    'cleanup_good'])
         self.assertEqual(unittest.case._module_cleanups, [])
 
     def test_debug_module_executes_cleanUp(self):
@@ -819,6 +859,7 @@ class TestModuleCleanUp(unittest.TestCase):
                 unittest.addModuleCleanup(cleanup, ordering, blowUp=blowUp)
             @staticmethod
             def tearDownModule():
+                ordering.append('tearDownModule')
                 raise Exception('TearDownModuleExc')
 
         class TestableTest(unittest.TestCase):
@@ -838,7 +879,7 @@ class TestModuleCleanUp(unittest.TestCase):
             suite.debug()
         self.assertEqual(str(cm.exception), 'TearDownModuleExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
-                                    'tearDownClass'])
+                                    'tearDownClass', 'tearDownModule'])
         self.assertTrue(unittest.case._module_cleanups)
         unittest.case._module_cleanups.clear()
 
@@ -849,7 +890,7 @@ class TestModuleCleanUp(unittest.TestCase):
             suite.debug()
         self.assertEqual(str(cm.exception), 'TearDownModuleExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
-                                    'tearDownClass'])
+                                    'tearDownClass', 'tearDownModule'])
         self.assertTrue(unittest.case._module_cleanups)
         unittest.case._module_cleanups.clear()
 
@@ -1262,8 +1303,6 @@ class Test_TextTestRunner(unittest.TestCase):
             return [b.splitlines() for b in p.communicate()]
         opts = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     cwd=os.path.dirname(__file__))
-        ae_msg = b'Please use assertEqual instead.'
-        at_msg = b'Please use assertTrue instead.'
 
         # no args -> all the warnings are printed, unittest warnings only once
         p = subprocess.Popen([sys.executable, '-E', '_test_warnings.py'], **opts)
@@ -1271,11 +1310,11 @@ class Test_TextTestRunner(unittest.TestCase):
             out, err = get_parse_out_err(p)
         self.assertIn(b'OK', err)
         # check that the total number of warnings in the output is correct
-        self.assertEqual(len(out), 12)
+        self.assertEqual(len(out), 10)
         # check that the numbers of the different kind of warnings is correct
         for msg in [b'dw', b'iw', b'uw']:
             self.assertEqual(out.count(msg), 3)
-        for msg in [ae_msg, at_msg, b'rw']:
+        for msg in [b'rw']:
             self.assertEqual(out.count(msg), 1)
 
         args_list = (
@@ -1302,11 +1341,9 @@ class Test_TextTestRunner(unittest.TestCase):
         with p:
             out, err = get_parse_out_err(p)
         self.assertIn(b'OK', err)
-        self.assertEqual(len(out), 14)
+        self.assertEqual(len(out), 12)
         for msg in [b'dw', b'iw', b'uw', b'rw']:
             self.assertEqual(out.count(msg), 3)
-        for msg in [ae_msg, at_msg]:
-            self.assertEqual(out.count(msg), 1)
 
     def testStdErrLookedUpAtInstantiationTime(self):
         # see issue 10786

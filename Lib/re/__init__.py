@@ -124,6 +124,7 @@ This module also defines an exception 'error'.
 import enum
 from . import _compiler, _parser
 import functools
+import _sre
 
 
 # public symbols
@@ -229,7 +230,8 @@ def compile(pattern, flags=0):
 def purge():
     "Clear the regular expression caches"
     _cache.clear()
-    _compile_repl.cache_clear()
+    _cache2.clear()
+    _compile_template.cache_clear()
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a Pattern object, deprecated"
@@ -266,61 +268,70 @@ Match = type(_compiler.compile('', 0).match(''))
 # --------------------------------------------------------------------
 # internals
 
-_cache = {}  # ordered!
-
+# Use the fact that dict keeps the insertion order.
+# _cache2 uses the simple FIFO policy which has better latency.
+# _cache uses the LRU policy which has better hit rate.
+_cache = {}  # LRU
+_cache2 = {}  # FIFO
 _MAXCACHE = 512
+_MAXCACHE2 = 256
+assert _MAXCACHE2 < _MAXCACHE
+
 def _compile(pattern, flags):
     # internal: compile pattern
     if isinstance(flags, RegexFlag):
         flags = flags.value
     try:
-        return _cache[type(pattern), pattern, flags]
+        return _cache2[type(pattern), pattern, flags]
     except KeyError:
         pass
-    if isinstance(pattern, Pattern):
-        if flags:
-            raise ValueError(
-                "cannot process flags argument with a compiled pattern")
-        return pattern
-    if not _compiler.isstring(pattern):
-        raise TypeError("first argument must be string or compiled pattern")
-    if flags & T:
-        import warnings
-        warnings.warn("The re.TEMPLATE/re.T flag is deprecated "
-                  "as it is an undocumented flag "
-                  "without an obvious purpose. "
-                  "Don't use it.",
-                  DeprecationWarning)
-    p = _compiler.compile(pattern, flags)
-    if not (flags & DEBUG):
+
+    key = (type(pattern), pattern, flags)
+    # Item in _cache should be moved to the end if found.
+    p = _cache.pop(key, None)
+    if p is None:
+        if isinstance(pattern, Pattern):
+            if flags:
+                raise ValueError(
+                    "cannot process flags argument with a compiled pattern")
+            return pattern
+        if not _compiler.isstring(pattern):
+            raise TypeError("first argument must be string or compiled pattern")
+        if flags & T:
+            import warnings
+            warnings.warn("The re.TEMPLATE/re.T flag is deprecated "
+                    "as it is an undocumented flag "
+                    "without an obvious purpose. "
+                    "Don't use it.",
+                    DeprecationWarning)
+        p = _compiler.compile(pattern, flags)
+        if flags & DEBUG:
+            return p
         if len(_cache) >= _MAXCACHE:
-            # Drop the oldest item
+            # Drop the least recently used item.
+            # next(iter(_cache)) is known to have linear amortized time,
+            # but it is used here to avoid a dependency from using OrderedDict.
+            # For the small _MAXCACHE value it doesn't make much of a difference.
             try:
                 del _cache[next(iter(_cache))]
             except (StopIteration, RuntimeError, KeyError):
                 pass
-        _cache[type(pattern), pattern, flags] = p
+    # Append to the end.
+    _cache[key] = p
+
+    if len(_cache2) >= _MAXCACHE2:
+        # Drop the oldest item.
+        try:
+            del _cache2[next(iter(_cache2))]
+        except (StopIteration, RuntimeError, KeyError):
+            pass
+    _cache2[key] = p
     return p
 
 @functools.lru_cache(_MAXCACHE)
-def _compile_repl(repl, pattern):
+def _compile_template(pattern, repl):
     # internal: compile replacement pattern
-    return _parser.parse_template(repl, pattern)
-
-def _expand(pattern, match, template):
-    # internal: Match.expand implementation hook
-    template = _parser.parse_template(template, pattern)
-    return _parser.expand_template(template, match)
-
-def _subx(pattern, template):
-    # internal: Pattern.sub/subn implementation helper
-    template = _compile_repl(template, pattern)
-    if not template[0] and len(template[1]) == 1:
-        # literal replacement
-        return template[1][0]
-    def filter(match, template=template):
-        return _parser.expand_template(template, match)
-    return filter
+    return _sre.template(pattern, _parser.parse_template(repl, pattern))
 
 # register myself for pickling
 
