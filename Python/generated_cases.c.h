@@ -2638,14 +2638,14 @@
             STAT_INC(FOR_ITER, hit);
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
-            if (r->step > 0 ? r->start >= r->stop : r->start <= r->stop) {
+            long value = r->start, step = r->step;
+            if (step > 0 ? value >= r->stop : value <= r->stop) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
             else {
-                long value = r->start;
-                r->start = value + r->step;
+                r->start = value + step;
                 if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
                     goto error;
                 }
