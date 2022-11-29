@@ -110,12 +110,13 @@ newXxoObject(PyObject *module)
 /* Xxo finalization */
 
 static int
-Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
+Xxo_traverse(PyObject *self_obj, visitproc visit, void *arg)
 {
     // Visit the type
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE(self_obj));
 
     // Visit the attribute dict
+    XxoObject *self = (XxoObject *)self_obj;
     Py_VISIT(self->x_attr);
     return 0;
 }
@@ -128,14 +129,16 @@ Xxo_clear(XxoObject *self)
 }
 
 static void
-Xxo_finalize(XxoObject *self)
+Xxo_finalize(PyObject *self_obj)
 {
+    XxoObject *self = (XxoObject *)self_obj;
     Py_CLEAR(self->x_attr);
 }
 
 static void
-Xxo_dealloc(XxoObject *self)
+Xxo_dealloc(PyObject *self)
 {
+    PyObject_GC_UnTrack(self);
     Xxo_finalize(self);
     PyTypeObject *tp = Py_TYPE(self);
     freefunc free = PyType_GetSlot(tp, Py_tp_free);
@@ -152,8 +155,7 @@ Xxo_getattro(XxoObject *self, PyObject *name)
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
-            Py_INCREF(v);
-            return v;
+            return Py_NewRef(v);
         }
         else if (PyErr_Occurred()) {
             return NULL;
@@ -207,22 +209,19 @@ Xxo_demo(XxoObject *self, PyTypeObject *defining_class,
 
     /* Test if the argument is "str" */
     if (PyUnicode_Check(o)) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
 
     /* test if the argument is of the Xxo class */
     if (PyObject_TypeCheck(o, defining_class)) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 static PyMethodDef Xxo_methods[] = {
-    {"demo",            (PyCFunction)(void(*)(void))Xxo_demo,
+    {"demo",            _PyCFunction_CAST(Xxo_demo),
      METH_METHOD | METH_FASTCALL | METH_KEYWORDS, PyDoc_STR("demo(o) -> o")},
     {NULL,              NULL}           /* sentinel */
 };

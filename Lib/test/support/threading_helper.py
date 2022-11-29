@@ -4,6 +4,7 @@ import functools
 import sys
 import threading
 import time
+import unittest
 
 from test import support
 
@@ -87,19 +88,17 @@ def wait_threads_exit(timeout=None):
         yield
     finally:
         start_time = time.monotonic()
-        deadline = start_time + timeout
-        while True:
+        for _ in support.sleeping_retry(timeout, error=False):
+            support.gc_collect()
             count = _thread._count()
             if count <= old_count:
                 break
-            if time.monotonic() > deadline:
-                dt = time.monotonic() - start_time
-                msg = (f"wait_threads() failed to cleanup {count - old_count} "
-                       f"threads after {dt:.1f} seconds "
-                       f"(count: {count}, old count: {old_count})")
-                raise AssertionError(msg)
-            time.sleep(0.010)
-            support.gc_collect()
+        else:
+            dt = time.monotonic() - start_time
+            msg = (f"wait_threads() failed to cleanup {count - old_count} "
+                   f"threads after {dt:.1f} seconds "
+                   f"(count: {count}, old count: {old_count})")
+            raise AssertionError(msg)
 
 
 def join_thread(thread, timeout=None):
@@ -210,7 +209,7 @@ class catch_threading_exception:
 
 
 def _can_start_thread() -> bool:
-    """Detect if Python can start new threads.
+    """Detect whether Python can start new threads.
 
     Some WebAssembly platforms do not provide a working pthread
     implementation. Thread support is stubbed and any attempt
@@ -221,12 +220,7 @@ def _can_start_thread() -> bool:
       support (-s USE_PTHREADS / __EMSCRIPTEN_PTHREADS__).
     """
     if sys.platform == "emscripten":
-        try:
-            _thread.start_new_thread(lambda: None, ())
-        except RuntimeError:
-            return False
-        else:
-            return True
+        return sys._emscripten_info.pthreads
     elif sys.platform == "wasi":
         return False
     else:
@@ -234,3 +228,15 @@ def _can_start_thread() -> bool:
         return True
 
 can_start_thread = _can_start_thread()
+
+def requires_working_threading(*, module=False):
+    """Skip tests or modules that require working threading.
+
+    Can be used as a function/class decorator or to skip an entire module.
+    """
+    msg = "requires threading support"
+    if module:
+        if not can_start_thread:
+            raise unittest.SkipTest(msg)
+    else:
+        return unittest.skipUnless(can_start_thread, msg)

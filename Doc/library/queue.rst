@@ -138,7 +138,7 @@ provide the public methods described below.
 
 .. method:: Queue.put_nowait(item)
 
-   Equivalent to ``put(item, False)``.
+   Equivalent to ``put(item, block=False)``.
 
 
 .. method:: Queue.get(block=True, timeout=None)
@@ -190,7 +190,8 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
-    import threading, queue
+    import threading
+    import queue
 
     q = queue.Queue()
 
@@ -248,7 +249,7 @@ SimpleQueue Objects
 
 .. method:: SimpleQueue.put_nowait(item)
 
-   Equivalent to ``put(item)``, provided for compatibility with
+   Equivalent to ``put(item, block=False)``, provided for compatibility with
    :meth:`Queue.put_nowait`.
 
 
