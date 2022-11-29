@@ -38,19 +38,19 @@ details that are unchanged.
 
 .. seealso::
 
-   * `TkDocs <https://tkdocs.com/>`_
+   * `TkDocs <https://tkdocs.com>`_
       Extensive tutorial on creating user interfaces with Tkinter.  Explains key concepts,
       and illustrates recommended approaches using the modern API.
 
-   * `Tkinter 8.5 reference: a GUI for Python <https://www.tkdocs.com/shipman/>`_
+   * `Tkinter 8.5 reference: a GUI for Python <https://tkdocs.com/shipman/>`_
       Reference documentation for Tkinter 8.5 detailing available classes, methods, and options.
 
    Tcl/Tk Resources:
 
-   * `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
+   * `Tk commands <https://tcl.tk/man/tcl8.6/TkCmd/contents.html>`_
       Comprehensive reference to each of the underlying Tcl/Tk commands used by Tkinter.
 
-   * `Tcl/Tk Home Page <https://www.tcl.tk>`_
+   * `Tcl/Tk Home Page <https://tcl.tk>`_
       Additional documentation, and links to Tcl/Tk core development.
 
    Books:
