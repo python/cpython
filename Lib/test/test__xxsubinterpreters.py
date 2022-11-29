@@ -1545,6 +1545,19 @@ class ChannelTests(TestBase):
         self.assertEqual(obj5, b'eggs')
         self.assertIs(obj6, default)
 
+    def test_recv_sending_interp_destroyed(self):
+        cid = interpreters.channel_create()
+        interp = interpreters.create()
+        interpreters.run_string(interp, dedent(f"""
+            import _xxsubinterpreters as _interpreters
+            _interpreters.channel_send({cid}, b'spam')
+            """))
+        interpreters.destroy(interp)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'unrecognized interpreter ID'):
+            interpreters.channel_recv(cid)
+
     def test_run_string_arg_unresolved(self):
         cid = interpreters.channel_create()
         interp = interpreters.create()

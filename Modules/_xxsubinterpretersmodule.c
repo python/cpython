@@ -103,9 +103,8 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
     if (ignoreexc) {
         PyErr_Fetch(&exctype, &excval, &exctb);
     }
-    int res = 0;
-    _PyCrossInterpreterData_Release(data);
-    if (PyErr_Occurred()) {
+    int res = _PyCrossInterpreterData_Release(data);
+    if (res < 0) {
         // XXX Fix this!
         /* The owning interpreter is already destroyed.
          * Ideally, this shouldn't ever happen.  When an interpreter is
@@ -128,7 +127,6 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
             // XXX Emit a warning?
             PyErr_Clear();
         }
-        res = 1;
     }
     if (ignoreexc) {
         PyErr_Restore(exctype, excval, exctb);
@@ -1512,6 +1510,7 @@ _channel_recv(_channels *channels, int64_t id, PyObject **res)
         return err;
     }
     else if (data == NULL) {
+        assert(!PyErr_Occurred());
         return 0;
     }
 
