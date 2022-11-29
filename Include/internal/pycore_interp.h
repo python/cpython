@@ -246,7 +246,7 @@ extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 struct _xidregitem;
 
 struct _xidregitem {
-    PyTypeObject *cls;
+    PyObject *cls;  // weakref to a PyTypeObject
     crossinterpdatafunc getdata;
     struct _xidregitem *next;
 };

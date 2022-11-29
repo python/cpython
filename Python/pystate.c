@@ -1944,13 +1944,30 @@ _register_xidata(struct _xidregistry *xidregistry, PyTypeObject *cls,
     // Note that we effectively replace already registered classes
     // rather than failing.
     struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
-    if (newhead == NULL)
+    if (newhead == NULL) {
         return -1;
-    newhead->cls = cls;
+    }
+    // XXX Assign a callback to clear the entry from the registry?
+    newhead->cls = PyWeakref_NewRef((PyObject *)cls, NULL);
+    if (newhead->cls == NULL) {
+        PyMem_RawFree(newhead);
+        return -1;
+    }
     newhead->getdata = getdata;
     newhead->next = xidregistry->head;
     xidregistry->head = newhead;
     return 0;
+}
+
+static int
+_match_registered_type(struct _xidregitem *item, PyObject *cls)
+{
+    PyObject *registered = PyWeakref_GetObject(item->cls);
+    if (registered == Py_None) {
+        return -1;
+    }
+    assert(PyType_Check(registered));
+    return (registered == cls);
 }
 
 static void _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry);
@@ -1967,9 +1984,6 @@ _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
         PyErr_Format(PyExc_ValueError, "missing 'getdata' func");
         return -1;
     }
-
-    // Make sure the class isn't ever deallocated.
-    Py_INCREF((PyObject *)cls);
 
     struct _xidregistry *xidregistry = &_PyRuntime.xidregistry ;
     PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
@@ -1992,15 +2006,34 @@ _PyCrossInterpreterData_Lookup(PyObject *obj)
     PyObject *cls = PyObject_Type(obj);
     crossinterpdatafunc getdata = NULL;
     PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
+    struct _xidregitem *prev = NULL;
     struct _xidregitem *cur = xidregistry->head;
     if (cur == NULL) {
         _register_builtins_for_crossinterpreter_data(xidregistry);
         cur = xidregistry->head;
     }
-    for(; cur != NULL; cur = cur->next) {
-        if (cur->cls == (PyTypeObject *)cls) {
+    while (cur != NULL) {
+        int res = _match_registered_type(cur, cls);
+        if (res < 0) {
+            // The weakly ref'ed object was freed.
+            struct _xidregitem *expired = cur;
+            cur = expired->next;
+            Py_DECREF(expired->cls);
+            PyMem_RawFree(expired);
+            if (prev == NULL) {
+                xidregistry->head = cur;
+            }
+            else {
+                prev->next = cur;
+            }
+        }
+        else if (res) {
             getdata = cur->getdata;
             break;
+        }
+        else {
+            prev = cur;
+            cur = cur->next;
         }
     }
     Py_DECREF(cls);
