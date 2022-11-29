@@ -1,7 +1,7 @@
 """Parser for bytecodes.inst."""
 
 from dataclasses import dataclass, field
-from typing import NamedTuple, Callable, TypeVar
+from typing import NamedTuple, Callable, TypeVar, Literal
 
 import lexer as lx
 from plexer import PLexer
@@ -74,6 +74,7 @@ OutputEffect = StackEffect
 
 @dataclass
 class InstHeader(Node):
+    kind: Literal["inst", "op"]
     name: str
     inputs: list[InputEffect]
     outputs: list[OutputEffect]
@@ -81,8 +82,13 @@ class InstHeader(Node):
 
 @dataclass
 class InstDef(Node):
+    # TODO: Merge InstHeader and InstDef
     header: InstHeader
     block: Block
+
+    @property
+    def kind(self) -> str:
+        return self.header.kind
 
     @property
     def name(self) -> str:
@@ -93,12 +99,13 @@ class InstDef(Node):
         return self.header.inputs
 
     @property
-    def outputs(self) -> list[StackEffect]:
+    def outputs(self) -> list[OutputEffect]:
         return self.header.outputs
 
 
 @dataclass
 class Super(Node):
+    kind: Literal["macro", "super"]
     name: str
     ops: list[str]
 
@@ -122,10 +129,12 @@ class Parser(PLexer):
 
     @contextual
     def inst_header(self) -> InstHeader | None:
-        # inst(NAME) | inst(NAME, (inputs -- outputs))
+        # inst(NAME)
+        #   | inst(NAME, (inputs -- outputs))
+        #   | op(NAME, (inputs -- outputs))
         # TODO: Error out when there is something unexpected.
         # TODO: Make INST a keyword in the lexer.
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "inst":
+        if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in ("inst", "op"):
             if (self.expect(lx.LPAREN)
                     and (tkn := self.expect(lx.IDENTIFIER))):
                 name = tkn.text
@@ -134,9 +143,10 @@ class Parser(PLexer):
                     if self.expect(lx.RPAREN):
                         if ((tkn := self.peek())
                                 and tkn.kind == lx.LBRACE):
-                            return InstHeader(name, inp, outp)
-                elif self.expect(lx.RPAREN):
-                    return InstHeader(name, [], [])
+                            return InstHeader(kind, name, inp, outp)
+                elif self.expect(lx.RPAREN) and kind == "inst":
+                    # No legacy stack effect if kind is "op".
+                    return InstHeader(kind, name, [], [])
         return None
 
     def stack_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
@@ -200,13 +210,13 @@ class Parser(PLexer):
 
     @contextual
     def super_def(self) -> Super | None:
-        if (tkn := self.expect(lx.IDENTIFIER)) and tkn.text == "super":
+        if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in ("super", "macro"):
             if self.expect(lx.LPAREN):
                 if (tkn := self.expect(lx.IDENTIFIER)):
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if ops := self.ops():
-                                res = Super(tkn.text, ops)
+                                res = Super(kind, tkn.text, ops)
                                 return res
 
     def ops(self) -> list[str] | None:
@@ -278,7 +288,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
         if filename == "-c" and sys.argv[2:]:
             src = sys.argv[2]
-            filename = None
+            filename = "<string>"
         else:
             with open(filename) as f:
                 src = f.read()
@@ -287,7 +297,7 @@ if __name__ == "__main__":
             end = srclines.index("// END BYTECODES //")
             src = "\n".join(srclines[begin+1 : end])
     else:
-        filename = None
+        filename = "<default>"
         src = "if (x) { x.foo; // comment\n}"
     parser = Parser(src, filename)
     x = parser.inst_def() or parser.super_def() or parser.family_def()
