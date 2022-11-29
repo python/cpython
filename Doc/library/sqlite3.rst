@@ -325,9 +325,11 @@ Module functions
        enabling various :ref:`sqlite3-uri-tricks`.
 
    :param autocommit:
-       If *autocommit* is ``False``, a new transaction is implicitly opened.
+       Controls :pep:`249` transaction handling behaviour.
        See :attr:`Connection.autocommit` and
        :ref:`sqlite3-transaction-control-autocommit` for more information.
+       If ``False``, a new transaction is implicitly opened
+       when the :class:`Connection` is created.
        *autocommit* currently defaults to
        :data:`~sqlite3.LEGACY_TRANSACTION_CONTROL`.
        The default will change to ``False`` in a future Python release.
