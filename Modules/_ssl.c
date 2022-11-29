@@ -936,6 +936,17 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 /* SSL object methods */
 
 /*[clinic input]
+_ssl._SSLSocket.get_internal_addr
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_internal_addr_impl(PySSLSocket *self)
+/*[clinic end generated code: output=1f4d2afe94d5cb67 input=48e3adf2ace2e50d]*/
+{
+    return Py_BuildValue(_Py_PARSE_INTPTR, (intptr_t)self->ssl);
+}
+
+/*[clinic input]
 _ssl._SSLSocket.do_handshake
 [clinic start generated code]*/
 
@@ -2977,6 +2988,7 @@ static PyGetSetDef ssl_getsetlist[] = {
 };
 
 static PyMethodDef PySSLMethods[] = {
+    _SSL__SSLSOCKET_GET_INTERNAL_ADDR_METHODDEF
     _SSL__SSLSOCKET_DO_HANDSHAKE_METHODDEF
     _SSL__SSLSOCKET_WRITE_METHODDEF
     _SSL__SSLSOCKET_READ_METHODDEF

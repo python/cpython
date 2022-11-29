@@ -2,6 +2,23 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(_ssl__SSLSocket_get_internal_addr__doc__,
+"get_internal_addr($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GET_INTERNAL_ADDR_METHODDEF    \
+    {"get_internal_addr", (PyCFunction)_ssl__SSLSocket_get_internal_addr, METH_NOARGS, _ssl__SSLSocket_get_internal_addr__doc__},
+
+static PyObject *
+_ssl__SSLSocket_get_internal_addr_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_get_internal_addr(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl__SSLSocket_get_internal_addr_impl(self);
+}
+
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
 "do_handshake($self, /)\n"
 "--\n"
@@ -1404,4 +1421,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=9c345417cf263cf8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f07db5f227f6f2b5 input=a9049054013a1b77]*/
