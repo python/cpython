@@ -23,6 +23,10 @@ print("ssl")
 
 print("ssl.OPENSSL_VERSION_NUMBER", hex(ssl.OPENSSL_VERSION_NUMBER))
 print("ssl.OPENSSL_VERSION", ssl.OPENSSL_VERSION)
+print("ssl.OPENSSL_CFLAGS", ssl.OPENSSL_CFLAGS)
+print("ssl.OPENSSL_BUILT_ON", ssl.OPENSSL_BUILT_ON)
+print("ssl.OPENSSL_PLATFORM", ssl.OPENSSL_PLATFORM)
+print("ssl.OPENSSL_DIR", ssl.OPENSSL_DIR)
 
 crypto_dll_path = ssl._ssl.CRYPTO_DLL_PATH
 print("CRYPTO_DLL_PATH:", crypto_dll_path)
@@ -63,6 +67,9 @@ crypto_lib.OpenSSL_version.restype = ctypes.c_char_p
 
 print("ctypes OpenSSL_version_num:", hex(crypto_lib.OpenSSL_version_num()))
 print("ctypes OpenSSL_version:", crypto_lib.OpenSSL_version(0))
+assert ssl.OPENSSL_CFLAGS == crypto_lib.OpenSSL_version(1).decode('utf-8')
+assert ssl.OPENSSL_BUILT_ON == crypto_lib.OpenSSL_version(2).decode('utf-8')
+assert ssl.OPENSSL_PLATFORM == crypto_lib.OpenSSL_version(3).decode('utf-8')
 
 ssl_lib.SSL_get_version.argtypes = (ctypes.c_void_p, )
 ssl_lib.SSL_get_version.restype = ctypes.c_char_p
@@ -129,6 +136,9 @@ ssl_lib = ssl_ffi.dlopen(ssl_dll_path)
 
 print("cffi OpenSSL_version_num:", hex(crypto_lib.OpenSSL_version_num()))
 print("cffi OpenSSL_version(0):", crypto_ffi.string(crypto_lib.OpenSSL_version(0)))
+assert ssl.OPENSSL_CFLAGS == crypto_ffi.string(crypto_lib.OpenSSL_version(1)).decode('utf-8')
+assert ssl.OPENSSL_BUILT_ON == crypto_ffi.string(crypto_lib.OpenSSL_version(2)).decode('utf-8')
+assert ssl.OPENSSL_PLATFORM == crypto_ffi.string(crypto_lib.OpenSSL_version(3)).decode('utf-8')
 
 ssl_ptr = ssl_ffi.cast('void *', ssl_addr)
 print("cffi SSL_get_version:", repr(ssl_ffi.string(ssl_lib.SSL_get_version(ssl_ptr))))

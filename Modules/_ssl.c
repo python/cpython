@@ -6195,6 +6195,22 @@ sslmodule_init_versioninfo(PyObject *m)
     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
         return -1;
 
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_CFLAGS));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_CFLAGS", r))
+        return -1;
+
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_BUILT_ON));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_BUILT_ON", r))
+        return -1;
+
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_PLATFORM));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_PLATFORM", r))
+        return -1;
+
+    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_DIR));
+    if (r == NULL || PyModule_AddObject(m, "OPENSSL_DIR", r))
+        return -1;
+
     libver = OPENSSL_VERSION_NUMBER;
     parse_openssl_version(libver, &major, &minor, &fix, &patch, &status);
     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
