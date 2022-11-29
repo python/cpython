@@ -1,0 +1,2 @@
+``zipfile.Path`` is now pickleable if its initialization parameters were
+pickleable (e.g. for file system paths).

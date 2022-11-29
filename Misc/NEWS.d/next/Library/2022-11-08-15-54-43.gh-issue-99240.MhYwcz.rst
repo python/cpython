@@ -1,0 +1,2 @@
+Fix double-free bug in Argument Clinic ``str_converter`` by
+extracting memory clean up to a new ``post_parsing`` section.

@@ -291,8 +291,7 @@ _winapi_Overlapped_getbuffer_impl(OverlappedObject *self)
         return NULL;
     }
     res = self->read_buffer ? self->read_buffer : Py_None;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 /*[clinic input]
@@ -1089,14 +1088,6 @@ _winapi_CreateProcess_impl(PyObject *module,
         return NULL;
     }
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (config->_isolated_interpreter) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "subprocess not supported for isolated subinterpreters");
-        return NULL;
-    }
-
     ZeroMemory(&si, sizeof(si));
     si.StartupInfo.cb = sizeof(si);
 
@@ -1400,6 +1391,30 @@ _winapi_MapViewOfFile_impl(PyObject *module, HANDLE file_map,
         PyErr_SetFromWindowsErr(0);
 
     return address;
+}
+
+/*[clinic input]
+_winapi.UnmapViewOfFile
+
+    address: LPCVOID
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_UnmapViewOfFile_impl(PyObject *module, LPCVOID address)
+/*[clinic end generated code: output=4f7e18ac75d19744 input=8c4b6119ad9288a3]*/
+{
+    BOOL success;
+
+    Py_BEGIN_ALLOW_THREADS
+    success = UnmapViewOfFile(address);
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2071,6 +2086,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_READFILE_METHODDEF
     _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF
     _WINAPI_TERMINATEPROCESS_METHODDEF
+    _WINAPI_UNMAPVIEWOFFILE_METHODDEF
     _WINAPI_VIRTUALQUERYSIZE_METHODDEF
     _WINAPI_WAITNAMEDPIPE_METHODDEF
     _WINAPI_WAITFORMULTIPLEOBJECTS_METHODDEF

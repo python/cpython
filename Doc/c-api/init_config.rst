@@ -254,7 +254,7 @@ PyPreConfig
 
    .. c:member:: int configure_locale
 
-      Set the LC_CTYPE locale to the user preferred locale?
+      Set the LC_CTYPE locale to the user preferred locale.
 
       If equals to ``0``, set :c:member:`~PyPreConfig.coerce_c_locale` and
       :c:member:`~PyPreConfig.coerce_c_locale_warn` members to ``0``.
@@ -1571,8 +1571,6 @@ Private provisional API:
 
 * :c:member:`PyConfig._init_main`: if set to ``0``,
   :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
-* :c:member:`PyConfig._isolated_interpreter`: if non-zero,
-  disallow threads, subprocesses and fork.
 
 .. c:function:: PyStatus _Py_InitializeMain(void)
 

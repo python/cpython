@@ -30,7 +30,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "ismount", "expanduser","expandvars","normpath","abspath",
            "curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
-           "samefile", "sameopenfile", "samestat", "commonpath"]
+           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction"]
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -266,6 +266,24 @@ def islink(path):
     except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
+
+
+# Is a path a junction?
+
+if hasattr(os.stat_result, 'st_reparse_tag'):
+    def isjunction(path):
+        """Test whether a path is a junction"""
+        try:
+            st = os.lstat(path)
+        except (OSError, ValueError, AttributeError):
+            return False
+        return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
+else:
+    def isjunction(path):
+        """Test whether a path is a junction"""
+        os.fspath(path)
+        return False
+
 
 # Being true for dangling symbolic links is also useful.
 
