@@ -173,9 +173,12 @@ struct instr {
 
 /* One arg*/
 #define INSTR_SET_OP1(I, OP, ARG) \
-    assert(HAS_ARG(OP) || ((ARG) == 0)); \
-    (I)->i_opcode = (OP); \
-    (I)->i_oparg = (ARG);
+    do { \
+        struct instr *__instr__ptr__ = (I); \
+        assert(HAS_ARG(OP) || ((ARG) == 0)); \
+        (__instr__ptr__)->i_opcode = (OP); \
+        (__instr__ptr__)->i_oparg = (ARG); \
+    } while (0);
 
 /* No args*/
 #define INSTR_SET_OP0(I, OP) \
