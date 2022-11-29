@@ -1446,6 +1446,9 @@ class GrammarTests(unittest.TestCase):
         if 1 not in (): pass
         if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in x is x is not x: pass
 
+        # Check that lambdas without surrounded parentheses are allowed in the RHS
+        if 1 == lambda: x: pass
+
     def test_comparison_is_literal(self):
         def check(test, msg='"is" with a literal'):
             self.check_syntax_warning(test, msg)
