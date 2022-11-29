@@ -71,7 +71,7 @@
     <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1q\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
-    <zlibDir>$(ExternalsDir)\zlib-1.2.12\</zlibDir>
+    <zlibDir>$(ExternalsDir)\zlib-1.2.13\</zlibDir>
     
     <!-- Suffix for all binaries when building for debug -->
     <PyDebugExt Condition="'$(PyDebugExt)' == '' and $(Configuration) == 'Debug'">_d</PyDebugExt>

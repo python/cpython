@@ -642,6 +642,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTCLINIC_FALSE
+MODULE__TESTCLINIC_TRUE
 MODULE__TESTCAPI_FALSE
 MODULE__TESTCAPI_TRUE
 MODULE__HASHLIB_FALSE
@@ -904,8 +906,6 @@ MKDIR_P
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
-ac_ct_READELF
-READELF
 ARFLAGS
 ac_ct_AR
 AR
@@ -3361,7 +3361,7 @@ fi
 
 
 
-for ac_prog in python$PACKAGE_VERSION python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
+for ac_prog in python$PACKAGE_VERSION python3.11 python3.10 python3.9 python3.8 python3.7 python3.6 python3 python
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -6755,7 +6755,7 @@ if test "x$enable_profiling" = xyes; then
   CC="$CC -pg"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-int main() { return 0; }
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
@@ -7180,116 +7180,6 @@ if test -z "$ARFLAGS"
 then
         ARFLAGS="rcs"
 fi
-
-if test -n "$ac_tool_prefix"; then
-  for ac_prog in readelf
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_READELF+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$READELF"; then
-  ac_cv_prog_READELF="$READELF" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_READELF="$ac_tool_prefix$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-READELF=$ac_cv_prog_READELF
-if test -n "$READELF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READELF" >&5
-$as_echo "$READELF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-    test -n "$READELF" && break
-  done
-fi
-if test -z "$READELF"; then
-  ac_ct_READELF=$READELF
-  for ac_prog in readelf
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_READELF+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_READELF"; then
-  ac_cv_prog_ac_ct_READELF="$ac_ct_READELF" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_READELF="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_READELF=$ac_cv_prog_ac_ct_READELF
-if test -n "$ac_ct_READELF"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_READELF" >&5
-$as_echo "$ac_ct_READELF" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ac_ct_READELF" && break
-done
-
-  if test "x$ac_ct_READELF" = x; then
-    READELF=":"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    READELF=$ac_ct_READELF
-  fi
-fi
-
-if test "$cross_compiling" = yes; then
-    case "$READELF" in
-	readelf|:)
-	as_fn_error $? "readelf for the host is required for cross builds" "$LINENO" 5
-	;;
-    esac
-fi
-
-
 
 case $MACHDEP in
 hp*|HP*)
@@ -9330,7 +9220,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9385,7 +9275,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9434,7 +9324,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9483,7 +9373,7 @@ else
 
 void* routine(void* p){return NULL;}
 
-int main(){
+int main(void){
   pthread_t p;
   if(pthread_create(&p,NULL,routine,NULL)!=0)
     return 1;
@@ -9558,7 +9448,7 @@ for ac_header in  \
   alloca.h asm/types.h bluetooth.h conio.h crypt.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
-  linux/tipc.h linux/wait.h netdb.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
+  linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
@@ -11629,7 +11519,7 @@ if test "x$perf_trampoline" = xyes; then :
 
 $as_echo "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
-  PERF_TRAMPOLINE_OBJ=Objects/asm_trampoline.o
+  PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
     if test "x$Py_DEBUG" = xtrue; then :
 
@@ -12343,7 +12233,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-int main()
+int main(void)
 {
     char s[16];
     int i, *p1, *p2;
@@ -12619,7 +12509,7 @@ else
 
   LIBEXPAT_CFLAGS="-I\$(srcdir)/Modules/expat"
   LIBEXPAT_LDFLAGS="-lm \$(LIBEXPAT_A)"
-  LIBEXPAT_INTERNAL="\$(LIBEXPAT_A)"
+  LIBEXPAT_INTERNAL="\$(LIBEXPAT_HEADERS) \$(LIBEXPAT_A)"
 
 fi
 
@@ -13128,7 +13018,7 @@ else
 
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
-  LIBMPDEC_INTERNAL="\$(LIBMPDEC_A)"
+  LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
 
     if test "x$with_pydebug" = xyes; then :
 
@@ -15152,6 +15042,7 @@ $as_echo_n "checking for pthread_create in -lpthread... " >&6; }
 /* end confdefs.h.  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 void * start_routine (void *arg) { exit (0); }
@@ -15462,7 +15353,7 @@ else
       void *foo(void *parm) {
         return NULL;
       }
-      main() {
+      int main(void) {
         pthread_attr_t attr;
         pthread_t id;
         if (pthread_attr_init(&attr)) return (-1);
@@ -17064,7 +16955,7 @@ else
 
 #include <sys/stat.h>
 #include <unistd.h>
-int main(int argc, char*argv[])
+int main(int argc, char *argv[])
 {
   if(chflags(argv[0], 0) != 0)
     return 1;
@@ -17113,7 +17004,7 @@ else
 
 #include <sys/stat.h>
 #include <unistd.h>
-int main(int argc, char*argv[])
+int main(int argc, char *argv[])
 {
   if(lchflags(argv[0], 0) != 0)
     return 1;
@@ -19821,7 +19712,7 @@ else
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-int main()
+int main(void)
 {
   int passive, gaierr, inet4 = 0, inet6 = 0;
   struct addrinfo hints, *ai, *aitop;
@@ -21018,7 +20909,7 @@ else
 
 #include <stdlib.h>
 #include <math.h>
-int main() {
+int main(void) {
     volatile double x, y, z;
     /* 1./(1-2**-53) -> 1+2**-52 (correct), 1.0 (double rounding) */
     x = 0.99999999999999989; /* 1-2**-53 */
@@ -21797,7 +21688,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-int main()
+int main(void)
 {
 	return (((-1)>>3 == -1) ? 0 : 1);
 }
@@ -22699,7 +22590,7 @@ else
 
 #include <stdlib.h>
 #include <unistd.h>
-int main()
+int main(void)
 {
 	int val1 = nice(1);
 	if (val1 != -1 && val1 == nice(2))
@@ -22741,7 +22632,7 @@ else
 #include <poll.h>
 #include <unistd.h>
 
-int main()
+int main(void)
 {
     struct pollfd poll_struct = { 42, POLLIN|POLLPRI|POLLOUT, 0 };
     int poll_test;
@@ -22798,7 +22689,7 @@ else
 extern char *tzname[];
 #endif
 
-int main()
+int main(void)
 {
 	/* Note that we need to ensure that not only does tzset(3)
 	   do 'something' with localtime, but it works as documented
@@ -24460,9 +24351,10 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <stddef.h>
 #include <stdio.h>
-#include<stdlib.h>
-int main() {
+#include <stdlib.h>
+int main(void) {
     size_t len = -1;
     const char *str = "text";
     len = mbstowcs(NULL, str, 0);
@@ -24662,7 +24554,7 @@ else
 #include <stdlib.h>
 #include <string.h>
 void foo(void *p, void *q) { memmove(p, q, 19); }
-int main() {
+int main(void) {
   char a[32] = "123456789000000000";
   foo(&a[9], a);
   if (strcmp(a, "123456789123456789000000000") != 0)
@@ -24717,7 +24609,7 @@ else
               );
               return r;
             }
-            int main() {
+            int main(void) {
               int p = 8;
               if ((foo(&p) ? : p) != 6)
                 return 1;
@@ -24760,7 +24652,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
     #include <stdatomic.h>
     atomic_int int_var;
     atomic_uintptr_t uintptr_var;
-    int main() {
+    int main(void) {
       atomic_store_explicit(&int_var, 5, memory_order_relaxed);
       atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
       int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
@@ -24801,7 +24693,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 
     int val;
-    int main() {
+    int main(void) {
       __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
       (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
@@ -24877,7 +24769,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
     #include <dirent.h>
 
-    int main() {
+    int main(void) {
       struct dirent entry;
       return entry.d_type == DT_UNKNOWN;
     }
@@ -24915,11 +24807,12 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
+    #include <stddef.h>
     #include <unistd.h>
     #include <sys/syscall.h>
     #include <linux/random.h>
 
-    int main() {
+    int main(void) {
         char buffer[1];
         const size_t buflen = sizeof(buffer);
         const int flags = GRND_NONBLOCK;
@@ -24962,9 +24855,10 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
+    #include <stddef.h>
     #include <sys/random.h>
 
-    int main() {
+    int main(void) {
         char buffer[1];
         const size_t buflen = sizeof(buffer);
         const int flags = 0;
@@ -27859,6 +27753,40 @@ fi
 $as_echo "$py_cv_module__testcapi" >&6; }
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testclinic" >&5
+$as_echo_n "checking for stdlib extension module _testclinic... " >&6; }
+        if test "$py_cv_module__testclinic" != "n/a"; then :
+
+    if test "$TEST_MODULES" = yes; then :
+  if true; then :
+  py_cv_module__testclinic=yes
+else
+  py_cv_module__testclinic=missing
+fi
+else
+  py_cv_module__testclinic=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTCLINIC_STATE=$py_cv_module__testclinic$as_nl"
+  if test "x$py_cv_module__testclinic" = xyes; then :
+
+
+
+
+fi
+   if test "$py_cv_module__testclinic" = yes; then
+  MODULE__TESTCLINIC_TRUE=
+  MODULE__TESTCLINIC_FALSE='#'
+else
+  MODULE__TESTCLINIC_TRUE='#'
+  MODULE__TESTCLINIC_FALSE=
+fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testclinic" >&5
+$as_echo "$py_cv_module__testclinic" >&6; }
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 $as_echo_n "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"; then :
@@ -28576,6 +28504,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCAPI_TRUE}" && test -z "${MODULE__TESTCAPI_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCLINIC_TRUE}" && test -z "${MODULE__TESTCLINIC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCLINIC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then

@@ -3003,14 +3003,19 @@ class TestNormalDist:
         nd = NormalDist(100, 15)
         self.assertNotEqual(nd, lnd)
 
-    def test_pickle_and_copy(self):
+    def test_copy(self):
         nd = self.module.NormalDist(37.5, 5.625)
         nd1 = copy.copy(nd)
         self.assertEqual(nd, nd1)
         nd2 = copy.deepcopy(nd)
         self.assertEqual(nd, nd2)
-        nd3 = pickle.loads(pickle.dumps(nd))
-        self.assertEqual(nd, nd3)
+
+    def test_pickle(self):
+        nd = self.module.NormalDist(37.5, 5.625)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                pickled = pickle.loads(pickle.dumps(nd, protocol=proto))
+                self.assertEqual(nd, pickled)
 
     def test_hashability(self):
         ND = self.module.NormalDist
