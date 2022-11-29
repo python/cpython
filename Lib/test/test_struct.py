@@ -756,6 +756,7 @@ class StructTest(unittest.TestCase):
         int_type = 'n'
         test_error_msg('@', int_type, False)
 
+    @support.cpython_only
     def test_issue98248_error_propagation(self):
         class Div0:
             def __index__(self):
