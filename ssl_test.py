@@ -38,6 +38,15 @@ if hasattr(ssock, "export_keying_material"):
     km = ssock.export_keying_material(label, km_len, context)
     print("%s:" % ssock.export_keying_material.__name__, binascii.b2a_hex(km))
 
+    # And delete it so that the extension version is installed next
+    del ssl.SSLSocket.export_keying_material
+
+print()
+print("extension")
+import ssl_export_keying_material
+km = ssock.export_keying_material(label, km_len, context)
+print("%s:" % ssock.export_keying_material.__name__, binascii.b2a_hex(km))
+
 print()
 print("ctypes")
 
