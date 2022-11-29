@@ -1147,13 +1147,16 @@ _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
     result->st_file_attributes = info->FileAttributes;
     switch (info->DeviceType) {
     case FILE_DEVICE_DISK:
-    case FILE_DEVICE_DISK_FILE_SYSTEM:
     case FILE_DEVICE_VIRTUAL_DISK:
     case FILE_DEVICE_DFS:
     case FILE_DEVICE_CD_ROM:
-    case FILE_DEVICE_CD_ROM_FILE_SYSTEM:
     case FILE_DEVICE_CONTROLLER:
     case FILE_DEVICE_DATALINK:
+        break;
+    case FILE_DEVICE_DISK_FILE_SYSTEM:
+    case FILE_DEVICE_CD_ROM_FILE_SYSTEM:
+    case FILE_DEVICE_NETWORK_FILE_SYSTEM:
+        result->st_mode = (result->st_mode & ~S_IFMT) | 0x6000; /* _S_IFBLK */
         break;
     case FILE_DEVICE_CONSOLE:
     case FILE_DEVICE_NULL:
