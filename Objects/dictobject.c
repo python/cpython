@@ -687,6 +687,7 @@ free_keys_object(PyDictKeysObject *keys)
 static inline PyDictValues*
 new_values(size_t size)
 {
+    assert(size >= 1);
     size_t prefix_size = _Py_SIZE_ROUND_UP(size+2, sizeof(PyObject *));
     assert(prefix_size < 256);
     size_t n = prefix_size + size * sizeof(PyObject *);
