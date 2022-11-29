@@ -1,0 +1,2 @@
+Fix substitution of :class:`~typing.TypeVarTuple` and
+:class:`~typing.ParamSpec` together in user generics.
