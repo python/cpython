@@ -159,8 +159,7 @@ unicodedata_UCD_decimal_impl(PyObject *self, int chr,
             return NULL;
         }
         else {
-            Py_INCREF(default_value);
-            return default_value;
+            return Py_NewRef(default_value);
         }
     }
     return PyLong_FromLong(rc);
@@ -194,8 +193,7 @@ unicodedata_UCD_digit_impl(PyObject *self, int chr, PyObject *default_value)
             return NULL;
         }
         else {
-            Py_INCREF(default_value);
-            return default_value;
+            return Py_NewRef(default_value);
         }
     }
     return PyLong_FromLong(rc);
@@ -246,8 +244,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
             return NULL;
         }
         else {
-            Py_INCREF(default_value);
-            return default_value;
+            return Py_NewRef(default_value);
         }
     }
     return PyFloat_FromDouble(rc);
@@ -917,8 +914,7 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
         result = (m == YES) ? Py_True : Py_False;
     }
 
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 
@@ -943,39 +939,34 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
            them  later would cause internal errors. */
-        Py_INCREF(input);
-        return input;
+        return Py_NewRef(input);
     }
 
     if (PyUnicode_CompareWithASCIIString(form, "NFC") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      true,  false, true) == YES) {
-            Py_INCREF(input);
-            return input;
+            return Py_NewRef(input);
         }
         return nfc_nfkc(self, input, 0);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFKC") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      true,  true,  true) == YES) {
-            Py_INCREF(input);
-            return input;
+            return Py_NewRef(input);
         }
         return nfc_nfkc(self, input, 1);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFD") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      false, false, true) == YES) {
-            Py_INCREF(input);
-            return input;
+            return Py_NewRef(input);
         }
         return nfd_nfkd(self, input, 0);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFKD") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      false, true,  true) == YES) {
-            Py_INCREF(input);
-            return input;
+            return Py_NewRef(input);
         }
         return nfd_nfkd(self, input, 1);
     }
@@ -1370,8 +1361,7 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
             return NULL;
         }
         else {
-            Py_INCREF(default_value);
-            return default_value;
+            return Py_NewRef(default_value);
         }
     }
 

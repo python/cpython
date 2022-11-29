@@ -1,0 +1,1 @@
+Fix bug where compiler crashes on an if expression with an empty body block.

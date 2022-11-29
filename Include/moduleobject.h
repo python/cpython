@@ -43,8 +43,22 @@ PyAPI_DATA(PyTypeObject) PyModuleDef_Type;
 
 typedef struct PyModuleDef_Base {
   PyObject_HEAD
+  /* The function used to re-initialize the module.
+     This is only set for legacy (single-phase init) extension modules
+     and only used for those that support multiple initializations
+     (m_size >= 0).
+     It is set by _PyImport_LoadDynamicModuleWithSpec()
+     and _imp.create_builtin(). */
   PyObject* (*m_init)(void);
+  /* The module's index into its interpreter's modules_by_index cache.
+     This is set for all extension modules but only used for legacy ones.
+     (See PyInterpreterState.modules_by_index for more info.)
+     It is set by PyModuleDef_Init(). */
   Py_ssize_t m_index;
+  /* A copy of the module's __dict__ after the first time it was loaded.
+     This is only set/used for legacy modules that do not support
+     multiple initializations.
+     It is set by _PyImport_FixupExtensionObject(). */
   PyObject* m_copy;
 } PyModuleDef_Base;
 
