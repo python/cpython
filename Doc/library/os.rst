@@ -2861,6 +2861,12 @@ features:
    The :attr:`stat_result.stx_mask` field is always present, and is initialized
    with a meaningful value for regular stat calls.
 
+   This function is present even if the operating system does not support
+   ``statx``. In this case, the *mask* argument is ignored and a regular
+   :func:`stat`, :func:`lstat` or :func:`fstat` call will be used.
+   The :attr:`stat_result.stx_mask` field is always present, and is initialized
+   with a meaningful value for regular stat calls.
+
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
