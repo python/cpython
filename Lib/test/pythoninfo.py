@@ -213,6 +213,8 @@ def collect_os(info_add):
     )
     copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
 
+    info_add('os.HAVE_STATX', hasattr(sys.modules[os.name], 'statx'))
+
     for func in (
         'cpu_count',
         'getcwd',

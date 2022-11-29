@@ -118,6 +118,7 @@ if _exists("_have_functions"):
     _add("HAVE_OPENAT",     "open")
     _add("HAVE_READLINKAT", "readlink")
     _add("HAVE_RENAMEAT",   "rename")
+    _add("HAVE_STATX",      "statx")
     _add("HAVE_SYMLINKAT",  "symlink")
     _add("HAVE_UNLINKAT",   "unlink")
     _add("HAVE_UNLINKAT",   "rmdir")
@@ -140,6 +141,7 @@ if _exists("_have_functions"):
     _add("HAVE_FUTIMENS",   "utime")
     _add("HAVE_FUTIMES",    "utime")
     _add("HAVE_FPATHCONF",  "pathconf")
+    _add("HAVE_STATX",      "statx")
     if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
         _add("HAVE_FSTATVFS", "statvfs")
     supports_fd = _set
@@ -1099,6 +1101,12 @@ result will be set for the information returned by a normal stat() call.
 """
         return (stat if follow_symlinks else lstat)(path, dir_fd=dir_fd)
 
+    # Ensure our supports sets include us based on the fallback functions
+    supports_fd.add(statx)
+    if stat in supports_follow_symlinks:
+        supports_follow_symlinks.add(statx)
+    if stat in supports_dir_fd:
+        supports_dir_fd.add(statx)
 
 if name == 'nt':
     class _AddedDllDirectory:
