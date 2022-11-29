@@ -292,6 +292,7 @@ Module functions
        By default (``0``), type detection is disabled.
 
    :param isolation_level:
+       Control legacy transaction handling behaviour.
        See :attr:`Connection.isolation_level` and
        :ref:`sqlite3-transaction-control-isolation-level` for more information.
        Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
@@ -325,7 +326,7 @@ Module functions
        enabling various :ref:`sqlite3-uri-tricks`.
 
    :param autocommit:
-       Controls :pep:`249` transaction handling behaviour.
+       Control :pep:`249` transaction handling behaviour.
        See :attr:`Connection.autocommit` and
        :ref:`sqlite3-transaction-control-autocommit` for more information.
        If ``False``, a new transaction is implicitly opened
