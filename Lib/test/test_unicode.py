@@ -1574,9 +1574,9 @@ class UnicodeTest(string_tests.CommonTest,
 
         class RaisingNumber:
             def __int__(self):
-                raise RuntimeError('int')  # should be not `TypeErorr`
+                raise RuntimeError('int')  # should not be `TypeError`
             def __index__(self):
-                raise RuntimeError('index')  # should be not `TypeErorr`
+                raise RuntimeError('index')  # should not be `TypeError`
 
         rn = RaisingNumber()
         self.assertRaisesRegex(RuntimeError, 'int', operator.mod, '%d', rn)
