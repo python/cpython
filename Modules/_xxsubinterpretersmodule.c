@@ -1794,12 +1794,19 @@ channelid_hash(PyObject *self)
 static PyObject *
 channelid_richcompare(PyObject *self, PyObject *other, int op)
 {
+    PyObject *res = NULL;
     if (op != Py_EQ && op != Py_NE) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
+    PyObject *mod = get_module_from_type(Py_TYPE(self));
+    if (mod == NULL) {
+        return NULL;
+    }
+
     if (!PyObject_TypeCheck(self, &ChannelIDType)) {
-        Py_RETURN_NOTIMPLEMENTED;
+        res = Py_NewRef(Py_NotImplemented);
+        goto done;
     }
 
     channelid *cid = (channelid *)self;
@@ -1813,27 +1820,34 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         int overflow;
         long long othercid = PyLong_AsLongLongAndOverflow(other, &overflow);
         if (othercid == -1 && PyErr_Occurred()) {
-            return NULL;
+            goto done;
         }
         equal = !overflow && (othercid >= 0) && (cid->id == othercid);
     }
     else if (PyNumber_Check(other)) {
         PyObject *pyid = PyLong_FromLongLong(cid->id);
         if (pyid == NULL) {
-            return NULL;
+            goto done;
         }
-        PyObject *res = PyObject_RichCompare(pyid, other, op);
+        res = PyObject_RichCompare(pyid, other, op);
         Py_DECREF(pyid);
-        return res;
+        goto done;
     }
     else {
-        Py_RETURN_NOTIMPLEMENTED;
+        res = Py_NewRef(Py_NotImplemented);
+        goto done;
     }
 
     if ((op == Py_EQ && equal) || (op == Py_NE && !equal)) {
-        Py_RETURN_TRUE;
+        res = Py_NewRef(Py_True);
     }
-    Py_RETURN_FALSE;
+    else {
+        res = Py_NewRef(Py_False);
+    }
+
+done:
+    Py_DECREF(mod);
+    return res;
 }
 
 static PyObject *
