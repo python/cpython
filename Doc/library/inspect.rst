@@ -348,8 +348,10 @@ attributes:
 
 .. function:: iscoroutinefunction(object)
 
-   Return ``True`` if the object is a :term:`coroutine function`
-   (a function defined with an :keyword:`async def` syntax).
+   Return ``True`` if the object is a :term:`coroutine function` (a function
+   defined with an :keyword:`async def` syntax), a :func:`functools.partial`
+   wrapping a :term:`coroutine function`, or an instance of a class defining
+   an :keyword:`async def` ``__call__``.
 
    .. versionadded:: 3.5
 
@@ -357,17 +359,19 @@ attributes:
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
 
+   .. versionchanged:: 3.12
+      Instances of classes defining an :keyword:`async def` ``__call__`` now
+      return ``True``.
+
 
 .. function:: markcoroutinefunction(func)
 
    Decorator to mark a callable as a :term:`coroutine function` if it would not
    otherwise be detected by :func:`iscoroutinefunction`.
 
-   This may be of use for sync functions that return an awaitable or objects
-   implementing an :keyword:`async def` ``__call__``.
-
-   Prefer :keyword:`async def` functions or calling the function and testing
-   the return with :func:`isawaitable` where feasible.
+   This may be of use for sync functions that return a :term:`coroutine`, but
+   prefer :keyword:`async def` functions, or if necessary calling the function
+   and testing the return with :func:`iscoroutine` where feasible.
 
    .. versionadded:: 3.12
 
