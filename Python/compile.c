@@ -171,6 +171,17 @@ struct instr {
     struct basicblock_ *i_except; /* target block when exception is raised */
 };
 
+/* One arg*/
+#define INSTR_SET_OP1(I, OP, ARG) \
+    assert(HAS_ARG(OP) || ((ARG) == 0)); \
+    (I)->i_opcode = (OP); \
+    (I)->i_oparg = (ARG);
+
+/* No args*/
+#define INSTR_SET_OP0(I, OP) \
+    assert(!HAS_ARG(OP)); \
+    INSTR_SET_OP1((I), (OP), 0);
+
 typedef struct exceptstack {
     struct basicblock_ *handlers[CO_MAXBLOCKS+1];
     int depth;
@@ -218,7 +229,8 @@ instr_size(struct instr *instruction)
 {
     int opcode = instruction->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
+    int oparg = instruction->i_oparg;
+    assert(HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
     return extended_args + 1 + caches;
@@ -229,7 +241,8 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
 {
     int opcode = instruction->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = HAS_ARG(opcode) ? instruction->i_oparg : 0;
+    int oparg = instruction->i_oparg;
+    assert(HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
@@ -7598,7 +7611,7 @@ convert_exception_handlers_to_nops(basicblock *entryblock) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
-                instr->i_opcode = NOP;
+                INSTR_SET_OP0(instr, NOP);
             }
         }
     }
@@ -8723,7 +8736,7 @@ remove_redundant_jumps(cfg_builder *g) {
             }
             if (last->i_target == b->b_next) {
                 assert(b->b_next->b_iused);
-                last->i_opcode = NOP;
+                INSTR_SET_OP0(last, NOP);
             }
         }
     }
@@ -8988,10 +9001,9 @@ fold_tuple_on_constants(PyObject *const_cache,
     }
     Py_DECREF(newconst);
     for (int i = 0; i < n; i++) {
-        inst[i].i_opcode = NOP;
+        INSTR_SET_OP0(&inst[i], NOP);
     }
-    inst[n].i_opcode = LOAD_CONST;
-    inst[n].i_oparg = (int)index;
+    INSTR_SET_OP1(&inst[n], LOAD_CONST, (int)index);
     return 0;
 }
 
@@ -9088,7 +9100,7 @@ swaptimize(basicblock *block, int *ix)
     }
     // NOP out any unused instructions:
     while (0 <= current) {
-        instructions[current--].i_opcode = NOP;
+        INSTR_SET_OP0(&instructions[current--], NOP);
     }
     PyMem_Free(stack);
     *ix += len - 1;
@@ -9154,7 +9166,7 @@ apply_static_swaps(basicblock *block, int i)
             }
         }
         // Success!
-        swap->i_opcode = NOP;
+        INSTR_SET_OP0(swap, NOP);
         struct instr temp = block->b_instr[j];
         block->b_instr[j] = block->b_instr[k];
         block->b_instr[k] = temp;
@@ -9191,7 +9203,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     struct instr nop;
-    nop.i_opcode = NOP;
+    INSTR_SET_OP0(&nop, NOP);
     struct instr *target;
     for (int i = 0; i < bb->b_iused; i++) {
         struct instr *inst = &bb->b_instr[i];
@@ -9225,13 +9237,13 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         if (is_true == -1) {
                             goto error;
                         }
-                        inst->i_opcode = NOP;
+                        INSTR_SET_OP0(inst, NOP);
                         jump_if_true = nextop == POP_JUMP_IF_TRUE;
                         if (is_true == jump_if_true) {
                             bb->b_instr[i+1].i_opcode = JUMP;
                         }
                         else {
-                            bb->b_instr[i+1].i_opcode = NOP;
+                            INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                         }
                         break;
                     case JUMP_IF_FALSE_OR_POP:
@@ -9250,8 +9262,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                             bb->b_instr[i+1].i_opcode = JUMP;
                         }
                         else {
-                            inst->i_opcode = NOP;
-                            bb->b_instr[i+1].i_opcode = NOP;
+                            INSTR_SET_OP0(inst, NOP);
+                            INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                         }
                         break;
                     case IS_OP:
@@ -9262,8 +9274,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         int jump_op = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
                         if (Py_IsNone(cnt) && (jump_op == POP_JUMP_IF_FALSE || jump_op == POP_JUMP_IF_TRUE)) {
                             unsigned char nextarg = bb->b_instr[i+1].i_oparg;
-                            inst->i_opcode = NOP;
-                            bb->b_instr[i+1].i_opcode = NOP;
+                            INSTR_SET_OP0(inst, NOP);
+                            INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                             bb->b_instr[i+2].i_opcode = nextarg ^ (jump_op == POP_JUMP_IF_FALSE) ?
                                     POP_JUMP_IF_NOT_NONE : POP_JUMP_IF_NONE;
                         }
@@ -9281,12 +9293,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 if (nextop == UNPACK_SEQUENCE && oparg == bb->b_instr[i+1].i_oparg) {
                     switch(oparg) {
                         case 1:
-                            inst->i_opcode = NOP;
-                            bb->b_instr[i+1].i_opcode = NOP;
+                            INSTR_SET_OP0(inst, NOP);
+                            INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                             continue;
                         case 2:
                         case 3:
-                            inst->i_opcode = NOP;
+                            INSTR_SET_OP0(inst, NOP);
                             bb->b_instr[i+1].i_opcode = SWAP;
                             continue;
                     }
@@ -9395,7 +9407,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case SWAP:
                 if (oparg == 1) {
-                    inst->i_opcode = NOP;
+                    INSTR_SET_OP0(inst, NOP);
                     break;
                 }
                 if (swaptimize(bb, &i)) {
@@ -9407,8 +9419,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case PUSH_NULL:
                 if (nextop == LOAD_GLOBAL && (inst[1].i_opcode & 1) == 0) {
-                    inst->i_opcode = NOP;
-                    inst->i_oparg = 0;
+                    INSTR_SET_OP0(inst, NOP);
                     inst[1].i_oparg |= 1;
                 }
                 break;
@@ -9437,7 +9448,7 @@ inline_small_exit_blocks(basicblock *bb) {
     }
     basicblock *target = last->i_target;
     if (basicblock_exits_scope(target) && target->b_iused <= MAX_COPY_SIZE) {
-        last->i_opcode = NOP;
+        INSTR_SET_OP0(last, NOP);
         if (basicblock_append_instructions(bb, target) < 0) {
             return -1;
         }
