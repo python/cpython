@@ -723,7 +723,7 @@ class StructTest(unittest.TestCase):
                 struct.calcsize(s)
 
     @support.cpython_only
-    def test_issue92848(self):
+    def test_issue98248(self):
         def test_error_msg(prefix, int_type, is_unsigned):
             fmt_str = prefix + int_type
             size = struct.calcsize(fmt_str)
@@ -756,7 +756,7 @@ class StructTest(unittest.TestCase):
         int_type = 'n'
         test_error_msg("@", int_type, False)
 
-    def test_issue92848_error_propagation(self):
+    def test_issue98248_error_propagation(self):
         class Div0:
             def __index__(self):
                 1 / 0
