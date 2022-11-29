@@ -2329,7 +2329,6 @@ _PyObject_GC_New(PyTypeObject *tp)
 PyVarObject *
 _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
 {
-    size_t size;
     PyVarObject *op;
 
     if (nitems < 0) {
@@ -2337,7 +2336,7 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
         return NULL;
     }
     size_t presize = _PyType_PreHeaderSize(tp);
-    size = _PyObject_VAR_SIZE(tp, nitems);
+    size_t size = _PyObject_VAR_SIZE(tp, nitems);
     op = (PyVarObject *)gc_alloc(size, presize);
     if (op == NULL) {
         return NULL;
@@ -2351,7 +2350,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));
-    if (basicsize > PY_SSIZE_T_MAX - sizeof(PyGC_Head)) {
+    if (basicsize > (size_t)PY_SSIZE_T_MAX - sizeof(PyGC_Head)) {
         return (PyVarObject *)PyErr_NoMemory();
     }
 

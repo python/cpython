@@ -1,0 +1,2 @@
+Check the number of arguments in substitution in user generics containing a
+:class:`~typing.TypeVarTuple` and one or more :class:`~typing.TypeVar`.
