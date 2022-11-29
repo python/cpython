@@ -772,19 +772,41 @@ class GenericAliasSubstitutionTests(BaseTestCase):
             ('generic[*Ts]',                           '[*Ts]',                                          'generic[*Ts]'),
             ('generic[*Ts]',                           '[T, *Ts]',                                       'generic[T, *Ts]'),
             ('generic[*Ts]',                           '[*Ts, T]',                                       'generic[*Ts, T]'),
+            ('generic[T, *Ts]',                        '[()]',                                           'TypeError'),
             ('generic[T, *Ts]',                        '[int]',                                          'generic[int]'),
             ('generic[T, *Ts]',                        '[int, str]',                                     'generic[int, str]'),
             ('generic[T, *Ts]',                        '[int, str, bool]',                               'generic[int, str, bool]'),
+            ('generic[list[T], *Ts]',                  '[()]',                                           'TypeError'),
             ('generic[list[T], *Ts]',                  '[int]',                                          'generic[list[int]]'),
             ('generic[list[T], *Ts]',                  '[int, str]',                                     'generic[list[int], str]'),
             ('generic[list[T], *Ts]',                  '[int, str, bool]',                               'generic[list[int], str, bool]'),
 
+            ('generic[*Ts, T]',                        '[()]',                                           'TypeError'),
             ('generic[*Ts, T]',                        '[int]',                                          'generic[int]'),
             ('generic[*Ts, T]',                        '[int, str]',                                     'generic[int, str]'),
             ('generic[*Ts, T]',                        '[int, str, bool]',                               'generic[int, str, bool]'),
+            ('generic[*Ts, list[T]]',                  '[()]',                                           'TypeError'),
             ('generic[*Ts, list[T]]',                  '[int]',                                          'generic[list[int]]'),
             ('generic[*Ts, list[T]]',                  '[int, str]',                                     'generic[int, list[str]]'),
             ('generic[*Ts, list[T]]',                  '[int, str, bool]',                               'generic[int, str, list[bool]]'),
+
+            ('generic[T1, T2, *Ts]',                   '[()]',                                           'TypeError'),
+            ('generic[T1, T2, *Ts]',                   '[int]',                                          'TypeError'),
+            ('generic[T1, T2, *Ts]',                   '[int, str]',                                     'generic[int, str]'),
+            ('generic[T1, T2, *Ts]',                   '[int, str, bool]',                               'generic[int, str, bool]'),
+            ('generic[T1, T2, *Ts]',                   '[int, str, bool, bytes]',                        'generic[int, str, bool, bytes]'),
+
+            ('generic[*Ts, T1, T2]',                   '[()]',                                           'TypeError'),
+            ('generic[*Ts, T1, T2]',                   '[int]',                                          'TypeError'),
+            ('generic[*Ts, T1, T2]',                   '[int, str]',                                     'generic[int, str]'),
+            ('generic[*Ts, T1, T2]',                   '[int, str, bool]',                               'generic[int, str, bool]'),
+            ('generic[*Ts, T1, T2]',                   '[int, str, bool, bytes]',                        'generic[int, str, bool, bytes]'),
+
+            ('generic[T1, *Ts, T2]',                   '[()]',                                           'TypeError'),
+            ('generic[T1, *Ts, T2]',                   '[int]',                                          'TypeError'),
+            ('generic[T1, *Ts, T2]',                   '[int, str]',                                     'generic[int, str]'),
+            ('generic[T1, *Ts, T2]',                   '[int, str, bool]',                               'generic[int, str, bool]'),
+            ('generic[T1, *Ts, T2]',                   '[int, str, bool, bytes]',                        'generic[int, str, bool, bytes]'),
 
             ('generic[T, *Ts]',                        '[*tuple_type[int, ...]]',                        'generic[int, *tuple_type[int, ...]]'),
             ('generic[T, *Ts]',                        '[str, *tuple_type[int, ...]]',                   'generic[str, *tuple_type[int, ...]]'),
@@ -7240,6 +7262,65 @@ class ParamSpecTests(BaseTestCase):
         self.assertNotEqual(G1, G2)
         self.assertEqual(G1.__args__, ((int, str), (bytes,)))
         self.assertEqual(G2.__args__, ((int,), (str, bytes)))
+
+    def test_typevartuple_and_paramspecs_in_user_generics(self):
+        Ts = TypeVarTuple("Ts")
+        P = ParamSpec("P")
+
+        class X(Generic[*Ts, P]):
+            f: Callable[P, int]
+            g: Tuple[*Ts]
+
+        G1 = X[int, [bytes]]
+        self.assertEqual(G1.__args__, (int, (bytes,)))
+        G2 = X[int, str, [bytes]]
+        self.assertEqual(G2.__args__, (int, str, (bytes,)))
+        G3 = X[[bytes]]
+        self.assertEqual(G3.__args__, ((bytes,),))
+        G4 = X[[]]
+        self.assertEqual(G4.__args__, ((),))
+        with self.assertRaises(TypeError):
+            X[()]
+
+        class Y(Generic[P, *Ts]):
+            f: Callable[P, int]
+            g: Tuple[*Ts]
+
+        G1 = Y[[bytes], int]
+        self.assertEqual(G1.__args__, ((bytes,), int))
+        G2 = Y[[bytes], int, str]
+        self.assertEqual(G2.__args__, ((bytes,), int, str))
+        G3 = Y[[bytes]]
+        self.assertEqual(G3.__args__, ((bytes,),))
+        G4 = Y[[]]
+        self.assertEqual(G4.__args__, ((),))
+        with self.assertRaises(TypeError):
+            Y[()]
+
+    def test_typevartuple_and_paramspecs_in_generic_aliases(self):
+        P = ParamSpec('P')
+        T = TypeVar('T')
+        Ts = TypeVarTuple('Ts')
+
+        for C in Callable, collections.abc.Callable:
+            with self.subTest(generic=C):
+                A = C[P, Tuple[*Ts]]
+                B = A[[int, str], bytes, float]
+                self.assertEqual(B.__args__, (int, str, Tuple[bytes, float]))
+
+        class X(Generic[T, P]):
+            pass
+
+        A = X[Tuple[*Ts], P]
+        B = A[bytes, float, [int, str]]
+        self.assertEqual(B.__args__, (Tuple[bytes, float], (int, str,)))
+
+        class Y(Generic[P, T]):
+            pass
+
+        A = Y[P, Tuple[*Ts]]
+        B = A[[int, str], bytes, float]
+        self.assertEqual(B.__args__, ((int, str,), Tuple[bytes, float]))
 
     def test_var_substitution(self):
         T = TypeVar("T")
