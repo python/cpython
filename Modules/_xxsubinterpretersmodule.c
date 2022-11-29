@@ -1097,6 +1097,8 @@ _channels_init(_channels *channels, PyThread_type_lock mutex)
 static void
 _channels_fini(_channels *channels)
 {
+    assert(channels->numopen == 0);
+    assert(channels->head == NULL);
     if (channels->mutex != NULL) {
         PyThread_free_lock(channels->mutex);
         channels->mutex = NULL;
