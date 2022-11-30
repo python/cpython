@@ -2199,15 +2199,9 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
             return encoding;
         }
     }
-<<<<<<< HEAD
-||||||| parent of 417206a05c (gh-99891: Fix infinite recursion in the tokenizer when showing warnings (GH-99893))
-    struct token token;
-=======
-    struct token token;
     // We don't want to report warnings here because it could cause infinite recursion
     // if fetching the encoding shows a warning.
     tok->report_warnings = 0;
->>>>>>> 417206a05c (gh-99891: Fix infinite recursion in the tokenizer when showing warnings (GH-99893))
     while (tok->lineno < 2 && tok->done == E_OK) {
         _PyTokenizer_Get(tok, &p_start, &p_end);
     }
