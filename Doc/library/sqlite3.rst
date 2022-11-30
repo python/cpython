@@ -2105,7 +2105,7 @@ The following example illustrates the implicit and explicit approaches:
            return f"Point({self.x}, {self.y})"
 
    def adapt_point(point):
-       return f"{point.x};{point.y}".encode("utf-8")
+       return f"{point.x};{point.y}"
 
    def convert_point(s):
        x, y = list(map(float, s.split(b";")))

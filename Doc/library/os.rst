@@ -4491,6 +4491,9 @@ written in Python, such as a mail server's external command delivery program.
    number is zero); the high bit of the low byte is set if a core file was
    produced.
 
+   If there are no children that could be waited for, :exc:`ChildProcessError`
+   is raised.
+
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
@@ -4498,75 +4501,39 @@ written in Python, such as a mail server's external command delivery program.
 
    .. seealso::
 
-      :func:`waitpid` can be used to wait for the completion of a specific
-      child process and has more options.
+      The other :func:`!wait*` functions documented below can be used to wait for the
+      completion of a specific child process and have more options.
+      :func:`waitpid` is the only one also available on Windows.
+
 
 .. function:: waitid(idtype, id, options, /)
 
-   Wait for the completion of one or more child processes.
-   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
-   :data:`P_PIDFD` on Linux.
-   *id* specifies the pid to wait on.
-   *options* is constructed from the ORing of one or more of :data:`WEXITED`,
-   :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
-   :data:`WNOHANG` or :data:`WNOWAIT`. The return value is an object
-   representing the data contained in the :c:type:`siginfo_t` structure, namely:
-   :attr:`si_pid`, :attr:`si_uid`, :attr:`si_signo`, :attr:`si_status`,
-   :attr:`si_code` or ``None`` if :data:`WNOHANG` is specified and there are no
-   children in a waitable state.
+   Wait for the completion of a child process.
+
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or (on Linux) :data:`P_PIDFD`.
+   The interpretation of *id* depends on it; see their individual descriptions.
+
+   *options* is an OR combination of flags.  At least one of :data:`WEXITED`,
+   :data:`WSTOPPED` or :data:`WCONTINUED` is required;
+   :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
+
+   The return value is an object representing the data contained in the
+   :c:type:`!siginfo_t` structure with the following attributes:
+
+   * :attr:`!si_pid` (process ID)
+   * :attr:`!si_uid` (real user ID of the child)
+   * :attr:`!si_signo` (always :data:`~signal.SIGCHLD`)
+   * :attr:`!si_status` (the exit status or signal number, depending on :attr:`!si_code`)
+   * :attr:`!si_code` (see :data:`CLD_EXITED` for possible values)
+
+   If :data:`WNOHANG` is specified and there are no matching children in the
+   requested state, ``None`` is returned.
+   Otherwise, if there are no matching children
+   that could be waited for, :exc:`ChildProcessError` is raised.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
-
-.. data:: P_PID
-          P_PGID
-          P_ALL
-
-   These are the possible values for *idtype* in :func:`waitid`. They affect
-   how *id* is interpreted.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.3
-
-.. data:: P_PIDFD
-
-   This is a Linux-specific *idtype* that indicates that *id* is a file
-   descriptor that refers to a process.
-
-   .. availability:: Linux >= 5.4
-
-   .. versionadded:: 3.9
-
-.. data:: WEXITED
-          WSTOPPED
-          WNOWAIT
-
-   Flags that can be used in *options* in :func:`waitid` that specify what
-   child signal to wait for.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.3
-
-
-.. data:: CLD_EXITED
-          CLD_KILLED
-          CLD_DUMPED
-          CLD_TRAPPED
-          CLD_STOPPED
-          CLD_CONTINUED
-
-   These are the possible values for :attr:`si_code` in the result returned by
-   :func:`waitid`.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.9
-      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitpid(pid, options, /)
@@ -4585,8 +4552,11 @@ written in Python, such as a mail server's external command delivery program.
    ``-1``, status is requested for any process in the process group ``-pid`` (the
    absolute value of *pid*).
 
-   An :exc:`OSError` is raised with the value of errno when the syscall
-   returns -1.
+   *options* is an OR combination of flags.  If it contains :data:`WNOHANG` and
+   there are no matching children in the requested state, ``(0, 0)`` is
+   returned.  Otherwise, if there are no matching children that could be waited
+   for, :exc:`ChildProcessError` is raised.  Other options that can be used are
+   :data:`WUNTRACED` and :data:`WCONTINUED`.
 
    On Windows: Wait for completion of a process given by process handle *pid*, and
    return a tuple containing *pid*, and its exit status shifted left by 8 bits
@@ -4599,7 +4569,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -4612,9 +4582,9 @@ written in Python, such as a mail server's external command delivery program.
    Similar to :func:`waitpid`, except no process id argument is given and a
    3-element tuple containing the child's process id, exit status indication,
    and resource usage information is returned.  Refer to
-   :mod:`resource`.\ :func:`~resource.getrusage` for details on resource usage
-   information.  The option argument is the same as that provided to
-   :func:`waitpid` and :func:`wait4`.
+   :func:`resource.getrusage` for details on resource usage information.  The
+   *options* argument is the same as that provided to :func:`waitpid` and
+   :func:`wait4`.
 
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
@@ -4625,15 +4595,120 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: wait4(pid, options)
 
    Similar to :func:`waitpid`, except a 3-element tuple, containing the child's
-   process id, exit status indication, and resource usage information is returned.
-   Refer to :mod:`resource`.\ :func:`~resource.getrusage` for details on
-   resource usage information.  The arguments to :func:`wait4` are the same
-   as those provided to :func:`waitpid`.
+   process id, exit status indication, and resource usage information is
+   returned.  Refer to :func:`resource.getrusage` for details on resource usage
+   information.  The arguments to :func:`wait4` are the same as those provided
+   to :func:`waitpid`.
 
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: P_PID
+          P_PGID
+          P_ALL
+          P_PIDFD
+
+   These are the possible values for *idtype* in :func:`waitid`. They affect
+   how *id* is interpreted:
+
+   * :data:`!P_PID` - wait for the child whose PID is *id*.
+   * :data:`!P_PGID` - wait for any child whose progress group ID is *id*.
+   * :data:`!P_ALL` - wait for any child; *id* is ignored.
+   * :data:`!P_PIDFD` - wait for the child identified by the file descriptor
+     *id* (a process file descriptor created with :func:`pidfd_open`).
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. note:: :data:`!P_PIDFD` is only available on Linux >= 5.4.
+
+   .. versionadded:: 3.3
+   .. versionadded:: 3.9
+      The :data:`!P_PIDFD` constant.
+
+
+.. data:: WCONTINUED
+
+   This *options* flag for :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` causes child processes to be reported if they have been
+   continued from a job control stop since they were last reported.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WEXITED
+
+   This *options* flag for :func:`waitid` causes child processes that have terminated to
+   be reported.
+
+   The other ``wait*`` functions always report children that have terminated,
+   so this option is not available for them.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: WSTOPPED
+
+   This *options* flag for :func:`waitid` causes child processes that have been stopped
+   by the delivery of a signal to be reported.
+
+   This option is not available for the other ``wait*`` functions.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: WUNTRACED
+
+   This *options* flag for :func:`waitpid`, :func:`wait3`, and :func:`wait4` causes
+   child processes to also be reported if they have been stopped but their
+   current state has not been reported since they were stopped.
+
+   This option is not available for :func:`waitid`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WNOHANG
+
+   This *options* flag causes :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` to return right away if no child process status is available
+   immediately.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WNOWAIT
+
+   This *options* flag causes :func:`waitid` to leave the child in a waitable state, so that
+   a later :func:`!wait*` call can be used to retrieve the child status information again.
+
+   This option is not available for the other ``wait*`` functions.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: CLD_EXITED
+          CLD_KILLED
+          CLD_DUMPED
+          CLD_TRAPPED
+          CLD_STOPPED
+          CLD_CONTINUED
+
+   These are the possible values for :attr:`!si_code` in the result returned by
+   :func:`waitid`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitstatus_to_exitcode(status)
@@ -4666,32 +4741,6 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionadded:: 3.9
-
-
-.. data:: WNOHANG
-
-   The option for :func:`waitpid` to return immediately if no child process status
-   is available immediately. The function returns ``(0, 0)`` in this case.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-
-.. data:: WCONTINUED
-
-   This option causes child processes to be reported if they have been continued
-   from a job control stop since their status was last reported.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-      Some Unix systems.
-
-
-.. data:: WUNTRACED
-
-   This option causes child processes to be reported if they have been stopped but
-   their current state has not been reported since they were stopped.
-
-   .. availability:: Unix, not Emscripten, not WASI.
 
 
 The following functions take a process status code as returned by
