@@ -862,9 +862,9 @@ class EnumType(type):
 
         if module is None:
             try:
-                module = sys._getcallingmodule(2)
+                module = sys._getframemodulename(2)
             except AttributeError:
-                # Fall back on _getframe if _getcallingmodule is missing
+                # Fall back on _getframe if _getframemodulename is missing
                 try:
                     module = sys._getframe(2).f_globals['__name__']
                 except (AttributeError, ValueError, KeyError):

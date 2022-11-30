@@ -419,7 +419,7 @@ def test_sys_getframe():
     sys._getframe()
 
 
-def test_sys_getcallingmodule():
+def test_sys_getframemodulename():
     import sys
 
     def hook(event, args):
@@ -427,7 +427,7 @@ def test_sys_getcallingmodule():
             print(event, *args)
 
     sys.addaudithook(hook)
-    sys._getcallingmodule()
+    sys._getframemodulename()
 
 
 def test_threading():

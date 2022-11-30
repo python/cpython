@@ -2181,22 +2181,24 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
 
 
 /*[clinic input]
-sys._getcallingmodule
+sys._getframemodulename
 
     depth: int = 0
 
-Return the name of the calling module, or None if not available.
+Return the name of the module for a calling frame.
 
 The default depth returns the module containing the call to this API.
 A more typical use in a library will pass a depth of 1 to get the user's
 module rather than the library module.
+
+If no frame, module, or name can be found, returns None.
 [clinic start generated code]*/
 
 static PyObject *
-sys__getcallingmodule_impl(PyObject *module, int depth)
-/*[clinic end generated code: output=2035dac7eecb38ae input=8138669512c41eec]*/
+sys__getframemodulename_impl(PyObject *module, int depth)
+/*[clinic end generated code: output=1d70ef691f09d2db input=d4f1a8ed43b8fb46]*/
 {
-    if (PySys_Audit("sys._getcallingmodule", "i", depth) < 0) {
+    if (PySys_Audit("sys._getframemodulename", "i", depth) < 0) {
         return NULL;
     }
     _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
@@ -2242,8 +2244,8 @@ static PyMethodDef sys_methods[] = {
     SYS_GETRECURSIONLIMIT_METHODDEF
     {"getsizeof", _PyCFunction_CAST(sys_getsizeof),
      METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
-    SYS__GETCALLINGMODULE_METHODDEF
     SYS__GETFRAME_METHODDEF
+    SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
     SYS_INTERN_METHODDEF

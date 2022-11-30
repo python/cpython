@@ -399,10 +399,10 @@ class SysModuleTest(unittest.TestCase):
             is sys._getframe().f_code
         )
 
-    def test_getcallingmodule(self):
+    def test_getframemodulename(self):
         # Default depth gets ourselves
-        self.assertEqual(__name__, sys._getcallingmodule())
-        self.assertEqual("unittest.case", sys._getcallingmodule(1))
+        self.assertEqual(__name__, sys._getframemodulename())
+        self.assertEqual("unittest.case", sys._getframemodulename(1))
 
     # sys._current_frames() is a CPython-only gimmick.
     @threading_helper.reap_threads

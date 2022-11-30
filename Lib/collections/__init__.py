@@ -507,7 +507,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # specified a particular module.
     if module is None:
         try:
-            module = _sys._getcallingmodule(1) or '__main__'
+            module = _sys._getframemodulename(1) or '__main__'
         except AttributeError:
             try:
                 module = _sys._getframe(1).f_globals.get('__name__', '__main__')
