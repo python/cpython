@@ -820,6 +820,7 @@ class _TestProcess(BaseTestCase):
                 # AuthenticationString for security reasons.
                 multiprocessing.context.set_spawning_popen(0)
                 serialized_proc = pickle.dumps(proc, protocol=proto)
+                multiprocessing.context.set_spawning_popen(None)
                 deserialized_proc = pickle.loads(serialized_proc)
                 self.assertIsInstance(deserialized_proc, self.Process)
 
@@ -2952,6 +2953,7 @@ class _TestMyManager(BaseTestCase):
                 # AuthenticationString for security reasons.
                 multiprocessing.context.set_spawning_popen(0)
                 serialized_manager = pickle.dumps(manager, protocol=proto)
+                multiprocessing.context.set_spawning_popen(None)
                 deserialized_manager = pickle.loads(serialized_manager)
                 self.assertIsInstance(deserialized_manager, MyManager)
                 manager.shutdown()
