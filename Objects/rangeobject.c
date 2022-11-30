@@ -971,10 +971,6 @@ longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
         if (cmp > 0)
             state = r->len;
     }
-    PyObject *new_len = PyNumber_Subtract(r->len, state);
-    if (new_len == NULL)
-        return NULL;
-    Py_SETREF(r->len, new_len);
     PyObject *product = PyNumber_Multiply(state, r->step);
     if (product == NULL)
         return NULL;
@@ -982,7 +978,15 @@ longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
     Py_DECREF(product);
     if (new_start == NULL)
         return NULL;
-    Py_SETREF(r->start, new_start);
+    PyObject *new_len = PyNumber_Subtract(r->len, state);
+    if (new_len == NULL) {
+        Py_DECREF(new_start);
+        return NULL;
+    }
+    PyObject *tmp = r->start;
+    r->start = new_start;
+    Py_SETREF(r->len, new_len);
+    Py_DECREF(tmp);
     Py_RETURN_NONE;
 }
 
