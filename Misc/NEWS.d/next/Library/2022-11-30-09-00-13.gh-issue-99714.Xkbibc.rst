@@ -1,0 +1,3 @@
+Add :func:`shield_scope` context manager in :mod:`asyncio.tasks` to shield
+async blocks of code from cancellation. Add :func:`shielded` decorator in
+:mod:`asyncio.tasks` to shield functions from cancellation.
