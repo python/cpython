@@ -86,9 +86,7 @@ class FutureReprTests(unittest.IsolatedAsyncioTestCase):
         async def func():
             return asyncio.all_tasks()
 
-        # The repr() call should not raise RecursiveError at first.
-        # The check for returned string is not very reliable but
-        # exact comparison for the whole string is even weaker.
+        # The repr() call should not raise RecursionError at first.
         repr(await asyncio.wait_for(func(), timeout=10))
 
 
