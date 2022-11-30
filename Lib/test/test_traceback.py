@@ -3168,7 +3168,7 @@ class SuggestionFormattingTestBase:
         for name in ("b", "v", "m", "py"):
             with self.subTest(name=name):
                 actual = self.get_import_from_suggestion(code, name)
-                self.assertNotIn("you mean", actual)
+                self.assertNotIn("Did you mean", actual)
                 self.assertNotIn("'vvv'", actual)
                 self.assertNotIn("'mom'", actual)
                 self.assertNotIn("'id'", actual)
