@@ -138,4 +138,3 @@ class Popen(object):
     def __setstate__(self, state):
         vars(self).update(state)
         self.finalizer = util._finalizer_registry[self.finalizer]
-
