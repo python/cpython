@@ -574,15 +574,12 @@ class BaseManager(object):
 
         # register a finalizer
         self._state.value = State.STARTED
-        self._finalizer = util.Finalize(
+        self.shutdown = util.Finalize(
             self, type(self)._finalize_manager,
             args=(self._process, self._address, self._authkey,
                   self._state, self._Client),
             exitpriority=0
-            )._key
-
-    def shutdown(self):
-        util._finalizer_registry[self._finalizer]()
+            )
 
     @classmethod
     def _run_server(cls, registry, address, authkey, serializer, writer,
