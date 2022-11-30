@@ -739,12 +739,12 @@ class BaseManager(object):
 
     def __getstate__(self):
         state = vars(self).copy()
-        state['_finalizer'] = state['_finalizer']._key
+        state['shutdown'] = state['shutdown']._key
         return state
 
     def __setstate__(self, state):
         vars(self).update(state)
-        self._finalizer = util._finalizer_registry[self._finalizer]
+        self.shutdown = util._finalizer_registry[self.shutdown]
 
 #
 # Subclass of set which get cleared after a fork

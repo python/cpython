@@ -287,13 +287,13 @@ class BaseProcess(object):
 
     def __getstate__(self):
         state = vars(self).copy()
-        state['_finalizer'] = state['_finalizer']._key
+        state['finalizer'] = state['finalizer']._key
         return state
 
     def __setstate__(self, state):
         from . import util
         vars(self).update(state)
-        self._finalizer = util._finalizer_registry[self._finalizer]
+        self.finalizer = util._finalizer_registry[self.finalizer]
 
     ##
 
