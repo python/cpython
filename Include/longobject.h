@@ -153,7 +153,7 @@ PyAPI_FUNC(PyObject *) _PyLong_FormatAdvanced(PyObject *obj,
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
-int Py_LongMaxStrDigits;
+extern int Py_LongMaxStrDigits;
 
 #ifdef __cplusplus
 }

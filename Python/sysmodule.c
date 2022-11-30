@@ -1,4 +1,7 @@
-
+/* Copyright (C) 2022 ActiveState Software Inc.
+ * sysmodule.c is licensed under the PSFLv2 License.
+ * See the file LICENSE for details.
+ */
 /* System module */
 
 /*

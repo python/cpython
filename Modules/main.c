@@ -1,3 +1,7 @@
+/* Copyright (C) 2022 ActiveState Software Inc.
+ * main.c is licensed under the PSFLv2 License.
+ * See the file LICENSE for details.
+ */
 /* Python interpreter main program */
 
 #include "Python.h"

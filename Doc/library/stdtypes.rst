@@ -1,3 +1,7 @@
+.. 
+   Copyright (C) 2022 ActiveState Software Inc.
+   stdtypes.rst is licensed under the PSFLv2 License.
+   See the file LICENSE for details.
 .. XXX: reference/datamodel and this have quite a few overlaps!
 
 

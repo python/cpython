@@ -1,4 +1,7 @@
-
+/* Copyright (C) 2022 ActiveState Software Inc.
+ * pythonrun.c is licensed under the PSFLv2 License.
+ * See the file LICENSE for details.
+ */
 /* Python interpreter top-level routines, including init/exit */
 
 #include "Python.h"

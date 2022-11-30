@@ -1,3 +1,7 @@
+/* Copyright (C) 2022 ActiveState Software Inc.
+ * longobject.c is licensed under the PSFLv2 License.
+ * See the file LICENSE for details.
+ */
 /* Long (arbitrary precision) integer object implementation */
 
 /* XXX The functional organization of this file is terrible */

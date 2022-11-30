@@ -1,3 +1,8 @@
+..
+   Copyright (C) 2022 ActiveState Software Inc.
+   2.7.rst is licensed under the PSFLv2 License.
+   See the file LICENSE for details.
+
 ****************************
   What's New in Python 2.7
 ****************************
