@@ -13,6 +13,7 @@ __all__ = (
 
 import contextvars
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -828,3 +829,13 @@ else:
     _c__set_running_loop = _set_running_loop
     _c_get_running_loop = get_running_loop
     _c_get_event_loop = get_event_loop
+
+
+if hasattr(os, 'fork'):
+    def on_fork():
+        # Reset the loop and wakeupfd in the forked child process.
+        if _event_loop_policy is not None:
+            _event_loop_policy._local = BaseDefaultEventLoopPolicy._Local()
+        signal.set_wakeup_fd(-1)
+
+    os.register_at_fork(after_in_child=on_fork)

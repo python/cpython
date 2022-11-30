@@ -614,12 +614,18 @@ asyncio
   These are primarily intended for internal use,
   notably by :class:`~asyncio.TaskGroup`.
 
+
+.. _whatsnew311-contextlib:
+
 contextlib
 ----------
 
-Added non parallel-safe :func:`~contextlib.chdir` context manager to change
-the current working directory and then restore it on exit. Simple wrapper
-around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
+* Added non parallel-safe :func:`~contextlib.chdir` context manager to change
+  the current working directory and then restore it on exit. Simple wrapper
+  around :func:`~os.chdir`. (Contributed by Filipe Laíns in :issue:`25625`)
+
+
+.. _whatsnew311-dataclasses:
 
 dataclasses
 -----------
@@ -629,11 +635,15 @@ dataclasses
   :class:`dict`, :class:`list` or :class:`set`. (Contributed by Eric V. Smith in
   :issue:`44674`.)
 
+
+.. _whatsnew311-datetime:
+
 datetime
 --------
 
 * Add :attr:`datetime.UTC`, a convenience alias for
   :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
+
 * :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
   :meth:`datetime.datetime.fromisoformat` can now be used to parse most ISO 8601
   formats (barring only those that support fractional hours and minutes).
@@ -658,7 +668,7 @@ enum
   (used by :func:`str`, :func:`format` and :term:`f-string`\s).
 
 * Changed :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
-  to now inherit from :class:`ReprEnum`,
+  to now inherit from :class:`~enum.ReprEnum`,
   so their :func:`str` output now matches :func:`format`
   (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``,
   whereas before ``str(AnIntEnum.ONE)`` returned ``'AnIntEnum.ONE'``.
@@ -708,6 +718,18 @@ enum
   inverted flags are coerced to their positive equivalent.
 
 
+.. _whatsnew311-fcntl:
+
+fcntl
+-----
+
+* On FreeBSD, the :data:`!F_DUP2FD` and :data:`!F_DUP2FD_CLOEXEC` flags respectively
+  are supported, the former equals to ``dup2`` usage while the latter set
+  the ``FD_CLOEXEC`` flag in addition.
+
+
+.. _whatsnew311-fractions:
+
 fractions
 ---------
 
@@ -717,6 +739,9 @@ fractions
 * :class:`~fractions.Fraction` now implements an ``__int__`` method, so
   that an ``isinstance(some_fraction, typing.SupportsInt)`` check passes.
   (Contributed by Mark Dickinson in :issue:`44547`.)
+
+
+.. _whatsnew311-functools:
 
 functools
 ---------
@@ -748,6 +773,9 @@ functools
 
   (Contributed by Yurii Karabas in :issue:`46014`.)
 
+
+.. _whatsnew311-hashlib:
+
 hashlib
 -------
 
@@ -766,6 +794,9 @@ hashlib
   of files or file-like objects.
   (Contributed by Christian Heimes in :gh:`89313`.)
 
+
+.. _whatsnew311-idle:
+
 IDLE and idlelib
 ----------------
 
@@ -775,22 +806,36 @@ IDLE and idlelib
 * Include prompts when saving Shell with inputs and outputs.
   (Contributed by Terry Jan Reedy in :gh:`95191`.)
 
+
+.. _whatsnew311-inspect:
+
 inspect
 -------
-* Add :func:`inspect.getmembers_static`: return all members without
+
+* Add :func:`~inspect.getmembers_static` to return all members without
   triggering dynamic lookup via the descriptor protocol. (Contributed by
   Weipeng Hong in :issue:`30533`.)
 
-* Add :func:`inspect.ismethodwrapper` for checking if the type of an object is a
-  :class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
+* Add :func:`~inspect.ismethodwrapper`
+  for checking if the type of an object is a :class:`~types.MethodWrapperType`.
+  (Contributed by Hakan Çelik in :issue:`29418`.)
 
-* Change the frame-related functions in the :mod:`inspect` module to return a
-  regular object (that is backwards compatible with the old tuple-like
-  interface) that include the extended :pep:`657` position information (end
+* Change the frame-related functions in the :mod:`inspect` module to return new
+  :class:`~inspect.FrameInfo` and :class:`~inspect.Traceback` class instances
+  (backwards compatible with the previous :term:`named tuple`-like interfaces)
+  that includes the extended :pep:`657` position information (end
   line number, column and end column). The affected functions are:
-  :func:`inspect.getframeinfo`, :func:`inspect.getouterframes`, :func:`inspect.getinnerframes`,
-  :func:`inspect.stack` and :func:`inspect.trace`. (Contributed by Pablo Galindo in
-  :gh:`88116`.)
+
+  * :func:`inspect.getframeinfo`
+  * :func:`inspect.getouterframes`
+  * :func:`inspect.getinnerframes`,
+  * :func:`inspect.stack`
+  * :func:`inspect.trace`
+
+  (Contributed by Pablo Galindo in :gh:`88116`.)
+
+
+.. _whatsnew311-locale:
 
 locale
 ------
@@ -819,6 +864,8 @@ logging
   (Contributed by Kirill Pinchuk in :gh:`88457`.)
 
 
+.. _whatsnew311-math:
+
 math
 ----
 
@@ -838,6 +885,8 @@ math
   (Contributed by Victor Stinner in :issue:`46917`.)
 
 
+.. _whatsnew311-operator:
+
 operator
 --------
 
@@ -845,6 +894,8 @@ operator
   ``operator.call(obj, *args, **kwargs) == obj(*args, **kwargs)``.
   (Contributed by Antony Lee in :issue:`44019`.)
 
+
+.. _whatsnew311-os:
 
 os
 --
@@ -854,6 +905,8 @@ os
   (Contributed by Dong-hee Na in :issue:`44611`.)
 
 
+.. _whatsnew311-pathlib:
+
 pathlib
 -------
 
@@ -862,6 +915,9 @@ pathlib
   :data:`~os.sep` or :data:`~os.altsep`.
   (Contributed by Eisuke Kawasima in :issue:`22276` and :issue:`33392`.)
 
+
+.. _whatsnew311-re:
+
 re
 --
 
@@ -869,12 +925,17 @@ re
   ``?+``, ``{m,n}+``) are now supported in regular expressions.
   (Contributed by Jeffrey C. Jacobs and Serhiy Storchaka in :issue:`433030`.)
 
+
+.. _whatsnew311-shutil:
+
 shutil
 ------
 
 * Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
   (Contributed by Serhiy Storchaka in :issue:`46245`.)
 
+
+.. _whatsnew311-socket:
 
 socket
 ------
@@ -886,6 +947,9 @@ socket
   failure to connect, an :exc:`ExceptionGroup` containing all errors
   instead of only raising the last error.
   (Contributed by Irit Katriel in :issue:`29980`.)
+
+
+.. _whatsnew311-sqlite3:
 
 sqlite3
 -------
@@ -938,13 +1002,27 @@ sqlite3
   (Contributed by Aviv Palivoda and Erlend E. Aasland in :issue:`24905`.)
 
 
+.. _whatsnew311-string:
+
+string
+------
+
+* Add :meth:`~string.Template.get_identifiers`
+  and :meth:`~string.Template.is_valid` to :class:`string.Template`,
+  which respectively return all valid placeholders,
+  and whether any invalid placeholders are present.
+  (Contributed by Ben Kehoe in :gh:`90465`.)
+
+
+.. _whatsnew311-sys:
+
 sys
 ---
 
 * :func:`sys.exc_info` now derives the ``type`` and ``traceback`` fields
   from the ``value`` (the exception instance), so when an exception is
   modified while it is being handled, the changes are reflected in
-  the results of subsequent calls to :func:`exc_info`.
+  the results of subsequent calls to :func:`!exc_info`.
   (Contributed by Irit Katriel in :issue:`45711`.)
 
 * Add :func:`sys.exception` which returns the active exception instance
@@ -954,6 +1032,8 @@ sys
 * Add the :data:`sys.flags.safe_path <sys.flags>` flag.
   (Contributed by Victor Stinner in :gh:`57684`.)
 
+
+.. _whatsnew311-sysconfig:
 
 sysconfig
 ---------
@@ -972,6 +1052,21 @@ sysconfig
   (Contributed by Miro Hrončok in :issue:`45413`.)
 
 
+.. _whatsnew311-tempfile:
+
+tempfile
+--------
+
+* :class:`~tempfile.SpooledTemporaryFile` objects now fully implement the methods
+  of :class:`io.BufferedIOBase` or :class:`io.TextIOBase`
+  (depending on file mode).
+  This lets them work correctly with APIs that expect file-like objects,
+  such as compression modules.
+  (Contributed by Carey Metcalfe in :gh:`70363`.)
+
+
+.. _whatsnew311-threading:
+
 threading
 ---------
 
@@ -982,6 +1077,8 @@ threading
   by system clock changes.
   (Contributed by Victor Stinner in :issue:`41710`.)
 
+
+.. _whatsnew311-time:
 
 time
 ----
@@ -1000,6 +1097,18 @@ time
   (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
 
+.. _whatsnew311-tkinter:
+
+tkinter
+-------
+
+* Added method ``info_patchlevel()`` which returns the exact version of
+  the Tcl library as a named tuple similar to :data:`sys.version_info`.
+  (Contributed by Serhiy Storchaka in :gh:`91827`.)
+
+
+.. _whatsnew311-traceback:
+
 traceback
 ---------
 
@@ -1012,6 +1121,8 @@ traceback
   formatted :exc:`~traceback.TracebackException` instance to a file.
   (Contributed by Irit Katriel in :issue:`33809`.)
 
+
+.. _whatsnew311-typing:
 
 typing
 ------
@@ -1053,7 +1164,7 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   to clear all registered overloads of a function.
   (Contributed by Jelle Zijlstra in :gh:`89263`.)
 
-* The :meth:`__init__` method of :class:`~typing.Protocol` subclasses
+* The :meth:`~object.__init__` method of :class:`~typing.Protocol` subclasses
   is now preserved. (Contributed by Adrian Garcia Badarasco in :gh:`88970`.)
 
 * The representation of empty tuple types (``Tuple[()]``) is simplified.
@@ -1082,19 +1193,16 @@ For major changes, see :ref:`new-feat-related-type-hints-311`.
   by Nikita Sobolev in :gh:`90729`.)
 
 
-tkinter
--------
-
-* Added method ``info_patchlevel()`` which returns the exact version of
-  the Tcl library as a named tuple similar to :data:`sys.version_info`.
-  (Contributed by Serhiy Storchaka in :gh:`91827`.)
-
+.. _whatsnew311-unicodedata:
 
 unicodedata
 -----------
 
-* The Unicode database has been updated to version 14.0.0. (Contributed by  Benjamin Peterson in :issue:`45190`).
+* The Unicode database has been updated to version 14.0.0.
+  (Contributed by Benjamin Peterson in :issue:`45190`).
 
+
+.. _whatsnew311-unittest:
 
 unittest
 --------
@@ -1108,6 +1216,8 @@ unittest
   (Contributed by Serhiy Storchaka in :issue:`45046`.)
 
 
+.. _whatsnew311-venv:
+
 venv
 ----
 
@@ -1120,6 +1230,9 @@ venv
   scheme without changing behavior of virtual environments.
   Third party code that also creates new virtual environments should do the same.
   (Contributed by Miro Hrončok in :issue:`45413`.)
+
+
+.. _whatsnew311-warnings:
 
 warnings
 --------
@@ -1147,46 +1260,57 @@ zipfile
   (Contributed by Miguel Brito in :gh:`88261`.)
 
 
-fcntl
------
-
-* On FreeBSD, the :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` flags respectively
-  are supported, the former equals to ``dup2`` usage while the latter set
-  the ``FD_CLOEXEC`` flag in addition.
-
-
 .. _whatsnew311-optimizations:
 
 Optimizations
 =============
 
-* Compiler now optimizes simple C-style formatting with literal format
-  containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
-  fast as corresponding f-string expression.
+This section covers specific optimizations independent of the
+:ref:`whatsnew311-faster-cpython` project, which is covered in its own section.
+
+* The compiler now optimizes simple
+  :ref:`printf-style % formatting <old-string-formatting>` on string literals
+  containing only the format codes ``%s``, ``%r`` and ``%a`` and makes it as
+  fast as a corresponding :term:`f-string` expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
 
-* "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
-  almost eliminated when no exception is raised.
-  (Contributed by Mark Shannon in :issue:`40222`.)
+* Integer division (``//``) is better tuned for optimization by compilers.
+  It is now around 20% faster on x86-64 when dividing an :class:`int`
+  by a value smaller than ``2**30``.
+  (Contributed by Gregory P. Smith and Tim Peters in :gh:`90564`.)
 
-* Pure ASCII strings are now normalized in constant time by :func:`unicodedata.normalize`.
-  (Contributed by Dong-hee Na in :issue:`44987`.)
+* :func:`sum` is now nearly 30% faster for integers smaller than ``2**30``.
+  (Contributed by Stefan Behnel in :gh:`68264`.)
 
-* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now up
-  to 10 times or more faster for large arguments (the speed up is larger for
-  larger *k*).
-  (Contributed by Serhiy Storchaka in :issue:`37295`.)
+* Resizing lists is streamlined for the common case,
+  speeding up :meth:`list.append` by ≈15%
+  and simple :term:`list comprehension`\s by up to 20-30%
+  (Contributed by Dennis Sweeney in :gh:`91165`.)
 
-* Dict don't store hash value when all inserted keys are Unicode objects.
-  This reduces dict size. For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
-  becomes 272 bytes from 352 bytes on 64bit platform.
+* Dictionaries don't store hash values when all keys are Unicode objects,
+  decreasing :class:`dict` size.
+  For example, ``sys.getsizeof(dict.fromkeys("abcdefg"))``
+  is reduced from 352 bytes to 272 bytes (23% smaller) on 64-bit platforms.
   (Contributed by Inada Naoki in :issue:`46845`.)
 
-* :mod:`re`'s regular expression matching engine has been partially refactored,
-  and now uses computed gotos (or "threaded code") on supported platforms. As a
-  result, Python 3.11 executes the `pyperformance regular expression benchmarks
-  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
-  faster than Python 3.10.
+* Using :class:`asyncio.DatagramProtocol` is now orders of magnitude faster
+  when transferring large files over UDP,
+  with speeds over 100 times higher for a ≈60 MiB file.
+  (Contributed by msoxzw in :gh:`91487`.)
+
+* :mod:`math` functions :func:`~math.comb` and :func:`~math.perm` are now
+  ≈10 times faster for large arguments (with a larger speedup for larger *k*).
+  (Contributed by Serhiy Storchaka in :issue:`37295`.)
+
+* The :mod:`statistics` functions :func:`~statistics.mean`,
+  :func:`~statistics.variance` and :func:`~statistics.stdev` now consume
+  iterators in one pass rather than converting them to a :class:`list` first.
+  This is twice as fast and can save substantial memory.
+  (Contributed by Raymond Hettinger in :gh:`90415`.)
+
+* :func:`unicodedata.normalize`
+  now normalizes pure-ASCII strings in constant time.
+  (Contributed by Dong-hee Na in :issue:`44987`.)
 
 
 .. _whatsnew311-faster-cpython:
@@ -1439,58 +1563,100 @@ contributors are volunteers from the community.
 CPython bytecode changes
 ========================
 
-* The bytecode now contains inline cache entries, which take the form of
-  :opcode:`CACHE` instructions. Many opcodes expect to be followed by an exact
-  number of caches, and instruct the interpreter to skip over them at runtime.
-  Populated caches can look like arbitrary instructions, so great care should be
-  taken when reading or modifying raw, adaptive bytecode containing quickened
-  data.
+The bytecode now contains inline cache entries,
+which take the form of the newly-added :opcode:`CACHE` instructions.
+Many opcodes expect to be followed by an exact number of caches,
+and instruct the interpreter to skip over them at runtime.
+Populated caches can look like arbitrary instructions,
+so great care should be taken when reading or modifying
+raw, adaptive bytecode containing quickened data.
 
-* Replaced all numeric ``BINARY_*`` and ``INPLACE_*`` instructions with a single
-  :opcode:`BINARY_OP` implementation.
 
-* Replaced the three call instructions: :opcode:`CALL_FUNCTION`,
-  :opcode:`CALL_FUNCTION_KW` and :opcode:`CALL_METHOD` with
-  :opcode:`PUSH_NULL`, :opcode:`PRECALL`, :opcode:`CALL`,
-  and :opcode:`KW_NAMES`.
-  This decouples the argument shifting for methods from the handling of
-  keyword arguments and allows better specialization of calls.
+.. _whatsnew311-added-opcodes:
 
-* Removed ``COPY_DICT_WITHOUT_KEYS`` and ``GEN_START``.
+New opcodes
+-----------
 
-* :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS` no longer push an additional
-  boolean value indicating whether the match succeeded or failed. Instead, they
-  indicate failure with :const:`None` (where a tuple of extracted values would
-  otherwise be).
+* :opcode:`ASYNC_GEN_WRAP`, :opcode:`RETURN_GENERATOR` and :opcode:`SEND`,
+  used in generators and co-routines.
 
-* Replace several stack manipulation instructions (``DUP_TOP``, ``DUP_TOP_TWO``,
-  ``ROT_TWO``, ``ROT_THREE``, ``ROT_FOUR``, and ``ROT_N``) with new
-  :opcode:`COPY` and :opcode:`SWAP` instructions.
+* :opcode:`COPY_FREE_VARS`,
+  which avoids needing special caller-side code for closures.
 
-* Replaced :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` which
-  performs the check but does not jump.
+* :opcode:`JUMP_BACKWARD_NO_INTERRUPT`,
+  for use in certain loops where handling interrupts is undesirable.
 
-* Replaced :opcode:`JUMP_IF_NOT_EG_MATCH` by :opcode:`CHECK_EG_MATCH` which
-  performs the check but does not jump.
+* :opcode:`MAKE_CELL`, to create :ref:`cell-objects`.
 
-* Replaced :opcode:`JUMP_ABSOLUTE` by the relative :opcode:`JUMP_BACKWARD`.
+* :opcode:`CHECK_EG_MATCH`  and  :opcode:`PREP_RERAISE_STAR`,
+  to handle the :ref:`new exception groups and except* <whatsnew311-pep654>`
+  added in :pep:`654`.
 
-* Added :opcode:`JUMP_BACKWARD_NO_INTERRUPT`, which is used in certain loops where it
-  is undesirable to handle interrupts.
+* :opcode:`PUSH_EXC_INFO`, for use in exception handlers.
 
-* Replaced :opcode:`POP_JUMP_IF_TRUE` and :opcode:`POP_JUMP_IF_FALSE` by
-  the relative :opcode:`POP_JUMP_FORWARD_IF_TRUE`, :opcode:`POP_JUMP_BACKWARD_IF_TRUE`,
-  :opcode:`POP_JUMP_FORWARD_IF_FALSE` and :opcode:`POP_JUMP_BACKWARD_IF_FALSE`.
+* :opcode:`RESUME`, a no-op,
+  for internal tracing, debugging and optimization checks.
 
-* Added :opcode:`POP_JUMP_FORWARD_IF_NOT_NONE`, :opcode:`POP_JUMP_BACKWARD_IF_NOT_NONE`,
-  :opcode:`POP_JUMP_FORWARD_IF_NONE` and :opcode:`POP_JUMP_BACKWARD_IF_NONE`
-  opcodes to speed up conditional jumps.
 
-* :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP` are now
-  relative rather than absolute.
+.. _whatsnew311-replaced-opcodes:
 
-* :opcode:`RESUME` has been added. It is a no-op. Performs internal tracing,
-  debugging and optimization checks.
+Replaced opcodes
+----------------
+
++------------------------------------+-----------------------------------+-----------------------------------------+
+| Replaced Opcode(s)                 | New Opcode(s)                     | Notes                                   |
++====================================+===================================+=========================================+
+| | :opcode:`!BINARY_*`              | :opcode:`BINARY_OP`               | Replaced all numeric binary/in-place    |
+| | :opcode:`!INPLACE_*`             |                                   | opcodes with a single opcode            |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!CALL_FUNCTION`         | | :opcode:`CALL`                  | Decouples argument shifting for methods |
+| | :opcode:`!CALL_FUNCTION_KW`      | | :opcode:`KW_NAMES`              | from handling of keyword arguments;     |
+| | :opcode:`!CALL_METHOD`           | | :opcode:`PRECALL`               | allows better specialization of calls   |
+|                                    | | :opcode:`PUSH_NULL`             |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!DUP_TOP`               | | :opcode:`COPY`                  | Stack manipulation instructions         |
+| | :opcode:`!DUP_TOP_TWO`           | | :opcode:`SWAP`                  |                                         |
+| | :opcode:`!ROT_TWO`               |                                   |                                         |
+| | :opcode:`!ROT_THREE`             |                                   |                                         |
+| | :opcode:`!ROT_FOUR`              |                                   |                                         |
+| | :opcode:`!ROT_N`                 |                                   |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | | :opcode:`CHECK_EXC_MATCH`       | Now performs check but doesn't jump     |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!JUMP_ABSOLUTE`         | | :opcode:`JUMP_BACKWARD`         | See [#bytecode-jump]_;                  |
+| | :opcode:`!POP_JUMP_IF_FALSE`     | | :opcode:`POP_JUMP_BACKWARD_IF_* | ``TRUE``, ``FALSE``,                    |
+| | :opcode:`!POP_JUMP_IF_TRUE`      |   <POP_JUMP_BACKWARD_IF_TRUE>`    | ``NONE`` and ``NOT_NONE`` variants      |
+|                                    | | :opcode:`POP_JUMP_FORWARD_IF_*  | for each direction                      |
+|                                    |   <POP_JUMP_FORWARD_IF_TRUE>`     |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
+| | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`             | :keyword:`with` block setup             |
+| | :opcode:`!SETUP_ASYNC_WITH`      |                                   |                                         |
++------------------------------------+-----------------------------------+-----------------------------------------+
+
+.. [#bytecode-jump] All jump opcodes are now relative, including the
+   existing :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP`.
+   The argument is now an offset from the current instruction
+   rather than an absolute location.
+
+
+.. _whatsnew311-changed-opcodes:
+.. _whatsnew311-removed-opcodes:
+.. _whatsnew311-changed-removed-opcodes:
+
+Changed/removed opcodes
+-----------------------
+
+* Changed :opcode:`MATCH_CLASS` and :opcode:`MATCH_KEYS`
+  to no longer push an additional boolean value to indicate success/failure.
+  Instead, ``None`` is pushed on failure
+  in place of the tuple of extracted values.
+
+* Changed opcodes that work with exceptions to reflect them
+  now being represented as one item on the stack instead of three
+  (see :gh:`89874`).
+
+* Removed :opcode:`!COPY_DICT_WITHOUT_KEYS`, :opcode:`!GEN_START`,
+  :opcode:`!POP_BLOCK`, :opcode:`!SETUP_FINALLY` and :opcode:`!YIELD_FROM`.
 
 
 .. _whatsnew311-deprecated:
@@ -1503,77 +1669,106 @@ This section lists Python APIs that have been deprecated in Python 3.11.
 
 Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
 
+
+.. _whatsnew311-deprecated-language:
+.. _whatsnew311-deprecated-builtins:
+
+Language/Builtins
+-----------------
+
 * Chaining :class:`classmethod` descriptors (introduced in :issue:`19072`)
   is now deprecated.  It can no longer be used to wrap other descriptors
   such as :class:`property`.  The core design of this feature was flawed
   and caused a number of downstream problems.  To "pass-through" a
-  :class:`classmethod`, consider using the ``__wrapped__`` attribute
+  :class:`classmethod`, consider using the :attr:`!__wrapped__` attribute
   that was added in Python 3.10.
   (Contributed by Raymond Hettinger in :gh:`89519`.)
 
-* Octal escapes in string and bytes literals with value larger than ``0o377`` now
-  produce :exc:`DeprecationWarning`.
-  In a future Python version they will be a :exc:`SyntaxWarning` and
+* Octal escapes in string and bytes literals with values larger than ``0o377``
+  (255 in decimal) now produce a :exc:`DeprecationWarning`.
+  In a future Python version, they will raise a :exc:`SyntaxWarning` and
   eventually a :exc:`SyntaxError`.
   (Contributed by Serhiy Storchaka in :gh:`81548`.)
 
-* The :mod:`lib2to3` package and ``2to3`` tool are now deprecated and may not
-  be able to parse Python 3.10 or newer. See the :pep:`617` (New PEG parser for
-  CPython).  (Contributed by Victor Stinner in :issue:`40360`.)
-
-* Undocumented modules ``sre_compile``, ``sre_constants`` and ``sre_parse``
-  are now deprecated.
-  (Contributed by Serhiy Storchaka in :issue:`47152`.)
-
-* :class:`webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
-  It is untested and undocumented and also not used by webbrowser itself.
-  (Contributed by Dong-hee Na in :issue:`42255`.)
-
-* The behavior of returning a value from a :class:`~unittest.TestCase` and
-  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
-  default ``None`` value), is now deprecated.
-
-* Deprecated the following :mod:`unittest` functions, scheduled for removal in
-  Python 3.13:
-
-  * :func:`unittest.findTestCases`
-  * :func:`unittest.makeSuite`
-  * :func:`unittest.getTestCaseNames`
-
-  Use :class:`~unittest.TestLoader` method instead:
-
-  * :meth:`unittest.TestLoader.loadTestsFromModule`
-  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
-  * :meth:`unittest.TestLoader.getTestCaseNames`
-
-  (Contributed by Erlend E. Aasland in :issue:`5846`.)
-
-* The :meth:`turtle.RawTurtle.settiltangle` is deprecated since Python 3.1,
-  it now emits a deprecation warning and will be removed in Python 3.13. Use
-  :meth:`turtle.RawTurtle.tiltangle` instead (it was earlier incorrectly marked
-  as deprecated, its docstring is now corrected).
-  (Contributed by Hugo van Kemenade in :issue:`45837`.)
-
-* The delegation of :func:`int` to :meth:`__trunc__` is now deprecated. Calling
-  ``int(a)`` when ``type(a)`` implements :meth:`__trunc__` but not
-  :meth:`__int__` or :meth:`__index__` now raises a :exc:`DeprecationWarning`.
+* The delegation of :func:`int` to :meth:`~object.__trunc__` is now deprecated.
+  Calling ``int(a)`` when ``type(a)`` implements :meth:`!__trunc__` but not
+  :meth:`~object.__int__` or :meth:`~object.__index__` now raises
+  a :exc:`DeprecationWarning`.
   (Contributed by Zackery Spytz in :issue:`44977`.)
 
-* The following have been deprecated in :mod:`configparser` since Python 3.2.
-  Their deprecation warnings have now been updated to note they will removed in
-  Python 3.12:
 
-  * the :class:`configparser.SafeConfigParser` class
-  * the :attr:`configparser.ParsingError.filename` property
+.. _whatsnew311-deprecated-modules:
+
+Modules
+-------
+
+.. _whatsnew311-pep594:
+
+* :pep:`594` led to the deprecations of the following modules
+  slated for removal in Python 3.13:
+
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+  | :mod:`aifc`         | :mod:`chunk`        | :mod:`msilib`       | :mod:`pipes`        | :mod:`telnetlib`    |
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+  | :mod:`audioop`      | :mod:`crypt`        | :mod:`nis`          | :mod:`sndhdr`       | :mod:`uu`           |
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+  | :mod:`cgi`          | :mod:`imghdr`       | :mod:`nntplib`      | :mod:`spwd`         | :mod:`xdrlib`       |
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+  | :mod:`cgitb`        | :mod:`mailcap`      | :mod:`ossaudiodev`  | :mod:`sunau`        |                     |
+  +---------------------+---------------------+---------------------+---------------------+---------------------+
+
+  (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
+  :gh:`68966`.)
+
+* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+  deprecated since at least Python 3.6. Their documentation and deprecation
+  warnings have now been updated to note they will be removed in Python 3.12.
+  (Contributed by Hugo van Kemenade in :issue:`47022`.)
+
+* The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
+  are now deprecated and may not be able to parse Python 3.10 or newer.
+  See :pep:`617`, introducing the new PEG parser, for details.
+  (Contributed by Victor Stinner in :issue:`40360`.)
+
+* Undocumented modules :mod:`!sre_compile`, :mod:`!sre_constants`
+  and :mod:`!sre_parse` are now deprecated.
+  (Contributed by Serhiy Storchaka in :issue:`47152`.)
+
+
+.. _whatsnew311-deprecated-stdlib:
+
+Standard Library
+----------------
+
+* The following have been deprecated in :mod:`configparser` since Python 3.2.
+  Their deprecation warnings have now been updated to note they will be removed
+  in Python 3.12:
+
+  * the :class:`!configparser.SafeConfigParser` class
+  * the :attr:`!configparser.ParsingError.filename` property
   * the :meth:`configparser.RawConfigParser.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
-* :class:`configparser.LegacyInterpolation` has been deprecated in the docstring
-  since Python 3.2. It now emits a :exc:`DeprecationWarning` and will be removed
+* :class:`!configparser.LegacyInterpolation` has been deprecated in the docstring
+  since Python 3.2, and is not listed in the :mod:`configparser` documentation.
+  It now emits a :exc:`DeprecationWarning` and will be removed
   in Python 3.13. Use :class:`configparser.BasicInterpolation` or
   :class:`configparser.ExtendedInterpolation` instead.
   (Contributed by Hugo van Kemenade in :issue:`46607`.)
+
+* The older set of :mod:`importlib.resources` functions were deprecated
+  in favor of the replacements added in Python 3.9
+  and will be removed in a future Python version,
+  due to not supporting resources located within package subdirectories:
+
+  * :func:`importlib.resources.contents`
+  * :func:`importlib.resources.is_resource`
+  * :func:`importlib.resources.open_binary`
+  * :func:`importlib.resources.open_text`
+  * :func:`importlib.resources.read_binary`
+  * :func:`importlib.resources.read_text`
+  * :func:`importlib.resources.path`
 
 * The :func:`locale.getdefaultlocale` function is deprecated and will be
   removed in Python 3.13. Use :func:`locale.setlocale`,
@@ -1585,46 +1780,25 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
   removed in Python 3.13. Use ``locale.setlocale(locale.LC_ALL, "")`` instead.
   (Contributed by Victor Stinner in :gh:`90817`.)
 
-.. _whatsnew311-pep594:
-
-* :pep:`594` led to the deprecations of the following modules which are
-  slated for removal in Python 3.13:
-
-  * :mod:`aifc`
-  * :mod:`audioop`
-  * :mod:`cgi`
-  * :mod:`cgitb`
-  * :mod:`chunk`
-  * :mod:`crypt`
-  * :mod:`imghdr`
-  * :mod:`mailcap`
-  * :mod:`msilib`
-  * :mod:`nis`
-  * :mod:`nntplib`
-  * :mod:`ossaudiodev`
-  * :mod:`pipes`
-  * :mod:`sndhdr`
-  * :mod:`spwd`
-  * :mod:`sunau`
-  * :mod:`telnetlib`
-  * :mod:`uu`
-  * :mod:`xdrlib`
-
-  (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
-  :gh:`68966`.)
-
-* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
-  deprecated since at least Python 3.6. Their documentation and deprecation
-  warnings have now been updated to note they will removed in Python 3.12.
-  (Contributed by Hugo van Kemenade in :issue:`47022`.)
-
-* More strict rules will be applied now applied for numerical group references
-  and group names in regular expressions in future Python versions.
-  Only sequence of ASCII digits will be now accepted as a numerical reference.
-  The group name in bytes patterns and replacement strings could only
-  contain ASCII letters and digits and underscore.
-  For now, a deprecation warning is raised for such syntax.
+* Stricter rules will now be applied for numerical group references
+  and group names in :ref:`regular expressions <re-syntax>`.
+  Only sequences of ASCII digits will now be accepted as a numerical reference,
+  and the group name in :class:`bytes` patterns and replacement strings
+  can only contain ASCII letters, digits and underscores.
+  For now, a deprecation warning is raised for syntax violating these rules.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
+
+* In the :mod:`re` module, the :func:`!re.template` function
+  and the corresponding :data:`!re.TEMPLATE` and :data:`!re.T` flags
+  are deprecated, as they were undocumented and lacked an obvious purpose.
+  They will be removed in Python 3.13.
+  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
+
+* :func:`turtle.settiltangle` has been deprecated since Python 3.1;
+  it now emits a deprecation warning and will be removed in Python 3.13. Use
+  :func:`turtle.tiltangle` instead (it was earlier incorrectly marked
+  as deprecated, and its docstring is now corrected).
+  (Contributed by Hugo van Kemenade in :issue:`45837`.)
 
 * :class:`typing.Text`, which exists solely to provide compatibility support
   between Python 2 and Python 3 code, is now deprecated. Its removal is
@@ -1632,14 +1806,32 @@ Deprecated C APIs are :ref:`listed separately <whatsnew311-c-api-deprecated>`.
   wherever possible.
   (Contributed by Alex Waygood in :gh:`92332`.)
 
-* The keyword argument syntax for constructing :data:`~typing.TypedDict` types
+* The keyword argument syntax for constructing :data:`typing.TypedDict` types
   is now deprecated. Support will be removed in Python 3.13. (Contributed by
   Jingchen Ye in :gh:`90224`.)
 
-* The :func:`re.template` function and the corresponding :const:`re.TEMPLATE`
-  and :const:`re.T` flags are deprecated, as they were undocumented and
-  lacked an obvious purpose. They will be removed in Python 3.13.
-  (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
+* :class:`!webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
+  It is untested, undocumented, and not used by :mod:`webbrowser` itself.
+  (Contributed by Dong-hee Na in :issue:`42255`.)
+
+* The behavior of returning a value from a :class:`~unittest.TestCase` and
+  :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
+  default ``None`` value) is now deprecated.
+
+* Deprecated the following not-formally-documented :mod:`unittest` functions,
+  scheduled for removal in Python 3.13:
+
+  * :func:`!unittest.findTestCases`
+  * :func:`!unittest.makeSuite`
+  * :func:`!unittest.getTestCaseNames`
+
+  Use :class:`~unittest.TestLoader` methods instead:
+
+  * :meth:`unittest.TestLoader.loadTestsFromModule`
+  * :meth:`unittest.TestLoader.loadTestsFromTestCase`
+  * :meth:`unittest.TestLoader.getTestCaseNames`
+
+  (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
 
 .. _whatsnew311-pending-removal:
@@ -1654,33 +1846,56 @@ and will be removed in Python 3.12.
 C APIs pending removal are
 :ref:`listed separately <whatsnew311-c-api-pending-removal>`.
 
-* :class:`pkgutil.ImpImporter`
-* :class:`pkgutil.ImpLoader`
-* :envvar:`PYTHONTHREADDEBUG`
+* The :mod:`asynchat` module
+* The :mod:`asyncore` module
+* The :ref:`entire distutils package <distutils-deprecated>`
+* The :mod:`imp` module
+* The :class:`typing.io <typing.IO>` namespace
+* The :class:`typing.re <typing.Pattern>` namespace
+* :func:`!cgi.log`
 * :func:`importlib.find_loader`
-* :func:`importlib.util.module_for_loader`
-* :func:`importlib.util.set_loader_wrapper`
-* :func:`importlib.util.set_package_wrapper`
 * :meth:`importlib.abc.Loader.module_repr`
-* :meth:`importlib.abc.Loadermodule_repr`
-* :meth:`importlib.abc.MetaPathFinder.find_module`
 * :meth:`importlib.abc.MetaPathFinder.find_module`
 * :meth:`importlib.abc.PathEntryFinder.find_loader`
 * :meth:`importlib.abc.PathEntryFinder.find_module`
-* :meth:`importlib.machinery.BuiltinImporter.find_module`
-* :meth:`importlib.machinery.BuiltinLoader.module_repr`
-* :meth:`importlib.machinery.FileFinder.find_loader`
-* :meth:`importlib.machinery.FileFinder.find_module`
-* :meth:`importlib.machinery.FrozenImporter.find_module`
-* :meth:`importlib.machinery.FrozenLoader.module_repr`
+* :meth:`!importlib.machinery.BuiltinImporter.find_module`
+* :meth:`!importlib.machinery.BuiltinLoader.module_repr`
+* :meth:`!importlib.machinery.FileFinder.find_loader`
+* :meth:`!importlib.machinery.FileFinder.find_module`
+* :meth:`!importlib.machinery.FrozenImporter.find_module`
+* :meth:`!importlib.machinery.FrozenLoader.module_repr`
 * :meth:`importlib.machinery.PathFinder.find_module`
-* :meth:`importlib.machinery.WindowsRegistryFinder.find_module`
+* :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`
+* :func:`importlib.util.module_for_loader`
+* :func:`!importlib.util.set_loader_wrapper`
+* :func:`!importlib.util.set_package_wrapper`
+* :class:`pkgutil.ImpImporter`
+* :class:`pkgutil.ImpLoader`
 * :meth:`pathlib.Path.link_to`
-* The entire :ref:`distutils namespace <distutils-deprecated>`
-* :func:`cgi.log`
-* :func:`sqlite3.OptimizedUnicode`
-* :func:`sqlite3.enable_shared_cache`
+* :func:`!sqlite3.enable_shared_cache`
+* :func:`!sqlite3.OptimizedUnicode`
+* :envvar:`PYTHONTHREADDEBUG` environment variable
+* The following deprecated aliases in :mod:`unittest`:
 
+    ============================ =============================== ===============
+       Deprecated alias           Method Name                     Deprecated in
+    ============================ =============================== ===============
+     ``failUnless``               :meth:`.assertTrue`             3.1
+     ``failIf``                   :meth:`.assertFalse`            3.1
+     ``failUnlessEqual``          :meth:`.assertEqual`            3.1
+     ``failIfEqual``              :meth:`.assertNotEqual`         3.1
+     ``failUnlessAlmostEqual``    :meth:`.assertAlmostEqual`      3.1
+     ``failIfAlmostEqual``        :meth:`.assertNotAlmostEqual`   3.1
+     ``failUnlessRaises``         :meth:`.assertRaises`           3.1
+     ``assert_``                  :meth:`.assertTrue`             3.2
+     ``assertEquals``             :meth:`.assertEqual`            3.2
+     ``assertNotEquals``          :meth:`.assertNotEqual`         3.2
+     ``assertAlmostEquals``       :meth:`.assertAlmostEqual`      3.2
+     ``assertNotAlmostEquals``    :meth:`.assertNotAlmostEqual`   3.2
+     ``assertRegexpMatches``      :meth:`.assertRegex`            3.2
+     ``assertRaisesRegexp``       :meth:`.assertRaisesRegex`      3.2
+     ``assertNotRegexpMatches``   :meth:`.assertNotRegex`         3.5
+    ============================ =============================== ===============
 
 .. _whatsnew311-removed:
 .. _whatsnew311-python-api-removed:
@@ -1688,27 +1903,20 @@ C APIs pending removal are
 Removed
 =======
 
-This section lists Python APIs that have been removed in Python 3.12.
+This section lists Python APIs that have been removed in Python 3.11.
 
 Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
-* :class:`smtpd.MailmanProxy` is now removed as it is unusable without
-  an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
+* Removed the :func:`!@asyncio.coroutine` :term:`decorator`
+  enabling legacy generator-based coroutines to be compatible with
+  :keyword:`async` / :keyword:`await` code.
+  The function has been deprecated since Python 3.8 and the removal was
+  initially scheduled for Python 3.10. Use :keyword:`async def` instead.
+  (Contributed by Illia Volochii in :issue:`43216`.)
 
-* The ``binhex`` module, deprecated in Python 3.9, is now removed.
-  The following :mod:`binascii` functions, deprecated in Python 3.9, are now
-  also removed:
-
-  * ``a2b_hqx()``, ``b2a_hqx()``;
-  * ``rlecode_hqx()``, ``rledecode_hqx()``.
-
-  The :func:`binascii.crc_hqx` function remains available.
-
-  (Contributed by Victor Stinner in :issue:`45085`.)
-
-* The distutils ``bdist_msi`` command, deprecated in Python 3.9, is now removed.
-  Use ``bdist_wheel`` (wheel packages) instead.
-  (Contributed by Hugo van Kemenade in :issue:`45124`.)
+* Removed :class:`!asyncio.coroutines.CoroWrapper` used for wrapping legacy
+  generator-based coroutine objects in the debug mode.
+  (Contributed by Illia Volochii in :issue:`43216`.)
 
 * Due to significant security concerns, the *reuse_address* parameter of
   :meth:`asyncio.loop.create_datagram_endpoint`, disabled in Python 3.9, is
@@ -1716,71 +1924,81 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   ``SO_REUSEADDR`` in UDP.
   (Contributed by Hugo van Kemenade in :issue:`45129`.)
 
-* Removed :meth:`__getitem__` methods of
+* Removed the :mod:`!binhex` module, deprecated in Python 3.9.
+  Also removed the related, similarly-deprecated :mod:`binascii` functions:
+
+  * :func:`!binascii.a2b_hqx`
+  * :func:`!binascii.b2a_hqx`
+  * :func:`!binascii.rlecode_hqx`
+  * :func:`!binascii.rldecode_hqx`
+
+  The :func:`binascii.crc_hqx` function remains available.
+
+  (Contributed by Victor Stinner in :issue:`45085`.)
+
+* Removed the :mod:`distutils` ``bdist_msi`` command deprecated in Python 3.9.
+  Use ``bdist_wheel`` (wheel packages) instead.
+  (Contributed by Hugo van Kemenade in :issue:`45124`.)
+
+* Removed the :meth:`~object.__getitem__` methods of
   :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
   and :class:`fileinput.FileInput`, deprecated since Python 3.9.
   (Contributed by Hugo van Kemenade in :issue:`45132`.)
 
-* The following deprecated functions and methods are removed in the :mod:`gettext`
-  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
-  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
-
-  Function :func:`~gettext.bind_textdomain_codeset`, methods
-  :meth:`~gettext.NullTranslations.output_charset` and
-  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
-  parameter of functions :func:`~gettext.translation` and
-  :func:`~gettext.install` are also removed, since they are only used for
-  the ``l*gettext()`` functions.
+* Removed the deprecated :mod:`gettext` functions
+  :func:`!lgettext`, :func:`!ldgettext`,
+  :func:`!lngettext` and :func:`!ldngettext`.
+  Also removed the :func:`!bind_textdomain_codeset` function,
+  the :meth:`!NullTranslations.output_charset` and
+  :meth:`!NullTranslations.set_output_charset` methods,
+  and the *codeset* parameter of :func:`!translation` and :func:`!install`,
+  since they are only used for the :func:`!l*gettext` functions.
   (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
-
-* The :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator` enabling
-  legacy generator-based coroutines to be compatible with async/await code.
-  The function has been deprecated since Python 3.8 and the removal was
-  initially scheduled for Python 3.10. Use :keyword:`async def` instead.
-  (Contributed by Illia Volochii in :issue:`43216`.)
-
-* :class:`asyncio.coroutines.CoroWrapper` used for wrapping legacy
-  generator-based coroutine objects in the debug mode.
-  (Contributed by Illia Volochii in :issue:`43216`.)
-
-* Removed the deprecated ``split()`` method of :class:`_tkinter.TkappType`.
-  (Contributed by Erlend E. Aasland in :issue:`38371`.)
 
 * Removed from the :mod:`inspect` module:
 
-  * the ``getargspec`` function, deprecated since Python 3.0;
+  * The :func:`!getargspec` function, deprecated since Python 3.0;
     use :func:`inspect.signature` or :func:`inspect.getfullargspec` instead.
 
-  * the ``formatargspec`` function, deprecated since Python 3.5;
-    use the :func:`inspect.signature` function and :class:`Signature` object
-    directly.
+  * The :func:`!formatargspec` function, deprecated since Python 3.5;
+    use the :func:`inspect.signature` function
+    or the :class:`inspect.Signature` object directly.
 
-  * the undocumented ``Signature.from_builtin`` and ``Signature.from_function``
-    functions, deprecated since Python 3.5; use the
-    :meth:`Signature.from_callable() <inspect.Signature.from_callable>` method
-    instead.
+  * The undocumented :meth:`!Signature.from_builtin`
+    and :meth:`!Signature.from_function` methods, deprecated since Python 3.5;
+    use the :meth:`Signature.from_callable() <inspect.Signature.from_callable>`
+    method instead.
 
   (Contributed by Hugo van Kemenade in :issue:`45320`.)
 
-* Remove namespace package support from unittest discovery. It was introduced in
-  Python 3.4 but has been broken since Python 3.7.
-  (Contributed by Inada Naoki in :issue:`23882`.)
-
-* Remove ``__class_getitem__`` method from :class:`pathlib.PurePath`,
+* Removed the :meth:`~object.__class_getitem__` method
+  from :class:`pathlib.PurePath`,
   because it was not used and added by mistake in previous versions.
   (Contributed by Nikita Sobolev in :issue:`46483`.)
 
-* Remove the undocumented private ``float.__set_format__()`` method, previously
-  known as ``float.__setformat__()`` in Python 3.7. Its docstring said: "You
-  probably don't want to use this function. It exists mainly to be used in
-  Python's test suite."
+* Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
+  as it is unusable without the external :mod:`!mailman` package.
+  (Contributed by Dong-hee Na in :issue:`35800`.)
+
+* Removed the deprecated :meth:`!split` method of :class:`!_tkinter.TkappType`.
+  (Contributed by Erlend E. Aasland in :issue:`38371`.)
+
+* Removed namespace package support from :mod:`unittest` discovery.
+  It was introduced in Python 3.4 but has been broken since Python 3.7.
+  (Contributed by Inada Naoki in :issue:`23882`.)
+
+* Removed the undocumented private :meth:`!float.__set_format__()` method,
+  previously known as :meth:`!float.__setformat__()` in Python 3.7.
+  Its docstring said: "You probably don't want to use this function.
+  It exists mainly to be used in Python's test suite."
   (Contributed by Victor Stinner in :issue:`46852`.)
 
-* The ``--experimental-isolated-subinterpreters`` configure flag
-  (and corresponding ``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS``)
+* The :option:`!--experimental-isolated-subinterpreters` configure flag
+  (and corresponding :c:macro:`!EXPERIMENTAL_ISOLATED_SUBINTERPRETERS` macro)
   have been removed.
 
-* Pynche --- The Pythonically Natural Color and Hue Editor --- has been moved out
+* `Pynche <https://pypi.org/project/pynche/>`_
+  --- The Pythonically Natural Color and Hue Editor --- has been moved out
   of ``Tools/scripts`` and is `being developed independently
   <https://gitlab.com/warsaw/pynche/-/tree/main>`_ from the Python source tree.
 
@@ -1797,22 +2015,23 @@ in the Python API that may require changes to your Python code.
 Porting notes for the C API are
 :ref:`listed separately <whatsnew311-c-api-porting>`.
 
-* Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
-  executors to :meth:`loop.set_default_executor` following a deprecation in
-  Python 3.8.
-  (Contributed by Illia Volochii in :issue:`43234`.)
-
 * :func:`open`, :func:`io.open`, :func:`codecs.open` and
   :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
-  in the file mode. This flag was deprecated since Python 3.3. In Python 3, the
-  "universal newline" is used by default when a file is open in text mode.  The
-  :ref:`newline parameter <open-newline-parameter>` of :func:`open` controls
-  how universal newlines works.
+  in the file mode. In Python 3, "universal newline" mode is used by default
+  whenever a file is opened in text mode,
+  and the ``'U'`` flag has been deprecated since Python 3.3.
+  The :ref:`newline parameter <open-newline-parameter>`
+  to these functions controls how universal newlines work.
   (Contributed by Victor Stinner in :issue:`37330`.)
 
-* The :mod:`pdb` module now reads the :file:`.pdbrc` configuration file with
-  the ``'utf-8'`` encoding.
-  (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
+* :class:`ast.AST` node positions are now validated when provided to
+  :func:`compile` and other related functions. If invalid positions are detected,
+  a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
+
+* Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
+  executors to :meth:`asyncio.loop.set_default_executor`
+  following a deprecation in Python 3.8.
+  (Contributed by Illia Volochii in :issue:`43234`.)
 
 * :mod:`calendar`: The :class:`calendar.LocaleTextCalendar` and
   :class:`calendar.LocaleHTMLCalendar` classes now use
@@ -1820,29 +2039,29 @@ Porting notes for the C API are
   if no locale is specified.
   (Contributed by Victor Stinner in :issue:`46659`.)
 
-* Global inline flags (e.g. ``(?i)``) can now only be used at the start of
-  the regular expressions.  Using them not at the start of expression was
-  deprecated since Python 3.6.
-  (Contributed by Serhiy Storchaka in :issue:`47066`.)
+* The :mod:`pdb` module now reads the :file:`.pdbrc` configuration file with
+  the ``'UTF-8'`` encoding.
+  (Contributed by Srinivas Reddy Thatiparthy (శ్రీనివాస్  రెడ్డి తాటిపర్తి) in :issue:`41137`.)
 
-* :mod:`re` module: Fix a few long-standing bugs where, in rare cases,
-  capturing group could get wrong result. So the result may be different than
-  before.
-  (Contributed by Ma Lin in :issue:`35859`.)
-
-* The *population* parameter of :func:`random.sample` must be a sequence.
-  Automatic conversion of sets to lists is no longer supported. If the sample size
+* The *population* parameter of :func:`random.sample` must be a sequence,
+  and automatic conversion of :class:`set`\s to :class:`list`\s
+  is no longer supported. Also, if the sample size
   is larger than the population size, a :exc:`ValueError` is raised.
   (Contributed by Raymond Hettinger in :issue:`40465`.)
 
-* :class:`ast.AST` node positions are now validated when provided to
-  :func:`compile` and other related functions. If invalid positions are detected,
-  a :exc:`ValueError` will be raised. (Contributed by Pablo Galindo in :gh:`93351`)
+* The *random* optional parameter of :func:`random.shuffle` was removed.
+  It was previously an arbitrary random function to use for the shuffle;
+  now, :func:`random.random` (its previous default) will always be used.
 
-* :c:member:`~PyTypeObject.tp_dictoffset` should be treated as write-only.
-  It can be set to describe C extension clases to the VM, but should be regarded
-  as meaningless when read. To get the pointer to the object's dictionary call
-  :c:func:`PyObject_GenericGetDict` instead.
+* In :mod:`re` :ref:`re-syntax`, global inline flags (e.g. ``(?i)``)
+  can now only be used at the start of regular expressions.
+  Using them elsewhere has been deprecated since Python 3.6.
+  (Contributed by Serhiy Storchaka in :issue:`47066`.)
+
+* In the :mod:`re` module, several long-standing bugs where fixed that,
+  in rare cases, could cause capture groups to get the wrong result.
+  Therefore, this could change the captured output in these cases.
+  (Contributed by Ma Lin in :issue:`35859`.)
 
 
 .. _whatsnew311-build-changes:
@@ -1850,31 +2069,66 @@ Porting notes for the C API are
 Build Changes
 =============
 
-* Building Python now requires a C11 compiler. Optional C11 features are not
-  required.
-  (Contributed by Victor Stinner in :issue:`46656`.)
+* CPython now has :pep:`11` :pep:`Tier 3 support <11#tier-3>` for
+  cross compiling to the `WebAssembly <https://webassembly.org/>`_ platforms
+  `Emscripten <https://emscripten.org/>`_
+  (``wasm32-unknown-emscripten``, i.e. Python in the browser)
+  and `WebAssembly System Interface (WASI) <https://wasi.dev/>`_
+  (``wasm32-unknown-wasi``).
+  The effort is inspired by previous work like `Pyodide <https://pyodide.org/>`_.
+  These platforms provide a limited subset of POSIX APIs; Python standard
+  libraries features and modules related to networking, processes, threading,
+  signals, mmap, and users/groups are not available or don't work.
+  (Emscripten contributed by Christian Heimes and Ethan Smith in :gh:`84461`
+  and WASI contributed by Christian Heimes in :gh:`90473`;
+  platforms promoted in :gh:`95085`)
 
-* Building Python now requires support of IEEE 754 floating point numbers.
-  (Contributed by Victor Stinner in :issue:`46917`.)
+* Building Python now requires:
 
-* CPython can now be built with the ThinLTO option via ``--with-lto=thin``.
-  (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
+  * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler.
+    `Optional C11 features
+    <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
+    are not required.
+    (Contributed by Victor Stinner in :issue:`46656`.)
+
+  * Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
+    floating point numbers.
+    (Contributed by Victor Stinner in :issue:`46917`.)
+
+  * Support for `floating point Not-a-Number (NaN)
+    <https://en.wikipedia.org/wiki/NaN#Floating_point>`_,
+    as the :c:macro:`!Py_NO_NAN` macro has been removed.
+    (Contributed by Victor Stinner in :issue:`46656`.)
+
+  * A `C99 <https://en.cppreference.com/w/c/99>`_
+    ``<math.h>`` header file providing the
+    :c:func:`!copysign`, :c:func:`!hypot`, :c:func:`!isfinite`,
+    :c:func:`!isinf`, :c:func:`!isnan`, and :c:func:`!round` functions
+    (contributed by Victor Stinner in :issue:`45440`);
+    and a :c:data:`!NAN` constant or the :c:func:`!__builtin_nan` function
+    (Contributed by Victor Stinner in :issue:`46640`).
+
+* The :mod:`tkinter` package now requires `Tcl/Tk <https://www.tcl.tk>`_
+  version 8.5.12 or newer.
+  (Contributed by Serhiy Storchaka in :issue:`46996`.)
+
+* Build dependencies, compiler flags, and linker flags for most stdlib
+  extension modules are now detected by :program:`configure`. libffi, libnsl,
+  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk, and uuid flags
+  are detected by `pkg-config
+  <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ (when available).
+  :mod:`tkinter` now requires a pkg-config command
+  to detect development settings for `Tcl/Tk`_ headers and libraries.
+  (Contributed by Christian Heimes and Erlend Egeberg Aasland in
+  :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
 
 * libpython is no longer linked against libcrypt.
   (Contributed by Mike Gilbert in :issue:`45433`.)
 
-* Building Python now requires a C99 ``<math.h>`` header file providing
-  the following functions: ``copysign()``, ``hypot()``, ``isfinite()``,
-  ``isinf()``, ``isnan()``, ``round()``.
-  (Contributed by Victor Stinner in :issue:`45440`.)
-
-* Building Python now requires a C99 ``<math.h>`` header file providing
-  a ``NAN`` constant, or the ``__builtin_nan()`` built-in function.
-  (Contributed by Victor Stinner in :issue:`46640`.)
-
-* Building Python now requires support for floating point Not-a-Number (NaN):
-  remove the ``Py_NO_NAN`` macro.
-  (Contributed by Victor Stinner in :issue:`46656`.)
+* CPython can now be built with the
+  `ThinLTO <https://clang.llvm.org/docs/ThinLTO.html>`_ option
+  via passing ``thin`` to :option:`--with-lto`, i.e. ``--with-lto=thin``.
+  (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`!--without-freelists` can be used to disable all freelists
@@ -1883,55 +2137,30 @@ Build Changes
 
 * ``Modules/Setup`` and ``Modules/makesetup`` have been improved and tied up.
   Extension modules can now be built through ``makesetup``. All except some
-  test modules can be linked statically into main binary or library.
+  test modules can be linked statically into a main binary or library.
   (Contributed by Brett Cannon and Christian Heimes in :issue:`45548`,
   :issue:`45570`, :issue:`45571`, and :issue:`43974`.)
 
-* Build dependencies, compiler flags, and linker flags for most stdlib
-  extension modules are now detected by :program:`configure`. libffi, libnsl,
-  libsqlite3, zlib, bzip2, liblzma, libcrypt, Tcl/Tk, and uuid flags
-  are detected by ``pkg-config`` (when available). :mod:`tkinter` now
-  requires ``pkg-config`` command to detect development settings for Tcl/Tk
-  headers and libraries.
-  (Contributed by Christian Heimes and Erlend Egeberg Aasland in
-  :issue:`45847`, :issue:`45747`, and :issue:`45763`.)
-
   .. note::
-     Use the environment variables :envvar:`TCLTK_CFLAGS` and
-     :envvar:`TCLTK_LIBS` to manually specify the location of Tcl/Tk headers
-     and libraries. The :program:`configure` options ``--with-tcltk-includes``
-     and ``--with-tcltk-libs`` have been removed.
+     Use the environment variables :envvar:`!TCLTK_CFLAGS` and
+     :envvar:`!TCLTK_LIBS` to manually specify the location of Tcl/Tk headers
+     and libraries. The :program:`configure` options
+     :option:`!--with-tcltk-includes` and :option:`!--with-tcltk-libs`
+     have been removed.
 
      On RHEL 7 and CentOS 7 the development packages do not provide ``tcl.pc``
-     and ``tk.pc``, use :envvar:`TCLTK_LIBS="-ltk8.5 -ltkstub8.5 -ltcl8.5"`.
+     and ``tk.pc``; use ``TCLTK_LIBS="-ltk8.5 -ltkstub8.5 -ltcl8.5"``.
      The directory ``Misc/rhel7`` contains ``.pc`` files and instructions
-     how to build Python with RHEL 7's and CentOS 7's Tcl/Tk and OpenSSL.
-
-* CPython now has :pep:`11` tier 3 support for cross compiling to WebAssembly
-  platform ``wasm32-unknown-emscripten`` (Python in the browser). The effort
-  is inspired by previous work like `Pyodide <https://pyodide.org/>`_.
-  Emscripten provides a limited subset of POSIX APIs. Python standard
-  libraries features and modules related to networking, processes, threading,
-  signals, mmap, and users/groups are not available or don't work.
-  (Contributed by Christian Heimes and Ethan Smith in :gh:`84461`,
-  promoted in :gh:`95085`)
-
-* CPython now has :pep:`11` tier 3 support for cross compiling to WebAssembly
-  platform ``wasm32-unknown-wasi`` (WebAssembly System Interface). Like on
-  Emscripten, only a subset of Python's standard library is available on WASI.
-  (Contributed by Christian Heimes in :gh:`90473`, promoted in :gh:`95085`)
+     on how to build Python with RHEL 7's and CentOS 7's Tcl/Tk and OpenSSL.
 
 * CPython will now use 30-bit digits by default for the Python :class:`int`
   implementation. Previously, the default was to use 30-bit digits on platforms
   with ``SIZEOF_VOID_P >= 8``, and 15-bit digits otherwise. It's still possible
   to explicitly request use of 15-bit digits via either the
-  ``--enable-big-digits`` option to the configure script or (for Windows) the
-  ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``, but this option may
-  be removed at some point in the future. (Contributed by Mark Dickinson in
-  :issue:`45569`.)
-
-* The :mod:`tkinter` package now requires Tcl/Tk version 8.5.12 or newer.
-  (Contributed by Serhiy Storchaka in :issue:`46996`.)
+  :option:`--enable-big-digits` option to the configure script
+  or (for Windows) the ``PYLONG_BITS_IN_DIGIT`` variable in ``PC/pyconfig.h``,
+  but this option may be removed at some point in the future.
+  (Contributed by Mark Dickinson in :issue:`45569`.)
 
 
 .. _whatsnew311-c-api:

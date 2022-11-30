@@ -76,9 +76,7 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.count('1.0', 'end'), (124,)  # 'indices' by default
                          if self.wantobjects else ('124',))
         self.assertRaises(tkinter.TclError, text.count, '1.0', 'end', 'spam')
-        # '-lines' is ignored, 'indices' is used by default
-        self.assertEqual(text.count('1.0', 'end', '-lines'), (124,)
-                         if self.wantobjects else ('124',))
+        self.assertRaises(tkinter.TclError, text.count, '1.0', 'end', '-lines')
 
         self.assertIsInstance(text.count('1.3', '1.5', 'ypixels'), tuple)
         self.assertIsInstance(text.count('1.3', '1.5', 'update', 'ypixels'), int

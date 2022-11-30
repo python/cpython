@@ -1,1 +1,0 @@
-Improve error message when trying to subclass an instance of :data:`typing.TypeVar`, :data:`typing.ParamSpec`, :data:`typing.TypeVarTuple`, etc. Based on patch by Gregory Beauregard.

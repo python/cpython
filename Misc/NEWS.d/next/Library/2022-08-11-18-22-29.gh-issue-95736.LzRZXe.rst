@@ -1,1 +1,0 @@
-Fix :class:`unittest.IsolatedAsyncioTestCase` to set event loop before calling setup functions. Patch by Kumar Aditya.

@@ -1,1 +1,0 @@
-Convert :mod:`_functools` to argument clinic.
