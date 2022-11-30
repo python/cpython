@@ -1144,7 +1144,8 @@ class SourceLoader(_LoaderBasics):
                 source_mtime is not None):
             if hash_based:
                 if source_hash is None:
-                    source_hash = _imp.source_hash(source_bytes)
+                    source_hash = _imp.source_hash(_RAW_MAGIC_NUMBER,
+                                                   source_bytes)
                 data = _code_to_hash_pyc(code_object, source_hash, check_source)
             else:
                 data = _code_to_timestamp_pyc(code_object, source_mtime,

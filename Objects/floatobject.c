@@ -531,20 +531,17 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                 temp = _PyLong_Lshift(ww, 1);
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(ww);
-                ww = temp;
+                Py_SETREF(ww, temp);
 
                 temp = _PyLong_Lshift(vv, 1);
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(vv);
-                vv = temp;
+                Py_SETREF(vv, temp);
 
                 temp = PyNumber_Or(vv, _PyLong_GetOne());
                 if (temp == NULL)
                     goto Error;
-                Py_DECREF(vv);
-                vv = temp;
+                Py_SETREF(vv, temp);
             }
 
             r = PyObject_RichCompareBool(vv, ww, op);

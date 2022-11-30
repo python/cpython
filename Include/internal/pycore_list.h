@@ -35,7 +35,7 @@ struct _Py_list_state {
 #endif
 };
 
-#define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
+#define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)
 
 extern int
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem);

@@ -834,8 +834,7 @@ teedataobject_safe_decref(PyObject *obj)
            Py_REFCNT(obj) == 1) {
         PyObject *nextlink = ((teedataobject *)obj)->nextlink;
         ((teedataobject *)obj)->nextlink = NULL;
-        Py_DECREF(obj);
-        obj = nextlink;
+        Py_SETREF(obj, nextlink);
     }
     Py_XDECREF(obj);
 }
@@ -2485,11 +2484,9 @@ product_dealloc(productobject *lz)
 static PyObject *
 product_sizeof(productobject *lz, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(lz));
-    res += PyTuple_GET_SIZE(lz->pools) * sizeof(Py_ssize_t);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(lz));
+    res += (size_t)PyTuple_GET_SIZE(lz->pools) * sizeof(Py_ssize_t);
+    return PyLong_FromSize_t(res);
 }
 
 PyDoc_STRVAR(sizeof_doc, "Returns size in memory, in bytes.");
@@ -2818,11 +2815,9 @@ combinations_dealloc(combinationsobject *co)
 static PyObject *
 combinations_sizeof(combinationsobject *co, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(co));
-    res += co->r * sizeof(Py_ssize_t);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(co));
+    res += (size_t)co->r * sizeof(Py_ssize_t);
+    return PyLong_FromSize_t(res);
 }
 
 static int
@@ -3154,11 +3149,9 @@ cwr_dealloc(cwrobject *co)
 static PyObject *
 cwr_sizeof(cwrobject *co, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(co));
-    res += co->r * sizeof(Py_ssize_t);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(co));
+    res += (size_t)co->r * sizeof(Py_ssize_t);
+    return PyLong_FromSize_t(res);
 }
 
 static int
@@ -3499,12 +3492,10 @@ permutations_dealloc(permutationsobject *po)
 static PyObject *
 permutations_sizeof(permutationsobject *po, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(po));
-    res += PyTuple_GET_SIZE(po->pool) * sizeof(Py_ssize_t);
-    res += po->r * sizeof(Py_ssize_t);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(po));
+    res += (size_t)PyTuple_GET_SIZE(po->pool) * sizeof(Py_ssize_t);
+    res += (size_t)po->r * sizeof(Py_ssize_t);
+    return PyLong_FromSize_t(res);
 }
 
 static int

@@ -753,7 +753,19 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     else {
-        /* Do nothing - we don't interfere with subclasses */
+        /* user-defined subclass */
+        if (nested_base_exceptions) {
+            int nonbase = PyObject_IsSubclass((PyObject*)cls, PyExc_Exception);
+            if (nonbase == -1) {
+                goto error;
+            }
+            else if (nonbase == 1) {
+                PyErr_Format(PyExc_TypeError,
+                    "Cannot nest BaseExceptions in '%.200s'",
+                    cls->tp_name);
+                goto error;
+            }
+        }
     }
 
     if (!cls) {

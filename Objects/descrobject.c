@@ -906,8 +906,7 @@ descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
         descr->d_type = (PyTypeObject*)Py_XNewRef(type);
         descr->d_name = PyUnicode_InternFromString(name);
         if (descr->d_name == NULL) {
-            Py_DECREF(descr);
-            descr = NULL;
+            Py_SETREF(descr, NULL);
         }
         else {
             descr->d_qualname = NULL;

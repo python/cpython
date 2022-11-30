@@ -2052,11 +2052,11 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
         def cleanup():
             server.close()
-            self.run_loop(server.wait_closed())
             sock.close()
             if proto.transport is not None:
                 proto.transport.close()
                 self.run_loop(proto.wait_closed())
+            self.run_loop(server.wait_closed())
 
         self.addCleanup(cleanup)
 

@@ -16,6 +16,9 @@
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <pathcch.h>
+#  include <lmcons.h>             // UNLEN
+#  include "osdefs.h"             // SEP
+#  define HAVE_SYMLINK
 #endif
 
 #ifdef __VXWORKS__
@@ -152,6 +155,18 @@
 
 #  ifdef HAVE_SYMLINKAT
 #    define HAVE_SYMLINKAT_RUNTIME (symlinkat != NULL)
+#  endif
+
+#  ifdef HAVE_UTIMENSAT
+#    define HAVE_UTIMENSAT_RUNTIME (utimensat != NULL)
+#  endif
+
+#  ifdef HAVE_FUTIMENS
+#    define HAVE_FUTIMENS_RUNTIME (futimens != NULL)
+#  endif
+
+#  ifdef HAVE_PWRITEV
+#    define HAVE_PWRITEV_RUNTIME (pwritev != NULL)
 #  endif
 
 #endif
@@ -414,18 +429,7 @@ extern char        *ctermid_r(char *);
 #  ifdef HAVE_PROCESS_H
 #    include <process.h>
 #  endif
-#  ifndef IO_REPARSE_TAG_SYMLINK
-#    define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
-#  endif
-#  ifndef IO_REPARSE_TAG_MOUNT_POINT
-#    define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
-#  endif
-#  include "osdefs.h"             // SEP
 #  include <malloc.h>
-#  include <windows.h>
-#  include <shellapi.h>           // ShellExecute()
-#  include <lmcons.h>             // UNLEN
-#  define HAVE_SYMLINK
 #endif /* _MSC_VER */
 
 #ifndef MAXPATHLEN
@@ -1190,8 +1194,7 @@ path_converter(PyObject *o, void *p)
         }
 
         /* still owns a reference to the original object */
-        Py_DECREF(o);
-        o = res;
+        Py_SETREF(o, res);
     }
 
     if (is_unicode) {
@@ -4025,14 +4028,12 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
                 Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
             }
             if (v == NULL) {
-                Py_DECREF(list);
-                list = NULL;
+                Py_SETREF(list, NULL);
                 break;
             }
             if (PyList_Append(list, v) != 0) {
                 Py_DECREF(v);
-                Py_DECREF(list);
-                list = NULL;
+                Py_SETREF(list, NULL);
                 break;
             }
             Py_DECREF(v);
@@ -9838,7 +9839,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
     do {
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__clang__)
 /* This entire function will be removed from the module dict when the API
  * is not available.
  */
@@ -9853,7 +9854,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
@@ -10480,7 +10481,7 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__clang__)
 /* This entire function will be removed from the module dict when the API
  * is not available.
  */
@@ -10496,7 +10497,7 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         Py_END_ALLOW_THREADS
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
@@ -13120,15 +13121,13 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
                 PyObject *attribute = PyUnicode_DecodeFSDefaultAndSize(start,
                                                                  trace - start);
                 if (!attribute) {
-                    Py_DECREF(result);
-                    result = NULL;
+                    Py_SETREF(result, NULL);
                     goto exit;
                 }
                 error = PyList_Append(result, attribute);
                 Py_DECREF(attribute);
                 if (error) {
-                    Py_DECREF(result);
-                    result = NULL;
+                    Py_SETREF(result, NULL);
                     goto exit;
                 }
                 start = trace + 1;
@@ -13622,6 +13621,25 @@ os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class)
 #endif
 }
 
+/*[clinic input]
+os.DirEntry.is_junction -> bool
+    defining_class: defining_class
+    /
+
+Return True if the entry is a junction; cached per entry.
+[clinic start generated code]*/
+
+static int
+os_DirEntry_is_junction_impl(DirEntry *self, PyTypeObject *defining_class)
+/*[clinic end generated code: output=7061a07b0ef2cd1f input=475cd36fb7d4723f]*/
+{
+#ifdef MS_WINDOWS
+    return self->win32_lstat.st_reparse_tag == IO_REPARSE_TAG_MOUNT_POINT;
+#else
+    return 0;
+#endif
+}
+
 static PyObject *
 DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 {
@@ -13916,6 +13934,7 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_IS_DIR_METHODDEF
     OS_DIRENTRY_IS_FILE_METHODDEF
     OS_DIRENTRY_IS_SYMLINK_METHODDEF
+    OS_DIRENTRY_IS_JUNCTION_METHODDEF
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF

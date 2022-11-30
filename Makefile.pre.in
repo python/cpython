@@ -1585,6 +1585,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/listobject.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
+		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
 		$(srcdir)/Include/cpython/modsupport.h \
 		$(srcdir)/Include/cpython/object.h \
@@ -1977,6 +1978,7 @@ LIBSUBDIRS=	asyncio \
 		wsgiref \
 		$(XMLLIBSUBDIRS) \
 		xmlrpc \
+		zipfile \
 		zoneinfo \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
@@ -2050,6 +2052,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tools \
 		test/test_ttk \
 		test/test_warnings test/test_warnings/data \
+		test/test_zipfile \
 		test/test_zoneinfo test/test_zoneinfo/data \
 		test/test_unittest test/test_unittest/testmock \
 		test/tracedmodules \

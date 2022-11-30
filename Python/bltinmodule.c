@@ -168,8 +168,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
         if (winner != meta) {
-            Py_DECREF(meta);
-            meta = Py_NewRef(winner);
+            Py_SETREF(meta, Py_NewRef(winner));
         }
     }
     /* else: meta is not a class, so we cannot do the metaclass
@@ -219,8 +218,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__class__ set to %.200R defining %.200R as %.200R";
                     PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
                 }
-                Py_DECREF(cls);
-                cls = NULL;
+                Py_SETREF(cls, NULL);
                 goto error;
             }
         }
@@ -2484,8 +2482,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         long i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
         }
         while(result == NULL) {
             item = PyIter_Next(iter);
@@ -2535,8 +2532,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 
     if (PyFloat_CheckExact(result)) {
         double f_result = PyFloat_AS_DOUBLE(result);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         while(result == NULL) {
             item = PyIter_Next(iter);
             if (item == NULL) {
@@ -2583,8 +2579,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
         if (item == NULL) {
             /* error, or end-of-sequence */
             if (PyErr_Occurred()) {
-                Py_DECREF(result);
-                result = NULL;
+                Py_SETREF(result, NULL);
             }
             break;
         }
