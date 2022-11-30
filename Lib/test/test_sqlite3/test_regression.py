@@ -471,13 +471,13 @@ class RegressionTests(unittest.TestCase):
 
     def test_custom_cursor_object_crash_gh_99886(self):
         # This test segfaults on GH-99886
-        class MyCursor(sqlite3.Cursor):
+        class MyCursor(sqlite.Cursor):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 # this can go before or after the super call; doesn't matter
                 self.some_attr = None
 
-        conn = sqlite3.connect(':memory:')
+        conn = sqlite.connect(':memory:')
         cur = conn.cursor(MyCursor)
         cur.close()
         del cur
