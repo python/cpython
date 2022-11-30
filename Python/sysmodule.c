@@ -1741,44 +1741,41 @@ sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits)
 size_t
 _PySys_GetSizeOf(PyObject *o)
 {
-    PyObject *res = NULL;
-    PyObject *method;
-    Py_ssize_t size;
-    PyThreadState *tstate = _PyThreadState_GET();
-
     /* Make sure the type is initialized. float gets initialized late */
     if (PyType_Ready(Py_TYPE(o)) < 0) {
         return (size_t)-1;
     }
 
-    method = _PyObject_LookupSpecial(o, &_Py_ID(__sizeof__));
+    PyObject *method = _PyObject_LookupSpecial(o, &_Py_ID(__sizeof__));
+    PyThreadState *tstate = _PyThreadState_GET();
     if (method == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "Type %.100s doesn't define __sizeof__",
                           Py_TYPE(o)->tp_name);
         }
-    }
-    else {
-        res = _PyObject_CallNoArgs(method);
-        Py_DECREF(method);
-    }
-
-    if (res == NULL)
         return (size_t)-1;
+    }
 
-    size = PyLong_AsSsize_t(res);
+    PyObject *res = _PyObject_CallNoArgs(method);
+    Py_DECREF(method);
+    if (res == NULL) {
+        return (size_t)-1;
+    }
+
+    size_t size = PyLong_AsSize_t(res);
     Py_DECREF(res);
-    if (size == -1 && _PyErr_Occurred(tstate))
-        return (size_t)-1;
-
-    if (size < 0) {
-        _PyErr_SetString(tstate, PyExc_ValueError,
-                          "__sizeof__() should return >= 0");
+    if (size == (size_t)-1 && _PyErr_Occurred(tstate)) {
         return (size_t)-1;
     }
 
-    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
+    size_t header_size = _PyType_PreHeaderSize(Py_TYPE(o));
+    if (size > SIZE_MAX - header_size) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "size greater than size_t maximum");
+        return (size_t)-1;
+    }
+    return header_size + size;
 }
 
 static PyObject *

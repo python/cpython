@@ -1297,17 +1297,19 @@ class SizeofTest(unittest.TestCase):
         self.assertRaises(TypeError, sys.getsizeof, FloatSizeof())
         self.assertIs(sys.getsizeof(FloatSizeof(), sentinel), sentinel)
 
+        # size_t maximum
+        header_size = self.gc_headsize * 2
+        umaxsize = (sys.maxsize * 2 + 1) - header_size
+
         class OverflowSizeof(int):
             def __sizeof__(self):
                 return int(self)
-        self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
-                         sys.maxsize + self.gc_headsize*2)
+        self.assertEqual(sys.getsizeof(OverflowSizeof(umaxsize)),
+                         umaxsize + header_size)
         with self.assertRaises(OverflowError):
-            sys.getsizeof(OverflowSizeof(sys.maxsize + 1))
-        with self.assertRaises(ValueError):
-            sys.getsizeof(OverflowSizeof(-1))
+            sys.getsizeof(OverflowSizeof(umaxsize + 1))
         with self.assertRaises((ValueError, OverflowError)):
-            sys.getsizeof(OverflowSizeof(-sys.maxsize - 1))
+            sys.getsizeof(OverflowSizeof(-1))
 
     def test_default(self):
         size = test.support.calcvobjsize
