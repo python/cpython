@@ -167,4 +167,3 @@ class PyMemDefaultTests(PyMemDebugTests):
 
 if __name__ == "__main__":
     unittest.main()
-
