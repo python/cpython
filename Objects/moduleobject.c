@@ -327,9 +327,10 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
             goto error;
         } else {
             if (PyErr_Occurred()) {
-                PyErr_Format(PyExc_SystemError,
-                            "creation of module %s raised unreported exception",
-                            name);
+                _PyErr_FormatFromCause(
+                    PyExc_SystemError,
+                    "creation of module %s raised unreported exception",
+                    name);
                 goto error;
             }
         }
@@ -431,7 +432,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                     return -1;
                 }
                 if (PyErr_Occurred()) {
-                    PyErr_Format(
+                    _PyErr_FormatFromCause(
                         PyExc_SystemError,
                         "execution of module %s raised unreported exception",
                         name);

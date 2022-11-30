@@ -351,8 +351,12 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                 ]:
             with self.subTest(name_base):
                 name = self.name + '_' + name_base
-                with self.assertRaises(SystemError):
+                with self.assertRaises(SystemError) as cm:
                     self.load_module_by_name(name)
+
+                # If there is an unreported exception, it should be chained
+                if "unreported_exception" in name_base:
+                    self.assertIsNot(cm.exception.__cause__, None)
 
     def test_nonascii(self):
         # Test that modules with non-ASCII names can be loaded.
