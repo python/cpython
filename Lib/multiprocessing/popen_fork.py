@@ -75,9 +75,9 @@ class Popen(object):
             os.close(child_w)
             os.close(child_r)
             self.finalizer = util.Finalize(self, util.close_fds,
-                                           (parent_r, parent_w,))._key
+                                           (parent_r, parent_w,))
             self.sentinel = parent_r
 
     def close(self):
         if self.finalizer is not None:
-            util._finalizer_registry[self.finalizer()]()
+            self.finalizer()
