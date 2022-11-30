@@ -1669,43 +1669,44 @@ class TestArchives(BaseTest, unittest.TestCase):
         try:
             os.unlink(path)
         except FileNotFoundError:
-            print(f"File {path} not found")
             pass
 
     def test_make_tarfile_rootdir_nodir(self):
         # GH-99203
         self.addCleanup(self._unlink_existing_file, f'{TESTFN}.tar')
         for dry_run in (0, True):
-            tmp_fd, tmp_file = tempfile.mkstemp(dir=self.mkdtemp())
-            os.close(tmp_fd)
-            with self.assertRaises(NotADirectoryError):
-                make_archive(TESTFN, 'tar', tmp_file, dry_run=dry_run)
-            self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
+            with self.subTest(dry_run=dry_run):
+                tmp_fd, tmp_file = tempfile.mkstemp(dir=self.mkdtemp())
+                os.close(tmp_fd)
+                with self.assertRaises(NotADirectoryError):
+                    make_archive(TESTFN, 'tar', tmp_file, dry_run=dry_run)
+                self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
 
-            tmp_fd, tmp_file = tempfile.mkstemp(dir=self.mkdtemp())
-            os.close(tmp_fd)
-            os.unlink(tmp_file)
-            with self.assertRaises(FileNotFoundError):
-                make_archive(TESTFN, 'tar', tmp_file, dry_run=dry_run)
-            self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
+                tmp_fd, tmp_file = tempfile.mkstemp(dir=self.mkdtemp())
+                os.close(tmp_fd)
+                os.unlink(tmp_file)
+                with self.assertRaises(FileNotFoundError):
+                    make_archive(TESTFN, 'tar', tmp_file, dry_run=dry_run)
+                self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
 
     @support.requires_zlib()
     def test_make_zipfile_rootdir_nodir(self):
         # GH-99203
         self.addCleanup(self._unlink_existing_file, f'{TESTFN}.zip')
         for dry_run in (0, True):
-            tmp_fd, tmp_file = tempfile.mkstemp(dir=self.mkdtemp())
-            os.close(tmp_fd)
-            with self.assertRaises(NotADirectoryError):
-                make_archive(TESTFN, 'zip', tmp_file, dry_run=dry_run)
-            self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
+            with self.subTest(dry_run=dry_run):
+                tmp_fd, tmp_file = tempfile.mkstemp(dir=self.mkdtemp())
+                os.close(tmp_fd)
+                with self.assertRaises(NotADirectoryError):
+                    make_archive(TESTFN, 'zip', tmp_file, dry_run=dry_run)
+                self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
 
-            tmp_fd, tmp_file = tempfile.mkstemp(dir=self.mkdtemp())
-            os.close(tmp_fd)
-            os.unlink(tmp_file)
-            with self.assertRaises(FileNotFoundError):
-                make_archive(TESTFN, 'zip', tmp_file, dry_run=dry_run)
-            self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
+                tmp_fd, tmp_file = tempfile.mkstemp(dir=self.mkdtemp())
+                os.close(tmp_fd)
+                os.unlink(tmp_file)
+                with self.assertRaises(FileNotFoundError):
+                    make_archive(TESTFN, 'zip', tmp_file, dry_run=dry_run)
+                self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
 
     ### shutil.unpack_archive
 
