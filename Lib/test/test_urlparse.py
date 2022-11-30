@@ -875,6 +875,13 @@ class UrlParseTestCase(unittest.TestCase):
                 self.assertEqual(func(b"path").scheme, b"")
                 self.assertEqual(func(b"path", "").scheme, b"")
 
+    def test_empty_netloc(self):
+        # Issue gh-99901: don't preprend '/' to url if netloc is empty
+        self.assertEqual(urllib.parse.urlunparse(("http", "", "example", "", "", "")),
+                         "http://example")
+        self.assertEqual(urllib.parse.urlunparse((b"http", b"", b"example", b"", b"", b"")),
+                         b"http://example")
+
     def test_parse_fragments(self):
         # Exercise the allow_fragments parameter of urlparse() and urlsplit()
         tests = (
