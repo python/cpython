@@ -53,7 +53,7 @@ class Popen(popen_fork.Popen):
         # parent process used by the child process.
         _parent_w = os.dup(w)
         self.finalizer = util.Finalize(self, util.close_fds,
-                                       (_parent_w, self.sentinel))._key
+                                       (_parent_w, self.sentinel))
         with open(w, 'wb', closefd=True) as f:
             f.write(buf.getbuffer())
         self.pid = forkserver.read_signed(self.sentinel)
