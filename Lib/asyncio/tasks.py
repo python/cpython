@@ -17,6 +17,7 @@ import itertools
 import types
 import warnings
 import weakref
+import contextlib
 from types import GenericAlias
 
 from . import base_tasks
@@ -75,6 +76,21 @@ def _set_task_name(task, name):
             set_name(name)
 
 
+@contextlib.contextmanager
+def shield_scope():
+    shield = object()  # just for making sure shields closed in order
+    # if __enter__ and __exit__ called directly
+    task = current_task()
+    task.shields.append(shield)
+    try:
+        yield
+    finally:
+        if task.shields.pop() is not shield:
+            raise RuntimeError(
+                f"Unbalanced enter/exit of shield scopes for task {task!r}"
+            )
+
+
 class Task(futures._PyFuture):  # Inherit Python Task implementation
                                 # from a Python Future implementation.
 
@@ -95,6 +111,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def __init__(self, coro, *, loop=None, name=None, context=None):
         super().__init__(loop=loop)
+        self.shields = []
         if self._source_traceback:
             del self._source_traceback[-1]
         if not coroutines.iscoroutine(coro):
@@ -219,7 +236,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         # Also remember that this is duplicated in _asynciomodule.c.
         # if self._num_cancels_requested > 1:
         #     return False
-        if self._fut_waiter is not None:
+        if self._fut_waiter is not None and not self.shields:
             if self._fut_waiter.cancel(msg=msg):
                 # Leave self._fut_waiter; it may be a Task that
                 # catches and ignores the cancellation so we may have
@@ -254,7 +271,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         if self.done():
             raise exceptions.InvalidStateError(
                 f'_step(): already done: {self!r}, {exc!r}')
-        if self._must_cancel:
+        if self._must_cancel and not self.shields:
             if not isinstance(exc, exceptions.CancelledError):
                 exc = self._make_cancelled_error()
             self._must_cancel = False
@@ -307,7 +324,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                         result.add_done_callback(
                             self.__wakeup, context=self._context)
                         self._fut_waiter = result
-                        if self._must_cancel:
+                        if self._must_cancel and not self.shields:
                             if self._fut_waiter.cancel(
                                     msg=self._cancel_message):
                                 self._must_cancel = False
