@@ -5581,6 +5581,7 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
         Py_XDECREF((*values_ptr)->values[i]);
     }
     free_values(*values_ptr);
+    *values_ptr = NULL;
 }
 
 PyObject *
