@@ -16,11 +16,13 @@ static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->_initialized);
-    for (int i = 0; i < CODE_MAX_WATCHERS; i++) {
-        PyCode_WatchCallback cb = interp->code_watchers[i];
-        if ((cb != NULL) && (cb(event, co) < 0)) {
-            PyErr_WriteUnraisable((PyObject *) co);
+    if (interp->active_code_watchers) {
+        assert(interp->_initialized);
+        for (int i = 0; i < CODE_MAX_WATCHERS; i++) {
+            PyCode_WatchCallback cb = interp->code_watchers[i];
+            if ((cb != NULL) && (cb(event, co) < 0)) {
+                PyErr_WriteUnraisable((PyObject *) co);
+            }
         }
     }
 }
@@ -34,6 +36,7 @@ PyCode_AddWatcher(PyCode_WatchCallback callback)
     for (int i = 0; i < CODE_MAX_WATCHERS; i++) {
         if (!interp->code_watchers[i]) {
             interp->code_watchers[i] = callback;
+            interp->active_code_watchers |= (1 << i);
             return i;
         }
     }
@@ -65,6 +68,7 @@ PyCode_ClearWatcher(int watcher_id)
         return -1;
     }
     interp->code_watchers[watcher_id] = NULL;
+    interp->active_code_watchers &= ~(1 << watcher_id);
     return 0;
 }
 

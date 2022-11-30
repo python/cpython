@@ -469,6 +469,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     for (int i=0; i < CODE_MAX_WATCHERS; i++) {
         interp->code_watchers[i] = NULL;
     }
+    interp->active_code_watchers = 0;
 
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
