@@ -1021,7 +1021,7 @@ Functions
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
       In :class:`bytes` replacement strings, group *name* can only contain bytes
-      in the ASCII range (``b'\x00'``-``b'\x7f'``)
+      in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
