@@ -1,0 +1,3 @@
+Make started :class:`multiprocessing.Process` instances and started
+:class:`multiprocessing.managers.BaseManager` instances serialisable. Patch by
+Géry Ogam.
