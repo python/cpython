@@ -317,11 +317,11 @@ def calculate_execution_counts(opcode_stats, total):
     for (count, name, miss) in counts:
         cumulative += count
         if miss:
-            miss =  f"{100*miss/count:0.1f}%"
+            miss = f"{100*miss/count:0.1f}%"
         else:
             miss = ""
-            rows.append((name, count, f"{100*count/total:0.1f}%",
-                         f"{100*cumulative/total:0.1f}%", miss))
+        rows.append((name, count, f"{100*count/total:0.1f}%",
+                     f"{100*cumulative/total:0.1f}%", miss))
     return rows
 
 def emit_execution_counts(opcode_stats, total):
