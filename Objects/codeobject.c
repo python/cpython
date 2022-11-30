@@ -1867,15 +1867,13 @@ static PyGetSetDef code_getsetlist[] = {
 static PyObject *
 code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
 {
-    Py_ssize_t res = _PyObject_VAR_SIZE(Py_TYPE(co), Py_SIZE(co));
-
+    size_t res = _PyObject_VAR_SIZE(Py_TYPE(co), Py_SIZE(co));
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
     if (co_extra != NULL) {
-        res += sizeof(_PyCodeObjectExtra) +
-               (co_extra->ce_size-1) * sizeof(co_extra->ce_extras[0]);
+        res += sizeof(_PyCodeObjectExtra);
+        res += ((size_t)co_extra->ce_size - 1) * sizeof(co_extra->ce_extras[0]);
     }
-
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 static PyObject *
