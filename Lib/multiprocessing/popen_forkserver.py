@@ -52,8 +52,8 @@ class Popen(popen_fork.Popen):
         # Keep a duplicate of the data pipe's write end as a sentinel of the
         # parent process used by the child process.
         _parent_w = os.dup(w)
-        self._finalizer = util.Finalize(self, util.close_fds,
-                                        (_parent_w, self.sentinel))._key
+        self.finalizer = util.Finalize(self, util.close_fds,
+                                       (_parent_w, self.sentinel))._key
         with open(w, 'wb', closefd=True) as f:
             f.write(buf.getbuffer())
         self.pid = forkserver.read_signed(self.sentinel)
