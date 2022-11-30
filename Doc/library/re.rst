@@ -1575,11 +1575,12 @@ Python offers different primitive operations based on regular expressions:
 
 For example::
 
-   >>> re.match("c", "cdef")    # match
-   <re.Match object; span=(0, 1), match='c'>
-   >>> re.search("c", "cdef")   # Match
-   <re.Match object; span=(0, 1), match='c'>
-   >>> re.fullmatch("c", "cdef")  # No Match
+   >>> re.match("c", "abcdef")    # No match
+   >>> re.search("c", "abcdef")   # Match
+   <re.Match object; span=(2, 3), match='c'>
+   >>> re.fullmatch("p.*n", "python")
+   <re.Match object; span=(0, 6), match='python'>
+   >>> re.fullmatch("r.*n", "python") # No match
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
@@ -1594,9 +1595,9 @@ Note however that in :const:`MULTILINE` mode :func:`match` only matches at the
 beginning of the string, whereas using :func:`search` with a regular expression
 beginning with ``'^'`` will match at the beginning of each line. ::
 
-   >>> re.match('X', 'A\nB\nX', re.MULTILINE)  # No match
-   >>> re.fullmatch('X', "A\nB\nX", re.MULTILINE)  # No Match
-   >>> re.search('^X', 'A\nB\nX', re.MULTILINE)  # Match
+   >>> re.match("X", "A\nB\nX", re.MULTILINE)  # No match
+   >>> re.fullmatch("X", "A\nB\nX", re.MULTILINE)  # No Match
+   >>> re.search("^X", "A\nB\nX", re.MULTILINE)  # Match
    <re.Match object; span=(4, 5), match='X'>
 
 
