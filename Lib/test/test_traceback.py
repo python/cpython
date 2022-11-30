@@ -2979,8 +2979,8 @@ class SuggestionFormattingTestBase:
             with self.subTest(name=name):
                 actual = self.get_suggestion(MyClass, name)
                 self.assertNotIn("you mean", actual)
-                self.assertNotIn("vvv", actual)
-                self.assertNotIn("mom", actual)
+                self.assertNotIn("'vvv'", actual)
+                self.assertNotIn("'mom'", actual)
                 self.assertNotIn("'id'", actual)
                 self.assertNotIn("'w'", actual)
                 self.assertNotIn("'pytho'", actual)
