@@ -91,6 +91,16 @@ def shield_scope():
             )
 
 
+def shielded(func):
+    """Decorator to shield the call of a async function or method,
+    wrapping it in a shield_scope()."""
+    @functools.wraps(func)
+    async def _shielded(*args, **kwargs):
+        with shield_scope():
+            return await func(*args, **kwargs)
+    return _shielded
+
+
 class Task(futures._PyFuture):  # Inherit Python Task implementation
                                 # from a Python Future implementation.
 
