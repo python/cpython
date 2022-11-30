@@ -495,8 +495,142 @@ class IntTestCases(IntLongCommonTests, unittest.TestCase):
                 self.assertIs(type(n), IntSubclass)
 
 
+class IntStrDigitLimitsTests(unittest.TestCase):
+
+    int_class = int  # Override this in subclasses to reuse the suite.
+
+    def setUp(self):
+        super(IntStrDigitLimitsTests, self).setUp()
+        self._previous_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(2048)
+
+    def tearDown(self):
+        sys.set_int_max_str_digits(self._previous_limit)
+        super(IntStrDigitLimitsTests, self).tearDown()
+
+    def stringify(self, i, will_error=False):
+        if not will_error:
+            str(i)
+            # repr will also create a string, but append 'L' if i was long
+            repr(i)
+            unicode(i)
+            return
+        with self.assertRaises(ValueError):
+            str(i)
+        with self.assertRaises(ValueError):
+            repr(i)
+        with self.assertRaises(ValueError):
+            unicode(i)
+
+    def test_disabled_limit(self):
+        self.assertGreater(sys.get_int_max_str_digits(), 0)
+        self.assertLess(sys.get_int_max_str_digits(), 20000)
+        with test_support.adjust_int_max_str_digits(0):
+            self.assertEqual(sys.get_int_max_str_digits(), 0)
+            i = self.int_class('1' * 20000)
+            self.stringify(i)
+        self.assertGreater(sys.get_int_max_str_digits(), 0)
+
+    def test_max_str_digits_edge_cases(self):
+        """Ignore the +/- sign 'L' and space padding."""
+        int_class = self.int_class
+        maxdigits = sys.get_int_max_str_digits()
+
+        int_class('1' * maxdigits)
+        int_class(' ' + '1' * maxdigits)
+        int_class('1' * maxdigits + ' ')
+        int_class('+' + '1' * maxdigits)
+        int_class('-' + '1' * maxdigits)
+        self.assertEqual(len(str(10 ** (maxdigits - 1))), maxdigits)
+
+        int_class(u'1' * maxdigits)
+        int_class(u' ' + u'1' * maxdigits)
+        int_class(u'1' * maxdigits + u' ')
+        int_class(u'+' + u'1' * maxdigits)
+        int_class(u'-' + u'1' * maxdigits)
+        self.assertEqual(len(unicode(10 ** (maxdigits - 1))), maxdigits)
+
+    def check(self, i, base=None):
+        with self.assertRaises(ValueError):
+            if base is None:
+                self.int_class(i)
+            else:
+                self.int_class(i, base)
+
+    def test_max_str_digits(self):
+        maxdigits = sys.get_int_max_str_digits()
+
+        self.check('1' * (maxdigits + 1))
+        self.check(' ' + '1' * (maxdigits + 1))
+        self.check('1' * (maxdigits + 1) + ' ')
+        self.check('+' + '1' * (maxdigits + 1))
+        self.check('-' + '1' * (maxdigits + 1))
+        self.check('1' * (maxdigits + 1))
+
+        self.check(u'1' * (maxdigits + 1))
+        self.check(u' ' + u'1' * (maxdigits + 1))
+        self.check(u'1' * (maxdigits + 1) + u' ')
+        self.check(u'+' + u'1' * (maxdigits + 1))
+        self.check(u'-' + u'1' * (maxdigits + 1))
+        self.check(u'1' * (maxdigits + 1))
+
+        i = 10 ** maxdigits
+        self.stringify(i, will_error=True)
+
+    def test_changed_limit(self):
+        int_class = self.int_class
+        newmax = 900
+        self.assertLess(sys.long_info.str_digits_check_threshold, newmax)
+        with test_support.adjust_int_max_str_digits(newmax):
+            i = 10 ** (newmax - 1)
+            self.stringify(i)
+            int_class('1' * newmax)
+
+            i = 10 ** newmax
+            self.stringify(i, will_error=True)
+            self.check('1' * (newmax + 1))
+
+    def test_power_of_two_bases_unlimited(self):
+        """The limit does not apply to power of 2 bases."""
+        maxdigits = sys.get_int_max_str_digits()
+
+        for base in (2, 4, 8, 16, 32):
+            self.int_class('1' * (maxdigits + 1), base)
+            assert maxdigits < 100000
+            self.int_class('1' * 100000, base)
+
+    def test_sign_not_counted(self):
+        int_class = self.int_class
+        maxdigits = sys.get_int_max_str_digits()
+        s = '5' * maxdigits
+        i = int_class(s)
+        pos_i = int_class('+{s}'.format(s=s))
+        assert i == pos_i
+        neg_i = int_class('-{s}'.format(s=s))
+        assert -pos_i == neg_i
+        self.stringify(pos_i)
+        self.stringify(neg_i)
+
+    def _other_base_helper(self, base):
+        int_class = self.int_class
+        maxdigits = sys.get_int_max_str_digits()
+        s = '2' * maxdigits
+        i = int_class(s, base)
+        if base > 10:
+            self.stringify(i, will_error=True)
+        elif base < 10:
+            self.stringify(i)
+        with self.assertRaises(ValueError) as err:
+            int_class('{s}1'.format(s=s), base)
+
+    def test_int_from_other_bases(self):
+        self._other_base_helper(base=3)
+        self._other_base_helper(base=36)
+
+
 def test_main():
     run_unittest(IntTestCases)
+    run_unittest(IntStrDigitLimitsTests)
 
 if __name__ == "__main__":
     test_main()

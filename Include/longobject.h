@@ -129,6 +129,32 @@ PyAPI_FUNC(PyObject *) _PyLong_FormatAdvanced(PyObject *obj,
 					      char *format_spec,
 					      Py_ssize_t format_spec_len);
 
+#define _MAX_STR_DIGITS_ERROR_FMT "Exceeds the limit (%d) for integer string conversion: value has %zd digits"
+/*
+ * Default long base conversion size limitation: Denial of Service prevention.
+ *
+ * Chosen such that this isn't wildly slow on modern hardware
+ * 4300 decimal digits fits a ~14284 bit number.
+ */
+#define _PY_LONG_DEFAULT_MAX_STR_DIGITS 4300
+/*
+ * Threshold for max digits check.  For performance reasons long() and
+ * long.__str__() don't checks values that are smaller than this
+ * threshold.  Acts as a guaranteed minimum size limit for bignums that
+ * applications can expect from CPython.
+ *
+ * "640 digits should be enough for anyone." - gps
+ * fits a ~2126 bit decimal number.
+ */
+#define _PY_LONG_MAX_STR_DIGITS_THRESHOLD 640
+
+#if ((_PY_LONG_DEFAULT_MAX_STR_DIGITS != 0) && \
+   (_PY_LONG_DEFAULT_MAX_STR_DIGITS < _PY_LONG_MAX_STR_DIGITS_THRESHOLD))
+# error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
+#endif
+
+int Py_LongMaxStrDigits;
+
 #ifdef __cplusplus
 }
 #endif

@@ -82,6 +82,8 @@ int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 int _Py_QnewFlag = 0;
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
+int Py_LongMaxStrDigitsFlag = 0; /* for PYTHONINTMAXSTRDIGITS */
+int Py_LongMaxStrDigits = -1; /* for longobject.c */
 
 
 /* Hack to force loading of object files */
@@ -197,8 +199,12 @@ Py_InitializeEx(int install_sigs)
        check its value further. */
     if ((p = Py_GETENV("PYTHONHASHSEED")) && *p != '\0')
         Py_HashRandomizationFlag = add_flag(Py_HashRandomizationFlag, p);
-
     _PyRandom_Init();
+    /* The variable is only tested for existence here; _PyLongMaxStrDigits_Init
+       will check its value further. */
+    if ((p = Py_GETENV("PYTHONINTMAXSTRDIGITS")) && *p != '\0')
+        Py_LongMaxStrDigitsFlag = add_flag(Py_LongMaxStrDigitsFlag, p);
+    _PyLongMaxStrDigits_Init();
 
     interp = PyInterpreterState_New();
     if (interp == NULL)

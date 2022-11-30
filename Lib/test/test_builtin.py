@@ -63,6 +63,15 @@ class TestFailingIter:
 
 class BuiltinTest(unittest.TestCase):
 
+    def setUp(self):
+        super(BuiltinTest, self).setUp()
+        self._previous_int_limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(7000)
+
+    def tearDown(self):
+        sys.set_int_max_str_digits(self._previous_int_limit)
+        super(BuiltinTest, self).tearDown()
+
     def test_import(self):
         __import__('sys')
         __import__('time')

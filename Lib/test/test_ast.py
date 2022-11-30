@@ -492,6 +492,13 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.literal_eval('1.5 - 2j'), 1.5 - 2j)
         self.assertRaises(ValueError, ast.literal_eval, '2 + (3 + 4j)')
 
+    def test_literal_eval_str_int_limit(self):
+        with test_support.adjust_int_max_str_digits(4000):
+            ast.literal_eval('3'*4000)
+            with self.assertRaises(ValueError) as err_ctx:
+                ast.literal_eval('3'*4001)  
+            self.assertIn('Exceeds the limit ', str(err_ctx.exception))
+
 
 def test_main():
     with test_support.check_py3k_warnings(("backquote not supported",

@@ -115,6 +115,10 @@ PYTHONHASHSEED: if this variable is set to 'random', the effect is the same\n\
    as specifying the -R option: a random value is used to seed the hashes of\n\
    str, bytes and datetime objects.  It can also be set to an integer\n\
    in the range [0,4294967295] to get hash values with a predictable seed.\n\
+PYTHONINTMAXSTRDIGITS: limits the maximum digit characters in an integer value\n\
+   when converting from a string and when converting an integer back to a str.\n\
+   A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,\n\
+   16, and 32 are never limited.\n\
 ";
 
 
@@ -481,6 +485,14 @@ Py_Main(int argc, char **argv)
             PySys_AddWarnOption(warning);
         free(buf);
     }
+
+    /* The variable is only tested for existence here; _PyLongMaxStrDigits_Init
+       will check its value further. */
+    if (!Py_LongMaxStrDigitsFlag &&
+        (p = Py_GETENV("PYTHONINTMAXSTRDIGITS")) && *p != '\0')
+        Py_LongMaxStrDigitsFlag = 1;
+
+    _PyLongMaxStrDigits_Init();
 
     if (command == NULL && module == NULL && _PyOS_optind < argc &&
         strcmp(argv[_PyOS_optind], "-") != 0)

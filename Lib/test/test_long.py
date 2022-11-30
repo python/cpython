@@ -941,8 +941,37 @@ class LongTest(test_int.IntLongCommonTests, unittest.TestCase):
             self.assertEqual((-a-1).bit_length(), i+1)
 
 
+class LongStrDigitLimitsTests(test_int.IntStrDigitLimitsTests):
+    int_class = long
+
+    def test_l_not_counted(self):
+        int_class = self.int_class
+        maxdigits = sys.get_int_max_str_digits()
+
+        s = '5' * maxdigits
+        i = int_class(s)
+        long_i = int_class('{s}L'.format(s=s))
+        assert i == long_i
+        self.stringify(long_i)
+
+    def test_max_l_str_digits(self):
+        int_class = self.int_class
+        maxdigits = sys.get_int_max_str_digits()
+
+        int_class('1' * maxdigits + 'L')
+        int_class(u'1' * maxdigits + u'L')
+
+        self.check('1' * (maxdigits + 1) + 'L')
+        self.check(u'1' * (maxdigits + 1) + u'L')
+
+class LongSubclassStrDigitLimitsTests(LongStrDigitLimitsTests):
+    int_class = LongSubclass
+
+
 def test_main():
     test_support.run_unittest(LongTest)
+    test_support.run_unittest(LongStrDigitLimitsTests)
+    test_support.run_unittest(LongSubclassStrDigitLimitsTests)
 
 if __name__ == "__main__":
     test_main()

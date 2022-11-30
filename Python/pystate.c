@@ -84,6 +84,7 @@ PyInterpreterState_New(void)
 #ifdef WITH_TSC
         interp->tscdump = 0;
 #endif
+        interp->long_max_str_digits = -1;
 
         HEAD_LOCK();
         interp->next = interp_head;

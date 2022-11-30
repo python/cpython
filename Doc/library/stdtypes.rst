@@ -521,6 +521,13 @@ class`. float also has the following additional methods.
 
    .. versionadded:: 2.6
 
+   .. note::
+
+      The values returned by ``as_integer_ratio()`` can be huge. Attempts
+      to render such integers into decimal strings may bump into the
+      :ref:`integer string conversion length limitation
+      <int_max_str_digits>`.
+
 .. method:: float.is_integer()
 
    Return ``True`` if the float instance is finite with integral
@@ -3188,6 +3195,167 @@ The following attributes are only supported by :term:`new-style class`\ es.
 
       >>> int.__subclasses__()
       [<type 'bool'>]
+
+
+.. _int_max_str_digits:
+
+Integer string conversion length limitation
+===========================================
+
+CPython has a global limit for converting between :class:`long` and :class:`str`
+or :class:`unicode` to mitigate denial of service attacks. This limit *only* applies
+to decimal or other non-power-of-two number bases. Hexadecimal, octal, and binary
+conversions are unlimited. The limit can be configured.
+
+The :class:`long` type in CPython is an arbitrary length number stored in binary
+form (commonly known as a "bignum"). There exists no algorithm that can convert
+a string to a binary integer or a binary integer to a string in linear time,
+*unless* the base is a power of 2. Even the best known algorithms for base 10
+have sub-quadratic complexity. Converting a large value such as ``long('1' *
+500_000)`` can take over a second on a fast CPU.
+
+Limiting conversion size offers a practical way to avoid `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+
+The limit is applied to the number of digit characters in the input or output
+string when a non-linear conversion algorithm would be involved.  Trailing *L*s
+and the sign are not counted towards the limit.
+
+When an operation would exceed the limit, a :exc:`ValueError` is raised:
+
+.. doctest::
+
+   >>> import sys
+   >>> sys.set_int_max_str_digits(4300)  # Illustrative, this is the default.
+   >>> _ = long('2' * 5432)
+   Traceback (most recent call last):
+   ...
+   ValueError: Exceeds the limit (4300) for integer string conversion: value has 5432 digits.
+   >>> i = long('2' * 4300)
+   >>> len(str(i))
+   4300
+   >>> i_squared = i*i
+   >>> len(str(i_squared))
+   Traceback (most recent call last):
+   ...
+   ValueError: Exceeds the limit (4300) for integer string conversion: value has 8599 digits.
+   >>> len(hex(i_squared))
+   7144
+   >>> assert long(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
+
+The default limit is 4300 digits as provided in
+:data:`sys.long_info.default_max_str_digits <sys.long_info>`.
+The lowest limit that can be configured is 640 digits as provided in
+:data:`sys.long_info.str_digits_check_threshold <sys.long_info>`.
+
+Verification:
+
+.. doctest::
+
+   >>> import sys
+   >>> assert sys.int_info.default_max_str_digits == 4300, sys.int_info
+   >>> assert sys.int_info.str_digits_check_threshold == 640, sys.int_info
+   >>> msg = long('578966293710682886880994035146873798396722250538762761564'
+   ...           '9252925514383915483333812743580549779436104706260696366600'
+   ...           '571186405732').to_bytes(53, 'big')
+   ...
+
+.. versionadded:: 2.7.18.6
+
+
+Affected APIs
+-------------
+
+Because int automatically converts to long if the value is larger than
+:data:`sys.maxint` this limitation applies to potentially slow conversions
+between any of :class:`int` or :class:`long` and :class:`str` or :class:`unicode`:
+
+* ``int(string)`` with default base 10.
+* ``int(string, base)`` for all bases that are not a power of 2.
+* ``long(string)`` with default base 10.
+* ``long(string, base)`` for all bases that are not a power of 2.
+* ``int(unicode)`` with default base 10.
+* ``int(unicode, base)`` for all bases that are not a power of 2.
+* ``long(unicode)`` with default base 10.
+* ``long(unicode, base)`` for all bases that are not a power of 2.
+* ``str(long)``.
+* ``repr(long)``.
+* ``unicode(long)``.
+* any other string conversion to base 10, for example ``"{}".format(long)``.
+
+The limitations do not apply to functions with a linear algorithm:
+
+* ``long(string, base)`` with base 2, 4, 8, 16, or 32.
+* :func:`hex`, :func:`oct`, :func:`bin`.
+* :ref:`formatspec` for hex, octal, and binary numbers.
+* :class:`str` to :class:`float`.
+* :class:`str` to :class:`decimal.Decimal`.
+
+Configuring the limit
+---------------------
+
+Before Python starts up you can use an environment variable to configure the limit:
+
+* :envvar:`PYTHONINTMAXSTRDIGITS`, e.g.
+  ``PYTHONINTMAXSTRDIGITS=640 python`` to set the limit to 640 or
+  ``PYTHONINTMAXSTRDIGITS=0 python`` to disable the limitation.
+* :data:`sys.flags.long_max_str_digits` contains the value of
+  :envvar:`PYTHONINTMAXSTRDIGITS`. A value of *-1* indicates that none was set,
+  thus a value of :data:`sys.int_info.default_max_str_digits` was used during
+  initialization.
+
+From code, you can inspect the current limit and set a new one using these
+:mod:`sys` APIs:
+
+* :func:`sys.get_int_max_str_digits` and :func:`sys.set_int_max_str_digits` are
+  a getter and setter for the interpreter-wide limit.
+
+Information about the default and minimum can be found in :attr:`sys.long_info`:
+
+* :data:`sys.long_info.default_max_str_digits <sys.long_info>` is the compiled-in
+  default limit.
+* :data:`sys.long_info.str_digits_check_threshold <sys.long_info>` is the lowest
+  accepted value for the limit (other than 0 which disables it).
+
+.. versionadded:: 2.7.18.6
+
+.. caution::
+
+   Setting a low limit *can* lead to problems. While rare, code exists that
+   contains integer constants in decimal in their source that exceed the
+   minimum threshold. A consequence of setting the limit is that Python source
+   code containing decimal integer literals longer than the limit will
+   encounter an error during parsing, usually at startup time or import time or
+   even at installation time - anytime an up to date ``.pyc`` does not already
+   exist for the code. A workaround for source that contains such large
+   constants is to convert them to ``0x`` hexadecimal form as it has no limit.
+
+   Test your application thoroughly if you use a low limit. Ensure your tests
+   run with the limit set early via the environment so that it applies during
+   startup and even during any installation step that may invoke Python to
+   precompile ``.py`` sources to ``.pyc`` files.
+
+Recommended configuration
+-------------------------
+
+The default :data:`sys.long_info.default_max_str_digits` is expected to be
+reasonable for most applications. If your application requires a different
+limit, set it from your main entry point using Python version agnostic code as
+these APIs were ported from the original fix in version 3.12.
+
+Example::
+
+   >>> import sys
+   >>> if hasattr(sys, "set_int_max_str_digits"):
+   ...     upper_bound = 68000
+   ...     lower_bound = 4004
+   ...     current_limit = sys.get_int_max_str_digits()
+   ...     if current_limit == 0 or current_limit > upper_bound:
+   ...         sys.set_int_max_str_digits(upper_bound)
+   ...     elif current_limit < lower_bound:
+   ...         sys.set_int_max_str_digits(lower_bound)
+
+If you need to disable it entirely, set it to ``0``.
 
 
 .. rubric:: Footnotes

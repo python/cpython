@@ -884,6 +884,18 @@ Some smaller changes made to the core Python language are:
   now only cleared if no one else is holding a reference to the
   dictionary (:issue:`7140`).
 
+* Converting between :class:`int` or :class:`long` and :class:`str` or
+  :class:`unicode` in bases other than 2 (binary), 4, 8 (octal), 16
+  (hexadecimal), or 32 such as base 10 (decimal) now raises a
+  :exc:`ValueError` if the number of digits in string form is above a
+  limit to avoid potential denial of service attacks due to the
+  algorithmic complexity. This is a mitigation for `CVE-2020-10735
+  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+  This limit can be configured or disabled by environment variable or
+  :mod:`sys` APIs. See the :ref:`integer string conversion length
+  limitation <int_max_str_digits>` documentation.  The default limit
+  is 4300 digits in string form.
+
 .. ======================================================================
 
 .. _new-27-interpreter:

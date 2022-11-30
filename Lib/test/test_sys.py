@@ -389,13 +389,19 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.executable, basestring)
         self.assertEqual(len(sys.float_info), 11)
         self.assertEqual(sys.float_info.radix, 2)
-        self.assertEqual(len(sys.long_info), 2)
+        self.assertEqual(len(sys.long_info), 4)
         self.assertTrue(sys.long_info.bits_per_digit % 5 == 0)
         self.assertTrue(sys.long_info.sizeof_digit >= 1)
+        self.assertGreaterEqual(sys.long_info.default_max_str_digits, 500)
+        self.assertGreaterEqual(sys.long_info.str_digits_check_threshold, 100)
+        self.assertGreater(sys.long_info.default_max_str_digits,
+                           sys.long_info.str_digits_check_threshold)
         self.assertEqual(type(sys.long_info.bits_per_digit), int)
         self.assertEqual(type(sys.long_info.sizeof_digit), int)
         self.assertIsInstance(sys.hexversion, int)
         self.assertIsInstance(sys.maxint, int)
+        self.assertIsInstance(sys.long_info.default_max_str_digits, long)
+        self.assertIsInstance(sys.long_info.str_digits_check_threshold, long)
         if test.test_support.have_unicode:
             self.assertIsInstance(sys.maxunicode, int)
         self.assertIsInstance(sys.platform, basestring)
@@ -436,7 +442,8 @@ class SysModuleTest(unittest.TestCase):
         attrs = ("debug", "py3k_warning", "division_warning", "division_new",
                  "inspect", "interactive", "optimize", "dont_write_bytecode",
                  "no_site", "ignore_environment", "tabcheck", "verbose",
-                 "unicode", "bytes_warning", "hash_randomization")
+                 "unicode", "bytes_warning", "hash_randomization",
+                 "int_max_str_digits")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
             self.assertEqual(type(getattr(sys.flags, attr)), int, attr)

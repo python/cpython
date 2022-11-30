@@ -431,6 +431,14 @@ always available.
    an argument to :func:`getrefcount`.
 
 
+.. function:: get_int_max_str_digits()
+
+   Returns the current value for the :ref:`integer string conversion length
+   limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
+
+   .. versionadded:: 2.7.18.6
+
+
 .. function:: getrecursionlimit()
 
    Return the current value of the recursion limit, the maximum depth of the Python
@@ -603,18 +611,29 @@ always available.
 
    .. tabularcolumns:: |l|L|
 
-   +-------------------------+----------------------------------------------+
-   | Attribute               | Explanation                                  |
-   +=========================+==============================================+
-   | :const:`bits_per_digit` | number of bits held in each digit.  Python   |
-   |                         | integers are stored internally in base       |
-   |                         | ``2**long_info.bits_per_digit``              |
-   +-------------------------+----------------------------------------------+
-   | :const:`sizeof_digit`   | size in bytes of the C type used to          |
-   |                         | represent a digit                            |
-   +-------------------------+----------------------------------------------+
+   +----------------------------------------+-----------------------------------------------+
+   | Attribute                              | Explanation                                   |
+   +========================================+===============================================+
+   | :const:`bits_per_digit`                | number of bits held in each digit.  Python    |
+   |                                        | integers are stored internally in base        |
+   |                                        | ``2**int_info.bits_per_digit``                |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`sizeof_digit`                  | size in bytes of the C type used to           |
+   |                                        | represent a digit                             |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`default_max_str_digits`        | default value for                             |
+   |                                        | :func:`sys.get_int_max_str_digits` when it    |
+   |                                        | is not otherwise explicitly configured.       |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`str_digits_check_threshold`    | minimum non-zero value for                    |
+   |                                        | :func:`sys.set_int_max_str_digits`,           |
+   |                                        | :envvar:`PYTHONINTMAXSTRDIGITS`.              |
+   +----------------------------------------+-----------------------------------------------+
 
    .. versionadded:: 2.7
+
+   .. versionchanged:: 2.7.18.6
+      Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
 
 
 .. data:: last_type
@@ -846,6 +865,15 @@ always available.
    Unix.
 
    .. versionadded:: 2.2
+
+
+.. function:: set_int_max_str_digits(n)
+
+   Set the :ref:`integer string conversion length limitation
+   <int_max_str_digits>` used by this interpreter. See also
+   :func:`get_int_max_str_digits`.
+
+   .. versionadded:: 2.7.18.6
 
 
 .. function:: setprofile(profilefunc)

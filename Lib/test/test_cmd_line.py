@@ -134,6 +134,30 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
         self.assertEqual(b'', out)
 
+    def test_int_max_str_digits(self):
+        code = 'import sys; print sys.flags.int_max_str_digits, sys.get_int_max_str_digits()'
+
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='-1')
+
+        def parse(res):
+            return tuple(int(r) for r in res[1].strip().split())
+
+        res = assert_python_ok('-c', code)
+        self.assertEqual(parse(res), (-1, sys.get_int_max_str_digits()))
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='0')
+        self.assertEqual(parse(res), (0, 0))
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='4000')
+        self.assertEqual(parse(res), (4000, 4000))
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='100000')
+        self.assertEqual(parse(res), (100000, 100000))
+
+        res = assert_python_ok('-E', '-c', code, PYTHONINTMAXSTRDIGITS='0')
+        self.assertEqual(parse(res), (-1, sys.get_int_max_str_digits()))
+        res = assert_python_ok('-E', '-c', code, PYTHONINTMAXSTRDIGITS='4000')
+        self.assertEqual(parse(res), (-1, sys.get_int_max_str_digits()))
+
 
 def test_main():
     test.test_support.run_unittest(CmdLineTest)

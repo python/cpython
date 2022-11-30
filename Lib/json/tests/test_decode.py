@@ -2,6 +2,7 @@ import decimal
 from StringIO import StringIO
 from collections import OrderedDict
 from json.tests import PyTest, CTest
+from test import test_support
 
 
 class TestDecode(object):
@@ -64,6 +65,13 @@ class TestDecode(object):
         d = self.json.JSONDecoder()
         self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
         self.assertRaises(ValueError, d.raw_decode, u'a'*42, -50000)
+
+    def test_limit_int(self):
+        maxdigits = 5000
+        with test_support.adjust_int_max_str_digits(maxdigits):
+            self.loads('1' * maxdigits)
+            with self.assertRaises(ValueError):
+                self.loads('1' * (maxdigits + 1))
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass

@@ -638,6 +638,15 @@ conflict.
 
    .. versionadded:: 2.7.12
 
+
+.. envvar:: PYTHONINTMAXSTRDIGITS
+
+   If this variable is set to an integer, it is used to configure the
+   interpreter's global :ref:`integer string conversion length limitation
+   <int_max_str_digits>`.
+
+   .. versionadded:: 2.7.18.6
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 

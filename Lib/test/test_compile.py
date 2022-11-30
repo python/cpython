@@ -291,6 +291,17 @@ if 1:
         self.assertEqual(eval("01000000000000000000000.0"),
                          1000000000000000000000.0)
 
+    def test_int_literals_too_long(self):
+        n = 3000
+        bign = '3'*n
+        source = 'a = 1\nb = 2\nc = {bign}\nd = 4'.format(bign=bign)
+        with test_support.adjust_int_max_str_digits(n):
+            compile(source, '<long_int_pass>', 'exec')
+        with test_support.adjust_int_max_str_digits(n-1):
+            with self.assertRaises(ValueError) as err_ctx:
+                compile(source, '<long_int_fail>', 'exec')
+            self.assertIn('Exceeds the limit ', str(err_ctx.exception))
+
     def test_unary_minus(self):
         # Verify treatment of unary minus on negative numbers SF bug #660455
         if sys.maxint == 2147483647:
