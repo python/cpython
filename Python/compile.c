@@ -174,16 +174,20 @@ struct instr {
 /* One arg*/
 #define INSTR_SET_OP1(I, OP, ARG) \
     do { \
-        struct instr *__instr__ptr__ = (I); \
-        assert(HAS_ARG(OP) || ((ARG) == 0)); \
-        (__instr__ptr__)->i_opcode = (OP); \
-        (__instr__ptr__)->i_oparg = (ARG); \
+        assert(HAS_ARG(OP)); \
+        struct instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_opcode = (OP); \
+        _instr__ptr_->i_oparg = (ARG); \
     } while (0);
 
 /* No args*/
 #define INSTR_SET_OP0(I, OP) \
-    assert(!HAS_ARG(OP)); \
-    INSTR_SET_OP1((I), (OP), 0);
+    do { \
+        assert(!HAS_ARG(OP)); \
+        struct instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_opcode = (OP); \
+        _instr__ptr_->i_oparg = 0; \
+    } while (0);
 
 typedef struct exceptstack {
     struct basicblock_ *handlers[CO_MAXBLOCKS+1];
