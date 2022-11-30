@@ -83,7 +83,7 @@ class Popen(object):
             self.returncode = None
             self._handle = hp
             self.sentinel = int(hp)
-            self._finalizer = util.Finalize(self, _close_handles,
+            self.finalizer = util.Finalize(self, _close_handles,
                                            (self.sentinel, int(rhandle)))._key
 
             # send information to child
@@ -128,4 +128,4 @@ class Popen(object):
     kill = terminate
 
     def close(self):
-        util._finalizer_registry[self._finalizer]()
+        util._finalizer_registry[self.finalizer()]()
