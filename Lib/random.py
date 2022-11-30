@@ -372,7 +372,12 @@ class Random(_random.Random):
 
     def shuffle(self, x):
         """Shuffle list x in place, and return None."""
-
+        
+        if not isinstance(x,list):
+            # random.shuffle() returns unexpected results when used with something other than a list(eg. a numpy array). 
+            # We should add warning in this case.
+            _warn("random.shuffle expects a list, to shuffle np.array, use np.random.shuffle(x)")
+            
         randbelow = self._randbelow
         for i in reversed(range(1, len(x))):
             # pick an element in x[:i+1] with which to exchange x[i]
