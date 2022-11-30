@@ -249,6 +249,74 @@ _ssl__SSLSocket_uses_ktls_for_read(PySSLSocket *self, PyObject *Py_UNUSED(ignore
     return _ssl__SSLSocket_uses_ktls_for_read_impl(self);
 }
 
+#if defined(BIO_get_ktls_send)
+
+PyDoc_STRVAR(_ssl__SSLSocket_sendfile__doc__,
+"sendfile($self, fd, offset, size, flags=0, /)\n"
+"--\n"
+"\n"
+"Write size bytes from offset in the file descriptor fd to the SSL connection.\n"
+"\n"
+"This method uses the zero-copy technique and returns the number of bytes\n"
+"written. It should be called only when Kernel TLS is used for sending data in\n"
+"the connection.\n"
+"\n"
+"The meaning of flags is platform dependent.");
+
+#define _SSL__SSLSOCKET_SENDFILE_METHODDEF    \
+    {"sendfile", _PyCFunction_CAST(_ssl__SSLSocket_sendfile), METH_FASTCALL, _ssl__SSLSocket_sendfile__doc__},
+
+static PyObject *
+_ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
+                              Py_ssize_t size, int flags);
+
+static PyObject *
+_ssl__SSLSocket_sendfile(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    Py_off_t offset;
+    Py_ssize_t size;
+    int flags = 0;
+
+    if (!_PyArg_CheckPositional("sendfile", nargs, 3, 4)) {
+        goto exit;
+    }
+    fd = _PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!Py_off_t_converter(args[1], &offset)) {
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    flags = _PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _ssl__SSLSocket_sendfile_impl(self, fd, offset, size, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(BIO_get_ktls_send) */
+
 PyDoc_STRVAR(_ssl__SSLSocket_write__doc__,
 "write($self, b, /)\n"
 "--\n"
@@ -1572,6 +1640,10 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
+#ifndef _SSL__SSLSOCKET_SENDFILE_METHODDEF
+    #define _SSL__SSLSOCKET_SENDFILE_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_SENDFILE_METHODDEF) */
+
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
 #endif /* !defined(_SSL_ENUM_CERTIFICATES_METHODDEF) */
@@ -1579,4 +1651,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=d4842f6b79d738a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a8f9790ad7a68d46 input=a9049054013a1b77]*/
