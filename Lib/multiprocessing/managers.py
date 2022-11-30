@@ -476,6 +476,12 @@ class State(object):
     STARTED = 1
     SHUTDOWN = 2
 
+    def __getstate__(self):
+        return self.value
+
+    def __setstate__(self, state):
+        self.value = state
+
 #
 # Mapping from serializer name to Listener and Client types
 #
