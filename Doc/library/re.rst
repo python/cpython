@@ -1575,11 +1575,11 @@ Python offers different primitive operations based on regular expressions:
 
 For example::
 
-   >>> re.match("c", "abcdef")    # No match
-   >>> re.search("c", "abcdef")   # Match
-   <re.Match object; span=(2, 3), match='c'>
-   >>> re.fullmatch("python", "python")  # Match
-   <re.Match object; span=(0, 6), match='python'>
+   >>> re.match("c", "cdef")    # match
+   <re.Match object; span=(0, 1), match='c'>
+   >>> re.search("c", "cdef")   # Match
+   <re.Match object; span=(0, 1), match='c'>
+   >>> re.fullmatch("c", "cdef")  # No Match
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
