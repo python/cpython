@@ -18,7 +18,7 @@
 
 #ifdef Py_STATS
 PyStats _py_stats_struct = { 0 };
-PyStats *_py_stats = &_py_stats_struct;
+PyStats *_py_stats = NULL;
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -205,9 +205,6 @@ _Py_StatsClear(void)
 void
 _Py_PrintSpecializationStats(int to_file)
 {
-    if (_py_stats == NULL) {
-        return;
-    }
     FILE *out = stderr;
     if (to_file) {
         /* Write to a file instead of stderr. */
@@ -238,7 +235,7 @@ _Py_PrintSpecializationStats(int to_file)
     else {
         fprintf(out, "Specialization stats:\n");
     }
-    print_stats(out, _py_stats);
+    print_stats(out, &_py_stats_struct);
     if (out != stderr) {
         fclose(out);
     }

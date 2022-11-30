@@ -1057,7 +1057,7 @@ from text files and modules with doctests:
    from a text file using :func:`DocFileSuite`.
 
 
-.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, checker=None)
+.. function:: DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None, setUp=None, tearDown=None, optionflags=0, checker=None)
 
    Convert doctest tests for a module to a :class:`unittest.TestSuite`.
 

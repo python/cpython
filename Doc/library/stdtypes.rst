@@ -4743,7 +4743,7 @@ An example of dictionary view usage::
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
-   mappingproxy({'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500})
+   mappingproxy({'bacon': 1, 'spam': 500})
    >>> values.mapping['spam']
    500
 
@@ -5503,7 +5503,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> _ = int('2' * 5432)
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
    >>> i = int('2' * 4300)
    >>> len(str(i))
    4300
@@ -5511,7 +5511,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> len(str(i_squared))
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
    >>> len(hex(i_squared))
    7144
    >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.

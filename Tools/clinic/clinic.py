@@ -5212,10 +5212,6 @@ clinic = None
 
 def main(argv):
     import sys
-
-    if sys.version_info.major < 3 or sys.version_info.minor < 3:
-        sys.exit("Error: clinic.py requires Python 3.3 or greater.")
-
     import argparse
     cmdline = argparse.ArgumentParser(
         description="""Preprocessor for CPython C files.

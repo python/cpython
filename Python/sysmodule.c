@@ -950,10 +950,6 @@ static int
 profile_trampoline(PyObject *self, PyFrameObject *frame,
                    int what, PyObject *arg)
 {
-    if (arg == NULL) {
-        arg = Py_None;
-    }
-
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *result = call_trampoline(tstate, self, frame, what, arg);
     if (result == NULL) {

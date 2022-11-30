@@ -119,12 +119,12 @@ directly accessible:
 
 * the innermost scope, which is searched first, contains the local names
 * the scopes of any enclosing functions, which are searched starting with the
-  nearest enclosing scope, contains non-local, but also non-global names
+  nearest enclosing scope, contain non-local, but also non-global names
 * the next-to-last scope contains the current module's global names
 * the outermost scope (searched last) is the namespace containing built-in names
 
 If a name is declared global, then all references and assignments go directly to
-the middle scope containing the module's global names.  To rebind variables
+the next-to-last scope containing the module's global names.  To rebind variables
 found outside of the innermost scope, the :keyword:`nonlocal` statement can be
 used; if not declared nonlocal, those variables are read-only (an attempt to
 write to such a variable will simply create a *new* local variable in the

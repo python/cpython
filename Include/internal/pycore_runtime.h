@@ -13,6 +13,7 @@ extern "C" {
 #include "pycore_dict_state.h"      // struct _Py_dict_runtime_state
 #include "pycore_dtoa.h"            // struct _dtoa_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
+#include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_function.h"        // struct _func_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
@@ -23,6 +24,7 @@ extern "C" {
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_obmalloc.h"        // struct obmalloc_state
 #include "pycore_time.h"            // struct _time_runtime_state
+#include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 struct _getargs_runtime_state {
@@ -137,11 +139,10 @@ typedef struct pyruntimestate {
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
     struct _getargs_runtime_state getargs;
-    struct {
-        struct _PyTraceMalloc_Config config;
-    } tracemalloc;
     struct _dtoa_runtime_state dtoa;
     struct _fileutils_state fileutils;
+    struct _faulthandler_runtime_state faulthandler;
+    struct _tracemalloc_runtime_state tracemalloc;
 
     PyPreConfig preconfig;
 
