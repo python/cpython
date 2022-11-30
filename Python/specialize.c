@@ -1924,16 +1924,16 @@ compare_op_fail_kind(PyObject *lhs, PyObject *rhs)
 
 
 static int compare_masks[] = {
-    // 1-bit: jump if less than
-    // 2-bit: jump if equal
+    // 1-bit: jump if unordered
+    // 2-bit: jump if less
     // 4-bit: jump if greater
-    // 8-bit: jump if unordered
-    [Py_LT] = 1 | 0 | 0 | 0,
-    [Py_LE] = 1 | 2 | 0 | 0,
-    [Py_EQ] = 0 | 2 | 0 | 0,
-    [Py_NE] = 1 | 0 | 4 | 8,
+    // 8-bit: jump if equal
+    [Py_LT] = 0 | 2 | 0 | 0,
+    [Py_LE] = 0 | 2 | 0 | 8,
+    [Py_EQ] = 0 | 0 | 0 | 8,
+    [Py_NE] = 1 | 2 | 4 | 0,
     [Py_GT] = 0 | 0 | 4 | 0,
-    [Py_GE] = 0 | 2 | 4 | 0,
+    [Py_GE] = 0 | 0 | 4 | 8,
 };
 
 void
@@ -1983,7 +1983,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
         else {
             _Py_SET_OPCODE(*instr, COMPARE_OP_STR_JUMP);
-            cache->mask = (when_to_jump_mask & 2) == 0;
+            cache->mask = (when_to_jump_mask & 8) == 0;
             goto success;
         }
     }

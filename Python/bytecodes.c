@@ -2027,11 +2027,8 @@ dummy_func(
             STAT_INC(COMPARE_OP, hit);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
-            // 1 if <, 2 if ==, 4 if >, 8 if unordered; this matches when_to_jump_mask
-            int sign_ish = (+ 6 * (Py_IS_NAN(dleft) | Py_IS_NAN(dright))
-                            + 2 * (dleft > dright)
-                            - 1 * (dleft < dright)
-                            + 2);
+            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
+            int sign_ish = 1 << (2 * (dleft >= dright) + (dleft <= dright));
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             jump = sign_ish & when_to_jump_mask;
@@ -2058,8 +2055,8 @@ dummy_func(
             assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
             Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
             Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-            // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
-            int sign_ish = 2*(ileft > iright) + 2 - (ileft < iright);
+            // 2 if <, 4 if >, 8 if ==; this matches when_to_jump_mask
+            int sign_ish = 1 << (2 * (ileft >= iright) + (ileft <= iright));
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             jump = sign_ish & when_to_jump_mask;
