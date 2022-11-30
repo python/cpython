@@ -29,7 +29,7 @@ a literal backslash, one might have to write ``'\\\\'`` as the pattern
 string, because the regular expression must be ``\\``, and each
 backslash must be expressed as ``\\`` inside a regular Python string
 literal. Also, please note that any invalid escape sequences in Python's
-usage of the backslash in string literals now generate a :exc:`DeprecationWarning`
+usage of the backslash in string literals now generate a :exc:`SyntaxWarning`
 and in the future this will become a :exc:`SyntaxError`. This behaviour
 will happen even if it is a valid escape sequence for a regular expression.
 
@@ -482,6 +482,9 @@ The special characters are:
    positive lookbehind assertions, the contained pattern must only match strings of
    some fixed length.  Patterns which start with negative lookbehind assertions may
    match at the beginning of the string being searched.
+
+.. _re-conditional-expression:
+.. index:: single: (?(; in regular expressions
 
 ``(?(id/name)yes-pattern|no-pattern)``
    Will try to match with ``yes-pattern`` if the group with given *id* or

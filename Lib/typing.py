@@ -284,25 +284,6 @@ def _unpack_args(args):
             newargs.append(arg)
     return newargs
 
-def _prepare_paramspec_params(cls, params):
-    """Prepares the parameters for a Generic containing ParamSpec
-    variables (internal helper).
-    """
-    # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
-    if (len(cls.__parameters__) == 1
-            and params and not _is_param_expr(params[0])):
-        assert isinstance(cls.__parameters__[0], ParamSpec)
-        return (params,)
-    else:
-        _check_generic(cls, params, len(cls.__parameters__))
-        _params = []
-        # Convert lists to tuples to help other libraries cache the results.
-        for p, tvar in zip(params, cls.__parameters__):
-            if isinstance(tvar, ParamSpec) and isinstance(p, list):
-                p = tuple(p)
-            _params.append(p)
-        return tuple(_params)
-
 def _deduplicate(params):
     # Weed out strict duplicates, preserving the first of each occurrence.
     all_params = set(params)
@@ -344,6 +325,7 @@ def _flatten_literal_params(parameters):
 
 
 _cleanups = []
+_caches = {}
 
 
 def _tp_cache(func=None, /, *, typed=False):
@@ -351,13 +333,20 @@ def _tp_cache(func=None, /, *, typed=False):
     original function for non-hashable arguments.
     """
     def decorator(func):
-        cached = functools.lru_cache(typed=typed)(func)
-        _cleanups.append(cached.cache_clear)
+        # The callback 'inner' references the newly created lru_cache
+        # indirectly by performing a lookup in the global '_caches' dictionary.
+        # This breaks a reference that can be problematic when combined with
+        # C API extensions that leak references to types. See GH-98253.
+
+        cache = functools.lru_cache(typed=typed)(func)
+        _caches[func] = cache
+        _cleanups.append(cache.cache_clear)
+        del cache
 
         @functools.wraps(func)
         def inner(*args, **kwds):
             try:
-                return cached(*args, **kwds)
+                return _caches[func](*args, **kwds)
             except TypeError:
                 pass  # All real errors (not unhashable args) are raised below.
             return func(*args, **kwds)
@@ -1238,7 +1227,18 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
         return arg
 
     def __typing_prepare_subst__(self, alias, args):
-        return _prepare_paramspec_params(alias, args)
+        params = alias.__parameters__
+        i = params.index(self)
+        if i >= len(args):
+            raise TypeError(f"Too few arguments for {alias}")
+        # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
+        if len(params) == 1 and not _is_param_expr(args[0]):
+            assert i == 0
+            args = (args,)
+        # Convert lists to tuples to help other libraries cache the results.
+        elif isinstance(args[i], list):
+            args = (*args[:i], tuple(args[i]), *args[i+1:])
+        return args
 
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
@@ -1436,6 +1436,10 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
         new_args = []
         for old_arg in self.__args__:
+
+            if isinstance(old_arg, type):
+                new_args.append(old_arg)
+                continue
 
             substfunc = getattr(old_arg, '__typing_subst__', None)
             if substfunc:
@@ -1797,23 +1801,13 @@ class Generic:
         if not isinstance(params, tuple):
             params = (params,)
 
-        if not params:
-            # We're only ok with `params` being empty if the class's only type
-            # parameter is a `TypeVarTuple` (which can contain zero types).
-            class_params = getattr(cls, "__parameters__", None)
-            only_class_parameter_is_typevartuple = (
-                    class_params is not None
-                    and len(class_params) == 1
-                    and isinstance(class_params[0], TypeVarTuple)
-            )
-            if not only_class_parameter_is_typevartuple:
-                raise TypeError(
-                    f"Parameter list to {cls.__qualname__}[...] cannot be empty"
-                )
-
         params = tuple(_type_convert(p) for p in params)
         if cls in (Generic, Protocol):
             # Generic and Protocol can only be subscripted with unique type variables.
+            if not params:
+                raise TypeError(
+                    f"Parameter list to {cls.__qualname__}[...] cannot be empty"
+                )
             if not all(_is_typevar_like(p) for p in params):
                 raise TypeError(
                     f"Parameters to {cls.__name__}[...] must all be type variables "
@@ -1823,13 +1817,20 @@ class Generic:
                     f"Parameters to {cls.__name__}[...] must all be unique")
         else:
             # Subscripting a regular Generic subclass.
-            if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
-                params = _prepare_paramspec_params(cls, params)
-            elif not any(isinstance(p, TypeVarTuple) for p in cls.__parameters__):
-                # We only run this if there are no TypeVarTuples, because we
-                # don't check variadic generic arity at runtime (to reduce
-                # complexity of typing.py).
-                _check_generic(cls, params, len(cls.__parameters__))
+            for param in cls.__parameters__:
+                prepare = getattr(param, '__typing_prepare_subst__', None)
+                if prepare is not None:
+                    params = prepare(cls, params)
+            _check_generic(cls, params, len(cls.__parameters__))
+
+            new_args = []
+            for param, new_arg in zip(cls.__parameters__, params):
+                if isinstance(param, TypeVarTuple):
+                    new_args.extend(new_arg)
+                else:
+                    new_args.append(new_arg)
+            params = tuple(new_args)
+
         return _GenericAlias(cls, params,
                              _paramspec_tvars=True)
 
