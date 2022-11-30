@@ -737,6 +737,15 @@ class BaseManager(object):
             temp.__name__ = typeid
             setattr(cls, typeid, temp)
 
+    def __getstate__(self):
+        state = vars(self).copy()
+        state['_finalizer'] = state['_finalizer']._key
+        return state
+
+    def __setstate__(self, state):
+        vars(self).update(state)
+        self._finalizer = util._finalizer_registry[self._finalizer]
+
 #
 # Subclass of set which get cleared after a fork
 #
