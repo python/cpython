@@ -673,6 +673,15 @@ Changes in the Python API
   :class:`bytes` type is accepted for bytes strings.
   (Contributed by Victor Stinner in :gh:`98393`.)
 
+* :func:`syslog.openlog` and :func:`syslog.closelog` now fail if used in subinterpreters.
+  :func:`syslog.syslog` may still be used in subinterpreters,
+  but now only if :func:`syslog.openlog` has already been called in the main interpreter.
+  These new restrictions do not apply to the main interpreter,
+  so only a very small set of users might be affected.
+  This change helps with interpreter isolation.  Furthermore, :mod:`syslog` is a wrapper
+  around process-global resources, which are best managed from the main interpreter.
+  (Contributed by Dong-hee Na in :gh:`99127`.)
+
 
 Build Changes
 =============
