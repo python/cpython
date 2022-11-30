@@ -1,0 +1,2 @@
+In argument parsing, after deallocating newly allocated memory, reset its
+pointer to NULL.
