@@ -1314,6 +1314,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(zdict);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(zipimporter);
+    PyUnicode_InternInPlace(&string);
 }
 /* End auto-generated code */
 #ifdef __cplusplus

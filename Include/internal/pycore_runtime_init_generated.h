@@ -1210,6 +1210,7 @@ extern "C" {
     INIT_ID(x), \
     INIT_ID(year), \
     INIT_ID(zdict), \
+    INIT_ID(zipimporter), \
 }
 
 #define _Py_str_ascii_INIT { \
