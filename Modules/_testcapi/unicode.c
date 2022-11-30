@@ -260,7 +260,7 @@ unicode_decodeutf8stateful(PyObject *self, PyObject *args)
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
-    Py_ssize_t consumed;
+    Py_ssize_t consumed = 123456789;
     PyObject *result;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))

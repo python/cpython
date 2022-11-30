@@ -1,19 +1,14 @@
 import unittest
-from test import support
+from test.support import import_helper
 
-try:
-    import _testcapi
-except ImportError:
-    _testcapi = None
+_testcapi = import_helper.import_module('_testcapi')
 
 
 class CAPITest(unittest.TestCase):
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_decodeutf8(self):
         """Test PyUnicode_DecodeUTF8()"""
-        from _testcapi import unicode_decodeutf8 as decodeutf8
+        decodeutf8 = _testcapi.unicode_decodeutf8
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
             b = s.encode('utf-8')
@@ -31,11 +26,9 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_DecodeUTF8() with NULL as data and
         # negative size.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_decodeutf8stateful(self):
         """Test PyUnicode_DecodeUTF8Stateful()"""
-        from _testcapi import unicode_decodeutf8stateful as decodeutf8stateful
+        decodeutf8stateful = _testcapi.unicode_decodeutf8stateful
 
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600']:
             b = s.encode('utf-8')
