@@ -1091,8 +1091,9 @@ _PyObject_GetDictPtr(PyObject *obj)
             tsize = -tsize;
         }
         size_t size = _PyObject_VAR_SIZE(tp, tsize);
+        assert(size <= (size_t)PY_SSIZE_T_MAX);
+        dictoffset += (Py_ssize_t)size;
 
-        dictoffset += (long)size;
         _PyObject_ASSERT(obj, dictoffset > 0);
         _PyObject_ASSERT(obj, dictoffset % SIZEOF_VOID_P == 0);
     }
