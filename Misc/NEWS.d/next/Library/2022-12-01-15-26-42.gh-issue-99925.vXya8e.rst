@@ -1,2 +1,0 @@
-Unify error messages in :meth:`json.dumps(float('nan'), allow_nan=False)`
-between `indent=None` and `indent=<SOMETHING>`
