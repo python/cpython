@@ -1242,4 +1242,4 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=23ea9e176d86e026 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acabf8f2b5cc44a1 input=a9049054013a1b77]*/
