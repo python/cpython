@@ -180,8 +180,8 @@ How do I create documentation from doc strings?
 
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
 source code.  An alternative for creating API documentation purely from
-docstrings is `epydoc <http://epydoc.sourceforge.net/>`_.  `Sphinx
-<http://sphinx-doc.org>`_ can also include docstring content.
+docstrings is `epydoc <https://epydoc.sourceforge.net/>`_.  `Sphinx
+<https://www.sphinx-doc.org>`_ can also include docstring content.
 
 
 How do I get a single keypress at a time?
@@ -609,7 +609,7 @@ use ``p.read(n)``.
    substituted for standard input and output.  You will have to use pseudo ttys
    ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
    "expect" library.  A Python extension that interfaces to expect is called
-   "expy" and available from http://expectpy.sourceforge.net.  A pure Python
+   "expy" and available from https://expectpy.sourceforge.net.  A pure Python
    solution that works like expect is `pexpect
    <https://pypi.org/project/pexpect/>`_.
 
@@ -670,7 +670,7 @@ A summary of available frameworks is maintained by Paul Boddie at
 https://wiki.python.org/moin/WebProgramming\ .
 
 Cameron Laird maintains a useful set of pages about Python web technologies at
-http://phaseit.net/claird/comp.lang.python/web_python.
+https://web.archive.org/web/20210224183619/http://phaseit.net/claird/comp.lang.python/web_python.
 
 
 How can I mimic CGI form submission (METHOD=POST)?

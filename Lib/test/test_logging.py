@@ -47,6 +47,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import asyncore
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -61,10 +62,8 @@ from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
 
-
-asyncore = warnings_helper.import_deprecated('asyncore')
-smtpd = warnings_helper.import_deprecated('smtpd')
-
+with warnings.catch_warnings():
+    from . import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -1224,6 +1223,35 @@ class MemoryHandlerTest(BaseTest):
         # assert that no new lines have been added
         self.assert_log_lines(lines)  # no change
 
+    def test_shutdown_flush_on_close(self):
+        """
+        Test that the flush-on-close configuration is respected by the
+        shutdown method.
+        """
+        self.mem_logger.debug(self.next_message())
+        self.assert_log_lines([])
+        self.mem_logger.info(self.next_message())
+        self.assert_log_lines([])
+        # Default behaviour is to flush on close. Check that it happens.
+        logging.shutdown(handlerList=[logging.weakref.ref(self.mem_hdlr)])
+        lines = [
+            ('DEBUG', '1'),
+            ('INFO', '2'),
+        ]
+        self.assert_log_lines(lines)
+        # Now configure for flushing not to be done on close.
+        self.mem_hdlr = logging.handlers.MemoryHandler(10, logging.WARNING,
+                                                       self.root_hdlr,
+                                                       False)
+        self.mem_logger.addHandler(self.mem_hdlr)
+        self.mem_logger.debug(self.next_message())
+        self.assert_log_lines(lines)  # no change
+        self.mem_logger.info(self.next_message())
+        self.assert_log_lines(lines)  # no change
+        # assert that no new lines have been added after shutdown
+        logging.shutdown(handlerList=[logging.weakref.ref(self.mem_hdlr)])
+        self.assert_log_lines(lines) # no change
+
     @threading_helper.requires_working_threading()
     def test_race_between_set_target_and_flush(self):
         class MockRaceConditionHandler:
@@ -1828,12 +1856,6 @@ class SocketHandlerTest(BaseTest):
         time.sleep(self.sock_hdlr.retryTime - now + 0.001)
         self.root_logger.error('Nor this')
 
-def _get_temp_domain_socket():
-    fn = make_temp_file(prefix='test_logging_', suffix='.sock')
-    # just need a name - file can't be present, or we'll get an
-    # 'address already in use' error.
-    os.remove(fn)
-    return fn
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSocketHandlerTest(SocketHandlerTest):
@@ -1845,12 +1867,9 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         SocketHandlerTest.setUp(self)
-
-    def tearDown(self):
-        SocketHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -1928,12 +1947,9 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         DatagramHandlerTest.setUp(self)
-
-    def tearDown(self):
-        DatagramHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @support.requires_working_socket()
 @threading_helper.requires_working_threading()
@@ -1965,7 +1981,7 @@ class SysLogHandlerTest(BaseTest):
             self.sl_hdlr = hcls((server.server_address[0], server.port))
         else:
             self.sl_hdlr = hcls(server.server_address)
-        self.log_output = ''
+        self.log_output = b''
         self.root_logger.removeHandler(self.root_logger.handlers[0])
         self.root_logger.addHandler(self.sl_hdlr)
         self.handled = threading.Event()
@@ -2022,12 +2038,9 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        self.address = _get_temp_domain_socket()
+        self.address = socket_helper.create_unix_domain_name()
+        self.addCleanup(os_helper.unlink, self.address)
         SysLogHandlerTest.setUp(self)
-
-    def tearDown(self):
-        SysLogHandlerTest.tearDown(self)
-        os_helper.unlink(self.address)
 
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
@@ -3602,20 +3615,25 @@ class ConfigDictTest(BaseTest):
         if lspec is not None:
             cd['handlers']['ah']['listener'] = lspec
         qh = None
-        delay = 0.01
         try:
             self.apply_config(cd)
             qh = logging.getHandlerByName('ah')
             self.assertEqual(sorted(logging.getHandlerNames()), ['ah', 'h1'])
             self.assertIsNotNone(qh.listener)
             qh.listener.start()
-            # Need to let the listener thread get started
-            time.sleep(delay)
             logging.debug('foo')
             logging.info('bar')
             logging.warning('baz')
+
             # Need to let the listener thread finish its work
-            time.sleep(delay)
+            while support.sleeping_retry(support.LONG_TIMEOUT,
+                                         "queue not empty"):
+                if qh.listener.queue.empty():
+                    break
+
+            # wait until the handler completed its last task
+            qh.listener.queue.join()
+
             with open(fn, encoding='utf-8') as f:
                 data = f.read().splitlines()
             self.assertEqual(data, ['foo', 'bar', 'baz'])
@@ -3657,6 +3675,35 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
+    def test_90195(self):
+        # See gh-90195
+        config = {
+            'version': 1,
+            'disable_existing_loggers': False,
+            'handlers': {
+                'console': {
+                    'level': 'DEBUG',
+                    'class': 'logging.StreamHandler',
+                },
+            },
+            'loggers': {
+                'a': {
+                    'level': 'DEBUG',
+                    'handlers': ['console']
+                }
+            }
+        }
+        logger = logging.getLogger('a')
+        self.assertFalse(logger.disabled)
+        self.apply_config(config)
+        self.assertFalse(logger.disabled)
+        # Should disable all loggers ...
+        self.apply_config({'version': 1})
+        self.assertTrue(logger.disabled)
+        del config['disable_existing_loggers']
+        self.apply_config(config)
+        # Logger should be enabled, since explicitly mentioned
+        self.assertFalse(logger.disabled)
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -3697,6 +3744,20 @@ class ChildLoggerTest(BaseTest):
         self.assertIs(c2, logging.getLogger('abc.def.ghi'))
         self.assertIs(c2, c3)
 
+    def test_get_children(self):
+        r = logging.getLogger()
+        l1 = logging.getLogger('foo')
+        l2 = logging.getLogger('foo.bar')
+        l3 = logging.getLogger('foo.bar.baz.bozz')
+        l4 = logging.getLogger('bar')
+        kids = r.getChildren()
+        expected = {l1, l4}
+        self.assertEqual(expected, kids & expected)  # might be other kids for root
+        self.assertNotIn(l2, expected)
+        kids = l1.getChildren()
+        self.assertEqual({l2}, kids)
+        kids = l2.getChildren()
+        self.assertEqual(set(), kids)
 
 class DerivedLogRecord(logging.LogRecord):
     pass
@@ -3818,7 +3879,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener_with_StreamHandler(self):
-        # Test that traceback only appends once (bpo-34334).
+        # Test that traceback and stack-info only appends once (bpo-34334, bpo-46755).
         listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
         listener.start()
         try:
@@ -3826,8 +3887,10 @@ class QueueHandlerTest(BaseTest):
         except ZeroDivisionError as e:
             exc = e
             self.que_logger.exception(self.next_message(), exc_info=exc)
+        self.que_logger.error(self.next_message(), stack_info=True)
         listener.stop()
         self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
+        self.assertEqual(self.stream.getvalue().strip().count('Stack'), 1)
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
@@ -4238,6 +4301,14 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         f = NoMsecFormatter()
         f.converter = time.gmtime
         self.assertEqual(f.formatTime(r), '21/04/1993 08:03:00')
+
+    def test_issue_89047(self):
+        f = logging.Formatter(fmt='{asctime}.{msecs:03.0f} {message}', style='{', datefmt="%Y-%m-%d %H:%M:%S")
+        for i in range(2500):
+            time.sleep(0.0004)
+            r = logging.makeLogRecord({'msg': 'Message %d' % (i + 1)})
+            s = f.format(r)
+            self.assertNotIn('.1000', s)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):

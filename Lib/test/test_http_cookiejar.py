@@ -4,7 +4,6 @@ import os
 import stat
 import sys
 import re
-import test.support
 from test.support import os_helper
 from test.support import warnings_helper
 import time

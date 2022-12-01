@@ -246,3 +246,11 @@ def modules_cleanup(oldmodules):
     # do currently). Implicitly imported *real* modules should be left alone
     # (see issue 10556).
     sys.modules.update(oldmodules)
+
+
+def mock_register_at_fork(func):
+    # bpo-30599: Mock os.register_at_fork() when importing the random module,
+    # since this function doesn't allow to unregister callbacks and would leak
+    # memory.
+    from unittest import mock
+    return mock.patch('os.register_at_fork', create=True)(func)

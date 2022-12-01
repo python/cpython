@@ -19,7 +19,17 @@
  * to avoid allocating a massive buffer on the stack.
  */
 #ifndef CTYPES_MAX_ARGCOUNT
-  #define CTYPES_MAX_ARGCOUNT 1024
+  #ifdef __EMSCRIPTEN__
+    #define CTYPES_MAX_ARGCOUNT 1000
+  #else
+    #define CTYPES_MAX_ARGCOUNT 1024
+  #endif
+#endif
+
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_available)
+#define HAVE_BUILTIN_AVAILABLE 1
+#endif
 #endif
 
 typedef struct tagPyCArgObject PyCArgObject;
