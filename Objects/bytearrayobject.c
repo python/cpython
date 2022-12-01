@@ -2151,10 +2151,9 @@ static PyObject *
 bytearray_sizeof_impl(PyByteArrayObject *self)
 /*[clinic end generated code: output=738abdd17951c427 input=e27320fd98a4bc5a]*/
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self)) + self->ob_alloc * sizeof(char);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
+    res += (size_t)self->ob_alloc * sizeof(char);
+    return PyLong_FromSize_t(res);
 }
 
 static PySequenceMethods bytearray_as_sequence = {

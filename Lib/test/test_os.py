@@ -4158,6 +4158,8 @@ class TestScandir(unittest.TestCase):
         self.assertEqual(entry.is_file(follow_symlinks=False),
                          stat.S_ISREG(entry_lstat.st_mode))
 
+        self.assertEqual(entry.is_junction(), os.path.isjunction(entry.path))
+
         self.assert_stat_equal(entry.stat(),
                                entry_stat,
                                os.name == 'nt' and not is_symlink)
@@ -4205,6 +4207,21 @@ class TestScandir(unittest.TestCase):
 
             entry = entries['symlink_file.txt']
             self.check_entry(entry, 'symlink_file.txt', False, True, True)
+
+    @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
+    def test_attributes_junctions(self):
+        dirname = os.path.join(self.path, "tgtdir")
+        os.mkdir(dirname)
+
+        import _winapi
+        try:
+            _winapi.CreateJunction(dirname, os.path.join(self.path, "srcjunc"))
+        except OSError:
+            raise unittest.SkipTest('creating the test junction failed')
+
+        entries = self.get_entries(['srcjunc', 'tgtdir'])
+        self.assertEqual(entries['srcjunc'].is_junction(), True)
+        self.assertEqual(entries['tgtdir'].is_junction(), False)
 
     def get_entry(self, name):
         path = self.bytes_path if isinstance(name, bytes) else self.path

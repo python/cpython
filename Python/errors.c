@@ -37,8 +37,7 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
     if (traceback != NULL && !PyTraceBack_Check(traceback)) {
         /* XXX Should never happen -- fatal error instead? */
         /* Well, it could be None. */
-        Py_DECREF(traceback);
-        traceback = NULL;
+        Py_SETREF(traceback, NULL);
     }
 
     /* Save these in locals to safeguard against recursive
@@ -353,16 +352,13 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
             if (fixed_value == NULL) {
                 goto error;
             }
-            Py_DECREF(value);
-            value = fixed_value;
+            Py_SETREF(value, fixed_value);
         }
         /* If the class of the instance doesn't exactly match the
            class of the type, believe the instance.
         */
         else if (inclass != type) {
-            Py_INCREF(inclass);
-            Py_DECREF(type);
-            type = inclass;
+            Py_SETREF(type, Py_NewRef(inclass));
         }
     }
     *exc = type;

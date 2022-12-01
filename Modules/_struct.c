@@ -2090,13 +2090,11 @@ PyDoc_STRVAR(s_sizeof__doc__,
 static PyObject *
 s_sizeof(PyStructObject *self, void *unused)
 {
-    Py_ssize_t size;
-    formatcode *code;
-
-    size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
-    for (code = self->s_codes; code->fmtdef != NULL; code++)
+    size_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
+    for (formatcode *code = self->s_codes; code->fmtdef != NULL; code++) {
         size += sizeof(formatcode);
-    return PyLong_FromSsize_t(size);
+    }
+    return PyLong_FromSize_t(size);
 }
 
 /* List of functions */
@@ -2164,8 +2162,7 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
     _structmodulestate *state = get_struct_state(module);
 
     if (fmt == NULL) {
-        Py_DECREF(*ptr);
-        *ptr = NULL;
+        Py_SETREF(*ptr, NULL);
         return 1;
     }
 
