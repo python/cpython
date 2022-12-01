@@ -864,15 +864,22 @@ class TemporaryDirectory:
 
     @classmethod
     def _rmtree(cls, name, ignore_errors=False):
+        def without_following_symlinks(func, path, *args):
+            # Pass follow_symlinks=False, unless not supported on this platform.
+            if func in _os.supports_follow_symlinks:
+                func(path, *args, follow_symlinks=False)
+            elif not _os.path.islink(path):
+                func(path, *args)
+
+        def resetperms(path):
+            try:
+                without_following_symlinks(_os.chflags, path, 0)
+            except AttributeError:
+                pass
+            without_following_symlinks(_os.chmod, path, 0o700)
+
         def onerror(func, path, exc_info):
             if issubclass(exc_info[0], PermissionError):
-                def resetperms(path):
-                    try:
-                        _os.chflags(path, 0)
-                    except AttributeError:
-                        pass
-                    _os.chmod(path, 0o700)
-
                 try:
                     if path != name:
                         resetperms(_os.path.dirname(path))

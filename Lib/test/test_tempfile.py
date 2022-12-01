@@ -1652,6 +1652,45 @@ class TestTemporaryDirectory(BaseTestCase):
                          "were deleted")
         d2.cleanup()
 
+    @os_helper.skip_unless_symlink
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipUnless(os.chmod in os.supports_follow_symlinks, 'needs chmod follow_symlinks support')
+    def test_cleanup_with_error_deleting_symlink(self):
+        # cleanup() should not follow symlinks when fixing mode bits etc. (#91133)
+        d1 = self.do_create()
+        d2 = self.do_create(recurse=0)
+
+        # Symlink d1/my_symlink -> d2, then give d2 a custom mode to see if changes.
+        os.symlink(d2.name, os.path.join(d1.name, "my_symlink"))
+        os.chmod(d2.name, 0o567)
+        expected_mode = os.stat(d2.name).st_mode # can be impacted by umask etc.
+
+        # There are a variety of reasons why the OS may raise a PermissionError,
+        # but provoking those reliably and cross-platform is not straightforward,
+        # so raise the error synthetically instead.
+        real_unlink = os.unlink
+        error_was_raised = False
+        def patched_unlink(path, **kwargs):
+            nonlocal error_was_raised
+            # unlink may be called with full path or path relative to 'fd' kwarg.
+            if path.endswith("my_symlink") and not error_was_raised:
+                error_was_raised = True
+                raise PermissionError()
+            real_unlink(path, **kwargs)
+
+        with mock.patch("tempfile._os.unlink", patched_unlink):
+            # This call to cleanup() should not follow my_symlink when fixing permissions
+            d1.cleanup()
+
+        self.assertTrue(error_was_raised, "did not see expected 'unlink' call")
+        self.assertFalse(os.path.exists(d1.name),
+                         "TemporaryDirectory %s exists after cleanup" % d1.name)
+        self.assertTrue(os.path.exists(d2.name),
+                        "Directory pointed to by a symlink was deleted")
+        self.assertEqual(os.stat(d2.name).st_mode, expected_mode,
+                         "Mode of the directory pointed to by a symlink changed")
+        d2.cleanup()
+
     @support.cpython_only
     def test_del_on_collection(self):
         # A TemporaryDirectory is deleted when garbage collected
