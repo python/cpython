@@ -1826,17 +1826,28 @@ class TestTemporaryDirectory(BaseTestCase):
 
     @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.lchflags')
     def test_flags(self):
-        flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
-        d = self.do_create(recurse=3, dirs=2, files=2)
-        with d:
-            # Change files and directories flags recursively.
-            for root, dirs, files in os.walk(d.name, topdown=False):
+        def chflags_recursively(name, flags):
+            for root, dirs, files in os.walk(name, topdown=False):
                 for name in files:
                     os.chflags(os.path.join(root, name), flags)
                 os.chflags(root, flags)
-            d.cleanup()
-        self.assertFalse(os.path.exists(d.name))
 
+        d = self.do_create(recurse=3, dirs=2, files=2)
+        try:
+            with d:
+                chflags_recursively(d.name, stat.UF_IMMUTABLE | stat.UF_NOUNLINK)
+                d.cleanup()
+
+            self.assertFalse(os.path.exists(d.name))
+
+        finally:
+            # Even if test fails, make a best-effort attempt at not leaving
+            # behind NOUNLINK files, because they require manual removal,
+            # which becomes tiresome during development.
+            try:
+                chflags_recursively(d.name, 0)
+            except Exception:
+                pass # we tried
 
 if __name__ == "__main__":
     unittest.main()
