@@ -8282,17 +8282,17 @@ merge_const_one(PyObject *const_cache, PyObject **obj)
     PyDict_CheckExact(const_cache);
     PyObject *key = _PyCode_ConstantKey(*obj);
     if (key == NULL) {
-        return 0;
+        return -1;
     }
 
     // t is borrowed reference
     PyObject *t = PyDict_SetDefault(const_cache, key, key);
     Py_DECREF(key);
     if (t == NULL) {
-        return 0;
+        return -1;
     }
     if (t == key) {  // obj is new constant.
-        return 1;
+        return 0;
     }
 
     if (PyTuple_CheckExact(t)) {
@@ -8301,7 +8301,7 @@ merge_const_one(PyObject *const_cache, PyObject **obj)
     }
 
     Py_SETREF(*obj, Py_NewRef(t));
-    return 1;
+    return 0;
 }
 
 // This is in codeobject.c.
@@ -8367,7 +8367,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (!names) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &names)) {
+    if (merge_const_one(c->c_const_cache, &names) < 0) {
         goto error;
     }
 
@@ -8375,7 +8375,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (consts == NULL) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &consts)) {
+    if (merge_const_one(c->c_const_cache, &consts) < 0) {
         goto error;
     }
 
@@ -8426,7 +8426,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    if (!merge_const_one(c->c_const_cache, &localsplusnames)) {
+    if (merge_const_one(c->c_const_cache, &localsplusnames) < 0) {
         goto error;
     }
     con.localsplusnames = localsplusnames;
@@ -8916,21 +8916,21 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &a.a_except_table)) {
+    if (merge_const_one(c->c_const_cache, &a.a_except_table) < 0) {
         goto error;
     }
 
     if (_PyBytes_Resize(&a.a_linetable, a.a_location_off) < 0) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &a.a_linetable)) {
+    if (merge_const_one(c->c_const_cache, &a.a_linetable) < 0) {
         goto error;
     }
 
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &a.a_bytecode)) {
+    if (merge_const_one(c->c_const_cache, &a.a_bytecode) < 0) {
         goto error;
     }
 
@@ -8995,7 +8995,7 @@ fold_tuple_on_constants(PyObject *const_cache,
         }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-    if (merge_const_one(const_cache, &newconst) == 0) {
+    if (merge_const_one(const_cache, &newconst) < 0) {
         Py_DECREF(newconst);
         return -1;
     }
