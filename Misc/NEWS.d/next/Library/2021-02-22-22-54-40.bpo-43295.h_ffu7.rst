@@ -1,2 +1,0 @@
-:meth:`datetime.datetime.strptime` now raises ``ValueError`` instead of
-``IndexError`` when matching ``'z'`` with the ``%z`` format specifier.

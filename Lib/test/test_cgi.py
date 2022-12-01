@@ -1,4 +1,3 @@
-import cgi
 import os
 import sys
 import tempfile
@@ -6,6 +5,10 @@ import unittest
 from collections import namedtuple
 from io import StringIO, BytesIO
 from test import support
+from test.support import warnings_helper
+
+cgi = warnings_helper.import_deprecated("cgi")
+
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -50,7 +53,7 @@ def do_test(buf, method):
         return ComparableException(err)
 
 parse_strict_test_cases = [
-    ("", ValueError("bad query field: ''")),
+    ("", {}),
     ("&", ValueError("bad query field: ''")),
     ("&&", ValueError("bad query field: ''")),
     # Should the next few really be valid?
@@ -220,6 +223,7 @@ Content-Length: 3
                     else:
                         self.assertEqual(fs.getvalue(key), expect_val[0])
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_log(self):
         cgi.log("Testing")
 

@@ -1,4 +1,0 @@
-Clarified that a result from :func:`time.monotonic`,
-:func:`time.perf_counter`, :func:`time.process_time`, or
-:func:`time.thread_time` can be compared with the result from any following
-call to the same function - not just the next immediate call.

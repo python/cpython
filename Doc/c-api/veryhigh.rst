@@ -16,11 +16,11 @@ parameter.  The available start symbols are :const:`Py_eval_input`,
 :const:`Py_file_input`, and :const:`Py_single_input`.  These are described
 following the functions which accept them as parameters.
 
-Note also that several of these functions take :c:type:`FILE*` parameters.  One
-particular issue which needs to be handled carefully is that the :c:type:`FILE`
+Note also that several of these functions take :c:expr:`FILE*` parameters.  One
+particular issue which needs to be handled carefully is that the :c:expr:`FILE`
 structure for different C libraries can be different and incompatible.  Under
 Windows (at least), it is possible for dynamically linked extensions to actually
-use different libraries, so care should be taken that :c:type:`FILE*` parameters
+use different libraries, so care should be taken that :c:expr:`FILE*` parameters
 are only passed to these functions if it is certain that they were created by
 the same library that the Python runtime is using.
 
@@ -39,7 +39,7 @@ the same library that the Python runtime is using.
 
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set.
+   :c:member:`PyConfig.inspect` is zero.
 
 
 .. c:function:: int Py_BytesMain(int argc, char **argv)
@@ -75,12 +75,14 @@ the same library that the Python runtime is using.
    :c:func:`PyRun_SimpleFile`.  *filename* is decoded from the filesystem
    encoding (:func:`sys.getfilesystemencoding`).  If *filename* is ``NULL``, this
    function uses ``"???"`` as the filename.
+   If *closeit* is true, the file is closed before
+   ``PyRun_SimpleFileExFlags()`` returns.
 
 
 .. c:function:: int PyRun_SimpleString(const char *command)
 
    This is a simplified interface to :c:func:`PyRun_SimpleStringFlags` below,
-   leaving the :c:type:`PyCompilerFlags`\* argument set to ``NULL``.
+   leaving the :c:struct:`PyCompilerFlags`\* argument set to ``NULL``.
 
 
 .. c:function:: int PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
@@ -93,7 +95,7 @@ the same library that the Python runtime is using.
 
    Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
    function will not return ``-1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set.
+   :c:member:`PyConfig.inspect` is zero.
 
 
 .. c:function:: int PyRun_SimpleFile(FILE *fp, const char *filename)
@@ -184,42 +186,6 @@ the same library that the Python runtime is using.
       The result must be allocated by :c:func:`PyMem_RawMalloc` or
       :c:func:`PyMem_RawRealloc`, instead of being allocated by
       :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseString(const char *str, int start)
-
-   This is a simplified interface to
-   :c:func:`PyParser_SimpleParseStringFlagsFilename` below, leaving  *filename* set
-   to ``NULL`` and *flags* set to ``0``.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseStringFlags( const char *str, int start, int flags)
-
-   This is a simplified interface to
-   :c:func:`PyParser_SimpleParseStringFlagsFilename` below, leaving  *filename* set
-   to ``NULL``.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseStringFlagsFilename( const char *str, const char *filename, int start, int flags)
-
-   Parse Python source code from *str* using the start token *start* according to
-   the *flags* argument.  The result can be used to create a code object which can
-   be evaluated efficiently. This is useful if a code fragment must be evaluated
-   many times. *filename* is decoded from the :term:`filesystem encoding and
-   error handler`.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
-
-   This is a simplified interface to :c:func:`PyParser_SimpleParseFileFlags` below,
-   leaving *flags* set to ``0``.
-
-
-.. c:function:: struct _node* PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int flags)
-
-   Similar to :c:func:`PyParser_SimpleParseStringFlagsFilename`, but the Python
-   source code is read from *fp* instead of an in-memory string.
-
 
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 
@@ -320,12 +286,6 @@ the same library that the Python runtime is using.
    <keyword-only_parameter>` arguments and a closure tuple of cells.
 
 
-.. c:type:: PyFrameObject
-
-   The C structure of the objects used to describe frame objects. The
-   fields of this type are subject to change at any time.
-
-
 .. c:function:: PyObject* PyEval_EvalFrame(PyFrameObject *f)
 
    Evaluate an execution frame.  This is a simplified interface to
@@ -378,7 +338,7 @@ the same library that the Python runtime is using.
    interpreter loop.
 
 
-.. c:type:: struct PyCompilerFlags
+.. c:struct:: PyCompilerFlags
 
    This is the structure used to hold compiler flags.  In cases where code is only
    being compiled, it is passed as ``int flags``, and in cases where code is being

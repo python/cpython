@@ -77,7 +77,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
    .. versionadded:: 3.2
 
-.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True)
+.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=None)
 
    Reads the logging configuration from a :mod:`configparser`\-format file. The
    format of the file should be as described in
@@ -111,6 +111,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     they or their ancestors are explicitly named
                                     in the logging configuration.
 
+    :param encoding: The encoding used to open file when *fname* is filename.
+
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
       now accepted as a value for ``fname``. This facilitates:
@@ -120,6 +122,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       * Use of a configuration read from a file, and then modified by the using
         application (e.g. based on command-line parameters or other aspects
         of the runtime environment) before being passed to ``fileConfig``.
+
+    .. versionadded:: 3.10
+       The *encoding* parameter is added.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
@@ -147,6 +152,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    send it to the socket as a sequence of bytes preceded by a four-byte length
    string packed in binary using ``struct.pack('>L', n)``.
 
+   .. _logging-eval-security:
+
    .. note::
 
       Because portions of the configuration are passed through
@@ -161,7 +168,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       :func:`listen` socket and sending a configuration which runs whatever
       code the attacker wants to have executed in the victim's process. This is
       especially easy to do if the default port is used, but not hard even if a
-      different port is used). To avoid the risk of this happening, use the
+      different port is used. To avoid the risk of this happening, use the
       ``verify`` argument to :func:`listen` to prevent unrecognised
       configurations from being applied.
 
@@ -182,6 +189,20 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    Stops the listening server which was created with a call to :func:`listen`.
    This is typically called before calling :meth:`join` on the return value from
    :func:`listen`.
+
+
+Security considerations
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The logging configuration functionality tries to offer convenience, and in part this
+is done by offering the ability to convert text in configuration files into Python
+objects used in logging configuration - for example, as described in
+:ref:`logging-config-dict-userdef`. However, these same mechanisms (importing
+callables from user-defined modules and calling them with parameters from the
+configuration) could be used to invoke any code you like, and for this reason you
+should treat configuration files from untrusted sources with *extreme caution* and
+satisfy yourself that nothing bad can happen if you load them, before actually loading
+them.
 
 
 .. _logging-config-dictschema:
@@ -267,6 +288,9 @@ otherwise, the context is used to determine what to instantiate.
   * ``filters`` (optional).  A list of ids of the filters for this
     handler.
 
+    .. versionchanged:: 3.11
+       ``filters`` can take filter instances in addition to ids.
+
   All *other* keys are passed through as keyword arguments to the
   handler's constructor.  For example, given the snippet:
 
@@ -304,6 +328,9 @@ otherwise, the context is used to determine what to instantiate.
 
   * ``filters`` (optional).  A list of ids of the filters for this
     logger.
+
+    .. versionchanged:: 3.11
+       ``filters`` can take filter instances in addition to ids.
 
   * ``handlers`` (optional).  A list of ids of the handlers for this
     logger.
@@ -503,6 +530,29 @@ valid keyword parameter name, and so will not clash with the names of
 the keyword arguments used in the call.  The ``'()'`` also serves as a
 mnemonic that the corresponding value is a callable.
 
+    .. versionchanged:: 3.11
+       The ``filters`` member of ``handlers`` and ``loggers`` can take
+       filter instances in addition to ids.
+
+You can also specify a special key ``'.'`` whose value is a dictionary is a
+mapping of attribute names to values. If found, the specified attributes will
+be set on the user-defined object before it is returned. Thus, with the
+following configuration::
+
+    {
+      '()' : 'my.package.customFormatterFactory',
+      'bar' : 'baz',
+      'spam' : 99.9,
+      'answer' : 42,
+      '.' {
+        'foo': 'bar',
+        'baz': 'bozz'
+      }
+    }
+
+the returned formatter will have attribute ``foo`` set to ``'bar'`` and
+attribute ``baz`` set to ``'bozz'``.
+
 
 .. _logging-config-dict-externalobj:
 
@@ -630,6 +680,76 @@ it with :func:`staticmethod`. For example::
 You don't need to wrap with :func:`staticmethod` if you're setting the import
 callable on a configurator *instance*.
 
+.. _configure-queue:
+
+Configuring QueueHandler and QueueListener
+""""""""""""""""""""""""""""""""""""""""""
+
+If you want to configure a :class:`~logging.handlers.QueueHandler`, noting that this
+is normally used in conjunction with a :class:`~logging.handlers.QueueListener`, you
+can configure both together. After the configuration, the ``QueueListener`` instance
+will be available as the :attr:`~logging.handlers.QueueHandler.listener` attribute of
+the created handler, and that in turn will be available to you using
+:func:`~logging.getHandlerByName` and passing the name you have used for the
+``QueueHandler`` in your configuration. The dictionary schema for configuring the pair
+is shown in the example YAML snippet below.
+
+.. code-block:: yaml
+
+    handlers:
+      qhand:
+        class: logging.handlers.QueueHandler
+        queue: my.module.queue_factory
+        listener: my.package.CustomListener
+        handlers:
+          - hand_name_1
+          - hand_name_2
+          ...
+
+The ``queue`` and ``listener`` keys are optional.
+
+If the ``queue`` key is present, the corresponding value can be one of the following:
+
+* An actual instance of :class:`queue.Queue` or a subclass thereof. This is of course
+  only possible if you are constructing or modifying the configuration dictionary in
+  code.
+
+* A string that resolves to a callable which, when called with no arguments, returns
+  the :class:`queue.Queue` instance to use. That callable could be a
+  :class:`queue.Queue` subclass or a function which returns a suitable queue instance,
+  such as ``my.module.queue_factory()``.
+
+* A dict with a ``'()'`` key which is constructed in the usual way as discussed in
+  :ref:`logging-config-dict-userdef`. The result of this construction should be a
+  :class:`queue.Queue` instance.
+
+If the  ``queue`` key is absent, a standard unbounded :class:`queue.Queue` instance is
+created and used.
+
+If the ``listener`` key is present, the corresponding value can be one of the following:
+
+* A subclass of :class:`logging.handlers.QueueListener`. This is of course only
+  possible if you are constructing or modifying the configuration dictionary in
+  code.
+
+* A string which resolves to a class which is a subclass of ``QueueListener``, such as
+  ``'my.package.CustomListener'``.
+
+* A dict with a ``'()'`` key which is constructed in the usual way as discussed in
+  :ref:`logging-config-dict-userdef`. The result of this construction should be a
+  callable with the same signature as the ``QueueListener`` initializer.
+
+If the ``listener`` key is absent, :class:`logging.handlers.QueueListener` is used.
+
+The values under the ``handlers`` key are the names of other handlers in the
+configuration (not shown in the above snippet) which will be passed to the queue
+listener.
+
+Any custom queue handler and listener classes will need to be defined with the same
+initialization signatures as :class:`~logging.handlers.QueueHandler` and
+:class:`~logging.handlers.QueueListener`.
+
+.. versionadded:: 3.12
 
 .. _logging-config-fileformat:
 
@@ -685,7 +805,7 @@ root logger section is given below.
 
 The ``level`` entry can be one of ``DEBUG, INFO, WARNING, ERROR, CRITICAL`` or
 ``NOTSET``. For the root logger only, ``NOTSET`` means that all messages will be
-logged. Level values are :func:`eval`\ uated in the context of the ``logging``
+logged. Level values are :ref:`evaluated <func-eval>` in the context of the ``logging``
 package's namespace.
 
 The ``handlers`` entry is a comma-separated list of handler names, which must
@@ -732,13 +852,13 @@ handler. If blank, a default formatter (``logging._defaultFormatter``) is used.
 If a name is specified, it must appear in the ``[formatters]`` section and have
 a corresponding section in the configuration file.
 
-The ``args`` entry, when :func:`eval`\ uated in the context of the ``logging``
+The ``args`` entry, when :ref:`evaluated <func-eval>` in the context of the ``logging``
 package's namespace, is the list of arguments to the constructor for the handler
 class. Refer to the constructors for the relevant handlers, or to the examples
 below, to see how typical entries are constructed. If not provided, it defaults
 to ``()``.
 
-The optional ``kwargs`` entry, when :func:`eval`\ uated in the context of the
+The optional ``kwargs`` entry, when :ref:`evaluated <func-eval>` in the context of the
 ``logging`` package's namespace, is the keyword argument dict to the constructor
 for the handler class. If not provided, it defaults to ``{}``.
 
@@ -802,7 +922,7 @@ Sections which specify formatter configuration are typified by the following.
    [formatter_form01]
    format=F1 %(asctime)s %(levelname)s %(message)s
    datefmt=
-   style='%'
+   style=%
    validate=True
    class=logging.Formatter
 
