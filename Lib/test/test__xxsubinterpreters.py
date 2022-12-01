@@ -386,7 +386,6 @@ class ShareableTypeTests(unittest.TestCase):
         self._assert_values([
             b'spam',
             9999,
-            self.cid,
             ])
 
     def test_bytes(self):
@@ -1212,6 +1211,18 @@ class ChannelIDTests(TestBase):
         self.assertFalse(cid1 != cid1)
         self.assertFalse(cid1 != cid2)
         self.assertTrue(cid1 != cid3)
+
+    def test_shareable(self):
+        chan = interpreters.channel_create()
+
+        obj = interpreters.channel_create()
+        interpreters.channel_send(chan, obj)
+        got = interpreters.channel_recv(chan)
+
+        self.assertEqual(got, obj)
+        self.assertIs(type(got), type(obj))
+        # XXX Check the following in the channel tests?
+        #self.assertIsNot(got, obj)
 
 
 class ChannelTests(TestBase):
