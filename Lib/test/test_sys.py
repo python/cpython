@@ -1269,6 +1269,15 @@ class SizeofTest(unittest.TestCase):
 
     check_sizeof = test.support.check_sizeof
 
+    def test_sizeof_method(self):
+        class Sizeof(int):
+            def __sizeof__(self):
+                return int(self)
+
+        header_size = self.gc_headsize * 2
+        self.assertEqual(sys.getsizeof(Sizeof(0)), header_size)
+        self.assertEqual(sys.getsizeof(Sizeof(100)), 100 + header_size)
+
     def test_gc_head_size(self):
         # Check that the gc header size is added to objects tracked by the gc.
         vsize = test.support.calcvobjsize
@@ -1299,16 +1308,17 @@ class SizeofTest(unittest.TestCase):
 
         # size_t maximum
         header_size = self.gc_headsize * 2
-        umaxsize = (sys.maxsize * 2 + 1) - header_size
+        maxsize = (sys.maxsize * 2 + 1) - header_size
 
         class OverflowSizeof(int):
             def __sizeof__(self):
                 return int(self)
-        self.assertEqual(sys.getsizeof(OverflowSizeof(umaxsize)),
-                         umaxsize + header_size)
+
+        self.assertEqual(sys.getsizeof(OverflowSizeof(maxsize)),
+                         maxsize + header_size)
         with self.assertRaises(OverflowError):
-            sys.getsizeof(OverflowSizeof(umaxsize + 1))
-        with self.assertRaises((ValueError, OverflowError)):
+            sys.getsizeof(OverflowSizeof(maxsize + 1))
+        with self.assertRaises(OverflowError):
             sys.getsizeof(OverflowSizeof(-1))
 
     def test_default(self):

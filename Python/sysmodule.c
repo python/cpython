@@ -1772,7 +1772,7 @@ _PySys_GetSizeOf(PyObject *o)
     size_t header_size = _PyType_PreHeaderSize(Py_TYPE(o));
     if (size > SIZE_MAX - header_size) {
         PyErr_SetString(PyExc_OverflowError,
-                        "size greater than size_t maximum");
+                        "__sizeof__() greater than size_t maximum");
         return (size_t)-1;
     }
     return header_size + size;
