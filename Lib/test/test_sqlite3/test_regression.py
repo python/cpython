@@ -477,10 +477,10 @@ class RegressionTests(unittest.TestCase):
                 # this can go before or after the super call; doesn't matter
                 self.some_attr = None
 
-        conn = sqlite.connect(':memory:')
-        cur = conn.cursor(MyCursor)
-        cur.close()
-        del cur
+        with memory_database() as con:
+            cur = con.cursor(MyCursor)
+            cur.close()
+            del cur
 
 class RecursiveUseOfCursors(unittest.TestCase):
     # GH-80254: sqlite3 should not segfault for recursive use of cursors.
