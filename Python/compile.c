@@ -9849,17 +9849,17 @@ end:
     return err;
 }
 
-static inline int
+static inline bool
 is_exit_without_lineno(basicblock *b) {
     if (!basicblock_exits_scope(b)) {
-        return 0;
+        return false;
     }
     for (int i = 0; i < b->b_iused; i++) {
         if (b->b_instr[i].i_loc.lineno >= 0) {
-            return 0;
+            return false;
         }
     }
-    return 1;
+    return true;
 }
 
 /* PEP 626 mandates that the f_lineno of a frame is correct
