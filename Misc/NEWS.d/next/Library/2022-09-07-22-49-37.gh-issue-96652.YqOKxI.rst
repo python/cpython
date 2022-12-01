@@ -1,3 +1,0 @@
-Fix the faulthandler implementation of ``faulthandler.register(signal,
-chain=True)`` if the ``sigaction()`` function is not available: don't call
-the previous signal handler if it's NULL. Patch by Victor Stinner.

@@ -1,3 +1,0 @@
-``makesetup`` now works around an issue with sed on macOS and uses correct
-CFLAGS for object files that end up in a shared extension. Module CFLAGS
-are used before PY_STDMODULE_CFLAGS to avoid clashes with system headers.

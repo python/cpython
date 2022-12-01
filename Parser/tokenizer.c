@@ -97,6 +97,7 @@ tok_new(void)
     tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
+    tok->report_warnings = 1;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
@@ -413,7 +414,11 @@ tok_readline_recode(struct tok_state *tok) {
         error_ret(tok);
         goto error;
     }
-    if (!tok_reserve_buf(tok, buflen + 1)) {
+    // Make room for the null terminator *and* potentially
+    // an extra newline character that we may need to artificially
+    // add.
+    size_t buffer_size = buflen + 2;
+    if (!tok_reserve_buf(tok, buffer_size)) {
         goto error;
     }
     memcpy(tok->inp, buf, buflen);
@@ -1000,6 +1005,7 @@ tok_underflow_file(struct tok_state *tok) {
         return 0;
     }
     if (tok->inp[-1] != '\n') {
+        assert(tok->inp + 1 < tok->end);
         /* Last line does not end in \n, fake one */
         *tok->inp++ = '\n';
         *tok->inp = '\0';
@@ -1196,6 +1202,10 @@ indenterror(struct tok_state *tok)
 static int
 parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
+    if (!tok->report_warnings) {
+        return 0;
+    }
+
     PyObject *errmsg;
     va_list vargs;
     va_start(vargs, format);
@@ -2223,8 +2233,7 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         return NULL;
     }
     if (filename != NULL) {
-        Py_INCREF(filename);
-        tok->filename = filename;
+        tok->filename = Py_NewRef(filename);
     }
     else {
         tok->filename = PyUnicode_FromString("<string>");
@@ -2235,6 +2244,9 @@ _PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
         }
     }
     struct token token;
+    // We don't want to report warnings here because it could cause infinite recursion
+    // if fetching the encoding shows a warning.
+    tok->report_warnings = 0;
     while (tok->lineno < 2 && tok->done == E_OK) {
         _PyTokenizer_Get(tok, &token);
     }

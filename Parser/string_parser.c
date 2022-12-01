@@ -21,9 +21,16 @@ warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token 
     if (msg == NULL) {
         return -1;
     }
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, p->tok->filename,
+    PyObject *category;
+    if (p->feature_version >= 12) {
+        category = PyExc_SyntaxWarning;
+    }
+    else {
+        category = PyExc_DeprecationWarning;
+    }
+    if (PyErr_WarnExplicitObject(category, msg, p->tok->filename,
                                  t->lineno, NULL, NULL) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+        if (PyErr_ExceptionMatches(category)) {
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
@@ -410,9 +417,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         PyMem_Free(str);
         return NULL;
     }
-    Py_INCREF(p->tok->filename);
-
-    tok->filename = p->tok->filename;
+    tok->filename = Py_NewRef(p->tok->filename);
     tok->lineno = t->lineno + lines - 1;
 
     Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, p->feature_version,

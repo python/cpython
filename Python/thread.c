@@ -207,8 +207,7 @@ PyThread_GetInfo(void)
     if (value == NULL)
 #endif
     {
-        Py_INCREF(Py_None);
-        value = Py_None;
+        value = Py_NewRef(Py_None);
     }
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;

@@ -1,2 +1,0 @@
-WASI does not have a ``chmod(2)`` syscall. :func:`os.chmod` is now a dummy
-function on WASI. Skip all tests that depend on working :func:`os.chmod`.
