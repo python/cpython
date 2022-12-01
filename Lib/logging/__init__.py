@@ -224,7 +224,7 @@ def _checkLevel(level):
 #
 #_lock is used to serialize access to shared data structures in this module.
 #This needs to be an RLock because fileConfig() creates and configures
-#Handlers, and so might arbitrary user threads. Since Handler code updates the
+#Handlers, and so might arbitrarily use threads. Since Handler code updates the
 #shared dictionary _handlers, it needs to acquire the lock. But if configuring,
 #the lock would already have been acquired - so we need an RLock.
 #The same argument applies to Loggers and Manager.loggerDict.
