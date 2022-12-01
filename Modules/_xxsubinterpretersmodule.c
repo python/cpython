@@ -96,6 +96,46 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 #define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
     add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
 
+static int
+_release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
+{
+    PyObject *exctype, *excval, *exctb;
+    if (ignoreexc) {
+        PyErr_Fetch(&exctype, &excval, &exctb);
+    }
+    int res = 0;
+    _PyCrossInterpreterData_Release(data);
+    if (PyErr_Occurred()) {
+        // XXX Fix this!
+        /* The owning interpreter is already destroyed.
+         * Ideally, this shouldn't ever happen.  When an interpreter is
+         * about to be destroyed, we should clear out all of its objects
+         * from every channel associated with that interpreter.
+         * For now we hack around that to resolve refleaks, by decref'ing
+         * the released object here, even if its the wrong interpreter.
+         * The owning interpreter has already been destroyed
+         * so we should be okay, especially since the currently
+         * shareable types are all very basic, with no GC.
+         * That said, it becomes much messier once interpreters
+         * no longer share a GIL, so this needs to be fixed before then. */
+        // We do what _release_xidata() does in pystate.c.
+        if (data->free != NULL) {
+            data->free(data->data);
+            data->data = NULL;
+        }
+        Py_CLEAR(data->obj);
+        if (ignoreexc) {
+            // XXX Emit a warning?
+            PyErr_Clear();
+        }
+        res = 1;
+    }
+    if (ignoreexc) {
+        PyErr_Restore(exctype, excval, exctb);
+    }
+    return res;
+}
+
 
 /* data-sharing-specific code ***********************************************/
 
@@ -127,7 +167,7 @@ _sharednsitem_clear(struct _sharednsitem *item)
         PyMem_Free(item->name);
         item->name = NULL;
     }
-    _PyCrossInterpreterData_Release(&item->data);
+    (void)_release_xid_data(&item->data, 1);
 }
 
 static int
@@ -475,7 +515,7 @@ static void
 _channelitem_clear(_channelitem *item)
 {
     if (item->data != NULL) {
-        _PyCrossInterpreterData_Release(item->data);
+        (void)_release_xid_data(item->data, 1);
         PyMem_Free(item->data);
         item->data = NULL;
     }
@@ -1430,7 +1470,8 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
     int res = _channel_add(chan, PyInterpreterState_GetID(interp), data);
     PyThread_release_lock(mutex);
     if (res != 0) {
-        _PyCrossInterpreterData_Release(data);
+        // We may chain an exception here:
+        (void)_release_xid_data(data, 0);
         PyMem_Free(data);
         return res;
     }
@@ -1476,10 +1517,18 @@ _channel_recv(_channels *channels, int64_t id, PyObject **res)
 
     // Convert the data back to an object.
     PyObject *obj = _PyCrossInterpreterData_NewObject(data);
-    _PyCrossInterpreterData_Release(data);
-    PyMem_Free(data);
     if (obj == NULL) {
         assert(PyErr_Occurred());
+        (void)_release_xid_data(data, 1);
+        PyMem_Free(data);
+        return -1;
+    }
+    int release_res = _release_xid_data(data, 0);
+    PyMem_Free(data);
+    if (release_res < 0) {
+        // The source interpreter has been destroyed already.
+        assert(PyErr_Occurred());
+        Py_DECREF(obj);
         return -1;
     }
 
