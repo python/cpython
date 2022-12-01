@@ -7813,12 +7813,12 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
     if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
         if (_PyBytes_Resize(&a->a_linetable, len*2) < 0) {
-            return 0;
+            return -1;
         }
     }
     if (i->i_loc.lineno < 0) {
         write_location_info_none(a, isize);
-        return 1;
+        return 0;
     }
     int line_delta = i->i_loc.lineno - a->a_lineno;
     int column = i->i_loc.col_offset;
@@ -7829,23 +7829,23 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
         if (i->i_loc.end_lineno == i->i_loc.lineno || i->i_loc.end_lineno == -1) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = i->i_loc.lineno;
-            return 1;
+            return 0;
         }
     }
     else if (i->i_loc.end_lineno == i->i_loc.lineno) {
         if (line_delta == 0 && column < 80 && end_column - column < 16 && end_column >= column) {
             write_location_info_short_form(a, isize, column, end_column);
-            return 1;
+            return 0;
         }
         if (line_delta >= 0 && line_delta < 3 && column < 128 && end_column < 128) {
             write_location_info_oneline_form(a, isize, line_delta, column, end_column);
             a->a_lineno = i->i_loc.lineno;
-            return 1;
+            return 0;
         }
     }
     write_location_info_long_form(a, i, isize);
     a->a_lineno = i->i_loc.lineno;
-    return 1;
+    return 0;
 }
 
 static int
@@ -7853,8 +7853,8 @@ assemble_emit_location(struct assembler* a, struct instr* i)
 {
     int isize = instr_size(i);
     while (isize > 8) {
-        if (!write_location_info_entry(a, i, 8)) {
-            return 0;
+        if (write_location_info_entry(a, i, 8) < 0) {
+            return -1;
         }
         isize -= 8;
     }
@@ -8909,9 +8909,11 @@ assemble(struct compiler *c, int addNone)
     /* Emit location info */
     a.a_lineno = c->u->u_firstlineno;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++)
-            if (!assemble_emit_location(&a, &b->b_instr[j]))
+        for (int j = 0; j < b->b_iused; j++) {
+            if (assemble_emit_location(&a, &b->b_instr[j]) < 0) {
                 goto error;
+            }
+        }
     }
 
     if (!assemble_exception_table(&a, g->g_entryblock)) {
