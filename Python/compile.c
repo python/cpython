@@ -240,7 +240,7 @@ instr_size(struct instr *instruction)
     assert(HAS_ARG(opcode) || oparg == 0);
     int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
     int caches = _PyOpcode_Caches[opcode];
-    return extended_args + 1 + caches;
+    return 2 * (extended_args + 1) + caches;
 }
 
 static void
@@ -251,18 +251,22 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int oparg = instruction->i_oparg;
     assert(HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
-    switch (ilen - caches) {
+    switch ((ilen - caches)/2) {
         case 4:
             *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 24) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(0, 0);  /* oparg2, oparg3 */
             /* fall through */
         case 3:
             *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 16) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(0, 0);  /* oparg2, oparg3 */
             /* fall through */
         case 2:
             *codestr++ = _Py_MAKECODEUNIT(EXTENDED_ARG, (oparg >> 8) & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(0, 0);  /* oparg2, oparg3 */
             /* fall through */
         case 1:
             *codestr++ = _Py_MAKECODEUNIT(opcode, oparg & 0xFF);
+            *codestr++ = _Py_MAKECODEUNIT(0, 0);  /* oparg2, oparg3 */
             break;
         default:
             Py_UNREACHABLE();

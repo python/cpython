@@ -695,9 +695,9 @@ class CodeLocationTest(unittest.TestCase):
             co_firstlineno=42,
             co_code=bytes(
                 [
-                    dis.opmap["RESUME"], 0,
-                    dis.opmap["LOAD_ASSERTION_ERROR"], 0,
-                    dis.opmap["RAISE_VARARGS"], 1,
+                    dis.opmap["RESUME"], 0, 0, 0,
+                    dis.opmap["LOAD_ASSERTION_ERROR"], 0, 0, 0,
+                    dis.opmap["RAISE_VARARGS"], 1, 0, 0,
                 ]
             ),
             co_linetable=bytes(
