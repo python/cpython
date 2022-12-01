@@ -53,7 +53,7 @@ def python_cmd():
     cmd.extend(subprocess._optim_args_from_interpreter_flags())
     for key, value in sys._xoptions.items():
         cmd.append("-X")
-        if value == True:
+        if value is True:
             cmd.append(key)
         else:
             cmd.append(f"{key}={value}")
