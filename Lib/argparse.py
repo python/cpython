@@ -1318,7 +1318,8 @@ class _SubParsersAction(Action):
         for key, value in vars(subnamespace).items():
             if key != '__defaults__':
                 setattr(namespace, key, value)
-        namespace.__defaults__.update(subnamespace.__defaults__)
+        if hasattr(namespace, '__defaults__'):
+            namespace.__defaults__.update(subnamespace.__defaults__)
 
         if arg_strings:
             if not hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
@@ -1431,6 +1432,12 @@ class Namespace(_AttributeHolder):
     def __contains__(self, key):
         return key in self.__dict__ or key in self.__defaults__
 
+
+def _set_default(namespace, dest, value):
+    if not hasattr(namespace, '__defaults__'):
+        setattr(namespace, dest, value)
+    else:
+        namespace.__defaults__[dest] = value
 
 class _ActionsContainer(object):
 
@@ -2042,13 +2049,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # add any action defaults that aren't present
         for action in self._actions:
             if action.dest is not SUPPRESS:
-                if action.default is not SUPPRESS and action.dest not in namespace:
-                    namespace.__defaults__[action.dest] = action.default
+                if action.default is not SUPPRESS and not hasattr(namespace, action.dest):
+                    _set_default(namespace, action.dest, action.default)
 
         # add any parser defaults that aren't present
         for dest in self._defaults:
-            if dest not in namespace:
-                namespace.__defaults__[dest] = self._defaults[dest]
+            if not hasattr(namespace, dest):
+                _set_default(namespace, dest, self._defaults[dest])
 
         # parse the arguments and exit if there are any errors
         if self.exit_on_error:
@@ -2342,11 +2349,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     # parsing arguments to avoid calling convert functions
                     # twice (which may fail) if the argument was given, but
                     # only if it was defined already in the namespace
-                    if (isinstance(action.default, str) and
-                        action.dest in namespace and
-                        getattr(namespace, action.dest) is action.default):
-                        namespace.__defaults__[action.dest] = self._get_value(
-                            action, action.default)
+                    if (action.default is not None and
+                        isinstance(action.default, str) and
+                        hasattr(namespace, action.dest) and
+                        action.default is getattr(namespace, action.dest)):
+                        _set_default(namespace, action.dest,
+                                self._get_value(action, action.default))
 
         if required_actions:
             raise ArgumentError(None, _('the following arguments are required: %s') %
