@@ -1873,8 +1873,9 @@ _release_xidata(void *arg)
     _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
     if (data->free != NULL) {
         data->free(data->data);
+        data->data = NULL;
     }
-    Py_XDECREF(data->obj);
+    Py_CLEAR(data->obj);
 }
 
 static void
@@ -1894,6 +1895,8 @@ _call_in_interpreter(struct _gilstate_runtime_state *gilstate,
         save_tstate = _PyThreadState_Swap(gilstate, tstate);
     }
 
+    // XXX Once the GIL is per-interpreter, this should be called with the
+    // calling interpreter's GIL released and the target interpreter's held.
     func(arg);
 
     // Switch back.
