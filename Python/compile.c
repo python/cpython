@@ -7667,8 +7667,9 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
-        if (_PyBytes_Resize(&a->a_except_table, len * 2) < 0)
-            return 0;
+        if (_PyBytes_Resize(&a->a_except_table, len * 2) < 0) {
+            return -1;
+        }
     }
     int size = end-start;
     assert(end > start);
@@ -7683,7 +7684,7 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
     assemble_emit_exception_table_item(a, size, 0);
     assemble_emit_exception_table_item(a, target, 0);
     assemble_emit_exception_table_item(a, depth_lasti, 0);
-    return 1;
+    return 0;
 }
 
 static int
@@ -7699,7 +7700,9 @@ assemble_exception_table(struct assembler *a, basicblock *entryblock)
             struct instr *instr = &b->b_instr[i];
             if (instr->i_except != handler) {
                 if (handler != NULL) {
-                    RETURN_IF_FALSE(assemble_emit_exception_table_entry(a, start, ioffset, handler));
+                    if (assemble_emit_exception_table_entry(a, start, ioffset, handler) < 0) {
+                        return -1;
+                    }
                 }
                 start = ioffset;
                 handler = instr->i_except;
@@ -7708,9 +7711,11 @@ assemble_exception_table(struct assembler *a, basicblock *entryblock)
         }
     }
     if (handler != NULL) {
-        RETURN_IF_FALSE(assemble_emit_exception_table_entry(a, start, ioffset, handler));
+        if (assemble_emit_exception_table_entry(a, start, ioffset, handler) < 0) {
+            return -1;
+        }
     }
-    return 1;
+    return 0;
 }
 
 /* Code location emitting code. See locations.md for a description of the format. */
@@ -8916,7 +8921,7 @@ assemble(struct compiler *c, int addNone)
         }
     }
 
-    if (!assemble_exception_table(&a, g->g_entryblock)) {
+    if (assemble_exception_table(&a, g->g_entryblock) < 0) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
