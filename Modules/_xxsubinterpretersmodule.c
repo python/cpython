@@ -60,9 +60,8 @@ static PyObject *
 get_module_from_owned_type(PyTypeObject *cls)
 {
     assert(cls != NULL);
-    // XXX We can't use PyType_GetModule() until the module's types
-    // are heap types.
     return _get_current_module();
+    // XXX Use the more efficient API now that we use heap types:
     //return PyType_GetModule(cls);
 }
 
@@ -72,9 +71,8 @@ static PyObject *
 get_module_from_type(PyTypeObject *cls)
 {
     assert(cls != NULL);
-    // XXX We can't use PyType_GetModuleByDef() until the module's types
-    // are heap types.
     return _get_current_module();
+    // XXX Use the more efficient API now that we use heap types:
     //return PyType_GetModuleByDef(cls, &moduledef);
 }
 
