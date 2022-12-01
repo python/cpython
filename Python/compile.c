@@ -7874,15 +7874,17 @@ assemble_emit(struct assembler *a, struct instr *i)
 
     int size = instr_size(i);
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
-        if (len > PY_SSIZE_T_MAX / 2)
-            return 0;
-        if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
-            return 0;
+        if (len > PY_SSIZE_T_MAX / 2) {
+            return -1;
+        }
+        if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0) {
+            return -1;
+        }
     }
     code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
     write_instr(code, i, size);
-    return 1;
+    return 0;
 }
 
 static int
@@ -8897,9 +8899,11 @@ assemble(struct compiler *c, int addNone)
 
     /* Emit code. */
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++)
-            if (!assemble_emit(&a, &b->b_instr[j]))
+        for (int j = 0; j < b->b_iused; j++) {
+            if (assemble_emit(&a, &b->b_instr[j]) < 0) {
                 goto error;
+            }
+        }
     }
 
     /* Emit location info */
