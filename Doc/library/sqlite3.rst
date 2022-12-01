@@ -1869,7 +1869,7 @@ How to use placeholders to bind values in SQL queries
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
 are vulnerable to `SQL injection attacks`_. For example, an attacker can simply
-close the single quote and inject arbitrary logic::
+close the single quote and inject ``OR TRUE`` to select all rows::
 
    >>> # Never do this -- insecure!
    >>> symbol = input()
