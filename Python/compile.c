@@ -7268,12 +7268,12 @@ assemble_init(struct assembler *a, int firstlineno)
     if (a->a_except_table == NULL) {
         goto error;
     }
-    return 1;
+    return 0;
 error:
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_linetable);
     Py_XDECREF(a->a_except_table);
-    return 0;
+    return -1;
 }
 
 static void
@@ -8899,8 +8899,9 @@ assemble(struct compiler *c, int addNone)
     assemble_jump_offsets(g->g_entryblock);
 
     /* Create assembler */
-    if (!assemble_init(&a, c->u->u_firstlineno))
+    if (assemble_init(&a, c->u->u_firstlineno) < 0) {
         goto error;
+    }
 
     /* Emit code. */
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
