@@ -464,7 +464,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
 
     allow_fragments = bool(allow_fragments)
     netloc = ''
-    query = fragment = None  # the query and fragment are absent
+    query = fragment = None  # the query and fragment are undefined
     i = url.find(':')
     if i > 0 and url[0].isascii() and url[0].isalpha():
         for c in url[:i]:
@@ -508,9 +508,9 @@ def urlunsplit(components):
         url = '//' + (netloc or '') + url
     if scheme:
         url = scheme + ':' + url
-    if query is not None:  # the query is present
+    if query is not None:  # the query is defined
         url = url + '?' + query
-    if fragment is not None:  # the fragment is present
+    if fragment is not None:  # the fragment is defined
         url = url + '#' + fragment
     return _coerce_result(url)
 
