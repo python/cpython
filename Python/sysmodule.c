@@ -2202,16 +2202,20 @@ sys__getframemodulename_impl(PyObject *module, int depth)
         return NULL;
     }
     _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
-    while (f && (f->owner == FRAME_OWNED_BY_CSTACK || depth-- > 0)) {
+    while (f && (_PyFrame_IsIncomplete(f) || depth-- > 0)) {
         f = f->previous;
     }
-    if (f == NULL) {
+    if (f == NULL || f->f_funcobj == NULL) {
         Py_RETURN_NONE;
     }
-    PyObject *r = PyDict_GetItemWithError(f->f_globals, &_Py_ID(__name__));
+    PyObject *r = PyFunction_GetModule(f->f_funcobj);
     if (!r) {
         PyErr_Clear();
-        r = Py_None;
+        r = PyDict_GetItemWithError(f->f_globals, &_Py_ID(__name__));
+        if (!r) {
+            PyErr_Clear();
+            r = Py_None;
+        }
     }
     return Py_NewRef(r);
 }
