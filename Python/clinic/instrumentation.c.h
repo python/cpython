@@ -210,4 +210,21 @@ monitoring_restart_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring_restart_events_impl(module);
 }
-/*[clinic end generated code: output=3997247efd06367f input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(monitoring__all_events__doc__,
+"_all_events($module, /)\n"
+"--\n"
+"\n");
+
+#define MONITORING__ALL_EVENTS_METHODDEF    \
+    {"_all_events", (PyCFunction)monitoring__all_events, METH_NOARGS, monitoring__all_events__doc__},
+
+static PyObject *
+monitoring__all_events_impl(PyObject *module);
+
+static PyObject *
+monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return monitoring__all_events_impl(module);
+}
+/*[clinic end generated code: output=d4c412a002392e2b input=a9049054013a1b77]*/

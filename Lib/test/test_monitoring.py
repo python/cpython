@@ -201,6 +201,7 @@ class MonitoringEventsBase:
         sys.monitoring.set_events(TEST_TOOL, 0)
         #Remove the final event, the call to `sys.monitoring.set_events`
         events = events[:-1]
+        sys.monitoring.set_events(TEST_TOOL, 0)
         return events
 
     def check_events(self, func, expected=None):
@@ -287,7 +288,6 @@ class CounterWithDisable:
         if self.disable:
             return sys.monitoring.DISABLE
 
-
 class MontoringDisableAndRestartTest(unittest.TestCase):
 
     def test_disable(self):
@@ -305,6 +305,7 @@ class MontoringDisableAndRestartTest(unittest.TestCase):
         counter.count = 0
         f1()
         self.assertEqual(counter.count, 0)
+        sys.monitoring.set_events(TEST_TOOL, 0)
 
     def test_restart(self):
         counter = CounterWithDisable()
@@ -319,11 +320,12 @@ class MontoringDisableAndRestartTest(unittest.TestCase):
         counter.count = 0
         f1()
         self.assertEqual(counter.count, 1)
+        sys.monitoring.set_events(TEST_TOOL, 0)
 
 
 class MultipleMonitors(unittest.TestCase):
 
-    def test_two_simple(self):
+    def test_two_same(self):
         counter1 = CounterWithDisable()
         counter2 = CounterWithDisable()
         sys.monitoring.register_callback(TEST_TOOL, E.PY_START, counter1)
@@ -339,4 +341,29 @@ class MultipleMonitors(unittest.TestCase):
         count2 = counter2.count
         self.assertEqual(count1, 1)
         self.assertEqual(count2, 1)
+        sys.monitoring.set_events(TEST_TOOL, 0)
+        sys.monitoring.set_events(TEST_TOOL2, 0)
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, None)
+        sys.monitoring.register_callback(TEST_TOOL2, E.PY_START, None)
+
+    def test_two_different(self):
+        counter1 = CounterWithDisable()
+        counter2 = CounterWithDisable()
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, counter1)
+        sys.monitoring.register_callback(TEST_TOOL2, E.PY_RETURN, counter2)
+        sys.monitoring.set_events(TEST_TOOL, E.PY_START)
+        sys.monitoring.set_events(TEST_TOOL2, E.PY_RETURN)
+        self.assertEqual(sys.monitoring.get_events(TEST_TOOL), E.PY_START)
+        self.assertEqual(sys.monitoring.get_events(TEST_TOOL2), E.PY_RETURN)
+        counter1.count = 0
+        counter2.count = 0
+        f1()
+        count1 = counter1.count
+        count2 = counter2.count
+        self.assertEqual(count1, 1)
+        self.assertEqual(count2, 1)
+        sys.monitoring.set_events(TEST_TOOL, 0)
+        sys.monitoring.set_events(TEST_TOOL2, 0)
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, None)
+        sys.monitoring.register_callback(TEST_TOOL2, E.PY_RETURN, None)
 

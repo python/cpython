@@ -36,17 +36,21 @@ call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
     if (tstate->c_profilefunc == NULL) {
         Py_RETURN_NONE;
     }
+    if (tstate->tracing) {
+        Py_RETURN_NONE;
+    }
     PyFrameObject* frame = PyEval_GetFrame();
     Py_INCREF(frame);
     assert(frame != NULL);
+    tstate->tracing++;
     int err = tstate->c_profilefunc(tstate->c_profileobj, frame, self->event, arg);
+    tstate->tracing--;
     Py_DECREF(frame);
     if (err) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
-
 
 static PyObject *
 sys_profile_func2(
