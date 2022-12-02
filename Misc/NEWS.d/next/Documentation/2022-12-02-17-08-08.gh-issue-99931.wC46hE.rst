@@ -1,0 +1,1 @@
+Use the sphinxext-opengraph extension to generate OpenGraph metadata.
