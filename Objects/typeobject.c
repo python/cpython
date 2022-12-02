@@ -4680,16 +4680,17 @@ static PyObject *
 type___sizeof___impl(PyTypeObject *self)
 /*[clinic end generated code: output=766f4f16cd3b1854 input=99398f24b9cf45d6]*/
 {
-    Py_ssize_t size;
+    size_t size;
     if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)self;
         size = sizeof(PyHeapTypeObject);
         if (et->ht_cached_keys)
             size += _PyDict_KeysSize(et->ht_cached_keys);
     }
-    else
+    else {
         size = sizeof(PyTypeObject);
-    return PyLong_FromSsize_t(size);
+    }
+    return PyLong_FromSize_t(size);
 }
 
 static PyMethodDef type_methods[] = {
@@ -8741,7 +8742,7 @@ static pytype_slotdef slotdefs[] = {
     SQSLOT(__delitem__, sq_ass_item, slot_sq_ass_item, wrap_sq_delitem,
            "__delitem__($self, key, /)\n--\n\nDelete self[key]."),
     SQSLOT(__contains__, sq_contains, slot_sq_contains, wrap_objobjproc,
-           "__contains__($self, key, /)\n--\n\nReturn key in self."),
+           "__contains__($self, key, /)\n--\n\nReturn bool(key in self)."),
     SQSLOT(__iadd__, sq_inplace_concat, NULL,
            wrap_binaryfunc,
            "__iadd__($self, value, /)\n--\n\nImplement self+=value."),
@@ -9593,7 +9594,7 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
             return -1;
         Py_INCREF(obj);
     }
-    Py_XSETREF(su->type, Py_NewRef(type));
+    Py_XSETREF(su->type, (PyTypeObject*)Py_NewRef(type));
     Py_XSETREF(su->obj, obj);
     Py_XSETREF(su->obj_type, obj_type);
     return 0;
