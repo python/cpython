@@ -80,6 +80,30 @@ elif os.name == "posix" and sys.platform == "darwin":
                 continue
         return None
 
+elif os.name == "posix" and sys.platform == "emscripten":
+    def _is_wasm(filename):
+        # Return True if the given file is an WASM module
+        wasm_header = b'\x00asm'
+        with open(filename, 'br') as thefile:
+            return thefile.read(4) == wasm_header
+
+    def find_library(name):
+        possible = ['lib%s.so' % name,
+                    'lib%s.wasm' % name]
+
+        paths = os.environ.get('LD_LIBRARY_PATH', '')
+        for dir in paths.split(":"):
+            for name in possible:
+                libfile = os.path.join(dir, name)
+
+                if os.path.isfile(libfile):
+                    if not _is_wasm(libfile):
+                        continue
+
+                    return libfile
+
+        return None
+
 elif sys.platform.startswith("aix"):
     # AIX has two styles of storing shared libraries
     # GNU auto_tools refer to these as svr4 and aix
