@@ -336,6 +336,74 @@ class TestTypeWatchers(unittest.TestCase):
                 self.add_watcher()
 
 
+class TestCodeObjectWatchers(unittest.TestCase):
+    @contextmanager
+    def code_watcher(self, which_watcher):
+        wid = _testcapi.add_code_watcher(which_watcher)
+        try:
+            yield wid
+        finally:
+            _testcapi.clear_code_watcher(wid)
+
+    def assert_event_counts(self, exp_created_0, exp_destroyed_0,
+                            exp_created_1, exp_destroyed_1):
+        self.assertEqual(
+            exp_created_0, _testcapi.get_code_watcher_num_created_events(0))
+        self.assertEqual(
+            exp_destroyed_0, _testcapi.get_code_watcher_num_destroyed_events(0))
+        self.assertEqual(
+            exp_created_1, _testcapi.get_code_watcher_num_created_events(1))
+        self.assertEqual(
+            exp_destroyed_1, _testcapi.get_code_watcher_num_destroyed_events(1))
+
+    def test_code_object_events_dispatched(self):
+        # verify that all counts are zero before any watchers are registered
+        self.assert_event_counts(0, 0, 0, 0)
+
+        # verify that all counts remain zero when a code object is
+        # created and destroyed with no watchers registered
+        co1 = _testcapi.code_newempty("test_watchers", "dummy1", 0)
+        self.assert_event_counts(0, 0, 0, 0)
+        del co1
+        self.assert_event_counts(0, 0, 0, 0)
+
+        # verify counts are as expected when first watcher is registered
+        with self.code_watcher(0):
+            self.assert_event_counts(0, 0, 0, 0)
+            co2 = _testcapi.code_newempty("test_watchers", "dummy2", 0)
+            self.assert_event_counts(1, 0, 0, 0)
+            del co2
+            self.assert_event_counts(1, 1, 0, 0)
+
+            # again with second watcher registered
+            with self.code_watcher(1):
+                self.assert_event_counts(1, 1, 0, 0)
+                co3 = _testcapi.code_newempty("test_watchers", "dummy3", 0)
+                self.assert_event_counts(2, 1, 1, 0)
+                del co3
+                self.assert_event_counts(2, 2, 1, 1)
+
+        # verify counts remain as they were after both watchers are cleared
+        co4 = _testcapi.code_newempty("test_watchers", "dummy4", 0)
+        self.assert_event_counts(2, 2, 1, 1)
+        del co4
+        self.assert_event_counts(2, 2, 1, 1)
+
+    def test_clear_out_of_range_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"Invalid code watcher ID -1"):
+            _testcapi.clear_code_watcher(-1)
+        with self.assertRaisesRegex(ValueError, r"Invalid code watcher ID 8"):
+            _testcapi.clear_code_watcher(8)  # CODE_MAX_WATCHERS = 8
+
+    def test_clear_unassigned_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"No code watcher set for ID 1"):
+            _testcapi.clear_code_watcher(1)
+
+    def test_allocate_too_many_watchers(self):
+        with self.assertRaisesRegex(RuntimeError, r"no more code watcher IDs available"):
+            _testcapi.allocate_too_many_code_watchers()
+
+
 class TestFuncWatchers(unittest.TestCase):
     @contextmanager
     def add_watcher(self, func):
