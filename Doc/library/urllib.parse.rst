@@ -70,7 +70,7 @@ or on combining URL components into a URL string.
       >>> o.port
       80
       >>> o._replace(fragment="").geturl()
-      'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params'
+      'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params#'
 
    Following the syntax specifications in :rfc:`1808`, urlparse recognizes
    a netloc only if it is properly introduced by '//'.  Otherwise the
@@ -83,13 +83,13 @@ or on combining URL components into a URL string.
       >>> from urllib.parse import urlparse
       >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
       ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+                  params='', query=None, fragment=None)
       >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
       ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+                  params='', query=None, fragment=None)
       >>> urlparse('help/Python.html')
       ParseResult(scheme='', netloc='', path='help/Python.html', params='',
-                  query='', fragment='')
+                  query=None, fragment=None)
 
    The *scheme* argument gives the default addressing scheme, to be
    used only if the URL does not specify one.  It should be the same type
@@ -154,10 +154,10 @@ or on combining URL components into a URL string.
       >>> u = urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
       >>> u
       ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+                  params='', query=None, fragment=None)
       >>> u._replace(scheme='http')
       ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+                  params='', query=None, fragment=None)
 
 
    .. versionchanged:: 3.2
@@ -458,32 +458,28 @@ individual URL quoting functions.
 Structured Parse Results
 ------------------------
 
-The result objects from the :func:`urlparse`, :func:`urlsplit`  and
+The result objects from the :func:`urlparse`, :func:`urlsplit` and
 :func:`urldefrag` functions are subclasses of the :class:`tuple` type.
 These subclasses add the attributes listed in the documentation for
 those functions, the encoding and decoding support described in the
 previous section, as well as an additional method:
 
-.. method:: urllib.parse.SplitResult.geturl()
+.. method:: urllib.parse.ParseResult.geturl()
 
    Return the re-combined version of the original URL as a string. This may
-   differ from the original URL in that the scheme may be normalized to lower
-   case and empty components may be dropped. Specifically, empty parameters,
-   queries, and fragment identifiers will be removed.
-
-   For :func:`urldefrag` results, only empty fragment identifiers will be removed.
-   For :func:`urlsplit` and :func:`urlparse` results, all noted changes will be
-   made to the URL returned by this method.
+   differ from the original URL in that the scheme will be normalized to lower
+   case for :func:`urlparse`, :func:`urlsplit` and :func:`urldefrag` results,
+   and empty parameters will be removed for :func:`urlparse` results.
 
    The result of this method remains unchanged if passed back through the original
    parsing function:
 
-      >>> from urllib.parse import urlsplit
-      >>> url = 'HTTP://www.Python.org/doc/#'
-      >>> r1 = urlsplit(url)
+      >>> from urllib.parse import urlparse
+      >>> url = 'HTTP://www.Python.org/doc/;'
+      >>> r1 = urlparse(url)
       >>> r1.geturl()
       'http://www.Python.org/doc/'
-      >>> r2 = urlsplit(r1.geturl())
+      >>> r2 = urlparse(r1.geturl())
       >>> r2.geturl()
       'http://www.Python.org/doc/'
 
