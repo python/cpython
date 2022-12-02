@@ -295,8 +295,8 @@ def clean_up_channels():
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
-        clean_up_interpreters()
         clean_up_channels()
+        clean_up_interpreters()
 
 
 ##################################
