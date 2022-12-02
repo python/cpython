@@ -1175,7 +1175,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             raise RuntimeError('unable to writelines; sendfile is in progress')
         if not list_of_data:
             return
-        self._buffer.extend([memoryview(i) for i in list_of_data])
+        self._buffer.extend([memoryview(data) for data in list_of_data])
         self._write_ready()
 
     def can_write_eof(self):
