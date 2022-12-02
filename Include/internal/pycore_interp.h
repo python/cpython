@@ -249,9 +249,10 @@ extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 struct _xidregitem;
 
 struct _xidregitem {
-    PyTypeObject *cls;
-    crossinterpdatafunc getdata;
+    struct _xidregitem *prev;
     struct _xidregitem *next;
+    PyObject *cls;  // weakref to a PyTypeObject
+    crossinterpdatafunc getdata;
 };
 
 PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
