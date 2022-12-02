@@ -135,12 +135,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
          * shareable types are all very basic, with no GC.
          * That said, it becomes much messier once interpreters
          * no longer share a GIL, so this needs to be fixed before then. */
-        // We do what _release_xidata() does in pystate.c.
-        if (data->free != NULL) {
-            data->free(data->data);
-            data->data = NULL;
-        }
-        Py_CLEAR(data->obj);
+        _PyCrossInterpreterData_Clear(NULL, data);
         if (ignoreexc) {
             // XXX Emit a warning?
             PyErr_Clear();
@@ -1926,20 +1921,20 @@ done:
 }
 
 static int
-_channelid_shared(PyObject *obj, _PyCrossInterpreterData *data)
+_channelid_shared(PyThreadState *tstate, PyObject *obj,
+                  _PyCrossInterpreterData *data)
 {
-    struct _channelid_xid *xid = PyMem_NEW(struct _channelid_xid, 1);
-    if (xid == NULL) {
+    if (_PyCrossInterpreterData_InitWithSize(
+            data, tstate->interp, sizeof(struct _channelid_xid), obj,
+            _channelid_from_xid
+            ) < 0)
+    {
         return -1;
     }
+    struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
     xid->id = ((channelid *)obj)->id;
     xid->end = ((channelid *)obj)->end;
     xid->resolve = ((channelid *)obj)->resolve;
-
-    data->data = xid;
-    data->obj = Py_NewRef(obj);
-    data->new_object = _channelid_from_xid;
-    data->free = PyMem_Free;
     return 0;
 }
 
