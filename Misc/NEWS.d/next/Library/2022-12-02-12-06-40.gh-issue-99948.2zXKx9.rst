@@ -1,0 +1,1 @@
+Add emscripten platform support to ctypes.util.find_library.
