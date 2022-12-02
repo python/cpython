@@ -2196,7 +2196,7 @@ _str_shared(PyThreadState *tstate, PyObject *obj,
     {
         return -1;
     }
-    struct _shared_str_data *shared = (struct _shared_str_data *)&data->data;
+    struct _shared_str_data *shared = (struct _shared_str_data *)data->data;
     shared->kind = PyUnicode_KIND(obj);
     shared->buffer = PyUnicode_DATA(obj);
     shared->len = PyUnicode_GET_LENGTH(obj);
