@@ -1865,7 +1865,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     // Fill in the blanks and validate the result.
     data->interp = interp->id;
     if (_check_xidata(tstate, data) != 0) {
-        _PyCrossInterpreterData_Release(data);
+        (void)_PyCrossInterpreterData_Release(data);
         return -1;
     }
 
@@ -1878,8 +1878,8 @@ _release_xidata(void *arg)
     _PyCrossInterpreterData *data = (_PyCrossInterpreterData *)arg;
     if (data->free != NULL) {
         data->free(data->data);
-        data->data = NULL;
     }
+    data->data = NULL;
     Py_CLEAR(data->obj);
 }
 
@@ -1910,27 +1910,29 @@ _call_in_interpreter(struct _gilstate_runtime_state *gilstate,
     }
 }
 
-void
+int
 _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
 {
-    if (data->data == NULL && data->obj == NULL) {
+    if (data->free == NULL && data->obj == NULL) {
         // Nothing to release!
-        return;
+        data->data = NULL;
+        return 0;
     }
 
     // Switch to the original interpreter.
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interp);
     if (interp == NULL) {
         // The interpreter was already destroyed.
-        if (data->free != NULL) {
-            // XXX Someone leaked some memory...
-        }
-        return;
+        // This function shouldn't have been called.
+        // XXX Someone leaked some memory...
+        assert(PyErr_Occurred());
+        return -1;
     }
 
     // "Release" the data and/or the object.
     struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
     _call_in_interpreter(gilstate, interp, _release_xidata, data);
+    return 0;
 }
 
 PyObject *
