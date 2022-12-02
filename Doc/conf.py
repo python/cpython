@@ -22,8 +22,16 @@ extensions = [
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
-    'sphinxext.opengraph',
 ]
+
+# Skip if downstream redistributors haven't installed it
+try:
+    import sphinxext.opengraph
+except ImportError:
+    pass
+else:
+    extensions.append('sphinxext.opengraph')
+
 
 doctest_global_setup = '''
 try:
