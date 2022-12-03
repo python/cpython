@@ -436,10 +436,10 @@
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
-            uint32_t type_version = read_u32(next_instr + 1);
-            uint16_t func_version = read_u16(next_instr + 3);
             PyObject *sub = PEEK(1);
             PyObject *container = PEEK(2);
+            uint32_t type_version = read_u32(next_instr + 1);
+            uint16_t func_version = read_u16(next_instr + 3);
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(tp->tp_version_tag != type_version, BINARY_SUBSCR);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
