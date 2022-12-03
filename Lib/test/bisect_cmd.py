@@ -4,17 +4,17 @@ Command line tool to bisect failing CPython tests.
 
 Find the test_os test method which alters the environment:
 
-    ./python -m test.bisect --fail-env-changed test_os
+    ./python -m test.bisect_cmd --fail-env-changed test_os
 
 Find a reference leak in "test_os", write the list of failing tests into the
 "bisect" file:
 
-    ./python -m test.bisect -o bisect -R 3:3 test_os
+    ./python -m test.bisect_cmd -o bisect -R 3:3 test_os
 
 Load an existing list of tests from a file using -i option:
 
     ./python -m test --list-cases -m FileTests test_os > tests
-    ./python -m test.bisect -i tests test_os
+    ./python -m test.bisect_cmd -i tests test_os
 """
 
 import argparse
@@ -47,8 +47,16 @@ def format_shell_args(args):
     return ' '.join(args)
 
 
+def python_cmd():
+    cmd = [sys.executable]
+    cmd.extend(subprocess._args_from_interpreter_flags())
+    cmd.extend(subprocess._optim_args_from_interpreter_flags())
+    return cmd
+
+
 def list_cases(args):
-    cmd = [sys.executable, '-m', 'test', '--list-cases']
+    cmd = python_cmd()
+    cmd.extend(['-m', 'test', '--list-cases'])
     cmd.extend(args.test_args)
     proc = subprocess.run(cmd,
                           stdout=subprocess.PIPE,
@@ -68,7 +76,8 @@ def run_tests(args, tests, huntrleaks=None):
     try:
         write_tests(tmp, tests)
 
-        cmd = [sys.executable, '-m', 'test', '--matchfile', tmp]
+        cmd = python_cmd()
+        cmd.extend(['-m', 'test', '--matchfile', tmp])
         cmd.extend(args.test_args)
         print("+ %s" % format_shell_args(cmd))
         proc = subprocess.run(cmd)
@@ -100,6 +109,9 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if '-w' in args.test_args or '--verbose2' in args.test_args:
+        print("WARNING: -w/--verbose2 option should not be used to bisect!")
+        print()
 
     if args.input:
         with open(args.input) as fp:

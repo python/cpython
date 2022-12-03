@@ -10,17 +10,8 @@ import sys
 import os
 import tokenize
 
-__all__ = ["getline", "clearcache", "checkcache"]
+__all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 
-def getline(filename, lineno, module_globals=None):
-    lines = getlines(filename, module_globals)
-    if 1 <= lineno <= len(lines):
-        return lines[lineno-1]
-    else:
-        return ''
-
-
-# The cache
 
 # The cache. Maps filenames to either a thunk which will provide source code,
 # or a tuple (size, mtime, lines, fullname) once loaded.
@@ -29,9 +20,17 @@ cache = {}
 
 def clearcache():
     """Clear the cache entirely."""
+    cache.clear()
 
-    global cache
-    cache = {}
+
+def getline(filename, lineno, module_globals=None):
+    """Get a line for a Python source file from the cache.
+    Update the cache if it doesn't contain an entry for this file already."""
+
+    lines = getlines(filename, module_globals)
+    if 1 <= lineno <= len(lines):
+        return lines[lineno - 1]
+    return ''
 
 
 def getlines(filename, module_globals=None):
@@ -56,11 +55,10 @@ def checkcache(filename=None):
 
     if filename is None:
         filenames = list(cache.keys())
+    elif filename in cache:
+        filenames = [filename]
     else:
-        if filename in cache:
-            filenames = [filename]
-        else:
-            return
+        return
 
     for filename in filenames:
         entry = cache[filename]
@@ -73,10 +71,10 @@ def checkcache(filename=None):
         try:
             stat = os.stat(fullname)
         except OSError:
-            del cache[filename]
+            cache.pop(filename, None)
             continue
         if size != stat.st_size or mtime != stat.st_mtime:
-            del cache[filename]
+            cache.pop(filename, None)
 
 
 def updatecache(filename, module_globals=None):
@@ -86,7 +84,7 @@ def updatecache(filename, module_globals=None):
 
     if filename in cache:
         if len(cache[filename]) != 1:
-            del cache[filename]
+            cache.pop(filename, None)
     if not filename or (filename.startswith('<') and filename.endswith('>')):
         return []
 
@@ -109,8 +107,10 @@ def updatecache(filename, module_globals=None):
                     # for this module.
                     return []
                 cache[filename] = (
-                    len(data), None,
-                    [line+'\n' for line in data.splitlines()], fullname
+                    len(data),
+                    None,
+                    [line + '\n' for line in data.splitlines()],
+                    fullname
                 )
                 return cache[filename][2]
 
@@ -135,7 +135,7 @@ def updatecache(filename, module_globals=None):
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()
-    except OSError:
+    except (OSError, UnicodeDecodeError, SyntaxError):
         return []
     if lines and not lines[-1].endswith('\n'):
         lines[-1] += '\n'
@@ -154,7 +154,7 @@ def lazycache(filename, module_globals):
 
     :return: True if a lazy load is registered in the cache,
         otherwise False. To register such a load a module loader with a
-        get_source method must be found, the filename must be a cachable
+        get_source method must be found, the filename must be a cacheable
         filename, and the filename must not be already cached.
     """
     if filename in cache:
@@ -165,9 +165,14 @@ def lazycache(filename, module_globals):
     if not filename or (filename.startswith('<') and filename.endswith('>')):
         return False
     # Try for a __loader__, if available
-    if module_globals and '__loader__' in module_globals:
-        name = module_globals.get('__name__')
-        loader = module_globals['__loader__']
+    if module_globals and '__name__' in module_globals:
+        name = module_globals['__name__']
+        if (loader := module_globals.get('__loader__')) is None:
+            if spec := module_globals.get('__spec__'):
+                try:
+                    loader = spec.loader
+                except AttributeError:
+                    pass
         get_source = getattr(loader, 'get_source', None)
 
         if name and get_source:
