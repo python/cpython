@@ -385,7 +385,7 @@ Deprecated
 * Deprecated using :term:`bytes-like objects <bytes-like object>` except
   :class:`bytes` and :class:`bytearray` in builtins :class:`int`,
   :class:`float`, :func:`compile`, :func:`eval` and :func:`exec`.
-  (Contributed by Serhiy Storchaka in :bpo:`27572`.)
+  (Contributed by Serhiy Storchaka in :gh:`71759`.)
 
 
 Pending Removal in Python 3.13
