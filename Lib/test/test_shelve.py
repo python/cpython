@@ -3,6 +3,7 @@ import dbm
 import shelve
 import pickle
 import os
+from io import BytesIO
 
 from test.support import os_helper
 from collections.abc import MutableMapping
@@ -164,6 +165,22 @@ class TestCase(unittest.TestCase):
     def test_default_protocol(self):
         with shelve.Shelf({}) as s:
             self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
+
+    def test_custom_loads_and_dumps(self):
+        def custom_dumps(obj, protocol=None):
+            return bytes(f"{type(obj)}", 'utf-8')
+
+        def custom_loads(data):
+            value = BytesIO(data).read()
+            return value.decode("utf-8")
+
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        with shelve.open(self.fn, custom_dumps=custom_dumps, custom_loads=custom_loads) as s:
+            num = 1
+            s['number'] = num
+            self.assertEqual(s['number'], f"{type(num)}")
 
 
 class TestShelveBase:
