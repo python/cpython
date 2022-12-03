@@ -16,9 +16,6 @@ class Str(str):
 
 
 class CAPITest(unittest.TestCase):
-    # TODO: Test the following function:
-    #
-    #   PyUnicode_ClearFreeList
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -26,8 +23,7 @@ class CAPITest(unittest.TestCase):
         """Test PyUnicode_New()"""
         from _testcapi import unicode_new as new
 
-        for maxchar in 0, 0x61, 0xa1, 0x4f60, 0x1f600:
-            # XXX assertIs?
+        for maxchar in 0, 0x61, 0xa1, 0x4f60, 0x1f600, 0x10ffff:
             self.assertEqual(new(0, maxchar), '')
             self.assertEqual(new(5, maxchar), chr(maxchar)*5)
         self.assertEqual(new(0, 0x110000), '')
@@ -41,6 +37,7 @@ class CAPITest(unittest.TestCase):
         from _testcapi import unicode_fill as fill
 
         strings = [
+            # all strings have exactly 5 characters
             'abcde', '\xa1\xa2\xa3\xa4\xa5',
             '\u4f60\u597d\u4e16\u754c\uff01',
             '\U0001f600\U0001f601\U0001f602\U0001f603\U0001f604'
@@ -70,7 +67,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, fill, [], 0, 0, 0x78)
         # CRASHES fill(s, 0, NULL, 0, 0)
         # CRASHES fill(NULL, 0, 0, 0x78)
-        # TODO: Test PyUnicode_CopyCharacters() with non-modifiable unicode.
+        # TODO: Test PyUnicode_Fill() with non-modifiable unicode.
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -79,9 +76,11 @@ class CAPITest(unittest.TestCase):
         from _testcapi import unicode_writechar as writechar
 
         strings = [
+            # one string for every kind
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
             '\U0001f600\U0001f601\U0001f602'
         ]
+        # one character for every kind + out of range code
         chars = [0x78, 0xa9, 0x20ac, 0x1f638, 0x110000]
         for i, s in enumerate(strings):
             for j, c in enumerate(chars):
@@ -106,6 +105,7 @@ class CAPITest(unittest.TestCase):
         from _testcapi import unicode_resize as resize
 
         strings = [
+            # all strings have exactly 3 characters
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
             '\U0001f600\U0001f601\U0001f602'
         ]
@@ -133,7 +133,8 @@ class CAPITest(unittest.TestCase):
         for left in strings:
             left = left[::-1]
             for right in strings:
-                self.assertEqual(append(left, right), left + right)
+                expected = left + right
+                self.assertEqual(append(left, right), expected)
 
         self.assertRaises(SystemError, append, 'abc', b'abc')
         self.assertRaises(SystemError, append, b'abc', 'abc')
@@ -608,15 +609,9 @@ class CAPITest(unittest.TestCase):
         from _testcapi import SIZEOF_WCHAR_T
 
         if SIZEOF_WCHAR_T == 2:
-            if sys.byteorder == 'little':
-                encoding = 'utf-16le'
-            elif sys.byteorder == 'little':
-                encoding = 'utf-16be'
+            encoding = 'utf-16le' if sys.byteorder == 'little' else 'utf-16be'
         elif SIZEOF_WCHAR_T == 4:
-            if sys.byteorder == 'little':
-                encoding = 'utf-32le'
-            elif sys.byteorder == 'little':
-                encoding = 'utf-32be'
+            encoding = 'utf-32le' if sys.byteorder == 'little' else 'utf-32be'
 
         for s in '', 'abc', '\xa1\xa2', '\u4f60', '\U0001f600':
             b = s.encode(encoding)
@@ -1289,6 +1284,7 @@ class CAPITest(unittest.TestCase):
         from _testcapi import unicode_copycharacters
 
         strings = [
+            # all strings have exactly 5 characters
             'abcde', '\xa1\xa2\xa3\xa4\xa5',
             '\u4f60\u597d\u4e16\u754c\uff01',
             '\U0001f600\U0001f601\U0001f602\U0001f603\U0001f604'

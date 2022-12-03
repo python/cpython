@@ -250,9 +250,6 @@ unicode_append(PyObject *self, PyObject *args)
         return NULL;
     }
     PyUnicode_Append(&left_copy, right);
-    if (PyErr_Occurred()) {
-        Py_XDECREF(left_copy);
-    }
     return left_copy;
 }
 
@@ -272,9 +269,6 @@ unicode_appendanddel(PyObject *self, PyObject *args)
     }
     Py_XINCREF(right);
     PyUnicode_AppendAndDel(&left_copy, right);
-    if (PyErr_Occurred()) {
-        Py_XDECREF(left_copy);
-    }
     return left_copy;
 }
 
@@ -282,11 +276,16 @@ unicode_appendanddel(PyObject *self, PyObject *args)
 static PyObject *
 unicode_fromstringandsize(PyObject *self, PyObject *args)
 {
-    const char *s = NULL;
+    const char *s;
+    Py_ssize_t bsize;
     Py_ssize_t size = -100;
 
-    if (!PyArg_ParseTuple(args, "z#|n", &s, &size, &size)) {
+    if (!PyArg_ParseTuple(args, "z#|n", &s, &bsize, &size)) {
         return NULL;
+    }
+
+    if (size == -100) {
+        size = bsize;
     }
     return PyUnicode_FromStringAndSize(s, size);
 }
@@ -295,8 +294,8 @@ unicode_fromstringandsize(PyObject *self, PyObject *args)
 static PyObject *
 unicode_fromstring(PyObject *self, PyObject *arg)
 {
-    const char *s = NULL;
-    Py_ssize_t size = -100;
+    const char *s;
+    Py_ssize_t size;
 
     if (!PyArg_Parse(arg, "z#", &s, &size)) {
         return NULL;
@@ -310,14 +309,19 @@ unicode_fromkindanddata(PyObject *self, PyObject *args)
 {
     int kind;
     void *buffer;
+    Py_ssize_t bsize;
     Py_ssize_t size = -100;
 
-    if (!PyArg_ParseTuple(args, "iz#|n", &kind, &buffer, &size, &size)) {
+    if (!PyArg_ParseTuple(args, "iz#|n", &kind, &buffer, &bsize, &size)) {
         return NULL;
     }
 
+    if (size == -100) {
+        size = bsize;
+    }
     if (kind && size % kind) {
-        PyErr_SetString(PyExc_SystemError, "invalid size in unicode_fromkindanddata()");
+        PyErr_SetString(PyExc_AssertionError,
+                        "invalid size in unicode_fromkindanddata()");
         return NULL;
     }
     return PyUnicode_FromKindAndData(kind, buffer, kind ? size / kind : 0);
@@ -392,8 +396,8 @@ unicode_interninplace(PyObject *self, PyObject *arg)
 static PyObject *
 unicode_internfromstring(PyObject *self, PyObject *arg)
 {
-    const char *s = NULL;
-    Py_ssize_t size = -100;
+    const char *s;
+    Py_ssize_t size;
 
     if (!PyArg_Parse(arg, "z#", &s, &size)) {
         return NULL;
@@ -405,14 +409,19 @@ unicode_internfromstring(PyObject *self, PyObject *arg)
 static PyObject *
 unicode_fromwidechar(PyObject *self, PyObject *args)
 {
-    const char *s = NULL;
-    Py_ssize_t bsize = -100;
+    const char *s;
+    Py_ssize_t bsize;
     Py_ssize_t size = -100;
 
     if (!PyArg_ParseTuple(args, "z#|n", &s, &bsize, &size)) {
         return NULL;
     }
     if (size == -100) {
+        if (bsize % SIZEOF_WCHAR_T) {
+            PyErr_SetString(PyExc_AssertionError,
+                            "invalid size in unicode_fromwidechar()");
+            return NULL;
+        }
         size = bsize / SIZEOF_WCHAR_T;
     }
     return PyUnicode_FromWideChar((const wchar_t *)s, size);
@@ -536,12 +545,12 @@ unicode_asucs4(PyObject *self, PyObject *args)
     buffer[str_len] = 0xffffU;
 
     if (!PyUnicode_AsUCS4(unicode, buffer, buf_len, copy_null)) {
-        PyMem_FREE(buffer);
+        PyMem_Free(buffer);
         return NULL;
     }
 
     result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer, buf_len);
-    PyMem_FREE(buffer);
+    PyMem_Free(buffer);
     return result;
 }
 
