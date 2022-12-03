@@ -773,6 +773,10 @@ New Features
   callbacks to receive notification on changes to a type.
   (Contributed by Carl Meyer in :gh:`91051`.)
 
+* Added :c:func:`PyCode_AddWatcher` and :c:func:`PyCode_ClearWatcher`
+  APIs to register callbacks to receive notification on creation and
+  destruction of code objects.
+  (Contributed by Itamar Ostricher in :gh:`91054`.)
 
 * Add :c:func:`PyFrame_GetVar` and :c:func:`PyFrame_GetVarString` functions to
   get a frame variable by its name.

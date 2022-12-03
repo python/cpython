@@ -7268,12 +7268,12 @@ assemble_init(struct assembler *a, int firstlineno)
     if (a->a_except_table == NULL) {
         goto error;
     }
-    return 1;
+    return 0;
 error:
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_linetable);
     Py_XDECREF(a->a_except_table);
-    return 0;
+    return -1;
 }
 
 static void
@@ -7667,8 +7667,9 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
-        if (_PyBytes_Resize(&a->a_except_table, len * 2) < 0)
-            return 0;
+        if (_PyBytes_Resize(&a->a_except_table, len * 2) < 0) {
+            return -1;
+        }
     }
     int size = end-start;
     assert(end > start);
@@ -7683,7 +7684,7 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
     assemble_emit_exception_table_item(a, size, 0);
     assemble_emit_exception_table_item(a, target, 0);
     assemble_emit_exception_table_item(a, depth_lasti, 0);
-    return 1;
+    return 0;
 }
 
 static int
@@ -7699,7 +7700,9 @@ assemble_exception_table(struct assembler *a, basicblock *entryblock)
             struct instr *instr = &b->b_instr[i];
             if (instr->i_except != handler) {
                 if (handler != NULL) {
-                    RETURN_IF_FALSE(assemble_emit_exception_table_entry(a, start, ioffset, handler));
+                    if (assemble_emit_exception_table_entry(a, start, ioffset, handler) < 0) {
+                        return -1;
+                    }
                 }
                 start = ioffset;
                 handler = instr->i_except;
@@ -7708,9 +7711,11 @@ assemble_exception_table(struct assembler *a, basicblock *entryblock)
         }
     }
     if (handler != NULL) {
-        RETURN_IF_FALSE(assemble_emit_exception_table_entry(a, start, ioffset, handler));
+        if (assemble_emit_exception_table_entry(a, start, ioffset, handler) < 0) {
+            return -1;
+        }
     }
-    return 1;
+    return 0;
 }
 
 /* Code location emitting code. See locations.md for a description of the format. */
@@ -7813,12 +7818,12 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
     if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
         if (_PyBytes_Resize(&a->a_linetable, len*2) < 0) {
-            return 0;
+            return -1;
         }
     }
     if (i->i_loc.lineno < 0) {
         write_location_info_none(a, isize);
-        return 1;
+        return 0;
     }
     int line_delta = i->i_loc.lineno - a->a_lineno;
     int column = i->i_loc.col_offset;
@@ -7829,23 +7834,23 @@ write_location_info_entry(struct assembler* a, struct instr* i, int isize)
         if (i->i_loc.end_lineno == i->i_loc.lineno || i->i_loc.end_lineno == -1) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = i->i_loc.lineno;
-            return 1;
+            return 0;
         }
     }
     else if (i->i_loc.end_lineno == i->i_loc.lineno) {
         if (line_delta == 0 && column < 80 && end_column - column < 16 && end_column >= column) {
             write_location_info_short_form(a, isize, column, end_column);
-            return 1;
+            return 0;
         }
         if (line_delta >= 0 && line_delta < 3 && column < 128 && end_column < 128) {
             write_location_info_oneline_form(a, isize, line_delta, column, end_column);
             a->a_lineno = i->i_loc.lineno;
-            return 1;
+            return 0;
         }
     }
     write_location_info_long_form(a, i, isize);
     a->a_lineno = i->i_loc.lineno;
-    return 1;
+    return 0;
 }
 
 static int
@@ -7853,8 +7858,8 @@ assemble_emit_location(struct assembler* a, struct instr* i)
 {
     int isize = instr_size(i);
     while (isize > 8) {
-        if (!write_location_info_entry(a, i, 8)) {
-            return 0;
+        if (write_location_info_entry(a, i, 8) < 0) {
+            return -1;
         }
         isize -= 8;
     }
@@ -7874,15 +7879,17 @@ assemble_emit(struct assembler *a, struct instr *i)
 
     int size = instr_size(i);
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
-        if (len > PY_SSIZE_T_MAX / 2)
-            return 0;
-        if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0)
-            return 0;
+        if (len > PY_SSIZE_T_MAX / 2) {
+            return -1;
+        }
+        if (_PyBytes_Resize(&a->a_bytecode, len * 2) < 0) {
+            return -1;
+        }
     }
     code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
     write_instr(code, i, size);
-    return 1;
+    return 0;
 }
 
 static int
@@ -8282,17 +8289,17 @@ merge_const_one(PyObject *const_cache, PyObject **obj)
     PyDict_CheckExact(const_cache);
     PyObject *key = _PyCode_ConstantKey(*obj);
     if (key == NULL) {
-        return 0;
+        return -1;
     }
 
     // t is borrowed reference
     PyObject *t = PyDict_SetDefault(const_cache, key, key);
     Py_DECREF(key);
     if (t == NULL) {
-        return 0;
+        return -1;
     }
     if (t == key) {  // obj is new constant.
-        return 1;
+        return 0;
     }
 
     if (PyTuple_CheckExact(t)) {
@@ -8301,7 +8308,7 @@ merge_const_one(PyObject *const_cache, PyObject **obj)
     }
 
     Py_SETREF(*obj, Py_NewRef(t));
-    return 1;
+    return 0;
 }
 
 // This is in codeobject.c.
@@ -8367,7 +8374,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (!names) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &names)) {
+    if (merge_const_one(c->c_const_cache, &names) < 0) {
         goto error;
     }
 
@@ -8375,7 +8382,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (consts == NULL) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &consts)) {
+    if (merge_const_one(c->c_const_cache, &consts) < 0) {
         goto error;
     }
 
@@ -8426,7 +8433,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    if (!merge_const_one(c->c_const_cache, &localsplusnames)) {
+    if (merge_const_one(c->c_const_cache, &localsplusnames) < 0) {
         goto error;
     }
     con.localsplusnames = localsplusnames;
@@ -8892,45 +8899,50 @@ assemble(struct compiler *c, int addNone)
     assemble_jump_offsets(g->g_entryblock);
 
     /* Create assembler */
-    if (!assemble_init(&a, c->u->u_firstlineno))
+    if (assemble_init(&a, c->u->u_firstlineno) < 0) {
         goto error;
+    }
 
     /* Emit code. */
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++)
-            if (!assemble_emit(&a, &b->b_instr[j]))
+        for (int j = 0; j < b->b_iused; j++) {
+            if (assemble_emit(&a, &b->b_instr[j]) < 0) {
                 goto error;
+            }
+        }
     }
 
     /* Emit location info */
     a.a_lineno = c->u->u_firstlineno;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++)
-            if (!assemble_emit_location(&a, &b->b_instr[j]))
+        for (int j = 0; j < b->b_iused; j++) {
+            if (assemble_emit_location(&a, &b->b_instr[j]) < 0) {
                 goto error;
+            }
+        }
     }
 
-    if (!assemble_exception_table(&a, g->g_entryblock)) {
+    if (assemble_exception_table(&a, g->g_entryblock) < 0) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &a.a_except_table)) {
+    if (merge_const_one(c->c_const_cache, &a.a_except_table) < 0) {
         goto error;
     }
 
     if (_PyBytes_Resize(&a.a_linetable, a.a_location_off) < 0) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &a.a_linetable)) {
+    if (merge_const_one(c->c_const_cache, &a.a_linetable) < 0) {
         goto error;
     }
 
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
         goto error;
     }
-    if (!merge_const_one(c->c_const_cache, &a.a_bytecode)) {
+    if (merge_const_one(c->c_const_cache, &a.a_bytecode) < 0) {
         goto error;
     }
 
@@ -8995,7 +9007,7 @@ fold_tuple_on_constants(PyObject *const_cache,
         }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-    if (merge_const_one(const_cache, &newconst) == 0) {
+    if (merge_const_one(const_cache, &newconst) < 0) {
         Py_DECREF(newconst);
         return -1;
     }
@@ -9849,17 +9861,17 @@ end:
     return err;
 }
 
-static inline int
+static inline bool
 is_exit_without_lineno(basicblock *b) {
     if (!basicblock_exits_scope(b)) {
-        return 0;
+        return false;
     }
     for (int i = 0; i < b->b_iused; i++) {
         if (b->b_instr[i].i_loc.lineno >= 0) {
-            return 0;
+            return false;
         }
     }
-    return 1;
+    return true;
 }
 
 /* PEP 626 mandates that the f_lineno of a frame is correct
