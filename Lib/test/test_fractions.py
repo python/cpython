@@ -830,6 +830,183 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(type(f.numerator), myint)
         self.assertEqual(type(f.denominator), myint)
 
+    def test_format(self):
+        # Triples (fraction, specification, expected_result)
+        testcases = [
+            # Case inherited from object - equivalent to str()
+            (F(1, 3), '', '1/3'),
+            (F(-1, 3), '', '-1/3'),
+            # Simple .f formatting
+            (F(0, 1), '.2f', '0.00'),
+            (F(1, 3), '.2f', '0.33'),
+            (F(2, 3), '.2f', '0.67'),
+            (F(4, 3), '.2f', '1.33'),
+            (F(1, 8), '.2f', '0.12'),
+            (F(3, 8), '.2f', '0.38'),
+            (F(1, 13), '.2f', '0.08'),
+            (F(1, 199), '.2f', '0.01'),
+            (F(1, 200), '.2f', '0.00'),
+            (F(22, 7), '.5f', '3.14286'),
+            (F('399024789'), '.2f', '399024789.00'),
+            # Large precision (more than float can provide)
+            (F(104348, 33215), '.50f',
+             '3.14159265392142104470871594159265392142104470871594'),
+            # Precision defaults to 6 if not given
+            (F(22, 7), 'f', '3.142857'),
+            (F(0), 'f', '0.000000'),
+            (F(-22, 7), 'f', '-3.142857'),
+            # Round-ties-to-even checks
+            (F('1.225'), '.2f', '1.22'),
+            (F('1.2250000001'), '.2f', '1.23'),
+            (F('1.2349999999'), '.2f', '1.23'),
+            (F('1.235'), '.2f', '1.24'),
+            (F('1.245'), '.2f', '1.24'),
+            (F('1.2450000001'), '.2f', '1.25'),
+            (F('1.2549999999'), '.2f', '1.25'),
+            (F('1.255'), '.2f', '1.26'),
+            (F('-1.225'), '.2f', '-1.22'),
+            (F('-1.2250000001'), '.2f', '-1.23'),
+            (F('-1.2349999999'), '.2f', '-1.23'),
+            (F('-1.235'), '.2f', '-1.24'),
+            (F('-1.245'), '.2f', '-1.24'),
+            (F('-1.2450000001'), '.2f', '-1.25'),
+            (F('-1.2549999999'), '.2f', '-1.25'),
+            (F('-1.255'), '.2f', '-1.26'),
+            # Negatives and sign handling
+            (F(2, 3), '.2f', '0.67'),
+            (F(2, 3), '-.2f', '0.67'),
+            (F(2, 3), '+.2f', '+0.67'),
+            (F(2, 3), ' .2f', ' 0.67'),
+            (F(-2, 3), '.2f', '-0.67'),
+            (F(-2, 3), '-.2f', '-0.67'),
+            (F(-2, 3), '+.2f', '-0.67'),
+            (F(-2, 3), ' .2f', '-0.67'),
+            # Formatting to zero places
+            (F(1, 2), '.0f', '0'),
+            (F(22, 7), '.0f', '3'),
+            (F(-22, 7), '.0f', '-3'),
+            # Formatting to zero places, alternate form
+            (F(1, 2), '#.0f', '0.'),
+            (F(22, 7), '#.0f', '3.'),
+            (F(-22, 7), '#.0f', '-3.'),
+            # Corner-case: leading zeros are allowed in the precision
+            (F(2, 3), '.02f', '0.67'),
+            (F(22, 7), '.000f', '3'),
+            # Specifying a minimum width
+            (F(2, 3), '6.2f', '  0.67'),
+            (F(12345), '6.2f', '12345.00'),
+            (F(12345), '12f', '12345.000000'),
+            # Fill and alignment
+            (F(2, 3), '>6.2f', '  0.67'),
+            (F(2, 3), '<6.2f', '0.67  '),
+            (F(2, 3), '^3.2f', '0.67'),
+            (F(2, 3), '^4.2f', '0.67'),
+            (F(2, 3), '^5.2f', '0.67 '),
+            (F(2, 3), '^6.2f', ' 0.67 '),
+            (F(2, 3), '^7.2f', ' 0.67  '),
+            (F(2, 3), '^8.2f', '  0.67  '),
+            # '=' alignment
+            (F(-2, 3), '=+8.2f', '-   0.67'),
+            (F(2, 3), '=+8.2f', '+   0.67'),
+            # Fill character
+            (F(-2, 3), 'X>3.2f', '-0.67'),
+            (F(-2, 3), 'X>7.2f', 'XX-0.67'),
+            (F(-2, 3), 'X<7.2f', '-0.67XX'),
+            (F(-2, 3), 'X^7.2f', 'X-0.67X'),
+            (F(-2, 3), 'X=7.2f', '-XX0.67'),
+            (F(-2, 3), ' >7.2f', '  -0.67'),
+            # Corner cases: weird fill characters
+            (F(-2, 3), '\x00>7.2f', '\x00\x00-0.67'),
+            (F(-2, 3), '\n>7.2f', '\n\n-0.67'),
+            (F(-2, 3), '\t>7.2f', '\t\t-0.67'),
+            # Zero-padding
+            (F(-2, 3), '07.2f', '-000.67'),
+            (F(-2, 3), '-07.2f', '-000.67'),
+            (F(2, 3), '+07.2f', '+000.67'),
+            (F(2, 3), ' 07.2f', ' 000.67'),
+            (F(2, 3), '0.2f', '0.67'),
+            # Thousands separator (only affects portion before the point)
+            (F(2, 3), ',.2f', '0.67'),
+            (F(2, 3), ',.7f', '0.6666667'),
+            (F('123456.789'), ',.2f', '123,456.79'),
+            (F('1234567'), ',.2f', '1,234,567.00'),
+            (F('12345678'), ',.2f', '12,345,678.00'),
+            (F('12345678'), ',f', '12,345,678.000000'),
+            # Underscore as thousands separator
+            (F(2, 3), '_.2f', '0.67'),
+            (F(2, 3), '_.7f', '0.6666667'),
+            (F('123456.789'), '_.2f', '123_456.79'),
+            (F('1234567'), '_.2f', '1_234_567.00'),
+            (F('12345678'), '_.2f', '12_345_678.00'),
+            # Thousands and zero-padding
+            (F('1234.5678'), '07,.2f', '1,234.57'),
+            (F('1234.5678'), '08,.2f', '1,234.57'),
+            (F('1234.5678'), '09,.2f', '01,234.57'),
+            (F('1234.5678'), '010,.2f', '001,234.57'),
+            (F('1234.5678'), '011,.2f', '0,001,234.57'),
+            (F('1234.5678'), '012,.2f', '0,001,234.57'),
+            (F('1234.5678'), '013,.2f', '00,001,234.57'),
+            (F('1234.5678'), '014,.2f', '000,001,234.57'),
+            (F('1234.5678'), '015,.2f', '0,000,001,234.57'),
+            (F('1234.5678'), '016,.2f', '0,000,001,234.57'),
+            (F('-1234.5678'), '07,.2f', '-1,234.57'),
+            (F('-1234.5678'), '08,.2f', '-1,234.57'),
+            (F('-1234.5678'), '09,.2f', '-1,234.57'),
+            (F('-1234.5678'), '010,.2f', '-01,234.57'),
+            (F('-1234.5678'), '011,.2f', '-001,234.57'),
+            (F('-1234.5678'), '012,.2f', '-0,001,234.57'),
+            (F('-1234.5678'), '013,.2f', '-0,001,234.57'),
+            (F('-1234.5678'), '014,.2f', '-00,001,234.57'),
+            (F('-1234.5678'), '015,.2f', '-000,001,234.57'),
+            (F('-1234.5678'), '016,.2f', '-0,000,001,234.57'),
+            # Corner case: no decimal point
+            (F('-1234.5678'), '06,.0f', '-1,235'),
+            (F('-1234.5678'), '07,.0f', '-01,235'),
+            (F('-1234.5678'), '08,.0f', '-001,235'),
+            (F('-1234.5678'), '09,.0f', '-0,001,235'),
+            # Corner-case - zero-padding specified through fill and align
+            # instead of the zero-pad character - in this case, treat '0' as a
+            # regular fill character and don't attempt to insert commas into
+            # the filled portion. This differs from the int and float
+            # behaviour.
+            (F('1234.5678'), '0=12,.2f', '00001,234.57'),
+            # Corner case where it's not clear whether the '0' indicates zero
+            # padding or gives the minimum width, but there's still an obvious
+            # answer to give. We want this to work in case the minimum width
+            # is being inserted programmatically: spec = f'{width}.2f'.
+            (F('12.34'), '0.2f', '12.34'),
+            (F('12.34'), 'X>0.2f', '12.34'),
+        ]
+        for fraction, spec, expected in testcases:
+            with self.subTest(fraction=fraction, spec=spec):
+                self.assertEqual(format(fraction, spec), expected)
+
+    def test_invalid_formats(self):
+        fraction = F(2, 3)
+        with self.assertRaises(TypeError):
+            format(fraction, None)
+
+        invalid_specs = [
+            "Q6f",  # regression test
+            # illegal to use fill or alignment when zero padding
+            "X>010f",
+            "X<010f",
+            "X^010f",
+            "X=010f",
+            "0>010f",
+            "0<010f",
+            "0^010f",
+            "0=010f",
+            ">010f",
+            "<010f",
+            "^010f",
+            "=010f",
+        ]
+        for spec in invalid_specs:
+            with self.subTest(spec=spec):
+                with self.assertRaises(ValueError):
+                    format(fraction, spec)
+
 
 if __name__ == '__main__':
     unittest.main()

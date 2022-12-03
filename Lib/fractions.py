@@ -310,6 +310,105 @@ class Fraction(numbers.Rational):
         else:
             return '%s/%s' % (self._numerator, self._denominator)
 
+    def __format__(self, format_spec, /):
+        """Format this fraction according to the given format specification."""
+
+        # Backwards compatiblility with existing formatting.
+        if not format_spec:
+            return str(self)
+
+        # Pattern matcher for the format spec; only supports "f" so far
+        FORMAT_SPEC_MATCHER = re.compile(r"""
+            (?:
+                (?P<fill>.)?
+                (?P<align>[<>=^])
+            )?
+            (?P<sign>[-+ ]?)
+            (?P<alt>\#)?
+            (?P<zeropad>0(?=\d))?
+            (?P<minimumwidth>\d+)?
+            (?P<thousands_sep>[,_])?
+            (?:\.(?P<precision>\d+))?
+            f
+        """, re.DOTALL | re.VERBOSE).fullmatch
+
+        # Validate and parse the format specifier.
+        match = FORMAT_SPEC_MATCHER(format_spec)
+        if match is None:
+            raise ValueError(
+                f"Invalid format specifier {format_spec!r} "
+                f"for object of type {type(self).__name__!r}"
+            )
+        elif match["align"] is not None and match["zeropad"] is not None:
+            # Avoid the temptation to guess.
+            raise ValueError(
+                f"Invalid format specifier {format_spec!r} "
+                f"for object of type {type(self).__name__!r}; "
+                "can't use explicit alignment when zero-padding"
+            )
+        else:
+            fill = match["fill"] or " "
+            align = match["align"] or ">"
+            pos_sign = "" if match["sign"] == "-" else match["sign"]
+            neg_sign = "-"
+            alternate_form = bool(match["alt"])
+            zeropad = bool(match["zeropad"])
+            minimumwidth = int(match["minimumwidth"] or "0")
+            thousands_sep = match["thousands_sep"]
+            precision = int(match["precision"] or "6")
+
+        # Get sign and output digits for the target number
+        negative = self < 0
+        digits = str(round(abs(self) * 10**precision))
+
+        # Assemble the output: before padding, it has the form
+        # f"{sign}{leading}{trailing}", where `leading` includes thousands
+        # separators if necessary, and `trailing` includes the decimal
+        # separator where appropriate.
+        digits = digits.zfill(precision + 1)
+        dot_pos = len(digits) - precision
+        sign = neg_sign if negative else pos_sign
+        separator = "." if precision or alternate_form else ""
+        trailing = separator + digits[dot_pos:]
+        leading = digits[:dot_pos]
+
+        # Do zero padding if required.
+        if zeropad:
+            min_leading = minimumwidth - len(sign) - len(trailing)
+            # When adding thousands separators, they'll be added to the
+            # zero-padded portion too, so we need to compensate.
+            leading = leading.zfill(
+                3 * min_leading // 4 + 1 if thousands_sep else min_leading
+            )
+
+        # Insert thousands separators if required.
+        if thousands_sep:
+            first_pos = 1 + (len(leading) - 1) % 3
+            leading = leading[:first_pos] + "".join(
+                thousands_sep + leading[pos:pos+3]
+                for pos in range(first_pos, len(leading), 3)
+            )
+
+        after_sign = leading + trailing
+
+        # Pad if a minimum width was given and we haven't already zero padded.
+        if zeropad or minimumwidth is None:
+            result = sign + after_sign
+        else:
+            padding = fill * (minimumwidth - len(sign) - len(after_sign))
+            if align == ">":
+                result = padding + sign + after_sign
+            elif align == "<":
+                result = sign + after_sign + padding
+            elif align == "=":
+                result = sign + padding + after_sign
+            else:
+                # Centered, with a leftwards bias when padding length is odd.
+                assert align == "^"
+                half = len(padding)//2
+                result = padding[:half] + sign + after_sign + padding[half:]
+        return result
+
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
         operator and a function from the operator module.
