@@ -4,21 +4,9 @@ Contributing to Python
 Build Status
 ------------
 
-- main
+- `Buildbot status overview <https://buildbot.python.org/all/#/release_status>`_
 
-  + `Stable buildbots <http://buildbot.python.org/3.x.stable/>`_
-
-- 3.9
-
-  + `Stable buildbots <http://buildbot.python.org/3.9.stable/>`_
-
-- 3.8
-
-  + `Stable buildbots <http://buildbot.python.org/3.8.stable/>`_
-
-- 3.7
-
-  + `Stable buildbots <http://buildbot.python.org/3.7.stable/>`_
+- `GitHub Actions status <https://github.com/python/cpython/actions/workflows/build.yml>`_
 
 
 Thank You
@@ -38,13 +26,13 @@ also suggestions on how you can most effectively help the project.
 
 Please be aware that our workflow does deviate slightly from the typical GitHub
 project. Details on how to properly submit a pull request are covered in
-`Lifecycle of a Pull Request <https://devguide.python.org/pullrequest/>`_.
+`Lifecycle of a Pull Request <https://devguide.python.org/getting-started/pull-request-lifecycle.html>`_.
 We utilize various bots and status checks to help with this, so do follow the
 comments they leave and their "Details" links, respectively. The key points of
 our workflow that are not covered by a bot or status check are:
 
 - All discussions that are not directly related to the code in the pull request
-  should happen on bugs.python.org
+  should happen on `GitHub Issues <https://github.com/python/cpython/issues>`_.
 - Upon your first non-trivial pull request (which includes documentation changes),
   feel free to add yourself to ``Misc/ACKS``
 

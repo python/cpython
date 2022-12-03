@@ -45,12 +45,11 @@ def _wait_for_interp_to_run(interp, timeout=None):
     # run subinterpreter eariler than the main thread in multiprocess.
     if timeout is None:
         timeout = support.SHORT_TIMEOUT
-    start_time = time.monotonic()
-    deadline = start_time + timeout
-    while not interpreters.is_running(interp):
-        if time.monotonic() > deadline:
-            raise RuntimeError('interp is not running')
-        time.sleep(0.010)
+    for _ in support.sleeping_retry(timeout, error=False):
+        if interpreters.is_running(interp):
+            break
+    else:
+        raise RuntimeError('interp is not running')
 
 
 @contextlib.contextmanager
@@ -387,7 +386,6 @@ class ShareableTypeTests(unittest.TestCase):
         self._assert_values([
             b'spam',
             9999,
-            self.cid,
             ])
 
     def test_bytes(self):
@@ -802,7 +800,7 @@ class RunStringTests(TestBase):
         self.assertEqual(out, 'it worked!')
 
     def test_create_thread(self):
-        subinterp = interpreters.create(isolated=False)
+        subinterp = interpreters.create()
         script, file = _captured_script("""
             import threading
             def f():
@@ -818,7 +816,62 @@ class RunStringTests(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    def test_create_daemon_thread(self):
+        with self.subTest('isolated'):
+            expected = 'spam spam spam spam spam'
+            subinterp = interpreters.create(isolated=True)
+            script, file = _captured_script(f"""
+                import threading
+                def f():
+                    print('it worked!', end='')
+
+                try:
+                    t = threading.Thread(target=f, daemon=True)
+                    t.start()
+                    t.join()
+                except RuntimeError:
+                    print('{expected}', end='')
+                """)
+            with file:
+                interpreters.run_string(subinterp, script)
+                out = file.read()
+
+            self.assertEqual(out, expected)
+
+        with self.subTest('not isolated'):
+            subinterp = interpreters.create(isolated=False)
+            script, file = _captured_script("""
+                import threading
+                def f():
+                    print('it worked!', end='')
+
+                t = threading.Thread(target=f, daemon=True)
+                t.start()
+                t.join()
+                """)
+            with file:
+                interpreters.run_string(subinterp, script)
+                out = file.read()
+
+            self.assertEqual(out, 'it worked!')
+
+    def test_os_exec(self):
+        expected = 'spam spam spam spam spam'
+        subinterp = interpreters.create()
+        script, file = _captured_script(f"""
+            import os, sys
+            try:
+                os.execl(sys.executable)
+            except RuntimeError:
+                print('{expected}', end='')
+            """)
+        with file:
+            interpreters.run_string(subinterp, script)
+            out = file.read()
+
+        self.assertEqual(out, expected)
+
+    @support.requires_fork()
     def test_fork(self):
         import tempfile
         with tempfile.NamedTemporaryFile('w+', encoding="utf-8") as file:
@@ -1159,6 +1212,18 @@ class ChannelIDTests(TestBase):
         self.assertFalse(cid1 != cid2)
         self.assertTrue(cid1 != cid3)
 
+    def test_shareable(self):
+        chan = interpreters.channel_create()
+
+        obj = interpreters.channel_create()
+        interpreters.channel_send(chan, obj)
+        got = interpreters.channel_recv(chan)
+
+        self.assertEqual(got, obj)
+        self.assertIs(type(got), type(obj))
+        # XXX Check the following in the channel tests?
+        #self.assertIsNot(got, obj)
+
 
 class ChannelTests(TestBase):
 
@@ -1221,7 +1286,7 @@ class ChannelTests(TestBase):
             import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
-        # Test for channel that has boths ends associated to an interpreter.
+        # Test for channel that has both ends associated to an interpreter.
         send_interps = interpreters.channel_list_interpreters(cid, send=True)
         recv_interps = interpreters.channel_list_interpreters(cid, send=False)
         self.assertEqual(send_interps, [interp0])
@@ -1490,6 +1555,19 @@ class ChannelTests(TestBase):
         self.assertEqual(obj4, b'spam')
         self.assertEqual(obj5, b'eggs')
         self.assertIs(obj6, default)
+
+    def test_recv_sending_interp_destroyed(self):
+        cid = interpreters.channel_create()
+        interp = interpreters.create()
+        interpreters.run_string(interp, dedent(f"""
+            import _xxsubinterpreters as _interpreters
+            _interpreters.channel_send({cid}, b'spam')
+            """))
+        interpreters.destroy(interp)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'unrecognized interpreter ID'):
+            interpreters.channel_recv(cid)
 
     def test_run_string_arg_unresolved(self):
         cid = interpreters.channel_create()

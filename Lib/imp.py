@@ -9,7 +9,7 @@ functionality over this module.
 from _imp import (lock_held, acquire_lock, release_lock,
                   get_frozen_object, is_frozen_package,
                   init_frozen, is_builtin, is_frozen,
-                  _fix_co_filename)
+                  _fix_co_filename, _frozen_module_names)
 try:
     from _imp import create_dynamic
 except ImportError:
@@ -226,7 +226,7 @@ def load_module(name, file, filename, details):
 
     """
     suffix, mode, type_ = details
-    if mode and (not mode.startswith(('r', 'U')) or '+' in mode):
+    if mode and (not mode.startswith('r') or '+' in mode):
         raise ValueError('invalid file open mode {!r}'.format(mode))
     elif file is None and type_ in {PY_SOURCE, PY_COMPILED}:
         msg = 'file object required for import (type code {})'.format(type_)
