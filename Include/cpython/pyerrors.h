@@ -37,6 +37,7 @@ typedef struct {
     PyObject *msg;
     PyObject *name;
     PyObject *path;
+    PyObject *name_from;
 } PyImportErrorObject;
 
 typedef struct {
@@ -176,4 +177,11 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
     const char *format,
     ...);
 
-#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, message)
+extern PyObject *_PyErr_SetImportErrorWithNameFrom(
+        PyObject *,
+        PyObject *,
+        PyObject *,
+        PyObject *);
+
+
+#define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

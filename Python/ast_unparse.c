@@ -13,7 +13,7 @@ _Py_DECLARE_STR(open_br, "{");
 _Py_DECLARE_STR(dbl_open_br, "{{");
 _Py_DECLARE_STR(close_br, "}");
 _Py_DECLARE_STR(dbl_close_br, "}}");
-static PyObject *_str_replace_inf;
+#define _str_replace_inf _Py_CACHED_OBJECT(str_replace_inf)
 
 /* Forward declarations for recursion via helper functions. */
 static PyObject *

@@ -324,8 +324,7 @@ _io_BytesIO_getbuffer_impl(bytesio *self)
     buf = (bytesiobuf *) type->tp_alloc(type, 0);
     if (buf == NULL)
         return NULL;
-    Py_INCREF(self);
-    buf->source = self;
+    buf->source = (bytesio*)Py_NewRef(self);
     view = PyMemoryView_FromObject((PyObject *) buf);
     Py_DECREF(buf);
     return view;
@@ -356,8 +355,7 @@ _io_BytesIO_getvalue_impl(bytesio *self)
                 return NULL;
         }
     }
-    Py_INCREF(self->buf);
-    return self->buf;
+    return Py_NewRef(self->buf);
 }
 
 /*[clinic input]
@@ -401,8 +399,7 @@ read_bytes(bytesio *self, Py_ssize_t size)
         self->pos == 0 && size == PyBytes_GET_SIZE(self->buf) &&
         self->exports == 0) {
         self->pos += size;
-        Py_INCREF(self->buf);
-        return self->buf;
+        return Py_NewRef(self->buf);
     }
 
     output = PyBytes_AS_STRING(self->buf) + self->pos;
@@ -791,8 +788,7 @@ bytesio_getstate(bytesio *self, PyObject *Py_UNUSED(ignored))
     if (initvalue == NULL)
         return NULL;
     if (self->dict == NULL) {
-        Py_INCREF(Py_None);
-        dict = Py_None;
+        dict = Py_NewRef(Py_None);
     }
     else {
         dict = PyDict_Copy(self->dict);
@@ -875,8 +871,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
                 return NULL;
         }
         else {
-            Py_INCREF(dict);
-            self->dict = dict;
+            self->dict = Py_NewRef(dict);
         }
     }
 
@@ -943,8 +938,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
     }
     if (initvalue && initvalue != Py_None) {
         if (PyBytes_CheckExact(initvalue)) {
-            Py_INCREF(initvalue);
-            Py_XSETREF(self->buf, initvalue);
+            Py_XSETREF(self->buf, Py_NewRef(initvalue));
             self->string_size = PyBytes_GET_SIZE(initvalue);
         }
         else {
@@ -963,17 +957,15 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 static PyObject *
 bytesio_sizeof(bytesio *self, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
-        Py_ssize_t s = _PySys_GetSizeOf(self->buf);
-        if (s == -1) {
+        size_t s = _PySys_GetSizeOf(self->buf);
+        if (s == (size_t)-1) {
             return NULL;
         }
         res += s;
     }
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 static int

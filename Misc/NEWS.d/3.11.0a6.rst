@@ -1043,7 +1043,8 @@ Respect `--with-suffix` when building on case-insensitive file systems.
 .. nonce: MD783M
 .. section: Build
 
-Building Python now requires a C11 compiler without optional C11 features.
+Building Python now requires a C11 compiler. Optional C11 features are not
+required.
 Patch by Victor Stinner.
 
 ..
