@@ -4,8 +4,6 @@
 extern "C" {
 #endif
 
-#define CODE_MAX_WATCHERS 8
-
 /* PEP 659
  * Specialization and quickening structs and helper functions
  */
