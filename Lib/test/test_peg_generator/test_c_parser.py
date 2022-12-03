@@ -1,12 +1,20 @@
+import sysconfig
 import textwrap
 import unittest
-from distutils.tests.support import TempdirManager
+import os
+import shutil
+import tempfile
 from pathlib import Path
 
 from test import test_tools
 from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
+
+_py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
+_pgo_flag = sysconfig.get_config_var("PGO_PROF_USE_FLAG")
+if _pgo_flag and _py_cflags_nodist and _pgo_flag in _py_cflags_nodist:
+    raise unittest.SkipTest("peg_generator test disabled under PGO build")
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
@@ -62,23 +70,46 @@ unittest.main()
 """
 
 
-class TestCParser(TempdirManager, unittest.TestCase):
+@support.requires_subprocess()
+class TestCParser(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # When running under regtest, a separate tempdir is used
+        # as the current directory and watched for left-overs.
+        # Reusing that as the base for temporary directories
+        # ensures everything is cleaned up properly and
+        # cleans up afterwards if not (with warnings).
+        cls.tmp_base = os.getcwd()
+        if os.path.samefile(cls.tmp_base, os_helper.SAVEDCWD):
+            cls.tmp_base = None
+        # Create a directory for the reuseable static library part of
+        # the pegen extension build process.  This greatly reduces the
+        # runtime overhead of spawning compiler processes.
+        cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
+        cls.addClassCleanup(shutil.rmtree, cls.library_dir)
+
     def setUp(self):
+        self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()
         if cmd is not None:
             self.skipTest("The %r command is not found" % cmd)
-        super(TestCParser, self).setUp()
-        self.tmp_path = self.mkdtemp()
-        change_cwd = os_helper.change_cwd(self.tmp_path)
-        change_cwd.__enter__()
-        self.addCleanup(change_cwd.__exit__, None, None, None)
+        self.old_cwd = os.getcwd()
+        self.tmp_path = tempfile.mkdtemp(dir=self.tmp_base)
+        self.enterContext(os_helper.change_cwd(self.tmp_path))
 
     def tearDown(self):
-        super(TestCParser, self).tearDown()
+        os.chdir(self.old_cwd)
+        shutil.rmtree(self.tmp_path)
+        sysconfig._CONFIG_VARS.clear()
+        sysconfig._CONFIG_VARS.update(self._backup_config_vars)
 
     def build_extension(self, grammar_source):
         grammar = parse_string(grammar_source, GrammarParser)
-        generate_parser_c_extension(grammar, Path(self.tmp_path))
+        # Because setUp() already changes the current directory to the
+        # temporary path, use a relative path here to prevent excessive
+        # path lengths when compiling.
+        generate_parser_c_extension(grammar, Path('.'), library_dir=self.library_dir)
 
     def run_test(self, grammar_source, test_source):
         self.build_extension(grammar_source)
@@ -90,15 +121,15 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_c_parser(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=stmt* $ { Module(a, NULL, p->arena) }
+        start[mod_ty]: a[asdl_stmt_seq*]=stmt* $ { _PyAST_Module(a, NULL, p->arena) }
         stmt[stmt_ty]: a=expr_stmt { a }
-        expr_stmt[stmt_ty]: a=expression NEWLINE { _Py_Expr(a, EXTRA) }
-        expression[expr_ty]: ( l=expression '+' r=term { _Py_BinOp(l, Add, r, EXTRA) }
-                            | l=expression '-' r=term { _Py_BinOp(l, Sub, r, EXTRA) }
+        expr_stmt[stmt_ty]: a=expression NEWLINE { _PyAST_Expr(a, EXTRA) }
+        expression[expr_ty]: ( l=expression '+' r=term { _PyAST_BinOp(l, Add, r, EXTRA) }
+                            | l=expression '-' r=term { _PyAST_BinOp(l, Sub, r, EXTRA) }
                             | t=term { t }
                             )
-        term[expr_ty]: ( l=term '*' r=factor { _Py_BinOp(l, Mult, r, EXTRA) }
-                    | l=term '/' r=factor { _Py_BinOp(l, Div, r, EXTRA) }
+        term[expr_ty]: ( l=term '*' r=factor { _PyAST_BinOp(l, Mult, r, EXTRA) }
+                    | l=term '/' r=factor { _PyAST_BinOp(l, Div, r, EXTRA) }
                     | f=factor { f }
                     )
         factor[expr_ty]: ('(' e=expression ')' { e }
@@ -231,12 +262,12 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_return_stmt_noexpr_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { a }
+        start[mod_ty]: a=[statements] ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
+        statements[asdl_stmt_seq*]: a[asdl_stmt_seq*]=statement+ { a }
         statement[stmt_ty]: simple_stmt
         simple_stmt[stmt_ty]: small_stmt
         small_stmt[stmt_ty]: return_stmt
-        return_stmt[stmt_ty]: a='return' NEWLINE { _Py_Return(NULL, EXTRA) }
+        return_stmt[stmt_ty]: a='return' NEWLINE { _PyAST_Return(NULL, EXTRA) }
         """
         test_source = """
         stmt = "return"
@@ -246,8 +277,8 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_gather_action_ast(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=';'.pass_stmt+ NEWLINE ENDMARKER { Module(a, NULL, p->arena) }
-        pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA)}
+        start[mod_ty]: a[asdl_stmt_seq*]=';'.pass_stmt+ NEWLINE ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
+        pass_stmt[stmt_ty]: a='pass' { _PyAST_Pass(EXTRA)}
         """
         test_source = """
         stmt = "pass; pass"
@@ -257,12 +288,12 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_pass_stmt_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { a }
+        start[mod_ty]: a=[statements] ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
+        statements[asdl_stmt_seq*]: a[asdl_stmt_seq*]=statement+ { a }
         statement[stmt_ty]: simple_stmt
         simple_stmt[stmt_ty]: small_stmt
         small_stmt[stmt_ty]: pass_stmt
-        pass_stmt[stmt_ty]: a='pass' NEWLINE { _Py_Pass(EXTRA) }
+        pass_stmt[stmt_ty]: a='pass' NEWLINE { _PyAST_Pass(EXTRA) }
         """
         test_source = """
         stmt = "pass"
@@ -272,22 +303,23 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_if_stmt_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
-        statement[asdl_seq*]:  a=compound_stmt { _PyPegen_singleton_seq(p, a) } | simple_stmt
+        start[mod_ty]: a=[statements] ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
+        statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
+        statement[asdl_stmt_seq*]:  a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | simple_stmt
 
-        simple_stmt[asdl_seq*]: a=small_stmt b=further_small_stmt* [';'] NEWLINE { _PyPegen_seq_insert_in_front(p, a, b) }
+        simple_stmt[asdl_stmt_seq*]: a=small_stmt b=further_small_stmt* [';'] NEWLINE {
+                                            (asdl_stmt_seq*)_PyPegen_seq_insert_in_front(p, a, b) }
         further_small_stmt[stmt_ty]: ';' a=small_stmt { a }
 
         block: simple_stmt | NEWLINE INDENT a=statements DEDENT { a }
 
         compound_stmt: if_stmt
 
-        if_stmt: 'if' a=full_expression ':' b=block { _Py_If(a, b, NULL, EXTRA) }
+        if_stmt: 'if' a=full_expression ':' b=block { _PyAST_If(a, b, NULL, EXTRA) }
 
         small_stmt[stmt_ty]: pass_stmt
 
-        pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA) }
+        pass_stmt[stmt_ty]: a='pass' { _PyAST_Pass(EXTRA) }
 
         full_expression: NAME
         """
@@ -299,15 +331,15 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_same_name_different_types(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=import_from+ NEWLINE ENDMARKER { Module(a, NULL, p->arena)}
+        start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { _PyAST_Module(a, NULL, p->arena)}
         import_from[stmt_ty]: ( a='from' !'import' c=simple_name 'import' d=import_as_names_from {
-                                _Py_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
+                                _PyAST_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
                             | a='from' '.' 'import' c=import_as_names_from {
-                                _Py_ImportFrom(NULL, c, 1, EXTRA) }
+                                _PyAST_ImportFrom(NULL, c, 1, EXTRA) }
                             )
         simple_name[expr_ty]: NAME
-        import_as_names_from[asdl_seq*]: a=','.import_as_name_from+ { a }
-        import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _Py_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, p->arena) }
+        import_as_names_from[asdl_alias_seq*]: a[asdl_alias_seq*]=','.import_as_name_from+ { a }
+        import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _PyAST_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, EXTRA) }
         """
         test_source = """
         for stmt in ("from a import b as c", "from . import a as b"):
@@ -319,19 +351,19 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_with_stmt_with_paren(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
-        statement[asdl_seq*]: a=compound_stmt { _PyPegen_singleton_seq(p, a) }
+        start[mod_ty]: a=[statements] ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
+        statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
+        statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
         compound_stmt[stmt_ty]: with_stmt
         with_stmt[stmt_ty]: (
-            a='with' '(' b=','.with_item+ ')' ':' c=block {
-                _Py_With(b, _PyPegen_singleton_seq(p, c), NULL, EXTRA) }
+            a='with' '(' b[asdl_withitem_seq*]=','.with_item+ ')' ':' c=block {
+                _PyAST_With(b, (asdl_stmt_seq*) _PyPegen_singleton_seq(p, c), NULL, EXTRA) }
         )
         with_item[withitem_ty]: (
-            e=NAME o=['as' t=NAME { t }] { _Py_withitem(e, _PyPegen_set_expr_context(p, o, Store), p->arena) }
+            e=NAME o=['as' t=NAME { t }] { _PyAST_withitem(e, _PyPegen_set_expr_context(p, o, Store), p->arena) }
         )
         block[stmt_ty]: a=pass_stmt NEWLINE { a } | NEWLINE INDENT a=pass_stmt DEDENT { a }
-        pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA) }
+        pass_stmt[stmt_ty]: a='pass' { _PyAST_Pass(EXTRA) }
         """
         test_source = """
         stmt = "with (\\n    a as b,\\n    c as d\\n): pass"
@@ -345,14 +377,14 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_ternary_operator(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=expr ENDMARKER { Module(a, NULL, p->arena) }
-        expr[asdl_seq*]: a=listcomp NEWLINE { _PyPegen_singleton_seq(p, _Py_Expr(a, EXTRA)) }
+        start[mod_ty]: a=expr ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
+        expr[asdl_stmt_seq*]: a=listcomp NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, _PyAST_Expr(a, EXTRA)) }
         listcomp[expr_ty]: (
-            a='[' b=NAME c=for_if_clauses d=']' { _Py_ListComp(b, c, EXTRA) }
+            a='[' b=NAME c=for_if_clauses d=']' { _PyAST_ListComp(b, c, EXTRA) }
         )
-        for_if_clauses[asdl_seq*]: (
-            a=(y=[ASYNC] 'for' a=NAME 'in' b=NAME c=('if' z=NAME { z })*
-                { _Py_comprehension(_Py_Name(((expr_ty) a)->v.Name.id, Store, EXTRA), b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
+        for_if_clauses[asdl_comprehension_seq*]: (
+            a[asdl_comprehension_seq*]=(y=[ASYNC] 'for' a=NAME 'in' b=NAME c[asdl_expr_seq*]=('if' z=NAME { z })*
+                { _PyAST_comprehension(_PyAST_Name(((expr_ty) a)->v.Name.id, Store, EXTRA), b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
         )
         """
         test_source = """
@@ -443,5 +475,30 @@ class TestCParser(TempdirManager, unittest.TestCase):
         valid_cases = ["if if + if"]
         invalid_cases = ["if if"]
         self.check_input_strings_for_grammar(valid_cases, invalid_cases)
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_forced(self) -> None:
+        grammar_source = """
+        start: NAME &&':' | NAME
+        """
+        test_source = """
+        self.assertEqual(parse.parse_string("number :", mode=0), None)
+        with self.assertRaises(SyntaxError) as e:
+            parse.parse_string("a", mode=0)
+        self.assertIn("expected ':'", str(e.exception))
+        """
+        self.run_test(grammar_source, test_source)
+
+    def test_forced_with_group(self) -> None:
+        grammar_source = """
+        start: NAME &&(':' | ';') | NAME
+        """
+        test_source = """
+        self.assertEqual(parse.parse_string("number :", mode=0), None)
+        self.assertEqual(parse.parse_string("number ;", mode=0), None)
+        with self.assertRaises(SyntaxError) as e:
+            parse.parse_string("a", mode=0)
+        self.assertIn("expected (':' | ';')", e.exception.args[0])
         """
         self.run_test(grammar_source, test_source)

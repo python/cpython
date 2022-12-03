@@ -1,2 +1,0 @@
-Delete unnecessary instance check in importlib.reload().
-Patch by Furkan Önder.
