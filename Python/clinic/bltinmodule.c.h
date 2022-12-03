@@ -183,11 +183,14 @@ PyDoc_STRVAR(builtin_format__doc__,
 "format($module, value, format_spec=\'\', /)\n"
 "--\n"
 "\n"
-"Return value.__format__(format_spec)\n"
+"Return type(value).__format__(value, format_spec)\n"
 "\n"
-"format_spec defaults to the empty string.\n"
-"See the Format Specification Mini-Language section of help(\'FORMATTING\') for\n"
-"details.");
+"Many built-in types implement format_spec according to the\n"
+"Format Specification Mini-language. See help(\'FORMATTING\').\n"
+"\n"
+"If type(value) does not supply a method named __format__\n"
+"and format_spec is empty, then str(value) is returned.\n"
+"See also help(\'SPECIALMETHODS\').");
 
 #define BUILTIN_FORMAT_METHODDEF    \
     {"format", _PyCFunction_CAST(builtin_format), METH_FASTCALL, builtin_format__doc__},
@@ -1212,4 +1215,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f3da5510745785af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c9497e0ffeb8a30 input=a9049054013a1b77]*/

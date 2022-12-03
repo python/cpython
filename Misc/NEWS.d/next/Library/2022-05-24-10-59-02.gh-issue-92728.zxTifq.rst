@@ -1,3 +1,0 @@
-The :func:`re.template` function and the corresponding :const:`re.TEMPLATE`
-and :const:`re.T` flags are restored after they were removed in 3.11.0b1,
-but they are now deprecated, so they might be removed from Python 3.13.

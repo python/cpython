@@ -18,10 +18,11 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     PyCompilerFlags *flags,
     int optimize,
     struct _arena *arena);
-extern PyFutureFeatures* _PyFuture_FromAST(
+
+int _PyFuture_FromAST(
     struct _mod * mod,
-    PyObject *filename
-    );
+    PyObject *filename,
+    PyFutureFeatures* futures);
 
 extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
@@ -39,6 +40,13 @@ extern int _PyAST_Optimize(
     _PyASTOptimizeState *state);
 
 /* Access compiler internals for unit testing */
+
+PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
+        PyObject *ast,
+        PyObject *filename,
+        PyCompilerFlags *flags,
+        int optimize);
+
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
         PyObject *consts);

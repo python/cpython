@@ -1439,7 +1439,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('P2P4P4c7P2ic??P'))
+        check(get_gen(), size('P2P4P4c7P2ic??2P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
@@ -1484,7 +1484,8 @@ class SizeofTest(unittest.TestCase):
         # PyCapsule
         # XXX
         # rangeiterator
-        check(iter(range(1)), size('4l'))
+        check(iter(range(1)), size('3l'))
+        check(iter(range(2**65)), size('3P'))
         # reverse
         check(reversed(''), size('nP'))
         # range
@@ -1521,7 +1522,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2nPI13Pl4Pn9Pn12PIP'
+        fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
         s = vsize('2P' + fmt)
         check(int, s)
         # class

@@ -165,11 +165,6 @@ class DictWriter:
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
-# Guard Sniffer's type checking against builds that exclude complex()
-try:
-    complex
-except NameError:
-    complex = float
 
 class Sniffer:
     '''

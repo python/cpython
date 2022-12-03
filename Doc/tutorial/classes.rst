@@ -581,7 +581,8 @@ this::
        .
        <statement-N>
 
-The name :class:`BaseClassName` must be defined in a scope containing the
+The name :class:`BaseClassName` must be defined in a
+namespace accessible from the scope containing the
 derived class definition.  In place of a base class name, other arbitrary
 expressions are also allowed.  This can be useful, for example, when the base
 class is defined in another module::
