@@ -329,8 +329,8 @@ class Fraction(numbers.Rational):
             (?P<minimumwidth>\d+)?
             (?P<thousands_sep>[,_])?
             (?:\.(?P<precision>\d+))?
-            f
-        """, re.DOTALL | re.VERBOSE).fullmatch
+            (?P<specifier_type>[f%])
+        """, re.DOTALL | re.IGNORECASE | re.VERBOSE).fullmatch
 
         # Validate and parse the format specifier.
         match = FORMAT_SPEC_MATCHER(format_spec)
@@ -350,16 +350,17 @@ class Fraction(numbers.Rational):
             fill = match["fill"] or " "
             align = match["align"] or ">"
             pos_sign = "" if match["sign"] == "-" else match["sign"]
-            neg_sign = "-"
             alternate_form = bool(match["alt"])
             zeropad = bool(match["zeropad"])
             minimumwidth = int(match["minimumwidth"] or "0")
             thousands_sep = match["thousands_sep"]
             precision = int(match["precision"] or "6")
+            specifier_type = match["specifier_type"]
 
         # Get sign and output digits for the target number
         negative = self < 0
-        digits = str(round(abs(self) * 10**precision))
+        shift = precision + 2 if specifier_type == "%" else precision
+        digits = str(round(abs(self) * 10**shift))
 
         # Assemble the output: before padding, it has the form
         # f"{sign}{leading}{trailing}", where `leading` includes thousands
@@ -367,9 +368,10 @@ class Fraction(numbers.Rational):
         # separator where appropriate.
         digits = digits.zfill(precision + 1)
         dot_pos = len(digits) - precision
-        sign = neg_sign if negative else pos_sign
+        sign = "-" if negative else pos_sign
         separator = "." if precision or alternate_form else ""
-        trailing = separator + digits[dot_pos:]
+        percent = "%" if specifier_type == "%" else ""
+        trailing = separator + digits[dot_pos:] + percent
         leading = digits[:dot_pos]
 
         # Do zero padding if required.

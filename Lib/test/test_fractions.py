@@ -976,6 +976,21 @@ class FractionTest(unittest.TestCase):
             # is being inserted programmatically: spec = f'{width}.2f'.
             (F('12.34'), '0.2f', '12.34'),
             (F('12.34'), 'X>0.2f', '12.34'),
+            # "F" should work identically to "f"
+            (F(22, 7), '.5F', '3.14286'),
+            # %-specifier
+            (F(22, 7), '.2%', '314.29%'),
+            (F(1, 7), '.2%', '14.29%'),
+            (F(1, 70), '.2%', '1.43%'),
+            (F(1, 700), '.2%', '0.14%'),
+            (F(1, 7000), '.2%', '0.01%'),
+            (F(1, 70000), '.2%', '0.00%'),
+            (F(1, 7), '.0%', '14%'),
+            (F(1, 7), '#.0%', '14.%'),
+            (F(100, 7), ',.2%', '1,428.57%'),
+            (F(22, 7), '7.2%', '314.29%'),
+            (F(22, 7), '8.2%', ' 314.29%'),
+            (F(22, 7), '08.2%', '0314.29%'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
