@@ -1,0 +1,2 @@
+Update :exc:`~urllib.error.HTTPError` to be initialized properly, even if
+the ``fp`` is ``None``. Patch by Dong-hee Na.
