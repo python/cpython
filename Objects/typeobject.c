@@ -4328,7 +4328,7 @@ _Py_type_getattro(PyTypeObject *type, PyObject *name, int suppress_exception)
 
 /* This is similar to PyObject_GenericGetAttr(),
    but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
-PyObject *
+static PyObject *
 type_getattro(PyTypeObject *type, PyObject *name)
 {
     return _Py_type_getattro(type, name, 0);
