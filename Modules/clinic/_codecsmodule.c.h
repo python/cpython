@@ -1178,8 +1178,8 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -1258,8 +1258,8 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
     if (nargs < 3) {
         goto skip_optional;
     }
-    final = _PyLong_AsInt(args[2]);
-    if (final == -1 && PyErr_Occurred()) {
+    final = PyObject_IsTrue(args[2]);
+    if (final < 0) {
         goto exit;
     }
 skip_optional:
@@ -2869,4 +2869,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=67992c0e34f1b81b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=603da07cf8dfeb4b input=a9049054013a1b77]*/

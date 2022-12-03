@@ -490,14 +490,14 @@ _codecs_utf_32_ex_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.unicode_escape_decode
     data: Py_buffer(accept={str, buffer})
     errors: str(accept={str, NoneType}) = None
-    final: bool(accept={int}) = True
+    final: bool = True
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
                                    const char *errors, int final)
-/*[clinic end generated code: output=b284f97b12c635ee input=6154f039a9f7c639]*/
+/*[clinic end generated code: output=b284f97b12c635ee input=15019f081ffe272b]*/
 {
     Py_ssize_t consumed = data->len;
     PyObject *decoded = _PyUnicode_DecodeUnicodeEscapeStateful(data->buf, data->len,
@@ -510,14 +510,14 @@ _codecs_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
 _codecs.raw_unicode_escape_decode
     data: Py_buffer(accept={str, buffer})
     errors: str(accept={str, NoneType}) = None
-    final: bool(accept={int}) = True
+    final: bool = True
     /
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_raw_unicode_escape_decode_impl(PyObject *module, Py_buffer *data,
                                        const char *errors, int final)
-/*[clinic end generated code: output=11dbd96301e2879e input=2d166191beb3235a]*/
+/*[clinic end generated code: output=11dbd96301e2879e input=b93f823aa8c343ad]*/
 {
     Py_ssize_t consumed = data->len;
     PyObject *decoded = _PyUnicode_DecodeRawUnicodeEscapeStateful(data->buf, data->len,

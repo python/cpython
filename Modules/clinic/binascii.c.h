@@ -175,8 +175,8 @@ binascii_a2b_base64(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    strict_mode = _PyLong_AsInt(args[1]);
-    if (strict_mode == -1 && PyErr_Occurred()) {
+    strict_mode = PyObject_IsTrue(args[1]);
+    if (strict_mode < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -795,4 +795,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=98e476001a93e8e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab156917c9db79d2 input=a9049054013a1b77]*/

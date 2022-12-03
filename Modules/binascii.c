@@ -375,7 +375,7 @@ binascii.a2b_base64
     data: ascii_buffer
     /
     *
-    strict_mode: bool(accept={int}) = False
+    strict_mode: bool = False
 
 Decode a line of base64 data.
 
@@ -386,7 +386,7 @@ Decode a line of base64 data.
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
-/*[clinic end generated code: output=5409557788d4f975 input=3a30c4e3528317c6]*/
+/*[clinic end generated code: output=5409557788d4f975 input=c0c15fd0f8f9a62d]*/
 {
     assert(data->len >= 0);
 
