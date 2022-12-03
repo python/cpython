@@ -1,1 +1,1 @@
-SystemErrors on import now chain the original unexpected exception
+Raising SystemError on import will now have its cause be set to the original unexpected exception.
