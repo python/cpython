@@ -4237,8 +4237,8 @@ is_dunder_name(PyObject *name)
 
 /* This is similar to PyObject_GenericGetAttr(),
    but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
-static PyObject *
-type_getattro(PyTypeObject *type, PyObject *name)
+PyObject *
+_Py_type_getattro(PyTypeObject *type, PyObject *name, int suppress_exception)
 {
     PyTypeObject *metatype = Py_TYPE(type);
     PyObject *meta_attribute, *attribute;
@@ -4318,10 +4318,20 @@ type_getattro(PyTypeObject *type, PyObject *name)
     }
 
     /* Give up */
+    if (!suppress_exception) {
     PyErr_Format(PyExc_AttributeError,
                  "type object '%.50s' has no attribute '%U'",
                  type->tp_name, name);
+    }
     return NULL;
+}
+
+/* This is similar to PyObject_GenericGetAttr(),
+   but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
+PyObject *
+type_getattro(PyTypeObject *type, PyObject *name)
+{
+    return _Py_type_getattro(type, name, 0);
 }
 
 static int

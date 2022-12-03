@@ -980,6 +980,20 @@ int
 PyObject_HasAttr(PyObject *v, PyObject *name)
 {
     PyObject *res;
+
+    if (Py_IS_TYPE(v, &PyType_Type)) // exact type object
+    {
+        PyObject *result = _Py_type_getattro((PyTypeObject*)v, name, 1);
+        if (result != NULL) {
+            return 1;
+        }
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+            return 0;
+        }
+        return 0;
+    }
+
     if (_PyObject_LookupAttr(v, name, &res) < 0) {
         PyErr_Clear();
         return 0;
