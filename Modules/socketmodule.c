@@ -2928,8 +2928,8 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
     long block;
 
-    block = PyLong_AsLong(arg);
-    if (block == -1 && PyErr_Occurred())
+    block = PyObject_IsTrue(arg);
+    if (block < 0)
         return NULL;
 
     s->sock_timeout = _PyTime_FromSeconds(block ? -1 : 0);

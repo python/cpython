@@ -739,10 +739,6 @@ class TestBasicOps(unittest.TestCase):
             c.__setstate__((tuple('defg'), 0))
         take(20, c)
 
-        # The second argument in the setstate tuple must be an int
-        with self.assertRaises(TypeError):
-            cycle('defg').__setstate__((list('abcdefg'), 'x'))
-
         self.assertRaises(TypeError, cycle('').__setstate__, ())
         self.assertRaises(TypeError, cycle('').__setstate__, ([],))
 
