@@ -1661,11 +1661,6 @@ Deprecated
   and returning the next item instead.
   (Contributed by Berker Peksag in :issue:`9372`.)
 
-* Deprecated using :term:`bytes-like objects <bytes-like object>` except
-  :class:`bytes` and :class:`bytearray` in builtins :class:`int`,
-  :class:`float`, :func:`compile`, :func:`eval` and :func:`exec`.
-  (Contributed by Serhiy Storchaka in :issue:`27572`.)
-
 * The :class:`typing.NamedTuple` class has deprecated the ``_field_types``
   attribute in favor of the ``__annotations__`` attribute which has the same
   information. (Contributed by Raymond Hettinger in :issue:`36320`.)
