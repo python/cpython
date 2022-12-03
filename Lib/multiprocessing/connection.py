@@ -498,7 +498,7 @@ def Client(address, family=None, authkey=None):
     if family == 'AF_PIPE':
         c = PipeClient(address)
     else:
-        c = SocketClient(address)
+        c = SocketClient(address, family)
 
     if authkey is not None and not isinstance(authkey, bytes):
         raise TypeError('authkey should be a byte string')
@@ -619,11 +619,11 @@ class SocketListener(object):
                 unlink()
 
 
-def SocketClient(address):
+def SocketClient(address, family=None):
     '''
     Return a connection object connected to the socket given by `address`
     '''
-    family = address_type(address)
+    family =family or address_type(address)
     with socket.socket( getattr(socket, family) ) as s:
         s.setblocking(True)
         s.connect(address)
