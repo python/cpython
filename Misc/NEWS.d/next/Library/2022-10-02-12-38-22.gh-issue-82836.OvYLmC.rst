@@ -1,0 +1,1 @@
+Fix :attr:`~ipaddress.IPv4Address.is_private` properties in the :mod:`ipaddress` module. Previously non-private networks (0.0.0.0/0) would return True from this method; now they correctly return False.

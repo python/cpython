@@ -1907,7 +1907,6 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         def child_main():
             signal.signal(signal.SIGTERM, lambda *args: child_handled.set())
             child_started.set()
-            time.sleep(1)
 
         async def main():
             loop = asyncio.get_running_loop()

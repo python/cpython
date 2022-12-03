@@ -389,12 +389,11 @@ buffered_dealloc(buffered *self)
 static PyObject *
 buffered_sizeof(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
-    if (self->buffer)
-        res += self->buffer_size;
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
+    if (self->buffer) {
+        res += (size_t)self->buffer_size;
+    }
+    return PyLong_FromSize_t(res);
 }
 
 static int
