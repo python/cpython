@@ -196,7 +196,7 @@ class TestResult(object):
         ret = None
         first = True
         excs = [(exctype, value, tb)]
-        seen = {id(value)}  # Handle loops in __cause__ or __context__.
+        seen = {id(value)}  # Detect loops in chained exceptions.
         while excs:
             (exctype, value, tb) = excs.pop()
             # Skip test runner traceback levels
