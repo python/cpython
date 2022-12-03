@@ -284,8 +284,6 @@ class Test_TestResult(unittest.TestCase):
             try:
                 # Create two directionally opposed cycles
                 # __cause__ in one direction, __context__ in the other
-                # Only one is needed since they serve the same role in _clean_tracebacks()
-                # But this way we cover both possibilities if the code changes
                 A, B, C = Exception("A"), Exception("B"), Exception("C")
                 edges = [(C, B), (B, A), (A, C)]
                 for ex1, ex2 in edges:
