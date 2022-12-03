@@ -49,20 +49,20 @@ PyDoc_STRVAR(_pickle_Pickler___sizeof____doc__,
 #define _PICKLE_PICKLER___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)_pickle_Pickler___sizeof__, METH_NOARGS, _pickle_Pickler___sizeof____doc__},
 
-static Py_ssize_t
+static size_t
 _pickle_Pickler___sizeof___impl(PicklerObject *self);
 
 static PyObject *
 _pickle_Pickler___sizeof__(PicklerObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
+    size_t _return_value;
 
     _return_value = _pickle_Pickler___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromSsize_t(_return_value);
+    return_value = PyLong_FromSize_t(_return_value);
 
 exit:
     return return_value;
@@ -301,20 +301,20 @@ PyDoc_STRVAR(_pickle_Unpickler___sizeof____doc__,
 #define _PICKLE_UNPICKLER___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)_pickle_Unpickler___sizeof__, METH_NOARGS, _pickle_Unpickler___sizeof____doc__},
 
-static Py_ssize_t
+static size_t
 _pickle_Unpickler___sizeof___impl(UnpicklerObject *self);
 
 static PyObject *
 _pickle_Unpickler___sizeof__(UnpicklerObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
+    size_t _return_value;
 
     _return_value = _pickle_Unpickler___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromSsize_t(_return_value);
+    return_value = PyLong_FromSize_t(_return_value);
 
 exit:
     return return_value;
@@ -980,4 +980,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3321309c2157ee74 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=730dc26938561313 input=a9049054013a1b77]*/

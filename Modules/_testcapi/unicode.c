@@ -667,6 +667,40 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
 
+/* Test PyUnicode_DecodeUTF8() */
+static PyObject *
+unicode_decodeutf8(PyObject *self, PyObject *args)
+{
+    const char *data;
+    Py_ssize_t size;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
+        return NULL;
+
+    return PyUnicode_DecodeUTF8(data, size, errors);
+}
+
+/* Test PyUnicode_DecodeUTF8Stateful() */
+static PyObject *
+unicode_decodeutf8stateful(PyObject *self, PyObject *args)
+{
+    const char *data;
+    Py_ssize_t size;
+    const char *errors = NULL;
+    Py_ssize_t consumed = 123456789;
+    PyObject *result;
+
+    if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
+        return NULL;
+
+    result = PyUnicode_DecodeUTF8Stateful(data, size, errors, &consumed);
+    if (!result) {
+        return NULL;
+    }
+    return Py_BuildValue("(Nn)", result, consumed);
+}
+
 /* Test PyUnicode_Concat() */
 static PyObject *
 unicode_concat(PyObject *self, PyObject *args)
@@ -1475,6 +1509,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_asutf8andsize",    unicode_asutf8andsize,          METH_VARARGS},
     {"unicode_asutf8andsize_null",unicode_asutf8andsize_null,    METH_VARARGS},
+    {"unicode_decodeutf8",       unicode_decodeutf8,             METH_VARARGS},
+    {"unicode_decodeutf8stateful",unicode_decodeutf8stateful,    METH_VARARGS},
     {"unicode_getdefaultencoding",unicode_getdefaultencoding,    METH_NOARGS},
     {"unicode_transformdecimalandspacetoascii", unicode_transformdecimalandspacetoascii, METH_O},
     {"unicode_concat",           unicode_concat,                 METH_VARARGS},
