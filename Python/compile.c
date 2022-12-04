@@ -1673,10 +1673,8 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
         return ERROR; \
 }
 
-#define POP_EXCEPT_AND_RERAISE(C, LOC) { \
-    if (!compiler_pop_except_and_reraise((C), (LOC))) \
-        return ERROR; \
-}
+#define POP_EXCEPT_AND_RERAISE(C, LOC)  \
+    RETURN_IF_ERROR(compiler_pop_except_and_reraise((C), (LOC)));
 
 #define ADDOP_YIELD(C, LOC) { \
     if (!addop_yield((C), (LOC))) \
@@ -1795,8 +1793,10 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 #define _ADD_YIELD_FROM(C, LOC, await) \
     RETURN_IF_FALSE(compiler_add_yield_from((C), (LOC), (await)))
 
-#define _POP_EXCEPT_AND_RERAISE(C, LOC) \
-    RETURN_IF_FALSE(compiler_pop_except_and_reraise((C), (LOC)))
+#define _POP_EXCEPT_AND_RERAISE(C, LOC) { \
+    if (compiler_pop_except_and_reraise((C), (LOC)) < 0) \
+        return 0; \
+}
 
 #define _ADDOP_YIELD(C, LOC) \
     RETURN_IF_FALSE(addop_yield((C), (LOC)))
@@ -2119,10 +2119,10 @@ compiler_pop_except_and_reraise(struct compiler *c, location loc)
      * (exception_unwind clears the stack)
      */
 
-    _ADDOP_I(c, loc, COPY, 3);
-    _ADDOP(c, loc, POP_EXCEPT);
-    _ADDOP_I(c, loc, RERAISE, 1);
-    return 1;
+    ADDOP_I(c, loc, COPY, 3);
+    ADDOP(c, loc, POP_EXCEPT);
+    ADDOP_I(c, loc, RERAISE, 1);
+    return SUCCESS;
 }
 
 /* Unwind a frame block.  If preserve_tos is true, the TOS before
