@@ -1,0 +1,1 @@
+Expose ``F_KINFO`` constant in :mod:`fcntl`. Patch by David Carlier.
