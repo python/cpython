@@ -4223,7 +4223,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case AugAssign_kind:
         return compiler_augassign(c, s) == SUCCESS ? 1 : 0;
     case AnnAssign_kind:
-        return compiler_annassign(c, s);
+        return compiler_annassign(c, s) == SUCCESS ? 1 : 0;
     case For_kind:
         return compiler_for(c, s);
     case While_kind:
@@ -6268,57 +6268,57 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 
     /* We perform the actual assignment first. */
     if (s->v.AnnAssign.value) {
-        _VISIT(c, expr, s->v.AnnAssign.value);
-        _VISIT(c, expr, targ);
+        VISIT(c, expr, s->v.AnnAssign.value);
+        VISIT(c, expr, targ);
     }
     switch (targ->kind) {
     case Name_kind:
         if (forbidden_name(c, loc, targ->v.Name.id, Store)) {
-            return 0;
+            return ERROR;
         }
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
             if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
-                _VISIT(c, annexpr, s->v.AnnAssign.annotation)
+                VISIT(c, annexpr, s->v.AnnAssign.annotation)
             }
             else {
-                _VISIT(c, expr, s->v.AnnAssign.annotation);
+                VISIT(c, expr, s->v.AnnAssign.annotation);
             }
-            _ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
+            ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
-            _ADDOP_LOAD_CONST_NEW(c, loc, mangled);
-            _ADDOP(c, loc, STORE_SUBSCR);
+            ADDOP_LOAD_CONST_NEW(c, loc, mangled);
+            ADDOP(c, loc, STORE_SUBSCR);
         }
         break;
     case Attribute_kind:
         if (forbidden_name(c, loc, targ->v.Attribute.attr, Store)) {
-            return 0;
+            return ERROR;
         }
         if (!s->v.AnnAssign.value &&
             !check_ann_expr(c, targ->v.Attribute.value)) {
-            return 0;
+            return ERROR;
         }
         break;
     case Subscript_kind:
         if (!s->v.AnnAssign.value &&
             (!check_ann_expr(c, targ->v.Subscript.value) ||
              !check_ann_subscr(c, targ->v.Subscript.slice))) {
-                return 0;
+                return ERROR;
         }
         break;
     default:
         PyErr_Format(PyExc_SystemError,
                      "invalid node type (%d) for annotated assignment",
                      targ->kind);
-            return 0;
+        return ERROR;
     }
     /* Annotation is evaluated last. */
     if (!s->v.AnnAssign.simple && !check_annotation(c, s)) {
-        return 0;
+        return ERROR;
     }
-    return 1;
+    return SUCCESS;
 }
 
 /* Raises a SyntaxError and returns 0.
