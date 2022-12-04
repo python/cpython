@@ -1976,7 +1976,7 @@ compiler_exit_scope(struct compiler *c)
 
 /* Search if variable annotations are present statically in a block. */
 
-static int
+static bool
 find_ann(asdl_stmt_seq *stmts)
 {
     int i, j, res = 0;
@@ -1986,7 +1986,7 @@ find_ann(asdl_stmt_seq *stmts)
         st = (stmt_ty)asdl_seq_GET(stmts, i);
         switch (st->kind) {
         case AnnAssign_kind:
-            return 1;
+            return true;
         case For_kind:
             res = find_ann(st->v.For.body) ||
                   find_ann(st->v.For.orelse);
@@ -2014,7 +2014,7 @@ find_ann(asdl_stmt_seq *stmts)
                 excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
                     st->v.Try.handlers, j);
                 if (find_ann(handler->v.ExceptHandler.body)) {
-                    return 1;
+                    return true;
                 }
             }
             res = find_ann(st->v.Try.body) ||
@@ -2026,7 +2026,7 @@ find_ann(asdl_stmt_seq *stmts)
                 excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
                     st->v.TryStar.handlers, j);
                 if (find_ann(handler->v.ExceptHandler.body)) {
-                    return 1;
+                    return true;
                 }
             }
             res = find_ann(st->v.TryStar.body) ||
@@ -2034,7 +2034,7 @@ find_ann(asdl_stmt_seq *stmts)
                   find_ann(st->v.TryStar.orelse);
             break;
         default:
-            res = 0;
+            res = false;
         }
         if (res) {
             break;
