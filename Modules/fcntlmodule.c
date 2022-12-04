@@ -19,6 +19,10 @@
 #include <stropts.h>
 #endif
 
+#ifdef HAVE_SYS_USER_H
+#include <sys/user.h>
+#endif
+
 /*[clinic input]
 module fcntl
 [clinic start generated code]*/
@@ -64,6 +68,12 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 
     if (arg != NULL) {
         int parse_result;
+#ifdef F_KINFO
+	if (code == F_KINFO) {
+		PyErr_SetString(PyExc_ValueError,
+				"fcntl arg not permitted with F_KINFO");
+	}
+#endif
 
         if (PyArg_Parse(arg, "s#", &str, &len)) {
             if ((size_t)len > sizeof buf) {
@@ -92,6 +102,21 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
           return NULL;
         }
     }
+
+#ifdef F_KINFO
+    if (code == F_KINFO) {
+        struct kinfo_file f = {.kf_structsize = KINFO_FILE_SIZE};
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            ret = fcntl(fd, code, &f);
+            Py_END_ALLOW_THREADS
+        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        if (ret < 0) {
+            return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+        }
+	return PyBytes_FromString(f.kf_path);
+    }
+#endif
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -484,6 +509,9 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_DUPFD_CLOEXEC
     if (PyModule_AddIntMacro(m, F_DUPFD_CLOEXEC)) return -1;
+#endif
+#ifdef F_KINFO
+    if (PyModule_AddIntMacro(m, F_KINFO)) return -1;
 #endif
 #ifdef F_GETFD
     if (PyModule_AddIntMacro(m, F_GETFD)) return -1;

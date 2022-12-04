@@ -57,6 +57,8 @@ descriptor.
    ``FICLONERANGE`` constants, which allow to share some data of one file with
    another file by reflinking on some filesystems (e.g., btrfs, OCFS2, and
    XFS). This behavior is commonly referred to as "copy-on-write".
+   On FreeBSD >= 13.1, the :mod:`fcntl` module exposes the ``F_KINFO``
+   constant which allow to get the path of the file descriptor.
 
 The module defines the following functions:
 
