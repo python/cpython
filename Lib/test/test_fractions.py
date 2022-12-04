@@ -840,6 +840,63 @@ class FractionTest(unittest.TestCase):
             with self.subTest(fraction=fraction, spec=spec):
                 self.assertEqual(format(fraction, spec), expected)
 
+    def test_format_e_presentation_type(self):
+        # Triples (fraction, specification, expected_result)
+        testcases = [
+            (F(2, 3), '.6e', '6.666667e-01'),
+            (F(3, 2), '.6e', '1.500000e+00'),
+            (F(2, 13), '.6e', '1.538462e-01'),
+            (F(2, 23), '.6e', '8.695652e-02'),
+            (F(2, 33), '.6e', '6.060606e-02'),
+            (F(13, 2), '.6e', '6.500000e+00'),
+            (F(20, 2), '.6e', '1.000000e+01'),
+            (F(23, 2), '.6e', '1.150000e+01'),
+            (F(33, 2), '.6e', '1.650000e+01'),
+            (F(2, 3), '.6e', '6.666667e-01'),
+            (F(3, 2), '.6e', '1.500000e+00'),
+            # Zero
+            (F(0), '.3e', '0.000e+00'),
+            # Powers of 10, to exercise the log10 boundary logic
+            (F(1, 1000), '.3e', '1.000e-03'),
+            (F(1, 100), '.3e', '1.000e-02'),
+            (F(1, 10), '.3e', '1.000e-01'),
+            (F(1, 1), '.3e', '1.000e+00'),
+            (F(10), '.3e', '1.000e+01'),
+            (F(100), '.3e', '1.000e+02'),
+            (F(1000), '.3e', '1.000e+03'),
+            # Boundary where we round up to the next power of 10
+            (F('99.999994999999'), '.6e', '9.999999e+01'),
+            (F('99.999995'), '.6e', '1.000000e+02'),
+            (F('99.999995000001'), '.6e', '1.000000e+02'),
+            # Negatives
+            (F(-2, 3), '.6e', '-6.666667e-01'),
+            (F(-3, 2), '.6e', '-1.500000e+00'),
+            (F(-100), '.6e', '-1.000000e+02'),
+            # Large and small
+            (F('1e1000'), '.3e', '1.000e+1000'),
+            (F('1e-1000'), '.3e', '1.000e-1000'),
+            # Using 'E' instead of 'e' should give us a capital 'E'
+            (F(2, 3), '.6E', '6.666667E-01'),
+            # Tiny precision
+            (F(2, 3), '.1e', '6.7e-01'),
+            (F('0.995'), '.0e', '1e+00'),
+            # Default precision is 6
+            (F(22, 7), 'e', '3.142857e+00'),
+            # Alternate form forces a decimal point
+            (F('0.995'), '#.0e', '1.e+00'),
+            # Check that padding takes the exponent into account.
+            (F(22, 7), '11.6e', '3.142857e+00'),
+            (F(22, 7), '12.6e', '3.142857e+00'),
+            (F(22, 7), '13.6e', ' 3.142857e+00'),
+            # Legal to specify a thousands separator, but it'll have no effect
+            (F('1234567.123456'), ',.5e', '1.23457e+06'),
+            # Same with z flag: legal, but useless
+            (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
+        ]
+        for fraction, spec, expected in testcases:
+            with self.subTest(fraction=fraction, spec=spec):
+                self.assertEqual(format(fraction, spec), expected)
+
     def test_format_f_presentation_type(self):
         # Triples (fraction, specification, expected_result)
         testcases = [
@@ -1012,58 +1069,60 @@ class FractionTest(unittest.TestCase):
             with self.subTest(fraction=fraction, spec=spec):
                 self.assertEqual(format(fraction, spec), expected)
 
-    def test_format_e_presentation_type(self):
+    def test_format_g_presentation_type(self):
         # Triples (fraction, specification, expected_result)
         testcases = [
-            (F(2, 3), '.6e', '6.666667e-01'),
-            (F(3, 2), '.6e', '1.500000e+00'),
-            (F(2, 13), '.6e', '1.538462e-01'),
-            (F(2, 23), '.6e', '8.695652e-02'),
-            (F(2, 33), '.6e', '6.060606e-02'),
-            (F(13, 2), '.6e', '6.500000e+00'),
-            (F(20, 2), '.6e', '1.000000e+01'),
-            (F(23, 2), '.6e', '1.150000e+01'),
-            (F(33, 2), '.6e', '1.650000e+01'),
-            (F(2, 3), '.6e', '6.666667e-01'),
-            (F(3, 2), '.6e', '1.500000e+00'),
-            # Zero
-            (F(0), '.3e', '0.000e+00'),
-            # Powers of 10, to exercise the log10 boundary logic
-            (F(1, 1000), '.3e', '1.000e-03'),
-            (F(1, 100), '.3e', '1.000e-02'),
-            (F(1, 10), '.3e', '1.000e-01'),
-            (F(1, 1), '.3e', '1.000e+00'),
-            (F(10), '.3e', '1.000e+01'),
-            (F(100), '.3e', '1.000e+02'),
-            (F(1000), '.3e', '1.000e+03'),
-            # Boundary where we round up to the next power of 10
-            (F('99.999994999999'), '.6e', '9.999999e+01'),
-            (F('99.999995'), '.6e', '1.000000e+02'),
-            (F('99.999995000001'), '.6e', '1.000000e+02'),
-            # Negatives
-            (F(-2, 3), '.6e', '-6.666667e-01'),
-            (F(-3, 2), '.6e', '-1.500000e+00'),
-            (F(-100), '.6e', '-1.000000e+02'),
-            # Large and small
-            (F('1e1000'), '.3e', '1.000e+1000'),
-            (F('1e-1000'), '.3e', '1.000e-1000'),
-            # Using 'E' instead of 'e' should give us a capital 'E'
-            (F(2, 3), '.6E', '6.666667E-01'),
-            # Tiny precision
-            (F(2, 3), '.1e', '6.7e-01'),
-            (F('0.995'), '.0e', '1e+00'),
-            # Default precision is 6
-            (F(22, 7), 'e', '3.142857e+00'),
-            # Alternate form forces a decimal point
-            (F('0.995'), '#.0e', '1.e+00'),
-            # Check that padding takes the exponent into account.
-            (F(22, 7), '11.6e', '3.142857e+00'),
-            (F(22, 7), '12.6e', '3.142857e+00'),
-            (F(22, 7), '13.6e', ' 3.142857e+00'),
-            # Legal to specify a thousands separator, but it'll have no effect
-            (F('1234567.123456'), ',.5e', '1.23457e+06'),
-            # Same with z flag: legal, but useless
-            (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
+            (F('0.000012345678'), '.6g', '1.23457e-05'),
+            (F('0.00012345678'), '.6g', '0.000123457'),
+            (F('0.0012345678'), '.6g', '0.00123457'),
+            (F('0.012345678'), '.6g', '0.0123457'),
+            (F('0.12345678'), '.6g', '0.123457'),
+            (F('1.2345678'), '.6g', '1.23457'),
+            (F('12.345678'), '.6g', '12.3457'),
+            (F('123.45678'), '.6g', '123.457'),
+            (F('1234.5678'), '.6g', '1234.57'),
+            (F('12345.678'), '.6g', '12345.7'),
+            (F('123456.78'), '.6g', '123457'),
+            (F('1234567.8'), '.6g', '1.23457e+06'),
+            # Rounding up cases
+            (F('9.99999e+2'), '.4g', '1000'),
+            (F('9.99999e-8'), '.4g', '1e-07'),
+            (F('9.99999e+8'), '.4g', '1e+09'),
+            # Trailing zeros and decimal point suppressed by default ...
+            (F(0), '.6g', '0'),
+            (F('123.400'), '.6g', '123.4'),
+            (F('123.000'), '.6g', '123'),
+            (F('120.000'), '.6g', '120'),
+            (F('12000000'), '.6g', '1.2e+07'),
+            # ... but not when alternate form is in effect
+            (F(0), '#.6g', '0.00000'),
+            (F('123.400'), '#.6g', '123.400'),
+            (F('123.000'), '#.6g', '123.000'),
+            (F('120.000'), '#.6g', '120.000'),
+            (F('12000000'), '#.6g', '1.20000e+07'),
+            # 'G' format (uses 'E' instead of 'e' for the exponent indicator)
+            (F('123.45678'), '.6G', '123.457'),
+            (F('1234567.8'), '.6G', '1.23457E+06'),
+            # Default precision is 6 significant figures
+            (F('3.1415926535'), 'g', '3.14159'),
+            # Precision 0 is treated the same as precision 1.
+            (F('0.000031415'), '.0g', '3e-05'),
+            (F('0.00031415'), '.0g', '0.0003'),
+            (F('0.31415'), '.0g', '0.3'),
+            (F('3.1415'), '.0g', '3'),
+            (F('3.1415'), '#.0g', '3.'),
+            (F('31.415'), '.0g', '3e+01'),
+            (F('31.415'), '#.0g', '3.e+01'),
+            (F('0.000031415'), '.1g', '3e-05'),
+            (F('0.00031415'), '.1g', '0.0003'),
+            (F('0.31415'), '.1g', '0.3'),
+            (F('3.1415'), '.1g', '3'),
+            (F('3.1415'), '#.1g', '3.'),
+            (F('31.415'), '.1g', '3e+01'),
+            # Thousands separator
+            (F(2**64), '_.25g', '18_446_744_073_709_551_616'),
+            # As with 'e' format, z flag is legal, but has no effect
+            (F(-1, 7**100), 'zg', '-3.09169e-85'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1088,11 +1147,15 @@ class FractionTest(unittest.TestCase):
             ">010f",
             "<010f",
             "^010f",
-            "=010f",
             "=010e",
+            "=010f",
+            "=010g",
+            "=010%",
             # Missing precision
-            ".f",
             ".e",
+            ".f",
+            ".g",
+            ".%",
         ]
         for spec in invalid_specs:
             with self.subTest(spec=spec):
