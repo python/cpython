@@ -3429,18 +3429,15 @@ compiler_break(struct compiler *c, location loc)
 {
     struct fblockinfo *loop = NULL;
     /* Emit instruction with line number */
-    _ADDOP(c, loc, NOP);
-    if (compiler_unwind_fblock_stack(c, &loc, 0, &loop) < 0) {
-        return 0;
-    }
+    ADDOP(c, loc, NOP);
+    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
-        return compiler_error(c, loc, "'break' outside loop");
+        compiler_error(c, loc, "'break' outside loop");
+        return ERROR;
     }
-    if (compiler_unwind_fblock(c, &loc, loop, 0) < 0) {
-        return 0;
-    }
-    _ADDOP_JUMP(c, loc, JUMP, loop->fb_exit);
-    return 1;
+    RETURN_IF_ERROR(compiler_unwind_fblock(c, &loc, loop, 0));
+    ADDOP_JUMP(c, loc, JUMP, loop->fb_exit);
+    return SUCCESS;
 }
 
 static int
@@ -4087,11 +4084,11 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t n = asdl_seq_LEN(s->v.ImportFrom.names);
 
-    _ADDOP_LOAD_CONST_NEW(c, LOC(s), PyLong_FromLong(s->v.ImportFrom.level));
+    ADDOP_LOAD_CONST_NEW(c, LOC(s), PyLong_FromLong(s->v.ImportFrom.level));
 
     PyObject *names = PyTuple_New(n);
     if (!names) {
-        return 0;
+        return ERROR;
     }
 
     /* build up the names */
@@ -4105,17 +4102,18 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
     {
         Py_DECREF(names);
-        return compiler_error(c, LOC(s), "from __future__ imports must occur "
-                              "at the beginning of the file");
+        compiler_error(c, LOC(s), "from __future__ imports must occur "
+                       "at the beginning of the file");
+        return ERROR;
     }
-    _ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
+    ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
 
     if (s->v.ImportFrom.module) {
-        _ADDOP_NAME(c, LOC(s), IMPORT_NAME, s->v.ImportFrom.module, names);
+        ADDOP_NAME(c, LOC(s), IMPORT_NAME, s->v.ImportFrom.module, names);
     }
     else {
         _Py_DECLARE_STR(empty, "");
-        _ADDOP_NAME(c, LOC(s), IMPORT_NAME, &_Py_STR(empty), names);
+        ADDOP_NAME(c, LOC(s), IMPORT_NAME, &_Py_STR(empty), names);
     }
     for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
@@ -4123,23 +4121,23 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
         if (i == 0 && PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             assert(n == 1);
-            _ADDOP(c, LOC(s), IMPORT_STAR);
-            return 1;
+            ADDOP(c, LOC(s), IMPORT_STAR);
+            return SUCCESS;
         }
 
-        _ADDOP_NAME(c, LOC(s), IMPORT_FROM, alias->name, names);
+        ADDOP_NAME(c, LOC(s), IMPORT_FROM, alias->name, names);
         store_name = alias->name;
         if (alias->asname) {
             store_name = alias->asname;
         }
 
         if (!compiler_nameop(c, LOC(s), store_name, Store)) {
-            return 0;
+            return ERROR;
         }
     }
     /* remove imported module */
-    _ADDOP(c, LOC(s), POP_TOP);
-    return 1;
+    ADDOP(c, LOC(s), POP_TOP);
+    return SUCCESS;
 }
 
 static int
@@ -4258,7 +4256,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Import_kind:
         return compiler_import(c, s) == SUCCESS ? 1 : 0;
     case ImportFrom_kind:
-        return compiler_from_import(c, s);
+        return compiler_from_import(c, s) == SUCCESS ? 1 : 0;
     case Global_kind:
     case Nonlocal_kind:
         break;
@@ -4273,7 +4271,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     }
     case Break_kind:
     {
-        return compiler_break(c, LOC(s));
+        return compiler_break(c, LOC(s)) == SUCCESS ? 1 : 0;
     }
     case Continue_kind:
     {
