@@ -1379,14 +1379,14 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
     }
-    return basicblock_addop(g->g_curblock, opcode, oparg, loc) == SUCCESS ? 1 : 0;
+    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
 }
 
 static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, loc);
+    return cfg_builder_addop(g, opcode, 0, loc) == SUCCESS ? 1 : 0;
 }
 
 static Py_ssize_t
@@ -1595,7 +1595,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, loc);
+    return cfg_builder_addop(g, opcode, oparg_, loc) == SUCCESS ? 1 : 0;
 }
 
 static int
@@ -1604,7 +1604,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, target.id, loc);
+    return cfg_builder_addop(g, opcode, target.id, loc) == SUCCESS ? 1 : 0;
 }
 
 
@@ -10012,7 +10012,7 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
             if (PyErr_Occurred()) {
                 return -1;
             }
-            if (!cfg_builder_addop(g, opcode, oparg, loc)) {
+            if (cfg_builder_addop(g, opcode, oparg, loc) < 0) {
                 return -1;
             }
         }
