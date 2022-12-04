@@ -1337,7 +1337,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
 
     int off = basicblock_next_instr(b);
     if (off < 0) {
-        return 0;
+        return ERROR;
     }
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
@@ -1345,7 +1345,7 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     i->i_target = NULL;
     i->i_loc = loc;
 
-    return 1;
+    return SUCCESS;
 }
 
 static bool
@@ -1379,7 +1379,7 @@ cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
     }
-    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
+    return basicblock_addop(g->g_curblock, opcode, oparg, loc) == SUCCESS ? 1 : 0;
 }
 
 static int
