@@ -3358,28 +3358,27 @@ compiler_while(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, anchor);
 
     USE_LABEL(c, loop);
-    if (compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL) < 0) {
-        return 0;
-    }
+
+    RETURN_IF_ERROR(compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL));
     if (!compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0)) {
-        return 0;
+        return ERROR;
     }
 
     USE_LABEL(c, body);
-    _VISIT_SEQ(c, stmt, s->v.While.body);
+    VISIT_SEQ(c, stmt, s->v.While.body);
     if (!compiler_jump_if(c, LOC(s), s->v.While.test, body, 1)) {
-        return 0;
+        return ERROR;
     }
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
     USE_LABEL(c, anchor);
     if (s->v.While.orelse) {
-        _VISIT_SEQ(c, stmt, s->v.While.orelse);
+        VISIT_SEQ(c, stmt, s->v.While.orelse);
     }
 
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4226,7 +4225,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case For_kind:
         return compiler_for(c, s) == SUCCESS ? 1 : 0;
     case While_kind:
-        return compiler_while(c, s);
+        return compiler_while(c, s) == SUCCESS ? 1 : 0;
     case If_kind:
         return compiler_if(c, s);
     case Match_kind:
