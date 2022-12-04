@@ -3389,41 +3389,41 @@ compiler_return(struct compiler *c, stmt_ty s)
     location loc = LOC(s);
     int preserve_tos = ((s->v.Return.value != NULL) &&
                         (s->v.Return.value->kind != Constant_kind));
-    if (c->u->u_ste->ste_type != FunctionBlock)
-        return compiler_error(c, loc, "'return' outside function");
+    if (c->u->u_ste->ste_type != FunctionBlock) {
+        compiler_error(c, loc, "'return' outside function");
+        return ERROR;
+    }
     if (s->v.Return.value != NULL &&
         c->u->u_ste->ste_coroutine && c->u->u_ste->ste_generator)
     {
-            return compiler_error(
-                c, loc, "'return' with value in async generator");
+        compiler_error(c, loc, "'return' with value in async generator");
+        return ERROR;
     }
 
     if (preserve_tos) {
-        _VISIT(c, expr, s->v.Return.value);
+        VISIT(c, expr, s->v.Return.value);
     } else {
         /* Emit instruction with line number for return value */
         if (s->v.Return.value != NULL) {
             loc = LOC(s->v.Return.value);
-            _ADDOP(c, loc, NOP);
+            ADDOP(c, loc, NOP);
         }
     }
     if (s->v.Return.value == NULL || s->v.Return.value->lineno != s->lineno) {
         loc = LOC(s);
-        _ADDOP(c, loc, NOP);
+        ADDOP(c, loc, NOP);
     }
 
-    if (compiler_unwind_fblock_stack(c, &loc, preserve_tos, NULL) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, preserve_tos, NULL));
     if (s->v.Return.value == NULL) {
-        _ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
     }
     else if (!preserve_tos) {
-        _ADDOP_LOAD_CONST(c, loc, s->v.Return.value->v.Constant.value);
+        ADDOP_LOAD_CONST(c, loc, s->v.Return.value->v.Constant.value);
     }
-    _ADDOP(c, loc, RETURN_VALUE);
+    ADDOP(c, loc, RETURN_VALUE);
 
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4203,7 +4203,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case ClassDef_kind:
         return compiler_class(c, s) == SUCCESS ? 1 : 0;
     case Return_kind:
-        return compiler_return(c, s);
+        return compiler_return(c, s) == SUCCESS ? 1 : 0;
     case Delete_kind:
         _VISIT_SEQ(c, expr, s->v.Delete.targets)
         break;
