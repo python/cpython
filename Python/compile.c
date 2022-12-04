@@ -2601,9 +2601,9 @@ static int
 compiler_visit_defaults(struct compiler *c, arguments_ty args,
                         location loc)
 {
-    _VISIT_SEQ(c, expr, args->defaults);
-    _ADDOP_I(c, loc, BUILD_TUPLE, asdl_seq_LEN(args->defaults));
-    return 1;
+    VISIT_SEQ(c, expr, args->defaults);
+    ADDOP_I(c, loc, BUILD_TUPLE, asdl_seq_LEN(args->defaults));
+    return SUCCESS;
 }
 
 static Py_ssize_t
@@ -2612,8 +2612,7 @@ compiler_default_arguments(struct compiler *c, location loc,
 {
     Py_ssize_t funcflags = 0;
     if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
-        if (!compiler_visit_defaults(c, args, loc))
-            return -1;
+        RETURN_IF_ERROR(compiler_visit_defaults(c, args, loc));
         funcflags |= 0x01;
     }
     if (args->kwonlyargs) {
