@@ -2282,10 +2282,11 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     }
     /* Every annotated class and module should have __annotations__. */
     if (find_ann(stmts)) {
-        _ADDOP(c, loc, SETUP_ANNOTATIONS);
+        ADDOP(c, loc, SETUP_ANNOTATIONS);
     }
-    if (!asdl_seq_LEN(stmts))
-        return 1;
+    if (!asdl_seq_LEN(stmts)) {
+        return SUCCESS;
+    }
     /* if not -OO mode, set docstring */
     if (c->c_optimize < 2) {
         docstring = _PyAST_GetDocString(stmts);
@@ -2293,14 +2294,16 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
             i = 1;
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
-            _VISIT(c, expr, st->v.Expr.value);
-            if (!compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store))
-                return 0;
+            VISIT(c, expr, st->v.Expr.value);
+            if (!compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store)) {
+                return ERROR;
+            }
         }
     }
-    for (; i < asdl_seq_LEN(stmts); i++)
-        _VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
-    return 1;
+    for (; i < asdl_seq_LEN(stmts); i++) {
+        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
+    }
+    return SUCCESS;
 }
 
 static int
@@ -2314,7 +2317,7 @@ compiler_codegen(struct compiler *c, mod_ty mod)
     location loc = LOCATION(1, 1, 0, 0);
     switch (mod->kind) {
     case Module_kind:
-        if (!compiler_body(c, loc, mod->v.Module.body)) {
+        if (compiler_body(c, loc, mod->v.Module.body) < 0) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -2908,7 +2911,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return 0;
         }
         /* compile the body proper */
-        if (!compiler_body(c, loc, s->v.ClassDef.body)) {
+        if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
             compiler_exit_scope(c);
             return 0;
         }
