@@ -7177,26 +7177,23 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
     expr_ty value = p->v.MatchValue.value;
     if (!MATCH_VALUE_EXPR(value)) {
         const char *e = "patterns may only match literals and attribute lookups";
-        return compiler_error(c, LOC(p), e);
+        compiler_error(c, LOC(p), e);
+        return ERROR;
     }
-    _VISIT(c, expr, value);
-    _ADDOP_COMPARE(c, LOC(p), Eq);
-    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-        return 0;
-    }
-    return 1;
+    VISIT(c, expr, value);
+    ADDOP_COMPARE(c, LOC(p), Eq);
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    return SUCCESS;
 }
 
 static int
 compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchSingleton_kind);
-    _ADDOP_LOAD_CONST(c, LOC(p), p->v.MatchSingleton.value);
-    _ADDOP_COMPARE(c, LOC(p), Is);
-    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-        return 0;
-    }
-    return 1;
+    ADDOP_LOAD_CONST(c, LOC(p), p->v.MatchSingleton.value);
+    ADDOP_COMPARE(c, LOC(p), Is);
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    return SUCCESS;
 }
 
 static int
@@ -7204,9 +7201,9 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     switch (p->kind) {
         case MatchValue_kind:
-            return compiler_pattern_value(c, p, pc);
+            return compiler_pattern_value(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchSingleton_kind:
-            return compiler_pattern_singleton(c, p, pc);
+            return compiler_pattern_singleton(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchSequence_kind:
             return compiler_pattern_sequence(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchMapping_kind:
