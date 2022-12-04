@@ -6558,27 +6558,30 @@ pattern_helper_store_name(struct compiler *c, location loc,
                           identifier n, pattern_context *pc)
 {
     if (n == NULL) {
-        _ADDOP(c, loc, POP_TOP);
-        return 1;
+        ADDOP(c, loc, POP_TOP);
+        return SUCCESS;
     }
     if (forbidden_name(c, loc, n, Store)) {
-        return 0;
+        return ERROR;
     }
     // Can't assign to the same name twice:
     int duplicate = PySequence_Contains(pc->stores, n);
     if (duplicate < 0) {
-        return 0;
+        return ERROR;
     }
     if (duplicate) {
         compiler_error_duplicate_store(c, loc, n);
-        return 0;
+        return ERROR;
     }
     // Rotate this object underneath any items we need to preserve:
     Py_ssize_t rotations = pc->on_top + PyList_GET_SIZE(pc->stores) + 1;
     if (pattern_helper_rotate(c, loc, rotations) < 0) {
-        return 0;
+        return ERROR;
     }
-    return !PyList_Append(pc->stores, n);
+    if (PyList_Append(pc->stores, n) < 0) {
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 
@@ -6695,7 +6698,7 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
             const char *e = "wildcard makes remaining patterns unreachable";
             return compiler_error(c, LOC(p), e);
         }
-        return pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc);
+        return pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc) == SUCCESS ? 1 : 0;
     }
     // Need to make a copy for (possibly) storing later:
     pc->on_top++;
@@ -6703,7 +6706,9 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
     RETURN_IF_FALSE(compiler_pattern(c, p->v.MatchAs.pattern, pc));
     // Success! Store it:
     pc->on_top--;
-    RETURN_IF_FALSE(pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc));
+    if (pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc) < 0) {
+        return 0;
+    }
     return 1;
 }
 
@@ -6711,7 +6716,9 @@ static int
 compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchStar_kind);
-    RETURN_IF_FALSE(pattern_helper_store_name(c, LOC(p), p->v.MatchStar.name, pc));
+    if (pattern_helper_store_name(c, LOC(p), p->v.MatchStar.name, pc) < 0) {
+        return 0;
+    }
     return 1;
 }
 
@@ -6931,7 +6938,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
             _ADDOP_I(c, LOC(p), SWAP, 2);            // [copy, keys..., copy, key]
             _ADDOP(c, LOC(p), DELETE_SUBSCR);        // [copy, keys...]
         }
-        RETURN_IF_FALSE(pattern_helper_store_name(c, LOC(p), star_target, pc));
+        if (pattern_helper_store_name(c, LOC(p), star_target, pc) < 0) {
+            return 0;
+        }
     }
     else {
         _ADDOP(c, LOC(p), POP_TOP);  // Tuple of keys.
