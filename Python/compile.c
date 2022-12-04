@@ -1541,9 +1541,10 @@ static int
 compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
 {
     Py_ssize_t arg = compiler_add_const(c, o);
-    if (arg < 0)
+    if (arg < 0) {
         return 0;
-    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, loc);
+    }
+    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, loc) == SUCCESS ? 1 : 0;
 }
 
 static int
@@ -1553,7 +1554,7 @@ compiler_addop_o(struct compiler *c, location loc,
     Py_ssize_t arg = dict_add_o(dict, o);
     if (arg < 0)
         return 0;
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc);
+    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc) == SUCCESS ? 1 : 0;
 }
 
 static int
@@ -1577,7 +1578,7 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 1;
         arg |= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc);
+    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc) == SUCCESS ? 1 : 0;
 }
 
 /* Add an opcode with an integer argument.
@@ -1595,7 +1596,7 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, loc) == SUCCESS ? 1 : 0;
+    return cfg_builder_addop(g, opcode, oparg_, loc);
 }
 
 static int
@@ -1653,7 +1654,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADDOP_I(C, LOC, OP, O) { \
-    if (!cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), (LOC))) \
+    if (cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), (LOC)) < 0) \
         return 0; \
 }
 
@@ -4343,7 +4344,7 @@ compiler_nameop(struct compiler *c, location loc,
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc);
+    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc) == SUCCESS ? 1 : 0;
 }
 
 static int
@@ -6833,7 +6834,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!cfg_builder_addop_i(CFG_BUILDER(c), COPY, 1, LOC(alt)) ||
+        if ((cfg_builder_addop_i(CFG_BUILDER(c), COPY, 1, LOC(alt)) < 0) ||
             !compiler_pattern(c, alt, pc)) {
             goto error;
         }
