@@ -3249,18 +3249,18 @@ compiler_if(struct compiler *c, stmt_ty s)
         next = end;
     }
     if (!compiler_jump_if(c, LOC(s), s->v.If.test, next, 0)) {
-        return 0;
+        return ERROR;
     }
-    _VISIT_SEQ(c, stmt, s->v.If.body);
+    VISIT_SEQ(c, stmt, s->v.If.body);
     if (asdl_seq_LEN(s->v.If.orelse)) {
-        _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
         USE_LABEL(c, next);
-        _VISIT_SEQ(c, stmt, s->v.If.orelse);
+        VISIT_SEQ(c, stmt, s->v.If.orelse);
     }
 
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4227,7 +4227,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case While_kind:
         return compiler_while(c, s) == SUCCESS ? 1 : 0;
     case If_kind:
-        return compiler_if(c, s);
+        return compiler_if(c, s) == SUCCESS ? 1 : 0;
     case Match_kind:
         return compiler_match(c, s);
     case Raise_kind:
