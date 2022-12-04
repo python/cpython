@@ -976,6 +976,15 @@ class FractionTest(unittest.TestCase):
             # is being inserted programmatically: spec = f'{width}.2f'.
             (F('12.34'), '0.2f', '12.34'),
             (F('12.34'), 'X>0.2f', '12.34'),
+            # z flag for suppressing negative zeros
+            (F('-0.001'), 'z.2f', '0.00'),
+            (F('-0.001'), '-z.2f', '0.00'),
+            (F('-0.001'), '+z.2f', '+0.00'),
+            (F('-0.001'), ' z.2f', ' 0.00'),
+            (F('0.001'), 'z.2f', '0.00'),
+            (F('0.001'), '-z.2f', '0.00'),
+            (F('0.001'), '+z.2f', '+0.00'),
+            (F('0.001'), ' z.2f', ' 0.00'),
             # "F" should work identically to "f"
             (F(22, 7), '.5F', '3.14286'),
             # %-specifier

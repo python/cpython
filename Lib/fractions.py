@@ -324,6 +324,7 @@ class Fraction(numbers.Rational):
                 (?P<align>[<>=^])
             )?
             (?P<sign>[-+ ]?)
+            (?P<no_neg_zero>z)?
             (?P<alt>\#)?
             (?P<zeropad>0(?=\d))?
             (?P<minimumwidth>\d+)?
@@ -350,6 +351,7 @@ class Fraction(numbers.Rational):
             fill = match["fill"] or " "
             align = match["align"] or ">"
             pos_sign = "" if match["sign"] == "-" else match["sign"]
+            neg_zero_ok = not match["no_neg_zero"]
             alternate_form = bool(match["alt"])
             zeropad = bool(match["zeropad"])
             minimumwidth = int(match["minimumwidth"] or "0")
@@ -360,15 +362,15 @@ class Fraction(numbers.Rational):
         # Get sign and output digits for the target number
         negative = self < 0
         shift = precision + 2 if specifier_type == "%" else precision
-        digits = str(round(abs(self) * 10**shift))
+        significand = round(abs(self) * 10**shift)
 
         # Assemble the output: before padding, it has the form
         # f"{sign}{leading}{trailing}", where `leading` includes thousands
         # separators if necessary, and `trailing` includes the decimal
         # separator where appropriate.
-        digits = digits.zfill(precision + 1)
+        digits = str(significand).zfill(precision + 1)
         dot_pos = len(digits) - precision
-        sign = "-" if negative else pos_sign
+        sign = "-" if negative and (significand or neg_zero_ok) else pos_sign
         separator = "." if precision or alternate_form else ""
         percent = "%" if specifier_type == "%" else ""
         trailing = separator + digits[dot_pos:] + percent
