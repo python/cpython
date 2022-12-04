@@ -2078,11 +2078,11 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, jump_target_label blo
 static int
 compiler_call_exit_with_nones(struct compiler *c, location loc)
 {
-    _ADDOP_LOAD_CONST(c, loc, Py_None);
-    _ADDOP_LOAD_CONST(c, loc, Py_None);
-    _ADDOP_LOAD_CONST(c, loc, Py_None);
-    _ADDOP_I(c, loc, CALL, 2);
-    return 1;
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADDOP_I(c, loc, CALL, 2);
+    return SUCCESS;
 }
 
 static int
@@ -2191,7 +2191,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             if (preserve_tos) {
                 _ADDOP_I(c, *ploc, SWAP, 2);
             }
-            if(!compiler_call_exit_with_nones(c, *ploc)) {
+            if (compiler_call_exit_with_nones(c, *ploc) < 0) {
                 return 0;
             }
             if (info->fb_type == ASYNC_WITH) {
@@ -5849,8 +5849,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     /* For successful outcome:
      * call __exit__(None, None, None)
      */
-    if(!compiler_call_exit_with_nones(c, loc))
+    if (compiler_call_exit_with_nones(c, loc) < 0) {
         return 0;
+    }
     _ADDOP_I(c, loc, GET_AWAITABLE, 2);
     _ADDOP_LOAD_CONST(c, loc, Py_None);
     _ADD_YIELD_FROM(c, loc, 1);
@@ -5945,8 +5946,9 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
      * call __exit__(None, None, None)
      */
     loc = LOC(s);
-    if (!compiler_call_exit_with_nones(c, loc))
+    if (compiler_call_exit_with_nones(c, loc) < 0) {
         return 0;
+    }
     _ADDOP(c, loc, POP_TOP);
     _ADDOP_JUMP(c, loc, JUMP, exit);
 
