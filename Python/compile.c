@@ -4221,7 +4221,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         break;
     }
     case AugAssign_kind:
-        return compiler_augassign(c, s);
+        return compiler_augassign(c, s) == SUCCESS ? 1 : 0;
     case AnnAssign_kind:
         return compiler_annassign(c, s);
     case For_kind:
@@ -6132,72 +6132,72 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 
     switch (e->kind) {
     case Attribute_kind:
-        _VISIT(c, expr, e->v.Attribute.value);
-        _ADDOP_I(c, loc, COPY, 1);
+        VISIT(c, expr, e->v.Attribute.value);
+        ADDOP_I(c, loc, COPY, 1);
         loc = update_start_location_to_match_attr(c, loc, e);
-        _ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
+        ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        _VISIT(c, expr, e->v.Subscript.value);
+        VISIT(c, expr, e->v.Subscript.value);
         if (is_two_element_slice(e->v.Subscript.slice)) {
             if (!compiler_slice(c, e->v.Subscript.slice)) {
-                return 0;
+                return ERROR;
             }
-            _ADDOP_I(c, loc, COPY, 3);
-            _ADDOP_I(c, loc, COPY, 3);
-            _ADDOP_I(c, loc, COPY, 3);
-            _ADDOP(c, loc, BINARY_SLICE);
+            ADDOP_I(c, loc, COPY, 3);
+            ADDOP_I(c, loc, COPY, 3);
+            ADDOP_I(c, loc, COPY, 3);
+            ADDOP(c, loc, BINARY_SLICE);
         }
         else {
-            _VISIT(c, expr, e->v.Subscript.slice);
-            _ADDOP_I(c, loc, COPY, 2);
-            _ADDOP_I(c, loc, COPY, 2);
-            _ADDOP(c, loc, BINARY_SUBSCR);
+            VISIT(c, expr, e->v.Subscript.slice);
+            ADDOP_I(c, loc, COPY, 2);
+            ADDOP_I(c, loc, COPY, 2);
+            ADDOP(c, loc, BINARY_SUBSCR);
         }
         break;
     case Name_kind:
         if (!compiler_nameop(c, loc, e->v.Name.id, Load))
-            return 0;
+            return ERROR;
         break;
     default:
         PyErr_Format(PyExc_SystemError,
             "invalid node type (%d) for augmented assignment",
             e->kind);
-        return 0;
+        return ERROR;
     }
 
     loc = LOC(s);
 
-    _VISIT(c, expr, s->v.AugAssign.value);
-    _ADDOP_INPLACE(c, loc, s->v.AugAssign.op);
+    VISIT(c, expr, s->v.AugAssign.value);
+    ADDOP_INPLACE(c, loc, s->v.AugAssign.op);
 
     loc = LOC(e);
 
     switch (e->kind) {
     case Attribute_kind:
         loc = update_start_location_to_match_attr(c, loc, e);
-        _ADDOP_I(c, loc, SWAP, 2);
-        _ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
+        ADDOP_I(c, loc, SWAP, 2);
+        ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
         if (is_two_element_slice(e->v.Subscript.slice)) {
-            _ADDOP_I(c, loc, SWAP, 4);
-            _ADDOP_I(c, loc, SWAP, 3);
-            _ADDOP_I(c, loc, SWAP, 2);
-            _ADDOP(c, loc, STORE_SLICE);
+            ADDOP_I(c, loc, SWAP, 4);
+            ADDOP_I(c, loc, SWAP, 3);
+            ADDOP_I(c, loc, SWAP, 2);
+            ADDOP(c, loc, STORE_SLICE);
         }
         else {
-            _ADDOP_I(c, loc, SWAP, 3);
-            _ADDOP_I(c, loc, SWAP, 2);
-            _ADDOP(c, loc, STORE_SUBSCR);
+            ADDOP_I(c, loc, SWAP, 3);
+            ADDOP_I(c, loc, SWAP, 2);
+            ADDOP(c, loc, STORE_SUBSCR);
         }
         break;
     case Name_kind:
-        return compiler_nameop(c, loc, e->v.Name.id, Store);
+        return compiler_nameop(c, loc, e->v.Name.id, Store) ? SUCCESS : ERROR;
     default:
         Py_UNREACHABLE();
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
