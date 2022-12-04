@@ -6700,33 +6700,34 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
         if (!pc->allow_irrefutable) {
             if (p->v.MatchAs.name) {
                 const char *e = "name capture %R makes remaining patterns unreachable";
-                return compiler_error(c, LOC(p), e, p->v.MatchAs.name);
+                compiler_error(c, LOC(p), e, p->v.MatchAs.name);
+                return ERROR;
             }
             const char *e = "wildcard makes remaining patterns unreachable";
-            return compiler_error(c, LOC(p), e);
+            compiler_error(c, LOC(p), e);
+            return ERROR;
         }
-        return pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc) == SUCCESS ? 1 : 0;
+        return pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc);
     }
     // Need to make a copy for (possibly) storing later:
     pc->on_top++;
-    _ADDOP_I(c, LOC(p), COPY, 1);
-    RETURN_IF_FALSE(compiler_pattern(c, p->v.MatchAs.pattern, pc));
+    ADDOP_I(c, LOC(p), COPY, 1);
+    if (!compiler_pattern(c, p->v.MatchAs.pattern, pc)) {
+        return ERROR;
+    }
     // Success! Store it:
     pc->on_top--;
-    if (pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc) < 0) {
-        return 0;
-    }
-    return 1;
+    RETURN_IF_ERROR(pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc));
+    return SUCCESS;
 }
 
 static int
 compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchStar_kind);
-    if (pattern_helper_store_name(c, LOC(p), p->v.MatchStar.name, pc) < 0) {
-        return 0;
-    }
-    return 1;
+    RETURN_IF_ERROR(
+        pattern_helper_store_name(c, LOC(p), p->v.MatchStar.name, pc));
+    return SUCCESS;
 }
 
 static int
@@ -7228,9 +7229,9 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
         case MatchClass_kind:
             return compiler_pattern_class(c, p, pc);
         case MatchStar_kind:
-            return compiler_pattern_star(c, p, pc);
+            return compiler_pattern_star(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchAs_kind:
-            return compiler_pattern_as(c, p, pc);
+            return compiler_pattern_as(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchOr_kind:
             return compiler_pattern_or(c, p, pc);
     }
