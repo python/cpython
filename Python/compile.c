@@ -4000,33 +4000,36 @@ compiler_import_as(struct compiler *c, location loc,
     */
     Py_ssize_t len = PyUnicode_GET_LENGTH(name);
     Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, len, 1);
-    if (dot == -2)
-        return 0;
+    if (dot == -2) {
+        return ERROR;
+    }
     if (dot != -1) {
         /* Consume the base module name to get the first attribute */
         while (1) {
             Py_ssize_t pos = dot + 1;
             PyObject *attr;
             dot = PyUnicode_FindChar(name, '.', pos, len, 1);
-            if (dot == -2)
-                return 0;
+            if (dot == -2) {
+                return ERROR;
+            }
             attr = PyUnicode_Substring(name, pos, (dot != -1) ? dot : len);
-            if (!attr)
-                return 0;
-            _ADDOP_N(c, loc, IMPORT_FROM, attr, names);
+            if (!attr) {
+                return ERROR;
+            }
+            ADDOP_N(c, loc, IMPORT_FROM, attr, names);
             if (dot == -1) {
                 break;
             }
-            _ADDOP_I(c, loc, SWAP, 2);
-            _ADDOP(c, loc, POP_TOP);
+            ADDOP_I(c, loc, SWAP, 2);
+            ADDOP(c, loc, POP_TOP);
         }
         if (!compiler_nameop(c, loc, asname, Store)) {
-            return 0;
+            return ERROR;
         }
-        _ADDOP(c, loc, POP_TOP);
-        return 1;
+        ADDOP(c, loc, POP_TOP);
+        return SUCCESS;
     }
-    return compiler_nameop(c, loc, asname, Store);
+    return compiler_nameop(c, loc, asname, Store) ? SUCCESS : ERROR;
 }
 
 static int
@@ -4047,14 +4050,15 @@ compiler_import(struct compiler *c, stmt_ty s)
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.Import.names, i);
         int r;
 
-        _ADDOP_LOAD_CONST(c, loc, zero);
-        _ADDOP_LOAD_CONST(c, loc, Py_None);
-        _ADDOP_NAME(c, loc, IMPORT_NAME, alias->name, names);
+        ADDOP_LOAD_CONST(c, loc, zero);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADDOP_NAME(c, loc, IMPORT_NAME, alias->name, names);
 
         if (alias->asname) {
             r = compiler_import_as(c, loc, alias->name, alias->asname);
-            if (!r)
+            if (r == ERROR) {
                 return r;
+            }
         }
         else {
             identifier tmp = alias->name;
@@ -4062,18 +4066,20 @@ compiler_import(struct compiler *c, stmt_ty s)
                 alias->name, '.', 0, PyUnicode_GET_LENGTH(alias->name), 1);
             if (dot != -1) {
                 tmp = PyUnicode_Substring(alias->name, 0, dot);
-                if (tmp == NULL)
-                    return 0;
+                if (tmp == NULL) {
+                    return ERROR;
+                }
             }
             r = compiler_nameop(c, loc, tmp, Store);
             if (dot != -1) {
                 Py_DECREF(tmp);
             }
-            if (!r)
-                return r;
+            if (!r) {
+                return ERROR;
+            }
         }
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4250,7 +4256,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Assert_kind:
         return compiler_assert(c, s) == SUCCESS ? 1 : 0;
     case Import_kind:
-        return compiler_import(c, s);
+        return compiler_import(c, s) == SUCCESS ? 1 : 0;
     case ImportFrom_kind:
         return compiler_from_import(c, s);
     case Global_kind:
