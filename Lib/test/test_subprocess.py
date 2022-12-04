@@ -3209,7 +3209,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True, 0,
                         None, None, None, -1,
-                        None, "no vfork")
+                        None, True)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
