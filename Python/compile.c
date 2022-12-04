@@ -3445,15 +3445,14 @@ compiler_continue(struct compiler *c, location loc)
 {
     struct fblockinfo *loop = NULL;
     /* Emit instruction with line number */
-    _ADDOP(c, loc, NOP);
-    if (compiler_unwind_fblock_stack(c, &loc, 0, &loop) < 0) {
-        return 0;
-    }
+    ADDOP(c, loc, NOP);
+    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
-        return compiler_error(c, loc, "'continue' not properly in loop");
+        compiler_error(c, loc, "'continue' not properly in loop");
+        return ERROR;
     }
-    _ADDOP_JUMP(c, loc, JUMP, loop->fb_block);
-    return 1;
+    ADDOP_JUMP(c, loc, JUMP, loop->fb_block);
+    return SUCCESS;
 }
 
 
@@ -4275,14 +4274,14 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     }
     case Continue_kind:
     {
-        return compiler_continue(c, LOC(s));
+        return compiler_continue(c, LOC(s)) == SUCCESS ? 1 : 0;
     }
     case With_kind:
-        return compiler_with(c, s, 0);
+        return compiler_with(c, s, 0) == SUCCESS ? 1 : 0;
     case AsyncFunctionDef_kind:
         return compiler_function(c, s, 1);
     case AsyncWith_kind:
-        return compiler_async_with(c, s, 0);
+        return compiler_async_with(c, s, 0) == SUCCESS ? 1 : 0;
     case AsyncFor_kind:
         return compiler_async_for(c, s);
     }
@@ -5803,7 +5802,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
-        return compiler_error(c, loc, "'async with' outside async function");
+        compiler_error(c, loc, "'async with' outside async function");
+        return ERROR;
     }
 
     NEW_JUMP_TARGET_LABEL(c, block);
@@ -5812,70 +5812,66 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     NEW_JUMP_TARGET_LABEL(c, cleanup);
 
     /* Evaluate EXPR */
-    _VISIT(c, expr, item->context_expr);
+    VISIT(c, expr, item->context_expr);
 
-    _ADDOP(c, loc, BEFORE_ASYNC_WITH);
-    _ADDOP_I(c, loc, GET_AWAITABLE, 1);
-    _ADDOP_LOAD_CONST(c, loc, Py_None);
-    _ADD_YIELD_FROM(c, loc, 1);
+    ADDOP(c, loc, BEFORE_ASYNC_WITH);
+    ADDOP_I(c, loc, GET_AWAITABLE, 1);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
 
-    _ADDOP_JUMP(c, loc, SETUP_WITH, final);
+    ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */
     USE_LABEL(c, block);
-    if (compiler_push_fblock(c, loc, ASYNC_WITH, block, final, s) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(compiler_push_fblock(c, loc, ASYNC_WITH, block, final, s));
 
     if (item->optional_vars) {
-        _VISIT(c, expr, item->optional_vars);
+        VISIT(c, expr, item->optional_vars);
     }
     else {
-    /* Discard result from context.__aenter__() */
-        _ADDOP(c, loc, POP_TOP);
+        /* Discard result from context.__aenter__() */
+        ADDOP(c, loc, POP_TOP);
     }
 
     pos++;
     if (pos == asdl_seq_LEN(s->v.AsyncWith.items)) {
         /* BLOCK code */
-        _VISIT_SEQ(c, stmt, s->v.AsyncWith.body)
+        VISIT_SEQ(c, stmt, s->v.AsyncWith.body)
     }
-    else if (!compiler_async_with(c, s, pos)) {
-            return 0;
+    else if (compiler_async_with(c, s, pos) == ERROR) {
+        return ERROR;
     }
 
     compiler_pop_fblock(c, ASYNC_WITH, block);
 
-    _ADDOP(c, loc, POP_BLOCK);
+    ADDOP(c, loc, POP_BLOCK);
     /* End of body; start the cleanup */
 
     /* For successful outcome:
      * call __exit__(None, None, None)
      */
-    if (compiler_call_exit_with_nones(c, loc) < 0) {
-        return 0;
-    }
-    _ADDOP_I(c, loc, GET_AWAITABLE, 2);
-    _ADDOP_LOAD_CONST(c, loc, Py_None);
-    _ADD_YIELD_FROM(c, loc, 1);
+    RETURN_IF_ERROR(compiler_call_exit_with_nones(c, loc));
+    ADDOP_I(c, loc, GET_AWAITABLE, 2);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
 
-    _ADDOP(c, loc, POP_TOP);
+    ADDOP(c, loc, POP_TOP);
 
-    _ADDOP_JUMP(c, loc, JUMP, exit);
+    ADDOP_JUMP(c, loc, JUMP, exit);
 
     /* For exceptional outcome: */
     USE_LABEL(c, final);
 
-    _ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
-    _ADDOP(c, loc, PUSH_EXC_INFO);
-    _ADDOP(c, loc, WITH_EXCEPT_START);
-    _ADDOP_I(c, loc, GET_AWAITABLE, 2);
-    _ADDOP_LOAD_CONST(c, loc, Py_None);
-    _ADD_YIELD_FROM(c, loc, 1);
+    ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
+    ADDOP(c, loc, PUSH_EXC_INFO);
+    ADDOP(c, loc, WITH_EXCEPT_START);
+    ADDOP_I(c, loc, GET_AWAITABLE, 2);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
     compiler_with_except_finish(c, cleanup);
 
     USE_LABEL(c, exit);
-    return 1;
+    return SUCCESS;
 }
 
 
@@ -5913,34 +5909,34 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     NEW_JUMP_TARGET_LABEL(c, cleanup);
 
     /* Evaluate EXPR */
-    _VISIT(c, expr, item->context_expr);
+    VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
     location loc = LOC(s);
-    _ADDOP(c, loc, BEFORE_WITH);
-    _ADDOP_JUMP(c, loc, SETUP_WITH, final);
+    ADDOP(c, loc, BEFORE_WITH);
+    ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */
     USE_LABEL(c, block);
-    if (compiler_push_fblock(c, loc, WITH, block, final, s) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(compiler_push_fblock(c, loc, WITH, block, final, s));
 
     if (item->optional_vars) {
-        _VISIT(c, expr, item->optional_vars);
+        VISIT(c, expr, item->optional_vars);
     }
     else {
     /* Discard result from context.__enter__() */
-        _ADDOP(c, loc, POP_TOP);
+        ADDOP(c, loc, POP_TOP);
     }
 
     pos++;
-    if (pos == asdl_seq_LEN(s->v.With.items))
+    if (pos == asdl_seq_LEN(s->v.With.items)) {
         /* BLOCK code */
-        _VISIT_SEQ(c, stmt, s->v.With.body)
-    else if (!compiler_with(c, s, pos))
-            return 0;
+        VISIT_SEQ(c, stmt, s->v.With.body)
+    }
+    else if (compiler_with(c, s, pos) == ERROR) {
+        return ERROR;
+    }
 
-    _ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
     compiler_pop_fblock(c, WITH, block);
 
     /* End of body; start the cleanup. */
@@ -5949,22 +5945,20 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
      * call __exit__(None, None, None)
      */
     loc = LOC(s);
-    if (compiler_call_exit_with_nones(c, loc) < 0) {
-        return 0;
-    }
-    _ADDOP(c, loc, POP_TOP);
-    _ADDOP_JUMP(c, loc, JUMP, exit);
+    RETURN_IF_ERROR(compiler_call_exit_with_nones(c, loc));
+    ADDOP(c, loc, POP_TOP);
+    ADDOP_JUMP(c, loc, JUMP, exit);
 
     /* For exceptional outcome: */
     USE_LABEL(c, final);
 
-    _ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
-    _ADDOP(c, loc, PUSH_EXC_INFO);
-    _ADDOP(c, loc, WITH_EXCEPT_START);
+    ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
+    ADDOP(c, loc, PUSH_EXC_INFO);
+    ADDOP(c, loc, WITH_EXCEPT_START);
     compiler_with_except_finish(c, cleanup);
 
     USE_LABEL(c, exit);
-    return 1;
+    return SUCCESS;
 }
 
 static int
