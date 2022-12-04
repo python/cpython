@@ -3520,9 +3520,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
                              s->v.Try.finalbody));
 
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
-        if (!compiler_try_except(c, s)) {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(compiler_try_except(c, s));
     }
     else {
         VISIT_SEQ(c, stmt, s->v.Try.body);
@@ -3646,42 +3644,43 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, cleanup);
 
-    _ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
 
     USE_LABEL(c, body);
-    if (compiler_push_fblock(c, loc, TRY_EXCEPT, body, NO_LABEL, NULL) < 0) {
-        return 0;
-    }
-    _VISIT_SEQ(c, stmt, s->v.Try.body);
+    RETURN_IF_ERROR(
+        compiler_push_fblock(c, loc, TRY_EXCEPT, body, NO_LABEL, NULL));
+    VISIT_SEQ(c, stmt, s->v.Try.body);
     compiler_pop_fblock(c, TRY_EXCEPT, body);
-    _ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
     if (s->v.Try.orelse && asdl_seq_LEN(s->v.Try.orelse)) {
-        _VISIT_SEQ(c, stmt, s->v.Try.orelse);
+        VISIT_SEQ(c, stmt, s->v.Try.orelse);
     }
-    _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
     n = asdl_seq_LEN(s->v.Try.handlers);
 
     USE_LABEL(c, except);
 
-    _ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, cleanup);
-    _ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
+    ADDOP_JUMP(c, NO_LOCATION, SETUP_CLEANUP, cleanup);
+    ADDOP(c, NO_LOCATION, PUSH_EXC_INFO);
+
     /* Runtime will push a block here, so we need to account for that */
-    if (compiler_push_fblock(c, loc, EXCEPTION_HANDLER, NO_LABEL, NO_LABEL, NULL) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(
+        compiler_push_fblock(c, loc, EXCEPTION_HANDLER, NO_LABEL, NO_LABEL, NULL));
+
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.Try.handlers, i);
         location loc = LOC(handler);
         if (!handler->v.ExceptHandler.type && i < n-1) {
-            return compiler_error(c, loc, "default 'except:' must be last");
+            compiler_error(c, loc, "default 'except:' must be last");
+            return ERROR;
         }
         NEW_JUMP_TARGET_LABEL(c, next_except);
         except = next_except;
         if (handler->v.ExceptHandler.type) {
-            _VISIT(c, expr, handler->v.ExceptHandler.type);
-            _ADDOP(c, loc, CHECK_EXC_MATCH);
-            _ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, except);
+            VISIT(c, expr, handler->v.ExceptHandler.type);
+            ADDOP(c, loc, CHECK_EXC_MATCH);
+            ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, except);
         }
         if (handler->v.ExceptHandler.name) {
             NEW_JUMP_TARGET_LABEL(c, cleanup_end);
@@ -3701,63 +3700,63 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             */
 
             /* second try: */
-            _ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup_end);
+            ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup_end);
 
             USE_LABEL(c, cleanup_body);
-            if (compiler_push_fblock(c, loc, HANDLER_CLEANUP, cleanup_body,
-                                     NO_LABEL, handler->v.ExceptHandler.name) < 0) {
-                return 0;
-            }
+            RETURN_IF_ERROR(
+                compiler_push_fblock(c, loc, HANDLER_CLEANUP, cleanup_body,
+                                     NO_LABEL, handler->v.ExceptHandler.name));
 
             /* second # body */
-            _VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
+            VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
             /* name = None; del name; # Mark as artificial */
-            _ADDOP(c, NO_LOCATION, POP_BLOCK);
-            _ADDOP(c, NO_LOCATION, POP_BLOCK);
-            _ADDOP(c, NO_LOCATION, POP_EXCEPT);
-            _ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+            ADDOP(c, NO_LOCATION, POP_BLOCK);
+            ADDOP(c, NO_LOCATION, POP_BLOCK);
+            ADDOP(c, NO_LOCATION, POP_EXCEPT);
+            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
             compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
-            _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+            ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
             /* except: */
             USE_LABEL(c, cleanup_end);
 
             /* name = None; del name; # artificial */
-            _ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
             compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
 
-            _ADDOP_I(c, NO_LOCATION, RERAISE, 1);
+            ADDOP_I(c, NO_LOCATION, RERAISE, 1);
         }
         else {
             NEW_JUMP_TARGET_LABEL(c, cleanup_body);
 
-            _ADDOP(c, loc, POP_TOP); /* exc_value */
+            ADDOP(c, loc, POP_TOP); /* exc_value */
 
             USE_LABEL(c, cleanup_body);
-            if (compiler_push_fblock(c, loc, HANDLER_CLEANUP, cleanup_body, NO_LABEL, NULL) < 0) {
-                return 0;
-            }
-            _VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
+            RETURN_IF_ERROR(
+                compiler_push_fblock(c, loc, HANDLER_CLEANUP, cleanup_body,
+                                     NO_LABEL, NULL));
+
+            VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
-            _ADDOP(c, NO_LOCATION, POP_BLOCK);
-            _ADDOP(c, NO_LOCATION, POP_EXCEPT);
-            _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+            ADDOP(c, NO_LOCATION, POP_BLOCK);
+            ADDOP(c, NO_LOCATION, POP_EXCEPT);
+            ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
         }
 
         USE_LABEL(c, except);
     }
     /* artificial */
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NO_LABEL);
-    _ADDOP_I(c, NO_LOCATION, RERAISE, 0);
+    ADDOP_I(c, NO_LOCATION, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
-    _POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);
+    POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);
 
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 /*
@@ -3976,7 +3975,7 @@ compiler_try(struct compiler *c, stmt_ty s) {
     if (s->v.Try.finalbody && asdl_seq_LEN(s->v.Try.finalbody))
         return compiler_try_finally(c, s) == SUCCESS ? 1 : 0;
     else
-        return compiler_try_except(c, s);
+        return compiler_try_except(c, s) == SUCCESS ? 1 : 0;
 }
 
 static int
