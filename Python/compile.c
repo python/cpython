@@ -6506,11 +6506,9 @@ jump_to_fail_pop(struct compiler *c, location loc,
     // Pop any items on the top of the stack, plus any objects we were going to
     // capture on success:
     Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
-    if (ensure_fail_pop(c, pc, pops) < 0) {
-        return 0;
-    }
-    _ADDOP_JUMP(c, loc, op, pc->fail_pop[pops]);
-    return 1;
+    RETURN_IF_ERROR(ensure_fail_pop(c, pc, pops));
+    ADDOP_JUMP(c, loc, op, pc->fail_pop[pops]);
+    return SUCCESS;
 }
 
 // Build all of the fail_pop blocks and reset fail_pop.
@@ -6775,7 +6773,9 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     _ADDOP_I(c, LOC(p), IS_OP, 1);
     // TOS is now a tuple of (nargs + nattrs) attributes (or None):
     pc->on_top++;
-    RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+        return 0;
+    }
     _ADDOP_I(c, LOC(p), UNPACK_SEQUENCE, nargs + nattrs);
     pc->on_top += nargs + nattrs - 1;
     for (i = 0; i < nargs + nattrs; i++) {
@@ -6819,7 +6819,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
     // We need to keep the subject on top during the mapping and length checks:
     pc->on_top++;
     _ADDOP(c, LOC(p), MATCH_MAPPING);
-    RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+        return 0;
+    }
     if (!size && !star_target) {
         // If the pattern is just "{}", we're done! Pop the subject:
         pc->on_top--;
@@ -6831,7 +6833,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
         _ADDOP(c, LOC(p), GET_LEN);
         _ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size));
         _ADDOP_COMPARE(c, LOC(p), GtE);
-        RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+        if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+            return 0;
+        }
     }
     if (INT_MAX < size - 1) {
         return compiler_error(c, LOC(p), "too many sub-patterns in mapping pattern");
@@ -6892,7 +6896,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
     _ADDOP_I(c, LOC(p), COPY, 1);
     _ADDOP_LOAD_CONST(c, LOC(p), Py_None);
     _ADDOP_I(c, LOC(p), IS_OP, 1);
-    RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+        return 0;
+    }
     // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:
     _ADDOP_I(c, LOC(p), UNPACK_SEQUENCE, size);
@@ -7037,7 +7043,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
     if ((cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, LOC(p)) < 0) ||
-        !jump_to_fail_pop(c, LOC(p), pc, JUMP)) {
+        jump_to_fail_pop(c, LOC(p), pc, JUMP) < 0) {
         goto error;
     }
 
@@ -7114,20 +7120,26 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p,
     // We need to keep the subject on top during the sequence and length checks:
     pc->on_top++;
     _ADDOP(c, LOC(p), MATCH_SEQUENCE);
-    RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+        return 0;
+    }
     if (star < 0) {
         // No star: len(subject) == size
         _ADDOP(c, LOC(p), GET_LEN);
         _ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size));
         _ADDOP_COMPARE(c, LOC(p), Eq);
-        RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+        if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+            return 0;
+        }
     }
     else if (size > 1) {
         // Star: len(subject) >= size - 1
         _ADDOP(c, LOC(p), GET_LEN);
         _ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size - 1));
         _ADDOP_COMPARE(c, LOC(p), GtE);
-        RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+        if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+            return 0;
+        }
     }
     // Whatever comes next should consume the subject:
     pc->on_top--;
@@ -7155,7 +7167,9 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     _VISIT(c, expr, value);
     _ADDOP_COMPARE(c, LOC(p), Eq);
-    RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+        return 0;
+    }
     return 1;
 }
 
@@ -7165,7 +7179,9 @@ compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc
     assert(p->kind == MatchSingleton_kind);
     _ADDOP_LOAD_CONST(c, LOC(p), p->v.MatchSingleton.value);
     _ADDOP_COMPARE(c, LOC(p), Is);
-    RETURN_IF_FALSE(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
+        return 0;
+    }
     return 1;
 }
 
