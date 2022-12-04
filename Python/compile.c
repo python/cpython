@@ -6518,7 +6518,7 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
 {
     if (!pc->fail_pop_size) {
         assert(pc->fail_pop == NULL);
-        return 1;
+        return SUCCESS;
     }
     while (--pc->fail_pop_size) {
         USE_LABEL(c, pc->fail_pop[pc->fail_pop_size]);
@@ -6526,20 +6526,21 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
             pc->fail_pop = NULL;
-            return 0;
+            return ERROR;
         }
     }
     USE_LABEL(c, pc->fail_pop[0]);
     PyObject_Free(pc->fail_pop);
     pc->fail_pop = NULL;
-    return 1;
+    return SUCCESS;
 }
 
 static int
 compiler_error_duplicate_store(struct compiler *c, location loc, identifier n)
 {
-    return compiler_error(c, loc,
+    compiler_error(c, loc,
         "multiple assignments to name %R in pattern", n);
+    return ERROR;
 }
 
 // Duplicate the effect of 3.10's ROT_* instructions using SWAPs.
@@ -6569,7 +6570,8 @@ pattern_helper_store_name(struct compiler *c, location loc,
         return 0;
     }
     if (duplicate) {
-        return compiler_error_duplicate_store(c, loc, n);
+        compiler_error_duplicate_store(c, loc, n);
+        return 0;
     }
     // Rotate this object underneath any items we need to preserve:
     Py_ssize_t rotations = pc->on_top + PyList_GET_SIZE(pc->stores) + 1;
@@ -7030,8 +7032,8 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
-        if ((cfg_builder_addop_j(CFG_BUILDER(c), LOC(alt), JUMP, end) < 0) ||
-            !emit_and_reset_fail_pop(c, LOC(alt), pc))
+        if (cfg_builder_addop_j(CFG_BUILDER(c), LOC(alt), JUMP, end) < 0 ||
+            emit_and_reset_fail_pop(c, LOC(alt), pc) < 0)
         {
             goto error;
         }
@@ -7265,7 +7267,9 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
         // of the body
-        RETURN_IF_FALSE(emit_and_reset_fail_pop(c, LOC(m->pattern), pc));
+        if (emit_and_reset_fail_pop(c, LOC(m->pattern), pc) < 0) {
+            return 0;
+        }
     }
     if (has_default) {
         // A trailing "case _" is common, and lets us save a bit of redundant
