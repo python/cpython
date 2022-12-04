@@ -4149,25 +4149,25 @@ compiler_assert(struct compiler *c, stmt_ty s)
         if (!compiler_warn(c, LOC(s), "assertion is always true, "
                                       "perhaps remove parentheses?"))
         {
-            return 0;
+            return ERROR;
         }
     }
     if (c->c_optimize) {
-        return 1;
+        return SUCCESS;
     }
     NEW_JUMP_TARGET_LABEL(c, end);
     if (!compiler_jump_if(c, LOC(s), s->v.Assert.test, end, 1)) {
-        return 0;
+        return ERROR;
     }
-    _ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
+    ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
-        _VISIT(c, expr, s->v.Assert.msg);
-        _ADDOP_I(c, LOC(s), CALL, 0);
+        VISIT(c, expr, s->v.Assert.msg);
+        ADDOP_I(c, LOC(s), CALL, 0);
     }
-    _ADDOP_I(c, LOC(s), RAISE_VARARGS, 1);
+    ADDOP_I(c, LOC(s), RAISE_VARARGS, 1);
 
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4248,7 +4248,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case TryStar_kind:
         return compiler_try_star(c, s) == SUCCESS ? 1 : 0;
     case Assert_kind:
-        return compiler_assert(c, s);
+        return compiler_assert(c, s) == SUCCESS ? 1 : 0;
     case Import_kind:
         return compiler_import(c, s);
     case ImportFrom_kind:
