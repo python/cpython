@@ -2783,11 +2783,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     if (compiler_check_debug_args(c, args) < 0) {
-        return 0;
+        return ERROR;
     }
 
     if (compiler_decorators(c, decos) < 0) {
-        return 0;
+        return ERROR;
     }
 
     firstlineno = s->lineno;
@@ -2798,19 +2798,18 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     location loc = LOC(s);
     funcflags = compiler_default_arguments(c, loc, args);
     if (funcflags == -1) {
-        return 0;
+        return ERROR;
     }
     annotations = compiler_visit_annotations(c, loc, args, returns);
     if (annotations == 0) {
-        return 0;
+        return ERROR;
     }
     else if (annotations > 0) {
         funcflags |= 0x04;
     }
 
-    if (compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno));
 
     /* if not -OO mode, add docstring */
     if (c->c_optimize < 2) {
@@ -2818,19 +2817,19 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
     if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
         compiler_exit_scope(c);
-        return 0;
+        return ERROR;
     }
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     for (i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
-        _VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
+        VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
     if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
         if (wrap_in_stopiteration_handler(c) < 0) {
             compiler_exit_scope(c);
-            return 0;
+            return ERROR;
         }
     }
     co = assemble(c, 1);
@@ -2839,20 +2838,20 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (co == NULL) {
         Py_XDECREF(qualname);
         Py_XDECREF(co);
-        return 0;
+        return ERROR;
     }
     if (compiler_make_closure(c, loc, co, funcflags, qualname) < 0) {
         Py_DECREF(qualname);
         Py_DECREF(co);
-        return 0;
+        return ERROR;
     }
     Py_DECREF(qualname);
     Py_DECREF(co);
 
     if (compiler_apply_decorators(c, decos) < 0) {
-        return 0;
+        return ERROR;
     }
-    return compiler_nameop(c, loc, name, Store);
+    return compiler_nameop(c, loc, name, Store) ? SUCCESS : ERROR;
 }
 
 static int
@@ -4199,7 +4198,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 
     switch (s->kind) {
     case FunctionDef_kind:
-        return compiler_function(c, s, 0);
+        return compiler_function(c, s, 0) == SUCCESS ? 1 : 0;
     case ClassDef_kind:
         return compiler_class(c, s) == SUCCESS ? 1 : 0;
     case Return_kind:
@@ -4279,7 +4278,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case With_kind:
         return compiler_with(c, s, 0) == SUCCESS ? 1 : 0;
     case AsyncFunctionDef_kind:
-        return compiler_function(c, s, 1);
+        return compiler_function(c, s, 1) == SUCCESS ? 1 : 0;
     case AsyncWith_kind:
         return compiler_async_with(c, s, 0) == SUCCESS ? 1 : 0;
     case AsyncFor_kind:
