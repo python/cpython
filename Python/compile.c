@@ -2139,30 +2139,30 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
         case EXCEPTION_HANDLER:
         case EXCEPTION_GROUP_HANDLER:
         case ASYNC_COMPREHENSION_GENERATOR:
-            return 1;
+            return SUCCESS;
 
         case FOR_LOOP:
             /* Pop the iterator */
             if (preserve_tos) {
-                _ADDOP_I(c, *ploc, SWAP, 2);
+                ADDOP_I(c, *ploc, SWAP, 2);
             }
-            _ADDOP(c, *ploc, POP_TOP);
-            return 1;
+            ADDOP(c, *ploc, POP_TOP);
+            return SUCCESS;
 
         case TRY_EXCEPT:
-            _ADDOP(c, *ploc, POP_BLOCK);
-            return 1;
+            ADDOP(c, *ploc, POP_BLOCK);
+            return SUCCESS;
 
         case FINALLY_TRY:
             /* This POP_BLOCK gets the line number of the unwinding statement */
-            _ADDOP(c, *ploc, POP_BLOCK);
+            ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
                 if (compiler_push_fblock(c, *ploc, POP_VALUE, NO_LABEL, NO_LABEL, NULL) < 0) {
-                    return 0;
+                    return ERROR;
                 }
             }
             /* Emit the finally block */
-            _VISIT_SEQ(c, stmt, info->fb_datum);
+            VISIT_SEQ(c, stmt, info->fb_datum);
             if (preserve_tos) {
                 compiler_pop_fblock(c, POP_VALUE, NO_LABEL);
             }
@@ -2170,64 +2170,64 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
              * statement causing the unwinding, so make the unwinding
              * instruction artificial */
             *ploc = NO_LOCATION;
-            return 1;
+            return SUCCESS;
 
         case FINALLY_END:
             if (preserve_tos) {
-                _ADDOP_I(c, *ploc, SWAP, 2);
+                ADDOP_I(c, *ploc, SWAP, 2);
             }
-            _ADDOP(c, *ploc, POP_TOP); /* exc_value */
+            ADDOP(c, *ploc, POP_TOP); /* exc_value */
             if (preserve_tos) {
-                _ADDOP_I(c, *ploc, SWAP, 2);
+                ADDOP_I(c, *ploc, SWAP, 2);
             }
-            _ADDOP(c, *ploc, POP_BLOCK);
-            _ADDOP(c, *ploc, POP_EXCEPT);
-            return 1;
+            ADDOP(c, *ploc, POP_BLOCK);
+            ADDOP(c, *ploc, POP_EXCEPT);
+            return SUCCESS;
 
         case WITH:
         case ASYNC_WITH:
             *ploc = LOC((stmt_ty)info->fb_datum);
-            _ADDOP(c, *ploc, POP_BLOCK);
+            ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
-                _ADDOP_I(c, *ploc, SWAP, 2);
+                ADDOP_I(c, *ploc, SWAP, 2);
             }
             if (compiler_call_exit_with_nones(c, *ploc) < 0) {
-                return 0;
+                return ERROR;
             }
             if (info->fb_type == ASYNC_WITH) {
-                _ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
-                _ADDOP_LOAD_CONST(c, *ploc, Py_None);
-                _ADD_YIELD_FROM(c, *ploc, 1);
+                ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
+                ADDOP_LOAD_CONST(c, *ploc, Py_None);
+                ADD_YIELD_FROM(c, *ploc, 1);
             }
-            _ADDOP(c, *ploc, POP_TOP);
+            ADDOP(c, *ploc, POP_TOP);
             /* The exit block should appear to execute after the
              * statement causing the unwinding, so make the unwinding
              * instruction artificial */
             *ploc = NO_LOCATION;
-            return 1;
+            return SUCCESS;
 
         case HANDLER_CLEANUP: {
             if (info->fb_datum) {
-                _ADDOP(c, *ploc, POP_BLOCK);
+                ADDOP(c, *ploc, POP_BLOCK);
             }
             if (preserve_tos) {
-                _ADDOP_I(c, *ploc, SWAP, 2);
+                ADDOP_I(c, *ploc, SWAP, 2);
             }
-            _ADDOP(c, *ploc, POP_BLOCK);
-            _ADDOP(c, *ploc, POP_EXCEPT);
+            ADDOP(c, *ploc, POP_BLOCK);
+            ADDOP(c, *ploc, POP_EXCEPT);
             if (info->fb_datum) {
-                _ADDOP_LOAD_CONST(c, *ploc, Py_None);
+                ADDOP_LOAD_CONST(c, *ploc, Py_None);
                 compiler_nameop(c, *ploc, info->fb_datum, Store);
                 compiler_nameop(c, *ploc, info->fb_datum, Del);
             }
-            return 1;
+            return SUCCESS;
         }
         case POP_VALUE: {
             if (preserve_tos) {
-                _ADDOP_I(c, *ploc, SWAP, 2);
+                ADDOP_I(c, *ploc, SWAP, 2);
             }
-            _ADDOP(c, *ploc, POP_TOP);
-            return 1;
+            ADDOP(c, *ploc, POP_TOP);
+            return SUCCESS;
         }
     }
     Py_UNREACHABLE();
@@ -2252,7 +2252,7 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
     }
     struct fblockinfo copy = *top;
     c->u->u_nfblocks--;
-    if (!compiler_unwind_fblock(c, ploc, &copy, preserve_tos)) {
+    if (compiler_unwind_fblock(c, ploc, &copy, preserve_tos) < 0) {
         return 0;
     }
     if (!compiler_unwind_fblock_stack(c, ploc, preserve_tos, loop)) {
@@ -3437,7 +3437,7 @@ compiler_break(struct compiler *c, location loc)
     if (loop == NULL) {
         return compiler_error(c, loc, "'break' outside loop");
     }
-    if (!compiler_unwind_fblock(c, &loc, loop, 0)) {
+    if (compiler_unwind_fblock(c, &loc, loop, 0) < 0) {
         return 0;
     }
     _ADDOP_JUMP(c, loc, JUMP, loop->fb_exit);
