@@ -6684,9 +6684,7 @@ compiler_pattern_subpattern(struct compiler *c,
 {
     int allow_irrefutable = pc->allow_irrefutable;
     pc->allow_irrefutable = 1;
-    if (!compiler_pattern(c, p, pc)) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_pattern(c, p, pc));
     pc->allow_irrefutable = allow_irrefutable;
     return SUCCESS;
 }
@@ -6712,9 +6710,7 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to make a copy for (possibly) storing later:
     pc->on_top++;
     ADDOP_I(c, LOC(p), COPY, 1);
-    if (!compiler_pattern(c, p->v.MatchAs.pattern, pc)) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_pattern(c, p->v.MatchAs.pattern, pc));
     // Success! Store it:
     pc->on_top--;
     RETURN_IF_ERROR(pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc));
@@ -6984,8 +6980,8 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if ((cfg_builder_addop_i(CFG_BUILDER(c), COPY, 1, LOC(alt)) < 0) ||
-            !compiler_pattern(c, alt, pc)) {
+        if (cfg_builder_addop_i(CFG_BUILDER(c), COPY, 1, LOC(alt)) < 0 ||
+            compiler_pattern(c, alt, pc) < 0) {
             goto error;
         }
         // Success!
@@ -7201,26 +7197,27 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     switch (p->kind) {
         case MatchValue_kind:
-            return compiler_pattern_value(c, p, pc) == SUCCESS ? 1 : 0;
+            return compiler_pattern_value(c, p, pc);
         case MatchSingleton_kind:
-            return compiler_pattern_singleton(c, p, pc) == SUCCESS ? 1 : 0;
+            return compiler_pattern_singleton(c, p, pc);
         case MatchSequence_kind:
-            return compiler_pattern_sequence(c, p, pc) == SUCCESS ? 1 : 0;
+            return compiler_pattern_sequence(c, p, pc);
         case MatchMapping_kind:
-            return compiler_pattern_mapping(c, p, pc) == SUCCESS ? 1 : 0;
+            return compiler_pattern_mapping(c, p, pc);
         case MatchClass_kind:
-            return compiler_pattern_class(c, p, pc) == SUCCESS ? 1 : 0;
+            return compiler_pattern_class(c, p, pc);
         case MatchStar_kind:
-            return compiler_pattern_star(c, p, pc) == SUCCESS ? 1 : 0;
+            return compiler_pattern_star(c, p, pc);
         case MatchAs_kind:
-            return compiler_pattern_as(c, p, pc) == SUCCESS ? 1 : 0;
+            return compiler_pattern_as(c, p, pc);
         case MatchOr_kind:
-            return compiler_pattern_or(c, p, pc) == SUCCESS ? 1 : 0;
+            return compiler_pattern_or(c, p, pc);
     }
     // AST validator shouldn't let this happen, but if it does,
     // just fail, don't crash out of the interpreter
     const char *e = "invalid match pattern node in AST (kind=%d)";
-    return compiler_error(c, LOC(p), e, p->kind);
+    compiler_error(c, LOC(p), e, p->kind);
+    return ERROR;
 }
 
 static int
@@ -7245,7 +7242,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         pc->fail_pop_size = 0;
         pc->on_top = 0;
         // NOTE: Can't use returning macros here (they'll leak pc->stores)!
-        if (!compiler_pattern(c, m->pattern, pc)) {
+        if (compiler_pattern(c, m->pattern, pc) < 0) {
             Py_DECREF(pc->stores);
             return 0;
         }
