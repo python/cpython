@@ -57,6 +57,10 @@ Accessing The Annotations Dict Of An Object In Python 3.10 And Newer
   newer is to call :func:`getattr` with three arguments,
   for example ``getattr(o, '__annotations__', None)``.
 
+  Starting from Python 3.10, accessing the annotations
+  of a class will not give anymore the ones of its base
+  classes.
+
 
 Accessing The Annotations Dict Of An Object In Python 3.9 And Older
 ===================================================================
