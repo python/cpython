@@ -876,8 +876,10 @@ compiler_set_qualname(struct compiler *c)
             || u->u_scope_type == COMPILER_SCOPE_CLASS) {
             assert(u->u_name);
             mangled = _Py_Mangle(parent->u_private, u->u_name);
-            if (!mangled)
-                return 0;
+            if (!mangled) {
+                return ERROR;
+            }
+
             scope = _PyST_GetScope(parent->u_ste, mangled);
             Py_DECREF(mangled);
             assert(scope != GLOBAL_IMPLICIT);
@@ -893,8 +895,9 @@ compiler_set_qualname(struct compiler *c)
                 _Py_DECLARE_STR(dot_locals, ".<locals>");
                 base = PyUnicode_Concat(parent->u_qualname,
                                         &_Py_STR(dot_locals));
-                if (base == NULL)
-                    return 0;
+                if (base == NULL) {
+                    return ERROR;
+                }
             }
             else {
                 base = Py_NewRef(parent->u_qualname);
@@ -906,18 +909,20 @@ compiler_set_qualname(struct compiler *c)
         _Py_DECLARE_STR(dot, ".");
         name = PyUnicode_Concat(base, &_Py_STR(dot));
         Py_DECREF(base);
-        if (name == NULL)
-            return 0;
+        if (name == NULL) {
+            return ERROR;
+        }
         PyUnicode_Append(&name, u->u_name);
-        if (name == NULL)
-            return 0;
+        if (name == NULL) {
+            return ERROR;
+        }
     }
     else {
         name = Py_NewRef(u->u_name);
     }
     u->u_qualname = name;
 
-    return 1;
+    return SUCCESS;
 }
 
 static jump_target_label
@@ -1809,8 +1814,9 @@ compiler_enter_scope(struct compiler *c, identifier name,
         loc.lineno = 0;
     }
     else {
-        if (!compiler_set_qualname(c))
+        if (compiler_set_qualname(c) < 0){
             return 0;
+        }
     }
     ADDOP_I(c, loc, RESUME, 0);
 
