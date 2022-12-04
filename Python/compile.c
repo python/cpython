@@ -1800,13 +1800,6 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
         return 0; \
 }
 
-#define _VISIT_IN_SCOPE(C, TYPE, V) {\
-    if (!compiler_visit_ ## TYPE((C), (V))) { \
-        compiler_exit_scope(c); \
-        return 0; \
-    } \
-}
-
 #define _VISIT_SEQ(C, TYPE, SEQ) { \
     int _i; \
     asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
@@ -1817,22 +1810,6 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     } \
 }
 
-#define _VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) { \
-    int _i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        if (!compiler_visit_ ## TYPE((C), elt)) { \
-            compiler_exit_scope(c); \
-            return 0; \
-        } \
-    } \
-}
-
-#define RETURN_IF_FALSE(X)  \
-    if (!(X)) {             \
-        return 0;           \
-    }
 
 static int
 compiler_enter_scope(struct compiler *c, identifier name,
@@ -3166,9 +3143,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
 
-    if (compiler_check_debug_args(c, args) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(compiler_check_debug_args(c, args));
 
     location loc = LOC(e);
     funcflags = compiler_default_arguments(c, loc, args);
@@ -3177,43 +3152,42 @@ compiler_lambda(struct compiler *c, expr_ty e)
     }
 
     _Py_DECLARE_STR(anon_lambda, "<lambda>");
-    if (compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
-                             (void *)e, e->lineno) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
+                             (void *)e, e->lineno));
+
     /* Make None the first constant, so the lambda can't have a
        docstring. */
-    if (compiler_add_const(c, Py_None) < 0)
-        return 0;
+    RETURN_IF_ERROR(compiler_add_const(c, Py_None));
 
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
-    _VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
+    VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (c->u->u_ste->ste_generator) {
         co = assemble(c, 0);
     }
     else {
         location loc = LOCATION(e->lineno, e->lineno, 0, 0);
-        _ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+        ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = assemble(c, 1);
     }
     qualname = Py_NewRef(c->u->u_qualname);
     compiler_exit_scope(c);
     if (co == NULL) {
         Py_DECREF(qualname);
-        return 0;
+        return ERROR;
     }
 
     if (compiler_make_closure(c, loc, co, funcflags, qualname) < 0) {
         Py_DECREF(qualname);
         Py_DECREF(co);
-        return 0;
+        return ERROR;
     }
     Py_DECREF(qualname);
     Py_DECREF(co);
 
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -5965,7 +5939,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         _ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
         break;
     case Lambda_kind:
-        return compiler_lambda(c, e);
+        return compiler_lambda(c, e) == SUCCESS ? 1 : 0;
     case IfExp_kind:
         return compiler_ifexp(c, e) == SUCCESS ? 1 : 0;
     case Dict_kind:
