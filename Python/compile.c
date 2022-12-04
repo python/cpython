@@ -2782,13 +2782,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
 
-    if (compiler_check_debug_args(c, args) < 0) {
-        return ERROR;
-    }
-
-    if (compiler_decorators(c, decos) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_check_debug_args(c, args));
+    RETURN_IF_ERROR(compiler_decorators(c, decos));
 
     firstlineno = s->lineno;
     if (asdl_seq_LEN(decos)) {
@@ -2848,9 +2843,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_DECREF(qualname);
     Py_DECREF(co);
 
-    if (compiler_apply_decorators(c, decos) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
     return compiler_nameop(c, loc, name, Store) ? SUCCESS : ERROR;
 }
 
@@ -2957,11 +2950,10 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP_LOAD_CONST(c, loc, s->v.ClassDef.name);
 
     /* 5. generate the rest of the code for the call */
-    if (!compiler_call_helper(c, loc, 2,
-                              s->v.ClassDef.bases,
-                              s->v.ClassDef.keywords)) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
+                                         s->v.ClassDef.bases,
+                                         s->v.ClassDef.keywords));
+
     /* 6. apply decorators */
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
 
@@ -5052,23 +5044,23 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
         }
         location loc = LOC(key);
         if (forbidden_name(c, loc, key->arg, Store)) {
-            return -1;
+            return ERROR;
         }
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
                 compiler_error(c, LOC(other), "keyword argument repeated: %U", key->arg);
-                return -1;
+                return ERROR;
             }
         }
     }
-    return 0;
+    return SUCCESS;
 }
 
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
-    if (validate_keywords(c, e->v.Call.keywords) == -1) {
+    if (validate_keywords(c, e->v.Call.keywords) < 0) {
         return 0;
     }
     int ret = maybe_optimize_method_call(c, e);
@@ -5084,7 +5076,7 @@ compiler_call(struct compiler *c, expr_ty e)
     loc = LOC(e);
     return compiler_call_helper(c, loc, 0,
                                 e->v.Call.args,
-                                e->v.Call.keywords);
+                                e->v.Call.keywords) == SUCCESS ? 1 : 0;
 }
 
 static int
@@ -5239,9 +5231,7 @@ compiler_call_helper(struct compiler *c, location loc,
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
 
-    if (validate_keywords(c, keywords) == -1) {
-        return 0;
-    }
+    RETURN_IF_ERROR(validate_keywords(c, keywords));
 
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
@@ -5266,26 +5256,26 @@ compiler_call_helper(struct compiler *c, location loc,
     for (i = 0; i < nelts; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         assert(elt->kind != Starred_kind);
-        _VISIT(c, expr, elt);
+        VISIT(c, expr, elt);
     }
     if (nkwelts) {
-        _VISIT_SEQ(c, keyword, keywords);
+        VISIT_SEQ(c, keyword, keywords);
         if (!compiler_call_simple_kw_helper(c, loc, keywords, nkwelts)) {
-            return 0;
+            return ERROR;
         };
     }
-    _ADDOP_I(c, loc, CALL, n + nelts + nkwelts);
-    return 1;
+    ADDOP_I(c, loc, CALL, n + nelts + nkwelts);
+    return SUCCESS;
 
 ex_call:
 
     /* Do positional arguments. */
     if (n ==0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {
-        _VISIT(c, expr, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
+        VISIT(c, expr, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
     }
     else if (starunpack_helper(c, loc, args, n, BUILD_LIST,
                                  LIST_APPEND, LIST_EXTEND, 1) == 0) {
-        return 0;
+        return ERROR;
     }
     /* Then keyword arguments */
     if (nkwelts) {
@@ -5299,20 +5289,20 @@ ex_call:
                 /* A keyword argument unpacking. */
                 if (nseen) {
                     if (!compiler_subkwargs(c, loc, keywords, i - nseen, i)) {
-                        return 0;
+                        return ERROR;
                     }
                     if (have_dict) {
-                        _ADDOP_I(c, loc, DICT_MERGE, 1);
+                        ADDOP_I(c, loc, DICT_MERGE, 1);
                     }
                     have_dict = 1;
                     nseen = 0;
                 }
                 if (!have_dict) {
-                    _ADDOP_I(c, loc, BUILD_MAP, 0);
+                    ADDOP_I(c, loc, BUILD_MAP, 0);
                     have_dict = 1;
                 }
-                _VISIT(c, expr, kw->value);
-                _ADDOP_I(c, loc, DICT_MERGE, 1);
+                VISIT(c, expr, kw->value);
+                ADDOP_I(c, loc, DICT_MERGE, 1);
             }
             else {
                 nseen++;
@@ -5321,17 +5311,17 @@ ex_call:
         if (nseen) {
             /* Pack up any trailing keyword arguments. */
             if (!compiler_subkwargs(c, loc, keywords, nkwelts - nseen, nkwelts)) {
-                return 0;
+                return ERROR;
             }
             if (have_dict) {
-                _ADDOP_I(c, loc, DICT_MERGE, 1);
+                ADDOP_I(c, loc, DICT_MERGE, 1);
             }
             have_dict = 1;
         }
         assert(have_dict);
     }
-    _ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
-    return 1;
+    ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
+    return SUCCESS;
 }
 
 
