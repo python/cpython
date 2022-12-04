@@ -813,11 +813,12 @@ cfg_builder_init(cfg_builder *g)
 {
     g->g_block_list = NULL;
     basicblock *block = cfg_builder_new_block(g);
-    if (block == NULL)
-        return 0;
+    if (block == NULL) {
+        return ERROR;
+    }
     g->g_curblock = g->g_entryblock = block;
     g->g_current_label = NO_LABEL;
-    return 1;
+    return SUCCESS;
 }
 
 static void
@@ -1800,7 +1801,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->c_nestlevel++;
 
     cfg_builder *g = CFG_BUILDER(c);
-    if (!cfg_builder_init(g)) {
+    if (cfg_builder_init(g) < 0) {
         return 0;
     }
 
