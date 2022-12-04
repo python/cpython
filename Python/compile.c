@@ -2663,27 +2663,28 @@ compiler_default_arguments(struct compiler *c, location loc,
     return funcflags;
 }
 
-static int
+static bool
 forbidden_name(struct compiler *c, location loc, identifier name,
                expr_context_ty ctx)
 {
     if (ctx == Store && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
         compiler_error(c, loc, "cannot assign to __debug__");
-        return 1;
+        return true;
     }
     if (ctx == Del && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
         compiler_error(c, loc, "cannot delete __debug__");
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 static int
 compiler_check_debug_one_arg(struct compiler *c, arg_ty arg)
 {
     if (arg != NULL) {
-        if (forbidden_name(c, LOC(arg), arg->arg, Store))
+        if (forbidden_name(c, LOC(arg), arg->arg, Store)) {
             return 0;
+        }
     }
     return 1;
 }
@@ -4394,8 +4395,9 @@ compiler_nameop(struct compiler *c, location loc,
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
 
-    if (forbidden_name(c, loc, name, ctx))
+    if (forbidden_name(c, loc, name, ctx)) {
         return 0;
+    }
 
     mangled = _Py_Mangle(c->u->u_private, name);
     if (!mangled)
@@ -6278,8 +6280,9 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     }
     switch (targ->kind) {
     case Name_kind:
-        if (forbidden_name(c, loc, targ->v.Name.id, Store))
+        if (forbidden_name(c, loc, targ->v.Name.id, Store)) {
             return 0;
+        }
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
@@ -6297,8 +6300,9 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         }
         break;
     case Attribute_kind:
-        if (forbidden_name(c, loc, targ->v.Attribute.attr, Store))
+        if (forbidden_name(c, loc, targ->v.Attribute.attr, Store)) {
             return 0;
+        }
         if (!s->v.AnnAssign.value &&
             !check_ann_expr(c, targ->v.Attribute.value)) {
             return 0;
