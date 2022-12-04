@@ -2511,17 +2511,17 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, Py_ssize_t *annotations_len, location loc)
 {
     if (!annotation) {
-        return 1;
+        return SUCCESS;
     }
     PyObject *mangled = _Py_Mangle(c->u->u_private, id);
     if (!mangled) {
-        return 0;
+        return ERROR;
     }
-    _ADDOP_LOAD_CONST(c, loc, mangled);
+    ADDOP_LOAD_CONST(c, loc, mangled);
     Py_DECREF(mangled);
 
     if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
-        _VISIT(c, annexpr, annotation);
+        VISIT(c, annexpr, annotation);
     }
     else {
         if (annotation->kind == Starred_kind) {
@@ -2529,15 +2529,15 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
             // Do [annotation_value] = [*Ts].
             // (Note that in theory we could end up here even for an argument
             // other than *args, but in practice the grammar doesn't allow it.)
-            _VISIT(c, expr, annotation->v.Starred.value);
-            _ADDOP_I(c, loc, UNPACK_SEQUENCE, (Py_ssize_t) 1);
+            VISIT(c, expr, annotation->v.Starred.value);
+            ADDOP_I(c, loc, UNPACK_SEQUENCE, (Py_ssize_t) 1);
         }
         else {
-            _VISIT(c, expr, annotation);
+            VISIT(c, expr, annotation);
         }
     }
     *annotations_len += 2;
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -2547,15 +2547,15 @@ compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
     int i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
-        if (!compiler_visit_argannotation(
+        RETURN_IF_ERROR(
+            compiler_visit_argannotation(
                         c,
                         arg->arg,
                         arg->annotation,
                         annotations_len,
-                        loc))
-            return 0;
+                        loc));
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -2565,36 +2565,36 @@ compiler_visit_annotations(struct compiler *c, location loc,
     /* Push arg annotation names and values.
        The expressions are evaluated out-of-order wrt the source code.
 
-       Return 0 on error, -1 if no annotations pushed, 1 if a annotations is pushed.
+       Return -1 on error, 0 if no annotations pushed, 1 if a annotations is pushed.
        */
     Py_ssize_t annotations_len = 0;
 
-    if (!compiler_visit_argannotations(c, args->args, &annotations_len, loc))
-        return 0;
-    if (!compiler_visit_argannotations(c, args->posonlyargs, &annotations_len, loc))
-        return 0;
+    if (compiler_visit_argannotations(c, args->args, &annotations_len, loc) < 0)
+        return ERROR;
+    if (compiler_visit_argannotations(c, args->posonlyargs, &annotations_len, loc) < 0)
+        return ERROR;
     if (args->vararg && args->vararg->annotation &&
-        !compiler_visit_argannotation(c, args->vararg->arg,
-                                     args->vararg->annotation, &annotations_len, loc))
-        return 0;
-    if (!compiler_visit_argannotations(c, args->kwonlyargs, &annotations_len, loc))
-        return 0;
+        compiler_visit_argannotation(c, args->vararg->arg,
+                                     args->vararg->annotation, &annotations_len, loc) < 0)
+        return ERROR;
+    if (compiler_visit_argannotations(c, args->kwonlyargs, &annotations_len, loc) < 0)
+        return ERROR;
     if (args->kwarg && args->kwarg->annotation &&
-        !compiler_visit_argannotation(c, args->kwarg->arg,
-                                     args->kwarg->annotation, &annotations_len, loc))
-        return 0;
+        compiler_visit_argannotation(c, args->kwarg->arg,
+                                     args->kwarg->annotation, &annotations_len, loc) < 0)
+        return ERROR;
 
-    if (!compiler_visit_argannotation(c, &_Py_ID(return), returns,
-                                      &annotations_len, loc)) {
-        return 0;
+    if (compiler_visit_argannotation(c, &_Py_ID(return), returns,
+                                     &annotations_len, loc) < 0) {
+        return ERROR;
     }
 
     if (annotations_len) {
-        _ADDOP_I(c, loc, BUILD_TUPLE, annotations_len);
+        ADDOP_I(c, loc, BUILD_TUPLE, annotations_len);
         return 1;
     }
 
-    return -1;
+    return 0;
 }
 
 static int
@@ -2762,7 +2762,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return ERROR;
     }
     annotations = compiler_visit_annotations(c, loc, args, returns);
-    if (annotations == 0) {
+    if (annotations == ERROR) {
         return ERROR;
     }
     else if (annotations > 0) {
