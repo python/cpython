@@ -7125,7 +7125,8 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p,
         if (pattern->kind == MatchStar_kind) {
             if (star >= 0) {
                 const char *e = "multiple starred names in sequence pattern";
-                return compiler_error(c, LOC(p), e);
+                compiler_error(c, LOC(p), e);
+                return ERROR;
             }
             star_wildcard = WILDCARD_STAR_CHECK(pattern);
             only_wildcard &= star_wildcard;
@@ -7136,45 +7137,37 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p,
     }
     // We need to keep the subject on top during the sequence and length checks:
     pc->on_top++;
-    _ADDOP(c, LOC(p), MATCH_SEQUENCE);
-    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-        return 0;
-    }
+    ADDOP(c, LOC(p), MATCH_SEQUENCE);
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     if (star < 0) {
         // No star: len(subject) == size
-        _ADDOP(c, LOC(p), GET_LEN);
-        _ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size));
-        _ADDOP_COMPARE(c, LOC(p), Eq);
-        if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-            return 0;
-        }
+        ADDOP(c, LOC(p), GET_LEN);
+        ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size));
+        ADDOP_COMPARE(c, LOC(p), Eq);
+        RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     }
     else if (size > 1) {
         // Star: len(subject) >= size - 1
-        _ADDOP(c, LOC(p), GET_LEN);
-        _ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size - 1));
-        _ADDOP_COMPARE(c, LOC(p), GtE);
-        if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-            return 0;
-        }
+        ADDOP(c, LOC(p), GET_LEN);
+        ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size - 1));
+        ADDOP_COMPARE(c, LOC(p), GtE);
+        RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     }
     // Whatever comes next should consume the subject:
     pc->on_top--;
     if (only_wildcard) {
         // Patterns like: [] / [_] / [_, _] / [*_] / [_, *_] / [_, _, *_] / etc.
-        _ADDOP(c, LOC(p), POP_TOP);
+        ADDOP(c, LOC(p), POP_TOP);
     }
     else if (star_wildcard) {
-        if (pattern_helper_sequence_subscr(c, LOC(p), patterns, star, pc) < 0) {
-            return 0;
-        }
+        RETURN_IF_ERROR(
+            pattern_helper_sequence_subscr(c, LOC(p), patterns, star, pc));
     }
     else {
-        if (pattern_helper_sequence_unpack(c, LOC(p), patterns, star, pc) < 0) {
-            return 0;
-        }
+        RETURN_IF_ERROR(
+            pattern_helper_sequence_unpack(c, LOC(p), patterns, star, pc));
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -7215,7 +7208,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
         case MatchSingleton_kind:
             return compiler_pattern_singleton(c, p, pc);
         case MatchSequence_kind:
-            return compiler_pattern_sequence(c, p, pc);
+            return compiler_pattern_sequence(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchMapping_kind:
             return compiler_pattern_mapping(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchClass_kind:
