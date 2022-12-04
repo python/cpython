@@ -1779,21 +1779,12 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
         return 0; \
     }
 
-#define _ADDOP_INPLACE(C, LOC, BINOP) { \
-    if (addop_binary((C), (LOC), (BINOP), true) < 0) \
-        return 0; \
-    }
-
 
 #define _ADD_YIELD_FROM(C, LOC, await) { \
     if (compiler_add_yield_from((C), (LOC), (await)) < 0) \
         return 0; \
 }
 
-#define _POP_EXCEPT_AND_RERAISE(C, LOC) { \
-    if (compiler_pop_except_and_reraise((C), (LOC)) < 0) \
-        return 0; \
-}
 
 #define _ADDOP_YIELD(C, LOC) { \
     if (addop_yield((C), (LOC)) < 0) \
@@ -5740,23 +5731,23 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 compiler_with_except_finish(struct compiler *c, jump_target_label cleanup) {
     NEW_JUMP_TARGET_LABEL(c, suppress);
-    _ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
-    _ADDOP_I(c, NO_LOCATION, RERAISE, 2);
+    ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
+    ADDOP_I(c, NO_LOCATION, RERAISE, 2);
 
     USE_LABEL(c, suppress);
-    _ADDOP(c, NO_LOCATION, POP_TOP); /* exc_value */
-    _ADDOP(c, NO_LOCATION, POP_BLOCK);
-    _ADDOP(c, NO_LOCATION, POP_EXCEPT);
-    _ADDOP(c, NO_LOCATION, POP_TOP);
-    _ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_TOP); /* exc_value */
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP(c, NO_LOCATION, POP_EXCEPT);
+    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_TOP);
     NEW_JUMP_TARGET_LABEL(c, exit);
-    _ADDOP_JUMP(c, NO_LOCATION, JUMP, exit);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, exit);
 
     USE_LABEL(c, cleanup);
-    _POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);
+    POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);
 
     USE_LABEL(c, exit);
-    return 1;
+    return SUCCESS;
 }
 
 /*
@@ -5859,7 +5850,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
-    compiler_with_except_finish(c, cleanup);
+    RETURN_IF_ERROR(compiler_with_except_finish(c, cleanup));
 
     USE_LABEL(c, exit);
     return SUCCESS;
@@ -5946,7 +5937,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
     ADDOP(c, loc, PUSH_EXC_INFO);
     ADDOP(c, loc, WITH_EXCEPT_START);
-    compiler_with_except_finish(c, cleanup);
+    RETURN_IF_ERROR(compiler_with_except_finish(c, cleanup));
 
     USE_LABEL(c, exit);
     return SUCCESS;
