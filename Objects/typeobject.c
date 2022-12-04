@@ -485,22 +485,23 @@ PyType_Modified(PyTypeObject *type)
         }
     }
 
+    // Notify registered type watchers, if any
     if (type->tp_watched) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         int bits = type->tp_watched;
         int i = 0;
-        while(bits && i < TYPE_MAX_WATCHERS) {
+        while (bits) {
+            assert(i < TYPE_MAX_WATCHERS);
             if (bits & 1) {
                 PyType_WatchCallback cb = interp->type_watchers[i];
                 if (cb && (cb(type) < 0)) {
                     PyErr_WriteUnraisable((PyObject *)type);
                 }
             }
-            i += 1;
+            i++;
             bits >>= 1;
         }
     }
-
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
