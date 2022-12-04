@@ -1564,12 +1564,14 @@ compiler_addop_name(struct compiler *c, location loc,
     Py_ssize_t arg;
 
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
-    if (!mangled)
-        return 0;
+    if (!mangled) {
+        return ERROR;
+    }
     arg = dict_add_o(dict, mangled);
     Py_DECREF(mangled);
-    if (arg < 0)
-        return 0;
+    if (arg < 0) {
+        return ERROR;
+    }
     if (opcode == LOAD_ATTR) {
         arg <<= 1;
     }
@@ -1578,12 +1580,10 @@ compiler_addop_name(struct compiler *c, location loc,
         arg <<= 1;
         arg |= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc) == SUCCESS ? 1 : 0;
+    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc);
 }
 
-/* Add an opcode with an integer argument.
-   Returns 0 on failure, 1 on success.
-*/
+/* Add an opcode with an integer argument */
 static int
 cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
 {
@@ -1649,7 +1649,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) { \
-    if (!compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O))) \
+    if (compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) \
         return 0; \
 }
 
