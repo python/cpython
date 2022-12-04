@@ -2450,28 +2450,28 @@ compiler_make_closure(struct compiler *c, location loc,
 static int
 compiler_decorators(struct compiler *c, asdl_expr_seq* decos)
 {
-    int i;
-
-    if (!decos)
-        return 1;
-
-    for (i = 0; i < asdl_seq_LEN(decos); i++) {
-        _VISIT(c, expr, (expr_ty)asdl_seq_GET(decos, i));
+    if (!decos) {
+        return SUCCESS;
     }
-    return 1;
+
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(decos); i++) {
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(decos, i));
+    }
+    return SUCCESS;
 }
 
 static int
 compiler_apply_decorators(struct compiler *c, asdl_expr_seq* decos)
 {
-    if (!decos)
-        return 1;
+    if (!decos) {
+        return SUCCESS;
+    }
 
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         location loc = LOC((expr_ty)asdl_seq_GET(decos, i));
-        _ADDOP_I(c, loc, CALL, 0);
+        ADDOP_I(c, loc, CALL, 0);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -2792,8 +2792,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (!compiler_check_debug_args(c, args))
         return 0;
 
-    if (!compiler_decorators(c, decos))
+    if (compiler_decorators(c, decos) < 0) {
         return 0;
+    }
 
     firstlineno = s->lineno;
     if (asdl_seq_LEN(decos)) {
@@ -2854,8 +2855,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_DECREF(qualname);
     Py_DECREF(co);
 
-    if (!compiler_apply_decorators(c, decos))
+    if (compiler_apply_decorators(c, decos) < 0) {
         return 0;
+    }
     return compiler_nameop(c, loc, name, Store);
 }
 
@@ -2866,8 +2868,9 @@ compiler_class(struct compiler *c, stmt_ty s)
     int i, firstlineno;
     asdl_expr_seq *decos = s->v.ClassDef.decorator_list;
 
-    if (!compiler_decorators(c, decos))
+    if (compiler_decorators(c, decos) < 0) {
         return 0;
+    }
 
     firstlineno = s->lineno;
     if (asdl_seq_LEN(decos)) {
@@ -2967,8 +2970,9 @@ compiler_class(struct compiler *c, stmt_ty s)
                               s->v.ClassDef.keywords))
         return 0;
     /* 6. apply decorators */
-    if (!compiler_apply_decorators(c, decos))
+    if (compiler_apply_decorators(c, decos) < 0) {
         return 0;
+    }
 
     /* 7. store into <name> */
     if (!compiler_nameop(c, loc, s->v.ClassDef.name, Store))
