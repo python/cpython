@@ -6482,20 +6482,20 @@ ensure_fail_pop(struct compiler *c, pattern_context *pc, Py_ssize_t n)
 {
     Py_ssize_t size = n + 1;
     if (size <= pc->fail_pop_size) {
-        return 1;
+        return SUCCESS;
     }
     Py_ssize_t needed = sizeof(jump_target_label) * size;
     jump_target_label *resized = PyObject_Realloc(pc->fail_pop, needed);
     if (resized == NULL) {
         PyErr_NoMemory();
-        return 0;
+        return ERROR;
     }
     pc->fail_pop = resized;
     while (pc->fail_pop_size < size) {
         NEW_JUMP_TARGET_LABEL(c, new_block);
         pc->fail_pop[pc->fail_pop_size++] = new_block;
     }
-    return 1;
+    return SUCCESS;
 }
 
 // Use op to jump to the correct fail_pop block.
@@ -6506,7 +6506,9 @@ jump_to_fail_pop(struct compiler *c, location loc,
     // Pop any items on the top of the stack, plus any objects we were going to
     // capture on success:
     Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
-    RETURN_IF_FALSE(ensure_fail_pop(c, pc, pops));
+    if (ensure_fail_pop(c, pc, pops) < 0) {
+        return 0;
+    }
     _ADDOP_JUMP(c, loc, op, pc->fail_pop[pops]);
     return 1;
 }
@@ -7233,7 +7235,9 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         Py_DECREF(pc->stores);
         // NOTE: Returning macros are safe again.
         if (m->guard) {
-            RETURN_IF_FALSE(ensure_fail_pop(c, pc, 0));
+            if (ensure_fail_pop(c, pc, 0) < 0) {
+                return 0;
+            }
             RETURN_IF_FALSE(compiler_jump_if(c, LOC(m->pattern), m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
