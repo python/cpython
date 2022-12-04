@@ -6833,33 +6833,31 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
         // AST validator shouldn't let this happen, but if it does,
         // just fail, don't crash out of the interpreter
         const char * e = "keys (%d) / patterns (%d) length mismatch in mapping pattern";
-        return compiler_error(c, LOC(p), e, size, npatterns);
+        compiler_error(c, LOC(p), e, size, npatterns);
+        return ERROR;
     }
     // We have a double-star target if "rest" is set
     PyObject *star_target = p->v.MatchMapping.rest;
     // We need to keep the subject on top during the mapping and length checks:
     pc->on_top++;
-    _ADDOP(c, LOC(p), MATCH_MAPPING);
-    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-        return 0;
-    }
+    ADDOP(c, LOC(p), MATCH_MAPPING);
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     if (!size && !star_target) {
         // If the pattern is just "{}", we're done! Pop the subject:
         pc->on_top--;
-        _ADDOP(c, LOC(p), POP_TOP);
-        return 1;
+        ADDOP(c, LOC(p), POP_TOP);
+        return SUCCESS;
     }
     if (size) {
         // If the pattern has any keys in it, perform a length check:
-        _ADDOP(c, LOC(p), GET_LEN);
-        _ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size));
-        _ADDOP_COMPARE(c, LOC(p), GtE);
-        if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-            return 0;
-        }
+        ADDOP(c, LOC(p), GET_LEN);
+        ADDOP_LOAD_CONST_NEW(c, LOC(p), PyLong_FromSsize_t(size));
+        ADDOP_COMPARE(c, LOC(p), GtE);
+        RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     }
     if (INT_MAX < size - 1) {
-        return compiler_error(c, LOC(p), "too many sub-patterns in mapping pattern");
+        compiler_error(c, LOC(p), "too many sub-patterns in mapping pattern");
+        return ERROR;
     }
     // Collect all of the keys into a tuple for MATCH_KEYS and
     // **rest. They can either be dotted names or literals:
@@ -6868,7 +6866,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
     // SyntaxError in the case of duplicates.
     PyObject *seen = PySet_New(NULL);
     if (seen == NULL) {
-        return 0;
+        return ERROR;
     }
 
     // NOTE: goto error on failure in the loop below to avoid leaking `seen`
@@ -6910,26 +6908,22 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
     // all keys have been checked; there are no duplicates
     Py_DECREF(seen);
 
-    _ADDOP_I(c, LOC(p), BUILD_TUPLE, size);
-    _ADDOP(c, LOC(p), MATCH_KEYS);
+    ADDOP_I(c, LOC(p), BUILD_TUPLE, size);
+    ADDOP(c, LOC(p), MATCH_KEYS);
     // There's now a tuple of keys and a tuple of values on top of the subject:
     pc->on_top += 2;
-    _ADDOP_I(c, LOC(p), COPY, 1);
-    _ADDOP_LOAD_CONST(c, LOC(p), Py_None);
-    _ADDOP_I(c, LOC(p), IS_OP, 1);
-    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-        return 0;
-    }
+    ADDOP_I(c, LOC(p), COPY, 1);
+    ADDOP_LOAD_CONST(c, LOC(p), Py_None);
+    ADDOP_I(c, LOC(p), IS_OP, 1);
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:
-    _ADDOP_I(c, LOC(p), UNPACK_SEQUENCE, size);
+    ADDOP_I(c, LOC(p), UNPACK_SEQUENCE, size);
     pc->on_top += size - 1;
     for (Py_ssize_t i = 0; i < size; i++) {
         pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        if (compiler_pattern_subpattern(c, pattern, pc) < 0) {
-            return 0;
-        }
+        RETURN_IF_ERROR(compiler_pattern_subpattern(c, pattern, pc));
     }
     // If we get this far, it's a match! Whatever happens next should consume
     // the tuple of keys and the subject:
@@ -6941,28 +6935,26 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
         // rest = dict(TOS1)
         // for key in TOS:
         //     del rest[key]
-        _ADDOP_I(c, LOC(p), BUILD_MAP, 0);           // [subject, keys, empty]
-        _ADDOP_I(c, LOC(p), SWAP, 3);                // [empty, keys, subject]
-        _ADDOP_I(c, LOC(p), DICT_UPDATE, 2);         // [copy, keys]
-        _ADDOP_I(c, LOC(p), UNPACK_SEQUENCE, size);  // [copy, keys...]
+        ADDOP_I(c, LOC(p), BUILD_MAP, 0);           // [subject, keys, empty]
+        ADDOP_I(c, LOC(p), SWAP, 3);                // [empty, keys, subject]
+        ADDOP_I(c, LOC(p), DICT_UPDATE, 2);         // [copy, keys]
+        ADDOP_I(c, LOC(p), UNPACK_SEQUENCE, size);  // [copy, keys...]
         while (size) {
-            _ADDOP_I(c, LOC(p), COPY, 1 + size--);   // [copy, keys..., copy]
-            _ADDOP_I(c, LOC(p), SWAP, 2);            // [copy, keys..., copy, key]
-            _ADDOP(c, LOC(p), DELETE_SUBSCR);        // [copy, keys...]
+            ADDOP_I(c, LOC(p), COPY, 1 + size--);   // [copy, keys..., copy]
+            ADDOP_I(c, LOC(p), SWAP, 2);            // [copy, keys..., copy, key]
+            ADDOP(c, LOC(p), DELETE_SUBSCR);        // [copy, keys...]
         }
-        if (pattern_helper_store_name(c, LOC(p), star_target, pc) < 0) {
-            return 0;
-        }
+        RETURN_IF_ERROR(pattern_helper_store_name(c, LOC(p), star_target, pc));
     }
     else {
-        _ADDOP(c, LOC(p), POP_TOP);  // Tuple of keys.
-        _ADDOP(c, LOC(p), POP_TOP);  // Subject.
+        ADDOP(c, LOC(p), POP_TOP);  // Tuple of keys.
+        ADDOP(c, LOC(p), POP_TOP);  // Subject.
     }
-    return 1;
+    return SUCCESS;
 
 error:
     Py_DECREF(seen);
-    return 0;
+    return ERROR;
 }
 
 static int
@@ -7225,7 +7217,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
         case MatchSequence_kind:
             return compiler_pattern_sequence(c, p, pc);
         case MatchMapping_kind:
-            return compiler_pattern_mapping(c, p, pc);
+            return compiler_pattern_mapping(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchClass_kind:
             return compiler_pattern_class(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchStar_kind:
