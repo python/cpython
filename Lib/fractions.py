@@ -330,7 +330,7 @@ class Fraction(numbers.Rational):
             (?P<minimumwidth>\d+)?
             (?P<thousands_sep>[,_])?
             (?:\.(?P<precision>\d+))?
-            (?P<specifier_type>[f%])
+            (?P<presentation_type>[f%])
         """, re.DOTALL | re.IGNORECASE | re.VERBOSE).fullmatch
 
         # Validate and parse the format specifier.
@@ -357,11 +357,11 @@ class Fraction(numbers.Rational):
             minimumwidth = int(match["minimumwidth"] or "0")
             thousands_sep = match["thousands_sep"]
             precision = int(match["precision"] or "6")
-            specifier_type = match["specifier_type"]
+            presentation_type = match["presentation_type"]
 
         # Get sign and output digits for the target number
         negative = self < 0
-        shift = precision + 2 if specifier_type == "%" else precision
+        shift = precision + 2 if presentation_type == "%" else precision
         significand = round(abs(self) * 10**shift)
 
         # Assemble the output: before padding, it has the form
@@ -372,7 +372,7 @@ class Fraction(numbers.Rational):
         dot_pos = len(digits) - precision
         sign = "-" if negative and (significand or neg_zero_ok) else pos_sign
         separator = "." if precision or alternate_form else ""
-        percent = "%" if specifier_type == "%" else ""
+        percent = "%" if presentation_type == "%" else ""
         trailing = separator + digits[dot_pos:] + percent
         leading = digits[:dot_pos]
 
@@ -395,23 +395,17 @@ class Fraction(numbers.Rational):
 
         after_sign = leading + trailing
 
-        # Pad if a minimum width was given and we haven't already zero padded.
-        if zeropad or minimumwidth is None:
-            result = sign + after_sign
-        else:
-            padding = fill * (minimumwidth - len(sign) - len(after_sign))
-            if align == ">":
-                result = padding + sign + after_sign
-            elif align == "<":
-                result = sign + after_sign + padding
-            elif align == "=":
-                result = sign + padding + after_sign
-            else:
-                # Centered, with a leftwards bias when padding length is odd.
-                assert align == "^"
-                half = len(padding)//2
-                result = padding[:half] + sign + after_sign + padding[half:]
-        return result
+        # Pad if necessary and return.
+        padding = fill * (minimumwidth - len(sign) - len(after_sign))
+        if align == ">":
+            return padding + sign + after_sign
+        elif align == "<":
+            return sign + after_sign + padding
+        elif align == "^":
+            half = len(padding)//2
+            return padding[:half] + sign + after_sign + padding[half:]
+        else:  # align == "="
+            return sign + padding + after_sign
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational
