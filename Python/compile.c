@@ -2862,9 +2862,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     int i, firstlineno;
     asdl_expr_seq *decos = s->v.ClassDef.decorator_list;
 
-    if (compiler_decorators(c, decos) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(compiler_decorators(c, decos));
 
     firstlineno = s->lineno;
     if (asdl_seq_LEN(decos)) {
@@ -2882,10 +2880,10 @@ compiler_class(struct compiler *c, stmt_ty s)
        This borrows from compiler_call.
     */
     /* 1. compile the class body into a code object */
-    if (compiler_enter_scope(c, s->v.ClassDef.name,
-                             COMPILER_SCOPE_CLASS, (void *)s, firstlineno) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, s->v.ClassDef.name,
+                             COMPILER_SCOPE_CLASS, (void *)s, firstlineno));
+
     /* this block represents what we do in the new scope */
     {
         location loc = LOCATION(firstlineno, firstlineno, 0, 0);
@@ -2894,23 +2892,23 @@ compiler_class(struct compiler *c, stmt_ty s)
         /* load (global) __name__ ... */
         if (!compiler_nameop(c, loc, &_Py_ID(__name__), Load)) {
             compiler_exit_scope(c);
-            return 0;
+            return ERROR;
         }
         /* ... and store it as __module__ */
         if (!compiler_nameop(c, loc, &_Py_ID(__module__), Store)) {
             compiler_exit_scope(c);
-            return 0;
+            return ERROR;
         }
         assert(c->u->u_qualname);
-        _ADDOP_LOAD_CONST(c, loc, c->u->u_qualname);
+        ADDOP_LOAD_CONST(c, loc, c->u->u_qualname);
         if (!compiler_nameop(c, loc, &_Py_ID(__qualname__), Store)) {
             compiler_exit_scope(c);
-            return 0;
+            return ERROR;
         }
         /* compile the body proper */
         if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
             compiler_exit_scope(c);
-            return 0;
+            return ERROR;
         }
         /* The following code is artificial */
         /* Return __classcell__ if it is referenced, otherwise return None */
@@ -2919,59 +2917,60 @@ compiler_class(struct compiler *c, stmt_ty s)
             i = compiler_lookup_arg(c->u->u_cellvars, &_Py_ID(__class__));
             if (i < 0) {
                 compiler_exit_scope(c);
-                return 0;
+                return ERROR;
             }
             assert(i == 0);
-            _ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
-            _ADDOP_I(c, NO_LOCATION, COPY, 1);
+            ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
+            ADDOP_I(c, NO_LOCATION, COPY, 1);
             if (!compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store)) {
                 compiler_exit_scope(c);
-                return 0;
+                return ERROR;
             }
         }
         else {
             /* No methods referenced __class__, so just return None */
             assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
-            _ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
-        _ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
+        ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
         /* create the code object */
         co = assemble(c, 1);
     }
     /* leave the new scope */
     compiler_exit_scope(c);
-    if (co == NULL)
-        return 0;
+    if (co == NULL) {
+        return ERROR;
+    }
 
     location loc = LOC(s);
     /* 2. load the 'build_class' function */
-    _ADDOP(c, loc, PUSH_NULL);
-    _ADDOP(c, loc, LOAD_BUILD_CLASS);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP(c, loc, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
     if (compiler_make_closure(c, loc, co, 0, NULL) < 0) {
         Py_DECREF(co);
-        return 0;
+        return ERROR;
     }
     Py_DECREF(co);
 
     /* 4. load class name */
-    _ADDOP_LOAD_CONST(c, loc, s->v.ClassDef.name);
+    ADDOP_LOAD_CONST(c, loc, s->v.ClassDef.name);
 
     /* 5. generate the rest of the code for the call */
     if (!compiler_call_helper(c, loc, 2,
                               s->v.ClassDef.bases,
-                              s->v.ClassDef.keywords))
-        return 0;
-    /* 6. apply decorators */
-    if (compiler_apply_decorators(c, decos) < 0) {
-        return 0;
+                              s->v.ClassDef.keywords)) {
+        return ERROR;
     }
+    /* 6. apply decorators */
+    RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
 
     /* 7. store into <name> */
-    if (!compiler_nameop(c, loc, s->v.ClassDef.name, Store))
-        return 0;
-    return 1;
+    if (!compiler_nameop(c, loc, s->v.ClassDef.name, Store)) {
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 /* Return 0 if the expression is a constant value except named singletons.
@@ -4202,7 +4201,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case FunctionDef_kind:
         return compiler_function(c, s, 0);
     case ClassDef_kind:
-        return compiler_class(c, s);
+        return compiler_class(c, s) == SUCCESS ? 1 : 0;
     case Return_kind:
         return compiler_return(c, s);
     case Delete_kind:
