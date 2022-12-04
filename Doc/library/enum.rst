@@ -552,11 +552,11 @@ Data Types
       Using :class:`auto` with :class:`Flag` results in integers that are powers
       of two, starting with ``1``.
 
-   .. versionchanged:: 3.11  The *repr()* of zero-valued flags has changed.  It
-      is now:
+   .. versionchanged:: 3.11 The *repr()* of zero-valued flags has changed.  It
+      is now::
 
-          >>> Color(0) # doctest: +SKIP
-          <Color: 0>
+         >>> Color(0) # doctest: +SKIP
+         <Color: 0>
 
 .. class:: IntFlag
 
