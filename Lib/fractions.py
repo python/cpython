@@ -68,6 +68,23 @@ _RATIONAL_FORMAT = re.compile(r"""
     \s*\Z                                 # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
+# Pattern for matching format specification; only supports 'e', 'E', 'f', 'F'
+# and '%' presentation types.
+_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
+    (?:
+        (?P<fill>.)?
+        (?P<align>[<>=^])
+    )?
+    (?P<sign>[-+ ]?)
+    (?P<no_neg_zero>z)?
+    (?P<alt>\#)?
+    (?P<zeropad>0(?=\d))?
+    (?P<minimumwidth>\d+)?
+    (?P<thousands_sep>[,_])?
+    (?:\.(?P<precision>\d+))?
+    (?P<presentation_type>[ef%])
+""", re.DOTALL | re.IGNORECASE | re.VERBOSE).fullmatch
+
 
 class Fraction(numbers.Rational):
     """This class implements rational numbers.
@@ -317,24 +334,8 @@ class Fraction(numbers.Rational):
         if not format_spec:
             return str(self)
 
-        # Pattern matcher for the format spec; only supports "f" so far
-        FORMAT_SPEC_MATCHER = re.compile(r"""
-            (?:
-                (?P<fill>.)?
-                (?P<align>[<>=^])
-            )?
-            (?P<sign>[-+ ]?)
-            (?P<no_neg_zero>z)?
-            (?P<alt>\#)?
-            (?P<zeropad>0(?=\d))?
-            (?P<minimumwidth>\d+)?
-            (?P<thousands_sep>[,_])?
-            (?:\.(?P<precision>\d+))?
-            (?P<presentation_type>[f%])
-        """, re.DOTALL | re.IGNORECASE | re.VERBOSE).fullmatch
-
         # Validate and parse the format specifier.
-        match = FORMAT_SPEC_MATCHER(format_spec)
+        match = _FORMAT_SPECIFICATION_MATCHER(format_spec)
         if match is None:
             raise ValueError(
                 f"Invalid format specifier {format_spec!r} "
@@ -361,8 +362,37 @@ class Fraction(numbers.Rational):
 
         # Get sign and output digits for the target number
         negative = self < 0
-        shift = precision + 2 if presentation_type == "%" else precision
-        significand = round(abs(self) * 10**shift)
+        self = abs(self)
+        if presentation_type == "f" or presentation_type == "F":
+            suffix = ""
+            significand = round(self * 10**precision)
+        elif presentation_type == "%":
+            suffix = "%"
+            significand = round(self * 10**(precision + 2))
+        elif presentation_type == "e" or presentation_type == "E":
+            if not self:
+                significand = 0
+                exponent = 0
+            else:
+                # Find integer 'exponent' satisfying the constraint
+                #   10**exponent <= self <= 10**(exponent + 1)
+                # (Either possibility for exponent is fine in the case
+                # where 'self' is an exact power of 10.)
+                str_n, str_d = str(self.numerator), str(self.denominator)
+                exponent = len(str_n) - len(str_d) - (str_n < str_d)
+
+                # Compute the necessary digits.
+                if precision >= exponent:
+                    significand = round(self * 10**(precision - exponent))
+                else:
+                    significand = round(self / 10**(exponent - precision))
+                if len(str(significand)) == precision + 2:
+                    # Can only happen when significand is a power of 10.
+                    assert significand % 10 == 0
+                    significand //= 10
+                    exponent += 1
+                assert len(str(significand)) == precision + 1
+            suffix = f"{presentation_type}{exponent:+03d}"
 
         # Assemble the output: before padding, it has the form
         # f"{sign}{leading}{trailing}", where `leading` includes thousands
@@ -372,8 +402,7 @@ class Fraction(numbers.Rational):
         dot_pos = len(digits) - precision
         sign = "-" if negative and (significand or neg_zero_ok) else pos_sign
         separator = "." if precision or alternate_form else ""
-        percent = "%" if presentation_type == "%" else ""
-        trailing = separator + digits[dot_pos:] + percent
+        trailing = separator + digits[dot_pos:] + suffix
         leading = digits[:dot_pos]
 
         # Do zero padding if required.
@@ -393,19 +422,19 @@ class Fraction(numbers.Rational):
                 for pos in range(first_pos, len(leading), 3)
             )
 
-        after_sign = leading + trailing
+        body = leading + trailing
 
         # Pad if necessary and return.
-        padding = fill * (minimumwidth - len(sign) - len(after_sign))
+        padding = fill * (minimumwidth - len(sign) - len(body))
         if align == ">":
-            return padding + sign + after_sign
+            return padding + sign + body
         elif align == "<":
-            return sign + after_sign + padding
+            return sign + body + padding
         elif align == "^":
             half = len(padding)//2
-            return padding[:half] + sign + after_sign + padding[half:]
+            return padding[:half] + sign + body + padding[half:]
         else:  # align == "="
-            return sign + padding + after_sign
+            return sign + padding + body
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator):
         """Generates forward and reverse operators given a purely-rational

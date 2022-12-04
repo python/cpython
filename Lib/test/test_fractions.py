@@ -830,12 +830,19 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(type(f.numerator), myint)
         self.assertEqual(type(f.denominator), myint)
 
-    def test_format(self):
+    def test_format_no_presentation_type(self):
         # Triples (fraction, specification, expected_result)
         testcases = [
-            # Case inherited from object - equivalent to str()
             (F(1, 3), '', '1/3'),
             (F(-1, 3), '', '-1/3'),
+        ]
+        for fraction, spec, expected in testcases:
+            with self.subTest(fraction=fraction, spec=spec):
+                self.assertEqual(format(fraction, spec), expected)
+
+    def test_format_f_presentation_type(self):
+        # Triples (fraction, specification, expected_result)
+        testcases = [
             # Simple .f formatting
             (F(0, 1), '.2f', '0.00'),
             (F(1, 3), '.2f', '0.33'),
@@ -1005,6 +1012,63 @@ class FractionTest(unittest.TestCase):
             with self.subTest(fraction=fraction, spec=spec):
                 self.assertEqual(format(fraction, spec), expected)
 
+    def test_format_e_presentation_type(self):
+        # Triples (fraction, specification, expected_result)
+        testcases = [
+            (F(2, 3), '.6e', '6.666667e-01'),
+            (F(3, 2), '.6e', '1.500000e+00'),
+            (F(2, 13), '.6e', '1.538462e-01'),
+            (F(2, 23), '.6e', '8.695652e-02'),
+            (F(2, 33), '.6e', '6.060606e-02'),
+            (F(13, 2), '.6e', '6.500000e+00'),
+            (F(20, 2), '.6e', '1.000000e+01'),
+            (F(23, 2), '.6e', '1.150000e+01'),
+            (F(33, 2), '.6e', '1.650000e+01'),
+            (F(2, 3), '.6e', '6.666667e-01'),
+            (F(3, 2), '.6e', '1.500000e+00'),
+            # Zero
+            (F(0), '.3e', '0.000e+00'),
+            # Powers of 10, to exercise the log10 boundary logic
+            (F(1, 1000), '.3e', '1.000e-03'),
+            (F(1, 100), '.3e', '1.000e-02'),
+            (F(1, 10), '.3e', '1.000e-01'),
+            (F(1, 1), '.3e', '1.000e+00'),
+            (F(10), '.3e', '1.000e+01'),
+            (F(100), '.3e', '1.000e+02'),
+            (F(1000), '.3e', '1.000e+03'),
+            # Boundary where we round up to the next power of 10
+            (F('99.999994999999'), '.6e', '9.999999e+01'),
+            (F('99.999995'), '.6e', '1.000000e+02'),
+            (F('99.999995000001'), '.6e', '1.000000e+02'),
+            # Negatives
+            (F(-2, 3), '.6e', '-6.666667e-01'),
+            (F(-3, 2), '.6e', '-1.500000e+00'),
+            (F(-100), '.6e', '-1.000000e+02'),
+            # Large and small
+            (F('1e1000'), '.3e', '1.000e+1000'),
+            (F('1e-1000'), '.3e', '1.000e-1000'),
+            # Using 'E' instead of 'e' should give us a capital 'E'
+            (F(2, 3), '.6E', '6.666667E-01'),
+            # Tiny precision
+            (F(2, 3), '.1e', '6.7e-01'),
+            (F('0.995'), '.0e', '1e+00'),
+            # Default precision is 6
+            (F(22, 7), 'e', '3.142857e+00'),
+            # Alternate form forces a decimal point
+            (F('0.995'), '#.0e', '1.e+00'),
+            # Check that padding takes the exponent into account.
+            (F(22, 7), '11.6e', '3.142857e+00'),
+            (F(22, 7), '12.6e', '3.142857e+00'),
+            (F(22, 7), '13.6e', ' 3.142857e+00'),
+            # Legal to specify a thousands separator, but it'll have no effect
+            (F('1234567.123456'), ',.5e', '1.23457e+06'),
+            # Same with z flag: legal, but useless
+            (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
+        ]
+        for fraction, spec, expected in testcases:
+            with self.subTest(fraction=fraction, spec=spec):
+                self.assertEqual(format(fraction, spec), expected)
+
     def test_invalid_formats(self):
         fraction = F(2, 3)
         with self.assertRaises(TypeError):
@@ -1025,6 +1089,10 @@ class FractionTest(unittest.TestCase):
             "<010f",
             "^010f",
             "=010f",
+            "=010e",
+            # Missing precision
+            ".f",
+            ".e",
         ]
         for spec in invalid_specs:
             with self.subTest(spec=spec):
