@@ -3305,32 +3305,32 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
-        return compiler_error(c, loc, "'async for' outside async function");
+        compiler_error(c, loc, "'async for' outside async function");
+        return ERROR;
     }
 
     NEW_JUMP_TARGET_LABEL(c, start);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, end);
 
-    _VISIT(c, expr, s->v.AsyncFor.iter);
-    _ADDOP(c, loc, GET_AITER);
+    VISIT(c, expr, s->v.AsyncFor.iter);
+    ADDOP(c, loc, GET_AITER);
 
     USE_LABEL(c, start);
-    if (compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
+
     /* SETUP_FINALLY to guard the __anext__ call */
-    _ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
-    _ADDOP(c, loc, GET_ANEXT);
-    _ADDOP_LOAD_CONST(c, loc, Py_None);
-    _ADD_YIELD_FROM(c, loc, 1);
-    _ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
+    ADDOP(c, loc, GET_ANEXT);
+    ADDOP_LOAD_CONST(c, loc, Py_None);
+    ADD_YIELD_FROM(c, loc, 1);
+    ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
 
     /* Success block for __anext__ */
-    _VISIT(c, expr, s->v.AsyncFor.target);
-    _VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
+    VISIT(c, expr, s->v.AsyncFor.target);
+    VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
     /* Mark jump as artificial */
-    _ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
@@ -3340,13 +3340,13 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* Use same line number as the iterator,
      * as the END_ASYNC_FOR succeeds the `for`, not the body. */
     loc = LOC(s->v.AsyncFor.iter);
-    _ADDOP(c, loc, END_ASYNC_FOR);
+    ADDOP(c, loc, END_ASYNC_FOR);
 
     /* `else` block */
-    _VISIT_SEQ(c, stmt, s->v.For.orelse);
+    VISIT_SEQ(c, stmt, s->v.For.orelse);
 
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4177,20 +4177,20 @@ static int
 compiler_stmt_expr(struct compiler *c, location loc, expr_ty value)
 {
     if (c->c_interactive && c->c_nestlevel <= 1) {
-        _VISIT(c, expr, value);
-        _ADDOP(c, loc, PRINT_EXPR);
-        return 1;
+        VISIT(c, expr, value);
+        ADDOP(c, loc, PRINT_EXPR);
+        return SUCCESS;
     }
 
     if (value->kind == Constant_kind) {
         /* ignore constant statement */
-        _ADDOP(c, loc, NOP);
-        return 1;
+        ADDOP(c, loc, NOP);
+        return SUCCESS;
     }
 
-    _VISIT(c, expr, value);
-    _ADDOP(c, NO_LOCATION, POP_TOP); /* artificial */
-    return 1;
+    VISIT(c, expr, value);
+    ADDOP(c, NO_LOCATION, POP_TOP); /* artificial */
+    return SUCCESS;
 }
 
 static int
@@ -4261,7 +4261,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         break;
     case Expr_kind:
     {
-        return compiler_stmt_expr(c, LOC(s), s->v.Expr.value);
+        return compiler_stmt_expr(c, LOC(s), s->v.Expr.value) == SUCCESS ? 1 : 0;
     }
     case Pass_kind:
     {
@@ -4283,7 +4283,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case AsyncWith_kind:
         return compiler_async_with(c, s, 0) == SUCCESS ? 1 : 0;
     case AsyncFor_kind:
-        return compiler_async_for(c, s);
+        return compiler_async_for(c, s) == SUCCESS ? 1 : 0;
     }
 
     return 1;
