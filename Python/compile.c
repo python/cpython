@@ -6622,7 +6622,7 @@ pattern_helper_sequence_unpack(struct compiler *c, location loc,
                                pattern_context *pc)
 {
     if (pattern_unpack_helper(c, loc, patterns) < 0) {
-        return 0;
+        return ERROR;
     }
     Py_ssize_t size = asdl_seq_LEN(patterns);
     // We've now got a bunch of new subjects on the stack. They need to remain
@@ -6632,9 +6632,11 @@ pattern_helper_sequence_unpack(struct compiler *c, location loc,
         // One less item to keep track of each time we loop through:
         pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
+        if (!compiler_pattern_subpattern(c, pattern, pc)) {
+            return ERROR;
+        }
     }
-    return 1;
+    return SUCCESS;
 }
 
 // Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
@@ -7169,7 +7171,9 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p,
         RETURN_IF_FALSE(pattern_helper_sequence_subscr(c, LOC(p), patterns, star, pc));
     }
     else {
-        RETURN_IF_FALSE(pattern_helper_sequence_unpack(c, LOC(p), patterns, star, pc));
+        if (pattern_helper_sequence_unpack(c, LOC(p), patterns, star, pc) < 0) {
+            return 0;
+        }
     }
     return 1;
 }
