@@ -423,9 +423,17 @@ class GrammarTests(unittest.TestCase):
             pass
         class C(A):
             attr: str
+        class D:
+            attr2: int
+        class E(A, D):
+            pass
+        class F(C, A):
+            pass
         self.assertEqual(A.__annotations__, {"attr": int})
         self.assertEqual(B.__annotations__, {})
         self.assertEqual(C.__annotations__, {"attr" : str})
+        self.assertEqual(E.__annotations__, {})
+        self.assertEqual(F.__annotations__, {})
 
 
     def test_var_annot_metaclass_semantics(self):
