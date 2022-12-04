@@ -2979,9 +2979,8 @@ check_is_arg(expr_ty e)
          || value == Py_Ellipsis);
 }
 
-/* Check operands of identity chacks ("is" and "is not").
+/* Check operands of identity checks ("is" and "is not").
    Emit a warning if any operand is a constant except named singletons.
-   Return 0 on error.
  */
 static int
 check_compare(struct compiler *c, expr_ty e)
@@ -2997,12 +2996,13 @@ check_compare(struct compiler *c, expr_ty e)
                 const char *msg = (op == Is)
                         ? "\"is\" with a literal. Did you mean \"==\"?"
                         : "\"is not\" with a literal. Did you mean \"!=\"?";
-                return compiler_warn(c, LOC(e), msg);
+                int ret = compiler_warn(c, LOC(e), msg);
+                return ret == 0 ? ERROR : SUCCESS;
             }
         }
         left = right;
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int compiler_addcompare(struct compiler *c, location loc,
@@ -3105,7 +3105,7 @@ compiler_jump_if(struct compiler *c, location loc,
     case Compare_kind: {
         Py_ssize_t n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
-            if (!check_compare(c, e)) {
+            if (check_compare(c, e) < 0) {
                 return 0;
             }
             NEW_JUMP_TARGET_LABEL(c, cleanup);
@@ -4778,38 +4778,38 @@ compiler_compare(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     Py_ssize_t i, n;
 
-    if (!check_compare(c, e)) {
+    if (check_compare(c, e) < 0) {
         return 0;
     }
-    _VISIT(c, expr, e->v.Compare.left);
+    VISIT(c, expr, e->v.Compare.left);
     assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
     n = asdl_seq_LEN(e->v.Compare.ops) - 1;
     if (n == 0) {
-        _VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
-        _ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, 0));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
+        ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, 0));
     }
     else {
         NEW_JUMP_TARGET_LABEL(c, cleanup);
         for (i = 0; i < n; i++) {
-            _VISIT(c, expr,
+            VISIT(c, expr,
                 (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
-            _ADDOP_I(c, loc, SWAP, 2);
-            _ADDOP_I(c, loc, COPY, 2);
-            _ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, i));
-            _ADDOP_JUMP(c, loc, JUMP_IF_FALSE_OR_POP, cleanup);
+            ADDOP_I(c, loc, SWAP, 2);
+            ADDOP_I(c, loc, COPY, 2);
+            ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, i));
+            ADDOP_JUMP(c, loc, JUMP_IF_FALSE_OR_POP, cleanup);
         }
-        _VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
-        _ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, n));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
+        ADDOP_COMPARE(c, loc, asdl_seq_GET(e->v.Compare.ops, n));
         NEW_JUMP_TARGET_LABEL(c, end);
-        _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
         USE_LABEL(c, cleanup);
-        _ADDOP_I(c, loc, SWAP, 2);
-        _ADDOP(c, loc, POP_TOP);
+        ADDOP_I(c, loc, SWAP, 2);
+        ADDOP(c, loc, POP_TOP);
 
         USE_LABEL(c, end);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static PyTypeObject *
@@ -6028,7 +6028,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         _ADD_YIELD_FROM(c, loc, 1);
         break;
     case Compare_kind:
-        return compiler_compare(c, e);
+        return compiler_compare(c, e) == SUCCESS ? 1 : 0;
     case Call_kind:
         return compiler_call(c, e) == SUCCESS ? 1 : 0;
     case Constant_kind:
