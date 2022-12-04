@@ -3155,16 +3155,16 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     NEW_JUMP_TARGET_LABEL(c, next);
 
     if (!compiler_jump_if(c, LOC(e), e->v.IfExp.test, next, 0)) {
-        return 0;
+        return ERROR;
     }
-    _VISIT(c, expr, e->v.IfExp.body);
-    _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+    VISIT(c, expr, e->v.IfExp.body);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
     USE_LABEL(c, next);
-    _VISIT(c, expr, e->v.IfExp.orelse);
+    VISIT(c, expr, e->v.IfExp.orelse);
 
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4482,16 +4482,16 @@ compiler_boolop(struct compiler *c, expr_ty e)
     n = asdl_seq_LEN(s) - 1;
     assert(n >= 0);
     for (i = 0; i < n; ++i) {
-        _VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
-        _ADDOP_JUMP(c, loc, jumpi, end);
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
+        ADDOP_JUMP(c, loc, jumpi, end);
         NEW_JUMP_TARGET_LABEL(c, next);
 
         USE_LABEL(c, next);
     }
-    _VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
+    VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
 
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4588,34 +4588,37 @@ unpack_helper(struct compiler *c, location loc, asdl_expr_seq *elts)
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind && !seen_star) {
             if ((i >= (1 << 8)) ||
-                (n-i-1 >= (INT_MAX >> 8)))
-                return compiler_error(c, loc,
+                (n-i-1 >= (INT_MAX >> 8))) {
+                compiler_error(c, loc,
                     "too many expressions in "
                     "star-unpacking assignment");
-            _ADDOP_I(c, loc, UNPACK_EX, (i + ((n-i-1) << 8)));
+                return ERROR;
+            }
+            ADDOP_I(c, loc, UNPACK_EX, (i + ((n-i-1) << 8)));
             seen_star = 1;
         }
         else if (elt->kind == Starred_kind) {
-            return compiler_error(c, loc,
+            compiler_error(c, loc,
                 "multiple starred expressions in assignment");
+            return ERROR;
         }
     }
     if (!seen_star) {
-        _ADDOP_I(c, loc, UNPACK_SEQUENCE, n);
+        ADDOP_I(c, loc, UNPACK_SEQUENCE, n);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
 assignment_helper(struct compiler *c, location loc, asdl_expr_seq *elts)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    RETURN_IF_FALSE(unpack_helper(c, loc, elts));
+    RETURN_IF_ERROR(unpack_helper(c, loc, elts));
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
-        _VISIT(c, expr, elt->kind != Starred_kind ? elt : elt->v.Starred.value);
+        VISIT(c, expr, elt->kind != Starred_kind ? elt : elt->v.Starred.value);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4624,7 +4627,7 @@ compiler_list(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     asdl_expr_seq *elts = e->v.List.elts;
     if (e->v.List.ctx == Store) {
-        return assignment_helper(c, loc, elts);
+        return assignment_helper(c, loc, elts) == SUCCESS ? 1 : 0;
     }
     else if (e->v.List.ctx == Load) {
         return starunpack_helper(c, loc, elts, 0,
@@ -4641,7 +4644,7 @@ compiler_tuple(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     asdl_expr_seq *elts = e->v.Tuple.elts;
     if (e->v.Tuple.ctx == Store) {
-        return assignment_helper(c, loc, elts);
+        return assignment_helper(c, loc, elts) == SUCCESS ? 1 : 0;
     }
     else if (e->v.Tuple.ctx == Load) {
         return starunpack_helper(c, loc, elts, 0,
@@ -5961,7 +5964,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         _VISIT(c, expr, e->v.NamedExpr.target);
         break;
     case BoolOp_kind:
-        return compiler_boolop(c, e);
+        return compiler_boolop(c, e) == SUCCESS ? 1 : 0;
     case BinOp_kind:
         _VISIT(c, expr, e->v.BinOp.left);
         _VISIT(c, expr, e->v.BinOp.right);
@@ -5974,7 +5977,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Lambda_kind:
         return compiler_lambda(c, e);
     case IfExp_kind:
-        return compiler_ifexp(c, e);
+        return compiler_ifexp(c, e) == SUCCESS ? 1 : 0;
     case Dict_kind:
         return compiler_dict(c, e);
     case Set_kind:
