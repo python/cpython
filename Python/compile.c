@@ -1606,7 +1606,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, target.id, loc) == SUCCESS ? 1 : 0;
+    return cfg_builder_addop(g, opcode, target.id, loc);
 }
 
 
@@ -1660,7 +1660,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADDOP_JUMP(C, LOC, OP, O) { \
-    if (!cfg_builder_addop_j(CFG_BUILDER(C), (LOC), (OP), (O))) \
+    if (cfg_builder_addop_j(CFG_BUILDER(C), (LOC), (OP), (O)) < 0) \
         return 0; \
 }
 
@@ -6898,7 +6898,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
             }
         }
         assert(control);
-        if (!cfg_builder_addop_j(CFG_BUILDER(c), LOC(alt), JUMP, end) ||
+        if ((cfg_builder_addop_j(CFG_BUILDER(c), LOC(alt), JUMP, end) < 0) ||
             !emit_and_reset_fail_pop(c, LOC(alt), pc))
         {
             goto error;
