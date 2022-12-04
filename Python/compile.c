@@ -1668,10 +1668,8 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
         return ERROR; \
 }
 
-#define ADD_YIELD_FROM(C, LOC, await) { \
-    if (! compiler_add_yield_from((C), (LOC), (await))) \
-        return ERROR; \
-}
+#define ADD_YIELD_FROM(C, LOC, await)  \
+    RETURN_IF_ERROR(compiler_add_yield_from((C), (LOC), (await)));
 
 #define POP_EXCEPT_AND_RERAISE(C, LOC)  \
     RETURN_IF_ERROR(compiler_pop_except_and_reraise((C), (LOC)));
@@ -1790,8 +1788,10 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 #define _ADDOP_INPLACE(C, LOC, BINOP) \
     RETURN_IF_FALSE(addop_binary((C), (LOC), (BINOP), true))
 
-#define _ADD_YIELD_FROM(C, LOC, await) \
-    RETURN_IF_FALSE(compiler_add_yield_from((C), (LOC), (await)))
+#define _ADD_YIELD_FROM(C, LOC, await) { \
+    if (compiler_add_yield_from((C), (LOC), (await)) < 0) \
+        return 0; \
+}
 
 #define _POP_EXCEPT_AND_RERAISE(C, LOC) { \
     if (compiler_pop_except_and_reraise((C), (LOC)) < 0) \
@@ -2093,20 +2093,20 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
     NEW_JUMP_TARGET_LABEL(c, exit);
 
     USE_LABEL(c, send);
-    _ADDOP_JUMP(c, loc, SEND, exit);
+    ADDOP_JUMP(c, loc, SEND, exit);
     // Set up a virtual try/except to handle when StopIteration is raised during
     // a close or throw call. The only way YIELD_VALUE raises if they do!
-    _ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
-    _ADDOP_I(c, loc, YIELD_VALUE, 0);
-    _ADDOP(c, NO_LOCATION, POP_BLOCK);
-    _ADDOP_I(c, loc, RESUME, await ? 3 : 2);
-    _ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
+    ADDOP_I(c, loc, YIELD_VALUE, 0);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP_I(c, loc, RESUME, await ? 3 : 2);
+    ADDOP_JUMP(c, loc, JUMP_NO_INTERRUPT, send);
 
     USE_LABEL(c, fail);
-    _ADDOP(c, loc, CLEANUP_THROW);
+    ADDOP(c, loc, CLEANUP_THROW);
 
     USE_LABEL(c, exit);
-    return 1;
+    return SUCCESS;
 }
 
 static int
