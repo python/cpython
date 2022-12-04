@@ -4857,12 +4857,13 @@ check_caller(struct compiler *c, expr_ty e)
     case JoinedStr_kind:
     case FormattedValue_kind: {
         location loc = LOC(e);
-        return compiler_warn(c, loc, "'%.200s' object is not callable; "
-                                     "perhaps you missed a comma?",
-                                     infer_type(e)->tp_name);
+        int ret = compiler_warn(c, loc, "'%.200s' object is not callable; "
+                                        "perhaps you missed a comma?",
+                                        infer_type(e)->tp_name);
+        return ret == 0 ? ERROR : SUCCESS;
     }
     default:
-        return 1;
+        return SUCCESS;
     }
 }
 
@@ -5060,23 +5061,22 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
-    if (validate_keywords(c, e->v.Call.keywords) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(validate_keywords(c, e->v.Call.keywords));
     int ret = maybe_optimize_method_call(c, e);
-    if (ret >= 0) {
-        return ret;
+    if (ret == 1) {
+        return SUCCESS;
     }
-    if (!check_caller(c, e->v.Call.func)) {
-        return 0;
+    if (ret == 0) {
+        return ERROR;
     }
+    RETURN_IF_ERROR(check_caller(c, e->v.Call.func));
     location loc = LOC(e->v.Call.func);
-    _ADDOP(c, loc, PUSH_NULL);
-    _VISIT(c, expr, e->v.Call.func);
+    ADDOP(c, loc, PUSH_NULL);
+    VISIT(c, expr, e->v.Call.func);
     loc = LOC(e);
     return compiler_call_helper(c, loc, 0,
                                 e->v.Call.args,
-                                e->v.Call.keywords) == SUCCESS ? 1 : 0;
+                                e->v.Call.keywords);
 }
 
 static int
@@ -6030,7 +6030,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Compare_kind:
         return compiler_compare(c, e);
     case Call_kind:
-        return compiler_call(c, e);
+        return compiler_call(c, e) == SUCCESS ? 1 : 0;
     case Constant_kind:
         _ADDOP_LOAD_CONST(c, loc, e->v.Constant.value);
         break;
