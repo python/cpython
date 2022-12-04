@@ -2426,6 +2426,12 @@ class TestDateTime(TestDate):
         got = self.theclass.fromtimestamp(ts)
         self.verify_field_equality(expected, got)
 
+    def test_fromtimestamp_keyword_arg(self):
+        import time
+
+        # gh-85432: The parameter was named "t" in the pure-Python impl.
+        self.theclass.fromtimestamp(timestamp=time.time())
+
     def test_utcfromtimestamp(self):
         import time
 
@@ -3527,6 +3533,9 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             t.strftime('%H\ud800%M')
         except UnicodeEncodeError:
             pass
+
+        # gh-85432: The parameter was named "fmt" in the pure-Python impl.
+        t.strftime(format="%f")
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)

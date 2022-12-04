@@ -1553,8 +1553,7 @@ class time:
         except Exception:
             raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
-
-    def strftime(self, fmt):
+    def strftime(self, format):
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
         """
@@ -1563,7 +1562,7 @@ class time:
         timetuple = (1900, 1, 1,
                      self._hour, self._minute, self._second,
                      0, 1, -1)
-        return _wrap_strftime(self, fmt, timetuple)
+        return _wrap_strftime(self, format, timetuple)
 
     def __format__(self, fmt):
         if not isinstance(fmt, str):
@@ -1787,14 +1786,14 @@ class datetime(date):
         return result
 
     @classmethod
-    def fromtimestamp(cls, t, tz=None):
+    def fromtimestamp(cls, timestamp, tz=None):
         """Construct a datetime from a POSIX timestamp (like time.time()).
 
         A timezone info object may be passed in as well.
         """
         _check_tzinfo_arg(tz)
 
-        return cls._fromtimestamp(t, tz is not None, tz)
+        return cls._fromtimestamp(timestamp, tz is not None, tz)
 
     @classmethod
     def utcfromtimestamp(cls, t):
