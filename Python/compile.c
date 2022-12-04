@@ -6740,18 +6740,18 @@ validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_
         identifier attr = ((identifier)asdl_seq_GET(attrs, i));
         location loc = LOC((pattern_ty) asdl_seq_GET(patterns, i));
         if (forbidden_name(c, loc, attr, Store)) {
-            return -1;
+            return ERROR;
         }
         for (Py_ssize_t j = i + 1; j < nattrs; j++) {
             identifier other = ((identifier)asdl_seq_GET(attrs, j));
             if (!PyUnicode_Compare(attr, other)) {
                 location loc = LOC((pattern_ty) asdl_seq_GET(patterns, j));
                 compiler_error(c, loc, "attribute name repeated in class pattern: %U", attr);
-                return -1;
+                return ERROR;
             }
         }
     }
-    return 0;
+    return SUCCESS;
 }
 
 static int
@@ -6768,34 +6768,36 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
         // AST validator shouldn't let this happen, but if it does,
         // just fail, don't crash out of the interpreter
         const char * e = "kwd_attrs (%d) / kwd_patterns (%d) length mismatch in class pattern";
-        return compiler_error(c, LOC(p), e, nattrs, nkwd_patterns);
+        compiler_error(c, LOC(p), e, nattrs, nkwd_patterns);
+        return ERROR;
     }
     if (INT_MAX < nargs || INT_MAX < nargs + nattrs - 1) {
         const char *e = "too many sub-patterns in class pattern %R";
-        return compiler_error(c, LOC(p), e, p->v.MatchClass.cls);
+        compiler_error(c, LOC(p), e, p->v.MatchClass.cls);
+        return ERROR;
     }
     if (nattrs) {
-        RETURN_IF_FALSE(!validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
+        RETURN_IF_ERROR(validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
     }
-    _VISIT(c, expr, p->v.MatchClass.cls);
-    PyObject *attr_names;
-    RETURN_IF_FALSE(attr_names = PyTuple_New(nattrs));
+    VISIT(c, expr, p->v.MatchClass.cls);
+    PyObject *attr_names = PyTuple_New(nattrs);
+    if (!attr_names) {
+        return ERROR;
+    }
     Py_ssize_t i;
     for (i = 0; i < nattrs; i++) {
         PyObject *name = asdl_seq_GET(kwd_attrs, i);
         PyTuple_SET_ITEM(attr_names, i, Py_NewRef(name));
     }
-    _ADDOP_LOAD_CONST_NEW(c, LOC(p), attr_names);
-    _ADDOP_I(c, LOC(p), MATCH_CLASS, nargs);
-    _ADDOP_I(c, LOC(p), COPY, 1);
-    _ADDOP_LOAD_CONST(c, LOC(p), Py_None);
-    _ADDOP_I(c, LOC(p), IS_OP, 1);
+    ADDOP_LOAD_CONST_NEW(c, LOC(p), attr_names);
+    ADDOP_I(c, LOC(p), MATCH_CLASS, nargs);
+    ADDOP_I(c, LOC(p), COPY, 1);
+    ADDOP_LOAD_CONST(c, LOC(p), Py_None);
+    ADDOP_I(c, LOC(p), IS_OP, 1);
     // TOS is now a tuple of (nargs + nattrs) attributes (or None):
     pc->on_top++;
-    if (jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE) < 0) {
-        return 0;
-    }
-    _ADDOP_I(c, LOC(p), UNPACK_SEQUENCE, nargs + nattrs);
+    RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
+    ADDOP_I(c, LOC(p), UNPACK_SEQUENCE, nargs + nattrs);
     pc->on_top += nargs + nattrs - 1;
     for (i = 0; i < nargs + nattrs; i++) {
         pc->on_top--;
@@ -6809,15 +6811,13 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
             pattern = asdl_seq_GET(kwd_patterns, i - nargs);
         }
         if (WILDCARD_CHECK(pattern)) {
-            _ADDOP(c, LOC(p), POP_TOP);
+            ADDOP(c, LOC(p), POP_TOP);
             continue;
         }
-        if (compiler_pattern_subpattern(c, pattern, pc) < 0) {
-            return 0;
-        }
+        RETURN_IF_ERROR(compiler_pattern_subpattern(c, pattern, pc));
     }
     // Success! Pop the tuple of attributes:
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -7227,7 +7227,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
         case MatchMapping_kind:
             return compiler_pattern_mapping(c, p, pc);
         case MatchClass_kind:
-            return compiler_pattern_class(c, p, pc);
+            return compiler_pattern_class(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchStar_kind:
             return compiler_pattern_star(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchAs_kind:
