@@ -3972,19 +3972,19 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 static int
 compiler_try(struct compiler *c, stmt_ty s) {
     if (s->v.Try.finalbody && asdl_seq_LEN(s->v.Try.finalbody))
-        return compiler_try_finally(c, s) == SUCCESS ? 1 : 0;
+        return compiler_try_finally(c, s);
     else
-        return compiler_try_except(c, s) == SUCCESS ? 1 : 0;
+        return compiler_try_except(c, s);
 }
 
 static int
 compiler_try_star(struct compiler *c, stmt_ty s)
 {
     if (s->v.TryStar.finalbody && asdl_seq_LEN(s->v.TryStar.finalbody)) {
-        return compiler_try_star_finally(c, s) == SUCCESS ? 1 : 0;
+        return compiler_try_star_finally(c, s);
     }
     else {
-        return compiler_try_star_except(c, s) == SUCCESS ? 1 : 0;
+        return compiler_try_star_except(c, s);
     }
 }
 
@@ -4244,9 +4244,9 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         break;
     }
     case Try_kind:
-        return compiler_try(c, s);
+        return compiler_try(c, s) == SUCCESS ? 1 : 0;
     case TryStar_kind:
-        return compiler_try_star(c, s);
+        return compiler_try_star(c, s) == SUCCESS ? 1 : 0;
     case Assert_kind:
         return compiler_assert(c, s);
     case Import_kind:
