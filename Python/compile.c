@@ -7097,15 +7097,15 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     Py_DECREF(control);
     // NOTE: Returning macros are safe again.
     // Pop the copy of the subject:
-    _ADDOP(c, LOC(p), POP_TOP);
-    return 1;
+    ADDOP(c, LOC(p), POP_TOP);
+    return SUCCESS;
 diff:
     compiler_error(c, LOC(p), "alternative patterns bind different names");
 error:
     PyObject_Free(old_pc.fail_pop);
     Py_DECREF(old_pc.stores);
     Py_XDECREF(control);
-    return 0;
+    return ERROR;
 }
 
 
@@ -7225,7 +7225,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
         case MatchAs_kind:
             return compiler_pattern_as(c, p, pc) == SUCCESS ? 1 : 0;
         case MatchOr_kind:
-            return compiler_pattern_or(c, p, pc);
+            return compiler_pattern_or(c, p, pc) == SUCCESS ? 1 : 0;
     }
     // AST validator shouldn't let this happen, but if it does,
     // just fail, don't crash out of the interpreter
