@@ -6632,9 +6632,7 @@ pattern_helper_sequence_unpack(struct compiler *c, location loc,
         // One less item to keep track of each time we loop through:
         pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        if (!compiler_pattern_subpattern(c, pattern, pc)) {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(compiler_pattern_subpattern(c, pattern, pc));
     }
     return SUCCESS;
 }
@@ -6659,24 +6657,24 @@ pattern_helper_sequence_subscr(struct compiler *c, location loc,
             assert(WILDCARD_STAR_CHECK(pattern));
             continue;
         }
-        _ADDOP_I(c, loc, COPY, 1);
+        ADDOP_I(c, loc, COPY, 1);
         if (i < star) {
-            _ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(i));
+            ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(i));
         }
         else {
             // The subject may not support negative indexing! Compute a
             // nonnegative index:
-            _ADDOP(c, loc, GET_LEN);
-            _ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(size - i));
-            _ADDOP_BINARY(c, loc, Sub);
+            ADDOP(c, loc, GET_LEN);
+            ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(size - i));
+            ADDOP_BINARY(c, loc, Sub);
         }
-        _ADDOP(c, loc, BINARY_SUBSCR);
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
+        ADDOP(c, loc, BINARY_SUBSCR);
+        RETURN_IF_ERROR(compiler_pattern_subpattern(c, pattern, pc));
     }
     // Pop the subject, we're done with it:
     pc->on_top--;
-    _ADDOP(c, loc, POP_TOP);
-    return 1;
+    ADDOP(c, loc, POP_TOP);
+    return SUCCESS;
 }
 
 // Like compiler_pattern, but turn off checks for irrefutability.
@@ -6686,9 +6684,11 @@ compiler_pattern_subpattern(struct compiler *c,
 {
     int allow_irrefutable = pc->allow_irrefutable;
     pc->allow_irrefutable = 1;
-    RETURN_IF_FALSE(compiler_pattern(c, p, pc));
+    if (!compiler_pattern(c, p, pc)) {
+        return ERROR;
+    }
     pc->allow_irrefutable = allow_irrefutable;
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -6811,7 +6811,9 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
             _ADDOP(c, LOC(p), POP_TOP);
             continue;
         }
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
+        if (compiler_pattern_subpattern(c, pattern, pc) < 0) {
+            return 0;
+        }
     }
     // Success! Pop the tuple of attributes:
     return 1;
@@ -6924,7 +6926,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
     for (Py_ssize_t i = 0; i < size; i++) {
         pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
+        if (compiler_pattern_subpattern(c, pattern, pc) < 0) {
+            return 0;
+        }
     }
     // If we get this far, it's a match! Whatever happens next should consume
     // the tuple of keys and the subject:
@@ -7168,7 +7172,9 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p,
         _ADDOP(c, LOC(p), POP_TOP);
     }
     else if (star_wildcard) {
-        RETURN_IF_FALSE(pattern_helper_sequence_subscr(c, LOC(p), patterns, star, pc));
+        if (pattern_helper_sequence_subscr(c, LOC(p), patterns, star, pc) < 0) {
+            return 0;
+        }
     }
     else {
         if (pattern_helper_sequence_unpack(c, LOC(p), patterns, star, pc) < 0) {
