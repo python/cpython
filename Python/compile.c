@@ -4231,7 +4231,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case If_kind:
         return compiler_if(c, s) == SUCCESS ? 1 : 0;
     case Match_kind:
-        return compiler_match(c, s);
+        return compiler_match(c, s) == SUCCESS ? 1 : 0;
     case Raise_kind:
     {
         Py_ssize_t n = 0;
@@ -7223,7 +7223,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 static int
 compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 {
-    _VISIT(c, expr, s->v.Match.subject);
+    VISIT(c, expr, s->v.Match.subject);
     NEW_JUMP_TARGET_LABEL(c, end);
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases > 0);
@@ -7233,9 +7233,12 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         m = asdl_seq_GET(s->v.Match.cases, i);
         // Only copy the subject if we're *not* on the last case:
         if (i != cases - has_default - 1) {
-            _ADDOP_I(c, LOC(m->pattern), COPY, 1);
+            ADDOP_I(c, LOC(m->pattern), COPY, 1);
         }
-        RETURN_IF_FALSE(pc->stores = PyList_New(0));
+        pc->stores = PyList_New(0);
+        if (!pc->stores) {
+            return ERROR;
+        }
         // Irrefutable cases must be either guarded, last, or both:
         pc->allow_irrefutable = m->guard != NULL || i == cases - 1;
         pc->fail_pop = NULL;
@@ -7244,7 +7247,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         // NOTE: Can't use returning macros here (they'll leak pc->stores)!
         if (compiler_pattern(c, m->pattern, pc) < 0) {
             Py_DECREF(pc->stores);
-            return 0;
+            return ERROR;
         }
         assert(!pc->on_top);
         // It's a match! Store all of the captured names (they're on the stack).
@@ -7253,29 +7256,27 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             PyObject *name = PyList_GET_ITEM(pc->stores, n);
             if (!compiler_nameop(c, LOC(m->pattern), name, Store)) {
                 Py_DECREF(pc->stores);
-                return 0;
+                return ERROR;
             }
         }
         Py_DECREF(pc->stores);
         // NOTE: Returning macros are safe again.
         if (m->guard) {
-            if (ensure_fail_pop(c, pc, 0) < 0) {
-                return 0;
+            RETURN_IF_ERROR(ensure_fail_pop(c, pc, 0));
+            if (!compiler_jump_if(c, LOC(m->pattern), m->guard, pc->fail_pop[0], 0)) {
+                return ERROR;
             }
-            RETURN_IF_FALSE(compiler_jump_if(c, LOC(m->pattern), m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
-            _ADDOP(c, LOC(m->pattern), POP_TOP);
+            ADDOP(c, LOC(m->pattern), POP_TOP);
         }
-        _VISIT_SEQ(c, stmt, m->body);
-        _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+        VISIT_SEQ(c, stmt, m->body);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
         // If the pattern fails to match, we want the line number of the
         // cleanup to be associated with the failed pattern, not the last line
         // of the body
-        if (emit_and_reset_fail_pop(c, LOC(m->pattern), pc) < 0) {
-            return 0;
-        }
+        RETURN_IF_ERROR(emit_and_reset_fail_pop(c, LOC(m->pattern), pc));
     }
     if (has_default) {
         // A trailing "case _" is common, and lets us save a bit of redundant
@@ -7283,19 +7284,21 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         m = asdl_seq_GET(s->v.Match.cases, cases - 1);
         if (cases == 1) {
             // No matches. Done with the subject:
-            _ADDOP(c, LOC(m->pattern), POP_TOP);
+            ADDOP(c, LOC(m->pattern), POP_TOP);
         }
         else {
             // Show line coverage for default case (it doesn't create bytecode)
-            _ADDOP(c, LOC(m->pattern), NOP);
+            ADDOP(c, LOC(m->pattern), NOP);
         }
         if (m->guard) {
-            RETURN_IF_FALSE(compiler_jump_if(c, LOC(m->pattern), m->guard, end, 0));
+            if (!compiler_jump_if(c, LOC(m->pattern), m->guard, end, 0)) {
+                return ERROR;
+            }
         }
-        _VISIT_SEQ(c, stmt, m->body);
+        VISIT_SEQ(c, stmt, m->body);
     }
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 static int
