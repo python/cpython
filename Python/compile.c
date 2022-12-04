@@ -1386,7 +1386,7 @@ static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, loc) == SUCCESS ? 1 : 0;
+    return cfg_builder_addop(g, opcode, 0, loc);
 }
 
 static Py_ssize_t
@@ -1609,12 +1609,12 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 
 #define ADDOP(C, LOC, OP) { \
-    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC))) \
+    if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) \
         return 0; \
 }
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
-    if (!cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC))) { \
+    if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
         compiler_exit_scope(c); \
         return 0; \
     } \
@@ -6396,7 +6396,7 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
     }
     while (--pc->fail_pop_size) {
         USE_LABEL(c, pc->fail_pop[pc->fail_pop_size]);
-        if (!cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, loc)) {
+        if (cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, loc) < 0) {
             pc->fail_pop_size = 0;
             PyObject_Free(pc->fail_pop);
             pc->fail_pop = NULL;
@@ -6908,7 +6908,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if (!cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, LOC(p)) ||
+    if ((cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, LOC(p)) < 0) ||
         !jump_to_fail_pop(c, LOC(p), pc, JUMP)) {
         goto error;
     }
