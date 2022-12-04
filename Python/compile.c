@@ -3272,30 +3272,29 @@ compiler_for(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, cleanup);
     NEW_JUMP_TARGET_LABEL(c, end);
 
-    if (compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL) < 0) {
-        return 0;
-    }
-    _VISIT(c, expr, s->v.For.iter);
-    _ADDOP(c, loc, GET_ITER);
+    RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
+
+    VISIT(c, expr, s->v.For.iter);
+    ADDOP(c, loc, GET_ITER);
 
     USE_LABEL(c, start);
-    _ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
+    ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
 
     USE_LABEL(c, body);
-    _VISIT(c, expr, s->v.For.target);
-    _VISIT_SEQ(c, stmt, s->v.For.body);
+    VISIT(c, expr, s->v.For.target);
+    VISIT_SEQ(c, stmt, s->v.For.body);
     /* Mark jump as artificial */
-    _ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     USE_LABEL(c, cleanup);
-    _ADDOP(c, NO_LOCATION, END_FOR);
+    ADDOP(c, NO_LOCATION, END_FOR);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
-    _VISIT_SEQ(c, stmt, s->v.For.orelse);
+    VISIT_SEQ(c, stmt, s->v.For.orelse);
 
     USE_LABEL(c, end);
-    return 1;
+    return SUCCESS;
 }
 
 
@@ -4225,7 +4224,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case AnnAssign_kind:
         return compiler_annassign(c, s) == SUCCESS ? 1 : 0;
     case For_kind:
-        return compiler_for(c, s);
+        return compiler_for(c, s) == SUCCESS ? 1 : 0;
     case While_kind:
         return compiler_while(c, s);
     case If_kind:
