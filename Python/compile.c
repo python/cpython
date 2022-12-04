@@ -2480,7 +2480,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
 {
     /* Push a dict of keyword-only default values.
 
-       Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
+       Return -1 on error, 0 if no dict pushed, 1 if a dict is pushed.
        */
     int i;
     PyObject *keys = NULL;
@@ -2497,7 +2497,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
                 keys = PyList_New(1);
                 if (keys == NULL) {
                     Py_DECREF(mangled);
-                    return 0;
+                    return ERROR;
                 }
                 PyList_SET_ITEM(keys, 0, mangled);
             }
@@ -2523,12 +2523,12 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
         return 1;
     }
     else {
-        return -1;
+        return 0;
     }
 
 error:
     Py_XDECREF(keys);
-    return 0;
+    return ERROR;
 }
 
 static int
@@ -2653,8 +2653,8 @@ compiler_default_arguments(struct compiler *c, location loc,
         int res = compiler_visit_kwonlydefaults(c, loc,
                                                 args->kwonlyargs,
                                                 args->kw_defaults);
-        if (res == 0) {
-            return -1;
+        if (res < 0) {
+            return ERROR;
         }
         else if (res > 0) {
             funcflags |= 0x02;
