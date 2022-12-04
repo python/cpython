@@ -6595,22 +6595,25 @@ pattern_unpack_helper(struct compiler *c, location loc,
         pattern_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == MatchStar_kind && !seen_star) {
             if ((i >= (1 << 8)) ||
-                (n-i-1 >= (INT_MAX >> 8)))
-                return compiler_error(c, loc,
+                (n-i-1 >= (INT_MAX >> 8))) {
+                compiler_error(c, loc,
                     "too many expressions in "
                     "star-unpacking sequence pattern");
-            _ADDOP_I(c, loc, UNPACK_EX, (i + ((n-i-1) << 8)));
+                return ERROR;
+            }
+            ADDOP_I(c, loc, UNPACK_EX, (i + ((n-i-1) << 8)));
             seen_star = 1;
         }
         else if (elt->kind == MatchStar_kind) {
-            return compiler_error(c, loc,
+            compiler_error(c, loc,
                 "multiple starred expressions in sequence pattern");
+            return ERROR;
         }
     }
     if (!seen_star) {
-        _ADDOP_I(c, loc, UNPACK_SEQUENCE, n);
+        ADDOP_I(c, loc, UNPACK_SEQUENCE, n);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -6618,7 +6621,9 @@ pattern_helper_sequence_unpack(struct compiler *c, location loc,
                                asdl_pattern_seq *patterns, Py_ssize_t star,
                                pattern_context *pc)
 {
-    RETURN_IF_FALSE(pattern_unpack_helper(c, loc, patterns));
+    if (pattern_unpack_helper(c, loc, patterns) < 0) {
+        return 0;
+    }
     Py_ssize_t size = asdl_seq_LEN(patterns);
     // We've now got a bunch of new subjects on the stack. They need to remain
     // there after each subpattern match:
