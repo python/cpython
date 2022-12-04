@@ -4235,10 +4235,8 @@ is_dunder_name(PyObject *name)
     return 0;
 }
 
-/* This is similar to PyObject_GenericGetAttr(),
-   but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
-static PyObject *
-type_getattro(PyTypeObject *type, PyObject *name)
+PyObject *
+_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress)
 {
     PyTypeObject *metatype = Py_TYPE(type);
     PyObject *meta_attribute, *attribute;
@@ -4318,10 +4316,23 @@ type_getattro(PyTypeObject *type, PyObject *name)
     }
 
     /* Give up */
-    PyErr_Format(PyExc_AttributeError,
-                 "type object '%.50s' has no attribute '%U'",
-                 type->tp_name, name);
+    if (suppress == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                        "type object '%.50s' has no attribute '%U'",
+                        type->tp_name, name);
+    } else {
+        // signal the caller we have not set an PyExc_AttributeError and gave up
+        *suppress = 1;
+    }
     return NULL;
+}
+
+/* This is similar to PyObject_GenericGetAttr(),
+   but uses _PyType_Lookup() instead of just looking in type->tp_dict. */
+PyObject *
+_Py_type_getattro(PyTypeObject *type, PyObject *name)
+{
+    return _Py_type_getattro_impl(type, name, NULL);
 }
 
 static int
@@ -4815,7 +4826,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_hash */
     (ternaryfunc)type_call,                     /* tp_call */
     0,                                          /* tp_str */
-    (getattrofunc)type_getattro,                /* tp_getattro */
+    (getattrofunc)_Py_type_getattro,                /* tp_getattro */
     (setattrofunc)type_setattro,                /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |

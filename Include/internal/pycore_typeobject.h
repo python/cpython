@@ -80,6 +80,10 @@ extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
 extern void _PyStaticType_ClearWeakRefs(PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
+PyObject *
+_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *flag);
+PyObject *
+_Py_type_getattro(PyTypeObject *type, PyObject *name);
 
 PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
 PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
