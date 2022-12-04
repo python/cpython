@@ -1542,9 +1542,9 @@ compiler_addop_load_const(struct compiler *c, location loc, PyObject *o)
 {
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0) {
-        return 0;
+        return ERROR;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, loc) == SUCCESS ? 1 : 0;
+    return cfg_builder_addop_i(CFG_BUILDER(c), LOAD_CONST, arg, loc);
 }
 
 static int
@@ -1552,9 +1552,10 @@ compiler_addop_o(struct compiler *c, location loc,
                  int opcode, PyObject *dict, PyObject *o)
 {
     Py_ssize_t arg = dict_add_o(dict, o);
-    if (arg < 0)
-        return 0;
-    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc) == SUCCESS ? 1 : 0;
+    if (arg < 0) {
+        return ERROR;
+    }
+    return cfg_builder_addop_i(CFG_BUILDER(c), opcode, arg, loc);
 }
 
 static int
@@ -1622,7 +1623,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADDOP_LOAD_CONST(C, LOC, O) { \
-    if (!compiler_addop_load_const((C), (LOC), (O))) \
+    if (compiler_addop_load_const((C), (LOC), (O)) < 0) \
         return 0; \
 }
 
@@ -1632,7 +1633,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     if (__new_const == NULL) { \
         return 0; \
     } \
-    if (!compiler_addop_load_const((C), (LOC), __new_const)) { \
+    if (compiler_addop_load_const((C), (LOC), __new_const) < 0) { \
         Py_DECREF(__new_const); \
         return 0; \
     } \
@@ -1641,7 +1642,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
     assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (!compiler_addop_o((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O))) { \
+    if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return 0; \
     } \
