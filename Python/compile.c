@@ -2239,28 +2239,27 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
                              int preserve_tos, struct fblockinfo **loop)
 {
     if (c->u->u_nfblocks == 0) {
-        return 1;
+        return SUCCESS;
     }
     struct fblockinfo *top = &c->u->u_fblock[c->u->u_nfblocks-1];
     if (top->fb_type == EXCEPTION_GROUP_HANDLER) {
-        return compiler_error(
-            c, *ploc, "'break', 'continue' and 'return' cannot appear in an except* block");
+        compiler_error(c, *ploc,
+            "'break', 'continue' and 'return' cannot appear in an except* block");
+        return ERROR;
     }
     if (loop != NULL && (top->fb_type == WHILE_LOOP || top->fb_type == FOR_LOOP)) {
         *loop = top;
-        return 1;
+        return SUCCESS;
     }
     struct fblockinfo copy = *top;
     c->u->u_nfblocks--;
     if (compiler_unwind_fblock(c, ploc, &copy, preserve_tos) < 0) {
-        return 0;
+        return ERROR;
     }
-    if (!compiler_unwind_fblock_stack(c, ploc, preserve_tos, loop)) {
-        return 0;
-    }
+    RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, ploc, preserve_tos, loop));
     c->u->u_fblock[c->u->u_nfblocks] = copy;
     c->u->u_nfblocks++;
-    return 1;
+    return SUCCESS;
 }
 
 /* Compile a sequence of statements, checking for a docstring
@@ -3412,8 +3411,9 @@ compiler_return(struct compiler *c, stmt_ty s)
         _ADDOP(c, loc, NOP);
     }
 
-    if (!compiler_unwind_fblock_stack(c, &loc, preserve_tos, NULL))
+    if (compiler_unwind_fblock_stack(c, &loc, preserve_tos, NULL) < 0) {
         return 0;
+    }
     if (s->v.Return.value == NULL) {
         _ADDOP_LOAD_CONST(c, loc, Py_None);
     }
@@ -3431,7 +3431,7 @@ compiler_break(struct compiler *c, location loc)
     struct fblockinfo *loop = NULL;
     /* Emit instruction with line number */
     _ADDOP(c, loc, NOP);
-    if (!compiler_unwind_fblock_stack(c, &loc, 0, &loop)) {
+    if (compiler_unwind_fblock_stack(c, &loc, 0, &loop) < 0) {
         return 0;
     }
     if (loop == NULL) {
@@ -3450,7 +3450,7 @@ compiler_continue(struct compiler *c, location loc)
     struct fblockinfo *loop = NULL;
     /* Emit instruction with line number */
     _ADDOP(c, loc, NOP);
-    if (!compiler_unwind_fblock_stack(c, &loc, 0, &loop)) {
+    if (compiler_unwind_fblock_stack(c, &loc, 0, &loop) < 0) {
         return 0;
     }
     if (loop == NULL) {
