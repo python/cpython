@@ -55,6 +55,19 @@
  */
 #define STACK_USE_GUIDELINE 30
 
+#define SUCCESS 0
+#define ERROR -1
+
+#define RETURN_IF_ERROR(X)  \
+    if ((X) == -1) {        \
+        return -1;          \
+    }
+
+#define RETURN_NULL_IF_ERROR(X)  \
+    if ((X) == -1) {             \
+        return NULL;             \
+    }
+
 /* If we exceed this limit, it should
  * be considered a compiler bug.
  * Currently it should be impossible
@@ -610,18 +623,18 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
 {
     c->c_const_cache = PyDict_New();
     if (!c->c_const_cache) {
-        return 0;
+        return ERROR;
     }
 
     c->c_stack = PyList_New(0);
     if (!c->c_stack) {
-        return 0;
+        return ERROR;
     }
 
     c->c_filename = Py_NewRef(filename);
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
-        return 0;
+        return ERROR;
     }
     int merged = c->c_future.ff_features | flags.cf_flags;
     c->c_future.ff_features = merged;
@@ -635,16 +648,16 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     state.ff_features = merged;
 
     if (!_PyAST_Optimize(mod, arena, &state)) {
-        return 0;
+        return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
     if (c->c_st == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_SystemError, "no symtable");
         }
-        return 0;
+        return ERROR;
     }
-    return 1;
+    return SUCCESS;
 }
 
 static struct compiler*
@@ -656,7 +669,7 @@ new_compiler(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
     if (c == NULL) {
         return NULL;
     }
-    if (!compiler_setup(c, mod, filename, flags, optimize, arena)) {
+    if (compiler_setup(c, mod, filename, flags, optimize, arena) < 0) {
         compiler_free(c);
         return NULL;
     }
