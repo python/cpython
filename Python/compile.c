@@ -1609,6 +1609,123 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     return cfg_builder_addop(g, opcode, target.id, loc);
 }
 
+#define ADDOP(C, LOC, OP) \
+    RETURN_IF_ERROR(cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)));
+
+#define ADDOP_IN_SCOPE(C, LOC, OP) { \
+    if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
+        compiler_exit_scope(c); \
+        return -1; \
+    } \
+}
+
+#define ADDOP_LOAD_CONST(C, LOC, O) \
+    RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)));
+
+/* Same as ADDOP_LOAD_CONST, but steals a reference. */
+#define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
+    PyObject *__new_const = (O); \
+    if (__new_const == NULL) { \
+        return ERROR; \
+    } \
+    if (compiler_addop_load_const((C), (LOC), __new_const) < 0) { \
+        Py_DECREF(__new_const); \
+        return ERROR; \
+    } \
+    Py_DECREF(__new_const); \
+}
+
+#define ADDOP_N(C, LOC, OP, O, TYPE) { \
+    assert(!HAS_CONST(OP)); /* use _ADDOP_LOAD_CONST_NEW */ \
+    if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) { \
+        Py_DECREF((O)); \
+        return ERROR; \
+    } \
+    Py_DECREF((O)); \
+}
+
+#define ADDOP_NAME(C, LOC, OP, O, TYPE) \
+    RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)));
+
+#define ADDOP_I(C, LOC, OP, O) \
+    RETURN_IF_ERROR(cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), (LOC)));
+
+#define ADDOP_JUMP(C, LOC, OP, O) \
+    RETURN_IF_ERROR(cfg_builder_addop_j(CFG_BUILDER(C), (LOC), (OP), (O)));
+
+#define ADDOP_COMPARE(C, LOC, CMP) { \
+    if (!compiler_addcompare((C), (LOC), (cmpop_ty)(CMP))) \
+        return ERROR; \
+}
+
+#define ADDOP_BINARY(C, LOC, BINOP) { \
+    if (!addop_binary((C), (LOC), (BINOP), false)) \
+        return ERROR; \
+}
+
+#define ADDOP_INPLACE(C, LOC, BINOP) { \
+    if (!addop_binary((C), (LOC), (BINOP), true)) \
+        return ERROR; \
+}
+
+#define ADD_YIELD_FROM(C, LOC, await) { \
+    if (! compiler_add_yield_from((C), (LOC), (await))) \
+        return ERROR; \
+}
+
+#define POP_EXCEPT_AND_RERAISE(C, LOC) { \
+    if (!compiler_pop_except_and_reraise((C), (LOC))) \
+        return ERROR; \
+}
+
+#define ADDOP_YIELD(C, LOC) { \
+    if (!addop_yield((C), (LOC))) \
+        return ERROR; \
+}
+
+/* VISIT and VISIT_SEQ takes an ASDL type as their second argument.  They use
+   the ASDL name to synthesize the name of the C type and the visit function.
+*/
+
+#define VISIT(C, TYPE, V) {\
+    if (!compiler_visit_ ## TYPE((C), (V))) \
+        return ERROR; \
+}
+
+#define VISIT_IN_SCOPE(C, TYPE, V) {\
+    if (!compiler_visit_ ## TYPE((C), (V))) { \
+        compiler_exit_scope(c); \
+        return ERROR; \
+    } \
+}
+
+#define VISIT_SEQ(C, TYPE, SEQ) { \
+    int _i; \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
+        if (!compiler_visit_ ## TYPE((C), elt)) \
+            return ERROR; \
+    } \
+}
+
+#define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) { \
+    int _i; \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
+    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
+        if (!compiler_visit_ ## TYPE((C), elt)) { \
+            compiler_exit_scope(c); \
+            return ERROR; \
+        } \
+    } \
+}
+
+
+/*******************/
+
+
+
 
 #define _ADDOP(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) \
