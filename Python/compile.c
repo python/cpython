@@ -1856,7 +1856,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
                                             struct compiler_unit));
     if (!u) {
         PyErr_NoMemory();
-        return 0;
+        return ERROR;
     }
     u->u_scope_type = scope_type;
     u->u_argcount = 0;
@@ -1865,14 +1865,14 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_ste = PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
         compiler_unit_free(u);
-        return 0;
+        return ERROR;
     }
     u->u_name = Py_NewRef(name);
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
     if (!u->u_varnames || !u->u_cellvars) {
         compiler_unit_free(u);
-        return 0;
+        return ERROR;
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
@@ -1883,7 +1883,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
                              _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
-            return 0;
+            return ERROR;
         }
     }
 
@@ -1891,7 +1891,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
                                PyDict_GET_SIZE(u->u_cellvars));
     if (!u->u_freevars) {
         compiler_unit_free(u);
-        return 0;
+        return ERROR;
     }
 
     u->u_nfblocks = 0;
@@ -1899,12 +1899,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
-        return 0;
+        return ERROR;
     }
     u->u_names = PyDict_New();
     if (!u->u_names) {
         compiler_unit_free(u);
-        return 0;
+        return ERROR;
     }
 
     u->u_private = NULL;
@@ -1915,7 +1915,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         if (!capsule || PyList_Append(c->c_stack, capsule) < 0) {
             Py_XDECREF(capsule);
             compiler_unit_free(u);
-            return 0;
+            return ERROR;
         }
         Py_DECREF(capsule);
         u->u_private = Py_XNewRef(c->u->u_private);
@@ -1926,7 +1926,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     cfg_builder *g = CFG_BUILDER(c);
     if (cfg_builder_init(g) < 0) {
-        return 0;
+        return ERROR;
     }
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
@@ -1934,15 +1934,15 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     else {
         if (compiler_set_qualname(c) < 0){
-            return 0;
+            return ERROR;
         }
     }
-    _ADDOP_I(c, loc, RESUME, 0);
+    ADDOP_I(c, loc, RESUME, 0);
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = -1;
     }
-    return 1;
+    return SUCCESS;
 }
 
 static void
@@ -2307,8 +2307,8 @@ static int
 compiler_codegen(struct compiler *c, mod_ty mod)
 {
     _Py_DECLARE_STR(anon_module, "<module>");
-    if (!compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
-                              mod, 1)) {
+    if (compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
+                             mod, 1) < 0) {
         return 0;
     }
     location loc = LOCATION(1, 1, 0, 0);
@@ -2810,7 +2810,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         funcflags |= 0x04;
     }
 
-    if (!compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno)) {
+    if (compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno) < 0) {
         return 0;
     }
 
@@ -2882,8 +2882,8 @@ compiler_class(struct compiler *c, stmt_ty s)
        This borrows from compiler_call.
     */
     /* 1. compile the class body into a code object */
-    if (!compiler_enter_scope(c, s->v.ClassDef.name,
-                              COMPILER_SCOPE_CLASS, (void *)s, firstlineno)) {
+    if (compiler_enter_scope(c, s->v.ClassDef.name,
+                             COMPILER_SCOPE_CLASS, (void *)s, firstlineno) < 0) {
         return 0;
     }
     /* this block represents what we do in the new scope */
@@ -3195,8 +3195,8 @@ compiler_lambda(struct compiler *c, expr_ty e)
     }
 
     _Py_DECLARE_STR(anon_lambda, "<lambda>");
-    if (!compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
-                              (void *)e, e->lineno)) {
+    if (compiler_enter_scope(c, &_Py_STR(anon_lambda), COMPILER_SCOPE_LAMBDA,
+                             (void *)e, e->lineno) < 0) {
         return 0;
     }
     /* Make None the first constant, so the lambda can't have a
@@ -5592,8 +5592,8 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
-    if (!compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
-                              (void *)e, e->lineno))
+    if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
+                             (void *)e, e->lineno) < 0)
     {
         goto error;
     }
