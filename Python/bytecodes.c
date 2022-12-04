@@ -2999,19 +2999,17 @@ dummy_func(
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 kwnames);
             if (opcode == INSTRUMENTED_CALL) {
-                if (!PyFunction_Check(function) && !PyMethod_Check(function)) {
-                    if (res == NULL) {
-                        _Py_call_instrumentation_exc(
-                            tstate, PY_MONITORING_EVENT_C_RAISE,
-                            frame, next_instr-1, function);
-                    }
-                    else {
-                        int err = _Py_call_instrumentation_arg(
-                            tstate, PY_MONITORING_EVENT_C_RETURN,
-                            frame, next_instr-1, function);
-                        if (err < 0) {
-                            Py_CLEAR(res);
-                        }
+                if (res == NULL) {
+                    _Py_call_instrumentation_exc(
+                        tstate, PY_MONITORING_EVENT_C_RAISE,
+                        frame, next_instr-1, function);
+                }
+                else {
+                    int err = _Py_call_instrumentation_arg(
+                        tstate, PY_MONITORING_EVENT_C_RETURN,
+                        frame, next_instr-1, function);
+                    if (err < 0) {
+                        Py_CLEAR(res);
                     }
                 }
             }

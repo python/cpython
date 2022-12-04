@@ -83,7 +83,7 @@ sys_profile_call_or_return(
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     assert(nargs == 3);
     PyObject *callable = args[2];
-    if (PyFunction_Check(callable) || PyMethod_Check(callable)) {
+    if (!PyCFunction_Check(callable) && Py_TYPE(callable) != &PyMethodDescr_Type) {
         Py_RETURN_NONE;
     }
     return call_profile_func(self, callable);
@@ -223,8 +223,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
             (1 << PY_MONITORING_EVENT_CALL) | (1 << PY_MONITORING_EVENT_PY_UNWIND) |
-            (1 << PY_MONITORING_EVENT_C_RETURN) |
-            (1 << PY_MONITORING_EVENT_C_RAISE);
+            (1 << PY_MONITORING_EVENT_C_RETURN) | (1 << PY_MONITORING_EVENT_C_RAISE);
         _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_PROFILE, events);
     }
     else if (tstate->interp->sys_profiling_threads == 0) {
