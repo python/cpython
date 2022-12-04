@@ -2714,14 +2714,12 @@ compiler_check_debug_args(struct compiler *c, arguments_ty args)
 
 static inline int
 insert_instruction(basicblock *block, int pos, struct instr *instr) {
-    if (basicblock_next_instr(block) < 0) {
-        return -1;
-    }
+    RETURN_IF_ERROR(basicblock_next_instr(block));
     for (int i = block->b_iused - 1; i > pos; i--) {
         block->b_instr[i] = block->b_instr[i-1];
     }
     block->b_instr[pos] = *instr;
-    return 0;
+    return SUCCESS;
 }
 
 static int
@@ -2736,16 +2734,15 @@ wrap_in_stopiteration_handler(struct compiler *c)
         .i_loc = NO_LOCATION,
         .i_target = NULL,
     };
-    if (insert_instruction(c->u->u_cfg_builder.g_entryblock, 0, &setup)) {
-        return 0;
-    }
+    RETURN_IF_ERROR(
+        insert_instruction(c->u->u_cfg_builder.g_entryblock, 0, &setup));
 
-    _ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-    _ADDOP(c, NO_LOCATION, RETURN_VALUE);
+    ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+    ADDOP(c, NO_LOCATION, RETURN_VALUE);
     USE_LABEL(c, handler);
-    _ADDOP(c, NO_LOCATION, STOPITERATION_ERROR);
-    _ADDOP_I(c, NO_LOCATION, RERAISE, 1);
-    return 1;
+    ADDOP(c, NO_LOCATION, STOPITERATION_ERROR);
+    ADDOP_I(c, NO_LOCATION, RERAISE, 1);
+    return SUCCESS;
 }
 
 static int
@@ -2831,7 +2828,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         _VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
     if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
-        if (!wrap_in_stopiteration_handler(c)) {
+        if (wrap_in_stopiteration_handler(c) < 0) {
             compiler_exit_scope(c);
             return 0;
         }
@@ -5653,7 +5650,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         _ADDOP(c, LOC(e), RETURN_VALUE);
     }
     if (type == COMP_GENEXP) {
-        if (!wrap_in_stopiteration_handler(c)) {
+        if (wrap_in_stopiteration_handler(c) < 0) {
             goto error_in_scope;
         }
     }
