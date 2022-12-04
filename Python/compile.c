@@ -1653,20 +1653,14 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 #define ADDOP_JUMP(C, LOC, OP, O) \
     RETURN_IF_ERROR(cfg_builder_addop_j(CFG_BUILDER(C), (LOC), (OP), (O)));
 
-#define ADDOP_COMPARE(C, LOC, CMP) { \
-    if (!compiler_addcompare((C), (LOC), (cmpop_ty)(CMP))) \
-        return ERROR; \
-}
+#define ADDOP_COMPARE(C, LOC, CMP) \
+    RETURN_IF_ERROR(compiler_addcompare((C), (LOC), (cmpop_ty)(CMP)));
 
-#define ADDOP_BINARY(C, LOC, BINOP) { \
-    if (!addop_binary((C), (LOC), (BINOP), false)) \
-        return ERROR; \
-}
+#define ADDOP_BINARY(C, LOC, BINOP) \
+    RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), false));
 
-#define ADDOP_INPLACE(C, LOC, BINOP) { \
-    if (!addop_binary((C), (LOC), (BINOP), true)) \
-        return ERROR; \
-}
+#define ADDOP_INPLACE(C, LOC, BINOP) \
+    RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), true));
 
 #define ADD_YIELD_FROM(C, LOC, await)  \
     RETURN_IF_ERROR(compiler_add_yield_from((C), (LOC), (await)));
@@ -1675,9 +1669,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     RETURN_IF_ERROR(compiler_pop_except_and_reraise((C), (LOC)));
 
 #define ADDOP_YIELD(C, LOC) { \
-    if (!addop_yield((C), (LOC))) \
-        return ERROR; \
-}
+    RETURN_IF_ERROR(addop_yield((C), (LOC)));
 
 /* VISIT and VISIT_SEQ takes an ASDL type as their second argument.  They use
    the ASDL name to synthesize the name of the C type and the visit function.
@@ -1778,15 +1770,20 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define _ADDOP_COMPARE(C, LOC, CMP) { \
-    if (!compiler_addcompare((C), (LOC), (cmpop_ty)(CMP))) \
+    if (compiler_addcompare((C), (LOC), (cmpop_ty)(CMP)) < 0) \
         return 0; \
 }
 
-#define _ADDOP_BINARY(C, LOC, BINOP) \
-    RETURN_IF_FALSE(addop_binary((C), (LOC), (BINOP), false))
+#define _ADDOP_BINARY(C, LOC, BINOP) { \
+    if (addop_binary((C), (LOC), (BINOP), false) < 0) \
+        return 0; \
+    }
 
-#define _ADDOP_INPLACE(C, LOC, BINOP) \
-    RETURN_IF_FALSE(addop_binary((C), (LOC), (BINOP), true))
+#define _ADDOP_INPLACE(C, LOC, BINOP) { \
+    if (addop_binary((C), (LOC), (BINOP), true) < 0) \
+        return 0; \
+    }
+
 
 #define _ADD_YIELD_FROM(C, LOC, await) { \
     if (compiler_add_yield_from((C), (LOC), (await)) < 0) \
@@ -1798,8 +1795,10 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
         return 0; \
 }
 
-#define _ADDOP_YIELD(C, LOC) \
-    RETURN_IF_FALSE(addop_yield((C), (LOC)))
+#define _ADDOP_YIELD(C, LOC) { \
+    if (addop_yield((C), (LOC)) < 0) \
+        return 0; \
+    }
 
 /* _VISIT and _VISIT_SEQ takes an ASDL type as their second argument.  They use
    the ASDL name to synthesize the name of the C type and the visit function.
@@ -3029,22 +3028,22 @@ static int compiler_addcompare(struct compiler *c, location loc,
         cmp = Py_GE;
         break;
     case Is:
-        _ADDOP_I(c, loc, IS_OP, 0);
-        return 1;
+        ADDOP_I(c, loc, IS_OP, 0);
+        return SUCCESS;
     case IsNot:
-        _ADDOP_I(c, loc, IS_OP, 1);
-        return 1;
+        ADDOP_I(c, loc, IS_OP, 1);
+        return SUCCESS;
     case In:
-        _ADDOP_I(c, loc, CONTAINS_OP, 0);
-        return 1;
+        ADDOP_I(c, loc, CONTAINS_OP, 0);
+        return SUCCESS;
     case NotIn:
-        _ADDOP_I(c, loc, CONTAINS_OP, 1);
-        return 1;
+        ADDOP_I(c, loc, CONTAINS_OP, 1);
+        return SUCCESS;
     default:
         Py_UNREACHABLE();
     }
-    _ADDOP_I(c, loc, COMPARE_OP, cmp);
-    return 1;
+    ADDOP_I(c, loc, COMPARE_OP, cmp);
+    return SUCCESS;
 }
 
 
@@ -4347,21 +4346,21 @@ addop_binary(struct compiler *c, location loc, operator_ty binop,
         default:
             PyErr_Format(PyExc_SystemError, "%s op %d should not be possible",
                          inplace ? "inplace" : "binary", binop);
-            return 0;
+            return ERROR;
     }
-    _ADDOP_I(c, loc, BINARY_OP, oparg);
-    return 1;
+    ADDOP_I(c, loc, BINARY_OP, oparg);
+    return SUCCESS;
 }
 
 
 static int
 addop_yield(struct compiler *c, location loc) {
     if (c->u->u_ste->ste_generator && c->u->u_ste->ste_coroutine) {
-        _ADDOP(c, loc, ASYNC_GEN_WRAP);
+        ADDOP(c, loc, ASYNC_GEN_WRAP);
     }
-    _ADDOP_I(c, loc, YIELD_VALUE, 0);
-    _ADDOP_I(c, loc, RESUME, 1);
-    return 1;
+    ADDOP_I(c, loc, YIELD_VALUE, 0);
+    ADDOP_I(c, loc, RESUME, 1);
+    return SUCCESS;
 }
 
 static int
