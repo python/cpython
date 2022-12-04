@@ -3512,45 +3512,46 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, cleanup);
 
     /* `try` block */
-    _ADDOP_JUMP(c, loc, SETUP_FINALLY, end);
+    ADDOP_JUMP(c, loc, SETUP_FINALLY, end);
 
     USE_LABEL(c, body);
-    if (compiler_push_fblock(c, loc, FINALLY_TRY, body, end, s->v.Try.finalbody) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(
+        compiler_push_fblock(c, loc, FINALLY_TRY, body, end,
+                             s->v.Try.finalbody));
+
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
-        if (!compiler_try_except(c, s))
-            return 0;
+        if (!compiler_try_except(c, s)) {
+            return ERROR;
+        }
     }
     else {
-        _VISIT_SEQ(c, stmt, s->v.Try.body);
+        VISIT_SEQ(c, stmt, s->v.Try.body);
     }
-    _ADDOP(c, NO_LOCATION, POP_BLOCK);
+    ADDOP(c, NO_LOCATION, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
-    _VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
 
-    _ADDOP_JUMP(c, NO_LOCATION, JUMP, exit);
+    ADDOP_JUMP(c, NO_LOCATION, JUMP, exit);
     /* `finally` block */
 
     USE_LABEL(c, end);
 
     loc = NO_LOCATION;
-    _ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
-    _ADDOP(c, loc, PUSH_EXC_INFO);
-    if (compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL) < 0) {
-        return 0;
-    }
-    _VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+    ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
+    ADDOP(c, loc, PUSH_EXC_INFO);
+    RETURN_IF_ERROR(
+        compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
+    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     loc = location_of_last_executing_statement(s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
 
-    _ADDOP_I(c, loc, RERAISE, 0);
+    ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
-    _POP_EXCEPT_AND_RERAISE(c, loc);
+    POP_EXCEPT_AND_RERAISE(c, loc);
 
     USE_LABEL(c, exit);
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -3973,7 +3974,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 static int
 compiler_try(struct compiler *c, stmt_ty s) {
     if (s->v.Try.finalbody && asdl_seq_LEN(s->v.Try.finalbody))
-        return compiler_try_finally(c, s);
+        return compiler_try_finally(c, s) == SUCCESS ? 1 : 0;
     else
         return compiler_try_except(c, s);
 }
