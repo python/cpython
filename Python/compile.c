@@ -2412,7 +2412,7 @@ compiler_make_closure(struct compiler *c, location loc,
             */
             int reftype = get_ref_type(c, name);
             if (reftype == -1) {
-                return 0;
+                return ERROR;
             }
             int arg;
             if (reftype == CELL) {
@@ -2435,16 +2435,16 @@ compiler_make_closure(struct compiler *c, location loc,
                     co->co_name,
                     freevars);
                 Py_DECREF(freevars);
-                return 0;
+                return ERROR;
             }
-            _ADDOP_I(c, loc, LOAD_CLOSURE, arg);
+            ADDOP_I(c, loc, LOAD_CLOSURE, arg);
         }
         flags |= 0x08;
-        _ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
+        ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
-    _ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
-    _ADDOP_I(c, loc, MAKE_FUNCTION, flags);
-    return 1;
+    ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
+    ADDOP_I(c, loc, MAKE_FUNCTION, flags);
+    return SUCCESS;
 }
 
 static int
@@ -2846,7 +2846,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         Py_XDECREF(co);
         return 0;
     }
-    if (!compiler_make_closure(c, loc, co, funcflags, qualname)) {
+    if (compiler_make_closure(c, loc, co, funcflags, qualname) < 0) {
         Py_DECREF(qualname);
         Py_DECREF(co);
         return 0;
@@ -2952,7 +2952,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     _ADDOP(c, loc, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    if (!compiler_make_closure(c, loc, co, 0, NULL)) {
+    if (compiler_make_closure(c, loc, co, 0, NULL) < 0) {
         Py_DECREF(co);
         return 0;
     }
@@ -3226,7 +3226,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         return 0;
     }
 
-    if (!compiler_make_closure(c, loc, co, funcflags, qualname)) {
+    if (compiler_make_closure(c, loc, co, funcflags, qualname) < 0) {
         Py_DECREF(qualname);
         Py_DECREF(co);
         return 0;
@@ -5665,7 +5665,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         goto error;
 
     loc = LOC(e);
-    if (!compiler_make_closure(c, loc, co, 0, qualname)) {
+    if (compiler_make_closure(c, loc, co, 0, qualname) < 0) {
         goto error;
     }
     Py_DECREF(qualname);
