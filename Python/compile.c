@@ -6548,9 +6548,9 @@ static int
 pattern_helper_rotate(struct compiler *c, location loc, Py_ssize_t count)
 {
     while (1 < count) {
-        _ADDOP_I(c, loc, SWAP, count--);
+        ADDOP_I(c, loc, SWAP, count--);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -6575,7 +6575,9 @@ pattern_helper_store_name(struct compiler *c, location loc,
     }
     // Rotate this object underneath any items we need to preserve:
     Py_ssize_t rotations = pc->on_top + PyList_GET_SIZE(pc->stores) + 1;
-    RETURN_IF_FALSE(pattern_helper_rotate(c, loc, rotations));
+    if (pattern_helper_rotate(c, loc, rotations) < 0) {
+        return 0;
+    }
     return !PyList_Append(pc->stores, n);
 }
 
@@ -7024,7 +7026,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
                     // Do the same thing to the stack, using several
                     // rotations:
                     while (rotations--) {
-                        if (!pattern_helper_rotate(c, LOC(alt), icontrol + 1)){
+                        if (pattern_helper_rotate(c, LOC(alt), icontrol + 1) < 0) {
                             goto error;
                         }
                     }
@@ -7060,7 +7062,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     Py_ssize_t nrots = nstores + 1 + pc->on_top + PyList_GET_SIZE(pc->stores);
     for (Py_ssize_t i = 0; i < nstores; i++) {
         // Rotate this capture to its proper place on the stack:
-        if (!pattern_helper_rotate(c, LOC(p), nrots)) {
+        if (pattern_helper_rotate(c, LOC(p), nrots) < 0) {
             goto error;
         }
         // Update the list of previous stores with this new name, checking for
