@@ -711,6 +711,12 @@ Build Changes
   optimization levels (0, 1, 2) at once.
   (Contributed by Victor Stinner in :gh:`99289`.)
 
+* Building Python now requires `two's complement
+  <https://en.wikipedia.org/wiki/Two%27s_complement>`_ integer representation:
+  drop support for platforms with other `signed number representations
+  <https://en.wikipedia.org/wiki/Signed_number_representations>`_.
+  (Contributed by Victor Stinner in :gh:`100008`.)
+
 
 C API Changes
 =============

@@ -16,6 +16,9 @@ Features required to build CPython:
   point numbers and `floating point Not-a-Number (NaN)
   <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
 
+* `Two's complement <https://en.wikipedia.org/wiki/Two%27s_complement>`_
+  integer representation.
+
 * Support for threads.
 
 * OpenSSL 1.1.1 or newer for the :mod:`ssl` and :mod:`hashlib` modules.
