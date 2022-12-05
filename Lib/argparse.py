@@ -927,7 +927,7 @@ class _StoreAction(Action):
                  required=False,
                  help=None,
                  metavar=None):
-        if nargs == 0:
+        if nargs <= 0:
             raise ValueError('nargs for store actions must be != 0; if you '
                              'have nothing to store, actions such as store '
                              'true or store const may be more appropriate')
