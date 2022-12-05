@@ -1,0 +1,6 @@
+``python -m http.server`` no longer allows terminal control characters sent
+within a garbage request to be printed to the stderr server log.
+
+This is done by changing the :mod:`http.server` :class:`BaseHTTPRequestHandler`
+``.log_message`` method to replace control characters with a ``\xHH`` hex escape
+before printing.

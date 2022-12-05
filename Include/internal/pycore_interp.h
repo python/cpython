@@ -191,6 +191,9 @@ struct _is {
 
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
+    PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
+    // One bit is set for each non-NULL entry in code_watchers
+    uint8_t active_code_watchers;
 
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
@@ -246,9 +249,10 @@ extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 struct _xidregitem;
 
 struct _xidregitem {
-    PyTypeObject *cls;
-    crossinterpdatafunc getdata;
+    struct _xidregitem *prev;
     struct _xidregitem *next;
+    PyObject *cls;  // weakref to a PyTypeObject
+    crossinterpdatafunc getdata;
 };
 
 PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);
