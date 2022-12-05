@@ -511,7 +511,7 @@ static int compiler_annassign(struct compiler *, stmt_ty);
 static int compiler_subscript(struct compiler *, expr_ty);
 static int compiler_slice(struct compiler *, expr_ty);
 
-static int are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
+static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
 
 
 static int compiler_with(struct compiler *, stmt_ty, int);
@@ -4628,16 +4628,16 @@ compiler_set(struct compiler *c, expr_ty e)
                              BUILD_SET, SET_ADD, SET_UPDATE, 0);
 }
 
-static int
+static bool
 are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
 {
-    Py_ssize_t i;
-    for (i = begin; i < end; i++) {
+    for (Py_ssize_t i = begin; i < end; i++) {
         expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || key->kind != Constant_kind)
-            return 0;
+        if (key == NULL || key->kind != Constant_kind) {
+            return false;
+        }
     }
-    return 1;
+    return true;
 }
 
 static int
