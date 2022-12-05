@@ -1,0 +1,1 @@
+Shelve module accepts custom_dumps and custom_loads functions.
