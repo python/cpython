@@ -1005,9 +1005,9 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertNotIn('\000', stderr)  # non-printable chars are caught.
         lines = stderr.splitlines()
         self.assertIn('/foo', lines[0])
-        self.assertIn('/!bar!!', lines[1])
+        self.assertIn(r'/\x1bbar\x00\x1b', lines[1])
         self.assertIn('/spam a.', lines[2])
-        self.assertIn('/spam !!!\xa0beans.', lines[3])
+        self.assertIn('/spam \\x1b\\x7f\\x9f\xa0beans.', lines[3])
 
     def test_http_1_1(self):
         result = self.send_typical_request(b'GET / HTTP/1.1\r\n\r\n')
