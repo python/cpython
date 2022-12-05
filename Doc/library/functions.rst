@@ -579,7 +579,7 @@ are always available.  They are listed here in alphabetical order.
 
       Dynamic execution of *statements* is supported by the :func:`exec`
       function (see below).
- 
+
 .. index:: builtin: exec
 
 .. function:: exec(object, globals=None, locals=None, /, *, closure=None)
