@@ -5308,10 +5308,9 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
-    if (compiler_push_fblock(c, loc, ASYNC_COMPREHENSION_GENERATOR,
-                             start, NO_LABEL, NULL) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(
+        compiler_push_fblock(c, loc, ASYNC_COMPREHENSION_GENERATOR,
+                             start, NO_LABEL, NULL));
 
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
@@ -5631,8 +5630,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
         /* BLOCK code */
         VISIT_SEQ(c, stmt, s->v.AsyncWith.body)
     }
-    else if (compiler_async_with(c, s, pos) == ERROR) {
-        return ERROR;
+    else {
+        RETURN_IF_ERROR(compiler_async_with(c, s, pos));
     }
 
     compiler_pop_fblock(c, ASYNC_WITH, block);
@@ -5725,8 +5724,8 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
         /* BLOCK code */
         VISIT_SEQ(c, stmt, s->v.With.body)
     }
-    else if (compiler_with(c, s, pos) == ERROR) {
-        return ERROR;
+    else {
+        RETURN_IF_ERROR(compiler_with(c, s, pos));
     }
 
     ADDOP(c, NO_LOCATION, POP_BLOCK);
@@ -6346,20 +6345,14 @@ pattern_helper_store_name(struct compiler *c, location loc,
     }
     // Can't assign to the same name twice:
     int duplicate = PySequence_Contains(pc->stores, n);
-    if (duplicate < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(duplicate);
     if (duplicate) {
         return compiler_error_duplicate_store(c, loc, n);
     }
     // Rotate this object underneath any items we need to preserve:
     Py_ssize_t rotations = pc->on_top + PyList_GET_SIZE(pc->stores) + 1;
-    if (pattern_helper_rotate(c, loc, rotations) < 0) {
-        return ERROR;
-    }
-    if (PyList_Append(pc->stores, n) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(pattern_helper_rotate(c, loc, rotations));
+    RETURN_IF_ERROR(PyList_Append(pc->stores, n));
     return SUCCESS;
 }
 
@@ -6398,9 +6391,7 @@ pattern_helper_sequence_unpack(struct compiler *c, location loc,
                                asdl_pattern_seq *patterns, Py_ssize_t star,
                                pattern_context *pc)
 {
-    if (pattern_unpack_helper(c, loc, patterns) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(pattern_unpack_helper(c, loc, patterns));
     Py_ssize_t size = asdl_seq_LEN(patterns);
     // We've now got a bunch of new subjects on the stack. They need to remain
     // there after each subpattern match:
