@@ -4466,7 +4466,7 @@ starunpack_helper(struct compiler *c, location loc,
     if (n > 2 && are_all_items_const(elts, 0, n)) {
         PyObject *folded = PyTuple_New(n);
         if (folded == NULL) {
-            return 0;
+            return ERROR;
         }
         PyObject *val;
         for (Py_ssize_t i = 0; i < n; i++) {
@@ -4474,22 +4474,22 @@ starunpack_helper(struct compiler *c, location loc,
             PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
         }
         if (tuple && !pushed) {
-            _ADDOP_LOAD_CONST_NEW(c, loc, folded);
+            ADDOP_LOAD_CONST_NEW(c, loc, folded);
         } else {
             if (add == SET_ADD) {
                 Py_SETREF(folded, PyFrozenSet_New(folded));
                 if (folded == NULL) {
-                    return 0;
+                    return ERROR;
                 }
             }
-            _ADDOP_I(c, loc, build, pushed);
-            _ADDOP_LOAD_CONST_NEW(c, loc, folded);
-            _ADDOP_I(c, loc, extend, 1);
+            ADDOP_I(c, loc, build, pushed);
+            ADDOP_LOAD_CONST_NEW(c, loc, folded);
+            ADDOP_I(c, loc, extend, 1);
             if (tuple) {
-                _ADDOP(c, loc, LIST_TO_TUPLE);
+                ADDOP(c, loc, LIST_TO_TUPLE);
             }
         }
-        return 1;
+        return SUCCESS;
     }
 
     int big = n+pushed > STACK_USE_GUIDELINE;
@@ -4504,42 +4504,42 @@ starunpack_helper(struct compiler *c, location loc,
     if (!seen_star && !big) {
         for (Py_ssize_t i = 0; i < n; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
-            _VISIT(c, expr, elt);
+            VISIT(c, expr, elt);
         }
         if (tuple) {
-            _ADDOP_I(c, loc, BUILD_TUPLE, n+pushed);
+            ADDOP_I(c, loc, BUILD_TUPLE, n+pushed);
         } else {
-            _ADDOP_I(c, loc, build, n+pushed);
+            ADDOP_I(c, loc, build, n+pushed);
         }
-        return 1;
+        return SUCCESS;
     }
     int sequence_built = 0;
     if (big) {
-        _ADDOP_I(c, loc, build, pushed);
+        ADDOP_I(c, loc, build, pushed);
         sequence_built = 1;
     }
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
             if (sequence_built == 0) {
-                _ADDOP_I(c, loc, build, i+pushed);
+                ADDOP_I(c, loc, build, i+pushed);
                 sequence_built = 1;
             }
-            _VISIT(c, expr, elt->v.Starred.value);
-            _ADDOP_I(c, loc, extend, 1);
+            VISIT(c, expr, elt->v.Starred.value);
+            ADDOP_I(c, loc, extend, 1);
         }
         else {
-            _VISIT(c, expr, elt);
+            VISIT(c, expr, elt);
             if (sequence_built) {
-                _ADDOP_I(c, loc, add, 1);
+                ADDOP_I(c, loc, add, 1);
             }
         }
     }
     assert(sequence_built);
     if (tuple) {
-        _ADDOP(c, loc, LIST_TO_TUPLE);
+        ADDOP(c, loc, LIST_TO_TUPLE);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4594,7 +4594,7 @@ compiler_list(struct compiler *c, expr_ty e)
     }
     else if (e->v.List.ctx == Load) {
         return starunpack_helper(c, loc, elts, 0,
-                                 BUILD_LIST, LIST_APPEND, LIST_EXTEND, 0);
+                                 BUILD_LIST, LIST_APPEND, LIST_EXTEND, 0) == SUCCESS ? 1 : 0;
     }
     else
         _VISIT_SEQ(c, expr, elts);
@@ -4611,7 +4611,7 @@ compiler_tuple(struct compiler *c, expr_ty e)
     }
     else if (e->v.Tuple.ctx == Load) {
         return starunpack_helper(c, loc, elts, 0,
-                                 BUILD_LIST, LIST_APPEND, LIST_EXTEND, 1);
+                                 BUILD_LIST, LIST_APPEND, LIST_EXTEND, 1) == SUCCESS ? 1 : 0;
     }
     else
         _VISIT_SEQ(c, expr, elts);
@@ -4623,7 +4623,7 @@ compiler_set(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.Set.elts, 0,
-                             BUILD_SET, SET_ADD, SET_UPDATE, 0);
+                             BUILD_SET, SET_ADD, SET_UPDATE, 0) == SUCCESS ? 1 : 0;
 }
 
 static int
@@ -5240,7 +5240,7 @@ ex_call:
         VISIT(c, expr, ((expr_ty)asdl_seq_GET(args, 0))->v.Starred.value);
     }
     else if (starunpack_helper(c, loc, args, n, BUILD_LIST,
-                                 LIST_APPEND, LIST_EXTEND, 1) == 0) {
+                                 LIST_APPEND, LIST_EXTEND, 1) < 0) {
         return ERROR;
     }
     /* Then keyword arguments */
