@@ -63,11 +63,6 @@
         return -1;          \
     }
 
-#define RETURN_NULL_IF_ERROR(X)  \
-    if ((X) == -1) {             \
-        return NULL;             \
-    }
-
 /* If we exceed this limit, it should
  * be considered a compiler bug.
  * Currently it should be impossible
@@ -4917,7 +4912,7 @@ update_start_location_to_match_attr(struct compiler *c, location loc,
     return loc;
 }
 
-// Return 1 if the method call was optimized, -1 if not, and 0 on error.
+// Return 1 if the method call was optimized, 0 if not, and -1 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
@@ -4928,49 +4923,48 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 
     /* Check that the call node is an attribute access */
     if (meth->kind != Attribute_kind || meth->v.Attribute.ctx != Load) {
-        return -1;
+        return 0;
     }
 
     /* Check that the base object is not something that is imported */
     if (is_import_originated(c, meth->v.Attribute.value)) {
-        return -1;
+        return 0;
     }
 
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
     if (argsl + kwdsl + (kwdsl != 0) >= STACK_USE_GUIDELINE) {
-        return -1;
+        return 0;
     }
     /* Check that there are no *varargs types of arguments. */
     for (i = 0; i < argsl; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         if (elt->kind == Starred_kind) {
-            return -1;
+            return 0;
         }
     }
 
     for (i = 0; i < kwdsl; i++) {
         keyword_ty kw = asdl_seq_GET(kwds, i);
         if (kw->arg == NULL) {
-            return -1;
+            return 0;
         }
     }
     /* Alright, we can optimize the code. */
-    _VISIT(c, expr, meth->v.Attribute.value);
+    VISIT(c, expr, meth->v.Attribute.value);
     location loc = LOC(meth);
     loc = update_start_location_to_match_attr(c, loc, meth);
-    _ADDOP_NAME(c, loc, LOAD_METHOD, meth->v.Attribute.attr, names);
-    _VISIT_SEQ(c, expr, e->v.Call.args);
+    ADDOP_NAME(c, loc, LOAD_METHOD, meth->v.Attribute.attr, names);
+    VISIT_SEQ(c, expr, e->v.Call.args);
 
     if (kwdsl) {
-        _VISIT_SEQ(c, keyword, kwds);
-        if (!compiler_call_simple_kw_helper(c, loc, kwds, kwdsl)) {
-            return 0;
-        };
+        VISIT_SEQ(c, keyword, kwds);
+        RETURN_IF_ERROR(
+            compiler_call_simple_kw_helper(c, loc, kwds, kwdsl));
     }
     loc = update_start_location_to_match_attr(c, LOC(e), meth);
-    _ADDOP_I(c, loc, CALL, argsl + kwdsl);
+    ADDOP_I(c, loc, CALL, argsl + kwdsl);
     return 1;
 }
 
@@ -5003,11 +4997,11 @@ compiler_call(struct compiler *c, expr_ty e)
 {
     RETURN_IF_ERROR(validate_keywords(c, e->v.Call.keywords));
     int ret = maybe_optimize_method_call(c, e);
+    if (ret < 0) {
+        return ERROR;
+    }
     if (ret == 1) {
         return SUCCESS;
-    }
-    if (ret == 0) {
-        return ERROR;
     }
     RETURN_IF_ERROR(check_caller(c, e->v.Call.func));
     location loc = LOC(e->v.Call.func);
@@ -5137,7 +5131,6 @@ compiler_subkwargs(struct compiler *c, location loc,
 
 /* Used by compiler_call_helper and maybe_optimize_method_call to emit
  * KW_NAMES before CALL.
- * Returns 1 on success, 0 on error.
  */
 static int
 compiler_call_simple_kw_helper(struct compiler *c, location loc,
@@ -5146,7 +5139,7 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
     PyObject *names;
     names = PyTuple_New(nkwelts);
     if (names == NULL) {
-        return 0;
+        return ERROR;
     }
     for (int i = 0; i < nkwelts; i++) {
         keyword_ty kw = asdl_seq_GET(keywords, i);
@@ -5154,11 +5147,11 @@ compiler_call_simple_kw_helper(struct compiler *c, location loc,
     }
     Py_ssize_t arg = compiler_add_const(c, names);
     if (arg < 0) {
-        return 0;
+        return ERROR;
     }
     Py_DECREF(names);
-    _ADDOP_I(c, loc, KW_NAMES, arg);
-    return 1;
+    ADDOP_I(c, loc, KW_NAMES, arg);
+    return SUCCESS;
 }
 
 
@@ -5200,9 +5193,8 @@ compiler_call_helper(struct compiler *c, location loc,
     }
     if (nkwelts) {
         VISIT_SEQ(c, keyword, keywords);
-        if (!compiler_call_simple_kw_helper(c, loc, keywords, nkwelts)) {
-            return ERROR;
-        };
+        RETURN_IF_ERROR(
+            compiler_call_simple_kw_helper(c, loc, keywords, nkwelts));
     }
     ADDOP_I(c, loc, CALL, n + nelts + nkwelts);
     return SUCCESS;
