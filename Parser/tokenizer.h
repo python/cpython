@@ -92,6 +92,7 @@ struct tok_state {
                              NEWLINE token after it. */
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
+    int report_warnings;
 #ifdef Py_DEBUG
     int debug;
 #endif

@@ -292,6 +292,7 @@ Module functions
        By default (``0``), type detection is disabled.
 
    :param isolation_level:
+       Control legacy transaction handling behaviour.
        See :attr:`Connection.isolation_level` and
        :ref:`sqlite3-transaction-control-isolation-level` for more information.
        Can be ``"DEFERRED"`` (default), ``"EXCLUSIVE"`` or ``"IMMEDIATE"``;
@@ -325,6 +326,7 @@ Module functions
        enabling various :ref:`sqlite3-uri-tricks`.
 
    :param autocommit:
+       Control :pep:`249` transaction handling behaviour.
        See :attr:`Connection.autocommit` and
        :ref:`sqlite3-transaction-control-autocommit` for more information.
        *autocommit* currently defaults to
@@ -2468,9 +2470,9 @@ which implies :pep:`249`-compliant transaction control.
 This means:
 
 * :mod:`!sqlite3` ensures that a transaction is always open,
-  so :meth:`Connection.commit` and :meth:`Connection.rollback`
-  will implicitly open a new transaction immediately after closing
-  the pending one.
+  so :func:`connect`, :meth:`Connection.commit`, and :meth:`Connection.rollback`
+  will implicitly open a new transaction
+  (immediately after closing the pending one, for the latter two).
   :mod:`!sqlite3` uses ``BEGIN DEFERRED`` statements when opening transactions.
 * Transactions should be committed explicitly using :meth:`!commit`.
 * Transactions should be rolled back explicitly using :meth:`!rollback`.
