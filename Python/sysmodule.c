@@ -2211,11 +2211,7 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     PyObject *r = PyFunction_GetModule(f->f_funcobj);
     if (!r) {
         PyErr_Clear();
-        r = PyDict_GetItemWithError(f->f_globals, &_Py_ID(__name__));
-        if (!r) {
-            PyErr_Clear();
-            r = Py_None;
-        }
+        r = Py_None;
     }
     return Py_NewRef(r);
 }
