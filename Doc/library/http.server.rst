@@ -485,6 +485,9 @@ to be served.
 Earlier versions of Python did not scrub control characters from the
 log messages emitted to stderr from ``python -m http.server`` or the
 default :class:`BaseHTTPRequestHandler` ``.log_message``
-implementation. This could allow to remote clients connecting to your
+implementation. This could allow remote clients connecting to your
 server to send nefarious control codes to your terminal.
+
+.. versionadded:: 3.7.16
+    scrubbing control characters from log messages
 
