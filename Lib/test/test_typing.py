@@ -7767,7 +7767,7 @@ class DataclassTransformTests(BaseTestCase):
                 return super().__new__(cls, name, bases, namespace)
 
         Decorated = dataclass_transform(
-            order_default=True, field_specifiers=(Field,)
+            order_default=True, frozen_default=True, field_specifiers=(Field,)
         )(ModelMeta)
 
         class ModelBase(metaclass=Decorated): ...
@@ -7782,7 +7782,7 @@ class DataclassTransformTests(BaseTestCase):
                 "eq_default": True,
                 "order_default": True,
                 "kw_only_default": False,
-                "frozen_default": False,
+                "frozen_default": True,
                 "field_specifiers": (Field,),
                 "kwargs": {},
             }
