@@ -1636,7 +1636,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use _ADDOP_LOAD_CONST_NEW */ \
+    assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
     if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return ERROR; \
@@ -1718,13 +1718,6 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 #define _ADDOP(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) \
         return 0; \
-}
-
-#define _ADDOP_IN_SCOPE(C, LOC, OP) { \
-    if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
-        compiler_exit_scope(c); \
-        return 0; \
-    } \
 }
 
 #define _ADDOP_LOAD_CONST(C, LOC, O) { \
@@ -3037,67 +3030,60 @@ compiler_jump_if(struct compiler *c, location loc,
             next2 = new_next2;
         }
         for (i = 0; i < n; ++i) {
-            if (!compiler_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, i), next2, cond2)) {
-                return 0;
-            }
+            RETURN_IF_ERROR(
+                compiler_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, i), next2, cond2));
         }
-        if (!compiler_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, n), next, cond)) {
-            return 0;
-        }
+        RETURN_IF_ERROR(
+            compiler_jump_if(c, loc, (expr_ty)asdl_seq_GET(s, n), next, cond));
         if (!SAME_LABEL(next2, next)) {
             USE_LABEL(c, next2);
         }
-        return 1;
+        return SUCCESS;
     }
     case IfExp_kind: {
         NEW_JUMP_TARGET_LABEL(c, end);
         NEW_JUMP_TARGET_LABEL(c, next2);
-        if (!compiler_jump_if(c, loc, e->v.IfExp.test, next2, 0)) {
-            return 0;
-        }
-        if (!compiler_jump_if(c, loc, e->v.IfExp.body, next, cond)) {
-            return 0;
-        }
-        _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+        RETURN_IF_ERROR(
+            compiler_jump_if(c, loc, e->v.IfExp.test, next2, 0));
+        RETURN_IF_ERROR(
+            compiler_jump_if(c, loc, e->v.IfExp.body, next, cond));
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
         USE_LABEL(c, next2);
-        if (!compiler_jump_if(c, loc, e->v.IfExp.orelse, next, cond)) {
-            return 0;
-        }
+        RETURN_IF_ERROR(
+            compiler_jump_if(c, loc, e->v.IfExp.orelse, next, cond));
 
         USE_LABEL(c, end);
-        return 1;
+        return SUCCESS;
     }
     case Compare_kind: {
         Py_ssize_t n = asdl_seq_LEN(e->v.Compare.ops) - 1;
         if (n > 0) {
-            if (check_compare(c, e) < 0) {
-                return 0;
-            }
+            RETURN_IF_ERROR(check_compare(c, e));
             NEW_JUMP_TARGET_LABEL(c, cleanup);
-            _VISIT(c, expr, e->v.Compare.left);
+            VISIT(c, expr, e->v.Compare.left);
             for (Py_ssize_t i = 0; i < n; i++) {
-                _VISIT(c, expr,
+                VISIT(c, expr,
                     (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
-                _ADDOP_I(c, LOC(e), SWAP, 2);
-                _ADDOP_I(c, LOC(e), COPY, 2);
-                _ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, i));
-                _ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_FALSE, cleanup);
+                ADDOP_I(c, LOC(e), SWAP, 2);
+                ADDOP_I(c, LOC(e), COPY, 2);
+                ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, i));
+                ADDOP_JUMP(c, LOC(e), POP_JUMP_IF_FALSE, cleanup);
             }
-            _VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
-            _ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
-            _ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
+            ADDOP_COMPARE(c, LOC(e), asdl_seq_GET(e->v.Compare.ops, n));
+            ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
             NEW_JUMP_TARGET_LABEL(c, end);
-            _ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
+            ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
             USE_LABEL(c, cleanup);
-            _ADDOP(c, LOC(e), POP_TOP);
+            ADDOP(c, LOC(e), POP_TOP);
             if (!cond) {
-                _ADDOP_JUMP(c, NO_LOCATION, JUMP, next);
+                ADDOP_JUMP(c, NO_LOCATION, JUMP, next);
             }
 
             USE_LABEL(c, end);
-            return 1;
+            return SUCCESS;
         }
         /* fallback to general implementation */
         break;
@@ -3108,9 +3094,9 @@ compiler_jump_if(struct compiler *c, location loc,
     }
 
     /* general implementation */
-    _VISIT(c, expr, e);
-    _ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
-    return 1;
+    VISIT(c, expr, e);
+    ADDOP_JUMP(c, LOC(e), cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    return SUCCESS;
 }
 
 static int
@@ -3120,9 +3106,9 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     NEW_JUMP_TARGET_LABEL(c, end);
     NEW_JUMP_TARGET_LABEL(c, next);
 
-    if (!compiler_jump_if(c, LOC(e), e->v.IfExp.test, next, 0)) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(
+        compiler_jump_if(c, LOC(e), e->v.IfExp.test, next, 0));
+
     VISIT(c, expr, e->v.IfExp.body);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
@@ -3202,9 +3188,9 @@ compiler_if(struct compiler *c, stmt_ty s)
     else {
         next = end;
     }
-    if (!compiler_jump_if(c, LOC(s), s->v.If.test, next, 0)) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(
+        compiler_jump_if(c, LOC(s), s->v.If.test, next, 0));
+
     VISIT_SEQ(c, stmt, s->v.If.body);
     if (asdl_seq_LEN(s->v.If.orelse)) {
         ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
@@ -3314,15 +3300,11 @@ compiler_while(struct compiler *c, stmt_ty s)
     USE_LABEL(c, loop);
 
     RETURN_IF_ERROR(compiler_push_fblock(c, LOC(s), WHILE_LOOP, loop, end, NULL));
-    if (!compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0)) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, anchor, 0));
 
     USE_LABEL(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
-    if (!compiler_jump_if(c, LOC(s), s->v.While.test, body, 1)) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.While.test, body, 1));
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
@@ -4113,9 +4095,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         return SUCCESS;
     }
     NEW_JUMP_TARGET_LABEL(c, end);
-    if (!compiler_jump_if(c, LOC(s), s->v.Assert.test, end, 1)) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_jump_if(c, LOC(s), s->v.Assert.test, end, 1));
     ADDOP(c, LOC(s), LOAD_ASSERTION_ERROR);
     if (s->v.Assert.msg) {
         VISIT(c, expr, s->v.Assert.msg);
@@ -4740,9 +4720,7 @@ compiler_compare(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     Py_ssize_t i, n;
 
-    if (check_compare(c, e) < 0) {
-        return 0;
-    }
+    RETURN_IF_ERROR(check_compare(c, e));
     VISIT(c, expr, e->v.Compare.left);
     assert(asdl_seq_LEN(e->v.Compare.ops) > 0);
     n = asdl_seq_LEN(e->v.Compare.ops) - 1;
@@ -5378,9 +5356,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, loc, e, if_cleanup, 0)) {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(compiler_jump_if(c, loc, e, if_cleanup, 0));
     }
 
     if (++gen_index < asdl_seq_LEN(generators)) {
@@ -5477,9 +5453,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
     Py_ssize_t n = asdl_seq_LEN(gen->ifs);
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(gen->ifs, i);
-        if (!compiler_jump_if(c, loc, e, if_cleanup, 0)) {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(compiler_jump_if(c, loc, e, if_cleanup, 0));
     }
 
     depth++;
@@ -7213,9 +7187,9 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         // NOTE: Returning macros are safe again.
         if (m->guard) {
             RETURN_IF_ERROR(ensure_fail_pop(c, pc, 0));
-            if (!compiler_jump_if(c, LOC(m->pattern), m->guard, pc->fail_pop[0], 0)) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(
+                compiler_jump_if(c, LOC(m->pattern), m->guard,
+                                 pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
@@ -7241,9 +7215,8 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, LOC(m->pattern), NOP);
         }
         if (m->guard) {
-            if (!compiler_jump_if(c, LOC(m->pattern), m->guard, end, 0)) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(
+                compiler_jump_if(c, LOC(m->pattern), m->guard, end, 0));
         }
         VISIT_SEQ(c, stmt, m->body);
     }
