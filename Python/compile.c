@@ -2172,8 +2172,8 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             ADDOP(c, *ploc, POP_EXCEPT);
             if (info->fb_datum) {
                 ADDOP_LOAD_CONST(c, *ploc, Py_None);
-                compiler_nameop(c, *ploc, info->fb_datum, Store);
-                compiler_nameop(c, *ploc, info->fb_datum, Del);
+                RETURN_IF_ERROR(compiler_nameop(c, *ploc, info->fb_datum, Store));
+                RETURN_IF_ERROR(compiler_nameop(c, *ploc, info->fb_datum, Del));
             }
             return SUCCESS;
         }
@@ -2250,9 +2250,7 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
             st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
             VISIT(c, expr, st->v.Expr.value);
-            if (!compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store)) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
     for (; i < asdl_seq_LEN(stmts); i++) {
@@ -2798,7 +2796,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_DECREF(co);
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
-    return compiler_nameop(c, loc, name, Store) ? SUCCESS : ERROR;
+    return compiler_nameop(c, loc, name, Store);
 }
 
 static int
@@ -2836,18 +2834,18 @@ compiler_class(struct compiler *c, stmt_ty s)
         /* use the class name for name mangling */
         Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         /* load (global) __name__ ... */
-        if (!compiler_nameop(c, loc, &_Py_ID(__name__), Load)) {
+        if (compiler_nameop(c, loc, &_Py_ID(__name__), Load) < 0) {
             compiler_exit_scope(c);
             return ERROR;
         }
         /* ... and store it as __module__ */
-        if (!compiler_nameop(c, loc, &_Py_ID(__module__), Store)) {
+        if (compiler_nameop(c, loc, &_Py_ID(__module__), Store) < 0) {
             compiler_exit_scope(c);
             return ERROR;
         }
         assert(c->u->u_qualname);
         ADDOP_LOAD_CONST(c, loc, c->u->u_qualname);
-        if (!compiler_nameop(c, loc, &_Py_ID(__qualname__), Store)) {
+        if (compiler_nameop(c, loc, &_Py_ID(__qualname__), Store) < 0) {
             compiler_exit_scope(c);
             return ERROR;
         }
@@ -2868,7 +2866,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             assert(i == 0);
             ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
             ADDOP_I(c, NO_LOCATION, COPY, 1);
-            if (!compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store)) {
+            if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store) < 0) {
                 compiler_exit_scope(c);
                 return ERROR;
             }
@@ -2912,10 +2910,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
 
     /* 7. store into <name> */
-    if (!compiler_nameop(c, loc, s->v.ClassDef.name, Store)) {
-        return ERROR;
-    }
-    return SUCCESS;
+    return compiler_nameop(c, loc, s->v.ClassDef.name, Store);
 }
 
 /* Return 0 if the expression is a constant value except named singletons.
@@ -3612,7 +3607,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             NEW_JUMP_TARGET_LABEL(c, cleanup_end);
             NEW_JUMP_TARGET_LABEL(c, cleanup_body);
 
-            compiler_nameop(c, loc, handler->v.ExceptHandler.name, Store);
+            RETURN_IF_ERROR(
+                compiler_nameop(c, loc, handler->v.ExceptHandler.name, Store));
 
             /*
               try:
@@ -3641,8 +3637,10 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_EXCEPT);
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            RETURN_IF_ERROR(
+                compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store));
+            RETURN_IF_ERROR(
+                compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del));
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
             /* except: */
@@ -3650,8 +3648,10 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             /* name = None; del name; # artificial */
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            RETURN_IF_ERROR(
+                compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store));
+            RETURN_IF_ERROR(
+                compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del));
 
             ADDOP_I(c, NO_LOCATION, RERAISE, 1);
         }
@@ -3806,7 +3806,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         NEW_JUMP_TARGET_LABEL(c, cleanup_body);
 
         if (handler->v.ExceptHandler.name) {
-            compiler_nameop(c, loc, handler->v.ExceptHandler.name, Store);
+            RETURN_IF_ERROR(
+                compiler_nameop(c, loc, handler->v.ExceptHandler.name, Store));
         }
         else {
             ADDOP(c, loc, POP_TOP);  // match
@@ -3837,8 +3838,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         ADDOP(c, NO_LOCATION, POP_BLOCK);
         if (handler->v.ExceptHandler.name) {
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            RETURN_IF_ERROR(
+                compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store));
+            RETURN_IF_ERROR(
+                compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del));
         }
         ADDOP_JUMP(c, NO_LOCATION, JUMP, except);
 
@@ -3848,8 +3851,10 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* name = None; del name; # artificial */
         if (handler->v.ExceptHandler.name) {
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            RETURN_IF_ERROR(
+                compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store));
+            RETURN_IF_ERROR(
+                compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del));
         }
 
         /* add exception raised to the res list */
@@ -3950,13 +3955,11 @@ compiler_import_as(struct compiler *c, location loc,
             ADDOP_I(c, loc, SWAP, 2);
             ADDOP(c, loc, POP_TOP);
         }
-        if (!compiler_nameop(c, loc, asname, Store)) {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(compiler_nameop(c, loc, asname, Store));
         ADDOP(c, loc, POP_TOP);
         return SUCCESS;
     }
-    return compiler_nameop(c, loc, asname, Store) ? SUCCESS : ERROR;
+    return compiler_nameop(c, loc, asname, Store);
 }
 
 static int
@@ -4001,9 +4004,7 @@ compiler_import(struct compiler *c, stmt_ty s)
             if (dot != -1) {
                 Py_DECREF(tmp);
             }
-            if (!r) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(r);
         }
     }
     return SUCCESS;
@@ -4061,9 +4062,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
             store_name = alias->asname;
         }
 
-        if (!compiler_nameop(c, LOC(s), store_name, Store)) {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(compiler_nameop(c, LOC(s), store_name, Store));
     }
     /* remove imported module */
     ADDOP(c, LOC(s), POP_TOP);
@@ -4318,12 +4317,13 @@ compiler_nameop(struct compiler *c, location loc,
            !_PyUnicode_EqualToASCIIString(name, "False"));
 
     if (forbidden_name(c, loc, name, ctx)) {
-        return 0;
+        return ERROR;
     }
 
     mangled = _Py_Mangle(c->u->u_private, name);
-    if (!mangled)
-        return 0;
+    if (!mangled) {
+        return ERROR;
+    }
 
     op = 0;
     optype = OP_NAME;
@@ -4372,8 +4372,8 @@ compiler_nameop(struct compiler *c, location loc,
         case Store: op = STORE_FAST; break;
         case Del: op = DELETE_FAST; break;
         }
-        _ADDOP_N(c, loc, op, mangled, varnames);
-        return 1;
+        ADDOP_N(c, loc, op, mangled, varnames);
+        return SUCCESS;
     case OP_GLOBAL:
         switch (ctx) {
         case Load: op = LOAD_GLOBAL; break;
@@ -4394,12 +4394,12 @@ compiler_nameop(struct compiler *c, location loc,
     arg = dict_add_o(dict, mangled);
     Py_DECREF(mangled);
     if (arg < 0) {
-        return 0;
+        return ERROR;
     }
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc) == SUCCESS ? 1 : 0;
+    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc);
 }
 
 static int
@@ -6009,7 +6009,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     }
     case Name_kind:
-        return compiler_nameop(c, loc, e->v.Name.id, e->v.Name.ctx);
+        return compiler_nameop(c, loc, e->v.Name.id, e->v.Name.ctx) == SUCCESS ? 1 : 0;
     /* child nodes of List and Tuple will have expr_context set */
     case List_kind:
         return compiler_list(c, e) == SUCCESS ? 1 : 0;
@@ -6065,8 +6065,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         }
         break;
     case Name_kind:
-        if (!compiler_nameop(c, loc, e->v.Name.id, Load))
-            return ERROR;
+        RETURN_IF_ERROR(compiler_nameop(c, loc, e->v.Name.id, Load));
         break;
     default:
         PyErr_Format(PyExc_SystemError,
@@ -6102,7 +6101,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
         }
         break;
     case Name_kind:
-        return compiler_nameop(c, loc, e->v.Name.id, Store) ? SUCCESS : ERROR;
+        return compiler_nameop(c, loc, e->v.Name.id, Store);
     default:
         Py_UNREACHABLE();
     }
@@ -7168,7 +7167,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
         for (Py_ssize_t n = 0; n < nstores; n++) {
             PyObject *name = PyList_GET_ITEM(pc->stores, n);
-            if (!compiler_nameop(c, LOC(m->pattern), name, Store)) {
+            if (compiler_nameop(c, LOC(m->pattern), name, Store) < 0) {
                 Py_DECREF(pc->stores);
                 return ERROR;
             }
