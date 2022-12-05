@@ -2,6 +2,46 @@
 Configure Python
 ****************
 
+Build Requirements
+==================
+
+Features required to build CPython:
+
+* A `C11 <https://en.cppreference.com/w/c/11>`_ compiler. `Optional C11
+  features
+  <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
+  are not required.
+
+* Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_ floating
+  point numbers and `floating point Not-a-Number (NaN)
+  <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
+
+* Support for threads.
+
+* OpenSSL 1.1.1 or newer for the :mod:`ssl` and :mod:`hashlib` modules.
+
+* On Windows, Microsoft Visual Studio 2017 or later is required.
+
+.. versionchanged:: 3.11
+   C11 compiler, IEEE 754 and NaN support are now required.
+
+.. versionchanged:: 3.10
+   OpenSSL 1.1.1 is now required.
+
+.. versionchanged:: 3.7
+   Thread support and OpenSSL 1.0.2 are now required.
+
+.. versionchanged:: 3.6
+   Selected C99 features are now required, like ``<stdint.h>`` and ``static
+   inline`` functions.
+
+.. versionchanged:: 3.5
+   On Windows, Visual Studio 2015 or later is required.
+
+See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
+support".
+
+
 .. _configure-options:
 
 Configure Options
@@ -92,6 +132,12 @@ General Options
    Don't define the ``PY_COERCE_C_LOCALE`` macro.
 
    See :envvar:`PYTHONCOERCECLOCALE` and the :pep:`538`.
+
+.. cmdoption:: --without-freelists
+
+   Disable all freelists except the empty tuple singleton.
+
+   .. versionadded:: 3.11
 
 .. cmdoption:: --with-platlibdir=DIRNAME
 
