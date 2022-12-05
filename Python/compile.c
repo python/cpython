@@ -4590,15 +4590,16 @@ compiler_list(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     asdl_expr_seq *elts = e->v.List.elts;
     if (e->v.List.ctx == Store) {
-        return assignment_helper(c, loc, elts) == SUCCESS ? 1 : 0;
+        return assignment_helper(c, loc, elts);
     }
     else if (e->v.List.ctx == Load) {
         return starunpack_helper(c, loc, elts, 0,
-                                 BUILD_LIST, LIST_APPEND, LIST_EXTEND, 0) == SUCCESS ? 1 : 0;
+                                 BUILD_LIST, LIST_APPEND, LIST_EXTEND, 0);
     }
-    else
-        _VISIT_SEQ(c, expr, elts);
-    return 1;
+    else {
+        VISIT_SEQ(c, expr, elts);
+    }
+    return SUCCESS;
 }
 
 static int
@@ -4607,15 +4608,16 @@ compiler_tuple(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     asdl_expr_seq *elts = e->v.Tuple.elts;
     if (e->v.Tuple.ctx == Store) {
-        return assignment_helper(c, loc, elts) == SUCCESS ? 1 : 0;
+        return assignment_helper(c, loc, elts);
     }
     else if (e->v.Tuple.ctx == Load) {
         return starunpack_helper(c, loc, elts, 0,
-                                 BUILD_LIST, LIST_APPEND, LIST_EXTEND, 1) == SUCCESS ? 1 : 0;
+                                 BUILD_LIST, LIST_APPEND, LIST_EXTEND, 1);
     }
-    else
-        _VISIT_SEQ(c, expr, elts);
-    return 1;
+    else {
+        VISIT_SEQ(c, expr, elts);
+    }
+    return SUCCESS;
 }
 
 static int
@@ -4623,7 +4625,7 @@ compiler_set(struct compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.Set.elts, 0,
-                             BUILD_SET, SET_ADD, SET_UPDATE, 0) == SUCCESS ? 1 : 0;
+                             BUILD_SET, SET_ADD, SET_UPDATE, 0);
 }
 
 static int
@@ -4647,34 +4649,34 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
     location loc = LOC(e);
     if (n > 1 && !big && are_all_items_const(e->v.Dict.keys, begin, end)) {
         for (i = begin; i < end; i++) {
-            _VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
         }
         keys = PyTuple_New(n);
         if (keys == NULL) {
-            return 0;
+            return SUCCESS;
         }
         for (i = begin; i < end; i++) {
             key = ((expr_ty)asdl_seq_GET(e->v.Dict.keys, i))->v.Constant.value;
             PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
         }
-        _ADDOP_LOAD_CONST_NEW(c, loc, keys);
-        _ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
-        return 1;
+        ADDOP_LOAD_CONST_NEW(c, loc, keys);
+        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
+        return SUCCESS;
     }
     if (big) {
-        _ADDOP_I(c, loc, BUILD_MAP, 0);
+        ADDOP_I(c, loc, BUILD_MAP, 0);
     }
     for (i = begin; i < end; i++) {
-        _VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
-        _VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
         if (big) {
-            _ADDOP_I(c, loc, MAP_ADD, 1);
+            ADDOP_I(c, loc, MAP_ADD, 1);
         }
     }
     if (!big) {
-        _ADDOP_I(c, loc, BUILD_MAP, n);
+        ADDOP_I(c, loc, BUILD_MAP, n);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -4691,29 +4693,25 @@ compiler_dict(struct compiler *c, expr_ty e)
         is_unpacking = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i) == NULL;
         if (is_unpacking) {
             if (elements) {
-                if (!compiler_subdict(c, e, i - elements, i)) {
-                    return 0;
-                }
+                RETURN_IF_ERROR(compiler_subdict(c, e, i - elements, i));
                 if (have_dict) {
-                    _ADDOP_I(c, loc, DICT_UPDATE, 1);
+                    ADDOP_I(c, loc, DICT_UPDATE, 1);
                 }
                 have_dict = 1;
                 elements = 0;
             }
             if (have_dict == 0) {
-                _ADDOP_I(c, loc, BUILD_MAP, 0);
+                ADDOP_I(c, loc, BUILD_MAP, 0);
                 have_dict = 1;
             }
-            _VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
-            _ADDOP_I(c, loc, DICT_UPDATE, 1);
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+            ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
         else {
             if (elements*2 > STACK_USE_GUIDELINE) {
-                if (!compiler_subdict(c, e, i - elements, i + 1)) {
-                    return 0;
-                }
+                RETURN_IF_ERROR(compiler_subdict(c, e, i - elements, i + 1));
                 if (have_dict) {
-                    _ADDOP_I(c, loc, DICT_UPDATE, 1);
+                    ADDOP_I(c, loc, DICT_UPDATE, 1);
                 }
                 have_dict = 1;
                 elements = 0;
@@ -4724,18 +4722,16 @@ compiler_dict(struct compiler *c, expr_ty e)
         }
     }
     if (elements) {
-        if (!compiler_subdict(c, e, n - elements, n)) {
-            return 0;
-        }
+        RETURN_IF_ERROR(compiler_subdict(c, e, n - elements, n));
         if (have_dict) {
-            _ADDOP_I(c, loc, DICT_UPDATE, 1);
+            ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
         have_dict = 1;
     }
     if (!have_dict) {
-        _ADDOP_I(c, loc, BUILD_MAP, 0);
+        ADDOP_I(c, loc, BUILD_MAP, 0);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -5940,9 +5936,9 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case IfExp_kind:
         return compiler_ifexp(c, e) == SUCCESS ? 1 : 0;
     case Dict_kind:
-        return compiler_dict(c, e);
+        return compiler_dict(c, e) == SUCCESS ? 1 : 0;
     case Set_kind:
-        return compiler_set(c, e);
+        return compiler_set(c, e) == SUCCESS ? 1 : 0;
     case GeneratorExp_kind:
         return compiler_genexp(c, e);
     case ListComp_kind:
@@ -6049,9 +6045,9 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_nameop(c, loc, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */
     case List_kind:
-        return compiler_list(c, e);
+        return compiler_list(c, e) == SUCCESS ? 1 : 0;
     case Tuple_kind:
-        return compiler_tuple(c, e);
+        return compiler_tuple(c, e) == SUCCESS ? 1 : 0;
     }
     return 1;
 }
