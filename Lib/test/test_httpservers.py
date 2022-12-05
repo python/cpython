@@ -1000,6 +1000,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
             log_message(self.handler, '/\033bar\000\033')
             log_message(self.handler, '/spam %s.', 'a')
             log_message(self.handler, '/spam %s.', '\033\x7f\x9f\xa0beans')
+            log_message(self.handler, '"GET /foo\\b"ar\007 HTTP/1.0"')
         stderr = fake_stderr.getvalue()
         self.assertNotIn('\033', stderr)  # non-printable chars are caught.
         self.assertNotIn('\000', stderr)  # non-printable chars are caught.
@@ -1008,6 +1009,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertIn(r'/\x1bbar\x00\x1b', lines[1])
         self.assertIn('/spam a.', lines[2])
         self.assertIn('/spam \\x1b\\x7f\\x9f\xa0beans.', lines[3])
+        self.assertIn(r'"GET /foo\\b"ar\x07 HTTP/1.0"', lines[4])
 
     def test_http_1_1(self):
         result = self.send_typical_request(b'GET / HTTP/1.1\r\n\r\n')
