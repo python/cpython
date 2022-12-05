@@ -806,7 +806,7 @@ Utilities and Decorators
 
    .. versionchanged:: 3.11.1
 
-      Prior to 3.11.1 ``auto()`` had to be the only thing
+      In prior versions, ``auto()`` had to be the only thing
       on the assignment line to work properly.
 
    ``_generate_next_value_`` can be overridden to customize the values used by
