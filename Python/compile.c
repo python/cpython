@@ -2841,8 +2841,7 @@ check_compare(struct compiler *c, expr_ty e)
                 const char *msg = (op == Is)
                         ? "\"is\" with a literal. Did you mean \"==\"?"
                         : "\"is not\" with a literal. Did you mean \"!=\"?";
-                int ret = compiler_warn(c, LOC(e), msg);
-                return ret == 0 ? ERROR : SUCCESS;
+                return compiler_warn(c, LOC(e), msg);
             }
         }
         left = right;
@@ -3968,11 +3967,9 @@ compiler_assert(struct compiler *c, stmt_ty s)
          PyTuple_Check(s->v.Assert.test->v.Constant.value) &&
          PyTuple_Size(s->v.Assert.test->v.Constant.value) > 0))
     {
-        if (!compiler_warn(c, LOC(s), "assertion is always true, "
-                                      "perhaps remove parentheses?"))
-        {
-            return ERROR;
-        }
+        RETURN_IF_ERROR(
+            compiler_warn(c, LOC(s), "assertion is always true, "
+                                     "perhaps remove parentheses?"));
     }
     if (c->c_optimize) {
         return SUCCESS;
@@ -4679,10 +4676,9 @@ check_caller(struct compiler *c, expr_ty e)
     case JoinedStr_kind:
     case FormattedValue_kind: {
         location loc = LOC(e);
-        int ret = compiler_warn(c, loc, "'%.200s' object is not callable; "
-                                        "perhaps you missed a comma?",
-                                        infer_type(e)->tp_name);
-        return ret == 0 ? ERROR : SUCCESS;
+        return compiler_warn(c, loc, "'%.200s' object is not callable; "
+                                     "perhaps you missed a comma?",
+                                     infer_type(e)->tp_name);
     }
     default:
         return SUCCESS;
@@ -4709,10 +4705,9 @@ check_subscripter(struct compiler *c, expr_ty e)
     case GeneratorExp_kind:
     case Lambda_kind: {
         location loc = LOC(e);
-        int ret = compiler_warn(c, loc, "'%.200s' object is not subscriptable; "
-                                        "perhaps you missed a comma?",
-                                        infer_type(e)->tp_name);
-        return ret == 0 ? ERROR : SUCCESS;
+        return compiler_warn(c, loc, "'%.200s' object is not subscriptable; "
+                                     "perhaps you missed a comma?",
+                                     infer_type(e)->tp_name);
     }
     default:
         return SUCCESS;
@@ -4744,12 +4739,11 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
     case JoinedStr_kind:
     case FormattedValue_kind: {
         location loc = LOC(e);
-        int ret = compiler_warn(c, loc, "%.200s indices must be integers "
-                                        "or slices, not %.200s; "
-                                        "perhaps you missed a comma?",
-                                        infer_type(e)->tp_name,
-                                        index_type->tp_name);
-        return ret == 0 ? ERROR : SUCCESS;
+        return compiler_warn(c, loc, "%.200s indices must be integers "
+                                     "or slices, not %.200s; "
+                                     "perhaps you missed a comma?",
+                                     infer_type(e)->tp_name,
+                                     index_type->tp_name);
     }
     default:
         return SUCCESS;
@@ -6155,7 +6149,7 @@ compiler_warn(struct compiler *c, location loc,
     PyObject *msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (msg == NULL) {
-        return 0;
+        return ERROR;
     }
     if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
                                  loc.lineno, NULL, NULL) < 0)
@@ -6168,10 +6162,10 @@ compiler_warn(struct compiler *c, location loc,
             compiler_error(c, loc, PyUnicode_AsUTF8(msg));
         }
         Py_DECREF(msg);
-        return 0;
+        return ERROR;
     }
     Py_DECREF(msg);
-    return 1;
+    return SUCCESS;
 }
 
 static int
