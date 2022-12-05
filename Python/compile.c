@@ -2007,9 +2007,8 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             /* This POP_BLOCK gets the line number of the unwinding statement */
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
-                if (compiler_push_fblock(c, *ploc, POP_VALUE, NO_LABEL, NO_LABEL, NULL) < 0) {
-                    return ERROR;
-                }
+                RETURN_IF_ERROR(
+                    compiler_push_fblock(c, *ploc, POP_VALUE, NO_LABEL, NO_LABEL, NULL));
             }
             /* Emit the finally block */
             VISIT_SEQ(c, stmt, info->fb_datum);
@@ -2041,9 +2040,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
-            if (compiler_call_exit_with_nones(c, *ploc) < 0) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(compiler_call_exit_with_nones(c, *ploc));
             if (info->fb_type == ASYNC_WITH) {
                 ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
                 ADDOP_LOAD_CONST(c, *ploc, Py_None);
@@ -2093,8 +2090,8 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
     }
     struct fblockinfo *top = &c->u->u_fblock[c->u->u_nfblocks-1];
     if (top->fb_type == EXCEPTION_GROUP_HANDLER) {
-        return compiler_error(c, *ploc,
-            "'break', 'continue' and 'return' cannot appear in an except* block");
+        return compiler_error(
+            c, *ploc, "'break', 'continue' and 'return' cannot appear in an except* block");
     }
     if (loop != NULL && (top->fb_type == WHILE_LOOP || top->fb_type == FOR_LOOP)) {
         *loop = top;
@@ -2353,7 +2350,9 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
                     goto error;
                 }
             }
-            RETURN_IF_ERROR(compiler_visit_expr(c, default_));
+            if (compiler_visit_expr(c, default_) < 0) {
+                goto error;
+            }
         }
     }
     if (keys != NULL) {
@@ -2445,25 +2444,29 @@ compiler_visit_annotations(struct compiler *c, location loc,
        */
     Py_ssize_t annotations_len = 0;
 
-    if (compiler_visit_argannotations(c, args->args, &annotations_len, loc) < 0)
-        return ERROR;
-    if (compiler_visit_argannotations(c, args->posonlyargs, &annotations_len, loc) < 0)
-        return ERROR;
-    if (args->vararg && args->vararg->annotation &&
-        compiler_visit_argannotation(c, args->vararg->arg,
-                                     args->vararg->annotation, &annotations_len, loc) < 0)
-        return ERROR;
-    if (compiler_visit_argannotations(c, args->kwonlyargs, &annotations_len, loc) < 0)
-        return ERROR;
-    if (args->kwarg && args->kwarg->annotation &&
-        compiler_visit_argannotation(c, args->kwarg->arg,
-                                     args->kwarg->annotation, &annotations_len, loc) < 0)
-        return ERROR;
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->args, &annotations_len, loc));
 
-    if (compiler_visit_argannotation(c, &_Py_ID(return), returns,
-                                     &annotations_len, loc) < 0) {
-        return ERROR;
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->posonlyargs, &annotations_len, loc));
+
+    if (args->vararg && args->vararg->annotation) {
+        RETURN_IF_ERROR(
+            compiler_visit_argannotation(c, args->vararg->arg,
+                                         args->vararg->annotation, &annotations_len, loc));
     }
+
+    RETURN_IF_ERROR(
+        compiler_visit_argannotations(c, args->kwonlyargs, &annotations_len, loc));
+
+    if (args->kwarg && args->kwarg->annotation) {
+        RETURN_IF_ERROR(
+            compiler_visit_argannotation(c, args->kwarg->arg,
+                                         args->kwarg->annotation, &annotations_len, loc));
+    }
+
+    RETURN_IF_ERROR(
+        compiler_visit_argannotation(c, &_Py_ID(return), returns, &annotations_len, loc));
 
     if (annotations_len) {
         ADDOP_I(c, loc, BUILD_TUPLE, annotations_len);
@@ -2796,7 +2799,8 @@ compiler_class(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
 
     /* 7. store into <name> */
-    return compiler_nameop(c, loc, s->v.ClassDef.name, Store);
+    RETURN_IF_ERROR(compiler_nameop(c, loc, s->v.ClassDef.name, Store));
+    return SUCCESS;
 }
 
 /* Return false if the expression is a constant value except named singletons.
@@ -3865,9 +3869,7 @@ compiler_import(struct compiler *c, stmt_ty s)
 
         if (alias->asname) {
             r = compiler_import_as(c, loc, alias->name, alias->asname);
-            if (r == ERROR) {
-                return r;
-            }
+            RETURN_IF_ERROR(r);
         }
         else {
             identifier tmp = alias->name;
@@ -4857,7 +4859,8 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
-                return compiler_error(c, LOC(other), "keyword argument repeated: %U", key->arg);
+                compiler_error(c, LOC(other), "keyword argument repeated: %U", key->arg);
+                return ERROR;
             }
         }
     }
@@ -6498,7 +6501,8 @@ validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_
             identifier other = ((identifier)asdl_seq_GET(attrs, j));
             if (!PyUnicode_Compare(attr, other)) {
                 location loc = LOC((pattern_ty) asdl_seq_GET(patterns, j));
-                return compiler_error(c, loc, "attribute name repeated in class pattern: %U", attr);
+                compiler_error(c, loc, "attribute name repeated in class pattern: %U", attr);
+                return ERROR;
             }
         }
     }
@@ -6530,7 +6534,7 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     VISIT(c, expr, p->v.MatchClass.cls);
     PyObject *attr_names = PyTuple_New(nattrs);
-    if (!attr_names) {
+    if (attr_names == NULL) {
         return ERROR;
     }
     Py_ssize_t i;
@@ -6647,7 +6651,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
             compiler_error(c, LOC(p), e);
             goto error;
         }
-        RETURN_IF_ERROR(compiler_visit_expr(c, key));
+        if (compiler_visit_expr(c, key) < 0) {
+            goto error;
+        }
     }
 
     // all keys have been checked; there are no duplicates
@@ -6904,12 +6910,10 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p,
         ADDOP(c, LOC(p), POP_TOP);
     }
     else if (star_wildcard) {
-        RETURN_IF_ERROR(
-            pattern_helper_sequence_subscr(c, LOC(p), patterns, star, pc));
+        RETURN_IF_ERROR(pattern_helper_sequence_subscr(c, LOC(p), patterns, star, pc));
     }
     else {
-        RETURN_IF_ERROR(
-            pattern_helper_sequence_unpack(c, LOC(p), patterns, star, pc));
+        RETURN_IF_ERROR(pattern_helper_sequence_unpack(c, LOC(p), patterns, star, pc));
     }
     return SUCCESS;
 }
@@ -6982,7 +6986,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP_I(c, LOC(m->pattern), COPY, 1);
         }
         pc->stores = PyList_New(0);
-        if (!pc->stores) {
+        if (pc->stores == NULL) {
             return ERROR;
         }
         // Irrefutable cases must be either guarded, last, or both:
@@ -7009,9 +7013,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         // NOTE: Returning macros are safe again.
         if (m->guard) {
             RETURN_IF_ERROR(ensure_fail_pop(c, pc, 0));
-            RETURN_IF_ERROR(
-                compiler_jump_if(c, LOC(m->pattern), m->guard,
-                                 pc->fail_pop[0], 0));
+            RETURN_IF_ERROR(compiler_jump_if(c, LOC(m->pattern), m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
@@ -7037,8 +7039,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, LOC(m->pattern), NOP);
         }
         if (m->guard) {
-            RETURN_IF_ERROR(
-                compiler_jump_if(c, LOC(m->pattern), m->guard, end, 0));
+            RETURN_IF_ERROR(compiler_jump_if(c, LOC(m->pattern), m->guard, end, 0));
         }
         VISIT_SEQ(c, stmt, m->body);
     }
