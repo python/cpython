@@ -1,0 +1,2 @@
+Use `sphinxext-opengraph <https://sphinxext-opengraph.readthedocs.io/>`__
+to generate `OpenGraph metadata <https://ogp.me/>`__.
