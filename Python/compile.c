@@ -5092,35 +5092,35 @@ compiler_subkwargs(struct compiler *c, location loc,
     if (n > 1 && !big) {
         for (i = begin; i < end; i++) {
             kw = asdl_seq_GET(keywords, i);
-            _VISIT(c, expr, kw->value);
+            VISIT(c, expr, kw->value);
         }
         keys = PyTuple_New(n);
         if (keys == NULL) {
-            return 0;
+            return ERROR;
         }
         for (i = begin; i < end; i++) {
             key = ((keyword_ty) asdl_seq_GET(keywords, i))->arg;
             PyTuple_SET_ITEM(keys, i - begin, Py_NewRef(key));
         }
-        _ADDOP_LOAD_CONST_NEW(c, loc, keys);
-        _ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
-        return 1;
+        ADDOP_LOAD_CONST_NEW(c, loc, keys);
+        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, n);
+        return SUCCESS;
     }
     if (big) {
-        _ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0);
+        ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0);
     }
     for (i = begin; i < end; i++) {
         kw = asdl_seq_GET(keywords, i);
-        _ADDOP_LOAD_CONST(c, loc, kw->arg);
-        _VISIT(c, expr, kw->value);
+        ADDOP_LOAD_CONST(c, loc, kw->arg);
+        VISIT(c, expr, kw->value);
         if (big) {
-            _ADDOP_I(c, NO_LOCATION, MAP_ADD, 1);
+            ADDOP_I(c, NO_LOCATION, MAP_ADD, 1);
         }
     }
     if (!big) {
-        _ADDOP_I(c, loc, BUILD_MAP, n);
+        ADDOP_I(c, loc, BUILD_MAP, n);
     }
-    return 1;
+    return SUCCESS;
 }
 
 /* Used by compiler_call_helper and maybe_optimize_method_call to emit
@@ -5214,9 +5214,7 @@ ex_call:
             if (kw->arg == NULL) {
                 /* A keyword argument unpacking. */
                 if (nseen) {
-                    if (!compiler_subkwargs(c, loc, keywords, i - nseen, i)) {
-                        return ERROR;
-                    }
+                    RETURN_IF_ERROR(compiler_subkwargs(c, loc, keywords, i - nseen, i));
                     if (have_dict) {
                         ADDOP_I(c, loc, DICT_MERGE, 1);
                     }
@@ -5236,9 +5234,7 @@ ex_call:
         }
         if (nseen) {
             /* Pack up any trailing keyword arguments. */
-            if (!compiler_subkwargs(c, loc, keywords, nkwelts - nseen, nkwelts)) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(compiler_subkwargs(c, loc, keywords, nkwelts - nseen, nkwelts));
             if (have_dict) {
                 ADDOP_I(c, loc, DICT_MERGE, 1);
             }
