@@ -1913,8 +1913,7 @@ compiler_push_fblock(struct compiler *c, location loc,
 {
     struct fblockinfo *f;
     if (c->u->u_nfblocks >= CO_MAXBLOCKS) {
-        compiler_error(c, loc, "too many statically nested blocks");
-        return ERROR;
+        return compiler_error(c, loc, "too many statically nested blocks");
     }
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
@@ -2102,9 +2101,8 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
     }
     struct fblockinfo *top = &c->u->u_fblock[c->u->u_nfblocks-1];
     if (top->fb_type == EXCEPTION_GROUP_HANDLER) {
-        compiler_error(c, *ploc,
+        return compiler_error(c, *ploc,
             "'break', 'continue' and 'return' cannot appear in an except* block");
-        return ERROR;
     }
     if (loop != NULL && (top->fb_type == WHILE_LOOP || top->fb_type == FOR_LOOP)) {
         *loop = top;
@@ -3133,8 +3131,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION) {
-        compiler_error(c, loc, "'async for' outside async function");
-        return ERROR;
+        return compiler_error(c, loc, "'async for' outside async function");
     }
 
     NEW_JUMP_TARGET_LABEL(c, start);
@@ -3212,14 +3209,12 @@ compiler_return(struct compiler *c, stmt_ty s)
     int preserve_tos = ((s->v.Return.value != NULL) &&
                         (s->v.Return.value->kind != Constant_kind));
     if (c->u->u_ste->ste_type != FunctionBlock) {
-        compiler_error(c, loc, "'return' outside function");
-        return ERROR;
+        return compiler_error(c, loc, "'return' outside function");
     }
     if (s->v.Return.value != NULL &&
         c->u->u_ste->ste_coroutine && c->u->u_ste->ste_generator)
     {
-        compiler_error(c, loc, "'return' with value in async generator");
-        return ERROR;
+        return compiler_error(c, loc, "'return' with value in async generator");
     }
 
     if (preserve_tos) {
@@ -3256,8 +3251,7 @@ compiler_break(struct compiler *c, location loc)
     ADDOP(c, loc, NOP);
     RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
-        compiler_error(c, loc, "'break' outside loop");
-        return ERROR;
+        return compiler_error(c, loc, "'break' outside loop");
     }
     RETURN_IF_ERROR(compiler_unwind_fblock(c, &loc, loop, 0));
     ADDOP_JUMP(c, loc, JUMP, loop->fb_exit);
@@ -3272,8 +3266,7 @@ compiler_continue(struct compiler *c, location loc)
     ADDOP(c, loc, NOP);
     RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, &loc, 0, &loop));
     if (loop == NULL) {
-        compiler_error(c, loc, "'continue' not properly in loop");
-        return ERROR;
+        return compiler_error(c, loc, "'continue' not properly in loop");
     }
     ADDOP_JUMP(c, loc, JUMP, loop->fb_block);
     return SUCCESS;
@@ -3491,8 +3484,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             s->v.Try.handlers, i);
         location loc = LOC(handler);
         if (!handler->v.ExceptHandler.type && i < n-1) {
-            compiler_error(c, loc, "default 'except:' must be last");
-            return ERROR;
+            return compiler_error(c, loc, "default 'except:' must be last");
         }
         NEW_JUMP_TARGET_LABEL(c, next_except);
         except = next_except;
@@ -3931,9 +3923,8 @@ compiler_from_import(struct compiler *c, stmt_ty s)
         _PyUnicode_EqualToASCIIString(s->v.ImportFrom.module, "__future__"))
     {
         Py_DECREF(names);
-        compiler_error(c, LOC(s), "from __future__ imports must occur "
-                       "at the beginning of the file");
-        return ERROR;
+        return compiler_error(c, LOC(s), "from __future__ imports must occur "
+                              "at the beginning of the file");
     }
     ADDOP_LOAD_CONST_NEW(c, LOC(s), names);
 
@@ -4425,18 +4416,16 @@ unpack_helper(struct compiler *c, location loc, asdl_expr_seq *elts)
         if (elt->kind == Starred_kind && !seen_star) {
             if ((i >= (1 << 8)) ||
                 (n-i-1 >= (INT_MAX >> 8))) {
-                compiler_error(c, loc,
+                return compiler_error(c, loc,
                     "too many expressions in "
                     "star-unpacking assignment");
-                return ERROR;
             }
             ADDOP_I(c, loc, UNPACK_EX, (i + ((n-i-1) << 8)));
             seen_star = 1;
         }
         else if (elt->kind == Starred_kind) {
-            compiler_error(c, loc,
+            return compiler_error(c, loc,
                 "multiple starred expressions in assignment");
-            return ERROR;
         }
     }
     if (!seen_star) {
@@ -4884,8 +4873,7 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
-                compiler_error(c, LOC(other), "keyword argument repeated: %U", key->arg);
-                return ERROR;
+                return compiler_error(c, LOC(other), "keyword argument repeated: %U", key->arg);
             }
         }
     }
@@ -5614,8 +5602,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     if (IS_TOP_LEVEL_AWAIT(c)){
         c->u->u_ste->ste_coroutine = 1;
     } else if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION){
-        compiler_error(c, loc, "'async with' outside async function");
-        return ERROR;
+        return compiler_error(c, loc, "'async with' outside async function");
     }
 
     NEW_JUMP_TARGET_LABEL(c, block);
@@ -5812,8 +5799,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_dictcomp(c, e);
     case Yield_kind:
         if (c->u->u_ste->ste_type != FunctionBlock) {
-            compiler_error(c, loc, "'yield' outside function");
-            return ERROR;
+            return compiler_error(c, loc, "'yield' outside function");
         }
         if (e->v.Yield.value) {
             VISIT(c, expr, e->v.Yield.value);
@@ -5825,12 +5811,10 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case YieldFrom_kind:
         if (c->u->u_ste->ste_type != FunctionBlock) {
-            compiler_error(c, loc, "'yield' outside function");
-            return ERROR;
+            return compiler_error(c, loc, "'yield' outside function");
         }
         if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION) {
-            compiler_error(c, loc, "'yield from' inside async function");
-            return ERROR;
+            return compiler_error(c, loc, "'yield from' inside async function");
         }
         VISIT(c, expr, e->v.YieldFrom.value);
         ADDOP(c, loc, GET_YIELD_FROM_ITER);
@@ -5840,14 +5824,12 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Await_kind:
         if (!IS_TOP_LEVEL_AWAIT(c)){
             if (c->u->u_ste->ste_type != FunctionBlock){
-                compiler_error(c, loc, "'await' outside function");
-                return ERROR;
+                return compiler_error(c, loc, "'await' outside function");
             }
 
             if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
                     c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION) {
-                compiler_error(c, loc, "'await' outside async function");
-                return ERROR;
+                return compiler_error(c, loc, "'await' outside async function");
             }
         }
 
@@ -5894,13 +5876,11 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         case Store:
             /* In all legitimate cases, the Starred node was already replaced
              * by compiler_list/compiler_tuple. XXX: is that okay? */
-            compiler_error(c, loc,
+            return compiler_error(c, loc,
                 "starred assignment target must be in a list or tuple");
-            return ERROR;
         default:
-            compiler_error(c, loc,
+            return compiler_error(c, loc,
                 "can't use starred expression here");
-            return ERROR;
         }
         break;
     case Slice_kind:
@@ -6142,7 +6122,7 @@ compiler_error(struct compiler *c, location loc,
     PyObject *msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (msg == NULL) {
-        return 0;
+        return ERROR;
     }
     PyObject *loc_obj = PyErr_ProgramTextObject(c->c_filename, loc.lineno);
     if (loc_obj == NULL) {
@@ -6159,7 +6139,7 @@ compiler_error(struct compiler *c, location loc,
  exit:
     Py_DECREF(loc_obj);
     Py_XDECREF(args);
-    return 0;
+    return ERROR;
 }
 
 /* Emits a SyntaxWarning and returns 1 on success.
@@ -6345,9 +6325,8 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
 static int
 compiler_error_duplicate_store(struct compiler *c, location loc, identifier n)
 {
-    compiler_error(c, loc,
+    return compiler_error(c, loc,
         "multiple assignments to name %R in pattern", n);
-    return ERROR;
 }
 
 // Duplicate the effect of 3.10's ROT_* instructions using SWAPs.
@@ -6377,8 +6356,7 @@ pattern_helper_store_name(struct compiler *c, location loc,
         return ERROR;
     }
     if (duplicate) {
-        compiler_error_duplicate_store(c, loc, n);
-        return ERROR;
+        return compiler_error_duplicate_store(c, loc, n);
     }
     // Rotate this object underneath any items we need to preserve:
     Py_ssize_t rotations = pc->on_top + PyList_GET_SIZE(pc->stores) + 1;
@@ -6403,18 +6381,16 @@ pattern_unpack_helper(struct compiler *c, location loc,
         if (elt->kind == MatchStar_kind && !seen_star) {
             if ((i >= (1 << 8)) ||
                 (n-i-1 >= (INT_MAX >> 8))) {
-                compiler_error(c, loc,
+                return compiler_error(c, loc,
                     "too many expressions in "
                     "star-unpacking sequence pattern");
-                return ERROR;
             }
             ADDOP_I(c, loc, UNPACK_EX, (i + ((n-i-1) << 8)));
             seen_star = 1;
         }
         else if (elt->kind == MatchStar_kind) {
-            compiler_error(c, loc,
+            return compiler_error(c, loc,
                 "multiple starred expressions in sequence pattern");
-            return ERROR;
         }
     }
     if (!seen_star) {
@@ -6505,12 +6481,10 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
         if (!pc->allow_irrefutable) {
             if (p->v.MatchAs.name) {
                 const char *e = "name capture %R makes remaining patterns unreachable";
-                compiler_error(c, LOC(p), e, p->v.MatchAs.name);
-                return ERROR;
+                return compiler_error(c, LOC(p), e, p->v.MatchAs.name);
             }
             const char *e = "wildcard makes remaining patterns unreachable";
-            compiler_error(c, LOC(p), e);
-            return ERROR;
+            return compiler_error(c, LOC(p), e);
         }
         return pattern_helper_store_name(c, LOC(p), p->v.MatchAs.name, pc);
     }
@@ -6549,8 +6523,7 @@ validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_
             identifier other = ((identifier)asdl_seq_GET(attrs, j));
             if (!PyUnicode_Compare(attr, other)) {
                 location loc = LOC((pattern_ty) asdl_seq_GET(patterns, j));
-                compiler_error(c, loc, "attribute name repeated in class pattern: %U", attr);
-                return ERROR;
+                return compiler_error(c, loc, "attribute name repeated in class pattern: %U", attr);
             }
         }
     }
@@ -6571,13 +6544,11 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
         // AST validator shouldn't let this happen, but if it does,
         // just fail, don't crash out of the interpreter
         const char * e = "kwd_attrs (%d) / kwd_patterns (%d) length mismatch in class pattern";
-        compiler_error(c, LOC(p), e, nattrs, nkwd_patterns);
-        return ERROR;
+        return compiler_error(c, LOC(p), e, nattrs, nkwd_patterns);
     }
     if (INT_MAX < nargs || INT_MAX < nargs + nattrs - 1) {
         const char *e = "too many sub-patterns in class pattern %R";
-        compiler_error(c, LOC(p), e, p->v.MatchClass.cls);
-        return ERROR;
+        return compiler_error(c, LOC(p), e, p->v.MatchClass.cls);
     }
     if (nattrs) {
         RETURN_IF_ERROR(validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
@@ -6636,8 +6607,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
         // AST validator shouldn't let this happen, but if it does,
         // just fail, don't crash out of the interpreter
         const char * e = "keys (%d) / patterns (%d) length mismatch in mapping pattern";
-        compiler_error(c, LOC(p), e, size, npatterns);
-        return ERROR;
+        return compiler_error(c, LOC(p), e, size, npatterns);
     }
     // We have a double-star target if "rest" is set
     PyObject *star_target = p->v.MatchMapping.rest;
@@ -6659,8 +6629,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
         RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     }
     if (INT_MAX < size - 1) {
-        compiler_error(c, LOC(p), "too many sub-patterns in mapping pattern");
-        return ERROR;
+        return compiler_error(c, LOC(p), "too many sub-patterns in mapping pattern");
     }
     // Collect all of the keys into a tuple for MATCH_KEYS and
     // **rest. They can either be dotted names or literals:
@@ -6926,8 +6895,7 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p,
         if (pattern->kind == MatchStar_kind) {
             if (star >= 0) {
                 const char *e = "multiple starred names in sequence pattern";
-                compiler_error(c, LOC(p), e);
-                return ERROR;
+                return compiler_error(c, LOC(p), e);
             }
             star_wildcard = WILDCARD_STAR_CHECK(pattern);
             only_wildcard &= star_wildcard;
@@ -6978,8 +6946,7 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
     expr_ty value = p->v.MatchValue.value;
     if (!MATCH_VALUE_EXPR(value)) {
         const char *e = "patterns may only match literals and attribute lookups";
-        compiler_error(c, LOC(p), e);
-        return ERROR;
+        return compiler_error(c, LOC(p), e);
     }
     VISIT(c, expr, value);
     ADDOP_COMPARE(c, LOC(p), Eq);
@@ -7021,8 +6988,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
     // AST validator shouldn't let this happen, but if it does,
     // just fail, don't crash out of the interpreter
     const char *e = "invalid match pattern node in AST (kind=%d)";
-    compiler_error(c, LOC(p), e, p->kind);
-    return ERROR;
+    return compiler_error(c, LOC(p), e, p->kind);
 }
 
 static int
