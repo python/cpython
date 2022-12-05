@@ -564,7 +564,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         self.log_message(format, *args)
 
     # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
-    __control_char_table = str.maketrans(
+    _control_char_table = str.maketrans(
             {c: fr'\x{c:x}' for c in itertools.chain(range(0x20), range(0x7f,0xa0))})
 
     def log_message(self, format, *args):
@@ -591,7 +591,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         sys.stderr.write("%s - - [%s] %s\n" %
                          (self.address_string(),
                           self.log_date_time_string(),
-                          message.translate(self.__control_char_table)))
+                          message.translate(self._control_char_table)))
 
     def version_string(self):
         """Return the server software version string."""
