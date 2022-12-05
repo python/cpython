@@ -3567,8 +3567,13 @@
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 0);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -3576,6 +3581,7 @@
                 Py_INCREF(value);
                 _tmp_1 = value;
             }
+            next_instr += 1;
             STACK_GROW(2);
             POKE(1, _tmp_1);
             POKE(2, _tmp_2);
@@ -3592,14 +3598,20 @@
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 0);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
                 Py_INCREF(value);
                 _tmp_1 = value;
             }
+            next_instr += 1;
             STACK_GROW(2);
             POKE(1, _tmp_1);
             POKE(2, _tmp_2);
@@ -3612,8 +3624,13 @@
                 PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
             }
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 0);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -3621,6 +3638,7 @@
                 Py_INCREF(value);
                 _tmp_1 = value;
             }
+            next_instr += 1;
             POKE(1, _tmp_1);
             DISPATCH();
         }
@@ -3632,12 +3650,18 @@
                 PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
             }
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 0);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 PyObject *value = _tmp_2;
                 SETLOCAL(oparg, value);
             }
+            next_instr += 1;
             STACK_SHRINK(2);
             DISPATCH();
         }
@@ -3651,8 +3675,13 @@
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 0);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -3660,9 +3689,25 @@
                 Py_INCREF(value);
                 _tmp_1 = value;
             }
+            next_instr += 1;
             STACK_GROW(2);
             POKE(1, _tmp_1);
             POKE(2, _tmp_2);
+            DISPATCH();
+        }
+
+        TARGET(END_FOR) {
+            PyObject *_tmp_2 = PEEK(2);
+            PyObject *_tmp_1 = PEEK(1);
+            {
+                PyObject *value = _tmp_1;
+                Py_DECREF(value);
+            }
+            {
+                PyObject *value = _tmp_2;
+                Py_DECREF(value);
+            }
+            STACK_SHRINK(2);
             DISPATCH();
         }
 
@@ -3698,12 +3743,17 @@
                 _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 if (*target_local == NULL) goto pop_2_error;
             }
-            next_instr += 1;
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 1);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 // The STORE_FAST is already done; oparg is dead.
             }
+            next_instr += 2;
             STACK_SHRINK(2);
             DISPATCH();
         }
@@ -3732,9 +3782,13 @@
                 jump = sign_ish & when_to_jump_mask;
                 _tmp_2 = (PyObject *)jump;
             }
-            next_instr += 2;
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 2);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
@@ -3742,6 +3796,7 @@
                     JUMPBY(oparg);
                 }
             }
+            next_instr += 3;
             STACK_SHRINK(2);
             DISPATCH();
         }
@@ -3771,9 +3826,13 @@
                 jump = sign_ish & when_to_jump_mask;
                 _tmp_2 = (PyObject *)jump;
             }
-            next_instr += 2;
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 2);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
@@ -3781,6 +3840,7 @@
                     JUMPBY(oparg);
                 }
             }
+            next_instr += 3;
             STACK_SHRINK(2);
             DISPATCH();
         }
@@ -3807,9 +3867,13 @@
                 jump = res ^ invert;
                 _tmp_2 = (PyObject *)jump;
             }
-            next_instr += 2;
-            NEXTOPARG();
-            next_instr++;
+            {
+                uint16_t word = read_u16(next_instr + 2);
+                #ifndef NDEBUG
+                opcode = _Py_OPCODE(word);
+                #endif
+                oparg = _Py_OPARG(word);
+            }
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
@@ -3817,21 +3881,7 @@
                     JUMPBY(oparg);
                 }
             }
-            STACK_SHRINK(2);
-            DISPATCH();
-        }
-
-        TARGET(END_FOR) {
-            PyObject *_tmp_2 = PEEK(2);
-            PyObject *_tmp_1 = PEEK(1);
-            {
-                PyObject *value = _tmp_1;
-                Py_DECREF(value);
-            }
-            {
-                PyObject *value = _tmp_2;
-                Py_DECREF(value);
-            }
+            next_instr += 3;
             STACK_SHRINK(2);
             DISPATCH();
         }

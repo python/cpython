@@ -73,7 +73,7 @@ do { \
 #define op(name, ...) /* NAME is ignored */
 #define macro(name) static int MACRO_##name
 #define super(name) static int SUPER_##name
-#define family(name, ...) static int family_##name
+#define family(name, ...) static int family_##name[]
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -86,6 +86,7 @@ static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
 static size_t jump;
 // Dummy variables for cache effects
 static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
+static _Py_CODEUNIT word;
 static uint32_t type_version;
 // Dummy opcode names for 'op' opcodes
 #define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1001
@@ -94,6 +95,7 @@ static uint32_t type_version;
 #define _COMPARE_OP_INT 1004
 #define _COMPARE_OP_STR 1005
 #define _JUMP_ON_SIGN 1006
+#define JOIN 0
 
 static PyObject *
 dummy_func(
@@ -156,11 +158,18 @@ dummy_func(
             SETLOCAL(oparg, value);
         }
 
-        super(LOAD_FAST__LOAD_FAST) = LOAD_FAST + LOAD_FAST;
-        super(LOAD_FAST__LOAD_CONST) = LOAD_FAST + LOAD_CONST;
-        super(STORE_FAST__LOAD_FAST)  = STORE_FAST + LOAD_FAST;
-        super(STORE_FAST__STORE_FAST) = STORE_FAST + STORE_FAST;
-        super(LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
+        op(JOIN, (word/1 --)) {
+            #ifndef NDEBUG
+            opcode = _Py_OPCODE(word);
+            #endif
+            oparg = _Py_OPARG(word);
+        }
+
+        macro(LOAD_FAST__LOAD_FAST) = LOAD_FAST + JOIN + LOAD_FAST;
+        macro(LOAD_FAST__LOAD_CONST) = LOAD_FAST + JOIN + LOAD_CONST;
+        macro(STORE_FAST__LOAD_FAST) = STORE_FAST + JOIN + LOAD_FAST;
+        macro(STORE_FAST__STORE_FAST) = STORE_FAST + JOIN + STORE_FAST;
+        macro(LOAD_CONST__LOAD_FAST) = LOAD_CONST + JOIN + LOAD_FAST;
 
         inst(POP_TOP, (value --)) {
             Py_DECREF(value);
@@ -307,8 +316,8 @@ dummy_func(
         op(_BINARY_OP_INPLACE_ADD_UNICODE_PART_2, (unused --)) {
             // The STORE_FAST is already done; oparg is dead.
         }
-        super(BINARY_OP_INPLACE_ADD_UNICODE) =
-            _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 + _BINARY_OP_INPLACE_ADD_UNICODE_PART_2;
+        macro(BINARY_OP_INPLACE_ADD_UNICODE) =
+            _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 + JOIN + _BINARY_OP_INPLACE_ADD_UNICODE_PART_2;
 
         inst(BINARY_OP_ADD_FLOAT, (left, right, unused/1 -- sum)) {
             assert(cframe.use_tracing == 0);
@@ -2042,7 +2051,7 @@ dummy_func(
             }
         }
         // We're praying that the compiler optimizes the flags manipuations.
-        super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_ON_SIGN;
+        macro(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + JOIN + _JUMP_ON_SIGN;
 
         // Similar to COMPARE_OP_FLOAT
         op(_COMPARE_OP_INT, (unused/1, left, right, when_to_jump_mask/1 -- jump: size_t)) {
@@ -2062,7 +2071,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             jump = sign_ish & when_to_jump_mask;
         }
-        super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_ON_SIGN;
+        macro(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + JOIN + _JUMP_ON_SIGN;
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
         op(_COMPARE_OP_STR, (unused/1, left, right, invert/1 -- jump: size_t)) {
@@ -2079,7 +2088,7 @@ dummy_func(
             assert(invert == 0 || invert == 1);
             jump = res ^ invert;
         }
-        super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_ON_SIGN;
+        macro(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + JOIN + _JUMP_ON_SIGN;
 
         // stack effect: (__0 -- )
         inst(IS_OP) {
