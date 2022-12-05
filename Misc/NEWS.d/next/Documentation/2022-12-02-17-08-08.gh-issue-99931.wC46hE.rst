@@ -1,1 +1,2 @@
-Use the sphinxext-opengraph extension to generate OpenGraph metadata.
+Use `sphinxext-opengraph <https://sphinxext-opengraph.readthedocs.io/>`__ 
+to generate `OpenGraph metadata <https://ogp.me/>`__.
