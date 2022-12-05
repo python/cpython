@@ -6002,7 +6002,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Slice_kind:
     {
         int n = compiler_slice(c, e);
-        if (n == 0) {
+        if (n < 0) {
             return 0;
         }
         _ADDOP_I(c, loc, BUILD_SLICE, n);
@@ -6051,9 +6051,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
         if (is_two_element_slice(e->v.Subscript.slice)) {
-            if (!compiler_slice(c, e->v.Subscript.slice)) {
-                return ERROR;
-            }
+            RETURN_IF_ERROR(compiler_slice(c, e->v.Subscript.slice));
             ADDOP_I(c, loc, COPY, 3);
             ADDOP_I(c, loc, COPY, 3);
             ADDOP_I(c, loc, COPY, 3);
@@ -6315,7 +6313,7 @@ compiler_subscript(struct compiler *c, expr_ty e)
 
     _VISIT(c, expr, e->v.Subscript.value);
     if (is_two_element_slice(e->v.Subscript.slice) && ctx != Del) {
-        if (!compiler_slice(c, e->v.Subscript.slice)) {
+        if (compiler_slice(c, e->v.Subscript.slice) < 0) {
             return 0;
         }
         if (ctx == Load) {
@@ -6349,22 +6347,22 @@ compiler_slice(struct compiler *c, expr_ty s)
 
     /* only handles the cases where BUILD_SLICE is emitted */
     if (s->v.Slice.lower) {
-        _VISIT(c, expr, s->v.Slice.lower);
+        VISIT(c, expr, s->v.Slice.lower);
     }
     else {
-        _ADDOP_LOAD_CONST(c, LOC(s), Py_None);
+        ADDOP_LOAD_CONST(c, LOC(s), Py_None);
     }
 
     if (s->v.Slice.upper) {
-        _VISIT(c, expr, s->v.Slice.upper);
+        VISIT(c, expr, s->v.Slice.upper);
     }
     else {
-        _ADDOP_LOAD_CONST(c, LOC(s), Py_None);
+        ADDOP_LOAD_CONST(c, LOC(s), Py_None);
     }
 
     if (s->v.Slice.step) {
         n++;
-        _VISIT(c, expr, s->v.Slice.step);
+        VISIT(c, expr, s->v.Slice.step);
     }
     return n;
 }
