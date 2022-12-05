@@ -592,7 +592,6 @@ Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
 Modules/_zoneinfo.c	-	TIMEDELTA_CACHE	-
 Modules/_zoneinfo.c	-	ZONEINFO_WEAK_CACHE	-
-Modules/syslogmodule.c	-	S_ident_o	-
 
 
 ##################################
@@ -681,4 +680,3 @@ Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
 Modules/socketmodule.c	-	defaulttimeout	-
-Modules/syslogmodule.c	-	S_log_open	-

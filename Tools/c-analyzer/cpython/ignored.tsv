@@ -45,6 +45,12 @@ Objects/unicodeobject.c	_init_global_state	initialized	-
 # XXX Move to _PyRuntimeState?
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 
+#-----------------------
+# main interp state in stdlib modules
+
+Modules/syslogmodule.c	-	S_ident_o	-
+Modules/syslogmodule.c	-	S_log_open	-
+
 
 ##################################
 # state tied to C main() (only in main thread)
