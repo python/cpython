@@ -67,6 +67,7 @@
 
 
 
+#ifdef BIO_get_ktls_send
 #ifdef MS_WINDOWS
     typedef long long Py_off_t;
 #else
@@ -86,16 +87,6 @@ Py_off_t_converter(PyObject *arg, void *addr)
     return 1;
 }
 
-static PyObject *
-PyLong_FromPy_off_t(Py_off_t offset)
-{
-#ifdef HAVE_LARGEFILE_SUPPORT
-    return PyLong_FromLongLong(offset);
-#else
-    return PyLong_FromLong(offset);
-#endif
-}
-
 /*[python input]
 
 class Py_off_t_converter(CConverter):
@@ -104,6 +95,7 @@ class Py_off_t_converter(CConverter):
 
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=3fd9ca8ca6f0cbb8]*/
+#endif /* BIO_get_ktls_send */
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -2448,7 +2440,7 @@ error:
     PySSL_ChainExceptions(self);
     return NULL;
 }
-#endif /* SSL_sendfile */
+#endif /* BIO_get_ktls_send */
 
 /*[clinic input]
 _ssl._SSLSocket.write
