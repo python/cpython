@@ -2583,7 +2583,7 @@ channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int64_t cid = _channel_create(&_globals.channels);
     if (cid < 0) {
-        (void)handle_channel_error(cid, self, -1);
+        (void)handle_channel_error(-1, self, cid);
         return NULL;
     }
     module_state *state = get_module_state(self);
@@ -2985,6 +2985,11 @@ module_exec(PyObject *mod)
         return -1;
     }
 
+    module_state *state = get_module_state(mod);
+    if (state == NULL) {
+        goto error;
+    }
+
     /* Add exception types */
     if (interp_exceptions_init(mod) != 0) {
         goto error;
@@ -2994,7 +2999,6 @@ module_exec(PyObject *mod)
     }
 
     /* Add other types */
-    module_state *state = get_module_state(mod);
 
     // ChannelID
     state->ChannelIDType = add_new_type(
