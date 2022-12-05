@@ -2348,7 +2348,7 @@ _ssl__SSLSocket_uses_ktls_for_read_impl(PySSLSocket *self)
 _ssl._SSLSocket.sendfile
     fd: int
     offset: Py_off_t
-    size: Py_ssize_t
+    size: size_t
     flags: int = 0
     /
 
@@ -2363,8 +2363,8 @@ The meaning of flags is platform dependent.
 
 static PyObject *
 _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
-                              Py_ssize_t size, int flags)
-/*[clinic end generated code: output=70ec71c2503e560b input=87f5a263b28cb164]*/
+                              size_t size, int flags)
+/*[clinic end generated code: output=0c6815b0719ca8d5 input=f09170aab5a44ec0]*/
 {
     Py_ssize_t retval;
     int sockstate;

@@ -268,7 +268,7 @@ PyDoc_STRVAR(_ssl__SSLSocket_sendfile__doc__,
 
 static PyObject *
 _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
-                              Py_ssize_t size, int flags);
+                              size_t size, int flags);
 
 static PyObject *
 _ssl__SSLSocket_sendfile(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs)
@@ -276,7 +276,7 @@ _ssl__SSLSocket_sendfile(PySSLSocket *self, PyObject *const *args, Py_ssize_t na
     PyObject *return_value = NULL;
     int fd;
     Py_off_t offset;
-    Py_ssize_t size;
+    size_t size;
     int flags = 0;
 
     if (!_PyArg_CheckPositional("sendfile", nargs, 3, 4)) {
@@ -289,17 +289,8 @@ _ssl__SSLSocket_sendfile(PySSLSocket *self, PyObject *const *args, Py_ssize_t na
     if (!Py_off_t_converter(args[1], &offset)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        size = ival;
+    if (!_PyLong_Size_t_Converter(args[2], &size)) {
+        goto exit;
     }
     if (nargs < 4) {
         goto skip_optional;
@@ -1651,4 +1642,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=a8f9790ad7a68d46 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4cc7cf648add6eb input=a9049054013a1b77]*/
