@@ -565,7 +565,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
     # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
     __control_char_table = str.maketrans(
-            {c: '!' for c in itertools.chain(range(0x20), range(0x7f,0xa0))})
+            {c: fr'\x{c:x}' for c in itertools.chain(range(0x20), range(0x7f,0xa0))})
 
     def log_message(self, format, *args):
         """Log an arbitrary message.
@@ -582,8 +582,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         The client ip and current date/time are prefixed to
         every message.
 
-        Unicode control characters are replaced with ! before
-        writing the output to stderr.
+        Unicode control characters are replaced with escaped hex
+        before writing the output to stderr.
 
         """
 
