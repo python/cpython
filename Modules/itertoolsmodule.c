@@ -1368,12 +1368,13 @@ cycle_setstate(cycleobject *lz, PyObject *state)
         PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
     }
-    if (!PyArg_ParseTuple(state, "O!p", &PyList_Type, &saved, &firstpass)) {
+    // The second item can be 1/0 in old pickles and True/False in new pickles
+    if (!PyArg_ParseTuple(state, "O!i", &PyList_Type, &saved, &firstpass)) {
         return NULL;
     }
     Py_INCREF(saved);
     Py_XSETREF(lz->saved, saved);
-    lz->firstpass = firstpass;
+    lz->firstpass = firstpass != 0;
     lz->index = 0;
     Py_RETURN_NONE;
 }

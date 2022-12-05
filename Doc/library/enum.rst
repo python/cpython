@@ -804,6 +804,11 @@ Utilities and Decorators
       * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
         create the ``THREE`` enum member)
 
+   .. versionchanged:: 3.11.1
+
+      In prior versions, ``auto()`` had to be the only thing
+      on the assignment line to work properly.
+
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
