@@ -117,7 +117,7 @@ asyncio ships with the following built-in policies:
       On Windows, :class:`ProactorEventLoop` is now used by default.
 
    .. versionchanged:: 3.12
-      :meth:`get_event_loop` now raises an :exc:`RuntimeError` if there is no
+      :meth:`get_event_loop` now raises a :exc:`RuntimeError` if there is no
       current event loop set.
 
 
