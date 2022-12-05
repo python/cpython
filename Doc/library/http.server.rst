@@ -506,5 +506,5 @@ default :class:`BaseHTTPRequestHandler` ``.log_message``
 implementation. This could allow remote clients connecting to your
 server to send nefarious control codes to your terminal.
 
-.. versionadded:: 3.12
+.. versionadded:: 3.10.9
    Control characters are scrubbed in stderr logs.
