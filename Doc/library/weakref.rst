@@ -143,8 +143,11 @@ See :ref:`__slots__ documentation <slots>` for details.
    ``ProxyType`` or ``CallableProxyType``, depending on whether *object* is
    callable.  Proxy objects are not :term:`hashable` regardless of the referent; this
    avoids a number of problems related to their fundamentally mutable nature, and
-   prevent their use as dictionary keys.  *callback* is the same as the parameter
+   prevents their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
+
+   Accessing an attribute of the proxy object after the referent is
+   garbage collected raises :exc:`ReferenceError`.
 
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
@@ -209,7 +212,7 @@ objects.
    discarded when no strong reference to it exists any more.
 
 
-.. class:: WeakMethod(method)
+.. class:: WeakMethod(method[, callback])
 
    A custom :class:`ref` subclass which simulates a weak reference to a bound
    method (i.e., a method defined on a class and looked up on an instance).
@@ -234,6 +237,8 @@ objects.
       0
       >>> r()
       >>>
+
+   *callback* is the same as the parameter of the same name to the :func:`ref` function.
 
    .. versionadded:: 3.4
 

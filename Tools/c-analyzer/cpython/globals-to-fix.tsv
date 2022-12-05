@@ -130,6 +130,8 @@ Python/symtable.c	-	PySTEntry_Type	-
 # private static builtin types
 
 Objects/setobject.c	-	_PySetDummy_Type	-
+Objects/stringlib/unicode_format.h	-	PyFormatterIter_Type	-
+Objects/stringlib/unicode_format.h	-	PyFieldNameIter_Type	-
 Objects/unicodeobject.c	-	EncodingMapType	-
 #Objects/unicodeobject.c	-	PyFieldNameIter_Type	-
 #Objects/unicodeobject.c	-	PyFormatterIter_Type	-
@@ -296,178 +298,34 @@ Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
 
-#-----------------------
-# cached - initialized once
-
-# manually cached PyUnicodeObject
-Python/ast_unparse.c	-	_str_replace_inf	-
-
-# holds strings
-Objects/typeobject.c	-	slotdefs	-
-
-# other
-Objects/typeobject.c	object___reduce_ex___impl	objreduce	-
-Objects/unicodeobject.c	-	_string_module	-
-Objects/unicodeobject.c	-	interned	-
-
-#-----------------------
-# other
-
-# initialized once
-Python/context.c	-	_token_missing	-
-Python/fileutils.c	-	_Py_open_cloexec_works	-
-Python/hamt.c	-	_empty_bitmap_node	-
-Python/hamt.c	-	_empty_hamt	-
-
-# state
-Objects/typeobject.c	resolve_slotdups	pname	-
-Python/import.c	-	extensions	-
-
 
 ##################################
 # global non-objects to fix in core code
 
 #-----------------------
-# initialized/set once
+# effectively-const but initialized lazily
 
-# pre-allocated buffer
-Modules/getbuildinfo.c	Py_GetBuildInfo	buildinfo	-
-
-# during init
-Objects/typeobject.c	-	slotdefs_initialized	-
-Objects/unicodeobject.c	-	bloom_linebreak	-
-Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
-Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
-Python/initconfig.c	-	Py_DebugFlag	-
-Python/initconfig.c	-	Py_UTF8Mode	-
-Python/initconfig.c	-	Py_DebugFlag	-
-Python/initconfig.c	-	Py_VerboseFlag	-
-Python/initconfig.c	-	Py_QuietFlag	-
-Python/initconfig.c	-	Py_InteractiveFlag	-
-Python/initconfig.c	-	Py_InspectFlag	-
-Python/initconfig.c	-	Py_OptimizeFlag	-
-Python/initconfig.c	-	Py_NoSiteFlag	-
-Python/initconfig.c	-	Py_BytesWarningFlag	-
-Python/initconfig.c	-	Py_FrozenFlag	-
-Python/initconfig.c	-	Py_IgnoreEnvironmentFlag	-
-Python/initconfig.c	-	Py_DontWriteBytecodeFlag	-
-Python/initconfig.c	-	Py_NoUserSiteDirectory	-
-Python/initconfig.c	-	Py_UnbufferedStdioFlag	-
-Python/initconfig.c	-	Py_HashRandomizationFlag	-
-Python/initconfig.c	-	Py_IsolatedFlag	-
-Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
-Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
-Python/initconfig.c	-	orig_argv	-
-Python/pyhash.c	-	_Py_HashSecret	-
-Python/pylifecycle.c	-	runtime_initialized	-
-Python/sysmodule.c	-	_PySys_ImplCacheTag	-
-Python/sysmodule.c	-	_PySys_ImplName	-
-Python/sysmodule.c	-	_preinit_warnoptions	-
-Python/sysmodule.c	-	_preinit_xoptions	-
-Python/thread.c	-	initialized	-
-
-# set by embedders during init
-Python/initconfig.c	-	_Py_StandardStreamEncoding	-
-Python/initconfig.c	-	_Py_StandardStreamErrors	-
-
-# lazy
-Objects/floatobject.c	-	double_format	-
-Objects/floatobject.c	-	float_format	-
-Objects/longobject.c	PyLong_FromString	log_base_BASE	-
-Objects/longobject.c	PyLong_FromString	convwidth_base	-
-Objects/longobject.c	PyLong_FromString	convmultmax_base	-
-Objects/unicodeobject.c	-	ucnhash_capi	-
-Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
+# idempotent
 Python/dtoa.c	-	p5s	-
-Python/fileutils.c	-	force_ascii	-
-Python/fileutils.c	set_inheritable	ioctl_works	-
-Python/import.c	-	import_lock	-
-Python/import.c	import_find_and_load	header	-
+Objects/obmalloc.c	new_arena	debug_stats	-
 
-#-----------------------
-# unlikely to change after init (or main thread)
-
-# through C-API
-Python/frozen.c	-	PyImport_FrozenModules	-
-Python/frozen.c	-	_PyImport_FrozenAliases	-
-Python/frozen.c	-	_PyImport_FrozenBootstrap	-
-Python/frozen.c	-	_PyImport_FrozenStdlib	-
-Python/frozen.c	-	_PyImport_FrozenTest	-
-Python/import.c	-	inittab_copy	-
-Python/import.c	-	PyImport_Inittab	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
-Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
-Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
-
-# REPL
-Parser/myreadline.c	-	_PyOS_ReadlineLock	-
-Parser/myreadline.c	-	_PyOS_ReadlineTState	-
-Parser/myreadline.c	-	PyOS_InputHook	-
-Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
-
-# handling C argv
-Python/getopt.c	-	_PyOS_optarg	-
-Python/getopt.c	-	_PyOS_opterr	-
-Python/getopt.c	-	_PyOS_optind	-
-Python/getopt.c	-	opt_ptr	-
-Python/pathconfig.c	-	_Py_path_config	-
+# others
+Python/perf_trampoline.c	-	perf_map_file	-
+Objects/unicodeobject.c	-	ucnhash_capi	-
 
 #-----------------------
 # state
 
-# allocator
-Objects/obmalloc.c	-	_PyObject_Arena	-
-Objects/obmalloc.c	-	_Py_tracemalloc_config	-
-Objects/obmalloc.c	-	arena_map_bot_count	-
-Objects/obmalloc.c	-	arena_map_mid_count	-
-Objects/obmalloc.c	-	arena_map_root	-
-Objects/obmalloc.c	-	arenas	-
-Objects/obmalloc.c	-	maxarenas	-
-Objects/obmalloc.c	-	narenas_currently_allocated	-
-Objects/obmalloc.c	-	narenas_highwater	-
-Objects/obmalloc.c	-	nfp2lasta	-
-Objects/obmalloc.c	-	ntimes_arena_allocated	-
-Objects/obmalloc.c	-	raw_allocated_blocks	-
-Objects/obmalloc.c	-	unused_arena_objects	-
-Objects/obmalloc.c	-	usable_arenas	-
-Objects/obmalloc.c	new_arena	debug_stats	-
-
-# pre-allocated memory
-Python/dtoa.c	-	freelist	-
-Python/dtoa.c	-	private_mem	-
-
 # local buffer
-Python/getversion.c	Py_GetVersion	version	-
 Python/suggestions.c	levenshtein_distance	buffer	-
 
-# linked list
-Python/dtoa.c	-	pmem_next	-
-Python/getargs.c	-	static_arg_parsers	-
-
 # other
-Objects/dictobject.c	-	_pydict_global_version	-
-Objects/dictobject.c	-	next_dict_keys_version	-
-Objects/funcobject.c	-	next_func_version	-
-Objects/moduleobject.c	-	max_module_number	-
 Objects/object.c	-	_Py_RefTotal	-
-Objects/typeobject.c	-	next_version_tag	-
-Objects/typeobject.c	resolve_slotdups	ptrs	-
-Parser/pegen.c	-	memo_statistics	-
-Python/bootstrap_hash.c	-	urandom_cache	-
-Python/ceval_gil.c	make_pending_calls	busy	-
-Python/ceval.c	_PyEval_SetProfile	reentrant	-
-Python/ceval.c	_PyEval_SetTrace	reentrant	-
-Python/import.c	-	import_lock_level	-
-Python/import.c	-	import_lock_thread	-
-Python/import.c	import_find_and_load	accumulated	-
-Python/import.c	import_find_and_load	import_level	-
-Python/modsupport.c	-	_Py_PackageContext	-
-Python/pyfpe.c	-	PyFPE_counter	-
-Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
-Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	-
-Python/pylifecycle.c	fatal_error	reentrant	-
-Python/specialize.c	-	_Py_QuickenedCount	-
+Python/perf_trampoline.c	-	perf_status	-
+Python/perf_trampoline.c	-	extra_code_index	-
+Python/perf_trampoline.c	-	code_arena	-
+Python/perf_trampoline.c	-	trampoline_api	-
+Python/thread_pthread_stubs.h	-	py_tls_entries	-
 
 
 ##################################
@@ -495,7 +353,6 @@ Modules/_io/stringio.c	-	PyStringIO_Type	-
 Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/textio.c	-	PyTextIOBase_Type	-
 Modules/_io/textio.c	-	PyTextIOWrapper_Type	-
-# XXX This should have been found by the analyzer but wasn't:
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
@@ -503,6 +360,7 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
 Modules/itertoolsmodule.c	-	_grouper_type	-
 Modules/itertoolsmodule.c	-	accumulate_type	-
+Modules/itertoolsmodule.c	-	batched_type	-
 Modules/itertoolsmodule.c	-	chain_type	-
 Modules/itertoolsmodule.c	-	combinations_type	-
 Modules/itertoolsmodule.c	-	compress_type	-
@@ -526,28 +384,12 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 #-----------------------
 # other
 
-# statically initializd pointer to static type
-# XXX should be const?
-# XXX This should have been found by the analyzer but wasn't:
-Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
-
-# initialized once
-Modules/_functoolsmodule.c	-	kwd_mark	-
-Modules/_io/_iomodule.c	-	_PyIO_empty_bytes	-
-Modules/_testcapi/heaptype.c	-	_testcapimodule	-
-Modules/_testcapi/unicode.c	-	_testcapimodule	-
-Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
-Modules/signalmodule.c	-	DefaultHandler	-
-Modules/signalmodule.c	-	IgnoreHandler	-
-Modules/signalmodule.c	-	IntHandler	-
-
 # state
 Modules/faulthandler.c	-	fatal_error	-
 Modules/faulthandler.c	-	thread	-
 Modules/faulthandler.c	-	user_signals	-
 Modules/faulthandler.c	-	stack	-
 Modules/faulthandler.c	-	old_stack	-
-Modules/signalmodule.c	-	Handlers	-
 
 
 ##################################
@@ -568,6 +410,7 @@ Modules/timemodule.c	_PyTime_GetProcessTimeWithInfo	ticks_per_second	-
 
 Modules/_tracemalloc.c	-	allocators	-
 Modules/_tracemalloc.c	-	tables_lock	-
+Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
 Modules/_tracemalloc.c	-	tracemalloc_traced_memory	-
 Modules/_tracemalloc.c	-	tracemalloc_peak_traced_memory	-
 Modules/_tracemalloc.c	-	tracemalloc_filenames	-
@@ -581,6 +424,7 @@ Modules/posixmodule.c	-	environ	-
 Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
 Modules/signalmodule.c	-	wakeup	-
+Modules/signalmodule.c	-	Handlers	-
 
 
 ##################################
@@ -612,6 +456,24 @@ Modules/_ctypes/_ctypes.c	-	Union_Type	-
 Modules/_ctypes/callbacks.c	-	PyCThunk_Type	-
 Modules/_ctypes/callproc.c	-	PyCArg_Type	-
 Modules/_ctypes/cfield.c	-	PyCField_Type	-
+Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
+Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
+Modules/_ctypes/ctypes.h	-	PyCData_Type	-
+Modules/_ctypes/ctypes.h	-	PyCField_Type	-
+Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
+Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
+Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
+Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-
+Modules/_ctypes/ctypes.h	-	PyCThunk_Type	-
+Modules/_ctypes/ctypes.h	-	PyExc_ArgError	-
+Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
+Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
+Modules/_ctypes/ctypes.h	-	_ctypes_ptrtype_cache	-
+Modules/_ctypes/ctypes.h	-	basespec_string	-
 Modules/_ctypes/stgdict.c	-	PyCStgDict_Type	-
 Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
 Modules/_datetimemodule.c	-	PyDateTime_DateTimeType	-
@@ -675,89 +537,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 
 #-----------------------
 # cached - initialized once
-
-# _Py_IDENTIFIER (global)
-Modules/_asynciomodule.c	-	PyId___asyncio_running_event_loop__	-
-Modules/_asynciomodule.c	-	PyId__asyncio_future_blocking	-
-Modules/_asynciomodule.c	-	PyId_add_done_callback	-
-Modules/_asynciomodule.c	-	PyId_call_soon	-
-Modules/_asynciomodule.c	-	PyId_cancel	-
-Modules/_asynciomodule.c	-	PyId_get_event_loop	-
-Modules/_asynciomodule.c	-	PyId_throw	-
-Modules/_datetimemodule.c	-	PyId_as_integer_ratio	-
-Modules/_datetimemodule.c	-	PyId_fromutc	-
-Modules/_datetimemodule.c	-	PyId_isoformat	-
-Modules/_datetimemodule.c	-	PyId_strftime	-
-
-# _Py_IDENTIFIER (local)
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_call_exception_handler	-
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_exception	-
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_future	-
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_message	-
-Modules/_asynciomodule.c	FutureObj_finalize	PyId_source_traceback	-
-Modules/_asynciomodule.c	FutureObj_get_state	PyId_CANCELLED	-
-Modules/_asynciomodule.c	FutureObj_get_state	PyId_FINISHED	-
-Modules/_asynciomodule.c	FutureObj_get_state	PyId_PENDING	-
-Modules/_asynciomodule.c	TaskObj_finalize	PyId_call_exception_handler	-
-Modules/_asynciomodule.c	TaskObj_finalize	PyId_message	-
-Modules/_asynciomodule.c	TaskObj_finalize	PyId_source_traceback	-
-Modules/_asynciomodule.c	TaskObj_finalize	PyId_task	-
-Modules/_asynciomodule.c	future_init	PyId_get_debug	-
-Modules/_asynciomodule.c	get_future_loop	PyId__loop	-
-Modules/_asynciomodule.c	get_future_loop	PyId_get_loop	-
-Modules/_asynciomodule.c	register_task	PyId_add	-
-Modules/_asynciomodule.c	unregister_task	PyId_discard	-
-Modules/_ctypes/_ctypes.c	CDataType_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	PyCArrayType_new	PyId__length_	-
-Modules/_ctypes/_ctypes.c	PyCArrayType_new	PyId__type_	-
-Modules/_ctypes/_ctypes.c	PyCFuncPtr_set_restype	PyId__check_retval_	-
-Modules/_ctypes/_ctypes.c	PyCPointerType_new	PyId__type_	-
-Modules/_ctypes/_ctypes.c	PyCPointerType_set_type	PyId__type_	-
-Modules/_ctypes/_ctypes.c	PyCSimpleType_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	PyCSimpleType_new	PyId__type_	-
-Modules/_ctypes/_ctypes.c	StructUnionType_new	PyId__abstract_	-
-Modules/_ctypes/_ctypes.c	StructUnionType_new	PyId__fields_	-
-Modules/_ctypes/_ctypes.c	_build_result	PyId___ctypes_from_outparam__	-
-Modules/_ctypes/_ctypes.c	_init_pos_args	PyId__fields_	-
-Modules/_ctypes/_ctypes.c	c_char_p_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	c_void_p_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	c_wchar_p_from_param	PyId__as_parameter_	-
-Modules/_ctypes/_ctypes.c	converters_from_argtypes	PyId_from_param	-
-Modules/_ctypes/_ctypes.c	make_funcptrtype_dict	PyId__argtypes_	-
-Modules/_ctypes/_ctypes.c	make_funcptrtype_dict	PyId__check_retval_	-
-Modules/_ctypes/_ctypes.c	make_funcptrtype_dict	PyId__flags_	-
-Modules/_ctypes/_ctypes.c	make_funcptrtype_dict	PyId__restype_	-
-Modules/_ctypes/callproc.c	ConvParam	PyId__as_parameter_	-
-Modules/_ctypes/callproc.c	unpickle	PyId___new__	-
-Modules/_ctypes/callproc.c	unpickle	PyId___setstate__	-
-Modules/_ctypes/stgdict.c	MakeAnonFields	PyId__anonymous_	-
-Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__pack_	-
-Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__swappedbytes_	-
-Modules/_ctypes/stgdict.c	PyCStructUnionType_update_stgdict	PyId__use_broken_old_ctypes_structure_semantics_	-
-Modules/_cursesmodule.c	_curses_getwin	PyId_read	-
-Modules/_cursesmodule.c	_curses_window_putwin	PyId_write	-
-Modules/_cursesmodule.c	update_lines_cols	PyId_COLS	-
-Modules/_cursesmodule.c	update_lines_cols	PyId_LINES	-
-Modules/_datetimemodule.c	call_tzname	PyId_tzname	-
-Modules/_datetimemodule.c	date_strftime	PyId_timetuple	-
-Modules/_datetimemodule.c	date_today	PyId_fromtimestamp	-
-Modules/_datetimemodule.c	datetime_strptime	PyId__strptime_datetime	-
-Modules/_datetimemodule.c	make_Zreplacement	PyId_replace	-
-Modules/_datetimemodule.c	tzinfo_reduce	PyId___getinitargs__	-
-Modules/_elementtree.c	_elementtree_Element_find_impl	PyId_find	-
-Modules/_elementtree.c	_elementtree_Element_findall_impl	PyId_findall	-
-Modules/_elementtree.c	_elementtree_Element_findtext_impl	PyId_findtext	-
-Modules/_elementtree.c	_elementtree_Element_iterfind_impl	PyId_iterfind	-
-Modules/_elementtree.c	expat_start_doctype_handler	PyId_doctype	-
-Modules/_elementtree.c	treebuilder_add_subelement	PyId_append	-
-Modules/_elementtree.c	treebuilder_flush_data	PyId_tail	-
-Modules/_elementtree.c	treebuilder_flush_data	PyId_text	-
-Modules/_json.c	_encoded_const	PyId_false	-
-Modules/_json.c	_encoded_const	PyId_null	-
-Modules/_json.c	_encoded_const	PyId_true	-
-Modules/_json.c	raise_errmsg	PyId_JSONDecodeError	-
-Modules/_json.c	raise_errmsg	PyId_decoder	-
-Modules/ossaudiodev.c	oss_exit	PyId_close	-
 
 # manually cached PyUnicodeOjbect
 Modules/_asynciomodule.c	-	context_kwname	-
@@ -849,6 +628,27 @@ Modules/_decimal/_decimal.c	-	_py_float_abs	-
 Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
 Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
+Modules/cjkcodecs/_codecs_hk.c	-	big5_encmap	-
+Modules/cjkcodecs/_codecs_hk.c	-	big5_decmap	-
+Modules/cjkcodecs/_codecs_hk.c	big5hkscs_codec_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	cp949_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	ksx1001_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisxcommon_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0208_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0212_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_bmp_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_1_bmp_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_2_bmp_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_emp_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_1_emp_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_2_emp_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	gbcommon_encmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	gb2312_decmap	-
+Modules/cjkcodecs/_codecs_iso2022.c	ksx1001_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	jisx0208_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	jisx0212_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	jisx0213_init	initialized	-
+Modules/cjkcodecs/_codecs_iso2022.c	gb2312_init	initialized	-
 Modules/cjkcodecs/cjkcodecs.h	-	codec_list	-
 Modules/cjkcodecs/cjkcodecs.h	-	mapping_list	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-

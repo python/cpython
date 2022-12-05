@@ -1,10 +1,17 @@
+import gc
 import re
 import sys
+import textwrap
 import types
 import unittest
 import weakref
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 
 class ClearTest(unittest.TestCase):
@@ -238,24 +245,126 @@ class ReprTest(unittest.TestCase):
 class TestIncompleteFrameAreInvisible(unittest.TestCase):
 
     def test_issue95818(self):
-        #See GH-95818 for details
-        import gc
-        self.addCleanup(gc.set_threshold, *gc.get_threshold())
+        # See GH-95818 for details
+        code = textwrap.dedent(f"""
+            import gc
 
-        gc.set_threshold(1,1,1)
-        class GCHello:
-            def __del__(self):
-                print("Destroyed from gc")
+            gc.set_threshold(1,1,1)
+            class GCHello:
+                def __del__(self):
+                    print("Destroyed from gc")
 
-        def gen():
-            yield
+            def gen():
+                yield
 
-        fd = open(__file__)
-        l = [fd, GCHello()]
-        l.append(l)
-        del fd
-        del l
-        gen()
+            fd = open({__file__!r})
+            l = [fd, GCHello()]
+            l.append(l)
+            del fd
+            del l
+            gen()
+        """)
+        assert_python_ok("-c", code)
+
+    @support.cpython_only
+    def test_sneaky_frame_object(self):
+
+        def trace(frame, event, arg):
+            """
+            Don't actually do anything, just force a frame object to be created.
+            """
+
+        def callback(phase, info):
+            """
+            Yo dawg, I heard you like frames, so I'm allocating a frame while
+            you're allocating a frame, so you can have a frame while you have a
+            frame!
+            """
+            nonlocal sneaky_frame_object
+            sneaky_frame_object = sys._getframe().f_back.f_back
+            # We're done here:
+            gc.callbacks.remove(callback)
+
+        def f():
+            while True:
+                yield
+
+        old_threshold = gc.get_threshold()
+        old_callbacks = gc.callbacks[:]
+        old_enabled = gc.isenabled()
+        old_trace = sys.gettrace()
+        try:
+            # Stop the GC for a second while we set things up:
+            gc.disable()
+            # Create a paused generator:
+            g = f()
+            next(g)
+            # Move all objects to the oldest generation, and tell the GC to run
+            # on the *very next* allocation:
+            gc.collect()
+            gc.set_threshold(1, 0, 0)
+            # Okay, so here's the nightmare scenario:
+            # - We're tracing the resumption of a generator, which creates a new
+            #   frame object.
+            # - The allocation of this frame object triggers a collection
+            #   *before* the frame object is actually created.
+            # - During the collection, we request the exact same frame object.
+            #   This test does it with a GC callback, but in real code it would
+            #   likely be a trace function, weakref callback, or finalizer.
+            # - The collection finishes, and the original frame object is
+            #   created. We now have two frame objects fighting over ownership
+            #   of the same interpreter frame!
+            sys.settrace(trace)
+            gc.callbacks.append(callback)
+            sneaky_frame_object = None
+            gc.enable()
+            next(g)
+            # g.gi_frame should be the the frame object from the callback (the
+            # one that was *requested* second, but *created* first):
+            self.assertIs(g.gi_frame, sneaky_frame_object)
+        finally:
+            gc.set_threshold(*old_threshold)
+            gc.callbacks[:] = old_callbacks
+            sys.settrace(old_trace)
+            if old_enabled:
+                gc.enable()
+
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    def getframe(self):
+        return sys._getframe()
+
+    def test_frame_getters(self):
+        frame = self.getframe()
+        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
+        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
+        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
+        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
+
+    def test_getvar(self):
+        current_frame = sys._getframe()
+        x = 1
+        self.assertEqual(_testcapi.frame_getvar(current_frame, "x"), 1)
+        self.assertEqual(_testcapi.frame_getvarstring(current_frame, b"x"), 1)
+        with self.assertRaises(NameError):
+            _testcapi.frame_getvar(current_frame, "y")
+        with self.assertRaises(NameError):
+            _testcapi.frame_getvarstring(current_frame, b"y")
+
+        # wrong name type
+        with self.assertRaises(TypeError):
+            _testcapi.frame_getvar(current_frame, b'x')
+        with self.assertRaises(TypeError):
+            _testcapi.frame_getvar(current_frame, 123)
+
+    def getgenframe(self):
+        yield sys._getframe()
+
+    def test_frame_get_generator(self):
+        gen = self.getgenframe()
+        frame = next(gen)
+        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
 
 
 if __name__ == "__main__":

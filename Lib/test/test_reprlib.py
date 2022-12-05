@@ -9,6 +9,7 @@ import shutil
 import importlib
 import importlib.util
 import unittest
+import textwrap
 
 from test.support import verbose
 from test.support.os_helper import create_empty_file
@@ -39,6 +40,7 @@ class ReprTests(unittest.TestCase):
             "maxlong": 110,
             "maxother": 111,
             "fillvalue": "x" * 112,
+            "indent": "x" * 113,
         }
         r1 = Repr()
         for attr, val in example_kwargs.items():
@@ -245,6 +247,338 @@ class ReprTests(unittest.TestCase):
         r(x)
         r(y)
         r(z)
+
+    def test_valid_indent(self):
+        test_cases = [
+            {
+                'object': (),
+                'tests': (
+                    (dict(indent=None), '()'),
+                    (dict(indent=False), '()'),
+                    (dict(indent=True), '()'),
+                    (dict(indent=0), '()'),
+                    (dict(indent=1), '()'),
+                    (dict(indent=4), '()'),
+                    (dict(indent=4, maxlevel=2), '()'),
+                    (dict(indent=''), '()'),
+                    (dict(indent='-->'), '()'),
+                    (dict(indent='....'), '()'),
+                ),
+            },
+            {
+                'object': '',
+                'tests': (
+                    (dict(indent=None), "''"),
+                    (dict(indent=False), "''"),
+                    (dict(indent=True), "''"),
+                    (dict(indent=0), "''"),
+                    (dict(indent=1), "''"),
+                    (dict(indent=4), "''"),
+                    (dict(indent=4, maxlevel=2), "''"),
+                    (dict(indent=''), "''"),
+                    (dict(indent='-->'), "''"),
+                    (dict(indent='....'), "''"),
+                ),
+            },
+            {
+                'object': [1, 'spam', {'eggs': True, 'ham': []}],
+                'tests': (
+                    (dict(indent=None), '''\
+                        [1, 'spam', {'eggs': True, 'ham': []}]'''),
+                    (dict(indent=False), '''\
+                        [
+                        1,
+                        'spam',
+                        {
+                        'eggs': True,
+                        'ham': [],
+                        },
+                        ]'''),
+                    (dict(indent=True), '''\
+                        [
+                         1,
+                         'spam',
+                         {
+                          'eggs': True,
+                          'ham': [],
+                         },
+                        ]'''),
+                    (dict(indent=0), '''\
+                        [
+                        1,
+                        'spam',
+                        {
+                        'eggs': True,
+                        'ham': [],
+                        },
+                        ]'''),
+                    (dict(indent=1), '''\
+                        [
+                         1,
+                         'spam',
+                         {
+                          'eggs': True,
+                          'ham': [],
+                         },
+                        ]'''),
+                    (dict(indent=4), '''\
+                        [
+                            1,
+                            'spam',
+                            {
+                                'eggs': True,
+                                'ham': [],
+                            },
+                        ]'''),
+                    (dict(indent=4, maxlevel=2), '''\
+                        [
+                            1,
+                            'spam',
+                            {
+                                'eggs': True,
+                                'ham': [],
+                            },
+                        ]'''),
+                    (dict(indent=''), '''\
+                        [
+                        1,
+                        'spam',
+                        {
+                        'eggs': True,
+                        'ham': [],
+                        },
+                        ]'''),
+                    (dict(indent='-->'), '''\
+                        [
+                        -->1,
+                        -->'spam',
+                        -->{
+                        -->-->'eggs': True,
+                        -->-->'ham': [],
+                        -->},
+                        ]'''),
+                    (dict(indent='....'), '''\
+                        [
+                        ....1,
+                        ....'spam',
+                        ....{
+                        ........'eggs': True,
+                        ........'ham': [],
+                        ....},
+                        ]'''),
+                ),
+            },
+            {
+                'object': {
+                    1: 'two',
+                    b'three': [
+                        (4.5, 6.7),
+                        [set((8, 9)), frozenset((10, 11))],
+                    ],
+                },
+                'tests': (
+                    (dict(indent=None), '''\
+                        {1: 'two', b'three': [(4.5, 6.7), [{8, 9}, frozenset({10, 11})]]}'''),
+                    (dict(indent=False), '''\
+                        {
+                        1: 'two',
+                        b'three': [
+                        (
+                        4.5,
+                        6.7,
+                        ),
+                        [
+                        {
+                        8,
+                        9,
+                        },
+                        frozenset({
+                        10,
+                        11,
+                        }),
+                        ],
+                        ],
+                        }'''),
+                    (dict(indent=True), '''\
+                        {
+                         1: 'two',
+                         b'three': [
+                          (
+                           4.5,
+                           6.7,
+                          ),
+                          [
+                           {
+                            8,
+                            9,
+                           },
+                           frozenset({
+                            10,
+                            11,
+                           }),
+                          ],
+                         ],
+                        }'''),
+                    (dict(indent=0), '''\
+                        {
+                        1: 'two',
+                        b'three': [
+                        (
+                        4.5,
+                        6.7,
+                        ),
+                        [
+                        {
+                        8,
+                        9,
+                        },
+                        frozenset({
+                        10,
+                        11,
+                        }),
+                        ],
+                        ],
+                        }'''),
+                    (dict(indent=1), '''\
+                        {
+                         1: 'two',
+                         b'three': [
+                          (
+                           4.5,
+                           6.7,
+                          ),
+                          [
+                           {
+                            8,
+                            9,
+                           },
+                           frozenset({
+                            10,
+                            11,
+                           }),
+                          ],
+                         ],
+                        }'''),
+                    (dict(indent=4), '''\
+                        {
+                            1: 'two',
+                            b'three': [
+                                (
+                                    4.5,
+                                    6.7,
+                                ),
+                                [
+                                    {
+                                        8,
+                                        9,
+                                    },
+                                    frozenset({
+                                        10,
+                                        11,
+                                    }),
+                                ],
+                            ],
+                        }'''),
+                    (dict(indent=4, maxlevel=2), '''\
+                        {
+                            1: 'two',
+                            b'three': [
+                                (...),
+                                [...],
+                            ],
+                        }'''),
+                    (dict(indent=''), '''\
+                        {
+                        1: 'two',
+                        b'three': [
+                        (
+                        4.5,
+                        6.7,
+                        ),
+                        [
+                        {
+                        8,
+                        9,
+                        },
+                        frozenset({
+                        10,
+                        11,
+                        }),
+                        ],
+                        ],
+                        }'''),
+                    (dict(indent='-->'), '''\
+                        {
+                        -->1: 'two',
+                        -->b'three': [
+                        -->-->(
+                        -->-->-->4.5,
+                        -->-->-->6.7,
+                        -->-->),
+                        -->-->[
+                        -->-->-->{
+                        -->-->-->-->8,
+                        -->-->-->-->9,
+                        -->-->-->},
+                        -->-->-->frozenset({
+                        -->-->-->-->10,
+                        -->-->-->-->11,
+                        -->-->-->}),
+                        -->-->],
+                        -->],
+                        }'''),
+                    (dict(indent='....'), '''\
+                        {
+                        ....1: 'two',
+                        ....b'three': [
+                        ........(
+                        ............4.5,
+                        ............6.7,
+                        ........),
+                        ........[
+                        ............{
+                        ................8,
+                        ................9,
+                        ............},
+                        ............frozenset({
+                        ................10,
+                        ................11,
+                        ............}),
+                        ........],
+                        ....],
+                        }'''),
+                ),
+            },
+        ]
+        for test_case in test_cases:
+            with self.subTest(test_object=test_case['object']):
+                for repr_settings, expected_repr in test_case['tests']:
+                    with self.subTest(repr_settings=repr_settings):
+                        r = Repr()
+                        for attribute, value in repr_settings.items():
+                            setattr(r, attribute, value)
+                        resulting_repr = r.repr(test_case['object'])
+                        expected_repr = textwrap.dedent(expected_repr)
+                        self.assertEqual(resulting_repr, expected_repr)
+
+    def test_invalid_indent(self):
+        test_object = [1, 'spam', {'eggs': True, 'ham': []}]
+        test_cases = [
+            (-1, (ValueError, '[Nn]egative|[Pp]ositive')),
+            (-4, (ValueError, '[Nn]egative|[Pp]ositive')),
+            ((), (TypeError, None)),
+            ([], (TypeError, None)),
+            ((4,), (TypeError, None)),
+            ([4,], (TypeError, None)),
+            (object(), (TypeError, None)),
+        ]
+        for indent, (expected_error, expected_msg) in test_cases:
+            with self.subTest(indent=indent):
+                r = Repr()
+                r.indent = indent
+                expected_msg = expected_msg or f'{type(indent)}'
+                with self.assertRaisesRegex(expected_error, expected_msg):
+                    r.repr(test_object)
 
 def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:

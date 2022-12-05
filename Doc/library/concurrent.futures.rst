@@ -152,7 +152,7 @@ And::
 
    All threads enqueued to ``ThreadPoolExecutor`` will be joined before the
    interpreter can exit. Note that the exit handler which does this is
-   executed *before* any exit handlers added using `atexit`. This means
+   executed *before* any exit handlers added using ``atexit``. This means
    exceptions in the main thread must be caught and handled in order to
    signal threads to exit gracefully. For this reason, it is recommended
    that ``ThreadPoolExecutor`` not be used for long-running tasks.
@@ -411,13 +411,13 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        tests.
 
        If the method returns ``False`` then the :class:`Future` was cancelled,
-       i.e. :meth:`Future.cancel` was called and returned `True`.  Any threads
+       i.e. :meth:`Future.cancel` was called and returned ``True``.  Any threads
        waiting on the :class:`Future` completing (i.e. through
        :func:`as_completed` or :func:`wait`) will be woken up.
 
        If the method returns ``True`` then the :class:`Future` was not cancelled
        and has been put in the running state, i.e. calls to
-       :meth:`Future.running` will return `True`.
+       :meth:`Future.running` will return ``True``.
 
        This method can only be called once and cannot be called after
        :meth:`Future.set_result` or :meth:`Future.set_exception` have been

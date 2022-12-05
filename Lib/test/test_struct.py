@@ -700,6 +700,20 @@ class StructTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     cls.x = 1
 
+    @support.cpython_only
+    def test__struct_Struct__new__initialized(self):
+        # See https://github.com/python/cpython/issues/78724
+
+        s = struct.Struct.__new__(struct.Struct, "b")
+        s.unpack_from(b"abcd")
+
+    @support.cpython_only
+    def test__struct_Struct_subclassing(self):
+        class Bob(struct.Struct):
+            pass
+
+        s = Bob("b")
+        s.unpack_from(b"abcd")
 
     def test_issue35714(self):
         # Embedded null characters should not be allowed in format strings.
@@ -709,23 +723,56 @@ class StructTest(unittest.TestCase):
                 struct.calcsize(s)
 
     @support.cpython_only
-    def test_issue45034_unsigned(self):
-        _testcapi = import_helper.import_module('_testcapi')
-        error_msg = f'ushort format requires 0 <= number <= {_testcapi.USHRT_MAX}'
-        with self.assertRaisesRegex(struct.error, error_msg):
-            struct.pack('H', 70000)  # too large
-        with self.assertRaisesRegex(struct.error, error_msg):
-            struct.pack('H', -1)  # too small
+    def test_issue98248(self):
+        def test_error_msg(prefix, int_type, is_unsigned):
+            fmt_str = prefix + int_type
+            size = struct.calcsize(fmt_str)
+            if is_unsigned:
+                max_ = 2 ** (size * 8) - 1
+                min_ = 0
+            else:
+                max_ = 2 ** (size * 8 - 1) - 1
+                min_ = -2 ** (size * 8 - 1)
+            error_msg = f"'{int_type}' format requires {min_} <= number <= {max_}"
+            for number in [int(-1e50), min_ - 1, max_ + 1, int(1e50)]:
+                with self.subTest(format_str=fmt_str, number=number):
+                    with self.assertRaisesRegex(struct.error, error_msg):
+                        struct.pack(fmt_str, number)
+            error_msg = "required argument is not an integer"
+            not_number = ""
+            with self.subTest(format_str=fmt_str, number=not_number):
+                with self.assertRaisesRegex(struct.error, error_msg):
+                    struct.pack(fmt_str, not_number)
+
+        for prefix in '@=<>':
+            for int_type in 'BHILQ':
+                test_error_msg(prefix, int_type, True)
+            for int_type in 'bhilq':
+                test_error_msg(prefix, int_type, False)
+
+        int_type = 'N'
+        test_error_msg('@', int_type, True)
+
+        int_type = 'n'
+        test_error_msg('@', int_type, False)
 
     @support.cpython_only
-    def test_issue45034_signed(self):
-        _testcapi = import_helper.import_module('_testcapi')
-        error_msg = f'short format requires {_testcapi.SHRT_MIN} <= number <= {_testcapi.SHRT_MAX}'
-        with self.assertRaisesRegex(struct.error, error_msg):
-            struct.pack('h', 70000)  # too large
-        with self.assertRaisesRegex(struct.error, error_msg):
-            struct.pack('h', -70000)  # too small
+    def test_issue98248_error_propagation(self):
+        class Div0:
+            def __index__(self):
+                1 / 0
 
+        def test_error_propagation(fmt_str):
+            with self.subTest(format_str=fmt_str, exception="ZeroDivisionError"):
+                with self.assertRaises(ZeroDivisionError):
+                    struct.pack(fmt_str, Div0())
+
+        for prefix in '@=<>':
+            for int_type in 'BHILQbhilq':
+                test_error_propagation(prefix + int_type)
+
+        test_error_propagation('N')
+        test_error_propagation('n')
 
 class UnpackIteratorTest(unittest.TestCase):
     """
