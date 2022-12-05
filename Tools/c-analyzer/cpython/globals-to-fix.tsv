@@ -306,7 +306,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ## effectively-const but initialized lazily
 
 ## idempotent
-Python/dtoa.c	-	p5s	-
 Objects/obmalloc.c	new_arena	debug_stats	-
 
 ## others
