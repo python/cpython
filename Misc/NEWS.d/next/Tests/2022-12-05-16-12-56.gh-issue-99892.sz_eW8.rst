@@ -1,0 +1,2 @@
+Skip test_normalization() of test_unicodedata if it fails to download
+NormalizationTest.txt file from pythontest.net. Patch by Victor Stinner.
