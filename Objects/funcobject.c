@@ -18,7 +18,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
         assert(i < FUNC_MAX_WATCHERS);
         if (bits & 1) {
             PyFunction_WatchCallback cb = interp->func_watchers[i];
-            if ((cb != NULL) && (cb(event, func, new_value) < 0)) {
+            // callback must be non-null if the watcher bit is set
+            assert(cb != NULL);
+            if (cb(event, func, new_value) < 0) {
                 PyErr_WriteUnraisable((PyObject *) func);
             }
         }
