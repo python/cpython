@@ -496,7 +496,6 @@ Modules/_pickle.c	-	PicklerMemoProxyType	-
 Modules/_pickle.c	-	Pickler_Type	-
 Modules/_pickle.c	-	UnpicklerMemoProxyType	-
 Modules/_pickle.c	-	Unpickler_Type	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelIDtype	-
 Modules/_zoneinfo.c	-	PyZoneInfo_ZoneInfoType	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
@@ -523,12 +522,6 @@ Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelNotFoundError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelClosedError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelEmptyError	-
-Modules/_xxsubinterpretersmodule.c	-	ChannelNotEmptyError	-
-Modules/_xxsubinterpretersmodule.c	-	RunFailedError	-
 Modules/ossaudiodev.c	-	OSSAudioError	-
 Modules/socketmodule.c	-	socket_herror	-
 Modules/socketmodule.c	-	socket_gaierror	-

@@ -556,7 +556,7 @@ py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
     Py_ssize_t end;
     Py_ssize_t next_end = -1;
     int strict = 1;
-    if (!PyArg_ParseTuple(args, "On|i:scanstring", &pystr, &end, &strict)) {
+    if (!PyArg_ParseTuple(args, "On|p:scanstring", &pystr, &end, &strict)) {
         return NULL;
     }
     if (PyUnicode_Check(pystr)) {
