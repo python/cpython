@@ -4814,7 +4814,7 @@ check_subscripter(struct compiler *c, expr_ty e)
               PyLong_Check(v) || PyFloat_Check(v) || PyComplex_Check(v) ||
               PyAnySet_Check(v)))
         {
-            return 1;
+            return SUCCESS;
         }
         /* fall through */
     case Set_kind:
@@ -4822,12 +4822,13 @@ check_subscripter(struct compiler *c, expr_ty e)
     case GeneratorExp_kind:
     case Lambda_kind: {
         location loc = LOC(e);
-        return compiler_warn(c, loc, "'%.200s' object is not subscriptable; "
-                                     "perhaps you missed a comma?",
-                                     infer_type(e)->tp_name);
+        int ret = compiler_warn(c, loc, "'%.200s' object is not subscriptable; "
+                                        "perhaps you missed a comma?",
+                                        infer_type(e)->tp_name);
+        return ret == 0 ? ERROR : SUCCESS;
     }
     default:
-        return 1;
+        return SUCCESS;
     }
 }
 
@@ -4840,14 +4841,14 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
     if (index_type == NULL
         || PyType_FastSubclass(index_type, Py_TPFLAGS_LONG_SUBCLASS)
         || index_type == &PySlice_Type) {
-        return 1;
+        return SUCCESS;
     }
 
     switch (e->kind) {
     case Constant_kind:
         v = e->v.Constant.value;
         if (!(PyUnicode_Check(v) || PyBytes_Check(v) || PyTuple_Check(v))) {
-            return 1;
+            return SUCCESS;
         }
         /* fall through */
     case Tuple_kind:
@@ -4856,14 +4857,15 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
     case JoinedStr_kind:
     case FormattedValue_kind: {
         location loc = LOC(e);
-        return compiler_warn(c, loc, "%.200s indices must be integers "
-                                     "or slices, not %.200s; "
-                                     "perhaps you missed a comma?",
-                                     infer_type(e)->tp_name,
-                                     index_type->tp_name);
+        int ret = compiler_warn(c, loc, "%.200s indices must be integers "
+                                        "or slices, not %.200s; "
+                                        "perhaps you missed a comma?",
+                                        infer_type(e)->tp_name,
+                                        index_type->tp_name);
+        return ret == 0 ? ERROR : SUCCESS;
     }
     default:
-        return 1;
+        return SUCCESS;
     }
 }
 
@@ -5986,7 +5988,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         }
         break;
     case Subscript_kind:
-        return compiler_subscript(c, e);
+        return compiler_subscript(c, e) == SUCCESS ? 1 : 0;
     case Starred_kind:
         switch (e->v.Starred.ctx) {
         case Store:
@@ -6302,38 +6304,32 @@ compiler_subscript(struct compiler *c, expr_ty e)
     int op = 0;
 
     if (ctx == Load) {
-        if (!check_subscripter(c, e->v.Subscript.value)) {
-            return 0;
-        }
-        if (!check_index(c, e->v.Subscript.value, e->v.Subscript.slice)) {
-            return 0;
-        }
+        RETURN_IF_ERROR(check_subscripter(c, e->v.Subscript.value));
+        RETURN_IF_ERROR(check_index(c, e->v.Subscript.value, e->v.Subscript.slice));
     }
 
-    _VISIT(c, expr, e->v.Subscript.value);
+    VISIT(c, expr, e->v.Subscript.value);
     if (is_two_element_slice(e->v.Subscript.slice) && ctx != Del) {
-        if (compiler_slice(c, e->v.Subscript.slice) < 0) {
-            return 0;
-        }
+        RETURN_IF_ERROR(compiler_slice(c, e->v.Subscript.slice));
         if (ctx == Load) {
-            _ADDOP(c, loc, BINARY_SLICE);
+            ADDOP(c, loc, BINARY_SLICE);
         }
         else {
             assert(ctx == Store);
-            _ADDOP(c, loc, STORE_SLICE);
+            ADDOP(c, loc, STORE_SLICE);
         }
     }
     else {
-        _VISIT(c, expr, e->v.Subscript.slice);
+        VISIT(c, expr, e->v.Subscript.slice);
         switch (ctx) {
             case Load:    op = BINARY_SUBSCR; break;
             case Store:   op = STORE_SUBSCR; break;
             case Del:     op = DELETE_SUBSCR; break;
         }
         assert(op);
-        _ADDOP(c, loc, op);
+        ADDOP(c, loc, op);
     }
-    return 1;
+    return SUCCESS;
 }
 
 /* Returns the number of the values emitted,
