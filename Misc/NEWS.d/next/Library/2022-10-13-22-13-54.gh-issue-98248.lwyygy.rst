@@ -1,0 +1,1 @@
+Provide informative error messages in :func:`struct.pack` when its integral arguments are not in range.
