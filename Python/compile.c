@@ -5586,7 +5586,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
             goto error_in_scope;
         }
 
-        _ADDOP_I(c, loc, op, 0);
+        ADDOP_I(c, loc, op, 0);
     }
 
     if (compiler_comprehension_generator(c, loc, generators, 0, 0,
@@ -5595,7 +5595,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
 
     if (type != COMP_GENEXP) {
-        _ADDOP(c, LOC(e), RETURN_VALUE);
+        ADDOP(c, LOC(e), RETURN_VALUE);
     }
     if (type == COMP_GENEXP) {
         if (wrap_in_stopiteration_handler(c) < 0) {
@@ -5609,8 +5609,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (is_top_level_await && is_async_generator){
         c->u->u_ste->ste_coroutine = 1;
     }
-    if (co == NULL)
+    if (co == NULL) {
         goto error;
+    }
 
     loc = LOC(e);
     if (compiler_make_closure(c, loc, co, 0, qualname) < 0) {
@@ -5619,30 +5620,30 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     Py_DECREF(qualname);
     Py_DECREF(co);
 
-    _VISIT(c, expr, outermost->iter);
+    VISIT(c, expr, outermost->iter);
 
     loc = LOC(e);
     if (outermost->is_async) {
-        _ADDOP(c, loc, GET_AITER);
+        ADDOP(c, loc, GET_AITER);
     } else {
-        _ADDOP(c, loc, GET_ITER);
+        ADDOP(c, loc, GET_ITER);
     }
 
-    _ADDOP_I(c, loc, CALL, 0);
+    ADDOP_I(c, loc, CALL, 0);
 
     if (is_async_generator && type != COMP_GENEXP) {
-        _ADDOP_I(c, loc, GET_AWAITABLE, 0);
-        _ADDOP_LOAD_CONST(c, loc, Py_None);
-        _ADD_YIELD_FROM(c, loc, 1);
+        ADDOP_I(c, loc, GET_AWAITABLE, 0);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADD_YIELD_FROM(c, loc, 1);
     }
 
-    return 1;
+    return SUCCESS;
 error_in_scope:
     compiler_exit_scope(c);
 error:
     Py_XDECREF(qualname);
     Py_XDECREF(co);
-    return 0;
+    return ERROR;
 }
 
 static int
@@ -5940,13 +5941,13 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Set_kind:
         return compiler_set(c, e) == SUCCESS ? 1 : 0;
     case GeneratorExp_kind:
-        return compiler_genexp(c, e);
+        return compiler_genexp(c, e) == SUCCESS ? 1 : 0;
     case ListComp_kind:
-        return compiler_listcomp(c, e);
+        return compiler_listcomp(c, e) == SUCCESS ? 1 : 0;
     case SetComp_kind:
-        return compiler_setcomp(c, e);
+        return compiler_setcomp(c, e) == SUCCESS ? 1 : 0;
     case DictComp_kind:
-        return compiler_dictcomp(c, e);
+        return compiler_dictcomp(c, e) == SUCCESS ? 1 : 0;
     case Yield_kind:
         if (c->u->u_ste->ste_type != FunctionBlock)
             return compiler_error(c, loc, "'yield' outside function");
