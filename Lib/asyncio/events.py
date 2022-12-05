@@ -615,7 +615,7 @@ class AbstractEventLoopPolicy:
 
         Returns an event loop object implementing the BaseEventLoop interface,
         or raises an exception in case no event loop has been set for the
-        current context.
+        current context and the current policy does not specify to create one.
 
         It should never return None."""
         raise NotImplementedError
@@ -803,6 +803,16 @@ def get_event_loop():
     return get_event_loop_policy().get_event_loop()
 
 
+def _get_event_loop(stacklevel=3):
+    current_loop = _get_running_loop()
+    if current_loop is not None:
+        return current_loop
+    import warnings
+    warnings.warn('There is no current event loop',
+                  DeprecationWarning, stacklevel=stacklevel)
+    return get_event_loop_policy().get_event_loop()
+
+
 def set_event_loop(loop):
     """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
     get_event_loop_policy().set_event_loop(loop)
@@ -829,6 +839,7 @@ _py__get_running_loop = _get_running_loop
 _py__set_running_loop = _set_running_loop
 _py_get_running_loop = get_running_loop
 _py_get_event_loop = get_event_loop
+_py__get_event_loop = _get_event_loop
 
 
 try:
@@ -836,7 +847,7 @@ try:
     # functions in asyncio.  Pure Python implementation is
     # about 4 times slower than C-accelerated.
     from _asyncio import (_get_running_loop, _set_running_loop,
-                          get_running_loop, get_event_loop)
+                          get_running_loop, get_event_loop, _get_event_loop)
 except ImportError:
     pass
 else:
@@ -845,3 +856,4 @@ else:
     _c__set_running_loop = _set_running_loop
     _c_get_running_loop = get_running_loop
     _c_get_event_loop = get_event_loop
+    _c__get_event_loop = _get_event_loop

@@ -3123,6 +3123,42 @@ _asyncio_get_event_loop_impl(PyObject *module)
 }
 
 /*[clinic input]
+_asyncio._get_event_loop
+    stacklevel: int = 3
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio__get_event_loop_impl(PyObject *module, int stacklevel)
+/*[clinic end generated code: output=9c1d6d3c802e67c9 input=d17aebbd686f711d]*/
+{
+    PyObject *loop;
+    PyObject *policy;
+
+    if (get_running_loop(&loop)) {
+        return NULL;
+    }
+    if (loop != NULL) {
+        return loop;
+    }
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "There is no current event loop",
+                     stacklevel-1))
+    {
+        return NULL;
+    }
+
+    policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
+    if (policy == NULL) {
+        return NULL;
+    }
+
+    loop = _PyObject_CallMethodIdNoArgs(policy, &PyId_get_event_loop);
+    Py_DECREF(policy);
+    return loop;
+}
+
+/*[clinic input]
 _asyncio.get_running_loop
 
 Return the running event loop.  Raise a RuntimeError if there is none.
@@ -3417,6 +3453,7 @@ PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
 static PyMethodDef asyncio_methods[] = {
     _ASYNCIO_GET_EVENT_LOOP_METHODDEF
+    _ASYNCIO__GET_EVENT_LOOP_METHODDEF
     _ASYNCIO_GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__SET_RUNNING_LOOP_METHODDEF
