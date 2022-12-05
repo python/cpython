@@ -1733,14 +1733,6 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     Py_DECREF(__new_const); \
 }
 
-#define _ADDOP_N(C, LOC, OP, O, TYPE) { \
-    assert(!HAS_CONST(OP)); /* use _ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) { \
-        Py_DECREF((O)); \
-        return 0; \
-    } \
-    Py_DECREF((O)); \
-}
 
 #define _ADDOP_NAME(C, LOC, OP, O, TYPE) { \
     if (compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) \
@@ -2913,13 +2905,13 @@ compiler_class(struct compiler *c, stmt_ty s)
     return compiler_nameop(c, loc, s->v.ClassDef.name, Store);
 }
 
-/* Return 0 if the expression is a constant value except named singletons.
-   Return 1 otherwise. */
-static int
+/* Return false if the expression is a constant value except named singletons.
+   Return true otherwise. */
+static bool
 check_is_arg(expr_ty e)
 {
     if (e->kind != Constant_kind) {
-        return 1;
+        return true;
     }
     PyObject *value = e->v.Constant.value;
     return (value == Py_None
@@ -2935,11 +2927,11 @@ static int
 check_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
-    int left = check_is_arg(e->v.Compare.left);
+    bool left = check_is_arg(e->v.Compare.left);
     n = asdl_seq_LEN(e->v.Compare.ops);
     for (i = 0; i < n; i++) {
         cmpop_ty op = (cmpop_ty)asdl_seq_GET(e->v.Compare.ops, i);
-        int right = check_is_arg((expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+        bool right = check_is_arg((expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
         if (op == Is || op == IsNot) {
             if (!right || !left) {
                 const char *msg = (op == Is)
@@ -6113,9 +6105,9 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 static int
 check_ann_expr(struct compiler *c, expr_ty e)
 {
-    _VISIT(c, expr, e);
-    _ADDOP(c, LOC(e), POP_TOP);
-    return 1;
+    VISIT(c, expr, e);
+    ADDOP(c, LOC(e), POP_TOP);
+    return SUCCESS;
 }
 
 static int
@@ -6124,7 +6116,7 @@ check_annotation(struct compiler *c, stmt_ty s)
     /* Annotations of complex targets does not produce anything
        under annotations future */
     if (c->c_future.ff_features & CO_FUTURE_ANNOTATIONS) {
-        return 1;
+        return SUCCESS;
     }
 
     /* Annotations are only evaluated in a module or class. */
@@ -6132,7 +6124,7 @@ check_annotation(struct compiler *c, stmt_ty s)
         c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
         return check_ann_expr(c, s->v.AnnAssign.annotation);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -6141,26 +6133,24 @@ check_ann_subscr(struct compiler *c, expr_ty e)
     /* We check that everything in a subscript is defined at runtime. */
     switch (e->kind) {
     case Slice_kind:
-        if (e->v.Slice.lower && !check_ann_expr(c, e->v.Slice.lower)) {
-            return 0;
+        if (e->v.Slice.lower && check_ann_expr(c, e->v.Slice.lower) < 0) {
+            return ERROR;
         }
-        if (e->v.Slice.upper && !check_ann_expr(c, e->v.Slice.upper)) {
-            return 0;
+        if (e->v.Slice.upper && check_ann_expr(c, e->v.Slice.upper) < 0) {
+            return ERROR;
         }
-        if (e->v.Slice.step && !check_ann_expr(c, e->v.Slice.step)) {
-            return 0;
+        if (e->v.Slice.step && check_ann_expr(c, e->v.Slice.step) < 0) {
+            return ERROR;
         }
-        return 1;
+        return SUCCESS;
     case Tuple_kind: {
         /* extended slice */
         asdl_expr_seq *elts = e->v.Tuple.elts;
         Py_ssize_t i, n = asdl_seq_LEN(elts);
         for (i = 0; i < n; i++) {
-            if (!check_ann_subscr(c, asdl_seq_GET(elts, i))) {
-                return 0;
-            }
+            RETURN_IF_ERROR(check_ann_subscr(c, asdl_seq_GET(elts, i)));
         }
-        return 1;
+        return SUCCESS;
     }
     default:
         return check_ann_expr(c, e);
@@ -6207,14 +6197,14 @@ compiler_annassign(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         if (!s->v.AnnAssign.value &&
-            !check_ann_expr(c, targ->v.Attribute.value)) {
+            check_ann_expr(c, targ->v.Attribute.value) < 0) {
             return ERROR;
         }
         break;
     case Subscript_kind:
         if (!s->v.AnnAssign.value &&
-            (!check_ann_expr(c, targ->v.Subscript.value) ||
-             !check_ann_subscr(c, targ->v.Subscript.slice))) {
+            (check_ann_expr(c, targ->v.Subscript.value) < 0 ||
+             check_ann_subscr(c, targ->v.Subscript.slice) < 0)) {
                 return ERROR;
         }
         break;
@@ -6225,7 +6215,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         return ERROR;
     }
     /* Annotation is evaluated last. */
-    if (!s->v.AnnAssign.simple && !check_annotation(c, s)) {
+    if (!s->v.AnnAssign.simple && check_annotation(c, s) < 0) {
         return ERROR;
     }
     return SUCCESS;
