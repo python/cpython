@@ -16,7 +16,7 @@
 //
 // In C++ 11 static_assert is a keyword, redefining is undefined behaviour.
 // So only define if building as C (if __STDC_VERSION__ is defined), not C++.
-#if !defined(static_assert) && defined(__GNUC__) \
+#if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
      && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #  define static_assert _Static_assert
 #endif
