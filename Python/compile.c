@@ -1670,13 +1670,11 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
    the ASDL name to synthesize the name of the C type and the visit function.
 */
 
-#define VISIT(C, TYPE, V) {\
-    if (!compiler_visit_ ## TYPE((C), (V))) \
-        return ERROR; \
-}
+#define VISIT(C, TYPE, V) \
+    RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), (V)));
 
 #define VISIT_IN_SCOPE(C, TYPE, V) {\
-    if (!compiler_visit_ ## TYPE((C), (V))) { \
+    if (compiler_visit_ ## TYPE((C), (V)) < 0) { \
         compiler_exit_scope(c); \
         return ERROR; \
     } \
@@ -1687,7 +1685,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        if (!compiler_visit_ ## TYPE((C), elt)) \
+        if (compiler_visit_ ## TYPE((C), elt) < 0) \
             return ERROR; \
     } \
 }
@@ -1697,96 +1695,10 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
     asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        if (!compiler_visit_ ## TYPE((C), elt)) { \
+        if (compiler_visit_ ## TYPE((C), elt) < 0) { \
             compiler_exit_scope(c); \
             return ERROR; \
         } \
-    } \
-}
-
-
-/*******************/
-
-
-
-
-#define _ADDOP(C, LOC, OP) { \
-    if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) \
-        return 0; \
-}
-
-#define _ADDOP_LOAD_CONST(C, LOC, O) { \
-    if (compiler_addop_load_const((C), (LOC), (O)) < 0) \
-        return 0; \
-}
-
-/* Same as _ADDOP_LOAD_CONST, but steals a reference. */
-#define _ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
-    PyObject *__new_const = (O); \
-    if (__new_const == NULL) { \
-        return 0; \
-    } \
-    if (compiler_addop_load_const((C), (LOC), __new_const) < 0) { \
-        Py_DECREF(__new_const); \
-        return 0; \
-    } \
-    Py_DECREF(__new_const); \
-}
-
-
-#define _ADDOP_NAME(C, LOC, OP, O, TYPE) { \
-    if (compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) \
-        return 0; \
-}
-
-#define _ADDOP_I(C, LOC, OP, O) { \
-    if (cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), (LOC)) < 0) \
-        return 0; \
-}
-
-#define _ADDOP_JUMP(C, LOC, OP, O) { \
-    if (cfg_builder_addop_j(CFG_BUILDER(C), (LOC), (OP), (O)) < 0) \
-        return 0; \
-}
-
-#define _ADDOP_COMPARE(C, LOC, CMP) { \
-    if (compiler_addcompare((C), (LOC), (cmpop_ty)(CMP)) < 0) \
-        return 0; \
-}
-
-#define _ADDOP_BINARY(C, LOC, BINOP) { \
-    if (addop_binary((C), (LOC), (BINOP), false) < 0) \
-        return 0; \
-    }
-
-
-#define _ADD_YIELD_FROM(C, LOC, await) { \
-    if (compiler_add_yield_from((C), (LOC), (await)) < 0) \
-        return 0; \
-}
-
-
-#define _ADDOP_YIELD(C, LOC) { \
-    if (addop_yield((C), (LOC)) < 0) \
-        return 0; \
-    }
-
-/* _VISIT and _VISIT_SEQ takes an ASDL type as their second argument.  They use
-   the ASDL name to synthesize the name of the C type and the visit function.
-*/
-
-#define _VISIT(C, TYPE, V) {\
-    if (!compiler_visit_ ## TYPE((C), (V))) \
-        return 0; \
-}
-
-#define _VISIT_SEQ(C, TYPE, SEQ) { \
-    int _i; \
-    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
-    for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
-        if (!compiler_visit_ ## TYPE((C), elt)) \
-            return 0; \
     } \
 }
 
@@ -2453,17 +2365,15 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
                     goto error;
                 }
             }
-            if (!compiler_visit_expr(c, default_)) {
-                goto error;
-            }
+            RETURN_IF_ERROR(compiler_visit_expr(c, default_));
         }
     }
     if (keys != NULL) {
         Py_ssize_t default_count = PyList_GET_SIZE(keys);
         PyObject *keys_tuple = PyList_AsTuple(keys);
         Py_DECREF(keys);
-        _ADDOP_LOAD_CONST_NEW(c, loc, keys_tuple);
-        _ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, default_count);
+        ADDOP_LOAD_CONST_NEW(c, loc, keys_tuple);
+        ADDOP_I(c, loc, BUILD_CONST_KEY_MAP, default_count);
         assert(default_count > 0);
         return 1;
     }
@@ -2480,8 +2390,8 @@ static int
 compiler_visit_annexpr(struct compiler *c, expr_ty annotation)
 {
     location loc = LOC(annotation);
-    _ADDOP_LOAD_CONST_NEW(c, loc, _PyAST_ExprAsUnicode(annotation));
-    return 1;
+    ADDOP_LOAD_CONST_NEW(c, loc, _PyAST_ExprAsUnicode(annotation));
+    return SUCCESS;
 }
 
 static int
@@ -2597,10 +2507,8 @@ compiler_default_arguments(struct compiler *c, location loc,
         int res = compiler_visit_kwonlydefaults(c, loc,
                                                 args->kwonlyargs,
                                                 args->kw_defaults);
-        if (res < 0) {
-            return ERROR;
-        }
-        else if (res > 0) {
+        RETURN_IF_ERROR(res);
+        if (res > 0) {
             funcflags |= 0x02;
         }
     }
@@ -2740,10 +2648,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return ERROR;
     }
     annotations = compiler_visit_annotations(c, loc, args, returns);
-    if (annotations == ERROR) {
-        return ERROR;
-    }
-    else if (annotations > 0) {
+    RETURN_IF_ERROR(annotations);
+    if (annotations > 0) {
         funcflags |= 0x04;
     }
 
@@ -4119,94 +4025,94 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 
     switch (s->kind) {
     case FunctionDef_kind:
-        return compiler_function(c, s, 0) == SUCCESS ? 1 : 0;
+        return compiler_function(c, s, 0);
     case ClassDef_kind:
-        return compiler_class(c, s) == SUCCESS ? 1 : 0;
+        return compiler_class(c, s);
     case Return_kind:
-        return compiler_return(c, s) == SUCCESS ? 1 : 0;
+        return compiler_return(c, s);
     case Delete_kind:
-        _VISIT_SEQ(c, expr, s->v.Delete.targets)
+        VISIT_SEQ(c, expr, s->v.Delete.targets)
         break;
     case Assign_kind:
     {
         Py_ssize_t n = asdl_seq_LEN(s->v.Assign.targets);
-        _VISIT(c, expr, s->v.Assign.value);
+        VISIT(c, expr, s->v.Assign.value);
         for (Py_ssize_t i = 0; i < n; i++) {
             if (i < n - 1) {
-                _ADDOP_I(c, LOC(s), COPY, 1);
+                ADDOP_I(c, LOC(s), COPY, 1);
             }
-            _VISIT(c, expr,
+            VISIT(c, expr,
                   (expr_ty)asdl_seq_GET(s->v.Assign.targets, i));
         }
         break;
     }
     case AugAssign_kind:
-        return compiler_augassign(c, s) == SUCCESS ? 1 : 0;
+        return compiler_augassign(c, s);
     case AnnAssign_kind:
-        return compiler_annassign(c, s) == SUCCESS ? 1 : 0;
+        return compiler_annassign(c, s);
     case For_kind:
-        return compiler_for(c, s) == SUCCESS ? 1 : 0;
+        return compiler_for(c, s);
     case While_kind:
-        return compiler_while(c, s) == SUCCESS ? 1 : 0;
+        return compiler_while(c, s);
     case If_kind:
-        return compiler_if(c, s) == SUCCESS ? 1 : 0;
+        return compiler_if(c, s);
     case Match_kind:
-        return compiler_match(c, s) == SUCCESS ? 1 : 0;
+        return compiler_match(c, s);
     case Raise_kind:
     {
         Py_ssize_t n = 0;
         if (s->v.Raise.exc) {
-            _VISIT(c, expr, s->v.Raise.exc);
+            VISIT(c, expr, s->v.Raise.exc);
             n++;
             if (s->v.Raise.cause) {
-                _VISIT(c, expr, s->v.Raise.cause);
+                VISIT(c, expr, s->v.Raise.cause);
                 n++;
             }
         }
-        _ADDOP_I(c, LOC(s), RAISE_VARARGS, (int)n);
+        ADDOP_I(c, LOC(s), RAISE_VARARGS, (int)n);
         break;
     }
     case Try_kind:
-        return compiler_try(c, s) == SUCCESS ? 1 : 0;
+        return compiler_try(c, s);
     case TryStar_kind:
-        return compiler_try_star(c, s) == SUCCESS ? 1 : 0;
+        return compiler_try_star(c, s);
     case Assert_kind:
-        return compiler_assert(c, s) == SUCCESS ? 1 : 0;
+        return compiler_assert(c, s);
     case Import_kind:
-        return compiler_import(c, s) == SUCCESS ? 1 : 0;
+        return compiler_import(c, s);
     case ImportFrom_kind:
-        return compiler_from_import(c, s) == SUCCESS ? 1 : 0;
+        return compiler_from_import(c, s);
     case Global_kind:
     case Nonlocal_kind:
         break;
     case Expr_kind:
     {
-        return compiler_stmt_expr(c, LOC(s), s->v.Expr.value) == SUCCESS ? 1 : 0;
+        return compiler_stmt_expr(c, LOC(s), s->v.Expr.value);
     }
     case Pass_kind:
     {
-        _ADDOP(c, LOC(s), NOP);
+        ADDOP(c, LOC(s), NOP);
         break;
     }
     case Break_kind:
     {
-        return compiler_break(c, LOC(s)) == SUCCESS ? 1 : 0;
+        return compiler_break(c, LOC(s));
     }
     case Continue_kind:
     {
-        return compiler_continue(c, LOC(s)) == SUCCESS ? 1 : 0;
+        return compiler_continue(c, LOC(s));
     }
     case With_kind:
-        return compiler_with(c, s, 0) == SUCCESS ? 1 : 0;
+        return compiler_with(c, s, 0);
     case AsyncFunctionDef_kind:
-        return compiler_function(c, s, 1) == SUCCESS ? 1 : 0;
+        return compiler_function(c, s, 1);
     case AsyncWith_kind:
-        return compiler_async_with(c, s, 0) == SUCCESS ? 1 : 0;
+        return compiler_async_with(c, s, 0);
     case AsyncFor_kind:
-        return compiler_async_for(c, s) == SUCCESS ? 1 : 0;
+        return compiler_async_for(c, s);
     }
 
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -5647,8 +5553,8 @@ compiler_dictcomp(struct compiler *c, expr_ty e)
 static int
 compiler_visit_keyword(struct compiler *c, keyword_ty k)
 {
-    _VISIT(c, expr, k->value);
-    return 1;
+    VISIT(c, expr, k->value);
+    return SUCCESS;
 }
 
 
@@ -5873,140 +5779,146 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     location loc = LOC(e);
     switch (e->kind) {
     case NamedExpr_kind:
-        _VISIT(c, expr, e->v.NamedExpr.value);
-        _ADDOP_I(c, loc, COPY, 1);
-        _VISIT(c, expr, e->v.NamedExpr.target);
+        VISIT(c, expr, e->v.NamedExpr.value);
+        ADDOP_I(c, loc, COPY, 1);
+        VISIT(c, expr, e->v.NamedExpr.target);
         break;
     case BoolOp_kind:
-        return compiler_boolop(c, e) == SUCCESS ? 1 : 0;
+        return compiler_boolop(c, e);
     case BinOp_kind:
-        _VISIT(c, expr, e->v.BinOp.left);
-        _VISIT(c, expr, e->v.BinOp.right);
-        _ADDOP_BINARY(c, loc, e->v.BinOp.op);
+        VISIT(c, expr, e->v.BinOp.left);
+        VISIT(c, expr, e->v.BinOp.right);
+        ADDOP_BINARY(c, loc, e->v.BinOp.op);
         break;
     case UnaryOp_kind:
-        _VISIT(c, expr, e->v.UnaryOp.operand);
-        _ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
+        VISIT(c, expr, e->v.UnaryOp.operand);
+        ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
         break;
     case Lambda_kind:
-        return compiler_lambda(c, e) == SUCCESS ? 1 : 0;
+        return compiler_lambda(c, e);
     case IfExp_kind:
-        return compiler_ifexp(c, e) == SUCCESS ? 1 : 0;
+        return compiler_ifexp(c, e);
     case Dict_kind:
-        return compiler_dict(c, e) == SUCCESS ? 1 : 0;
+        return compiler_dict(c, e);
     case Set_kind:
-        return compiler_set(c, e) == SUCCESS ? 1 : 0;
+        return compiler_set(c, e);
     case GeneratorExp_kind:
-        return compiler_genexp(c, e) == SUCCESS ? 1 : 0;
+        return compiler_genexp(c, e);
     case ListComp_kind:
-        return compiler_listcomp(c, e) == SUCCESS ? 1 : 0;
+        return compiler_listcomp(c, e);
     case SetComp_kind:
-        return compiler_setcomp(c, e) == SUCCESS ? 1 : 0;
+        return compiler_setcomp(c, e);
     case DictComp_kind:
-        return compiler_dictcomp(c, e) == SUCCESS ? 1 : 0;
+        return compiler_dictcomp(c, e);
     case Yield_kind:
-        if (c->u->u_ste->ste_type != FunctionBlock)
-            return compiler_error(c, loc, "'yield' outside function");
+        if (c->u->u_ste->ste_type != FunctionBlock) {
+            compiler_error(c, loc, "'yield' outside function");
+            return ERROR;
+        }
         if (e->v.Yield.value) {
-            _VISIT(c, expr, e->v.Yield.value);
+            VISIT(c, expr, e->v.Yield.value);
         }
         else {
-            _ADDOP_LOAD_CONST(c, loc, Py_None);
+            ADDOP_LOAD_CONST(c, loc, Py_None);
         }
-        _ADDOP_YIELD(c, loc);
+        ADDOP_YIELD(c, loc);
         break;
     case YieldFrom_kind:
-        if (c->u->u_ste->ste_type != FunctionBlock)
-            return compiler_error(c, loc, "'yield' outside function");
-
-        if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION)
-            return compiler_error(c, loc, "'yield from' inside async function");
-
-        _VISIT(c, expr, e->v.YieldFrom.value);
-        _ADDOP(c, loc, GET_YIELD_FROM_ITER);
-        _ADDOP_LOAD_CONST(c, loc, Py_None);
-        _ADD_YIELD_FROM(c, loc, 0);
+        if (c->u->u_ste->ste_type != FunctionBlock) {
+            compiler_error(c, loc, "'yield' outside function");
+            return ERROR;
+        }
+        if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION) {
+            compiler_error(c, loc, "'yield from' inside async function");
+            return ERROR;
+        }
+        VISIT(c, expr, e->v.YieldFrom.value);
+        ADDOP(c, loc, GET_YIELD_FROM_ITER);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
         if (!IS_TOP_LEVEL_AWAIT(c)){
             if (c->u->u_ste->ste_type != FunctionBlock){
-                return compiler_error(c, loc, "'await' outside function");
+                compiler_error(c, loc, "'await' outside function");
+                return ERROR;
             }
 
             if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-                    c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION){
-                return compiler_error(c, loc, "'await' outside async function");
+                    c->u->u_scope_type != COMPILER_SCOPE_COMPREHENSION) {
+                compiler_error(c, loc, "'await' outside async function");
+                return ERROR;
             }
         }
 
-        _VISIT(c, expr, e->v.Await.value);
-        _ADDOP_I(c, loc, GET_AWAITABLE, 0);
-        _ADDOP_LOAD_CONST(c, loc, Py_None);
-        _ADD_YIELD_FROM(c, loc, 1);
+        VISIT(c, expr, e->v.Await.value);
+        ADDOP_I(c, loc, GET_AWAITABLE, 0);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADD_YIELD_FROM(c, loc, 1);
         break;
     case Compare_kind:
-        return compiler_compare(c, e) == SUCCESS ? 1 : 0;
+        return compiler_compare(c, e);
     case Call_kind:
-        return compiler_call(c, e) == SUCCESS ? 1 : 0;
+        return compiler_call(c, e);
     case Constant_kind:
-        _ADDOP_LOAD_CONST(c, loc, e->v.Constant.value);
+        ADDOP_LOAD_CONST(c, loc, e->v.Constant.value);
         break;
     case JoinedStr_kind:
-        return compiler_joined_str(c, e) == SUCCESS ? 1 : 0;
+        return compiler_joined_str(c, e);
     case FormattedValue_kind:
-        return compiler_formatted_value(c, e) == SUCCESS ? 1 : 0;
+        return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
-        _VISIT(c, expr, e->v.Attribute.value);
+        VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
         switch (e->v.Attribute.ctx) {
         case Load:
-            _ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
+            ADDOP_NAME(c, loc, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
             if (forbidden_name(c, loc, e->v.Attribute.attr, e->v.Attribute.ctx)) {
-                return 0;
+                return ERROR;
             }
-            _ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
+            ADDOP_NAME(c, loc, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
-            _ADDOP_NAME(c, loc, DELETE_ATTR, e->v.Attribute.attr, names);
+            ADDOP_NAME(c, loc, DELETE_ATTR, e->v.Attribute.attr, names);
             break;
         }
         break;
     case Subscript_kind:
-        return compiler_subscript(c, e) == SUCCESS ? 1 : 0;
+        return compiler_subscript(c, e);
     case Starred_kind:
         switch (e->v.Starred.ctx) {
         case Store:
             /* In all legitimate cases, the Starred node was already replaced
              * by compiler_list/compiler_tuple. XXX: is that okay? */
-            return compiler_error(c, loc,
+            compiler_error(c, loc,
                 "starred assignment target must be in a list or tuple");
+            return ERROR;
         default:
-            return compiler_error(c, loc,
+            compiler_error(c, loc,
                 "can't use starred expression here");
+            return ERROR;
         }
         break;
     case Slice_kind:
     {
         int n = compiler_slice(c, e);
-        if (n < 0) {
-            return 0;
-        }
-        _ADDOP_I(c, loc, BUILD_SLICE, n);
+        RETURN_IF_ERROR(n);
+        ADDOP_I(c, loc, BUILD_SLICE, n);
         break;
     }
     case Name_kind:
-        return compiler_nameop(c, loc, e->v.Name.id, e->v.Name.ctx) == SUCCESS ? 1 : 0;
+        return compiler_nameop(c, loc, e->v.Name.id, e->v.Name.ctx);
     /* child nodes of List and Tuple will have expr_context set */
     case List_kind:
-        return compiler_list(c, e) == SUCCESS ? 1 : 0;
+        return compiler_list(c, e);
     case Tuple_kind:
-        return compiler_tuple(c, e) == SUCCESS ? 1 : 0;
+        return compiler_tuple(c, e);
     }
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -6791,9 +6703,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p,
             compiler_error(c, LOC(p), e);
             goto error;
         }
-        if (!compiler_visit_expr(c, key)) {
-            goto error;
-        }
+        RETURN_IF_ERROR(compiler_visit_expr(c, key));
     }
 
     // all keys have been checked; there are no duplicates
@@ -8865,6 +8775,19 @@ prepare_localsplus(struct compiler* c, int code_flags)
     return nlocalsplus;
 }
 
+static int
+add_return_at_end_of_block(struct compiler *c, int addNone)
+{
+    /* Make sure every block that falls off the end returns None. */
+    if (!basicblock_returns(CFG_BUILDER(c)->g_curblock)) {
+        if (addNone) {
+            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+        }
+        ADDOP(c, NO_LOCATION, RETURN_VALUE);
+    }
+    return SUCCESS;
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -8878,12 +8801,8 @@ assemble(struct compiler *c, int addNone)
         return NULL;
     }
 
-    /* Make sure every block that falls off the end returns None. */
-    if (!basicblock_returns(CFG_BUILDER(c)->g_curblock)) {
-        if (addNone) {
-            _ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-        }
-        _ADDOP(c, NO_LOCATION, RETURN_VALUE);
+    if (add_return_at_end_of_block(c, addNone) < 0) {
+        return NULL;
     }
 
     int nblocks = 0;
