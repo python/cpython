@@ -5020,22 +5020,22 @@ compiler_joined_str(struct compiler *c, expr_ty e)
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
     if (value_count > STACK_USE_GUIDELINE) {
         _Py_DECLARE_STR(empty, "");
-        _ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
-        _ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
-        _ADDOP_I(c, loc, BUILD_LIST, 0);
+        ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
+        ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
+        ADDOP_I(c, loc, BUILD_LIST, 0);
         for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.JoinedStr.values); i++) {
-            _VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
-            _ADDOP_I(c, loc, LIST_APPEND, 1);
+            VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
+            ADDOP_I(c, loc, LIST_APPEND, 1);
         }
-        _ADDOP_I(c, loc, CALL, 1);
+        ADDOP_I(c, loc, CALL, 1);
     }
     else {
-        _VISIT_SEQ(c, expr, e->v.JoinedStr.values);
+        VISIT_SEQ(c, expr, e->v.JoinedStr.values);
         if (asdl_seq_LEN(e->v.JoinedStr.values) != 1) {
-            _ADDOP_I(c, loc, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
+            ADDOP_I(c, loc, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
         }
     }
-    return 1;
+    return SUCCESS;
 }
 
 /* Used to implement f-strings. Format a single value. */
@@ -5060,7 +5060,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     int oparg;
 
     /* The expression to be formatted. */
-    _VISIT(c, expr, e->v.FormattedValue.value);
+    VISIT(c, expr, e->v.FormattedValue.value);
 
     switch (conversion) {
     case 's': oparg = FVC_STR;   break;
@@ -5070,19 +5070,19 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     default:
         PyErr_Format(PyExc_SystemError,
                      "Unrecognized conversion character %d", conversion);
-        return 0;
+        return ERROR;
     }
     if (e->v.FormattedValue.format_spec) {
         /* Evaluate the format spec, and update our opcode arg. */
-        _VISIT(c, expr, e->v.FormattedValue.format_spec);
+        VISIT(c, expr, e->v.FormattedValue.format_spec);
         oparg |= FVS_HAVE_SPEC;
     }
 
     /* And push our opcode and oparg */
     location loc = LOC(e);
-    _ADDOP_I(c, loc, FORMAT_VALUE, oparg);
+    ADDOP_I(c, loc, FORMAT_VALUE, oparg);
 
-    return 1;
+    return SUCCESS;
 }
 
 static int
@@ -5962,9 +5962,9 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         _ADDOP_LOAD_CONST(c, loc, e->v.Constant.value);
         break;
     case JoinedStr_kind:
-        return compiler_joined_str(c, e);
+        return compiler_joined_str(c, e) == SUCCESS ? 1 : 0;
     case FormattedValue_kind:
-        return compiler_formatted_value(c, e);
+        return compiler_formatted_value(c, e) == SUCCESS ? 1 : 0;
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         _VISIT(c, expr, e->v.Attribute.value);
