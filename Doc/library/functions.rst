@@ -569,7 +569,7 @@ are always available.  They are listed here in alphabetical order.
       :ref:`comprehensions <comprehensions>`, and :term:`generator expressions
       <generator expression>`, which create an inner scope of their own.
       The action of an assignment expression (see :pep:`572`) also
-      depends on scope information determined at compile-time.
+      depends on scope information determined at compile time.
 
       Interaction between these expressions and :func:`eval` can be explicitly
       controlled by the arguments *globals* and *locals* in the aforementioned manner.
