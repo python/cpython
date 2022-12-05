@@ -411,6 +411,15 @@ class ShareableTypeTests(unittest.TestCase):
                     interpreters.channel_send(self.cid, i)
 
 
+class ModuleTests(TestBase):
+
+    def test_import_in_interpreter(self):
+        _run_output(
+            interpreters.create(),
+            'import _xxsubinterpreters as _interpreters',
+        )
+
+
 ##################################
 # interpreter tests
 
