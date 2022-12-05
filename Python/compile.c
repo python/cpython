@@ -1318,10 +1318,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
     return stack_effect(opcode, oparg, -1);
 }
 
-/* Add an opcode with no argument.
-   Returns 0 on failure, 1 on success.
-*/
-
 static int
 basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
 {
@@ -1605,7 +1601,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADDOP(C, LOC, OP) \
-    RETURN_IF_ERROR(cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)));
+    RETURN_IF_ERROR(cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)))
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
@@ -1615,7 +1611,7 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADDOP_LOAD_CONST(C, LOC, O) \
-    RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)));
+    RETURN_IF_ERROR(compiler_addop_load_const((C), (LOC), (O)))
 
 /* Same as ADDOP_LOAD_CONST, but steals a reference. */
 #define ADDOP_LOAD_CONST_NEW(C, LOC, O) { \
@@ -1640,31 +1636,31 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 }
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) \
-    RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)));
+    RETURN_IF_ERROR(compiler_addop_name((C), (LOC), (OP), (C)->u->u_ ## TYPE, (O)))
 
 #define ADDOP_I(C, LOC, OP, O) \
-    RETURN_IF_ERROR(cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), (LOC)));
+    RETURN_IF_ERROR(cfg_builder_addop_i(CFG_BUILDER(C), (OP), (O), (LOC)))
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
-    RETURN_IF_ERROR(cfg_builder_addop_j(CFG_BUILDER(C), (LOC), (OP), (O)));
+    RETURN_IF_ERROR(cfg_builder_addop_j(CFG_BUILDER(C), (LOC), (OP), (O)))
 
 #define ADDOP_COMPARE(C, LOC, CMP) \
-    RETURN_IF_ERROR(compiler_addcompare((C), (LOC), (cmpop_ty)(CMP)));
+    RETURN_IF_ERROR(compiler_addcompare((C), (LOC), (cmpop_ty)(CMP)))
 
 #define ADDOP_BINARY(C, LOC, BINOP) \
-    RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), false));
+    RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), false))
 
 #define ADDOP_INPLACE(C, LOC, BINOP) \
-    RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), true));
+    RETURN_IF_ERROR(addop_binary((C), (LOC), (BINOP), true))
 
-#define ADD_YIELD_FROM(C, LOC, await)  \
-    RETURN_IF_ERROR(compiler_add_yield_from((C), (LOC), (await)));
+#define ADD_YIELD_FROM(C, LOC, await) \
+    RETURN_IF_ERROR(compiler_add_yield_from((C), (LOC), (await)))
 
-#define POP_EXCEPT_AND_RERAISE(C, LOC)  \
-    RETURN_IF_ERROR(compiler_pop_except_and_reraise((C), (LOC)));
+#define POP_EXCEPT_AND_RERAISE(C, LOC) \
+    RETURN_IF_ERROR(compiler_pop_except_and_reraise((C), (LOC)))
 
 #define ADDOP_YIELD(C, LOC) \
-    RETURN_IF_ERROR(addop_yield((C), (LOC)));
+    RETURN_IF_ERROR(addop_yield((C), (LOC)))
 
 /* VISIT and VISIT_SEQ takes an ASDL type as their second argument.  They use
    the ASDL name to synthesize the name of the C type and the visit function.
@@ -1784,17 +1780,13 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->c_nestlevel++;
 
     cfg_builder *g = CFG_BUILDER(c);
-    if (cfg_builder_init(g) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(cfg_builder_init(g));
 
     if (u->u_scope_type == COMPILER_SCOPE_MODULE) {
         loc.lineno = 0;
     }
     else {
-        if (compiler_set_qualname(c) < 0){
-            return ERROR;
-        }
+        RETURN_IF_ERROR(compiler_set_qualname(c));
     }
     ADDOP_I(c, loc, RESUME, 0);
 
@@ -2110,9 +2102,7 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
     }
     struct fblockinfo copy = *top;
     c->u->u_nfblocks--;
-    if (compiler_unwind_fblock(c, ploc, &copy, preserve_tos) < 0) {
-        return ERROR;
-    }
+    RETURN_IF_ERROR(compiler_unwind_fblock(c, ploc, &copy, preserve_tos));
     RETURN_IF_ERROR(compiler_unwind_fblock_stack(c, ploc, preserve_tos, loop));
     c->u->u_fblock[c->u->u_nfblocks] = copy;
     c->u->u_nfblocks++;
@@ -6204,7 +6194,7 @@ compiler_subscript(struct compiler *c, expr_ty e)
 }
 
 /* Returns the number of the values emitted,
- * thus are needed to build the slice, or 0 if there is an error. */
+ * thus are needed to build the slice, or -1 if there is an error. */
 static int
 compiler_slice(struct compiler *c, expr_ty s)
 {
