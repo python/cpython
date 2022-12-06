@@ -894,9 +894,9 @@ The following attributes are also available:
 
 .. attribute:: Popen.returncode
 
-   The child return code. Initially ``None``, :attr:`returncode` is set by 
+   The child return code. Initially ``None``, :attr:`returncode` is set by
    :meth:`poll` and :meth:`wait` after process termination is observed.
-   
+
    A ``None`` value indicates that the process
    hasn't terminated yet.
 
