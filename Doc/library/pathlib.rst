@@ -502,7 +502,7 @@ Pure paths provide the following methods and properties:
 
    .. versionadded:: 3.9
 
-   .. deprecated:: 3.12
+   .. deprecated-removed:: 3.12 3.14
 
       Passing additional arguments is deprecated; if supplied, they are joined
       with *other*.
@@ -609,7 +609,7 @@ Pure paths provide the following methods and properties:
    .. versionadded:: 3.12
       The *walk_up* argument (old behavior is the same as ``walk_up=False``).
 
-   .. deprecated:: 3.12
+   .. deprecated-removed:: 3.12 3.14
 
       Passing additional positional arguments is deprecated; if supplied,
       they are joined with *other*.
