@@ -495,9 +495,11 @@ extern char        *ctermid_r(char *);
 #ifdef MS_WINDOWS
 #  define INITFUNC PyInit_nt
 #  define MODNAME "nt"
+#  define MODNAME_OBJ &_Py_ID(nt)
 #else
 #  define INITFUNC PyInit_posix
 #  define MODNAME "posix"
+#  define MODNAME_OBJ &_Py_ID(posix)
 #endif
 
 #if defined(__sun)
@@ -2225,13 +2227,22 @@ static PyStructSequence_Desc waitid_result_desc = {
     5
 };
 #endif
-static newfunc structseq_new;
 
 static PyObject *
 statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyStructSequence *result;
     int i;
+
+    PyObject *mod = PyType_GetModule(type);
+    if (mod == NULL) {
+        return NULL;
+    }
+    _posixstate *state = get_posix_state(mod);
+    if (state == NULL) {
+        return NULL;
+    }
+#define structseq_new ((PyTypeObject *)state->StatResultType)->tp_new
 
     result = (PyStructSequence*)structseq_new(type, args, kwds);
     if (!result)
@@ -15925,7 +15936,6 @@ posixmodule_exec(PyObject *m)
     }
     PyModule_AddObject(m, "stat_result", Py_NewRef(StatResultType));
     state->StatResultType = StatResultType;
-    structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
 
     statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */

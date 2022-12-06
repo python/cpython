@@ -390,7 +390,6 @@ Modules/faulthandler.c	-	old_stack	-
 ##-----------------------
 ## initialized once
 
-Modules/posixmodule.c	-	structseq_new	-
 Modules/timemodule.c	_PyTime_GetClockWithInfo	initialized	-
 Modules/timemodule.c	_PyTime_GetProcessTimeWithInfo	ticks_per_second	-
 
