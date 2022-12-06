@@ -305,18 +305,11 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ##-----------------------
 ## effectively-const but initialized lazily
 
-## others
-Python/perf_trampoline.c	-	perf_map_file	-
-
 ##-----------------------
 ## state
 
 ## other
 Objects/object.c	-	_Py_RefTotal	-
-Python/perf_trampoline.c	-	perf_status	-
-Python/perf_trampoline.c	-	extra_code_index	-
-Python/perf_trampoline.c	-	code_arena	-
-Python/perf_trampoline.c	-	trampoline_api	-
 Python/thread_pthread_stubs.h	-	py_tls_entries	-
 
 
