@@ -392,22 +392,31 @@ def isgeneratorfunction(obj):
     See help(isfunction) for a list of attributes."""
     return _has_code_flag(obj, CO_GENERATOR)
 
+# A marker for markcoroutinefunction and iscoroutinefunction.
+_is_coroutine = object()
+
 def markcoroutinefunction(func):
     """
     Decorator to ensure callable is recognised as a coroutine function.
     """
     if hasattr(func, '__func__'):
         func = func.__func__
-    func.__code__ = func.__code__.replace(
-        co_flags=func.__code__.co_flags | CO_COROUTINE
-    )
+    func._is_coroutine = _is_coroutine
     return func
 
 def iscoroutinefunction(obj):
     """Return true if the object is a coroutine function.
 
-    Coroutine functions are defined with "async def" syntax.
+    Coroutine functions are normally defined with "async def" syntax, but may
+    be marked via markcoroutinefunction.
     """
+    func = getattr(obj, "__func__", obj)
+    if getattr(func, "_is_coroutine", None) is _is_coroutine:
+        return True
+
+    if not isclass(obj) and callable(obj) and getattr(obj.__call__, "_is_coroutine", None) is _is_coroutine:
+        return True
+
     return _has_code_flag(obj, CO_COROUTINE) or (
         not isclass(obj) and callable(obj) and _has_code_flag(obj.__call__, CO_COROUTINE)
     )
