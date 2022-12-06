@@ -382,15 +382,6 @@ definition with the same method name.
 Accessing attributes of extension types
 ---------------------------------------
 
-.. raw:: html
-
-   <!-- Keep old URL fragments working (see gh-97908) -->
-   <span id='c.PyMemberDef.PyMemberDef.name'></span>
-   <span id='c.PyMemberDef.PyMemberDef.offset'></span>
-   <span id='c.PyMemberDef.PyMemberDef.type'></span>
-   <span id='c.PyMemberDef.PyMemberDef.flags'></span>
-   <span id='c.PyMemberDef.PyMemberDef.doc'></span>
-
 .. c:type:: PyMemberDef
 
    Structure which describes an attribute of a type which corresponds to a C
@@ -611,15 +602,6 @@ Macro name                       C type                        Python type
 
 Defining Getters and Setters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. raw:: html
-
-   <!-- Keep old URL fragments working (see gh-97908) -->
-   <span id='c.PyGetSetDef.PyGetSetDef.name'></span>
-   <span id='c.PyGetSetDef.PyGetSetDef.get'></span>
-   <span id='c.PyGetSetDef.PyGetSetDef.set'></span>
-   <span id='c.PyGetSetDef.PyGetSetDef.docstring'></span>
-   <span id='c.PyGetSetDef.PyGetSetDef.closure'></span>
 
 .. c:type:: PyGetSetDef
 
