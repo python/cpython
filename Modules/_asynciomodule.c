@@ -3122,6 +3122,8 @@ _asyncio_get_event_loop_impl(PyObject *module)
     return get_event_loop();
 }
 
+// This function is no longer used, will disappear in 3.12,
+// but is retained in 3.10-3.11 in case some user code was calling it.
 /*[clinic input]
 _asyncio._get_event_loop
     stacklevel: int = 3

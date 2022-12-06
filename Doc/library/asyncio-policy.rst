@@ -114,7 +114,7 @@ asyncio ships with the following built-in policies:
 
    .. deprecated:: 3.11.1
       :meth:`get_event_loop` now emits a :exc:`DeprecationWarning` if there
-      is no current event loop set and a new policy has been created.
+      is no current event loop set and a new event loop has been created.
       In Python 3.12 it will be an error.
 
 

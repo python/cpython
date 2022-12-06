@@ -803,6 +803,8 @@ def get_event_loop():
     return get_event_loop_policy().get_event_loop()
 
 
+# This function is no longer used, will disappear in 3.12,
+# but is retained in 3.10-3.11 in case some user code was calling it.
 def _get_event_loop(stacklevel=3):
     current_loop = _get_running_loop()
     if current_loop is not None:
