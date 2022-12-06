@@ -184,6 +184,7 @@ def gather_stats(input):
                     key = key.strip()
                     value = int(value)
                     stats[key] += value
+            stats['__nfiles__'] += 1
         return stats
     else:
         raise ValueError(f"{input:r} is not a file or directory path")
@@ -561,6 +562,9 @@ def output_single_stats(stats):
     emit_specialization_overview(opcode_stats, total)
     emit_call_stats(stats)
     emit_object_stats(stats)
+    with Section("Meta stats", summary="Meta statistics"):
+        emit_table(("", "Count:"), [('Number of data files', stats['__nfiles__'])])
+
 
 def output_comparative_stats(base_stats, head_stats):
     base_opcode_stats = extract_opcode_stats(base_stats)
