@@ -100,13 +100,7 @@ class sigset_t_converter(CConverter):
    may not be the thread that received the signal.
 */
 
-static volatile struct {
-    _Py_atomic_int tripped;
-    /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
-     * (even though it would probably be otherwise, anyway).
-     */
-    _Py_atomic_address func;
-} Handlers[Py_NSIG];
+#define Handlers _PyRuntime.signals.handlers
 
 #ifdef MS_WINDOWS
 #define INVALID_FD ((SOCKET_T)-1)
