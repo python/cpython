@@ -110,6 +110,15 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
     int base,
     int alternate);
 
+/* Return 1 if the argument is negative or a multi-digit int */
+static inline int
+_PyLong_Negative_or_multi_digit_int(PyObject* sub) {
+    // this method uses the twos-complement representation
+    assert(PyLong_CheckExact(sub));
+    Py_ssize_t signed_magnitude = Py_SIZE(sub);
+    return ((size_t)signed_magnitude) > 1;
+}
+
 #ifdef __cplusplus
 }
 #endif
