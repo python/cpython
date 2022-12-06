@@ -16,6 +16,10 @@ static inline int _Py_is_valid_index(Py_ssize_t i, Py_ssize_t limit)
         See:  Section 14.2 "Bounds Checking" in the Agner Fog
         optimization manual found at:
         https://www.agner.org/optimize/optimizing_cpp.pdf
+
+        The function relies on twos-complement representation, and is not
+        affected by -fwrapv, -fno-wrapv and -ftrapv compiler options
+        of GCC and clang
     */
     return (size_t)i < (size_t)limit;
 }
