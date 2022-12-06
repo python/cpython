@@ -1,9 +1,0 @@
-:func:`asyncio.get_event_loop` and many other :mod:`asyncio` functions like
-:func:`asyncio.ensure_future`, :func:`asyncio.shield` or
-:func:`asyncio.gather`, and also the
-:meth:`~asyncio.BaseDefaultEventLoopPolicy.get_event_loop` method of
-:class:`asyncio.BaseDefaultEventLoopPolicy` now raise a :exc:`RuntimeError`
-if called when there is no running event loop and the current event loop was
-not set. Previously they implicitly created and set a new current event
-loop. :exc:`DeprecationWarning` is no longer emitted if there is no running
-event loop but the current event loop was set.

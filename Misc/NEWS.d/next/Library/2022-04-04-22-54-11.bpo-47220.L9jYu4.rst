@@ -1,2 +1,0 @@
-Document the optional *callback* parameter of :class:`WeakMethod`. Patch by
-Géry Ogam.
