@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/// Return 1 if the specified index is in the range [0, limit)
+// Return 1 if 0 <= index < limit
 static inline int _Py_is_valid_index(Py_ssize_t i, Py_ssize_t limit)
 {
     /* The cast to size_t lets us use just a single comparison
