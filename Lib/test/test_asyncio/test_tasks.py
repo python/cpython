@@ -221,7 +221,7 @@ class BaseTaskTests:
         self.assertTrue(t.done())
         self.assertEqual(t.result(), 'ok')
 
-        # Deprecated in 3.10, undeprecated in 3.11.1
+        # Deprecated in 3.10.0, undeprecated in 3.10.9
         asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio.set_event_loop, None)
         t = asyncio.ensure_future(notmuch())
@@ -236,6 +236,28 @@ class BaseTaskTests:
             def notmuch():
                 return 'ok'
         t = asyncio.ensure_future(notmuch(), loop=self.loop)
+        self.assertIs(t._loop, self.loop)
+        self.loop.run_until_complete(t)
+        self.assertTrue(t.done())
+        self.assertEqual(t.result(), 'ok')
+
+        a = notmuch()
+        self.addCleanup(a.close)
+        with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
+            asyncio.ensure_future(a)
+
+        async def test():
+            return asyncio.ensure_future(notmuch())
+        t = self.loop.run_until_complete(test())
+        self.assertIs(t._loop, self.loop)
+        self.loop.run_until_complete(t)
+        self.assertTrue(t.done())
+        self.assertEqual(t.result(), 'ok')
+
+        # Deprecated in 3.10.0, undeprecated in 3.10.9
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+        t = asyncio.ensure_future(notmuch())
         self.assertIs(t._loop, self.loop)
         self.loop.run_until_complete(t)
         self.assertTrue(t.done())
@@ -1475,7 +1497,7 @@ class BaseTaskTests:
         loop.run_until_complete(test())
 
     def test_as_completed_coroutine_use_global_loop(self):
-        # Deprecated in 3.10
+        # Deprecated in 3.10.0, undeprecated in 3.10.9
         async def coro():
             return 42
 
@@ -1967,7 +1989,7 @@ class BaseTaskTests:
         self.assertEqual(res, 42)
 
     def test_shield_coroutine_use_global_loop(self):
-        # Deprecated in 3.10, undeprecated in 3.11.1
+        # Deprecated in 3.10.0, undeprecated in 3.10.9
         async def coro():
             return 42
 
@@ -3089,7 +3111,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertEqual(fut.result(), [])
 
     def test_constructor_empty_sequence_use_global_loop(self):
-        # Deprecated in 3.10, undeprecated in 3.11.1
+        # Deprecated in 3.10.0, undeprecated in 3.10.9
         asyncio.set_event_loop(self.one_loop)
         self.addCleanup(asyncio.set_event_loop, None)
         fut = asyncio.gather()
@@ -3195,7 +3217,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         self.one_loop.run_until_complete(fut)
 
     def test_constructor_use_global_loop(self):
-        # Deprecated in 3.10, undeprecated in 3.11.1
+        # Deprecated in 3.10.0, undeprecated in 3.10.9
         async def coro():
             return 'abc'
         asyncio.set_event_loop(self.other_loop)

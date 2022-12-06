@@ -64,7 +64,7 @@ an event loop:
       In Python 3.12 it will be an error.
 
    .. note::
-      In Python versions 3.10.0--3.10.8 and 3.11.0 this function
+      In Python versions 3.10.0--3.10.8 this function
       (and other functions which used it implicitly) emitted a
       :exc:`DeprecationWarning` if there was no running event loop, even if
       the current loop was set.
