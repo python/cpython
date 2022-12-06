@@ -310,7 +310,6 @@ Objects/obmalloc.c	new_arena	debug_stats	-
 
 ## others
 Python/perf_trampoline.c	-	perf_map_file	-
-Objects/unicodeobject.c	-	ucnhash_capi	-
 
 ##-----------------------
 ## state
