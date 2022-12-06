@@ -388,11 +388,6 @@ Modules/faulthandler.c	-	old_stack	-
 ## global non-objects to fix in builtin modules
 
 ##-----------------------
-## initialized once
-
-Modules/timemodule.c	_PyTime_GetProcessTimeWithInfo	ticks_per_second	-
-
-##-----------------------
 ## state
 
 Modules/_tracemalloc.c	-	allocators	-

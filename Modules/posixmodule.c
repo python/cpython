@@ -9065,24 +9065,6 @@ build_times_result(PyObject *module, double user, double system,
 }
 
 
-#ifdef _OS_NEED_TICKS_PER_SECOND
-#define ticks_per_second _PyRuntime.os.ticks_per_second
-static void
-ticks_per_second_init(void)
-{
-    if (ticks_per_second != -1) {
-        return;
-    }
-#  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
-    ticks_per_second = sysconf(_SC_CLK_TCK);
-#  elif defined(HZ)
-    ticks_per_second = HZ;
-#  else
-    ticks_per_second = 60; /* magic fallback value; may be bogus */
-#  endif
-}
-#endif
-
 /*[clinic input]
 os.times
 
@@ -9116,22 +9098,24 @@ os_times_impl(PyObject *module)
         (double)0,
         (double)0);
 }
-#elif !defined(_OS_NEED_TICKS_PER_SECOND)
-# error "missing ticks_per_second"
 #else /* MS_WINDOWS */
 {
     struct tms t;
     clock_t c;
     errno = 0;
     c = times(&t);
-    if (c == (clock_t) -1)
+    if (c == (clock_t) -1) {
         return posix_error();
+    }
+    assert(_PyRuntime.time.ticks_per_second_initialized);
+#define ticks_per_second _PyRuntime.time.ticks_per_second
     return build_times_result(module,
                          (double)t.tms_utime / ticks_per_second,
                          (double)t.tms_stime / ticks_per_second,
                          (double)t.tms_cutime / ticks_per_second,
                          (double)t.tms_cstime / ticks_per_second,
                          (double)c / ticks_per_second);
+#undef ticks_per_second
 }
 #endif /* MS_WINDOWS */
 #endif /* HAVE_TIMES */
@@ -15949,10 +15933,6 @@ posixmodule_exec(PyObject *m)
     }
     PyModule_AddObject(m, "statvfs_result", Py_NewRef(StatVFSResultType));
     state->StatVFSResultType = StatVFSResultType;
-
-#ifdef _OS_NEED_TICKS_PER_SECOND
-    ticks_per_second_init();
-#endif
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
     sched_param_desc.name = MODNAME ".sched_param";

@@ -10,7 +10,12 @@ extern "C" {
 
 
 struct _time_runtime_state {
-    int clocks_per_sec_checked;
+#ifdef HAVE_TIMES
+    int ticks_per_second_initialized;
+    long ticks_per_second;
+#else
+    int _not_used;
+#endif
 };
 
 
