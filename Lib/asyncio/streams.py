@@ -126,7 +126,7 @@ class FlowControlMixin(protocols.Protocol):
 
     def __init__(self, loop=None):
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop(stacklevel=4)
         else:
             self._loop = loop
         self._paused = False
@@ -405,7 +405,7 @@ class StreamReader:
 
         self._limit = limit
         if loop is None:
-            self._loop = events.get_event_loop()
+            self._loop = events._get_event_loop()
         else:
             self._loop = loop
         self._buffer = bytearray()

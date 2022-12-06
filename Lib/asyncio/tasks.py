@@ -579,7 +579,7 @@ def as_completed(fs, *, timeout=None):
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue()
 
-    loop = events.get_event_loop()
+    loop = events._get_event_loop()
     todo = {ensure_future(f, loop=loop) for f in set(fs)}
     timeout_handle = None
 
@@ -665,7 +665,7 @@ def _ensure_future(coro_or_future, *, loop=None):
                             'is required')
 
     if loop is None:
-        loop = events.get_event_loop()
+        loop = events._get_event_loop(stacklevel=4)
     try:
         return loop.create_task(coro_or_future)
     except RuntimeError:
@@ -746,7 +746,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     gather won't cancel any other awaitables.
     """
     if not coros_or_futures:
-        loop = events.get_event_loop()
+        loop = events._get_event_loop()
         outer = loop.create_future()
         outer.set_result([])
         return outer

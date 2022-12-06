@@ -797,21 +797,17 @@ def get_event_loop():
     the result of `get_event_loop_policy().get_event_loop()` call.
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
-    current_loop = _get_running_loop()
-    if current_loop is not None:
-        return current_loop
-    return get_event_loop_policy().get_event_loop()
+    return _py__get_event_loop()
 
 
-# This function is no longer used, will disappear in 3.12,
-# but is retained in 3.10-3.11 in case some user code was calling it.
 def _get_event_loop(stacklevel=3):
+    # This internal method is going away in Python 3.12, left here only for
+    # backwards compatibility with 3.10.0 - 3.10.8 and 3.11.0.
+    # Similarly, this method's C equivalent in _asyncio is going away as well.
+    # See GH-99949 for more details.
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
-    import warnings
-    warnings.warn('There is no current event loop',
-                  DeprecationWarning, stacklevel=stacklevel)
     return get_event_loop_policy().get_event_loop()
 
 

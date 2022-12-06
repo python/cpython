@@ -327,7 +327,7 @@ set_running_loop(PyObject *loop)
 
 
 static PyObject *
-get_event_loop(void)
+get_event_loop(int stacklevel)
 {
     PyObject *loop;
     PyObject *policy;
@@ -498,7 +498,7 @@ future_init(FutureObj *fut, PyObject *loop)
     fut->fut_blocking = 0;
 
     if (loop == Py_None) {
-        loop = get_event_loop();
+        loop = get_event_loop(1);
         if (loop == NULL) {
             return -1;
         }
@@ -3119,11 +3119,14 @@ static PyObject *
 _asyncio_get_event_loop_impl(PyObject *module)
 /*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
 {
-    return get_event_loop();
+    return get_event_loop(1);
 }
 
-// This function is no longer used, will disappear in 3.12,
-// but is retained in 3.10-3.11 in case some user code was calling it.
+// This internal method is going away in Python 3.12, left here only for
+// backwards compatibility with 3.10.0 - 3.10.8 and 3.11.0.
+// Similarly, this method's Python equivalent in asyncio.events is going
+// away as well.
+// See GH-99949 for more details.
 /*[clinic input]
 _asyncio._get_event_loop
     stacklevel: int = 3
@@ -3133,31 +3136,7 @@ static PyObject *
 _asyncio__get_event_loop_impl(PyObject *module, int stacklevel)
 /*[clinic end generated code: output=9c1d6d3c802e67c9 input=d17aebbd686f711d]*/
 {
-    PyObject *loop;
-    PyObject *policy;
-
-    if (get_running_loop(&loop)) {
-        return NULL;
-    }
-    if (loop != NULL) {
-        return loop;
-    }
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "There is no current event loop",
-                     stacklevel-1))
-    {
-        return NULL;
-    }
-
-    policy = PyObject_CallNoArgs(asyncio_get_event_loop_policy);
-    if (policy == NULL) {
-        return NULL;
-    }
-
-    loop = _PyObject_CallMethodIdNoArgs(policy, &PyId_get_event_loop);
-    Py_DECREF(policy);
-    return loop;
+    return get_event_loop(stacklevel-1);
 }
 
 /*[clinic input]
