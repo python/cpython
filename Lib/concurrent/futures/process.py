@@ -420,16 +420,18 @@ class _ExecutorManagerThread(threading.Thread):
         elif wakeup_reader in ready:
             is_broken = False
 
-        failed = [p for p in self.processes.values() if p.sentinel in ready]
         if cause is not None:
             cause = _RemoteTraceback(f"\n'''\n{''.join(cause)}'''")
-        elif failed:
-            exitcodes = [p.exitcode for p in failed]
-            exitcodes = [signal.Signals(-c) if c < 0 else c for c in exitcodes]
-            cause = mp.ProcessError(
-                "Processes exited with codes: "
-                f"{', '.join(map(str, exitcodes))}"
+
+        elif is_broken and any(s in ready for s in worker_sentinels):
+            exitcodes_and_signals = (
+                signal.Signals(-p.exitcode) if p.exitcode < 0 else p.exitcode
+                for p in self.processes.values()
+                if p.sentinel in ready
             )
+            reasons = (str(c) for c in exitcodes_and_signals)
+            cause = mp.ProcessError(f"Processes exited with codes: "
+                                    f"{', '.join(reasons)}")
 
         with self.shutdown_lock:
             self.thread_wakeup.clear()
