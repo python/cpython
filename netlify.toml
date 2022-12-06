@@ -1,4 +1,8 @@
 [build]
     base = "Doc/"
     command = "make html"
-    publish = "Doc/build/html"
+    publish = "build/html"
+
+[build.environment]
+  PYTHON_VERSION = "3.8"
+  IS_DEPLOYMENT_PREVIEW = "true"

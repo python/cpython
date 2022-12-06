@@ -7,6 +7,7 @@
 PYTHON       = python3
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
+SPHINXLINT   = PATH=$(VENVDIR)/bin:$$PATH sphinx-lint
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
@@ -17,13 +18,10 @@ SPHINXERRORHANDLING = -W
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
 PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) \
+ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j auto \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
 
-.PHONY: help build html htmlhelp latex text texinfo changes linkcheck \
-	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \
-	autobuild-dev autobuild-stable venv
-
+.PHONY: help
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean      to remove build files"
@@ -41,10 +39,9 @@ help:
 	@echo "  doctest    to run doctests in the documentation"
 	@echo "  pydoc-topics  to regenerate the pydoc topics file"
 	@echo "  dist       to create a \"dist\" directory with archived docs for download"
-	@echo "  suspicious to check for suspicious markup in output text"
 	@echo "  check      to run a check for frequent markup errors"
-	@echo "  serve      to serve the documentation on the localhost (8000)"
 
+.PHONY: build
 build:
 	-mkdir -p build
 # Look first for a Misc/NEWS file (building from a source release tarball
@@ -71,38 +68,46 @@ build:
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
+.PHONY: html
 html: BUILDER = html
 html: build
 	@echo "Build finished. The HTML pages are in build/html."
 
+.PHONY: htmlhelp
 htmlhelp: BUILDER = htmlhelp
 htmlhelp: build
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
 	      "build/htmlhelp/pydoc.hhp project file."
 
+.PHONY: latex
 latex: BUILDER = latex
 latex: build
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."
 
+.PHONY: text
 text: BUILDER = text
 text: build
 	@echo "Build finished; the text files are in build/text."
 
+.PHONY: texinfo
 texinfo: BUILDER = texinfo
 texinfo: build
 	@echo "Build finished; the python.texi file is in build/texinfo."
 	@echo "Run \`make info' in that directory to run it through makeinfo."
 
+.PHONY: epub
 epub: BUILDER = epub
 epub: build
 	@echo "Build finished; the epub files are in build/epub."
 
+.PHONY: changes
 changes: BUILDER = changes
 changes: build
 	@echo "The overview file is in build/changes."
 
+.PHONY: linkcheck
 linkcheck: BUILDER = linkcheck
 linkcheck:
 	@$(MAKE) build BUILDER=$(BUILDER) || { \
@@ -110,18 +115,12 @@ linkcheck:
 	     "or in build/$(BUILDER)/output.txt"; \
 	false; }
 
-suspicious: BUILDER = suspicious
-suspicious:
-	@$(MAKE) build BUILDER=$(BUILDER) || { \
-	echo "Suspicious check complete; look for any errors in the above output" \
-	     "or in build/$(BUILDER)/suspicious.csv.  If all issues are false" \
-	     "positives, append that file to tools/susp-ignored.csv."; \
-	false; }
-
+.PHONY: coverage
 coverage: BUILDER = coverage
 coverage: build
 	@echo "Coverage finished; see c.txt and python.txt in build/coverage"
 
+.PHONY: doctest
 doctest: BUILDER = doctest
 doctest:
 	@$(MAKE) build BUILDER=$(BUILDER) || { \
@@ -129,23 +128,37 @@ doctest:
 	     "results in build/doctest/output.txt"; \
 	false; }
 
+.PHONY: pydoc-topics
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
 	@echo "Building finished; now run this:" \
 	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
+.PHONY: htmlview
 htmlview: html
-	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
+	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
 
-clean:
-	-rm -rf build/* $(VENVDIR)/*
+.PHONY: clean
+clean: clean-venv
+	-rm -rf build/*
 
+.PHONY: clean-venv
+clean-venv:
+	rm -rf $(VENVDIR)
+
+.PHONY: venv
 venv:
-	$(PYTHON) -m venv $(VENVDIR)
-	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.2.0 blurb python-docs-theme
-	@echo "The venv has been created in the $(VENVDIR) directory"
+	@if [ -d $(VENVDIR) ] ; then \
+		echo "venv already exists."; \
+		echo "To recreate it, remove it first with \`make clean-venv'."; \
+	else \
+		$(PYTHON) -m venv $(VENVDIR); \
+		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools; \
+		$(VENVDIR)/bin/python3 -m pip install -r requirements.txt; \
+		echo "The venv has been created in the $(VENVDIR) directory"; \
+	fi
 
+.PHONY: dist
 dist:
 	rm -rf dist
 	mkdir -p dist
@@ -200,11 +213,16 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-texinfo
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
+.PHONY: check
 check:
-	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
+	# Check the docs and NEWS files with sphinx-lint.
+	# Ignore the tools and venv dirs and check that the default role is not used.
+	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
+	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
 
+.PHONY: serve
 serve:
-	$(PYTHON) ../Tools/scripts/serve.py build/html
+	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.
@@ -214,16 +232,18 @@ serve:
 # output files)
 
 # for development releases: always build
+.PHONY: autobuild-dev
 autobuild-dev:
-	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switchers=1'
-	-make suspicious
+	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
 
 # for quick rebuilds (HTML only)
+.PHONY: autobuild-dev-html
 autobuild-dev-html:
-	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switchers=1'
+	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage
+.PHONY: autobuild-stable
 autobuild-stable:
 	@case $(DISTVERSION) in *[ab]*) \
 		echo "Not building; $(DISTVERSION) is not a release version."; \
@@ -231,6 +251,7 @@ autobuild-stable:
 	esac
 	@make autobuild-dev
 
+.PHONY: autobuild-stable-html
 autobuild-stable-html:
 	@case $(DISTVERSION) in *[ab]*) \
 		echo "Not building; $(DISTVERSION) is not a release version."; \

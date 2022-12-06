@@ -41,11 +41,15 @@ static const wchar_t *opt_ptr = L"";
 
 /* Python command line short and long options */
 
-#define SHORT_OPTS L"bBc:dEhiIJm:OqRsStuvVW:xX:?"
+#define SHORT_OPTS L"bBc:dEhiIJm:OPqRsStuvVW:xX:?"
 
 static const _PyOS_LongOption longopts[] = {
+    /* name, has_arg, val (used in switch in initconfig.c) */
     {L"check-hash-based-pycs", 1, 0},
-    {NULL, 0, 0},
+    {L"help-all", 0, 1},
+    {L"help-env", 0, 2},
+    {L"help-xoptions", 0, 3},
+    {NULL, 0, -1},                     /* sentinel */
 };
 
 
@@ -101,7 +105,9 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
     if (option == L'-') {
         // Parse long option.
         if (*opt_ptr == L'\0') {
-            fprintf(stderr, "expected long option\n");
+            if (_PyOS_opterr) {
+                fprintf(stderr, "expected long option\n");
+            }
             return -1;
         }
         *longindex = 0;
@@ -111,7 +117,9 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
                 break;
         }
         if (!opt->name) {
-            fprintf(stderr, "unknown option %ls\n", argv[_PyOS_optind - 1]);
+            if (_PyOS_opterr) {
+                fprintf(stderr, "unknown option %ls\n", argv[_PyOS_optind - 1]);
+            }
             return '_';
         }
         opt_ptr = L"";
@@ -119,8 +127,10 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
             return opt->val;
         }
         if (_PyOS_optind >= argc) {
-            fprintf(stderr, "Argument expected for the %ls options\n",
-                    argv[_PyOS_optind - 1]);
+            if (_PyOS_opterr) {
+                fprintf(stderr, "Argument expected for the %ls options\n",
+                        argv[_PyOS_optind - 1]);
+            }
             return '_';
         }
         _PyOS_optarg = argv[_PyOS_optind++];
@@ -128,14 +138,16 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
     }
 
     if (option == 'J') {
-        if (_PyOS_opterr)
+        if (_PyOS_opterr) {
             fprintf(stderr, "-J is reserved for Jython\n");
+        }
         return '_';
     }
 
     if ((ptr = wcschr(SHORT_OPTS, option)) == NULL) {
-        if (_PyOS_opterr)
+        if (_PyOS_opterr) {
             fprintf(stderr, "Unknown option: -%c\n", (char)option);
+        }
         return '_';
     }
 
@@ -147,9 +159,10 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
 
         else {
             if (_PyOS_optind >= argc) {
-                if (_PyOS_opterr)
+                if (_PyOS_opterr) {
                     fprintf(stderr,
                         "Argument expected for the -%c option\n", (char)option);
+                }
                 return '_';
             }
 
