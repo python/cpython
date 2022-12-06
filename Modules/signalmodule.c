@@ -101,26 +101,7 @@ class sigset_t_converter(CConverter):
 */
 
 #define Handlers _PyRuntime.signals.handlers
-
-#ifdef MS_WINDOWS
-#define INVALID_FD ((SOCKET_T)-1)
-
-static volatile struct {
-    SOCKET_T fd;
-    int warn_on_full_buffer;
-    int use_send;
-} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1, .use_send = 0};
-#else
-#define INVALID_FD (-1)
-static volatile struct {
-#ifdef __VXWORKS__
-    int fd;
-#else
-    sig_atomic_t fd;
-#endif
-    int warn_on_full_buffer;
-} wakeup = {.fd = INVALID_FD, .warn_on_full_buffer = 1};
-#endif
+#define wakeup _PyRuntime.signals.wakeup
 
 /* Speed up sigcheck() when none tripped */
 static _Py_atomic_int is_tripped;

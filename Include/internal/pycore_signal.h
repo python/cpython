@@ -30,6 +30,11 @@ extern "C" {
 #  define Py_NSIG 64               // Use a reasonable default value
 #endif
 
+#ifdef MS_WINDOWS
+# define INVALID_FD ((SOCKET_T)-1)
+#else
+# define INVALID_FD (-1)
+#endif
 
 struct _signals_runtime_state {
     volatile struct {
@@ -39,10 +44,39 @@ struct _signals_runtime_state {
          */
         _Py_atomic_address func;
     } handlers[Py_NSIG];
+
+    volatile struct {
+#ifdef MS_WINDOWS
+        SOCKET_T fd;
+#elif defined(__VXWORKS__)
+        int fd;
+#else
+        sig_atomic_t fd;
+#endif
+
+        int warn_on_full_buffer;
+#ifdef MS_WINDOWS
+        int use_send;
+#endif
+    } wakeup;
+
     /* True if the main interpreter thread exited due to an unhandled
      * KeyboardInterrupt exception, suggesting the user pressed ^C. */
     int unhandled_keyboard_interrupt;
 };
+
+#ifdef MS_WINDOWS
+# define _signals_WAKEUP_INIT \
+    {.fd = INVALID_FD, .warn_on_full_buffer = 1, .use_send = 0}
+#else
+# define _signals_WAKEUP_INIT \
+    {.fd = INVALID_FD, .warn_on_full_buffer = 1}
+#endif
+
+#define _signals_RUNTIME_INIT \
+    { \
+        .wakeup = _signals_WAKEUP_INIT, \
+    }
 
 
 #ifdef __cplusplus

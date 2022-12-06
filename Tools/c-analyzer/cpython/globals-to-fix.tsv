@@ -370,7 +370,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
-Modules/signalmodule.c	-	wakeup	-
 
 
 ##################################
