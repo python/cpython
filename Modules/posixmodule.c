@@ -9051,10 +9051,23 @@ build_times_result(PyObject *module, double user, double system,
 }
 
 
-#ifndef MS_WINDOWS
-#define NEED_TICKS_PER_SECOND
-static long ticks_per_second = -1;
-#endif /* MS_WINDOWS */
+#ifdef _OS_NEED_TICKS_PER_SECOND
+#define ticks_per_second _PyRuntime.os.ticks_per_second
+static void
+ticks_per_second_init(void)
+{
+    if (ticks_per_second != -1) {
+        return;
+    }
+#  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+    ticks_per_second = sysconf(_SC_CLK_TCK);
+#  elif defined(HZ)
+    ticks_per_second = HZ;
+#  else
+    ticks_per_second = 60; /* magic fallback value; may be bogus */
+#  endif
+}
+#endif
 
 /*[clinic input]
 os.times
@@ -9089,10 +9102,10 @@ os_times_impl(PyObject *module)
         (double)0,
         (double)0);
 }
+#elif !defined(_OS_NEED_TICKS_PER_SECOND)
+# error "missing ticks_per_second"
 #else /* MS_WINDOWS */
 {
-
-
     struct tms t;
     clock_t c;
     errno = 0;
@@ -15922,14 +15935,9 @@ posixmodule_exec(PyObject *m)
     }
     PyModule_AddObject(m, "statvfs_result", Py_NewRef(StatVFSResultType));
     state->StatVFSResultType = StatVFSResultType;
-#ifdef NEED_TICKS_PER_SECOND
-#  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
-    ticks_per_second = sysconf(_SC_CLK_TCK);
-#  elif defined(HZ)
-    ticks_per_second = HZ;
-#  else
-    ticks_per_second = 60; /* magic fallback value; may be bogus */
-#  endif
+
+#ifdef _OS_NEED_TICKS_PER_SECOND
+    ticks_per_second_init();
 #endif
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
