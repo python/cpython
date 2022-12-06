@@ -46,8 +46,17 @@ extern "C" {
 #endif
 
 
+#if defined(HAVE_PTHREAD_STUBS)
+// pthread_key
+struct py_stub_tls_entry {
+    bool in_use;
+    void *value;
+};
+#endif
+
 struct _pythread_runtime_state {
     int initialized;
+
 #ifdef _USE_PTHREADS
     // This matches when thread_pthread.h is used.
     struct {
@@ -60,6 +69,12 @@ struct _pythread_runtime_state {
     } _condattr_monotonic;
 
 #endif  // USE_PTHREADS
+
+#if defined(HAVE_PTHREAD_STUBS)
+    struct {
+        struct py_stub_tls_entry tls_entries[PTHREAD_KEYS_MAX];
+    } stubs;
+#endif
 };
 
 
