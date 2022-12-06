@@ -96,10 +96,6 @@ class Annotations:
             if name.startswith("c."):
                 name = name[2:]
 
-            components = name.split('.')
-            if len(set(components)) != len(components):
-                raise ValueError(f'repeated name components: {name}')
-
             objtype = par['objtype']
 
             # Stable ABI annotation. These have two forms:
