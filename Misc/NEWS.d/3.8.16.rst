@@ -1,0 +1,66 @@
+.. date: 2022-12-05-01-39-10
+.. gh-issue: 100001
+.. nonce: uD05Fc
+.. release date: 2022-12-06
+.. section: Security
+
+``python -m http.server`` no longer allows terminal control characters sent
+within a garbage request to be printed to the stderr server log.
+
+This is done by changing the :mod:`http.server`
+:class:`BaseHTTPRequestHandler` ``.log_message`` method to replace control
+characters with a ``\xHH`` hex escape before printing.
+
+..
+
+.. date: 2022-11-11-12-50-28
+.. gh-issue: 87604
+.. nonce: OtwH5L
+.. section: Security
+
+Avoid publishing list of active per-interpreter audit hooks via the
+:mod:`gc` module
+
+..
+
+.. date: 2022-11-04-09-29-36
+.. gh-issue: 98433
+.. nonce: l76c5G
+.. section: Security
+
+The IDNA codec decoder used on DNS hostnames by :mod:`socket` or
+:mod:`asyncio` related name resolution functions no longer involves a
+quadratic algorithm. This prevents a potential CPU denial of service if an
+out-of-spec excessive length hostname involving bidirectional characters
+were decoded. Some protocols such as :mod:`urllib` http ``3xx`` redirects
+potentially allow for an attacker to supply such a name.
+
+..
+
+.. date: 2022-10-26-21-04-23
+.. gh-issue: 98739
+.. nonce: keBWcY
+.. section: Security
+
+Update bundled libexpat to 2.5.0
+
+..
+
+.. date: 2022-10-21-13-31-47
+.. gh-issue: 98517
+.. nonce: SXXGfV
+.. section: Security
+
+Port XKCP's fix for the buffer overflows in SHA-3 (CVE-2022-37454).
+
+..
+
+.. date: 2022-04-27-18-25-30
+.. gh-issue: 68966
+.. nonce: gjS8zs
+.. section: Security
+
+The deprecated mailcap module now refuses to inject unsafe text (filenames,
+MIME types, parameters) into shell commands. Instead of using such text, it
+will warn and act as if a match was not found (or for test commands, as if
+the test failed).
