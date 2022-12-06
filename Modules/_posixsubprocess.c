@@ -814,7 +814,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     int allow_vfork;
 
     if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiiii" _Py_PARSE_PID "OOOiOp:fork_exec",
+            args, "OOpO!OOiiiiiiiipp" _Py_PARSE_PID "OOOiOp:fork_exec",
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,

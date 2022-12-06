@@ -295,8 +295,8 @@ def clean_up_channels():
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
-        clean_up_interpreters()
         clean_up_channels()
+        clean_up_interpreters()
 
 
 ##################################
@@ -409,6 +409,15 @@ class ShareableTypeTests(unittest.TestCase):
             with self.subTest(i):
                 with self.assertRaises(OverflowError):
                     interpreters.channel_send(self.cid, i)
+
+
+class ModuleTests(TestBase):
+
+    def test_import_in_interpreter(self):
+        _run_output(
+            interpreters.create(),
+            'import _xxsubinterpreters as _interpreters',
+        )
 
 
 ##################################
