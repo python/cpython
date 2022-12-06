@@ -459,6 +459,31 @@ sense to allow sharing some common behavior between a group of enumerations.
 (See `OrderedEnum`_ for an example.)
 
 
+.. _enum-dataclass-support:
+
+Dataclass support
+-----------------
+
+When inheriting from a :class:`~dataclasses.dataclass`,
+the :meth:`~Enum.__repr__` omits the inherited class' name.  For example::
+
+    >>> @dataclass
+    ... class CreatureDataMixin:
+    ...     size: str
+    ...     legs: int
+    ...     tail: bool = field(repr=False, default=True)
+    ...
+    >>> class Creature(CreatureDataMixin, Enum):
+    ...     BEETLE = 'small', 6
+    ...     DOG = 'medium', 4
+    ...
+    >>> Creature.DOG
+    <Creature.DOG: size='medium', legs=4>
+
+Use the :func:`!dataclass` argument ``repr=False``
+to use the standard :func:`repr`.
+
+
 Pickling
 --------
 

@@ -389,6 +389,8 @@ Data Types
       Using :class:`auto` with :class:`Enum` results in integers of increasing value,
       starting with ``1``.
 
+   .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
+
 
 .. class:: IntEnum
 
