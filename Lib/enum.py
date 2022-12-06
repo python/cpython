@@ -955,7 +955,15 @@ class EnumType(type):
                     return base._value_repr_
                 elif '__repr__' in base.__dict__:
                     # this is our data repr
-                    return base.__dict__['__repr__']
+                    # double-check if a dataclass with a default __repr__
+                    if (
+                            '__dataclass_fields__' in base.__dict__
+                            and '__dataclass_params__' in base.__dict__
+                            and base.__dict__['__dataclass_params__'].repr
+                        ):
+                        return _dataclass_repr
+                    else:
+                        return base.__dict__['__repr__']
         return None
 
     @classmethod
@@ -1550,6 +1558,14 @@ def _power_of_two(value):
     if value < 1:
         return False
     return value == 2 ** _high_bit(value)
+
+def _dataclass_repr(self):
+    dcf = self.__dataclass_fields__
+    return ', '.join(
+            '%s=%r' % (k, getattr(self, k))
+            for k in dcf.keys()
+            if dcf[k].repr
+            )
 
 def global_enum_repr(self):
     """
