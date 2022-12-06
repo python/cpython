@@ -1,3 +1,0 @@
-:func:`asyncio.get_event_loop` now only emits a deprecation warning when a
-new event loop was created implicitly. It no longer emits a deprecation
-warning if the current event loop was set.

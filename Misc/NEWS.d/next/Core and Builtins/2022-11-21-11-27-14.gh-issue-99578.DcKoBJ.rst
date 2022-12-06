@@ -1,3 +1,0 @@
-Fix a reference bug in :func:`_imp.create_builtin()` after the creation of the
-first sub-interpreter for modules ``builtins`` and ``sys``. Patch by Victor
-Stinner.
