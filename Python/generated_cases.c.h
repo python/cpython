@@ -628,7 +628,10 @@
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
-            frame = cframe.current_frame = pop_frame(tstate, frame);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = cframe.current_frame = dying->previous;
+            _PyEvalFrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
