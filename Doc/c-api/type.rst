@@ -322,25 +322,25 @@ The following functions and structs are used to create
 
    Structure defining a type's behavior.
 
-   .. c:member:: const char* PyType_Spec.name
+   .. c:member:: const char* name
 
       Name of the type, used to set :c:member:`PyTypeObject.tp_name`.
 
-   .. c:member:: int PyType_Spec.basicsize
-   .. c:member:: int PyType_Spec.itemsize
+   .. c:member:: int basicsize
+   .. c:member:: int itemsize
 
       Size of the instance in bytes, used to set
       :c:member:`PyTypeObject.tp_basicsize` and
       :c:member:`PyTypeObject.tp_itemsize`.
 
-   .. c:member:: int PyType_Spec.flags
+   .. c:member:: int flags
 
       Type flags, used to set :c:member:`PyTypeObject.tp_flags`.
 
       If the ``Py_TPFLAGS_HEAPTYPE`` flag is not set,
       :c:func:`PyType_FromSpecWithBases` sets it automatically.
 
-   .. c:member:: PyType_Slot *PyType_Spec.slots
+   .. c:member:: PyType_Slot *slots
 
       Array of :c:type:`PyType_Slot` structures.
       Terminated by the special slot value ``{0, NULL}``.
@@ -352,7 +352,7 @@ The following functions and structs are used to create
    Structure defining optional functionality of a type, containing a slot ID
    and a value pointer.
 
-   .. c:member:: int PyType_Slot.slot
+   .. c:member:: int slot
 
       A slot ID.
 
@@ -396,7 +396,7 @@ The following functions and structs are used to create
         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
         under the limited API.
 
-   .. c:member:: void *PyType_Slot.pfunc
+   .. c:member:: void *pfunc
 
       The desired value of the slot. In most cases, this is a pointer
       to a function.
