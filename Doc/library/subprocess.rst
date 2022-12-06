@@ -904,7 +904,6 @@ The following attributes are also available:
    ``N`` (POSIX only).
 
 
-
 Windows Popen Helpers
 ---------------------
 
