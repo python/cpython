@@ -140,10 +140,8 @@ Return the current time in nanoseconds since the Epoch.");
 static int
 _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    static int initialized = 0;
-
-    if (!initialized) {
-        initialized = 1;
+    if (!_PyRuntime.time.clocks_per_sec_checked) {
+        _PyRuntime.time.clocks_per_sec_checked = 1;
 
         /* Make sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
            above cannot overflow */
