@@ -102,9 +102,7 @@ class sigset_t_converter(CConverter):
 
 #define Handlers _PyRuntime.signals.handlers
 #define wakeup _PyRuntime.signals.wakeup
-
-/* Speed up sigcheck() when none tripped */
-static _Py_atomic_int is_tripped;
+#define is_tripped _PyRuntime.signals.is_tripped
 
 typedef struct {
     PyObject *default_handler;

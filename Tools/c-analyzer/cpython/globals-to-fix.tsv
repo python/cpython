@@ -368,7 +368,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 ##-----------------------
 ## state
 
-Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
 
 

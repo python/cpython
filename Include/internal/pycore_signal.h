@@ -60,6 +60,9 @@ struct _signals_runtime_state {
 #endif
     } wakeup;
 
+    /* Speed up sigcheck() when none tripped */
+    _Py_atomic_int is_tripped;
+
     /* True if the main interpreter thread exited due to an unhandled
      * KeyboardInterrupt exception, suggesting the user pressed ^C. */
     int unhandled_keyboard_interrupt;
