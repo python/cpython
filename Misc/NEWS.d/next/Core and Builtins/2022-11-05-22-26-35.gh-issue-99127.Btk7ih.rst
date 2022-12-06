@@ -1,0 +1,1 @@
+Allow some features of :mod:`syslog` to the main interpreter only. Patch by Dong-hee Na.

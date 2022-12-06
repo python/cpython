@@ -1,4 +1,9 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "structmember.h"
 
 #include <ctype.h>
@@ -6,6 +11,13 @@
 #include <stdint.h>
 
 #include "datetime.h"
+
+#include "clinic/_zoneinfo.c.h"
+/*[clinic input]
+module zoneinfo
+class zoneinfo.ZoneInfo "PyObject *" "PyTypeObject *"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d12c73c0eef36df8]*/
 
 // Imports
 static PyObject *io_open = NULL;
@@ -163,7 +175,7 @@ is_leap_year(int year);
 static size_t
 _bisect(const int64_t value, const int64_t *arr, size_t size);
 
-static void
+static int
 eject_from_strong_cache(const PyTypeObject *const type, PyObject *key);
 static void
 clear_strong_cache(const PyTypeObject *const type);
@@ -171,7 +183,7 @@ static void
 update_strong_cache(const PyTypeObject *const type, PyObject *key,
                     PyObject *zone);
 static PyObject *
-zone_from_strong_cache(const PyTypeObject *const type, PyObject *key);
+zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key);
 
 static PyObject *
 zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
@@ -208,24 +220,27 @@ zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
     }
 
     PyObject *rv = PyObject_CallMethod(file_obj, "close", NULL);
-    Py_DECREF(file_obj);
-    file_obj = NULL;
+    Py_SETREF(file_obj, NULL);
     if (rv == NULL) {
         goto error;
     }
     Py_DECREF(rv);
 
-    ((PyZoneInfo_ZoneInfo *)self)->key = key;
-    Py_INCREF(key);
+    ((PyZoneInfo_ZoneInfo *)self)->key = Py_NewRef(key);
 
     goto cleanup;
 error:
-    Py_XDECREF(self);
-    self = NULL;
+    Py_CLEAR(self);
 cleanup:
     if (file_obj != NULL) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
         PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
-        Py_DECREF(tmp);
+        _PyErr_ChainExceptions(exc, val, tb);
+        if (tmp == NULL) {
+            Py_CLEAR(self);
+        }
+        Py_XDECREF(tmp);
         Py_DECREF(file_obj);
     }
     Py_DECREF(file_path);
@@ -259,7 +274,7 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     PyObject *instance = zone_from_strong_cache(type, key);
-    if (instance != NULL) {
+    if (instance != NULL || PyErr_Occurred()) {
         return instance;
     }
 
@@ -327,19 +342,24 @@ zoneinfo_dealloc(PyObject *obj_self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-static PyObject *
-zoneinfo_from_file(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyObject *file_obj = NULL;
-    PyObject *file_repr = NULL;
-    PyObject *key = Py_None;
-    PyZoneInfo_ZoneInfo *self = NULL;
+/*[clinic input]
+@classmethod
+zoneinfo.ZoneInfo.from_file
 
-    static char *kwlist[] = {"", "key", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O", kwlist, &file_obj,
-                                     &key)) {
-        return NULL;
-    }
+    file_obj: object
+    /
+    key: object = None
+
+Create a ZoneInfo file from a file object.
+[clinic start generated code]*/
+
+static PyObject *
+zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyObject *file_obj,
+                                 PyObject *key)
+/*[clinic end generated code: output=68ed2022404ae5be input=ccfe73708133d2e4]*/
+{
+    PyObject *file_repr = NULL;
+    PyZoneInfo_ZoneInfo *self = NULL;
 
     PyObject *obj_self = (PyObject *)(type->tp_alloc(type, 0));
     self = (PyZoneInfo_ZoneInfo *)obj_self;
@@ -358,26 +378,29 @@ zoneinfo_from_file(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     self->source = SOURCE_FILE;
     self->file_repr = file_repr;
-    self->key = key;
-    Py_INCREF(key);
-
+    self->key = Py_NewRef(key);
     return obj_self;
+
 error:
     Py_XDECREF(file_repr);
     Py_XDECREF(self);
     return NULL;
 }
 
-static PyObject *
-zoneinfo_no_cache(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {"key", NULL};
-    PyObject *key = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &key)) {
-        return NULL;
-    }
+/*[clinic input]
+@classmethod
+zoneinfo.ZoneInfo.no_cache
 
-    PyObject *out = zoneinfo_new_instance(cls, key);
+    key: object
+
+Get a new instance of ZoneInfo, bypassing the cache.
+[clinic start generated code]*/
+
+static PyObject *
+zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyObject *key)
+/*[clinic end generated code: output=751c6894ad66f91b input=bb24afd84a80ba46]*/
+{
+    PyObject *out = zoneinfo_new_instance(type, key);
     if (out != NULL) {
         ((PyZoneInfo_ZoneInfo *)out)->source = SOURCE_NOCACHE;
     }
@@ -385,18 +408,20 @@ zoneinfo_no_cache(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
     return out;
 }
 
+/*[clinic input]
+@classmethod
+zoneinfo.ZoneInfo.clear_cache
+
+    *
+    only_keys: object = None
+
+Clear the ZoneInfo cache.
+[clinic start generated code]*/
+
 static PyObject *
-zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
+zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyObject *only_keys)
+/*[clinic end generated code: output=eec0a3276f07bd90 input=8cff0182a95f295b]*/
 {
-    PyObject *only_keys = NULL;
-    static char *kwlist[] = {"only_keys", NULL};
-
-    if (!(PyArg_ParseTupleAndKeywords(args, kwargs, "|$O", kwlist,
-                                      &only_keys))) {
-        return NULL;
-    }
-
-    PyTypeObject *type = (PyTypeObject *)cls;
     PyObject *weak_cache = get_weak_cache(type);
 
     if (only_keys == NULL || only_keys == Py_None) {
@@ -406,7 +431,6 @@ zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
         }
 
         clear_strong_cache(type);
-        ZONEINFO_STRONG_CACHE = NULL;
     }
     else {
         PyObject *item = NULL;
@@ -423,7 +447,10 @@ zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
 
         while ((item = PyIter_Next(iter))) {
             // Remove from strong cache
-            eject_from_strong_cache(type, item);
+            if (eject_from_strong_cache(type, item) < 0) {
+                Py_DECREF(item);
+                break;
+            }
 
             // Remove from weak cache
             PyObject *tmp = PyObject_CallMethodObjArgs(weak_cache, pop, item,
@@ -453,8 +480,7 @@ zoneinfo_utcoffset(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->utcoff);
-    return tti->utcoff;
+    return Py_NewRef(tti->utcoff);
 }
 
 static PyObject *
@@ -464,8 +490,7 @@ zoneinfo_dst(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->dstoff);
-    return tti->dstoff;
+    return Py_NewRef(tti->dstoff);
 }
 
 static PyObject *
@@ -475,13 +500,10 @@ zoneinfo_tzname(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->tzname);
-    return tti->tzname;
+    return Py_NewRef(tti->tzname);
 }
 
-#define HASTZINFO(p) (((_PyDateTime_BaseTZInfo *)(p))->hastzinfo)
-#define GET_DT_TZINFO(p) \
-    (HASTZINFO(p) ? ((PyDateTime_DateTime *)(p))->tzinfo : Py_None)
+#define GET_DT_TZINFO PyDateTime_DATE_GET_TZINFO
 
 static PyObject *
 zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
@@ -582,7 +604,7 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
             }
 
             dt = NULL;
-            if (!PyDict_SetItemString(kwargs, "fold", _PyLong_One)) {
+            if (!PyDict_SetItemString(kwargs, "fold", _PyLong_GetOne())) {
                 dt = PyObject_Call(replace, args, kwargs);
             }
 
@@ -622,8 +644,7 @@ static PyObject *
 zoneinfo_str(PyZoneInfo_ZoneInfo *self)
 {
     if (!(self->key == Py_None)) {
-        Py_INCREF(self->key);
-        return self->key;
+        return Py_NewRef(self->key);
     }
     else {
         return zoneinfo_repr(self);
@@ -648,14 +669,8 @@ zoneinfo_reduce(PyObject *obj_self, PyObject *unused)
     PyZoneInfo_ZoneInfo *self = (PyZoneInfo_ZoneInfo *)obj_self;
     if (self->source == SOURCE_FILE) {
         // Objects constructed from files cannot be pickled.
-        PyObject *pickle = PyImport_ImportModule("pickle");
-        if (pickle == NULL) {
-            return NULL;
-        }
-
         PyObject *pickle_error =
-            PyObject_GetAttrString(pickle, "PicklingError");
-        Py_DECREF(pickle);
+            _PyImport_GetModuleAttrString("pickle", "PicklingError");
         if (pickle_error == NULL) {
             return NULL;
         }
@@ -719,17 +734,16 @@ zoneinfo__unpickle(PyTypeObject *cls, PyObject *args)
 static PyObject *
 load_timedelta(long seconds)
 {
-    PyObject *rv = NULL;
+    PyObject *rv;
     PyObject *pyoffset = PyLong_FromLong(seconds);
     if (pyoffset == NULL) {
         return NULL;
     }
-    int contains = PyDict_Contains(TIMEDELTA_CACHE, pyoffset);
-    if (contains == -1) {
-        goto error;
-    }
-
-    if (!contains) {
+    rv = PyDict_GetItemWithError(TIMEDELTA_CACHE, pyoffset);
+    if (rv == NULL) {
+        if (PyErr_Occurred()) {
+            goto error;
+        }
         PyObject *tmp = PyDateTimeAPI->Delta_FromDelta(
             0, seconds, 0, 1, PyDateTimeAPI->DeltaType);
 
@@ -740,12 +754,9 @@ load_timedelta(long seconds)
         rv = PyDict_SetDefault(TIMEDELTA_CACHE, pyoffset, tmp);
         Py_DECREF(tmp);
     }
-    else {
-        rv = PyDict_GetItem(TIMEDELTA_CACHE, pyoffset);
-    }
 
+    Py_XINCREF(rv);
     Py_DECREF(pyoffset);
-    Py_INCREF(rv);
     return rv;
 error:
     Py_DECREF(pyoffset);
@@ -774,8 +785,7 @@ build_ttinfo(long utcoffset, long dstoffset, PyObject *tzname, _ttinfo *out)
         return -1;
     }
 
-    out->tzname = tzname;
-    Py_INCREF(tzname);
+    out->tzname = Py_NewRef(tzname);
 
     return 0;
 }
@@ -904,7 +914,13 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Load the transition indices and list
     self->trans_list_utc =
         PyMem_Malloc(self->num_transitions * sizeof(int64_t));
+    if (self->trans_list_utc == NULL) {
+        goto error;
+    }
     trans_idx = PyMem_Malloc(self->num_transitions * sizeof(Py_ssize_t));
+    if (trans_idx == NULL) {
+        goto error;
+    }
 
     for (size_t i = 0; i < self->num_transitions; ++i) {
         PyObject *num = PyTuple_GetItem(trans_utc, i);
@@ -986,6 +1002,9 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     // Build _ttinfo objects from utcoff, dstoff and abbr
     self->_ttinfos = PyMem_Malloc(self->num_ttinfos * sizeof(_ttinfo));
+    if (self->_ttinfos == NULL) {
+        goto error;
+    }
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
         PyObject *tzname = PyTuple_GetItem(abbr, i);
         if (tzname == NULL) {
@@ -1001,6 +1020,9 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Build our mapping from transition to the ttinfo that applies
     self->trans_ttinfos =
         PyMem_Calloc(self->num_transitions, sizeof(_ttinfo *));
+    if (self->trans_ttinfos == NULL) {
+        goto error;
+    }
     for (size_t i = 0; i < self->num_transitions; ++i) {
         size_t ttinfo_idx = trans_idx[i];
         assert(ttinfo_idx < self->num_ttinfos);
@@ -1050,9 +1072,7 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         // that the dstoff is set correctly in that case.
         if (PyObject_IsTrue(tti->dstoff)) {
             _ttinfo *tti_after = &(self->tzrule_after.std);
-            Py_DECREF(tti_after->dstoff);
-            tti_after->dstoff = tti->dstoff;
-            Py_INCREF(tti_after->dstoff);
+            Py_SETREF(tti_after->dstoff, Py_NewRef(tti->dstoff));
         }
     }
 
@@ -1214,15 +1234,9 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
         return -1;
     }
 
-    // day is an unsigned integer, so day < 0 should always return false, but
-    // if day's type changes to a signed integer *without* changing this value,
-    // it may create a bug. Considering that the compiler should be able to
-    // optimize out the first comparison if day is an unsigned integer anyway,
-    // we will leave this comparison in place and disable the compiler warning.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
-    if (day < 0 || day > 6) {
-#pragma GCC diagnostic pop
+    // If the 'day' parameter type is changed to a signed type,
+    // "day < 0" check must be added.
+    if (/* day < 0 || */ day > 6) {
         PyErr_Format(PyExc_ValueError, "Day must be in [0, 6]");
         return -1;
     }
@@ -1333,7 +1347,7 @@ tzrule_transitions(_tzrule *rule, int year, int64_t *start, int64_t *end)
  * could technically be calculated from the timestamp, but given that the
  * callers of this function already have the year information accessible from
  * the datetime struct, it is taken as an additional parameter to reduce
- * unncessary calculation.
+ * unnecessary calculation.
  * */
 static _ttinfo *
 find_tzrule_ttinfo(_tzrule *rule, int64_t ts, unsigned char fold, int year)
@@ -1459,11 +1473,11 @@ parse_tz_str(PyObject *tz_str_obj, _tzrule *out)
     long std_offset = 1 << 20;
     long dst_offset = 1 << 20;
 
-    char *tz_str = PyBytes_AsString(tz_str_obj);
+    const char *tz_str = PyBytes_AsString(tz_str_obj);
     if (tz_str == NULL) {
         return -1;
     }
-    char *p = tz_str;
+    const char *p = tz_str;
 
     // Read the `std` abbreviation, which must be at least 3 characters long.
     Py_ssize_t num_chars = parse_abbr(p, &std_abbr);
@@ -2260,13 +2274,10 @@ strong_cache_node_new(PyObject *key, PyObject *zone)
         return NULL;
     }
 
-    Py_INCREF(key);
-    Py_INCREF(zone);
-
     node->next = NULL;
     node->prev = NULL;
-    node->key = key;
-    node->zone = zone;
+    node->key = Py_NewRef(key);
+    node->zone = Py_NewRef(zone);
 
     return node;
 }
@@ -2336,7 +2347,11 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
 {
     const StrongCacheNode *node = root;
     while (node != NULL) {
-        if (PyObject_RichCompareBool(key, node->key, Py_EQ)) {
+        int rv = PyObject_RichCompareBool(key, node->key, Py_EQ);
+        if (rv < 0) {
+            return NULL;
+        }
+        if (rv) {
             return (StrongCacheNode *)node;
         }
 
@@ -2350,11 +2365,11 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
  *
  * This function is used to enable the per-key functionality in clear_cache.
  */
-static void
+static int
 eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
 {
     if (type != &PyZoneInfo_ZoneInfoType) {
-        return;
+        return 0;
     }
 
     StrongCacheNode *node = find_in_strong_cache(ZONEINFO_STRONG_CACHE, key);
@@ -2363,6 +2378,10 @@ eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
 
         strong_cache_node_free(node);
     }
+    else if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
 }
 
 /* Moves a node to the front of the LRU cache.
@@ -2410,8 +2429,7 @@ zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key)
 
     if (node != NULL) {
         move_strong_cache_node_to_front(&ZONEINFO_STRONG_CACHE, node);
-        Py_INCREF(node->zone);
-        return node->zone;
+        return Py_NewRef(node->zone);
     }
 
     return NULL;  // Cache miss
@@ -2465,24 +2483,24 @@ clear_strong_cache(const PyTypeObject *const type)
     }
 
     strong_cache_free(ZONEINFO_STRONG_CACHE);
+    ZONEINFO_STRONG_CACHE = NULL;
 }
 
 static PyObject *
-new_weak_cache()
+new_weak_cache(void)
 {
-    PyObject *weakref_module = PyImport_ImportModule("weakref");
-    if (weakref_module == NULL) {
+    PyObject *WeakValueDictionary =
+            _PyImport_GetModuleAttrString("weakref", "WeakValueDictionary");
+    if (WeakValueDictionary == NULL) {
         return NULL;
     }
-
-    PyObject *weak_cache =
-        PyObject_CallMethod(weakref_module, "WeakValueDictionary", "");
-    Py_DECREF(weakref_module);
+    PyObject *weak_cache = PyObject_CallNoArgs(WeakValueDictionary);
+    Py_DECREF(WeakValueDictionary);
     return weak_cache;
 }
 
 static int
-initialize_caches()
+initialize_caches(void)
 {
     // TODO: Move to a PyModule_GetState / PEP 573 based caching system.
     if (TIMEDELTA_CACHE == NULL) {
@@ -2518,22 +2536,21 @@ zoneinfo_init_subclass(PyTypeObject *cls, PyObject *args, PyObject **kwargs)
         return NULL;
     }
 
-    PyObject_SetAttrString((PyObject *)cls, "_weak_cache", weak_cache);
+    if (PyObject_SetAttrString((PyObject *)cls, "_weak_cache",
+                               weak_cache) < 0) {
+        Py_DECREF(weak_cache);
+        return NULL;
+    }
+    Py_DECREF(weak_cache);
     Py_RETURN_NONE;
 }
 
 /////
 // Specify the ZoneInfo type
 static PyMethodDef zoneinfo_methods[] = {
-    {"clear_cache", (PyCFunction)(void (*)(void))zoneinfo_clear_cache,
-     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("Clear the ZoneInfo cache.")},
-    {"no_cache", (PyCFunction)(void (*)(void))zoneinfo_no_cache,
-     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("Get a new instance of ZoneInfo, bypassing the cache.")},
-    {"from_file", (PyCFunction)(void (*)(void))zoneinfo_from_file,
-     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("Create a ZoneInfo file from a file object.")},
+    ZONEINFO_ZONEINFO_CLEAR_CACHE_METHODDEF
+    ZONEINFO_ZONEINFO_NO_CACHE_METHODDEF
+    ZONEINFO_ZONEINFO_FROM_FILE_METHODDEF
     {"utcoffset", (PyCFunction)zoneinfo_utcoffset, METH_O,
      PyDoc_STR("Retrieve a timedelta representing the UTC offset in a zone at "
                "the given datetime.")},
@@ -2551,7 +2568,7 @@ static PyMethodDef zoneinfo_methods[] = {
     {"_unpickle", (PyCFunction)zoneinfo__unpickle, METH_VARARGS | METH_CLASS,
      PyDoc_STR("Private method used in unpickling.")},
     {"__init_subclass__", (PyCFunction)(void (*)(void))zoneinfo_init_subclass,
-     METH_VARARGS | METH_KEYWORDS,
+     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("Function to initialize subclasses.")},
     {NULL} /* Sentinel */
 };
@@ -2585,16 +2602,11 @@ static PyTypeObject PyZoneInfo_ZoneInfoType = {
 // Specify the _zoneinfo module
 static PyMethodDef module_methods[] = {{NULL, NULL}};
 static void
-module_free()
+module_free(void *m)
 {
-    Py_XDECREF(_tzpath_find_tzfile);
-    _tzpath_find_tzfile = NULL;
-
-    Py_XDECREF(_common_mod);
-    _common_mod = NULL;
-
-    Py_XDECREF(io_open);
-    io_open = NULL;
+    Py_CLEAR(_tzpath_find_tzfile);
+    Py_CLEAR(_common_mod);
+    Py_CLEAR(io_open);
 
     xdecref_ttinfo(&NO_TTINFO);
 
@@ -2610,42 +2622,33 @@ module_free()
         Py_CLEAR(ZONEINFO_WEAK_CACHE);
     }
 
-    strong_cache_free(ZONEINFO_STRONG_CACHE);
-    ZONEINFO_STRONG_CACHE = NULL;
+    clear_strong_cache(&PyZoneInfo_ZoneInfoType);
 }
 
 static int
 zoneinfomodule_exec(PyObject *m)
 {
     PyDateTime_IMPORT;
+    if (PyDateTimeAPI == NULL) {
+        goto error;
+    }
     PyZoneInfo_ZoneInfoType.tp_base = PyDateTimeAPI->TZInfoType;
     if (PyType_Ready(&PyZoneInfo_ZoneInfoType) < 0) {
         goto error;
     }
 
-    Py_INCREF(&PyZoneInfo_ZoneInfoType);
-    PyModule_AddObject(m, "ZoneInfo", (PyObject *)&PyZoneInfo_ZoneInfoType);
-
-    /* Populate imports */
-    PyObject *_tzpath_module = PyImport_ImportModule("zoneinfo._tzpath");
-    if (_tzpath_module == NULL) {
+    if (PyModule_AddObjectRef(m, "ZoneInfo", (PyObject *)&PyZoneInfo_ZoneInfoType) < 0) {
         goto error;
     }
 
+    /* Populate imports */
     _tzpath_find_tzfile =
-        PyObject_GetAttrString(_tzpath_module, "find_tzfile");
-    Py_DECREF(_tzpath_module);
+        _PyImport_GetModuleAttrString("zoneinfo._tzpath", "find_tzfile");
     if (_tzpath_find_tzfile == NULL) {
         goto error;
     }
 
-    PyObject *io_module = PyImport_ImportModule("io");
-    if (io_module == NULL) {
-        goto error;
-    }
-
-    io_open = PyObject_GetAttrString(io_module, "open");
-    Py_DECREF(io_module);
+    io_open = _PyImport_GetModuleAttrString("io", "open");
     if (io_open == NULL) {
         goto error;
     }
@@ -2656,13 +2659,9 @@ zoneinfomodule_exec(PyObject *m)
     }
 
     if (NO_TTINFO.utcoff == NULL) {
-        NO_TTINFO.utcoff = Py_None;
-        NO_TTINFO.dstoff = Py_None;
-        NO_TTINFO.tzname = Py_None;
-
-        for (size_t i = 0; i < 3; ++i) {
-            Py_INCREF(Py_None);
-        }
+        NO_TTINFO.utcoff = Py_NewRef(Py_None);
+        NO_TTINFO.dstoff = Py_NewRef(Py_None);
+        NO_TTINFO.tzname = Py_NewRef(Py_None);
     }
 
     if (initialize_caches()) {

@@ -33,6 +33,9 @@ decode(in_file [, out_file, mode, quiet])
 import binascii
 import os
 import sys
+import warnings
+
+warnings._deprecated(__name__, remove=(3, 13))
 
 __all__ = ["Error", "encode", "decode"]
 
