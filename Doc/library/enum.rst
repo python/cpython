@@ -619,7 +619,7 @@ Data Types
       * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
       * :meth:`!str.__str__` for :class:`StrEnum`
 
-   Inherit from :class:`!ReprEnum` to keep the :class:`str() <str> / :func:`format`
+   Inherit from :class:`!ReprEnum` to keep the :class:`str() <str>` / :func:`format`
    of the mixed-in data type instead of using the
    :class:`Enum`-default :meth:`str() <Enum.__str__>`.
 
