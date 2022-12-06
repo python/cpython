@@ -107,6 +107,7 @@ html_short_title = '%s Documentation' % release
 
 # Deployment preview information, from Netlify
 # (See netlify.toml and https://docs.netlify.com/configure-builds/environment-variables/#git-metadata)
+
 html_context = {
     "is_deployment_preview": os.getenv("IS_DEPLOYMENT_PREVIEW"),
     "repository_url": os.getenv("REPOSITORY_URL"),
