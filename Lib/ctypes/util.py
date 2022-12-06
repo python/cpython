@@ -94,7 +94,7 @@ elif os.name == "posix":
     import re, tempfile
 
     def _is_elf(filename):
-        "Return True if the given file is readable and is an ELF file"
+        "Return True if the given file is an ELF file"
         elf_header = b'\x7fELF'
         try:
             with open(filename, 'br') as thefile:
