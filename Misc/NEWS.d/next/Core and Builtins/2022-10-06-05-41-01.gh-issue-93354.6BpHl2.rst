@@ -1,2 +1,0 @@
-Fix an issue that could delay the specialization of :opcode:`PRECALL`
-instructions.

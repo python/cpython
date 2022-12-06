@@ -1,1 +1,0 @@
-Fix a crash when an object which does not have a dictionary frees its instance values.

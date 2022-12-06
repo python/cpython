@@ -1,7 +1,0 @@
-[3.11] Applied changes from importlib_metadata `4.11.4 through 4.13
-<https://importlib-metadata.readthedocs.io/en/latest/history.html#v4-13-0>`_,
-including compatibility and robustness fixes for ``Distribution`` objects
-without ``_normalized_name``, disallowing invalid inputs to
-``Distribution.from_name``, and refined behaviors in
-``PathDistribution._name_from_stem`` and
-``PathDistribution._normalized_name``.
