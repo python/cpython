@@ -29,6 +29,14 @@ extern "C" {
 #  define Py_NSIG 64               // Use a reasonable default value
 #endif
 
+
+struct _signals_runtime_state {
+    /* True if the main interpreter thread exited due to an unhandled
+     * KeyboardInterrupt exception, suggesting the user pressed ^C. */
+    int unhandled_keyboard_interrupt;
+};
+
+
 #ifdef __cplusplus
 }
 #endif

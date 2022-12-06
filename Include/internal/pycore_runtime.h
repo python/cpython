@@ -23,6 +23,7 @@ extern "C" {
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_obmalloc.h"        // struct obmalloc_state
+#include "pycore_signal.h"          // struct _signals_runtime_state
 #include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
@@ -93,13 +94,9 @@ typedef struct pyruntimestate {
     struct _pymem_allocators allocators;
     struct _obmalloc_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
-    struct {
-        /* True if the main interpreter thread exited due to an unhandled
-         * KeyboardInterrupt exception, suggesting the user pressed ^C. */
-        int unhandled_keyboard_interrupt;
-    } signals;
     struct _time_runtime_state time;
     struct _pythread_runtime_state threads;
+    struct _signals_runtime_state signals;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
