@@ -420,7 +420,6 @@ Modules/_tracemalloc.c	-	tracemalloc_traces	-
 Modules/_tracemalloc.c	-	tracemalloc_domains	-
 Modules/_tracemalloc.c	-	tracemalloc_reentrant_key	-
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
-Modules/posixmodule.c	-	environ	-
 Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
 Modules/signalmodule.c	-	wakeup	-

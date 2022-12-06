@@ -208,6 +208,7 @@ Modules/_sqlite/module.c	-	pysqlite_BaseTypeAdapted	-
 Modules/_sqlite/module.h	-	pysqlite_global_state	-
 Modules/_testcapimodule.c	-	_PyBytesIOBuffer_Type	-
 Modules/posixmodule.c	-	_Py_open_cloexec_works	-
+Modules/posixmodule.c	-	environ	-
 Objects/object.c	-	_Py_GenericAliasIterType	-
 Objects/object.c	-	_PyMemoryIter_Type	-
 Objects/object.c	-	_PyLineIterator	-
