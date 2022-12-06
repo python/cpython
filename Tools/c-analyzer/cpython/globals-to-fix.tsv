@@ -314,9 +314,6 @@ Python/perf_trampoline.c	-	perf_map_file	-
 ##-----------------------
 ## state
 
-## local buffer
-Python/suggestions.c	levenshtein_distance	buffer	-
-
 ## other
 Objects/object.c	-	_Py_RefTotal	-
 Python/perf_trampoline.c	-	perf_status	-
