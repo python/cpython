@@ -318,6 +318,15 @@ The following functions and structs are used to create
       base classes provided in *Py_tp_base[s]* slots.
       Previously, only :class:`type` instances were returned.
 
+.. raw:: html
+
+   <!-- Keep old URL fragments working (see gh-97908) -->
+   <span id='c.PyType_Spec.PyType_Spec.name'></span>
+   <span id='c.PyType_Spec.PyType_Spec.basicsize'></span>
+   <span id='c.PyType_Spec.PyType_Spec.itemsize'></span>
+   <span id='c.PyType_Spec.PyType_Spec.flags'></span>
+   <span id='c.PyType_Spec.PyType_Spec.slots'></span>
+
 .. c:type:: PyType_Spec
 
    Structure defining a type's behavior.
@@ -346,6 +355,12 @@ The following functions and structs are used to create
       Terminated by the special slot value ``{0, NULL}``.
 
       Each slot ID should be specified at most once.
+
+.. raw:: html
+
+   <!-- Keep old URL fragments working (see gh-97908) -->
+   <span id='c.PyType_Slot.PyType_Slot.slot'></span>
+   <span id='c.PyType_Slot.PyType_Slot.pfunc'></span>
 
 .. c:type:: PyType_Slot
 
