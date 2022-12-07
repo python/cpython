@@ -305,9 +305,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ##-----------------------
 ## effectively-const but initialized lazily
 
-## idempotent
-Objects/obmalloc.c	new_arena	debug_stats	-
-
 ## others
 Python/perf_trampoline.c	-	perf_map_file	-
 
