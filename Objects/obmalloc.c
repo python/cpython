@@ -908,11 +908,12 @@ new_arena(void)
     struct arena_object* arenaobj;
     uint excess;        /* number of bytes above pool alignment */
     void *address;
-    static int debug_stats = -1;
 
+    int debug_stats = _PyRuntime.obmalloc.dump_debug_stats;
     if (debug_stats == -1) {
         const char *opt = Py_GETENV("PYTHONMALLOCSTATS");
         debug_stats = (opt != NULL && *opt != '\0');
+        _PyRuntime.obmalloc.dump_debug_stats = debug_stats;
     }
     if (debug_stats) {
         _PyObject_DebugMallocStats(stderr);

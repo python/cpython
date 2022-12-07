@@ -87,8 +87,6 @@ Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
 
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
 Python/initconfig.c	-	_Py_StandardStreamErrors	-
-# XXX This only gets cleared by Py_Main().
-Python/initconfig.c	-	orig_argv	-
 
 ##-----------------------
 ## public C-API
@@ -142,15 +140,6 @@ Python/pylifecycle.c	-	runtime_initialized	-
 ## main interp state in stdlib modules
 Modules/syslogmodule.c	-	S_ident_o	-
 Modules/syslogmodule.c	-	S_log_open	-
-
-##-----------------------
-## *not* tied to init/fini cycle
-
-# These do not ge reset with each init/fini cycle.
-# XXX These should probably be tied to init/fini.  Move to _PyRuntimeState?
-
-# special-use diagnistic state
-Parser/pegen.c	-	memo_statistics	-
 
 ##-----------------------
 ## one-off temporary state
