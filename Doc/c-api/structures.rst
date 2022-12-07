@@ -242,7 +242,7 @@ Implementing functions and methods
 
    .. c:member:: const char* 'PyMethodDef.ml_doc'
 
-      points to the contents of the docstring   
+      points to the contents of the docstring
 
 The :c:member:`PyMethodDef.ml_meth` is a C function pointer.  The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
