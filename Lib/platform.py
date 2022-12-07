@@ -1035,7 +1035,9 @@ _sys_version_parser = re.compile(
     r'([\w.+]+)\s*'  # "version<space>"
     r'\(#?([^,]+)'  # "(#buildno"
     r'(?:,\s*([\w ]*)'  # ", builddate"
-    r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
+        r'(?:,\s*([\w :]*))?)?'  # ", buildtime"
+    r'(?:,\s*([\w :]*))?'  # ", build details"
+    r'\)\s*'  # ")<space>"
     r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
 
 _ironpython_sys_version_parser = re.compile(
@@ -1114,7 +1116,7 @@ def _sys_version(sys_version=None):
             raise ValueError(
                 'failed to parse Jython sys.version: %s' %
                 repr(sys_version))
-        version, buildno, builddate, buildtime, _ = match.groups()
+        version, buildno, builddate, buildtime, _, _ = match.groups()
         if builddate is None:
             builddate = ''
         compiler = sys.platform
@@ -1136,7 +1138,7 @@ def _sys_version(sys_version=None):
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %
                 repr(sys_version))
-        version, buildno, builddate, buildtime, compiler = \
+        version, buildno, builddate, buildtime, _, compiler = \
               match.groups()
         name = 'CPython'
         if builddate is None:

@@ -119,7 +119,7 @@ class PlatformTest(unittest.TestCase):
         sys.platform = self.save_platform
 
     def test_sys_version(self):
-        # Old test.
+        # Test platform._sys_version()
         for input, output in (
             ('2.4.3 (#1, Jun 21 2006, 13:54:21) \n[GCC 3.3.4 (pre 3.3.5 20040809)]',
              ('CPython', '2.4.3', '', '', '1', 'Jun 21 2006 13:54:21', 'GCC 3.3.4 (pre 3.3.5 20040809)')),
@@ -143,6 +143,11 @@ class PlatformTest(unittest.TestCase):
              ('CPython', '2.4.3', '', '', 'truncation', '', 'GCC')),
             ('2.4.3 (truncation) \n[GCC]',
              ('CPython', '2.4.3', '', '', 'truncation', '', 'GCC')),
+            ('3.12.0a3+ (heads/py_build_str:f9be94491f, '
+             'Dec  7 2022, 21:57:04, debug build) '
+             '[GCC 12.2.1 20221121 (Red Hat 12.2.1-4)]',
+             ('CPython', '3.12.0a3+', '', '', 'heads/py_build_str:f9be94491f',
+              'Dec  7 2022 21:57:04', 'GCC 12.2.1 20221121 (Red Hat 12.2.1-4)')),
             ):
             # branch and revision are not "parsed", but fetched
             # from sys._git.  Ignore them
