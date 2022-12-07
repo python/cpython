@@ -154,7 +154,10 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
                 os.write(STDOUT_FILENO, data)
 
         if STDIN_FILENO in rfds:
-            data = stdin_read(STDIN_FILENO)
+            try:
+                data = stdin_read(STDIN_FILENO)
+            except OSError:
+                data = b""
             if not data:
                 fds.remove(STDIN_FILENO)
             else:
