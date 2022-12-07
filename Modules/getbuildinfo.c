@@ -30,6 +30,14 @@
 #ifndef GITBRANCH
 #define GITBRANCH ""
 #endif
+#ifndef PY_BUILD_STR
+   // On Windows, only provide basic info
+#  ifdef Py_DEBUG
+#    define PY_BUILD_STR "debug build"
+#  else
+#    define PY_BUILD_STR "release build"
+#  endif
+#endif
 
 static int initialized = 0;
 static char buildinfo[50 + sizeof(GITVERSION) +
@@ -50,8 +58,9 @@ Py_GetBuildInfo(void)
         gitid = "main";
     }
     PyOS_snprintf(buildinfo, sizeof(buildinfo),
-                  "%s%s%s, %.20s, %.9s", gitid, sep, revision,
-                  DATE, TIME);
+                  "%s%s%s, %.20s, %.9s, %s",
+                gitid, sep, revision, DATE, TIME,
+                PY_BUILD_STR);
     return buildinfo;
 }
 

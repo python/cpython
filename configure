@@ -623,6 +623,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+PY_BUILD_STR
 MODULE_BLOCK
 MODULE_XXLIMITED_35_FALSE
 MODULE_XXLIMITED_35_TRUE
@@ -11072,6 +11073,8 @@ $as_echo "no" >&6; }
 	;;
 esac
 
+SANITIZERS=""
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-address-sanitizer" >&5
 $as_echo_n "checking for --with-address-sanitizer... " >&6; }
 
@@ -11080,6 +11083,7 @@ if test "${with_address_sanitizer+set}" = set; then :
   withval=$with_address_sanitizer;
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
+SANITIZERS="$SANITIZERS asan"
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
 # ASan works by controlling memory allocation, our own malloc interferes.
@@ -11130,6 +11134,7 @@ fi
 $as_echo "$ax_cv_check_cflags___fsanitize_memory" >&6; }
 if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes; then :
 
+SANITIZERS="$SANITIZERS msan"
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
 
@@ -11154,6 +11159,7 @@ if test "${with_undefined_behavior_sanitizer+set}" = set; then :
   withval=$with_undefined_behavior_sanitizer;
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 $as_echo "$withval" >&6; }
+SANITIZERS="$SANITIZERS ubsan"
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
@@ -11165,6 +11171,10 @@ $as_echo "no" >&6; }
 with_ubsan="no"
 
 fi
+
+
+# strip leading space
+SANITIZERS=$(echo $SANITIZERS | sed 's/^ //')
 
 
 # Set info about shared libraries.
@@ -28095,6 +28105,64 @@ $as_echo "$py_cv_module_xxlimited_35" >&6; }
 
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
+
+
+
+# String describing the Python build used by sys.version (ex: "debug build")
+# Short string containing most important configure options.
+# Examples:
+# - "debug+tracerefs build"
+# - "release+assert shared build"
+# - "release lto+pgo build"
+
+if test "$Py_DEBUG" = 'true' ; then
+    PY_BUILD_STR="debug"
+else
+    PY_BUILD_STR="release"
+    if test "$assertions" = 'true'; then
+        PY_BUILD_STR="$PY_BUILD_STR+assert"
+    fi
+fi
+if test "$with_trace_refs" = "yes"; then
+    PY_BUILD_STR="$PY_BUILD_STR+tracerefs"
+fi
+if test "$enable_pystats" = "yes"; then
+    PY_BUILD_STR="$PY_BUILD_STR+pystats"
+fi
+if test -n "${SANITIZERS}"; then
+    PY_BUILD_STR="$PY_BUILD_STR $SANITIZERS"
+fi
+if test "$Py_LTO" = 'true' ; then
+    LTO_BUILD_STR="lto"
+    if test "$Py_LTO_POLICY" = 'thin' ; then
+        LTO_BUILD_STR="lto=thin"
+    fi
+else
+    LTO_BUILD_STR=""
+fi
+if test "$Py_OPT" = 'true' ; then
+    PGO_BUILD_STR="pgo"
+else
+    PGO_BUILD_STR=""
+fi
+if test -n "${LTO_BUILD_STR}"; then
+    if test -n "${PGO_BUILD_STR}"; then
+        PY_BUILD_STR="$PY_BUILD_STR $LTO_BUILD_STR+$PGO_BUILD_STR"
+    else
+        PY_BUILD_STR="$PY_BUILD_STR $LTO_BUILD_STR"
+    fi
+else
+    if test -n "${PGO_BUILD_STR}"; then
+        PY_BUILD_STR="$PY_BUILD_STR $PGO_BUILD_STR"
+    fi
+fi
+if test "$enable_framework"; then
+    PY_BUILD_STR="$PY_BUILD_STR framework"
+fi
+if test "$PY_ENABLE_SHARED" = 1; then
+    PY_BUILD_STR="$PY_BUILD_STR shared"
+fi
+PY_BUILD_STR="$PY_BUILD_STR build"
 
 
 # generate output files

@@ -3093,12 +3093,15 @@ case $ac_sys_system/$ac_sys_release in
 	;;
 esac
 
+SANITIZERS=""
+
 AC_MSG_CHECKING(for --with-address-sanitizer)
 AC_ARG_WITH(address_sanitizer,
             AS_HELP_STRING([--with-address-sanitizer],
                            [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
 [
 AC_MSG_RESULT($withval)
+SANITIZERS="$SANITIZERS asan"
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=address $LDFLAGS"
 # ASan works by controlling memory allocation, our own malloc interferes.
@@ -3113,6 +3116,7 @@ AC_ARG_WITH(memory_sanitizer,
 [
 AC_MSG_RESULT($withval)
 AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
+SANITIZERS="$SANITIZERS msan"
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
 LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
 ],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
@@ -3127,6 +3131,7 @@ AC_ARG_WITH(undefined_behavior_sanitizer,
                            [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
 [
 AC_MSG_RESULT($withval)
+SANITIZERS="$SANITIZERS ubsan"
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
 LDFLAGS="-fsanitize=undefined $LDFLAGS"
 with_ubsan="yes"
@@ -3135,6 +3140,10 @@ with_ubsan="yes"
 AC_MSG_RESULT(no)
 with_ubsan="no"
 ])
+
+# strip leading space
+SANITIZERS=$(echo $SANITIZERS | sed 's/^ //')
+
 
 # Set info about shared libraries.
 AC_SUBST(SHLIB_SUFFIX)
@@ -7373,6 +7382,64 @@ PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no"], [test "$ac_cv_fu
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
+
+
+# String describing the Python build used by sys.version (ex: "debug build")
+# Short string containing most important configure options.
+# Examples:
+# - "debug+tracerefs build"
+# - "release+assert shared build"
+# - "release lto+pgo build"
+AC_SUBST(PY_BUILD_STR)
+if test "$Py_DEBUG" = 'true' ; then
+    PY_BUILD_STR="debug"
+else
+    PY_BUILD_STR="release"
+    if test "$assertions" = 'true'; then
+        PY_BUILD_STR="$PY_BUILD_STR+assert"
+    fi
+fi
+if test "$with_trace_refs" = "yes"; then
+    PY_BUILD_STR="$PY_BUILD_STR+tracerefs"
+fi
+if test "$enable_pystats" = "yes"; then
+    PY_BUILD_STR="$PY_BUILD_STR+pystats"
+fi
+if test -n "${SANITIZERS}"; then
+    PY_BUILD_STR="$PY_BUILD_STR $SANITIZERS"
+fi
+if test "$Py_LTO" = 'true' ; then
+    LTO_BUILD_STR="lto"
+    if test "$Py_LTO_POLICY" = 'thin' ; then
+        LTO_BUILD_STR="lto=thin"
+    fi
+else
+    LTO_BUILD_STR=""
+fi
+if test "$Py_OPT" = 'true' ; then
+    PGO_BUILD_STR="pgo"
+else
+    PGO_BUILD_STR=""
+fi
+if test -n "${LTO_BUILD_STR}"; then
+    if test -n "${PGO_BUILD_STR}"; then
+        PY_BUILD_STR="$PY_BUILD_STR $LTO_BUILD_STR+$PGO_BUILD_STR"
+    else
+        PY_BUILD_STR="$PY_BUILD_STR $LTO_BUILD_STR"
+    fi
+else
+    if test -n "${PGO_BUILD_STR}"; then
+        PY_BUILD_STR="$PY_BUILD_STR $PGO_BUILD_STR"
+    fi
+fi
+if test "$enable_framework"; then
+    PY_BUILD_STR="$PY_BUILD_STR framework"
+fi
+if test "$PY_ENABLE_SHARED" = 1; then
+    PY_BUILD_STR="$PY_BUILD_STR shared"
+fi
+PY_BUILD_STR="$PY_BUILD_STR build"
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)

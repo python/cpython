@@ -323,6 +323,10 @@ sys
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
 
+* Add more build details about how Python was configured in
+  :data:`sys.version`, like "debug" or "release" build.
+  (Contributed by Victor Stinner in :gh:`100086`.)
+
 
 Optimizations
 =============

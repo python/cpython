@@ -123,7 +123,8 @@ PY_CORE_CFLAGS=	$(PY_STDMODULE_CFLAGS) -DPy_BUILD_CORE
 PY_CORE_LDFLAGS=$(PY_LDFLAGS) $(PY_LDFLAGS_NODIST)
 # Strict or non-strict aliasing flags used to compile dtoa.c, see above
 CFLAGS_ALIASING=@CFLAGS_ALIASING@
-
+# String describing the Python build used by sys.version (ex: "debug build")
+PY_BUILD_STR=@PY_BUILD_STR@
 
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
@@ -1245,6 +1246,7 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 	      -DGITVERSION="\"`LC_ALL=C $(GITVERSION)`\"" \
 	      -DGITTAG="\"`LC_ALL=C $(GITTAG)`\"" \
 	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
+	      -DPY_BUILD_STR="\"$(PY_BUILD_STR)\"" \
 	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
