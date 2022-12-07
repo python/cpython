@@ -433,8 +433,7 @@ class _TemporaryFileCloser:
             try:
                 if not self.close_called:
                     self.close_called = True
-                    if self.file is not None:
-                        self.file.close()
+                    self.file.close()
             finally:
                 # Windows provides delete-on-close as a primitive, in which
                 # case the file was deleted by self.file.close().
@@ -448,8 +447,7 @@ class _TemporaryFileCloser:
         if not self.close_called:
             self.close_called = True
             try:
-                if self.file is not None:
-                    self.file.close()
+                self.file.close()
             finally:
                 if self.delete and self.delete_on_close:
                     self.cleanup()
