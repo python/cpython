@@ -142,15 +142,6 @@ Modules/syslogmodule.c	-	S_ident_o	-
 Modules/syslogmodule.c	-	S_log_open	-
 
 ##-----------------------
-## *not* tied to init/fini cycle
-
-# These do not ge reset with each init/fini cycle.
-# XXX These should probably be tied to init/fini.  Move to _PyRuntimeState?
-
-# special-use diagnistic state
-Parser/pegen.c	-	memo_statistics	-
-
-##-----------------------
 ## one-off temporary state
 
 # used during runtime init
