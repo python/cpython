@@ -260,27 +260,13 @@ class Component:
 
 
 @dataclasses.dataclass
-class SuperOrMacroInstruction:
-    """Common fields for super- and macro instructions."""
+class MacroInstruction:
+    """A macro instruction."""
 
     name: str
     stack: list[StackEffect]
     initial_sp: int
     final_sp: int
-
-
-@dataclasses.dataclass
-class SuperInstruction(SuperOrMacroInstruction):
-    """A super-instruction."""
-
-    super: parser.Super
-    parts: list[Component]
-
-
-@dataclasses.dataclass
-class MacroInstruction(SuperOrMacroInstruction):
-    """A macro instruction."""
-
     macro: parser.Macro
     parts: list[Component | parser.CacheEffect]
 
@@ -312,8 +298,6 @@ class Analyzer:
         self.errors += 1
 
     instrs: dict[str, Instruction]  # Includes ops
-    supers: dict[str, parser.Super]
-    super_instrs: dict[str, SuperInstruction]
     macros: dict[str, parser.Macro]
     macro_instrs: dict[str, MacroInstruction]
     families: dict[str, parser.Family]
@@ -345,15 +329,12 @@ class Analyzer:
         # Parse from start
         psr.setpos(start)
         self.instrs = {}
-        self.supers = {}
         self.macros = {}
         self.families = {}
         while thing := psr.definition():
             match thing:
                 case parser.InstDef(name=name):
                     self.instrs[name] = Instruction(thing)
-                case parser.Super(name):
-                    self.supers[name] = thing
                 case parser.Macro(name):
                     self.macros[name] = thing
                 case parser.Family(name):
@@ -365,7 +346,7 @@ class Analyzer:
 
         print(
             f"Read {len(self.instrs)} instructions/ops, "
-            f"{len(self.supers)} supers, {len(self.macros)} macros, "
+            f"{len(self.macros)} macros, "
             f"and {len(self.families)} families from {self.filename}",
             file=sys.stderr,
         )
@@ -378,7 +359,7 @@ class Analyzer:
         self.find_predictions()
         self.map_families()
         self.check_families()
-        self.analyze_supers_and_macros()
+        self.analyze_macros()
 
     def find_predictions(self) -> None:
         """Find the instructions that need PREDICTED() labels."""
@@ -444,25 +425,11 @@ class Analyzer:
                         family,
                     )
 
-    def analyze_supers_and_macros(self) -> None:
-        """Analyze each super- and macro instruction."""
-        self.super_instrs = {}
+    def analyze_macros(self) -> None:
+        """Analyze each macro instruction."""
         self.macro_instrs = {}
-        for name, super in self.supers.items():
-            self.super_instrs[name] = self.analyze_super(super)
         for name, macro in self.macros.items():
             self.macro_instrs[name] = self.analyze_macro(macro)
-
-    def analyze_super(self, super: parser.Super) -> SuperInstruction:
-        components = self.check_super_components(super)
-        stack, initial_sp = self.stack_analysis(components)
-        sp = initial_sp
-        parts: list[Component] = []
-        for instr in components:
-            part, sp = self.analyze_instruction(instr, stack, sp)
-            parts.append(part)
-        final_sp = sp
-        return SuperInstruction(super.name, stack, initial_sp, final_sp, super, parts)
 
     def analyze_macro(self, macro: parser.Macro) -> MacroInstruction:
         components = self.check_macro_components(macro)
@@ -494,15 +461,6 @@ class Analyzer:
             sp += 1
         return Component(instr, input_mapping, output_mapping), sp
 
-    def check_super_components(self, super: parser.Super) -> list[Instruction]:
-        components: list[Instruction] = []
-        for op in super.ops:
-            if op.name not in self.instrs:
-                self.error(f"Unknown instruction {op.name!r}", super)
-            else:
-                components.append(self.instrs[op.name])
-        return components
-
     def check_macro_components(
         self, macro: parser.Macro
     ) -> list[InstructionOrCacheEffect]:
@@ -522,9 +480,7 @@ class Analyzer:
     def stack_analysis(
         self, components: typing.Iterable[InstructionOrCacheEffect]
     ) -> tuple[list[StackEffect], int]:
-        """Analyze a super-instruction or macro.
-
-        Print an error if there's a cache effect (which we don't support yet).
+        """Analyze a macro.
 
         Return the list of variable names and the initial stack pointer.
         """
@@ -576,12 +532,6 @@ class Analyzer:
                             self.out.emit(f"PREDICT({prediction});")
                         self.out.emit(f"DISPATCH();")
 
-            # Write and count super-instructions
-            n_supers = 0
-            for sup in self.super_instrs.values():
-                n_supers += 1
-                self.write_super(sup)
-
             # Write and count macro instructions
             n_macros = 0
             for macro in self.macro_instrs.values():
@@ -589,27 +539,14 @@ class Analyzer:
                 self.write_macro(macro)
 
         print(
-            f"Wrote {n_instrs} instructions, {n_supers} supers, "
+            f"Wrote {n_instrs} instructions "
             f"and {n_macros} macros to {self.output_filename}",
             file=sys.stderr,
         )
 
-    def write_super(self, sup: SuperInstruction) -> None:
-        """Write code for a super-instruction."""
-        with self.wrap_super_or_macro(sup):
-            first = True
-            for comp in sup.parts:
-                if not first:
-                    self.out.emit("NEXTOPARG();")
-                    self.out.emit("next_instr++;")
-                first = False
-                comp.write_body(self.out, 0)
-                if comp.instr.cache_offset:
-                    self.out.emit(f"next_instr += {comp.instr.cache_offset};")
-
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
-        with self.wrap_super_or_macro(mac):
+        with self.wrap_macro(mac):
             cache_adjust = 0
             for part in mac.parts:
                 match part:
@@ -623,8 +560,8 @@ class Analyzer:
                 self.out.emit(f"next_instr += {cache_adjust};")
 
     @contextlib.contextmanager
-    def wrap_super_or_macro(self, up: SuperOrMacroInstruction):
-        """Shared boilerplate for super- and macro instructions."""
+    def wrap_macro(self, up: MacroInstruction):
+        """Boilerplate for macro instructions."""
         # TODO: Somewhere (where?) make it so that if one instruction
         # has an output that is input to another, and the variable names
         # and types match and don't conflict with other instructions,
