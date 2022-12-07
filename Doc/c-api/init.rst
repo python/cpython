@@ -1933,7 +1933,7 @@ is not possible due to its implementation being opaque at build time.
 
    .. note::
       A freed key becomes a dangling pointer. You should reset the key to
-      `NULL`.
+      ``NULL``.
 
 
 Methods

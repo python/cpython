@@ -32,7 +32,7 @@ The :func:`getmembers` function retrieves the members of an object such as a
 class or module. The functions whose names begin with "is" are mainly
 provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
-attributes:
+attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. this function name is too big to fit in the ascii-art table below
 .. |coroutine-origin-link| replace:: :func:`sys.set_coroutine_origin_tracking_depth`
@@ -40,11 +40,6 @@ attributes:
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
-| module    | __doc__           | documentation string      |
-+-----------+-------------------+---------------------------+
-|           | __file__          | filename (missing for     |
-|           |                   | built-in modules)         |
-+-----------+-------------------+---------------------------+
 | class     | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -434,8 +429,10 @@ attributes:
 
    Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
 
-   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
-   :meth:`~object().__eq__` and :meth:`~object().__repr__`
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object.__str__`,
+   :meth:`~object.__eq__` and :meth:`~object.__repr__`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: isroutine(object)
@@ -1206,12 +1203,13 @@ is considered deprecated and may be removed in the future.
       number, start column offset, and end column offset associated with the
       instruction being executed by the frame this record corresponds to.
 
-.. versionchanged:: 3.5
-   Return a named tuple instead of a tuple.
+   .. versionchanged:: 3.5
+      Return a :term:`named tuple` instead of a :class:`tuple`.
 
-.. versionchanged:: 3.11
-   Changed the return object from a named tuple to a regular object (that is
-   backwards compatible with the previous named tuple).
+   .. versionchanged:: 3.11
+      :class:`!FrameInfo` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. class:: Traceback
 
@@ -1244,6 +1242,11 @@ is considered deprecated and may be removed in the future.
       line number, start column offset, and end column offset associated with
       the instruction being executed by the frame this traceback corresponds
       to.
+
+   .. versionchanged:: 3.11
+      :class:`!Traceback` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. note::
 

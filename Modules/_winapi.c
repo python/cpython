@@ -291,8 +291,7 @@ _winapi_Overlapped_getbuffer_impl(OverlappedObject *self)
         return NULL;
     }
     res = self->read_buffer ? self->read_buffer : Py_None;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 /*[clinic input]
@@ -405,13 +404,13 @@ _winapi_CloseHandle_impl(PyObject *module, HANDLE handle)
 _winapi.ConnectNamedPipe
 
     handle: HANDLE
-    overlapped as use_overlapped: bool(accept={int}) = False
+    overlapped as use_overlapped: bool = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
                               int use_overlapped)
-/*[clinic end generated code: output=335a0e7086800671 input=34f937c1c86e5e68]*/
+/*[clinic end generated code: output=335a0e7086800671 input=a80e56e8bd370e31]*/
 {
     BOOL success;
     OverlappedObject *overlapped = NULL;
@@ -1089,14 +1088,6 @@ _winapi_CreateProcess_impl(PyObject *module,
         return NULL;
     }
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (config->_isolated_interpreter) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "subprocess not supported for isolated subinterpreters");
-        return NULL;
-    }
-
     ZeroMemory(&si, sizeof(si));
     si.StartupInfo.cb = sizeof(si);
 
@@ -1403,6 +1394,30 @@ _winapi_MapViewOfFile_impl(PyObject *module, HANDLE file_map,
 }
 
 /*[clinic input]
+_winapi.UnmapViewOfFile
+
+    address: LPCVOID
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_UnmapViewOfFile_impl(PyObject *module, LPCVOID address)
+/*[clinic end generated code: output=4f7e18ac75d19744 input=8c4b6119ad9288a3]*/
+{
+    BOOL success;
+
+    Py_BEGIN_ALLOW_THREADS
+    success = UnmapViewOfFile(address);
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 _winapi.OpenFileMapping -> HANDLE
 
     desired_access: DWORD
@@ -1561,13 +1576,13 @@ _winapi.ReadFile
 
     handle: HANDLE
     size: DWORD
-    overlapped as use_overlapped: bool(accept={int}) = False
+    overlapped as use_overlapped: bool = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
                       int use_overlapped)
-/*[clinic end generated code: output=d3d5b44a8201b944 input=08c439d03a11aac5]*/
+/*[clinic end generated code: output=d3d5b44a8201b944 input=4f82f8e909ad91ad]*/
 {
     DWORD nread;
     PyObject *buf;
@@ -1847,13 +1862,13 @@ _winapi.WriteFile
 
     handle: HANDLE
     buffer: object
-    overlapped as use_overlapped: bool(accept={int}) = False
+    overlapped as use_overlapped: bool = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                        int use_overlapped)
-/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=11eae2a03aa32731]*/
+/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=2badb008c8a2e2a0]*/
 {
     Py_buffer _buf, *buf;
     DWORD len, written;
@@ -2071,6 +2086,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_READFILE_METHODDEF
     _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF
     _WINAPI_TERMINATEPROCESS_METHODDEF
+    _WINAPI_UNMAPVIEWOFFILE_METHODDEF
     _WINAPI_VIRTUALQUERYSIZE_METHODDEF
     _WINAPI_WAITNAMEDPIPE_METHODDEF
     _WINAPI_WAITFORMULTIPLEOBJECTS_METHODDEF

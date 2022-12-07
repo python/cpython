@@ -79,6 +79,10 @@ class SingleNamespacePackage(NamespacePackageTest):
         with self.assertRaises(ImportError):
             import foo.two
 
+    def test_simple_repr(self):
+        import foo.one
+        assert repr(foo).startswith("<module 'foo' (namespace) from [")
+
 
 class DynamicPathNamespacePackage(NamespacePackageTest):
     paths = ['portion1']

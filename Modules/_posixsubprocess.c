@@ -814,7 +814,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     int allow_vfork;
 
     if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiiii" _Py_PARSE_PID "OOOiOp:fork_exec",
+            args, "OOpO!OOiiiiiiiipp" _Py_PARSE_PID "OOOiOp:fork_exec",
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
@@ -825,8 +825,8 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
             &preexec_fn, &allow_vfork))
         return NULL;
 
-    if ((preexec_fn != Py_None) &&
-            (PyInterpreterState_Get() != PyInterpreterState_Main())) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if ((preexec_fn != Py_None) && (interp != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");
         return NULL;
@@ -838,14 +838,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     }
     if (_sanity_check_python_fd_sequence(py_fds_to_keep)) {
         PyErr_SetString(PyExc_ValueError, "bad value(s) in fds_to_keep");
-        return NULL;
-    }
-
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
-    if (config->_isolated_interpreter) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "subprocess not supported for isolated subinterpreters");
         return NULL;
     }
 

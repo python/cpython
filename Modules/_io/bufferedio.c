@@ -389,12 +389,11 @@ buffered_dealloc(buffered *self)
 static PyObject *
 buffered_sizeof(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
-    if (self->buffer)
-        res += self->buffer_size;
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
+    if (self->buffer) {
+        res += (size_t)self->buffer_size;
+    }
+    return PyLong_FromSize_t(res);
 }
 
 static int
@@ -481,8 +480,7 @@ buffered_close(buffered *self, PyObject *args)
     if (r < 0)
         goto end;
     if (r > 0) {
-        res = Py_None;
-        Py_INCREF(res);
+        res = Py_NewRef(Py_None);
         goto end;
     }
 
@@ -1007,8 +1005,7 @@ _buffered_readinto_generic(buffered *self, Py_buffer *buffer, char readinto1)
             break;
         if (n < 0) {
             if (n == -2) {
-                Py_INCREF(Py_None);
-                res = Py_None;
+                res = Py_NewRef(Py_None);
             }
             goto end;
         }
@@ -1422,8 +1419,7 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
     if (_PyIOBase_check_readable(raw, Py_True) == NULL)
         return -1;
 
-    Py_INCREF(raw);
-    Py_XSETREF(self->raw, raw);
+    Py_XSETREF(self->raw, Py_NewRef(raw));
     self->buffer_size = buffer_size;
     self->readable = 1;
     self->writable = 0;

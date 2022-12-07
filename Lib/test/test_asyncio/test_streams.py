@@ -797,7 +797,9 @@ os.close(fd)
             watcher = asyncio.SafeChildWatcher()
         watcher.attach_loop(self.loop)
         try:
-            asyncio.set_child_watcher(watcher)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                asyncio.set_child_watcher(watcher)
             create = asyncio.create_subprocess_exec(
                 *args,
                 pass_fds={wfd},
@@ -805,17 +807,17 @@ os.close(fd)
             proc = self.loop.run_until_complete(create)
             self.loop.run_until_complete(proc.wait())
         finally:
-            asyncio.set_child_watcher(None)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                asyncio.set_child_watcher(None)
 
         os.close(wfd)
         data = self.loop.run_until_complete(reader.read(-1))
         self.assertEqual(data, b'data')
 
     def test_streamreader_constructor_without_loop(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
-                asyncio.StreamReader()
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            asyncio.StreamReader()
 
     def test_streamreader_constructor_use_running_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
@@ -829,21 +831,17 @@ os.close(fd)
     def test_streamreader_constructor_use_global_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
-        # Deprecated in 3.10
+        # Deprecated in 3.10, undeprecated in 3.12
         self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
-        with self.assertWarns(DeprecationWarning) as cm:
-            reader = asyncio.StreamReader()
-        self.assertEqual(cm.filename, __file__)
+        reader = asyncio.StreamReader()
         self.assertIs(reader._loop, self.loop)
 
 
     def test_streamreaderprotocol_constructor_without_loop(self):
         reader = mock.Mock()
-        with self.assertWarns(DeprecationWarning) as cm:
-            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
-                asyncio.StreamReaderProtocol(reader)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            asyncio.StreamReaderProtocol(reader)
 
     def test_streamreaderprotocol_constructor_use_running_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
@@ -857,13 +855,11 @@ os.close(fd)
     def test_streamreaderprotocol_constructor_use_global_loop(self):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
-        # Deprecated in 3.10
+        # Deprecated in 3.10, undeprecated in 3.12
         self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
         reader = mock.Mock()
-        with self.assertWarns(DeprecationWarning) as cm:
-            protocol = asyncio.StreamReaderProtocol(reader)
-        self.assertEqual(cm.filename, __file__)
+        protocol = asyncio.StreamReaderProtocol(reader)
         self.assertIs(protocol._loop, self.loop)
 
     def test_multiple_drain(self):

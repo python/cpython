@@ -124,6 +124,7 @@ This module also defines an exception 'error'.
 import enum
 from . import _compiler, _parser
 import functools
+import _sre
 
 
 # public symbols
@@ -230,7 +231,7 @@ def purge():
     "Clear the regular expression caches"
     _cache.clear()
     _cache2.clear()
-    _compile_repl.cache_clear()
+    _compile_template.cache_clear()
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a Pattern object, deprecated"
@@ -328,24 +329,9 @@ def _compile(pattern, flags):
     return p
 
 @functools.lru_cache(_MAXCACHE)
-def _compile_repl(repl, pattern):
+def _compile_template(pattern, repl):
     # internal: compile replacement pattern
-    return _parser.parse_template(repl, pattern)
-
-def _expand(pattern, match, template):
-    # internal: Match.expand implementation hook
-    template = _parser.parse_template(template, pattern)
-    return _parser.expand_template(template, match)
-
-def _subx(pattern, template):
-    # internal: Pattern.sub/subn implementation helper
-    template = _compile_repl(template, pattern)
-    if not template[0] and len(template[1]) == 1:
-        # literal replacement
-        return template[1][0]
-    def filter(match, template=template):
-        return _parser.expand_template(template, match)
-    return filter
+    return _sre.template(pattern, _parser.parse_template(repl, pattern))
 
 # register myself for pickling
 
