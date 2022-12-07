@@ -21,10 +21,9 @@ on:
     - '3.8'
     - '3.7'
     paths:
-    - '.github/workflows/doc.yml'
-    # Should be in sync with `netlify.toml`:
     - 'Doc/**'
     - 'Misc/**'
+    - '.github/workflows/doc.yml'
 
 permissions:
   contents: read
