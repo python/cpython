@@ -129,6 +129,8 @@ typedef struct pyruntimestate {
 
     unsigned long main_thread;
 
+    PyWideStringList orig_argv;
+
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;

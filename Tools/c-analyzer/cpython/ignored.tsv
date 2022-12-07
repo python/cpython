@@ -87,8 +87,6 @@ Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
 
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
 Python/initconfig.c	-	_Py_StandardStreamErrors	-
-# XXX This only gets cleared by Py_Main().
-Python/initconfig.c	-	orig_argv	-
 
 ##-----------------------
 ## public C-API
