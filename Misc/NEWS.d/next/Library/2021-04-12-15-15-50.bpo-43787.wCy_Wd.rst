@@ -1,3 +1,0 @@
-Add ``__iter__()`` method to :class:`bz2.BZ2File`, :class:`gzip.GzipFile`, and
-:class:`lzma.LZMAFile`. It makes iterating them about 2x faster. Patch by
-Inada Naoki.

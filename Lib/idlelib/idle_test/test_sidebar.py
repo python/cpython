@@ -6,12 +6,12 @@ from itertools import chain
 import unittest
 import unittest.mock
 from test.support import requires, swap_attr
+from test import support
 import tkinter as tk
-from .tkinter_testing_utils import run_in_tk_mainloop
+from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
 from idlelib.editor import fixwordbreaks
-from idlelib import macosx
 from idlelib.percolator import Percolator
 import idlelib.pyshell
 from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
@@ -271,7 +271,6 @@ class LineNumbersTest(unittest.TestCase):
 
         self.assertEqual(self.get_selection(), ('2.0', '3.0'))
 
-    @unittest.skip('test disabled')
     def simulate_drag(self, start_line, end_line):
         start_x, start_y = self.get_line_screen_position(start_line)
         end_x, end_y = self.get_line_screen_position(end_line)
@@ -408,7 +407,7 @@ class ShellSidebarTest(unittest.TestCase):
         fix_x11_paste(root)
 
         cls.flist = flist = PyShellFileList(root)
-        macosx.setupApp(root, flist)
+        # See #43981 about macosx.setupApp(root, flist) causing failure.
         root.update_idletasks()
 
         cls.init_shell()
@@ -476,10 +475,7 @@ class ShellSidebarTest(unittest.TestCase):
         index = text.index("@0,0")
         if index.split('.', 1)[1] != '0':
             index = text.index(f"{index} +1line linestart")
-        while True:
-            lineinfo = text.dlineinfo(index)
-            if lineinfo is None:
-                break
+        while (lineinfo := text.dlineinfo(index)) is not None:
             y_coords.append(lineinfo[1])
             index = text.index(f"{index} +1line")
         return y_coords
@@ -512,19 +508,19 @@ class ShellSidebarTest(unittest.TestCase):
         )
         self.assert_sidebar_lines_synced()
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_single_empty_input(self):
         self.do_input('\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', '>>>'])
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_single_line_statement(self):
         self.do_input('1\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_multi_line_statement(self):
         # Block statements are not indented because IDLE auto-indents.
         self.do_input(dedent('''\
@@ -542,14 +538,14 @@ class ShellSidebarTest(unittest.TestCase):
             '>>>',
         ])
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_single_long_line_wraps(self):
         self.do_input('1' * 200 + '\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
         self.assert_sidebar_lines_synced()
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_squeeze_multi_line_output(self):
         shell = self.shell
         text = shell.text
@@ -569,7 +565,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_end_with(['>>>', None, None, None, '>>>'])
         self.assert_sidebar_lines_synced()
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_interrupt_recall_undo_redo(self):
         text = self.shell.text
         # Block statements are not indented because IDLE auto-indents.
@@ -615,9 +611,10 @@ class ShellSidebarTest(unittest.TestCase):
             ['>>>', '...', '...', '...', None, '>>>']
         )
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_very_long_wrapped_line(self):
-        with swap_attr(self.shell, 'squeezer', None):
+        with support.adjust_int_max_str_digits(11_111), \
+                swap_attr(self.shell, 'squeezer', None):
             self.do_input('x = ' + '1'*10_000 + '\n')
             yield
             self.assertEqual(self.get_sidebar_lines(), ['>>>'])
@@ -680,7 +677,7 @@ class ShellSidebarTest(unittest.TestCase):
         sidebar.update_colors()
         self.assertEqual(get_sidebar_colors(), test_colors)
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop()
     def test_mousewheel(self):
         sidebar = self.shell.shell_sidebar
         text = self.shell.text
@@ -704,6 +701,67 @@ class ShellSidebarTest(unittest.TestCase):
         sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
         yield
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+
+    @run_in_tk_mainloop()
+    def test_copy(self):
+        sidebar = self.shell.shell_sidebar
+        text = self.shell.text
+
+        first_line = get_end_linenumber(text)
+
+        self.do_input(dedent('''\
+            if True:
+            print(1)
+
+            '''))
+        yield
+
+        text.tag_add('sel', f'{first_line}.0', 'end-1c')
+        selected_text = text.get('sel.first', 'sel.last')
+        self.assertTrue(selected_text.startswith('if True:\n'))
+        self.assertIn('\n1\n', selected_text)
+
+        text.event_generate('<<copy>>')
+        self.addCleanup(text.clipboard_clear)
+
+        copied_text = text.clipboard_get()
+        self.assertEqual(copied_text, selected_text)
+
+    @run_in_tk_mainloop()
+    def test_copy_with_prompts(self):
+        sidebar = self.shell.shell_sidebar
+        text = self.shell.text
+
+        first_line = get_end_linenumber(text)
+        self.do_input(dedent('''\
+            if True:
+                print(1)
+
+            '''))
+        yield
+
+        text.tag_add('sel', f'{first_line}.3', 'end-1c')
+        selected_text = text.get('sel.first', 'sel.last')
+        self.assertTrue(selected_text.startswith('True:\n'))
+
+        selected_lines_text = text.get('sel.first linestart', 'sel.last')
+        selected_lines = selected_lines_text.split('\n')
+        selected_lines.pop()  # Final '' is a split artifact, not a line.
+        # Expect a block of input and a single output line.
+        expected_prompts = \
+            ['>>>'] + ['...'] * (len(selected_lines) - 2) + [None]
+        selected_text_with_prompts = '\n'.join(
+            line if prompt is None else prompt + ' ' + line
+            for prompt, line in zip(expected_prompts,
+                                    selected_lines,
+                                    strict=True)
+        ) + '\n'
+
+        text.event_generate('<<copy-with-prompts>>')
+        self.addCleanup(text.clipboard_clear)
+
+        copied_text = text.clipboard_get()
+        self.assertEqual(copied_text, selected_text_with_prompts)
 
 
 if __name__ == '__main__':

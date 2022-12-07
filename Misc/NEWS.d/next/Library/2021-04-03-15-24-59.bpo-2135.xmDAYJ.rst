@@ -1,2 +1,0 @@
-Deprecate find_module() and find_loader() implementations in importlib and
-zipimport.

@@ -1,4 +1,0 @@
-A ``simple_enum`` decorator is added to the ``enum`` module to convert a
-normal class into an Enum. ``test_simple_enum`` added to test simple enums
-against a corresponding normal Enum.  Standard library modules updated to
-use ``simple_enum``.

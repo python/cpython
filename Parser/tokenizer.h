@@ -8,7 +8,7 @@ extern "C" {
 
 /* Tokenizer interface */
 
-#include "token.h"      /* For token types */
+#include "pycore_token.h" /* For token types */
 
 #define MAXINDENT 100   /* Max indentation level */
 #define MAXLEVEL 200    /* Max parentheses level */
@@ -17,6 +17,20 @@ enum decoding_state {
     STATE_INIT,
     STATE_SEEK_CODING,
     STATE_NORMAL
+};
+
+enum interactive_underflow_t {
+    /* Normal mode of operation: return a new token when asked in interactie mode */
+    IUNDERFLOW_NORMAL,
+    /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
+     * can be used to prevent the tokenizer to prompt the user for new tokens */
+    IUNDERFLOW_STOP,
+};
+
+struct token {
+    int level;
+    int lineno, col_offset, end_lineno, end_col_offset;
+    const char *start, *end;
 };
 
 /* Tokenizer state */
@@ -43,6 +57,8 @@ struct tok_state {
     int lineno;         /* Current line number */
     int first_lineno;   /* First line of a single line or multi line string
                            expression (cf. issue 16806) */
+    int starting_col_offset; /* The column offset at the beginning of a token */
+    int col_offset;     /* Current col offset */
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];
@@ -63,7 +79,7 @@ struct tok_state {
     PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
     const char* enc;        /* Encoding for the current str. */
-    char* str;
+    char* str;          /* Source string being tokenized (if tokenizing from a string)*/
     char* input;       /* Tokenizer's newline translated copy of the string. */
 
     int type_comments;      /* Whether to look for type comments */
@@ -74,14 +90,20 @@ struct tok_state {
     int async_def_indent; /* Indentation level of the outermost 'async def'. */
     int async_def_nl;     /* =1 if the outermost 'async def' had at least one
                              NEWLINE token after it. */
+    /* How to proceed when asked for a new token in interactive mode */
+    enum interactive_underflow_t interactive_underflow;
+    int report_warnings;
+#ifdef Py_DEBUG
+    int debug;
+#endif
 };
 
-extern struct tok_state *PyTokenizer_FromString(const char *, int);
-extern struct tok_state *PyTokenizer_FromUTF8(const char *, int);
-extern struct tok_state *PyTokenizer_FromFile(FILE *, const char*,
+extern struct tok_state *_PyTokenizer_FromString(const char *, int);
+extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int);
+extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
-extern void PyTokenizer_Free(struct tok_state *);
-extern int PyTokenizer_Get(struct tok_state *, const char **, const char **);
+extern void _PyTokenizer_Free(struct tok_state *);
+extern int _PyTokenizer_Get(struct tok_state *, struct token *);
 
 #define tok_dump _Py_tok_dump
 

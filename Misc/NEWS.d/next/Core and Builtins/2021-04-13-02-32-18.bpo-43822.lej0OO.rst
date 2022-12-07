@@ -1,2 +1,0 @@
-Improve syntax errors in the parser for missing commas between expressions.
-Patch by Pablo Galindo.

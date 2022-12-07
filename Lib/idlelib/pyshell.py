@@ -22,17 +22,9 @@ if sys.platform == 'win32':
         pass
 
 from tkinter import messagebox
-if TkVersion < 8.5:
-    root = Tk()  # otherwise create root in main
-    root.withdraw()
-    from idlelib.run import fix_scaling
-    fix_scaling(root)
-    messagebox.showerror("Idle Cannot Start",
-            "Idle requires tcl/tk 8.5+, not %s." % TkVersion,
-            parent=root)
-    raise SystemExit(1)
 
 from code import InteractiveInterpreter
+import itertools
 import linecache
 import os
 import os.path
@@ -64,6 +56,13 @@ use_subprocess = False
 
 HOST = '127.0.0.1' # python execution server on localhost loopback
 PORT = 0  # someday pass in host, port for remote debug capability
+
+try:  # In case IDLE started with -n.
+    eof = 'Ctrl-D (end-of-file)'
+    exit.eof = eof
+    quit.eof = eof
+except NameError: # In case python started with -S.
+    pass
 
 # Override warnings module to write to warning_stream.  Initialize to send IDLE
 # internal warnings to the console.  ScriptBinding.check_syntax() will
@@ -865,6 +864,13 @@ class PyShell(OutputWindow):
     rmenu_specs = OutputWindow.rmenu_specs + [
         ("Squeeze", "<<squeeze-current-text>>"),
     ]
+    _idx = 1 + len(list(itertools.takewhile(
+        lambda rmenu_item: rmenu_item[0] != "Copy", rmenu_specs)
+    ))
+    rmenu_specs.insert(_idx, ("Copy with prompts",
+                              "<<copy-with-prompts>>",
+                              "rmenu_check_copy"))
+    del _idx
 
     allow_line_numbers = False
     user_input_insert_tags = "stdin"
@@ -906,6 +912,7 @@ class PyShell(OutputWindow):
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
+        text.bind("<<copy-with-prompts>>", self.copy_with_prompts_callback)
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
@@ -978,6 +985,43 @@ class PyShell(OutputWindow):
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
+
+    def get_prompt_text(self, first, last):
+        """Return text between first and last with prompts added."""
+        text = self.text.get(first, last)
+        lineno_range = range(
+            int(float(first)),
+            int(float(last))
+         )
+        prompts = [
+            self.shell_sidebar.line_prompts.get(lineno)
+            for lineno in lineno_range
+        ]
+        return "\n".join(
+            line if prompt is None else f"{prompt} {line}"
+            for prompt, line in zip(prompts, text.splitlines())
+        ) + "\n"
+
+
+    def copy_with_prompts_callback(self, event=None):
+        """Copy selected lines to the clipboard, with prompts.
+
+        This makes the copied text useful for doc-tests and interactive
+        shell code examples.
+
+        This always copies entire lines, even if only part of the first
+        and/or last lines is selected.
+        """
+        text = self.text
+        selfirst = text.index('sel.first linestart')
+        if selfirst is None:  # Should not be possible.
+            return  # No selection, do nothing.
+        sellast = text.index('sel.last')
+        if sellast[-1] != '0':
+            sellast = text.index("sel.last+1line linestart")
+        text.clipboard_clear()
+        prompt_text = self.get_prompt_text(selfirst, sellast)
+        text.clipboard_append(prompt_text)
 
     reading = False
     executing = False
@@ -1637,11 +1681,6 @@ def main():
         # check for problematic issues and print warning message(s) in
         # the IDLE shell window; this is less intrusive than always
         # opening a separate window.
-
-        # Warn if using a problematic OS X Tk version.
-        tkversionwarning = macosx.tkVersionWarning(root)
-        if tkversionwarning:
-            shell.show_warning(tkversionwarning)
 
         # Warn if the "Prefer tabs when opening documents" system
         # preference is set to "Always".
