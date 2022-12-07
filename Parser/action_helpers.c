@@ -13,6 +13,7 @@ void *
 _PyPegen_dummy_name(Parser *p, ...)
 {
     // XXX This leaks memory from the initial arena.
+    // Use a statically allocated variable instead of a pointer?
     static void *cache = NULL;
 
     if (cache != NULL) {
