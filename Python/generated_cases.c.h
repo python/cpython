@@ -518,8 +518,7 @@
             DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
 
             // Ensure nonnegative, zero-or-one-digit ints.
-            Py_ssize_t signed_magnitude = Py_SIZE(sub);
-            DEOPT_IF(((size_t)signed_magnitude) > 1, BINARY_SUBSCR);
+            DEOPT_IF(((size_t)Py_SIZE(sub)) > 1, STORE_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             // Ensure index < len(list)
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
