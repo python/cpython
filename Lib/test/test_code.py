@@ -143,7 +143,7 @@ from test.support import (cpython_only,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
-from opcode import opmap
+from opcode import opmap, opname
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
@@ -192,7 +192,7 @@ class CodeTest(unittest.TestCase):
 
         def new_code(c):
             '''A new code object with a __class__ cell added to freevars'''
-            return c.replace(co_freevars=c.co_freevars + ('__class__',), co_code=bytes([COPY_FREE_VARS, 1])+c.co_code)
+            return c.replace(co_freevars=c.co_freevars + ('__class__',), co_code=bytes([COPY_FREE_VARS, 1, 0, 0])+c.co_code)
 
         def add_foreign_method(cls, name, f):
             code = new_code(f.__code__)
@@ -339,15 +339,19 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(list(new_code.co_lines()), [])
 
     def test_invalid_bytecode(self):
-        def foo(): pass
-        foo.__code__ = co = foo.__code__.replace(co_code=b'\xee\x00d\x00S\x00')
+        def foo():
+            pass
 
-        with self.assertRaises(SystemError) as se:
+        # assert that opcode 238 is invalid
+        self.assertEqual(opname[238], '<238>')
+
+        # change first opcode to 0xee (=238)
+        foo.__code__ = foo.__code__.replace(
+            co_code=b'\xee' + foo.__code__.co_code[1:])
+
+        msg = f"unknown opcode 238"
+        with self.assertRaisesRegex(SystemError, msg):
             foo()
-        self.assertEqual(
-            f"{co.co_filename}:{co.co_firstlineno}: unknown opcode 238",
-            str(se.exception))
-
 
     @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
@@ -368,7 +372,7 @@ class CodeTest(unittest.TestCase):
         artificial_instructions = []
         for instr, positions in zip(
             dis.get_instructions(code, show_caches=True),
-            code.co_positions(),
+            dis._get_co_positions(code, show_caches=True),
             strict=True
         ):
             # If any of the positions is None, then all have to
