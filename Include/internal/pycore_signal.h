@@ -63,6 +63,13 @@ struct _signals_runtime_state {
     /* Speed up sigcheck() when none tripped */
     _Py_atomic_int is_tripped;
 
+    /* These objects necessarily belong to the main interpreter. */
+    PyObject *default_handler;
+    PyObject *ignore_handler;
+#ifdef MS_WINDOWS
+    HANDLE sigint_event;
+#endif
+
     /* True if the main interpreter thread exited due to an unhandled
      * KeyboardInterrupt exception, suggesting the user pressed ^C. */
     int unhandled_keyboard_interrupt;

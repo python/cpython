@@ -104,16 +104,9 @@ class sigset_t_converter(CConverter):
 #define wakeup _PyRuntime.signals.wakeup
 #define is_tripped _PyRuntime.signals.is_tripped
 
-typedef struct {
-    PyObject *default_handler;
-    PyObject *ignore_handler;
-#ifdef MS_WINDOWS
-    HANDLE sigint_event;
-#endif
-} signal_state_t;
-
 // State shared by all Python interpreters
-static signal_state_t signal_global_state = {0};
+typedef struct _signals_runtime_state signal_state_t;
+#define signal_global_state _PyRuntime.signals
 
 #if defined(HAVE_GETITIMER) || defined(HAVE_SETITIMER)
 #  define PYHAVE_ITIMER_ERROR
@@ -1627,6 +1620,8 @@ signal_module_exec(PyObject *m)
     signal_state_t *state = &signal_global_state;
     _signal_module_state *modstate = get_signal_state(m);
 
+    // XXX For proper isolation, these values must be guaranteed
+    // to be effectively const (e.g. immortal).
     modstate->default_handler = state->default_handler;  // borrowed ref
     modstate->ignore_handler = state->ignore_handler;  // borrowed ref
 
