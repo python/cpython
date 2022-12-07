@@ -4,7 +4,7 @@
     publish = "build/html"
     # Do not trigger netlify builds if docs were not changed.
     # Changed files should be in sync with `.github/workflows/doc.yml`
-    ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF Doc/ netlify.toml"
+    ignore = "git diff --name-only $CACHED_COMMIT_REF $COMMIT_REF | grep -q '^(Doc\/|netlify\.toml)' && exit 1 || exit 0"
 
 [build.environment]
   PYTHON_VERSION = "3.8"
