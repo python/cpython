@@ -32,6 +32,8 @@ Notes:
 import atexit
 import builtins
 import inspect
+import keyword
+import re
 import __main__
 
 __all__ = ["Completer"]
@@ -113,7 +115,6 @@ class Completer:
         defined in self.namespace that match.
 
         """
-        import keyword
         matches = []
         seen = {"__builtins__"}
         n = len(text)
@@ -146,7 +147,6 @@ class Completer:
         with a __getattr__ hook is evaluated.
 
         """
-        import re
         m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
         if not m:
             return []

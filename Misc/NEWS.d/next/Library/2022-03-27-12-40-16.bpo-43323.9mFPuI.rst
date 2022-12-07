@@ -1,2 +1,0 @@
-Fix errors in the :mod:`email` module if the charset itself contains
-undecodable/unencodable characters.

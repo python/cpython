@@ -13,6 +13,7 @@ __all__ = (
 
 import contextvars
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -60,6 +61,9 @@ class Handle:
             return self._repr
         info = self._repr_info()
         return '<{}>'.format(' '.join(info))
+
+    def get_context(self):
+        return self._context
 
     def cancel(self):
         if not self._cancelled:
@@ -615,7 +619,7 @@ class AbstractEventLoopPolicy:
 
         Returns an event loop object implementing the BaseEventLoop interface,
         or raises an exception in case no event loop has been set for the
-        current context and the current policy does not specify to create one.
+        current context.
 
         It should never return None."""
         raise NotImplementedError
@@ -668,11 +672,6 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
         Returns an instance of EventLoop or raises an exception.
         """
-        if (self._local._loop is None and
-                not self._local._set_called and
-                threading.current_thread() is threading.main_thread()):
-            self.set_event_loop(self.new_event_loop())
-
         if self._local._loop is None:
             raise RuntimeError('There is no current event loop in thread %r.'
                                % threading.current_thread().name)
@@ -782,16 +781,9 @@ def get_event_loop():
     the result of `get_event_loop_policy().get_event_loop()` call.
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
-    return _py__get_event_loop()
-
-
-def _get_event_loop(stacklevel=3):
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
-    import warnings
-    warnings.warn('There is no current event loop',
-                  DeprecationWarning, stacklevel=stacklevel)
     return get_event_loop_policy().get_event_loop()
 
 
@@ -821,7 +813,6 @@ _py__get_running_loop = _get_running_loop
 _py__set_running_loop = _set_running_loop
 _py_get_running_loop = get_running_loop
 _py_get_event_loop = get_event_loop
-_py__get_event_loop = _get_event_loop
 
 
 try:
@@ -829,7 +820,7 @@ try:
     # functions in asyncio.  Pure Python implementation is
     # about 4 times slower than C-accelerated.
     from _asyncio import (_get_running_loop, _set_running_loop,
-                          get_running_loop, get_event_loop, _get_event_loop)
+                          get_running_loop, get_event_loop)
 except ImportError:
     pass
 else:
@@ -838,4 +829,13 @@ else:
     _c__set_running_loop = _set_running_loop
     _c_get_running_loop = get_running_loop
     _c_get_event_loop = get_event_loop
-    _c__get_event_loop = _get_event_loop
+
+
+if hasattr(os, 'fork'):
+    def on_fork():
+        # Reset the loop and wakeupfd in the forked child process.
+        if _event_loop_policy is not None:
+            _event_loop_policy._local = BaseDefaultEventLoopPolicy._Local()
+        signal.set_wakeup_fd(-1)
+
+    os.register_at_fork(after_in_child=on_fork)

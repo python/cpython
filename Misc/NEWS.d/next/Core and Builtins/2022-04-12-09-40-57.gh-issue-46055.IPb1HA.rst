@@ -1,2 +1,0 @@
-Speed up right shift of negative integers, by removing unnecessary creation
-of temporaries. Original patch by Xinhang Xu, reworked by Mark Dickinson.

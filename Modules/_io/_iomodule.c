@@ -59,7 +59,7 @@ PyDoc_STRVAR(module_doc,
 "   I/O classes. open() uses the file's blksize (as obtained by os.stat) if\n"
 "   possible.\n"
     );
-
+
 
 /*
  * The main open() function
@@ -74,7 +74,7 @@ _io.open
     encoding: str(accept={str, NoneType}) = None
     errors: str(accept={str, NoneType}) = None
     newline: str(accept={str, NoneType}) = None
-    closefd: bool(accept={int}) = True
+    closefd: bool = True
     opener: object = None
 
 Open file and return a stream.  Raise OSError upon failure.
@@ -196,7 +196,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=5bb37f174cb2fb11]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=cd034e7cdfbf4e78]*/
 {
     unsigned i;
 
@@ -204,16 +204,14 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     int text = 0, binary = 0;
 
     char rawmode[6], *m;
-    int line_buffering, is_number;
-    long isatty = 0;
+    int line_buffering, is_number, isatty = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
     is_number = PyNumber_Check(file);
 
     if (is_number) {
-        path_or_fd = file;
-        Py_INCREF(path_or_fd);
+        path_or_fd = Py_NewRef(file);
     } else {
         path_or_fd = PyOS_FSPath(file);
         if (path_or_fd == NULL) {
@@ -335,8 +333,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
     result = raw;
 
-    Py_DECREF(path_or_fd);
-    path_or_fd = NULL;
+    Py_SETREF(path_or_fd, NULL);
 
     modeobj = PyUnicode_FromString(mode);
     if (modeobj == NULL)
@@ -347,9 +344,9 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         PyObject *res = PyObject_CallMethodNoArgs(raw, &_Py_ID(isatty));
         if (res == NULL)
             goto error;
-        isatty = PyLong_AsLong(res);
+        isatty = PyObject_IsTrue(res);
         Py_DECREF(res);
-        if (isatty == -1 && PyErr_Occurred())
+        if (isatty < 0)
             goto error;
     }
 
@@ -489,8 +486,7 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
             encoding = &_Py_ID(locale);
         }
     }
-    Py_INCREF(encoding);
-    return encoding;
+    return Py_NewRef(encoding);
 }
 
 
@@ -512,7 +508,7 @@ _io_open_code_impl(PyObject *module, PyObject *path)
 {
     return PyFile_OpenCodeObject(path);
 }
-
+
 /*
  * Private helpers for the io module.
  */
@@ -697,16 +693,15 @@ PyInit__io(void)
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         goto fail;
-    Py_INCREF(state->unsupported_operation);
     if (PyModule_AddObject(m, "UnsupportedOperation",
-                           state->unsupported_operation) < 0)
+                           Py_NewRef(state->unsupported_operation)) < 0)
         goto fail;
 
     /* BlockingIOError, for compatibility */
-    Py_INCREF(PyExc_BlockingIOError);
-    if (PyModule_AddObject(m, "BlockingIOError",
-                           (PyObject *) PyExc_BlockingIOError) < 0)
+    if (PyModule_AddObjectRef(m, "BlockingIOError",
+                              (PyObject *) PyExc_BlockingIOError) < 0) {
         goto fail;
+    }
 
     // Set type base classes
     PyFileIO_Type.tp_base = &PyRawIOBase_Type;

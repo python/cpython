@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -578,8 +584,31 @@ static PyObject *
 math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "isclose",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double a;
@@ -673,8 +702,31 @@ static PyObject *
 math_prod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(start), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "start", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "prod", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "prod",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *iterable;
@@ -865,4 +917,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=965f99dabaa72165 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2c2f42452d63734 input=a9049054013a1b77]*/
