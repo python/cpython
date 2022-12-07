@@ -558,11 +558,11 @@ def commonpath(paths):
         curdir = '.'
 
     isabs = paths_0[:1] == sep
-    min_parts = max_parts = [c for c in paths_0.split(sep) if c and c != curdir]
+    min_parts = max_parts = [p for p in paths_0.split(sep) if p and p != curdir]
 
     try:
         for paths_i in paths_rest:
-            parts = [c for c in paths_i.split(sep) if c and c != curdir]
+            parts = [p for p in paths_i.split(sep) if p and p != curdir]
 
             if (paths_i[:1] == sep) != isabs:
                 raise ValueError("Can't mix absolute and relative paths")
@@ -573,15 +573,13 @@ def commonpath(paths):
                 max_parts = parts
 
         common_parts = min_parts
-        for i, c in enumerate(common_parts):
-            if c != max_parts[i]:
+        for i, p in enumerate(common_parts):
+            if p != max_parts[i]:
                 del common_parts[i:]
                 break
 
         prefix = sep if isabs else sep[:0]
         return prefix + sep.join(common_parts)
     except (TypeError, AttributeError):
-        if 'paths_i' in locals():
-            genericpath._check_arg_types('commonpath', paths_0, paths_i)
-
+        genericpath._check_arg_types('commonpath', paths_0, paths_i)
         raise

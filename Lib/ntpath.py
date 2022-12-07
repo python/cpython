@@ -834,31 +834,33 @@ def commonpath(paths):
         altsep = '/'
         curdir = '.'
 
-    def split_path(p):
-        d, p = splitdrive(p.replace(altsep, sep))
-        return d, p, (c for c in p.split(sep) if c and c != curdir)
-
-    common_drive, path, common_parts = split_path(paths_0)
-    common_parts = list(common_parts)
+    common_drive, path = splitdrive(paths_0.replace(altsep, sep))
+    common_parts = [c for c in path.split(sep) if c and c != curdir]
     common_drive_lower, common_parts_lower = common_drive.lower(), [c.lower() for c in common_parts]
+    min_parts_lower = max_parts_lower = common_parts_lower
     isabs = path[:1] == sep
 
     try:
         for paths_i in paths_rest:
-            drive, path, parts = split_path(paths_i)
+            drive_lower, path_lower = splitdrive(paths_i.replace(altsep, sep).lower())
+            parts_lower = [c for c in path_lower.split(sep) if c and c != curdir]
 
-            if (path[:1] == sep) != isabs:
+            if (path_lower[:1] == sep) != isabs:
                 raise ValueError("Can't mix absolute and relative paths")
-            elif drive.lower() != common_drive_lower:
+            elif drive_lower != common_drive_lower:
                 raise ValueError("Paths don't have the same drive")
-            elif not common_parts:
-                # no common path exists, but the remaining paths must still be verified
-                continue
 
-            for i, (left_lower, right) in enumerate(zip(common_parts_lower, parts)):
-                if left_lower != right.lower():
-                    del common_parts[i:]
-                    break
+            if parts_lower < min_parts_lower:
+                min_parts_lower = parts_lower
+            elif parts_lower > max_parts_lower:
+                max_parts_lower = parts_lower
+
+        for i, c in enumerate(min_parts_lower):
+            if c != max_parts_lower[i]:
+                del common_parts[i:]
+                break
+        else:
+            del common_parts[len(min_parts_lower):]
 
         prefix = (common_drive + sep) if isabs else common_drive
         return prefix + sep.join(common_parts)
