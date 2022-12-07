@@ -357,7 +357,7 @@ set_running_loop(asyncio_state *state, PyObject *loop)
 
 
 static PyObject *
-get_event_loop(asyncio_state *state, int stacklevel)
+get_event_loop(asyncio_state *state)
 {
     PyObject *loop;
     PyObject *policy;
@@ -367,13 +367,6 @@ get_event_loop(asyncio_state *state, int stacklevel)
     }
     if (loop != NULL) {
         return loop;
-    }
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "There is no current event loop",
-                     stacklevel))
-    {
-        return NULL;
     }
 
     policy = PyObject_CallNoArgs(state->asyncio_get_event_loop_policy);
@@ -538,7 +531,7 @@ future_init(FutureObj *fut, PyObject *loop)
 
     if (loop == Py_None) {
         asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
-        loop = get_event_loop(state, 1);
+        loop = get_event_loop(state);
         if (loop == NULL) {
             return -1;
         }
@@ -3229,20 +3222,7 @@ _asyncio_get_event_loop_impl(PyObject *module)
 /*[clinic end generated code: output=2a2d8b2f824c648b input=9364bf2916c8655d]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    return get_event_loop(state, 1);
-}
-
-/*[clinic input]
-_asyncio._get_event_loop
-    stacklevel: int = 3
-[clinic start generated code]*/
-
-static PyObject *
-_asyncio__get_event_loop_impl(PyObject *module, int stacklevel)
-/*[clinic end generated code: output=9c1d6d3c802e67c9 input=d17aebbd686f711d]*/
-{
-    asyncio_state *state = get_asyncio_state(module);
-    return get_event_loop(state, stacklevel-1);
+    return get_event_loop(state);
 }
 
 /*[clinic input]
@@ -3620,7 +3600,6 @@ PyDoc_STRVAR(module_doc, "Accelerator module for asyncio");
 
 static PyMethodDef asyncio_methods[] = {
     _ASYNCIO_GET_EVENT_LOOP_METHODDEF
-    _ASYNCIO__GET_EVENT_LOOP_METHODDEF
     _ASYNCIO_GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__GET_RUNNING_LOOP_METHODDEF
     _ASYNCIO__SET_RUNNING_LOOP_METHODDEF

@@ -2717,17 +2717,67 @@ class TestSpecial(unittest.TestCase):
 
     def test_repr_with_dataclass(self):
         "ensure dataclass-mixin has correct repr()"
-        from dataclasses import dataclass
-        @dataclass
+        #
+        # check overridden dataclass __repr__ is used
+        #
+        from dataclasses import dataclass, field
+        @dataclass(repr=False)
         class Foo:
             __qualname__ = 'Foo'
             a: int
+            def __repr__(self):
+                return 'ha hah!'
         class Entries(Foo, Enum):
             ENTRY1 = 1
         self.assertTrue(isinstance(Entries.ENTRY1, Foo))
         self.assertTrue(Entries._member_type_ is Foo, Entries._member_type_)
         self.assertTrue(Entries.ENTRY1.value == Foo(1), Entries.ENTRY1.value)
-        self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: Foo(a=1)>')
+        self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: ha hah!>')
+        #
+        # check auto-generated dataclass __repr__ is not used
+        #
+        @dataclass
+        class CreatureDataMixin:
+            __qualname__ = 'CreatureDataMixin'
+            size: str
+            legs: int
+            tail: bool = field(repr=False, default=True)
+        class Creature(CreatureDataMixin, Enum):
+            __qualname__ = 'Creature'
+            BEETLE = ('small', 6)
+            DOG = ('medium', 4)
+        self.assertEqual(repr(Creature.DOG), "<Creature.DOG: size='medium', legs=4>")
+        #
+        # check inherited repr used
+        #
+        class Huh:
+            def __repr__(self):
+                return 'inherited'
+        @dataclass(repr=False)
+        class CreatureDataMixin(Huh):
+            __qualname__ = 'CreatureDataMixin'
+            size: str
+            legs: int
+            tail: bool = field(repr=False, default=True)
+        class Creature(CreatureDataMixin, Enum):
+            __qualname__ = 'Creature'
+            BEETLE = ('small', 6)
+            DOG = ('medium', 4)
+        self.assertEqual(repr(Creature.DOG), "<Creature.DOG: inherited>")
+        #
+        # check default object.__repr__ used if nothing provided
+        #
+        @dataclass(repr=False)
+        class CreatureDataMixin:
+            __qualname__ = 'CreatureDataMixin'
+            size: str
+            legs: int
+            tail: bool = field(repr=False, default=True)
+        class Creature(CreatureDataMixin, Enum):
+            __qualname__ = 'Creature'
+            BEETLE = ('small', 6)
+            DOG = ('medium', 4)
+        self.assertRegex(repr(Creature.DOG), "<Creature.DOG: .*CreatureDataMixin object at .*>")
 
     def test_repr_with_init_data_type_mixin(self):
         # non-data_type is a mixin that doesn't define __new__
@@ -4503,11 +4553,6 @@ COMPLEX_C = 1j
 COMPLEX_A = 2j
 COMPLEX_B = 3j
 
-class _ModuleWrapper:
-    """We use this class as a namespace for swapping modules."""
-    def __init__(self, module):
-        self.__dict__.update(module.__dict__)
-
 class TestConvert(unittest.TestCase):
     def tearDown(self):
         # Reset the module-level test variables to their original integer
@@ -4547,12 +4592,6 @@ class TestConvert(unittest.TestCase):
         self.assertEqual(test_type.CONVERT_TEST_NAME_D, 5)
         self.assertEqual(test_type.CONVERT_TEST_NAME_E, 5)
         # Ensure that test_type only picked up names matching the filter.
-        int_dir = dir(int) + [
-                'CONVERT_TEST_NAME_A', 'CONVERT_TEST_NAME_B', 'CONVERT_TEST_NAME_C',
-                'CONVERT_TEST_NAME_D', 'CONVERT_TEST_NAME_E', 'CONVERT_TEST_NAME_F',
-                'CONVERT_TEST_SIGABRT', 'CONVERT_TEST_SIGIOT',
-                'CONVERT_TEST_EIO', 'CONVERT_TEST_EBUS',
-                ]
         extra = [name for name in dir(test_type) if name not in enum_dir(test_type)]
         missing = [name for name in enum_dir(test_type) if name not in dir(test_type)]
         self.assertEqual(
@@ -4594,7 +4633,6 @@ class TestConvert(unittest.TestCase):
         self.assertEqual(test_type.CONVERT_STR_TEST_1, 'hello')
         self.assertEqual(test_type.CONVERT_STR_TEST_2, 'goodbye')
         # Ensure that test_type only picked up names matching the filter.
-        str_dir = dir(str) + ['CONVERT_STR_TEST_1', 'CONVERT_STR_TEST_2']
         extra = [name for name in dir(test_type) if name not in enum_dir(test_type)]
         missing = [name for name in enum_dir(test_type) if name not in dir(test_type)]
         self.assertEqual(
@@ -4661,8 +4699,6 @@ def member_dir(member):
             else:
                 allowed.add(name)
     return sorted(allowed)
-
-missing = object()
 
 
 if __name__ == '__main__':
