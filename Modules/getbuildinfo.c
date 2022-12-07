@@ -39,10 +39,14 @@
 #  endif
 #endif
 
+// len(", release+assert+tracerefs+pystats asan msan ubsan lto=thin+pgo framework shared build")
+#define PY_BUILD_STR_MAXLEN 86
+
 static int initialized = 0;
 static char buildinfo[50 + sizeof(GITVERSION) +
                       ((sizeof(GITTAG) > sizeof(GITBRANCH)) ?
-                       sizeof(GITTAG) : sizeof(GITBRANCH))];
+                       sizeof(GITTAG) : sizeof(GITBRANCH))
+                       + PY_BUILD_STR_MAXLEN];
 
 const char *
 Py_GetBuildInfo(void)

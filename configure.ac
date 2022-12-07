@@ -7390,6 +7390,9 @@ AC_SUBST([MODULE_BLOCK])
 # - "debug+tracerefs build"
 # - "release+assert shared build"
 # - "release lto+pgo build"
+#
+#  If the PY_BUILD_STR format changes, PY_BUILD_STR_MAXLEN in
+#  Modules/getbuildinfo.c should be updated.
 AC_SUBST(PY_BUILD_STR)
 if test "$Py_DEBUG" = 'true' ; then
     PY_BUILD_STR="debug"
