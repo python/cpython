@@ -6,8 +6,7 @@ Generator Objects
 -----------------
 
 Generator objects are what Python uses to implement generator iterators. They
-are normally created by iterating over a function that yields values, rather
-than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
+are normally created by iterating over a function that yields values.
 
 
 .. c:type:: PyGenObject
@@ -30,17 +29,3 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
    Return true if *ob*'s type is :c:type:`PyGen_Type`; *ob* must not be
    ``NULL``.  This function always succeeds.
-
-
-.. c:function:: PyObject* PyGen_New(PyFrameObject *frame)
-
-   Create and return a new generator object based on the *frame* object.
-   A reference to *frame* is stolen by this function. The argument must not be
-   ``NULL``.
-
-.. c:function:: PyObject* PyGen_NewWithQualName(PyFrameObject *frame, PyObject *name, PyObject *qualname)
-
-   Create and return a new generator object based on the *frame* object,
-   with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
-   A reference to *frame* is stolen by this function.  The *frame* argument
-   must not be ``NULL``.

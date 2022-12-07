@@ -914,56 +914,6 @@ _Py_MakeCoro(PyFunctionObject *func)
     return coro;
 }
 
-static PyObject *
-gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
-                      PyObject *name, PyObject *qualname)
-{
-    PyCodeObject *code = f->f_frame->f_code;
-    int size = code->co_nlocalsplus + code->co_stacksize;
-    PyGenObject *gen = PyObject_GC_NewVar(PyGenObject, type, size);
-    if (gen == NULL) {
-        Py_DECREF(f);
-        return NULL;
-    }
-    /* Copy the frame */
-    assert(f->f_frame->frame_obj == NULL);
-    assert(f->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
-    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
-    _PyFrame_Copy((_PyInterpreterFrame *)f->_f_frame_data, frame);
-    gen->gi_frame_state = FRAME_CREATED;
-    assert(frame->frame_obj == f);
-    f->f_frame = frame;
-    frame->owner = FRAME_OWNED_BY_GENERATOR;
-    assert(PyObject_GC_IsTracked((PyObject *)f));
-    gen->gi_code = PyFrame_GetCode(f);
-    Py_INCREF(gen->gi_code);
-    Py_DECREF(f);
-    gen->gi_weakreflist = NULL;
-    gen->gi_exc_state.exc_value = NULL;
-    gen->gi_exc_state.previous_item = NULL;
-    if (name != NULL)
-        gen->gi_name = Py_NewRef(name);
-    else
-        gen->gi_name = Py_NewRef(gen->gi_code->co_name);
-    if (qualname != NULL)
-        gen->gi_qualname = Py_NewRef(qualname);
-    else
-        gen->gi_qualname = Py_NewRef(gen->gi_code->co_qualname);
-    _PyObject_GC_TRACK(gen);
-    return (PyObject *)gen;
-}
-
-PyObject *
-PyGen_NewWithQualName(PyFrameObject *f, PyObject *name, PyObject *qualname)
-{
-    return gen_new_with_qualname(&PyGen_Type, f, name, qualname);
-}
-
-PyObject *
-PyGen_New(PyFrameObject *f)
-{
-    return gen_new_with_qualname(&PyGen_Type, f, NULL, NULL);
-}
 
 /* Coroutine Object */
 
@@ -1311,31 +1261,6 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     return cr_origin;
 }
 
-PyObject *
-PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
-{
-    PyObject *coro = gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
-    if (!coro) {
-        return NULL;
-    }
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    int origin_depth = tstate->coroutine_origin_tracking_depth;
-
-    if (origin_depth == 0) {
-        ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
-    } else {
-        PyObject *cr_origin = compute_cr_origin(origin_depth, _PyEval_GetFrame());
-        ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
-        if (!cr_origin) {
-            Py_DECREF(coro);
-            return NULL;
-        }
-    }
-
-    return coro;
-}
-
 
 /* ========= Asynchronous Generators ========= */
 
@@ -1602,23 +1527,6 @@ get_async_gen_state(void)
     return &interp->async_gen;
 }
 #endif
-
-
-PyObject *
-PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
-{
-    PyAsyncGenObject *o;
-    o = (PyAsyncGenObject *)gen_new_with_qualname(
-        &PyAsyncGen_Type, f, name, qualname);
-    if (o == NULL) {
-        return NULL;
-    }
-    o->ag_origin_or_finalizer = NULL;
-    o->ag_closed = 0;
-    o->ag_hooks_inited = 0;
-    o->ag_running_async = 0;
-    return (PyObject*)o;
-}
 
 
 void

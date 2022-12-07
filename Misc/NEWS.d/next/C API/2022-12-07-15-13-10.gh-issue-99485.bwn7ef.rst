@@ -1,0 +1,13 @@
+Remove untested functions which were used to create generators and
+coroutines:
+
+* ``PyAsyncGen_New()``
+* ``PyCoro_New()``
+* ``PyGen_New()``
+* ``PyGen_NewWithQualName()``
+
+Since 3.11, these functions can no longer be used in practice, because there
+is no public C API function creating a frame usable by these functions. In
+Python 3.10, these functions were called directly by Python, but Python now
+uses another internal function which create generators and coroutines with
+no frame ("frame cleared" state). Patch by Victor Stinner.

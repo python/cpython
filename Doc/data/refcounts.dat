@@ -959,21 +959,8 @@ PyGen_Check:PyObject*:ob:0:
 PyGen_CheckExact:int:::
 PyGen_CheckExact:PyObject*:ob:0:
 
-PyGen_New:PyObject*::+1:
-PyGen_New:PyFrameObject*:frame:0:
-
-PyGen_NewWithQualName:PyObject*::+1:
-PyGen_NewWithQualName:PyFrameObject*:frame:0:
-PyGen_NewWithQualName:PyObject*:name:0:
-PyGen_NewWithQualName:PyObject*:qualname:0:
-
 PyCoro_CheckExact:int:::
 PyCoro_CheckExact:PyObject*:ob:0:
-
-PyCoro_New:PyObject*::+1:
-PyCoro_New:PyFrameObject*:frame:0:
-PyCoro_New:PyObject*:name:0:
-PyCoro_New:PyObject*:qualname:0:
 
 PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:const char*:name::
