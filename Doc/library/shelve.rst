@@ -17,7 +17,7 @@ This includes most class instances, recursive data types, and objects containing
 lots of shared  sub-objects.  The keys are ordinary strings.
 
 
-.. function:: open(filename, flag='c', protocol=None, writeback=False, custom_dumps=dumps, custom_loads=loads)
+.. function:: open(filename, flag='c', protocol=None, writeback=False, serializer=None, deserializer=None)
 
    Open a persistent dictionary.  The filename specified is the base filename for
    the underlying database.  As a side-effect, an extension may be added to the
@@ -42,11 +42,11 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    mutated).
 
    By default, :mod:`shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
-   for pickling and unpickling. However *custom_loads* can be the function
-   that takes the :term:`bytes-like object` and returns the object. *custom_dumps*
+   for serializing and deserializing. However *serializer* can be the function
+   that takes the :term:`bytes-like object` and returns the object. *deserializer*
    can be the function that takes the object and returns :class:`bytes`. For example,
    :keyword:`lambda`, which the :mod:`pickle` does not support, can be used in
-   :mod:`shelve` using the custom loads and custom dumps functions, which do support
+   :mod:`shelve` using the serializer and deserializer functions, which do support
    the :keyword:`lambda`.
 
    .. versionchanged:: 3.10
@@ -57,7 +57,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
       Accepts :term:`path-like object` for filename.
 
    .. versionchanged:: 3.12
-      Accepts *custom_dumps* and *custom_loads*.
+      Accepts *serializer* and *deserializer*.
 
    .. note::
 

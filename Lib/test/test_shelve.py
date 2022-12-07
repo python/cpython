@@ -167,18 +167,18 @@ class TestCase(unittest.TestCase):
         with shelve.Shelf({}) as s:
             self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
 
-    def test_custom_loads_and_dumps(self):
-        def custom_dumps(obj, protocol=None):
+    def test_custom_serializer_and_deserializer(self):
+        def serializer(obj, protocol=None):
             return bytes(f"{type(obj).__name__}", 'utf-8')
 
-        def custom_loads(data):
+        def deserializer(data):
             value = BytesIO(data).read()
             return locate(value.decode("utf-8"))
 
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
 
-        with shelve.open(self.fn, custom_dumps=custom_dumps, custom_loads=custom_loads) as s:
+        with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
             num = 1
             s['number'] = num
             self.assertEqual(s['number'], type(num))

@@ -82,7 +82,7 @@ class Shelf(collections.abc.MutableMapping):
     """
 
     def __init__(self, dict, protocol=None, writeback=False,
-                 keyencoding="utf-8", custom_dumps=dumps, custom_loads=loads):
+                 keyencoding="utf-8", *, serializer=None, deserializer=None):
         self.dict = dict
         if protocol is None:
             protocol = DEFAULT_PROTOCOL
@@ -90,8 +90,13 @@ class Shelf(collections.abc.MutableMapping):
         self.writeback = writeback
         self.cache = {}
         self.keyencoding = keyencoding
-        self.custom_dumps = custom_dumps
-        self.custom_loads = custom_loads
+
+        if serializer is None and deserializer is None:
+            self.serializer = dumps
+            self.deserializer = loads
+        else:
+            self.serializer = serializer
+            self.deserializer = deserializer
 
     def __iter__(self):
         for k in self.dict.keys():
@@ -113,7 +118,7 @@ class Shelf(collections.abc.MutableMapping):
             value = self.cache[key]
         except KeyError:
             f = self.dict[key.encode(self.keyencoding)]
-            value = self.custom_loads(f)
+            value = self.deserializer(f)
             if self.writeback:
                 self.cache[key] = value
         return value
@@ -121,7 +126,7 @@ class Shelf(collections.abc.MutableMapping):
     def __setitem__(self, key, value):
         if self.writeback:
             self.cache[key] = value
-        self.dict[key.encode(self.keyencoding)] = self.custom_dumps(value, self._protocol)
+        self.dict[key.encode(self.keyencoding)] = self.serializer(value, self._protocol)
 
     def __delitem__(self, key):
         del self.dict[key.encode(self.keyencoding)]
@@ -222,12 +227,12 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False,  custom_dumps=dumps, custom_loads=loads):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False, serializer=None, deserializer=None):
         import dbm
-        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback, custom_dumps=custom_dumps, custom_loads=custom_loads)
+        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback, serializer=serializer, deserializer=deserializer)
 
 
-def open(filename, flag='c', protocol=None, writeback=False, custom_dumps=dumps, custom_loads=loads):
+def open(filename, flag='c', protocol=None, writeback=False, *, serializer=None, deserializer=None):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
@@ -240,4 +245,4 @@ def open(filename, flag='c', protocol=None, writeback=False, custom_dumps=dumps,
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback, custom_dumps, custom_loads)
+    return DbfilenameShelf(filename, flag, protocol, writeback, serializer, deserializer)
