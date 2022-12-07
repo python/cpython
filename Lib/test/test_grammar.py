@@ -432,6 +432,7 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(A.__annotations__, {"attr": int})
         self.assertEqual(B.__annotations__, {})
         self.assertEqual(C.__annotations__, {"attr" : str})
+        self.assertEqual(D.__annotations__, {"attr2" : int})
         self.assertEqual(E.__annotations__, {})
         self.assertEqual(F.__annotations__, {})
 
