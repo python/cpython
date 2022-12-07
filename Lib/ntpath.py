@@ -843,27 +843,28 @@ def commonpath(paths):
     common_drive_lower, common_parts_lower = common_drive.lower(), [c.lower() for c in common_parts]
     isabs = path[:1] == sep
 
-    for paths_i in paths_rest:
+    try:
+        for paths_i in paths_rest:
+            drive, path, parts = split_path(paths_i)
+
+            if (path[:1] == sep) != isabs:
+                raise ValueError("Can't mix absolute and relative paths")
+            elif drive.lower() != common_drive_lower:
+                raise ValueError("Paths don't have the same drive")
+            elif not common_parts:
+                # no common path exists, but the remaining paths must still be verified
+                continue
+
+            for i, (left_lower, right) in enumerate(zip(common_parts_lower, parts)):
+                if left_lower != right.lower():
+                    del common_parts[i:]
+                    break
+
+        prefix = (common_drive + sep) if isabs else common_drive
+        return prefix + sep.join(common_parts)
+    except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', paths_0, paths_i)
-
-        drive, path, parts = split_path(paths_i)
-
-        if (path[:1] == sep) != isabs:
-            raise ValueError("Can't mix absolute and relative paths")
-        elif drive.lower() != common_drive_lower:
-            raise ValueError("Paths don't have the same drive")
-        elif not common_parts:
-            # no common path exists, but the remaining paths must still be verified
-            continue
-
-        for i, (left_lower, right) in enumerate(zip(common_parts_lower, parts)):
-            if left_lower != right.lower():
-                del common_parts[i:]
-                break
-
-    prefix = (common_drive + sep) if isabs else common_drive
-    return prefix + sep.join(common_parts)
-
+        raise
 
 
 try:

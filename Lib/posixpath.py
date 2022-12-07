@@ -540,42 +540,48 @@ def commonpath(paths):
         paths = iter(paths)
     except TypeError:
         # TODO: should be a TypeError, but not backward compatible.
-        raise ValueError('commonpath() arg is not iteratable') from None
+        raise ValueError('commonpath() arg cannot be iterated') from None
 
     try:
-        path_0 = next(paths)
+        paths_0 = next(paths)
     except StopIteration:
         raise ValueError('commonpath() arg is an empty sequence') from None
 
-    path_0 = os.fspath(path_0)
+    paths_0 = os.fspath(paths_0)
     paths_rest = map(os.fspath, paths)
 
-    if isinstance(path_0, bytes):
+    if isinstance(paths_0, bytes):
         sep = b'/'
         curdir = b'.'
     else:
         sep = '/'
         curdir = '.'
 
-    def split_path(p):
-        return (c for c in p.split(sep) if c and c != curdir)
+    isabs = paths_0[:1] == sep
+    min_parts = max_parts = [c for c in paths_0.split(sep) if c and c != curdir]
 
-    isabs = path_0[:1] == sep
-    common_parts = list(split_path(path_0))
+    try:
+        for paths_i in paths_rest:
+            parts = [c for c in paths_i.split(sep) if c and c != curdir]
 
-    for path_i in paths_rest:
-        genericpath._check_arg_types('commonpath', path_0, path_i)
+            if (paths_i[:1] == sep) != isabs:
+                raise ValueError("Can't mix absolute and relative paths")
 
-        if (path_i[:1] == sep) != isabs:
-            raise ValueError("Can't mix absolute and relative paths")
-        elif not common_parts:
-            # no common path exists, but the remaining paths must still be verified
-            continue
+            if parts < min_parts:
+                min_parts = parts
+            elif parts > max_parts:
+                max_parts = parts
 
-        for i, (left, right) in enumerate(zip(common_parts, split_path(path_i))):
-            if left != right:
+        common_parts = min_parts
+        for i, c in enumerate(common_parts):
+            if c != max_parts[i]:
                 del common_parts[i:]
                 break
 
-    prefix = sep if isabs else sep[:0]
-    return prefix + sep.join(common_parts)
+        prefix = sep if isabs else sep[:0]
+        return prefix + sep.join(common_parts)
+    except (TypeError, AttributeError):
+        if 'paths_i' in locals():
+            genericpath._check_arg_types('commonpath', paths_0, paths_i)
+
+        raise
