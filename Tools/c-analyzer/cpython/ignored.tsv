@@ -5,61 +5,61 @@ filename	funcname	name	reason
 
 
 ##################################
-# process-global values - set once
+## process-global values - set once
 
 # These will never re-initialize (but would be idempotent).
 # These are effectively const.
 
-#-----------------------
-# process-global resources - set during first init
+##-----------------------
+## process-global resources - set during first init
 
-# indicators for resource availability/capability
+## indicators for resource availability/capability
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 
-# resource init
+## resource init
 Python/thread.c	-	initialized	-
 Python/thread_pthread.h	-	condattr_monotonic	-
-## safe static buffer used during one-time initialization
+# safe static buffer used during one-time initialization
 Python/thread_pthread.h	init_condattr	ca	-
 
-#-----------------------
-# other values (not Python-specific)
+##-----------------------
+## other values (not Python-specific)
 
-# cached computed data - set lazily (*after* first init)
+## cached computed data - set lazily (*after* first init)
 # XXX Are these safe relative to write races?
 Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
 Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
 Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
-## This is safe:
+# This is safe:
 Objects/unicodeobject.c	_init_global_state	initialized	-
 
-#-----------------------
-# other values (Python-specific)
+##-----------------------
+## other values (Python-specific)
 
-# internal state - set before/during first init
+## internal state - set before/during first init
 Modules/getbuildinfo.c	-	buildinfo	-
 Modules/getbuildinfo.c	-	initialized	-
 Python/getversion.c	-	initialized	-
 Python/getversion.c	-	version	-
 
-# public C-API - set during first init
+## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
 
-# internal state - set lazily (*after* first init)
+## internal state - set lazily (*after* first init)
 # XXX Move to _PyRuntimeState (i.e. tie to init/fini cycle)?
 Parser/action_helpers.c	_PyPegen_dummy_name	cache	-
 
 
 ##################################
-# state tied to Py_Main()
+## state tied to Py_Main()
 # (only in main thread)
 
-#-----------------------
-# handling C argv
+##-----------------------
+## handling C argv
 
 Python/getopt.c	-	_PyOS_optarg	-
 Python/getopt.c	-	_PyOS_opterr	-
@@ -67,8 +67,8 @@ Python/getopt.c	-	_PyOS_optind	-
 Python/getopt.c	-	opt_ptr	-
 Python/pathconfig.c	-	_Py_path_config	-
 
-#-----------------------
-# REPL
+##-----------------------
+## REPL
 
 Parser/myreadline.c	-	_PyOS_ReadlineLock	-
 Parser/myreadline.c	-	_PyOS_ReadlineTState	-
@@ -77,12 +77,12 @@ Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
 
 
 ##################################
-# runtime-global values - set once with each init
+## runtime-global values - set once with each init
 
 # These are effectively const.
 
-#-----------------------
-# set by embedders before init
+##-----------------------
+## set by embedders before init
 # (whether directly or through a call)
 
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
@@ -90,16 +90,16 @@ Python/initconfig.c	-	_Py_StandardStreamErrors	-
 # XXX This only gets cleared by Py_Main().
 Python/initconfig.c	-	orig_argv	-
 
-#-----------------------
-# public C-API
+##-----------------------
+## public C-API
 
-# deprecated
+## deprecated
 Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
 Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
 Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
 
-# legacy config flags
+## legacy config flags
 Python/initconfig.c	-	Py_UTF8Mode	-
 Python/initconfig.c	-	Py_DebugFlag	-
 Python/initconfig.c	-	Py_VerboseFlag	-
@@ -119,8 +119,8 @@ Python/initconfig.c	-	Py_IsolatedFlag	-
 Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
 Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
 
-#-----------------------
-# initialized statically, may be customized by embedders
+##-----------------------
+## initialized statically, may be customized by embedders
 
 Python/frozen.c	-	PyImport_FrozenModules	-
 Python/import.c	-	inittab_copy	-
@@ -128,53 +128,53 @@ Python/import.c	-	PyImport_Inittab	-
 
 
 ##################################
-# runtime-global state
+## runtime-global state
 
-#-----------------------
-# tied to each init/fini cycle
+##-----------------------
+## tied to each init/fini cycle
 
-# the consolidated runtime state
+## the consolidated runtime state
 Python/pylifecycle.c	-	_PyRuntime	-
 Python/pylifecycle.c	-	runtime_initialized	-
 
 # All cases of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.
 
-# main interp state in stdlib modules
+## main interp state in stdlib modules
 Modules/syslogmodule.c	-	S_ident_o	-
 Modules/syslogmodule.c	-	S_log_open	-
 
-#-----------------------
-# *not* tied to init/fini cycle
+##-----------------------
+## *not* tied to init/fini cycle
 
 # These do not ge reset with each init/fini cycle.
 # XXX These should probably be tied to init/fini.  Move to _PyRuntimeState?
 
-## special-use diagnistic state
+# special-use diagnistic state
 Parser/pegen.c	-	memo_statistics	-
 
-#-----------------------
-# one-off temporary state
+##-----------------------
+## one-off temporary state
 
-## used during runtime init
+# used during runtime init
 Python/sysmodule.c	-	_preinit_warnoptions	-
 Python/sysmodule.c	-	_preinit_xoptions	-
 
-## thread-safety
+# thread-safety
 # XXX need race protection?
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
 
 ##################################
-# not significant
+## not significant
 
-#-----------------------
-# not used (kept for compatibility)
+##-----------------------
+## not used (kept for compatibility)
 
 Python/pyfpe.c	-	PyFPE_counter	-
 
-#-----------------------
-# should be const
+##-----------------------
+## should be const
 # XXX Make them const.
 
 # These are all variables that we will be leaving global.
@@ -182,7 +182,7 @@ Python/pyfpe.c	-	PyFPE_counter	-
 # All module defs, type defs, etc. are handled in c-analyzr/cpython/_analyzer.py.
 # All kwlist arrays are handled in c-analyzr/cpython/_analyzer.py.
 
-## other vars that are actually constant
+# other vars that are actually constant
 
 Include/internal/pycore_blocks_output_buffer.h	-	BUFFER_BLOCK_SIZE	-
 Modules/_csv.c	-	quote_styles	-
@@ -354,8 +354,8 @@ Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
 
-#-----------------------
-# test code
+##-----------------------
+## test code
 
 Modules/_ctypes/_ctypes_test.c	-	_ctypes_test_slots	-
 Modules/_ctypes/_ctypes_test.c	-	_ctypes_testmodule	-
@@ -555,12 +555,11 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_MATCH_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	STRUCT_UNPACK_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED	-
 
-
-#-----------------------
-# the analyzer should have ignored these
+##-----------------------
+## the analyzer should have ignored these
 # XXX Fix the analyzer.
 
-# forward/extern references
+## forward/extern references
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
 Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
@@ -675,6 +674,6 @@ Modules/expat/xmlrole.c	-	condSect2	-
 Modules/expat/xmlrole.c	-	declClose	-
 Modules/expat/xmlrole.c	-	error	-
 
-# other
+## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
