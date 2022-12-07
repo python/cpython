@@ -110,7 +110,7 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
     int base,
     int alternate);
 
-/* Return 1 if the argument is negative or a multi-digit int */
+/* Return 1 if the argument is positive single digit int */
 static inline int
 _PyLong_IsPositiveSingleDigit(PyObject* sub) {
     // this method uses the twos-complement representation
