@@ -698,6 +698,15 @@ extern char * _getpty(int *, int, mode_t, int);
 #  define _Py__has_builtin(x) 0
 #endif
 
+// _Py_TYPEOF(expr) gets the type of an expression.
+//
+// Example: _Py_TYPEOF(x) x_copy = (x);
+//
+// The macro is only defined if GCC or clang compiler is used.
+#if defined(__GNUC__) || defined(__clang__)
+#  define _Py_TYPEOF(expr) __typeof__(expr)
+#endif
+
 
 /* A convenient way for code to know if sanitizers are enabled. */
 #if defined(__has_feature)
