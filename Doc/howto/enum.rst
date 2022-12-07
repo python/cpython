@@ -998,7 +998,7 @@ constructor.  For example::
     >>> class MyEnum(IntEnum):      # help(int) -> int(x, base=10) -> integer
     ...     example = '11', 16      # so x='11' and base=16
     ...
-    >>> MyEnum.example.value        # and hex(11) is...
+    >>> MyEnum.example.value        # and hex(17) is '0x11'
     17
 
 
