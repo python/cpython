@@ -93,7 +93,7 @@ static uint32_t type_version;
 #define _COMPARE_OP_FLOAT 1003
 #define _COMPARE_OP_INT 1004
 #define _COMPARE_OP_STR 1005
-#define _JUMP_ON_SIGN 1006
+#define _JUMP_IF 1006
 
 static PyObject *
 dummy_func(
@@ -2035,14 +2035,14 @@ dummy_func(
             jump = sign_ish & when_to_jump_mask;
         }
         // The input is an int disguised as an object pointer!
-        op(_JUMP_ON_SIGN, (jump: size_t --)) {
+        op(_JUMP_IF, (jump: size_t --)) {
             assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
             if (jump) {
                 JUMPBY(oparg);
             }
         }
         // We're praying that the compiler optimizes the flags manipuations.
-        super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_ON_SIGN;
+        super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_IF;
 
         // Similar to COMPARE_OP_FLOAT
         op(_COMPARE_OP_INT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
@@ -2062,7 +2062,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             jump = sign_ish & when_to_jump_mask;
         }
-        super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_ON_SIGN;
+        super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_IF;
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
         op(_COMPARE_OP_STR, (unused/1, invert/1, left, right -- jump: size_t)) {
@@ -2079,7 +2079,7 @@ dummy_func(
             assert(invert == 0 || invert == 1);
             jump = res ^ invert;
         }
-        super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_ON_SIGN;
+        super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;
 
         // stack effect: (__0 -- )
         inst(IS_OP) {
