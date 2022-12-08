@@ -437,7 +437,7 @@ dummy_func(
                 }
                 Py_DECREF(dict);
                 Py_DECREF(sub);
-                ERROR_IF(1, error);
+                ERROR_IF(true, error);
             }
             Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             Py_DECREF(dict);
@@ -553,7 +553,7 @@ dummy_func(
                 _PyErr_SetString(tstate, PyExc_RuntimeError,
                                  "lost sys.displayhook");
                 Py_DECREF(value);
-                ERROR_IF(1, error);
+                ERROR_IF(true, error);
             }
             res = PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
@@ -625,7 +625,7 @@ dummy_func(
                               "__aiter__ method, got %.100s",
                               type->tp_name);
                 Py_DECREF(obj);
-                ERROR_IF(1, error);
+                ERROR_IF(true, error);
             }
 
             iter = (*getter)(obj);
@@ -640,7 +640,7 @@ dummy_func(
                               "that does not implement __anext__: %.100s",
                               Py_TYPE(iter)->tp_name);
                 Py_DECREF(iter);
-                ERROR_IF(1, error);
+                ERROR_IF(true, error);
             }
         }
 

@@ -390,7 +390,7 @@
                 }
                 Py_DECREF(dict);
                 Py_DECREF(sub);
-                if (1) goto pop_2_error;
+                if (true) goto pop_2_error;
             }
             Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             Py_DECREF(dict);
@@ -537,7 +537,7 @@
                 _PyErr_SetString(tstate, PyExc_RuntimeError,
                                  "lost sys.displayhook");
                 Py_DECREF(value);
-                if (1) goto pop_1_error;
+                if (true) goto pop_1_error;
             }
             res = PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
@@ -614,7 +614,7 @@
                               "__aiter__ method, got %.100s",
                               type->tp_name);
                 Py_DECREF(obj);
-                if (1) goto pop_1_error;
+                if (true) goto pop_1_error;
             }
 
             iter = (*getter)(obj);
@@ -629,7 +629,7 @@
                               "that does not implement __anext__: %.100s",
                               Py_TYPE(iter)->tp_name);
                 Py_DECREF(iter);
-                if (1) goto pop_1_error;
+                if (true) goto pop_1_error;
             }
             POKE(1, iter);
             DISPATCH();
