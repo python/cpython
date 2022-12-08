@@ -65,7 +65,6 @@ static PyTypeObject pairwise_type;
    For now, the API is kept simple and clean.
  */
 
-
 typedef struct {
     PyObject_HEAD
     PyObject *it;
