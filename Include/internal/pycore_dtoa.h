@@ -25,7 +25,7 @@ Bigint {
 #ifdef Py_USING_MEMORY_DEBUGGER
 
 struct _dtoa_runtime_state {
-        int _not_used;
+    int _not_used;
 };
 #define _dtoa_runtime_state_INIT {0}
 
@@ -41,9 +41,12 @@ struct _dtoa_runtime_state {
     ((PRIVATE_MEM+sizeof(double)-1)/sizeof(double))
 
 struct _dtoa_runtime_state {
-        struct Bigint *freelist[Bigint_Kmax+1];
-        double preallocated[Bigint_PREALLOC_SIZE];
-        double *preallocated_next;
+    /* p5s is a linked list of powers of 5 of the form 5**(2**i), i >= 2 */
+    // XXX This should be freed during runtime fini.
+    struct Bigint *p5s;
+    struct Bigint *freelist[Bigint_Kmax+1];
+    double preallocated[Bigint_PREALLOC_SIZE];
+    double *preallocated_next;
 };
 #define _dtoa_runtime_state_INIT(runtime) \
     { \

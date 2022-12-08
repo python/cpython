@@ -215,8 +215,8 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto skip_optional_kwonly;
         }
     }
-    reverse = _PyLong_AsInt(args[1]);
-    if (reverse == -1 && PyErr_Occurred()) {
+    reverse = PyObject_IsTrue(args[1]);
+    if (reverse < 0) {
         goto exit;
     }
 skip_optional_kwonly:
@@ -382,4 +382,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=782ed6c68b1c9f83 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e6f38b655394564 input=a9049054013a1b77]*/

@@ -17,6 +17,7 @@ extern "C" {
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
 #include "pycore_interp.h"          // PyInterpreterState
+#include "pycore_parser.h"          // struct _parser_runtime_state
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
 #include "pycore_obmalloc.h"        // struct obmalloc_state
@@ -128,6 +129,10 @@ typedef struct pyruntimestate {
     } xidregistry;
 
     unsigned long main_thread;
+
+    PyWideStringList orig_argv;
+
+    struct _parser_runtime_state parser;
 
 #define NEXITFUNCS 32
     void (*exitfuncs[NEXITFUNCS])(void);

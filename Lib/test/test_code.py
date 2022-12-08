@@ -143,7 +143,7 @@ from test.support import (cpython_only,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
-from opcode import opmap
+from opcode import opmap, opname
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
@@ -339,15 +339,19 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(list(new_code.co_lines()), [])
 
     def test_invalid_bytecode(self):
-        def foo(): pass
-        foo.__code__ = co = foo.__code__.replace(co_code=b'\xee\x00d\x00S\x00')
+        def foo():
+            pass
 
-        with self.assertRaises(SystemError) as se:
+        # assert that opcode 238 is invalid
+        self.assertEqual(opname[238], '<238>')
+
+        # change first opcode to 0xee (=238)
+        foo.__code__ = foo.__code__.replace(
+            co_code=b'\xee' + foo.__code__.co_code[1:])
+
+        msg = f"unknown opcode 238"
+        with self.assertRaisesRegex(SystemError, msg):
             foo()
-        self.assertEqual(
-            f"{co.co_filename}:{co.co_firstlineno}: unknown opcode 238",
-            str(se.exception))
-
 
     @requires_debug_ranges()
     def test_co_positions_artificial_instructions(self):
