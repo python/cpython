@@ -632,7 +632,7 @@ class Analyzer:
         # outer block, rather than trusting the compiler to optimize it.
         self.out.emit("")
         with self.out.block(f"TARGET({up.name})"):
-            for i, var in enumerate(up.stack):
+            for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:
                     src = StackEffect(f"PEEK({up.initial_sp - i})", "")

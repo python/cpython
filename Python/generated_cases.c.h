@@ -3592,8 +3592,8 @@
         }
 
         TARGET(LOAD_FAST__LOAD_FAST) {
-            PyObject *_tmp_2;
             PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -3617,8 +3617,8 @@
         }
 
         TARGET(LOAD_FAST__LOAD_CONST) {
-            PyObject *_tmp_2;
             PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -3660,8 +3660,8 @@
         }
 
         TARGET(STORE_FAST__STORE_FAST) {
-            PyObject *_tmp_2 = PEEK(2);
             PyObject *_tmp_1 = PEEK(1);
+            PyObject *_tmp_2 = PEEK(2);
             {
                 PyObject *value = _tmp_1;
                 SETLOCAL(oparg, value);
@@ -3677,8 +3677,8 @@
         }
 
         TARGET(LOAD_CONST__LOAD_FAST) {
-            PyObject *_tmp_2;
             PyObject *_tmp_1;
+            PyObject *_tmp_2;
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
@@ -3701,8 +3701,8 @@
         }
 
         TARGET(COMPARE_OP_FLOAT_JUMP) {
-            PyObject *_tmp_2 = PEEK(2);
             PyObject *_tmp_1 = PEEK(1);
+            PyObject *_tmp_2 = PEEK(2);
             {
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
@@ -3739,8 +3739,8 @@
         }
 
         TARGET(COMPARE_OP_INT_JUMP) {
-            PyObject *_tmp_2 = PEEK(2);
             PyObject *_tmp_1 = PEEK(1);
+            PyObject *_tmp_2 = PEEK(2);
             {
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
@@ -3778,8 +3778,8 @@
         }
 
         TARGET(COMPARE_OP_STR_JUMP) {
-            PyObject *_tmp_2 = PEEK(2);
             PyObject *_tmp_1 = PEEK(1);
+            PyObject *_tmp_2 = PEEK(2);
             {
                 PyObject *right = _tmp_1;
                 PyObject *left = _tmp_2;
@@ -3814,8 +3814,8 @@
         }
 
         TARGET(END_FOR) {
-            PyObject *_tmp_2 = PEEK(2);
             PyObject *_tmp_1 = PEEK(1);
+            PyObject *_tmp_2 = PEEK(2);
             {
                 PyObject *value = _tmp_1;
                 Py_DECREF(value);
