@@ -619,7 +619,10 @@ dummy_func(
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
-            frame = cframe.current_frame = pop_frame(tstate, frame);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = cframe.current_frame = dying->previous;
+            _PyEvalFrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -2620,14 +2623,15 @@ dummy_func(
             STAT_INC(FOR_ITER, hit);
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
-            if (r->index >= r->len) {
+            if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
             else {
-                long value = (long)(r->start +
-                                    (unsigned long)(r->index++) * r->step);
+                long value = r->start;
+                r->start = value + r->step;
+                r->len--;
                 if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
                     goto error;
                 }

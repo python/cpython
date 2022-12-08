@@ -4575,26 +4575,25 @@ _pickle_Pickler_dump(PicklerObject *self, PyObject *obj)
 
 /*[clinic input]
 
-_pickle.Pickler.__sizeof__ -> Py_ssize_t
+_pickle.Pickler.__sizeof__ -> size_t
 
 Returns size in memory, in bytes.
 [clinic start generated code]*/
 
-static Py_ssize_t
+static size_t
 _pickle_Pickler___sizeof___impl(PicklerObject *self)
-/*[clinic end generated code: output=106edb3123f332e1 input=8cbbec9bd5540d42]*/
+/*[clinic end generated code: output=23ad75658d3b59ff input=d8127c8e7012ebd7]*/
 {
-    Py_ssize_t res, s;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->memo != NULL) {
         res += sizeof(PyMemoTable);
         res += self->memo->mt_allocated * sizeof(PyMemoEntry);
     }
     if (self->output_buffer != NULL) {
-        s = _PySys_GetSizeOf(self->output_buffer);
-        if (s == -1)
+        size_t s = _PySys_GetSizeOf(self->output_buffer);
+        if (s == (size_t)-1) {
             return -1;
+        }
         res += s;
     }
     return res;
@@ -7079,22 +7078,20 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self,
 
 /*[clinic input]
 
-_pickle.Unpickler.__sizeof__ -> Py_ssize_t
+_pickle.Unpickler.__sizeof__ -> size_t
 
 Returns size in memory, in bytes.
 [clinic start generated code]*/
 
-static Py_ssize_t
+static size_t
 _pickle_Unpickler___sizeof___impl(UnpicklerObject *self)
-/*[clinic end generated code: output=119d9d03ad4c7651 input=13333471fdeedf5e]*/
+/*[clinic end generated code: output=4648d84c228196df input=27180b2b6b524012]*/
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->memo != NULL)
         res += self->memo_size * sizeof(PyObject *);
     if (self->marks != NULL)
-        res += self->marks_size * sizeof(Py_ssize_t);
+        res += (size_t)self->marks_size * sizeof(Py_ssize_t);
     if (self->input_line != NULL)
         res += strlen(self->input_line) + 1;
     if (self->encoding != NULL)

@@ -6324,9 +6324,9 @@ os.posix_spawn
         A sequence of file action tuples.
     setpgroup: object = NULL
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
-    resetids: bool(accept={int}) = False
+    resetids: bool = False
         If the value is `true` the POSIX_SPAWN_RESETIDS will be activated.
-    setsid: bool(accept={int}) = False
+    setsid: bool = False
         If the value is `true` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
@@ -6344,7 +6344,7 @@ os_posix_spawn_impl(PyObject *module, path_t *path, PyObject *argv,
                     PyObject *setpgroup, int resetids, int setsid,
                     PyObject *setsigmask, PyObject *setsigdef,
                     PyObject *scheduler)
-/*[clinic end generated code: output=14a1098c566bc675 input=8c6305619a00ad04]*/
+/*[clinic end generated code: output=14a1098c566bc675 input=808aed1090d84e33]*/
 {
     return py_posix_spawn(0, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -6370,9 +6370,9 @@ os.posix_spawnp
         A sequence of file action tuples.
     setpgroup: object = NULL
         The pgroup to use with the POSIX_SPAWN_SETPGROUP flag.
-    resetids: bool(accept={int}) = False
+    resetids: bool = False
         If the value is `True` the POSIX_SPAWN_RESETIDS will be activated.
-    setsid: bool(accept={int}) = False
+    setsid: bool = False
         If the value is `True` the POSIX_SPAWN_SETSID or POSIX_SPAWN_SETSID_NP will be activated.
     setsigmask: object(c_default='NULL') = ()
         The sigmask to use with the POSIX_SPAWN_SETSIGMASK flag.
@@ -6390,7 +6390,7 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
                      PyObject *setpgroup, int resetids, int setsid,
                      PyObject *setsigmask, PyObject *setsigdef,
                      PyObject *scheduler)
-/*[clinic end generated code: output=7b9aaefe3031238d input=c1911043a22028da]*/
+/*[clinic end generated code: output=7b9aaefe3031238d input=9e89e616116752a1]*/
 {
     return py_posix_spawn(1, module, path, argv, env, file_actions,
                           setpgroup, resetids, setsid, setsigmask, setsigdef,
@@ -13528,7 +13528,7 @@ os_get_blocking_impl(PyObject *module, int fd)
 /*[clinic input]
 os.set_blocking
     fd: int
-    blocking: bool(accept={int})
+    blocking: bool
     /
 
 Set the blocking mode of the specified file descriptor.
@@ -13539,7 +13539,7 @@ clear the O_NONBLOCK flag otherwise.
 
 static PyObject *
 os_set_blocking_impl(PyObject *module, int fd, int blocking)
-/*[clinic end generated code: output=384eb43aa0762a9d input=bf5c8efdc5860ff3]*/
+/*[clinic end generated code: output=384eb43aa0762a9d input=7e9dfc9b14804dd4]*/
 {
     int result;
 
