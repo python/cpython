@@ -1587,6 +1587,22 @@ def func2():
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
 
+        # Some more complex examples:
+        code = """\
+func(
+    a=["unclosed], # Need a quote in this comment: "
+    b=2,
+)
+"""
+        self._check_error(code, "parenthesis '\\)' does not match opening parenthesis '\\['")
+
+    def test_error_string_literal(self):
+
+        self._check_error("'blech", "unterminated string literal")
+        self._check_error('"blech', "unterminated string literal")
+        self._check_error("'''blech", "unterminated triple-quoted string literal")
+        self._check_error('"""blech', "unterminated triple-quoted string literal")
+
     def test_match_call_does_not_raise_syntax_error(self):
         code = """
 def match(x):

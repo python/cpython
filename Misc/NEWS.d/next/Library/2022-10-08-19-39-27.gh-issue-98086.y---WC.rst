@@ -1,1 +1,0 @@
-Make sure ``patch.dict()`` can be applied on async functions.

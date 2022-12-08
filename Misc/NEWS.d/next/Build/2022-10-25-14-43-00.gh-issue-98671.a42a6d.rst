@@ -1,3 +1,0 @@
-Fix ``NO_MISALIGNED_ACCESSES`` being not defined for the SHA3 extension
-when ``HAVE_ALIGNED_REQUIRED`` is set. Allowing builds on hardware that
-unaligned memory accesses are not allowed.

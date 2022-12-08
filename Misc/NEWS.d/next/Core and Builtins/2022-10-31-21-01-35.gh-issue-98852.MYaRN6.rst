@@ -1,3 +1,0 @@
-Fix subscription of :class:`types.GenericAlias` instances containing bare
-generic types: for example ``tuple[A, T][int]``,
-where ``A`` is a generic type, and ``T`` is a type variable.
