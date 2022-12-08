@@ -1,1 +1,0 @@
-Fixed the return value of ``TypeVar.__ror__``. Patch by Jelle Zijlstra.

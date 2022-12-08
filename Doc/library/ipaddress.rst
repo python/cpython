@@ -41,7 +41,7 @@ IP addresses, networks and interfaces:
 
    Return an :class:`IPv4Address` or :class:`IPv6Address` object depending on
    the IP address passed as argument.  Either IPv4 or IPv6 addresses may be
-   supplied; integers less than 2**32 will be considered to be IPv4 by default.
+   supplied; integers less than ``2**32`` will be considered to be IPv4 by default.
    A :exc:`ValueError` is raised if *address* does not represent a valid IPv4
    or IPv6 address.
 
@@ -56,7 +56,7 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Network` or :class:`IPv6Network` object depending on
    the IP address passed as argument.  *address* is a string or integer
    representing the IP network.  Either IPv4 or IPv6 networks may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  *strict*
+   integers less than ``2**32`` will be considered to be IPv4 by default.  *strict*
    is passed to :class:`IPv4Network` or :class:`IPv6Network` constructor.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address, or if the network has host bits set.
@@ -70,7 +70,7 @@ IP addresses, networks and interfaces:
    Return an :class:`IPv4Interface` or :class:`IPv6Interface` object depending
    on the IP address passed as argument.  *address* is a string or integer
    representing the IP address.  Either IPv4 or IPv6 addresses may be supplied;
-   integers less than 2**32 will be considered to be IPv4 by default.  A
+   integers less than ``2**32`` will be considered to be IPv4 by default.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address.
 
@@ -104,8 +104,7 @@ write code that handles both IP versions correctly.  Address objects are
    1. A string in decimal-dot notation, consisting of four decimal integers in
       the inclusive range 0--255, separated by dots (e.g. ``192.168.0.1``). Each
       integer represents an octet (byte) in the address. Leading zeroes are
-      tolerated only for values less than 8 (as there is no ambiguity
-      between the decimal and octal interpretations of such strings).
+      not tolerated to prevent confusion with octal notation.
    2. An integer that fits into 32 bits.
    3. An integer packed into a :class:`bytes` object of length 4 (most
       significant octet first).
@@ -116,6 +115,27 @@ write code that handles both IP versions correctly.  Address objects are
    IPv4Address('192.168.0.1')
    >>> ipaddress.IPv4Address(b'\xC0\xA8\x00\x01')
    IPv4Address('192.168.0.1')
+
+   .. versionchanged:: 3.8
+
+      Leading zeros are tolerated, even in ambiguous cases that look like
+      octal notation.
+
+   .. versionchanged:: 3.10
+
+      Leading zeros are no longer tolerated and are treated as an error.
+      IPv4 address strings are now parsed as strict as glibc
+      :func:`~socket.inet_pton`.
+
+   .. versionchanged:: 3.9.5
+
+      The above change was also included in Python 3.9 starting with
+      version 3.9.5.
+
+   .. versionchanged:: 3.8.12
+
+      The above change was also included in Python 3.8 starting with
+      version 3.8.12.
 
    .. attribute:: version
 
@@ -662,7 +682,7 @@ dictionaries.
 
       Note that currently expanded netmasks are not supported.  That means
       ``2001:db00::0/24`` is a valid argument while ``2001:db00::0/ffff:ff00::``
-      not.
+      is not.
 
    2. An integer that fits into 128 bits.  This is equivalent to a
       single-address network, with the network address being *address* and

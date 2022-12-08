@@ -1,3 +1,0 @@
-Add ``slots`` parameter to ``dataclasses.dataclass`` decorator to
-automatically generate ``__slots__`` for class. Patch provided by Yurii
-Karabas.

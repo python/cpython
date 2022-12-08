@@ -1,2 +1,0 @@
-Tests multiple OpenSSL versions on GitHub Actions. Use ccache to speed up
-testing.

@@ -1,2 +1,0 @@
-Restore proper validation of complex literal value patterns when parsing
-:keyword:`!match` blocks.

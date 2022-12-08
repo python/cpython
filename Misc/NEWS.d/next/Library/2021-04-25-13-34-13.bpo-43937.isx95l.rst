@@ -1,1 +1,0 @@
-Fixed the :mod:`turtle` module working with non-default root window.

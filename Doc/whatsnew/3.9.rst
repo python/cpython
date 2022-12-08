@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.9, compared to 3.8.
-Python 3.9 was released on October 5th, 2020.
+Python 3.9 was released on October 5, 2020.
 
 For full details, see the :ref:`changelog <changelog>`.
 
@@ -484,7 +484,24 @@ Najera in :issue:`38944`.)
 Added keywords to module name completion list.  (Contributed by Terry J.
 Reedy in :issue:`37765`.)
 
+New in 3.9 maintenance releases
+
+Make IDLE invoke :func:`sys.excepthook` (when started without '-n').
+User hooks were previously ignored.  (Contributed by Ken Hilton in
+:issue:`43008`.)
+
 The changes above have been backported to 3.8 maintenance releases.
+
+Rearrange the settings dialog.  Split the General tab into Windows
+and Shell/Ed tabs.  Move help sources, which extend the Help menu, to the
+Extensions tab.  Make space for new options and shorten the dialog. The
+latter makes the dialog better fit small screens.  (Contributed by Terry Jan
+Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
+the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
+:issue:`33962`.)
+
+Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
+Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 imaplib
 -------
@@ -536,6 +553,10 @@ ipaddress
 Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
 If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
 (Contributed by Oleksandr Pavliuk in :issue:`34788`.)
+
+Starting with Python 3.9.5 the :mod:`ipaddress` module no longer
+accepts any leading zeros in IPv4 address strings.
+(Contributed by Christian Heimes in :issue:`36384`).
 
 math
 ----
@@ -667,7 +688,7 @@ time
 
 On AIX, :func:`~time.thread_time` is now implemented with ``thread_cputime()``
 which has nanosecond resolution, rather than
-``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 milliseconds.
 (Contributed by Batuhan Taskaya in :issue:`40192`)
 
 sys
@@ -752,7 +773,7 @@ Optimizations
   Stinner in :issue:`38061`.)
 
 * :c:func:`PyLong_FromDouble` is now up to 1.87x faster for values that
-  fit into :c:type:`long`.
+  fit into :c:expr:`long`.
   (Contributed by Sergey Fedoseev in :issue:`37986`.)
 
 * A number of Python builtins (:class:`range`, :class:`tuple`, :class:`set`,
@@ -1114,6 +1135,14 @@ Changes in the Python API
   compatible classes that don't inherit from those mentioned types.
   (Contributed by Roger Aiudi in :issue:`34775`).
 
+* Starting with Python 3.9.5 the :mod:`ipaddress` module no longer
+  accepts any leading zeros in IPv4 address strings. Leading zeros are
+  ambiguous and interpreted as octal notation by some libraries. For example
+  the legacy function :func:`socket.inet_aton` treats leading zeros as octal
+  notatation. glibc implementation of modern :func:`~socket.inet_pton` does
+  not accept any leading zeros.
+  (Contributed by Christian Heimes in :issue:`36384`).
+
 * :func:`codecs.lookup` now normalizes the encoding name the same way as
   :func:`encodings.normalize_encoding`, except that :func:`codecs.lookup` also
   converts the name to lower case. For example, ``"latex+latin1"`` encoding
@@ -1220,7 +1249,7 @@ Build Changes
   of macOS. If a macOS SDK is explicitly configured, by using
   :option:`--enable-universalsdk` or ``-isysroot``, only the SDK itself is
   searched. The default behavior can still be overridden with
-  :option:`--with-tcltk-includes` and :option:`--with-tcltk-libs`.
+  ``--with-tcltk-includes`` and ``--with-tcltk-libs``.
   (Contributed by Ned Deily in :issue:`34956`.)
 
 * Python can now be built for Windows 10 ARM64.
@@ -1366,10 +1395,6 @@ Porting to Python 3.9
     becomes an alias to the :c:func:`PyObject_NewVar` macro. They no longer
     access directly the :c:member:`PyTypeObject.tp_basicsize` member.
 
-  * :c:func:`PyType_HasFeature` now always calls :c:func:`PyType_GetFlags`.
-    Previously, it accessed directly the :c:member:`PyTypeObject.tp_flags`
-    member when the limited C API was not used.
-
   * :c:func:`PyObject_GET_WEAKREFS_LISTPTR` macro was converted to a function:
     the macro accessed directly the :c:member:`PyTypeObject.tp_weaklistoffset`
     member.
@@ -1482,7 +1507,7 @@ and to match the behavior of static type checkers specified in the PEP.
    now ``False``.  To support this change, the internally used type cache now
    supports differentiating types.
 4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
-   equality comparisons if one of their parameters are not :term:`immutable`.
+   equality comparisons if any of their parameters are not :term:`hashable`.
    Note that declaring ``Literal`` with mutable parameters will not throw
    an error::
 
