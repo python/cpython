@@ -161,11 +161,11 @@ class TestBasicOps(unittest.TestCase):
 
     def test_batched(self):
         self.assertEqual(list(batched('ABCDEFG', 3)),
-                             [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']])
+                             [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)])
         self.assertEqual(list(batched('ABCDEFG', 2)),
-                             [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']])
+                             [('A', 'B'), ('C', 'D'), ('E', 'F'), ('G',)])
         self.assertEqual(list(batched('ABCDEFG', 1)),
-                             [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']])
+                            [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)])
 
         with self.assertRaises(TypeError):          # Too few arguments
             list(batched('ABCDEFG'))
@@ -188,8 +188,8 @@ class TestBasicOps(unittest.TestCase):
                 with self.subTest(s=s, n=n, batches=batches):
                     # Order is preserved and no data is lost
                     self.assertEqual(''.join(chain(*batches)), s)
-                    # Each batch is an exact list
-                    self.assertTrue(all(type(batch) is list for batch in batches))
+                    # Each batch is an exact tuple
+                    self.assertTrue(all(type(batch) is tuple for batch in batches))
                     # All but the last batch is of size n
                     if batches:
                         last_batch = batches.pop()
@@ -1809,12 +1809,12 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
 
     def test_batched_recipe(self):
         def batched_recipe(iterable, n):
-            "Batch data into lists of length n. The last batch may be shorter."
+            "Batch data into tuples of length n. The last batch may be shorter."
             # batched('ABCDEFG', 3) --> ABC DEF G
             if n < 1:
                 raise ValueError('n must be at least one')
             it = iter(iterable)
-            while (batch := list(islice(it, n))):
+            while (batch := tuple(islice(it, n))):
                 yield batch
 
         for iterable, n in product(
@@ -2087,7 +2087,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
 
     def test_batched(self):
         s = 'abcde'
-        r = [['a', 'b'], ['c', 'd'], ['e']]
+        r = [('a', 'b'), ('c', 'd'), ('e',)]
         n = 2
         for g in (G, I, Ig, L, R):
             with self.subTest(g=g):
