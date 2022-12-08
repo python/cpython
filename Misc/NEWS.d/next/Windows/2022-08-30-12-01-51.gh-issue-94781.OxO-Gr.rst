@@ -1,2 +1,0 @@
-Fix :file:`pcbuild.proj` to clean previous instances of ouput files in ``Python\deepfreeze`` and
-``Python\frozen_modules`` directories on Windows. Patch by Charlie Zhao.
