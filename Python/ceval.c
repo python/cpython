@@ -986,6 +986,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         if (_Py_EnterRecursivePy(tstate)) {
             goto exit_unwind;
         }
+        /* Because this avoids the RESUME,
+         * we need to update instrumentation */
+        _Py_Instrument(frame->f_code, tstate->interp);
         /* TO DO -- Monitor throw entry. */
         goto resume_with_error;
     }

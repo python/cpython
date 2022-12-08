@@ -111,7 +111,7 @@ dummy_func(
         inst(INSTRUMENTED_RESUME) {
             /* Check monitoring *before* calling instrument */
             /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrument_version != tstate->interp->monitoring_version) {
+            if (frame->f_code->_co_instrumentation.monitoring_version != tstate->interp->monitoring_version) {
                 if (_Py_Instrument(frame->f_code, tstate->interp)) {
                     goto error;
                 }
@@ -131,7 +131,7 @@ dummy_func(
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrument_version != tstate->interp->monitoring_version) {
+            if (frame->f_code->_co_instrumentation.monitoring_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(frame->f_code, tstate->interp);
                 ERROR_IF(err, error);
                 next_instr--;
@@ -3766,6 +3766,18 @@ dummy_func(
             PyObject *top = TOP();
             SET_TOP(PEEK(oparg));
             PEEK(oparg) = top;
+        }
+
+        inst(INSTRUMENTED_LINE) {
+            int original_opcode = _Py_call_instrumentation_line(
+                    tstate, frame->f_code, next_instr-1);
+            assert(original_opcode!= 0);
+            ERROR_IF(original_opcode < 0, error);
+            opcode = original_opcode;
+            assert(_PyOpcode_Deopt[opcode] == opcode);
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DISPATCH_GOTO();
         }
 
         // stack effect: ( -- )

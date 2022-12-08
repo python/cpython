@@ -3,6 +3,7 @@
 #ifndef Py_LIMITED_API
 #ifndef Py_CODE_H
 #define Py_CODE_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,6 +45,25 @@ typedef struct {
     PyObject *_co_cellvars;
     PyObject *_co_freevars;
 } _PyCoCached;
+
+typedef struct _PyInstrumentationOffsets {
+    int8_t tools;
+    int8_t lines;
+    int8_t instructions;
+    int8_t size;
+} _PyInstrumentationOffsets;
+
+typedef union _PyInstrumentationLayout {
+    _PyInstrumentationOffsets offsets;
+    int32_t bits;
+} _PyInstrumentationLayout;
+
+typedef struct {
+    uint64_t monitoring_version; /* current instrumentation version */
+    _PyInstrumentationLayout layout;
+    _Py_MonitoringMatrix monitoring_matrix;
+    uint8_t *monitoring_data; /* array of data for monitoring */
+} _PyCoInstrumentation;
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
@@ -103,13 +123,8 @@ typedef struct {
     PyObject *co_linetable;       /* bytes object that holds location info */  \
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
+    _PyCoInstrumentation _co_instrumentation; /* Instrumentation */            \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
-    uint64_t _co_instrument_version; /* current instrumentation version */     \
-    uint8_t _co_monitoring_data_per_instruction; /* Number of bytes per instruction */ \
-    uint8_t _co_line_data_offset;  /* Offset in data for line data */          \
-    uint8_t _co_opcode_data_offset;  /* Offset in data for opcode data */      \
-    _Py_MonitoringMatrix _co_monitoring_matrix;                                \
-    uint8_t *_co_monitoring_data; /* array of data for monitoring */           \
     char *_co_linearray;          /* array of line offsets */                  \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \

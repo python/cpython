@@ -229,6 +229,8 @@ def_op('INSTRUMENTED_RETURN_VALUE', 242)
 def_op('INSTRUMENTED_YIELD_VALUE', 243)
 def_op('INSTRUMENTED_CALL_FUNCTION_EX', 244)
 
+def_op('INSTRUMENTED_LINE', 250)
+
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 

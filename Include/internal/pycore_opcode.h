@@ -138,6 +138,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [IMPORT_STAR] = IMPORT_STAR,
     [INSTRUMENTED_CALL] = INSTRUMENTED_CALL,
     [INSTRUMENTED_CALL_FUNCTION_EX] = INSTRUMENTED_CALL_FUNCTION_EX,
+    [INSTRUMENTED_LINE] = INSTRUMENTED_LINE,
     [INSTRUMENTED_RESUME] = INSTRUMENTED_RESUME,
     [INSTRUMENTED_RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
     [INSTRUMENTED_YIELD_VALUE] = INSTRUMENTED_YIELD_VALUE,
@@ -488,7 +489,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [247] = "<247>",
     [248] = "<248>",
     [249] = "<249>",
-    [250] = "<250>",
+    [INSTRUMENTED_LINE] = "INSTRUMENTED_LINE",
     [251] = "<251>",
     [252] = "<252>",
     [253] = "<253>",
@@ -576,7 +577,6 @@ static const char *const _PyOpcode_OpName[263] = {
     case 247: \
     case 248: \
     case 249: \
-    case 250: \
     case 251: \
     case 252: \
     case 253: \

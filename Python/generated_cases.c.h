@@ -8,7 +8,7 @@
         TARGET(INSTRUMENTED_RESUME) {
             /* Check monitoring *before* calling instrument */
             /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrument_version != tstate->interp->monitoring_version) {
+            if (frame->f_code->_co_instrumentation.monitoring_version != tstate->interp->monitoring_version) {
                 if (_Py_Instrument(frame->f_code, tstate->interp)) {
                     goto error;
                 }
@@ -29,7 +29,7 @@
             assert(tstate->cframe == &cframe);
             assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrument_version != tstate->interp->monitoring_version) {
+            if (frame->f_code->_co_instrumentation.monitoring_version != tstate->interp->monitoring_version) {
                 int err = _Py_Instrument(frame->f_code, tstate->interp);
                 if (err) goto error;
                 next_instr--;
@@ -3776,6 +3776,18 @@
             SET_TOP(PEEK(oparg));
             PEEK(oparg) = top;
             DISPATCH();
+        }
+
+        TARGET(INSTRUMENTED_LINE) {
+            int original_opcode = _Py_call_instrumentation_line(
+                    tstate, frame->f_code, next_instr-1);
+            assert(original_opcode!= 0);
+            if (original_opcode < 0) goto error;
+            opcode = original_opcode;
+            assert(_PyOpcode_Deopt[opcode] == opcode);
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DISPATCH_GOTO();
         }
 
         TARGET(EXTENDED_ARG) {

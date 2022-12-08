@@ -90,7 +90,7 @@ struct _is {
     PyInterpreterState *next;
 
     uint64_t monitoring_version;
-    uint64_t last_restart_version;;
+    uint64_t last_restart_version;
 
     struct pythreads {
         uint64_t next_unique_id;
@@ -196,6 +196,7 @@ struct _is {
     PyCodeObject *interpreter_trampoline;
 
     _Py_MonitoringMatrix monitoring_matrix;
+    _PyInstrumentationLayout instrumentation_layout;
     uint8_t required_monitoring_bytes;
     /* Tools numbered 1-8. 0 is the dispatcher/sole tool */
     struct _instrumentation_tool tools[PY_MONITORING_TOOL_IDS];
