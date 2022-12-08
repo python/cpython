@@ -186,7 +186,7 @@ class Instruction:
 
         # Write cache effect
         if self.cache_offset:
-            out.emit(f"next_instr += {self.cache_offset};")
+            out.emit(f"JUMPBY({self.cache_offset});")
 
     def write_body(self, out: Formatter, dedent: int, cache_adjust: int = 0) -> None:
         """Write the instruction body."""
@@ -601,11 +601,11 @@ class Analyzer:
             for comp in sup.parts:
                 if not first:
                     self.out.emit("NEXTOPARG();")
-                    self.out.emit("next_instr++;")
+                    self.out.emit("JUMPBY(1);")
                 first = False
                 comp.write_body(self.out, 0)
                 if comp.instr.cache_offset:
-                    self.out.emit(f"next_instr += {comp.instr.cache_offset};")
+                    self.out.emit(f"JUMPBY({comp.instr.cache_offset});")
 
     def write_macro(self, mac: MacroInstruction) -> None:
         """Write code for a macro instruction."""
@@ -620,7 +620,7 @@ class Analyzer:
                         cache_adjust += comp.instr.cache_offset
 
             if cache_adjust:
-                self.out.emit(f"next_instr += {cache_adjust};")
+                self.out.emit(f"JUMPBY({cache_adjust});")
 
     @contextlib.contextmanager
     def wrap_super_or_macro(self, up: SuperOrMacroInstruction):

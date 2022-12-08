@@ -139,7 +139,7 @@
             if (prod == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, prod);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -159,7 +159,7 @@
             if (prod == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, prod);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -177,7 +177,7 @@
             if (sub == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, sub);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -196,7 +196,7 @@
             if (sub == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, sub);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -214,7 +214,7 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, res);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -268,7 +268,7 @@
             if (sum == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, sum);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -286,7 +286,7 @@
             if (sum == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, sum);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -311,7 +311,7 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, res);
-            next_instr += 4;
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -380,7 +380,7 @@
             Py_DECREF(list);
             STACK_SHRINK(1);
             POKE(1, res);
-            next_instr += 4;
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -406,7 +406,7 @@
             Py_DECREF(tuple);
             STACK_SHRINK(1);
             POKE(1, res);
-            next_instr += 4;
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -431,7 +431,7 @@
             Py_DECREF(sub);
             STACK_SHRINK(1);
             POKE(1, res);
-            next_instr += 4;
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -505,7 +505,7 @@
             Py_DECREF(sub);
             if (err) goto pop_3_error;
             STACK_SHRINK(3);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -531,7 +531,7 @@
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
             STACK_SHRINK(3);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -546,7 +546,7 @@
             Py_DECREF(dict);
             if (err) goto pop_3_error;
             STACK_SHRINK(3);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -1139,7 +1139,7 @@
             Py_DECREF(owner);
             if (err) goto pop_2_error;
             STACK_SHRINK(2);
-            next_instr += 4;
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -1977,7 +1977,7 @@
             }
             Py_DECREF(owner);
             STACK_SHRINK(2);
-            next_instr += 4;
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -2026,7 +2026,7 @@
             dict->ma_version_tag = new_version;
             Py_DECREF(owner);
             STACK_SHRINK(2);
-            next_instr += 4;
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -2046,7 +2046,7 @@
             Py_XDECREF(old_value);
             Py_DECREF(owner);
             STACK_SHRINK(2);
-            next_instr += 4;
+            JUMPBY(4);
             DISPATCH();
         }
 
@@ -2071,7 +2071,7 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, res);
-            next_instr += 2;
+            JUMPBY(2);
             DISPATCH();
         }
 
@@ -3566,7 +3566,7 @@
             if (res == NULL) goto pop_2_error;
             STACK_SHRINK(1);
             POKE(1, res);
-            next_instr += 1;
+            JUMPBY(1);
             DISPATCH();
         }
 
@@ -3602,7 +3602,7 @@
                 _tmp_2 = value;
             }
             NEXTOPARG();
-            next_instr++;
+            JUMPBY(1);
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -3627,7 +3627,7 @@
                 _tmp_2 = value;
             }
             NEXTOPARG();
-            next_instr++;
+            JUMPBY(1);
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
@@ -3647,7 +3647,7 @@
                 SETLOCAL(oparg, value);
             }
             NEXTOPARG();
-            next_instr++;
+            JUMPBY(1);
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -3667,7 +3667,7 @@
                 SETLOCAL(oparg, value);
             }
             NEXTOPARG();
-            next_instr++;
+            JUMPBY(1);
             {
                 PyObject *value = _tmp_2;
                 SETLOCAL(oparg, value);
@@ -3686,7 +3686,7 @@
                 _tmp_2 = value;
             }
             NEXTOPARG();
-            next_instr++;
+            JUMPBY(1);
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
@@ -3724,9 +3724,9 @@
                 jump = sign_ish & when_to_jump_mask;
                 _tmp_2 = (PyObject *)jump;
             }
-            next_instr += 2;
+            JUMPBY(2);
             NEXTOPARG();
-            next_instr++;
+            JUMPBY(1);
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
@@ -3763,9 +3763,9 @@
                 jump = sign_ish & when_to_jump_mask;
                 _tmp_2 = (PyObject *)jump;
             }
-            next_instr += 2;
+            JUMPBY(2);
             NEXTOPARG();
-            next_instr++;
+            JUMPBY(1);
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
@@ -3799,9 +3799,9 @@
                 jump = res ^ invert;
                 _tmp_2 = (PyObject *)jump;
             }
-            next_instr += 2;
+            JUMPBY(2);
             NEXTOPARG();
-            next_instr++;
+            JUMPBY(1);
             {
                 size_t jump = (size_t)_tmp_2;
                 assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
