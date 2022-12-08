@@ -303,12 +303,8 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ## global non-objects to fix in core code
 
 ##-----------------------
-## effectively-const but initialized lazily
-
-##-----------------------
 ## state
 
-## other
 Objects/object.c	-	_Py_RefTotal	-
 Python/thread_pthread_stubs.h	-	py_tls_entries	-
 
@@ -367,9 +363,8 @@ Modules/itertoolsmodule.c	-	teedataobject_type	-
 Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 ##-----------------------
-## other
-
 ## state
+
 Modules/faulthandler.c	-	fatal_error	-
 Modules/faulthandler.c	-	thread	-
 Modules/faulthandler.c	-	user_signals	-
