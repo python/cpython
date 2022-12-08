@@ -868,6 +868,7 @@ SYMBOL_NAMES = (
     "_PyWeakref_RefType",
     "_Py_BuildValue_SizeT",
     "_Py_CheckRecursiveCall",
+    "_Py_Clear",
     "_Py_Dealloc",
     "_Py_DecRef",
     "_Py_EllipsisObject",

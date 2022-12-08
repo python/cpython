@@ -16,6 +16,7 @@
 
 EXPORT_FUNC(_Py_BuildValue_SizeT)
 EXPORT_FUNC(_Py_CheckRecursiveCall)
+EXPORT_FUNC(_Py_Clear)
 EXPORT_FUNC(_Py_Dealloc)
 EXPORT_FUNC(_Py_DecRef)
 EXPORT_FUNC(_Py_IncRef)

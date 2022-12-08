@@ -2386,3 +2386,7 @@
     added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
 [const.Py_AUDIT_READ]
     added = '3.12'  # Before 3.12, available in "structmember.h"
+
+[function._Py_Clear]
+    added = '3.12'
+    abi_only = true

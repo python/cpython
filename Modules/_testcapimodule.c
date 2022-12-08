@@ -2593,27 +2593,53 @@ test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject*
 test_py_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    // simple case with a variable
-    PyObject *obj = PyList_New(0);
-    if (obj == NULL) {
+    PyObject *list = PyList_New(0);
+    if (list == NULL) {
         return NULL;
     }
+    assert(Py_REFCNT(list) == 1);
+
+    // simple case with a variable
+    PyObject *obj = Py_NewRef(list);
+    if (obj == NULL) {
+        goto error;
+    }
+    assert(Py_REFCNT(list) == 2);
     Py_CLEAR(obj);
+    assert(Py_REFCNT(list) == 1);
     assert(obj == NULL);
+
+    // test _Py_Clear() used by the limited C API
+    PyObject *obj2 = Py_NewRef(list);
+    if (obj2 == NULL) {
+        goto error;
+    }
+    assert(Py_REFCNT(list) == 2);
+    _Py_Clear(&obj2);
+    assert(Py_REFCNT(list) == 1);
+    assert(obj2 == NULL);
 
     // gh-98724: complex case, Py_CLEAR() argument has a side effect
     PyObject* array[1];
-    array[0] = PyList_New(0);
+    array[0] = Py_NewRef(list);
     if (array[0] == NULL) {
-        return NULL;
+        goto error;
     }
 
     PyObject **p = array;
+    assert(Py_REFCNT(list) == 2);
     Py_CLEAR(*p++);
+    assert(Py_REFCNT(list) == 1);
     assert(array[0] == NULL);
     assert(p == array + 1);
 
+    assert(Py_REFCNT(list) == 1);
+    Py_DECREF(list);
     Py_RETURN_NONE;
+
+error:
+    Py_DECREF(list);
+    return NULL;
 }
 
 

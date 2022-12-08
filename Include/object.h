@@ -612,7 +612,13 @@ static inline void Py_DECREF(PyObject *op)
  * and so avoid type punning. Otherwise, use memcpy() which causes type erasure
  * and so prevents the compiler to reuse an old cached 'op' value after
  * Py_CLEAR().
+ *
+ * If _Py_TYPEOF() is not available, the limited C API implementation uses a
+ * function call to hide implementation details. The function uses memcpy() of
+ * <string.h> which is not included by <Python.h>.
  */
+PyAPI_FUNC(void) _Py_Clear(PyObject **pobj);
+
 #ifdef _Py_TYPEOF
 #define Py_CLEAR(op) \
     do { \
@@ -623,6 +629,8 @@ static inline void Py_DECREF(PyObject *op)
             Py_DECREF(_tmp_old_op); \
         } \
     } while (0)
+#elif defined(Py_LIMITED_API)
+#define Py_CLEAR(op) _Py_Clear(_Py_CAST(PyObject**, &(op)))
 #else
 #define Py_CLEAR(op) \
     do { \

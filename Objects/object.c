@@ -2446,6 +2446,23 @@ int Py_IsFalse(PyObject *x)
     return Py_Is(x, Py_False);
 }
 
+void _Py_Clear(PyObject **pobj)
+{
+    PyObject *old_obj = *pobj;
+    if (old_obj == NULL) {
+        return;
+    }
+
+    // gh-99701: In the limited C API, the Py_CLEAR(obj) macro has a type
+    // punning issue, it casts '&obj' to PyObject** to call _Py_Clear(). Use
+    // memcpy() instead of a simple assignment to cause type erasure and so
+    // prevent the compiler to reuse an old cached 'obj' value after
+    // Py_CLEAR().
+    PyObject *null_ptr = NULL;
+    memcpy(pobj, &null_ptr, sizeof(PyObject*));
+    Py_DECREF(old_obj);
+}
+
 #ifdef __cplusplus
 }
 #endif
