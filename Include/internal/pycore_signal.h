@@ -13,10 +13,6 @@ extern "C" {
 #include "pycore_atomic.h"          // _Py_atomic_address
 
 #ifdef MS_WINDOWS
-#  include "socketmodule.h"         // SOCKET_T
-#endif
-
-#ifdef MS_WINDOWS
 #  include <windows.h>              // HANDLE
 #endif
 #ifdef HAVE_SIGNAL_H
@@ -58,7 +54,7 @@ struct _signals_runtime_state {
 
     volatile struct {
 #ifdef MS_WINDOWS
-        SOCKET_T fd;
+        SOCKET fd;
 #elif defined(__VXWORKS__)
         int fd;
 #else
