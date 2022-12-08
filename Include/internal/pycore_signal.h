@@ -10,8 +10,19 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <signal.h>                 // NSIG
 #include "pycore_atomic.h"          // _Py_atomic_address
+
+#ifdef MS_WINDOWS
+#  include "socketmodule.h"         // SOCKET_T
+#endif
+
+#ifdef MS_WINDOWS
+#  include <windows.h>              // HANDLE
+#endif
+#ifdef HAVE_SIGNAL_H
+#  include <signal.h>               // NSIG
+#endif
+
 
 #ifdef _SIG_MAXSIG
    // gh-91145: On FreeBSD, <signal.h> defines NSIG as 32: it doesn't include
@@ -21,19 +32,19 @@ extern "C" {
 #elif defined(NSIG)
 #  define Py_NSIG NSIG
 #elif defined(_NSIG)
-#  define Py_NSIG _NSIG            // BSD/SysV
+#  define Py_NSIG _NSIG             // BSD/SysV
 #elif defined(_SIGMAX)
-#  define Py_NSIG (_SIGMAX + 1)    // QNX
+#  define Py_NSIG (_SIGMAX + 1)     // QNX
 #elif defined(SIGMAX)
-#  define Py_NSIG (SIGMAX + 1)     // djgpp
+#  define Py_NSIG (SIGMAX + 1)      // djgpp
 #else
-#  define Py_NSIG 64               // Use a reasonable default value
+#  define Py_NSIG 64                // Use a reasonable default value
 #endif
 
 #ifdef MS_WINDOWS
-# define INVALID_FD ((SOCKET_T)-1)
+#  define INVALID_FD ((SOCKET_T)-1)
 #else
-# define INVALID_FD (-1)
+#  define INVALID_FD (-1)
 #endif
 
 struct _signals_runtime_state {
