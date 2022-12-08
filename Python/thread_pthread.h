@@ -197,10 +197,16 @@ typedef struct {
 static void
 PyThread__init_thread(void)
 {
+    // The library is only initialized once in the process,
+    // regardless of how many times the Python runtime is initialized.
+    static int lib_initialized = 0;
+    if (!lib_initialized) {
+        lib_initialized = 1;
 #if defined(_AIX) && defined(__GNUC__)
-    extern void pthread_init(void);
-    pthread_init();
+        extern void pthread_init(void);
+        pthread_init();
 #endif
+    }
     init_condattr();
 }
 
