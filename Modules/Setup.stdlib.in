@@ -169,12 +169,14 @@
 @MODULE__XXTESTFUZZ_TRUE@_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 @MODULE__TESTBUFFER_TRUE@_testbuffer _testbuffer.c
 @MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c
-@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c _testcapi/vectorcall_limited.c _testcapi/heaptype.c _testcapi/unicode.c
+@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c _testcapi/vectorcall_limited.c _testcapi/heaptype.c _testcapi/unicode.c _testcapi/getargs.c _testcapi/pytime.c _testcapi/datetime.c _testcapi/docstring.c _testcapi/mem.c _testcapi/watchers.c _testcapi/long.c _testcapi/float.c _testcapi/structmember.c
+@MODULE__TESTCLINIC_TRUE@_testclinic _testclinic.c
 
 # Some testing modules MUST be built as shared libraries.
 *shared*
 @MODULE__TESTIMPORTMULTIPLE_TRUE@_testimportmultiple _testimportmultiple.c
 @MODULE__TESTMULTIPHASE_TRUE@_testmultiphase _testmultiphase.c
+@MODULE__TESTMULTIPHASE_TRUE@_testsinglephase _testsinglephase.c
 @MODULE__CTYPES_TEST_TRUE@_ctypes_test _ctypes/_ctypes_test.c
 
 # Limited API template modules; must be built as shared modules.

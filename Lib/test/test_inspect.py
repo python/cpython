@@ -886,6 +886,12 @@ class TestNoEOL(GetSourceBase):
         self.assertSourceEqual(self.fodderModule.X, 1, 2)
 
 
+class TestComplexDecorator(GetSourceBase):
+    fodderModule = mod2
+
+    def test_parens_in_decorator(self):
+        self.assertSourceEqual(self.fodderModule.complex_decorated, 273, 275)
+
 class _BrokenDataDescriptor(object):
     """
     A broken data descriptor. See bug #1785.
@@ -2960,8 +2966,6 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(str(inspect.signature(foo)), '(a)')
 
     def test_signature_on_decorated(self):
-        import functools
-
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs) -> int:
@@ -2972,6 +2976,8 @@ class TestSignatureObject(unittest.TestCase):
             @decorator
             def bar(self, a, b):
                 pass
+
+        bar = decorator(Foo().bar)
 
         self.assertEqual(self.signature(Foo.bar),
                          ((('self', ..., ..., "positional_or_keyword"),
@@ -2990,6 +2996,11 @@ class TestSignatureObject(unittest.TestCase):
                           ...)) # functools.wraps will copy __annotations__
                                 # from "func" to "wrapper", hence no
                                 # return_annotation
+
+        self.assertEqual(self.signature(bar),
+                         ((('a', ..., ..., "positional_or_keyword"),
+                           ('b', ..., ..., "positional_or_keyword")),
+                          ...))
 
         # Test that we handle method wrappers correctly
         def decorator(func):

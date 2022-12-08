@@ -135,7 +135,7 @@ typedef struct {
         unsigned int ascii:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k). */
-        unsigned int :25;
+        unsigned int :26;
     } state;
 } PyASCIIObject;
 
@@ -231,9 +231,7 @@ enum PyUnicode_Kind {
 // new compiler warnings on "kind < PyUnicode_KIND(str)" (compare signed and
 // unsigned numbers) where kind type is an int or on
 // "unsigned int kind = PyUnicode_KIND(str)" (cast signed to unsigned).
-// Only declare the function as static inline function in the limited C API
-// version 3.12 which is stricter.
-#define PyUnicode_KIND(op) (_PyASCIIObject_CAST(op)->state.kind)
+#define PyUnicode_KIND(op) _Py_RVALUE(_PyASCIIObject_CAST(op)->state.kind)
 
 /* Return a void pointer to the raw unicode buffer. */
 static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {

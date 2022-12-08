@@ -346,7 +346,7 @@ class TraceTestCase(unittest.TestCase):
         return Tracer()
 
     def compare_events(self, line_offset, events, expected_events):
-        events = [(l - line_offset, e) for (l, e) in events]
+        events = [(l - line_offset if l is not None else None, e) for (l, e) in events]
         if events != expected_events:
             self.fail(
                 "events did not match expectation:\n" +

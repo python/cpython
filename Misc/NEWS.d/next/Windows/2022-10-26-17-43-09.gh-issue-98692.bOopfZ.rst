@@ -1,2 +1,0 @@
-Fix the :ref:`launcher` ignoring unrecognized shebang lines instead of
-treating them as local paths

@@ -246,8 +246,8 @@ _PyPegen_fill_token(Parser *p)
 // The array counts the number of tokens skipped by memoization,
 // indexed by type.
 
-#define NSTATISTICS 2000
-static long memo_statistics[NSTATISTICS];
+#define NSTATISTICS _PYPEGEN_NSTATISTICS
+#define memo_statistics _PyRuntime.parser.memo_statistics
 
 void
 _PyPegen_clear_memo_statistics()
@@ -885,8 +885,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
         tok->fp_interactive = 1;
     }
     // This transfers the ownership to the tokenizer
-    tok->filename = filename_ob;
-    Py_INCREF(filename_ob);
+    tok->filename = Py_NewRef(filename_ob);
 
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
@@ -925,8 +924,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
         return NULL;
     }
     // This transfers the ownership to the tokenizer
-    tok->filename = filename_ob;
-    Py_INCREF(filename_ob);
+    tok->filename = Py_NewRef(filename_ob);
 
     // We need to clear up from here on
     mod_ty result = NULL;

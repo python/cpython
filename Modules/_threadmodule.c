@@ -135,7 +135,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     *timeout = unset_timeout ;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO:acquire", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO:acquire", kwlist,
                                      &blocking, &timeout_obj))
         return -1;
 
@@ -1145,6 +1145,11 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
+    if (PySys_Audit("_thread.start_new_thread", "OOO",
+                    func, args, kwargs ? kwargs : Py_None) < 0) {
+        return NULL;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1160,7 +1165,10 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     boot->tstate = _PyThreadState_Prealloc(boot->interp);
     if (boot->tstate == NULL) {
         PyMem_Free(boot);
-        return PyErr_NoMemory();
+        if (!PyErr_Occurred()) {
+            return PyErr_NoMemory();
+        }
+        return NULL;
     }
     boot->runtime = runtime;
     boot->func = Py_NewRef(func);

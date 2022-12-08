@@ -10,7 +10,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
@@ -141,10 +140,6 @@ static PyTypeObject PyDateTime_TimeZoneType;
 
 static int check_tzinfo_subclass(PyObject *p);
 
-_Py_IDENTIFIER(as_integer_ratio);
-_Py_IDENTIFIER(fromutc);
-_Py_IDENTIFIER(isoformat);
-_Py_IDENTIFIER(strftime);
 
 /* ---------------------------------------------------------------------------
  * Math utilities.
@@ -194,8 +189,7 @@ divide_nearest(PyObject *m, PyObject *n)
     temp = _PyLong_DivmodNear(m, n);
     if (temp == NULL)
         return NULL;
-    result = PyTuple_GET_ITEM(temp, 0);
-    Py_INCREF(result);
+    result = Py_NewRef(PyTuple_GET_ITEM(temp, 0));
     Py_DECREF(temp);
 
     return result;
@@ -1010,8 +1004,7 @@ new_datetime_ex2(int year, int month, int day, int hour, int minute,
         DATE_SET_SECOND(self, second);
         DATE_SET_MICROSECOND(self, usecond);
         if (aware) {
-            Py_INCREF(tzinfo);
-            self->tzinfo = tzinfo;
+            self->tzinfo = Py_NewRef(tzinfo);
         }
         DATE_SET_FOLD(self, fold);
     }
@@ -1088,8 +1081,7 @@ new_time_ex2(int hour, int minute, int second, int usecond,
         TIME_SET_SECOND(self, second);
         TIME_SET_MICROSECOND(self, usecond);
         if (aware) {
-            Py_INCREF(tzinfo);
-            self->tzinfo = tzinfo;
+            self->tzinfo = Py_NewRef(tzinfo);
         }
         TIME_SET_FOLD(self, fold);
     }
@@ -1170,10 +1162,8 @@ create_timezone(PyObject *offset, PyObject *name)
     if (self == NULL) {
         return NULL;
     }
-    Py_INCREF(offset);
-    self->offset = offset;
-    Py_XINCREF(name);
-    self->name = name;
+    self->offset = Py_NewRef(offset);
+    self->name = Py_XNewRef(name);
     return (PyObject *)self;
 }
 
@@ -1187,8 +1177,7 @@ new_timezone(PyObject *offset, PyObject *name)
     assert(name == NULL || PyUnicode_Check(name));
 
     if (name == NULL && delta_bool((PyDateTime_Delta *)offset) == 0) {
-        Py_INCREF(PyDateTime_TimeZone_UTC);
-        return PyDateTime_TimeZone_UTC;
+        return Py_NewRef(PyDateTime_TimeZone_UTC);
     }
     if ((GET_TD_DAYS(offset) == -1 &&
             GET_TD_SECONDS(offset) == 0 &&
@@ -1323,8 +1312,6 @@ static PyObject *
 call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
 {
     PyObject *result;
-    _Py_IDENTIFIER(tzname);
-
     assert(tzinfo != NULL);
     assert(check_tzinfo_subclass(tzinfo) >= 0);
     assert(tzinfoarg != NULL);
@@ -1332,7 +1319,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
     if (tzinfo == Py_None)
         Py_RETURN_NONE;
 
-    result = _PyObject_CallMethodIdOneArg(tzinfo, &PyId_tzname, tzinfoarg);
+    result = PyObject_CallMethodOneArg(tzinfo, &_Py_ID(tzname), tzinfoarg);
 
     if (result == NULL || result == Py_None)
         return result;
@@ -1341,8 +1328,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
         PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
                      "return None or a string, not '%s'",
                      Py_TYPE(result)->tp_name);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
     }
 
     return result;
@@ -1404,8 +1390,7 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
     if (rv == 1) {
         // Create a timezone from offset in seconds (0 returns UTC)
         if (tzoffset == 0) {
-            Py_INCREF(PyDateTime_TimeZone_UTC);
-            return PyDateTime_TimeZone_UTC;
+            return Py_NewRef(PyDateTime_TimeZone_UTC);
         }
 
         PyObject *delta = new_delta(0, tzoffset, tz_useconds, 1);
@@ -1416,8 +1401,7 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
         Py_DECREF(delta);
     }
     else {
-        tzinfo = Py_None;
-        Py_INCREF(Py_None);
+        tzinfo = Py_NewRef(Py_None);
     }
 
     return tzinfo;
@@ -1515,7 +1499,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
     if (tzinfo == Py_None || tzinfo == NULL) {
         return PyBytes_FromStringAndSize(NULL, 0);
     }
-   
+
     assert(tzinfoarg != NULL);
     if (format_utcoffset(buf,
                          sizeof(buf),
@@ -1523,7 +1507,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
                          tzinfo,
                          tzinfoarg) < 0)
         return NULL;
-        
+
     return PyBytes_FromStringAndSize(buf, strlen(buf));
 }
 
@@ -1533,7 +1517,6 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
     PyObject *temp;
     PyObject *tzinfo = get_tzinfo_member(object);
     PyObject *Zreplacement = PyUnicode_FromStringAndSize(NULL, 0);
-    _Py_IDENTIFIER(replace);
 
     if (Zreplacement == NULL)
         return NULL;
@@ -1555,7 +1538,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
      * strftime doesn't treat them as format codes.
      */
     Py_DECREF(Zreplacement);
-    Zreplacement = _PyObject_CallMethodId(temp, &PyId_replace, "ss", "%", "%%");
+    Zreplacement = PyObject_CallMethod(temp, "replace", "ss", "%", "%%");
     Py_DECREF(temp);
     if (Zreplacement == NULL)
         return NULL;
@@ -1865,8 +1848,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x2 = PyNumber_Multiply(x1, seconds_per_day);        /* days in seconds */
     if (x2 == NULL)
         goto Done;
-    Py_DECREF(x1);
-    x1 = NULL;
+    Py_SETREF(x1, NULL);
 
     /* x2 has days in seconds */
     x1 = PyLong_FromLong(GET_TD_SECONDS(self));         /* seconds */
@@ -1883,8 +1865,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x1 = PyNumber_Multiply(x3, us_per_second);          /* us */
     if (x1 == NULL)
         goto Done;
-    Py_DECREF(x3);
-    x3 = NULL;
+    Py_SETREF(x3, NULL);
 
     /* x1 has days+seconds in us */
     x2 = PyLong_FromLong(GET_TD_MICROSECONDS(self));
@@ -1951,8 +1932,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
         goto BadDivmod;
     }
 
-    num = PyTuple_GET_ITEM(tuple, 0);           /* leftover seconds */
-    Py_INCREF(num);
+    num = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));        /* leftover seconds */
     Py_DECREF(tuple);
 
     tuple = checked_divmod(num, seconds_per_day);
@@ -1970,8 +1950,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
         goto BadDivmod;
     }
 
-    num = PyTuple_GET_ITEM(tuple, 0);           /* leftover days */
-    Py_INCREF(num);
+    num = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));           /* leftover days */
     d = _PyLong_AsInt(num);
     if (d == -1 && PyErr_Occurred()) {
         goto Done;
@@ -2019,7 +1998,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
     PyObject *ratio;
 
     assert(floatobj && PyFloat_Check(floatobj));
-    ratio = _PyObject_CallMethodIdNoArgs(floatobj, &PyId_as_integer_ratio);
+    ratio = PyObject_CallMethodNoArgs(floatobj, &_Py_ID(as_integer_ratio));
     if (ratio == NULL) {
         return NULL;
     }
@@ -2056,8 +2035,7 @@ multiply_truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *floatobj,
         goto error;
     }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, op));
-    Py_DECREF(pyus_in);
-    pyus_in = NULL;
+    Py_SETREF(pyus_in, NULL);
     if (temp == NULL)
         goto error;
     pyus_out = divide_nearest(temp, PyTuple_GET_ITEM(ratio, !op));
@@ -2982,8 +2960,6 @@ date_today(PyObject *cls, PyObject *dummy)
 {
     PyObject *time;
     PyObject *result;
-    _Py_IDENTIFIER(fromtimestamp);
-
     time = time_time();
     if (time == NULL)
         return NULL;
@@ -2994,7 +2970,7 @@ date_today(PyObject *cls, PyObject *dummy)
      * time.time() delivers; if someone were gonzo about optimization,
      * date.today() could get away with plain C time().
      */
-    result = _PyObject_CallMethodIdOneArg(cls, &PyId_fromtimestamp, time);
+    result = PyObject_CallMethodOneArg(cls, &_Py_ID(fromtimestamp), time);
     Py_DECREF(time);
     return result;
 }
@@ -3245,7 +3221,7 @@ date_isoformat(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 date_str(PyDateTime_Date *self)
 {
-    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
+    return PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(isoformat));
 }
 
 
@@ -3264,14 +3240,13 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
     PyObject *result;
     PyObject *tuple;
     PyObject *format;
-    _Py_IDENTIFIER(timetuple);
     static char *keywords[] = {"format", NULL};
 
     if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
                                       &format))
         return NULL;
 
-    tuple = _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_timetuple);
+    tuple = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(timetuple));
     if (tuple == NULL)
         return NULL;
     result = wrap_strftime((PyObject *)self, format, tuple,
@@ -3292,7 +3267,7 @@ date_format(PyDateTime_Date *self, PyObject *args)
     if (PyUnicode_GetLength(format) == 0)
         return PyObject_Str((PyObject *)self);
 
-    return _PyObject_CallMethodIdOneArg((PyObject *)self, &PyId_strftime,
+    return PyObject_CallMethodOneArg((PyObject *)self, &_Py_ID(strftime),
                                         format);
 }
 
@@ -3357,8 +3332,7 @@ iso_calendar_date_year(PyDateTime_IsoCalendarDate *self, void *unused)
     if (year == NULL) {
         return NULL;
     }
-    Py_INCREF(year);
-    return year;
+    return Py_NewRef(year);
 }
 
 static PyObject *
@@ -3368,8 +3342,7 @@ iso_calendar_date_week(PyDateTime_IsoCalendarDate *self, void *unused)
     if (week == NULL) {
         return NULL;
     }
-    Py_INCREF(week);
-    return week;
+    return Py_NewRef(week);
 }
 
 static PyObject *
@@ -3379,8 +3352,7 @@ iso_calendar_date_weekday(PyDateTime_IsoCalendarDate *self, void *unused)
     if (weekday == NULL) {
         return NULL;
     }
-    Py_INCREF(weekday);
-    return weekday;
+    return Py_NewRef(weekday);
 }
 
 static PyGetSetDef iso_calendar_date_getset[] = {
@@ -3821,9 +3793,8 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args, *state;
     PyObject *getinitargs;
-    _Py_IDENTIFIER(__getinitargs__);
 
-    if (_PyObject_LookupAttrId(self, &PyId___getinitargs__, &getinitargs) < 0) {
+    if (_PyObject_LookupAttr(self, &_Py_ID(__getinitargs__), &getinitargs) < 0) {
         return NULL;
     }
     if (getinitargs != NULL) {
@@ -3992,8 +3963,7 @@ timezone_str(PyDateTime_TimeZone *self)
     char sign;
 
     if (self->name != NULL) {
-        Py_INCREF(self->name);
-        return self->name;
+        return Py_NewRef(self->name);
     }
     if ((PyObject *)self == PyDateTime_TimeZone_UTC ||
            (GET_TD_DAYS(self->offset) == 0 &&
@@ -4009,8 +3979,7 @@ timezone_str(PyDateTime_TimeZone *self)
     }
     else {
         sign = '+';
-        offset = self->offset;
-        Py_INCREF(offset);
+        offset = Py_NewRef(self->offset);
     }
     /* Offset is not negative here. */
     microseconds = GET_TD_MICROSECONDS(offset);
@@ -4045,8 +4014,7 @@ timezone_utcoffset(PyDateTime_TimeZone *self, PyObject *dt)
     if (_timezone_check_argument(dt, "utcoffset") == -1)
         return NULL;
 
-    Py_INCREF(self->offset);
-    return self->offset;
+    return Py_NewRef(self->offset);
 }
 
 static PyObject *
@@ -4183,8 +4151,7 @@ static PyObject *
 time_tzinfo(PyDateTime_Time *self, void *unused)
 {
     PyObject *result = HASTZINFO(self) ? self->tzinfo : Py_None;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 static PyObject *
@@ -4229,8 +4196,7 @@ time_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
         me->hashcode = -1;
         me->hastzinfo = aware;
         if (aware) {
-            Py_INCREF(tzinfo);
-            me->tzinfo = tzinfo;
+            me->tzinfo = Py_NewRef(tzinfo);
         }
         if (pdata[0] & (1 << 7)) {
             me->data[0] -= 128;
@@ -4368,7 +4334,7 @@ time_repr(PyDateTime_Time *self)
 static PyObject *
 time_str(PyDateTime_Time *self)
 {
-    return _PyObject_CallMethodIdNoArgs((PyObject *)self, &PyId_isoformat);
+    return PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(isoformat));
 }
 
 static PyObject *
@@ -4526,12 +4492,10 @@ time_richcompare(PyObject *self, PyObject *other, int op)
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {
-        result = Py_False;
-        Py_INCREF(result);
+        result = Py_NewRef(Py_False);
     }
     else if (op == Py_NE) {
-        result = Py_True;
-        Py_INCREF(result);
+        result = Py_NewRef(Py_True);
     }
     else {
         PyErr_SetString(PyExc_TypeError,
@@ -4560,8 +4524,7 @@ time_hash(PyDateTime_Time *self)
                 return -1;
         }
         else {
-            self0 = (PyObject *)self;
-            Py_INCREF(self0);
+            self0 = Py_NewRef(self);
         }
         offset = time_utcoffset(self0, NULL);
         Py_DECREF(self0);
@@ -4858,8 +4821,7 @@ static PyObject *
 datetime_tzinfo(PyDateTime_DateTime *self, void *unused)
 {
     PyObject *result = HASTZINFO(self) ? self->tzinfo : Py_None;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 static PyObject *
@@ -4906,8 +4868,7 @@ datetime_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
         me->hashcode = -1;
         me->hastzinfo = aware;
         if (aware) {
-            Py_INCREF(tzinfo);
-            me->tzinfo = tzinfo;
+            me->tzinfo = Py_NewRef(tzinfo);
         }
         if (pdata[2] & (1 << 7)) {
             me->data[2] -= 128;
@@ -5170,7 +5131,9 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
                                   tz);
     if (self != NULL && tz != Py_None) {
         /* Convert UTC to tzinfo's zone. */
-        self = _PyObject_CallMethodId(tz, &PyId_fromutc, "N", self);
+        PyObject *res = PyObject_CallMethodOneArg(tz, &_Py_ID(fromutc), self);
+        Py_DECREF(self);
+        return res;
     }
     return self;
 }
@@ -5206,7 +5169,9 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
                                    tzinfo);
     if (self != NULL && tzinfo != Py_None) {
         /* Convert UTC to tzinfo's zone. */
-        self = _PyObject_CallMethodId(tzinfo, &PyId_fromutc, "N", self);
+        PyObject *res = PyObject_CallMethodOneArg(tzinfo, &_Py_ID(fromutc), self);
+        Py_DECREF(self);
+        return res;
     }
     return self;
 }
@@ -5230,7 +5195,6 @@ datetime_strptime(PyObject *cls, PyObject *args)
 {
     static PyObject *module = NULL;
     PyObject *string, *format;
-    _Py_IDENTIFIER(_strptime_datetime);
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
@@ -5240,7 +5204,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
         if (module == NULL)
             return NULL;
     }
-    return _PyObject_CallMethodIdObjArgs(module, &PyId__strptime_datetime,
+    return PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
                                          cls, string, format, NULL);
 }
 
@@ -5316,8 +5280,7 @@ _sanitize_isoformat_str(PyObject *dtstr)
     }
 
     if (surrogate_separator == 0) {
-        Py_INCREF(dtstr);
-        return dtstr;
+        return Py_NewRef(dtstr);
     }
 
     PyObject *str_out = _PyUnicode_Copy(dtstr);
@@ -5631,9 +5594,8 @@ datetime_subtract(PyObject *left, PyObject *right)
             int delta_d, delta_s, delta_us;
 
             if (GET_DT_TZINFO(left) == GET_DT_TZINFO(right)) {
-                offset2 = offset1 = Py_None;
-                Py_INCREF(offset1);
-                Py_INCREF(offset2);
+                offset1 = Py_NewRef(Py_None);
+                offset2 = Py_NewRef(Py_None);
             }
             else {
                 offset1 = datetime_utcoffset(left, NULL);
@@ -5747,7 +5709,14 @@ datetime_repr(PyDateTime_DateTime *self)
 static PyObject *
 datetime_str(PyDateTime_DateTime *self)
 {
-    return _PyObject_CallMethodId((PyObject *)self, &PyId_isoformat, "s", " ");
+    PyObject *space = PyUnicode_FromString(" ");
+    if (space == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyObject_CallMethodOneArg((PyObject *)self,
+                            &_Py_ID(isoformat), space);
+    Py_DECREF(space);
+    return res;
 }
 
 static PyObject *
@@ -5971,12 +5940,10 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {
-        result = Py_False;
-        Py_INCREF(result);
+        result = Py_NewRef(Py_False);
     }
     else if (op == Py_NE) {
-        result = Py_True;
-        Py_INCREF(result);
+        result = Py_NewRef(Py_True);
     }
     else {
         PyErr_SetString(PyExc_TypeError,
@@ -6008,8 +5975,7 @@ datetime_hash(PyDateTime_DateTime *self)
                 return -1;
         }
         else {
-            self0 = (PyObject *)self;
-            Py_INCREF(self0);
+            self0 = Py_NewRef(self);
         }
         offset = datetime_utcoffset(self0, NULL);
         Py_DECREF(self0);
@@ -6226,15 +6192,13 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
         if (self_tzinfo == NULL)
             return NULL;
     } else {
-        self_tzinfo = self->tzinfo;
-        Py_INCREF(self_tzinfo);
+        self_tzinfo = Py_NewRef(self->tzinfo);
     }
 
     /* Conversion to self's own time zone is a NOP. */
     if (self_tzinfo == tzinfo) {
         Py_DECREF(self_tzinfo);
-        Py_INCREF(self);
-        return self;
+        return (PyDateTime_DateTime*)Py_NewRef(self);
     }
 
     /* Convert self to UTC. */
@@ -6279,14 +6243,10 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
     else {
         /* Result is already aware - just replace tzinfo. */
-        temp = result->tzinfo;
-        result->tzinfo = PyDateTime_TimeZone_UTC;
-        Py_INCREF(result->tzinfo);
-        Py_DECREF(temp);
+        Py_SETREF(result->tzinfo, Py_NewRef(PyDateTime_TimeZone_UTC));
     }
 
     /* Attach new tzinfo and let fromutc() do the rest. */
-    temp = result->tzinfo;
     if (tzinfo == Py_None) {
         tzinfo = local_timezone(result);
         if (tzinfo == NULL) {
@@ -6296,12 +6256,11 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     }
     else
       Py_INCREF(tzinfo);
-    result->tzinfo = tzinfo;
-    Py_DECREF(temp);
+    Py_SETREF(result->tzinfo, tzinfo);
 
     temp = (PyObject *)result;
     result = (PyDateTime_DateTime *)
-        _PyObject_CallMethodIdOneArg(tzinfo, &PyId_fromutc, temp);
+        PyObject_CallMethodOneArg(tzinfo, &_Py_ID(fromutc), temp);
     Py_DECREF(temp);
 
     return result;
@@ -6451,8 +6410,7 @@ datetime_utctimetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 
     tzinfo = GET_DT_TZINFO(self);
     if (tzinfo == Py_None) {
-        utcself = self;
-        Py_INCREF(utcself);
+        utcself = (PyDateTime_DateTime*)Py_NewRef(self);
     }
     else {
         PyObject *offset;
@@ -6461,8 +6419,7 @@ datetime_utctimetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
             return NULL;
         if (offset == Py_None) {
             Py_DECREF(offset);
-            utcself = self;
-            Py_INCREF(utcself);
+            utcself = (PyDateTime_DateTime*)Py_NewRef(self);
         }
         else {
             utcself = (PyDateTime_DateTime *)add_datetime_timedelta(self,

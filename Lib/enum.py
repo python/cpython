@@ -114,9 +114,12 @@ def _make_class_unpicklable(obj):
         setattr(obj, '__module__', '<unknown>')
 
 def _iter_bits_lsb(num):
-    # num must be an integer
+    # num must be a positive integer
+    original = num
     if isinstance(num, Enum):
         num = num.value
+    if num < 0:
+        raise ValueError('%r is not a positive integer' % original)
     while num:
         b = num & (~num + 1)
         yield b
@@ -171,7 +174,8 @@ class auto:
     """
     Instances are replaced with an appropriate value in Enum class suites.
     """
-    value = _auto_null
+    def __init__(self, value=_auto_null):
+        self.value = value
 
     def __repr__(self):
         return "auto(%r)" % self.value
@@ -416,7 +420,7 @@ class _EnumDict(dict):
             value = value.value
         elif _is_descriptor(value):
             pass
-        # TODO: uncomment next three lines in 3.12
+        # TODO: uncomment next three lines in 3.13
         # elif _is_internal_class(self._cls_name, value):
         #     # do nothing, name will be a normal attribute
         #     pass
@@ -427,15 +431,33 @@ class _EnumDict(dict):
             elif isinstance(value, member):
                 # unwrap value here -- it will become a member
                 value = value.value
+            non_auto_store = True
+            single = False
             if isinstance(value, auto):
-                if value.value == _auto_null:
-                    value.value = self._generate_next_value(
-                            key, 1, len(self._member_names), self._last_values[:],
-                            )
-                    self._auto_called = True
-                value = value.value
+                single = True
+                value = (value, )
+            if type(value) is tuple and any(isinstance(v, auto) for v in value):
+                # insist on an actual tuple, no subclasses, in keeping with only supporting
+                # top-level auto() usage (not contained in any other data structure)
+                auto_valued = []
+                for v in value:
+                    if isinstance(v, auto):
+                        non_auto_store = False
+                        if v.value == _auto_null:
+                            v.value = self._generate_next_value(
+                                    key, 1, len(self._member_names), self._last_values[:],
+                                    )
+                            self._auto_called = True
+                        v = v.value
+                        self._last_values.append(v)
+                    auto_valued.append(v)
+                if single:
+                    value = auto_valued[0]
+                else:
+                    value = tuple(auto_valued)
             self._member_names[key] = None
-            self._last_values.append(value)
+            if non_auto_store:
+                self._last_values.append(value)
         super().__setitem__(key, value)
 
     def update(self, members, **more_members):
@@ -672,13 +694,15 @@ class EnumType(type):
         """
         return True
 
-    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None):
+    def __call__(cls, value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None):
         """
         Either returns an existing member, or creates a new enum class.
 
         This method is used both when an enum class is given a value to match
         to an enumeration member (i.e. Color(3)) and for the functional API
         (i.e. Color = Enum('Color', names='RED GREEN BLUE')).
+
+        The value lookup branch is chosen if the enum is final.
 
         When used for the functional API:
 
@@ -697,12 +721,15 @@ class EnumType(type):
 
         `type`, if set, will be mixed in as the first base class.
         """
-        if names is None:  # simple value lookup
+        if cls._member_map_:
+            # simple value lookup if members exist
+            if names:
+                value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
         return cls._create_(
-                value,
-                names,
+                class_name=value,
+                names=names,
                 module=module,
                 qualname=qualname,
                 type=type,
@@ -930,7 +957,15 @@ class EnumType(type):
                     return base._value_repr_
                 elif '__repr__' in base.__dict__:
                     # this is our data repr
-                    return base.__dict__['__repr__']
+                    # double-check if a dataclass with a default __repr__
+                    if (
+                            '__dataclass_fields__' in base.__dict__
+                            and '__dataclass_params__' in base.__dict__
+                            and base.__dict__['__dataclass_params__'].repr
+                        ):
+                        return _dataclass_repr
+                    else:
+                        return base.__dict__['__repr__']
         return None
 
     @classmethod
@@ -1021,20 +1056,20 @@ class Enum(metaclass=EnumType):
 
     Access them by:
 
-    - attribute access::
+    - attribute access:
 
-    >>> Color.RED
-    <Color.RED: 1>
+      >>> Color.RED
+      <Color.RED: 1>
 
     - value lookup:
 
-    >>> Color(1)
-    <Color.RED: 1>
+      >>> Color(1)
+      <Color.RED: 1>
 
     - name lookup:
 
-    >>> Color['RED']
-    <Color.RED: 1>
+      >>> Color['RED']
+      <Color.RED: 1>
 
     Enumerations can be iterated over, and know how many members they have:
 
@@ -1526,6 +1561,14 @@ def _power_of_two(value):
         return False
     return value == 2 ** _high_bit(value)
 
+def _dataclass_repr(self):
+    dcf = self.__dataclass_fields__
+    return ', '.join(
+            '%s=%r' % (k, getattr(self, k))
+            for k in dcf.keys()
+            if dcf[k].repr
+            )
+
 def global_enum_repr(self):
     """
     use module.enum_name instead of class.enum_name
@@ -1821,6 +1864,9 @@ class verify:
                 for name, alias in enumeration._member_map_.items():
                     if name in member_names:
                         # not an alias
+                        continue
+                    if alias.value < 0:
+                        # negative numbers are not checked
                         continue
                     values = list(_iter_bits_lsb(alias.value))
                     missed = [v for v in values if v not in member_values]

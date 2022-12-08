@@ -116,15 +116,13 @@ static PyTypeObject PyDecContextManager_Type;
 Py_LOCAL_INLINE(PyObject *)
 incr_true(void)
 {
-    Py_INCREF(Py_True);
-    return Py_True;
+    return Py_NewRef(Py_True);
 }
 
 Py_LOCAL_INLINE(PyObject *)
 incr_false(void)
 {
-    Py_INCREF(Py_False);
-    return Py_False;
+    return Py_NewRef(Py_False);
 }
 
 
@@ -655,8 +653,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
         }
     }
 
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 static PyObject *
@@ -754,8 +751,7 @@ context_getround(PyObject *self, void *closure UNUSED)
 {
     int i = mpd_getround(CTX(self));
 
-    Py_INCREF(round_map[i]);
-    return round_map[i];
+    return Py_NewRef(round_map[i]);
 }
 
 static PyObject *
@@ -1122,13 +1118,11 @@ context_getattr(PyObject *self, PyObject *name)
     if (PyUnicode_Check(name)) {
         if (PyUnicode_CompareWithASCIIString(name, "traps") == 0) {
             retval = ((PyDecContextObject *)self)->traps;
-            Py_INCREF(retval);
-            return retval;
+            return Py_NewRef(retval);
         }
         if (PyUnicode_CompareWithASCIIString(name, "flags") == 0) {
             retval = ((PyDecContextObject *)self)->flags;
-            Py_INCREF(retval);
-            return retval;
+            return Py_NewRef(retval);
         }
     }
 
@@ -1602,8 +1596,7 @@ PyDec_GetCurrentContext(PyObject *self UNUSED, PyObject *args UNUSED)
         return NULL;
     }
 
-    Py_INCREF(context);
-    return context;
+    return Py_NewRef(context);
 }
 
 /* Set the thread local context to a new context, decrement old reference */
@@ -1778,8 +1771,7 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
         Py_DECREF(self);
         return NULL;
     }
-    self->global = global;
-    Py_INCREF(self->global);
+    self->global = Py_NewRef(global);
 
     int ret = context_setattrs(
         self->local, prec, rounding,
@@ -1814,8 +1806,7 @@ ctxmanager_set_local(PyDecContextManagerObject *self, PyObject *args UNUSED)
     }
     Py_DECREF(ret);
 
-    Py_INCREF(self->local);
-    return self->local;
+    return Py_NewRef(self->local);
 }
 
 static PyObject *
@@ -2418,8 +2409,7 @@ PyDecType_FromDecimalExact(PyTypeObject *type, PyObject *v, PyObject *context)
     uint32_t status = 0;
 
     if (type == &PyDec_Type && PyDec_CheckExact(v)) {
-        Py_INCREF(v);
-        return v;
+        return Py_NewRef(v);
     }
 
     dec = PyDecType_New(type);
@@ -2440,8 +2430,7 @@ static PyObject *
 sequence_as_tuple(PyObject *v, PyObject *ex, const char *mesg)
 {
     if (PyTuple_Check(v)) {
-        Py_INCREF(v);
-        return v;
+        return Py_NewRef(v);
     }
     if (PyList_Check(v)) {
         return PyList_AsTuple(v);
@@ -2863,8 +2852,7 @@ convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
 {
 
     if (PyDec_Check(v)) {
-        *conv = v;
-        Py_INCREF(v);
+        *conv = Py_NewRef(v);
         return 1;
     }
     if (PyLong_Check(v)) {
@@ -2881,8 +2869,7 @@ convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
             Py_TYPE(v)->tp_name);
     }
     else {
-        Py_INCREF(Py_NotImplemented);
-        *conv = Py_NotImplemented;
+        *conv = Py_NewRef(Py_NotImplemented);
     }
     return 0;
 }
@@ -3041,8 +3028,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
     *vcmp = v;
 
     if (PyDec_Check(w)) {
-        Py_INCREF(w);
-        *wcmp = w;
+        *wcmp = Py_NewRef(w);
     }
     else if (PyLong_Check(w)) {
         *wcmp = PyDec_FromLongExact(w, context);
@@ -3074,8 +3060,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
             }
         }
         else {
-            Py_INCREF(Py_NotImplemented);
-            *wcmp = Py_NotImplemented;
+            *wcmp = Py_NewRef(Py_NotImplemented);
         }
     }
     else {
@@ -3093,8 +3078,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
             }
         }
         else {
-            Py_INCREF(Py_NotImplemented);
-            *wcmp = Py_NotImplemented;
+            *wcmp = Py_NewRef(Py_NotImplemented);
         }
     }
 
@@ -4329,15 +4313,13 @@ dec_mpd_adjexp(PyObject *self, PyObject *dummy UNUSED)
 static PyObject *
 dec_canonical(PyObject *self, PyObject *dummy UNUSED)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
 dec_conjugate(PyObject *self, PyObject *dummy UNUSED)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -4654,8 +4636,7 @@ dec_complex(PyObject *self, PyObject *dummy UNUSED)
 static PyObject *
 dec_copy(PyObject *self, PyObject *dummy UNUSED)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 /* __floor__ */
@@ -4815,13 +4796,11 @@ dec_reduce(PyObject *self, PyObject *dummy UNUSED)
 static PyObject *
 dec_sizeof(PyObject *v, PyObject *dummy UNUSED)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(v));
+    size_t res = _PyObject_SIZE(Py_TYPE(v));
     if (mpd_isdynamic_data(MPD(v))) {
-        res += MPD(v)->alloc * sizeof(mpd_uint_t);
+        res += (size_t)MPD(v)->alloc * sizeof(mpd_uint_t);
     }
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 /* __trunc__ */
@@ -4838,8 +4817,7 @@ dec_trunc(PyObject *self, PyObject *dummy UNUSED)
 static PyObject *
 dec_real(PyObject *self, void *closure UNUSED)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -5384,8 +5362,7 @@ ctx_canonical(PyObject *context UNUSED, PyObject *v)
         return NULL;
     }
 
-    Py_INCREF(v);
-    return v;
+    return Py_NewRef(v);
 }
 
 static PyObject *
@@ -5916,23 +5893,17 @@ PyInit__decimal(void)
     /* Create the module */
     ASSIGN_PTR(m, PyModule_Create(&_decimal_module));
 
-
     /* Add types to the module */
-    Py_INCREF(&PyDec_Type);
-    CHECK_INT(PyModule_AddObject(m, "Decimal", (PyObject *)&PyDec_Type));
-    Py_INCREF(&PyDecContext_Type);
+    CHECK_INT(PyModule_AddObject(m, "Decimal", Py_NewRef(&PyDec_Type)));
     CHECK_INT(PyModule_AddObject(m, "Context",
-                                 (PyObject *)&PyDecContext_Type));
-    Py_INCREF(DecimalTuple);
-    CHECK_INT(PyModule_AddObject(m, "DecimalTuple", (PyObject *)DecimalTuple));
-
+                                 Py_NewRef(&PyDecContext_Type)));
+    CHECK_INT(PyModule_AddObject(m, "DecimalTuple", Py_NewRef(DecimalTuple)));
 
     /* Create top level exception */
     ASSIGN_PTR(DecimalException, PyErr_NewException(
                                      "decimal.DecimalException",
                                      PyExc_ArithmeticError, NULL));
-    Py_INCREF(DecimalException);
-    CHECK_INT(PyModule_AddObject(m, "DecimalException", DecimalException));
+    CHECK_INT(PyModule_AddObject(m, "DecimalException", Py_NewRef(DecimalException)));
 
     /* Create signal tuple */
     ASSIGN_PTR(SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
@@ -5972,12 +5943,10 @@ PyInit__decimal(void)
         Py_DECREF(base);
 
         /* add to module */
-        Py_INCREF(cm->ex);
-        CHECK_INT(PyModule_AddObject(m, cm->name, cm->ex));
+        CHECK_INT(PyModule_AddObject(m, cm->name, Py_NewRef(cm->ex)));
 
         /* add to signal tuple */
-        Py_INCREF(cm->ex);
-        PyTuple_SET_ITEM(SignalTuple, i, cm->ex);
+        PyTuple_SET_ITEM(SignalTuple, i, Py_NewRef(cm->ex));
     }
 
     /*
@@ -6003,45 +5972,38 @@ PyInit__decimal(void)
         ASSIGN_PTR(cm->ex, PyErr_NewException(cm->fqname, base, NULL));
         Py_DECREF(base);
 
-        Py_INCREF(cm->ex);
-        CHECK_INT(PyModule_AddObject(m, cm->name, cm->ex));
+        CHECK_INT(PyModule_AddObject(m, cm->name, Py_NewRef(cm->ex)));
     }
 
 
     /* Init default context template first */
     ASSIGN_PTR(default_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
-    Py_INCREF(default_context_template);
     CHECK_INT(PyModule_AddObject(m, "DefaultContext",
-                                 default_context_template));
+                                 Py_NewRef(default_context_template)));
 
 #ifndef WITH_DECIMAL_CONTEXTVAR
     ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
-    Py_INCREF(Py_False);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_False));
+    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_NewRef(Py_False)));
 #else
     ASSIGN_PTR(current_context_var, PyContextVar_New("decimal_context", NULL));
-    Py_INCREF(Py_True);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_True));
+    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_NewRef(Py_True)));
 #endif
-    Py_INCREF(Py_True);
-    CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_True));
+    CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_NewRef(Py_True)));
 
     /* Init basic context template */
     ASSIGN_PTR(basic_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_basic_context(basic_context_template);
-    Py_INCREF(basic_context_template);
     CHECK_INT(PyModule_AddObject(m, "BasicContext",
-                                 basic_context_template));
+                                 Py_NewRef(basic_context_template)));
 
     /* Init extended context template */
     ASSIGN_PTR(extended_context_template,
                PyObject_CallObject((PyObject *)&PyDecContext_Type, NULL));
     init_extended_context(extended_context_template);
-    Py_INCREF(extended_context_template);
     CHECK_INT(PyModule_AddObject(m, "ExtendedContext",
-                                 extended_context_template));
+                                 Py_NewRef(extended_context_template)));
 
 
     /* Init mpd_ssize_t constants */
@@ -6060,8 +6022,7 @@ PyInit__decimal(void)
     /* Init string constants */
     for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
         ASSIGN_PTR(round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
-        Py_INCREF(round_map[i]);
-        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], round_map[i]));
+        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], Py_NewRef(round_map[i])));
     }
 
     /* Add specification version number */

@@ -752,6 +752,23 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(": can't open file ", err)
         self.assertNotEqual(proc.returncode, 0)
 
+    @unittest.skipUnless(os.path.exists('/dev/fd/0'), 'requires /dev/fd platform')
+    @unittest.skipIf(sys.platform.startswith("freebsd") and
+                     os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
+                     "Requires fdescfs mounted on /dev/fd on FreeBSD")
+    def test_script_as_dev_fd(self):
+        # GH-87235: On macOS passing a non-trivial script to /dev/fd/N can cause
+        # problems because all open /dev/fd/N file descriptors share the same
+        # offset.
+        script = 'print("12345678912345678912345")'
+        with os_helper.temp_dir() as work_dir:
+            script_name = _make_test_script(work_dir, 'script.py', script)
+            with open(script_name, "r") as fp:
+                p = spawn_python(f"/dev/fd/{fp.fileno()}", close_fds=False, pass_fds=(0,1,2,fp.fileno()))
+                out, err = p.communicate()
+                self.assertEqual(out, b"12345678912345678912345\n")
+
+
 
 def tearDownModule():
     support.reap_children()
