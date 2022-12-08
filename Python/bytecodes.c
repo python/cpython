@@ -86,12 +86,14 @@ static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
 static size_t jump;
 // Dummy variables for cache effects
 static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
+static _Py_CODEUNIT word;
 static uint32_t type_version;
 // Dummy opcode names for 'op' opcodes
 #define _COMPARE_OP_FLOAT 1003
 #define _COMPARE_OP_INT 1004
 #define _COMPARE_OP_STR 1005
 #define _JUMP_IF 1006
+#define JOIN 0
 
 static PyObject *
 dummy_func(
@@ -115,6 +117,14 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
+
+        op(JOIN, (word/1 --)) {
+            #ifndef NDEBUG
+            opcode = _Py_OPCODE(word);
+            #endif
+            oparg = _Py_OPARG(word);
+        }
+
         inst(NOP, (--)) {
         }
 
@@ -154,11 +164,11 @@ dummy_func(
             SETLOCAL(oparg, value);
         }
 
-        super(LOAD_FAST__LOAD_FAST) = LOAD_FAST + LOAD_FAST;
-        super(LOAD_FAST__LOAD_CONST) = LOAD_FAST + LOAD_CONST;
-        super(STORE_FAST__LOAD_FAST)  = STORE_FAST + LOAD_FAST;
-        super(STORE_FAST__STORE_FAST) = STORE_FAST + STORE_FAST;
-        super(LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
+        macro(LOAD_FAST__LOAD_FAST) = LOAD_FAST + JOIN + LOAD_FAST;
+        macro(LOAD_FAST__LOAD_CONST) = LOAD_FAST + JOIN + LOAD_CONST;
+        macro(STORE_FAST__LOAD_FAST) = STORE_FAST + JOIN + LOAD_FAST;
+        macro(STORE_FAST__STORE_FAST) = STORE_FAST + JOIN + STORE_FAST;
+        macro(LOAD_CONST__LOAD_FAST) = LOAD_CONST + JOIN + LOAD_FAST;
 
         inst(POP_TOP, (value --)) {
             Py_DECREF(value);
@@ -2043,7 +2053,7 @@ dummy_func(
             }
         }
         // We're praying that the compiler optimizes the flags manipuations.
-        super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_IF;
+        macro(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + JOIN + _JUMP_IF;
 
         // Similar to COMPARE_OP_FLOAT
         op(_COMPARE_OP_INT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
@@ -2063,7 +2073,7 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             jump = sign_ish & when_to_jump_mask;
         }
-        super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_IF;
+        macro(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + JOIN + _JUMP_IF;
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
         op(_COMPARE_OP_STR, (unused/1, invert/1, left, right -- jump: size_t)) {
@@ -2080,7 +2090,7 @@ dummy_func(
             assert(invert == 0 || invert == 1);
             jump = res ^ invert;
         }
-        super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;
+        macro(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + JOIN + _JUMP_IF;
 
         // stack effect: (__0 -- )
         inst(IS_OP) {
