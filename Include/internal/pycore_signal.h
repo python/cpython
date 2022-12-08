@@ -14,6 +14,7 @@ extern "C" {
 
 #ifdef MS_WINDOWS
 #  include <windows.h>              // HANDLE
+#  include <winsock2.h>             // SOCKET
 #endif
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>               // NSIG
