@@ -57,7 +57,7 @@ static PyTypeObject pairwise_type;
 
 /* Note:  The built-in zip() function includes a "strict" argument
    that was needed because that function would silently truncate data,
-   and there was no easy way for a user to detect that condition.
+   and there was no easy way for a user to detect the data loss.
    The same reasoning does not apply to batched() which never drops data.
    Instead, batched() produces a shorter tuple which can be handled
    as the user sees fit.  If requested, it would be reasonable to add
