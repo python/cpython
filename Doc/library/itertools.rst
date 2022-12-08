@@ -166,11 +166,11 @@ loops that truncate the stream.
 
 .. function:: batched(iterable, n)
 
-   Batch data from the *iterable* into lists of length *n*. The last
+   Batch data from the *iterable* into tuples of length *n*. The last
    batch may be shorter than *n*.
 
-   Loops over the input iterable and accumulates data into lists up to
-   size *n*.  The input is consumed lazily, just enough to fill a list.
+   Loops over the input iterable and accumulates data into tuples up to
+   size *n*.  The input is consumed lazily, just enough to fill a batch.
    The result is yielded as soon as the batch is full or when the input
    iterable is exhausted:
 
@@ -179,14 +179,14 @@ loops that truncate the stream.
       >>> flattened_data = ['roses', 'red', 'violets', 'blue', 'sugar', 'sweet']
       >>> unflattened = list(batched(flattened_data, 2))
       >>> unflattened
-      [['roses', 'red'], ['violets', 'blue'], ['sugar', 'sweet']]
+      [('roses', 'red'), ('violets', 'blue'), ('sugar', 'sweet')]
 
       >>> for batch in batched('ABCDEFG', 3):
       ...     print(batch)
       ...
-      ['A', 'B', 'C']
-      ['D', 'E', 'F']
-      ['G']
+      ('A', 'B', 'C')
+      ('D', 'E', 'F')
+      ('G',)
 
    Roughly equivalent to::
 
@@ -195,7 +195,7 @@ loops that truncate the stream.
           if n < 1:
               raise ValueError('n must be at least one')
           it = iter(iterable)
-          while (batch := list(islice(it, n))):
+          while (batch := tuple(islice(it, n))):
               yield batch
 
    .. versionadded:: 3.12

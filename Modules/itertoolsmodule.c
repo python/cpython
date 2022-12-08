@@ -74,9 +74,9 @@ typedef struct {
 itertools.batched.__new__ as batched_new
     iterable: object
     n: Py_ssize_t
-Batch data into lists of length n. The last batch may be shorter than n.
+Batch data into tuples of length n. The last batch may be shorter than n.
 
-Loops over the input iterable and accumulates data into lists
+Loops over the input iterable and accumulates data into tuples
 up to size n.  The input is consumed lazily, just enough to
 fill a list.  The result is yielded as soon as a batch is full
 or when the input iterable is exhausted.
@@ -150,12 +150,12 @@ batched_next(batchedobject *bo)
     if (it == NULL) {
         return NULL;
     }
-    result = PyList_New(n);
+    result = PyTuple_New(n);
     if (result == NULL) {
         return NULL;
     }
     iternextfunc iternext = *Py_TYPE(it)->tp_iternext;
-    PyObject **items = _PyList_ITEMS(result);
+    PyObject **items = _PyTuple_ITEMS(result);
     for (i=0 ; i < n ; i++) {
         item = iternext(it);
         if (item == NULL) {
