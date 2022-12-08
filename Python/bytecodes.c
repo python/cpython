@@ -216,7 +216,7 @@ dummy_func(
         };
 
 
-        inst(BINARY_OP_MULTIPLY_INT, (left, right, unused/1 -- prod)) {
+        inst(BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -227,7 +227,7 @@ dummy_func(
             ERROR_IF(prod == NULL, error);
         }
 
-        inst(BINARY_OP_MULTIPLY_FLOAT, (left, right, unused/1 -- prod)) {
+        inst(BINARY_OP_MULTIPLY_FLOAT, (unused/1, left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -240,7 +240,7 @@ dummy_func(
             ERROR_IF(prod == NULL, error);
         }
 
-        inst(BINARY_OP_SUBTRACT_INT, (left, right, unused/1 -- sub)) {
+        inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -251,7 +251,7 @@ dummy_func(
             ERROR_IF(sub == NULL, error);
         }
 
-        inst(BINARY_OP_SUBTRACT_FLOAT, (left, right, unused/1 -- sub)) {
+        inst(BINARY_OP_SUBTRACT_FLOAT, (unused/1, left, right -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -263,7 +263,7 @@ dummy_func(
             ERROR_IF(sub == NULL, error);
         }
 
-        inst(BINARY_OP_ADD_UNICODE, (left, right, unused/1 -- res)) {
+        inst(BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -277,7 +277,7 @@ dummy_func(
         // Part 1's output effect is a lie -- it has no result.
         // Part 2's input effect is equally a lie, and the two lies
         // cancel each other out.
-        op(_BINARY_OP_INPLACE_ADD_UNICODE_PART_1, (left, right, unused/1 -- unused)) {
+        op(_BINARY_OP_INPLACE_ADD_UNICODE_PART_1, (unused/1, left, right -- unused)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -310,7 +310,7 @@ dummy_func(
         super(BINARY_OP_INPLACE_ADD_UNICODE) =
             _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 + _BINARY_OP_INPLACE_ADD_UNICODE_PART_2;
 
-        inst(BINARY_OP_ADD_FLOAT, (left, right, unused/1 -- sum)) {
+        inst(BINARY_OP_ADD_FLOAT, (unused/1, left, right -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -323,7 +323,7 @@ dummy_func(
             ERROR_IF(sum == NULL, error);
         }
 
-        inst(BINARY_OP_ADD_INT, (left, right, unused/1 -- sum)) {
+        inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -342,7 +342,7 @@ dummy_func(
             BINARY_SUBSCR_TUPLE_INT,
         };
 
-        inst(BINARY_SUBSCR, (container, sub, unused/4 -- res)) {
+        inst(BINARY_SUBSCR, (unused/4, container, sub -- res)) {
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -388,7 +388,7 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        inst(BINARY_SUBSCR_LIST_INT, (list, sub, unused/4 -- res)) {
+        inst(BINARY_SUBSCR_LIST_INT, (unused/4, list, sub -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
@@ -407,7 +407,7 @@ dummy_func(
             Py_DECREF(list);
         }
 
-        inst(BINARY_SUBSCR_TUPLE_INT, (tuple, sub, unused/4 -- res)) {
+        inst(BINARY_SUBSCR_TUPLE_INT, (unused/4, tuple, sub -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
@@ -426,7 +426,7 @@ dummy_func(
             Py_DECREF(tuple);
         }
 
-        inst(BINARY_SUBSCR_DICT, (dict, sub, unused/4 -- res)) {
+        inst(BINARY_SUBSCR_DICT, (unused/4, dict, sub -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
@@ -444,7 +444,7 @@ dummy_func(
             Py_DECREF(sub);
         }
 
-        inst(BINARY_SUBSCR_GETITEM, (container, sub, unused/1, type_version/2, func_version/1 -- unused)) {
+        inst(BINARY_SUBSCR_GETITEM, (unused/1, type_version/2, func_version/1, container, sub -- unused)) {
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(tp->tp_version_tag != type_version, BINARY_SUBSCR);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -1099,7 +1099,7 @@ dummy_func(
             STORE_ATTR_WITH_HINT,
         };
 
-        inst(STORE_ATTR, (counter/1, v, owner, unused/3 --)) {
+        inst(STORE_ATTR, (counter/1, unused/3, v, owner --)) {
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg);
@@ -2000,7 +2000,7 @@ dummy_func(
             _COMPARE_OP_STR,
         };
 
-        inst(COMPARE_OP, (unused/1, left, right, unused/1 -- res)) {
+        inst(COMPARE_OP, (unused/2, left, right -- res)) {
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2018,7 +2018,7 @@ dummy_func(
         }
 
         // The result is an int disguised as an object pointer.
-        op(_COMPARE_OP_FLOAT, (unused/1, left, right, when_to_jump_mask/1 -- jump: size_t)) {
+        op(_COMPARE_OP_FLOAT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
@@ -2045,7 +2045,7 @@ dummy_func(
         super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_ON_SIGN;
 
         // Similar to COMPARE_OP_FLOAT
-        op(_COMPARE_OP_INT, (unused/1, left, right, when_to_jump_mask/1 -- jump: size_t)) {
+        op(_COMPARE_OP_INT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
@@ -2065,7 +2065,7 @@ dummy_func(
         super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_ON_SIGN;
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
-        op(_COMPARE_OP_STR, (unused/1, left, right, invert/1 -- jump: size_t)) {
+        op(_COMPARE_OP_STR, (unused/1, invert/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
@@ -3540,7 +3540,7 @@ dummy_func(
             PUSH(Py_NewRef(peek));
         }
 
-        inst(BINARY_OP, (lhs, rhs, unused/1 -- res)) {
+        inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
