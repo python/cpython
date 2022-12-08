@@ -21,7 +21,7 @@ static inline int _Py_is_valid_index(Py_ssize_t i, Py_ssize_t limit)
         affected by -fwrapv, -fno-wrapv and -ftrapv compiler options
         of GCC and clang
     */
-    return (size_t)i < (size_t)limit;
+    return (size_t)index < (size_t)limit;
 }
 
 // Fast inlined version of PyIndex_Check()
