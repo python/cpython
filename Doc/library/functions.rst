@@ -521,7 +521,7 @@ are always available.  They are listed here in alphabetical order.
    object.
 
    When the *expression* argument is a string, it is parsed and evaluated as a
-   Python expression (see :ref:`expression-input`). The leading and trailing spaces,
+   Python expression (see :ref:`expression-input`). Any leading and trailing spaces,
    tabs, and newlines are stripped.
 
    The evaluation is performed in the environment specified by the arguments
