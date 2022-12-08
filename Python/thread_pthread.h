@@ -124,8 +124,7 @@
 #define CONDATTR_MONOTONIC
 #endif
 
-// NULL when pthread_condattr_setclock(CLOCK_MONOTONIC) is not supported.
-static pthread_condattr_t *condattr_monotonic = NULL;
+#define condattr_monotonic _PyRuntime.threads.condattr_monotonic
 
 static void
 init_condattr(void)

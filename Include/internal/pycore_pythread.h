@@ -39,6 +39,11 @@ extern "C" {
 
 struct _pythread_runtime_state {
     int initialized;
+#if defined(_POSIX_THREADS) && !defined(HAVE_PTHREAD_STUBS)
+    // This matches when thread_pthread.h is used.
+    /* NULL when pthread_condattr_setclock(CLOCK_MONOTONIC) is not supported. */
+    pthread_condattr_t *condattr_monotonic;
+#endif
 };
 
 
