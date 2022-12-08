@@ -236,7 +236,6 @@
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
-    <ClInclude Include="..\Include\internal\pycore_os.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyarena.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
@@ -255,6 +254,7 @@
     <ClInclude Include="..\Include\internal\pycore_structseq.h" />
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
     <ClInclude Include="..\Include\internal\pycore_symtable.h" />
+    <ClInclude Include="..\Include\internal\pycore_time.h" />
     <ClInclude Include="..\Include\internal\pycore_token.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />

@@ -26,7 +26,6 @@ extern "C" {
         }, \
         .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
         .pyhash_state = pyhash_state_INIT, \
-        .os = _OS_RUNTIME_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
