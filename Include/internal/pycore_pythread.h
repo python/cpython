@@ -10,7 +10,7 @@ extern "C" {
 
 
 struct _pythread_runtime_state {
-    int _not_used;
+    int initialized;
 };
 
 

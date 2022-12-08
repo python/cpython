@@ -192,7 +192,7 @@ typedef struct {
     "%s: %s\n", name, strerror(status)); error = 1; }
 
 /*
- * Initialization.
+ * Initialization for the current runtime.
  */
 static void
 PyThread__init_thread(void)

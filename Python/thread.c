@@ -42,15 +42,16 @@
 
 #endif /* _POSIX_THREADS */
 
-static int initialized;
-
 static void PyThread__init_thread(void); /* Forward */
+
+#define initialized _PyRuntime.threads.initialized
 
 void
 PyThread_init_thread(void)
 {
-    if (initialized)
+    if (initialized) {
         return;
+    }
     initialized = 1;
     PyThread__init_thread();
 }
