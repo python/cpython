@@ -1,2 +1,0 @@
-Improve the error message in the parser for exception groups without
-parentheses. Patch by Pablo Galindo.

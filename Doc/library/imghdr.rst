@@ -3,8 +3,13 @@
 
 .. module:: imghdr
    :synopsis: Determine the type of image contained in a file or byte stream.
+   :deprecated:
 
 **Source code:** :source:`Lib/imghdr.py`
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`imghdr` module is deprecated
+   (see :pep:`PEP 594 <594#imghdr>` for details and alternatives).
 
 --------------
 
@@ -16,8 +21,8 @@ The :mod:`imghdr` module defines the following function:
 
 .. function:: what(file, h=None)
 
-   Tests the image data contained in the file named by *file*, and returns a
-   string describing the image type.  If optional *h* is provided, the *file*
+   Test the image data contained in the file named *file* and return a
+   string describing the image type.  If *h* is provided, the *file*
    argument is ignored and *h* is assumed to contain the byte stream to test.
 
    .. versionchanged:: 3.6
