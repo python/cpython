@@ -443,7 +443,7 @@
             PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
             int err = PySet_Add(set, v);
             Py_DECREF(v);
-            if (err != 0) goto pop_1_error;
+            if (err) goto pop_1_error;
             STACK_SHRINK(1);
             PREDICT(JUMP_BACKWARD);
             DISPATCH();
@@ -469,7 +469,7 @@
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0) goto pop_3_error;
+            if (err) goto pop_3_error;
             STACK_SHRINK(3);
             next_instr += 1;
             DISPATCH();
@@ -510,7 +510,7 @@
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
             Py_DECREF(dict);
-            if (err != 0) goto pop_3_error;
+            if (err) goto pop_3_error;
             STACK_SHRINK(3);
             next_instr += 1;
             DISPATCH();
@@ -523,7 +523,7 @@
             int err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0) goto pop_2_error;
+            if (err) goto pop_2_error;
             STACK_SHRINK(2);
             DISPATCH();
         }
@@ -1103,7 +1103,7 @@
             int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
-            if (err != 0) goto pop_2_error;
+            if (err) goto pop_2_error;
             STACK_SHRINK(2);
             next_instr += 4;
             DISPATCH();
@@ -1114,7 +1114,7 @@
             PyObject *name = GETITEM(names, oparg);
             int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
             Py_DECREF(owner);
-            if (err != 0) goto pop_1_error;
+            if (err) goto pop_1_error;
             STACK_SHRINK(1);
             DISPATCH();
         }
@@ -1124,7 +1124,7 @@
             PyObject *name = GETITEM(names, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
-            if (err != 0) goto pop_1_error;
+            if (err) goto pop_1_error;
             STACK_SHRINK(1);
             DISPATCH();
         }

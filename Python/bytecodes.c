@@ -480,7 +480,7 @@ dummy_func(
             PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
             int err = PySet_Add(set, v);
             Py_DECREF(v);
-            ERROR_IF(err != 0, error);
+            ERROR_IF(err, error);
             PREDICT(JUMP_BACKWARD);
         }
 
@@ -505,7 +505,7 @@ dummy_func(
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            ERROR_IF(err != 0, error);
+            ERROR_IF(err, error);
         }
 
         inst(STORE_SUBSCR_LIST_INT, (unused/1, value, list, sub -- )) {
@@ -534,7 +534,7 @@ dummy_func(
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
             Py_DECREF(dict);
-            ERROR_IF(err != 0, error);
+            ERROR_IF(err, error);
         }
 
         inst(DELETE_SUBSCR, (container, sub --)) {
@@ -542,7 +542,7 @@ dummy_func(
             int err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            ERROR_IF(err != 0, error);
+            ERROR_IF(err, error);
         }
 
         inst(PRINT_EXPR, (value --)) {
@@ -1114,21 +1114,21 @@ dummy_func(
             int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
-            ERROR_IF(err != 0, error);
+            ERROR_IF(err, error);
         }
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(names, oparg);
             int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
             Py_DECREF(owner);
-            ERROR_IF(err != 0, error);
+            ERROR_IF(err, error);
         }
 
         inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(names, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
-            ERROR_IF(err != 0, error);
+            ERROR_IF(err, error);
         }
 
         inst(DELETE_GLOBAL, (--)) {
