@@ -83,12 +83,12 @@ class Formatter:
     def declare(self, dst: StackEffect, src: StackEffect | None):
         if dst.name == UNUSED:
             return
-        type = f"{dst.type} " if dst.type else "PyObject *"
+        typ = f"{dst.type} " if dst.type else "PyObject *"
         init = ""
         if src:
             cast = self.cast(dst, src)
             init = f" = {cast}{src.name}"
-        self.emit(f"{type}{dst.name}{init};")
+        self.emit(f"{typ}{dst.name}{init};")
 
     def assign(self, dst: StackEffect, src: StackEffect):
         if src.name == UNUSED:
@@ -200,12 +200,12 @@ class Instruction:
                     # is always an object pointer.
                     # If this becomes false, we need a way to specify
                     # syntactically what type the cache data is.
-                    type = "PyObject *"
+                    typ = "PyObject *"
                     func = "read_obj"
                 else:
-                    type = f"uint{bits}_t "
+                    typ = f"uint{bits}_t "
                     func = f"read_u{bits}"
-                out.emit(f"{type}{ceffect.name} = {func}(next_instr + {cache_offset});")
+                out.emit(f"{typ}{ceffect.name} = {func}(next_instr + {cache_offset});")
             cache_offset += ceffect.size
         assert cache_offset == self.cache_offset + cache_adjust
 
