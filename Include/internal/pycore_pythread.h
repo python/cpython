@@ -16,10 +16,7 @@ extern "C" {
 # ifdef HAVE_PTHREAD_H
 #  include <pthread.h> /* _POSIX_THREADS */
 # endif
-#endif
-
-#ifndef _POSIX_THREADS
-
+# ifndef _POSIX_THREADS
 /* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
    enough of the Posix threads package is implemented to support python
    threads.
@@ -28,12 +25,12 @@ extern "C" {
    a check of __ia64 to verify that we're running on an ia64 system instead
    of a pa-risc system.
 */
-#ifdef __hpux
-#ifdef _SC_THREADS
-#define _POSIX_THREADS
-#endif
-#endif
-
+#  ifdef __hpux
+#   ifdef _SC_THREADS
+#    define _POSIX_THREADS
+#   endif
+#  endif
+# endif /* _POSIX_THREADS */
 #endif /* _POSIX_THREADS */
 
 #if defined(_POSIX_THREADS) && !defined(HAVE_PTHREAD_STUBS)
