@@ -24,7 +24,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "pycore_abstract.h"      // valid_index
+#include "pycore_abstract.h"      // _Py_is_valid_index()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
 #include "structmember.h"         // PyMemberDef
