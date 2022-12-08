@@ -1916,10 +1916,15 @@ are always available.  They are listed here in alphabetical order.
         >>> list(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
         [('a', 1), ('b', 2), ('c', 3)]
 
-     Unlike the default behavior, it checks that the lengths of iterables are
-     identical, raising a :exc:`ValueError` if they aren't:
+     Unlike the default behavior, it raises a :exc:`ValueError` if one iterable
+     is exhausted before the others:
 
-        >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
+        >>> for item in zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True):
+        ...     print(item)
+        ...
+        (0, 'fee')
+        (1, 'fi')
+        (2, 'fo')
         Traceback (most recent call last):
           ...
         ValueError: zip() argument 2 is longer than argument 1
