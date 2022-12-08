@@ -21,7 +21,6 @@ extern "C" {
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
 #include "pycore_obmalloc.h"        // struct obmalloc_state
-#include "pycore_os.h"              // struct _os_runtime_state
 #include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
@@ -105,7 +104,6 @@ typedef struct pyruntimestate {
          * KeyboardInterrupt exception, suggesting the user pressed ^C. */
         int unhandled_keyboard_interrupt;
     } signals;
-    struct _os_runtime_state os;
     struct _time_runtime_state time;
 
     struct pyinterpreters {
