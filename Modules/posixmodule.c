@@ -976,6 +976,7 @@ typedef struct {
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
     PyObject *SchedParamType;
 #endif
+    newfunc statresult_new_orig;
     PyObject *StatResultType;
     PyObject *StatVFSResultType;
     PyObject *TerminalSizeType;
@@ -2234,7 +2235,9 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyStructSequence *result;
     int i;
 
-    PyObject *mod = PyType_GetModule(type);
+    // ht_module doesn't get set in PyStructSequence_NewType(),
+    // so we can't use PyType_GetModule().
+    PyObject *mod = PyImport_GetModule(MODNAME_OBJ);
     if (mod == NULL) {
         return NULL;
     }
@@ -2242,7 +2245,7 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (state == NULL) {
         return NULL;
     }
-#define structseq_new ((PyTypeObject *)state->StatResultType)->tp_new
+#define structseq_new state->statresult_new_orig
 
     result = (PyStructSequence*)structseq_new(type, args, kwds);
     if (!result)
@@ -15936,6 +15939,7 @@ posixmodule_exec(PyObject *m)
     }
     PyModule_AddObject(m, "stat_result", Py_NewRef(StatResultType));
     state->StatResultType = StatResultType;
+    state->statresult_new_orig = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
 
     statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
