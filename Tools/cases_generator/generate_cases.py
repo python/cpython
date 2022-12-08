@@ -311,6 +311,7 @@ class Analyzer:
         print(f"{self.filename}:{lineno}: {msg}", file=sys.stderr)
         self.errors += 1
 
+    everything: list[parser.InstDef | parser.Super | parser.Macro]
     instrs: dict[str, Instruction]  # Includes ops
     supers: dict[str, parser.Super]
     super_instrs: dict[str, SuperInstruction]
@@ -344,6 +345,7 @@ class Analyzer:
 
         # Parse from start
         psr.setpos(start)
+        self.everything = []
         self.instrs = {}
         self.supers = {}
         self.macros = {}
@@ -352,10 +354,13 @@ class Analyzer:
             match thing:
                 case parser.InstDef(name=name):
                     self.instrs[name] = Instruction(thing)
+                    self.everything.append(thing)
                 case parser.Super(name):
                     self.supers[name] = thing
+                    self.everything.append(thing)
                 case parser.Macro(name):
                     self.macros[name] = thing
+                    self.everything.append(thing)
                 case parser.Family(name):
                     self.families[name] = thing
                 case _:
@@ -560,39 +565,42 @@ class Analyzer:
             # Create formatter; the rest of the code uses this.
             self.out = Formatter(f, 8)
 
-            # Write and count regular instructions
+            # Write and count instructions of all kinds
             n_instrs = 0
-            for name, instr in self.instrs.items():
-                if instr.kind != "inst":
-                    continue  # ops are not real instructions
-                n_instrs += 1
-                self.out.emit("")
-                with self.out.block(f"TARGET({name})"):
-                    if instr.predicted:
-                        self.out.emit(f"PREDICTED({name});")
-                    instr.write(self.out)
-                    if not instr.always_exits:
-                        for prediction in instr.predictions:
-                            self.out.emit(f"PREDICT({prediction});")
-                        self.out.emit(f"DISPATCH();")
-
-            # Write and count super-instructions
             n_supers = 0
-            for sup in self.super_instrs.values():
-                n_supers += 1
-                self.write_super(sup)
-
-            # Write and count macro instructions
             n_macros = 0
-            for macro in self.macro_instrs.values():
-                n_macros += 1
-                self.write_macro(macro)
+            for thing in self.everything:
+                match thing:
+                    case parser.InstDef():
+                        if thing.kind == "inst":
+                            n_instrs += 1
+                            self.write_instr(self.instrs[thing.name])
+                    case parser.Super():
+                        n_supers += 1
+                        self.write_super(self.super_instrs[thing.name])
+                    case parser.Macro():
+                        n_macros += 1
+                        self.write_macro(self.macro_instrs[thing.name])
+                    case _:
+                        typing.assert_never(thing)
 
         print(
             f"Wrote {n_instrs} instructions, {n_supers} supers, "
             f"and {n_macros} macros to {self.output_filename}",
             file=sys.stderr,
         )
+
+    def write_instr(self, instr: Instruction) -> None:
+        name = instr.name
+        self.out.emit("")
+        with self.out.block(f"TARGET({name})"):
+            if instr.predicted:
+                self.out.emit(f"PREDICTED({name});")
+            instr.write(self.out)
+            if not instr.always_exits:
+                for prediction in instr.predictions:
+                    self.out.emit(f"PREDICT({prediction});")
+                self.out.emit(f"DISPATCH();")
 
     def write_super(self, sup: SuperInstruction) -> None:
         """Write code for a super-instruction."""
