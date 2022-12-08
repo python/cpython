@@ -8,15 +8,7 @@
 #include "Python.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniType()
-
-#ifndef _POSIX_THREADS
-/* This means pthreads are not implemented in libc headers, hence the macro
-   not present in unistd.h. But they still can be implemented as an external
-   library (e.g. gnu pth in pthread emulation) */
-# ifdef HAVE_PTHREAD_H
-#  include <pthread.h> /* _POSIX_THREADS */
-# endif
-#endif
+#include "pycore_pythread.h"
 
 #ifndef DONT_HAVE_STDIO_H
 #include <stdio.h>
@@ -24,23 +16,6 @@
 
 #include <stdlib.h>
 
-#ifndef _POSIX_THREADS
-
-/* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
-   enough of the Posix threads package is implemented to support python
-   threads.
-
-   This is valid for HP-UX 11.23 running on an ia64 system. If needed, add
-   a check of __ia64 to verify that we're running on an ia64 system instead
-   of a pa-risc system.
-*/
-#ifdef __hpux
-#ifdef _SC_THREADS
-#define _POSIX_THREADS
-#endif
-#endif
-
-#endif /* _POSIX_THREADS */
 
 static void PyThread__init_thread(void); /* Forward */
 
