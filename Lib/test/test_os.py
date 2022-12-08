@@ -606,12 +606,13 @@ class StatAttributeTests(unittest.TestCase):
     def test_stat_result_pickle(self):
         result = os.stat(self.fname)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            p = pickle.dumps(result, proto)
-            self.assertIn(b'stat_result', p)
-            if proto < 4:
-                self.assertIn(b'cos\nstat_result\n', p)
-            unpickled = pickle.loads(p)
-            self.assertEqual(result, unpickled)
+            with self.subTest(f'protocol {proto}'):
+                p = pickle.dumps(result, proto)
+                self.assertIn(b'stat_result', p)
+                if proto < 4:
+                    self.assertIn(b'cos\nstat_result\n', p)
+                unpickled = pickle.loads(p)
+                self.assertEqual(result, unpickled)
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
