@@ -410,12 +410,13 @@ def iscoroutinefunction(obj):
     Coroutine functions are normally defined with "async def" syntax, but may
     be marked via markcoroutinefunction.
     """
-    func = getattr(obj, "__func__", obj)
-    if getattr(func, "_is_coroutine", None) is _is_coroutine:
-        return True
-
-    if not isclass(obj) and callable(obj) and getattr(obj.__call__, "_is_coroutine", None) is _is_coroutine:
-        return True
+    if not isclass(obj) and callable(obj):
+        # Test both the function and the __call__ implementation for the
+        # _is_coroutine marker.
+        f = getattr(getattr(obj, "__func__", obj), "_is_coroutine", None)
+        c = getattr(obj.__call__, "_is_coroutine", None)
+        if f is _is_coroutine or c is _is_coroutine:
+            return True
 
     return _has_code_flag(obj, CO_COROUTINE) or (
         not isclass(obj) and callable(obj) and _has_code_flag(obj.__call__, CO_COROUTINE)
