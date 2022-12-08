@@ -12,9 +12,9 @@ PyDoc_STRVAR(batched_new__doc__,
 "batched(iterable, n)\n"
 "--\n"
 "\n"
-"Batch data into lists of length n. The last batch may be shorter than n.\n"
+"Batch data into tuples of length n. The last batch may be shorter than n.\n"
 "\n"
-"Loops over the input iterable and accumulates data into lists\n"
+"Loops over the input iterable and accumulates data into tuples\n"
 "up to size n.  The input is consumed lazily, just enough to\n"
 "fill a list.  The result is yielded as soon as a batch is full\n"
 "or when the input iterable is exhausted.\n"
@@ -22,9 +22,9 @@ PyDoc_STRVAR(batched_new__doc__,
 "    >>> for batch in batched(\'ABCDEFG\', 3):\n"
 "    ...     print(batch)\n"
 "    ...\n"
-"    [\'A\', \'B\', \'C\']\n"
-"    [\'D\', \'E\', \'F\']\n"
-"    [\'G\']");
+"    (\'A\', \'B\', \'C\')\n"
+"    (\'D\', \'E\', \'F\')\n"
+"    (\'G\',)");
 
 static PyObject *
 batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n);
@@ -913,4 +913,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=efea8cd1e647bd17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c17b32bf690cbefd input=a9049054013a1b77]*/

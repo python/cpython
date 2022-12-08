@@ -84,15 +84,15 @@ or when the input iterable is exhausted.
     >>> for batch in batched('ABCDEFG', 3):
     ...     print(batch)
     ...
-    ['A', 'B', 'C']
-    ['D', 'E', 'F']
-    ['G']
+    ('A', 'B', 'C')
+    ('D', 'E', 'F')
+    ('G',)
 
 [clinic start generated code]*/
 
 static PyObject *
 batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
-/*[clinic end generated code: output=7ebc954d655371b6 input=f28fd12cb52365f0]*/
+/*[clinic end generated code: output=7ebc954d655371b6 input=ecf306e1654bf0a2]*/
 {
     PyObject *it;
     batchedobject *bo;
