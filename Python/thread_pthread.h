@@ -119,19 +119,16 @@
  * pthread_cond support
  */
 
-#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
-// monotonic is supported statically.  It doesn't mean it works on runtime.
-#define CONDATTR_MONOTONIC
-#endif
-
-#define condattr_monotonic _PyRuntime.threads.condattr_monotonic
+#define condattr_monotonic _PyRuntime.threads._condattr_monotonic.ptr
 
 static void
 init_condattr(void)
 {
 #ifdef CONDATTR_MONOTONIC
-    static pthread_condattr_t ca;
+# define ca _PyRuntime.threads._condattr_monotonic.val
+    // XXX We need to check the return code?
     pthread_condattr_init(&ca);
+    // XXX We need to run pthread_condattr_destroy() during runtime fini.
     if (pthread_condattr_setclock(&ca, CLOCK_MONOTONIC) == 0) {
         condattr_monotonic = &ca;  // Use monotonic clock
     }

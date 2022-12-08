@@ -34,7 +34,7 @@ PyThread_init_thread(void)
 #if defined(HAVE_PTHREAD_STUBS)
 #   define PYTHREAD_NAME "pthread-stubs"
 #   include "thread_pthread_stubs.h"
-#elif defined(_POSIX_THREADS)
+#elif defined(_USE_PTHREADS)  /* AKA _PTHREADS */
 #   if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
 #     define PYTHREAD_NAME "pthread-stubs"
 #   else

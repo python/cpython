@@ -24,8 +24,6 @@ Modules/posixmodule.c	os_dup2_impl	dup3_works	-
 
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
-# static buffer used during one-time initialization
-Python/thread_pthread.h	init_condattr	ca	-
 
 ##-----------------------
 ## other values (not Python-specific)

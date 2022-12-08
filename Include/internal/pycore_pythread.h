@@ -36,14 +36,30 @@ extern "C" {
 
 #endif /* _POSIX_THREADS */
 
+#if defined(_POSIX_THREADS) && !defined(HAVE_PTHREAD_STUBS)
+# define _USE_PTHREADS
+#endif
+
+#if defined(_USE_PTHREADS) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+// monotonic is supported statically.  It doesn't mean it works on runtime.
+# define CONDATTR_MONOTONIC
+#endif
+
 
 struct _pythread_runtime_state {
     int initialized;
-#if defined(_POSIX_THREADS) && !defined(HAVE_PTHREAD_STUBS)
+#ifdef _USE_PTHREADS
     // This matches when thread_pthread.h is used.
-    /* NULL when pthread_condattr_setclock(CLOCK_MONOTONIC) is not supported. */
-    pthread_condattr_t *condattr_monotonic;
-#endif
+    struct {
+        /* NULL when pthread_condattr_setclock(CLOCK_MONOTONIC) is not supported. */
+        pthread_condattr_t *ptr;
+# ifdef CONDATTR_MONOTONIC
+    /* The value to which condattr_monotonic is set. */
+        pthread_condattr_t val;
+# endif
+    } _condattr_monotonic;
+
+#endif  // USE_PTHREADS
 };
 
 
