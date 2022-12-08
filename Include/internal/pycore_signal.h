@@ -10,15 +10,13 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"          // _Py_atomic_address
+#include "pycore_atomic.h"         // _Py_atomic_address
 
 #ifdef MS_WINDOWS
-#  include <windows.h>              // HANDLE
-#  include <winsock2.h>             // SOCKET
+#  include <windows.h>             // HANDLE
+#  include <winsock2.h>            // SOCKET
 #endif
-#ifdef HAVE_SIGNAL_H
-#  include <signal.h>               // NSIG
-#endif
+#include <signal.h>                // NSIG
 
 
 #ifdef _SIG_MAXSIG
@@ -29,13 +27,13 @@ extern "C" {
 #elif defined(NSIG)
 #  define Py_NSIG NSIG
 #elif defined(_NSIG)
-#  define Py_NSIG _NSIG             // BSD/SysV
+#  define Py_NSIG _NSIG            // BSD/SysV
 #elif defined(_SIGMAX)
-#  define Py_NSIG (_SIGMAX + 1)     // QNX
+#  define Py_NSIG (_SIGMAX + 1)    // QNX
 #elif defined(SIGMAX)
-#  define Py_NSIG (SIGMAX + 1)      // djgpp
+#  define Py_NSIG (SIGMAX + 1)     // djgpp
 #else
-#  define Py_NSIG 64                // Use a reasonable default value
+#  define Py_NSIG 64               // Use a reasonable default value
 #endif
 
 #ifdef MS_WINDOWS
