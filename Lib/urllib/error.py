@@ -42,10 +42,9 @@ class HTTPError(URLError, urllib.response.addinfourl):
         self.hdrs = hdrs
         self.fp = fp
         self.filename = url
-        if fp is not None:
-            self.__super_init(fp, hdrs, url, code)
-        else:
-            self.__super_init(io.StringIO(), hdrs, url, code)
+        if fp is None:
+            fp = io.StringIO()
+        self.__super_init(fp, hdrs, url, code)
 
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)
