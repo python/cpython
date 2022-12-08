@@ -56,12 +56,15 @@ static PyTypeObject pairwise_type;
 /* batched object ************************************************************/
 
 /* Note:  The built-in zip() function includes a "strict" argument
-   that is needed because that function can silently truncate data
-   and there is no easy way for a user to detect that condition.
-   The same reasoning does not apply to batched() which never drops
-   data.  Instead, it produces a shorter list which can be handled
-   as the user sees fit.
+   that was needed because that function would silently truncate data,
+   and there was no easy way for a user to detect that condition.
+   The same reasoning does not apply to batched() which never drops data.
+   Instead, batched() produces a shorter tuple which can be handled
+   as the user sees fit.  If requested, it would be reasonable to add
+   "fillvalue" support which had demonstrated value in zip_longest().
+   For now, the API is kept simple and clean.
  */
+
 
 typedef struct {
     PyObject_HEAD
@@ -78,7 +81,7 @@ Batch data into tuples of length n. The last batch may be shorter than n.
 
 Loops over the input iterable and accumulates data into tuples
 up to size n.  The input is consumed lazily, just enough to
-fill a list.  The result is yielded as soon as a batch is full
+fill a batch.  The result is yielded as soon as a batch is full
 or when the input iterable is exhausted.
 
     >>> for batch in batched('ABCDEFG', 3):
@@ -92,7 +95,7 @@ or when the input iterable is exhausted.
 
 static PyObject *
 batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
-/*[clinic end generated code: output=7ebc954d655371b6 input=ecf306e1654bf0a2]*/
+/*[clinic end generated code: output=7ebc954d655371b6 input=ffd70726927c5129]*/
 {
     PyObject *it;
     batchedobject *bo;
