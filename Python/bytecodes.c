@@ -88,8 +88,6 @@ static size_t jump;
 static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
 static uint32_t type_version;
 // Dummy opcode names for 'op' opcodes
-#define _BINARY_OP_INPLACE_ADD_UNICODE_PART_1 1001
-#define _BINARY_OP_INPLACE_ADD_UNICODE_PART_2 1002
 #define _COMPARE_OP_FLOAT 1003
 #define _COMPARE_OP_INT 1004
 #define _COMPARE_OP_STR 1005
