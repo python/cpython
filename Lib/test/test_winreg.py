@@ -338,7 +338,6 @@ class LocalWinregTests(BaseWinregTests):
                 SetValueEx(ck, "test_name", None, REG_DWORD, 0x80000000)
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
-    
     def test_setvalueex_negative_one_check(self):
         # Test for Issue #43984, check -1 was not set by SetValueEx.
         # Py2Reg, which gets called by SetValueEx, wasn't checking return
@@ -355,7 +354,6 @@ class LocalWinregTests(BaseWinregTests):
 
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
-        
     def test_queryvalueex_return_value(self):
         # Test for Issue #16759, return unsigned int from QueryValueEx.
         # Reg2Py, which gets called by QueryValueEx, was returning a value
