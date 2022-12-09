@@ -35,12 +35,7 @@ static void raw_free(void *ptr);
 #define TO_PTR(key) ((const void *)(uintptr_t)(key))
 #define FROM_PTR(key) ((uintptr_t)(key))
 
-/* Protected by the GIL */
-static struct {
-    PyMemAllocatorEx mem;
-    PyMemAllocatorEx raw;
-    PyMemAllocatorEx obj;
-} allocators;
+#define allocators _PyRuntime.tracemalloc.allocators
 
 
 #if defined(TRACE_RAW_MALLOC)

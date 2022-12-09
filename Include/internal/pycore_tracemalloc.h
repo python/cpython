@@ -30,6 +30,12 @@ struct _PyTraceMalloc_Config {
 
 struct _tracemalloc_runtime_state {
     struct _PyTraceMalloc_Config config;
+    /* Protected by the GIL */
+    struct {
+        PyMemAllocatorEx mem;
+        PyMemAllocatorEx raw;
+        PyMemAllocatorEx obj;
+    } allocators;
 };
 
 #define _tracemalloc_runtime_state_INIT \
