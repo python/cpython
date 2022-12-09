@@ -62,8 +62,7 @@
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 
-#ifdef HAVE_TIMES
-
+#if defined(HAVE_TIMES) || defined(HAVE_CLOCK)
 static int
 check_ticks_per_second(long tps, const char *context)
 {
@@ -75,6 +74,9 @@ check_ticks_per_second(long tps, const char *context)
     }
     return 0;
 }
+#endif  /* HAVE_TIMES || HAVE_CLOCK */
+
+#ifdef HAVE_TIMES
 
 # define ticks_per_second _PyRuntime.time.ticks_per_second
 
