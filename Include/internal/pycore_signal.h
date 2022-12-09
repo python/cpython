@@ -14,10 +14,10 @@ extern "C" {
 
 #ifdef MS_WINDOWS
 #  ifndef SOCKET
-#    include <winsock2.h>          // SOCKET
+#    error "<winsock2.h> must be included before this header"
 #  endif
 #  ifndef HANDLE
-#    include <windows.h>           // HANDLE
+#    error "<windows.h> must be included before this header"
 #  endif
 #endif
 #include <signal.h>                // NSIG
