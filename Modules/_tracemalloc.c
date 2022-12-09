@@ -102,7 +102,7 @@ tracemalloc_error(const char *format, ...)
 #if defined(TRACE_RAW_MALLOC)
 #define REENTRANT_THREADLOCAL
 
-static Py_tss_t tracemalloc_reentrant_key = Py_tss_NEEDS_INIT;
+#define tracemalloc_reentrant_key _PyRuntime.tracemalloc.reentrant_key
 
 /* Any non-NULL pointer can be used */
 #define REENTRANT Py_True

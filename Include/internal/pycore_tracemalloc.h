@@ -64,12 +64,14 @@ struct tracemalloc_traceback {
 
 struct _tracemalloc_runtime_state {
     struct _PyTraceMalloc_Config config;
+
     /* Protected by the GIL */
     struct {
         PyMemAllocatorEx mem;
         PyMemAllocatorEx raw;
         PyMemAllocatorEx obj;
     } allocators;
+
 #if defined(TRACE_RAW_MALLOC)
     PyThread_type_lock tables_lock;
 #endif
@@ -96,6 +98,8 @@ struct _tracemalloc_runtime_state {
     /* domain (unsigned int) => traces (_Py_hashtable_t).
        Protected by TABLES_LOCK(). */
     _Py_hashtable_t *domains;
+
+    Py_tss_t reentrant_key;
 };
 
 #define _tracemalloc_runtime_state_INIT \
@@ -105,6 +109,7 @@ struct _tracemalloc_runtime_state {
             .tracing = 0, \
             .max_nframe = 1, \
         }, \
+        .reentrant_key = Py_tss_NEEDS_INIT, \
     }
 
 
