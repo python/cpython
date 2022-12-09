@@ -42,9 +42,6 @@ The :mod:`urllib.request` module defines the following functions:
    the global default timeout setting will be used).  This actually
    only works for HTTP, HTTPS and FTP connections.
 
-   Warning: the global default timeout value is set with no timeout, which may
-   not be the desired value for this function.
-
    If *context* is specified, it must be a :class:`ssl.SSLContext` instance
    describing the various SSL options. See :class:`~http.client.HTTPSConnection`
    for more details.
@@ -89,6 +86,11 @@ The :mod:`urllib.request` module defines the following functions:
    ``urllib2.urlopen``.  Proxy handling, which was done by passing a dictionary
    parameter to ``urllib.urlopen``, can be obtained by using
    :class:`ProxyHandler` objects.
+
+   .. note::
+
+      The global default timeout value is set with no timeout, which may
+      not be the desired value for this function.
 
    .. audit-event:: urllib.Request fullurl,data,headers,method urllib.request.urlopen
 
