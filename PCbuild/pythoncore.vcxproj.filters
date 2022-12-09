@@ -519,6 +519,9 @@
     <ClInclude Include="..\Include\internal\pycore_ceval.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_ceval_state.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_code.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
