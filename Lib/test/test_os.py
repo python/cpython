@@ -3287,7 +3287,8 @@ class ProgramPriorityTests(unittest.TestCase):
         os.setpriority(os.PRIO_PROCESS, os.getpid(), base + 1)
         try:
             new_prio = os.getpriority(os.PRIO_PROCESS, os.getpid())
-            if base >= 19 and new_prio <= 19:
+            # nice value cap is 19 for linux and 20 for FreeBSD
+            if base >= 19 and new_prio <= base:
                 raise unittest.SkipTest("unable to reliably test setpriority "
                                         "at current nice level of %s" % base)
             else:
