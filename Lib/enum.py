@@ -436,7 +436,9 @@ class _EnumDict(dict):
             if isinstance(value, auto):
                 single = True
                 value = (value, )
-            if isinstance(value, tuple):
+            if type(value) is tuple and any(isinstance(v, auto) for v in value):
+                # insist on an actual tuple, no subclasses, in keeping with only supporting
+                # top-level auto() usage (not contained in any other data structure)
                 auto_valued = []
                 for v in value:
                     if isinstance(v, auto):
@@ -955,7 +957,15 @@ class EnumType(type):
                     return base._value_repr_
                 elif '__repr__' in base.__dict__:
                     # this is our data repr
-                    return base.__dict__['__repr__']
+                    # double-check if a dataclass with a default __repr__
+                    if (
+                            '__dataclass_fields__' in base.__dict__
+                            and '__dataclass_params__' in base.__dict__
+                            and base.__dict__['__dataclass_params__'].repr
+                        ):
+                        return _dataclass_repr
+                    else:
+                        return base.__dict__['__repr__']
         return None
 
     @classmethod
@@ -1046,20 +1056,20 @@ class Enum(metaclass=EnumType):
 
     Access them by:
 
-    - attribute access::
+    - attribute access:
 
-    >>> Color.RED
-    <Color.RED: 1>
+      >>> Color.RED
+      <Color.RED: 1>
 
     - value lookup:
 
-    >>> Color(1)
-    <Color.RED: 1>
+      >>> Color(1)
+      <Color.RED: 1>
 
     - name lookup:
 
-    >>> Color['RED']
-    <Color.RED: 1>
+      >>> Color['RED']
+      <Color.RED: 1>
 
     Enumerations can be iterated over, and know how many members they have:
 
@@ -1550,6 +1560,14 @@ def _power_of_two(value):
     if value < 1:
         return False
     return value == 2 ** _high_bit(value)
+
+def _dataclass_repr(self):
+    dcf = self.__dataclass_fields__
+    return ', '.join(
+            '%s=%r' % (k, getattr(self, k))
+            for k in dcf.keys()
+            if dcf[k].repr
+            )
 
 def global_enum_repr(self):
     """

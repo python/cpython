@@ -2589,6 +2589,91 @@ test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+// Test Py_CLEAR() macro
+static PyObject*
+test_py_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // simple case with a variable
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_CLEAR(obj);
+    assert(obj == NULL);
+
+    // gh-98724: complex case, Py_CLEAR() argument has a side effect
+    PyObject* array[1];
+    array[0] = PyList_New(0);
+    if (array[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p = array;
+    Py_CLEAR(*p++);
+    assert(array[0] == NULL);
+    assert(p == array + 1);
+
+    Py_RETURN_NONE;
+}
+
+
+// Test Py_SETREF() and Py_XSETREF() macros, similar to test_py_clear()
+static PyObject*
+test_py_setref(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Py_SETREF() simple case with a variable
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_SETREF(obj, NULL);
+    assert(obj == NULL);
+
+    // Py_XSETREF() simple case with a variable
+    PyObject *obj2 = PyList_New(0);
+    if (obj2 == NULL) {
+        return NULL;
+    }
+    Py_XSETREF(obj2, NULL);
+    assert(obj2 == NULL);
+    // test Py_XSETREF() when the argument is NULL
+    Py_XSETREF(obj2, NULL);
+    assert(obj2 == NULL);
+
+    // gh-98724: complex case, Py_SETREF() argument has a side effect
+    PyObject* array[1];
+    array[0] = PyList_New(0);
+    if (array[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p = array;
+    Py_SETREF(*p++, NULL);
+    assert(array[0] == NULL);
+    assert(p == array + 1);
+
+    // gh-98724: complex case, Py_XSETREF() argument has a side effect
+    PyObject* array2[1];
+    array2[0] = PyList_New(0);
+    if (array2[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p2 = array2;
+    Py_XSETREF(*p2++, NULL);
+    assert(array2[0] == NULL);
+    assert(p2 == array2 + 1);
+
+    // test Py_XSETREF() when the argument is NULL
+    p2 = array2;
+    Py_XSETREF(*p2++, NULL);
+    assert(array2[0] == NULL);
+    assert(p2 == array2 + 1);
+
+    Py_RETURN_NONE;
+}
+
+
 #define TEST_REFCOUNT() \
     do { \
         PyObject *obj = PyList_New(0); \
@@ -3252,6 +3337,8 @@ static PyMethodDef TestMethods[] = {
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"without_gc", without_gc, METH_O},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
+    {"test_py_clear", test_py_clear, METH_NOARGS},
+    {"test_py_setref", test_py_setref, METH_NOARGS},
     {"test_refcount_macros", test_refcount_macros, METH_NOARGS},
     {"test_refcount_funcs", test_refcount_funcs, METH_NOARGS},
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},

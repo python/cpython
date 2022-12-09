@@ -606,6 +606,11 @@ pycore_init_runtime(_PyRuntimeState *runtime,
         return status;
     }
 
+    status = _PyTime_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PyImport_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;

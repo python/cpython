@@ -351,6 +351,7 @@ The fine print:
 
      >>> def f(x):
      ...     r'''Backslashes in a raw docstring: m\n'''
+     ...
      >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
@@ -360,6 +361,7 @@ The fine print:
 
      >>> def f(x):
      ...     '''Backslashes in a raw docstring: m\\n'''
+     ...
      >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 

@@ -1,0 +1,3 @@
+The Python test runner (libregrtest) now logs Python build information like
+"debug" vs "release" build, or LTO and PGO optimizations. Patch by Victor
+Stinner.

@@ -62,6 +62,56 @@
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 
+#if defined(HAVE_TIMES) || defined(HAVE_CLOCK)
+static int
+check_ticks_per_second(long tps, const char *context)
+{
+    /* Effectively, check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
+       cannot overflow. */
+    if (tps >= 0 && (_PyTime_t)tps > _PyTime_MAX / SEC_TO_NS) {
+        PyErr_Format(PyExc_OverflowError, "%s is too large", context);
+        return -1;
+    }
+    return 0;
+}
+#endif  /* HAVE_TIMES || HAVE_CLOCK */
+
+#ifdef HAVE_TIMES
+
+# define ticks_per_second _PyRuntime.time.ticks_per_second
+
+static void
+ensure_ticks_per_second(void)
+{
+    if (_PyRuntime.time.ticks_per_second_initialized) {
+        return;
+    }
+    _PyRuntime.time.ticks_per_second_initialized = 1;
+# if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+    ticks_per_second = sysconf(_SC_CLK_TCK);
+    if (ticks_per_second < 1) {
+        ticks_per_second = -1;
+    }
+# elif defined(HZ)
+    ticks_per_second = HZ;
+# else
+    ticks_per_second = 60;  /* magic fallback value; may be bogus */
+# endif
+}
+
+#endif  /* HAVE_TIMES */
+
+
+PyStatus
+_PyTime_Init(void)
+{
+#ifdef HAVE_TIMES
+    ensure_ticks_per_second();
+#endif
+    return PyStatus_Ok();
+}
+
+
 /* Forward declarations */
 static int pysleep(_PyTime_t timeout);
 
@@ -140,18 +190,8 @@ Return the current time in nanoseconds since the Epoch.");
 static int
 _PyTime_GetClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    static int initialized = 0;
-
-    if (!initialized) {
-        initialized = 1;
-
-        /* Make sure that _PyTime_MulDiv(ticks, SEC_TO_NS, CLOCKS_PER_SEC)
-           above cannot overflow */
-        if ((_PyTime_t)CLOCKS_PER_SEC > _PyTime_MAX / SEC_TO_NS) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "CLOCKS_PER_SEC is too large");
-            return -1;
-        }
+    if (check_ticks_per_second(CLOCKS_PER_SEC, "CLOCKS_PER_SEC") < 0) {
+        return -1;
     }
 
     if (info) {
@@ -1308,36 +1348,10 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     struct tms t;
 
     if (times(&t) != (clock_t)-1) {
-        static long ticks_per_second = -1;
-
-        if (ticks_per_second == -1) {
-            long freq;
-#if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
-            freq = sysconf(_SC_CLK_TCK);
-            if (freq < 1) {
-                freq = -1;
-            }
-#elif defined(HZ)
-            freq = HZ;
-#else
-            freq = 60; /* magic fallback value; may be bogus */
-#endif
-
-            if (freq != -1) {
-                /* check that _PyTime_MulDiv(t, SEC_TO_NS, ticks_per_second)
-                   cannot overflow below */
-#if LONG_MAX > _PyTime_MAX / SEC_TO_NS
-                if ((_PyTime_t)freq > _PyTime_MAX / SEC_TO_NS) {
-                    PyErr_SetString(PyExc_OverflowError,
-                                    "_SC_CLK_TCK is too large");
-                    return -1;
-                }
-#endif
-
-                ticks_per_second = freq;
-            }
+        assert(_PyRuntime.time.ticks_per_second_initialized);
+        if (check_ticks_per_second(ticks_per_second, "_SC_CLK_TCK") < 0) {
+            return -1;
         }
-
         if (ticks_per_second != -1) {
             if (info) {
                 info->implementation = "times()";

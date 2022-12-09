@@ -1043,6 +1043,7 @@ extern "C" {
     INIT_ID(node_offset), \
     INIT_ID(ns), \
     INIT_ID(nstype), \
+    INIT_ID(nt), \
     INIT_ID(null), \
     INIT_ID(number), \
     INIT_ID(obj), \
@@ -1081,6 +1082,7 @@ extern "C" {
     INIT_ID(pos), \
     INIT_ID(pos1), \
     INIT_ID(pos2), \
+    INIT_ID(posix), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \
