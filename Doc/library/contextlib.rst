@@ -66,6 +66,8 @@ Functions and classes provided:
               # Code to release resource, e.g.:
               release_resource(resource)
 
+   The function can then be used like this::
+
       >>> with managed_resource(timeout=3600) as resource:
       ...     # Resource is released at the end of this block,
       ...     # even if code in the block raises an exception
@@ -130,7 +132,9 @@ Functions and classes provided:
    either as decorators or with :keyword:`async with` statements::
 
      import time
+     from contextlib import asynccontextmanager
 
+     @asynccontextmanager
      async def timeit():
          now = time.monotonic()
          try:
@@ -138,9 +142,9 @@ Functions and classes provided:
          finally:
              print(f'it took {time.monotonic() - now}s to run')
 
-      @timeit()
-      async def main():
-          # ... async code ...
+     @timeit()
+     async def main():
+         # ... async code ...
 
    When used as a decorator, a new generator instance is implicitly created on
    each function call. This allows the otherwise "one-shot" context managers
@@ -171,7 +175,7 @@ Functions and classes provided:
       from contextlib import closing
       from urllib.request import urlopen
 
-      with closing(urlopen('http://www.python.org')) as page:
+      with closing(urlopen('https://www.python.org')) as page:
           for line in page:
               print(line)
 
@@ -179,7 +183,7 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
-.. class:: aclosing(thing)
+.. function:: aclosing(thing)
 
    Return an async context manager that calls the ``aclose()`` method of *thing*
    upon completion of the block.  This is basically equivalent to::
@@ -247,15 +251,15 @@ Functions and classes provided:
    :ref:`asynchronous context managers <async-context-managers>`::
 
        async def send_http(session=None):
-          if not session:
-              # If no http session, create it with aiohttp
-              cm = aiohttp.ClientSession()
-          else:
-              # Caller is responsible for closing the session
-              cm = nullcontext(session)
+           if not session:
+               # If no http session, create it with aiohttp
+               cm = aiohttp.ClientSession()
+           else:
+               # Caller is responsible for closing the session
+               cm = nullcontext(session)
 
-          async with cm as session:
-              # Send http requests with session
+           async with cm as session:
+               # Send http requests with session
 
    .. versionadded:: 3.7
 
@@ -353,6 +357,23 @@ Functions and classes provided:
    .. versionadded:: 3.5
 
 
+.. function:: chdir(path)
+
+   Non parallel-safe context manager to change the current working directory.
+   As this changes a global state, the working directory, it is not suitable
+   for use in most threaded or async contexts. It is also not suitable for most
+   non-linear code execution, like generators, where the program execution is
+   temporarily relinquished -- unless explicitly desired, you should not yield
+   when this context manager is active.
+
+   This is a simple wrapper around :func:`~os.chdir`, it changes the current
+   working directory upon entering and restores the old one on exit.
+
+   This context manager is :ref:`reentrant <reentrant-cms>`.
+
+   .. versionadded:: 3.11
+
+
 .. class:: ContextDecorator()
 
    A base class that enables a context manager to also be used as a decorator.
@@ -376,6 +397,8 @@ Functions and classes provided:
           def __exit__(self, *exc):
               print('Finishing')
               return False
+
+   The class can then be used like this::
 
       >>> @mycontext()
       ... def function():
@@ -447,6 +470,8 @@ Functions and classes provided:
               print('Finishing')
               return False
 
+   The class can then be used like this::
+
       >>> @mycontext()
       ... async def function():
       ...     print('The bit in the middle')
@@ -483,6 +508,9 @@ Functions and classes provided:
           # the with statement, even if attempts to open files later
           # in the list raise an exception
 
+   The :meth:`__enter__` method returns the :class:`ExitStack` instance, and
+   performs no additional operations.
+
    Each instance maintains a stack of registered callbacks that are called in
    reverse order when the instance is closed (either explicitly or implicitly
    at the end of a :keyword:`with` statement). Note that callbacks are *not*
@@ -514,6 +542,10 @@ Functions and classes provided:
 
       These context managers may suppress exceptions just as they normally
       would if used directly as part of a :keyword:`with` statement.
+
+      .. versionchanged:: 3.11
+         Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
+         is not a context manager.
 
    .. method:: push(exit)
 
@@ -584,6 +616,10 @@ Functions and classes provided:
 
       Similar to :meth:`enter_context` but expects an asynchronous context
       manager.
+
+      .. versionchanged:: 3.11
+         Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
+         is not an asynchronous context manager.
 
    .. method:: push_async_exit(exit)
 
@@ -892,8 +928,8 @@ but may also be used *inside* a :keyword:`!with` statement that is already
 using the same context manager.
 
 :class:`threading.RLock` is an example of a reentrant context manager, as are
-:func:`suppress` and :func:`redirect_stdout`. Here's a very simple example of
-reentrant use::
+:func:`suppress`, :func:`redirect_stdout`, and :func:`chdir`. Here's a very
+simple example of reentrant use::
 
     >>> from contextlib import redirect_stdout
     >>> from io import StringIO

@@ -48,11 +48,12 @@ internal error is detected, or when :func:`os._exit` is called.
 
 .. function:: unregister(func)
 
-   Remove *func* from the list of functions to be run at interpreter
-   shutdown.  After calling :func:`unregister`, *func* is guaranteed not to be
-   called when the interpreter shuts down, even if it was registered more than
-   once.  :func:`unregister` silently does nothing if *func* was not previously
-   registered.
+   Remove *func* from the list of functions to be run at interpreter shutdown.
+   :func:`unregister` silently does nothing if *func* was not previously
+   registered.  If *func* has been registered more than once, every occurrence
+   of that function in the :mod:`atexit` call stack will be removed.  Equality
+   comparisons (``==``) are used internally during unregistration, so function
+   references do not need to have matching identities.
 
 
 .. seealso::

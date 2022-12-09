@@ -9,6 +9,12 @@ import os
 import string
 import sys
 
+# Modified keyword list is used in fetch_completions.
+completion_kwds = [s for s in keyword.kwlist
+                     if s not in {'True', 'False', 'None'}]  # In builtins.
+completion_kwds.extend(('match', 'case'))  # Context keywords.
+completion_kwds.sort()
+
 # Two types of completions; defined here for autocomplete_w import below.
 ATTRS, FILES = 0, 1
 from idlelib import autocomplete_w
@@ -177,9 +183,7 @@ class AutoComplete:
                     namespace = {**__main__.__builtins__.__dict__,
                                  **__main__.__dict__}
                     bigl = eval("dir()", namespace)
-                    kwds = (s for s in keyword.kwlist
-                            if s not in {'True', 'False', 'None'})
-                    bigl.extend(kwds)
+                    bigl.extend(completion_kwds)
                     bigl.sort()
                     if "__all__" in bigl:
                         smalll = sorted(eval("__all__", namespace))

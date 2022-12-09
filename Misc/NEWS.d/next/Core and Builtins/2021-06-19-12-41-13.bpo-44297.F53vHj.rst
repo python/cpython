@@ -1,3 +1,0 @@
-Make sure that the line number is set when entering a comprehension scope.
-Ensures that backtraces inclusing generator expressions show the correct
-line number.
