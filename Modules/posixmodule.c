@@ -14,7 +14,6 @@
 // is not exported by <windows.h> if the WIN32_LEAN_AND_MEAN macro is defined,
 // whereas pycore_condvar.h defines the WIN32_LEAN_AND_MEAN macro.
 #ifdef MS_WINDOWS
-#  include <winsock2.h>
 #  include <windows.h>
 #  include <pathcch.h>
 #  include <lmcons.h>             // UNLEN
