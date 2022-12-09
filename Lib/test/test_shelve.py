@@ -10,6 +10,9 @@ from test.support import os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
+from Lib.shelve import ShelveError
+
+
 def L1(s):
     return s.decode("latin-1")
 
@@ -182,6 +185,20 @@ class TestCase(unittest.TestCase):
             num = 1
             s['number'] = num
             self.assertEqual(s['number'], type(num))
+
+    def test_missing_custom_deserializer(self):
+        def serializer(obj, protocol=None):
+            pass
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.Shelf({}, protocol=2, writeback=False, serializer=serializer)
+
+    def test_missing_custom_serializer(self):
+        def deserializer(data):
+            pass
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.Shelf({}, protocol=2, writeback=False, deserializer=deserializer)
 
 
 class TestShelveBase:
