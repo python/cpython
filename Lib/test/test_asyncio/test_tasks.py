@@ -2092,8 +2092,8 @@ class BaseTaskTests:
         async def create():
             # The indirection fut->child_coro is needed since otherwise the
             # gathering task is done at the same time as the child future
-            def child_coro():
-                return (yield from fut)
+            async def child_coro():
+                return await fut
             gather_future = asyncio.gather(child_coro())
             return asyncio.ensure_future(gather_future)
         gather_task = loop.run_until_complete(create())
