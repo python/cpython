@@ -1,1 +1,1 @@
-Shelve module accepts custom_dumps and custom_loads functions.
+Shelve module accepts serializer and deserializer functions.
