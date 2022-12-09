@@ -210,6 +210,24 @@ typedef int pid_t;
 #endif /* _MSC_VER */
 
 /* ------------------------------------------------------------------------*/
+/* mingw and mingw-w64 define __MINGW32__ */
+#ifdef __MINGW32__
+
+#if !defined(MS_WIN64) && defined(_WIN64)
+#define MS_WIN64
+#endif
+
+#if !defined(MS_WIN32) && defined(_WIN32)
+#define MS_WIN32
+#endif
+
+#if !defined(MS_WINDOWS) && defined(MS_WIN32)
+#define MS_WINDOWS
+#endif
+
+#endif /* __MINGW32__*/
+
+/* ------------------------------------------------------------------------*/
 /* egcs/gnu-win32 defines __GNUC__ and _WIN32 */
 #if defined(__GNUC__) && defined(_WIN32)
 /* XXX These defines are likely incomplete, but should be easy to fix.
