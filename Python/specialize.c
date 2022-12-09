@@ -18,7 +18,7 @@
 
 #ifdef Py_STATS
 PyStats _py_stats_struct = { 0 };
-PyStats *_py_stats = &_py_stats_struct;
+PyStats *_py_stats = NULL;
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
