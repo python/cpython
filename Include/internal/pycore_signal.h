@@ -13,8 +13,12 @@ extern "C" {
 #include "pycore_atomic.h"         // _Py_atomic_address
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>            // SOCKET
-#  include <windows.h>             // HANDLE
+#  ifndef SOCKET
+#    include <winsock2.h>          // SOCKET
+#  endif
+#  ifndef HANDLE
+#    include <windows.h>           // HANDLE
+#  endif
 #endif
 #include <signal.h>                // NSIG
 
