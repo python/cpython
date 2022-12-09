@@ -9,18 +9,20 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"          /* _Py_atomic_address */
+#include "pycore_ceval_state.h"     // struct _ceval_runtime_state
 #include "pycore_dict_state.h"      // struct _Py_dict_runtime_state
 #include "pycore_dtoa.h"            // struct _dtoa_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_function.h"        // struct _func_runtime_state
-#include "pycore_gil.h"             // struct _gil_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
 #include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_parser.h"          // struct _parser_runtime_state
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
+#include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_obmalloc.h"        // struct obmalloc_state
+#include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 struct _getargs_runtime_state {
@@ -29,15 +31,6 @@ struct _getargs_runtime_state {
 };
 
 /* ceval state */
-
-struct _ceval_runtime_state {
-    /* Request for checking signals. It is shared by all interpreters (see
-       bpo-40513). Any thread of any interpreter can receive a signal, but only
-       the main thread of the main interpreter can handle signals: see
-       _Py_ThreadCanHandleSignals(). */
-    _Py_atomic_int signals_pending;
-    struct _gil_runtime_state gil;
-};
 
 /* GIL state */
 
@@ -103,6 +96,8 @@ typedef struct pyruntimestate {
          * KeyboardInterrupt exception, suggesting the user pressed ^C. */
         int unhandled_keyboard_interrupt;
     } signals;
+    struct _time_runtime_state time;
+    struct _pythread_runtime_state threads;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
