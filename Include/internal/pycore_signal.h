@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 #ifdef MS_WINDOWS
-#  define INVALID_FD ((SOCKET_T)-1)
+#  define INVALID_FD ((SOCKET)-1)
 #else
 #  define INVALID_FD (-1)
 #endif
