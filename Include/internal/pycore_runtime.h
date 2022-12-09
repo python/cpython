@@ -20,6 +20,7 @@ extern "C" {
 #include "pycore_parser.h"          // struct _parser_runtime_state
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
+#include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_obmalloc.h"        // struct obmalloc_state
 #include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
@@ -96,6 +97,7 @@ typedef struct pyruntimestate {
         int unhandled_keyboard_interrupt;
     } signals;
     struct _time_runtime_state time;
+    struct _pythread_runtime_state threads;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
