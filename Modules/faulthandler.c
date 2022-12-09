@@ -73,23 +73,7 @@ typedef struct {
 } fault_handler_t;
 
 #define fatal_error _PyRuntime.faulthandler.fatal_error
-
-static struct {
-    PyObject *file;
-    int fd;
-    PY_TIMEOUT_T timeout_us;   /* timeout in microseconds */
-    int repeat;
-    PyInterpreterState *interp;
-    int exit;
-    char *header;
-    size_t header_len;
-    /* The main thread always holds this lock. It is only released when
-       faulthandler_thread() is interrupted before this thread exits, or at
-       Python exit. */
-    PyThread_type_lock cancel_event;
-    /* released by child thread when joined */
-    PyThread_type_lock running;
-} thread;
+#define thread _PyRuntime.faulthandler.thread
 
 #ifdef FAULTHANDLER_USER
 typedef struct {
@@ -1085,7 +1069,7 @@ faulthandler_fatal_error_thread(void *plock)
 static PyObject *
 faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
 {
-    long thread;
+    long tid;
     PyThread_type_lock lock;
 
     faulthandler_suppress_crash_report();
@@ -1096,8 +1080,8 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
 
     PyThread_acquire_lock(lock, WAIT_LOCK);
 
-    thread = PyThread_start_new_thread(faulthandler_fatal_error_thread, lock);
-    if (thread == -1) {
+    tid = PyThread_start_new_thread(faulthandler_fatal_error_thread, lock);
+    if (tid == -1) {
         PyThread_free_lock(lock);
         PyErr_SetString(PyExc_RuntimeError, "unable to start the thread");
         return NULL;

@@ -10,7 +10,6 @@ extern "C" {
 
 
 struct _faulthandler_runtime_state {
-    int _not_used;
     struct {
         int enabled;
         PyObject *file;
@@ -21,6 +20,23 @@ struct _faulthandler_runtime_state {
         void *exc_handler;
 #endif
     } fatal_error;
+
+    struct {
+        PyObject *file;
+        int fd;
+        PY_TIMEOUT_T timeout_us;   /* timeout in microseconds */
+        int repeat;
+        PyInterpreterState *interp;
+        int exit;
+        char *header;
+        size_t header_len;
+        /* The main thread always holds this lock. It is only released when
+           faulthandler_thread() is interrupted before this thread exits, or at
+           Python exit. */
+        PyThread_type_lock cancel_event;
+        /* released by child thread when joined */
+        PyThread_type_lock running;
+    } thread;
 };
 
 #define _faulthandler_runtime_state_INIT \
