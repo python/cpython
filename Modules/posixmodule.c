@@ -2242,6 +2242,7 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     _posixstate *state = get_posix_state(mod);
+    Py_DECREF(mod);
     if (state == NULL) {
         return NULL;
     }
