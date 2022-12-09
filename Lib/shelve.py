@@ -63,6 +63,11 @@ import collections.abc
 
 __all__ = ["Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
 
+
+class ShelveError(Exception):
+    pass
+
+
 class _ClosedDict(collections.abc.MutableMapping):
     'Marker for a closed dict.  Access attempts raise a ValueError.'
 
@@ -94,6 +99,8 @@ class Shelf(collections.abc.MutableMapping):
         if serializer is None and deserializer is None:
             self.serializer = dumps
             self.deserializer = loads
+        elif (serializer is None and deserializer is not None) or (deserializer is None and serializer is not None):
+            raise ShelveError("Serializer and deserializer must be defined together.")
         else:
             self.serializer = serializer
             self.deserializer = deserializer
