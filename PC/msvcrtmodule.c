@@ -23,6 +23,7 @@
 #include <conio.h>
 #include <sys/locking.h>
 #include <crtdbg.h>
+#include <winsock2.h>
 #include <windows.h>
 
 #ifdef _MSC_VER
