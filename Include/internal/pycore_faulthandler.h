@@ -9,6 +9,39 @@ extern "C" {
 #endif
 
 
+#ifdef HAVE_SIGACTION
+#include <signal.h>
+#endif
+
+
+#ifndef MS_WINDOWS
+   /* register() is useless on Windows, because only SIGSEGV, SIGABRT and
+      SIGILL can be handled by the process, and these signals can only be used
+      with enable(), not using register() */
+#  define FAULTHANDLER_USER
+#endif
+
+
+#ifdef HAVE_SIGACTION
+typedef struct sigaction _Py_sighandler_t;
+#else
+typedef PyOS_sighandler_t _Py_sighandler_t;
+#endif
+
+
+#ifdef FAULTHANDLER_USER
+struct faulthandler_user_signal {
+    int enabled;
+    PyObject *file;
+    int fd;
+    int all_threads;
+    int chain;
+    _Py_sighandler_t previous;
+    PyInterpreterState *interp;
+};
+#endif /* FAULTHANDLER_USER */
+
+
 struct _faulthandler_runtime_state {
     struct {
         int enabled;
@@ -37,6 +70,10 @@ struct _faulthandler_runtime_state {
         /* released by child thread when joined */
         PyThread_type_lock running;
     } thread;
+
+#ifdef FAULTHANDLER_USER
+    struct faulthandler_user_signal *user_signals;
+#endif
 };
 
 #define _faulthandler_runtime_state_INIT \

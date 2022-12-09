@@ -32,13 +32,6 @@
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
 
-#ifndef MS_WINDOWS
-   /* register() is useless on Windows, because only SIGSEGV, SIGABRT and
-      SIGILL can be handled by the process, and these signals can only be used
-      with enable(), not using register() */
-#  define FAULTHANDLER_USER
-#endif
-
 #define PUTS(fd, str) _Py_write_noraise(fd, str, strlen(str))
 
 
@@ -58,12 +51,6 @@
 #endif
 
 
-#ifdef HAVE_SIGACTION
-typedef struct sigaction _Py_sighandler_t;
-#else
-typedef PyOS_sighandler_t _Py_sighandler_t;
-#endif
-
 typedef struct {
     int signum;
     int enabled;
@@ -76,18 +63,8 @@ typedef struct {
 #define thread _PyRuntime.faulthandler.thread
 
 #ifdef FAULTHANDLER_USER
-typedef struct {
-    int enabled;
-    PyObject *file;
-    int fd;
-    int all_threads;
-    int chain;
-    _Py_sighandler_t previous;
-    PyInterpreterState *interp;
-} user_signal_t;
-
-static user_signal_t *user_signals;
-
+#define user_signals _PyRuntime.faulthandler.user_signals
+typedef struct faulthandler_user_signal user_signal_t;
 static void faulthandler_user(int signum);
 #endif /* FAULTHANDLER_USER */
 
