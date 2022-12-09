@@ -306,7 +306,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ## state
 
 Objects/object.c	-	_Py_RefTotal	-
-Python/thread_pthread_stubs.h	-	py_tls_entries	-
 
 
 ##################################
