@@ -4832,11 +4832,11 @@ order (MRO) for bases """
 
     def test_qualname(self):
         descriptors = [str.lower, complex.real, float.real, int.__add__]
-        types = ['method', 'member', 'getset', 'wrapper']
+        types = ['Method', 'Member', 'GetSet', 'Wrapper']
 
         # make sure we have an example of each type of descriptor
         for d, n in zip(descriptors, types):
-            self.assertEqual(type(d).__name__, n + '_descriptor')
+            self.assertEqual(type(d).__name__, n + 'DescriptorType')
 
         for d in descriptors:
             qualname = d.__objclass__.__qualname__ + '.' + d.__name__

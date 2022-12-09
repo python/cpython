@@ -345,11 +345,15 @@ class PyObjectPtr(object):
         name_map = {'bool': PyBoolObjectPtr,
                     'classobj': PyClassObjectPtr,
                     'NoneType': PyNoneStructPtr,
+                    'types.NoneType': PyNoneStructPtr,
                     'frame': PyFrameObjectPtr,
+                    'types.FrameType': PyFrameObjectPtr,
                     'set' : PySetObjectPtr,
                     'frozenset' : PySetObjectPtr,
                     'builtin_function_or_method' : PyCFunctionObjectPtr,
+                    'types.BuiltinFunctionType' : PyCFunctionObjectPtr,
                     'method-wrapper': wrapperobject,
+                    'types.MethodWrapperType': wrapperobject,
                     }
         if tp_name in name_map:
             return name_map[tp_name]

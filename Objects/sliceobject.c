@@ -48,7 +48,7 @@ static PyMethodDef ellipsis_methods[] = {
 
 PyTypeObject PyEllipsis_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "ellipsis",                         /* tp_name */
+    "types.EllipsisType",                         /* tp_name */
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     0, /*never called*/                 /* tp_dealloc */

@@ -263,73 +263,71 @@ What about willful misconduct?
       ...
     TypeError: h() got an unexpected keyword argument 'e'
 
-    >>> h(*h)
+    >>> h(*1)
     Traceback (most recent call last):
       ...
-    TypeError: test.test_extcall.h() argument after * must be an iterable, not function
+    TypeError: test.test_extcall.h() argument after * must be an iterable, not int
 
-    >>> h(1, *h)
+    >>> h(1, *2)
     Traceback (most recent call last):
       ...
-    TypeError: Value after * must be an iterable, not function
+    TypeError: Value after * must be an iterable, not int
 
-    >>> h(*[1], *h)
+    >>> h(*[1], *2)
     Traceback (most recent call last):
       ...
-    TypeError: Value after * must be an iterable, not function
+    TypeError: Value after * must be an iterable, not int
 
-    >>> dir(*h)
+    >>> dir(*1)
     Traceback (most recent call last):
       ...
-    TypeError: dir() argument after * must be an iterable, not function
+    TypeError: dir() argument after * must be an iterable, not int
 
     >>> nothing = None
-    >>> nothing(*h)
+    >>> nothing(*1)
     Traceback (most recent call last):
       ...
-    TypeError: None argument after * must be an iterable, \
-not function
+    TypeError: None argument after * must be an iterable, not int
 
-    >>> h(**h)
+    >>> h(**1)
     Traceback (most recent call last):
       ...
-    TypeError: test.test_extcall.h() argument after ** must be a mapping, not function
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not int
 
     >>> h(**[])
     Traceback (most recent call last):
       ...
     TypeError: test.test_extcall.h() argument after ** must be a mapping, not list
 
-    >>> h(a=1, **h)
+    >>> h(a=1, **2)
     Traceback (most recent call last):
       ...
-    TypeError: test.test_extcall.h() argument after ** must be a mapping, not function
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not int
 
     >>> h(a=1, **[])
     Traceback (most recent call last):
       ...
     TypeError: test.test_extcall.h() argument after ** must be a mapping, not list
 
-    >>> h(**{'a': 1}, **h)
+    >>> h(**{'a': 1}, **2)
     Traceback (most recent call last):
       ...
-    TypeError: test.test_extcall.h() argument after ** must be a mapping, not function
+    TypeError: test.test_extcall.h() argument after ** must be a mapping, not int
 
     >>> h(**{'a': 1}, **[])
     Traceback (most recent call last):
       ...
     TypeError: test.test_extcall.h() argument after ** must be a mapping, not list
 
-    >>> dir(**h)
+    >>> dir(**1)
     Traceback (most recent call last):
       ...
-    TypeError: dir() argument after ** must be a mapping, not function
+    TypeError: dir() argument after ** must be a mapping, not int
 
-    >>> nothing(**h)
+    >>> nothing(**1)
     Traceback (most recent call last):
       ...
-    TypeError: None argument after ** must be a mapping, \
-not function
+    TypeError: None argument after ** must be a mapping, not int
 
     >>> dir(b=1, **{'b': 1})
     Traceback (most recent call last):

@@ -112,7 +112,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertIsInstance(c, tuple)
         self.assertEqual(len(c), 1)
         # don't have a type object handy
-        self.assertEqual(c[0].__class__.__name__, "cell")
+        self.assertEqual(c[0].__class__.__name__, "CellType")
         self.cannot_set_attr(f, "__closure__", c, AttributeError)
 
     def test_cell_new(self):

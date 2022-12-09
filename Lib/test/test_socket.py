@@ -910,7 +910,7 @@ class GeneralModuleTests(unittest.TestCase):
                          "a bytes-like object is required, not 'complex'")
         with self.assertRaises(TypeError) as cm:
             s.sendto(b'foo', None)
-        self.assertIn('not NoneType',str(cm.exception))
+        self.assertIn('not types.NoneType',str(cm.exception))
         # 3 args
         with self.assertRaises(TypeError) as cm:
             s.sendto('\u2620', 0, sockname)
@@ -922,7 +922,7 @@ class GeneralModuleTests(unittest.TestCase):
                          "a bytes-like object is required, not 'complex'")
         with self.assertRaises(TypeError) as cm:
             s.sendto(b'foo', 0, None)
-        self.assertIn('not NoneType', str(cm.exception))
+        self.assertIn('not types.NoneType', str(cm.exception))
         with self.assertRaises(TypeError) as cm:
             s.sendto(b'foo', 'bar', sockname)
         with self.assertRaises(TypeError) as cm:
