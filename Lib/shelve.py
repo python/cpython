@@ -183,7 +183,6 @@ class Shelf(collections.abc.MutableMapping):
             self.dict.sync()
 
 
-
 class BsdDbShelf(Shelf):
     """Shelf implementation using the "BSD" db interface.
 

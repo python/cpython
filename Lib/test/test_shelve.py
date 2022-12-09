@@ -10,9 +10,6 @@ from test.support import os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
-from Lib.shelve import ShelveError
-
-
 def L1(s):
     return s.decode("latin-1")
 
