@@ -868,7 +868,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.stop()
             func.called = True
         func.called = False
-        self.loop.call_later(0.01, func)
+        self.loop.call_soon(self.loop.call_soon, func)
         self.loop.run_forever()
         self.assertTrue(func.called)
 
