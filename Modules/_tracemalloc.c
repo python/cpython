@@ -20,9 +20,6 @@ module _tracemalloc
 
 _Py_DECLARE_STR(anon_unknown, "<unknown>");
 
-/* Trace memory blocks allocated by PyMem_RawMalloc() */
-#define TRACE_RAW_MALLOC
-
 /* Forward declaration */
 static void tracemalloc_stop(void);
 static void* raw_malloc(size_t size);
@@ -42,7 +39,7 @@ static void raw_free(void *ptr);
 /* This lock is needed because tracemalloc_free() is called without
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
    would introduce a deadlock in _PyThreadState_DeleteCurrent(). */
-static PyThread_type_lock tables_lock;
+#  define tables_lock _PyRuntime.tracemalloc.tables_lock
 #  define TABLES_LOCK() PyThread_acquire_lock(tables_lock, 1)
 #  define TABLES_UNLOCK() PyThread_release_lock(tables_lock)
 #else

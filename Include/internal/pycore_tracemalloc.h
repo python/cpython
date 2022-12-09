@@ -9,6 +9,10 @@ extern "C" {
 #endif
 
 
+/* Trace memory blocks allocated by PyMem_RawMalloc() */
+#define TRACE_RAW_MALLOC
+
+
 struct _PyTraceMalloc_Config {
     /* Module initialized?
        Variable protected by the GIL */
@@ -36,6 +40,9 @@ struct _tracemalloc_runtime_state {
         PyMemAllocatorEx raw;
         PyMemAllocatorEx obj;
     } allocators;
+#if defined(TRACE_RAW_MALLOC)
+    PyThread_type_lock tables_lock;
+#endif
 };
 
 #define _tracemalloc_runtime_state_INIT \
