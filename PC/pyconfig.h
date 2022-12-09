@@ -213,16 +213,8 @@ typedef int pid_t;
 /* mingw and mingw-w64 define __MINGW32__ */
 #ifdef __MINGW32__
 
-#if !defined(MS_WIN64) && defined(_WIN64)
+#ifdef _WIN64
 #define MS_WIN64
-#endif
-
-#if !defined(MS_WIN32) && defined(_WIN32)
-#define MS_WIN32
-#endif
-
-#if !defined(MS_WINDOWS) && defined(MS_WIN32)
-#define MS_WINDOWS
 #endif
 
 #endif /* __MINGW32__*/
