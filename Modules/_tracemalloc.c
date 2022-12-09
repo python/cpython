@@ -63,7 +63,8 @@ typedef struct tracemalloc_traceback traceback_t;
 static const unsigned long MAX_NFRAME = Py_MIN(UINT16_MAX, ((SIZE_MAX - sizeof(traceback_t)) / sizeof(frame_t) + 1));
 
 
-static traceback_t tracemalloc_empty_traceback;
+#define tracemalloc_empty_traceback _PyRuntime.tracemalloc.empty_traceback
+
 
 /* Trace of a memory block */
 typedef struct {

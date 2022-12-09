@@ -99,6 +99,8 @@ struct _tracemalloc_runtime_state {
        Protected by TABLES_LOCK(). */
     _Py_hashtable_t *domains;
 
+    struct tracemalloc_traceback empty_traceback;
+
     Py_tss_t reentrant_key;
 };
 

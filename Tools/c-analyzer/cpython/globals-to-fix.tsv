@@ -377,7 +377,6 @@ Modules/faulthandler.c	-	old_stack	-
 ##-----------------------
 ## state
 
-Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
