@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_hashtable.h"     // _Py_hashtable_t
+
 
 /* Trace memory blocks allocated by PyMem_RawMalloc() */
 #define TRACE_RAW_MALLOC
@@ -32,6 +34,34 @@ struct _PyTraceMalloc_Config {
 };
 
 
+/* Pack the frame_t structure to reduce the memory footprint on 64-bit
+   architectures: 12 bytes instead of 16. */
+struct
+#ifdef __GNUC__
+__attribute__((packed))
+#elif defined(_MSC_VER)
+#pragma pack(push, 4)
+#endif
+tracemalloc_frame {
+    /* filename cannot be NULL: "<unknown>" is used if the Python frame
+       filename is NULL */
+    PyObject *filename;
+    unsigned int lineno;
+};
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
+struct tracemalloc_traceback {
+    Py_uhash_t hash;
+    /* Number of frames stored */
+    uint16_t nframe;
+    /* Total number of frames the traceback had */
+    uint16_t total_nframe;
+    struct tracemalloc_frame frames[1];
+};
+
+
 struct _tracemalloc_runtime_state {
     struct _PyTraceMalloc_Config config;
     /* Protected by the GIL */
@@ -43,6 +73,29 @@ struct _tracemalloc_runtime_state {
 #if defined(TRACE_RAW_MALLOC)
     PyThread_type_lock tables_lock;
 #endif
+    /* Size in bytes of currently traced memory.
+       Protected by TABLES_LOCK(). */
+    size_t traced_memory;
+    /* Peak size in bytes of traced memory.
+       Protected by TABLES_LOCK(). */
+    size_t peak_traced_memory;
+    /* Hash table used as a set to intern filenames:
+       PyObject* => PyObject*.
+       Protected by the GIL */
+    _Py_hashtable_t *filenames;
+    /* Buffer to store a new traceback in traceback_new().
+       Protected by the GIL. */
+    struct tracemalloc_traceback *traceback;
+    /* Hash table used as a set to intern tracebacks:
+       traceback_t* => traceback_t*
+       Protected by the GIL */
+    _Py_hashtable_t *tracebacks;
+    /* pointer (void*) => trace (trace_t*).
+       Protected by TABLES_LOCK(). */
+    _Py_hashtable_t *traces;
+    /* domain (unsigned int) => traces (_Py_hashtable_t).
+       Protected by TABLES_LOCK(). */
+    _Py_hashtable_t *domains;
 };
 
 #define _tracemalloc_runtime_state_INIT \

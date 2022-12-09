@@ -51,33 +51,8 @@ static void raw_free(void *ptr);
 
 #define DEFAULT_DOMAIN 0
 
-/* Pack the frame_t structure to reduce the memory footprint on 64-bit
-   architectures: 12 bytes instead of 16. */
-typedef struct
-#ifdef __GNUC__
-__attribute__((packed))
-#elif defined(_MSC_VER)
-#pragma pack(push, 4)
-#endif
-{
-    /* filename cannot be NULL: "<unknown>" is used if the Python frame
-       filename is NULL */
-    PyObject *filename;
-    unsigned int lineno;
-} frame_t;
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
-
-
-typedef struct {
-    Py_uhash_t hash;
-    /* Number of frames stored */
-    uint16_t nframe;
-    /* Total number of frames the traceback had */
-    uint16_t total_nframe;
-    frame_t frames[1];
-} traceback_t;
+typedef struct tracemalloc_frame frame_t;
+typedef struct tracemalloc_traceback traceback_t;
 
 #define TRACEBACK_SIZE(NFRAME) \
         (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME - 1))
@@ -100,35 +75,13 @@ typedef struct {
 } trace_t;
 
 
-/* Size in bytes of currently traced memory.
-   Protected by TABLES_LOCK(). */
-static size_t tracemalloc_traced_memory = 0;
-
-/* Peak size in bytes of traced memory.
-   Protected by TABLES_LOCK(). */
-static size_t tracemalloc_peak_traced_memory = 0;
-
-/* Hash table used as a set to intern filenames:
-   PyObject* => PyObject*.
-   Protected by the GIL */
-static _Py_hashtable_t *tracemalloc_filenames = NULL;
-
-/* Buffer to store a new traceback in traceback_new().
-   Protected by the GIL. */
-static traceback_t *tracemalloc_traceback = NULL;
-
-/* Hash table used as a set to intern tracebacks:
-   traceback_t* => traceback_t*
-   Protected by the GIL */
-static _Py_hashtable_t *tracemalloc_tracebacks = NULL;
-
-/* pointer (void*) => trace (trace_t*).
-   Protected by TABLES_LOCK(). */
-static _Py_hashtable_t *tracemalloc_traces = NULL;
-
-/* domain (unsigned int) => traces (_Py_hashtable_t).
-   Protected by TABLES_LOCK(). */
-static _Py_hashtable_t *tracemalloc_domains = NULL;
+#define tracemalloc_traced_memory _PyRuntime.tracemalloc.traced_memory
+#define tracemalloc_peak_traced_memory _PyRuntime.tracemalloc.peak_traced_memory
+#define tracemalloc_filenames _PyRuntime.tracemalloc.filenames
+#define tracemalloc_traceback _PyRuntime.tracemalloc.traceback
+#define tracemalloc_tracebacks _PyRuntime.tracemalloc.tracebacks
+#define tracemalloc_traces _PyRuntime.tracemalloc.traces
+#define tracemalloc_domains _PyRuntime.tracemalloc.domains
 
 
 #ifdef TRACE_DEBUG
