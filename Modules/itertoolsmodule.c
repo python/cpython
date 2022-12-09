@@ -182,8 +182,7 @@ batched_next(batchedobject *bo)
         Py_DECREF(result);
         return NULL;
     }
-    /* Elements in result[i:] are still NULL */
-    Py_SET_SIZE(result, i);
+    _PyTuple_Resize(&result, i);
     return result;
 }
 
