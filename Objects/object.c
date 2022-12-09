@@ -238,17 +238,12 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
     Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReference(self);
+    _Py_NewReferenceNoTotal(self);
     Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
-    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
-       _Py_RefTotal, so we need to undo that. */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
     return -1;
 }
 
@@ -2001,19 +1996,31 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 }
 
 
-void
-_Py_NewReference(PyObject *op)
+static inline void
+new_reference(PyObject *op)
 {
     if (_PyRuntime.tracemalloc.config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
     Py_SET_REFCNT(op, 1);
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif
+}
+
+void
+_Py_NewReference(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
+    new_reference(op);
+}
+
+void
+_Py_NewReferenceNoTotal(PyObject *op)
+{
+    new_reference(op);
 }
 
 

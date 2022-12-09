@@ -3,6 +3,7 @@
 #endif
 
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
+PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
