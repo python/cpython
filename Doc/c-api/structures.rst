@@ -228,30 +228,30 @@ Implementing functions and methods
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   .. c:member:: const char* PyMethodDef.ml_name
+   .. c:member:: const char* ml_name
 
       name of the method
 
-   .. c:member:: PyCFunction PyMethodDef.ml_meth
+   .. c:member:: PyCFunction ml_meth
 
       pointer to the C implementation
 
-   .. c:member:: int PyMethodDef.ml_flags
+   .. c:member:: int ml_flags
 
       flags bits indicating how the call should be constructed
 
-   .. c:member:: const char* PyMethodDef.ml_doc
+   .. c:member:: const char* ml_doc
 
       points to the contents of the docstring
 
-The :c:member:`PyMethodDef.ml_meth` is a C function pointer.  The functions may be of different
+The :c:member:`ml_meth` is a C function pointer.  The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
-The :c:member:`PyMethodDef.ml_flags` field is a bitfield which can include the following flags.
+The :c:member:`ml_flags` field is a bitfield which can include the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
