@@ -662,8 +662,10 @@ OpenerDirector Objects
    timeout setting will be used). The timeout feature actually works only for
    HTTP, HTTPS and FTP connections).
 
-   Warning: the global default timeout value is to never time out, which is often
-   not the desired value for this function.
+   .. note::
+
+      The global default timeout value is to never time out, which is often
+      not the desired value for this function.
 
 .. method:: OpenerDirector.error(proto, *args)
 
