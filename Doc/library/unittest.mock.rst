@@ -890,7 +890,7 @@ object::
     ...
     >>> mock = MagicMock(async_func)
     >>> mock
-    <MagicMock spec='function' id='...'>
+    <MagicMock spec='FunctionType' id='...'>
     >>> mock()  # doctest: +SKIP
     <coroutine object AsyncMockMixin._mock_call at ...>
 

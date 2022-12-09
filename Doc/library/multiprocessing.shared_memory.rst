@@ -300,7 +300,7 @@ instance:
    >>> from multiprocessing import shared_memory
    >>> a = shared_memory.ShareableList(['howdy', b'HoWdY', -273.154, 100, None, True, 42])
    >>> [ type(entry) for entry in a ]
-   [<class 'str'>, <class 'bytes'>, <class 'float'>, <class 'int'>, <class 'NoneType'>, <class 'bool'>, <class 'int'>]
+   [<class 'str'>, <class 'bytes'>, <class 'float'>, <class 'int'>, <class 'types.NoneType'>, <class 'bool'>, <class 'int'>]
    >>> a[2]
    -273.154
    >>> a[2] = -78.5
