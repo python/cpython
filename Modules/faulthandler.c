@@ -18,12 +18,6 @@
 #  include <sys/resource.h>
 #endif
 
-/* Using an alternative stack requires sigaltstack()
-   and sigaction() SA_ONSTACK */
-#if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
-#  define FAULTHANDLER_USE_ALT_STACK
-#endif
-
 #if defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_LINUX_AUXVEC_H) && defined(HAVE_SYS_AUXV_H)
 #  include <linux/auxvec.h>       // AT_MINSIGSTKSZ
 #  include <sys/auxv.h>           // getauxval()
@@ -86,8 +80,8 @@ static const size_t faulthandler_nsignals = \
     Py_ARRAY_LENGTH(faulthandler_handlers);
 
 #ifdef FAULTHANDLER_USE_ALT_STACK
-static stack_t stack;
-static stack_t old_stack;
+#  define stack _PyRuntime.faulthandler.stack
+#  define old_stack _PyRuntime.faulthandler.old_stack
 #endif
 
 

@@ -361,12 +361,6 @@ Modules/itertoolsmodule.c	-	tee_type	-
 Modules/itertoolsmodule.c	-	teedataobject_type	-
 Modules/itertoolsmodule.c	-	ziplongest_type	-
 
-##-----------------------
-## state
-
-Modules/faulthandler.c	-	stack	-
-Modules/faulthandler.c	-	old_stack	-
-
 
 ##################################
 ## global non-objects to fix in builtin modules

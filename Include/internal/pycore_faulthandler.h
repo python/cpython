@@ -8,9 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
 #ifdef HAVE_SIGACTION
-#include <signal.h>
+#  include <signal.h>
 #endif
 
 
@@ -23,10 +22,15 @@ extern "C" {
 
 
 #ifdef HAVE_SIGACTION
+/* Using an alternative stack requires sigaltstack()
+   and sigaction() SA_ONSTACK */
+#  ifdef HAVE_SIGALTSTACK
+#    define FAULTHANDLER_USE_ALT_STACK
+#  endif
 typedef struct sigaction _Py_sighandler_t;
 #else
 typedef PyOS_sighandler_t _Py_sighandler_t;
-#endif
+#endif  // HAVE_SIGACTION
 
 
 #ifdef FAULTHANDLER_USER
@@ -73,6 +77,11 @@ struct _faulthandler_runtime_state {
 
 #ifdef FAULTHANDLER_USER
     struct faulthandler_user_signal *user_signals;
+#endif
+
+#ifdef FAULTHANDLER_USE_ALT_STACK
+    stack_t stack;
+    stack_t old_stack;
 #endif
 };
 
