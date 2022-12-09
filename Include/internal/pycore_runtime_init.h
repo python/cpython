@@ -41,6 +41,9 @@ extern "C" {
                 .header = 1, \
             }, \
         }, \
+        .ceval = { \
+            .perf = _PyEval_RUNTIME_PERF_INIT, \
+        }, \
         .gilstate = { \
             .check_enabled = 1, \
             /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
