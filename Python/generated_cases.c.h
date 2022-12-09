@@ -3693,6 +3693,7 @@
                 func->func_defaults = POP();
             }
 
+            func->func_version = ((PyCodeObject *)codeobj)->co_version;
             PUSH((PyObject *)func);
             DISPATCH();
         }
