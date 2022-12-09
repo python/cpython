@@ -715,6 +715,7 @@ function.
 
          >>> def test(a, b):
          ...     pass
+         ...
          >>> sig = signature(test)
          >>> new_sig = sig.replace(return_annotation="new return anno")
          >>> str(new_sig)
@@ -1054,6 +1055,7 @@ Classes and functions
     >>> from inspect import getcallargs
     >>> def f(a, b=1, *pos, **named):
     ...     pass
+    ...
     >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
     True
     >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
