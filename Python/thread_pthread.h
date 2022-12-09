@@ -132,7 +132,8 @@ init_condattr(void)
     if (pthread_condattr_setclock(&ca, CLOCK_MONOTONIC) == 0) {
         condattr_monotonic = &ca;  // Use monotonic clock
     }
-#endif
+# undef ca
+#endif  // CONDATTR_MONOTONIC
 }
 
 int
