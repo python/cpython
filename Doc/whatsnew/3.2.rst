@@ -468,6 +468,7 @@ Some smaller changes made to the core Python language are:
     >>> class LowerCasedDict(dict):
     ...     def __getitem__(self, key):
     ...         return dict.__getitem__(self, key.lower())
+    ...
     >>> lcd = LowerCasedDict(part='widgets', quantity=10)
     >>> 'There are {QUANTITY} {Part} in stock'.format_map(lcd)
     'There are 10 widgets in stock'
@@ -475,6 +476,7 @@ Some smaller changes made to the core Python language are:
     >>> class PlaceholderDict(dict):
     ...     def __missing__(self, key):
     ...         return '<{}>'.format(key)
+    ...
     >>> 'Hello {name}, welcome to {location}'.format_map(PlaceholderDict())
     'Hello <name>, welcome to <location>'
 
@@ -1886,6 +1888,7 @@ inspect
     >>> from inspect import getgeneratorstate
     >>> def gen():
     ...     yield 'demo'
+    ...
     >>> g = gen()
     >>> getgeneratorstate(g)
     'GEN_CREATED'
