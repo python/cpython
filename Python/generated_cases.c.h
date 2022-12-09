@@ -2759,6 +2759,29 @@
             DISPATCH();
         }
 
+        TARGET(FOR_ITER_TUPLE) {
+            assert(cframe.use_tracing == 0);
+            _PyTupleIterObject *it = (_PyTupleIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
+            PyTupleObject *seq = it->it_seq;
+            if (seq) {
+                if (it->it_index < PyTuple_GET_SIZE(seq)) {
+                    PyObject *next = PyTuple_GET_ITEM(seq, it->it_index++);
+                    PUSH(Py_NewRef(next));
+                    JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    goto end_for_iter_tuple;  // End of this instruction
+                }
+                it->it_seq = NULL;
+                Py_DECREF(seq);
+            }
+            STACK_SHRINK(1);
+            Py_DECREF(it);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+        end_for_iter_tuple:
+            DISPATCH();
+        }
+
         TARGET(FOR_ITER_RANGE) {
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)TOP();
@@ -3670,6 +3693,7 @@
                 func->func_defaults = POP();
             }
 
+            func->func_version = ((PyCodeObject *)codeobj)->co_version;
             PUSH((PyObject *)func);
             DISPATCH();
         }
