@@ -3,7 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
-#include "pycore_function.h"      // FUNC_MAX_WATCHERS
+#include "pycore_code.h"          // _Py_next_func_version
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
@@ -64,7 +64,6 @@ PyFunction_ClearWatcher(int watcher_id)
     interp->active_func_watchers &= ~(1 << watcher_id);
     return 0;
 }
-
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
