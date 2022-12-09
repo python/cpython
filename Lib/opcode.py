@@ -320,6 +320,7 @@ _specializations = {
     ],
     "FOR_ITER": [
         "FOR_ITER_LIST",
+        "FOR_ITER_TUPLE",
         "FOR_ITER_RANGE",
         "FOR_ITER_GEN",
     ],
