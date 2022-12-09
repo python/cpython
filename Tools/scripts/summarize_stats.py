@@ -34,6 +34,16 @@ opmap = dict(sorted(opmap.items()))
 
 TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
 
+def format_ratio(num, den):
+    """
+    Format a ratio as a percentage. When the denominator is 0, returns the empty
+    string.
+    """
+    if den == 0:
+        return ""
+    else:
+        return f"{num/den:.01%}"
+
 def join_rows(a_rows, b_rows):
     """
     Joins two tables together, side-by-side, where the first column in each is a
@@ -87,7 +97,7 @@ def calculate_specialization_stats(family_stats, total):
             continue
         else:
             label = key
-        rows.append((f"{label:>12}", f"{family_stats[key]:>12}", f"{100*family_stats[key]/total:0.1f}%"))
+        rows.append((f"{label:>12}", f"{family_stats[key]:>12}", format_ratio(family_stats[key], total)))
     return rows
 
 def calculate_specialization_success_failure(family_stats):
@@ -100,7 +110,7 @@ def calculate_specialization_success_failure(family_stats):
             label = key[len("specialization."):]
             label = label[0].upper() + label[1:]
             val = family_stats.get(key, 0)
-            rows.append((label, val, f"{100*val/total_attempts:0.1f}%"))
+            rows.append((label, val, format_ratio(val, total_attempts)))
     return rows
 
 def calculate_specialization_failure_kinds(name, family_stats, defines):
@@ -118,7 +128,7 @@ def calculate_specialization_failure_kinds(name, family_stats, defines):
     for value, index in failures:
         if not value:
             continue
-        rows.append((kind_to_text(index, defines, name), value, f"{100*value/total_failures:0.1f}%"))
+        rows.append((kind_to_text(index, defines, name), value, format_ratio(value, total_failures)))
     return rows
 
 def print_specialization_stats(name, family_stats, defines):
@@ -318,11 +328,11 @@ def calculate_execution_counts(opcode_stats, total):
     for (count, name, miss) in counts:
         cumulative += count
         if miss:
-            miss = f"{100*miss/count:0.1f}%"
+            miss = format_ratio(miss, count)
         else:
             miss = ""
-        rows.append((name, count, f"{100*count/total:0.1f}%",
-                     f"{100*cumulative/total:0.1f}%", miss))
+        rows.append((name, count, format_ratio(count, total),
+                     format_ratio(cumulative, total), miss))
     return rows
 
 def emit_execution_counts(opcode_stats, total):
@@ -386,9 +396,9 @@ def emit_comparative_specialization_stats(base_opcode_stats, head_opcode_stats):
 def calculate_specialization_effectiveness(opcode_stats, total):
     basic, not_specialized, specialized = categorized_counts(opcode_stats)
     return [
-        ("Basic", basic, f"{basic*100/total:0.1f}%"),
-        ("Not specialized", not_specialized, f"{not_specialized*100/total:0.1f}%"),
-        ("Specialized", specialized, f"{specialized*100/total:0.1f}%"),
+        ("Basic", basic, format_ratio(basic, total)),
+        ("Not specialized", not_specialized, format_ratio(not_specialized, total)),
+        ("Specialized", specialized, format_ratio(specialized, total)),
     ]
 
 def emit_specialization_overview(opcode_stats, total):
@@ -405,7 +415,7 @@ def emit_specialization_overview(opcode_stats, total):
             counts.sort(reverse=True)
             if total:
                 with Section(f"{title} by instruction", 3):
-                    rows = [ (name, count, f"{100*count/total:0.1f}%") for (count, name) in counts[:10] ]
+                    rows = [ (name, count, format_ratio(count, total)) for (count, name) in counts[:10] ]
                     emit_table(("Name", "Count:", "Ratio:"), rows)
 
 def emit_comparative_specialization_overview(base_opcode_stats, base_total, head_opcode_stats, head_total):
@@ -432,15 +442,15 @@ def calculate_call_stats(stats):
             rows = []
     for key, value in stats.items():
         if "Calls to" in key:
-            rows.append((key, value, f"{100*value/total:0.1f}%"))
+            rows.append((key, value, format_ratio(value, total)))
         elif key.startswith("Calls "):
             name, index = key[:-1].split("[")
             index =  int(index)
             label = name + " (" + pretty(defines[index][0]) + ")"
-            rows.append((label, value, f"{100*value/total:0.1f}%"))
+            rows.append((label, value, format_ratio(value, total)))
     for key, value in stats.items():
         if key.startswith("Frame"):
-            rows.append((key, value, f"{100*value/total:0.1f}%"))
+            rows.append((key, value, format_ratio(value, total)))
     return rows
 
 def emit_call_stats(stats):
@@ -468,13 +478,13 @@ def calculate_object_stats(stats):
     for key, value in stats.items():
         if key.startswith("Object"):
             if "materialize" in key:
-                ratio = f"{100*value/total_materializations:0.1f}%"
+                ratio = format_ratio(value, total_materializations)
             elif "allocations" in key:
-                ratio = f"{100*value/total_allocations:0.1f}%"
+                ratio = format_ratio(value, total_allocations)
             elif "increfs"     in key:
-                ratio = f"{100*value/total_increfs:0.1f}%"
+                ratio = format_ratio(value, total_increfs)
             elif "decrefs"     in key:
-                ratio = f"{100*value/total_decrefs:0.1f}%"
+                ratio = format_ratio(value, total_decrefs)
             else:
                 ratio = ""
             label = key[6:].strip()
@@ -517,8 +527,8 @@ def emit_pair_counts(opcode_stats, total):
         for (count, pair) in itertools.islice(pair_counts, 100):
             i, j = pair
             cumulative += count
-            rows.append((opname[i] + " " + opname[j], count, f"{100*count/total:0.1f}%",
-                        f"{100*cumulative/total:0.1f}%"))
+            rows.append((opname[i] + " " + opname[j], count, format_ratio(count, total),
+                         format_ratio(cumulative, total)))
         emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
             rows
         )
