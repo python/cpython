@@ -11,7 +11,24 @@ extern "C" {
 
 struct _faulthandler_runtime_state {
     int _not_used;
+    struct {
+        int enabled;
+        PyObject *file;
+        int fd;
+        int all_threads;
+        PyInterpreterState *interp;
+#ifdef MS_WINDOWS
+        void *exc_handler;
+#endif
+    } fatal_error;
 };
+
+#define _faulthandler_runtime_state_INIT \
+    { \
+        .fatal_error = { \
+            .fd = -1, \
+        }, \
+    }
 
 
 #ifdef __cplusplus

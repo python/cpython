@@ -72,16 +72,7 @@ typedef struct {
     int all_threads;
 } fault_handler_t;
 
-static struct {
-    int enabled;
-    PyObject *file;
-    int fd;
-    int all_threads;
-    PyInterpreterState *interp;
-#ifdef MS_WINDOWS
-    void *exc_handler;
-#endif
-} fatal_error = {0, NULL, -1, 0};
+#define fatal_error _PyRuntime.faulthandler.fatal_error
 
 static struct {
     PyObject *file;
