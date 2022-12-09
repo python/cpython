@@ -186,6 +186,28 @@ class TestCase(unittest.TestCase):
             s['number'] = num
             self.assertEqual(s['number'], type(num))
 
+        with self.assertRaises(AssertionError):
+            def serializer(obj, protocol=None):
+                return bytes(f"{type(obj).__name__}", 'utf-8')
+
+            def deserializer(data):
+                pass
+
+            with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
+                s['number'] = 100
+                self.assertEqual(s['number'], 100)
+
+        with self.assertRaises(TypeError):
+            def serializer(obj, protocol=None):
+                pass
+
+            def deserializer(data):
+                return BytesIO(data).read().decode("utf-8")
+
+            with shelve.open(self.fn, serializer=serializer, deserializer=deserializer) as s:
+                s['number'] = 100
+                self.assertEqual(s['number'], 100)
+
     def test_missing_custom_deserializer(self):
         def serializer(obj, protocol=None):
             pass
