@@ -199,10 +199,8 @@ another rational number, or from a string.
       function, or :ref:`Formatted string literals <f-strings>`. The
       presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
       and ``"%"`` are supported. For these presentation types, formatting for a
-      :class:`Fraction` object ``x`` behaves as though the object ``x`` were
-      first converted to :class:`float` and then formatted using the float
-      formatting rules, but avoids the loss of precision that might arise as a
-      result of that conversion.
+      :class:`Fraction` object ``x`` follows the rules outlined for
+      the :class:`float` type in the :ref:`formatspec` section.
 
       Here are some examples::
 
