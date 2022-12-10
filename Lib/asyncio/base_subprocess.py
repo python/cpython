@@ -215,9 +215,11 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             # object. On Python 3.6, it is required to avoid a ResourceWarning.
             self._proc.returncode = returncode
         self._call(self._protocol.process_exited)
-        for p in self._pipes.values():
-            if p is not None:
-                p.pipe.close()
+        # The pipes should not be closed otherwise some data may be lost.
+        # https://github.com/python/cpython/issues/100133
+        # for p in self._pipes.values():
+        #     if p is not None:
+        #         p.pipe.close()
 
         self._try_finish()
 
