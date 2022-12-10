@@ -2776,6 +2776,15 @@ class AbstractPickleTests:
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(obj), unpickled(obj))
 
+        descriptors = (
+            PyMethodsTest.__dict__['cheese'],  # static method descriptor
+            PyMethodsTest.__dict__['wine'],  # class method descriptor
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for descr in descriptors:
+                with self.subTest(proto=proto, descr=descr):
+                    self.assertRaises(TypeError, self.dumps, descr, proto)
+
     def test_c_methods(self):
         global Subclass
         class Subclass(tuple):
@@ -2810,6 +2819,15 @@ class AbstractPickleTests:
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(*args), unpickled(*args))
+
+        descriptors = (
+            bytearray.__dict__['maketrans'],  # built-in static method descriptor
+            dict.__dict__['fromkeys'],  # built-in class method descriptor
+        )
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for descr in descriptors:
+                with self.subTest(proto=proto, descr=descr):
+                    self.assertRaises(TypeError, self.dumps, descr, proto)
 
     def test_compat_pickle(self):
         tests = [
@@ -3034,6 +3052,67 @@ class AbstractPickleTests:
         check_array(arr.T)
         # 2-D, non-contiguous
         check_array(arr[::2])
+
+    def test_evil_class_mutating_dict(self):
+        # https://github.com/python/cpython/issues/92930
+        from random import getrandbits
+
+        global Bad
+        class Bad:
+            def __eq__(self, other):
+                return ENABLED
+            def __hash__(self):
+                return 42
+            def __reduce__(self):
+                if getrandbits(6) == 0:
+                    collection.clear()
+                return (Bad, ())
+
+        for proto in protocols:
+            for _ in range(20):
+                ENABLED = False
+                collection = {Bad(): Bad() for _ in range(20)}
+                for bad in collection:
+                    bad.bad = bad
+                    bad.collection = collection
+                ENABLED = True
+                try:
+                    data = self.dumps(collection, proto)
+                    self.loads(data)
+                except RuntimeError as e:
+                    expected = "changed size during iteration"
+                    self.assertIn(expected, str(e))
+
+    def test_evil_pickler_mutating_collection(self):
+        # https://github.com/python/cpython/issues/92930
+        if not hasattr(self, "pickler"):
+            raise self.skipTest(f"{type(self)} has no associated pickler type")
+
+        global Clearer
+        class Clearer:
+            pass
+
+        def check(collection):
+            class EvilPickler(self.pickler):
+                def persistent_id(self, obj):
+                    if isinstance(obj, Clearer):
+                        collection.clear()
+                    return None
+            pickler = EvilPickler(io.BytesIO(), proto)
+            try:
+                pickler.dump(collection)
+            except RuntimeError as e:
+                expected = "changed size during iteration"
+                self.assertIn(expected, str(e))
+
+        for proto in protocols:
+            check([Clearer()])
+            check([Clearer(), Clearer()])
+            check({Clearer()})
+            check({Clearer(), Clearer()})
+            check({Clearer(): 1})
+            check({Clearer(): 1, Clearer(): 2})
+            check({1: Clearer(), 2: Clearer()})
 
 
 class BigmemPickleTests:

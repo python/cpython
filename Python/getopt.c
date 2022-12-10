@@ -44,8 +44,12 @@ static const wchar_t *opt_ptr = L"";
 #define SHORT_OPTS L"bBc:dEhiIJm:OPqRsStuvVW:xX:?"
 
 static const _PyOS_LongOption longopts[] = {
+    /* name, has_arg, val (used in switch in initconfig.c) */
     {L"check-hash-based-pycs", 1, 0},
-    {NULL, 0, 0},
+    {L"help-all", 0, 1},
+    {L"help-env", 0, 2},
+    {L"help-xoptions", 0, 3},
+    {NULL, 0, -1},                     /* sentinel */
 };
 
 

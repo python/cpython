@@ -225,11 +225,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 
     _Py_CheckPython3();
 
-#if USE_UNICODE_WCHAR_CACHE
-    const wchar_t *wpathname = _PyUnicode_AsUnicode(pathname);
-#else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpathname = PyUnicode_AsWideCharString(pathname, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpathname == NULL)
         return NULL;
 
@@ -251,9 +247,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                               LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
                               LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
         Py_END_ALLOW_THREADS
-#if !USE_UNICODE_WCHAR_CACHE
         PyMem_Free(wpathname);
-#endif /* USE_UNICODE_WCHAR_CACHE */
 
         /* restore old error mode settings */
         SetErrorMode(old_mode);

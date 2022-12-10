@@ -7,7 +7,7 @@ import functools
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
-from itertools import islice as _islice, count as _count
+from itertools import count as _count
 try:
     from _collections import deque as _deque
 except ImportError:
@@ -28,10 +28,12 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
-           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile']
+           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
+           'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
+_daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
@@ -60,10 +62,19 @@ def setprofile(func):
 
     The func will be passed to sys.setprofile() for each thread, before its
     run() method is called.
-
     """
     global _profile_hook
     _profile_hook = func
+
+def setprofile_all_threads(func):
+    """Set a profile function for all threads started from the threading module
+    and all Python threads that are currently executing.
+
+    The func will be passed to sys.setprofile() for each thread, before its
+    run() method is called.
+    """
+    setprofile(func)
+    _sys._setprofileallthreads(func)
 
 def getprofile():
     """Get the profiler function as set by threading.setprofile()."""
@@ -74,10 +85,19 @@ def settrace(func):
 
     The func will be passed to sys.settrace() for each thread, before its run()
     method is called.
-
     """
     global _trace_hook
     _trace_hook = func
+
+def settrace_all_threads(func):
+    """Set a trace function for all threads started from the threading module
+    and all Python threads that are currently executing.
+
+    The func will be passed to sys.settrace() for each thread, before its run()
+    method is called.
+    """
+    settrace(func)
+    _sys._settraceallthreads(func)
 
 def gettrace():
     """Get the trace function as set by threading.settrace()."""
@@ -243,18 +263,12 @@ class Condition:
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
         # release() and acquire() on the lock).  Ditto for _is_owned().
-        try:
+        if hasattr(lock, '_release_save'):
             self._release_save = lock._release_save
-        except AttributeError:
-            pass
-        try:
+        if hasattr(lock, '_acquire_restore'):
             self._acquire_restore = lock._acquire_restore
-        except AttributeError:
-            pass
-        try:
+        if hasattr(lock, '_is_owned'):
             self._is_owned = lock._is_owned
-        except AttributeError:
-            pass
         self._waiters = _deque()
 
     def _at_fork_reinit(self):
@@ -368,14 +382,21 @@ class Condition:
         """
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
-        all_waiters = self._waiters
-        waiters_to_notify = _deque(_islice(all_waiters, n))
-        if not waiters_to_notify:
-            return
-        for waiter in waiters_to_notify:
-            waiter.release()
+        waiters = self._waiters
+        while waiters and n > 0:
+            waiter = waiters[0]
             try:
-                all_waiters.remove(waiter)
+                waiter.release()
+            except RuntimeError:
+                # gh-92530: The previous call of notify() released the lock,
+                # but was interrupted before removing it from the queue.
+                # It can happen if a signal handler raises an exception,
+                # like CTRL+C which raises KeyboardInterrupt.
+                pass
+            else:
+                n -= 1
+            try:
+                waiters.remove(waiter)
             except ValueError:
                 pass
 
@@ -563,7 +584,7 @@ class Event:
     def isSet(self):
         """Return true if and only if the internal flag is true.
 
-        This method is deprecated, use notify_all() instead.
+        This method is deprecated, use is_set() instead.
 
         """
         import warnings
@@ -879,6 +900,8 @@ class Thread:
         self._args = args
         self._kwargs = kwargs
         if daemon is not None:
+            if daemon and not _daemon_threads_allowed():
+                raise RuntimeError('daemon threads are disabled in this (sub)interpreter')
             self._daemonic = daemon
         else:
             self._daemonic = current_thread().daemon
@@ -1206,6 +1229,8 @@ class Thread:
     def daemon(self, daemonic):
         if not self._initialized:
             raise RuntimeError("Thread.__init__() not called")
+        if daemonic and not _daemon_threads_allowed():
+            raise RuntimeError('daemon threads are disabled in this interpreter')
         if self._started.is_set():
             raise RuntimeError("cannot set daemon status of active thread")
         self._daemonic = daemonic
@@ -1412,7 +1437,8 @@ class _MainThread(Thread):
 class _DummyThread(Thread):
 
     def __init__(self):
-        Thread.__init__(self, name=_newname("Dummy-%d"), daemon=True)
+        Thread.__init__(self, name=_newname("Dummy-%d"),
+                        daemon=_daemon_threads_allowed())
 
         self._started.set()
         self._set_ident()

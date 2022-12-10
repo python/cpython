@@ -12,49 +12,21 @@ extern "C" {
 
 #include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
-#include "pycore_dict.h"          // struct _Py_dict_state
+#include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
-#include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_global_objects.h"  // struct _Py_interp_static_objects
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
-
-struct _pending_calls {
-    PyThread_type_lock lock;
-    /* Request for running pending calls. */
-    _Py_atomic_int calls_to_do;
-    /* Request for looking at the `async_exc` field of the current
-       thread state.
-       Guarded by the GIL. */
-    int async_exc;
-#define NPENDINGCALLS 32
-    struct {
-        int (*func)(void *);
-        void *arg;
-    } calls[NPENDINGCALLS];
-    int first;
-    int last;
-};
-
-struct _ceval_state {
-    int recursion_limit;
-    /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
-    _Py_atomic_int eval_breaker;
-    /* Request for dropping the GIL */
-    _Py_atomic_int gil_drop_request;
-    struct _pending_calls pending;
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state gil;
-#endif
-};
 
 
 // atexit state
@@ -71,12 +43,17 @@ struct atexit_state {
 };
 
 
+struct _Py_long_state {
+    int max_str_digits;
+};
+
+
 /* interpreter state */
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
-   The PyInterpreterState typedef is in Include/pystate.h.
+   The PyInterpreterState typedef is in Include/pytypedefs.h.
    */
 struct _is {
 
@@ -112,14 +89,30 @@ struct _is {
     int _initialized;
     int finalizing;
 
-    /* Was this interpreter statically allocated? */
-    bool _static;
-
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
     // sys.modules dictionary
     PyObject *modules;
+    /* This is the list of module objects for all legacy (single-phase init)
+       extension modules ever loaded in this process (i.e. imported
+       in this interpreter or in any other).  Py_None stands in for
+       modules that haven't actually been imported in this interpreter.
+
+       A module's index (PyModuleDef.m_base.m_index) is used to look up
+       the corresponding module object for this interpreter, if any.
+       (See PyState_FindModule().)  When any extension module
+       is initialized during import, its moduledef gets initialized by
+       PyModuleDef_Init(), and the first time that happens for each
+       PyModuleDef, its index gets set to the current value of
+       a global counter (see _PyRuntimeState.imports.last_module_index).
+       The entry for that index in this interpreter remains unset until
+       the module is actually imported here.  (Py_None is used as
+       a placeholder.)  Note that multi-phase init modules always get
+       an index for which there will never be a module set.
+
+       This is initialized lazily in _PyState_AddModule(), which is also
+       where modules get added. */
     PyObject *modules_by_index;
     // Dictionary of the sys module
     PyObject *sysdict;
@@ -140,6 +133,7 @@ struct _is {
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
+    unsigned long feature_flags;
 
     PyObject *dict;  /* Stores per-interpreter state */
 
@@ -147,6 +141,11 @@ struct _is {
     PyObject *import_func;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
+
+    PyDict_WatchCallback dict_watchers[DICT_MAX_WATCHERS];
+    PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
+    // One bit is set for each non-NULL entry in func_watchers
+    uint8_t active_func_watchers;
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
@@ -161,9 +160,14 @@ struct _is {
     struct atexit_state atexit;
 
     PyObject *audit_hooks;
+    PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
+    PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
+    // One bit is set for each non-NULL entry in code_watchers
+    uint8_t active_code_watchers;
 
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
+    struct _Py_long_state long_state;
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
@@ -176,8 +180,12 @@ struct _is {
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
-    struct type_cache type_cache;
+    struct types_state types;
     struct callable_cache callable_cache;
+    PyCodeObject *interpreter_trampoline;
+
+    struct _Py_interp_cached_objects cached_objects;
+    struct _Py_interp_static_objects static_objects;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.
@@ -211,9 +219,10 @@ extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 struct _xidregitem;
 
 struct _xidregitem {
-    PyTypeObject *cls;
-    crossinterpdatafunc getdata;
+    struct _xidregitem *prev;
     struct _xidregitem *next;
+    PyObject *cls;  // weakref to a PyTypeObject
+    crossinterpdatafunc getdata;
 };
 
 PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_LookUpID(int64_t);

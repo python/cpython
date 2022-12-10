@@ -7,7 +7,7 @@
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 .. sectionauthor:: Andrew M. Kuchling <amk@amk.ca>
 
-**Source code:** :source:`Lib/re.py`
+**Source code:** :source:`Lib/re/`
 
 --------------
 
@@ -29,7 +29,7 @@ a literal backslash, one might have to write ``'\\\\'`` as the pattern
 string, because the regular expression must be ``\\``, and each
 backslash must be expressed as ``\\`` inside a regular Python string
 literal. Also, please note that any invalid escape sequences in Python's
-usage of the backslash in string literals now generate a :exc:`DeprecationWarning`
+usage of the backslash in string literals now generate a :exc:`SyntaxWarning`
 and in the future this will become a :exc:`SyntaxError`. This behaviour
 will happen even if it is a valid escape sequence for a regular expression.
 
@@ -483,6 +483,9 @@ The special characters are:
    some fixed length.  Patterns which start with negative lookbehind assertions may
    match at the beginning of the string being searched.
 
+.. _re-conditional-expression:
+.. index:: single: (?(; in regular expressions
+
 ``(?(id/name)yes-pattern|no-pattern)``
    Will try to match with ``yes-pattern`` if the group with given *id* or
    *name* exists, and with ``no-pattern`` if it doesn't. ``no-pattern`` is
@@ -667,40 +670,14 @@ functions are simplified versions of the full featured methods for compiled
 regular expressions.  Most non-trivial applications always use the compiled
 form.
 
+
+Flags
+^^^^^
+
 .. versionchanged:: 3.6
    Flag constants are now instances of :class:`RegexFlag`, which is a subclass of
    :class:`enum.IntFlag`.
 
-.. function:: compile(pattern, flags=0)
-
-   Compile a regular expression pattern into a :ref:`regular expression object
-   <re-objects>`, which can be used for matching using its
-   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
-   below.
-
-   The expression's behaviour can be modified by specifying a *flags* value.
-   Values can be any of the following variables, combined using bitwise OR (the
-   ``|`` operator).
-
-   The sequence ::
-
-      prog = re.compile(pattern)
-      result = prog.match(string)
-
-   is equivalent to ::
-
-      result = re.match(pattern, string)
-
-   but using :func:`re.compile` and saving the resulting regular expression
-   object for reuse is more efficient when the expression will be used several
-   times in a single program.
-
-   .. note::
-
-      The compiled versions of the most recent patterns passed to
-      :func:`re.compile` and the module-level matching functions are cached, so
-      programs that use only a few regular expressions at a time needn't worry
-      about compiling regular expressions.
 
 .. class:: RegexFlag
 
@@ -809,7 +786,8 @@ form.
    more readable by allowing you to visually separate logical sections of the
    pattern and add comments. Whitespace within the pattern is ignored, except
    when in a character class, or when preceded by an unescaped backslash,
-   or within tokens like ``*?``, ``(?:`` or ``(?P<...>``.
+   or within tokens like ``*?``, ``(?:`` or ``(?P<...>``. For example, ``(? :``
+   and ``* ?`` are not allowed.
    When a line contains a ``#`` that is not in a character class and is not
    preceded by an unescaped backslash, all characters from the leftmost such
    ``#`` through the end of the line are ignored.
@@ -823,6 +801,41 @@ form.
       b = re.compile(r"\d+\.\d*")
 
    Corresponds to the inline flag ``(?x)``.
+
+
+Functions
+^^^^^^^^^
+
+.. function:: compile(pattern, flags=0)
+
+   Compile a regular expression pattern into a :ref:`regular expression object
+   <re-objects>`, which can be used for matching using its
+   :func:`~Pattern.match`, :func:`~Pattern.search` and other methods, described
+   below.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the following variables, combined using bitwise OR (the
+   ``|`` operator).
+
+   The sequence ::
+
+      prog = re.compile(pattern)
+      result = prog.match(string)
+
+   is equivalent to ::
+
+      result = re.match(pattern, string)
+
+   but using :func:`re.compile` and saving the resulting regular expression
+   object for reuse is more efficient when the expression will be used several
+   times in a single program.
+
+   .. note::
+
+      The compiled versions of the most recent patterns passed to
+      :func:`re.compile` and the module-level matching functions are cached, so
+      programs that use only a few regular expressions at a time needn't worry
+      about compiling regular expressions.
 
 
 .. function:: search(pattern, string, flags=0)
@@ -960,6 +973,7 @@ form.
       >>> def dashrepl(matchobj):
       ...     if matchobj.group(0) == '-': return ' '
       ...     else: return '-'
+      ...
       >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
       'pro--gram files'
       >>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
@@ -1060,6 +1074,9 @@ form.
 
    Clear the regular expression cache.
 
+
+Exceptions
+^^^^^^^^^^
 
 .. exception:: error(msg, pattern=None, pos=None)
 
@@ -1315,6 +1332,14 @@ Match objects support the following methods and attributes:
       >>> m[2]       # The second parenthesized subgroup.
       'Newton'
 
+   Named groups are supported as well::
+
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Isaac Newton")
+      >>> m['first_name']
+      'Isaac'
+      >>> m['last_name']
+      'Newton'
+
    .. versionadded:: 3.6
 
 
@@ -1541,16 +1566,22 @@ search() vs. match()
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
-Python offers two different primitive operations based on regular expressions:
-:func:`re.match` checks for a match only at the beginning of the string, while
-:func:`re.search` checks for a match anywhere in the string (this is what Perl
-does by default).
+Python offers different primitive operations based on regular expressions:
+
++ :func:`re.match` checks for a match only at the beginning of the string
++ :func:`re.search` checks for a match anywhere in the string
+  (this is what Perl does by default)
++ :func:`re.fullmatch` checks for entire string to be a match
+
 
 For example::
 
    >>> re.match("c", "abcdef")    # No match
    >>> re.search("c", "abcdef")   # Match
    <re.Match object; span=(2, 3), match='c'>
+   >>> re.fullmatch("p.*n", "python") # Match
+   <re.Match object; span=(0, 6), match='python'>
+   >>> re.fullmatch("r.*n", "python") # No match
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
@@ -1564,8 +1595,8 @@ Note however that in :const:`MULTILINE` mode :func:`match` only matches at the
 beginning of the string, whereas using :func:`search` with a regular expression
 beginning with ``'^'`` will match at the beginning of each line. ::
 
-   >>> re.match('X', 'A\nB\nX', re.MULTILINE)  # No match
-   >>> re.search('^X', 'A\nB\nX', re.MULTILINE)  # Match
+   >>> re.match("X", "A\nB\nX", re.MULTILINE)  # No match
+   >>> re.search("^X", "A\nB\nX", re.MULTILINE)  # Match
    <re.Match object; span=(4, 5), match='X'>
 
 
@@ -1642,6 +1673,7 @@ in each word of a sentence except for the first and last characters::
    ...     inner_word = list(m.group(2))
    ...     random.shuffle(inner_word)
    ...     return m.group(1) + "".join(inner_word) + m.group(3)
+   ...
    >>> text = "Professor Abdolmalek, please report your absences promptly."
    >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
    'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'

@@ -144,8 +144,10 @@ Functions
       Passing an invalid or expired *thread_id* may result in
       undefined behavior, such as segmentation fault.
 
-   .. availability:: Unix (see the man page for :manpage:`pthread_getcpuclockid(3)` for
-      further information).
+   .. availability:: Unix
+
+      See the man page for :manpage:`pthread_getcpuclockid(3)` for
+      further information.
 
    .. versionadded:: 3.7
 
@@ -651,8 +653,9 @@ Functions
    Use :func:`thread_time_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
-   .. availability::  Windows, Linux, Unix systems supporting
-      ``CLOCK_THREAD_CPUTIME_ID``.
+   .. availability::  Linux, Unix, Windows.
+
+      Unix systems supporting ``CLOCK_THREAD_CPUTIME_ID``.
 
    .. versionadded:: 3.7
 
@@ -770,7 +773,7 @@ These constants are used as parameters for :func:`clock_getres` and
    have  discontinuities if the time is changed using ``settimeofday()`` or
    similar.
 
-   .. availability:: Linux 2.6.39 or later.
+   .. availability:: Linux >= 2.6.39.
 
    .. versionadded:: 3.7
 
@@ -801,7 +804,7 @@ These constants are used as parameters for :func:`clock_getres` and
    Similar to :data:`CLOCK_MONOTONIC`, but provides access to a raw
    hardware-based time that is not subject to NTP adjustments.
 
-   .. availability:: Linux 2.6.28 and newer, macOS 10.12 and newer.
+   .. availability:: Linux >= 2.6.28, macOS >= 10.12.
 
    .. versionadded:: 3.3
 
@@ -819,7 +822,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
    High-resolution per-process timer from the CPU.
 
-   .. availability:: FreeBSD, NetBSD 7 or later, OpenBSD.
+   .. availability:: FreeBSD, NetBSD >= 7, OpenBSD.
 
    .. versionadded:: 3.7
 
@@ -849,7 +852,7 @@ These constants are used as parameters for :func:`clock_getres` and
    suspended, providing accurate uptime measurement, both absolute and
    interval.
 
-   .. availability:: FreeBSD, OpenBSD 5.5 or later.
+   .. availability:: FreeBSD, OpenBSD >= 5.5.
 
    .. versionadded:: 3.7
 
@@ -860,7 +863,7 @@ These constants are used as parameters for :func:`clock_getres` and
    point, unaffected by frequency or time adjustments and not incremented while
    the system is asleep.
 
-   .. availability:: macOS 10.12 and newer.
+   .. availability:: macOS >= 10.12.
 
    .. versionadded:: 3.8
 

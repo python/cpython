@@ -148,14 +148,14 @@ import re
 import sys
 import warnings
 
-__all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
+__all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
-           "ConfigParser", "SafeConfigParser", "RawConfigParser",
+           "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "LegacyInterpolation", "SectionProxy", "ConverterMapping",
-           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
+           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH")
 
 _default_dict = dict
 DEFAULTSECT = "DEFAULT"
@@ -297,40 +297,11 @@ class InterpolationDepthError(InterpolationError):
 class ParsingError(Error):
     """Raised when a configuration file does not follow legal syntax."""
 
-    def __init__(self, source=None, filename=None):
-        # Exactly one of `source'/`filename' arguments has to be given.
-        # `filename' kept for compatibility.
-        if filename and source:
-            raise ValueError("Cannot specify both `filename' and `source'. "
-                             "Use `source'.")
-        elif not filename and not source:
-            raise ValueError("Required argument `source' not given.")
-        elif filename:
-            source = filename
-        Error.__init__(self, 'Source contains parsing errors: %r' % source)
+    def __init__(self, source):
+        super().__init__(f'Source contains parsing errors: {source!r}')
         self.source = source
         self.errors = []
         self.args = (source, )
-
-    @property
-    def filename(self):
-        """Deprecated, use `source'."""
-        warnings.warn(
-            "The 'filename' attribute will be removed in Python 3.12. "
-            "Use 'source' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return self.source
-
-    @filename.setter
-    def filename(self, value):
-        """Deprecated, user `source'."""
-        warnings.warn(
-            "The 'filename' attribute will be removed in Python 3.12. "
-            "Use 'source' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        self.source = value
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
@@ -767,15 +738,6 @@ class RawConfigParser(MutableMapping):
                     raise DuplicateOptionError(section, key, source)
                 elements_added.add((section, key))
                 self.set(section, key, value)
-
-    def readfp(self, fp, filename=None):
-        """Deprecated, use read_file instead."""
-        warnings.warn(
-            "This method will be removed in Python 3.12. "
-            "Use 'parser.read_file()' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        self.read_file(fp, source=filename)
 
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
         """Get an option value for a given section.
@@ -1237,19 +1199,6 @@ class ConfigParser(RawConfigParser):
             self.read_dict({self.default_section: defaults})
         finally:
             self._interpolation = hold_interpolation
-
-
-class SafeConfigParser(ConfigParser):
-    """ConfigParser alias for backwards compatibility purposes."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warnings.warn(
-            "The SafeConfigParser class has been renamed to ConfigParser "
-            "in Python 3.2. This alias will be removed in Python 3.12."
-            " Use ConfigParser directly instead.",
-            DeprecationWarning, stacklevel=2
-        )
 
 
 class SectionProxy(MutableMapping):

@@ -37,8 +37,7 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
     if (traceback != NULL && !PyTraceBack_Check(traceback)) {
         /* XXX Should never happen -- fatal error instead? */
         /* Well, it could be None. */
-        Py_DECREF(traceback);
-        traceback = NULL;
+        Py_SETREF(traceback, NULL);
     }
 
     /* Save these in locals to safeguard against recursive
@@ -178,8 +177,7 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
     }
     if (value != NULL && PyExceptionInstance_Check(value))
         tb = PyException_GetTraceback(value);
-    Py_XINCREF(exception);
-    _PyErr_Restore(tstate, exception, value, tb);
+    _PyErr_Restore(tstate, Py_XNewRef(exception), value, tb);
 }
 
 void
@@ -326,8 +324,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
        set to NULL.
     */
     if (!value) {
-        value = Py_None;
-        Py_INCREF(value);
+        value = Py_NewRef(Py_None);
     }
 
     /* Normalize the exception so that if the type is a class, the
@@ -355,16 +352,13 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
             if (fixed_value == NULL) {
                 goto error;
             }
-            Py_DECREF(value);
-            value = fixed_value;
+            Py_SETREF(value, fixed_value);
         }
         /* If the class of the instance doesn't exactly match the
            class of the type, believe the instance.
         */
         else if (inclass != type) {
-            Py_INCREF(inclass);
-            Py_DECREF(type);
-            type = inclass;
+            Py_SETREF(type, Py_NewRef(inclass));
         }
     }
     *exc = type;
@@ -490,13 +484,9 @@ _PyErr_GetExcInfo(PyThreadState *tstate,
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
 
-    *p_type = get_exc_type(exc_info->exc_value);
-    *p_value = exc_info->exc_value;
-    *p_traceback = get_exc_traceback(exc_info->exc_value);
-
-    Py_XINCREF(*p_type);
-    Py_XINCREF(*p_value);
-    Py_XINCREF(*p_traceback);
+    *p_type = Py_XNewRef(get_exc_type(exc_info->exc_value));
+    *p_value = Py_XNewRef(exc_info->exc_value);
+    *p_traceback = Py_XNewRef(get_exc_traceback(exc_info->exc_value));
 }
 
 PyObject*
@@ -675,9 +665,9 @@ _PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
 
     _PyErr_Fetch(tstate, &exc, &val2, &tb);
     _PyErr_NormalizeException(tstate, &exc, &val2, &tb);
-    Py_INCREF(val);
-    PyException_SetCause(val2, val);
-    PyException_SetContext(val2, val);
+    PyException_SetCause(val2, Py_NewRef(val));
+    PyException_SetContext(val2, Py_NewRef(val));
+    Py_DECREF(val);
     _PyErr_Restore(tstate, exc, val2, tb);
 
     return NULL;
@@ -688,11 +678,7 @@ _PyErr_FormatFromCauseTstate(PyThreadState *tstate, PyObject *exception,
                              const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatVFromCause(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -703,11 +689,7 @@ _PyErr_FormatFromCause(PyObject *exception, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatVFromCause(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -983,9 +965,10 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 
 #endif /* MS_WINDOWS */
 
-PyObject *
-PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
-    PyObject *name, PyObject *path)
+static PyObject *
+_PyErr_SetImportErrorSubclassWithNameFrom(
+    PyObject *exception, PyObject *msg,
+    PyObject *name, PyObject *path, PyObject* from_name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int issubclass;
@@ -1013,6 +996,10 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
     if (path == NULL) {
         path = Py_None;
     }
+    if (from_name == NULL) {
+        from_name = Py_None;
+    }
+
 
     kwargs = PyDict_New();
     if (kwargs == NULL) {
@@ -1022,6 +1009,9 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
         goto done;
     }
     if (PyDict_SetItemString(kwargs, "path", path) < 0) {
+        goto done;
+    }
+    if (PyDict_SetItemString(kwargs, "name_from", from_name) < 0) {
         goto done;
     }
 
@@ -1034,6 +1024,20 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
 done:
     Py_DECREF(kwargs);
     return NULL;
+}
+
+
+PyObject *
+PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
+    PyObject *name, PyObject *path)
+{
+    return _PyErr_SetImportErrorSubclassWithNameFrom(exception, msg, name, path, NULL);
+}
+
+PyObject *
+_PyErr_SetImportErrorWithNameFrom(PyObject *msg, PyObject *name, PyObject *path, PyObject* from_name)
+{
+    return _PyErr_SetImportErrorSubclassWithNameFrom(PyExc_ImportError, msg, name, path, from_name);
 }
 
 PyObject *
@@ -1096,11 +1100,7 @@ _PyErr_Format(PyThreadState *tstate, PyObject *exception,
               const char *format, ...)
 {
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatV(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -1112,11 +1112,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     _PyErr_FormatV(tstate, exception, format, vargs);
     va_end(vargs);
     return NULL;
@@ -1160,9 +1156,7 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
             goto failure;
     }
     if (PyTuple_Check(base)) {
-        bases = base;
-        /* INCREF as we create a new ref in the else branch */
-        Py_INCREF(bases);
+        bases = Py_NewRef(base);
     } else {
         bases = PyTuple_Pack(1, base);
         if (bases == NULL)
@@ -1245,8 +1239,8 @@ _PyErr_InitTypes(PyInterpreterState *interp)
     }
 
     if (UnraisableHookArgsType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&UnraisableHookArgsType,
-                                       &UnraisableHookArgs_desc) < 0) {
+        if (_PyStructSequence_InitBuiltin(&UnraisableHookArgsType,
+                                          &UnraisableHookArgs_desc) < 0) {
             return _PyStatus_ERR("failed to initialize UnraisableHookArgs type");
         }
     }
@@ -1281,8 +1275,7 @@ make_unraisable_hook_args(PyThreadState *tstate, PyObject *exc_type,
             if (exc_type == NULL) { \
                 exc_type = Py_None; \
             } \
-            Py_INCREF(exc_type); \
-            PyStructSequence_SET_ITEM(args, pos++, exc_type); \
+            PyStructSequence_SET_ITEM(args, pos++, Py_NewRef(exc_type)); \
         } while (0)
 
 

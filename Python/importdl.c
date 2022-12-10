@@ -160,6 +160,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     p0 = (PyModInitFunction)exportfunc;
 
     /* Package context is needed for single-phase init */
+#define _Py_PackageContext (_PyRuntime.imports.pkgcontext)
     oldcontext = _Py_PackageContext;
     _Py_PackageContext = PyUnicode_AsUTF8(name_unicode);
     if (_Py_PackageContext == NULL) {
@@ -168,6 +169,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     }
     m = _PyImport_InitFunc_TrampolineCall(p0);
     _Py_PackageContext = oldcontext;
+#undef _Py_PackageContext
 
     if (m == NULL) {
         if (!PyErr_Occurred()) {

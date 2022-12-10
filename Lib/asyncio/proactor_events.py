@@ -60,6 +60,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._pending_write = 0
         self._conn_lost = 0
         self._closing = False  # Set when close() called.
+        self._called_connection_lost = False
         self._eof_written = False
         if self._server is not None:
             self._server._attach()
@@ -113,7 +114,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
     def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
-            self.close()
+            self._sock.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         try:
@@ -136,7 +137,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
                 self._empty_waiter.set_result(None)
             else:
                 self._empty_waiter.set_exception(exc)
-        if self._closing:
+        if self._closing and self._called_connection_lost:
             return
         self._closing = True
         self._conn_lost += 1
@@ -151,6 +152,8 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._loop.call_soon(self._call_connection_lost, exc)
 
     def _call_connection_lost(self, exc):
+        if self._called_connection_lost:
+            return
         try:
             self._protocol.connection_lost(exc)
         finally:
@@ -166,6 +169,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             if server is not None:
                 server._detach()
                 self._server = None
+            self._called_connection_lost = True
 
     def get_write_buffer_size(self):
         size = self._pending_write
