@@ -888,9 +888,10 @@ class FractionTest(unittest.TestCase):
             (F(22, 7), '11.6e', '3.142857e+00'),
             (F(22, 7), '12.6e', '3.142857e+00'),
             (F(22, 7), '13.6e', ' 3.142857e+00'),
-            # Legal to specify a thousands separator, but it'll have no effect
+            # Thousands separators
             (F('1234567.123456'), ',.5e', '1.23457e+06'),
-            # Same with z flag: legal, but useless
+            (F('123.123456'), '012_.2e', '0_001.23e+02'),
+            # z flag is legal, but never makes a different to the output
             (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
         ]
         for fraction, spec, expected in testcases:
