@@ -397,6 +397,7 @@ Module functions
       >>> con = sqlite3.connect(":memory:")
       >>> def evil_trace(stmt):
       ...     5/0
+      ...
       >>> con.set_trace_callback(evil_trace)
       >>> def debug(unraisable):
       ...     print(f"{unraisable.exc_value!r} in callback {unraisable.object.__name__}")
@@ -1929,12 +1930,16 @@ How to use placeholders to bind values in SQL queries
 
 SQL operations usually need to use values from Python variables. However,
 beware of using Python's string operations to assemble queries, as they
-are vulnerable to `SQL injection attacks`_ (see the `xkcd webcomic
-<https://xkcd.com/327/>`_ for a humorous example of what can go wrong)::
+are vulnerable to `SQL injection attacks`_. For example, an attacker can simply
+close the single quote and inject ``OR TRUE`` to select all rows::
 
-   # Never do this -- insecure!
-   symbol = 'RHAT'
-   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+   >>> # Never do this -- insecure!
+   >>> symbol = input()
+   ' OR TRUE; --
+   >>> sql = "SELECT * FROM stocks WHERE symbol = '%s'" % symbol
+   >>> print(sql)
+   SELECT * FROM stocks WHERE symbol = '' OR TRUE; --'
+   >>> cur.execute(sql)
 
 Instead, use the DB-API's parameter substitution. To insert a variable into a
 query string, use a placeholder in the string, and substitute the actual values

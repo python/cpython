@@ -158,6 +158,7 @@ And a function to display the chores for a given day::
     ...     for chore, days in chores.items():
     ...         if day in days:
     ...             print(chore)
+    ...
     >>> show_chores(chores_for_ethan, Weekday.SATURDAY)
     answer SO questions
 
@@ -712,6 +713,7 @@ It is also possible to name the combinations::
     ...     W = 2
     ...     X = 1
     ...     RWX = 7
+    ...
     >>> Perm.RWX
     <Perm.RWX: 7>
     >>> ~Perm.RWX

@@ -595,17 +595,13 @@ _Py_ClearStandardStreamEncoding(void)
 
 /* --- Py_GetArgcArgv() ------------------------------------------- */
 
-/* For Py_GetArgcArgv(); set by _Py_SetArgcArgv() */
-static PyWideStringList orig_argv = {.length = 0, .items = NULL};
-
-
 void
 _Py_ClearArgcArgv(void)
 {
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyWideStringList_Clear(&orig_argv);
+    _PyWideStringList_Clear(&_PyRuntime.orig_argv);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -620,7 +616,9 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    res = _PyWideStringList_Copy(&orig_argv, &argv_list);
+    // XXX _PyRuntime.orig_argv only gets cleared by Py_Main(),
+    // so it it currently leaks for embedders.
+    res = _PyWideStringList_Copy(&_PyRuntime.orig_argv, &argv_list);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
@@ -631,8 +629,8 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 void
 Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
-    *argc = (int)orig_argv.length;
-    *argv = orig_argv.items;
+    *argc = (int)_PyRuntime.orig_argv.length;
+    *argv = _PyRuntime.orig_argv.items;
 }
 
 

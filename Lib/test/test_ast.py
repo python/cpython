@@ -837,7 +837,8 @@ class AST_Tests(unittest.TestCase):
                 details = "Compiling ({!r} + {!r} * {})".format(
                             prefix, repeated, depth)
                 with self.assertRaises(RecursionError, msg=details):
-                    ast.parse(broken)
+                    with support.infinite_recursion():
+                        ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")

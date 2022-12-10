@@ -861,20 +861,15 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         self.loop._process_events = mock.Mock()
 
-        try:
+        with self.assertRaises(KeyboardInterrupt):
             self.loop.run_until_complete(raise_keyboard_interrupt())
-        except KeyboardInterrupt:
-            pass
 
         def func():
             self.loop.stop()
             func.called = True
         func.called = False
-        try:
-            self.loop.call_soon(func)
-            self.loop.run_forever()
-        except KeyboardInterrupt:
-            pass
+        self.loop.call_later(0.01, func)
+        self.loop.run_forever()
         self.assertTrue(func.called)
 
     def test_single_selecter_event_callback_after_stopping(self):
