@@ -495,7 +495,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argrepr = "to " + repr(argval)
             elif deop in hasjrel:
                 signed_arg = -arg if _is_backward_jump(deop) else arg
-                argval = offset + 2 + signed_arg*2
+                argval = offset + 4 + signed_arg*2
                 if deop == FOR_ITER:
                     argval += 2
                 argrepr = "to " + repr(argval)
