@@ -206,16 +206,16 @@ another rational number, or from a string.
 
       Here are some examples::
 
-      >>> from fractions import Fraction
-      >>> format(Fraction(1, 7), '.40g')
-      '0.1428571428571428571428571428571428571429'
-      >>> format(Fraction('1234567.855'), '_.2f')
-      '1_234_567.86'
-      >>> f"{Fraction(355, 113):*>20.6e}"
-      '********3.141593e+00'
-      >>> old_price, new_price = 499, 672
-      >>> "{:.2%} price increase".format(Fraction(new_price, old_price) - 1)
-      '34.67% price increase'
+         >>> from fractions import Fraction
+         >>> format(Fraction(1, 7), '.40g')
+         '0.1428571428571428571428571428571428571429'
+         >>> format(Fraction('1234567.855'), '_.2f')
+         '1_234_567.86'
+         >>> f"{Fraction(355, 113):*>20.6e}"
+         '********3.141593e+00'
+         >>> old_price, new_price = 499, 672
+         >>> "{:.2%} price increase".format(Fraction(new_price, old_price) - 1)
+         '34.67% price increase'
 
 
 .. seealso::
