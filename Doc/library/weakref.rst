@@ -172,14 +172,24 @@ See :ref:`__slots__ documentation <slots>` for details.
    existing key. Due to this, when the reference to the original key is deleted, it
    also deletes the entry in the dictionary::
 
-      >>> class T(str):
-      ...     pass
+      >>> class T(str): pass
       ...
       >>> k1, k2 = T(), T()
       >>> d = weakref.WeakKeyDictionary()
       >>> d[k1] = 1   # d = {k1: 1}
       >>> d[k2] = 2   # d = {k1: 2}
       >>> del k1      # d = {}
+
+   A workaround would be to remove the key prior to reassignment::
+
+      >>> class T(str): pass
+      ...
+      >>> k1, k2 = T(), T()
+      >>> d = weakref.WeakKeyDictionary()
+      >>> d[k1] = 1   # d = {k1: 1}
+      >>> d.pop(k1)
+      >>> d[k2] = 2   # d = {k2: 2}
+      >>> del k1      # d = {k2: 2}
 
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
