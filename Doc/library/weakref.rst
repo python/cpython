@@ -181,7 +181,6 @@ See :ref:`__slots__ documentation <slots>` for details.
       >>> d[k2] = 2   # d = {k1: 2}
       >>> del k1      # d = {}
 
-
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
 
