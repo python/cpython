@@ -125,23 +125,11 @@ used, an :exc:`UnboundLocalError` exception is raised.
 If a name binding operation occurs anywhere within a code block, all uses of the
 name within the block are treated as references to the current block.  This can
 lead to errors when a name is used within a block before it is bound.  This rule
-is subtle::
-
-   >>> x = 1
-   >>> def new_scope():
-   ...     print(x)
-   ...     x = 2
-   ...
-   >>> new_scope()
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-     File "<stdin>", line 2, in new_scope
-   UnboundLocalError: local variable 'x' referenced before assignment
-
-Python lacks declarations and allows name binding operations to
+is subtle. Python lacks declarations and allows name binding operations to
 occur anywhere within a code block.  The local variables of a code block can be
 determined by scanning the entire text of the block for name binding operations.
-See also :ref:`the FAQ entry on UnboundLocalError <faq-unboundlocalerror>`.
+See :ref:`the FAQ entry on UnboundLocalError <faq-unboundlocalerror>` for some
+examples.
 
 If the :keyword:`global` statement occurs within a block, all uses of the names
 specified in the statement refer to the bindings of those names in the top-level
