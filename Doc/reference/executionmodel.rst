@@ -125,7 +125,7 @@ used, an :exc:`UnboundLocalError` exception is raised.
 If a name binding operation occurs anywhere within a code block, all uses of the
 name within the block are treated as references to the current block.  This can
 lead to errors when a name is used within a block before it is bound.  This rule
-is subtle. Python lacks declarations and allows name binding operations to
+is subtle.  Python lacks declarations and allows name binding operations to
 occur anywhere within a code block.  The local variables of a code block can be
 determined by scanning the entire text of the block for name binding operations.
 See :ref:`the FAQ entry on UnboundLocalError <faq-unboundlocalerror>` for some
