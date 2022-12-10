@@ -5,9 +5,9 @@
 
 #ifdef MS_WINDOWS
 #  if !defined(SOCKET) && defined(Py_INTERNAL_SIGNAL_H)
-#    error "pycore_signal.h included without PYCORE_SIGNAL_REQUIRES_WINSOCK"
+#    error "pycore_signal.h included without PYCORE_SIGNAL_WITH_PRE_INCLUDES"
 #  endif
-#  define _PYCORE_SIGNAL_REQUIRES_WINSOCK
+#  define PYCORE_SIGNAL_WITH_PRE_INCLUDES
 #endif
 
 #include "Python.h"

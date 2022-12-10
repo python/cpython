@@ -13,13 +13,13 @@ extern "C" {
 #include "pycore_atomic.h"         // _Py_atomic_address
 
 #ifdef MS_WINDOWS
-#  ifndef SOCKET
-#    ifdef PYCORE_SIGNAL_REQUIRES_WINSOCK
+#  ifdef PYCORE_SIGNAL_WITH_PRE_INCLUDES
+#    ifndef SOCKET
 #      error "<winsock2.h> must be included before this header"
 #    endif
-#  endif
-#  ifndef HANDLE
-#    error "<windows.h> must be included before this header"
+#    ifndef HANDLE
+#      error "<windows.h> must be included before this header"
+#    endif
 #  endif
 #endif
 #include <signal.h>                // NSIG
@@ -62,7 +62,8 @@ struct _signals_runtime_state {
 #  ifdef SOCKET
         SOCKET fd;
 #  else
-        // <winsock2.h> wasn't included already, so we fake it.
+        // <winsock2.h> wasn't included already,
+        // we use something compatible with SOCKET.
         int fd;
 #  endif
 #elif defined(__VXWORKS__)
@@ -84,7 +85,13 @@ struct _signals_runtime_state {
     PyObject *default_handler;
     PyObject *ignore_handler;
 #ifdef MS_WINDOWS
+#  ifdef HANDLE
     HANDLE sigint_event;
+#  else
+    // <windows.h> wasn't included already,
+    // we use something compatible with HANDLE.
+    void *sigint_event;
+#  endif
 #endif
 
     /* True if the main interpreter thread exited due to an unhandled
