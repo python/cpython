@@ -17,9 +17,8 @@ static inline int _Py_is_valid_index(Py_ssize_t index, Py_ssize_t limit)
         optimization manual found at:
         https://www.agner.org/optimize/optimizing_cpp.pdf
 
-        The function relies on twos-complement representation, and is not
-        affected by -fwrapv, -fno-wrapv and -ftrapv compiler options
-        of GCC and clang
+        The function is not affected by -fwrapv, -fno-wrapv and -ftrapv
+        compiler options of GCC and clang
     */
     return (size_t)index < (size_t)limit;
 }
