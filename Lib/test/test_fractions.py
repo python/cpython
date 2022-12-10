@@ -947,12 +947,23 @@ class FractionTest(unittest.TestCase):
             (F(-2, 3), ' .2f', '-0.67'),
             # Formatting to zero places
             (F(1, 2), '.0f', '0'),
+            (F(-1, 2), '.0f', '-0'),
             (F(22, 7), '.0f', '3'),
             (F(-22, 7), '.0f', '-3'),
             # Formatting to zero places, alternate form
             (F(1, 2), '#.0f', '0.'),
+            (F(-1, 2), '#.0f', '-0.'),
             (F(22, 7), '#.0f', '3.'),
             (F(-22, 7), '#.0f', '-3.'),
+            # z flag for suppressing negative zeros
+            (F('-0.001'), 'z.2f', '0.00'),
+            (F('-0.001'), '-z.2f', '0.00'),
+            (F('-0.001'), '+z.2f', '+0.00'),
+            (F('-0.001'), ' z.2f', ' 0.00'),
+            (F('0.001'), 'z.2f', '0.00'),
+            (F('0.001'), '-z.2f', '0.00'),
+            (F('0.001'), '+z.2f', '+0.00'),
+            (F('0.001'), ' z.2f', ' 0.00'),
             # Corner-case: leading zeros are allowed in the precision
             (F(2, 3), '.02f', '0.67'),
             (F(22, 7), '.000f', '3'),
@@ -1040,15 +1051,6 @@ class FractionTest(unittest.TestCase):
             # is being inserted programmatically: spec = f'{width}.2f'.
             (F('12.34'), '0.2f', '12.34'),
             (F('12.34'), 'X>0.2f', '12.34'),
-            # z flag for suppressing negative zeros
-            (F('-0.001'), 'z.2f', '0.00'),
-            (F('-0.001'), '-z.2f', '0.00'),
-            (F('-0.001'), '+z.2f', '+0.00'),
-            (F('-0.001'), ' z.2f', ' 0.00'),
-            (F('0.001'), 'z.2f', '0.00'),
-            (F('0.001'), '-z.2f', '0.00'),
-            (F('0.001'), '+z.2f', '+0.00'),
-            (F('0.001'), ' z.2f', ' 0.00'),
             # "F" should work identically to "f"
             (F(22, 7), '.5F', '3.14286'),
             # %-specifier
@@ -1088,6 +1090,15 @@ class FractionTest(unittest.TestCase):
             (F('9.99999e+2'), '.4g', '1000'),
             (F('9.99999e-8'), '.4g', '1e-07'),
             (F('9.99999e+8'), '.4g', '1e+09'),
+            # Check round-ties-to-even behaviour
+            (F('-0.115'), '.2g', '-0.12'),
+            (F('-0.125'), '.2g', '-0.12'),
+            (F('-0.135'), '.2g', '-0.14'),
+            (F('-0.145'), '.2g', '-0.14'),
+            (F('0.115'), '.2g', '0.12'),
+            (F('0.125'), '.2g', '0.12'),
+            (F('0.135'), '.2g', '0.14'),
+            (F('0.145'), '.2g', '0.14'),
             # Trailing zeros and decimal point suppressed by default ...
             (F(0), '.6g', '0'),
             (F('123.400'), '.6g', '123.4'),

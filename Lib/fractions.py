@@ -68,8 +68,76 @@ _RATIONAL_FORMAT = re.compile(r"""
     \s*\Z                                 # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
-# Pattern for matching format specification; only supports 'e', 'E', 'f', 'F'
-# and '%' presentation types.
+
+# Helpers for formatting
+
+def _round_to_exponent(n, d, exponent, no_neg_zero=False):
+    """Round a rational number to an integer multiple of a power of 10.
+
+    Rounds the rational number n/d to the nearest integer multiple of
+    10**exponent using the round-ties-to-even rule, and returns a
+    pair (sign, significand) representing the rounded value
+    (-1)**sign * significand.
+
+    d must be positive, but n and d need not be relatively prime.
+
+    If no_neg_zero is true, then the returned sign will always be False
+    for a zero result. Otherwise, the sign is based on the sign of the input.
+    """
+    if exponent >= 0:
+        d *= 10**exponent
+    else:
+        n *= 10**-exponent
+
+    # The divmod quotient rounds ties towards positive infinity; we then adjust
+    # as needed for round-ties-to-even behaviour.
+    q, r = divmod(n + (d >> 1), d)
+    if r == 0 and d & 1 == 0:  # Tie
+        q &= -2
+
+    sign = q < 0 if no_neg_zero else n < 0
+    return sign, abs(q)
+
+
+def _round_to_figures(n, d, figures):
+    """Round a rational number to a given number of significant figures.
+
+    Rounds the rational number n/d to the given number of significant figures
+    using the round-ties-to-even rule, and returns a triple (sign, significand,
+    exponent) representing the rounded value (-1)**sign * significand *
+    10**exponent.
+
+    d must be positive, but n and d need not be relatively prime.
+    figures must be positive.
+
+    In the special case where n = 0, returns an exponent of 1 - figures, for
+    compatibility with formatting; the significand will be zero. Otherwise,
+    the significand satisfies 10**(figures - 1) <= significand < 10**figures.
+    """
+    # Find integer m satisfying 10**(m - 1) <= abs(self) <= 10**m if self
+    # is nonzero, with m = 1 if self = 0. (The latter choice is a little
+    # arbitrary, but gives the "right" results when formatting zero.)
+    if n == 0:
+        m = 1
+    else:
+        str_n, str_d = str(abs(n)), str(d)
+        m = len(str_n) - len(str_d) + (str_d <= str_n)
+
+    # Round to a multiple of 10**(m - figures). The result will satisfy either
+    # significand == 0 or 10**(figures - 1) <= significand <= 10**figures.
+    exponent = m - figures
+    sign, significand = _round_to_exponent(n, d, exponent)
+
+    # Adjust in the case where significand == 10**figures.
+    if len(str(significand)) == figures + 1:
+        significand //= 10
+        exponent += 1
+
+    return sign, significand, exponent
+
+
+# Pattern for matching format specification; supports 'e', 'E', 'f', 'F',
+# 'g', 'G' and '%' presentation types.
 _FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?:
         (?P<fill>.)?
@@ -78,8 +146,8 @@ _FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     (?P<sign>[-+ ]?)
     (?P<no_neg_zero>z)?
     (?P<alt>\#)?
-    (?P<zeropad>0(?=\d))?
-    (?P<minimumwidth>\d+)?
+    (?P<zeropad>0(?=\d))?   # use lookahead so that an isolated '0' is treated
+    (?P<minimumwidth>\d+)?  # as minimum width rather than the zeropad flag
     (?P<thousands_sep>[,_])?
     (?:\.(?P<precision>\d+))?
     (?P<presentation_type>[efg%])
@@ -327,35 +395,6 @@ class Fraction(numbers.Rational):
         else:
             return '%s/%s' % (self._numerator, self._denominator)
 
-    def _round_to_sig_figs(self, figures):
-        """Round a positive fraction to a given number of significant figures.
-
-        Returns a pair (significand, exponent) of integers such that
-        significand * 10**exponent gives a rounded approximation to self, and
-        significand lies in the range 10**(figures - 1) <= significand <
-        10**figures.
-        """
-        if not (self > 0 and figures > 0):
-            raise ValueError("Expected self and figures to be positive")
-
-        # Find integer m satisfying 10**(m - 1) <= self <= 10**m.
-        str_n, str_d = str(self.numerator), str(self.denominator)
-        m = len(str_n) - len(str_d) + (str_d <= str_n)
-
-        # Find best approximation significand * 10**exponent to self, with
-        # 10**(figures - 1) <= significand <= 10**figures.
-        exponent = m - figures
-        significand = round(
-            self / 10**exponent if exponent >= 0 else self * 10**-exponent
-        )
-
-        # Adjust in the case where significand == 10**figures.
-        if len(str(significand)) == figures + 1:
-            significand //= 10
-            exponent += 1
-
-        return significand, exponent
-
     def __format__(self, format_spec, /):
         """Format this fraction according to the given format specification."""
 
@@ -377,11 +416,10 @@ class Fraction(numbers.Rational):
                 f"for object of type {type(self).__name__!r}; "
                 "can't use explicit alignment when zero-padding"
             )
-
         fill = match["fill"] or " "
         align = match["align"] or ">"
         pos_sign = "" if match["sign"] == "-" else match["sign"]
-        neg_zero_ok = not match["no_neg_zero"]
+        no_neg_zero = bool(match["no_neg_zero"])
         alternate_form = bool(match["alt"])
         zeropad = bool(match["zeropad"])
         minimumwidth = int(match["minimumwidth"] or "0")
@@ -389,54 +427,50 @@ class Fraction(numbers.Rational):
         precision = int(match["precision"] or "6")
         presentation_type = match["presentation_type"]
         trim_zeros = presentation_type in "gG" and not alternate_form
-        trim_dot = not alternate_form
+        trim_point = not alternate_form
         exponent_indicator = "E" if presentation_type in "EFG" else "e"
 
-        # Record sign, then work with absolute value.
-        negative = self < 0
-        self = abs(self)
-
-        # Round to get the digits we need; also compute the suffix.
-        if presentation_type == "f" or presentation_type == "F":
-            significand = round(self * 10**precision)
+        # Round to get the digits we need, figure out where to place the point,
+        # and decide whether to use scientific notation.
+        n, d = self._numerator, self._denominator
+        if presentation_type in "fF%":
+            exponent = -precision - (2 if presentation_type == "%" else 0)
+            negative, significand = _round_to_exponent(
+                n, d, exponent, no_neg_zero)
+            scientific = False
             point_pos = precision
-            suffix = ""
-        elif presentation_type == "%":
-            significand = round(self * 10**(precision + 2))
-            point_pos = precision
-            suffix = "%"
-        elif presentation_type in "eEgG":
-            if presentation_type in "gG":
-                figures = max(precision, 1)
-            else:
-                figures = precision + 1
-            if self:
-                significand, exponent = self._round_to_sig_figs(figures)
-            else:
-                significand, exponent = 0, 1 - figures
-            if presentation_type in "gG" and -4 - figures < exponent <= 0:
-                point_pos = -exponent
-                suffix = ""
-            else:
-                point_pos = figures - 1
-                suffix = f"{exponent_indicator}{exponent + point_pos:+03d}"
-        else:
-            # It shouldn't be possible to get here.
-            raise ValueError(
-                f"unknown presentation type {presentation_type!r}"
+        else:  # presentation_type in "eEgG"
+            figures = (
+                max(precision, 1)
+                if presentation_type in "gG"
+                else precision + 1
             )
+            negative, significand, exponent = _round_to_figures(n, d, figures)
+            scientific = (
+                presentation_type in "eE"
+                or exponent > 0 or exponent + figures <= -4
+            )
+            point_pos = figures - 1 if scientific else -exponent
+
+        # Get the suffix - the part following the digits.
+        if presentation_type == "%":
+            suffix = "%"
+        elif scientific:
+            suffix = f"{exponent_indicator}{exponent + point_pos:+03d}"
+        else:
+            suffix = ""
 
         # Assemble the output: before padding, it has the form
         # f"{sign}{leading}{trailing}", where `leading` includes thousands
         # separators if necessary, and `trailing` includes the decimal
         # separator where appropriate.
         digits = f"{significand:0{point_pos + 1}d}"
-        sign = "-" if negative and (significand or neg_zero_ok) else pos_sign
-        leading = digits[:len(digits) - point_pos]
-        frac_part = digits[len(digits) - point_pos:]
+        sign = "-" if negative else pos_sign
+        leading = digits[: len(digits) - point_pos]
+        frac_part = digits[len(digits) - point_pos :]
         if trim_zeros:
             frac_part = frac_part.rstrip("0")
-        separator = "" if trim_dot and not frac_part else "."
+        separator = "" if trim_point and not frac_part else "."
         trailing = separator + frac_part + suffix
 
         # Do zero padding if required.
@@ -452,11 +486,11 @@ class Fraction(numbers.Rational):
         if thousands_sep:
             first_pos = 1 + (len(leading) - 1) % 3
             leading = leading[:first_pos] + "".join(
-                thousands_sep + leading[pos:pos+3]
+                thousands_sep + leading[pos : pos + 3]
                 for pos in range(first_pos, len(leading), 3)
             )
 
-        # Pad if necessary and return.
+        # Pad with fill character if necessary and return.
         body = leading + trailing
         padding = fill * (minimumwidth - len(sign) - len(body))
         if align == ">":
@@ -464,7 +498,7 @@ class Fraction(numbers.Rational):
         elif align == "<":
             return sign + body + padding
         elif align == "^":
-            half = len(padding)//2
+            half = len(padding) // 2
             return padding[:half] + sign + body + padding[half:]
         else:  # align == "="
             return sign + padding + body
