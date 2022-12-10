@@ -1,3 +1,0 @@
-Fix an issue that could cause frames to be visible to Python code as they
-are being torn down, possibly leading to memory corruption or hard crashes
-of the interpreter.

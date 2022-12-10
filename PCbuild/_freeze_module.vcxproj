@@ -110,6 +110,7 @@
     <ClCompile Include="..\Modules\getpath_noop.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
+    <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\_io\_iomodule.c" />
     <ClCompile Include="..\Modules\_io\bufferedio.c" />
