@@ -103,7 +103,8 @@ another rational number, or from a string.
 
    .. versionchanged:: 3.12
       :class:`Fraction` instances now support float-style formatting, with
-      presentation types `"e"`, `"E"`, `"f"`, `"F"`, `"g"`, `"G"` and `"%""`.
+      presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
+      and ``"%""``.
 
    .. attribute:: numerator
 
@@ -196,12 +197,12 @@ another rational number, or from a string.
       This method provides support for float-style formatting of
       :class:`Fraction` instances via the :meth:`str.format` method, the
       :func:`format` built-in function, or :ref:`Formatted string literals
-      <f-strings>`. The presentation types `"e"`, `"E"`, `"f"`, `"F"`, `"g"`,
-      `"G"`` and `"%"` are supported. For these presentation types, formatting
-      for a :class:`Fraction` object `x` behaves as though the object `x` were
-      first converted to :class:`float` and then formatted using the float
-      formatting rules, but avoids the loss of precision that might arise as
-      a result of that conversion.
+      <f-strings>`. The presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``,
+      ``"g"``, ``"G"`` and ``"%"`` are supported. For these presentation types,
+      formatting for a :class:`Fraction` object `x` behaves as though the
+      object `x` were first converted to :class:`float` and then formatted
+      using the float formatting rules, but avoids the loss of precision that
+      might arise as a result of that conversion.
 
       Here are some examples::
 
