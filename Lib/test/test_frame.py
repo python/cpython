@@ -2,6 +2,7 @@ import gc
 import re
 import sys
 import textwrap
+import threading
 import types
 import unittest
 import weakref
@@ -11,6 +12,7 @@ except ImportError:
     _testcapi = None
 
 from test import support
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -329,6 +331,46 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             if old_enabled:
                 gc.enable()
 
+    @support.cpython_only
+    @threading_helper.requires_working_threading()
+    def test_sneaky_frame_object_teardown(self):
+
+        class SneakyDel:
+            def __del__(self):
+                """
+                Stash a reference to the entire stack for walking later.
+
+                It may look crazy, but you'd be surprised how common this is
+                when using a test runner (like pytest). The typical recipe is:
+                ResourceWarning + -Werror + a custom sys.unraisablehook.
+                """
+                nonlocal sneaky_frame_object
+                sneaky_frame_object = sys._getframe()
+
+        class SneakyThread(threading.Thread):
+            """
+            A separate thread isn't needed to make this code crash, but it does
+            make crashes more consistent, since it means sneaky_frame_object is
+            backed by freed memory after the thread completes!
+            """
+
+            def run(self):
+                """Run SneakyDel.__del__ as this frame is popped."""
+                ref = SneakyDel()
+
+        sneaky_frame_object = None
+        t = SneakyThread()
+        t.start()
+        t.join()
+        # sneaky_frame_object can be anything, really, but it's crucial that
+        # SneakyThread.run's frame isn't anywhere on the stack while it's being
+        # torn down:
+        self.assertIsNotNone(sneaky_frame_object)
+        while sneaky_frame_object is not None:
+            self.assertIsNot(
+                sneaky_frame_object.f_code, SneakyThread.run.__code__
+            )
+            sneaky_frame_object = sneaky_frame_object.f_back
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi')
 class TestCAPI(unittest.TestCase):

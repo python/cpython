@@ -428,7 +428,14 @@ Constants
    .. versionchanged:: 3.12
       Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
       and FreeBSD respectively those constants can be used in the same way that
-      ``SO_MARK`` is used on Linux.
+      ``SO_MARK`` is used on Linux. Also added missing TCP socket options from
+      Linux: ``TCP_MD5SIG``, ``TCP_THIN_LINEAR_TIMEOUTS``, ``TCP_THIN_DUPACK``,
+      ``TCP_REPAIR``, ``TCP_REPAIR_QUEUE``, ``TCP_QUEUE_SEQ``,
+      ``TCP_REPAIR_OPTIONS``, ``TCP_TIMESTAMP``, ``TCP_CC_INFO``,
+      ``TCP_SAVE_SYN``, ``TCP_SAVED_SYN``, ``TCP_REPAIR_WINDOW``,
+      ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
+      ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
+      ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
 
 .. data:: AF_CAN
           PF_CAN

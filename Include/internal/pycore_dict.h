@@ -39,7 +39,7 @@ extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
  * Returns the version number, or zero if it was not possible to get a version number. */
 extern uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys);
 
-extern Py_ssize_t _PyDict_KeysSize(PyDictKeysObject *keys);
+extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
 
 /* _Py_dict_lookup() returns index of entry which can be used like DK_ENTRIES(dk)[index].
  * -1 when no entry found, -3 when compare raises error.
