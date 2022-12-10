@@ -825,9 +825,9 @@ class AST_Tests(unittest.TestCase):
 
     @support.cpython_only
     def test_ast_recursion_limit(self):
-        fail_depth = sys.getrecursionlimit() * 3
-        crash_depth = sys.getrecursionlimit() * 300
-        success_depth = int(fail_depth * 0.75)
+        fail_depth = support.EXCEEDS_RECURSION_LIMIT
+        crash_depth = 100_000
+        success_depth = 1200
 
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
@@ -837,13 +837,18 @@ class AST_Tests(unittest.TestCase):
                 details = "Compiling ({!r} + {!r} * {})".format(
                             prefix, repeated, depth)
                 with self.assertRaises(RecursionError, msg=details):
-                    ast.parse(broken)
+                    with support.infinite_recursion():
+                        ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")
         check_limit("a", "[0]")
         check_limit("a", "*a")
 
+    def test_null_bytes(self):
+        with self.assertRaises(SyntaxError,
+            msg="source code string cannot contain null bytes"):
+            ast.parse("a\0b")
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1031,6 +1036,18 @@ Module(
         )
         self.assertEqual(ast.increment_lineno(src).lineno, 2)
         self.assertIsNone(ast.increment_lineno(src).end_lineno)
+
+    def test_increment_lineno_on_module(self):
+        src = ast.parse(dedent("""\
+        a = 1
+        b = 2 # type: ignore
+        c = 3
+        d = 4 # type: ignore@tag
+        """), type_comments=True)
+        ast.increment_lineno(src, n=5)
+        self.assertEqual(src.type_ignores[0].lineno, 7)
+        self.assertEqual(src.type_ignores[1].lineno, 9)
+        self.assertEqual(src.type_ignores[1].tag, '@tag')
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')

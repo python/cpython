@@ -82,6 +82,8 @@ Py_TPFLAGS_DICT_SUBCLASS     = (1 << 29)
 Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
+#From pycore_frame.h
+FRAME_OWNED_BY_CSTACK = 3
 
 MAX_OUTPUT_LEN=1024
 
@@ -1077,8 +1079,8 @@ class PyFramePtr:
         first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
         return int(prev_instr - first_instr)
 
-    def is_entry(self):
-        return self._f_special("is_entry", bool)
+    def is_shim(self):
+        return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)
@@ -1821,14 +1823,14 @@ class Frame(object):
             interp_frame = self.get_pyop()
             while True:
                 if interp_frame:
+                    if interp_frame.is_shim():
+                        break
                     line = interp_frame.get_truncated_repr(MAX_OUTPUT_LEN)
                     sys.stdout.write('#%i %s\n' % (self.get_index(), line))
                     if not interp_frame.is_optimized_out():
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.is_entry():
-                        break
                 else:
                     sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
                     break
@@ -1845,13 +1847,13 @@ class Frame(object):
             interp_frame = self.get_pyop()
             while True:
                 if interp_frame:
+                    if interp_frame.is_shim():
+                        break
                     interp_frame.print_traceback()
                     if not interp_frame.is_optimized_out():
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.is_entry():
-                        break
                 else:
                     sys.stdout.write('  (unable to read python frame information)\n')
                     break
@@ -2106,6 +2108,8 @@ class PyLocals(gdb.Command):
         while True:
             if not pyop_frame:
                 print(UNABLE_READ_INFO_PYTHON_FRAME)
+            if pyop_frame.is_shim():
+                break
 
             sys.stdout.write('Locals for %s\n' % (pyop_frame.co_name.proxyval(set())))
 
@@ -2114,8 +2118,6 @@ class PyLocals(gdb.Command):
                     % (pyop_name.proxyval(set()),
                         pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
 
-            if pyop_frame.is_entry():
-                break
 
             pyop_frame = pyop_frame.previous()
 

@@ -83,6 +83,15 @@ There are a few functions specific to Python functions.
    Raises :exc:`SystemError` and returns ``-1`` on failure.
 
 
+.. c:function:: void PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
+
+   Set the vectorcall field of a given function object *func*.
+
+   Warning: extensions using this API must preserve the behavior
+   of the unaltered (default) vectorcall function!
+
+   .. versionadded:: 3.12
+
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
 
    Return the closure associated with the function object *op*. This can be ``NULL``
@@ -109,3 +118,63 @@ There are a few functions specific to Python functions.
    must be a dictionary or ``Py_None``.
 
    Raises :exc:`SystemError` and returns ``-1`` on failure.
+
+
+.. c:function:: int PyFunction_AddWatcher(PyFunction_WatchCallback callback)
+
+   Register *callback* as a function watcher for the current interpreter.
+   Return an ID which may be passed to :c:func:`PyFunction_ClearWatcher`.
+   In case of error (e.g. no more watcher IDs available),
+   return ``-1`` and set an exception.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyFunction_ClearWatcher(int watcher_id)
+
+   Clear watcher identified by *watcher_id* previously returned from
+   :c:func:`PyFunction_AddWatcher` for the current interpreter.
+   Return ``0`` on success, or ``-1`` and set an exception on error
+   (e.g.  if the given *watcher_id* was never registered.)
+
+   .. versionadded:: 3.12
+
+
+.. c:type:: PyFunction_WatchEvent
+
+   Enumeration of possible function watcher events:
+   - ``PyFunction_EVENT_CREATE``
+   - ``PyFunction_EVENT_DESTROY``
+   - ``PyFunction_EVENT_MODIFY_CODE``
+   - ``PyFunction_EVENT_MODIFY_DEFAULTS``
+   - ``PyFunction_EVENT_MODIFY_KWDEFAULTS``
+
+   .. versionadded:: 3.12
+
+
+.. c:type:: int (*PyFunction_WatchCallback)(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
+
+   Type of a function watcher callback function.
+
+   If *event* is ``PyFunction_EVENT_CREATE`` or ``PyFunction_EVENT_DESTROY``
+   then *new_value* will be ``NULL``. Otherwise, *new_value* will hold a
+   :term:`borrowed reference` to the new value that is about to be stored in
+   *func* for the attribute that is being modified.
+
+   The callback may inspect but must not modify *func*; doing so could have
+   unpredictable effects, including infinite recursion.
+
+   If *event* is ``PyFunction_EVENT_CREATE``, then the callback is invoked
+   after `func` has been fully initialized. Otherwise, the callback is invoked
+   before the modification to *func* takes place, so the prior state of *func*
+   can be inspected. The runtime is permitted to optimize away the creation of
+   function objects when possible. In such cases no event will be emitted.
+   Although this creates the possitibility of an observable difference of
+   runtime behavior depending on optimization decisions, it does not change
+   the semantics of the Python code being executed.
+
+   If the callback returns with an exception set, it must return ``-1``; this
+   exception will be printed as an unraisable exception using
+   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+
+   .. versionadded:: 3.12

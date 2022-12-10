@@ -272,9 +272,8 @@ report_wakeup_write_error(void *data)
     errno = (int) (intptr_t) data;
     PyErr_Fetch(&exc, &val, &tb);
     PyErr_SetFromErrno(PyExc_OSError);
-    PySys_WriteStderr("Exception ignored when trying to write to the "
-                      "signal wakeup fd:\n");
-    PyErr_WriteUnraisable(NULL);
+    _PyErr_WriteUnraisableMsg("when trying to write to the signal wakeup fd",
+                              NULL);
     PyErr_Restore(exc, val, tb);
     errno = save_errno;
     return 0;
@@ -284,15 +283,15 @@ report_wakeup_write_error(void *data)
 static int
 report_wakeup_send_error(void* data)
 {
+    int send_errno = (int) (intptr_t) data;
+
     PyObject *exc, *val, *tb;
     PyErr_Fetch(&exc, &val, &tb);
     /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
-    PyErr_SetExcFromWindowsErr(PyExc_OSError, (int) (intptr_t) data);
-    PySys_WriteStderr("Exception ignored when trying to send to the "
-                      "signal wakeup fd:\n");
-    PyErr_WriteUnraisable(NULL);
+    PyErr_SetExcFromWindowsErr(PyExc_OSError, send_errno);
+    _PyErr_WriteUnraisableMsg("when trying to send to the signal wakeup fd", NULL);
     PyErr_Restore(exc, val, tb);
     return 0;
 }
@@ -627,13 +626,14 @@ signal.strsignal
 
 Return the system description of the given signal.
 
-The return values can be such as "Interrupt", "Segmentation fault", etc.
-Returns None if the signal is not recognized.
+Returns the description of signal *signalnum*, such as "Interrupt"
+for :const:`SIGINT`. Returns :const:`None` if *signalnum* has no
+description. Raises :exc:`ValueError` if *signalnum* is invalid.
 [clinic start generated code]*/
 
 static PyObject *
 signal_strsignal_impl(PyObject *module, int signalnum)
-/*[clinic end generated code: output=44e12e1e3b666261 input=b77914b03f856c74]*/
+/*[clinic end generated code: output=44e12e1e3b666261 input=238b335847778bc0]*/
 {
     const char *res;
 
@@ -1798,6 +1798,19 @@ int
 PyErr_CheckSignals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+
+    /* Opportunistically check if the GC is scheduled to run and run it
+       if we have a request. This is done here because native code needs
+       to call this API if is going to run for some time without executing
+       Python code to ensure signals are handled. Checking for the GC here
+       allows long running native code to clean cycles created using the C-API
+       even if it doesn't run the evaluation loop */
+    struct _ceval_state *interp_ceval_state = &tstate->interp->ceval;
+    if (_Py_atomic_load_relaxed(&interp_ceval_state->gc_scheduled)) {
+        _Py_atomic_store_relaxed(&interp_ceval_state->gc_scheduled, 0);
+        _Py_RunGC(tstate);
+    }
+
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
@@ -1832,6 +1845,9 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
     _Py_atomic_store(&is_tripped, 0);
 
     _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    while (frame && _PyFrame_IsIncomplete(frame)) {
+        frame = frame->previous;
+    }
     signal_state_t *state = &signal_global_state;
     for (int i = 1; i < Py_NSIG; i++) {
         if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {

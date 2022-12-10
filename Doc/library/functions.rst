@@ -82,7 +82,8 @@ are always available.  They are listed here in alphabetical order.
           return True
 
 
-.. awaitablefunction:: anext(async_iterator[, default])
+.. awaitablefunction:: anext(async_iterator)
+                       anext(async_iterator, default)
 
    When awaited, return the next item from the given :term:`asynchronous
    iterator`, or *default* if given and the iterator is exhausted.
@@ -139,7 +140,7 @@ are always available.  They are listed here in alphabetical order.
    See also :func:`format` for more information.
 
 
-.. class:: bool([x])
+.. class:: bool(x=False)
 
    Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
    using the standard :ref:`truth testing procedure <truth>`.  If *x* is false
@@ -172,7 +173,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.7
 
 .. _func-bytearray:
-.. class:: bytearray([source[, encoding[, errors]]])
+.. class:: bytearray(source=b'')
+           bytearray(source, encoding)
+           bytearray(source, encoding, errors)
    :noindex:
 
    Return a new array of bytes.  The :class:`bytearray` class is a mutable
@@ -202,7 +205,9 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-bytes:
-.. class:: bytes([source[, encoding[, errors]]])
+.. class:: bytes(source=b'')
+           bytes(source, encoding)
+           bytes(source, encoding, errors)
    :noindex:
 
    Return a new "bytes" object which is an immutable sequence of integers in
@@ -358,7 +363,8 @@ are always available.  They are listed here in alphabetical order.
       support for top-level ``await``, ``async for``, and ``async with``.
 
 
-.. class:: complex([real[, imag]])
+.. class:: complex(real=0, imag=0)
+           complex(string)
 
    Return a complex number with the value *real* + *imag*\*1j or convert a string
    or number to a complex number.  If the first parameter is a string, it will
@@ -397,6 +403,7 @@ are always available.  They are listed here in alphabetical order.
    string.  The string must be the name of one of the object's attributes.  The
    function deletes the named attribute, provided the object allows it.  For
    example, ``delattr(x, 'foobar')`` is equivalent to ``del x.foobar``.
+   *name* need not be a Python identifier (see :func:`setattr`).
 
 
 .. _func-dict:
@@ -412,7 +419,8 @@ are always available.  They are listed here in alphabetical order.
    :class:`tuple` classes, as well as the :mod:`collections` module.
 
 
-.. function:: dir([object])
+.. function:: dir()
+              dir(object)
 
    Without arguments, return the list of names in the current local scope.  With an
    argument, attempt to return a list of valid attributes for that object.
@@ -454,6 +462,7 @@ are always available.  They are listed here in alphabetical order.
       >>> class Shape:
       ...     def __dir__(self):
       ...         return ['area', 'perimeter', 'location']
+      ...
       >>> s = Shape()
       >>> dir(s)
       ['area', 'location', 'perimeter']
@@ -504,7 +513,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-eval:
 
-.. function:: eval(expression[, globals[, locals]])
+.. function:: eval(expression, /, globals=None, locals=None)
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
@@ -555,7 +564,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. index:: builtin: exec
 
-.. function:: exec(object[, globals[, locals]], *, closure=None)
+.. function:: exec(object, globals=None, locals=None, /, *, closure=None)
 
    This function supports dynamic execution of Python code. *object* must be
    either a string or a code object.  If it is a string, the string is parsed as
@@ -628,7 +637,7 @@ are always available.  They are listed here in alphabetical order.
    elements of *iterable* for which *function* returns false.
 
 
-.. class:: float([x])
+.. class:: float(x=0.0)
 
    .. index::
       single: NaN
@@ -696,7 +705,7 @@ are always available.  They are listed here in alphabetical order.
    single: __format__
    single: string; format() (built-in function)
 
-.. function:: format(value[, format_spec])
+.. function:: format(value, format_spec="")
 
    Convert a *value* to a "formatted" representation, as controlled by
    *format_spec*.  The interpretation of *format_spec* will depend on the type
@@ -719,7 +728,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-frozenset:
-.. class:: frozenset([iterable])
+.. class:: frozenset(iterable=set())
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
@@ -731,13 +740,15 @@ are always available.  They are listed here in alphabetical order.
    module.
 
 
-.. function:: getattr(object, name[, default])
+.. function:: getattr(object, name)
+              getattr(object, name, default)
 
    Return the value of the named attribute of *object*.  *name* must be a string.
    If the string is the name of one of the object's attributes, the result is the
    value of that attribute.  For example, ``getattr(x, 'foobar')`` is equivalent to
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if
    provided, otherwise :exc:`AttributeError` is raised.
+   *name* need not be a Python identifier (see :func:`setattr`).
 
    .. note::
 
@@ -775,7 +786,8 @@ are always available.  They are listed here in alphabetical order.
       truncates the return value based on the bit width of the host machine.
       See :meth:`__hash__` for details.
 
-.. function:: help([object])
+.. function:: help()
+              help(request)
 
    Invoke the built-in help system.  (This function is intended for interactive
    use.)  If no argument is given, the interactive help system starts on the
@@ -840,7 +852,8 @@ are always available.  They are listed here in alphabetical order.
    .. audit-event:: builtins.id id id
 
 
-.. function:: input([prompt])
+.. function:: input()
+              input(prompt)
 
    If the *prompt* argument is present, it is written to standard output without
    a trailing newline.  The function then reads a line from input, converts it
@@ -866,7 +879,7 @@ are always available.  They are listed here in alphabetical order.
       with the result after successfully reading input.
 
 
-.. class:: int([x])
+.. class:: int(x=0)
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
@@ -910,7 +923,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The delegation to :meth:`__trunc__` is deprecated.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
       help avoid denial of service attacks. A :exc:`ValueError` is raised when
       the limit is exceeded while converting a string *x* to an :class:`int` or
@@ -949,7 +962,8 @@ are always available.  They are listed here in alphabetical order.
       *classinfo* can be a :ref:`types-union`.
 
 
-.. function:: iter(object[, sentinel])
+.. function:: iter(object)
+              iter(object, sentinel)
 
    Return an :term:`iterator` object.  The first argument is interpreted very
    differently depending on the presence of the second argument. Without a
@@ -989,7 +1003,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-list:
-.. class:: list([iterable])
+.. class:: list()
+           list(iterable)
    :noindex:
 
    Rather than being a function, :class:`list` is actually a mutable
@@ -1007,18 +1022,19 @@ are always available.  They are listed here in alphabetical order.
       The contents of this dictionary should not be modified; changes may not
       affect the values of local and free variables used by the interpreter.
 
-.. function:: map(function, iterable, ...)
+.. function:: map(function, iterable, *iterables)
 
    Return an iterator that applies *function* to every item of *iterable*,
-   yielding the results.  If additional *iterable* arguments are passed,
+   yielding the results.  If additional *iterables* arguments are passed,
    *function* must take that many arguments and is applied to the items from all
    iterables in parallel.  With multiple iterables, the iterator stops when the
    shortest iterable is exhausted.  For cases where the function inputs are
    already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
-.. function:: max(iterable, *[, key, default])
-              max(arg1, arg2, *args[, key])
+.. function:: max(iterable, *, key=None)
+              max(iterable, *, default, key=None)
+              max(arg1, arg2, *args, key=None)
 
    Return the largest item in an iterable or the largest of two or more
    arguments.
@@ -1054,8 +1070,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *[, key, default])
-              min(arg1, arg2, *args[, key])
+.. function:: min(iterable, *, key=None)
+              min(iterable, *, default, key=None)
+              min(arg1, arg2, *args, key=None)
 
    Return the smallest item in an iterable or the smallest of two or more
    arguments.
@@ -1083,7 +1100,8 @@ are always available.  They are listed here in alphabetical order.
       The *key* can be ``None``.
 
 
-.. function:: next(iterator[, default])
+.. function:: next(iterator)
+              next(iterator, default)
 
    Retrieve the next item from the :term:`iterator` by calling its
    :meth:`~iterator.__next__` method.  If *default* is given, it is returned
@@ -1252,8 +1270,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. _open-newline-parameter:
 
-   *newline* controls how :term:`universal newlines` mode works (it only
-   applies to text mode).  It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and
+   *newline* determines how to parse newline characters from the stream.
+   It can be ``None``, ``''``, ``'\n'``, ``'\r'``, and
    ``'\r\n'``.  It works as follows:
 
    * When reading input from the stream, if *newline* is ``None``, universal
@@ -1362,7 +1380,7 @@ are always available.  They are listed here in alphabetical order.
    returns ``8364``.  This is the inverse of :func:`chr`.
 
 
-.. function:: pow(base, exp[, mod])
+.. function:: pow(base, exp, mod=None)
 
    Return *base* to the power *exp*; if *mod* is present, return *base* to the
    power *exp*, modulo *mod* (computed more efficiently than
@@ -1402,7 +1420,7 @@ are always available.  They are listed here in alphabetical order.
       supported.
 
 
-.. function:: print(*objects, sep=' ', end='\n', file=sys.stdout, flush=False)
+.. function:: print(*objects, sep=' ', end='\n', file=None, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
    by *end*.  *sep*, *end*, *file*, and *flush*, if present, must be given as keyword
@@ -1506,7 +1524,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-range:
 .. class:: range(stop)
-              range(start, stop[, step])
+           range(start, stop, step=1)
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
@@ -1534,7 +1552,7 @@ are always available.  They are listed here in alphabetical order.
    arguments starting at ``0``).
 
 
-.. function:: round(number[, ndigits])
+.. function:: round(number, ndigits=None)
 
    Return *number* rounded to *ndigits* precision after the decimal
    point.  If *ndigits* is omitted or is ``None``, it returns the
@@ -1562,7 +1580,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-set:
-.. class:: set([iterable])
+.. class:: set()
+           set(iterable)
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
@@ -1582,6 +1601,12 @@ are always available.  They are listed here in alphabetical order.
    object allows it.  For example, ``setattr(x, 'foobar', 123)`` is equivalent to
    ``x.foobar = 123``.
 
+   *name* need not be a Python identifier as defined in :ref:`identifiers`
+   unless the object chooses to enforce that, for example in a custom
+   :meth:`~object.__getattribute__` or via :attr:`~object.__slots__`.
+   An attribute whose name is not an identifier will not be accessible using
+   the dot notation, but is accessible through :func:`getattr` etc..
+
    .. note::
 
       Since :ref:`private name mangling <private-name-mangling>` happens at
@@ -1591,7 +1616,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: slice(stop)
-           slice(start, stop[, step])
+           slice(start, stop, step=1)
 
    Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
@@ -1708,21 +1733,22 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
 
-.. class:: super([type[, object-or-type]])
+.. class:: super()
+           super(type, object_or_type=None)
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
    been overridden in a class.
 
-   The *object-or-type* determines the :term:`method resolution order`
+   The *object_or_type* determines the :term:`method resolution order`
    to be searched.  The search starts from the class right after the
    *type*.
 
-   For example, if :attr:`~class.__mro__` of *object-or-type* is
+   For example, if :attr:`~class.__mro__` of *object_or_type* is
    ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
    then :func:`super` searches ``C -> A -> object``.
 
-   The :attr:`~class.__mro__` attribute of the *object-or-type* lists the method
+   The :attr:`~class.__mro__` attribute of the *object_or_type* lists the method
    resolution search order used by both :func:`getattr` and :func:`super`.  The
    attribute is dynamic and can change whenever the inheritance hierarchy is
    updated.
@@ -1778,7 +1804,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-tuple:
-.. class:: tuple([iterable])
+.. class:: tuple()
+           tuple(iterable)
    :noindex:
 
    Rather than being a function, :class:`tuple` is actually an immutable
@@ -1826,7 +1853,8 @@ are always available.  They are listed here in alphabetical order.
       Subclasses of :class:`type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
 
-.. function:: vars([object])
+.. function:: vars()
+              vars(object)
 
    Return the :attr:`~object.__dict__` attribute for a module, class, instance,
    or any other object with a :attr:`~object.__dict__` attribute.

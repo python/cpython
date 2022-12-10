@@ -709,8 +709,15 @@ class CoroutineTest(unittest.TestCase):
         aw = coro.__await__()
         next(aw)
         with self.assertRaises(ZeroDivisionError):
-            aw.throw(ZeroDivisionError, None, None)
+            aw.throw(ZeroDivisionError())
         self.assertEqual(N, 102)
+
+        coro = foo()
+        aw = coro.__await__()
+        next(aw)
+        with self.assertRaises(ZeroDivisionError):
+            with self.assertWarns(DeprecationWarning):
+                aw.throw(ZeroDivisionError, ZeroDivisionError(), None)
 
     def test_func_11(self):
         async def func(): pass
@@ -1280,7 +1287,7 @@ class CoroutineTest(unittest.TestCase):
 
         async def func():
             async with CM():
-                assert (1, ) == 1
+                self.assertEqual((1, ), 1)
 
         with self.assertRaises(AssertionError):
             run_async(func())
@@ -2411,7 +2418,8 @@ class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
     def test_unawaited_warning_during_shutdown(self):
         code = ("import asyncio\n"
                 "async def f(): pass\n"
-                "asyncio.gather(f())\n")
+                "async def t(): asyncio.gather(f())\n"
+                "asyncio.run(t())\n")
         assert_python_ok("-c", code)
 
         code = ("import sys\n"

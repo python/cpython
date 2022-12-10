@@ -287,6 +287,10 @@ def _is_kwlist(decl):
 
 
 def _has_other_supported_type(decl):
+    if hasattr(decl, 'file') and decl.file.filename.endswith('.c.h'):
+        assert 'clinic' in decl.file.filename, (decl,)
+        if decl.name == '_kwtuple':
+            return True
     vartype = str(decl.vartype).split()
     if vartype[0] == 'struct':
         vartype = vartype[1:]

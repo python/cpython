@@ -10,6 +10,9 @@ extern "C" {
 
 #include "pycore_gc.h"              // PyGC_Head
 #include "pycore_global_strings.h"  // struct _Py_global_strings
+#include "pycore_hamt.h"            // PyHamtNode_Bitmap
+#include "pycore_context.h"         // _PyContextTokenMissing
+#include "pycore_typeobject.h"      // pytype_slotdef
 
 
 // These would be in pycore_long.h if it weren't for an include cycle.
@@ -19,6 +22,13 @@ extern "C" {
 
 // Only immutable objects should be considered runtime-global.
 // All others must be per-interpreter.
+
+#define _Py_CACHED_OBJECT(NAME) \
+    _PyRuntime.cached_objects.NAME
+
+struct _Py_cached_objects {
+    PyObject *str_replace_inf;
+};
 
 #define _Py_GLOBAL_OBJECT(NAME) \
     _PyRuntime.global_objects.NAME
@@ -44,9 +54,38 @@ struct _Py_global_objects {
 
         _PyGC_Head_UNUSED _tuple_empty_gc_not_used;
         PyTupleObject tuple_empty;
+
+        _PyGC_Head_UNUSED _hamt_bitmap_node_empty_gc_not_used;
+        PyHamtNode_Bitmap hamt_bitmap_node_empty;
+        _PyContextTokenMissing context_token_missing;
     } singletons;
 
     PyObject *interned;
+};
+
+#define _Py_INTERP_CACHED_OBJECT(interp, NAME) \
+    (interp)->cached_objects.NAME
+
+struct _Py_interp_cached_objects {
+    int _not_set;
+    /* object.__reduce__ */
+    PyObject *objreduce;
+    PyObject *type_slots_pname;
+    pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
+};
+
+#define _Py_INTERP_STATIC_OBJECT(interp, NAME) \
+    (interp)->static_objects.NAME
+#define _Py_INTERP_SINGLETON(interp, NAME) \
+    _Py_INTERP_STATIC_OBJECT(interp, singletons.NAME)
+
+struct _Py_interp_static_objects {
+    struct {
+        int _not_used;
+        // hamt_empty is here instead of global because of its weakreflist.
+        _PyGC_Head_UNUSED _hamt_empty_gc_not_used;
+        PyHamtObject hamt_empty;
+    } singletons;
 };
 
 

@@ -145,8 +145,6 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       The arguments for this method are the same as those for the :meth:`make_file`
       method.
 
-   :file:`Tools/scripts/diff.py` is a command-line front-end to this class and
-   contains a good example of its use.
 
 
 .. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
@@ -239,8 +237,6 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    returns if the character is junk, or false if not. The default is module-level
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; it's a bad idea to include newline in this!).
-
-   :file:`Tools/scripts/ndiff.py` is a command-line front-end to this function.
 
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
       ...              'ore\ntree\nemu\n'.splitlines(keepends=True))
@@ -759,7 +755,12 @@ A command-line interface to difflib
 -----------------------------------
 
 This example shows how to use difflib to create a ``diff``-like utility.
-It is also contained in the Python source distribution, as
-:file:`Tools/scripts/diff.py`.
 
-.. literalinclude:: ../../Tools/scripts/diff.py
+.. literalinclude:: ../includes/diff.py
+
+ndiff example
+-------------
+
+This example shows how to use :func:`difflib.ndiff`.
+
+.. literalinclude:: ../includes/ndiff.py

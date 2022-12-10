@@ -144,8 +144,8 @@ to start a process.  These *start methods* are
    subprocess. See :issue:`33725`.
 
 .. versionchanged:: 3.4
-   *spawn* added on all unix platforms, and *forkserver* added for
-   some unix platforms.
+   *spawn* added on all Unix platforms, and *forkserver* added for
+   some Unix platforms.
    Child processes no longer inherit all of the parents inheritable
    handles on Windows.
 
@@ -674,7 +674,6 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Example usage of some of the methods of :class:`Process`:
 
    .. doctest::
-      :options: +ELLIPSIS
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
@@ -1090,10 +1089,14 @@ Miscellaneous
    .. versionchanged:: 3.11
       Accepts a :term:`path-like object`.
 
-.. function:: set_start_method(method)
+.. function:: set_start_method(method, force=False)
 
    Set the method which should be used to start child processes.
-   *method* can be ``'fork'``, ``'spawn'`` or ``'forkserver'``.
+   The *method* argument can be ``'fork'``, ``'spawn'`` or ``'forkserver'``.
+   Raises :exc:`RuntimeError` if the start method has already been set and *force*
+   is not ``True``.  If *method* is ``None`` and *force* is ``True`` then the start
+   method is set to ``None``.  If *method* is ``None`` and *force* is ``False``
+   then the context is set to the default context.
 
    Note that this should be called at most once, and it should be
    protected inside the ``if __name__ == '__main__'`` clause of the
@@ -2630,9 +2633,9 @@ Address Formats
   filesystem.
 
 * An ``'AF_PIPE'`` address is a string of the form
-  :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
+  :samp:`r'\\\\\\.\\pipe\\\\{PipeName}'`.  To use :func:`Client` to connect to a named
   pipe on a remote computer called *ServerName* one should use an address of the
-  form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
+  form :samp:`r'\\\\\\\\{ServerName}\\pipe\\\\{PipeName}'` instead.
 
 Note that any string beginning with two backslashes is assumed by default to be
 an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
@@ -2954,6 +2957,8 @@ Global variables
 
     However, global variables which are just module level constants cause no
     problems.
+
+.. _multiprocessing-safe-main-import:
 
 Safe importing of main module
 

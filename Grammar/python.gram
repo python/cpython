@@ -194,7 +194,10 @@ yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
 
 assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
 
-import_stmt[stmt_ty]: import_name | import_from
+import_stmt[stmt_ty]: 
+    | invalid_import
+    | import_name
+    | import_from
 
 # Import statements
 # -----------------
@@ -954,6 +957,7 @@ kwargs[asdl_seq*]:
     | ','.kwarg_or_double_starred+
 
 starred_expression[expr_ty]:
+    | invalid_starred_expression
     | '*' a=expression { _PyAST_Starred(a, Load, EXTRA) }
 
 kwarg_or_starred[KeywordOrStarred*]:
@@ -1080,6 +1084,8 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
+    | (args ',')? a=NAME b='=' &(',' | ')') {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected argument value expression")}
     | a=args b=for_if_clauses { _PyPegen_nonparen_genexp_in_call(p, a, b) }
     | args ',' a=expression b=for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
@@ -1092,6 +1098,8 @@ invalid_kwarg:
     | !(NAME '=') a=expression b='=' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(
             a, b, "expression cannot contain assignment, perhaps you meant \"==\"?") }
+    | a='**' expression '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to keyword argument unpacking") }
 
 # IMPORTANT: Note that the "_without_invalid" suffix causes the rule to not call invalid rules under it
 expression_without_invalid[expr_ty]:
@@ -1162,14 +1170,14 @@ invalid_dict_comprehension:
     | '{' a='**' bitwise_or for_if_clauses '}' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
-    | param_no_default* invalid_parameters_helper a=param_no_default {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
-    | param_no_default* a='(' param_no_default+ ','? b=')' {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
     | a="/" ',' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
     | (slash_no_default | slash_with_default) param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | slash_no_default? param_no_default* invalid_parameters_helper a=param_no_default {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameter without a default follows parameter with a default") }
+    | param_no_default* a='(' param_no_default+ ','? b=')' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Function parameters cannot be parenthesized") }
     | (slash_no_default | slash_with_default)? param_maybe_default* '*' (',' | param_no_default) param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
     | param_maybe_default+ '/' a='*' {
@@ -1190,14 +1198,14 @@ invalid_parameters_helper: # This is only there to avoid type errors
     | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
     | param_with_default+
 invalid_lambda_parameters:
-    | lambda_param_no_default* invalid_lambda_parameters_helper a=lambda_param_no_default {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
-    | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
     | a="/" ',' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one argument must precede /") }
     | (lambda_slash_no_default | lambda_slash_with_default) lambda_param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ may appear only once") }
+    | lambda_slash_no_default? lambda_param_no_default* invalid_lambda_parameters_helper a=lambda_param_no_default {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "parameter without a default follows parameter with a default") }
+    | lambda_param_no_default* a='(' ','.lambda_param+ ','? b=')' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "Lambda expression parameters cannot be parenthesized") }
     | (lambda_slash_no_default | lambda_slash_with_default)? lambda_param_maybe_default* '*' (',' | lambda_param_no_default) lambda_param_maybe_default* a='/' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "/ must be ahead of *") }
     | lambda_param_maybe_default+ '/' a='*' {
@@ -1230,6 +1238,10 @@ invalid_group:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use starred expression here") }
     | '(' a='**' expression ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use double starred expression here") }
+invalid_import:
+    | a='import' dotted_name 'from' dotted_name {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "Did you mean to use 'from ... import ...' instead?") }
+ 
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
@@ -1247,8 +1259,10 @@ invalid_try_stmt:
     | a='try' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
     | 'try' ':' block !('except' | 'finally') { RAISE_SYNTAX_ERROR("expected 'except' or 'finally' block") }
-    | 'try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block* {
-        RAISE_SYNTAX_ERROR("cannot have both 'except' and 'except*' on the same 'try'") }
+    | 'try' ':' block* except_block+ a='except' b='*' expression ['as' NAME] ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot have both 'except' and 'except*' on the same 'try'") }
+    | 'try' ':' block* except_star_block+ a='except' [expression ['as' NAME]] ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot have both 'except' and 'except*' on the same 'try'") }
 invalid_except_stmt:
     | 'except' '*'? a=expression ',' expressions ['as' NAME ] ':' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }
@@ -1319,3 +1333,5 @@ invalid_kvpair:
         RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, a->end_lineno, -1, "':' expected after dictionary key") }
     | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
     | expression a=':' &('}'|',') {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
+invalid_starred_expression:
+    | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }

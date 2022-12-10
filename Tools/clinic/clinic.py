@@ -348,6 +348,12 @@ class CRenderData:
         # "goto exit" if there are any.
         self.return_conversion = []
 
+        # The C statements required to do some operations
+        # after the end of parsing but before cleaning up.
+        # These operations may be, for example, memory deallocations which
+        # can only be done without any error happening during argument parsing.
+        self.post_parsing = []
+
         # The C statements required to clean up after the impl call.
         self.cleanup = []
 
@@ -495,7 +501,8 @@ def permute_optional_groups(left, required, right):
     result = []
 
     if not required:
-        assert not left
+        if left:
+            raise ValueError("required is empty but left is not")
 
     accumulator = []
     counts = set()
@@ -712,7 +719,7 @@ class CLanguage(Language):
         vararg = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
-            if p.is_keyword_only() or vararg != NO_VARARG:
+            if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
                     min_kw_only = i - max_pos
@@ -819,6 +826,7 @@ class CLanguage(Language):
                     {modifications}
                     {return_value} = {c_basename}_impl({impl_arguments});
                     {return_conversion}
+                    {post_parsing}
 
                 {exit_label}
                     {cleanup}
@@ -955,7 +963,7 @@ class CLanguage(Language):
                         parser_code.append(normalize_snippet("""
                             %s = PyTuple_New(%s);
                             for (Py_ssize_t i = 0; i < %s; ++i) {{
-                                PyTuple_SET_ITEM(%s, i, args[%d + i]);
+                                PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
                             }}
                             """ % (
                                 p.converter.parser_name,
@@ -1008,13 +1016,14 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, *parser_code)
 
         else:
-            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters))
+            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                     min_pos,
                     max_pos,
                     min_kw_only
                 )
+                nargs = "nargs"
             else:
                 args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
@@ -1022,6 +1031,7 @@ class CLanguage(Language):
                     min_kw_only,
                     vararg
                 )
+                nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
             if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
@@ -1029,8 +1039,7 @@ class CLanguage(Language):
                 declarations = declare_parser(f)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
-                    pre_buffer = "0" if vararg != NO_VARARG else "nargs"
-                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
                     if (!args) {{
@@ -1047,7 +1056,7 @@ class CLanguage(Language):
                 declarations += "\nPyObject * const *fastargs;"
                 declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
                     if (!fastargs) {{
@@ -1459,6 +1468,7 @@ class CLanguage(Language):
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
         template_dict['return_conversion'] = format_escape("".join(data.return_conversion).rstrip())
+        template_dict['post_parsing'] = format_escape("".join(data.post_parsing).rstrip())
         template_dict['cleanup'] = format_escape("".join(data.cleanup))
         template_dict['return_value'] = data.return_value
 
@@ -1483,6 +1493,7 @@ class CLanguage(Language):
                 return_conversion=template_dict['return_conversion'],
                 initializers=template_dict['initializers'],
                 modifications=template_dict['modifications'],
+                post_parsing=template_dict['post_parsing'],
                 cleanup=template_dict['cleanup'],
                 )
 
@@ -2724,6 +2735,10 @@ class CConverter(metaclass=CConverterAutoRegister):
         # parse_arguments
         self.parse_argument(data.parse_arguments)
 
+        # post_parsing
+        if post_parsing := self.post_parsing():
+            data.post_parsing.append('/* Post parse cleanup for ' + name + ' */\n' + post_parsing.rstrip() + '\n')
+
         # cleanup
         cleanup = self.cleanup()
         if cleanup:
@@ -2816,6 +2831,14 @@ class CConverter(metaclass=CConverterAutoRegister):
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
         If no initialization is necessary, returns an empty string.
+        """
+        return ""
+
+    def post_parsing(self):
+        """
+        The C statements required to do some operations after the end of parsing but before cleaning up.
+        Return a string containing this code indented at column 0.
+        If no operation is necessary, return an empty string.
         """
         return ""
 
@@ -3415,10 +3438,10 @@ class str_converter(CConverter):
         if NoneType in accept and self.c_default == "Py_None":
             self.c_default = "NULL"
 
-    def cleanup(self):
+    def post_parsing(self):
         if self.encoding:
             name = self.name
-            return "".join(["if (", name, ") {\n   PyMem_FREE(", name, ");\n}\n"])
+            return f"PyMem_FREE({name});\n"
 
     def parse_arg(self, argname, displayname):
         if self.format_unit == 's':
@@ -3586,6 +3609,7 @@ class Py_UNICODE_converter(CConverter):
                 self.converter = '_PyUnicode_WideCharString_Opt_Converter'
             else:
                 fail("Py_UNICODE_converter: illegal 'accept' argument " + repr(accept))
+        self.c_default = "NULL"
 
     def cleanup(self):
         if not self.length:

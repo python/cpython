@@ -99,7 +99,7 @@ another rational number, or from a string.
       ``typing.SupportsInt`` instance checks.
 
    .. versionchanged:: 3.12
-      Space is allowed around the slash for string inputs: `Fraction('2 / 3')`.
+      Space is allowed around the slash for string inputs: ``Fraction('2 / 3')``.
 
    .. attribute:: numerator
 

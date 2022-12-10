@@ -35,6 +35,15 @@ always available.
    can then log the event, raise an exception to abort the operation,
    or terminate the process entirely.
 
+   Note that audit hooks are primarily for collecting information about internal
+   or otherwise unobservable actions, whether by Python or libraries written in
+   Python. They are not suitable for implementing a "sandbox". In particular,
+   malicious code can trivially disable or bypass hooks added using this
+   function. At a minimum, any security-sensitive hooks must be added using the
+   C API :c:func:`PySys_AddAuditHook` before initialising the runtime, and any
+   modules allowing arbitrary memory modification (such as :mod:`ctypes`) should
+   be completely removed or closely monitored.
+
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
       Calling :func:`sys.addaudithook` will itself raise an auditing event
@@ -250,7 +259,7 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is `built in debug mode <debug-build>` (:option:`configure
+   If Python is :ref:`built in debug mode <debug-build>` (:option:`configure
    --with-pydebug option <--with-pydebug>`), it also performs some expensive
    internal consistency checks.
 
@@ -349,7 +358,7 @@ always available.
    files to (and read them from) a parallel directory tree rooted at this
    directory, rather than from ``__pycache__`` directories in the source code
    tree. Any ``__pycache__`` directories in the source code tree will be ignored
-   and new `.pyc` files written within the pycache prefix. Thus if you use
+   and new ``.pyc`` files written within the pycache prefix. Thus if you use
    :mod:`compileall` as a pre-build step, you must ensure you run it with the
    same pycache prefix (if any) that you will use at runtime.
 
@@ -544,7 +553,7 @@ always available.
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
 
 
@@ -595,12 +604,18 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`rounds`     | FLT_ROUNDS     | integer constant representing the rounding mode  |
-   |                     |                | used for arithmetic operations.  This reflects   |
-   |                     |                | the value of the system FLT_ROUNDS macro at      |
-   |                     |                | interpreter startup time.  See section 5.2.4.2.2 |
-   |                     |                | of the C99 standard for an explanation of the    |
-   |                     |                | possible values and their meanings.              |
+   | :const:`rounds`     | FLT_ROUNDS     | integer representing the rounding mode for       |
+   |                     |                | floating-point arithmetic. This reflects the     |
+   |                     |                | value of the system FLT_ROUNDS macro at          |
+   |                     |                | interpreter startup time:                        |
+   |                     |                | ``-1`` indeterminable,                           |
+   |                     |                | ``0`` toward zero,                               |
+   |                     |                | ``1`` to nearest,                                |
+   |                     |                | ``2`` toward positive infinity,                  |
+   |                     |                | ``3`` toward negative infinity                   |
+   |                     |                |                                                  |
+   |                     |                | All other values for FLT_ROUNDS characterize     |
+   |                     |                | implementation-defined rounding behavior.        |
    +---------------------+----------------+--------------------------------------------------+
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
@@ -732,7 +747,7 @@ always available.
    Returns the current value for the :ref:`integer string conversion length
    limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
 
 .. function:: getrefcount(object)
 
@@ -874,7 +889,7 @@ always available.
 .. function:: get_asyncgen_hooks()
 
    Returns an *asyncgen_hooks* object, which is similar to a
-   :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
+   :class:`~collections.namedtuple` of the form ``(firstiter, finalizer)``,
    where *firstiter* and *finalizer* are expected to be either ``None`` or
    functions which take an :term:`asynchronous generator iterator` as an
    argument, and are used to schedule finalization of an asynchronous
@@ -1029,7 +1044,7 @@ always available.
 
    .. versionadded:: 3.1
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11
       Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
 
 
@@ -1178,7 +1193,7 @@ always available.
      string, which means the current working directory.
 
    To not prepend this potentially unsafe path, use the :option:`-P` command
-   line option or the :envvar:`PYTHONSAFEPATH` environment variable?
+   line option or the :envvar:`PYTHONSAFEPATH` environment variable.
 
    A program is free to modify this list for its own purposes.  Only strings
    should be added to :data:`sys.path`; all other data types are
@@ -1331,13 +1346,13 @@ always available.
 
    .. availability:: Unix.
 
-.. function:: set_int_max_str_digits(n)
+.. function:: set_int_max_str_digits(maxdigits)
 
    Set the :ref:`integer string conversion length limitation
    <int_max_str_digits>` used by this interpreter. See also
    :func:`get_int_max_str_digits`.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.11
 
 .. function:: setprofile(profilefunc)
 
@@ -1554,6 +1569,38 @@ always available.
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
+
+.. function:: activate_stack_trampoline(backend, /)
+
+   Activate the stack profiler trampoline *backend*.
+   The only supported backend is ``"perf"``.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      * :ref:`perf_profiling`
+      * https://perf.wiki.kernel.org
+
+.. function:: deactivate_stack_trampoline()
+
+   Deactivate the current stack profiler trampoline backend.
+
+   If no stack profiler is activated, this function has no effect.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+.. function:: is_stack_trampoline_active()
+
+   Return ``True`` if a stack profiler trampoline is active.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
 
 .. function:: _enablelegacywindowsfsencoding()
 
