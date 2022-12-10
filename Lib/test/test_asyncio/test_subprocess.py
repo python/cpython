@@ -686,7 +686,7 @@ class SubprocessMixin:
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
 
-    def test_subprocess_output_stdout(self):
+    def test_subprocess_communicate_stdout(self):
         # See https://github.com/python/cpython/issues/100133
         async def get_command_stdout(cmd, *args):
             proc = await asyncio.create_subprocess_exec(

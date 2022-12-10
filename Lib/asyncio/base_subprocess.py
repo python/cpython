@@ -219,7 +219,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         # The pipes should not be closed otherwise some data may be lost.
         # If the pipe is closed here then _UnixReadPipeTransport will remove the
         # reader prematurely and the data will be lost, instead of doing that
-        # the pipe will be closed when the process is finished.
+        # the pipe will be closed when the process is finished via _pipe_connection_lost
+        # followed by _try_finish.
         # for p in self._pipes.values():
         #     if p is not None:
         #         p.pipe.close()
