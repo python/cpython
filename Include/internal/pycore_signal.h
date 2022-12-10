@@ -14,7 +14,9 @@ extern "C" {
 
 #ifdef MS_WINDOWS
 #  ifndef SOCKET
-#    error "<winsock2.h> must be included before this header"
+#    ifdef PYCORE_SIGNAL_REQUIRES_WINSOCK
+#      error "<winsock2.h> must be included before this header"
+#    endif
 #  endif
 #  ifndef HANDLE
 #    error "<windows.h> must be included before this header"
@@ -40,7 +42,7 @@ extern "C" {
 #  define Py_NSIG 64               // Use a reasonable default value
 #endif
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) && defined(SOCKET)
 #  define INVALID_FD ((SOCKET)-1)
 #else
 #  define INVALID_FD (-1)
@@ -57,7 +59,12 @@ struct _signals_runtime_state {
 
     volatile struct {
 #ifdef MS_WINDOWS
+#  ifdef SOCKET
         SOCKET fd;
+#  else
+        // <winsock2.h> wasn't included already, so we fake it.
+        int fd;
+#  endif
 #elif defined(__VXWORKS__)
         int fd;
 #else

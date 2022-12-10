@@ -3,6 +3,13 @@
 
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
+#ifdef MS_WINDOWS
+#  if !defined(SOCKET) && defined(Py_INTERNAL_SIGNAL_H)
+#    error "pycore_signal.h included without PYCORE_SIGNAL_REQUIRES_WINSOCK"
+#  endif
+#  define _PYCORE_SIGNAL_REQUIRES_WINSOCK
+#endif
+
 #include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_call.h"          // _PyObject_Call()
