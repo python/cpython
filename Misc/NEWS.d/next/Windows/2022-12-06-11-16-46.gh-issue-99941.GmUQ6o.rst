@@ -1,6 +1,2 @@
-Made :func:`asyncio.Protocol.data_received` receive immutable object
-``bytes`` instead of ``bytearrays`` with regression tests added and opted to
-use ``memoryview`` to take the slices for performance on big buffers.
-Performance test from ``gh-issue:21442`` done on my machine with 10
-repetitions on release build with timings 0.043 (delta: 0.019) before patch
-and 0.041 (delta: 0.010) after so no noticable change in performance.
+Ensure that :func:`asyncio.Protocol.data_received` receives an immutable
+:class:`bytes` object (as documented), instead of :class:`bytearray`.
