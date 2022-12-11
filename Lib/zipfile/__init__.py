@@ -1098,7 +1098,6 @@ class ZipExtFile(io.BufferedIOBase):
 
         return self.tell()
 
-    # TODO Rename this here and in `seek`
     def _read_offset(self, new_pos):
         # Position is before the current position. Reset the ZipExtFile
         self._fileobj.seek(self._orig_compress_start)
