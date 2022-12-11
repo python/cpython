@@ -1,4 +1,3 @@
-import sys
 import unittest
 from test.test_ctypes import need_symbol
 import test.support
@@ -247,7 +246,6 @@ class SimpleTypesTestCase(unittest.TestCase):
     @test.support.cpython_only
     def test_from_param_result_refcount(self):
         # Issue #99952
-        import sys
         import _ctypes_test
         from ctypes import PyDLL, c_int, c_void_p, py_object, Structure
 
