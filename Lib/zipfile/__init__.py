@@ -952,7 +952,7 @@ class ZipExtFile(io.BufferedIOBase):
         """Read up to n bytes with at most one read() system call."""
 
         if n is None or n < 0:
-            buf = self._extracted_from_read1_5()
+            buf = self._get_buffer1()
             while not self._eof:
                 if data := self._read1(self.MAX_N):
                     buf += data
@@ -966,7 +966,7 @@ class ZipExtFile(io.BufferedIOBase):
             return buf
 
         n = end - len(self._readbuffer)
-        buf = self._extracted_from_read1_5()
+        buf = self._get_buffer1()
         if n > 0:
             while not self._eof:
                 data = self._read1(n)
@@ -980,8 +980,7 @@ class ZipExtFile(io.BufferedIOBase):
                     break
         return buf
 
-    # TODO Rename this here and in `read1`
-    def _extracted_from_read1_5(self):
+    def _get_buffer1(self):
         result = self._readbuffer[self._offset:]
         self._readbuffer = b''
         self._offset = 0
