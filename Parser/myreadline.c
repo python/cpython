@@ -10,6 +10,7 @@
 */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_pystate.h"   // _PyThreadState_GET()
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
@@ -246,13 +247,12 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     assert(tstate != NULL);
 
 #ifdef MS_WINDOWS
-    if (!Py_LegacyWindowsStdioFlag && sys_stdin == stdin) {
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (!config->legacy_windows_stdio && sys_stdin == stdin) {
         HANDLE hStdIn, hStdErr;
 
-        _Py_BEGIN_SUPPRESS_IPH
-        hStdIn = (HANDLE)_get_osfhandle(fileno(sys_stdin));
-        hStdErr = (HANDLE)_get_osfhandle(fileno(stderr));
-        _Py_END_SUPPRESS_IPH
+        hStdIn = _Py_get_osfhandle_noraise(fileno(sys_stdin));
+        hStdErr = _Py_get_osfhandle_noraise(fileno(stderr));
 
         if (_get_console_type(hStdIn) == 'r') {
             fflush(sys_stdout);
@@ -291,37 +291,16 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     }
 #endif
 
-    n = 100;
-    p = (char *)PyMem_RawMalloc(n);
-    if (p == NULL) {
-        PyEval_RestoreThread(tstate);
-        PyErr_NoMemory();
-        PyEval_SaveThread();
-        return NULL;
-    }
-
     fflush(sys_stdout);
     if (prompt) {
         fprintf(stderr, "%s", prompt);
     }
     fflush(stderr);
 
-    switch (my_fgets(tstate, p, (int)n, sys_stdin)) {
-    case 0: /* Normal case */
-        break;
-    case 1: /* Interrupt */
-        PyMem_RawFree(p);
-        return NULL;
-    case -1: /* EOF */
-    case -2: /* Error */
-    default: /* Shouldn't happen */
-        *p = '\0';
-        break;
-    }
-
-    n = strlen(p);
-    while (n > 0 && p[n-1] != '\n') {
-        size_t incr = n+2;
+    n = 0;
+    p = NULL;
+    do {
+        size_t incr = (n > 0) ? n + 2 : 100;
         if (incr > INT_MAX) {
             PyMem_RawFree(p);
             PyEval_RestoreThread(tstate);
@@ -329,7 +308,6 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
             PyEval_SaveThread();
             return NULL;
         }
-
         pr = (char *)PyMem_RawRealloc(p, n + incr);
         if (pr == NULL) {
             PyMem_RawFree(p);
@@ -339,12 +317,18 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
             return NULL;
         }
         p = pr;
-
-        if (my_fgets(tstate, p+n, (int)incr, sys_stdin) != 0) {
+        int err = my_fgets(tstate, p + n, (int)incr, sys_stdin);
+        if (err == 1) {
+            // Interrupt
+            PyMem_RawFree(p);
+            return NULL;
+        } else if (err != 0) {
+            // EOF or error
+            p[n] = '\0';
             break;
         }
-        n += strlen(p+n);
-    }
+        n += strlen(p + n);
+    } while (p[n-1] != '\n');
 
     pr = (char *)PyMem_RawRealloc(p, n+1);
     if (pr == NULL) {

@@ -3,6 +3,7 @@
 
 .. module:: nntplib
    :synopsis: NNTP protocol client (requires sockets).
+   :deprecated:
 
 **Source code:** :source:`Lib/nntplib.py`
 
@@ -10,12 +11,34 @@
    pair: NNTP; protocol
    single: Network News Transfer Protocol
 
+.. deprecated:: 3.11
+   The :mod:`nntplib` module is deprecated (see :pep:`594` for details).
+
+.. testsetup::
+
+   import warnings
+   with warnings.catch_warnings():
+       warnings.simplefilter('ignore', category=DeprecationWarning)
+       import nntplib
+
+.. testcleanup::
+
+   try:
+       s.quit()
+   except NameError:
+       pass
+   import sys
+   # Force a warning if any other file imports nntplib
+   sys.modules.pop('nntplib')
+
 --------------
 
 This module defines the class :class:`NNTP` which implements the client side of
 the Network News Transfer Protocol.  It can be used to implement a news reader
 or poster, or automated news processors.  It is compatible with :rfc:`3977`
 as well as the older :rfc:`977` and :rfc:`2980`.
+
+.. include:: ../includes/wasm-notavail.rst
 
 Here are two small examples of how it can be used.  To list some statistics
 about a newsgroup and print the subjects of the last 10 articles::
