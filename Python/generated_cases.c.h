@@ -414,6 +414,24 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_OP_AND_INT) {
+            PyObject *right = PEEK(1);
+            PyObject *left = PEEK(2);
+            PyObject *and;
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            and = _PyLong_And((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            if (and == NULL) goto pop_2_error;
+            STACK_SHRINK(1);
+            POKE(1, and);
+            JUMPBY(1);
+            DISPATCH();
+        }
+
         TARGET(BINARY_SUBSCR) {
             PREDICTED(BINARY_SUBSCR);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 4, "incorrect cache size");
