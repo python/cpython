@@ -5299,16 +5299,20 @@ long_bitwise(PyLongObject *a,
     return (PyObject *)maybe_small_long(long_normalize(z));
 }
 
+PyObject *
+_PyLong_And(PyLongObject *a, PyLongObject *b)
+{
+    if (IS_MEDIUM_VALUE(a) && IS_MEDIUM_VALUE(b)) {
+        return _PyLong_FromSTwoDigits(medium_value(a) & medium_value(b));
+    }
+    return long_bitwise(a, '&', b);
+}
+
 static PyObject *
 long_and(PyObject *a, PyObject *b)
 {
     CHECK_BINOP(a, b);
-    PyLongObject *x = (PyLongObject*)a;
-    PyLongObject *y = (PyLongObject*)b;
-    if (IS_MEDIUM_VALUE(x) && IS_MEDIUM_VALUE(y)) {
-        return _PyLong_FromSTwoDigits(medium_value(x) & medium_value(y));
-    }
-    return long_bitwise(x, '&', y);
+    return _PyLong_And((PyLongObject *)a, (PyLongObject *)b);
 }
 
 static PyObject *

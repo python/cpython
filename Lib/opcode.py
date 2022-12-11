@@ -287,6 +287,7 @@ _specializations = {
         "BINARY_OP_MULTIPLY_INT",
         "BINARY_OP_SUBTRACT_FLOAT",
         "BINARY_OP_SUBTRACT_INT",
+        "BINARY_OP_AND_INT",
     ],
     "BINARY_SUBSCR": [
         "BINARY_SUBSCR_DICT",

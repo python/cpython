@@ -211,6 +211,7 @@ dummy_func(
             BINARY_OP_MULTIPLY_INT,
             BINARY_OP_SUBTRACT_FLOAT,
             BINARY_OP_SUBTRACT_INT,
+            BINARY_OP_AND_INT,
         };
 
 
@@ -330,6 +331,17 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(sum == NULL, error);
+        }
+
+        inst(BINARY_OP_AND_INT, (left, right, unused/1 -- and)) {
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
+            DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            STAT_INC(BINARY_OP, hit);
+            and = _PyLong_And((PyLongObject *)left, (PyLongObject *)right);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            ERROR_IF(and == NULL, error);
         }
 
         family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
