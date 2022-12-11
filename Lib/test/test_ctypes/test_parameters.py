@@ -245,7 +245,6 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRegex(repr(c_void_p.from_param(0x12)), r"^<cparam 'P' \(0x0*12\)>$")
 
     @test.support.cpython_only
-    @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
     def test_from_param_result_refcount(self):
         # Issue #99952
         import sys
@@ -263,7 +262,7 @@ class SimpleTypesTestCase(unittest.TestCase):
                 trace.append(2)
                 return cls()
 
-        PyList_Append = PyDLL("python", handle=sys.dllhandle).PyList_Append
+        PyList_Append = PyDLL(_ctypes_test.__file__)._testfunc_pylist_append
         PyList_Append.restype = c_int
         PyList_Append.argtypes = [py_object, py_object, X]
 
@@ -285,7 +284,7 @@ class SimpleTypesTestCase(unittest.TestCase):
                 trace.append(2)
                 return cls()
 
-        PyList_Append = PyDLL("python", handle=sys.dllhandle).PyList_Append
+        PyList_Append = PyDLL(_ctypes_test.__file__)._testfunc_pylist_append
         PyList_Append.restype = c_int
         PyList_Append.argtypes = [py_object, py_object, Y]
 
