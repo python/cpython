@@ -4259,7 +4259,7 @@ expected_help_output_with_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(cls, /, *values)
+ |  Color(*values)
  |
  |  Method resolution order:
  |      Color
@@ -4315,7 +4315,7 @@ expected_help_output_without_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(cls, /, *values)
+ |  Color(*values)
  |
  |  Method resolution order:
  |      Color
