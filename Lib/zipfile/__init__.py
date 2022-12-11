@@ -1824,7 +1824,7 @@ class ZipFile:
             if not zinfo.is_dir():
                 raise ValueError("The given ZipInfo does not describe a directory")
         elif isinstance(zinfo_or_directory_name, str):
-            zinfo = self._extracted_from_mkdir_8(zinfo_or_directory_name, mode)
+            zinfo = self._get_zip_info(zinfo_or_directory_name, mode)
         else:
             raise TypeError("Expected type str or ZipInfo")
 
@@ -1847,8 +1847,7 @@ class ZipFile:
         self.fp.write(zinfo.FileHeader(False))
         self.start_dir = self.fp.tell()
 
-    # TODO Rename this here and in `mkdir`
-    def _extracted_from_mkdir_8(self, zinfo_or_directory_name, mode):
+    def _get_zip_info(self, zinfo_or_directory_name, mode):
         directory_name = zinfo_or_directory_name
         if not directory_name.endswith("/"):
             directory_name += "/"
