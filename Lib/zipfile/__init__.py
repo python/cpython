@@ -1090,7 +1090,7 @@ class ZipExtFile(io.BufferedIOBase):
             self._offset = buff_offset
             read_offset = 0
         elif read_offset < 0:
-            read_offset = self._extracted_from_seek_42(new_pos)
+            read_offset = self._read_offset(new_pos)
         while read_offset > 0:
             read_len = min(self.MAX_SEEK_READ, read_offset)
             self.read(read_len)
@@ -1099,7 +1099,7 @@ class ZipExtFile(io.BufferedIOBase):
         return self.tell()
 
     # TODO Rename this here and in `seek`
-    def _extracted_from_seek_42(self, new_pos):
+    def _read_offset(self, new_pos):
         # Position is before the current position. Reset the ZipExtFile
         self._fileobj.seek(self._orig_compress_start)
         self._running_crc = self._orig_start_crc
