@@ -908,7 +908,7 @@ class ZipExtFile(io.BufferedIOBase):
         if self.closed:
             raise ValueError("read from closed file.")
         if n is None or n < 0:
-            buf = self._extracted_from_read_8()
+            buf = self.get_buffer()
             while not self._eof:
                 buf += self._read1(self.MAX_N)
             return buf
@@ -920,7 +920,7 @@ class ZipExtFile(io.BufferedIOBase):
             return buf
 
         n = end - len(self._readbuffer)
-        buf = self._extracted_from_read_8()
+        buf = self.get_buffer()
         while n > 0 and not self._eof:
             data = self._read1(n)
             if n < len(data):
@@ -932,8 +932,7 @@ class ZipExtFile(io.BufferedIOBase):
             n -= len(data)
         return buf
 
-    # TODO Rename this here and in `read`
-    def _extracted_from_read_8(self):
+    def get_buffer(self):
         result = self._readbuffer[self._offset:]
         self._readbuffer = b''
         self._offset = 0
