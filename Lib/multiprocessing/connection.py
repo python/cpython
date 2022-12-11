@@ -810,14 +810,10 @@ _FAILURE = b'#FAILURE#'
 #
 # If this RETURNed, the connection remains open: it has been authenticated.
 #
-# Length prefixes are used consistently even though every step so far has
-# always been a singular specific fixed length.  This may help us evolve
-# the protocol in the future without breaking backwards compatibility.
-#
-# Similarly the initial challenge message from the serving side has always
-# been 20 bytes, but clients can accept a 100+ so using the length of the
-# opening challenge message as an indicator of protocol version may work.
-
+# Length prefixes are used consistently. Even on the legacy protocol, this
+# was good fortune and allowed us to evolve the protocol by using the length
+# of the opening challenge or length of the returned digest as a signal as
+# to which protocol the other end supports.
 
 _ALLOWED_DIGESTS = frozenset(
         {b'md5', b'sha256', b'sha384', b'sha3_256', b'sha3_384'})
