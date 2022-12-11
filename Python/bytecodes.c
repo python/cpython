@@ -333,7 +333,7 @@ dummy_func(
             ERROR_IF(sum == NULL, error);
         }
 
-        inst(BINARY_OP_AND_INT, (left, right, unused/1 -- and)) {
+        inst(BINARY_OP_AND_INT, (unused/1, left, right -- and)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
