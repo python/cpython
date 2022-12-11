@@ -587,8 +587,7 @@ class timedelta:
     returning a timedelta, and addition or subtraction of a datetime
     and a timedelta giving a datetime.
 
-    Representation: (days, seconds, microseconds).  Why?  Because I
-    felt like it.
+    Representation: (days, seconds, microseconds).
     """
     __slots__ = '_days', '_seconds', '_microseconds', '_hashcode'
 
