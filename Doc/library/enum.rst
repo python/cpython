@@ -310,12 +310,12 @@ Data Types
          >>> class PowersOfThree(Enum):
          ...     @staticmethod
          ...     def _generate_next_value_(name, start, count, last_values):
-         ...         return (count + 1) * 3
+         ...         return 3 ** (count + 1)
          ...     FIRST = auto()
          ...     SECOND = auto()
          ...
          >>> PowersOfThree.SECOND.value
-         6
+         9
 
    .. method:: Enum.__init_subclass__(cls, **kwds)
 
