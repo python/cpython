@@ -1829,10 +1829,9 @@ class ZipFile:
             raise TypeError("Expected type str or ZipInfo")
 
         with self._lock:
-            self._extracted_from_mkdir_21(zinfo)
+            self._mkdir(zinfo)
 
-    # TODO Rename this here and in `mkdir`
-    def _extracted_from_mkdir_21(self, zinfo):
+    def _mkdir(self, zinfo):
         if self._seekable:
             self.fp.seek(self.start_dir)
         zinfo.header_offset = self.fp.tell()  # Start of header bytes
