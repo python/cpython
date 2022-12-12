@@ -24,6 +24,7 @@ Features required to build CPython:
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
+   On Windows, Visual Studio 2017 or later is required.
 
 .. versionchanged:: 3.10
    OpenSSL 1.1.1 is now required.

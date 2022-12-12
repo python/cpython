@@ -17,7 +17,8 @@ from test.libregrtest.runtest import (
     ChildError, DidNotRun)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.pgo import setup_pgo_tests
-from test.libregrtest.utils import removepy, count, format_duration, printlist
+from test.libregrtest.utils import (removepy, count, format_duration,
+                                    printlist, get_build_info)
 from test import support
 from test.support import os_helper
 from test.support import threading_helper
@@ -491,6 +492,7 @@ class Regrtest:
         print("==", platform.python_implementation(), *sys.version.split())
         print("==", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
+        print("== Python build:", ' '.join(get_build_info()))
         print("== cwd:", os.getcwd())
         cpu_count = os.cpu_count()
         if cpu_count:

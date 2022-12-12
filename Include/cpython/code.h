@@ -87,6 +87,7 @@ typedef struct {
     int co_nplaincellvars;        /* number of non-arg cell variables */       \
     int co_ncellvars;             /* total number of cell variables */         \
     int co_nfreevars;             /* number of free variables */               \
+    uint32_t co_version;          /* version number */                         \
                                                                                \
     PyObject *co_localsplusnames; /* tuple mapping offsets to names */         \
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte    \

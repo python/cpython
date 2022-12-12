@@ -2132,6 +2132,10 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
         _Py_SET_OPCODE(*instr, FOR_ITER_LIST);
         goto success;
     }
+    else if (tp == &PyTupleIter_Type) {
+        _Py_SET_OPCODE(*instr, FOR_ITER_TUPLE);
+        goto success;
+    }
     else if (tp == &PyRangeIter_Type && next_op == STORE_FAST) {
         _Py_SET_OPCODE(*instr, FOR_ITER_RANGE);
         goto success;

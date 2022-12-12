@@ -11,7 +11,6 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
-
 static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
@@ -398,7 +397,10 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-
+    co->co_version = _Py_next_func_version;
+    if (_Py_next_func_version != 0) {
+        _Py_next_func_version++;
+    }
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;

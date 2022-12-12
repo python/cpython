@@ -13,9 +13,25 @@ sys.path.append(os.path.abspath('includes'))
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations', 'escape4chm',
-              'asdl_highlight', 'peg_highlight', 'glossary_search']
+extensions = [
+    'asdl_highlight',
+    'c_annotations',
+    'escape4chm',
+    'glossary_search',
+    'peg_highlight',
+    'pyspecific',
+    'sphinx.ext.coverage',
+    'sphinx.ext.doctest',
+]
+
+# Skip if downstream redistributors haven't installed it
+try:
+    import sphinxext.opengraph
+except ImportError:
+    pass
+else:
+    extensions.append('sphinxext.opengraph')
+
 
 doctest_global_setup = '''
 try:
@@ -89,6 +105,14 @@ if any('htmlhelp' in arg for arg in sys.argv):
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
 
+# Deployment preview information, from Netlify
+# (See netlify.toml and https://docs.netlify.com/configure-builds/environment-variables/#git-metadata)
+html_context = {
+    "is_deployment_preview": os.getenv("IS_DEPLOYMENT_PREVIEW"),
+    "repository_url": os.getenv("REPOSITORY_URL"),
+    "pr_id": os.getenv("REVIEW_ID")
+}
+
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 html_last_updated_fmt = '%b %d, %Y'
@@ -114,7 +138,7 @@ html_additional_pages = {
 html_use_opensearch = 'https://docs.python.org/' + version
 
 # Additional static files.
-html_static_path = ['tools/static']
+html_static_path = ['_static', 'tools/static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
@@ -238,3 +262,13 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
 # Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
+
+# sphinxext-opengraph config
+ogp_site_url = 'https://docs.python.org/3/'
+ogp_site_name = 'Python documentation'
+ogp_image = '_static/og-image.png'
+ogp_custom_meta_tags = [
+    '<meta property="og:image:width" content="200">',
+    '<meta property="og:image:height" content="200">',
+    '<meta name="theme-color" content="#3776ab">',
+]
