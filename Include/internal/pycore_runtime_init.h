@@ -50,13 +50,11 @@ extern "C" {
                in accordance with the specification. */ \
             .autoTSSkey = Py_tss_NEEDS_INIT, \
         }, \
-        .tracemalloc = { \
-            .config = _PyTraceMalloc_Config_INIT, \
-        }, \
         .dtoa = _dtoa_runtime_state_INIT(runtime), \
         .fileutils = { \
             .force_ascii = -1, \
         }, \
+        .tracemalloc = _tracemalloc_runtime_state_INIT, \
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \

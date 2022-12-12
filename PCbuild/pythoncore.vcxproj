@@ -259,6 +259,7 @@
     <ClInclude Include="..\Include\internal\pycore_time.h" />
     <ClInclude Include="..\Include\internal\pycore_token.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
+    <ClInclude Include="..\Include\internal\pycore_tracemalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
     <ClInclude Include="..\Include\internal\pycore_typeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
