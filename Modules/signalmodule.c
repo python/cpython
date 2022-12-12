@@ -783,7 +783,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     old_sockfd = wakeup.fd;
-    wakeup.fd = sockfd;
+    wakeup.fd = Py_SAFE_DOWNCAST(sockfd, SOCKET_T, int);
     wakeup.warn_on_full_buffer = warn_on_full_buffer;
     wakeup.use_send = is_socket;
 
