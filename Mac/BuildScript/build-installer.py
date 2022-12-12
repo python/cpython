@@ -37,10 +37,8 @@ TODO:
 Usage: see USAGE variable in the script.
 """
 import platform, os, sys, getopt, textwrap, shutil, stat, time, pwd, grp
-try:
-    import urllib2 as urllib_request
-except ImportError:
-    import urllib.request as urllib_request
+import urllib.request
+from plistlib import dump
 
 STAT_0o755 = ( stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
              | stat.S_IRGRP |                stat.S_IXGRP
@@ -53,15 +51,11 @@ STAT_0o775 = ( stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
 INCLUDE_TIMESTAMP = 1
 VERBOSE = 1
 
-RUNNING_ON_PYTHON2 = sys.version_info.major == 2
 
-if RUNNING_ON_PYTHON2:
-    from plistlib import writePlist
-else:
-    from plistlib import dump
-    def writePlist(path, plist):
-        with open(plist, 'wb') as fp:
-            dump(path, fp)
+def writePlist(path, plist):
+    with open(plist, 'wb') as fp:
+        dump(path, fp)
+
 
 def shellQuote(value):
     """
@@ -172,7 +166,6 @@ def getTargetCompilers():
 
 CC, CXX = getTargetCompilers()
 
-PYTHON_3 = getVersionMajorMinor() >= (3, 0)
 
 USAGE = textwrap.dedent("""\
     Usage: build_python [options]
@@ -312,17 +305,16 @@ def library_recipes():
                 ),
         ])
 
-    if PYTHON_3:
-        result.extend([
-          dict(
-              name="XZ 5.2.3",
-              url="http://tukaani.org/xz/xz-5.2.3.tar.gz",
-              checksum='ef68674fb47a8b8e741b34e429d86e9d',
-              configure_pre=[
-                    '--disable-dependency-tracking',
-              ]
-              ),
-        ])
+    result.extend([
+      dict(
+          name="XZ 5.2.3",
+          url="http://tukaani.org/xz/xz-5.2.3.tar.gz",
+          checksum='ef68674fb47a8b8e741b34e429d86e9d',
+          configure_pre=[
+                '--disable-dependency-tracking',
+          ]
+          ),
+    ])
 
     result.extend([
           dict(
@@ -381,21 +373,8 @@ def library_recipes():
           ),
         ])
 
-    if not PYTHON_3:
-        result.extend([
-          dict(
-              name="Sleepycat DB 4.7.25",
-              url="http://download.oracle.com/berkeley-db/db-4.7.25.tar.gz",
-              checksum='ec2b87e833779681a0c3a814aa71359e',
-              buildDir="build_unix",
-              configure="../dist/configure",
-              configure_pre=[
-                  '--includedir=/usr/local/include/db4',
-              ]
-          ),
-        ])
-
     return result
+
 
 def compilerCanOptimize():
     """
@@ -408,7 +387,6 @@ def compilerCanOptimize():
 
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
-    unselected_for_python3 = ('selected', 'unselected')[PYTHON_3]
     result = [
         dict(
             name="PythonFramework",
@@ -766,11 +744,12 @@ def extractArchive(builddir, archiveName):
     finally:
         os.chdir(curdir)
 
+
 def downloadURL(url, fname):
     """
     Download the contents of the url into the file.
     """
-    fpIn = urllib_request.urlopen(url)
+    fpIn = urllib.request.urlopen(url)
     fpOut = open(fname, 'wb')
     block = fpIn.read(10240)
     try:
@@ -1160,10 +1139,10 @@ def buildPython():
                "CFLAGS='-g -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
         UNIVERSALARCHS,
-        (' ', '--with-computed-gotos ')[PYTHON_3],
-        (' ', '--without-ensurepip ')[PYTHON_3],
-        (' ', "--with-openssl='%s/libraries/usr/local'"%(
-                            shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
+        '--with-computed-gotos ',
+        '--without-ensurepip ',
+        "--with-openssl='%s/libraries/usr/local'"%(
+                            shellQuote(WORKDIR)[1:-1],),
         (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
         (' ', "TCLTK_CFLAGS='-I%s/libraries/usr/local/include'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
@@ -1280,29 +1259,24 @@ def buildPython():
     if shared_lib_error:
         fatal("Unexpected shared library errors.")
 
-    if PYTHON_3:
-        LDVERSION=None
-        VERSION=None
-        ABIFLAGS=None
+    LDVERSION = None
+    VERSION = None
+    ABIFLAGS = None
 
-        fp = open(os.path.join(buildDir, 'Makefile'), 'r')
-        for ln in fp:
-            if ln.startswith('VERSION='):
-                VERSION=ln.split()[1]
-            if ln.startswith('ABIFLAGS='):
-                ABIFLAGS=ln.split()
-                ABIFLAGS=ABIFLAGS[1] if len(ABIFLAGS) > 1 else ''
-            if ln.startswith('LDVERSION='):
-                LDVERSION=ln.split()[1]
-        fp.close()
+    fp = open(os.path.join(buildDir, 'Makefile'), 'r')
+    for ln in fp:
+        if ln.startswith('VERSION='):
+            VERSION=ln.split()[1]
+        if ln.startswith('ABIFLAGS='):
+            ABIFLAGS=ln.split()
+            ABIFLAGS=ABIFLAGS[1] if len(ABIFLAGS) > 1 else ''
+        if ln.startswith('LDVERSION='):
+            LDVERSION=ln.split()[1]
+    fp.close()
 
-        LDVERSION = LDVERSION.replace('$(VERSION)', VERSION)
-        LDVERSION = LDVERSION.replace('$(ABIFLAGS)', ABIFLAGS)
-        config_suffix = '-' + LDVERSION
-        if getVersionMajorMinor() >= (3, 6):
-            config_suffix = config_suffix + '-darwin'
-    else:
-        config_suffix = ''      # Python 2.x
+    LDVERSION = LDVERSION.replace('$(VERSION)', VERSION)
+    LDVERSION = LDVERSION.replace('$(ABIFLAGS)', ABIFLAGS)
+    config_suffix = '-' + LDVERSION + '-darwin'
 
     # We added some directories to the search path during the configure
     # phase. Remove those because those directories won't be there on
@@ -1340,23 +1314,17 @@ def buildPython():
     # _sysconfigdata.py).
 
     import pprint
-    if getVersionMajorMinor() >= (3, 6):
-        # XXX this is extra-fragile
-        path = os.path.join(path_to_lib,
-            '_sysconfigdata_%s_darwin_darwin.py' % (ABIFLAGS,))
-    else:
-        path = os.path.join(path_to_lib, '_sysconfigdata.py')
+    # XXX this is extra-fragile
+    path = os.path.join(path_to_lib,
+                        '_sysconfigdata_%s_darwin_darwin.py' % (ABIFLAGS,))
     fp = open(path, 'r')
     data = fp.read()
     fp.close()
     # create build_time_vars dict
-    if RUNNING_ON_PYTHON2:
-        exec(data)
-    else:
-        g_dict = {}
-        l_dict = {}
-        exec(data, g_dict, l_dict)
-        build_time_vars = l_dict['build_time_vars']
+    g_dict = {}
+    l_dict = {}
+    exec(data, g_dict, l_dict)
+    build_time_vars = l_dict['build_time_vars']
     vars = {}
     for k, v in build_time_vars.items():
         if isinstance(v, str):
