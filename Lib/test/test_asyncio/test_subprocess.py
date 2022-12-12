@@ -698,7 +698,7 @@ class SubprocessMixin:
         async def main():
             outputs = [f'foo{i}' for i in range(10)]
             res = await asyncio.gather(*[get_command_stdout(sys.executable, '-c',
-                                        f'import sys; print({out!r})') for out in outputs])
+                                        f'print({out!r})') for out in outputs])
             self.assertEqual(res, outputs)
 
         self.loop.run_until_complete(main())
