@@ -6810,7 +6810,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
-    if ((cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, LOC(p)) < 0) ||
+    if (cfg_builder_addop_noarg(CFG_BUILDER(c), POP_TOP, LOC(p)) < 0 ||
         jump_to_fail_pop(c, LOC(p), pc, JUMP) < 0) {
         goto error;
     }
