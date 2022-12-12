@@ -335,6 +335,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
+   .. versionchanged:: 3.10.6
+      Duck-type functions now return ``True`` if their code object has the CO_GENERATOR
+      flag
 
 .. function:: isgenerator(object)
 
@@ -352,6 +355,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
 
+   .. versionchanged:: 3.10.6
+      Duck-type functions now return ``True`` if their code object has the CO_COROUTINE
+      flag
 
 .. function:: iscoroutine(object)
 
@@ -397,6 +403,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`asynchronous generator` function.
 
+   .. versionchanged:: 3.10.6
+      Duck-type functions now return ``True`` if their code object has the CO_ASYNC_GENERATOR
+      flag
 
 .. function:: isasyncgen(object)
 
