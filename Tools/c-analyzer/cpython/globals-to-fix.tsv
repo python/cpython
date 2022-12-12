@@ -302,10 +302,7 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ##################################
 ## global non-objects to fix in core code
 
-##-----------------------
-## state
-
-Objects/object.c	-	_Py_RefTotal	-
+# <none>
 
 
 ##################################
