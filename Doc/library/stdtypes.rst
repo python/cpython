@@ -1627,7 +1627,7 @@ expression support in the :mod:`re` module).
    Return an encoded version of the string as a bytes object. Default encoding
    is ``'utf-8'``.  And for a list of possible encodings, see section
    :ref:`standard-encodings`.
-   
+
    *errors* may be given to set a different error handling scheme.  The
    default for *errors* is ``'strict'``, meaning that encoding errors raise
    a :exc:`UnicodeError`. Other possible values are ``'ignore'``,
@@ -2764,7 +2764,7 @@ arbitrary binary data.
    Return a string decoded from the given bytes.  Default encoding is
    ``'utf-8'``.  And for a list of possible encodings, see section
    :ref:`standard-encodings`.
-   
+
    *errors* may be given to set a different error handling scheme.  The
    default for *errors* is ``'strict'``, meaning that encoding errors raise a
    :exc:`UnicodeError`.  Other possible values are ``'ignore'``, ``'replace'``
