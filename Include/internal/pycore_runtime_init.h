@@ -54,6 +54,7 @@ extern "C" {
         .fileutils = { \
             .force_ascii = -1, \
         }, \
+        .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
         .float_state = { \
             .float_format = _py_float_format_unknown, \
