@@ -3,13 +3,15 @@
 
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
+#include "Python.h"
+
 #ifdef MS_WINDOWS
 // These must be included before pycore_runtime.h or pycore_signal.h.
 #  include <winsock2.h>
 #  include <windows.h>
+#  define HANDLE HANDLE
 #endif
 
-#include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
