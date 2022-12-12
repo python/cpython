@@ -2,6 +2,8 @@
 
 #include "Python.h"
 
+#define PYCORE_SIGNAL_WITH_PRE_INCLUDES
+#include "pycore_signal.h"
 #include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()

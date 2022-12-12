@@ -2,6 +2,9 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+
+#define PYCORE_SIGNAL_WITH_PRE_INCLUDES
+#include "pycore_signal.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"           // stats
 #include "pycore_frame.h"
