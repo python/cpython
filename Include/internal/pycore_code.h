@@ -474,6 +474,8 @@ typedef struct _PyShimCodeDef {
 extern PyCodeObject *
 _Py_MakeShimCode(const _PyShimCodeDef *code);
 
+extern uint32_t _Py_next_func_version;
+
 
 #ifdef __cplusplus
 }
