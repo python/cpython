@@ -16,9 +16,8 @@ def text_open(fn, mode, encoding=None):
     try:
         return open(fn, mode, encoding=encoding or TEXT_ENCODING)
     except TypeError:
-        if 'r' in mode:
-            mode += 'U' # 'U' mode is needed only in Python 2.x
         return open(fn, mode)
+
 
 def get_file_sizes():
     for s in ['20 KiB', '400 KiB', '10 MiB']:
