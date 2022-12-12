@@ -32,11 +32,7 @@ extern "C" {
 #  define Py_NSIG 64               // Use a reasonable default value
 #endif
 
-#ifdef MS_WINDOWS
-#  define INVALID_FD ((SOCKET)-1)
-#else
-#  define INVALID_FD (-1)
-#endif
+#define INVALID_FD (-1)
 
 struct _signals_runtime_state {
     volatile struct {
@@ -50,8 +46,8 @@ struct _signals_runtime_state {
     volatile struct {
 #ifdef MS_WINDOWS
         /* This would be "SOCKET fd" if <winsock2.h> were always included.
-           It isn't so we must cast to SOCKET everywhere "fd" is used. */
-        void *fd;
+           It isn't so we must cast to SOCKET where appropriate. */
+        volatile int fd;
 #elif defined(__VXWORKS__)
         int fd;
 #else

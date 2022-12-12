@@ -305,13 +305,7 @@ trip_signal(int sig_num)
        See bpo-30038 for more details.
     */
 
-    int fd;
-#ifdef MS_WINDOWS
-    fd = Py_SAFE_DOWNCAST(wakeup.fd, void *, int);
-#else
-    fd = wakeup.fd;
-#endif
-
+    int fd = wakeup.fd;
     if (fd != INVALID_FD) {
         unsigned char byte = (unsigned char)sig_num;
 #ifdef MS_WINDOWS
@@ -795,8 +789,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
         }
     }
 
-    old_sockfd = (SOCKET_T)wakeup.fd;
-    wakeup.fd = (void *)sockfd;
+    old_sockfd = wakeup.fd;
+    wakeup.fd = sockfd;
     wakeup.warn_on_full_buffer = warn_on_full_buffer;
     wakeup.use_send = is_socket;
 
@@ -847,13 +841,8 @@ PySignal_SetWakeupFd(int fd)
         fd = -1;
     }
 
-#ifdef MS_WINDOWS
-    int old_fd = Py_SAFE_DOWNCAST(wakeup.fd, void *, int);
-    wakeup.fd = (void *)fd;
-#else
     int old_fd = wakeup.fd;
     wakeup.fd = fd;
-#endif
     wakeup.warn_on_full_buffer = 1;
     return old_fd;
 }
