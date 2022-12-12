@@ -976,7 +976,8 @@ Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
 
 BOOTSTRAP_HEADERS = \
 	Python/frozen_modules/importlib._bootstrap.h \
-	Python/frozen_modules/importlib._bootstrap_external.h
+	Python/frozen_modules/importlib._bootstrap_external.h \
+	Python/frozen_modules/zipimport.h
 
 Programs/_bootstrap_python.o: Programs/_bootstrap_python.c $(BOOTSTRAP_HEADERS) $(PYTHON_HEADERS)
 
