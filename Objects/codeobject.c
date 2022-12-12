@@ -1860,10 +1860,10 @@ code_hash(PyCodeObject *co)
     SCRAMBLE_IN(co->co_firstlineno);
     SCRAMBLE_IN(Py_SIZE(co));
     for (int i = 0; i < Py_SIZE(co); i++) {
-        _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
-        _Py_SET_OPCODE(co_instr, _PyOpcode_Deopt[_Py_OPCODE(co_instr)]);
-        SCRAMBLE_IN(co_instr);
-        i += _PyOpcode_Caches[_Py_OPCODE(co_instr)];
+        int deop = _PyOpcode_Deopt[_Py_OPCODE(_PyCode_CODE(co)[i])];
+        SCRAMBLE_IN(deop);
+        SCRAMBLE_IN(_Py_OPARG(_PyCode_CODE(co)[i]));
+        i += _PyOpcode_Caches[deop];
     }
     if ((Py_hash_t)uhash == -1) {
         return -2;
