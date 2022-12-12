@@ -220,20 +220,17 @@ zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
     }
 
     PyObject *rv = PyObject_CallMethod(file_obj, "close", NULL);
-    Py_DECREF(file_obj);
-    file_obj = NULL;
+    Py_SETREF(file_obj, NULL);
     if (rv == NULL) {
         goto error;
     }
     Py_DECREF(rv);
 
-    ((PyZoneInfo_ZoneInfo *)self)->key = key;
-    Py_INCREF(key);
+    ((PyZoneInfo_ZoneInfo *)self)->key = Py_NewRef(key);
 
     goto cleanup;
 error:
-    Py_XDECREF(self);
-    self = NULL;
+    Py_CLEAR(self);
 cleanup:
     if (file_obj != NULL) {
         PyObject *exc, *val, *tb;
@@ -381,10 +378,9 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyObject *file_obj,
 
     self->source = SOURCE_FILE;
     self->file_repr = file_repr;
-    self->key = key;
-    Py_INCREF(key);
-
+    self->key = Py_NewRef(key);
     return obj_self;
+
 error:
     Py_XDECREF(file_repr);
     Py_XDECREF(self);
@@ -484,8 +480,7 @@ zoneinfo_utcoffset(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->utcoff);
-    return tti->utcoff;
+    return Py_NewRef(tti->utcoff);
 }
 
 static PyObject *
@@ -495,8 +490,7 @@ zoneinfo_dst(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->dstoff);
-    return tti->dstoff;
+    return Py_NewRef(tti->dstoff);
 }
 
 static PyObject *
@@ -506,8 +500,7 @@ zoneinfo_tzname(PyObject *self, PyObject *dt)
     if (tti == NULL) {
         return NULL;
     }
-    Py_INCREF(tti->tzname);
-    return tti->tzname;
+    return Py_NewRef(tti->tzname);
 }
 
 #define GET_DT_TZINFO PyDateTime_DATE_GET_TZINFO
@@ -651,8 +644,7 @@ static PyObject *
 zoneinfo_str(PyZoneInfo_ZoneInfo *self)
 {
     if (!(self->key == Py_None)) {
-        Py_INCREF(self->key);
-        return self->key;
+        return Py_NewRef(self->key);
     }
     else {
         return zoneinfo_repr(self);
@@ -793,8 +785,7 @@ build_ttinfo(long utcoffset, long dstoffset, PyObject *tzname, _ttinfo *out)
         return -1;
     }
 
-    out->tzname = tzname;
-    Py_INCREF(tzname);
+    out->tzname = Py_NewRef(tzname);
 
     return 0;
 }
@@ -1081,9 +1072,7 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
         // that the dstoff is set correctly in that case.
         if (PyObject_IsTrue(tti->dstoff)) {
             _ttinfo *tti_after = &(self->tzrule_after.std);
-            Py_DECREF(tti_after->dstoff);
-            tti_after->dstoff = tti->dstoff;
-            Py_INCREF(tti_after->dstoff);
+            Py_SETREF(tti_after->dstoff, Py_NewRef(tti->dstoff));
         }
     }
 
@@ -2285,13 +2274,10 @@ strong_cache_node_new(PyObject *key, PyObject *zone)
         return NULL;
     }
 
-    Py_INCREF(key);
-    Py_INCREF(zone);
-
     node->next = NULL;
     node->prev = NULL;
-    node->key = key;
-    node->zone = zone;
+    node->key = Py_NewRef(key);
+    node->zone = Py_NewRef(zone);
 
     return node;
 }
@@ -2443,8 +2429,7 @@ zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key)
 
     if (node != NULL) {
         move_strong_cache_node_to_front(&ZONEINFO_STRONG_CACHE, node);
-        Py_INCREF(node->zone);
-        return node->zone;
+        return Py_NewRef(node->zone);
     }
 
     return NULL;  // Cache miss
@@ -2619,14 +2604,9 @@ static PyMethodDef module_methods[] = {{NULL, NULL}};
 static void
 module_free(void *m)
 {
-    Py_XDECREF(_tzpath_find_tzfile);
-    _tzpath_find_tzfile = NULL;
-
-    Py_XDECREF(_common_mod);
-    _common_mod = NULL;
-
-    Py_XDECREF(io_open);
-    io_open = NULL;
+    Py_CLEAR(_tzpath_find_tzfile);
+    Py_CLEAR(_common_mod);
+    Py_CLEAR(io_open);
 
     xdecref_ttinfo(&NO_TTINFO);
 
@@ -2679,13 +2659,9 @@ zoneinfomodule_exec(PyObject *m)
     }
 
     if (NO_TTINFO.utcoff == NULL) {
-        NO_TTINFO.utcoff = Py_None;
-        NO_TTINFO.dstoff = Py_None;
-        NO_TTINFO.tzname = Py_None;
-
-        for (size_t i = 0; i < 3; ++i) {
-            Py_INCREF(Py_None);
-        }
+        NO_TTINFO.utcoff = Py_NewRef(Py_None);
+        NO_TTINFO.dstoff = Py_NewRef(Py_None);
+        NO_TTINFO.tzname = Py_NewRef(Py_None);
     }
 
     if (initialize_caches()) {

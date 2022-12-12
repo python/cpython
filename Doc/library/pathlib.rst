@@ -891,6 +891,14 @@ call fails (for example because the path doesn't exist).
    other errors (such as permission errors) are propagated.
 
 
+.. method:: Path.is_junction()
+
+   Return ``True`` if the path points to a junction, and ``False`` for any other
+   type of file. Currently only Windows supports junctions.
+
+   .. versionadded:: 3.12
+
+
 .. method:: Path.is_mount()
 
    Return ``True`` if the path is a :dfn:`mount point`: a point in a

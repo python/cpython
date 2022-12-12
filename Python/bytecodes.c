@@ -68,22 +68,30 @@ do { \
 #define JUMPBY(offset) ((void)0)
 #define GO_TO_INSTRUCTION(instname) ((void)0)
 #define DISPATCH_SAME_OPARG() ((void)0)
-#define DISPATCH() ((void)0)
 
 #define inst(name, ...) case name:
+#define op(name, ...) /* NAME is ignored */
+#define macro(name) static int MACRO_##name
 #define super(name) static int SUPER_##name
-#define family(name) static int family_##name
+#define family(name, ...) static int family_##name
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
 
-typedef struct {
-    PyObject *kwnames;
-} CallShape;
-
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
-static PyObject *container, *start, *stop, *v;
+static PyObject *container, *start, *stop, *v, *lhs, *rhs;
+static PyObject *list, *tuple, *dict, *owner;
+static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
+static size_t jump;
+// Dummy variables for cache effects
+static _Py_CODEUNIT when_to_jump_mask, invert, counter, index, hint;
+static uint32_t type_version;
+// Dummy opcode names for 'op' opcodes
+#define _COMPARE_OP_FLOAT 1003
+#define _COMPARE_OP_INT 1004
+#define _COMPARE_OP_STR 1005
+#define _JUMP_IF 1006
 
 static PyObject *
 dummy_func(
@@ -102,11 +110,9 @@ dummy_func(
     binaryfunc binary_ops[]
 )
 {
-    switch (opcode) {
+    _PyInterpreterFrame  entry_frame;
 
-        /* BEWARE!
-           It is essential that any operation that fails must goto error
-           and that all operation that succeed call DISPATCH() ! */
+    switch (opcode) {
 
 // BEGIN BYTECODES //
         inst(NOP, (--)) {
@@ -152,22 +158,17 @@ dummy_func(
         super(LOAD_FAST__LOAD_CONST) = LOAD_FAST + LOAD_CONST;
         super(STORE_FAST__LOAD_FAST)  = STORE_FAST + LOAD_FAST;
         super(STORE_FAST__STORE_FAST) = STORE_FAST + STORE_FAST;
-        super (LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
+        super(LOAD_CONST__LOAD_FAST) = LOAD_CONST + LOAD_FAST;
 
         inst(POP_TOP, (value --)) {
             Py_DECREF(value);
         }
 
-        // stack effect: ( -- __0)
-        inst(PUSH_NULL) {
-            /* Use BASIC_PUSH as NULL is not a valid object pointer */
-            BASIC_PUSH(NULL);
+        inst(PUSH_NULL, (-- res)) {
+            res = NULL;
         }
 
-        inst(END_FOR, (value1, value2 --)) {
-            Py_DECREF(value1);
-            Py_DECREF(value2);
-        }
+        macro(END_FOR) = POP_TOP + POP_TOP;
 
         inst(UNARY_POSITIVE, (value -- res)) {
             res = PyNumber_Positive(value);
@@ -200,7 +201,20 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(BINARY_OP_MULTIPLY_INT, (left, right -- prod)) {
+        family(binary_op, INLINE_CACHE_ENTRIES_BINARY_OP) = {
+            BINARY_OP,
+            BINARY_OP_ADD_FLOAT,
+            BINARY_OP_ADD_INT,
+            BINARY_OP_ADD_UNICODE,
+            // BINARY_OP_INPLACE_ADD_UNICODE,  // This is an odd duck.
+            BINARY_OP_MULTIPLY_FLOAT,
+            BINARY_OP_MULTIPLY_INT,
+            BINARY_OP_SUBTRACT_FLOAT,
+            BINARY_OP_SUBTRACT_INT,
+        };
+
+
+        inst(BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -209,10 +223,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(prod == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_MULTIPLY_FLOAT, (left, right -- prod)) {
+        inst(BINARY_OP_MULTIPLY_FLOAT, (unused/1, left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -223,10 +236,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(prod == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_SUBTRACT_INT, (left, right -- sub)) {
+        inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -235,10 +247,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(sub == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_SUBTRACT_FLOAT, (left, right -- sub)) {
+        inst(BINARY_OP_SUBTRACT_FLOAT, (unused/1, left, right -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -248,10 +259,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(sub == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+        inst(BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -260,7 +270,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             ERROR_IF(res == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
         // This is a subtle one. It's a super-instruction for
@@ -299,7 +308,7 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }
 
-        inst(BINARY_OP_ADD_FLOAT, (left, right -- sum)) {
+        inst(BINARY_OP_ADD_FLOAT, (unused/1, left, right -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -310,10 +319,9 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             ERROR_IF(sum == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_OP_ADD_INT, (left, right -- sum)) {
+        inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -322,10 +330,17 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             ERROR_IF(sum == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
         }
 
-        inst(BINARY_SUBSCR, (container, sub -- res)) {
+        family(binary_subscr, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
+            BINARY_SUBSCR,
+            BINARY_SUBSCR_DICT,
+            BINARY_SUBSCR_GETITEM,
+            BINARY_SUBSCR_LIST_INT,
+            BINARY_SUBSCR_TUPLE_INT,
+        };
+
+        inst(BINARY_SUBSCR, (unused/4, container, sub -- res)) {
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -339,7 +354,6 @@ dummy_func(
             Py_DECREF(container);
             Py_DECREF(sub);
             ERROR_IF(res == NULL, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
         }
 
         inst(BINARY_SLICE, (container, start, stop -- res)) {
@@ -372,11 +386,8 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_SUBSCR_LIST_INT) {
+        inst(BINARY_SUBSCR_LIST_INT, (unused/4, list, sub -- res)) {
             assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *list = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
 
@@ -387,21 +398,15 @@ dummy_func(
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *res = PyList_GET_ITEM(list, index);
+            res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
             Py_INCREF(res);
-            STACK_SHRINK(1);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
-            SET_TOP(res);
             Py_DECREF(list);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_SUBSCR_TUPLE_INT) {
+        inst(BINARY_SUBSCR_TUPLE_INT, (unused/4, tuple, sub -- res)) {
             assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *tuple = SECOND();
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyTuple_CheckExact(tuple), BINARY_SUBSCR);
 
@@ -412,51 +417,39 @@ dummy_func(
             Py_ssize_t index = ((PyLongObject*)sub)->ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *res = PyTuple_GET_ITEM(tuple, index);
+            res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
             Py_INCREF(res);
-            STACK_SHRINK(1);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
-            SET_TOP(res);
             Py_DECREF(tuple);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_SUBSCR_DICT) {
+        inst(BINARY_SUBSCR_DICT, (unused/4, dict, sub -- res)) {
             assert(cframe.use_tracing == 0);
-            PyObject *dict = SECOND();
-            DEOPT_IF(!PyDict_CheckExact(SECOND()), BINARY_SUBSCR);
+            DEOPT_IF(!PyDict_CheckExact(dict), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
-            PyObject *sub = TOP();
-            PyObject *res = PyDict_GetItemWithError(dict, sub);
+            res = PyDict_GetItemWithError(dict, sub);
             if (res == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_SetKeyError(sub);
                 }
-                goto error;
+                Py_DECREF(dict);
+                Py_DECREF(sub);
+                ERROR_IF(true, error);
             }
-            Py_INCREF(res);
-            STACK_SHRINK(1);
-            Py_DECREF(sub);
-            SET_TOP(res);
+            Py_INCREF(res);  // Do this before DECREF'ing dict, sub
             Py_DECREF(dict);
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            Py_DECREF(sub);
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_SUBSCR_GETITEM) {
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->type_version);
+        inst(BINARY_SUBSCR_GETITEM, (unused/1, type_version/2, func_version/1, container, sub -- unused)) {
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(tp->tp_version_tag != type_version, BINARY_SUBSCR);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
             PyObject *cached = ((PyHeapTypeObject *)tp)->_spec_cache.getitem;
             assert(PyFunction_Check(cached));
             PyFunctionObject *getitem = (PyFunctionObject *)cached;
-            DEOPT_IF(getitem->func_version != cache->func_version, BINARY_SUBSCR);
+            DEOPT_IF(getitem->func_version != func_version, BINARY_SUBSCR);
             PyCodeObject *code = (PyCodeObject *)getitem->func_code;
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_SUBSCR);
@@ -469,61 +462,52 @@ dummy_func(
             for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
-        // stack effect: (__0 -- )
-        inst(LIST_APPEND) {
-            PyObject *v = POP();
-            PyObject *list = PEEK(oparg);
-            if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0)
-                goto error;
+        // Alternative: (list, unused[oparg], v -- list, unused[oparg])
+        inst(LIST_APPEND, (v --)) {
+            PyObject *list = PEEK(oparg + 1);  // +1 to account for v staying on stack
+            ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
 
-        // stack effect: (__0 -- )
-        inst(SET_ADD) {
-            PyObject *v = POP();
-            PyObject *set = PEEK(oparg);
-            int err;
-            err = PySet_Add(set, v);
+        // Alternative: (set, unused[oparg], v -- set, unused[oparg])
+        inst(SET_ADD, (v --)) {
+            PyObject *set = PEEK(oparg + 1);  // +1 to account for v staying on stack
+            int err = PySet_Add(set, v);
             Py_DECREF(v);
-            if (err != 0)
-                goto error;
+            ERROR_IF(err, error);
             PREDICT(JUMP_BACKWARD);
         }
 
-        inst(STORE_SUBSCR, (v, container, sub -- )) {
-            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+        family(store_subscr) = {
+            STORE_SUBSCR,
+            STORE_SUBSCR_DICT,
+            STORE_SUBSCR_LIST_INT,
+        };
+
+        inst(STORE_SUBSCR, (counter/1, v, container, sub -- )) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
+            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
-            ERROR_IF(err != 0, error);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
+            ERROR_IF(err, error);
         }
 
-        // stack effect: (__0, __1, __2 -- )
-        inst(STORE_SUBSCR_LIST_INT) {
+        inst(STORE_SUBSCR_LIST_INT, (unused/1, value, list, sub -- )) {
             assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *list = SECOND();
-            PyObject *value = THIRD();
             DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
 
@@ -536,60 +520,42 @@ dummy_func(
 
             PyObject *old_value = PyList_GET_ITEM(list, index);
             PyList_SET_ITEM(list, index, value);
-            STACK_SHRINK(3);
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
         }
 
-        // stack effect: (__0, __1, __2 -- )
-        inst(STORE_SUBSCR_DICT) {
+        inst(STORE_SUBSCR_DICT, (unused/1, value, dict, sub -- )) {
             assert(cframe.use_tracing == 0);
-            PyObject *sub = TOP();
-            PyObject *dict = SECOND();
-            PyObject *value = THIRD();
             DEOPT_IF(!PyDict_CheckExact(dict), STORE_SUBSCR);
-            STACK_SHRINK(3);
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
             Py_DECREF(dict);
-            if (err != 0) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_SUBSCR);
+            ERROR_IF(err, error);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(DELETE_SUBSCR) {
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            int err;
-            STACK_SHRINK(2);
+        inst(DELETE_SUBSCR, (container, sub --)) {
             /* del container[sub] */
-            err = PyObject_DelItem(container, sub);
+            int err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
-            if (err != 0)
-                goto error;
+            ERROR_IF(err, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(PRINT_EXPR) {
-            PyObject *value = POP();
+        inst(PRINT_EXPR, (value --)) {
             PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
             PyObject *res;
+            // Can't use ERROR_IF here.
             if (hook == NULL) {
                 _PyErr_SetString(tstate, PyExc_RuntimeError,
                                  "lost sys.displayhook");
                 Py_DECREF(value);
-                goto error;
+                ERROR_IF(true, error);
             }
             res = PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
-            if (res == NULL)
-                goto error;
+            ERROR_IF(res == NULL, error);
             Py_DECREF(res);
         }
 
@@ -616,11 +582,10 @@ dummy_func(
             goto error;
         }
 
-        // stack effect: (__0 -- )
-        inst(INTERPRETER_EXIT) {
+        inst(INTERPRETER_EXIT, (retval --)) {
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
-            PyObject *retval = POP();
+            STACK_SHRINK(1);  // Since we're not going to DISPATCH()
             assert(EMPTY());
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
@@ -631,62 +596,53 @@ dummy_func(
             return retval;
         }
 
-        // stack effect: (__0 -- )
-        inst(RETURN_VALUE) {
-            PyObject *retval = POP();
+        inst(RETURN_VALUE, (retval --)) {
+            STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             TRACE_FUNCTION_EXIT();
             DTRACE_FUNCTION_EXIT();
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
-            frame = cframe.current_frame = pop_frame(tstate, frame);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = cframe.current_frame = dying->previous;
+            _PyEvalFrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
 
-        // stack effect: ( -- )
-        inst(GET_AITER) {
+        inst(GET_AITER, (obj -- iter)) {
             unaryfunc getter = NULL;
-            PyObject *iter = NULL;
-            PyObject *obj = TOP();
             PyTypeObject *type = Py_TYPE(obj);
 
             if (type->tp_as_async != NULL) {
                 getter = type->tp_as_async->am_aiter;
             }
 
-            if (getter != NULL) {
-                iter = (*getter)(obj);
-                Py_DECREF(obj);
-                if (iter == NULL) {
-                    SET_TOP(NULL);
-                    goto error;
-                }
-            }
-            else {
-                SET_TOP(NULL);
+            if (getter == NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'async for' requires an object with "
                               "__aiter__ method, got %.100s",
                               type->tp_name);
                 Py_DECREF(obj);
-                goto error;
+                ERROR_IF(true, error);
             }
+
+            iter = (*getter)(obj);
+            Py_DECREF(obj);
+            ERROR_IF(iter == NULL, error);
 
             if (Py_TYPE(iter)->tp_as_async == NULL ||
                     Py_TYPE(iter)->tp_as_async->am_anext == NULL) {
 
-                SET_TOP(NULL);
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "'async for' received an object from __aiter__ "
                               "that does not implement __anext__: %.100s",
                               Py_TYPE(iter)->tp_name);
                 Py_DECREF(iter);
-                goto error;
+                ERROR_IF(true, error);
             }
-
-            SET_TOP(iter);
         }
 
         // stack effect: ( -- __0)
@@ -816,11 +772,12 @@ dummy_func(
                 Py_DECREF(receiver);
                 SET_TOP(retval);
                 JUMPBY(oparg);
-                DISPATCH();
             }
-            assert(gen_status == PYGEN_NEXT);
-            assert(retval != NULL);
-            PUSH(retval);
+            else {
+                assert(gen_status == PYGEN_NEXT);
+                assert(retval != NULL);
+                PUSH(retval);
+            }
         }
 
         // stack effect: ( -- )
@@ -913,7 +870,6 @@ dummy_func(
             if (PyErr_GivenExceptionMatches(val, PyExc_StopAsyncIteration)) {
                 Py_DECREF(val);
                 Py_DECREF(POP());
-                DISPATCH();
             }
             else {
                 PyObject *exc = Py_NewRef(PyExceptionInstance_Class(val));
@@ -935,12 +891,13 @@ dummy_func(
                 Py_DECREF(POP());  // The last sent value.
                 Py_DECREF(POP());  // The delegated sub-iterator.
                 PUSH(value);
-                DISPATCH();
             }
-            PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
-            PyObject *exc_traceback = PyException_GetTraceback(exc_value);
-            _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
-            goto exception_unwind;
+            else {
+                PyObject *exc_type = Py_NewRef(Py_TYPE(exc_value));
+                PyObject *exc_traceback = PyException_GetTraceback(exc_value);
+                _PyErr_Restore(tstate, exc_type, Py_NewRef(exc_value), exc_traceback);
+                goto exception_unwind;
+            }
         }
 
         inst(STOPITERATION_ERROR) {
@@ -982,7 +939,6 @@ dummy_func(
                 PyException_SetContext(error, exc);
                 Py_DECREF(message);
             }
-            DISPATCH();
         }
 
 
@@ -1040,8 +996,7 @@ dummy_func(
                 goto error;
         }
 
-        // stack effect: ( -- )
-        inst(DELETE_NAME) {
+        inst(DELETE_NAME, (--)) {
             PyObject *name = GETITEM(names, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -1051,6 +1006,7 @@ dummy_func(
                 goto error;
             }
             err = PyObject_DelItem(ns, name);
+            // Can't use ERROR_IF here.
             if (err != 0) {
                 format_exc_check_arg(tstate, PyExc_NameError,
                                      NAME_ERROR_MSG,
@@ -1137,62 +1093,50 @@ dummy_func(
             Py_DECREF(seq);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR) {
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+        family(store_attr) = {
+            STORE_ATTR,
+            STORE_ATTR_INSTANCE_VALUE,
+            STORE_ATTR_SLOT,
+            STORE_ATTR_WITH_HINT,
+        };
+
+        inst(STORE_ATTR, (counter/1, unused/3, v, owner --)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg);
                 next_instr--;
-                if (_Py_Specialize_StoreAttr(owner, next_instr, name)) {
-                    goto error;
-                }
+                _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_ATTR, deferred);
+            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = TOP();
-            PyObject *v = SECOND();
-            int err;
-            STACK_SHRINK(2);
-            err = PyObject_SetAttr(owner, name, v);
+            int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
-            if (err != 0) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
+            ERROR_IF(err, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(DELETE_ATTR) {
+        inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = POP();
-            int err;
-            err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
+            int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
             Py_DECREF(owner);
-            if (err != 0)
-                goto error;
+            ERROR_IF(err, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(STORE_GLOBAL) {
+        inst(STORE_GLOBAL, (v --)) {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *v = POP();
-            int err;
-            err = PyDict_SetItem(GLOBALS(), name, v);
+            int err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
-            if (err != 0)
-                goto error;
+            ERROR_IF(err, error);
         }
 
-        // stack effect: ( -- )
-        inst(DELETE_GLOBAL) {
+        inst(DELETE_GLOBAL, (--)) {
             PyObject *name = GETITEM(names, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
+            // Can't use ERROR_IF here.
             if (err != 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                     format_exc_check_arg(tstate, PyExc_NameError,
@@ -1372,18 +1316,13 @@ dummy_func(
             SET_TOP(Py_NewRef(res));
         }
 
-        // stack effect: ( -- )
-        inst(DELETE_FAST) {
+        inst(DELETE_FAST, (--)) {
             PyObject *v = GETLOCAL(oparg);
-            if (v != NULL) {
-                SETLOCAL(oparg, NULL);
-                DISPATCH();
-            }
-            goto unbound_local_error;
+            ERROR_IF(v == NULL, unbound_local_error);
+            SETLOCAL(oparg, NULL);
         }
 
-        // stack effect: ( -- )
-        inst(MAKE_CELL) {
+        inst(MAKE_CELL, (--)) {
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
@@ -1394,17 +1333,17 @@ dummy_func(
             SETLOCAL(oparg, cell);
         }
 
-        // stack effect: ( -- )
-        inst(DELETE_DEREF) {
+        inst(DELETE_DEREF, (--)) {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
-            if (oldobj != NULL) {
-                PyCell_SET(cell, NULL);
-                Py_DECREF(oldobj);
-                DISPATCH();
+            // Can't use ERROR_IF here.
+            // Fortunately we don't need its superpower.
+            if (oldobj == NULL) {
+                format_exc_unbound(tstate, frame->f_code, oparg);
+                goto error;
             }
-            format_exc_unbound(tstate, frame->f_code, oparg);
-            goto error;
+            PyCell_SET(cell, NULL);
+            Py_DECREF(oldobj);
         }
 
         // stack effect: ( -- __0)
@@ -1724,9 +1663,7 @@ dummy_func(
                 PyObject *owner = TOP();
                 PyObject *name = GETITEM(names, oparg>>1);
                 next_instr--;
-                if (_Py_Specialize_LoadAttr(owner, next_instr, name)) {
-                    goto error;
-                }
+                _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_ATTR, deferred);
@@ -1765,15 +1702,15 @@ dummy_func(
                     Py_DECREF(owner);
                     PUSH(meth);
                 }
-                JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-                DISPATCH();
             }
-            PyObject *res = PyObject_GetAttr(owner, name);
-            if (res == NULL) {
-                goto error;
+            else {
+                PyObject *res = PyObject_GetAttr(owner, name);
+                if (res == NULL) {
+                    goto error;
+                }
+                Py_DECREF(owner);
+                SET_TOP(res);
             }
-            Py_DECREF(owner);
-            SET_TOP(res);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
         }
 
@@ -1941,13 +1878,8 @@ dummy_func(
             for (int i = 1; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         // error: LOAD_ATTR has irregular stack effect
@@ -1982,31 +1914,19 @@ dummy_func(
             for (int i = 2; i < code->co_nlocalsplus; i++) {
                 new_frame->localsplus[i] = NULL;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            CALL_STAT_INC(inlined_py_calls);
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR_INSTANCE_VALUE) {
+        inst(STORE_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, value, owner --)) {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
             STAT_INC(STORE_ATTR, hit);
-            Py_ssize_t index = cache->index;
-            STACK_SHRINK(1);
-            PyObject *value = POP();
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
             PyObject *old_value = values->values[index];
             values->values[index] = value;
@@ -2017,16 +1937,11 @@ dummy_func(
                 Py_DECREF(old_value);
             }
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR_WITH_HINT) {
+        inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value, owner --)) {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
@@ -2036,17 +1951,14 @@ dummy_func(
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, oparg);
-            uint16_t hint = cache->index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
-            PyObject *value, *old_value;
+            PyObject *old_value;
             uint64_t new_version;
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                STACK_SHRINK(1);
-                value = POP();
                 new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
@@ -2055,8 +1967,6 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                STACK_SHRINK(1);
-                value = POP();
                 new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
@@ -2069,99 +1979,76 @@ dummy_func(
             /* PEP 509 */
             dict->ma_version_tag = new_version;
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
-        // stack effect: (__0, __1 -- )
-        inst(STORE_ATTR_SLOT) {
+        inst(STORE_ATTR_SLOT, (unused/1, type_version/2, index/1, value, owner --)) {
             assert(cframe.use_tracing == 0);
-            PyObject *owner = TOP();
             PyTypeObject *tp = Py_TYPE(owner);
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            uint32_t type_version = read_u32(cache->version);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
-            char *addr = (char *)owner + cache->index;
+            char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
-            STACK_SHRINK(1);
-            PyObject *value = POP();
             PyObject *old_value = *(PyObject **)addr;
             *(PyObject **)addr = value;
             Py_XDECREF(old_value);
             Py_DECREF(owner);
-            JUMPBY(INLINE_CACHE_ENTRIES_STORE_ATTR);
         }
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP_GENERIC) {
-            assert(oparg <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = TOP();
-            PyObject *res = PyObject_RichCompare(left, right, oparg);
-            SET_TOP(res);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-        }
+        family(compare_op) = {
+            COMPARE_OP,
+            _COMPARE_OP_FLOAT,
+            _COMPARE_OP_INT,
+            _COMPARE_OP_STR,
+        };
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP) {
+        inst(COMPARE_OP, (unused/2, left, right -- res)) {
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *right = TOP();
-                PyObject *left = SECOND();
                 next_instr--;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(COMPARE_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(COMPARE_OP_GENERIC);
+            assert(oparg <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            ERROR_IF(res == NULL, error);
         }
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP_FLOAT_JUMP) {
+        // The result is an int disguised as an object pointer.
+        op(_COMPARE_OP_FLOAT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (float ? float) + POP_JUMP_IF_(true/false)
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int when_to_jump_mask = cache->mask;
-            PyObject *right = TOP();
-            PyObject *left = SECOND();
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
-            int sign = (dleft > dright) - (dleft < dright);
+            // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
+            int sign_ish = 2*(dleft > dright) + 2 - (dleft < dright);
             DEOPT_IF(isnan(dleft), COMPARE_OP);
             DEOPT_IF(isnan(dright), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            NEXTOPARG();
-            STACK_SHRINK(2);
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            jump = sign_ish & when_to_jump_mask;
+        }
+        // The input is an int disguised as an object pointer!
+        op(_JUMP_IF, (jump: size_t --)) {
             assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            int jump = (1 << (sign + 1)) & when_to_jump_mask;
-            if (!jump) {
-                next_instr++;
-            }
-            else {
-                JUMPBY(1 + oparg);
+            if (jump) {
+                JUMPBY(oparg);
             }
         }
+        // We're praying that the compiler optimizes the flags manipuations.
+        super(COMPARE_OP_FLOAT_JUMP) = _COMPARE_OP_FLOAT + _JUMP_IF;
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP_INT_JUMP) {
+        // Similar to COMPARE_OP_FLOAT
+        op(_COMPARE_OP_INT, (unused/1, when_to_jump_mask/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (int ? int) + POP_JUMP_IF_(true/false)
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int when_to_jump_mask = cache->mask;
-            PyObject *right = TOP();
-            PyObject *left = SECOND();
             DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
             DEOPT_IF((size_t)(Py_SIZE(left) + 1) > 2, COMPARE_OP);
@@ -2170,51 +2057,30 @@ dummy_func(
             assert(Py_ABS(Py_SIZE(left)) <= 1 && Py_ABS(Py_SIZE(right)) <= 1);
             Py_ssize_t ileft = Py_SIZE(left) * ((PyLongObject *)left)->ob_digit[0];
             Py_ssize_t iright = Py_SIZE(right) * ((PyLongObject *)right)->ob_digit[0];
-            int sign = (ileft > iright) - (ileft < iright);
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            NEXTOPARG();
-            STACK_SHRINK(2);
+            // 1 if <, 2 if ==, 4 if >; this matches when _to_jump_mask
+            int sign_ish = 2*(ileft > iright) + 2 - (ileft < iright);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            int jump = (1 << (sign + 1)) & when_to_jump_mask;
-            if (!jump) {
-                next_instr++;
-            }
-            else {
-                JUMPBY(1 + oparg);
-            }
+            jump = sign_ish & when_to_jump_mask;
         }
+        super(COMPARE_OP_INT_JUMP) = _COMPARE_OP_INT + _JUMP_IF;
 
-        // stack effect: (__0 -- )
-        inst(COMPARE_OP_STR_JUMP) {
+        // Similar to COMPARE_OP_FLOAT, but for ==, != only
+        op(_COMPARE_OP_STR, (unused/1, invert/1, left, right -- jump: size_t)) {
             assert(cframe.use_tracing == 0);
             // Combined: COMPARE_OP (str == str or str != str) + POP_JUMP_IF_(true/false)
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            int invert = cache->mask;
-            PyObject *right = TOP();
-            PyObject *left = SECOND();
             DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
             DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
             STAT_INC(COMPARE_OP, hit);
             int res = _PyUnicode_Equal(left, right);
             assert(oparg == Py_EQ || oparg == Py_NE);
-            JUMPBY(INLINE_CACHE_ENTRIES_COMPARE_OP);
-            NEXTOPARG();
-            assert(opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_TRUE);
-            STACK_SHRINK(2);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             assert(res == 0 || res == 1);
             assert(invert == 0 || invert == 1);
-            int jump = res ^ invert;
-            if (!jump) {
-                next_instr++;
-            }
-            else {
-                JUMPBY(1 + oparg);
-            }
+            jump = res ^ invert;
         }
+        super(COMPARE_OP_STR_JUMP) = _COMPARE_OP_STR + _JUMP_IF;
 
         // stack effect: (__0 -- )
         inst(IS_OP) {
@@ -2431,21 +2297,23 @@ dummy_func(
             if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
                 _Py_DECREF_NO_DEALLOC(cond);
-                DISPATCH();
             }
-            if (Py_IsFalse(cond)) {
+            else if (Py_IsFalse(cond)) {
                 JUMPBY(oparg);
-                DISPATCH();
             }
-            err = PyObject_IsTrue(cond);
-            if (err > 0) {
-                STACK_SHRINK(1);
-                Py_DECREF(cond);
+            else {
+                err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    STACK_SHRINK(1);
+                    Py_DECREF(cond);
+                }
+                else if (err == 0) {
+                    JUMPBY(oparg);
+                }
+                else {
+                    goto error;
+                }
             }
-            else if (err == 0)
-                JUMPBY(oparg);
-            else
-                goto error;
         }
 
         // error: JUMP_IF_TRUE_OR_POP stack effect depends on jump flag
@@ -2455,22 +2323,23 @@ dummy_func(
             if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
                 _Py_DECREF_NO_DEALLOC(cond);
-                DISPATCH();
             }
-            if (Py_IsTrue(cond)) {
-                JUMPBY(oparg);
-                DISPATCH();
-            }
-            err = PyObject_IsTrue(cond);
-            if (err > 0) {
+            else if (Py_IsTrue(cond)) {
                 JUMPBY(oparg);
             }
-            else if (err == 0) {
-                STACK_SHRINK(1);
-                Py_DECREF(cond);
+            else {
+                err = PyObject_IsTrue(cond);
+                if (err > 0) {
+                    JUMPBY(oparg);
+                }
+                else if (err == 0) {
+                    STACK_SHRINK(1);
+                    Py_DECREF(cond);
+                }
+                else {
+                    goto error;
+                }
             }
-            else
-                goto error;
         }
 
         // stack effect: ( -- )
@@ -2611,23 +2480,24 @@ dummy_func(
             if (next != NULL) {
                 PUSH(next);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-                DISPATCH();
             }
-            if (_PyErr_Occurred(tstate)) {
-                if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                    goto error;
+            else {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        goto error;
+                    }
+                    else if (tstate->c_tracefunc != NULL) {
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
+                    }
+                    _PyErr_Clear(tstate);
                 }
-                else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, frame);
-                }
-                _PyErr_Clear(tstate);
+                /* iterator ended normally */
+                assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
+                STACK_SHRINK(1);
+                Py_DECREF(iter);
+                /* Skip END_FOR */
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
             }
-            /* iterator ended normally */
-            assert(_Py_OPCODE(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg]) == END_FOR);
-            STACK_SHRINK(1);
-            Py_DECREF(iter);
-            /* Skip END_FOR */
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
         }
 
         // stack effect: ( -- __0)
@@ -2642,7 +2512,7 @@ dummy_func(
                     PyObject *next = PyList_GET_ITEM(seq, it->it_index++);
                     PUSH(Py_NewRef(next));
                     JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
-                    DISPATCH();
+                    goto end_for_iter_list;  // End of this instruction
                 }
                 it->it_seq = NULL;
                 Py_DECREF(seq);
@@ -2650,6 +2520,30 @@ dummy_func(
             STACK_SHRINK(1);
             Py_DECREF(it);
             JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+        end_for_iter_list:
+        }
+
+        // stack effect: ( -- __0)
+        inst(FOR_ITER_TUPLE) {
+            assert(cframe.use_tracing == 0);
+            _PyTupleIterObject *it = (_PyTupleIterObject *)TOP();
+            DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, FOR_ITER);
+            STAT_INC(FOR_ITER, hit);
+            PyTupleObject *seq = it->it_seq;
+            if (seq) {
+                if (it->it_index < PyTuple_GET_SIZE(seq)) {
+                    PyObject *next = PyTuple_GET_ITEM(seq, it->it_index++);
+                    PUSH(Py_NewRef(next));
+                    JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                    goto end_for_iter_tuple;  // End of this instruction
+                }
+                it->it_seq = NULL;
+                Py_DECREF(seq);
+            }
+            STACK_SHRINK(1);
+            Py_DECREF(it);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+        end_for_iter_tuple:
         }
 
         // stack effect: ( -- __0)
@@ -2660,19 +2554,21 @@ dummy_func(
             STAT_INC(FOR_ITER, hit);
             _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
             assert(_PyOpcode_Deopt[_Py_OPCODE(next)] == STORE_FAST);
-            if (r->index >= r->len) {
+            if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
-                DISPATCH();
             }
-            long value = (long)(r->start +
-                                (unsigned long)(r->index++) * r->step);
-            if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
-                goto error;
+            else {
+                long value = r->start;
+                r->start = value + r->step;
+                r->len--;
+                if (_PyLong_AssignValue(&GETLOCAL(_Py_OPARG(next)), value) < 0) {
+                    goto error;
+                }
+                // The STORE_FAST is already done.
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
             }
-            // The STORE_FAST is already done.
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
         }
 
         inst(FOR_ITER_GEN) {
@@ -2682,18 +2578,14 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             frame->yield_offset = oparg;
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
-            assert(_Py_OPCODE(*next_instr) == END_FOR);
-            frame->prev_instr = next_instr - 1;
             _PyFrame_StackPush(gen_frame, Py_NewRef(Py_None));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            gen_frame->previous = frame;
-            frame = cframe.current_frame = gen_frame;
-            goto start_frame;
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
+            assert(_Py_OPCODE(*next_instr) == END_FOR);
+            DISPATCH_INLINED(gen_frame);
         }
 
         // stack effect: ( -- __0)
@@ -2768,33 +2660,27 @@ dummy_func(
             PUSH(res);
         }
 
-        // stack effect: ( -- __0)
-        inst(WITH_EXCEPT_START) {
+        inst(WITH_EXCEPT_START, (exit_func, lasti, unused, val -- exit_func, lasti, unused, val, res)) {
             /* At the top of the stack are 4 values:
-               - TOP = exc_info()
-               - SECOND = previous exception
-               - THIRD: lasti of exception in exc_info()
-               - FOURTH: the context.__exit__ bound method
+               - val: TOP = exc_info()
+               - unused: SECOND = previous exception
+               - lasti: THIRD = lasti of exception in exc_info()
+               - exit_func: FOURTH = the context.__exit__ bound method
                We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
                Then we push the __exit__ return value.
             */
-            PyObject *exit_func;
-            PyObject *exc, *val, *tb, *res;
+            PyObject *exc, *tb;
 
-            val = TOP();
             assert(val && PyExceptionInstance_Check(val));
             exc = PyExceptionInstance_Class(val);
             tb = PyException_GetTraceback(val);
             Py_XDECREF(tb);
-            assert(PyLong_Check(PEEK(3)));
-            exit_func = PEEK(4);
+            assert(PyLong_Check(lasti));
+            (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[4] = {NULL, exc, val, tb};
             res = PyObject_Vectorcall(exit_func, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            if (res == NULL)
-                goto error;
-
-            PUSH(res);
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: ( -- __0)
@@ -2975,13 +2861,8 @@ dummy_func(
                 if (new_frame == NULL) {
                     goto error;
                 }
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-                frame->prev_instr = next_instr - 1;
-                new_frame->previous = frame;
-                cframe.current_frame = frame = new_frame;
-                CALL_STAT_INC(inlined_py_calls);
-                goto start_frame;
+                DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
             PyObject *res;
@@ -3029,7 +2910,6 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
-            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -3038,12 +2918,8 @@ dummy_func(
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -3064,7 +2940,6 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
             STAT_INC(CALL, hit);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, func);
-            CALL_STAT_INC(inlined_py_calls);
             STACK_SHRINK(argcount);
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = stack_pointer[i];
@@ -3078,12 +2953,8 @@ dummy_func(
                 new_frame->localsplus[i] = NULL;
             }
             STACK_SHRINK(2-is_meth);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            new_frame->previous = frame;
-            frame = cframe.current_frame = new_frame;
-            goto start_frame;
+            DISPATCH_INLINED(new_frame);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -3113,7 +2984,6 @@ dummy_func(
             PyObject *callable = PEEK(2);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyObject *arg = TOP();
             PyObject *res = PyObject_Str(arg);
             Py_DECREF(arg);
@@ -3123,6 +2993,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3134,7 +3005,6 @@ dummy_func(
             PyObject *callable = PEEK(2);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyObject *arg = TOP();
             PyObject *res = PySequence_Tuple(arg);
             Py_DECREF(arg);
@@ -3144,6 +3014,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3225,7 +3096,6 @@ dummy_func(
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             STACK_SHRINK(total_args);
             PyObject *res = tp->tp_vectorcall((PyObject *)tp, stack_pointer,
                                               total_args-kwnames_len, kwnames);
@@ -3240,6 +3110,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3255,7 +3126,6 @@ dummy_func(
             DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
@@ -3263,7 +3133,7 @@ dummy_func(
                 goto error;
             }
             PyObject *arg = TOP();
-            PyObject *res = cfunc(PyCFunction_GET_SELF(callable), arg);
+            PyObject *res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -3274,6 +3144,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3289,7 +3160,6 @@ dummy_func(
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL,
                 CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs) */
@@ -3314,6 +3184,7 @@ dummy_func(
                 */
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3328,7 +3199,6 @@ dummy_func(
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
                 (METH_FASTCALL | METH_KEYWORDS), CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             STACK_SHRINK(total_args);
             /* res = func(self, args, nargs, kwnames) */
             _PyCFunctionFastWithKeywords cfunc =
@@ -3353,6 +3223,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3368,7 +3239,6 @@ dummy_func(
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyObject *arg = TOP();
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
@@ -3384,6 +3254,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -3398,7 +3269,6 @@ dummy_func(
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(callable != interp->callable_cache.isinstance, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyObject *cls = POP();
             PyObject *inst = TOP();
             int retval = PyObject_IsInstance(inst, cls);
@@ -3417,6 +3287,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -3430,9 +3301,6 @@ dummy_func(
             PyObject *list = SECOND();
             DEOPT_IF(!PyList_Check(list), CALL);
             STAT_INC(CALL, hit);
-            // CALL + POP_TOP
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
-            assert(_Py_OPCODE(next_instr[-1]) == POP_TOP);
             PyObject *arg = POP();
             if (_PyList_AppendTakeRef((PyListObject *)list, arg) < 0) {
                 goto error;
@@ -3440,6 +3308,9 @@ dummy_func(
             STACK_SHRINK(2);
             Py_DECREF(list);
             Py_DECREF(callable);
+            // CALL + POP_TOP
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL + 1);
+            assert(_Py_OPCODE(next_instr[-1]) == POP_TOP);
         }
 
         // stack effect: (__0, __array[oparg] -- )
@@ -3457,14 +3328,13 @@ dummy_func(
             PyObject *self = SECOND();
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *res = cfunc(self, arg);
+            PyObject *res = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -3475,6 +3345,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3491,7 +3362,6 @@ dummy_func(
             PyObject *self = PEEK(total_args);
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             int nargs = total_args-1;
             STACK_SHRINK(nargs);
             _PyCFunctionFastWithKeywords cfunc =
@@ -3512,6 +3382,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3529,14 +3400,13 @@ dummy_func(
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             DEOPT_IF(meth->ml_flags != METH_NOARGS, CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
             // function calls.
             if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
                 goto error;
             }
-            PyObject *res = cfunc(self, NULL);
+            PyObject *res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(self);
@@ -3546,6 +3416,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3563,7 +3434,6 @@ dummy_func(
             PyObject *self = PEEK(total_args);
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
-            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             _PyCFunctionFast cfunc =
                 (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args-1;
@@ -3581,6 +3451,7 @@ dummy_func(
             if (res == NULL) {
                 goto error;
             }
+            JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             CHECK_EVAL_BREAKER();
         }
 
@@ -3649,6 +3520,7 @@ dummy_func(
                 func->func_defaults = POP();
             }
 
+            func->func_version = ((PyCodeObject *)codeobj)->co_version;
             PUSH((PyObject *)func);
         }
 
@@ -3761,37 +3633,23 @@ dummy_func(
             PUSH(Py_NewRef(peek));
         }
 
-        // stack effect: (__0 -- )
-        inst(BINARY_OP_GENERIC) {
-            PyObject *rhs = POP();
-            PyObject *lhs = TOP();
-            assert(0 <= oparg);
-            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
-            assert(binary_ops[oparg]);
-            PyObject *res = binary_ops[oparg](lhs, rhs);
-            Py_DECREF(lhs);
-            Py_DECREF(rhs);
-            SET_TOP(res);
-            if (res == NULL) {
-                goto error;
-            }
-            JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP);
-        }
-
-        // stack effect: (__0 -- )
-        inst(BINARY_OP) {
+        inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *lhs = SECOND();
-                PyObject *rhs = TOP();
                 next_instr--;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, &GETLOCAL(0));
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(BINARY_OP, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            GO_TO_INSTRUCTION(BINARY_OP_GENERIC);
+            assert(0 <= oparg);
+            assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
+            assert(binary_ops[oparg]);
+            res = binary_ops[oparg](lhs, rhs);
+            Py_DECREF(lhs);
+            Py_DECREF(rhs);
+            ERROR_IF(res == NULL, error);
         }
 
         // stack effect: ( -- )
@@ -3831,16 +3689,8 @@ dummy_func(
     ;
 }
 
-// Families go below this point //
+// Future families go below this point //
 
-family(binary_op) = {
-    BINARY_OP, BINARY_OP_ADD_FLOAT,
-    BINARY_OP_ADD_INT, BINARY_OP_ADD_UNICODE, BINARY_OP_GENERIC, BINARY_OP_INPLACE_ADD_UNICODE,
-    BINARY_OP_MULTIPLY_FLOAT, BINARY_OP_MULTIPLY_INT, BINARY_OP_SUBTRACT_FLOAT,
-    BINARY_OP_SUBTRACT_INT };
-family(binary_subscr) = {
-    BINARY_SUBSCR, BINARY_SUBSCR_DICT,
-    BINARY_SUBSCR_GETITEM, BINARY_SUBSCR_LIST_INT, BINARY_SUBSCR_TUPLE_INT };
 family(call) = {
     CALL, CALL_PY_EXACT_ARGS,
     CALL_PY_WITH_DEFAULTS, CALL_BOUND_METHOD_EXACT_ARGS, CALL_BUILTIN_CLASS,
@@ -3849,9 +3699,6 @@ family(call) = {
     CALL_NO_KW_LIST_APPEND, CALL_NO_KW_METHOD_DESCRIPTOR_FAST, CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS,
     CALL_NO_KW_METHOD_DESCRIPTOR_O, CALL_NO_KW_STR_1, CALL_NO_KW_TUPLE_1,
     CALL_NO_KW_TYPE_1 };
-family(compare_op) = {
-    COMPARE_OP, COMPARE_OP_FLOAT_JUMP, COMPARE_OP_GENERIC,
-    COMPARE_OP_INT_JUMP, COMPARE_OP_STR_JUMP };
 family(for_iter) = {
     FOR_ITER, FOR_ITER_LIST,
     FOR_ITER_RANGE };
@@ -3866,13 +3713,7 @@ family(load_fast) = { LOAD_FAST, LOAD_FAST__LOAD_CONST, LOAD_FAST__LOAD_FAST };
 family(load_global) = {
     LOAD_GLOBAL, LOAD_GLOBAL_BUILTIN,
     LOAD_GLOBAL_MODULE };
-family(store_attr) = {
-    STORE_ATTR, STORE_ATTR_INSTANCE_VALUE,
-    STORE_ATTR_SLOT, STORE_ATTR_WITH_HINT };
 family(store_fast) = { STORE_FAST, STORE_FAST__LOAD_FAST, STORE_FAST__STORE_FAST };
-family(store_subscr) = {
-    STORE_SUBSCR, STORE_SUBSCR_DICT,
-    STORE_SUBSCR_LIST_INT };
 family(unpack_sequence) = {
     UNPACK_SEQUENCE, UNPACK_SEQUENCE_LIST,
     UNPACK_SEQUENCE_TUPLE, UNPACK_SEQUENCE_TWO_TUPLE };

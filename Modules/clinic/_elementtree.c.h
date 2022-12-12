@@ -106,20 +106,20 @@ PyDoc_STRVAR(_elementtree_Element___sizeof____doc__,
 #define _ELEMENTTREE_ELEMENT___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)_elementtree_Element___sizeof__, METH_NOARGS, _elementtree_Element___sizeof____doc__},
 
-static Py_ssize_t
+static size_t
 _elementtree_Element___sizeof___impl(ElementObject *self);
 
 static PyObject *
 _elementtree_Element___sizeof__(ElementObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
+    size_t _return_value;
 
     _return_value = _elementtree_Element___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = PyLong_FromSsize_t(_return_value);
+    return_value = PyLong_FromSize_t(_return_value);
 
 exit:
     return return_value;
@@ -1105,4 +1105,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=67a80531eaf43815 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4ad006cadce01571 input=a9049054013a1b77]*/

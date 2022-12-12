@@ -198,8 +198,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
         eventArgs = _Py_VaBuildValue_SizeT(argFormat, vargs);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);
-            Py_DECREF(eventArgs);
-            eventArgs = argTuple;
+            Py_SETREF(eventArgs, argTuple);
         }
     }
     else {
@@ -431,6 +430,8 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
         if (interp->audit_hooks == NULL) {
             return NULL;
         }
+        /* Avoid having our list of hooks show up in the GC module */
+        PyObject_GC_UnTrack(interp->audit_hooks);
     }
 
     if (PyList_Append(interp->audit_hooks, hook) < 0) {
@@ -2252,8 +2253,9 @@ list_builtin_module_names(void)
     if (list == NULL) {
         return NULL;
     }
-    for (Py_ssize_t i = 0; PyImport_Inittab[i].name != NULL; i++) {
-        PyObject *name = PyUnicode_FromString(PyImport_Inittab[i].name);
+    struct _inittab *inittab = _PyRuntime.imports.inittab;
+    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
+        PyObject *name = PyUnicode_FromString(inittab[i].name);
         if (name == NULL) {
             goto error;
         }
