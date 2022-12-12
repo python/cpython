@@ -309,14 +309,7 @@ def run_all_tests(options):
     }
 
     print("Python %s" % sys.version)
-    if sys.version_info < (3, 3):
-        if sys.maxunicode > 0xffff:
-            text = "UCS-4 (wide build)"
-        else:
-            text = "UTF-16 (narrow build)"
-    else:
-        text = "PEP 393"
-    print("Unicode: %s" % text)
+    print("Unicode: PEP 393")
     print(platform.platform())
     binary_files = list(get_binary_files())
     text_files = list(get_text_files())
