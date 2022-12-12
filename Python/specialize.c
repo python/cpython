@@ -1262,8 +1262,12 @@ _Py_Specialize_BinarySubscr(
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            _Py_SET_OPCODE(*instr, BINARY_SUBSCR_LIST_INT);
-            goto success;
+            if (Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1) {
+                _Py_SET_OPCODE(*instr, BINARY_SUBSCR_LIST_INT);
+                goto success;
+            }
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
+            goto fail;
         }
         SPECIALIZATION_FAIL(BINARY_SUBSCR,
             PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_LIST_SLICE : SPEC_FAIL_OTHER);
