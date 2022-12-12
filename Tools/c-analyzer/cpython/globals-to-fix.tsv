@@ -361,15 +361,6 @@ Modules/itertoolsmodule.c	-	tee_type	-
 Modules/itertoolsmodule.c	-	teedataobject_type	-
 Modules/itertoolsmodule.c	-	ziplongest_type	-
 
-##-----------------------
-## state
-
-Modules/faulthandler.c	-	fatal_error	-
-Modules/faulthandler.c	-	thread	-
-Modules/faulthandler.c	-	user_signals	-
-Modules/faulthandler.c	-	stack	-
-Modules/faulthandler.c	-	old_stack	-
-
 
 ##################################
 ## global non-objects to fix in builtin modules
@@ -377,7 +368,6 @@ Modules/faulthandler.c	-	old_stack	-
 ##-----------------------
 ## state
 
-Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
 Modules/signalmodule.c	-	wakeup	-
