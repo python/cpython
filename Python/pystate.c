@@ -7,7 +7,6 @@
 // These must be included before pycore_runtime.h.
 #  include <winsock2.h>
 #  include "windows.h"
-#  define HANDLE HANDLE
 #endif
 
 #include "pycore_ceval.h"

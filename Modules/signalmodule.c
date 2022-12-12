@@ -9,7 +9,6 @@
 // These must be included before pycore_runtime.h or pycore_signal.h.
 #  include <winsock2.h>
 #  include <windows.h>
-#  define HANDLE HANDLE
 #endif
 
 #include "pycore_atomic.h"        // _Py_atomic_int
@@ -382,7 +381,7 @@ signal_handler(int sig_num)
 #ifdef MS_WINDOWS
     if (sig_num == SIGINT) {
         signal_state_t *state = &signal_global_state;
-        SetEvent(state->sigint_event);
+        SetEvent((HANDLE)state->sigint_event);
     }
 #endif
 }
@@ -1761,7 +1760,7 @@ _PySignal_Fini(void)
 
 #ifdef MS_WINDOWS
     if (state->sigint_event != NULL) {
-        CloseHandle(state->sigint_event);
+        CloseHandle((HANDLE)state->sigint_event);
         state->sigint_event = NULL;
     }
 #endif
@@ -1987,7 +1986,7 @@ _PySignal_Init(int install_signal_handlers)
 
 #ifdef MS_WINDOWS
     /* Create manual-reset event, initially unset */
-    state->sigint_event = CreateEvent(NULL, TRUE, FALSE, FALSE);
+    state->sigint_event = (void *)CreateEvent(NULL, TRUE, FALSE, FALSE);
     if (state->sigint_event == NULL) {
         PyErr_SetFromWindowsErr(0);
         return -1;

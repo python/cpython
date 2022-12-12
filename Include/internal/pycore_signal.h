@@ -72,11 +72,9 @@ struct _signals_runtime_state {
     PyObject *ignore_handler;
 
 #ifdef MS_WINDOWS
-#  ifdef HANDLE
-    HANDLE sigint_event;
-#  else
-    void *_sigint_event_not_used;
-#  endif
+    /* This would be "HANDLE sigint_event" if <windows.h> were always included.
+       It isn't so we must cast to HANDLE everywhere "sigint_event" is used. */
+    void *sigint_event;
 #endif
 
     /* True if the main interpreter thread exited due to an unhandled
