@@ -82,7 +82,7 @@ class PythonAPITestCase(unittest.TestCase):
         self.assertEqual(repr(py_object(object)), "py_object(%r)" % object)
 
     def test_PyFrame_New_f_back(self):
-        """Test that accessing `f_back` does not cause a segmentation fault on 
+        """Test that accessing `f_back` does not cause a segmentation fault on
         a frame created with ctypes (GH-99110)."""
         # Adapted from:
         # https://naleraphael.github.io/blog/posts/devlog_create_a_builtin_frame_object/
