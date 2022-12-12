@@ -14,11 +14,6 @@ out = sys.stdout
 TEXT_ENCODING = 'utf8'
 NEWLINES = 'lf'
 
-# Compatibility
-try:
-    xrange
-except NameError:
-    xrange = range
 
 def text_open(fn, mode, encoding=None):
     try:
@@ -103,7 +98,7 @@ def seek_forward_bytewise(f):
     f.seek(0, 2)
     size = f.tell()
     f.seek(0, 0)
-    for i in xrange(0, size - 1):
+    for i in range(0, size - 1):
         f.seek(i, 0)
 
 @with_open_mode("r")
@@ -113,7 +108,7 @@ def seek_forward_blockwise(f):
     f.seek(0, 2)
     size = f.tell()
     f.seek(0, 0)
-    for i in xrange(0, size - 1, 1000):
+    for i in range(0, size - 1, 1000):
         f.seek(i, 0)
 
 @with_open_mode("rb")
@@ -137,28 +132,28 @@ def read_seek_blockwise(f):
 @with_sizes("small")
 def write_bytewise(f, source):
     """ write one unit at a time """
-    for i in xrange(0, len(source)):
+    for i in range(0, len(source)):
         f.write(source[i:i+1])
 
 @with_open_mode("w")
 @with_sizes("medium")
 def write_small_chunks(f, source):
     """ write 20 units at a time """
-    for i in xrange(0, len(source), 20):
+    for i in range(0, len(source), 20):
         f.write(source[i:i+20])
 
 @with_open_mode("w")
 @with_sizes("medium")
 def write_medium_chunks(f, source):
     """ write 4096 units at a time """
-    for i in xrange(0, len(source), 4096):
+    for i in range(0, len(source), 4096):
         f.write(source[i:i+4096])
 
 @with_open_mode("w")
 @with_sizes("large")
 def write_large_chunks(f, source):
     """ write 1e6 units at a time """
-    for i in xrange(0, len(source), 1000000):
+    for i in range(0, len(source), 1000000):
         f.write(source[i:i+1000000])
 
 
@@ -167,7 +162,7 @@ def write_large_chunks(f, source):
 def modify_bytewise(f, source):
     """ modify one unit at a time """
     f.seek(0)
-    for i in xrange(0, len(source)):
+    for i in range(0, len(source)):
         f.write(source[i:i+1])
 
 @with_open_mode("w+")
@@ -175,7 +170,7 @@ def modify_bytewise(f, source):
 def modify_small_chunks(f, source):
     """ modify 20 units at a time """
     f.seek(0)
-    for i in xrange(0, len(source), 20):
+    for i in range(0, len(source), 20):
         f.write(source[i:i+20])
 
 @with_open_mode("w+")
@@ -183,7 +178,7 @@ def modify_small_chunks(f, source):
 def modify_medium_chunks(f, source):
     """ modify 4096 units at a time """
     f.seek(0)
-    for i in xrange(0, len(source), 4096):
+    for i in range(0, len(source), 4096):
         f.write(source[i:i+4096])
 
 @with_open_mode("wb+")
@@ -191,7 +186,7 @@ def modify_medium_chunks(f, source):
 def modify_seek_forward_bytewise(f, source):
     """ alternate write & seek one unit """
     f.seek(0)
-    for i in xrange(0, len(source), 2):
+    for i in range(0, len(source), 2):
         f.write(source[i:i+1])
         f.seek(i+2)
 
@@ -200,7 +195,7 @@ def modify_seek_forward_bytewise(f, source):
 def modify_seek_forward_blockwise(f, source):
     """ alternate write & seek 1000 units """
     f.seek(0)
-    for i in xrange(0, len(source), 2000):
+    for i in range(0, len(source), 2000):
         f.write(source[i:i+1000])
         f.seek(i+2000)
 
@@ -210,7 +205,7 @@ def modify_seek_forward_blockwise(f, source):
 def read_modify_bytewise(f, source):
     """ alternate read & write one unit """
     f.seek(0)
-    for i in xrange(0, len(source), 2):
+    for i in range(0, len(source), 2):
         f.read(1)
         f.write(source[i+1:i+2])
 
@@ -219,7 +214,7 @@ def read_modify_bytewise(f, source):
 def read_modify_blockwise(f, source):
     """ alternate read & write 1000 units """
     f.seek(0)
-    for i in xrange(0, len(source), 2000):
+    for i in range(0, len(source), 2000):
         f.read(1000)
         f.write(source[i+1000:i+2000])
 
