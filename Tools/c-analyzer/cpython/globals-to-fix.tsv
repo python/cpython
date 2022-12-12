@@ -377,17 +377,6 @@ Modules/faulthandler.c	-	old_stack	-
 ##-----------------------
 ## state
 
-Modules/_tracemalloc.c	-	allocators	-
-Modules/_tracemalloc.c	-	tables_lock	-
-Modules/_tracemalloc.c	-	tracemalloc_empty_traceback	-
-Modules/_tracemalloc.c	-	tracemalloc_traced_memory	-
-Modules/_tracemalloc.c	-	tracemalloc_peak_traced_memory	-
-Modules/_tracemalloc.c	-	tracemalloc_filenames	-
-Modules/_tracemalloc.c	-	tracemalloc_traceback	-
-Modules/_tracemalloc.c	-	tracemalloc_tracebacks	-
-Modules/_tracemalloc.c	-	tracemalloc_traces	-
-Modules/_tracemalloc.c	-	tracemalloc_domains	-
-Modules/_tracemalloc.c	-	tracemalloc_reentrant_key	-
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Modules/signalmodule.c	-	is_tripped	-
 Modules/signalmodule.c	-	signal_global_state	-
