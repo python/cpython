@@ -664,8 +664,8 @@ OpenerDirector Objects
 
    .. note::
 
-      The global default timeout value is to never time out, which is often
-      not the desired value for this function.
+      The global default timeout value is set with no timeout, which may
+      not be the desired value for this function.
 
 .. method:: OpenerDirector.error(proto, *args)
 
