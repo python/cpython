@@ -270,7 +270,7 @@ faulthandler_dump_traceback_py(PyObject *self,
     int fd;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|Oi:dump_traceback", kwlist,
+        "|Op:dump_traceback", kwlist,
         &file, &all_threads))
         return NULL;
 
@@ -333,14 +333,17 @@ faulthandler_fatal_error(int signum)
     size_t i;
     fault_handler_t *handler = NULL;
     int save_errno = errno;
+    int found = 0;
 
     if (!fatal_error.enabled)
         return;
 
     for (i=0; i < faulthandler_nsignals; i++) {
         handler = &faulthandler_handlers[i];
-        if (handler->signum == signum)
+        if (handler->signum == signum) {
+            found = 1;
             break;
+        }
     }
     if (handler == NULL) {
         /* faulthandler_nsignals == 0 (unlikely) */
@@ -350,9 +353,18 @@ faulthandler_fatal_error(int signum)
     /* restore the previous handler */
     faulthandler_disable_fatal_handler(handler);
 
-    PUTS(fd, "Fatal Python error: ");
-    PUTS(fd, handler->name);
-    PUTS(fd, "\n\n");
+    if (found) {
+        PUTS(fd, "Fatal Python error: ");
+        PUTS(fd, handler->name);
+        PUTS(fd, "\n\n");
+    }
+    else {
+        char unknown_signum[23] = {0,};
+        snprintf(unknown_signum, 23, "%d", signum);
+        PUTS(fd, "Fatal Python error from unexpected signum: ");
+        PUTS(fd, unknown_signum);
+        PUTS(fd, "\n\n");
+    }
 
     faulthandler_dump_traceback(fd, fatal_error.all_threads,
                                 fatal_error.interp);
@@ -534,7 +546,7 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
     PyThreadState *tstate;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|Oi:enable", kwlist, &file, &all_threads))
+        "|Op:enable", kwlist, &file, &all_threads))
         return NULL;
 
     fd = faulthandler_get_fileno(&file);
@@ -904,7 +916,7 @@ faulthandler_register_py(PyObject *self,
     int err;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i|Oii:register", kwlist,
+        "i|Opp:register", kwlist,
         &signum, &file, &all_threads, &chain))
         return NULL;
 

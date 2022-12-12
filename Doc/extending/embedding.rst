@@ -298,16 +298,16 @@ be directly useful to you:
 
   .. code-block:: shell-session
 
-     $ /opt/bin/python3.4-config --cflags
-     -I/opt/include/python3.4m -I/opt/include/python3.4m -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
+     $ /opt/bin/python3.11-config --cflags
+     -I/opt/include/python3.11 -I/opt/include/python3.11 -Wsign-compare  -DNDEBUG -g -fwrapv -O3 -Wall
 
-* ``pythonX.Y-config --ldflags`` will give you the recommended flags when
-  linking:
+* ``pythonX.Y-config --ldflags --embed`` will give you the recommended flags
+  when linking:
 
   .. code-block:: shell-session
 
-     $ /opt/bin/python3.4-config --ldflags
-     -L/opt/lib/python3.4/config-3.4m -lpthread -ldl -lutil -lm -lpython3.4m -Xlinker -export-dynamic
+     $ /opt/bin/python3.11-config --ldflags --embed
+     -L/opt/lib/python3.11/config-3.11-x86_64-linux-gnu -L/opt/lib -lpython3.11 -lpthread -ldl  -lutil -lm
 
 .. note::
    To avoid confusion between several Python installations (and especially

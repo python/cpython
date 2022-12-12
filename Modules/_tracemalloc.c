@@ -16,6 +16,8 @@ module _tracemalloc
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=708a98302fc46e5f]*/
 
+#define tracemalloc_config _PyRuntime.tracemalloc.config
+
 _Py_DECLARE_STR(anon_unknown, "<unknown>");
 
 /* Trace memory blocks allocated by PyMem_RawMalloc() */
@@ -347,8 +349,8 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     else {
         /* tracemalloc_filenames is responsible to keep a reference
            to the filename */
-        Py_INCREF(filename);
-        if (_Py_hashtable_set(tracemalloc_filenames, filename, NULL) < 0) {
+        if (_Py_hashtable_set(tracemalloc_filenames, Py_NewRef(filename),
+                              NULL) < 0) {
             Py_DECREF(filename);
 #ifdef TRACE_DEBUG
             tracemalloc_error("failed to intern the filename");
@@ -407,7 +409,7 @@ traceback_get_frames(traceback_t *traceback)
         if (pyframe == NULL) {
             break;
         }
-        if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
+        if (traceback->nframe < tracemalloc_config.max_nframe) {
             tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
             assert(traceback->frames[traceback->nframe].filename != NULL);
             traceback->nframe++;
@@ -505,7 +507,7 @@ tracemalloc_get_traces_table(unsigned int domain)
 static void
 tracemalloc_remove_trace(unsigned int domain, uintptr_t ptr)
 {
-    assert(_Py_tracemalloc_config.tracing);
+    assert(tracemalloc_config.tracing);
 
     _Py_hashtable_t *traces = tracemalloc_get_traces_table(domain);
     if (!traces) {
@@ -529,7 +531,7 @@ static int
 tracemalloc_add_trace(unsigned int domain, uintptr_t ptr,
                       size_t size)
 {
-    assert(_Py_tracemalloc_config.tracing);
+    assert(tracemalloc_config.tracing);
 
     traceback_t *traceback = traceback_new();
     if (traceback == NULL) {
@@ -863,13 +865,13 @@ tracemalloc_clear_traces(void)
 static int
 tracemalloc_init(void)
 {
-    if (_Py_tracemalloc_config.initialized == TRACEMALLOC_FINALIZED) {
+    if (tracemalloc_config.initialized == TRACEMALLOC_FINALIZED) {
         PyErr_SetString(PyExc_RuntimeError,
                         "the tracemalloc module has been unloaded");
         return -1;
     }
 
-    if (_Py_tracemalloc_config.initialized == TRACEMALLOC_INITIALIZED)
+    if (tracemalloc_config.initialized == TRACEMALLOC_INITIALIZED)
         return 0;
 
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
@@ -919,7 +921,7 @@ tracemalloc_init(void)
     tracemalloc_empty_traceback.frames[0].lineno = 0;
     tracemalloc_empty_traceback.hash = traceback_hash(&tracemalloc_empty_traceback);
 
-    _Py_tracemalloc_config.initialized = TRACEMALLOC_INITIALIZED;
+    tracemalloc_config.initialized = TRACEMALLOC_INITIALIZED;
     return 0;
 }
 
@@ -927,9 +929,9 @@ tracemalloc_init(void)
 static void
 tracemalloc_deinit(void)
 {
-    if (_Py_tracemalloc_config.initialized != TRACEMALLOC_INITIALIZED)
+    if (tracemalloc_config.initialized != TRACEMALLOC_INITIALIZED)
         return;
-    _Py_tracemalloc_config.initialized = TRACEMALLOC_FINALIZED;
+    tracemalloc_config.initialized = TRACEMALLOC_FINALIZED;
 
     tracemalloc_stop();
 
@@ -969,12 +971,12 @@ tracemalloc_start(int max_nframe)
         return -1;
     }
 
-    if (_Py_tracemalloc_config.tracing) {
+    if (tracemalloc_config.tracing) {
         /* hook already installed: do nothing */
         return 0;
     }
 
-    _Py_tracemalloc_config.max_nframe = max_nframe;
+    tracemalloc_config.max_nframe = max_nframe;
 
     /* allocate a buffer to store a new traceback */
     size = TRACEBACK_SIZE(max_nframe);
@@ -1010,7 +1012,7 @@ tracemalloc_start(int max_nframe)
     PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &alloc);
 
     /* everything is ready: start tracing Python memory allocations */
-    _Py_tracemalloc_config.tracing = 1;
+    tracemalloc_config.tracing = 1;
 
     return 0;
 }
@@ -1019,11 +1021,11 @@ tracemalloc_start(int max_nframe)
 static void
 tracemalloc_stop(void)
 {
-    if (!_Py_tracemalloc_config.tracing)
+    if (!tracemalloc_config.tracing)
         return;
 
     /* stop tracing Python memory allocations */
-    _Py_tracemalloc_config.tracing = 0;
+    tracemalloc_config.tracing = 0;
 
     /* unregister the hook on memory allocators */
 #ifdef TRACE_RAW_MALLOC
@@ -1051,7 +1053,7 @@ static PyObject *
 _tracemalloc_is_tracing_impl(PyObject *module)
 /*[clinic end generated code: output=2d763b42601cd3ef input=af104b0a00192f63]*/
 {
-    return PyBool_FromLong(_Py_tracemalloc_config.tracing);
+    return PyBool_FromLong(tracemalloc_config.tracing);
 }
 
 
@@ -1065,7 +1067,7 @@ static PyObject *
 _tracemalloc_clear_traces_impl(PyObject *module)
 /*[clinic end generated code: output=a86080ee41b84197 input=0dab5b6c785183a5]*/
 {
-    if (!_Py_tracemalloc_config.tracing)
+    if (!tracemalloc_config.tracing)
         Py_RETURN_NONE;
 
     set_reentrant(1);
@@ -1085,8 +1087,7 @@ frame_to_pyobject(frame_t *frame)
     if (frame_obj == NULL)
         return NULL;
 
-    Py_INCREF(frame->filename);
-    PyTuple_SET_ITEM(frame_obj, 0, frame->filename);
+    PyTuple_SET_ITEM(frame_obj, 0, Py_NewRef(frame->filename));
 
     lineno_obj = PyLong_FromUnsignedLong(frame->lineno);
     if (lineno_obj == NULL) {
@@ -1107,8 +1108,7 @@ traceback_to_pyobject(traceback_t *traceback, _Py_hashtable_t *intern_table)
     if (intern_table != NULL) {
         frames = _Py_hashtable_get(intern_table, (const void *)traceback);
         if (frames) {
-            Py_INCREF(frames);
-            return frames;
+            return Py_NewRef(frames);
         }
     }
 
@@ -1347,7 +1347,7 @@ _tracemalloc__get_traces_impl(PyObject *module)
     if (get_traces.list == NULL)
         goto error;
 
-    if (!_Py_tracemalloc_config.tracing)
+    if (!tracemalloc_config.tracing)
         return get_traces.list;
 
     /* the traceback hash table is used temporarily to intern traceback tuple
@@ -1420,7 +1420,7 @@ static traceback_t*
 tracemalloc_get_traceback(unsigned int domain, uintptr_t ptr)
 {
 
-    if (!_Py_tracemalloc_config.tracing)
+    if (!tracemalloc_config.tracing)
         return NULL;
 
     trace_t *trace;
@@ -1500,7 +1500,7 @@ _PyMem_DumpTraceback(int fd, const void *ptr)
     traceback_t *traceback;
     int i;
 
-    if (!_Py_tracemalloc_config.tracing) {
+    if (!tracemalloc_config.tracing) {
         PUTS(fd, "Enable tracemalloc to get the memory block "
                  "allocation traceback\n\n");
         return;
@@ -1574,7 +1574,7 @@ static PyObject *
 _tracemalloc_get_traceback_limit_impl(PyObject *module)
 /*[clinic end generated code: output=d556d9306ba95567 input=da3cd977fc68ae3b]*/
 {
-    return PyLong_FromLong(_Py_tracemalloc_config.max_nframe);
+    return PyLong_FromLong(tracemalloc_config.max_nframe);
 }
 
 
@@ -1632,7 +1632,7 @@ _tracemalloc_get_traced_memory_impl(PyObject *module)
 {
     Py_ssize_t size, peak_size;
 
-    if (!_Py_tracemalloc_config.tracing)
+    if (!tracemalloc_config.tracing)
         return Py_BuildValue("ii", 0, 0);
 
     TABLES_LOCK();
@@ -1656,7 +1656,7 @@ static PyObject *
 _tracemalloc_reset_peak_impl(PyObject *module)
 /*[clinic end generated code: output=140c2870f691dbb2 input=18afd0635066e9ce]*/
 {
-    if (!_Py_tracemalloc_config.tracing) {
+    if (!tracemalloc_config.tracing) {
         Py_RETURN_NONE;
     }
 
@@ -1737,7 +1737,7 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
     int res;
     PyGILState_STATE gil_state;
 
-    if (!_Py_tracemalloc_config.tracing) {
+    if (!tracemalloc_config.tracing) {
         /* tracemalloc is not tracing: do nothing */
         return -2;
     }
@@ -1756,7 +1756,7 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 int
 PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 {
-    if (!_Py_tracemalloc_config.tracing) {
+    if (!tracemalloc_config.tracing) {
         /* tracemalloc is not tracing: do nothing */
         return -2;
     }
@@ -1779,7 +1779,7 @@ _PyTraceMalloc_NewReference(PyObject *op)
 {
     assert(PyGILState_Check());
 
-    if (!_Py_tracemalloc_config.tracing) {
+    if (!tracemalloc_config.tracing) {
         /* tracemalloc is not tracing: do nothing */
         return -1;
     }

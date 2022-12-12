@@ -246,23 +246,40 @@ Dictionary Objects
    of error (e.g. no more watcher IDs available), return ``-1`` and set an
    exception.
 
+   .. versionadded:: 3.12
+
 .. c:function:: int PyDict_ClearWatcher(int watcher_id)
 
    Clear watcher identified by *watcher_id* previously returned from
    :c:func:`PyDict_AddWatcher`. Return ``0`` on success, ``-1`` on error (e.g.
    if the given *watcher_id* was never registered.)
 
+   .. versionadded:: 3.12
+
 .. c:function:: int PyDict_Watch(int watcher_id, PyObject *dict)
 
    Mark dictionary *dict* as watched. The callback granted *watcher_id* by
    :c:func:`PyDict_AddWatcher` will be called when *dict* is modified or
-   deallocated.
+   deallocated. Return ``0`` on success or ``-1`` on error.
+
+   .. versionadded:: 3.12
+
+.. c:function:: int PyDict_Unwatch(int watcher_id, PyObject *dict)
+
+   Mark dictionary *dict* as no longer watched. The callback granted
+   *watcher_id* by :c:func:`PyDict_AddWatcher` will no longer be called when
+   *dict* is modified or deallocated. The dict must previously have been
+   watched by this watcher. Return ``0`` on success or ``-1`` on error.
+
+   .. versionadded:: 3.12
 
 .. c:type:: PyDict_WatchEvent
 
    Enumeration of possible dictionary watcher events: ``PyDict_EVENT_ADDED``,
    ``PyDict_EVENT_MODIFIED``, ``PyDict_EVENT_DELETED``, ``PyDict_EVENT_CLONED``,
    ``PyDict_EVENT_CLEARED``, or ``PyDict_EVENT_DEALLOCATED``.
+
+   .. versionadded:: 3.12
 
 .. c:type:: int (*PyDict_WatchCallback)(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 
@@ -289,3 +306,5 @@ Dictionary Objects
    If the callback returns with an exception set, it must return ``-1``; this
    exception will be printed as an unraisable exception using
    :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+
+   .. versionadded:: 3.12

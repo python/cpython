@@ -1,3 +1,0 @@
-Fix multiplying a list by an integer (``list *= int``): detect the integer
-overflow when the new allocated length is close to the maximum size. Issue
-reported by Jordan Limor.  Patch by Victor Stinner.

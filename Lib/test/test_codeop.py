@@ -310,8 +310,8 @@ class CodeopTests(unittest.TestCase):
     def test_warning(self):
         # Test that the warning is only returned once.
         with warnings_helper.check_warnings(
-                (".*literal", SyntaxWarning),
-                (".*invalid", DeprecationWarning),
+                ('"is" with a literal', SyntaxWarning),
+                ("invalid escape sequence", SyntaxWarning),
                 ) as w:
             compile_command(r"'\e' is 0")
             self.assertEqual(len(w.warnings), 2)
@@ -321,9 +321,9 @@ class CodeopTests(unittest.TestCase):
             warnings.simplefilter('error', SyntaxWarning)
             compile_command('1 is 1', symbol='exec')
 
-        # Check DeprecationWarning treated as an SyntaxError
+        # Check SyntaxWarning treated as an SyntaxError
         with warnings.catch_warnings(), self.assertRaises(SyntaxError):
-            warnings.simplefilter('error', DeprecationWarning)
+            warnings.simplefilter('error', SyntaxWarning)
             compile_command(r"'\e'", symbol='exec')
 
     def test_incomplete_warning(self):
@@ -337,7 +337,7 @@ class CodeopTests(unittest.TestCase):
             warnings.simplefilter('always')
             self.assertInvalid("'\\e' 1")
         self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertEqual(w[0].category, SyntaxWarning)
         self.assertRegex(str(w[0].message), 'invalid escape sequence')
         self.assertEqual(w[0].filename, '<input>')
 

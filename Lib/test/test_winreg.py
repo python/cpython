@@ -113,7 +113,6 @@ class BaseWinregTests(unittest.TestCase):
                       "does not close the actual key!")
         except OSError:
             pass
-
     def _read_test_data(self, root_key, subkeystr="sub_key", OpenKey=OpenKey):
         # Check we can get default value for this key.
         val = QueryValue(root_key, test_key_name)
@@ -337,6 +336,23 @@ class LocalWinregTests(BaseWinregTests):
             with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
                 self.assertNotEqual(ck.handle, 0)
                 SetValueEx(ck, "test_name", None, REG_DWORD, 0x80000000)
+        finally:
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
+    def test_setvalueex_negative_one_check(self):
+        # Test for Issue #43984, check -1 was not set by SetValueEx.
+        # Py2Reg, which gets called by SetValueEx, wasn't checking return
+        # value by PyLong_AsUnsignedLong, thus setting -1 as value in the registry.
+        # The implementation now checks PyLong_AsUnsignedLong return value to assure
+        # the value set was not -1.
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
+                with self.assertRaises(OverflowError):
+                    SetValueEx(ck, "test_name_dword", None, REG_DWORD, -1)
+                    SetValueEx(ck, "test_name_qword", None, REG_QWORD, -1)
+                self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_dword")
+                self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_qword")
+
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 

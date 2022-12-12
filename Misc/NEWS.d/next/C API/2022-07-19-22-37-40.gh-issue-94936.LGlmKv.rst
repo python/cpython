@@ -1,3 +1,0 @@
-Added :c:func:`PyCode_GetVarnames`, :c:func:`PyCode_GetCellvars` and
-:c:func:`PyCode_GetFreevars` for accessing ``co_varnames``, ``co_cellvars``
-and ``co_freevars`` respectively via the C API.
