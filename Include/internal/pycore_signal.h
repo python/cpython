@@ -33,10 +33,7 @@ extern "C" {
 #endif
 
 #ifdef MS_WINDOWS
-#  ifdef _WINSOCKAPI_
-#    define INVALID_FD ((SOCKET)-1)
-// Otherwise we don't expect it to be used.
-#  endif
+#  define INVALID_FD ((SOCKET)-1)
 #else
 #  define INVALID_FD (-1)
 #endif
@@ -52,11 +49,9 @@ struct _signals_runtime_state {
 
     volatile struct {
 #ifdef MS_WINDOWS
-#  ifdef _WINSOCKAPI_
-        SOCKET fd;
-#  else
-        int _fd_not_used;
-#  endif
+        /* This would be "SOCKET fd" if <winsock2.h> were always included.
+           It isn't so we must cast to SOCKET everywhere "fd" is used. */
+        void *fd;
 #elif defined(__VXWORKS__)
         int fd;
 #else

@@ -308,7 +308,7 @@ trip_signal(int sig_num)
 
     int fd;
 #ifdef MS_WINDOWS
-    fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
+    fd = Py_SAFE_DOWNCAST(wakeup.fd, void *, int);
 #else
     fd = wakeup.fd;
 #endif
@@ -796,8 +796,8 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
         }
     }
 
-    old_sockfd = wakeup.fd;
-    wakeup.fd = sockfd;
+    old_sockfd = (SOCKET_T)wakeup.fd;
+    wakeup.fd = (void *)sockfd;
     wakeup.warn_on_full_buffer = warn_on_full_buffer;
     wakeup.use_send = is_socket;
 
@@ -849,11 +849,12 @@ PySignal_SetWakeupFd(int fd)
     }
 
 #ifdef MS_WINDOWS
-    int old_fd = Py_SAFE_DOWNCAST(wakeup.fd, SOCKET_T, int);
+    int old_fd = Py_SAFE_DOWNCAST(wakeup.fd, void *, int);
+    wakeup.fd = (void *)fd;
 #else
     int old_fd = wakeup.fd;
-#endif
     wakeup.fd = fd;
+#endif
     wakeup.warn_on_full_buffer = 1;
     return old_fd;
 }
