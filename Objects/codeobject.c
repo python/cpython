@@ -1834,10 +1834,10 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 static Py_hash_t
 code_hash(PyCodeObject *co)
 {
-    Py_uhash_t res = 20221211;
-    #define SCRAMBLE_IN(H) do {      \
-        res ^= (Py_uhash_t)(H);      \
-        res *= _PyHASH_MULTIPLIER;   \
+    Py_uhash_t uhash = 20221211;
+    #define SCRAMBLE_IN(H) do {       \
+        uhash ^= (Py_uhash_t)(H);     \
+        uhash *= _PyHASH_MULTIPLIER;  \
     } while (0)
     #define SCRAMBLE_IN_OR_ERR(EXPR) do {  \
         Py_hash_t h = (EXPR);              \
@@ -1865,10 +1865,10 @@ code_hash(PyCodeObject *co)
         SCRAMBLE_IN(co_instr);
         i += _PyOpcode_Caches[_Py_OPCODE(co_instr)];
     }
-    if (res == -1) {
+    if ((Py_hash_t)uhash == -1) {
         return -2;
     }
-    return res;
+    return (Py_hash_t)uhash;
 }
 
 
