@@ -1,0 +1,3 @@
+When built with ``--enable-pystats``, stats collection is now off by
+default. To enable it early at startup, pass the ``-Xpystats`` flag.  Stats
+are now always dumped, even if switched off.
