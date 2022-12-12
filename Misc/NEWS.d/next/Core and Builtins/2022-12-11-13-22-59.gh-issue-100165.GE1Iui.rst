@@ -1,2 +1,2 @@
-Add ``BINARY_OP_AND_INT`` for and operation between int objects. Patch by
+Specialize for and operations between ``int`` objects. Patch by
 Dong-hee Na.
