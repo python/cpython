@@ -60,7 +60,7 @@
 
 #define RETURN_IF_ERROR(X)  \
     if ((X) == -1) {        \
-        return ERROR;          \
+        return ERROR;       \
     }
 
 /* If we exceed this limit, it should
