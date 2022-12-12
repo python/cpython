@@ -11,9 +11,17 @@
 .. versionadded:: 3.7
 
 This module leverages Python's import system to provide access to *resources*
-within *packages*.  If you can import a package, you can access resources
-within that package.  Resources can be opened or read, in either binary or
-text mode.
+within *packages*.
+
+"Resources" are file-like resources associated with a module or package in
+Python. The resources may be contained directly in a package or within a
+subdirectory contained in that package. Resources may be text or binary. As a
+result, Python module sources (.py) of a package and compilation artifacts
+(pycache) are technically de-facto resources of that package. In practice,
+however, resources are primarily those non-Python artifacts exposed
+specifically by the package author.
+
+Resources can be opened or read in either binary or text mode.
 
 Resources are roughly akin to files inside directories, though it's important
 to keep in mind that this is just a metaphor.  Resources and packages **do

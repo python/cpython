@@ -147,12 +147,12 @@ The :mod:`locale` module defines the following exception and functions:
    | ``CHAR_MAX`` | Nothing is specified in this locale.    |
    +--------------+-----------------------------------------+
 
-   The function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
+   The function temporarily sets the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
    locale or the ``LC_MONETARY`` locale if locales are different and numeric or
    monetary strings are non-ASCII. This temporary change affects other threads.
 
    .. versionchanged:: 3.7
-      The function now sets temporarily the ``LC_CTYPE`` locale to the
+      The function now temporarily sets the ``LC_CTYPE`` locale to the
       ``LC_NUMERIC`` locale in some cases.
 
 
@@ -227,15 +227,17 @@ The :mod:`locale` module defines the following exception and functions:
       Get a regular expression that can be used with the regex function to
       recognize a positive response to a yes/no question.
 
-      .. note::
-
-         The expression is in the syntax suitable for the :c:func:`regex` function
-         from the C library, which might differ from the syntax used in :mod:`re`.
-
    .. data:: NOEXPR
 
       Get a regular expression that can be used with the regex(3) function to
       recognize a negative response to a yes/no question.
+
+      .. note::
+
+         The regular expressions for :const:`YESEXPR` and
+         :const:`NOEXPR` use syntax suitable for the
+         :c:func:`regex` function from the C library, which might
+         differ from the syntax used in :mod:`re`.
 
    .. data:: CRNCYSTR
 
@@ -399,7 +401,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
-   values, the decimal point is modified if appropriate.  If *grouping* is true,
+   values, the decimal point is modified if appropriate.  If *grouping* is ``True``,
    also takes the grouping into account.
 
    If *monetary* is true, the conversion uses monetary thousands separator and
@@ -417,12 +419,14 @@ The :mod:`locale` module defines the following exception and functions:
    Formats a number *val* according to the current :const:`LC_MONETARY` settings.
 
    The returned string includes the currency symbol if *symbol* is true, which is
-   the default. If *grouping* is true (which is not the default), grouping is done
-   with the value. If *international* is true (which is not the default), the
+   the default. If *grouping* is ``True`` (which is not the default), grouping is done
+   with the value. If *international* is ``True`` (which is not the default), the
    international currency symbol is used.
 
-   Note that this function will not work with the 'C' locale, so you have to set a
-   locale via :func:`setlocale` first.
+   .. note::
+
+     This function will not work with the 'C' locale, so you have to set a
+     locale via :func:`setlocale` first.
 
 
 .. function:: str(float)
@@ -609,4 +613,3 @@ applications that link with additional C libraries which internally invoke
 :c:func:`gettext` or :c:func:`dcgettext`.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.
-

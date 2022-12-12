@@ -710,7 +710,7 @@ pyexpat.xmlparser.Parse
 
     cls: defining_class
     data: object
-    isfinal: bool(accept={int}) = False
+    isfinal: bool = False
     /
 
 Parse XML data.
@@ -721,7 +721,7 @@ Parse XML data.
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
                              PyObject *data, int isfinal)
-/*[clinic end generated code: output=8faffe07fe1f862a input=fc97f833558ca715]*/
+/*[clinic end generated code: output=8faffe07fe1f862a input=d0eb2a69fab3b9f1]*/
 {
     const char *s;
     Py_ssize_t slen;
@@ -959,8 +959,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
                                                         encoding);
     new_parser->handlers = 0;
-    new_parser->intern = self->intern;
-    Py_XINCREF(new_parser->intern);
+    new_parser->intern = Py_XNewRef(self->intern);
 
     if (self->buffer != NULL) {
         new_parser->buffer = PyMem_Malloc(new_parser->buffer_size);
@@ -991,8 +990,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     for (i = 0; handler_info[i].name != NULL; i++) {
         PyObject *handler = self->handlers[i];
         if (handler != NULL) {
-            Py_INCREF(handler);
-            new_parser->handlers[i] = handler;
+            new_parser->handlers[i] = Py_NewRef(handler);
             handler_info[i].setter(new_parser->itself,
                                    handler_info[i].handler);
         }
@@ -1148,8 +1146,7 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
     self->in_callback = 0;
     self->ns_prefixes = 0;
     self->handlers = NULL;
-    self->intern = intern;
-    Py_XINCREF(self->intern);
+    self->intern = Py_XNewRef(intern);
 
     /* namespace_separator is either NULL or contains one char + \0 */
     self->itself = XML_ParserCreate_MM(encoding, &ExpatMemoryHandler,
@@ -1232,8 +1229,7 @@ xmlparse_handler_getter(xmlparseobject *self, struct HandlerInfo *hi)
     PyObject *result = self->handlers[handlernum];
     if (result == NULL)
         result = Py_None;
-    Py_INCREF(result);
-    return result;
+    return Py_NewRef(result);
 }
 
 static int
@@ -1365,9 +1361,7 @@ xmlparse_buffer_size_setter(xmlparseobject *self, PyObject *v, void *closure)
 
     /* check maximum */
     if (new_buffer_size > INT_MAX) {
-        char errmsg[100];
-        sprintf(errmsg, "buffer_size must not be greater than %i", INT_MAX);
-        PyErr_SetString(PyExc_ValueError, errmsg);
+        PyErr_Format(PyExc_ValueError, "buffer_size must not be greater than %i", INT_MAX);
         return -1;
     }
 
@@ -1725,7 +1719,7 @@ add_error(PyObject *errors_module, PyObject *codes_dict,
     const int error_code = (int)error_index;
 
     /* NOTE: This keeps the source of truth regarding error
-     *       messages with libexpat and (by definiton) in bulletproof sync
+     *       messages with libexpat and (by definition) in bulletproof sync
      *       with the other uses of the XML_ErrorString function
      *       elsewhere within this file.  pyexpat's copy of the messages
      *       only acts as a fallback in case of outdated runtime libexpat,
@@ -1796,15 +1790,13 @@ add_errors_module(PyObject *mod)
         goto error;
     }
 
-    Py_INCREF(codes_dict);
-    if (PyModule_AddObject(errors_module, "codes", codes_dict) < 0) {
+    if (PyModule_AddObject(errors_module, "codes", Py_NewRef(codes_dict)) < 0) {
         Py_DECREF(codes_dict);
         goto error;
     }
     Py_CLEAR(codes_dict);
 
-    Py_INCREF(rev_codes_dict);
-    if (PyModule_AddObject(errors_module, "messages", rev_codes_dict) < 0) {
+    if (PyModule_AddObject(errors_module, "messages", Py_NewRef(rev_codes_dict)) < 0) {
         Py_DECREF(rev_codes_dict);
         goto error;
     }

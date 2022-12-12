@@ -537,7 +537,7 @@ def _getmembers(object, predicate, getter):
     processed = set()
     names = dir(object)
     if isclass(object):
-        mro = (object,) + getmro(object)
+        mro = getmro(object)
         # add any DynamicClassAttributes to the list of names if object is a class;
         # this may result in duplicate entries if, for example, a virtual
         # attribute with the same name as a DynamicClassAttribute exists
@@ -656,7 +656,7 @@ def classify_class_attrs(cls):
                 if name == '__dict__':
                     raise Exception("__dict__ is special, don't want the proxy")
                 get_obj = getattr(cls, name)
-            except Exception as exc:
+            except Exception:
                 pass
             else:
                 homecls = getattr(get_obj, "__objclass__", homecls)
@@ -1160,7 +1160,6 @@ class BlockFinder:
         self.started = False
         self.passline = False
         self.indecorator = False
-        self.decoratorhasargs = False
         self.last = 1
         self.body_col0 = None
 
@@ -1175,13 +1174,6 @@ class BlockFinder:
                     self.islambda = True
                 self.started = True
             self.passline = True    # skip to the end of the line
-        elif token == "(":
-            if self.indecorator:
-                self.decoratorhasargs = True
-        elif token == ")":
-            if self.indecorator:
-                self.indecorator = False
-                self.decoratorhasargs = False
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
@@ -1189,7 +1181,7 @@ class BlockFinder:
                 raise EndOfBlock
             # hitting a NEWLINE when in a decorator without args
             # ends the decorator
-            if self.indecorator and not self.decoratorhasargs:
+            if self.indecorator:
                 self.indecorator = False
         elif self.passline:
             pass
@@ -1310,7 +1302,6 @@ def getargs(co):
     nkwargs = co.co_kwonlyargcount
     args = list(names[:nargs])
     kwonlyargs = list(names[nargs:nargs+nkwargs])
-    step = 0
 
     nargs += nkwargs
     varargs = None
@@ -2451,7 +2442,10 @@ def _signature_from_callable(obj, *,
 
     # Was this function wrapped by a decorator?
     if follow_wrapper_chains:
-        obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
+        # Unwrap until we find an explicit signature or a MethodType (which will be
+        # handled explicitly below).
+        obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")
+                                or isinstance(f, types.MethodType)))
         if isinstance(obj, types.MethodType):
             # If the unwrapped object is a *method*, we might want to
             # skip its first parameter (self).

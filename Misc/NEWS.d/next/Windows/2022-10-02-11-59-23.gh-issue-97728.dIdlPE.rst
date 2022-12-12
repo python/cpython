@@ -1,3 +1,0 @@
-Fix possible crashes caused by the use of uninitialized variables when pass
-invalid arguments in :func:`os.system` on Windows and in Windows-specific
-modules (like ``winreg``).

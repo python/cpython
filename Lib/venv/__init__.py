@@ -260,7 +260,7 @@ class EnvBuilder:
                                  basename + ext)
             # Builds or venv's from builds need to remap source file
             # locations, as we do not put them into Lib/venv/scripts
-            if sysconfig.is_python_build(True) or not os.path.isfile(srcfn):
+            if sysconfig.is_python_build() or not os.path.isfile(srcfn):
                 if basename.endswith('_d'):
                     ext = '_d' + ext
                     basename = basename[:-2]
@@ -311,7 +311,7 @@ class EnvBuilder:
                     f for f in os.listdir(dirname) if
                     os.path.normcase(os.path.splitext(f)[1]) in ('.exe', '.dll')
                 ]
-                if sysconfig.is_python_build(True):
+                if sysconfig.is_python_build():
                     suffixes = [
                         f for f in suffixes if
                         os.path.normcase(f).startswith(('python', 'vcruntime'))
@@ -326,7 +326,7 @@ class EnvBuilder:
                 if os.path.lexists(src):
                     copier(src, os.path.join(binpath, suffix))
 
-            if sysconfig.is_python_build(True):
+            if sysconfig.is_python_build():
                 # copy init.tcl
                 for root, dirs, files in os.walk(context.python_dir):
                     if 'init.tcl' in files:

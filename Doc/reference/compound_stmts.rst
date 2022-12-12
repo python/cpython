@@ -593,6 +593,7 @@ The :keyword:`!match` statement
    keyword: if
    keyword: as
    pair: match; case
+   single: as; match statement
    single: : (colon); compound statement
 
 .. versionadded:: 3.10

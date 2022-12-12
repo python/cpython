@@ -1,3 +1,0 @@
-Speed up the regular expression substitution (functions :func:`re.sub` and
-:func:`re.subn` and corresponding :class:`re.Pattern` methods) for
-replacement strings containing group references by 2--3 times.

@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#define CODE_MAX_WATCHERS 8
+
 /* PEP 659
  * Specialization and quickening structs and helper functions
  */
@@ -90,28 +92,6 @@ typedef struct {
 } _PyForIterCache;
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
-
-#define QUICKENING_WARMUP_DELAY 8
-
-/* We want to compare to zero for efficiency, so we offset values accordingly */
-#define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
-
-void _PyCode_Quicken(PyCodeObject *code);
-
-static inline void
-_PyCode_Warmup(PyCodeObject *code)
-{
-    if (code->co_warmup != 0) {
-        code->co_warmup++;
-        if (code->co_warmup == 0) {
-            _PyCode_Quicken(code);
-        }
-    }
-}
-
-extern uint8_t _PyOpcode_Adaptive[256];
-
-extern Py_ssize_t _Py_QuickenedCount;
 
 // Borrowed references to common callables:
 struct callable_cache {
@@ -235,27 +215,30 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 /* Specialization functions */
 
-extern int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
-                                   PyObject *name);
-extern int _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
-extern int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name);
-extern int _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container, _Py_CODEUNIT *instr);
-extern int _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr);
-extern int _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
-                               int nargs, PyObject *kwnames);
+extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
+                                     PyObject *name);
+extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
+                                      _Py_CODEUNIT *instr, PyObject *name);
+extern void _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container,
+                                        _Py_CODEUNIT *instr);
+extern void _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub,
+                                       _Py_CODEUNIT *instr);
+extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
+                                int nargs, PyObject *kwnames);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg, PyObject **locals);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
-extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
 
-/* Deallocator function for static codeobjects used in deepfreeze.py */
-extern void _PyStaticCode_Dealloc(PyCodeObject *co);
-/* Function to intern strings of codeobjects */
-extern int _PyStaticCode_InternStrings(PyCodeObject *co);
+/* Finalizer function for static codeobjects used in deepfreeze.py */
+extern void _PyStaticCode_Fini(PyCodeObject *co);
+/* Function to intern strings of codeobjects and quicken the bytecode */
+extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 
@@ -310,6 +293,12 @@ static inline void
 write_obj(uint16_t *p, PyObject *val)
 {
     memcpy(p, &val, sizeof(val));
+}
+
+static inline uint16_t
+read_u16(uint16_t *p)
+{
+    return *p;
 }
 
 static inline uint32_t
@@ -397,8 +386,22 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 /* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
 #define ADAPTIVE_BACKOFF_BITS 4
-/* The initial counter value is 31 == 2**ADAPTIVE_BACKOFF_START - 1 */
-#define ADAPTIVE_BACKOFF_START 5
+
+// A value of 1 means that we attempt to specialize the *second* time each
+// instruction is executed. Executing twice is a much better indicator of
+// "hotness" than executing once, but additional warmup delays only prevent
+// specialization. Most types stabilize by the second execution, too:
+#define ADAPTIVE_WARMUP_VALUE 1
+#define ADAPTIVE_WARMUP_BACKOFF 1
+
+// A value of 52 means that we attempt to re-specialize after 53 misses (a prime
+// number, useful for avoiding artifacts if every nth value is a different type
+// or something). Setting the backoff to 0 means that the counter is reset to
+// the same state as a warming-up instruction (value == 1, backoff == 1) after
+// deoptimization. This isn't strictly necessary, but it is bit easier to reason
+// about when thinking about the opcode transitions as a state machine:
+#define ADAPTIVE_COOLDOWN_VALUE 52
+#define ADAPTIVE_COOLDOWN_BACKOFF 0
 
 #define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
 
@@ -410,9 +413,15 @@ adaptive_counter_bits(int value, int backoff) {
 }
 
 static inline uint16_t
-adaptive_counter_start(void) {
-    unsigned int value = (1 << ADAPTIVE_BACKOFF_START) - 1;
-    return adaptive_counter_bits(value, ADAPTIVE_BACKOFF_START);
+adaptive_counter_warmup(void) {
+    return adaptive_counter_bits(ADAPTIVE_WARMUP_VALUE,
+                                 ADAPTIVE_WARMUP_BACKOFF);
+}
+
+static inline uint16_t
+adaptive_counter_cooldown(void) {
+    return adaptive_counter_bits(ADAPTIVE_COOLDOWN_VALUE,
+                                 ADAPTIVE_COOLDOWN_BACKOFF);
 }
 
 static inline uint16_t
@@ -454,6 +463,18 @@ _PyCode_LineNumberFromArray(PyCodeObject *co, int index)
         return ((int32_t *)co->_co_linearray)[index];
     }
 }
+
+typedef struct _PyShimCodeDef {
+    const uint8_t *code;
+    int codelen;
+    int stacksize;
+    const char *cname;
+} _PyShimCodeDef;
+
+extern PyCodeObject *
+_Py_MakeShimCode(const _PyShimCodeDef *code);
+
+extern uint32_t _Py_next_func_version;
 
 
 #ifdef __cplusplus
