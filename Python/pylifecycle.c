@@ -2,12 +2,6 @@
 
 #include "Python.h"
 
-#ifdef MS_WINDOWS
-// These must be included before pycore_runtime.h.
-#  include <winsock2.h>
-#  include "windows.h"
-#endif
-
 #include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()

@@ -2,13 +2,6 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-
-#ifdef MS_WINDOWS
-// These must be included before pycore_runtime.h.
-#  include <winsock2.h>
-#  include "windows.h"
-#endif
-
 #include "pycore_ceval.h"
 #include "pycore_code.h"           // stats
 #include "pycore_frame.h"
