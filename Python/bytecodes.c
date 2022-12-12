@@ -1318,8 +1318,9 @@ dummy_func(
 
         inst(DELETE_FAST, (--)) {
             PyObject *v = GETLOCAL(oparg);
-            ERROR_IF(v == NULL, unbound_local_error);
-            SETLOCAL(oparg, NULL);
+            GETLOCAL(oparg) = NULL;
+            assert(v != NULL);
+            Py_DECREF(v);
         }
 
         inst(MAKE_CELL, (--)) {

@@ -1145,6 +1145,9 @@ iterations of the loop.
 
    Deletes local ``co_varnames[var_num]``.
 
+   .. versionchanged:: 3.12
+      This opcode is now only used in situations where the local variable is
+      guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
 .. opcode:: MAKE_CELL (i)
 
@@ -1470,6 +1473,21 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
    with a flag set in the arg.
 
+.. opcode:: DELETE_FAST_CHECK
+
+   Like ``DELETE_FAST``, but raises :exc:`UnboundLocalError` if the
+   local variable is unbound.
+   Emitted as ``LOAD_FAST_CHECK; POP_TOP; DELETE_FAST``.
+
+.. opcode:: DELETE_FAST_NOERROR
+.. opcode:: DELETE_FAST_NOERROR_CHECK
+
+   Used after the body of an ``except E as e:``
+   exception handler block to delete ``e`` without
+   raising :exc:`UnboundLocalError`.
+   Emitted as ``LOAD_CONST None; STORE_FAST e; DELETE_FAST e``
+   by default, or just ``DELETE_FAST e`` if it is guaranteed
+   that ``e`` will be bound.
 
 .. _opcode_collections:
 

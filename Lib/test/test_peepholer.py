@@ -776,6 +776,39 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
         self.assertNotInBytecode(f, 'LOAD_FAST')
 
+    def test_delete_fast_known(self):
+        def f():
+            x = 1
+            del x
+        self.assertNotInBytecode(f, "LOAD_FAST", "x")
+        self.assertNotInBytecode(f, "LOAD_FAST_CHECK", "x")
+
+    def test_delete_fast_unknown_1(self):
+        def f(x):
+            del x
+            del x
+        self.assertSequenceInBytecode(f,
+            ("DELETE_FAST", "x"),
+            ("LOAD_FAST_CHECK", "x"),
+            ("POP_TOP",),
+            ("DELETE_FAST", "x"),
+        )
+
+    def test_delete_fast_unknown_2(self):
+        def f():
+            x = 1
+            if condition:
+                del x
+            print("end")
+            del x
+        self.assertSequenceInBytecode(f,
+            ("CALL", 1),
+            ("POP_TOP",),
+            ("LOAD_FAST_CHECK", "x"),
+            ("POP_TOP",),
+            ("DELETE_FAST", "x"),
+        )
+
     def test_load_fast_too_many_locals(self):
         # When there get to be too many locals to analyze completely,
         # later locals are all converted to LOAD_FAST_CHECK, except
@@ -795,6 +828,8 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             while True:
                 print(a00, a01, a62, a63)
                 print(a64, a65, a78, a79)
+                # large unrelated opargs caused overflows in one version
+                z, *z, z = z
 
         for i in 0, 1, 62, 63:
             # First 64 locals: analyze completely
@@ -976,6 +1011,162 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, "LOAD_FAST")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
+class TestDeleteAfterExceptionHandler(BytecodeTestCase):
+
+    def test_exception_handler_deletes_global(self):
+        def f1():
+            global e
+            try:
+                print("body")
+            except E as e:
+                print("cleanup")
+        def f2():
+            global e
+            try:
+                print("body")
+            except E as e:
+                print("cleanup")
+                del e
+        def f3():
+            global e
+            try:
+                print("body")
+            except E as e:
+                if random():
+                    del e
+        for f in f1, f2, f3:
+            with self.subTest(f=f.__name__):
+                self.assertSequenceInBytecode(f,
+                    ("LOAD_CONST", None),
+                    ("STORE_GLOBAL", "e"),
+                    ("DELETE_GLOBAL", "e"),
+                    ("LOAD_CONST", None),
+                    ("RETURN_VALUE", ),
+                )
+
+    def test_exception_handler_deletes_nonlocal(self):
+        e = 1
+        def f1():
+            nonlocal e
+            try:
+                print("body")
+            except E as e:
+                print("cleanup")
+        def f2():
+            nonlocal e
+            try:
+                print("body")
+            except E as e:
+                print("cleanup")
+                del e
+        def f3():
+            nonlocal e
+            try:
+                print("body")
+            except E as e:
+                if random():
+                    del e
+        for f in f1, f2, f3:
+            with self.subTest(f=f.__name__):
+                self.assertSequenceInBytecode(f,
+                    ("LOAD_CONST", None),
+                    ("STORE_DEREF", "e"),
+                    ("DELETE_DEREF", "e"),
+                    ("LOAD_CONST", None),
+                    ("RETURN_VALUE", ),
+                )
+
+    def test_exception_handler_deletes_name(self):
+        def f1():
+            class C:
+                try:
+                    print("body")
+                except E as e:
+                    print("cleanup")
+        def f2():
+            class C:
+                try:
+                    print("body")
+                except E as e:
+                    print("cleanup")
+                    del e
+        def f3():
+            class C:
+                try:
+                    print("body")
+                except E as e:
+                    if random():
+                        del e
+        for f in f1, f2, f3:
+            with self.subTest(f=f.__name__):
+                class_code = f.__code__.co_consts[1]
+                self.assertTrue(hasattr(class_code, 'co_code'))
+                self.assertSequenceInBytecode(class_code,
+                    ("LOAD_CONST", None),
+                    ("STORE_NAME", "e"),
+                    ("DELETE_NAME", "e"),
+                    ("LOAD_CONST", None),
+                    ("RETURN_VALUE", ),
+                )
+
+    def test_exception_handler_deletes_local_no_check(self):
+        # When a `del e` is manually added for some reason,
+        # do the `e = None; del e` dance.
+        def f1():
+            try:
+                print("body")
+            except E as e:
+                print("cleanup")
+        def f2():
+            try:
+                print("body")
+            except E as e:
+                if random():
+                    del e
+                e = 1
+                print("cleanup")
+        for f in f1, f2:
+            with self.subTest(f=f.__name__):
+                self.assertSequenceInBytecode(f,
+                    ("CALL", 1),
+                    ("POP_TOP",),
+                    ("POP_EXCEPT",),
+                    # No LOAD_CONST; STORE_FAST here.
+                    ("DELETE_FAST", "e"),
+                    ("LOAD_CONST", None),
+                    ("RETURN_VALUE", ),
+                )
+        # Errors during exception handling still need to delete e.
+        self.assertSequenceInBytecode(f2,
+            ("LOAD_CONST", None),
+            ("STORE_FAST", "e"),
+            ("DELETE_FAST", "e"),
+            ("RERAISE", 1),
+        )
+
+    def test_exception_handler_deletes_local_assigns_first(self):
+        def f1():
+            try:
+                print("body")
+            except E as e:
+                del e
+                print("cleanup")
+        def f2():
+            try:
+                print("body")
+            except E as e:
+                if random():
+                    del e
+                print("cleanup")
+        for f in f1, f2:
+            with self.subTest(f=f.__name__):
+                self.assertSequenceInBytecode(f,
+                    ("LOAD_CONST", None),
+                    ("STORE_FAST", "e"),
+                    ("DELETE_FAST", "e"),
+                    ("LOAD_CONST", None),
+                    ("RETURN_VALUE", ),
+                )
 
 class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
 

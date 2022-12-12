@@ -487,7 +487,9 @@ static int cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, loc
 static void compiler_free(struct compiler *);
 static int compiler_error(struct compiler *, location loc, const char *, ...);
 static int compiler_warn(struct compiler *, location loc, const char *, ...);
-static int compiler_nameop(struct compiler *, location, identifier, expr_context_ty);
+
+#define DelNoErr 4 // An extra kind of expr_context_ty
+static int compiler_nameop(struct compiler *, location, identifier, int);
 
 static PyCodeObject *compiler_mod(struct compiler *, mod_ty);
 static int compiler_visit_stmt(struct compiler *, stmt_ty);
@@ -1240,6 +1242,13 @@ stack_effect(int opcode, int oparg, int jump)
         case DELETE_DEREF:
             return 0;
 
+        /* pseudoinstructions for `del x` */
+        case DELETE_FAST_CHECK:
+        case DELETE_FAST_NOERROR:
+        case DELETE_FAST_NOERROR_CHECK:
+        case DEL_PLACEHOLDER:
+            return 0;
+
         /* Iterators and generators */
         case GET_AWAITABLE:
             return 0;
@@ -1358,7 +1367,7 @@ static int
 cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
 {
     if (cfg_builder_maybe_start_new_block(g) != 0) {
-        return -1;
+        return 0;
     }
     return basicblock_addop(g->g_curblock, opcode, oparg, loc);
 }
@@ -2076,9 +2085,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
             ADDOP(c, *ploc, POP_BLOCK);
             ADDOP(c, *ploc, POP_EXCEPT);
             if (info->fb_datum) {
-                ADDOP_LOAD_CONST(c, *ploc, Py_None);
-                compiler_nameop(c, *ploc, info->fb_datum, Store);
-                compiler_nameop(c, *ploc, info->fb_datum, Del);
+                compiler_nameop(c, *ploc, info->fb_datum, DelNoErr);
             }
             return 1;
         }
@@ -3572,18 +3579,14 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_BLOCK);
             ADDOP(c, NO_LOCATION, POP_EXCEPT);
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
             ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
 
             /* except: */
             USE_LABEL(c, cleanup_end);
 
             /* name = None; del name; # artificial */
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
 
             ADDOP_I(c, NO_LOCATION, RERAISE, 1);
         }
@@ -3766,9 +3769,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* name = None; del name; # artificial */
         ADDOP(c, NO_LOCATION, POP_BLOCK);
         if (handler->v.ExceptHandler.name) {
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
         }
         ADDOP_JUMP(c, NO_LOCATION, JUMP, except);
 
@@ -3777,9 +3778,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
         /* name = None; del name; # artificial */
         if (handler->v.ExceptHandler.name) {
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Store);
-            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, Del);
+            compiler_nameop(c, NO_LOCATION, handler->v.ExceptHandler.name, DelNoErr);
         }
 
         /* add exception raised to the res list */
@@ -4228,10 +4227,9 @@ addop_yield(struct compiler *c, location loc) {
 }
 
 static int
-compiler_nameop(struct compiler *c, location loc,
-                identifier name, expr_context_ty ctx)
+compiler_nameop(struct compiler *c, location loc, identifier name, int ctx)
 {
-    int op, scope;
+    int op, scope, store_op;
     Py_ssize_t arg;
     enum { OP_FAST, OP_GLOBAL, OP_DEREF, OP_NAME } optype;
 
@@ -4250,6 +4248,7 @@ compiler_nameop(struct compiler *c, location loc,
         return 0;
 
     op = 0;
+    store_op = 0;
     optype = OP_NAME;
     scope = _PyST_GetScope(c->u->u_ste, mangled);
     switch (scope) {
@@ -4288,6 +4287,10 @@ compiler_nameop(struct compiler *c, location loc,
             break;
         case Store: op = STORE_DEREF; break;
         case Del: op = DELETE_DEREF; break;
+        case DelNoErr:
+            op = DELETE_DEREF;
+            store_op = STORE_DEREF;
+            break;
         }
         break;
     case OP_FAST:
@@ -4295,6 +4298,12 @@ compiler_nameop(struct compiler *c, location loc,
         case Load: op = LOAD_FAST; break;
         case Store: op = STORE_FAST; break;
         case Del: op = DELETE_FAST; break;
+        case DelNoErr: op = DELETE_FAST_NOERROR; break;
+        }
+        if (op == DELETE_FAST || op == DELETE_FAST_NOERROR) {
+            // Used in expand_del_noerror
+            ADDOP(c, NO_LOCATION, DEL_PLACEHOLDER);
+            ADDOP(c, NO_LOCATION, DEL_PLACEHOLDER);
         }
         ADDOP_N(c, loc, op, mangled, varnames);
         return 1;
@@ -4303,6 +4312,10 @@ compiler_nameop(struct compiler *c, location loc,
         case Load: op = LOAD_GLOBAL; break;
         case Store: op = STORE_GLOBAL; break;
         case Del: op = DELETE_GLOBAL; break;
+        case DelNoErr:
+            op = DELETE_GLOBAL;
+            store_op = STORE_GLOBAL;
+            break;
         }
         break;
     case OP_NAME:
@@ -4310,6 +4323,10 @@ compiler_nameop(struct compiler *c, location loc,
         case Load: op = LOAD_NAME; break;
         case Store: op = STORE_NAME; break;
         case Del: op = DELETE_NAME; break;
+        case DelNoErr:
+            op = DELETE_NAME;
+            store_op = STORE_NAME;
+            break;
         }
         break;
     }
@@ -4323,7 +4340,12 @@ compiler_nameop(struct compiler *c, location loc,
     if (op == LOAD_GLOBAL) {
         arg <<= 1;
     }
-    return cfg_builder_addop_i(CFG_BUILDER(c), op, arg, loc);
+    if (ctx == DelNoErr) {
+        ADDOP_LOAD_CONST(c, loc, Py_None);
+        ADDOP_I(c, loc, store_op, arg);
+    }
+    ADDOP_I(c, loc, op, arg);
+    return 1;
 }
 
 static int
@@ -8044,7 +8066,44 @@ assemble_jump_offsets(basicblock *entryblock)
 }
 
 
-// helper functions for add_checks_for_loads_of_unknown_variables
+// helper functions for add_local_null_checks
+static void
+mark_instruction_unsafe(struct instr *instr)
+{
+    switch (instr->i_opcode) {
+        case DELETE_FAST:
+            instr->i_opcode = DELETE_FAST_CHECK;
+            break;
+        case DELETE_FAST_NOERROR:
+            instr->i_opcode = DELETE_FAST_NOERROR_CHECK;
+            break;
+        case LOAD_FAST:
+            instr->i_opcode = LOAD_FAST_CHECK;
+            break;
+    }
+}
+
+static int
+opcode_safety_change(int opcode)
+{
+    switch (opcode) {
+        case DELETE_FAST:
+        case DELETE_FAST_NOERROR:
+        case DELETE_FAST_CHECK:
+        case DELETE_FAST_NOERROR_CHECK:
+            // Unsafe after this.
+            return -1;
+        case LOAD_FAST:
+        case LOAD_FAST_CHECK:
+        case STORE_FAST:
+            // Safe after this.
+            return +1;
+        default:
+            // No safety change.
+            return 0;
+    }
+}
+
 static inline void
 maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 {
@@ -8066,7 +8125,7 @@ maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
 static void
 scan_block_for_locals(basicblock *b, basicblock ***sp)
 {
-    // bit i is set if local i is potentially uninitialized
+    // bit j is set if local j is potentially uninitialized
     uint64_t unsafe_mask = b->b_unsafe_locals_mask;
     for (int i = 0; i < b->b_iused; i++) {
         struct instr *instr = &b->b_instr[i];
@@ -8080,21 +8139,16 @@ scan_block_for_locals(basicblock *b, basicblock ***sp)
         }
         assert(instr->i_oparg >= 0);
         uint64_t bit = (uint64_t)1 << instr->i_oparg;
-        switch (instr->i_opcode) {
-            case DELETE_FAST:
+        if (unsafe_mask & bit) {
+            mark_instruction_unsafe(instr);
+        }
+        switch (opcode_safety_change(instr->i_opcode)) {
+            case -1:
+                // Now potentially uninitialized.
                 unsafe_mask |= bit;
                 break;
-            case STORE_FAST:
-                unsafe_mask &= ~bit;
-                break;
-            case LOAD_FAST_CHECK:
-                // If this doesn't raise, then the local is defined.
-                unsafe_mask &= ~bit;
-                break;
-            case LOAD_FAST:
-                if (unsafe_mask & bit) {
-                    instr->i_opcode = LOAD_FAST_CHECK;
-                }
+            case +1:
+                // Now certainly initialized.
                 unsafe_mask &= ~bit;
                 break;
         }
@@ -8119,7 +8173,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
         return -1;
     }
     Py_ssize_t blocknum = 0;
-    // state[i - 64] == blocknum if local i is guaranteed to
+    // state[j - 64] == blocknum if local j is guaranteed to
     // be initialized, i.e., if it has had a previous LOAD_FAST or
     // STORE_FAST within that basicblock (not followed by DELETE_FAST).
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -8133,21 +8187,18 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
                 continue;
             }
             assert(arg >= 0);
-            switch (instr->i_opcode) {
-                case DELETE_FAST:
+            if (arg < nlocals && states[arg - 64] != blocknum) {
+                mark_instruction_unsafe(instr);
+            }
+            switch (opcode_safety_change(instr->i_opcode)) {
+                case -1:
+                    // Now potentially uninitialized.
                     states[arg - 64] = blocknum - 1;
                     break;
-                case STORE_FAST:
+                case +1:
+                    // Now certainly initialized.
                     states[arg - 64] = blocknum;
                     break;
-                case LOAD_FAST:
-                    if (states[arg - 64] != blocknum) {
-                        instr->i_opcode = LOAD_FAST_CHECK;
-                    }
-                    states[arg - 64] = blocknum;
-                    break;
-                case LOAD_FAST_CHECK:
-                    Py_UNREACHABLE();
             }
         }
     }
@@ -8156,8 +8207,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
 }
 
 static int
-add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
-                                                struct compiler *c)
+add_local_null_checks(basicblock *entryblock, struct compiler *c)
 {
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     if (nlocals == 0) {
@@ -8204,6 +8254,45 @@ add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
     }
     PyMem_Free(stack);
     return 0;
+}
+
+static void
+expand_del_noerror(basicblock *entryblock, int none_oparg)
+{
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = b->b_iused - 1; i >= 0; i--) {
+            struct instr *instr = &b->b_instr[i];
+            switch (instr->i_opcode) {
+                case DELETE_FAST_NOERROR:
+                    // Already proved this can't raise UnboundLocalError.
+                    instr->i_opcode = DELETE_FAST;
+                    break;
+                case DELETE_FAST_CHECK:
+                    assert(instr[-2].i_opcode == DEL_PLACEHOLDER);
+                    assert(instr[-1].i_opcode == DEL_PLACEHOLDER);
+                    instr[-2].i_loc = instr[-1].i_loc = instr->i_loc;
+                    instr[-2].i_opcode = LOAD_FAST_CHECK;
+                    instr[-2].i_oparg = instr->i_oparg;
+                    instr[-1].i_opcode = POP_TOP;
+                    instr->i_opcode = DELETE_FAST;
+                    break;
+                case DELETE_FAST_NOERROR_CHECK:
+                    assert(instr[-2].i_opcode == DEL_PLACEHOLDER);
+                    assert(instr[-1].i_opcode == DEL_PLACEHOLDER);
+                    instr[-2].i_loc = instr[-1].i_loc = instr->i_loc;
+                    instr[-2].i_opcode = LOAD_CONST;
+                    instr[-2].i_oparg = none_oparg;
+                    instr[-1].i_oparg = instr->i_oparg;
+                    instr[-1].i_opcode = STORE_FAST;
+                    instr->i_opcode = DELETE_FAST;
+                    break;
+                case DEL_PLACEHOLDER:
+                    instr->i_opcode = NOP;
+                    break;
+            }
+        }
+        remove_redundant_nops(b);
+    }
 }
 
 static PyObject *
@@ -8692,6 +8781,8 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
 static void
 propagate_line_numbers(basicblock *entryblock);
 
+static void eliminate_empty_basic_blocks(cfg_builder *g);
+
 #ifndef NDEBUG
 
 static bool
@@ -8847,7 +8938,12 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
+
     /** Optimization **/
+    int none_oparg = (int)compiler_add_const(c, Py_None);
+    if (none_oparg < 0) {
+        goto error;
+    }
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {
         goto error;
@@ -8855,9 +8951,11 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(g, consts, c->c_const_cache)) {
         goto error;
     }
-    if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, c) < 0) {
+    if (add_local_null_checks(g->g_entryblock, c) < 0) {
         goto error;
     }
+    expand_del_noerror(g->g_entryblock, none_oparg);
+    eliminate_empty_basic_blocks(g);
     if (remove_unused_consts(g->g_entryblock, consts)) {
         goto error;
     }

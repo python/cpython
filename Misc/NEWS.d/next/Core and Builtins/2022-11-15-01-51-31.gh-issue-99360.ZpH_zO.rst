@@ -1,0 +1,1 @@
+In exception handlers of the form ``except E as e: ...``, the compiler no longer always emits ``LOAD_CONST None; STORE_FAST e; DELETE_FAST e``, and instead usually emits ``DELETE_FAST e`` for cleanup at the end of the block.
