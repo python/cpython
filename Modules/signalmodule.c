@@ -3,13 +3,6 @@
 
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
-#ifdef MS_WINDOWS
-#  if !defined(SOCKET) && defined(Py_INTERNAL_SIGNAL_H)
-#    error "pycore_signal.h included without PYCORE_SIGNAL_WITH_PRE_INCLUDES"
-#  endif
-#  define PYCORE_SIGNAL_WITH_PRE_INCLUDES
-#endif
-
 #include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_call.h"          // _PyObject_Call()
@@ -35,6 +28,7 @@
 #  endif
 #endif
 
+#define PYCORE_SIGNAL_WITH_PRE_INCLUDES
 #include "pycore_signal.h"        // Py_NSIG
 
 #ifdef HAVE_SIGNAL_H
