@@ -33,7 +33,7 @@ extern "C" {
 #endif
 
 #ifdef MS_WINDOWS
-#  ifdef SOCKET
+#  ifdef _WINSOCKAPI_
 #    define INVALID_FD ((SOCKET)-1)
 // Otherwise we don't expect it to be used.
 #  endif
@@ -52,7 +52,7 @@ struct _signals_runtime_state {
 
     volatile struct {
 #ifdef MS_WINDOWS
-#  ifdef SOCKET
+#  ifdef _WINSOCKAPI_
         SOCKET fd;
 #  else
         int _fd_not_used;
