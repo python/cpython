@@ -11,6 +11,7 @@ from opcode import (
     _cache_format,
     _inline_cache_entries,
     _nb_ops,
+    _opsize,
     _specializations,
     _specialized_instructions,
 )
@@ -433,7 +434,8 @@ def _get_co_positions(code, show_caches=False):
     ops = code.co_code[::2]
     prev_op = 0
     for op, positions in zip(ops, code.co_positions()):
-        if prev_op != 0:
+        assert _opsize in (1, 2)
+        if _opsize == 2 and prev_op != 0:
             # skip oparg2, oparg3
             prev_op = op
             continue
@@ -495,7 +497,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argrepr = "to " + repr(argval)
             elif deop in hasjrel:
                 signed_arg = -arg if _is_backward_jump(deop) else arg
-                argval = offset + (signed_arg + 2) * 2
+                argval = offset + (signed_arg + _opsize) * 2
                 if deop == FOR_ITER:
                     argval += 2
                 argrepr = "to " + repr(argval)
@@ -627,7 +629,7 @@ def _unpack_opargs(code):
         op = code[i]
         deop = _deoptop(op)
         caches = _inline_cache_entries[deop]
-        caches += 1  # also skip over arg2, arg3
+        caches += _opsize - 1  # also skip over oparg2, oparg3
         if deop in hasarg:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if deop == EXTENDED_ARG else 0
@@ -654,7 +656,7 @@ def findlabels(code):
             if deop in hasjrel:
                 if _is_backward_jump(deop):
                     arg = -arg
-                label = offset + (arg + 2) * 2
+                label = offset + (arg + _opsize) * 2
                 if deop == FOR_ITER:
                     label += 2
             elif deop in hasjabs:

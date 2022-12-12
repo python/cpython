@@ -669,7 +669,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #define INSTRUCTION_START(op) \
     do { \
         frame->prev_instr = next_instr; \
-        next_instr += 2; \
+        next_instr += OPSIZE; \
         OPCODE_EXE_INC(op); \
         if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
@@ -679,7 +679,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     do { \
         frame->prev_instr = next_instr; \
         if (VERBOSE) fprintf(stderr, ">>: _Py_OPCODE(*next_instr) = %d\n", _Py_OPCODE(*next_instr)); \
-        next_instr += 2; \
+        next_instr += OPSIZE; \
     } while (0)
 #endif
 
@@ -721,7 +721,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        frame->prev_instr = next_instr - 2;             \
+        frame->prev_instr = next_instr - OPSIZE;        \
         (NEW_FRAME)->previous = frame;                  \
         frame = cframe.current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
@@ -1173,8 +1173,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         if(!_PyErr_Occurred(tstate)) PyObject_Print(frame->f_code->co_name, stderr, 0); \
         fprintf(stderr, "\n"); \
     } \
-    next_instr = frame->prev_instr + (_PyInterpreterFrame_LASTI(frame) == -1 ? 1 : 2); /* TODO: init frame to -2? */ \
-    if (_Py_OPCODE(*next_instr) == 0) next_instr++; \
+    next_instr = frame->prev_instr + (_PyInterpreterFrame_LASTI(frame) == -1 ? 1 : OPSIZE); /* TODO: init frame to -OPSIZE? */ \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     /* Set stackdepth to -1. \
         Update when returning or calling trace function. \
@@ -1289,7 +1288,7 @@ handle_eval_breaker:
                         // next_instr wasn't incremented at the start of this
                         // instruction. Increment it before handling the error,
                         // so that it looks the same as a "normal" instruction:
-                        next_instr += 2;
+                        next_instr += OPSIZE;
                         goto error;
                     }
                     // Reload next_instr. Don't increment it, though, since
@@ -1314,7 +1313,7 @@ handle_eval_breaker:
         }
         opcode = _PyOpcode_Deopt[opcode];
         if (_PyOpcode_Caches[opcode]) {
-            _Py_CODEUNIT *counter = &next_instr[2];
+            _Py_CODEUNIT *counter = &next_instr[OPSIZE];
             // The instruction is going to decrement the counter, so we need to
             // increment it here to make sure it doesn't try to specialize:
             if (!ADAPTIVE_COUNTER_IS_MAX(*counter)) {

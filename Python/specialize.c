@@ -266,30 +266,30 @@ _PyCode_Quicken(PyCodeObject *code)
 {
     int previous_opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
-    for (int i = 0; i < Py_SIZE(code); i += 2) {
+    for (int i = 0; i < Py_SIZE(code); i += OPSIZE) {
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instructions[i])];
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
-            instructions[i + 2] = adaptive_counter_warmup();
+            instructions[i + OPSIZE] = adaptive_counter_warmup();
             previous_opcode = 0;
             i += caches;
             continue;
         }
         switch (previous_opcode << 8 | opcode) {
             case LOAD_CONST << 8 | LOAD_FAST:
-                _Py_SET_OPCODE(instructions[i - 2], LOAD_CONST__LOAD_FAST);
+                _Py_SET_OPCODE(instructions[i - OPSIZE], LOAD_CONST__LOAD_FAST);
                 break;
             case LOAD_FAST << 8 | LOAD_CONST:
-                _Py_SET_OPCODE(instructions[i - 2], LOAD_FAST__LOAD_CONST);
+                _Py_SET_OPCODE(instructions[i - OPSIZE], LOAD_FAST__LOAD_CONST);
                 break;
             case LOAD_FAST << 8 | LOAD_FAST:
-                _Py_SET_OPCODE(instructions[i - 2], LOAD_FAST__LOAD_FAST);
+                _Py_SET_OPCODE(instructions[i - OPSIZE], LOAD_FAST__LOAD_FAST);
                 break;
             case STORE_FAST << 8 | LOAD_FAST:
-                _Py_SET_OPCODE(instructions[i - 2], STORE_FAST__LOAD_FAST);
+                _Py_SET_OPCODE(instructions[i - OPSIZE], STORE_FAST__LOAD_FAST);
                 break;
             case STORE_FAST << 8 | STORE_FAST:
-                _Py_SET_OPCODE(instructions[i - 2], STORE_FAST__STORE_FAST);
+                _Py_SET_OPCODE(instructions[i - OPSIZE], STORE_FAST__STORE_FAST);
                 break;
         }
         previous_opcode = opcode;
@@ -454,7 +454,7 @@ static int
 specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
                             PyObject *name, int opcode, int opcode_module)
 {
-    _PyAttrCache *cache = (_PyAttrCache *)(instr + 2);
+    _PyAttrCache *cache = (_PyAttrCache *)(instr + OPSIZE);
     PyModuleObject *m = (PyModuleObject *)owner;
     assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
@@ -623,7 +623,7 @@ specialize_dict_access(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
         return 0;
     }
-    _PyAttrCache *cache = (_PyAttrCache *)(instr + 2);
+    _PyAttrCache *cache = (_PyAttrCache *)(instr + OPSIZE);
     PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
     if (_PyDictOrValues_IsValues(dorv)) {
         // Virtual dictionary
@@ -667,7 +667,7 @@ void
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 {
     assert(_PyOpcode_Caches[LOAD_ATTR] == INLINE_CACHE_ENTRIES_LOAD_ATTR);
-    _PyAttrCache *cache = (_PyAttrCache *)(instr + 2);
+    _PyAttrCache *cache = (_PyAttrCache *)(instr + OPSIZE);
     PyTypeObject *type = Py_TYPE(owner);
     if (!_PyType_IsReady(type)) {
         // We *might* not really need this check, but we inherited it from
@@ -710,7 +710,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         }
         case PROPERTY:
         {
-            _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 2);
+            _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + OPSIZE);
             assert(Py_TYPE(descr) == &PyProperty_Type);
             PyObject *fget = ((_PyPropertyObject *)descr)->prop_get;
             if (fget == NULL) {
@@ -782,7 +782,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         {
             assert(type->tp_getattro == _Py_slot_tp_getattro);
             assert(Py_IS_TYPE(descr, &PyFunction_Type));
-            _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 2);
+            _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + OPSIZE);
             if (!function_check_args(descr, 2, LOAD_ATTR)) {
                 goto fail;
             }
@@ -825,7 +825,7 @@ void
 _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 {
     assert(_PyOpcode_Caches[STORE_ATTR] == INLINE_CACHE_ENTRIES_STORE_ATTR);
-    _PyAttrCache *cache = (_PyAttrCache *)(instr + 2);
+    _PyAttrCache *cache = (_PyAttrCache *)(instr + OPSIZE);
     PyTypeObject *type = Py_TYPE(owner);
     if (!_PyType_IsReady(type)) {
         // We *might* not really need this check, but we inherited it from
@@ -951,7 +951,7 @@ static int
 specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
                              PyObject *name)
 {
-    _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 2);
+    _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + OPSIZE);
     if (!PyType_CheckExact(owner) || _PyType_Lookup(Py_TYPE(owner), name)) {
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE);
         return -1;
@@ -992,7 +992,7 @@ static int
 specialize_attr_loadmethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
 PyObject *descr, DescriptorClassification kind)
 {
-    _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + 2);
+    _PyLoadMethodCache *cache = (_PyLoadMethodCache *)(instr + OPSIZE);
     PyTypeObject *owner_cls = Py_TYPE(owner);
 
     assert(kind == METHOD && descr != NULL);
@@ -1092,7 +1092,7 @@ _Py_Specialize_LoadGlobal(
 {
     assert(_PyOpcode_Caches[LOAD_GLOBAL] == INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
     /* Use inline cache */
-    _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr + 2);
+    _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr + OPSIZE);
     assert(PyUnicode_CheckExact(name));
     if (!PyDict_CheckExact(globals)) {
         goto fail;
@@ -1258,7 +1258,7 @@ _Py_Specialize_BinarySubscr(
 {
     assert(_PyOpcode_Caches[BINARY_SUBSCR] ==
            INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-    _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)(instr + 2);
+    _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)(instr + OPSIZE);
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
@@ -1330,7 +1330,7 @@ success:
 void
 _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
 {
-    _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)(instr + 2);
+    _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)(instr + OPSIZE);
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
@@ -1546,7 +1546,7 @@ static int
 specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
                    PyObject *kwnames, bool bound_method)
 {
-    _PyCallCache *cache = (_PyCallCache *)(instr + 2);
+    _PyCallCache *cache = (_PyCallCache *)(instr + OPSIZE);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
     int kind = function_kind(code);
     /* Don't specialize if PEP 523 is active */
@@ -1702,7 +1702,7 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
                     PyObject *kwnames)
 {
     assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
-    _PyCallCache *cache = (_PyCallCache *)(instr + 2);
+    _PyCallCache *cache = (_PyCallCache *)(instr + OPSIZE);
     int fail;
     if (PyCFunction_CheckExact(callable)) {
         fail = specialize_c_call(callable, instr, nargs, kwnames);
@@ -1820,7 +1820,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                         int oparg, PyObject **locals)
 {
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
-    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 2);
+    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + OPSIZE);
     switch (oparg) {
         case NB_ADD:
         case NB_INPLACE_ADD:
@@ -1940,7 +1940,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                          int oparg)
 {
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
-    _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 2);
+    _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + OPSIZE);
     int next_opcode = _Py_OPCODE(instr[INLINE_CACHE_ENTRIES_COMPARE_OP + 1]);
     if (next_opcode != POP_JUMP_IF_FALSE && next_opcode != POP_JUMP_IF_TRUE) {
         if (next_opcode == EXTENDED_ARG) {
@@ -2016,7 +2016,7 @@ _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr, int oparg)
 {
     assert(_PyOpcode_Caches[UNPACK_SEQUENCE] ==
            INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE);
-    _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)(instr + 2);
+    _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)(instr + OPSIZE);
     if (PyTuple_CheckExact(seq)) {
         if (PyTuple_GET_SIZE(seq) != oparg) {
             SPECIALIZATION_FAIL(UNPACK_SEQUENCE, SPEC_FAIL_EXPECTED_ERROR);
@@ -2124,9 +2124,9 @@ void
 _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
 {
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
-    _PyForIterCache *cache = (_PyForIterCache *)(instr + 2);
+    _PyForIterCache *cache = (_PyForIterCache *)(instr + OPSIZE);
     PyTypeObject *tp = Py_TYPE(iter);
-    _Py_CODEUNIT next = instr[2+INLINE_CACHE_ENTRIES_FOR_ITER];
+    _Py_CODEUNIT next = instr[OPSIZE + INLINE_CACHE_ENTRIES_FOR_ITER];
     int next_op = _PyOpcode_Deopt[_Py_OPCODE(next)];
     if (tp == &PyListIter_Type) {
         _Py_SET_OPCODE(*instr, FOR_ITER_LIST);
@@ -2137,7 +2137,7 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
         goto success;
     }
     else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
-        assert(_Py_OPCODE(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 2]) == END_FOR);
+        assert(_Py_OPCODE(instr[oparg + OPSIZE + INLINE_CACHE_ENTRIES_FOR_ITER]) == END_FOR);
         _Py_SET_OPCODE(*instr, FOR_ITER_GEN);
         goto success;
     }
