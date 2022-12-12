@@ -25,18 +25,22 @@ def get_file_sizes():
         size = int(size) * {'KiB': 1024, 'MiB': 1024 ** 2}[unit]
         yield s.replace(' ', ''), size
 
+
 def get_binary_files():
     return ((name + ".bin", size) for name, size in get_file_sizes())
+
 
 def get_text_files():
     return (("%s-%s-%s.txt" % (name, TEXT_ENCODING, NEWLINES), size)
         for name, size in get_file_sizes())
+
 
 def with_open_mode(mode):
     def decorate(f):
         f.file_open_mode = mode
         return f
     return decorate
+
 
 def with_sizes(*sizes):
     def decorate(f):
@@ -55,6 +59,7 @@ def read_bytewise(f):
     while f.read(1):
         pass
 
+
 @with_open_mode("r")
 @with_sizes("medium")
 def read_small_chunks(f):
@@ -62,6 +67,7 @@ def read_small_chunks(f):
     f.seek(0)
     while f.read(20):
         pass
+
 
 @with_open_mode("r")
 @with_sizes("medium")
@@ -71,6 +77,7 @@ def read_big_chunks(f):
     while f.read(4096):
         pass
 
+
 @with_open_mode("r")
 @with_sizes("small", "medium", "large")
 def read_whole_file(f):
@@ -79,6 +86,7 @@ def read_whole_file(f):
     while f.read():
         pass
 
+
 @with_open_mode("rt")
 @with_sizes("medium")
 def read_lines(f):
@@ -86,6 +94,7 @@ def read_lines(f):
     f.seek(0)
     for line in f:
         pass
+
 
 @with_open_mode("r")
 @with_sizes("medium")
@@ -97,6 +106,7 @@ def seek_forward_bytewise(f):
     for i in range(0, size - 1):
         f.seek(i, 0)
 
+
 @with_open_mode("r")
 @with_sizes("medium")
 def seek_forward_blockwise(f):
@@ -107,6 +117,7 @@ def seek_forward_blockwise(f):
     for i in range(0, size - 1, 1000):
         f.seek(i, 0)
 
+
 @with_open_mode("rb")
 @with_sizes("medium")
 def read_seek_bytewise(f):
@@ -114,6 +125,7 @@ def read_seek_bytewise(f):
     f.seek(0)
     while f.read(1):
         f.seek(1, 1)
+
 
 @with_open_mode("rb")
 @with_sizes("medium")
@@ -131,6 +143,7 @@ def write_bytewise(f, source):
     for i in range(0, len(source)):
         f.write(source[i:i+1])
 
+
 @with_open_mode("w")
 @with_sizes("medium")
 def write_small_chunks(f, source):
@@ -138,12 +151,14 @@ def write_small_chunks(f, source):
     for i in range(0, len(source), 20):
         f.write(source[i:i+20])
 
+
 @with_open_mode("w")
 @with_sizes("medium")
 def write_medium_chunks(f, source):
     """ write 4096 units at a time """
     for i in range(0, len(source), 4096):
         f.write(source[i:i+4096])
+
 
 @with_open_mode("w")
 @with_sizes("large")
@@ -161,6 +176,7 @@ def modify_bytewise(f, source):
     for i in range(0, len(source)):
         f.write(source[i:i+1])
 
+
 @with_open_mode("w+")
 @with_sizes("medium")
 def modify_small_chunks(f, source):
@@ -169,6 +185,7 @@ def modify_small_chunks(f, source):
     for i in range(0, len(source), 20):
         f.write(source[i:i+20])
 
+
 @with_open_mode("w+")
 @with_sizes("medium")
 def modify_medium_chunks(f, source):
@@ -176,6 +193,7 @@ def modify_medium_chunks(f, source):
     f.seek(0)
     for i in range(0, len(source), 4096):
         f.write(source[i:i+4096])
+
 
 @with_open_mode("wb+")
 @with_sizes("medium")
@@ -186,6 +204,7 @@ def modify_seek_forward_bytewise(f, source):
         f.write(source[i:i+1])
         f.seek(i+2)
 
+
 @with_open_mode("wb+")
 @with_sizes("medium")
 def modify_seek_forward_blockwise(f, source):
@@ -194,6 +213,7 @@ def modify_seek_forward_blockwise(f, source):
     for i in range(0, len(source), 2000):
         f.write(source[i:i+1000])
         f.seek(i+2000)
+
 
 # XXX the 2 following tests don't work with py3k's text IO
 @with_open_mode("wb+")
@@ -204,6 +224,7 @@ def read_modify_bytewise(f, source):
     for i in range(0, len(source), 2):
         f.read(1)
         f.write(source[i+1:i+2])
+
 
 @with_open_mode("wb+")
 @with_sizes("medium")
@@ -233,6 +254,7 @@ modify_tests = [
     read_modify_bytewise, read_modify_blockwise,
 ]
 
+
 def run_during(duration, func):
     _t = time.time
     n = 0
@@ -247,6 +269,7 @@ def run_during(duration, func):
     end = os.times()
     real = (end[4] if start[4] else time.time()) - real_start
     return n, real, sum(end[0:2]) - sum(start[0:2])
+
 
 def warm_cache(filename):
     with open(filename, "rb") as f:
@@ -322,6 +345,7 @@ def run_all_tests(options):
     # Binary writes
     if "b" in options and "w" in options:
         print("\n** Binary append **\n")
+
         def make_test_source(name, size):
             with open(name, "rb") as f:
                 return f.read()
@@ -331,6 +355,7 @@ def run_all_tests(options):
     # Text writes
     if "t" in options and "w" in options:
         print("\n** Text append **\n")
+
         def make_test_source(name, size):
             with text_open(name, "r") as f:
                 return f.read()
@@ -340,6 +365,7 @@ def run_all_tests(options):
     # Binary overwrites
     if "b" in options and "w" in options:
         print("\n** Binary overwrite **\n")
+
         def make_test_source(name, size):
             with open(name, "rb") as f:
                 return f.read()
@@ -349,6 +375,7 @@ def run_all_tests(options):
     # Text overwrites
     if "t" in options and "w" in options:
         print("\n** Text overwrite **\n")
+
         def make_test_source(name, size):
             with text_open(name, "r") as f:
                 return f.read()
@@ -397,6 +424,7 @@ def prepare_files():
         with open(name, "wb") as f:
             f.write(head)
             f.write(tail)
+
 
 def main():
     global TEXT_ENCODING, NEWLINES
@@ -454,6 +482,7 @@ def main():
 
     prepare_files()
     run_all_tests(test_options)
+
 
 if __name__ == "__main__":
     main()
