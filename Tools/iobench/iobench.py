@@ -31,7 +31,7 @@ def get_binary_files():
 
 
 def get_text_files():
-    return (("%s-%s-%s.txt" % (name, TEXT_ENCODING, NEWLINES), size)
+    return ((f"{name}-{TEXT_ENCODING}-{NEWLINES}.txt", size)
         for name, size in get_file_sizes())
 
 
@@ -280,9 +280,7 @@ def run_all_tests(options):
     def print_label(filename, func):
         name = re.split(r'[-.]', filename)[0]
         out.write(
-            ("[%s] %s... "
-                % (name.center(7), func.__doc__.strip())
-            ).ljust(52))
+            f"[{name.center(7)}] {func.__doc__.strip()}... ".ljust(52))
         out.flush()
 
     def print_results(size, n, real, cpu):
@@ -290,8 +288,9 @@ def run_all_tests(options):
         bw = ("%4d MiB/s" if bw > 100 else "%.3g MiB/s") % bw
         out.write(bw.rjust(12) + "\n")
         if cpu < 0.90 * real:
-            out.write("   warning: test above used only %d%% CPU, "
-                "result may be flawed!\n" % (100.0 * cpu / real))
+            out.write("   warning: test above used only "
+                      f"{100.0 * cpu / real}% CPU, "
+                      "result may be flawed!\n")
 
     def run_one_test(name, size, open_func, test_func, *args):
         mode = test_func.file_open_mode
@@ -322,7 +321,7 @@ def run_all_tests(options):
         "large": 2,
     }
 
-    print("Python %s" % sys.version)
+    print(f"Python {sys.version}")
     print("Unicode: PEP 393")
     print(platform.platform())
     binary_files = list(get_binary_files())
@@ -330,7 +329,7 @@ def run_all_tests(options):
     if "b" in options:
         print("Binary unit = one byte")
     if "t" in options:
-        print("Text unit = one character (%s-decoded)" % TEXT_ENCODING)
+        print(f"Text unit = one character ({TEXT_ENCODING}-decoded)")
 
     # Binary reads
     if "b" in options and "r" in options:
@@ -399,7 +398,7 @@ def prepare_files():
                 break
         else:
             raise RuntimeError(
-                "Couldn't find chunk marker in %s !" % __file__)
+                f"Couldn't find chunk marker in {__file__} !")
         if NEWLINES == "all":
             it = itertools.cycle(["\n", "\r", "\r\n"])
         else:
@@ -445,7 +444,7 @@ def main():
                       help="run write & modify tests")
     parser.add_option("-E", "--encoding",
                       action="store", dest="encoding", default=None,
-                      help="encoding for text tests (default: %s)" % TEXT_ENCODING)
+                      help=f"encoding for text tests (default: {TEXT_ENCODING})")
     parser.add_option("-N", "--newlines",
                       action="store", dest="newlines", default='lf',
                       help="line endings for text tests "
@@ -458,7 +457,7 @@ def main():
         parser.error("unexpected arguments")
     NEWLINES = options.newlines.lower()
     if NEWLINES not in ('lf', 'cr', 'crlf', 'all'):
-        parser.error("invalid 'newlines' option: %r" % NEWLINES)
+        parser.error(f"invalid 'newlines' option: {NEWLINES!r}")
 
     test_options = ""
     if options.read:
