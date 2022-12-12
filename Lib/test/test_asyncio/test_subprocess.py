@@ -688,13 +688,13 @@ class SubprocessMixin:
 
     def test_create_subprocess_env_shell(self) -> None:
         async def main() -> None:
-            cmd = f'''{sys.executable} -c "import os; print(os.getenv('FOO'))"'''
+            cmd = f'''{sys.executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
             env = {"FOO": 'bar'}
             proc = await asyncio.create_subprocess_shell(
                 cmd, env=env, stdout=subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
-            self.assertEqual(stdout, b"bar\n")
+            self.assertEqual(stdout, b"bar")
             self.assertEqual(proc.returncode, 0)
             task = asyncio.create_task(proc.wait())
             await asyncio.sleep(0)
@@ -705,13 +705,13 @@ class SubprocessMixin:
     def test_create_subprocess_env_exec(self) -> None:
         async def main() -> None:
             cmd = [sys.executable, "-c",
-                   "import os; print(os.getenv('FOO'))"]
+                   "import os, sys; sys.stdout.write(os.getenv('FOO'))"]
             env = {"FOO": 'bar'}
             proc = await asyncio.create_subprocess_exec(
                 *cmd, env=env, stdout=subprocess.PIPE
             )
             stdout, _ = await proc.communicate()
-            self.assertEqual(stdout, b"bar\n")
+            self.assertEqual(stdout, b"bar")
             self.assertEqual(proc.returncode, 0)
             task = asyncio.create_task(proc.wait())
             await asyncio.sleep(0)
