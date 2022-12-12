@@ -32,8 +32,11 @@ extern "C" {
 #  define Py_NSIG 64               // Use a reasonable default value
 #endif
 
-#if defined(MS_WINDOWS) && defined(SOCKET)
-#  define INVALID_FD ((SOCKET)-1)
+#ifdef MS_WINDOWS
+#  ifdef SOCKET
+#    define INVALID_FD ((SOCKET)-1)
+// Otherwise we don't expect it to be used.
+#  endif
 #else
 #  define INVALID_FD (-1)
 #endif
@@ -52,9 +55,7 @@ struct _signals_runtime_state {
 #  ifdef SOCKET
         SOCKET fd;
 #  else
-        // <winsock2.h> wasn't included already,
-        // we use something compatible with SOCKET.
-        int fd;
+        int _fd_not_used;
 #  endif
 #elif defined(__VXWORKS__)
         int fd;
@@ -74,13 +75,12 @@ struct _signals_runtime_state {
     /* These objects necessarily belong to the main interpreter. */
     PyObject *default_handler;
     PyObject *ignore_handler;
+
 #ifdef MS_WINDOWS
 #  ifdef HANDLE
     HANDLE sigint_event;
 #  else
-    // <windows.h> wasn't included already,
-    // we use something compatible with HANDLE.
-    void *sigint_event;
+    void *_sigint_event_not_used;
 #  endif
 #endif
 
