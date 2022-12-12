@@ -279,6 +279,7 @@ LIBOBJDIR=	Python/
 LIBOBJS=	@LIBOBJS@
 
 PYTHON=		python$(EXE)
+PYTHON3=	python3$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
 HOSTRUNNER= @HOSTRUNNER@
@@ -580,6 +581,7 @@ LIBEXPAT_HEADERS= \
 all:		@DEF_MAKE_ALL_RULE@
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
+		cp $(PYTHON) $(PYTHON3)
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
 
