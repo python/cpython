@@ -365,13 +365,7 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 ##################################
 ## global non-objects to fix in builtin modules
 
-##-----------------------
-## state
-
-Modules/signalmodule.c	-	is_tripped	-
-Modules/signalmodule.c	-	signal_global_state	-
-Modules/signalmodule.c	-	wakeup	-
-Modules/signalmodule.c	-	Handlers	-
+# <none>
 
 
 ##################################
