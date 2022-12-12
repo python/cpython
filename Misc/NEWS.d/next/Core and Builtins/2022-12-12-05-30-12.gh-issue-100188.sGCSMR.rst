@@ -1,1 +1,3 @@
-The ``BINARY_SUBSCR_LIST_INT`` instruction is no longer used for negative integers because that instruction always misses when encountering negative integers.
+The ``BINARY_SUBSCR_LIST_INT`` and ``BINARY_SUBSCR_TUPLE_INT``
+instruction are no longer used for negative integers because
+those instruction always miss when encountering negative integers.
