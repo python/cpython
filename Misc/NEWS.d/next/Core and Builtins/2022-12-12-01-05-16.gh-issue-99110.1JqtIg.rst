@@ -1,0 +1,1 @@
+Initialize frame->previous in _PyFrame_InitializeSpecials.
