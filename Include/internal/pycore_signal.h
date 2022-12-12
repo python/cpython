@@ -12,16 +12,6 @@ extern "C" {
 
 #include "pycore_atomic.h"         // _Py_atomic_address
 
-#ifdef MS_WINDOWS
-#  ifdef PYCORE_SIGNAL_WITH_PRE_INCLUDES
-#    ifndef SOCKET
-#      error "<winsock2.h> must be included before this header"
-#    endif
-#    ifndef HANDLE
-#      error "<windows.h> must be included before this header"
-#    endif
-#  endif
-#endif
 #include <signal.h>                // NSIG
 
 

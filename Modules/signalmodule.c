@@ -28,7 +28,6 @@
 #  endif
 #endif
 
-#define PYCORE_SIGNAL_WITH_PRE_INCLUDES
 #include "pycore_signal.h"        // Py_NSIG
 
 #ifdef HAVE_SIGNAL_H
