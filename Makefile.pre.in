@@ -176,6 +176,7 @@ EXPORTSFROM=	@EXPORTSFROM@
 # Executable suffix (.exe on Windows and Mac OS X)
 EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
+WINDOWSEXE=.exe
 
 # Short name and location for Mac OS X Python framework
 UNIVERSALSDK=@UNIVERSALSDK@
@@ -581,7 +582,9 @@ LIBEXPAT_HEADERS= \
 all:		@DEF_MAKE_ALL_RULE@
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
-		cp $(BUILDPYTHON) $(BUILDPYTHON3)
+	@if test "$(BUILDEXE)" = "$(WINDOWSEXE)" ; then \
+		cp $(BUILDPYTHON) $(BUILDPYTHON3) ; \
+	fi
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
 
