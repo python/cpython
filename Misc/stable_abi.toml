@@ -2271,6 +2271,50 @@
 [function.PyMemoryView_FromBuffer]
     added = '3.11'
 
+# Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)
+# (they were available with 3.11.0)
+[const.PyBUF_MAX_NDIM]
+    added = '3.11'
+[const.PyBUF_SIMPLE]
+    added = '3.11'
+[const.PyBUF_WRITABLE]
+    added = '3.11'
+[const.PyBUF_FORMAT]
+    added = '3.11'
+[const.PyBUF_ND]
+    added = '3.11'
+[const.PyBUF_STRIDES]
+    added = '3.11'
+[const.PyBUF_C_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_F_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_ANY_CONTIGUOUS]
+    added = '3.11'
+[const.PyBUF_INDIRECT]
+    added = '3.11'
+[const.PyBUF_CONTIG]
+    added = '3.11'
+[const.PyBUF_CONTIG_RO]
+    added = '3.11'
+[const.PyBUF_STRIDED]
+    added = '3.11'
+[const.PyBUF_STRIDED_RO]
+    added = '3.11'
+[const.PyBUF_RECORDS]
+    added = '3.11'
+[const.PyBUF_RECORDS_RO]
+    added = '3.11'
+[const.PyBUF_FULL]
+    added = '3.11'
+[const.PyBUF_FULL_RO]
+    added = '3.11'
+[const.PyBUF_READ]
+    added = '3.11'
+[const.PyBUF_WRITE]
+    added = '3.11'
+
+
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
 

@@ -462,6 +462,7 @@ are always available.  They are listed here in alphabetical order.
       >>> class Shape:
       ...     def __dir__(self):
       ...         return ['area', 'perimeter', 'location']
+      ...
       >>> s = Shape()
       >>> dir(s)
       ['area', 'location', 'perimeter']

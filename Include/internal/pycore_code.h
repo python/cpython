@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#define CODE_MAX_WATCHERS 8
+
 /* PEP 659
  * Specialization and quickening structs and helper functions
  */
@@ -471,6 +473,8 @@ typedef struct _PyShimCodeDef {
 
 extern PyCodeObject *
 _Py_MakeShimCode(const _PyShimCodeDef *code);
+
+extern uint32_t _Py_next_func_version;
 
 
 #ifdef __cplusplus
