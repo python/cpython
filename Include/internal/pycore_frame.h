@@ -109,10 +109,10 @@ _PyFrame_InitializeSpecials(
     frame->f_locals = locals;
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
-    frame->previous = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
+    // frame->previous: initialized when frame is linked into the frame stack
 }
 
 /* Gets the pointer to the locals array

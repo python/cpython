@@ -109,7 +109,7 @@ class PythonAPITestCase(unittest.TestCase):
         )
 
         # The following line should not cause a segmentation fault.
-        assert frame.f_back is None
+        self.assertEqual(frame.f_back, None)
 
 
 if __name__ == "__main__":

@@ -1,1 +1,2 @@
-Initialize frame->previous in _PyFrame_InitializeSpecials.
+Initialize frame->previous in frameobject.c to fix a segmentation fault when
+accessing frames created by ctypes.
