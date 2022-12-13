@@ -56,6 +56,7 @@
 #define STACK_USE_GUIDELINE 30
 
 #define SUCCESS 0
+#undef ERROR
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
