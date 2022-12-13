@@ -55,6 +55,8 @@
  */
 #define STACK_USE_GUIDELINE 30
 
+#undef SUCCESS
+#undef ERROR
 #define SUCCESS 0
 #define ERROR -1
 
