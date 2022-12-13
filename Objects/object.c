@@ -54,7 +54,28 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 
 
 #ifdef Py_REF_DEBUG
+/* The symbol is only exposed in the API for the sake of extensions
+   built against the pre-3.12 stable ABI. */
+PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 Py_ssize_t _Py_RefTotal;
+
+static inline void
+reftotal_increment(void)
+{
+    _Py_RefTotal++;
+}
+
+static inline void
+reftotal_decrement(void)
+{
+    _Py_RefTotal--;
+}
+
+void
+_Py_AddRefTotal(Py_ssize_t n)
+{
+    _Py_RefTotal += n;
+}
 
 Py_ssize_t
 _Py_GetRefTotal(void)
@@ -121,6 +142,32 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
                            filename, lineno, __func__);
 }
 
+/* This is exposed strictly for use in Py_INCREF(). */
+PyAPI_FUNC(void)
+_Py_IncRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_increment();
+}
+
+/* This is exposed strictly for use in Py_DECREF(). */
+PyAPI_FUNC(void)
+_Py_DecRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_decrement();
+}
+
+void
+_Py_IncRefTotal(void)
+{
+    reftotal_increment();
+}
+
+void
+_Py_DecRefTotal(void)
+{
+    reftotal_decrement();
+}
+
 #endif /* Py_REF_DEBUG */
 
 void
@@ -138,12 +185,18 @@ Py_DecRef(PyObject *o)
 void
 _Py_IncRef(PyObject *o)
 {
+#ifdef Py_REF_DEBUG
+    reftotal_increment();
+#endif
     Py_INCREF(o);
 }
 
 void
 _Py_DecRef(PyObject *o)
 {
+#ifdef Py_REF_DEBUG
+    reftotal_decrement();
+#endif
     Py_DECREF(o);
 }
 
@@ -2025,7 +2078,7 @@ void
 _Py_NewReference(PyObject *op)
 {
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
+    reftotal_increment();
 #endif
     new_reference(op);
 }

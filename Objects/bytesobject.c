@@ -3067,7 +3067,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
 #ifdef Py_REF_DEBUG
-        _Py_RefTotal--;
+        _Py_DecRefTotal();
 #endif
         PyObject_Free(v);
         PyErr_NoMemory();
