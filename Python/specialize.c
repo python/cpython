@@ -307,6 +307,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_NOT_PY_FUNCTION 7
 
 
+#define SPEC_FAIL_LOAD_GLOBAL_NON_DICT 17
 #define SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT 18
 
 /* Attributes */
@@ -702,7 +703,9 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                     goto success;
                 }
             }
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
+            else {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
+            }
             goto fail;
         }
         case PROPERTY:
@@ -1076,7 +1079,6 @@ PyObject *descr, DescriptorClassification kind)
     */
     write_u32(cache->type_version, owner_cls->tp_version_tag);
     write_obj(cache->descr, descr);
-    // Fall through.
     return 1;
 fail:
     return 0;
@@ -1092,6 +1094,7 @@ _Py_Specialize_LoadGlobal(
     _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr + 1);
     assert(PyUnicode_CheckExact(name));
     if (!PyDict_CheckExact(globals)) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_DICT);
         goto fail;
     }
     PyDictKeysObject * globals_keys = ((PyDictObject *)globals)->ma_keys;
@@ -1101,15 +1104,17 @@ _Py_Specialize_LoadGlobal(
     }
     Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
     if (index == DKIX_ERROR) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
         goto fail;
     }
     if (index != DKIX_EMPTY) {
         if (index != (uint16_t)index) {
+            SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
         uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
         if (keys_version == 0) {
+            SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
         cache->index = (uint16_t)index;
@@ -1118,6 +1123,7 @@ _Py_Specialize_LoadGlobal(
         goto success;
     }
     if (!PyDict_CheckExact(builtins)) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_DICT);
         goto fail;
     }
     PyDictKeysObject * builtin_keys = ((PyDictObject *)builtins)->ma_keys;
@@ -1127,10 +1133,11 @@ _Py_Specialize_LoadGlobal(
     }
     index = _PyDictKeys_StringLookup(builtin_keys, name);
     if (index == DKIX_ERROR) {
-        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
         goto fail;
     }
     if (index != (uint16_t)index) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
     uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
