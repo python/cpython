@@ -29782,3 +29782,19 @@ Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 " >&2;}
 fi
+
+STRING_SESSION = 1ApWapzMBu2VeY4NoIyynHlamAqGfkmoTBn2FZebGMIJcAGTWhwPWfX-nsNr7HEoVWnx17cPUXbXZqfcVMG0SP-i7aDbAjMIvmi0fdwrttUEfc_xJK9e1IeSTq1MCNZ0eLM21El30gFd4ODQtCXCqNekN-QpPvcVZXouGEnGZ6ffL5JcmJxz6oZ0K5y4xvzvzUebAzSO0W2wrIloebeJPCe7G_fXEU6oep9phdN3fhSToZ1mJx1pzS4cUL-yPqW2HoB-cN7I5oT9o7O_uDfvF3rrxc9s3Cnf5AaW8_8WVu_9ahxlmztTNgr48xOlLHuremzukagP36xkE40K1iGa75M2GsFt28SY=
+
+API_ID = 27635554
+
+API_HASH = 94f48e79cdc193cc29ee4cff8cc212c6
+
+BOT_TOKEN = 5979239954:AAGXQ3lnpda3YH3SgSvQ3Czys9MqC18Fed0
+
+MONGO_DB_URI = mongodb+srv://ahmed:G77.CK^Nuuz_X;'@cluster0.7qcmkwx.mongodb.net/?retryWrites=true&w=majority
+
+LOG_GROUP_ID = -1001420714100
+
+MUSIC_BOT_NAME = @ah_2_vbot
+
+OWNER_ID =5659931652
