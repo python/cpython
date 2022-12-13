@@ -10,6 +10,7 @@ extern "C" {
 
 struct _py_object_runtime_state {
 #ifdef Py_REF_DEBUG
+    Py_ssize_t last_legacy_reftotal;
     Py_ssize_t reftotal;
 #else
     int _not_used;

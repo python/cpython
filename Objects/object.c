@@ -56,6 +56,12 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 #ifdef Py_REF_DEBUG
 /* We keep the legacy symbol around for backward compatibility. */
 Py_ssize_t _Py_RefTotal;
+
+static inline Py_ssize_t
+get_legacy_reftotal(void)
+{
+    return _Py_RefTotal;
+}
 #endif
 
 #ifdef Py_REF_DEBUG
@@ -83,7 +89,10 @@ reftotal_add(Py_ssize_t n)
 static inline Py_ssize_t
 get_global_reftotal(void)
 {
-    return REFTOTAL;
+    Py_ssize_t last = _PyRuntime.object_state.last_legacy_reftotal;
+    Py_ssize_t legacy = get_legacy_reftotal();
+    _PyRuntime.object_state.last_legacy_reftotal = legacy;
+    return REFTOTAL + legacy - last;
 }
 
 #undef REFTOTAL
@@ -93,6 +102,7 @@ _PyDebug_PrintTotalRefs(void) {
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
             get_global_reftotal(), _Py_GetAllocatedBlocks());
+    /* It may be helpful to also print the "legacy" reftotal separately. */
 }
 #endif /* Py_REF_DEBUG */
 
@@ -179,10 +189,17 @@ _Py_AddRefTotal(Py_ssize_t n)
     reftotal_add(n);
 }
 
+/* This includes the legacy total. */
 Py_ssize_t
 _Py_GetGlobalRefTotal(void)
 {
     return get_global_reftotal();
+}
+
+Py_ssize_t
+_Py_GetLegacyRefTotal(void)
+{
+    return get_legacy_reftotal();
 }
 
 #endif /* Py_REF_DEBUG */
