@@ -143,6 +143,12 @@ Modules/syslogmodule.c	-	S_ident_o	-
 Modules/syslogmodule.c	-	S_log_open	-
 
 ##-----------------------
+## kept for stable ABI compatibility
+
+# XXX should be per-interpreter, without impacting stable ABI extensions
+Objects/object.c	-	_Py_RefTotal	-
+
+##-----------------------
 ## one-off temporary state
 
 # used during runtime init
