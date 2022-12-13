@@ -1,3 +1,0 @@
-Fix a bug in handling class cleanups in :class:`unittest.TestCase`.  Now
-``addClassCleanup()`` uses separate lists for different ``TestCase``
-subclasses, and ``doClassCleanups()`` only cleans up the particular class.

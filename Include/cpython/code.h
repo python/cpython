@@ -87,6 +87,7 @@ typedef struct {
     int co_nplaincellvars;        /* number of non-arg cell variables */       \
     int co_ncellvars;             /* total number of cell variables */         \
     int co_nfreevars;             /* number of free variables */               \
+    uint32_t co_version;          /* version number */                         \
                                                                                \
     PyObject *co_localsplusnames; /* tuple mapping offsets to names */         \
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte    \
@@ -147,8 +148,13 @@ struct PyCodeObject _PyCode_DEF(1);
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE((op), &PyCode_Type)
-#define PyCode_GetNumFree(op) ((op)->co_nfreevars)
-#define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+
+static inline Py_ssize_t PyCode_GetNumFree(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return op->co_nfreevars;
+}
+
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 /* Public interface */
@@ -175,6 +181,41 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, int *);
+
+typedef enum PyCodeEvent {
+  PY_CODE_EVENT_CREATE,
+  PY_CODE_EVENT_DESTROY
+} PyCodeEvent;
+
+
+/*
+ * A callback that is invoked for different events in a code object's lifecycle.
+ *
+ * The callback is invoked with a borrowed reference to co, after it is
+ * created and before it is destroyed.
+ *
+ * If the callback returns with an exception set, it must return -1. Otherwise
+ * it should return 0.
+ */
+typedef int (*PyCode_WatchCallback)(
+  PyCodeEvent event,
+  PyCodeObject* co);
+
+/*
+ * Register a per-interpreter callback that will be invoked for code object
+ * lifecycle events.
+ *
+ * Returns a handle that may be passed to PyCode_ClearWatcher on success,
+ * or -1 and sets an error if no more handles are available.
+ */
+PyAPI_FUNC(int) PyCode_AddWatcher(PyCode_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the provided id.
+ */
+PyAPI_FUNC(int) PyCode_ClearWatcher(int watcher_id);
 
 /* for internal use only */
 struct _opaque {

@@ -2131,7 +2131,7 @@ Build Changes
   (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
-  option :option:`!--without-freelists` can be used to disable all freelists
+  option :option:`--without-freelists` can be used to disable all freelists
   except empty tuple singleton.
   (Contributed by Christian Heimes in :issue:`45522`.)
 
