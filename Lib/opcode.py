@@ -87,6 +87,10 @@ def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
+def_op('UNARY_POSITIVE_R', 16)
+def_op('UNARY_NEGATIVE_R', 17)
+def_op('UNARY_NOT_R', 18)
+def_op('UNARY_INVERT_R', 19)
 
 def_op('BINARY_SUBSCR', 25)
 def_op('BINARY_SLICE', 26)

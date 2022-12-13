@@ -172,13 +172,41 @@ static struct jump_target_label_ NO_LABEL = {-1};
         return 0; \
     }
 
+enum oparg_type {
+    UNUSED_ARG,
+    EXPLICIT_ARG,  /* int value */
+    CONST_REG,     /* index of const */
+    NAME_REG,      /* index of name */
+    STACK_REG,     /* offset from TOS (1 is TOS) */
+    TMP_REG,       /* index of tmp */
+};
+
+typedef struct oparg_ {
+    int value; /* logical value set by codegen */
+    enum oparg_type type;
+    int final; /* actual reg value, resolved in assembly */
+} oparg_t;
+
+#define UNUSED_OPARG      ((const oparg_t){(0), UNUSED_ARG, -1})
+#define EXPLICIT_OPARG(V) ((const oparg_t){(V), EXPLICIT_ARG, -1})
+#define CONST_OPARG(V)    ((const oparg_t){(V), CONST_REG, -1})
+#define NAME_OPARG(V)     ((const oparg_t){(V), NAME_REG, -1})
+#define STACK_OPARG(V)    ((const oparg_t){(V), STACK_REG, -1})
+#define TMP_OPARG(V)      ((const oparg_t){(V), TMP_REG, -1})
+
+#define IS_UNUSED(OPARG) ((OPARG).type == UNUSED_OPARG)
+
 struct instr {
     int i_opcode;
     int i_oparg;
+    oparg_t i_oparg1;
+    oparg_t i_oparg2;
+    oparg_t i_oparg3;
     location i_loc;
     /* The following fields should not be set by the front-end: */
     struct basicblock_ *i_target; /* target block (if jump instruction) */
     struct basicblock_ *i_except; /* target block when exception is raised */
+    int i_stackdepth;
 };
 
 /* One arg*/
@@ -241,14 +269,26 @@ is_jump(struct instr *i)
     return IS_JUMP_OPCODE(i->i_opcode);
 }
 
-static int
-instr_size(struct instr *instruction)
+static int num_extended_args(int oparg)
 {
-    int opcode = instruction->i_opcode;
+    return (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
+}
+
+static int
+instr_size(struct instr *instr)
+{
+    int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
+    int oparg = instr->i_oparg;
     assert(HAS_ARG(opcode) || oparg == 0);
-    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
+    int oparg1 = instr->i_oparg1.type != UNUSED_ARG ? instr->i_oparg1.final : oparg;
+    int oparg2 = instr->i_oparg2.final;
+    int oparg3 = instr->i_oparg3.final;
+    int n1 = num_extended_args(oparg1);
+    int n2 = num_extended_args(oparg2);
+    int n3 = num_extended_args(oparg3);
+    int extended_args = n1 > n2 ? n1 : n2;
+    extended_args = extended_args > n3 ? extended_args : n3;
     int caches = _PyOpcode_Caches[opcode];
     return OPSIZE * (extended_args + 1) + caches;
 }
@@ -261,37 +301,52 @@ write_instr(_Py_CODEUNIT *codestr, struct instr *instruction, int ilen)
     int oparg = instruction->i_oparg;
     assert(HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
+    int oparg1 = instruction->i_oparg1.type != UNUSED_ARG ?
+                 instruction->i_oparg1.final : oparg;
+    int oparg2 = instruction->i_oparg2.final;
+    int oparg3 = instruction->i_oparg3.final;
+
+if (0) {
+  if (opcode == UNARY_POSITIVE_R || opcode == UNARY_NEGATIVE ||
+      opcode == UNARY_NOT || opcode == UNARY_INVERT) {
+
+    fprintf(stderr,
+            "write_instr [%d]: oparg = %d oparg1 = %d oparg2 = %d oparg3 = %d\n",
+             opcode, oparg, oparg1, oparg2, oparg3);
+  }
+}
+
     switch ((ilen - caches)/OPSIZE) {
         case 4:
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg >> 24) & 0xFF;
             codestr++;
-            codestr->opcode = 0;
-            codestr->oparg = 0;
+            codestr->opcode = (oparg2 >> 24) & 0xFF;
+            codestr->oparg = (oparg3 >> 24) & 0xFF;
             codestr++;
             /* fall through */
         case 3:
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg >> 16) & 0xFF;
             codestr++;
-            codestr->opcode = 0;
-            codestr->oparg = 0;
+            codestr->opcode = (oparg2 >> 16) & 0xFF;
+            codestr->oparg = (oparg3 >> 16) & 0xFF;
             codestr++;
             /* fall through */
         case 2:
             codestr->opcode = EXTENDED_ARG;
             codestr->oparg = (oparg >> 8) & 0xFF;
             codestr++;
-            codestr->opcode = 0;
-            codestr->oparg = 0;
+            codestr->opcode = (oparg2 >> 8) & 0xFF;
+            codestr->oparg = (oparg3 >> 8) & 0xFF;
             codestr++;
             /* fall through */
         case 1:
             codestr->opcode = opcode;
             codestr->oparg = oparg & 0xFF;
             codestr++;
-            codestr->opcode = 0;
-            codestr->oparg = 0;
+            codestr->opcode = oparg2 & 0xFF;
+            codestr->oparg = oparg3 & 0XFF;
             codestr++;
             break;
         default:
@@ -452,6 +507,7 @@ struct compiler_unit {
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
 
     int u_firstlineno; /* the first lineno of the block */
+    int u_ntmps; /* number of temporary registers */
 };
 
 /* This struct captures the global state of a compilation.
@@ -480,6 +536,7 @@ struct compiler {
     struct compiler_unit *u; /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
+    bool c_regcode;              /* produce regmachine code for this file */
 };
 
 #define CFG_BUILDER(c) (&((c)->u->u_cfg_builder))
@@ -651,6 +708,9 @@ compiler_setup(struct compiler *c, mod_ty mod, PyObject *filename,
     }
 
     c->c_filename = Py_NewRef(filename);
+    const char *f = PyUnicode_AsUTF8(c->c_filename);
+    c->c_regcode = strstr(f, "iritkatriel");
+
     c->c_arena = arena;
     if (!_PyFuture_FromAST(mod, filename, &c->c_future)) {
         return ERROR;
@@ -1090,6 +1150,10 @@ stack_effect(int opcode, int oparg, int jump)
             return -2;
 
         /* Unary operators */
+        case UNARY_POSITIVE_R:
+        case UNARY_NEGATIVE_R:
+        case UNARY_NOT_R:
+        case UNARY_INVERT_R:
         case UNARY_POSITIVE:
         case UNARY_NEGATIVE:
         case UNARY_NOT:
@@ -1343,7 +1407,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 }
 
 static int
-basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
+basicblock_addop(basicblock *b, int opcode, int oparg, location loc,
+                 oparg_t oparg1, oparg_t oparg2, oparg_t oparg3)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
@@ -1357,6 +1422,9 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     struct instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
+    i->i_oparg1 = oparg1;
+    i->i_oparg2 = oparg2;
+    i->i_oparg3 = oparg3;
     i->i_target = NULL;
     i->i_loc = loc;
 
@@ -1389,19 +1457,23 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
 }
 
 static int
-cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc)
+cfg_builder_addop(cfg_builder *g, int opcode, int oparg, location loc,
+                       oparg_t oparg1, oparg_t oparg2, oparg_t oparg3)
 {
     if (cfg_builder_maybe_start_new_block(g) != 0) {
         return -1;
     }
-    return basicblock_addop(g->g_curblock, opcode, oparg, loc);
+    return basicblock_addop(g->g_curblock, opcode, oparg, loc,
+                            oparg1, oparg2, oparg3);
 }
+
 
 static int
 cfg_builder_addop_noarg(cfg_builder *g, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
-    return cfg_builder_addop(g, opcode, 0, loc);
+    return cfg_builder_addop(g, opcode, 0, loc,
+                             UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
 }
 
 static Py_ssize_t
@@ -1612,7 +1684,8 @@ cfg_builder_addop_i(cfg_builder *g, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    return cfg_builder_addop(g, opcode, oparg_, loc);
+    return cfg_builder_addop(g, opcode, oparg_, loc,
+                             UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
 }
 
 static int
@@ -1621,11 +1694,17 @@ cfg_builder_addop_j(cfg_builder *g, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
-    return cfg_builder_addop(g, opcode, target.id, loc);
+    return cfg_builder_addop(g, opcode, target.id, loc,
+                             UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
 }
 
 #define ADDOP(C, LOC, OP) \
     RETURN_IF_ERROR(cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)))
+
+#define ADDOP_REGS(C, LOC, OP, R1, R2, R3) { \
+    if (!cfg_builder_addop(CFG_BUILDER(C), (OP), 0, (LOC), (R1), (R2), (R3))) \
+        return 0; \
+}
 
 #define ADDOP_IN_SCOPE(C, LOC, OP) { \
     if (cfg_builder_addop_noarg(CFG_BUILDER(C), (OP), (LOC)) < 0) { \
@@ -4120,17 +4199,17 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 }
 
 static int
-unaryop(unaryop_ty op)
+unaryop(unaryop_ty op, bool R)
 {
     switch (op) {
     case Invert:
-        return UNARY_INVERT;
+        return R ? UNARY_INVERT_R : UNARY_INVERT;
     case Not:
-        return UNARY_NOT;
+        return R ? UNARY_NOT_R : UNARY_NOT;
     case UAdd:
-        return UNARY_POSITIVE;
+        return R ? UNARY_POSITIVE_R : UNARY_POSITIVE;
     case USub:
-        return UNARY_NEGATIVE;
+        return R ? UNARY_NEGATIVE_R : UNARY_NEGATIVE;
     default:
         PyErr_Format(PyExc_SystemError,
             "unary op %d should not be possible", op);
@@ -5789,7 +5868,17 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case UnaryOp_kind:
         VISIT(c, expr, e->v.UnaryOp.operand);
-        ADDOP(c, loc, unaryop(e->v.UnaryOp.op));
+        if (c->c_regcode) {
+            oparg_t r1 = TMP_OPARG(c->u->u_ntmps++);
+            oparg_t r2 = TMP_OPARG(c->u->u_ntmps++);
+            ADDOP_REGS(c, loc, STORE_FAST, r1, UNUSED_OPARG, UNUSED_OPARG);
+            ADDOP_REGS(c, loc, unaryop(e->v.UnaryOp.op, true),
+                       r1, r2, UNUSED_OPARG);
+            ADDOP_REGS(c, loc, LOAD_FAST, r2, UNUSED_OPARG, UNUSED_OPARG);
+        } else {
+            ADDOP_REGS(c, loc, unaryop(e->v.UnaryOp.op, false),
+                       STACK_OPARG(1), STACK_OPARG(1), UNUSED_OPARG);
+        }
         break;
     case Lambda_kind:
         return compiler_lambda(c, e);
@@ -7153,6 +7242,7 @@ stackdepth(basicblock *entryblock, int code_flags)
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *instr = &b->b_instr[i];
+            instr->i_stackdepth = depth;
             int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
                 PyErr_Format(PyExc_SystemError,
@@ -7502,7 +7592,8 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return -1;
             }
-            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label, NO_LOCATION,
+                             UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
@@ -7901,7 +7992,8 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return -1;
     }
-    basicblock_addop(backwards_jump, JUMP, target->b_label, NO_LOCATION);
+    basicblock_addop(backwards_jump, JUMP, target->b_label, NO_LOCATION,
+                     UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG);
     backwards_jump->b_instr[0].i_target = target;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -8343,6 +8435,24 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     assert(INT_MAX - posonlyargcount - posorkwargcount > 0);
     int kwonlyargcount = (int)c->u->u_kwonlyargcount;
 
+    for(int i=0; i < c->u->u_ntmps; i++) {
+        PyObject *k = PyUnicode_FromFormat("$%d", i);
+        if (!k) {
+            goto error;
+        }
+        PyObject *v = PyLong_FromSsize_t(nlocalsplus++);
+        if (!v) {
+            Py_DECREF(k);
+            goto error;
+        }
+        int ret = PyDict_SetItem(c->u->u_varnames, k, v);
+        Py_DECREF(k);
+        Py_DECREF(v);
+        if (ret < 0) {
+            goto error;
+        }
+    }
+
     localsplusnames = PyTuple_New(nlocalsplus);
     if (localsplusnames == NULL) {
         goto error;
@@ -8754,6 +8864,62 @@ add_return_at_end_of_block(struct compiler *c, int addNone)
     return SUCCESS;
 }
 
+static int
+resolve_register(oparg_t *oparg, int i_stackdepth, int nlocalsplus,
+                 int ntmps, int stacksize, int nconsts)
+{
+    switch(oparg->type) {
+        case UNUSED_ARG:
+            oparg->final = 0;
+            break;
+        case EXPLICIT_ARG:
+            oparg->final = oparg->value;
+            break;
+        case CONST_REG:
+            assert(oparg->value >= 0 && oparg->value < nconsts);
+            oparg->final = nlocalsplus + ntmps + stacksize + oparg->value;
+        case NAME_REG:
+            assert(oparg->value >= 0 && oparg->value < nlocalsplus);
+            oparg->final = oparg->value;
+        case STACK_REG: {
+            int tos = nlocalsplus + ntmps + i_stackdepth;
+            assert(oparg->value > 0 && oparg->value <= tos);
+            oparg->final = tos - oparg->value;
+            break;
+        case TMP_REG:
+            assert(oparg->value >= 0 && oparg->value < ntmps);
+            oparg->final = nlocalsplus + oparg->value;
+            break;
+        }
+        default:
+            Py_UNREACHABLE();
+    }
+    return 1;
+}
+
+static int
+resolve_registers(cfg_builder *g, int nlocalsplus, int ntmps, int stacksize, int nconsts)
+{
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *inst = &b->b_instr[i];
+            if (resolve_register(&inst->i_oparg1, inst->i_stackdepth,
+                                 nlocalsplus, ntmps, stacksize, nconsts) < 0) {
+                return -1;
+            }
+            if (resolve_register(&inst->i_oparg2, inst->i_stackdepth,
+                                 nlocalsplus, ntmps, stacksize, nconsts) < 0) {
+                return -1;
+            }
+            if (resolve_register(&inst->i_oparg3, inst->i_stackdepth,
+                                 nlocalsplus, ntmps, stacksize, nconsts) < 0) {
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -8852,6 +9018,12 @@ assemble(struct compiler *c, int addNone)
     }
 
     assert(no_redundant_jumps(g));
+
+    Py_ssize_t nconsts = PyList_GET_SIZE(consts);
+    int ntmps = c->u->u_ntmps;
+    if (resolve_registers(g, nlocalsplus, ntmps, maxdepth, nconsts) < 0) {
+        goto error;
+    }
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g->g_entryblock);
@@ -9950,7 +10122,8 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
             if (PyErr_Occurred()) {
                 return -1;
             }
-            if (cfg_builder_addop(g, opcode, oparg, loc) < 0) {
+            if (cfg_builder_addop(g, opcode, oparg, loc,
+                                  UNUSED_OPARG, UNUSED_OPARG, UNUSED_OPARG) < 0) {
                 return -1;
             }
         }
