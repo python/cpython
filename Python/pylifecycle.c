@@ -54,7 +54,6 @@ extern void _PyIO_Fini(void);
 
 #ifdef MS_WINDOWS
 #  undef BYTE
-#  include "windows.h"
 
    extern PyTypeObject PyWindowsConsoleIO_Type;
 #  define PyWindowsConsoleIO_Check(op) \
@@ -602,6 +601,11 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     _Py_InitVersion();
 
     status = _Py_HashRandomization_Init(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyTime_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }

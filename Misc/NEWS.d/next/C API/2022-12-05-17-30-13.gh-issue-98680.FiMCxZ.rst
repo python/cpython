@@ -1,3 +1,0 @@
-``PyBUF_*`` constants were marked as part of Limited API of Python 3.11+.
-These were available in 3.11.0 with :c:macro:`Py_LIMITED_API` defined for
-3.11, and are necessary to use the buffer API.
