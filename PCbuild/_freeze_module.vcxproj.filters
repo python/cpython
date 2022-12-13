@@ -367,6 +367,9 @@
     <ClCompile Include="..\Python\thread.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\timemodule.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\token.c">
       <Filter>Source Files</Filter>
     </ClCompile>

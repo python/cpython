@@ -295,8 +295,8 @@ def clean_up_channels():
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
-        clean_up_interpreters()
         clean_up_channels()
+        clean_up_interpreters()
 
 
 ##################################
@@ -386,7 +386,6 @@ class ShareableTypeTests(unittest.TestCase):
         self._assert_values([
             b'spam',
             9999,
-            self.cid,
             ])
 
     def test_bytes(self):
@@ -410,6 +409,15 @@ class ShareableTypeTests(unittest.TestCase):
             with self.subTest(i):
                 with self.assertRaises(OverflowError):
                     interpreters.channel_send(self.cid, i)
+
+
+class ModuleTests(TestBase):
+
+    def test_import_in_interpreter(self):
+        _run_output(
+            interpreters.create(),
+            'import _xxsubinterpreters as _interpreters',
+        )
 
 
 ##################################
@@ -1213,6 +1221,18 @@ class ChannelIDTests(TestBase):
         self.assertFalse(cid1 != cid2)
         self.assertTrue(cid1 != cid3)
 
+    def test_shareable(self):
+        chan = interpreters.channel_create()
+
+        obj = interpreters.channel_create()
+        interpreters.channel_send(chan, obj)
+        got = interpreters.channel_recv(chan)
+
+        self.assertEqual(got, obj)
+        self.assertIs(type(got), type(obj))
+        # XXX Check the following in the channel tests?
+        #self.assertIsNot(got, obj)
+
 
 class ChannelTests(TestBase):
 
@@ -1544,6 +1564,19 @@ class ChannelTests(TestBase):
         self.assertEqual(obj4, b'spam')
         self.assertEqual(obj5, b'eggs')
         self.assertIs(obj6, default)
+
+    def test_recv_sending_interp_destroyed(self):
+        cid = interpreters.channel_create()
+        interp = interpreters.create()
+        interpreters.run_string(interp, dedent(f"""
+            import _xxsubinterpreters as _interpreters
+            _interpreters.channel_send({cid}, b'spam')
+            """))
+        interpreters.destroy(interp)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'unrecognized interpreter ID'):
+            interpreters.channel_recv(cid)
 
     def test_run_string_arg_unresolved(self):
         cid = interpreters.channel_create()
