@@ -333,6 +333,8 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_INSTANCE_ATTRIBUTE 26
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
 #define SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION 28
+#define SPEC_FAIL_ATTR_NOT_IN_KEYS 29
+#define SPEC_FAIL_ATTR_NOT_IN_DICT 30
 
 /* Binary subscr and store subscr */
 
@@ -449,41 +451,44 @@ static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
 
 static int
-specialize_module_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
-                            PyObject *name, int opcode, int opcode_module)
-{
+specialize_module_load_attr(
+    PyObject *owner, _Py_CODEUNIT *instr, PyObject *name
+) {
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
     PyModuleObject *m = (PyModuleObject *)owner;
     assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
-        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_NO_DICT);
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NO_DICT);
         return -1;
     }
     if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
         return -1;
     }
     Py_ssize_t index = _PyDict_LookupIndex(dict, &_Py_ID(__getattr__));
     assert(index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
-        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND);
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND);
         return -1;
     }
     index = _PyDict_LookupIndex(dict, name);
     assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
-        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_RANGE);
+        SPECIALIZATION_FAIL(LOAD_ATTR,
+                            index == DKIX_EMPTY ?
+                            SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND :
+                            SPEC_FAIL_OUT_OF_RANGE);
         return -1;
     }
     uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict->ma_keys);
     if (keys_version == 0) {
-        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
     write_u32(cache->version, keys_version);
     cache->index = (uint16_t)index;
-    _Py_SET_OPCODE(*instr, opcode_module);
+    _Py_SET_OPCODE(*instr, LOAD_ATTR_MODULE);
     return 0;
 }
 
@@ -630,7 +635,10 @@ specialize_dict_access(
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         assert (index != DKIX_ERROR);
         if (index != (uint16_t)index) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+            SPECIALIZATION_FAIL(base_op,
+                                index == DKIX_EMPTY ?
+                                SPEC_FAIL_ATTR_NOT_IN_KEYS :
+                                SPEC_FAIL_OUT_OF_RANGE);
             return 0;
         }
         write_u32(cache->version, type->tp_version_tag);
@@ -647,7 +655,10 @@ specialize_dict_access(
         Py_ssize_t index =
             _PyDict_LookupIndex(dict, name);
         if (index != (uint16_t)index) {
-            SPECIALIZATION_FAIL(base_op, SPEC_FAIL_OUT_OF_RANGE);
+            SPECIALIZATION_FAIL(base_op,
+                                index == DKIX_EMPTY ?
+                                SPEC_FAIL_ATTR_NOT_IN_DICT :
+                                SPEC_FAIL_OUT_OF_RANGE);
             return 0;
         }
         cache->index = (uint16_t)index;
@@ -675,8 +686,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         goto fail;
     }
     if (PyModule_CheckExact(owner)) {
-        if (specialize_module_load_attr(owner, instr, name, LOAD_ATTR,
-                                        LOAD_ATTR_MODULE))
+        if (specialize_module_load_attr(owner, instr, name))
         {
             goto fail;
         }
