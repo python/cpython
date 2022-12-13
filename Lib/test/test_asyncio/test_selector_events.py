@@ -766,7 +766,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         data = memoryview(b'data')
         self.sock.sendmsg = mock.Mock()
         # Sent partial data
-        self.sock.sendmsg.return_value = len(data) // 2
+        self.sock.sendmsg.return_value = 2
 
         transport = self.socket_transport(sendmsg=True)
         transport._buffer.append(data)
@@ -774,6 +774,36 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         transport._write_ready()
         self.assertTrue(self.sock.sendmsg.called)
         self.assertTrue(self.loop.writers)
+        self.assertEqual(list_to_buffer([b'ta']), transport._buffer)
+
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
+    def test_write_sendmsg_half_buffer(self):
+        data = [memoryview(b'data1'), memoryview(b'data2')]
+        self.sock.sendmsg = mock.Mock()
+        # Sent partial data
+        self.sock.sendmsg.return_value = 2
+
+        transport = self.socket_transport(sendmsg=True)
+        transport._buffer.extend(data)
+        self.loop._add_writer(7, transport._write_ready)
+        transport._write_ready()
+        self.assertTrue(self.sock.sendmsg.called)
+        self.assertTrue(self.loop.writers)
+        self.assertEqual(list_to_buffer([b'ta1', b'data2']), transport._buffer)
+
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
+    def test_write_sendmsg_OSError(self):
+        data = memoryview(b'data')
+        self.sock.sendmsg = mock.Mock()
+        self.sock.sendmsg.side_effect = OSError
+
+        transport = self.socket_transport(sendmsg=True)
+        transport._buffer.extend(data)
+        self.loop._add_writer(7, transport._write_ready)
+        transport._write_ready()
+        self.assertTrue(self.sock.sendmsg.called)
+        self.assertFalse(self.loop.writers)
+        self.assertEqual(list_to_buffer([]), transport._buffer)
 
     @mock.patch('asyncio.selector_events.logger')
     def test_write_exception(self, m_log):

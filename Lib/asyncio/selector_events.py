@@ -1058,7 +1058,6 @@ class _SelectorSocketTransport(_SelectorTransport):
             raise RuntimeError('unable to write; sendfile is in progress')
         if not data:
             return
-        data = memoryview(data)
 
         if self._conn_lost:
             if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:
@@ -1078,7 +1077,7 @@ class _SelectorSocketTransport(_SelectorTransport):
                 self._fatal_error(exc, 'Fatal write error on socket transport')
                 return
             else:
-                data = data[n:]
+                data = memoryview(data)[n:]
                 if not data:
                     return
             # Not all was written; register write handler.
