@@ -212,6 +212,15 @@
             DISPATCH();
         }
 
+        TARGET(UNARY_POSITIVE_R) {
+            PyObject *value = REG(oparg1);
+            assert(value != NULL);
+            PyObject *res = PyNumber_Positive(value);
+            if (res == NULL) goto error;
+            Py_XSETREF(REG(oparg2), res);
+            DISPATCH();
+        }
+
         TARGET(UNARY_NEGATIVE) {
             PyObject *value = PEEK(1);
             PyObject *res;
@@ -219,6 +228,15 @@
             Py_DECREF(value);
             if (res == NULL) goto pop_1_error;
             POKE(1, res);
+            DISPATCH();
+        }
+
+        TARGET(UNARY_NEGATIVE_R) {
+            PyObject *value = REG(oparg1);
+            assert(value != NULL);
+            PyObject *res = PyNumber_Negative(value);
+            Py_XSETREF(REG(oparg2), res);
+            if (res == NULL) goto error;
             DISPATCH();
         }
 
@@ -239,6 +257,23 @@
             DISPATCH();
         }
 
+        TARGET(UNARY_NOT_R) {
+            PyObject *value = REG(oparg1);
+            assert(value != NULL);
+            int err = PyObject_IsTrue(value);
+            if (err < 0) goto error;
+            PyObject *res;
+            if (err == 0) {
+                res = Py_True;
+            }
+            else {
+                res = Py_False;
+            }
+            Py_INCREF(res);
+            Py_XSETREF(REG(oparg2), res);
+            DISPATCH();
+        }
+
         TARGET(UNARY_INVERT) {
             PyObject *value = PEEK(1);
             PyObject *res;
@@ -246,6 +281,15 @@
             Py_DECREF(value);
             if (res == NULL) goto pop_1_error;
             POKE(1, res);
+            DISPATCH();
+        }
+
+        TARGET(UNARY_INVERT_R) {
+            PyObject *value = REG(oparg1);
+            assert(value != NULL);
+            PyObject *res = PyNumber_Invert(value);
+            if (res == NULL) goto error;
+            Py_XSETREF(REG(oparg2), res);
             DISPATCH();
         }
 

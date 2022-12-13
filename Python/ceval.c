@@ -763,7 +763,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         oparg2 = _Py_OPCODE(word); \
         oparg3 = _Py_OPARG(word); \
         if (VERBOSE) fprintf(stderr, "%d  (%d, %d, %d)\n", opcode, oparg, oparg2, oparg3); \
-        assert(oparg2 == 0 && oparg3 == 0); \
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
@@ -831,6 +830,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define BASIC_STACKADJ(n) (stack_pointer += n)
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
+
+#define REG(n)            (frame->localsplus[n])
+
 
 #ifdef Py_DEBUG
 #define PUSH(v)         do { \
