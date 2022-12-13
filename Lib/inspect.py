@@ -395,6 +395,14 @@ def isgeneratorfunction(obj):
 # A marker for markcoroutinefunction and iscoroutinefunction.
 _is_coroutine_marker = object()
 
+def _has_coroutine_mark(f):
+    while ismethod(f):
+        f = f.__func__
+    f = functools._unwrap_partial(f)
+    if not (isfunction(f) or _signature_is_functionlike(f)):
+        return False
+    return getattr(f, "_is_coroutine_marker", None) is _is_coroutine_marker
+
 def markcoroutinefunction(func):
     """
     Decorator to ensure callable is recognised as a coroutine function.
@@ -410,17 +418,7 @@ def iscoroutinefunction(obj):
     Coroutine functions are normally defined with "async def" syntax, but may
     be marked via markcoroutinefunction.
     """
-    if not isclass(obj) and callable(obj):
-        # Test both the function and the __call__ implementation for the
-        # _is_coroutine_marker.
-        f = getattr(getattr(obj, "__func__", obj), "_is_coroutine_marker", None)
-        c = getattr(obj.__call__, "_is_coroutine_marker", None)
-        if f is _is_coroutine_marker or c is _is_coroutine_marker:
-            return True
-
-    return _has_code_flag(obj, CO_COROUTINE) or (
-        not isclass(obj) and callable(obj) and _has_code_flag(obj.__call__, CO_COROUTINE)
-    )
+    return _has_code_flag(obj, CO_COROUTINE) or _has_coroutine_mark(obj)
 
 def isasyncgenfunction(obj):
     """Return true if the object is an asynchronous generator function.

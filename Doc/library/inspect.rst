@@ -345,8 +345,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Return ``True`` if the object is a :term:`coroutine function` (a function
    defined with an :keyword:`async def` syntax), a :func:`functools.partial`
-   wrapping a :term:`coroutine function`, an instance of a class defining an
-   :keyword:`async def` ``__call__``, or a sync function marked with
+   wrapping a :term:`coroutine function`, or a sync function marked with
    :func:`markcoroutinefunction`.
 
    .. versionadded:: 3.5
@@ -356,8 +355,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       wrapped function is a :term:`coroutine function`.
 
    .. versionchanged:: 3.12
-      Instances of classes defining an :keyword:`async def` ``__call__``, or
-      sync functions marked with :func:`markcoroutinefunction` now return
+      Sync functions marked with :func:`markcoroutinefunction` now return
       ``True``.
 
 
