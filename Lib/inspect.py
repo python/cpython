@@ -393,7 +393,7 @@ def isgeneratorfunction(obj):
     return _has_code_flag(obj, CO_GENERATOR)
 
 # A marker for markcoroutinefunction and iscoroutinefunction.
-_is_coroutine = object()
+_is_coroutine_marker = object()
 
 def markcoroutinefunction(func):
     """
@@ -401,7 +401,7 @@ def markcoroutinefunction(func):
     """
     if hasattr(func, '__func__'):
         func = func.__func__
-    func._is_coroutine = _is_coroutine
+    func._is_coroutine_marker = _is_coroutine_marker
     return func
 
 def iscoroutinefunction(obj):
@@ -412,10 +412,10 @@ def iscoroutinefunction(obj):
     """
     if not isclass(obj) and callable(obj):
         # Test both the function and the __call__ implementation for the
-        # _is_coroutine marker.
-        f = getattr(getattr(obj, "__func__", obj), "_is_coroutine", None)
-        c = getattr(obj.__call__, "_is_coroutine", None)
-        if f is _is_coroutine or c is _is_coroutine:
+        # _is_coroutine_marker.
+        f = getattr(getattr(obj, "__func__", obj), "_is_coroutine_marker", None)
+        c = getattr(obj.__call__, "_is_coroutine_marker", None)
+        if f is _is_coroutine_marker or c is _is_coroutine_marker:
             return True
 
     return _has_code_flag(obj, CO_COROUTINE) or (
