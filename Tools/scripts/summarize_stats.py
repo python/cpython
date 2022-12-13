@@ -115,7 +115,7 @@ def calculate_specialization_success_failure(family_stats):
 
 def calculate_specialization_failure_kinds(name, family_stats, defines):
     total_failures = family_stats.get("specialization.failure", 0)
-    failure_kinds = [ 0 ] * 30
+    failure_kinds = [ 0 ] * 40
     for key in family_stats:
         if not key.startswith("specialization.failure_kind"):
             continue
