@@ -795,15 +795,19 @@ class SelectorSocketTransportTests(test_utils.TestCase):
     def test_write_sendmsg_OSError(self):
         data = memoryview(b'data')
         self.sock.sendmsg = mock.Mock()
-        self.sock.sendmsg.side_effect = OSError
+        err = self.sock.sendmsg.side_effect = OSError()
 
         transport = self.socket_transport(sendmsg=True)
+        transport._fatal_error = mock.Mock()
         transport._buffer.extend(data)
         self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
         self.assertTrue(self.sock.sendmsg.called)
         self.assertFalse(self.loop.writers)
         self.assertEqual(list_to_buffer([]), transport._buffer)
+        transport._fatal_error.assert_called_with(
+                                   err,
+                                   'Fatal write error on socket transport')
 
     @mock.patch('asyncio.selector_events.logger')
     def test_write_exception(self, m_log):
