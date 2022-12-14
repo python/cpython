@@ -864,7 +864,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         STAT_INC(opcode, miss);                                  \
         STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
-        if (ADAPTIVE_COUNTER_IS_ZERO(*next_instr)) {             \
+        if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
         else {                                                   \
@@ -1289,7 +1289,7 @@ handle_eval_breaker:
         }
         opcode = _PyOpcode_Deopt[opcode];
         if (_PyOpcode_Caches[opcode]) {
-            _Py_CODEUNIT *counter = &next_instr[1];
+            uint16_t *counter = &next_instr[1].cache;
             // The instruction is going to decrement the counter, so we need to
             // increment it here to make sure it doesn't try to specialize:
             if (!ADAPTIVE_COUNTER_IS_MAX(*counter)) {
