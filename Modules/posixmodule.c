@@ -6756,9 +6756,9 @@ static void warn_about_fork_with_threads(const char* name) {
     mach_port_t macos_self = mach_task_self();
     mach_port_t macos_task;
     if (task_for_pid(macos_self, getpid(), &macos_task) == KERN_SUCCESS) {
-        // thread_array_t macos_threads;
+        thread_array_t macos_threads;
         mach_msg_type_number_t macos_n_threads;
-        if (task_threads(macos_task, NULL /* &macos_threads */,
+        if (task_threads(macos_task, &macos_threads,
                          &macos_n_threads) == KERN_SUCCESS) {
             num_python_threads = macos_n_threads;
         }
