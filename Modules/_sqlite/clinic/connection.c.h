@@ -100,8 +100,8 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[4]) {
-        check_same_thread = _PyLong_AsInt(fastargs[4]);
-        if (check_same_thread == -1 && PyErr_Occurred()) {
+        check_same_thread = PyObject_IsTrue(fastargs[4]);
+        if (check_same_thread < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -305,8 +305,8 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         goto skip_optional_kwonly;
     }
     if (args[3]) {
-        readonly = _PyLong_AsInt(args[3]);
-        if (readonly == -1 && PyErr_Occurred()) {
+        readonly = PyObject_IsTrue(args[3]);
+        if (readonly < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -831,8 +831,8 @@ pysqlite_connection_enable_load_extension(pysqlite_Connection *self, PyObject *a
     PyObject *return_value = NULL;
     int onoff;
 
-    onoff = _PyLong_AsInt(arg);
-    if (onoff == -1 && PyErr_Occurred()) {
+    onoff = PyObject_IsTrue(arg);
+    if (onoff < 0) {
         goto exit;
     }
     return_value = pysqlite_connection_enable_load_extension_impl(self, onoff);
@@ -1532,4 +1532,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=20e929a7a7d62a01 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f10306e10427488b input=a9049054013a1b77]*/

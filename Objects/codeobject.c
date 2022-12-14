@@ -11,6 +11,65 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
+static void
+notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->active_code_watchers) {
+        assert(interp->_initialized);
+        for (int i = 0; i < CODE_MAX_WATCHERS; i++) {
+            PyCode_WatchCallback cb = interp->code_watchers[i];
+            if ((cb != NULL) && (cb(event, co) < 0)) {
+                PyErr_WriteUnraisable((PyObject *) co);
+            }
+        }
+    }
+}
+
+int
+PyCode_AddWatcher(PyCode_WatchCallback callback)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->_initialized);
+
+    for (int i = 0; i < CODE_MAX_WATCHERS; i++) {
+        if (!interp->code_watchers[i]) {
+            interp->code_watchers[i] = callback;
+            interp->active_code_watchers |= (1 << i);
+            return i;
+        }
+    }
+
+    PyErr_SetString(PyExc_RuntimeError, "no more code watcher IDs available");
+    return -1;
+}
+
+static inline int
+validate_watcher_id(PyInterpreterState *interp, int watcher_id)
+{
+    if (watcher_id < 0 || watcher_id >= CODE_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "Invalid code watcher ID %d", watcher_id);
+        return -1;
+    }
+    if (!interp->code_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "No code watcher set for ID %d", watcher_id);
+        return -1;
+    }
+    return 0;
+}
+
+int
+PyCode_ClearWatcher(int watcher_id)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->_initialized);
+    if (validate_watcher_id(interp, watcher_id) < 0) {
+        return -1;
+    }
+    interp->code_watchers[watcher_id] = NULL;
+    interp->active_code_watchers &= ~(1 << watcher_id);
+    return 0;
+}
 
 /******************
  * generic helpers
@@ -338,7 +397,10 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-
+    co->co_version = _Py_next_func_version;
+    if (_Py_next_func_version != 0) {
+        _Py_next_func_version++;
+    }
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
@@ -355,6 +417,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     }
     co->_co_firsttraceable = entry_point;
     _PyCode_Quicken(co);
+    notify_code_watchers(PY_CODE_EVENT_CREATE, co);
 }
 
 static int
@@ -1457,9 +1520,10 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
         _Py_CODEUNIT instruction = instructions[i];
         int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
         int caches = _PyOpcode_Caches[opcode];
-        instructions[i] = _Py_MAKECODEUNIT(opcode, _Py_OPARG(instruction));
+        instructions[i].opcode = opcode;
         while (caches--) {
-            instructions[++i] = _Py_MAKECODEUNIT(CACHE, 0);
+            instructions[++i].opcode = CACHE;
+            instructions[i].oparg = 0;
         }
     }
 }
@@ -1615,6 +1679,8 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
 static void
 code_dealloc(PyCodeObject *co)
 {
+    notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
+
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         _PyCodeObjectExtra *co_extra = co->co_extra;
@@ -1710,9 +1776,9 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        _Py_SET_OPCODE(co_instr, _PyOpcode_Deopt[_Py_OPCODE(co_instr)]);
-        _Py_SET_OPCODE(cp_instr, _PyOpcode_Deopt[_Py_OPCODE(cp_instr)]);
-        eq = co_instr == cp_instr;
+        co_instr.opcode = _PyOpcode_Deopt[_Py_OPCODE(co_instr)];
+        cp_instr.opcode =_PyOpcode_Deopt[_Py_OPCODE(cp_instr)];
+        eq = co_instr.cache == cp_instr.cache;
         if (!eq) {
             goto unequal;
         }
