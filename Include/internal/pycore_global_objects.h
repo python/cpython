@@ -29,7 +29,7 @@ extern "C" {
 struct _Py_cached_objects {
     PyObject *str_replace_inf;
 
-    PyObject *interned;
+    PyObject *interned_strings;
 };
 
 #define _Py_GLOBAL_OBJECT(NAME) \

@@ -233,12 +233,12 @@ static inline PyObject* unicode_new_empty(void)
 */
 static inline PyObject *get_interned_dict(void)
 {
-    return _Py_CACHED_OBJECT(interned);
+    return _Py_CACHED_OBJECT(interned_strings);
 }
 
 static inline void set_interned_dict(PyObject *dict)
 {
-    _Py_CACHED_OBJECT(interned) = dict;
+    _Py_CACHED_OBJECT(interned_strings) = dict;
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
