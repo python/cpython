@@ -6737,6 +6737,52 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 }
 #endif /* HAVE_FORK */
 
+// Common code to raise a warning if we know there is more than one thread
+// running in the process.  Best effort, silent if unable to count threads.
+// Constraint: Acquires no locks. Quick. Never leaves an error set.
+void warn_about_fork_with_threads(const char* name) {
+    // TODO: Call native OS platform APIs to determine the number of threads in
+    // the process. Threads launched by Python itself are only one part of the
+    // story. System libraries and extension modules or embedding code are other
+    // common sources of threads.
+    PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
+    if (!threading) {
+        PyErr_Clear();
+        return;
+    }
+    PyObject *threading_active = PyObject_GetAttrString(threading, "_active");
+    if (!threading_active) {
+        PyErr_Clear();
+        Py_DECREF(threading);
+        return;
+    }
+    PyObject *threading_limbo = PyObject_GetAttrString(threading, "_limbo");
+    if (!threading_limbo) {
+        goto end;
+    }
+    // Worst case if someone replaced threading._active or threading._limbo
+    // with non-dicts, we get -1 from *Length() below and undercount.
+    // Whatever. That shouldn't happen, we're best effort so we clear errors
+    // and move on.
+    assert(PyMapping_Check(threading_active));
+    assert(PyMapping_Check(threading_limbo));
+    // Duplicating what threading.active_count() does but without holding
+    // threading._active_limbo_lock so our count could be inaccurate if these
+    // dicts are mid-update from another thread.  Not a big deal.
+    Py_ssize_t num_python_threads = (PyMapping_Length(threading_active) +
+                                     PyMapping_Length(threading_limbo));
+    PyErr_Clear();
+    if (num_python_threads > 1) {
+        PyErr_WarnFormat(
+                PyExc_DeprecationWarning, 1,
+                "multi-threaded process, %s() may cause deadlocks.", name);
+    }
+end:
+    PyErr_Clear();
+    Py_XDECREF(threading);
+    Py_XDECREF(threading_active);
+    Py_XDECREF(threading_limbo);
+}
 
 #ifdef HAVE_FORK1
 /*[clinic input]
@@ -6758,6 +6804,7 @@ os_fork1_impl(PyObject *module)
         return NULL;
     }
     PyOS_BeforeFork();
+    warn_about_fork_with_threads("fork1");
     pid = fork1();
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
@@ -6797,6 +6844,7 @@ os_fork_impl(PyObject *module)
         return NULL;
     }
     PyOS_BeforeFork();
+    warn_about_fork_with_threads("fork");
     pid = fork();
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
@@ -7466,6 +7514,7 @@ os_forkpty_impl(PyObject *module)
         return NULL;
     }
     PyOS_BeforeFork();
+    warn_about_fork_with_threads("forkpty");
     pid = forkpty(&master_fd, NULL, NULL, NULL);
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */

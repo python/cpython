@@ -1,0 +1,4 @@
+A :exc:`DeprecationWarning` may be raised when :func:`os.fork()` or
+:func:`os.forkpty()` is called from multi-threaded processes. This is to
+help people realize they are doing something unsafe. Lack of this seeing a
+warning does not imply safety.
