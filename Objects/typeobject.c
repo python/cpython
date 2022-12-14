@@ -4164,8 +4164,10 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         cache->hits++;
 #endif
         assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
+        OBJECT_STAT_INC(type_cache_hits);
         return entry->value;
     }
+    OBJECT_STAT_INC(type_cache_misses);
 
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
