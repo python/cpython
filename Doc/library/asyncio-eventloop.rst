@@ -188,19 +188,21 @@ Running and stopping the loop
 .. coroutinemethod:: loop.shutdown_default_executor(timeout=None)
 
    Schedule the closure of the default executor and wait for it to join all of
-   the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
-   :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
+   the threads in the :class:`ThreadPoolExecutor`. After calling this method,
+   :meth:`loop.run_in_executor` will raise a :exc:`RuntimeError` if called
    while using the default executor.
 
-   The *timeout* parameter specifies the amount of time the executor will
-   be given to finish joining. The default value is ``None``, which means the
-   executor will be given an unlimited amount of time.
+   The *timeout* parameter specifies the amount of time this method gives the
+   executor to finish joining. The default value is ``None``, which means the
+   method allows the executor an unlimited amount of time.
 
-   If the timeout duration is reached, a warning is emitted and executor is
-   terminated without waiting for its threads to finish joining.
+   If the timeout duration is reached, this method emits a warning and
+   terminates the default executor without waiting for its threads to finish
+   joining.
 
-   Note that there is no need to call this function when
-   :func:`asyncio.run` is used.
+   Note that there is no need to call this function when :func:`asyncio.run` is
+   used, because that high-level function handles default executor shutdown
+   automatically.
 
    .. versionadded:: 3.9
 
@@ -215,21 +217,21 @@ Scheduling callbacks
    Schedule the *callback* :term:`callback` to be called with
    *args* arguments at the next iteration of the event loop.
 
-   Callbacks are called in the order in which they are registered.
-   Each callback will be called exactly once.
+   Callbacks are called in the order in which they are registered. Each callback
+   will be called exactly once, even if it is registered multiple times.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *callback* to run in.
-   The current context is used when no *context* is provided.
+   Callbacks use the current context when no *context* is provided.
 
-   An instance of :class:`asyncio.Handle` is returned, which can be
+   Returns an instance of :class:`asyncio.Handle`, which can be
    used later to cancel the callback.
 
    This method is not thread-safe.
 
 .. method:: loop.call_soon_threadsafe(callback, *args, context=None)
 
-   A thread-safe variant of :meth:`call_soon`.  Must be used to
+   A thread-safe variant of :meth:`call_soon`. This method *must* be used to
    schedule callbacks *from another thread*.
 
    Raises :exc:`RuntimeError` if called on a loop that's been closed.
