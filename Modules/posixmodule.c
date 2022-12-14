@@ -6740,7 +6740,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 // Common code to raise a warning if we know there is more than one thread
 // running in the process.  Best effort, silent if unable to count threads.
 // Constraint: Acquires no locks. Quick. Never leaves an error set.
-void warn_about_fork_with_threads(const char* name) {
+static void warn_about_fork_with_threads(const char* name) {
     // TODO: Call native OS platform APIs to determine the number of threads in
     // the process. Threads launched by Python itself are only one part of the
     // story. System libraries and extension modules or embedding code are other
