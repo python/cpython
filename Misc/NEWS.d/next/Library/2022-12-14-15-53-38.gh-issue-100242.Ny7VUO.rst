@@ -1,0 +1,3 @@
+Bring pure Python implementation ``functools.partial.__new__`` more in line
+with the C-implementation by not just always checking for the presence of
+the attribute ``'func'`` on the first argument of ``partial``.
