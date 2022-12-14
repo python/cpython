@@ -33,11 +33,11 @@ struct _Py_cached_objects {
 };
 
 #define _Py_GLOBAL_OBJECT(NAME) \
-    _PyRuntime.global_objects.NAME
+    _PyRuntime.static_objects.NAME
 #define _Py_SINGLETON(NAME) \
     _Py_GLOBAL_OBJECT(singletons.NAME)
 
-struct _Py_global_objects {
+struct _Py_static_objects {
     struct {
         /* Small integers are preallocated in this array so that they
          * can be shared.
