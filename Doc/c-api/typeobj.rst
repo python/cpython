@@ -2094,9 +2094,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: char PyTypeObject.tp_watched
 
-   Bitset marking which of the (up to eight) registered :c:func:`type
-   watchers<PyType_AddWatcher>` are watching this type (via
-   :c:func:`PyType_Watch`.)
+   Internal. Do not use.
 
    .. versionadded:: 3.12
 
