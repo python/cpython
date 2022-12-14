@@ -116,8 +116,8 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[2]) {
-        closefd = _PyLong_AsInt(fastargs[2]);
-        if (closefd == -1 && PyErr_Occurred()) {
+        closefd = PyObject_IsTrue(fastargs[2]);
+        if (closefd < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -466,4 +466,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=ff479a26cab0d479 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27f883807a6c29ae input=a9049054013a1b77]*/

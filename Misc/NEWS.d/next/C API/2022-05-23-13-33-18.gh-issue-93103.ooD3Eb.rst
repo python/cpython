@@ -1,4 +1,0 @@
-Deprecate global configuration variables, like
-:c:var:`Py_IgnoreEnvironmentFlag`, in the documentation: the
-:c:func:`Py_InitializeFromConfig` API should be instead. Patch by Victor
-Stinner.

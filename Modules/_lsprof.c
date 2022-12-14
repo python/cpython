@@ -128,8 +128,7 @@ normalizeUserObj(PyObject *obj)
 {
     PyCFunctionObject *fn;
     if (!PyCFunction_Check(obj)) {
-        Py_INCREF(obj);
-        return obj;
+        return Py_NewRef(obj);
     }
     /* Replace built-in function objects with a descriptive string
        because of built-in methods -- keeping a reference to
@@ -142,8 +141,7 @@ normalizeUserObj(PyObject *obj)
         PyObject *modname = NULL;
         if (mod != NULL) {
             if (PyUnicode_Check(mod)) {
-                modname = mod;
-                Py_INCREF(modname);
+                modname = Py_NewRef(mod);
             }
             else if (PyModule_Check(mod)) {
                 modname = PyModule_GetNameObject(mod);
@@ -555,8 +553,7 @@ static int statsForEntry(rotating_node_t *node, void *arg)
         }
     }
     else {
-        Py_INCREF(Py_None);
-        collect->sublist = Py_None;
+        collect->sublist = Py_NewRef(Py_None);
     }
 
     info = PyObject_CallFunction((PyObject*) collect->state->stats_entry_type,
@@ -670,7 +667,7 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
     int subcalls = -1;
     int builtins = -1;
     static char *kwlist[] = {"subcalls", "builtins", 0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:enable",
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pp:enable",
                                      kwlist, &subcalls, &builtins))
         return NULL;
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
@@ -773,7 +770,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
     static char *kwlist[] = {"timer", "timeunit",
                                    "subcalls", "builtins", 0};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Odii:Profiler", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Odpp:Profiler", kwlist,
                                      &timer, &timeunit,
                                      &subcalls, &builtins))
         return -1;
@@ -781,8 +778,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
     if (setSubcalls(pObj, subcalls) < 0 || setBuiltins(pObj, builtins) < 0)
         return -1;
     pObj->externalTimerUnit = timeunit;
-    Py_XINCREF(timer);
-    Py_XSETREF(pObj->externalTimer, timer);
+    Py_XSETREF(pObj->externalTimer, Py_XNewRef(timer));
     return 0;
 }
 

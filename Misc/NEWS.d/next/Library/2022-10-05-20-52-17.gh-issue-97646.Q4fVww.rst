@@ -1,1 +1,0 @@
-Replace deprecated ``application/javascript`` with ``text/javascript`` in :mod:`mimetypes`. See :rfc:`9239`. Patch by Noam Cohen.

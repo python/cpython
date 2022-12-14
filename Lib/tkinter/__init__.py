@@ -3648,7 +3648,7 @@ class Text(Widget, XView, YView):
         "lines", "xpixels" and "ypixels". There is an additional possible
         option "update", which if given then all subsequent options ensure
         that any possible out of date information is recalculated."""
-        args = ['-%s' % arg for arg in args if not arg.startswith('-')]
+        args = ['-%s' % arg for arg in args]
         args += [index1, index2]
         res = self.tk.call(self._w, 'count', *args) or None
         if res is not None and len(args) <= 3:

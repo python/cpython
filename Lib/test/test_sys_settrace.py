@@ -346,7 +346,7 @@ class TraceTestCase(unittest.TestCase):
         return Tracer()
 
     def compare_events(self, line_offset, events, expected_events):
-        events = [(l - line_offset, e) for (l, e) in events]
+        events = [(l - line_offset if l is not None else None, e) for (l, e) in events]
         if events != expected_events:
             self.fail(
                 "events did not match expectation:\n" +
@@ -2796,12 +2796,8 @@ class TestEdgeCases(unittest.TestCase):
                 sys.settrace(bar)
 
         sys.settrace(A())
-        with support.catch_unraisable_exception() as cm:
-            sys.settrace(foo)
-            self.assertEqual(cm.unraisable.object, A.__del__)
-            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
-
-        self.assertEqual(sys.gettrace(), foo)
+        sys.settrace(foo)
+        self.assertEqual(sys.gettrace(), bar)
 
 
     def test_same_object(self):

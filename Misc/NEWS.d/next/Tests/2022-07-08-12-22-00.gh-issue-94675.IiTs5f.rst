@@ -1,1 +1,0 @@
-Add a regression test for :mod:`re` exponentional slowdown when using rjsmin.

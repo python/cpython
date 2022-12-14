@@ -765,13 +765,71 @@ serialization.
 Running a logging socket listener in production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To run a logging listener in production, you may need to use a process-management tool
-such as `Supervisor <http://supervisord.org/>`_. `Here
-<https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b>`_ is a Gist which
-provides the bare-bones files to run the above functionality using Supervisor: you
-will need to change the ``/path/to/`` parts in the Gist to reflect the actual paths you
-want to use.
+.. _socket-listener-gist: https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b
 
+To run a logging listener in production, you may need to use a
+process-management tool such as `Supervisor <http://supervisord.org/>`_.
+`Here is a Gist <socket-listener-gist_>`__
+which provides the bare-bones files to run the above functionality using
+Supervisor. It consists of the following files:
+
++-------------------------+----------------------------------------------------+
+| File                    | Purpose                                            |
++=========================+====================================================+
+| :file:`prepare.sh`      | A Bash script to prepare the environment for       |
+|                         | testing                                            |
++-------------------------+----------------------------------------------------+
+| :file:`supervisor.conf` | The Supervisor configuration file, which has       |
+|                         | entries for the listener and a multi-process web   |
+|                         | application                                        |
++-------------------------+----------------------------------------------------+
+| :file:`ensure_app.sh`   | A Bash script to ensure that Supervisor is running |
+|                         | with the above configuration                       |
++-------------------------+----------------------------------------------------+
+| :file:`log_listener.py` | The socket listener program which receives log     |
+|                         | events and records them to a file                  |
++-------------------------+----------------------------------------------------+
+| :file:`main.py`         | A simple web application which performs logging    |
+|                         | via a socket connected to the listener             |
++-------------------------+----------------------------------------------------+
+| :file:`webapp.json`     | A JSON configuration file for the web application  |
++-------------------------+----------------------------------------------------+
+| :file:`client.py`       | A Python script to exercise the web application    |
++-------------------------+----------------------------------------------------+
+
+The web application uses `Gunicorn <https://gunicorn.org/>`_, which is a
+popular web application server that starts multiple worker processes to handle
+requests. This example setup shows how the workers can write to the same log file
+without conflicting with one another --- they all go through the socket listener.
+
+To test these files, do the following in a POSIX environment:
+
+#. Download `the Gist <socket-listener-gist_>`__
+   as a ZIP archive using the :guilabel:`Download ZIP` button.
+
+#. Unzip the above files from the archive into a scratch directory.
+
+#. In the scratch directory, run ``bash prepare.sh`` to get things ready.
+   This creates a :file:`run` subdirectory to contain Supervisor-related and
+   log files, and a :file:`venv` subdirectory to contain a virtual environment
+   into which ``bottle``, ``gunicorn`` and ``supervisor`` are installed.
+
+#. Run ``bash ensure_app.sh`` to ensure that Supervisor is running with
+   the above configuration.
+
+#. Run ``venv/bin/python client.py`` to exercise the web application,
+   which will lead to records being written to the log.
+
+#. Inspect the log files in the :file:`run` subdirectory. You should see the
+   most recent log lines in files matching the pattern :file:`app.log*`. They won't be in
+   any particular order, since they have been handled concurrently by different
+   worker processes in a non-deterministic way.
+
+#. You can shut down the listener and the web application by running
+   ``venv/bin/supervisorctl -c supervisor.conf shutdown``.
+
+You may need to tweak the configuration files in the unlikely event that the
+configured ports clash with something else in your test environment.
 
 .. _context-info:
 
@@ -3711,6 +3769,71 @@ instance). Then, you'd get this kind of result:
 Of course, the examples above show output according to the format used by
 :func:`~logging.basicConfig`, but you can use a different formatter when you
 configure logging.
+
+Note that with the above scheme, you are somewhat at the mercy of buffering and
+the sequence of write calls which you are intercepting. For example, with the
+definition of ``LoggerWriter`` above, if you have the snippet
+
+.. code-block:: python
+
+    sys.stderr = LoggerWriter(logger, logging.WARNING)
+    1 / 0
+
+then running the script results in
+
+.. code-block:: text
+
+    WARNING:demo:Traceback (most recent call last):
+
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/test.py", line 53, in <module>
+
+    WARNING:demo:
+    WARNING:demo:main()
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/test.py", line 49, in main
+
+    WARNING:demo:
+    WARNING:demo:1 / 0
+    WARNING:demo:ZeroDivisionError
+    WARNING:demo::
+    WARNING:demo:division by zero
+
+As you can see, this output isn't ideal. That's because the underlying code
+which writes to ``sys.stderr`` makes mutiple writes, each of which results in a
+separate logged line (for example, the last three lines above). To get around
+this problem, you need to buffer things and only output log lines when newlines
+are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
+
+.. code-block:: python
+
+    class BufferingLoggerWriter(LoggerWriter):
+        def __init__(self, logger, level):
+            super().__init__(logger, level)
+            self.buffer = ''
+
+        def write(self, message):
+            if '\n' not in message:
+                self.buffer += message
+            else:
+                parts = message.split('\n')
+                if self.buffer:
+                    s = self.buffer + parts.pop(0)
+                    self.logger.log(self.level, s)
+                self.buffer = parts.pop()
+                for part in parts:
+                    self.logger.log(self.level, part)
+
+This just buffers up stuff until a newline is seen, and then logs complete
+lines. With this approach, you get better output:
+
+.. code-block:: text
+
+    WARNING:demo:Traceback (most recent call last):
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/main.py", line 55, in <module>
+    WARNING:demo:    main()
+    WARNING:demo:  File "/home/runner/cookbook-loggerwriter/main.py", line 52, in main
+    WARNING:demo:    1/0
+    WARNING:demo:ZeroDivisionError: division by zero
+
 
 .. patterns-to-avoid:
 

@@ -856,6 +856,23 @@ class TestNtpath(NtpathTestCase):
             self.assertIsInstance(b_final_path, bytes)
             self.assertGreater(len(b_final_path), 0)
 
+    @unittest.skipIf(sys.platform != 'win32', "Can only test junctions with creation on win32.")
+    def test_isjunction(self):
+        with os_helper.temp_dir() as d:
+            with os_helper.change_cwd(d):
+                os.mkdir('tmpdir')
+
+                import _winapi
+                try:
+                    _winapi.CreateJunction('tmpdir', 'testjunc')
+                except OSError:
+                    raise unittest.SkipTest('creating the test junction failed')
+
+                self.assertTrue(ntpath.isjunction('testjunc'))
+                self.assertFalse(ntpath.isjunction('tmpdir'))
+                self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
+
+
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath
     attributes = ['relpath']
