@@ -411,15 +411,18 @@ class NonCallableMock(Base):
     # necessary.
     _lock = RLock()
 
-    def __new__(cls, /, *args, **kw):
+    def __new__(
+            cls, spec=None, wraps=None, name=None, spec_set=None,
+            parent=None, _spec_state=None, _new_name='', _new_parent=None,
+            _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs
+        ):
         # every instance has its own class
         # so we can create magic methods on the
         # class without stomping on other mocks
         bases = (cls,)
         if not issubclass(cls, AsyncMockMixin):
             # Check if spec is an async object or function
-            bound_args = _MOCK_SIG.bind_partial(cls, *args, **kw).arguments
-            spec_arg = bound_args.get('spec_set', bound_args.get('spec'))
+            spec_arg = spec_set or spec
             if spec_arg is not None and _is_async_obj(spec_arg):
                 bases = (AsyncMockMixin, cls)
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
@@ -503,11 +506,6 @@ class NonCallableMock(Base):
 
         _spec_class = None
         _spec_signature = None
-        _spec_asyncs = []
-
-        for attr in dir(spec):
-            if iscoroutinefunction(getattr(spec, attr, None)):
-                _spec_asyncs.append(attr)
 
         if spec is not None and not _is_list(spec):
             if isinstance(spec, type):
@@ -525,7 +523,6 @@ class NonCallableMock(Base):
         __dict__['_spec_set'] = spec_set
         __dict__['_spec_signature'] = _spec_signature
         __dict__['_mock_methods'] = spec
-        __dict__['_spec_asyncs'] = _spec_asyncs
 
     def __get_return_value(self):
         ret = self._mock_return_value
@@ -1015,7 +1012,8 @@ class NonCallableMock(Base):
         For non-callable mocks the callable variant will be used (rather than
         any custom subclass)."""
         _new_name = kw.get("_new_name")
-        if _new_name in self.__dict__['_spec_asyncs']:
+        _spec_val = getattr(self.__dict__["_spec_class"], _new_name, None)
+        if _spec_val is not None and asyncio.iscoroutinefunction(_spec_val):
             return AsyncMock(**kw)
 
         if self._mock_sealed:
@@ -1055,9 +1053,6 @@ class NonCallableMock(Base):
         if not self.mock_calls:
             return ""
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
-
-
-_MOCK_SIG = inspect.signature(NonCallableMock.__init__)
 
 
 class _AnyComparer(list):
@@ -2183,6 +2178,10 @@ class MagicProxy(Base):
         return self.create_mock()
 
 
+_CODE_ATTRS = dir(CodeType)
+_CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+
+
 class AsyncMockMixin(Base):
     await_count = _delegating_property('await_count')
     await_args = _delegating_property('await_args')
@@ -2200,7 +2199,9 @@ class AsyncMockMixin(Base):
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
-        code_mock = NonCallableMock(spec_set=CodeType)
+        code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
+        code_mock.__dict__["_spec_class"] = CodeType
+        code_mock.__dict__["_spec_signature"] = _CODE_SIG
         code_mock.co_flags = inspect.CO_COROUTINE
         self.__dict__['__code__'] = code_mock
         self.__dict__['__name__'] = 'AsyncMock'
