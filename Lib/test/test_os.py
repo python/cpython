@@ -4534,6 +4534,31 @@ class ForkTests(unittest.TestCase):
         assert_python_ok("-c", code)
         assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
+    @unittest.skipUnless(sys.platform in ("linux", "darwin"),
+                         "Only Linux and macOS detect this today.")
+    def test_fork_warns_when_non_python_thread_exists(self):
+        code = """if 1:
+            import os, threading, warnings
+            from _testcapi import _spawn_pthread_waiter, _end_spawned_pthread
+            _spawn_pthread_waiter()
+            try:
+                with warnings.catch_warnings(record=True) as ws:
+                    warnings.filterwarnings(
+                            "always", category=DeprecationWarning)
+                    if os.fork() == 0:
+                        assert len(ws) == 0  # Warn only the parent
+                        os._exit(0)  # child
+                    else:
+                        assert ws[0].category == DeprecationWarning, ws[0]
+                        assert 'fork' in str(ws[0].message), ws[0]
+                assert threading.active_count() == 1, threading.enumerate()
+            finally:
+                _end_spawned_pthread()
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err.decode("utf-8"), "")
+        self.assertEqual(out.decode("utf-8"), "")
+
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.
