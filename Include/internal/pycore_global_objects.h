@@ -28,6 +28,8 @@ extern "C" {
 
 struct _Py_cached_objects {
     PyObject *str_replace_inf;
+
+    PyObject *interned;
 };
 
 #define _Py_GLOBAL_OBJECT(NAME) \
@@ -59,8 +61,6 @@ struct _Py_global_objects {
         PyHamtNode_Bitmap hamt_bitmap_node_empty;
         _PyContextTokenMissing context_token_missing;
     } singletons;
-
-    PyObject *interned;
 };
 
 #define _Py_INTERP_CACHED_OBJECT(interp, NAME) \
