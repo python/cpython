@@ -128,7 +128,8 @@ def calculate_specialization_failure_kinds(name, family_stats, defines):
     for value, index in failures:
         if not value:
             continue
-        rows.append((kind_to_text(index, defines, name), value, format_ratio(value, total_failures)))
+        link =  kind_to_link(index, defines, name, "SPEC_FAIL_")
+        rows.append((link, value, format_ratio(value, total_failures)))
     return rows
 
 def print_specialization_stats(name, family_stats, defines):
@@ -223,17 +224,25 @@ def parse_kinds(spec_src, prefix="SPEC_FAIL"):
 def pretty(defname):
     return defname.replace("_", " ").lower()
 
-def kind_to_text(kind, defines, opname):
-    if kind <= 7:
-        return pretty(defines[kind][0])
+def kind_and_pretty_name(kind, defines, opname):
+    if kind < 7:
+        orig = defines[kind][0]
+        return orig, pretty(orig)
+
     if opname.endswith("ATTR"):
         opname = "ATTR"
-    if opname.endswith("SUBSCR"):
+    elif opname.endswith("SUBSCR"):
         opname = "SUBSCR"
     for name in defines[kind]:
         if name.startswith(opname):
-            return pretty(name[len(opname)+1:])
-    return "kind " + str(kind)
+            return name, pretty(name[len(opname)+1:])
+
+    return kind, "kind " + str(kind)
+
+def kind_to_link(kind, defines, opname, sym_name_prefix):
+    symbol_name, text = kind_and_pretty_name(kind, defines, opname)
+    search_url = f"https://github.com/search?q=repo%3Apython%2Fcpython%20path:Python/specialize.c%20{sym_name_prefix}{symbol_name}&type=code"
+    return f"[{text}]({search_url})"
 
 def categorized_counts(opcode_stats):
     basic = 0
