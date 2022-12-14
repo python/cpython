@@ -67,7 +67,12 @@ typedef struct _object_stats {
     uint64_t dict_materialized_str_subclass;
     uint64_t type_cache_hits;
     uint64_t type_cache_misses;
+    uint64_t type_cache_dunder_hits;
+    uint64_t type_cache_dunder_misses;
+    uint64_t type_cache_collisions;
 } ObjectStats;
+
+#
 
 typedef struct _stats {
     OpcodeStats opcode_stats[256];

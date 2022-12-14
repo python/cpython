@@ -189,6 +189,9 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object materialize dict (str subclass): %" PRIu64 "\n", stats->dict_materialized_str_subclass);
     fprintf(out, "Object type cache hits: %" PRIu64 "\n", stats->type_cache_hits);
     fprintf(out, "Object type cache misses: %" PRIu64 "\n", stats->type_cache_misses);
+    fprintf(out, "Object type cache collisions: %" PRIu64 "\n", stats->type_cache_collisions);
+    fprintf(out, "Object type cache dunder hits: %" PRIu64 "\n", stats->type_cache_dunder_hits);
+    fprintf(out, "Object type cache dunder misses: %" PRIu64 "\n", stats->type_cache_dunder_misses);
 }
 
 static void
