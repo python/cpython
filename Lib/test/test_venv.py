@@ -1,8 +1,6 @@
 """
 Test harness for the venv module.
 
-
-
 Copyright (C) 2011-2012 Vinay Sajip.
 Licensed to the PSF under a contributor agreement.
 some changes
