@@ -203,10 +203,8 @@ static int
 cleanup_ptr(PyObject *self, void *ptr)
 {
     void **pptr = (void **)ptr;
-    if (*pptr) {
-        PyMem_Free(*pptr);
-        *pptr = NULL;
-    }
+    PyMem_Free(*pptr);
+    *pptr = NULL;
     return 0;
 }
 
