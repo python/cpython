@@ -6750,13 +6750,13 @@ static void warn_about_fork_with_threads(const char* name) {
         PyErr_Clear();
         return;
     }
-    PyObject *threading_active = PyObject_GetAttrString(threading, "_active");
+    PyObject *threading_active = PyObject_GetAttr(threading, &_Py_ID(_active));
     if (!threading_active) {
         PyErr_Clear();
         Py_DECREF(threading);
         return;
     }
-    PyObject *threading_limbo = PyObject_GetAttrString(threading, "_limbo");
+    PyObject *threading_limbo = PyObject_GetAttr(threading, &_Py_ID(_limbo));
     if (!threading_limbo) {
         goto end;
     }
