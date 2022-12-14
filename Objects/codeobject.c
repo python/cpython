@@ -15,14 +15,21 @@ static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->active_code_watchers) {
-        assert(interp->_initialized);
-        for (int i = 0; i < CODE_MAX_WATCHERS; i++) {
+    assert(interp->_initialized);
+    uint8_t bits = interp->active_code_watchers;
+    int i = 0;
+    while (bits) {
+        assert(i < CODE_MAX_WATCHERS);
+        if (bits & 1) {
             PyCode_WatchCallback cb = interp->code_watchers[i];
-            if ((cb != NULL) && (cb(event, co) < 0)) {
+            // callback must be non-null if the watcher bit is set
+            assert(cb != NULL);
+            if (cb(event, co) < 0) {
                 PyErr_WriteUnraisable((PyObject *) co);
             }
         }
+        i++;
+        bits >>= 1;
     }
 }
 
