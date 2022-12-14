@@ -2133,10 +2133,8 @@ class NonCallableMagicMock(MagicMixin, NonCallableMock):
 
 
 class AsyncMagicMixin(MagicMixin):
-    def __init__(self, /, *args, **kw):
-        self._mock_set_magics()  # make magic work for kwargs in init
-        _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
-        self._mock_set_magics()  # fix magic broken by upper level init
+    pass
+
 
 class MagicMock(MagicMixin, Mock):
     """
