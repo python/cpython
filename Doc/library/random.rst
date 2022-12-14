@@ -329,7 +329,7 @@ be found in any statistics text.
    negative infinity to 0 if *lambd* is negative.
 
    .. versionchanged:: 3.12
-      Added the default value for `lambd`.
+      Added the default value for ``lambd``.
 
 
 .. function:: gammavariate(alpha, beta)
