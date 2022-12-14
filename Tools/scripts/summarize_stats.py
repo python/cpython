@@ -32,7 +32,7 @@ for name in opcode.opname[1:]:
 opmap = {name: i for i, name in enumerate(opname)}
 opmap = dict(sorted(opmap.items()))
 
-TOTAL = "specialization.deferred", "specialization.hit", "specialization.miss", "execution_count"
+TOTAL = "specialization.hit", "specialization.miss", "execution_count"
 
 def format_ratio(num, den):
     """
@@ -90,7 +90,7 @@ def calculate_specialization_stats(family_stats, total):
         if key in ("specialization.hit", "specialization.miss"):
             label = key[len("specialization."):]
         elif key == "execution_count":
-            label = "unquickened"
+            continue
         elif key in ("specialization.success",  "specialization.failure", "specializable"):
             continue
         elif key.startswith("pair"):
@@ -115,7 +115,7 @@ def calculate_specialization_success_failure(family_stats):
 
 def calculate_specialization_failure_kinds(name, family_stats, defines):
     total_failures = family_stats.get("specialization.failure", 0)
-    failure_kinds = [ 0 ] * 30
+    failure_kinds = [ 0 ] * 40
     for key in family_stats:
         if not key.startswith("specialization.failure_kind"):
             continue
@@ -224,7 +224,7 @@ def pretty(defname):
     return defname.replace("_", " ").lower()
 
 def kind_to_text(kind, defines, opname):
-    if kind < 7:
+    if kind <= 7:
         return pretty(defines[kind][0])
     if opname.endswith("ATTR"):
         opname = "ATTR"
@@ -241,18 +241,13 @@ def categorized_counts(opcode_stats):
     not_specialized = 0
     specialized_instructions = {
         op for op in opcode._specialized_instructions
-        if "__" not in op and "ADAPTIVE" not in op}
-    adaptive_instructions = {
-        op for op in opcode._specialized_instructions
-        if "ADAPTIVE" in op}
+        if "__" not in op}
     for i, opcode_stat in enumerate(opcode_stats):
         if "execution_count" not in opcode_stat:
             continue
         count = opcode_stat['execution_count']
         name = opname[i]
         if "specializable" in opcode_stat:
-            not_specialized += count
-        elif name in adaptive_instructions:
             not_specialized += count
         elif name in specialized_instructions:
             miss = opcode_stat.get("specialization.miss", 0)
