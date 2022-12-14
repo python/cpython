@@ -563,7 +563,7 @@ class ThreadTests(BaseTestCase):
         # Issue #14308: a dummy thread in the active list doesn't mess up
         # the after-fork mechanism.
         code = """if 1:
-            import _thread, threading, os, time
+            import _thread, threading, os, time, warnings
 
             def background_thread(evt):
                 # Creates and registers the _DummyThread instance
@@ -575,11 +575,16 @@ class ThreadTests(BaseTestCase):
             _thread.start_new_thread(background_thread, (evt,))
             evt.wait()
             assert threading.active_count() == 2, threading.active_count()
-            if os.fork() == 0:
-                assert threading.active_count() == 1, threading.active_count()
-                os._exit(0)
-            else:
-                os.wait()
+            with warnings.catch_warnings(record=True) as ws:
+                warnings.filterwarnings(
+                        "always", category=DeprecationWarning)
+                if os.fork() == 0:
+                    assert threading.active_count() == 1, threading.active_count()
+                    os._exit(0)
+                else:
+                    assert ws[0].category == DeprecationWarning, ws[0]
+                    assert 'fork' in str(ws[0].message), ws[0]
+                    os.wait()
         """
         _, out, err = assert_python_ok("-c", code)
         self.assertEqual(out, b'')
@@ -645,21 +650,26 @@ class ThreadTests(BaseTestCase):
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork_from_nonmain_thread(self):
         code = """if 1:
-            import os, threading, sys
+            import os, threading, sys, warnings
             from test import support
 
             def func():
-                pid = os.fork()
-                if pid == 0:
-                    main = threading.main_thread()
-                    print(main.name)
-                    print(main.ident == threading.current_thread().ident)
-                    print(main.ident == threading.get_ident())
-                    # stdout is fully buffered because not a tty,
-                    # we have to flush before exit.
-                    sys.stdout.flush()
-                else:
-                    support.wait_process(pid, exitcode=0)
+                with warnings.catch_warnings(record=True) as ws:
+                    warnings.filterwarnings(
+                            "always", category=DeprecationWarning)
+                    pid = os.fork()
+                    if pid == 0:
+                        main = threading.main_thread()
+                        print(main.name)
+                        print(main.ident == threading.current_thread().ident)
+                        print(main.ident == threading.get_ident())
+                        # stdout is fully buffered because not a tty,
+                        # we have to flush before exit.
+                        sys.stdout.flush()
+                    else:
+                        assert ws[0].category == DeprecationWarning, ws[0]
+                        assert 'fork' in str(ws[0].message), ws[0]
+                        support.wait_process(pid, exitcode=0)
 
             th = threading.Thread(target=func)
             th.start()
@@ -667,7 +677,7 @@ class ThreadTests(BaseTestCase):
         """
         _, out, err = assert_python_ok("-c", code)
         data = out.decode().replace('\r', '')
-        self.assertEqual(err, b"")
+        self.assertEqual(err.decode('utf-8'), "")
         self.assertEqual(data, "Thread-1 (func)\nTrue\nTrue\n")
 
     def test_main_thread_during_shutdown(self):
