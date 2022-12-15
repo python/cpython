@@ -6920,7 +6920,10 @@ AS_VAR_IF([PY_UNSUPPORTED_OPENSSL_BUILD], [static], [
     AS_CASE([$arg],
       [-l*], [
         libname=$(echo $arg | cut -c3-)
-        new_OPENSSL_LIBS="$new_OPENSSL_LIBS -l:lib${libname}.a -Wl,--exclude-libs,lib${libname}.a"
+        AS_CASE([`uname`],
+          [Linux], [new_OPENSSL_LIBS="$new_OPENSSL_LIBS -l:lib${libname}.a -Wl,--exclude-libs,lib${libname}.a"]n
+          [Darwin], [new_OPENSSL_LIBS="$new_OPENSSL_LIBS -Wl,-hidden-l${libname}"]
+        )
       ],
       [new_OPENSSL_LIBS="$new_OPENSSL_LIBS $arg"]
     )
