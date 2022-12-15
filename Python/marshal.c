@@ -971,9 +971,11 @@ r_bytecode(RFILE *p)
         }
         assert(0x00 <= opcode && opcode < 0x100);
         assert(0x00 <= oparg && oparg < 0x100);
-        buffer[i++] = _Py_MAKECODEUNIT(opcode, oparg);
+        buffer[i].opcode = opcode;
+        buffer[i++].oparg = oparg;
         for (int j = 0; j < _PyOpcode_Caches[opcode]; j++) {
-            buffer[i++] = _Py_MAKECODEUNIT(CACHE, oparg);
+            buffer[i].opcode = CACHE;
+            buffer[i++].oparg = 0;
         }
     }
     if (i != size) {
