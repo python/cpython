@@ -142,7 +142,6 @@ struct _is {
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
 
-    PyDict_WatchCallback dict_watchers[DICT_MAX_WATCHERS];
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in func_watchers
     uint8_t active_func_watchers;
