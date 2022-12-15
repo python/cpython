@@ -33,6 +33,7 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        .parser = _parser_runtime_state_INIT, \
         .imports = { \
             .lock = { \
                 .mutex = NULL, \
@@ -91,7 +92,6 @@ extern "C" {
                 .context_token_missing = { \
                     .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
                 }, \
-                .parser_dummy_name = _Py_parser_dummy_name_INIT, \
             }, \
         }, \
         ._main_interpreter = _PyInterpreterState_INIT, \

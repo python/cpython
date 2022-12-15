@@ -3,12 +3,11 @@
 #include "pegen.h"
 #include "string_parser.h"
 #include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_global_objects.h"  // _Py_SINGLETON()
 
 void *
 _PyPegen_dummy_name(Parser *p, ...)
 {
-    return &_Py_SINGLETON(parser_dummy_name);
+    return &_PyRuntime.parser.dummy_name;
 }
 
 /* Creates a single-element asdl_seq* that contains a */
