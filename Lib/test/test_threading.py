@@ -604,13 +604,15 @@ class ThreadTests(BaseTestCase):
         for i in range(20):
             t = threading.Thread(target=lambda: None)
             t.start()
-            pid = os.fork()
-            if pid == 0:
-                os._exit(11 if t.is_alive() else 10)
-            else:
-                t.join()
+            # Ignore the warning about fork with threads.
+            with warnings.catch_warnings(category=DeprecationWarning,
+                                         action="ignore"):
+                if (pid := os.fork()) == 0:
+                    os._exit(11 if t.is_alive() else 10)
+                else:
+                    t.join()
 
-                support.wait_process(pid, exitcode=10)
+                    support.wait_process(pid, exitcode=10)
 
     def test_main_thread(self):
         main = threading.main_thread()
