@@ -1660,7 +1660,7 @@ class TestTemporaryDirectory(BaseTestCase):
         d1 = self.do_create()
         d2 = self.do_create(recurse=0)
 
-        # Symlink d1/my_symlink -> d2, then give d2 a custom mode to see if changes.
+        # Symlink d1/my_symlink -> d2, then give d2 a custom mode to see if it changes.
         os.symlink(d2.name, os.path.join(d1.name, "my_symlink"))
         os.chmod(d2.name, 0o567)
         expected_mode = os.stat(d2.name).st_mode # can be impacted by umask etc.
