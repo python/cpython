@@ -878,6 +878,9 @@ static PyThread_type_lock wait_done = NULL;
 
 static void wait_for_lock(void *unused) {
     PyThread_acquire_lock(wait_done, 1);
+    PyThread_release_lock(wait_done);
+    PyThread_free_lock(wait_done);
+    wait_done = NULL;
 }
 
 // These can be used to test things that care about the existence of another
@@ -906,8 +909,6 @@ end_spawned_pthread(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
     PyThread_release_lock(wait_done);
-    PyThread_free_lock(wait_done);
-    wait_done = NULL;
     Py_RETURN_NONE;
 }
 #endif  // not MS_WINDOWS
