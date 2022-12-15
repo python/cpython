@@ -1,4 +1,5 @@
 import enum
+import contextlib
 
 from types import TracebackType
 from typing import final, Optional, Type
@@ -23,7 +24,6 @@ class _State(enum.Enum):
     EXITED = "finished"
 
 
-@final
 class Timeout:
 
     def __init__(self, when: Optional[float]) -> None:
@@ -109,7 +109,7 @@ class Timeout:
         self._timeout_handler = None
 
 
-def timeout(delay: Optional[float]) -> Timeout:
+class timeout(Timeout, contextlib.AsyncContextDecorator):
     """Timeout async context manager.
 
     Useful in cases when you want to apply timeout logic around block
@@ -125,11 +125,12 @@ def timeout(delay: Optional[float]) -> Timeout:
     the top-most affected timeout() context manager converts CancelledError
     into TimeoutError.
     """
-    loop = events.get_running_loop()
-    return Timeout(loop.time() + delay if delay is not None else None)
+    def __init__(self, delay: Optional[float]):
+        loop = events.get_running_loop()
+        super().__init__(loop.time() + delay if delay is not None else None)
 
 
-def timeout_at(when: Optional[float]) -> Timeout:
+class timeout_at(Timeout, contextlib.AsyncContextDecorator):
     """Schedule the timeout at absolute time.
 
     Like timeout() but argument gives absolute time in the same clock system
@@ -148,4 +149,4 @@ def timeout_at(when: Optional[float]) -> Timeout:
     the top-most affected timeout() context manager converts CancelledError
     into TimeoutError.
     """
-    return Timeout(when)
+    pass
