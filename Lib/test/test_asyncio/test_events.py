@@ -837,10 +837,11 @@ class EventLoopTestsMixin:
         self.assertFalse(sock.get_inheritable())
         with self.assertRaises(ValueError):
             sock.settimeout(1)
+        sock.settimeout(0)
         self.assertEqual(sock.gettimeout(), 0)
         with self.assertRaises(ValueError):
             sock.setblocking(True)
-        sock.shutdown(socket.SHUT_RDWR)
+
         server.close()
 
 
