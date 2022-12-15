@@ -28,7 +28,7 @@ typedef union {
 #define _Py_OPARG(word) ((word).oparg)
 
 static inline void
-_py_set_opocde(_Py_CODEUNIT *word, uint8_t opcode)
+_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
 {
     word->opcode = opcode;
 }
