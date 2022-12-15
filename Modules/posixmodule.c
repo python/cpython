@@ -9457,8 +9457,9 @@ os_dup2_impl(PyObject *module, int fd, int fd2, int inheritable)
         res = dup3(fd, fd2, O_CLOEXEC);
         Py_END_ALLOW_THREADS
         if (res < 0) {
-            if (state->dup3_works == -1)
-                dup3_works = (errno != ENOSYS);
+            if (state->dup3_works == -1) {
+                state->dup3_works = (errno != ENOSYS);
+            }
             if (state->dup3_works) {
                 posix_error();
                 return -1;
