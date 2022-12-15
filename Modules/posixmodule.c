@@ -6739,10 +6739,13 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 }
 #endif /* HAVE_FORK */
 
-// Common code to raise a warning if we know there is more than one thread
-// running in the process.  Best effort, silent if unable to count threads.
-// Constraint: Avoids locks. Quick. Never leaves an error set.
+// Common code to raise a warning if we detect there is more than one thread
+// running in the process. Best effort, silent if unable to count threads.
+// Constraint: Quick. Never overcounts. Never leaves an error set.
 static void warn_about_fork_with_threads(const char* name) {
+    // TODO: Consider making an `os` module API to return the current number
+    // of threads in the process. That'd presumably use this platform code but
+    // raise an error rather than using the inaccurate fallback.
     Py_ssize_t num_python_threads = 0;
 #if defined(__APPLE__) && defined(HAVE_GETPID)
     mach_port_t macos_self = mach_task_self();
@@ -6760,6 +6763,8 @@ static void warn_about_fork_with_threads(const char* name) {
     FILE* proc_stat = fopen("/proc/self/stat", "r");
     if (proc_stat) {
         size_t n;
+        // Size chosen arbitrarily. ~60% more bytes than a 20th column index
+        // observed on the author's workstation.
         char stat_line[160];
         n = fread(&stat_line, 1, 159, proc_stat);
         stat_line[n] = '\0';
@@ -6777,7 +6782,8 @@ static void warn_about_fork_with_threads(const char* name) {
     }
 #endif
     if (num_python_threads <= 0) {
-        // Fall back to just the number of threads this CPython runtime knows about.
+        // Fall back to just the number of threads our threading module knows about.
+        // An incomplete view of the world, but better than nothing for our purpose.
         PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
         if (!threading) {
             PyErr_Clear();
@@ -6796,19 +6802,16 @@ static void warn_about_fork_with_threads(const char* name) {
             Py_XDECREF(threading_active);
             return;
         }
-        // Worst case if someone replaced threading._active or threading._limbo
-        // with non-dicts, we get -1 from *Length() below and undercount.
-        // Whatever. That shouldn't happen, we're best effort so we clear errors
-        // and move on.
-        assert(PyMapping_Check(threading_active));
-        assert(PyMapping_Check(threading_limbo));
+        Py_DECREF(threading);
         // Duplicating what threading.active_count() does but without holding
         // threading._active_limbo_lock so our count could be inaccurate if these
         // dicts are mid-update from another thread.  Not a big deal.
+        // Worst case if someone replaced threading._active or threading._limbo
+        // with non-dicts, we get -1 from *Length() below and undercount.
+        // Nobody should, but we're best effort so we clear errors and move on.
         num_python_threads = (PyMapping_Length(threading_active)
                               + PyMapping_Length(threading_limbo));
         PyErr_Clear();
-        Py_DECREF(threading);
         Py_DECREF(threading_active);
         Py_DECREF(threading_limbo);
     }
@@ -6817,6 +6820,7 @@ static void warn_about_fork_with_threads(const char* name) {
                 PyExc_DeprecationWarning, 1,
                 "multi-threaded process detected, "
                 "use of %s() may lead to deadlocks in the child.", name);
+        PyErr_Clear();
     }
 }
 
