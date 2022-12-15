@@ -6743,14 +6743,6 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 // running in the process.  Best effort, silent if unable to count threads.
 // Constraint: Avoids locks. Quick. Never leaves an error set.
 static void warn_about_fork_with_threads(const char* name) {
-    static pid_t already_warned = 0;
-#if defined(HAVE_GETPID)
-    if (getpid() == already_warned) {
-        // Avoid any system calls to reconfirm in this process if the warning might
-        // be silenced.
-        return;
-    }
-#endif
     Py_ssize_t num_python_threads = 0;
 #if defined(__APPLE__) && defined(HAVE_GETPID)
     mach_port_t macos_self = mach_task_self();
@@ -6824,9 +6816,6 @@ static void warn_about_fork_with_threads(const char* name) {
         PyErr_WarnFormat(
                 PyExc_DeprecationWarning, 1,
                 "multi-threaded process, %s() may cause deadlocks.", name);
-#ifdef HAVE_GETPID
-        already_warned = getpid();
-#endif
     }
 }
 
